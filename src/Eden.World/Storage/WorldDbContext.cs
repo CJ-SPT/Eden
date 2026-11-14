@@ -204,6 +204,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
             .ToTable("WorldNpcMiningCargo", t => t.HasCheckConstraint("CK_NpcMiningCargo_Quantity", "Quantity>=0"))
             .HasKey(c => new { c.NpcId, c.TypeId });
         model.Entity<WorldNpcMiningCargo>().HasOne<WorldNpc>().WithMany().HasForeignKey(c => c.NpcId);
+        PersonalSettingsSchema.Configure(model);
         model.Entity<SavedPilotNote>().ToTable("WorldPilotNote").HasKey(note => new { note.PilotId, note.TargetId });
         model.Entity<SavedPilotNote>().HasOne<Pilot>().WithMany().HasForeignKey(note => note.PilotId);
         model.Entity<SavedLoyaltyBalance>().ToTable("WorldLoyaltyWallet").HasOne<Pilot>().WithMany().HasForeignKey(b => b.PilotId);

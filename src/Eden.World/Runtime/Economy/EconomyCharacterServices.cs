@@ -49,6 +49,7 @@ internal sealed partial class ResidentEconomy
 {
     private void RegisterCharacterServices()
     {
+        RegisterPersonalSettings();
         Register(
             new EconomyTable<TestingWalletGrant, EconomyTestingWalletGrant>(
                 "WorldTestingGrant",

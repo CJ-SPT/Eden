@@ -673,3 +673,96 @@ Not performed. Agent client testing is disabled.
 ### Optional maintainer checks
 
 None.
+## Notepad and shared settings — November 14, 2026
+
+A bounded comparison with evejs found nine missing native calls, now implemented:
+
+| Feature | Calls | Behavior |
+| --- | --- | --- |
+| Personal notepad | `charMgr.GetOwnerNoteLabels`, `GetOwnerNote`, `AddOwnerNote`, `EditOwnerNote`, `RemoveOwnerNote` | Private entries, titles, rich text, rename without replacing the body, deletion and folder metadata. |
+| Overview sharing | `overviewPresetMgr.StoreLinkAndGetID`, `GetStoredPreset` | Immutable profile links readable by other selected pilots. |
+| Inventory filters and fleet broadcasts | `sharedSettingsMgr.StoreSettingLinkAndGetID`, `GetStoredSharedSetting` | Immutable shared links with the native setting-type discriminator. |
+
+Existing `charMgr.GetNote`/`SetNote` describe Show Info character notes and remain separate from the notepad.
+Notepad ownership comes only from the selected pilot. Reading another pilot's note ID produces an empty native
+note result; editing it fails and removing it does nothing. Missing note IDs behave identically. Labels retain
+the native `N:` and `S:` prefixes. The client stores folder metadata in ordinary hidden note rows, split into
+6,000-character chunks; the server preserves these without interpreting the client folder encoding. Titles
+allow the native 80 characters plus their two-character prefix. A two-argument rename or explicit None body
+preserves the previous text; an empty string clears it.
+
+Shared settings arrive as inert dictionaries. The wire adapter writes a YAML-compatible list of key/value
+pairs for the native `safe_load`/`GetDictFromList` path. Nested numeric dictionary keys, sequences, Unicode,
+booleans, None and finite numbers retain their meanings. Class instances and unsupported values are rejected.
+Eden bounds profiles to 256 KiB UTF-8, 20,000 nodes and 32 nesting levels. The server never loads YAML or executes
+settings. Keys contain the saved ID and SHA-256 payload digest, plus kind 2 for inventory filters or 3 for fleet
+broadcast settings. Exact repeated payloads of the same kind reuse a key. Editing a profile creates a new link;
+old links remain valid. Reads require the complete matching key and return None when it does not match.
+
+World schema 156 adds separate notepad and shared-setting tables. Notes follow pilot deletion through the
+existing cascade; shared profiles are public link targets independent of the creator's lifetime. Both tables
+participate in resident transactions and checkpoint capture, including sequence allocation, immutable captured
+generations and failed-projection retry. No Blue codec, transport or Destiny implementation was changed.
+
+### Reference evidence
+
+The local evejs distribution identifies itself as **261108.1**, targeting client **3396210**, and contains no
+Git metadata. Its package declares AGPL-3.0-only. It was used to identify service gaps; Eden's C# implementation
+was authored against the pinned client's observable contracts and existing Eden abstractions. File fingerprints:
+
+| Local evejs source | SHA-256 |
+| --- | --- |
+| `server/src/services/character/charMgrService.js` | `82731FCEBB67A53A6723F95464A7FFA838BC98C57344FA6C64B0E3A7A90858F1` |
+| `server/src/services/character/characterNoteState.js` | `E39C0669C4E66B8F1B2E994660C300FC03D87DA934F09947B6E15F60C40CA39B` |
+| `server/src/services/overview/overviewPresetMgrService.js` | `9C90E387CA9FFE5FB6794E0FFD60974231A6EE728AA2ED6F748AB9350E0CAC75` |
+| `server/src/services/settings/sharedSettingsMgrService.js` | `DD32CC2036B17D95365314D76232AAEC7C530EB2910288C8B4D63EE2FB4153A7` |
+
+Build **3662168** `code.ccp` was inspected as inert Python bytecode with xdis 6.3.0. Relevant modules are
+`eve/client/script/ui/shared/neocom/notepad.py`, `eve/client/script/parklife/overview/presetservice.py`,
+`eve/client/script/ui/control/eveEditPlainText.py`, `eve/client/script/ui/shared/inventory/filterSvc.py`,
+`sharedSettings/util.py`, `sharedSettings/constants.py`, and the overview/shared-setting link parsers.
+The untouched `.eden-original-code.ccp` archive SHA-256 is `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+All eight inspected modules match the staged build-3662168 archive byte-for-byte. No game modules were executed. [EVE University's overview-sharing guide](https://wiki.eveuniversity.org/Overview_settings#Saving_and_sharing_your_Overview_Profile)
+describes dragging shared profile links into text fields and retaining them in the notepad.
+
+This closes the listed calls, not the entire evejs comparison backlog. The older generated RPC inventory is
+historical evidence and is not a current count of missing handlers.
+
+### Automated validation
+
+Tool and solution restore passed. The final solution build completed in **7.60 seconds**, with zero
+warnings/errors. The combined affected run passed **69 tests**, no skips, in **22.82 seconds** including runner
+startup (incremental feature build **1.36 seconds**). Both Python policy suites passed: **8 catalog checks** in
+**0.964 seconds** and **9 formatting checks** in **0.014 seconds**. Formatting and diff verification passed.
+No full .NET regression suite was requested or run.
+
+The initial exact filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Persistence.PersonalSettingsTests.NotepadRenameFoldersPrivacyAndDeletionSurviveReopen`
+(1 pass; build 32.02 seconds, tests 8.10 seconds). The first shared-link protocol run failed three test
+assertions that incorrectly expected decoded Blue byte strings to be CLR strings; using the existing text
+adapter corrected the assertions. The subsequent new-feature run passed all 14 cases in 9.28 seconds.
+An initial formatter run also reported two over-width SQL lines; both were split before final validation.
+
+Final filter:
+
+```text
+FullyQualifiedName~PersonalSettingsTests|FullyQualifiedName~PersonalSettingsServiceTests|FullyQualifiedName~PilotNotesTests|FullyQualifiedName~PilotNotesServiceTests|FullyQualifiedName~CharacterDeletionTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~WorldInitializationTests|FullyQualifiedName~ResidentSocialTests|FullyQualifiedName~DockedServicesTests
+```
+
+Coverage includes native rowset/list/KeyVal shapes, selection gating, malformed calls, private notes for
+characters sharing one account, partial rename and explicit clearing, rich text and Unicode, folder chunk
+limits, shared-link key matching, deduplication, immutable earlier links, reopen and schema upgrade. Resident
+coverage verifies immediate reads, zero warmed SQL commands/connections/fitting calculations, immutable
+checkpoint capture, injected projection failure with complete rollback, successful retry, deletion and IDs
+that are not reused after deletion. Native UI rendering and application are not established by these tests.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. Native rendering, drag/drop and client-side profile application
+remain unverified.
+
+### Optional maintainer checks
+
+- Create, rename and reopen a note inside a notepad folder after a server restart.
+- Drag an overview profile into a note and open the link from another pilot.
+- Share an inventory filter and fleet broadcast settings, then load them from another pilot.

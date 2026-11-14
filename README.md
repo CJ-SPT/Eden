@@ -35,6 +35,9 @@ dotnet run --no-build --project src/Eden.Server
 The [feature notes](docs/feature-notes.md) detail supported content and limits. The [protocol records](docs/protocol.md)
 document automated coverage and any live client observations.
 
+Use the [personal notepad and shared settings](docs/protocol/social.md#notepad-and-shared-settings--november-14-2026)
+to save private notes and folders, and share overview profiles, inventory filters and fleet broadcast settings with other pilots.
+
 ## Local game data
 
 - `catalog.sqlite` contains game definitions for build 3662168. The setup script generates it locally.

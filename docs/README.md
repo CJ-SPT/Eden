@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Notepad and shared settings](protocol/social.md#notepad-and-shared-settings--november-14-2026) covers private notes,
+saved folders and shareable overview, inventory-filter and fleet-broadcast links.
+
 [Corporation owner cache correction](protocol/social.md#corporation-owner-cache-width-november-14-2026)
 records the missing field behind native Local, Guests and overview name failures, plus focused validation.
 

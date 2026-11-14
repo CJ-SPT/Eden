@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Notepad and shared settings](protocol/social.md#notepad-and-shared-settings--november-14-2026) records nine missing
+calls identified through evejs comparison, persistent private notes and cross-pilot overview/filter/broadcast links.
+
 [Corporation owner cache correction](protocol/social.md#corporation-owner-cache-width-november-14-2026)
 records the missing field behind native Local, Guests and overview name failures, plus focused validation.
 
