@@ -302,7 +302,7 @@ public sealed class MissionLayoutTests
         using MissionFixture f = new();
         using CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath);
         var profiles = MissionCatalog.Read(catalog).Where(p => p.Kind == MissionKind.Combat).ToArray();
-        Assert.Equal(50, profiles.Length);
+        Assert.Equal(59, profiles.Length);
         int restoredScenery = 0;
         FlightProperties hull = new(0, 500, 100_000_000, 0.1f, 100, 3);
         foreach (var profile in profiles)

@@ -861,3 +861,84 @@ run was stopped after a checkpoint fixture failure. The corrected structure fail
 the focused run.
 
 **Optional maintainer checks.** None.
+
+
+## Avenge a Fallen Comrade — November 14, 2026
+
+Nine definitions join the ordinary Security offer pool, bringing the total to **343**: 59 combat,
+177 ordinary courier, 84 courier storyline and 23 mining definitions. The complete 2,892-row
+catalog audit now leaves 2,549 records blocked.
+
+| Catalog missions | Enemy / level | Completion |
+| --- | --- | --- |
+| 1180, 1181 | Angel / 1 | Destroy Habitat; 14 optional guards |
+| 1177 | Guristas / 2 | Destroy Habitat; 19 optional guards |
+| 1179, 1199 | Serpentis / 2 | Destroy Habitat; 18 optional guards |
+| 1200, 1565 | DED / 1 | Destroy all six DED soldiers |
+| 1201, 1566 | DED / 2 | Destroy Habitat; 16 optional guards |
+
+Each definition keeps its native entrance lobby, acceleration gate, room-local geometry and supplier
+restrictions. Catalog twins are admitted only by the existing exact `killMission` equivalence rule.
+No mission cargo is issued or required. Habitat destruction can complete the objective with guards
+remaining; clearing guards alone cannot complete it. The ordinary resident mission owner handles
+acceptance, destruction, tracker updates, payout and checkpoints. No new persistence path is added.
+
+The Habitat is catalog type 19715, group 494 (`Deadspace Overseer's Structure`), with positive
+shield, armor and hull health. Explicitly authored mission structures now accept this group alongside
+319. Decorative objects and clouds remain invalid objectives. The existing rigid mission-structure
+role supplies targeting, damage and motion behavior; no Blue or Destiny format changes were needed.
+
+**Comparison and sources.** The local evejs checkout has no Git metadata. Compared content packs:
+
+- `evejs-security-missions-level-1-1.1.10.json`, SHA-256
+  `aac8b94379e9315aa08d98cc70c3e2c119fd43403c488899a39fd91f0f55ae6f`.
+- `evejs-security-missions-level-2-1.1.9.json`, SHA-256
+  `04765eddeb4a5825e32d98347babccee1463b5cd5b73a56c6e7af874c4d05df5`.
+
+Those packs bind these mission IDs to the same reports but label their generic
+`destroy_all_encounters` completion provisional. Their source dungeon build is 3579973 and target
+build is 3396210; Eden independently binds report facts to its own build-3662168 catalog. No evejs
+implementation or generated template is copied. Reviewed EVE University revisions:
+[Angel level 1 (209636)](https://wiki.eveuniversity.org/index.php?title=Avenge_a_Fallen_Comrade_(Angel_Cartel)_(Level_1)&oldid=209636),
+[Guristas level 2 (203235)](https://wiki.eveuniversity.org/index.php?title=Avenge_a_Fallen_Comrade_(Guristas_Pirates)_(Level_2)&oldid=203235),
+[Serpentis level 2 (193385)](https://wiki.eveuniversity.org/index.php?title=Avenge_a_Fallen_Comrade_(Serpentis)_(Level_2)&oldid=193385),
+[DED level 1 (191580)](https://wiki.eveuniversity.org/index.php?title=Avenge_a_Fallen_Comrade_(DED)_(Level_1)&oldid=191580), and
+[DED level 2 (191581)](https://wiki.eveuniversity.org/index.php?title=Avenge_a_Fallen_Comrade_(DED)_(Level_2)&oldid=191581).
+
+Alternatives and distance ranges follow the existing deterministic selection and upper-bound policy.
+The DED level-one group and Serpentis level-two fourth group have no reported range; their 25 km
+hints remain explicit Eden reconstruction. Group aggro choreography and exact live standing-loss
+magnitudes are not reconstructed; existing Eden combat and standing rules apply. Variants with
+uncertain reinforcement or damage-threshold triggers (1178, 1182–1184 and 1198) remain blocked.
+
+**Automated validation.** The exact development filter
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionContentTests.HabitatCompletionRequiresTheStructureAndSurvivesResidentRollbackAndCheckpoint`
+passed all seven cases (4.77 s build, 16.87 s tests). Earlier development attempts exposed an incorrect
+test lookup in static scenery (Habitat targets are NPC contacts) and a nullable test expression;
+both were corrected before the successful run. New assertions cover guard-only rejection, rollback,
+native tracker updates, stable identities after resident checkpoint/reopen and duplicate turn-in.
+The existing combat-content theory now runs against resident worlds and checks Habitat blitzes as
+well as existing retrieval encounters. Generated fixtures add 18 types and 105 source records;
+all previous fixture values remain unchanged. The broader development filter passed **391 cases**
+(1.36 s build, 455.48 s tests):
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionContentTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionLayoutTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionStructureTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionGateTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionTrackerTests
+```
+
+Final ordered validation passed in **56.82 seconds**: tool restore, solution restore/build (zero
+warnings/errors), 13 focused tests, both required Python policy suites (8 catalog and 9 formatting
+cases), six mission-admission checks, and formatting verification across 2,127 files. The final
+.NET filter selected the exact `MissionContentTests` methods
+`HabitatCompletionRequiresTheStructureAndSurvivesResidentRollbackAndCheckpoint`,
+`MissionStructuresAdmitDestructibleGroupsAndRejectScenery`, and
+`ExpandedContentLoadsEveryDefinitionAndCorrectsNuisanceFactionRosters` using `FullyQualifiedName=`
+clauses joined with `|`. Manifest/audit/fixture reproduction, relative documentation links and
+`git diff --check` also passed. Final TRX:
+`artifacts/feature-tests/results/missions-final/missions-final.trx`.
+No full .NET suite was requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Inspect Habitat targeting and the destroy-objective tracker in one
+new pocket; complete a Habitat blitz with guards remaining.

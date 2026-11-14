@@ -2,7 +2,7 @@
 
 [Documentation index](README.md) / [Implementation and validation record](protocol/agents.md#supported-mission-content-expansion--november-9-2026)
 
-The build-3662168 pool contains **334 definitions: 50 combat encounters, 177 ordinary deliveries, 84 delivery storylines and 23 mining missions**. The [complete catalog audit](data/mission-support-3662168.csv) lists all **2,892** source records, including the **2,558** that remain unavailable. A blocked encounter may need verified content rather than a new engine capability.
+The build-3662168 pool contains **343 definitions: 59 combat encounters, 177 ordinary deliveries, 84 delivery storylines and 23 mining missions**. The [complete catalog audit](data/mission-support-3662168.csv) lists all **2,892** source records, including the **2,549** that remain unavailable. A blocked encounter may need verified content rather than a new engine capability.
 
 ## Mining content
 
@@ -24,6 +24,7 @@ mission chains are outside the admitted mining pool. See the [implementation rec
 
 | Family | Admitted variants | Definitions |
 | --- | --- | --- |
+| Avenge a Fallen Comrade | Angel level 1 (two templates), Guristas level 2, Serpentis level 2 (two templates), DED levels 1–2 (two templates each) | 9 |
 | Angel Cartel Spies | Levels 1–4 | 4 |
 | Guristas Spies | Level 1 | 1 |
 | Serpentis Spies | Level 2 | 1 |
@@ -36,6 +37,8 @@ mission chains are outside the admitted mining pool. See the [implementation rec
 | Duo of Death | Angel, Blood, Guristas, Sansha, Serpentis; levels 3 and 4 | 10 |
 | Eliminate the Pirate Campers | Sansha and Serpentis level 1; Thukker level 2; Angel level 3 | 4 |
 | Seek and Destroy | Angel, Guristas and Sansha levels 1–2; Blood level 1; Serpentis level 2; two Thukker-supplier templates using the same Sansha dungeons | 10 |
+
+Avenge a Fallen Comrade requires destruction of the **Habitat** in the Angel, Guristas, Serpentis and level-two DED pockets; guards are optional and no cargo is required. Level-one DED instead requires all six DED soldiers. Each variant retains its empty entrance room and acceleration gate. The remaining variants with unverified reinforcement triggers stay blocked. See the [evejs comparison and validation](protocol/agents.md#avenge-a-fallen-comrade--november-14-2026).
 
 The numeric definitions and report revisions are in [the embedded manifest](../src/Eden.World/Agents/missions-3662168.json). The [exporter](../tools/Export-MissionCatalog.py) and [additional content compiler](../tools/mission_content.py) bind report names to exact pinned catalog types, factions, geometry, objective types and quantities. Unknown or ambiguous names fail export. Mixed rogue-drone groups use their own faction. The Pirate Nuisance Angel/Guristas definitions now match the catalog's actual faction assignments: **920 Angel, 916 Guristas**.
 
@@ -74,4 +77,4 @@ python tools/Export-MissionFixture.py --catalog src/Eden.Server/data/catalog.sql
 python tests/Eden.Protocol.Tests/Persistence/mission_content_test.py
 ```
 
-The first command emits the runtime manifest and exhaustive CSV audit. The second captures **553 types and 3,472 source records** for offline tests, including all authored NPC alternatives, objective cargo, geometry, faction/corporation references and ordinary/commander loot dependencies. SDE mission records retain only the English name fallback; native English messages are captured separately. No game launch or runtime network access is involved.
+The first command emits the runtime manifest and exhaustive CSV audit. The second captures **712 types and 4,173 source records** for offline tests, including all authored NPC alternatives, objective cargo, geometry, faction/corporation references and ordinary/commander loot dependencies. SDE mission records retain only the English name fallback; native English messages are captured separately. No game launch or runtime network access is involved.

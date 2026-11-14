@@ -14,6 +14,7 @@ using Eden.Gameplay.Loot;
 using Eden.Server;
 using Eden.World.Agents;
 using Eden.World.Catalog;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -49,7 +50,7 @@ public sealed partial class MissionContentTests
         using CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath);
         var profiles = MissionCatalog.Read(catalog);
         Assert.Equal(Content().Missions.Length, profiles.Length);
-        Assert.Equal(50, profiles.Count(p => p.Kind == MissionKind.Combat));
+        Assert.Equal(59, profiles.Count(p => p.Kind == MissionKind.Combat));
         Assert.Equal(261, profiles.Count(p => p.Kind == MissionKind.Courier));
         Assert.Equal(23, profiles.Count(p => p.Kind == MissionKind.Mining));
         foreach (var profile in profiles)
@@ -69,9 +70,9 @@ public sealed partial class MissionContentTests
 
     [Theory]
     [MemberData(nameof(NewCombatMissions))]
-    public void EveryNewCombatVariantHasWorkingObjectivesCargoAndExactlyOnceTurnIn(int id, int level)
+    public async Task EveryNewCombatVariantHasWorkingObjectivesCargoAndExactlyOnceTurnIn(int id, int level)
     {
-        using var f = Create(id, level, MissionRules.SecurityDivision);
+        using var f = Create(id, level, MissionRules.SecurityDivision, live: true);
         var offer = f.Accept(f.Request());
         Assert.Equal(id, offer.MissionId);
         using CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath);
@@ -93,19 +94,22 @@ public sealed partial class MissionContentTests
         {
             using (WorldDbContext world = new(f.Db.Path))
             {
-                last = world.Set<WorldNpc>().Single(n => n.Role == NpcRole.MissionStructure && n.TypeId == 17787).Id;
+                last = world.Set<SavedMissionStructure>().Single(s => s.MissionId == offer.Id && s.CompletesMission).NpcId;
             }
             f.Kill(last);
             Assert.True(Current(f).CombatComplete);
-            Assert.False(Current(f).ObjectiveComplete);
-            long recovery = MissionContainerRules.Id(offer.Id, 0);
-            var obj = f.Missions.Sites(offer.SystemId).SelectMany(s => s.Objects).Single(o => o.Id == recovery);
-            Move(f, offer.SystemId, obj.Position);
-            var containers = f.Services.GetRequiredService<IPilotMissionContainers>();
-            var cargo = Assert.Single(containers.Read(MissionFixture.PilotId, recovery).Items);
-            Assert.Equal(profile.CargoQuantity, cargo.Quantity);
-            containers.Take(MissionFixture.PilotId, f.Context.Pilot.ShipId, new([cargo.Id], recovery, (int)InventoryFlag.Cargo, null));
-            Assert.Empty(containers.Read(MissionFixture.PilotId, recovery).Items);
+            if (profile.CargoType != 0)
+            {
+                Assert.False(Current(f).ObjectiveComplete);
+                long recovery = MissionContainerRules.Id(offer.Id, 0);
+                var obj = f.Missions.Sites(offer.SystemId).SelectMany(s => s.Objects).Single(o => o.Id == recovery);
+                Move(f, offer.SystemId, obj.Position);
+                var containers = f.Services.GetRequiredService<IPilotMissionContainers>();
+                var cargo = Assert.Single(containers.Read(MissionFixture.PilotId, recovery).Items);
+                Assert.Equal(profile.CargoQuantity, cargo.Quantity);
+                containers.Take(MissionFixture.PilotId, f.Context.Pilot.ShipId, new([cargo.Id], recovery, (int)InventoryFlag.Cargo, null));
+                Assert.Empty(containers.Read(MissionFixture.PilotId, recovery).Items);
+            }
         }
         else
         {
@@ -148,7 +152,9 @@ public sealed partial class MissionContentTests
         }
         Assert.True(Current(f).ObjectiveComplete);
         f.Dock(MissionFixture.StationId);
-        using var reopened = ServerServices.Build(new(f.Db.Path), f.Clock);
+        await LiveWorld.Find(f.Db.Path)!.FlushAsync();
+        f.StopResident();
+        using var reopened = ServerServices.Build(new(f.Db.Path), f.Clock, liveWorld: true);
         var missions = reopened.GetRequiredService<IPilotMissions>();
         Assert.True(missions.Current(MissionFixture.PilotId, MissionFixture.AgentId)!.ObjectiveComplete);
         Assert.Equal(
@@ -163,11 +169,12 @@ public sealed partial class MissionContentTests
         Assert.Empty(missions.Sites(offer.SystemId));
     }
 
-    private static MissionFixture Create(int id, int level, int division)
+    private static MissionFixture Create(int id, int level, int division, bool live = false)
     {
         var f = new MissionFixture(
             level,
             division,
+            live: live,
             configure: catalog =>
             {
                 var mission = catalog.Require(CatalogData.Client.Missions, (long)id);
