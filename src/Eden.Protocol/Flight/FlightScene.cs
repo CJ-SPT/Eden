@@ -39,6 +39,8 @@ internal sealed class FlightScene(
     private readonly Dictionary<long, long> _gateDepartures = new();
     private long? _observingSince;
     private StaticSpaceObject[] _visibleAsteroids = [];
+    private IReadOnlyList<StaticSpaceObject>? _asteroidSource;
+    private IReadOnlyList<StaticSpaceObject> _objects = objects;
     private IReadOnlyList<StaticSpaceObject> _anomalies = [];
     private IReadOnlyList<StaticSpaceObject> _structures = [];
     private WreckContact[] _wrecks = [];
@@ -49,7 +51,15 @@ internal sealed class FlightScene(
 
     internal IReadOnlyList<StaticSpaceObject> VisibleAsteroids => _visibleAsteroids;
 
-    internal IReadOnlyList<StaticSpaceObject> Objects { get; private set; } = objects;
+    internal IReadOnlyList<StaticSpaceObject> Objects
+    {
+        get => _objects;
+        private set
+        {
+            _objects = value;
+            _asteroidSource = null;
+        }
+    }
     internal IReadOnlyList<NpcContact> VisibleNpcs => Npcs.Contacts;
     internal IReadOnlyList<WreckContact> VisibleWrecks => _wrecks;
     internal IReadOnlyList<MissileContact> VisibleMissiles => _missiles;
@@ -333,7 +343,13 @@ internal sealed class FlightScene(
 
     internal void RefreshAsteroids(FlightSceneContext context, IReadOnlyList<StaticSpaceObject> asteroids)
     {
-        Objects = Objects.Where(o => !IsPublicAsteroid(o)).Concat(asteroids).ToArray();
+        // Resident fields publish immutable lists; scene replacement clears the cached source.
+        if (!ReferenceEquals(_asteroidSource, asteroids))
+        {
+            Objects = Objects.Where(o => !IsPublicAsteroid(o)).Concat(asteroids).ToArray();
+            _asteroidSource = asteroids;
+        }
+        // Movement can cross visibility boundaries even when the field is unchanged.
         RefreshVisibleAsteroids(context);
     }
 
@@ -371,7 +387,14 @@ internal sealed class FlightScene(
         {
             return;
         }
-        var current = VisibleObjects(context).Where(IsPublicAsteroid).ToArray();
+        var current = Objects
+            .AsValueEnumerable()
+            .Where(o =>
+                IsPublicAsteroid(o)
+                && context.Pilot.Position is { } position
+                && position.DistanceTo(o.Position) <= AsteroidDefinitions.VisibilityRange
+            )
+            .ToArray();
         foreach (var departed in _visibleAsteroids.ExceptBy(current.Select(o => o.Id), o => o.Id))
         {
             update(new DestinyCommand.RemoveBall(departed.Id, false));

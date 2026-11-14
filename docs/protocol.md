@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Static scene frame costs](protocol/performance.md#static-scene-frame-costs-november-14-2026)
+records reduced collision/asteroid allocations and complete moving-session measurements.
+
 [Catalog mission deadlines](protocol/agents.md#catalog-mission-deadlines--november-14-2026) records four newly admitted
 courier definitions, resident expiry and checkpoint recovery.
 

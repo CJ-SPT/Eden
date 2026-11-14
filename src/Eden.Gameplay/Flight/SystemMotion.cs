@@ -66,9 +66,27 @@ public static class ShipCollisions
     }
 
     public static CollisionResult ResolveStatic(CollisionMotion ship, IReadOnlyList<StaticSpaceObject> obstacles) =>
-        ResolveOne(
-            ship,
-            obstacles.Select(body => new CollisionMotion(
+        ResolveOne(ship, StaticCandidates(ship, obstacles));
+
+    private static IEnumerable<CollisionMotion> StaticCandidates(CollisionMotion ship, IReadOnlyList<StaticSpaceObject> obstacles)
+    {
+        if (!ship.Solid)
+        {
+            yield break;
+        }
+        foreach (var body in obstacles)
+        {
+            // Use the same swept contact test as Potential before allocating a
+            // fixed body and hull. Keep float radius addition and caller ordering.
+            if (
+                ship.Id == body.Id
+                || !body.Solid
+                || ContactTime(ship, body.Position, body.Position, ship.Hull.ShipRadius + body.Radius) < 0
+            )
+            {
+                continue;
+            }
+            yield return new CollisionMotion(
                 body.Id,
                 ship.Hull with
                 {
@@ -80,8 +98,9 @@ public static class ShipCollisions
                 SpacePosition.Zero,
                 Solid: body.Solid,
                 Fixed: true
-            ))
-        );
+            );
+        }
+    }
 
     private static CollisionResult ResolveOne(CollisionMotion ship, IEnumerable<CollisionMotion> others)
     {
@@ -124,7 +143,7 @@ public static class ShipCollisions
     private static Impact? Potential(CollisionMotion ship, CollisionMotion other, int depth)
     {
         double radius = ship.Hull.ShipRadius + other.Hull.ShipRadius;
-        double time = ContactTime(ship, other, radius);
+        double time = ContactTime(ship, other.Start, other.Position, radius);
         if (time < 0)
         {
             return null;
@@ -208,14 +227,14 @@ public static class ShipCollisions
         );
     }
 
-    private static double ContactTime(CollisionMotion ship, CollisionMotion other, double radius)
+    private static double ContactTime(CollisionMotion ship, SpacePosition otherStart, SpacePosition otherPosition, double radius)
     {
-        double radialX = ship.Start.X - other.Start.X;
-        double radialY = ship.Start.Y - other.Start.Y;
-        double radialZ = ship.Start.Z - other.Start.Z;
-        double deltaX = (ship.Position.X - ship.Start.X) - (other.Position.X - other.Start.X);
-        double deltaY = (ship.Position.Y - ship.Start.Y) - (other.Position.Y - other.Start.Y);
-        double deltaZ = (ship.Position.Z - ship.Start.Z) - (other.Position.Z - other.Start.Z);
+        double radialX = ship.Start.X - otherStart.X;
+        double radialY = ship.Start.Y - otherStart.Y;
+        double radialZ = ship.Start.Z - otherStart.Z;
+        double deltaX = (ship.Position.X - ship.Start.X) - (otherPosition.X - otherStart.X);
+        double deltaY = (ship.Position.Y - ship.Start.Y) - (otherPosition.Y - otherStart.Y);
+        double deltaZ = (ship.Position.Z - ship.Start.Z) - (otherPosition.Z - otherStart.Z);
         double clearance = radialX * radialX + radialY * radialY + radialZ * radialZ - radius * radius;
         if (clearance <= 0)
         {
