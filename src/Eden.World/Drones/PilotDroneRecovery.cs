@@ -7,8 +7,8 @@ using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Drones;
 
@@ -20,8 +20,8 @@ internal sealed partial class PilotDroneStore
         {
             throw new InvalidDataException("Choose distinct lost drones and a valid ship hold.");
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = InSpace(world, pilotId, requireDroneHull: false);
         var ship = pilot.ActiveShip;
@@ -73,7 +73,6 @@ internal sealed partial class PilotDroneStore
             Release(drone);
             changes.Add(new(PilotInventoryStore.Read(catalog, item), previous));
         }
-        world.SaveChanges();
         transaction.Commit();
         return changes;
     }

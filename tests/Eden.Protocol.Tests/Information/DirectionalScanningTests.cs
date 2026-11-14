@@ -197,17 +197,11 @@ public sealed partial class InformationTests
                 Assert.Contains(store.Directional(other, Math.PI / 4, 1001, new(-1, 0, 0), f.Clock.Now), c => c.Id == ship);
                 Assert.DoesNotContain(store.Directional(f.PilotId, Math.PI / 4, 1001, new(-1, 0, 0), f.Clock.Now), c => c.Id == target);
             }
+            Assert.Equal(0, metrics!.Commands);
+            Assert.Equal(0, metrics.Connections);
             if (residentReads)
             {
-                Assert.Equal(0, metrics!.Commands);
-                Assert.Equal(0, metrics.Connections);
                 Assert.Equal(0, metrics.FittingCalculations);
-            }
-            else
-            {
-                Assert.True(metrics!.Commands > 0);
-                Assert.True(metrics.Connections > 0);
-                Assert.True(metrics.FittingCalculations > 0);
             }
         }
     }

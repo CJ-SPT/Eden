@@ -112,12 +112,13 @@ internal sealed partial class PilotDroneStore(
 
     public void ChangeSettings(long pilotId, bool? aggressive, bool? focusFire)
     {
-        using WorldDbContext world = new(database.Path);
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         var settings =
             world.Set<WorldDroneSettings>().Find(pilotId) ?? world.Set<WorldDroneSettings>().Add(new() { PilotId = pilotId }).Entity;
         settings.Aggressive = aggressive ?? settings.Aggressive;
         settings.FocusFire = focusFire ?? settings.FocusFire;
-        world.SaveChanges();
+        transaction.Commit();
     }
 
     public DroneProfile? Profile(long pilotId, int typeId)
@@ -443,17 +444,17 @@ internal sealed partial class PilotDroneStore(
     private IReadOnlySet<(long Pilot, long Ship)> ListControllers() =>
         LiveReadModels.Find(database.Path)?.DroneControllers(ReadControllers) ?? ReadControllers();
 
-    private IReadOnlySet<(long Pilot, long Ship)> ReadControllers()
-    {
-        using WorldDbContext world = new(database.Path);
-        return world
-            .Set<WorldDrone>()
-            .Where(d => d.ControllerShipId != 0 && d.SystemId != null)
-            .Select(d => new { d.PilotId, d.ControllerShipId })
-            .AsEnumerable()
-            .Select(d => (d.PilotId, d.ControllerShipId))
-            .ToHashSet();
-    }
+    private IReadOnlySet<(long Pilot, long Ship)> ReadControllers() =>
+        WorldActionScope.Inspect(
+            database,
+            world =>
+                world
+                    .Filter<WorldDrone>(d => d.ControllerShipId != 0 && d.SystemId != null)
+                    .Select(d => new { d.PilotId, d.ControllerShipId })
+                    .AsEnumerable()
+                    .Select(d => (d.PilotId, d.ControllerShipId))
+                    .ToHashSet()
+        );
 
     public IReadOnlyList<DroneContact> List(int systemId, long now) =>
         LiveWorld.Find(database.Path)?.CombatForSystem(systemId)?.Drones(systemId, now)
@@ -462,14 +463,17 @@ internal sealed partial class PilotDroneStore(
 
     private IReadOnlyList<DroneContact> ReadContacts(int systemId)
     {
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return world
-            .Set<WorldDrone>()
-            .Where(d => d.SystemId == systemId && !world.Set<SavedCapsuleerSuspension>().Any(pause => pause.PilotId == d.PilotId))
-            .AsEnumerable()
-            .Select(d => Contact(world, catalog, d))
-            .ToArray();
+        return WorldActionScope.Inspect(
+            database,
+            world =>
+                world
+                    .Filter<WorldDrone>(d => d.SystemId == systemId)
+                    .AsEnumerable()
+                    .Where(d => world.Set<SavedCapsuleerSuspension>().Find(d.PilotId) is null)
+                    .Select(d => Contact(world, catalog, d))
+                    .ToArray()
+        );
     }
 
     public bool WasDestroyed(long droneId)
@@ -484,26 +488,31 @@ internal sealed partial class PilotDroneStore(
 
     public IReadOnlyDictionary<long, ShipHealth> BayHealth(long pilotId, long shipId, IReadOnlySet<long> ids)
     {
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var items = world
-            .Set<OwnedItem>()
-            .Where(i => i.OwnerId == pilotId && i.LocationId == shipId && i.FlagId == (int)InventoryFlag.DroneBay && ids.Contains(i.Id))
-            .ToArray();
-        if (items.Length != ids.Count)
-        {
-            throw new InvalidDataException("Read damage only for your ship's stored drones.");
-        }
-        return items.ToDictionary(
-            i => i.Id,
-            i =>
+        return WorldActionScope.Inspect(
+            database,
+            world =>
             {
-                if (world.Set<WorldDrone>().Find(i.Id) is { } saved)
+                var items = ids.Select(id => world.Set<OwnedItem>().Find(id))
+                    .OfType<OwnedItem>()
+                    .Where(i => i.OwnerId == pilotId && i.LocationId == shipId && i.FlagId == (int)InventoryFlag.DroneBay)
+                    .ToArray();
+                if (items.Length != ids.Count)
                 {
-                    return Contact(world, catalog, saved).Health;
+                    throw new InvalidDataException("Read damage only for your ship's stored drones.");
                 }
-                var defense = ShipHealth.DefenseFrom(catalog.FittingAttributes(i.TypeId));
-                return new ShipHealth(i.Id, defense, defense.Undamaged);
+                return items.ToDictionary(
+                    i => i.Id,
+                    i =>
+                    {
+                        if (world.Set<WorldDrone>().Find(i.Id) is { } saved)
+                        {
+                            return Contact(world, catalog, saved).Health;
+                        }
+                        var defense = ShipHealth.DefenseFrom(catalog.FittingAttributes(i.TypeId));
+                        return new ShipHealth(i.Id, defense, defense.Undamaged);
+                    }
+                );
             }
         );
     }

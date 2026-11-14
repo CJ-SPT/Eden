@@ -507,3 +507,29 @@ response arrival, ship loss, bonus cache survival and checkpoint reopen in both 
 **Live acceptance.** Not performed. Agent client testing is disabled.
 
 **Optional maintainer checks.** None.
+
+
+## Resident ship information modules and drone commands
+
+Information-module cycles, their capacitor payments and active markers, salvage settlement and
+scanner results use resident actions. Directional scan baselines use resident membership and current
+positions. Tractor start and stop follow the cycle commit and live tractor movement is captured
+with the same checkpoint. Drone delegation, scooping, bay health and settings use resident rows
+for the pilot, controlled drone and inventory.
+
+Gameplay references are [directional scanning](https://wiki.eveuniversity.org/Directional_Scanning),
+[cargo scanning](https://wiki.eveuniversity.org/Cargo_scanning),
+[salvaging](https://wiki.eveuniversity.org/Salvaging), and
+[drones](https://wiki.eveuniversity.org/Drones). The local EveJS 261108.1 comparison used
+`scanMgrService.js`, `salvagerRuntime.js` and `droneRuntime.js`
+(SHA-256 prefixes `A565E0C5064A3115`, `9659E071D1D19988` and `163795E56D651C4B`).
+
+**Automated validation.** The focused information and drone filter passed 403 of 404 cases in
+5 minutes 23 seconds. The uncached directional test still expected SQL. An updated assertion
+verified zero SQL commands or connections with either cache setting. That follow-up and the
+resident tractor regression passed all three cases in 11 seconds. The build, Python policy
+suites and formatting checks passed.
+
+**Live acceptance.** Not performed. Agent client testing is disabled.
+
+**Optional maintainer checks.** None.

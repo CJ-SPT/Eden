@@ -13,7 +13,6 @@ using Eden.World.Fittings;
 using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Drones;
 
@@ -22,8 +21,8 @@ internal sealed partial class PilotDroneStore
     public void Delegate(long pilotId, IReadOnlyList<long> drones, DroneDelegationMode mode, long memberId, long now)
     {
         CheckIds(drones);
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId, memberId]));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = InSpace(world, pilotId);
         int system = CurrentSystem(catalog, pilot);
@@ -36,8 +35,8 @@ internal sealed partial class PilotDroneStore
         {
             throw new InvalidDataException("A destroyed ship cannot delegate drones.");
         }
-        var owner = DelegationOwner(new SqlWorldAction(world), catalog, pilot, system);
-        var member = DelegationMember(new SqlWorldAction(world), catalog, memberId, system);
+        var owner = DelegationOwner(world, catalog, pilot, system);
+        var member = DelegationMember(world, catalog, memberId, system);
         if (member.Available)
         {
             var targetDefense = ShipHealth.DefenseFrom(PilotFittingStore.ShipAttributes(world, catalog, memberId));
@@ -84,11 +83,8 @@ internal sealed partial class PilotDroneStore
             }
             if (!owners.TryGetValue(other.PilotId, out var previousOwner))
             {
-                var savedOwner = world
-                    .Pilots.Include(p => p.ActiveShip)
-                        .ThenInclude(s => s.Position)
-                    .SingleOrDefault(p => p.Id == other.PilotId);
-                previousOwner = savedOwner is null ? null : DelegationOwner(new SqlWorldAction(world), catalog, savedOwner, system);
+                var savedOwner = world.Pilots.Find(other.PilotId);
+                previousOwner = savedOwner is null ? null : DelegationOwner(world, catalog, savedOwner, system);
                 owners[other.PilotId] = previousOwner;
             }
             var delegation = DroneDelegationPersistence.Read(other)!;
@@ -131,7 +127,6 @@ internal sealed partial class PilotDroneStore
             drone.TargetId = member.ShipId;
             drone.Orbiting = false;
         }
-        world.SaveChanges();
         transaction.Commit();
     }
 

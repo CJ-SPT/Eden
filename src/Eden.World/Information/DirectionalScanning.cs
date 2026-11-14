@@ -12,8 +12,8 @@ using Eden.Gameplay.Loot;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Information;
 
@@ -85,32 +85,39 @@ internal sealed partial class PilotInformationStore
 
     private DirectionalObserver LoadObserver(long pilotId)
     {
-        using WorldDbContext world = new(database.Path) { ReadsDirectionalPositions = true };
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = Pilot(world, pilotId);
-        var position = Position(pilot);
-        double maximum = PilotFittingStore
-            .ShipAttributes(world, catalog, pilot)
-            .GetValueOrDefault(DogmaAttributeId.MaxDirectionalScanRange, InformationRules.MaximumDirectionalRange);
-        return new(pilot.ActiveShipId, System(catalog, pilot), position, maximum);
+        return WorldActionScope.Inspect(
+            database,
+            world =>
+            {
+                var pilot = Pilot(world, pilotId);
+                var position = Position(pilot);
+                double maximum = PilotFittingStore
+                    .ShipAttributes(world, catalog, pilot)
+                    .GetValueOrDefault(DogmaAttributeId.MaxDirectionalScanRange, InformationRules.MaximumDirectionalRange);
+                return new DirectionalObserver(pilot.ActiveShipId, System(catalog, pilot), position, maximum);
+            }
+        );
     }
 
     private IReadOnlyList<DirectionalEntry> LoadDirectional(int system, bool includeJetcans = false)
     {
-        // These are membership/name baselines. Current resident coordinates are overlaid
-        // under the world owner above, without projecting combat or tractor state to SQL.
-        using WorldDbContext world = new(database.Path) { ReadsDirectionalPositions = true };
         using CatalogDbContext catalog = new(database.CatalogPath);
+        return WorldActionScope.Inspect(database, world => LoadDirectional(world, catalog, system, includeJetcans));
+    }
+
+    private static IReadOnlyList<DirectionalEntry> LoadDirectional(WorldAction world, CatalogDbContext catalog, int system, bool jetcans)
+    {
+        // Observer data overlays live coordinates under the owner.
         List<DirectionalEntry> contacts = [];
-        var logoffs = world.Set<SavedLogoff>().AsNoTracking().Where(l => l.SystemId == system).ToDictionary(l => l.ShipId);
-        foreach (
-            var ship in world
-                .Ships.Include(s => s.Position)
-                .Where(s => !world.Set<SavedCapsuleerSuspension>().Any(pause => pause.PilotId == s.OwnerId))
-                .AsNoTracking()
-                .Where(s => s.Position != null && (s.Position.SystemId == null || s.Position.SystemId == system))
-        )
+        var logoffs = world.Filter<SavedLogoff>(l => l.SystemId == system).ToDictionary(l => l.ShipId);
+        foreach (var position in world.Filter<Eden.Data.World.Docking.FlightPosition>(p => p.SystemId == null || p.SystemId == system))
         {
+            var ship = world.Ships.Find(position.ShipId);
+            if (ship?.Position is null || world.Set<SavedCapsuleerSuspension>().Find(ship.OwnerId) is not null)
+            {
+                continue;
+            }
             int location = ship.Position!.SystemId ?? catalog.RequireStation(ship.StationId).SolarSystemId;
             if (location != system || catalog.FittingAttributes(ship.TypeId).GetValueOrDefault(DogmaAttributeId.DirectionalScanImmune) != 0)
             {
@@ -127,7 +134,7 @@ internal sealed partial class PilotInformationStore
                 )
             );
         }
-        foreach (var wreck in world.Set<WorldWreck>().AsNoTracking().Where(w => w.SystemId == system))
+        foreach (var wreck in world.Filter<WorldWreck>(w => w.SystemId == system))
         {
             contacts.Add(
                 new(
@@ -136,34 +143,27 @@ internal sealed partial class PilotInformationStore
                 )
             );
         }
-        if (includeJetcans)
+        if (jetcans)
         {
-            foreach (var can in world.Set<SavedJetcan>().AsNoTracking().Where(c => c.SystemId == system))
+            foreach (var can in world.Filter<SavedJetcan>(c => c.SystemId == system))
             {
                 var type = catalog.RequireItem(JetcanRules.TypeId);
                 contacts.Add(new(new(can.Id, type.Id, type.GroupId, type.Name, new(can.X, can.Y, can.Z)), can.ExpiresAt));
             }
         }
-        var drones =
-            from drone in world.Set<WorldDrone>().AsNoTracking()
-            join item in world.Set<OwnedItem>() on drone.ItemId equals item.Id
-            where drone.SystemId == system && !world.Set<SavedCapsuleerSuspension>().Any(pause => pause.PilotId == drone.PilotId)
-            select new
-            {
-                drone.ItemId,
-                item.TypeId,
-                drone.X,
-                drone.Y,
-                drone.Z,
-            };
-        foreach (var drone in drones)
+        foreach (var drone in world.Filter<WorldDrone>(d => d.SystemId == system))
         {
-            var type = catalog.RequireItem(drone.TypeId);
+            if (
+                world.Set<SavedCapsuleerSuspension>().Find(drone.PilotId) is not null
+                || world.Set<OwnedItem>().Find(drone.ItemId) is not { } item
+            )
+            {
+                continue;
+            }
+            var type = catalog.RequireItem(item.TypeId);
             contacts.Add(new(new(drone.ItemId, type.Id, type.GroupId, type.Name, new(drone.X, drone.Y, drone.Z))));
         }
-        foreach (
-            var npc in world.Set<WorldNpc>().AsNoTracking().Where(n => n.SystemId == system && n.DestroyedAt == null && n.RetiredAt == null)
-        )
+        foreach (var npc in world.Filter<WorldNpc>(n => n.SystemId == system && n.DestroyedAt == null && n.RetiredAt == null))
         {
             if (NpcPopulationRules.IsMining(npc.Role))
             {

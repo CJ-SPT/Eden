@@ -27,6 +27,10 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Set<Eden.Data.World.Market.SavedRegionalMarketStock>().Where(child => child.OrderId == removed.Id));
                 break;
             case Eden.Data.World.Inventory.OwnedItem removed:
+                if (Set<Eden.Data.World.Information.SavedInformationCycle>().Find(removed.Id) is { } information)
+                {
+                    Remove(information);
+                }
                 RemoveRange(Filter<Eden.Data.World.Structures.SavedStructureService>(child => child.ItemId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Combat.ModuleCooldown>().Where(child => child.ModuleId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Combat.SavedWeaponLink>().Where(child => child.MasterId == removed.Id));
@@ -191,6 +195,7 @@ internal sealed partial class EconomyTransaction
                 Eden.World.Repair.PilotRemoteAssistanceStore.ClearForTravel(this, removed.ShipId);
                 break;
             case Eden.Data.World.Inventory.Ship removed:
+                RemoveRange(Filter<Eden.Data.World.Information.SavedInformationCycle>(cycle => cycle.ShipId == removed.Id));
                 Eden.World.Fleets.CommandBurstStore.Clear(this, removed.Id);
                 if (Set<Eden.Data.World.Characters.Pilot>().Any(child => child.ActiveShipId == removed.Id && child.Id == removed.OwnerId))
                 {

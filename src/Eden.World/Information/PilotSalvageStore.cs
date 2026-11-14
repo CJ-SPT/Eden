@@ -9,15 +9,15 @@ using Eden.Gameplay.Inventory;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Information;
 
 internal sealed partial class PilotInformationStore
 {
     private static SalvageResult Salvage(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         Pilot pilot,
         long targetId,

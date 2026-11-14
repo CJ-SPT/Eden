@@ -2,16 +2,20 @@ using Eden.Data.World.Fittings;
 using Eden.Data.World.Information;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Loot;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Information;
 using Eden.World.Catalog;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Information;
 
 internal sealed partial class PilotInformationStore
 {
+    private SpacePosition WreckPosition(WorldWreck wreck) =>
+        LiveWorld.Find(database.Path)?.PublishedPosition(wreck.SystemId, wreck.Id) ?? new(wreck.X, wreck.Y, wreck.Z);
+
     public void AdvanceTractor(InformationCycle cycle, long now)
     {
         if (cycle.TargetOwnerId is not long owner || !CanTractor(cycle.PilotId, owner))
@@ -22,32 +26,38 @@ internal sealed partial class PilotInformationStore
         {
             if (!live.Tractors.Has(cycle))
             {
-                using WorldDbContext reload = new(database.Path);
                 using CatalogDbContext catalog = new(database.CatalogPath);
-                var row = reload.Set<SavedInformationCycle>().Find(cycle.Module.ItemId);
-                var item = reload.Set<OwnedItem>().Find(cycle.Module.ItemId);
-                var source = Pilot(reload, cycle.PilotId);
-                var target = reload.Set<WorldWreck>().Find(cycle.TargetId);
-                if (
-                    row?.ReadyAt != cycle.ReadyAt
-                    || item is not { Online: true }
-                    || item.LocationId != cycle.ShipId
-                    || source.ActiveShipId != cycle.ShipId
-                    || source.ActiveShip.Position is null
-                    || target is null
-                    || !reload.Set<ActiveFittedModule>().Any(m => m.ModuleId == cycle.Module.ItemId && m.ShipId == cycle.ShipId)
-                )
-                {
-                    throw new InvalidDataException("The tractor beam is no longer active.");
-                }
-                CheckTarget(reload, catalog, source, cycle.TargetId, cycle.Module, now);
+                var (row, source, target) = WorldActionScope.Inspect(
+                    database,
+                    world =>
+                    {
+                        var row = world.Set<SavedInformationCycle>().Find(cycle.Module.ItemId);
+                        var item = world.Set<OwnedItem>().Find(cycle.Module.ItemId);
+                        var source = Pilot(world, cycle.PilotId);
+                        var target = world.Set<WorldWreck>().Find(cycle.TargetId);
+                        if (
+                            row?.ReadyAt != cycle.ReadyAt
+                            || item is not { Online: true }
+                            || item.LocationId != cycle.ShipId
+                            || source.ActiveShipId != cycle.ShipId
+                            || source.ActiveShip.Position is null
+                            || target is null
+                            || world.Set<ActiveFittedModule>().Find(cycle.Module.ItemId)?.ShipId != cycle.ShipId
+                        )
+                        {
+                            throw new InvalidDataException("The tractor beam is no longer active.");
+                        }
+                        CheckTarget(world, catalog, source, cycle.TargetId, cycle.Module, now);
+                        return (row, source, target);
+                    }
+                );
                 live.Tractors.Start(
                     cycle with
                     {
                         StartedAt = Math.Max(row.StartedAt, Math.Min(now, cycle.ReadyAt)),
                     },
                     Position(source),
-                    new(target.X, target.Y, target.Z),
+                    WreckPosition(target),
                     (catalog.FittingType(source.ActiveShip.TypeId)!.Radius ?? 0) + (catalog.FittingType(target.TypeId)!.Radius ?? 0),
                     fleets,
                     target.SystemId
@@ -56,8 +66,8 @@ internal sealed partial class PilotInformationStore
             live.Tractors.Advance(now);
             return;
         }
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, Participants(cycle.PilotId, cycle.TargetId));
+        var world = transaction.World;
         using CatalogDbContext definitions = new(database.CatalogPath);
         var saved = world.Set<SavedInformationCycle>().Find(cycle.Module.ItemId);
         if (saved is null || saved.PilotId != cycle.PilotId || saved.ReadyAt != cycle.ReadyAt)
@@ -91,7 +101,6 @@ internal sealed partial class PilotInformationStore
             wreck.Y = point.Y;
             wreck.Z = point.Z;
             saved.StartedAt = until;
-            world.SaveChanges();
         }
         transaction.Commit();
     }

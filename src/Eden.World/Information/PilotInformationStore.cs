@@ -24,10 +24,10 @@ using Eden.World.Combat.Npcs;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Eden.World.Thermal;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Information;
 
@@ -36,8 +36,8 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
 {
     private readonly NpcProfileCatalog _npcs = new();
 
-    private static Pilot Pilot(WorldDbContext world, long id) =>
-        world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == id);
+    private static Pilot Pilot(WorldAction world, long id) =>
+        world.Pilots.Find(id) ?? throw new InvalidDataException("Unknown information pilot.");
 
     private static SpacePosition Position(Pilot pilot) =>
         pilot.ActiveShip.Position is { } p ? new(p.X, p.Y, p.Z) : throw new InvalidDataException("Use information modules while in space.");
@@ -47,8 +47,8 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
 
     public InformationActivation Begin(long pilotId, long moduleId, DogmaEffect effect, long targetId, IReadOnlySet<long> locks, long now)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, Participants(pilotId, targetId));
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
         _ = Position(pilot);
@@ -86,13 +86,13 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
         }
         if (
             effect == DogmaEffect.TractorBeam
-            && world.Set<SavedInformationCycle>().Any(c => c.TargetId == targetId && c.Effect == DogmaEffect.TractorBeam)
+            && world.Filter<SavedInformationCycle>(c => c.TargetId == targetId && c.Effect == DogmaEffect.TractorBeam).Any()
         )
         {
             throw new InvalidDataException("This container is already being tractored.");
         }
         var cooldown = world.Set<ModuleCooldown>().Find(moduleId);
-        if (cooldown?.ReadyAt > now || world.Set<SavedInformationCycle>().Any(c => c.ModuleId == moduleId))
+        if (cooldown?.ReadyAt > now || world.Set<SavedInformationCycle>().Find(moduleId) is not null)
         {
             throw new InvalidDataException("This module is already cycling.");
         }
@@ -115,8 +115,6 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
         cooldown ??= world.Add(new ModuleCooldown { ModuleId = moduleId }).Entity;
         cooldown.ReadyAt = end;
         cooldown.Kind = ModuleCooldownKind.Cycle;
-        world.SaveChanges();
-        transaction.Commit();
         InformationCycle cycle = new(
             pilotId,
             pilot.ActiveShipId,
@@ -129,22 +127,34 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
         if (effect == DogmaEffect.TractorBeam && LiveWorld.Find(database.Path) is { } live)
         {
             var wreck = world.Set<WorldWreck>().Find(targetId)!;
-            live.Tractors.Start(
-                cycle,
-                Position(pilot),
-                new(wreck.X, wreck.Y, wreck.Z),
-                (catalog.FittingType(pilot.ActiveShip.TypeId)!.Radius ?? 0) + (catalog.FittingType(wreck.TypeId)!.Radius ?? 0),
-                fleets,
-                wreck.SystemId
+            world.AfterCommit(() =>
+                live.Tractors.Start(
+                    cycle,
+                    Position(pilot),
+                    WreckPosition(wreck),
+                    (catalog.FittingType(pilot.ActiveShip.TypeId)!.Radius ?? 0) + (catalog.FittingType(wreck.TypeId)!.Radius ?? 0),
+                    fleets,
+                    wreck.SystemId
+                )
             );
         }
+        transaction.Commit();
         return new(cycle, capacitor);
     }
+
+    private static TransactionParticipants Participants(long pilotId, long targetId) =>
+        targetId == 0
+            ? new(pilots: [pilotId])
+            : new(
+                pilots: [pilotId],
+                ships: [targetId],
+                resources: [new(SharedSimulationResource.Npc, targetId), new(SharedSimulationResource.Wreck, targetId)]
+            );
 
     private bool CanTractor(long pilot, long owner) =>
         pilot == owner || fleets?.Identity(pilot) is { } source && fleets.Identity(owner)?.FleetId == source.FleetId;
 
-    private void CheckTarget(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, long targetId, InformationModule module, long now)
+    private void CheckTarget(WorldAction world, CatalogDbContext catalog, Pilot pilot, long targetId, InformationModule module, long now)
     {
         int system = System(catalog, pilot);
         SpacePosition targetPosition;
@@ -162,7 +172,7 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
             {
                 throw new InvalidDataException("This wreck is unavailable or cannot be tractored by this pilot.");
             }
-            targetPosition = new(wreck.X, wreck.Y, wreck.Z);
+            targetPosition = WreckPosition(wreck);
             radius = catalog.FittingType(wreck.TypeId)!.Radius ?? 0;
             if (
                 module.Effect == DogmaEffect.Salvaging
@@ -176,14 +186,13 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
             }
         }
         else if (
-            world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).SingleOrDefault(p => p.ActiveShipId == targetId)
-                is { ActiveShip.Position: { } position } target
+            world.Filter<Pilot>(p => p.ActiveShipId == targetId).SingleOrDefault() is { ActiveShip.Position: { } position } target
             && System(catalog, target) == system
         )
         {
             if (
-                world.Set<ShipLoss>().Any(l => l.ShipId == targetId)
-                || world.Set<SavedLogoff>().Any(l => l.ShipId == targetId && l.ExpiresAt <= now)
+                world.Set<ShipLoss>().Find(targetId) is not null
+                || world.Filter<SavedLogoff>(l => l.ShipId == targetId && l.ExpiresAt <= now).Any()
             )
             {
                 throw new InvalidDataException("The scan target is no longer available.");
@@ -198,7 +207,7 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
             && container.ExpiresAt > now
         )
         {
-            targetPosition = new(container.X, container.Y, container.Z);
+            targetPosition = WreckPosition(container);
             radius = catalog.FittingType(container.TypeId)!.Radius ?? 0;
         }
         else if (
@@ -227,8 +236,11 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
 
     public InformationCompletion Complete(long pilotId, long moduleId, long expectedReadyAt, long now)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(
+            database,
+            select: world => Participants(pilotId, world.Set<SavedInformationCycle>().Find(moduleId)?.TargetId ?? 0)
+        );
+        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var saved = world.Set<SavedInformationCycle>().Find(moduleId);
         if (saved is null || saved.PilotId != pilotId || saved.ReadyAt != expectedReadyAt || now < expectedReadyAt)
@@ -243,7 +255,7 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
             || item.OwnerId != pilotId
             || item.LocationId != saved.ShipId
             || !InventoryDefinitions.IsFittedSlot(item.FlagId)
-            || !world.Set<ActiveFittedModule>().Any(m => m.ModuleId == moduleId && m.ShipId == saved.ShipId)
+            || world.Set<ActiveFittedModule>().Find(moduleId)?.ShipId != saved.ShipId
         )
         {
             throw new InvalidDataException("The information module is no longer active on this ship.");
@@ -262,21 +274,19 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
             if (saved.Effect == DogmaEffect.CargoScan)
             {
                 var cargo = world
-                    .Set<OwnedItem>()
-                    .Where(i => i.LocationId == saved.TargetId)
+                    .Filter<OwnedItem>(i => i.LocationId == saved.TargetId)
                     .AsEnumerable()
                     .Where(i => ShipHoldRules.Definition(i.FlagId) is not null)
                     .OrderBy(i => i.Id)
                     .Select(i => new ScanItem(i.TypeId, i.Quantity))
                     .ToArray();
                 var npcCargo = world
-                    .Set<WorldNpcMiningCargo>()
-                    .Where(c => c.NpcId == saved.TargetId && c.Quantity > 0)
+                    .Filter<WorldNpcMiningCargo>(c => c.NpcId == saved.TargetId && c.Quantity > 0)
                     .OrderBy(c => c.TypeId)
                     .Select(c => new ScanItem(c.TypeId, checked((int)c.Quantity)))
                     .ToArray();
                 var storedShips = world
-                    .Ships.Where(s => s.StoredInId == saved.TargetId)
+                    .Filter<Ship>(s => s.StoredInId == saved.TargetId)
                     .OrderBy(s => s.Id)
                     .Select(s => new ScanItem(s.TypeId, 1))
                     .ToArray();
@@ -284,12 +294,11 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
             }
             else
             {
-                if (world.Pilots.Include(p => p.ActiveShip).SingleOrDefault(p => p.ActiveShipId == saved.TargetId) is { } target)
+                if (world.Filter<Pilot>(p => p.ActiveShipId == saved.TargetId).SingleOrDefault() is { } target)
                 {
                     var values = PilotFittingStore.ShipAttributes(world, catalog, target);
                     var hardware = world
-                        .Set<OwnedItem>()
-                        .Where(i => i.LocationId == saved.TargetId)
+                        .Filter<OwnedItem>(i => i.LocationId == saved.TargetId)
                         .AsEnumerable()
                         .Where(i => InventoryDefinitions.IsFittedSlot(i.FlagId))
                         .OrderBy(i => i.FlagId)
@@ -323,22 +332,20 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
             result = new(Salvage: Salvage(world, catalog, pilot, saved.TargetId, module, now));
         }
         world.Remove(saved);
-        world.Set<ActiveFittedModule>().Where(m => m.ModuleId == moduleId && m.ShipId == saved.ShipId).ExecuteDelete();
-        world.SaveChanges();
+        RemoveMarker(world, moduleId, saved.ShipId);
         transaction.Commit();
         return result;
     }
 
     public void Stop(long pilotId, long moduleId, long expectedReadyAt)
     {
-        using WorldDbContext world = new(database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        var world = transaction.World;
         if (world.Set<SavedInformationCycle>().Find(moduleId) is { } cycle && cycle.PilotId == pilotId && cycle.ReadyAt == expectedReadyAt)
         {
-            world.Set<ActiveFittedModule>().Where(m => m.ModuleId == moduleId && m.ShipId == cycle.ShipId).ExecuteDelete();
+            RemoveMarker(world, moduleId, cycle.ShipId);
             world.Remove(cycle);
-            world.SaveChanges();
-            LiveWorld.Find(database.Path)?.Tractors.Stop(moduleId);
+            world.AfterCommit(() => LiveWorld.Find(database.Path)?.Tractors.Stop(moduleId));
         }
         transaction.Commit();
     }
@@ -346,73 +353,75 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
     public bool IsActive(InformationCycle cycle) =>
         LiveReadModels.Find(database.Path)?.InformationActive(cycle, () => ReadActive(cycle)) ?? ReadActive(cycle);
 
-    private bool ReadActive(InformationCycle cycle)
+    private static void RemoveMarker(WorldAction world, long module, long ship)
     {
-        using WorldDbContext world = new(database.Path);
-        return world
-                .Set<SavedInformationCycle>()
-                .Any(c =>
-                    c.ModuleId == cycle.Module.ItemId
-                    && c.PilotId == cycle.PilotId
-                    && c.ShipId == cycle.ShipId
-                    && c.ReadyAt == cycle.ReadyAt
-                )
-            && world
-                .Set<OwnedItem>()
-                .Any(i =>
-                    i.Id == cycle.Module.ItemId && i.LocationId == cycle.ShipId && i.OwnerId == cycle.PilotId && i.Online && i.Singleton
-                )
-            && world.Set<ActiveFittedModule>().Any(m => m.ModuleId == cycle.Module.ItemId && m.ShipId == cycle.ShipId);
+        if (world.Set<ActiveFittedModule>().Find(module) is { } marker && marker.ShipId == ship)
+        {
+            world.Remove(marker);
+        }
     }
 
-    public IReadOnlyList<long> Hostiles(long pilotId, long now)
-    {
-        using WorldDbContext world = new(database.Path);
-        long ship = world.Pilots.Where(p => p.Id == pilotId).Select(p => p.ActiveShipId).Single();
-        return world
-            .Set<SavedPilotHostility>()
-            .Where(h => h.TargetShipId == ship && h.ExpiresAt > now && h.LastAttackAt > 0)
-            .Select(h => h.SourceShipId)
-            .Concat(
-                world
-                    .Set<NpcAggression>()
-                    .Where(a => a.TargetShipId == ship && a.LastTargetId == ship && a.LastShotAt != null)
-                    .Select(a => a.NpcId)
-            )
-            .Distinct()
-            .Order()
-            .ToArray();
-    }
+    private bool ReadActive(InformationCycle cycle) =>
+        WorldActionScope.Inspect(
+            database,
+            world =>
+                world.Set<SavedInformationCycle>().Find(cycle.Module.ItemId) is { } c
+                && c.PilotId == cycle.PilotId
+                && c.ShipId == cycle.ShipId
+                && c.ReadyAt == cycle.ReadyAt
+                && world.Set<OwnedItem>().Find(c.ModuleId) is { Online: true, Singleton: true } item
+                && item.LocationId == cycle.ShipId
+                && item.OwnerId == cycle.PilotId
+                && world.Set<ActiveFittedModule>().Find(c.ModuleId)?.ShipId == cycle.ShipId
+        );
+
+    public IReadOnlyList<long> Hostiles(long pilotId, long now) =>
+        WorldActionScope.Inspect(
+            database,
+            world =>
+            {
+                long ship = Pilot(world, pilotId).ActiveShipId;
+                return world
+                    .Filter<SavedPilotHostility>(h => h.TargetShipId == ship && h.ExpiresAt > now && h.LastAttackAt > 0)
+                    .Select(h => h.SourceShipId)
+                    .AsEnumerable()
+                    .Concat(
+                        world
+                            .Filter<NpcAggression>(a => a.TargetShipId == ship && a.LastTargetId == ship && a.LastShotAt != null)
+                            .Select(a => a.NpcId)
+                    )
+                    .Distinct()
+                    .Order()
+                    .ToArray();
+            }
+        );
 
     public IReadOnlyList<MiningScanResult> Survey(long pilotId, long now)
     {
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = Pilot(world, pilotId);
-        var position = Position(pilot);
-        var values = PilotFittingStore.ShipAttributes(world, catalog, pilot);
-        InformationRules.RequireMiningSurvey(values);
-        int system = System(catalog, pilot);
-        return world
-            .Set<WorldAsteroid>()
-            .AsNoTracking()
-            .Where(a => a.SystemId == system && a.Quantity > 0)
-            .Where(a =>
-                a.Id < MissionMiningRules.FirstDepositId
-                || a.Id >= MissionMiningRules.EndDepositId
-                || world
-                    .Set<SavedMission>()
-                    .Any(m =>
-                        m.Id == (a.Id - MissionMiningRules.FirstDepositId) / MissionMiningRules.DepositsPerMission
-                        && m.PilotId == pilotId
-                        && m.State == MissionState.Accepted
-                        && m.ExpiresAt > now
-                    )
-            )
-            .AsEnumerable()
-            .Where(a => position.DistanceTo(new(a.X, a.Y, a.Z)) <= InformationRules.MiningScanRange)
-            .OrderBy(a => a.Id)
-            .Select(a => new MiningScanResult(a.Id, a.TypeId, a.Quantity))
-            .ToArray();
+        return WorldActionScope.Inspect(
+            database,
+            world =>
+            {
+                var pilot = Pilot(world, pilotId);
+                var position = Position(pilot);
+                InformationRules.RequireMiningSurvey(PilotFittingStore.ShipAttributes(world, catalog, pilot));
+                int system = System(catalog, pilot);
+                return world
+                    .Filter<WorldAsteroid>(a => a.SystemId == system && a.Quantity > 0)
+                    .AsEnumerable()
+                    .Where(a => !MissionMiningRules.IsDeposit(a.Id) || IsPrivateDepositVisible(world, a.Id, pilotId, now))
+                    .Where(a => position.DistanceTo(new(a.X, a.Y, a.Z)) <= InformationRules.MiningScanRange)
+                    .OrderBy(a => a.Id)
+                    .Select(a => new MiningScanResult(a.Id, a.TypeId, a.Quantity))
+                    .ToArray();
+            }
+        );
     }
+
+    private static bool IsPrivateDepositVisible(WorldAction world, long id, long pilot, long now) =>
+        world.Set<SavedMission>().Find((id - MissionMiningRules.FirstDepositId) / MissionMiningRules.DepositsPerMission)
+            is { State: MissionState.Accepted } mission
+        && mission.PilotId == pilot
+        && mission.ExpiresAt > now;
 }

@@ -245,6 +245,9 @@ covers scan state, analyzer actions, loot, and Ghost Site settlement.
 [Resident combat service state](protocol/combat.md#resident-combat-service-state)
 covers overload and paste, ammunition and banks, safety, and security status.
 
+[Resident ship information modules and drone commands](protocol/information.md#resident-ship-information-modules-and-drone-commands)
+covers scanners, salvage, tractors, and drone custody and orders.
+
 ## Topics
 
 [Tech II supply audit](protocol/industry.md#tech-ii-supply-audit-and-refinery-bootstrap),
