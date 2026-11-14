@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Character and station clone read gaps](protocol/characters.md#character-and-station-clone-read-gaps-november-14-2026)
+records member-editor identity, selected-character birthdays, station clone lists and rename cache invalidation.
+
 [Loot abandonment and theft](protocol/inventory.md#loot-abandonment-and-theft-november-14-2026) records native public loot,
 safety-gated transfers, suspect timers and persistent wreck/jetcan rights.
 

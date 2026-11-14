@@ -24,6 +24,17 @@ internal sealed class CharacterSheetHandler(
     )
     {
         var pilot = context.Pilot;
+        if (service == "charMgr" && method == "GetCharacterCreationDate")
+        {
+            if (args.Length != 0 || keywords is { Count: > 0 })
+            {
+                return new PilotCallResult.Failure("Invalid character creation date request.");
+            }
+            // CCSvc._GetCharacterCreationDate supplies no ID: this is the selected character's birthday.
+            return sheet.ReadPublicProfile(pilot.PilotId)?.CreatedAt is long created
+                ? created
+                : new PilotCallResult.Failure("Unknown character creation date.");
+        }
         if (service == "charMgr" && method is "GetCharacterDescription" or "SetCharacterDescription")
         {
             try
@@ -60,7 +71,7 @@ internal sealed class CharacterSheetHandler(
             return method == "GetMyCharacterRankOverview" ? BlueEmpty.List : PilotCallResult.None;
         }
         if (
-            (service == "charMgr" && method is "GetPublicInfo" or "GetPublicInfo3")
+            (service == "charMgr" && method is "GetPublicInfo" or "GetPublicInfo3" or "GetPrivateInfo")
             || (service == "corpRegistry" && method == "GetInfoWindowDataForChar")
             || (service == "corporationSvc" && method is "GetMedalsReceived" or "GetEmployementRecordAndCharacterTransfers")
             || (service == "facWarMgr" && method == "GetCharacterRankInfo")
@@ -96,6 +107,9 @@ internal sealed class CharacterSheetHandler(
             }
             return method switch
             {
+                // EditMemberDialog reads only identity, gender, race and birthday. Reuse public fields;
+                // this historical method name does not authorize exposing the target's wallet or account.
+                "GetPrivateInfo" => new PublicCharacterInfo(profile),
                 "GetPublicInfo3" => new PublicCharacterInfo3(profile),
                 "GetInfoWindowDataForChar" => sheet.ReadPublicProfile(id) is null
                     ? new CharacterCorporationInfo(profile.CorporationId)

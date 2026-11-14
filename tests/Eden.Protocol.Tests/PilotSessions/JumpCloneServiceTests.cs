@@ -15,6 +15,58 @@ namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class JumpCloneServiceTests
 {
+    [Fact]
+    public void StationCloneRowsFollowInstallationRenameDestructionAndSelectedLocation()
+    {
+        using Fixture f = new();
+        const string method = "GetStationCloneState";
+        Assert.Same(PilotCallResult.Unsupported, f.Call("jumpCloneSvc", method, []));
+        f.Select();
+        var empty = Assert.IsType<BlueInstance>(Reply(f.Call("jumpCloneSvc", method, [])));
+        Assert.Equal("eve.common.script.sys.rowset.Rowset", empty.Name);
+        Assert.Equal(
+            new[] { "jumpCloneID", "locationID", "cloneName" },
+            Assert.IsType<List<object?>>(Fields(empty)["header"]).Select(BlueMarshal.Text)
+        );
+        Assert.Empty(Rows(empty));
+        Assert.Null(Reply(f.Call("jumpCloneSvc", "InstallCloneInStation", [])));
+        var row = Assert.IsType<object?[]>(Assert.Single(Rows(Reply(f.Call("jumpCloneSvc", method, [])))));
+        long id = Assert.IsType<long>(row[0]);
+        Assert.Equal((long)HomeStationTestData.Origin, row[1]);
+        f.Context.Notifications.Clear();
+        Assert.Null(Reply(f.Call("jumpCloneSvc", "SetJumpCloneName", [id, new BlueUnicode("Étoile 学習")])));
+        Assert.Single(f.Context.Notifications.OfType<JumpCloneCacheInvalidated>());
+        var changed = Assert.Single(f.Context.Notifications.OfType<StationJumpCloneCacheInvalidated>());
+        Assert.Equal(HomeStationTestData.Origin, changed.StationId);
+        Assert.Equal(JumpCloneTestData.PilotId, changed.PilotId);
+        row = Assert.IsType<object?[]>(Assert.Single(Rows(Reply(f.Call("jumpCloneSvc", method, [])))));
+        Assert.Equal("Étoile 学習", BlueMarshal.Text(row[2]));
+        Assert.Null(Reply(f.Call("jumpCloneSvc", "DestroyInstalledClone", [id])));
+        Assert.Empty(Rows(Reply(f.Call("jumpCloneSvc", method, []))));
+        Assert.Null(Reply(f.Call("jumpCloneSvc", "InstallCloneInStation", [])));
+        f.Context.LogOff();
+        HomeStationTestData.Travel(f.Db, HomeStationTestData.Other);
+        f.Select();
+        Assert.Empty(Rows(Reply(f.Call("jumpCloneSvc", method, []))));
+        row = Assert.IsType<object?[]>(Assert.Single(Rows(Fields(Reply(f.Call("jumpCloneSvc", "GetCloneState", [])))["clones"])));
+        long remoteId = Assert.IsType<long>(row[0]);
+        Assert.Null(Reply(f.Call("jumpCloneSvc", "SetJumpCloneName", [remoteId, "Remote"])));
+        Assert.Equal(
+            HomeStationTestData.Origin,
+            Assert.Single(f.Context.Notifications.OfType<StationJumpCloneCacheInvalidated>()).StationId
+        );
+        f.Context.Notifications.Clear();
+        Assert.IsType<PilotCallResult.Failure>(f.Call("jumpCloneSvc", "SetJumpCloneName", [0L, "Invalid"]));
+        Assert.Empty(f.Context.Notifications);
+        Assert.IsType<PilotCallResult.Failure>(f.Call("jumpCloneSvc", method, [90000002L]));
+        Assert.IsType<PilotCallResult.Failure>(f.Call("jumpCloneSvc", method, [], new() { ["stationID"] = HomeStationTestData.Origin }));
+        f.Context.LogOff();
+        f.Db.Store.SetPosition(f.Db.Store.FindPilot(1000001)!.ShipId, new(1, 2, 3));
+        f.Select();
+        Assert.IsType<PilotCallResult.Failure>(f.Call("jumpCloneSvc", method, []));
+        Assert.Empty(f.Context.Notifications);
+    }
+
     [Theory]
     [InlineData(InfomorphSkill.Psychology, 3, 22)]
     [InlineData(InfomorphSkill.Synchronizing, 2, 21)]
@@ -72,7 +124,7 @@ public sealed class JumpCloneServiceTests
         Assert.Null(Reply(f.Call("jumpCloneSvc", "DestroyInstalledClone", [id])));
         Assert.Single(Rows(Fields(Reply(f.Call("jumpCloneSvc", "GetCloneState", [])))["clones"]));
         Assert.Equal(4, f.Context.Notifications.OfType<JumpCloneCacheInvalidated>().Count());
-        Assert.Equal(3, f.Context.Notifications.OfType<StationJumpCloneCacheInvalidated>().Count());
+        Assert.Equal(4, f.Context.Notifications.OfType<StationJumpCloneCacheInvalidated>().Count());
         Assert.Equal(2, f.Context.Notifications.OfType<AccountBalanceChanged>().Count());
         var journal = Assert.IsType<BlueList<WalletJournalEntry>>(
             Assert.IsType<PilotCallResult.Success>(f.Call("account", "GetTransactions", [1000L, null, null, false])).Reply

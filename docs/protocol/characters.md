@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Character and station clone read gaps, November 14, 2026](#character-and-station-clone-read-gaps-november-14-2026)
+
 - [Player corporation banners in Character Show Info, November 13, 2026](#player-corporation-banners-in-character-show-info-november-13-2026)
 
 - [Player-created portrait settings, November 12, 2026](#player-created-portrait-settings-november-12-2026)
@@ -48,6 +50,101 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Skill training queue, November 2, 2026](#skill-training-queue-november-2-2026)
 - [Local skill-plan gateway, November 2, 2026](#local-skill-plan-gateway-november-2-2026)
 - [Character creation and first spawn, November 2, 2026](#character-creation-and-first-spawn-november-2-2026)
+
+## Character and station clone read gaps, November 14, 2026
+
+A bounded audit compared current handlers with the historical RPC inventory, the local evejs distribution,
+and build 3662168 bytecode. It identified three missing reads and a clone-cache invalidation gap:
+
+| Call | Implemented behavior |
+| --- | --- |
+| `charMgr.GetPrivateInfo(characterID)` | Saved public identity fields used by the corporation member editor, including `characterID`, `gender`, `raceID` and `createDateTime`. Unknown characters and malformed calls fail. |
+| `charMgr.GetCharacterCreationDate()` | The selected character's saved FILETIME birthday as an integer. A caller cannot substitute a character ID or use the call before selection. |
+| `jumpCloneSvc.GetStationCloneState()` | A direct `jumpCloneID`/`locationID`/`cloneName` rowset containing only the selected pilot's inactive bodies at the saved current NPC station. Active, remote and other pilots' clones are excluded. |
+| `jumpCloneSvc.SetJumpCloneName` | Invalidates both the personal clone cache and the renamed body's station cache after the transaction commits. |
+
+The member editor's historical `GetPrivateInfo` name does not introduce access to wallet balances or account
+details: its observed fields are already public through Show Info. The existing public identity model supplies
+those fields, including catalog NPC identities where available. Corporation role mutations retain their existing
+authorization. `GetCharacterCreationDate` does not fabricate a birthday or read the account creation date.
+
+The station list derives location from authoritative saved state and rejects calls in space or at unsupported
+structure facilities. It can list bodies at an ordinary NPC station without an installation service. It uses the
+existing resident transaction/read abstraction, and does not alter fees, cooldowns, clone capacity or implant
+ownership. Renaming returns the body's station from the committed operation so the notification identifies the
+correct cache even when the body is elsewhere. No schema migration or Blue codec/transport/Destiny change is needed.
+
+This is a limited service audit, not a claim that every inventory candidate is a missing feature or that all
+emulator gaps are closed. Structure and capital clone facilities, Pochven installation, and other explicitly
+unsupported gameplay remain separate work. The generated RPC inventory retains its original revision and counts.
+
+### Reference evidence
+
+The local evejs package is **261108.1**, declares **AGPL-3.0-only**, and has no Git metadata. It was used for
+gap discovery; the C# additions use Eden's existing typed operations and the pinned client's observed contracts.
+Source SHA-256 fingerprints:
+
+| evejs source | SHA-256 |
+| --- | --- |
+| `server/src/services/character/charMgrService.js` | `82731fcebb67a53a6723f95464a7ffa838bc98c57344fa6c64b0e3a7a90858f1` |
+| `server/src/services/station/jumpCloneService.js` | `340aba96bd46c71e0d12264fc6ac7b9d97cd03fa66d8cb5769b29ce1c99c7af2` |
+| `server/src/services/station/jumpCloneRuntime.js` | `9a1082e0c456182fa56de4f9f32777ed6c632835fe82ebc35f79e917690962be` |
+
+Build **3662168** original archive SHA-256 is
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`. Inspection used xdis **6.3.0** as inert
+bytecode, without executing client modules. These modules match the staged archive byte-for-byte:
+
+- `eve/client/script/ui/services/ccSvc.pyj`: `_GetCharacterCreationDate` calls the remote method without arguments.
+- `eve/client/script/ui/shared/neocom/corporation/corp_dlg_edit_member.pyj`: `LoadChar` calls `GetPrivateInfo`;
+  `OnTabGeneral` consumes character ID, gender, race and creation date. Security status uses a separate crimewatch call.
+- `eve/client/script/ui/services/clonejumpsvc.pyj`: `GetStationClones` calls `GetStationCloneState` without arguments
+  and caches its result directly; `OnJumpCloneCacheInvalidated` does not clear that station cache, whereas
+  `OnStationJumpCloneCacheInvalidated(locationID, ...)` does. The station row columns follow the existing clone
+  rows and reference service; this inspection did not establish a reachable modern UI consumer of the exported
+  `GetStationClones` helper.
+
+[EVE University member management](https://wiki.eveuniversity.org/Managing_corporation_members) describes the
+Edit Member entry point and separate role permissions. Its [jump-clone guide](https://wiki.eveuniversity.org/Jump_clones)
+describes inactive bodies, naming, and clone swaps. These are gameplay references; the pinned bytecode determines
+the RPC arguments and consumed fields.
+
+### Automated validation
+
+Tool and solution restore passed. The final solution build passed with zero warnings/errors in **4.74 seconds**.
+The final focused run passed **121 tests**, zero failures/skips, in **58.60 seconds** including runner startup.
+Both Python policy suites passed: **8 catalog tests** in **1.079 seconds** and **9 formatting tests** in
+**0.013 seconds**. Formatting, new documentation links/anchors, UTF-8/newline checks and `git diff --check` passed.
+No full .NET regression suite was requested or run.
+
+The first development filter was
+`FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.JumpCloneServiceTests.StationCloneRowsFollowInstallationRenameDestructionAndSelectedLocation`
+(1 pass; feature build **8.49 seconds**, tests **6.76 seconds**). The subsequent three-class development run
+passed **44 tests** in **15.44 seconds**, with a **1.18-second** incremental build. The final run also covers the
+added remote-rename/rejected-rename assertions and immediate clone, implant, home-station and corporation-role dependencies.
+
+Final filter:
+
+```text
+FullyQualifiedName~JumpCloneTests|FullyQualifiedName~JumpCloneServiceTests|FullyQualifiedName~CharacterSheetServiceTests|FullyQualifiedName~CharacterSheetTests|FullyQualifiedName~HomeStationTests|FullyQualifiedName~HomeStationServiceTests|FullyQualifiedName~ImplantTests|FullyQualifiedName~ImplantServiceTests|FullyQualifiedName~CorporationRoleTests
+```
+
+Assertions cover native reply shapes, Unicode names, selection gating, forged target/location arguments,
+unknown identities, selected-character birthday isolation, member-editor fields without wallet/account details,
+foreign/active/remote clone exclusion, current-location changes, missing installation facilities, rename and
+destruction updates, rejected rename without notifications, and service reopening. Resident coverage verifies
+immediate clone reads and renamed values without world SQL commands, active-body exclusion, and checkpointed names.
+These tests establish server contracts, not native UI rendering or complete member-editor/customization acceptance.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. Native member-editor rendering, customization behavior and
+station clone UI reachability remain unverified.
+
+### Optional maintainer checks
+
+- Open a corporation member's Edit Member dialog and check its General tab.
+- Open character customization for an existing character and check its age-dependent behavior.
+- Rename a stored clone and reopen the clone list to verify its displayed name.
 
 ## Player corporation banners in Character Show Info, November 13, 2026
 

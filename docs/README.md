@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Character and station clone reads](protocol/characters.md#character-and-station-clone-read-gaps-november-14-2026)
+cover missing member-editor, creation-date and station clone requests found through the native service audit.
+
 [Notepad and shared settings](protocol/social.md#notepad-and-shared-settings--november-14-2026) covers private notes,
 saved folders and shareable overview, inventory-filter and fleet-broadcast links.
 

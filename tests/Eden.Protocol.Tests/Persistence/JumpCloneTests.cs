@@ -125,6 +125,40 @@ internal static class JumpCloneTestData
 public sealed class JumpCloneTests
 {
     [Fact]
+    public void StationReadsExcludeForeignActiveAndRemoteBodiesAndSurviveReopen()
+    {
+        using TestWorld db = new();
+        JumpCloneTestData.Prepare(db);
+        var clones = db.Services.GetRequiredService<IPilotJumpClones>();
+        clones.Install(JumpCloneTestData.PilotId);
+        var local = Assert.Single(clones.ReadStation(JumpCloneTestData.PilotId));
+        Assert.Equal(HomeStationTestData.Origin, clones.Rename(JumpCloneTestData.PilotId, local.Id, "Learning"));
+        using (WorldDbContext world = new(db.Path))
+        {
+            world.Add(new SavedJumpClone { PilotId = 90000002, StationId = HomeStationTestData.Origin });
+            world.Add(new SavedJumpClone { PilotId = JumpCloneTestData.PilotId, Active = true });
+            world.Add(new SavedJumpClone { PilotId = JumpCloneTestData.PilotId, StationId = HomeStationTestData.Other });
+            world.SaveChanges();
+        }
+        using var reopened = ServerServices.Build(new(db.Path));
+        var reader = reopened.GetRequiredService<IPilotJumpClones>();
+        Assert.Equal(local with { Name = "Learning" }, Assert.Single(reader.ReadStation(JumpCloneTestData.PilotId)));
+        Assert.NotEqual(local.Id, Assert.Single(reader.ReadStation(90000002)).Id);
+        Assert.Throws<InvalidDataException>(() => reader.ReadStation(long.MaxValue));
+        using (CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true))
+        {
+            // Stored clones remain visible at stations without an installation facility.
+            catalog.Set<Station>().Find(HomeStationTestData.Origin)!.OperationId = 999;
+            catalog.SaveChanges();
+        }
+        Assert.Equal(local.Id, Assert.Single(reader.ReadStation(JumpCloneTestData.PilotId)).Id);
+        HomeStationTestData.Travel(db, HomeStationTestData.Other);
+        Assert.Equal(HomeStationTestData.Other, Assert.Single(reader.ReadStation(JumpCloneTestData.PilotId)).StationId);
+        db.Store.SetPosition(db.Store.FindPilot(1000001)!.ShipId, new(1, 2, 3));
+        Assert.Throws<InvalidDataException>(() => reader.ReadStation(JumpCloneTestData.PilotId));
+    }
+
+    [Fact]
     public async Task ResidentSwapsAndCloneReadsAvoidWorldSqlAndCheckpointTheFinalActiveBody()
     {
         TestClock clock = new();
@@ -149,6 +183,11 @@ public sealed class JumpCloneTests
                 _ = clones.Jump(pilot.PilotId, current.ShipId, next.StationId, next.Id, JumpCloneRules.FeeCents);
                 active = next.Id;
                 Assert.Null(clones.Read(pilot.PilotId).LastJump);
+                var station = clones.ReadStation(pilot.PilotId);
+                Assert.Equal(2, station.Count);
+                Assert.DoesNotContain(station, body => body.Id == active);
+                Assert.Equal(HomeStationTestData.Origin, clones.Rename(pilot.PilotId, station[0].Id, "Resident"));
+                Assert.Equal("Resident", clones.ReadStation(pilot.PilotId)[0].Name);
             }
             Assert.DoesNotContain(commands, sql => sql.Contains("World", StringComparison.Ordinal));
             await live.FlushAsync();
@@ -156,6 +195,7 @@ public sealed class JumpCloneTests
         using WorldDbContext saved = new(db.Path);
         var activeBody = Assert.Single(saved.Set<SavedJumpClone>().Where(body => body.PilotId == pilot.PilotId && body.Active));
         Assert.Equal(active, activeBody.Id);
+        Assert.Equal("Resident", clones.ReadStation(pilot.PilotId)[0].Name);
         Assert.Equal(4, saved.Set<SavedJumpClonePayment>().Count(payment => payment.PilotId == pilot.PilotId));
         Assert.Equal(0, saved.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS Value FROM pragma_foreign_key_check").Single());
     }

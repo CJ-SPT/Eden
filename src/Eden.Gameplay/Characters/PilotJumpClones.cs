@@ -54,10 +54,11 @@ public interface IPilotJumpCloneSkills
 public interface IPilotJumpClones : IPilotJumpCloneSkills
 {
     JumpCloneSnapshot Read(long pilotId);
+    IReadOnlyList<JumpClone> ReadStation(long pilotId);
     int? InstallLimit(long pilotId);
     long Price(long pilotId);
     JumpCloneChange Install(long pilotId);
-    void Rename(long pilotId, long cloneId, string name);
+    int Rename(long pilotId, long cloneId, string name);
     int Destroy(long pilotId, long cloneId);
     JumpCloneTransfer Jump(long pilotId, long expectedShipId, int stationId, long cloneId, long quotedCents);
 }

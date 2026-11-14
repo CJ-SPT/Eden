@@ -26,6 +26,7 @@ internal sealed class JumpCloneHandler(IPilotJumpClones clones, DeferredRefitPri
             || method
                 is not (
                     "GetCloneState"
+                    or "GetStationCloneState"
                     or "GetPriceForClone"
                     or "ValidateInstallJumpClone"
                     or "InstallCloneInStation"
@@ -48,6 +49,8 @@ internal sealed class JumpCloneHandler(IPilotJumpClones clones, DeferredRefitPri
             {
                 case ("GetCloneState", []):
                     return new JumpCloneState(clones.Read(pilot));
+                case ("GetStationCloneState", []):
+                    return new StationJumpCloneState(clones.ReadStation(pilot));
                 case ("GetPriceForClone", []):
                     return (double)clones.Price(pilot) / MarketDefinitions.CentsPerIsk;
                 case ("ValidateInstallJumpClone", []):
@@ -58,8 +61,7 @@ internal sealed class JumpCloneHandler(IPilotJumpClones clones, DeferredRefitPri
                     Balance(context, installed.BalanceCents);
                     return PilotCallResult.None;
                 case ("SetJumpCloneName", [long id, string or byte[]]):
-                    clones.Rename(pilot, id, BlueMarshal.Text(args[1]));
-                    context.Notifications.Add(new JumpCloneCacheInvalidated());
+                    Changed(context, clones.Rename(pilot, id, BlueMarshal.Text(args[1])));
                     return PilotCallResult.None;
                 case ("DestroyInstalledClone", [long id]):
                     Changed(context, clones.Destroy(pilot, id));
@@ -132,6 +134,16 @@ internal sealed record JumpCloneState(JumpCloneSnapshot Snapshot) : BlueModel
                 ["timeLastJump"] = Snapshot.LastJump,
             }
         );
+}
+
+internal sealed record StationJumpCloneState(IReadOnlyList<JumpClone> Clones) : BlueModel
+{
+    // clonejumpsvc.GetStationClones caches the rowset directly, without the GetCloneState envelope.
+    public override object ToBlue() =>
+        new CompatibilityRowset(
+            ["jumpCloneID", "locationID", "cloneName"],
+            Clones.Select(clone => new JumpCloneRow(clone)).ToArray()
+        ).ToBlue();
 }
 
 internal sealed record JumpCloneImplantRow(InstalledImplant Implant) : BlueModel

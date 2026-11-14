@@ -126,6 +126,24 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
         return JumpCloneRules.FeeCents;
     }
 
+    public IReadOnlyList<JumpClone> ReadStation(long pilotId)
+    {
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        return WorldActionScope.Inspect<IReadOnlyList<JumpClone>>(
+            database,
+            world =>
+            {
+                var station = CurrentStation(catalog, Pilot(world, pilotId), facility: false);
+                return world
+                    .Filter<SavedJumpClone>(c => c.PilotId == pilotId && !c.Active && c.StationId == station.Id)
+                    .OrderBy(c => c.Id)
+                    .Select(c => new JumpClone(c.Id, station.Id, c.Name))
+                    .ToArray();
+            },
+            consistentFileRead: true
+        );
+    }
+
     private static int? InstallLimit(WorldAction world, CatalogDbContext catalog, Pilot pilot)
     {
         _ = CurrentStation(catalog, pilot, facility: true);
@@ -199,14 +217,17 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
             ? clone
             : throw new InvalidDataException("That installed jump clone does not belong to you or is no longer available.");
 
-    public void Rename(long pilotId, long cloneId, string name)
+    public int Rename(long pilotId, long cloneId, string name)
     {
         string value = JumpCloneRules.Name(name);
         using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
         var world = transaction.World;
-        Owned(world, pilotId, cloneId).Name = value;
+        var clone = Owned(world, pilotId, cloneId);
+        clone.Name = value;
+        int station = clone.StationId!.Value;
         world.SaveChanges();
         transaction.Commit();
+        return station;
     }
 
     public int Destroy(long pilotId, long cloneId)

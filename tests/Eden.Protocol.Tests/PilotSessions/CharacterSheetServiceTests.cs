@@ -16,6 +16,43 @@ namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class CharacterSheetServiceTests
 {
+    [Fact]
+    public void CreationDateUsesOnlyTheSelectedPilotAndSurvivesReopen()
+    {
+        using Fixture fixture = new();
+        const string method = "GetCharacterCreationDate";
+        const long born = 134010000000000000L;
+        Assert.Same(PilotCallResult.Unsupported, fixture.Call("charMgr", method, []));
+        using (WorldDbContext world = new(fixture.Db.Path))
+        {
+            world.Pilots.Find(90000001L)!.CreatedAt = born;
+            world.Pilots.Find(90000002L)!.CreatedAt = born + TimeSpan.TicksPerDay;
+            world.SaveChanges();
+        }
+        fixture.Context.Select(fixture.Db.Store.FindPilot(1000001)!);
+        Assert.Equal(born, Reply(fixture.Call("charMgr", method, [])));
+        foreach (object?[] args in new object?[][] { [90000001L], [90000002L], [null], ["90000001"] })
+        {
+            Assert.IsType<PilotCallResult.Failure>(fixture.Call("charMgr", method, args));
+        }
+        Assert.IsType<PilotCallResult.Failure>(fixture.Call("charMgr", method, [], new() { ["characterID"] = 90000002L }));
+        Assert.Equal(born, Reply(fixture.Call("charMgr", method, [], new() { ["machoVersion"] = 1L })));
+        using var reopened = ServerServices.Build(new(fixture.Db.Path), fixture.Clock);
+        using var scope = reopened.CreateScope();
+        Assert.Equal(
+            born,
+            Reply(
+                scope
+                    .ServiceProvider.GetRequiredService<PilotCallRouter>()
+                    .Call(fixture.Context, "charMgr", method, new object?[] { }, _ => { })
+            )
+        );
+        fixture.Context.LogOff();
+        fixture.Context.Select(fixture.Db.Store.FindPilot(1000002)!);
+        Assert.Equal(born + TimeSpan.TicksPerDay, Reply(fixture.Call("charMgr", method, [])));
+        Assert.Empty(fixture.Context.Notifications);
+    }
+
     [Theory]
     [InlineData(90000001L)]
     [InlineData(90000002L)]
@@ -44,6 +81,13 @@ public sealed class CharacterSheetServiceTests
         Assert.Equal(name, legacy["characterName"]);
         Assert.Equal(born, legacy["createDateTime"]);
         Assert.DoesNotContain("description", legacy.Keys);
+        var member = BlueRead.Fields(Assert.IsType<BlueInstance>(Reply(fixture.Call("charMgr", "GetPrivateInfo", [target]))).State);
+        Assert.Equal(target, member["characterID"]);
+        Assert.Equal(0L, member["gender"]);
+        Assert.Equal(8L, member["raceID"]);
+        Assert.Equal(born, member["createDateTime"]);
+        Assert.DoesNotContain("balance", member.Keys);
+        Assert.DoesNotContain("accountID", member.Keys);
         var corporationReply = Assert.IsType<BlueInstance>(Reply(fixture.Call("corpRegistry", "GetInfoWindowDataForChar", [target])));
         var corporation = BlueRead.Fields(corporationReply.State);
         Assert.Equal(1000044L, corporation["corpID"]);
@@ -68,11 +112,19 @@ public sealed class CharacterSheetServiceTests
             biography,
             born
         );
+        member = BlueRead.Fields(
+            Assert
+                .IsType<BlueInstance>(Reply(router.Call(fixture.Context, "charMgr", "GetPrivateInfo", new object?[] { target }, _ => { })))
+                .State
+        );
+        Assert.Equal(born, member["createDateTime"]);
+        Assert.Equal(target, member["characterID"]);
     }
 
     [Theory]
     [InlineData("charMgr", "GetPublicInfo")]
     [InlineData("charMgr", "GetPublicInfo3")]
+    [InlineData("charMgr", "GetPrivateInfo")]
     [InlineData("corpRegistry", "GetInfoWindowDataForChar")]
     [InlineData("corporationSvc", "GetMedalsReceived")]
     [InlineData("corporationSvc", "GetEmployementRecordAndCharacterTransfers")]
