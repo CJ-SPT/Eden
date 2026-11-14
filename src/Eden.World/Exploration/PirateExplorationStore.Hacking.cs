@@ -19,18 +19,17 @@ using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Eden.World.Thermal;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Exploration;
 
 internal sealed partial class PirateExplorationStore
 {
-    private static Pilot Pilot(WorldDbContext world, long id) =>
-        world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == id);
+    private static Pilot Pilot(WorldAction world, long id) =>
+        world.Pilots.Find(id) ?? throw new InvalidDataException("Unknown hacking pilot.");
 
     private static HackingContact Contact(SavedHackingAttempt attempt) => JsonSerializer.Deserialize<HackingContact>(attempt.ContactJson)!;
 
-    private static void ReleaseModule(WorldDbContext world, SavedHackingAttempt attempt)
+    private static void ReleaseModule(WorldAction world, SavedHackingAttempt attempt)
     {
         var contact = Contact(attempt);
         if (world.Set<ActiveFittedModule>().Find(contact.Module.Id) is { } active)
@@ -40,7 +39,7 @@ internal sealed partial class PirateExplorationStore
     }
 
     private static (SavedExplorationSite Site, SavedHackingContainer Container, StaticSpaceObject Object) Access(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         Pilot pilot,
         long id,
@@ -94,8 +93,8 @@ internal sealed partial class PirateExplorationStore
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
         {
-            using WorldDbContext world = new(database.Path);
-            using var transaction = world.Database.BeginTransaction();
+            using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+            var world = transaction.World;
             using CatalogDbContext catalog = new(database.CatalogPath);
             var pilot = Pilot(world, pilotId);
             var item = world.Set<OwnedItem>().Find(moduleId);
@@ -142,9 +141,12 @@ internal sealed partial class PirateExplorationStore
             var cooldown = world.Set<ModuleCooldown>().Find(moduleId);
             if (
                 access.Container.Hacked
-                || world.Set<SavedHackingAttempt>().Any(a => a.PilotId == pilotId || a.ContainerId == targetId)
+                || (
+                    world.Set<SavedHackingAttempt>().Find(pilotId) is not null
+                    || world.Filter<SavedHackingAttempt>(a => a.ContainerId == targetId).Any()
+                )
                 || cooldown?.ReadyAt > now
-                || world.Set<ActiveFittedModule>().Any(a => a.ModuleId == moduleId)
+                || world.Set<ActiveFittedModule>().Find(moduleId) is not null
             )
             {
                 throw new InvalidDataException("The analyzer or container is already in use or has already been hacked.");
@@ -188,9 +190,8 @@ internal sealed partial class PirateExplorationStore
             cooldown ??= world.Add(new ModuleCooldown { ModuleId = moduleId }).Entity;
             cooldown.ReadyAt = ready;
             cooldown.Kind = ModuleCooldownKind.Cycle;
-            world.SaveChanges();
+            Invalidate(world, access.Site.SystemId);
             transaction.Commit();
-            _views.TryRemove(access.Site.SystemId, out _);
             return contact;
         }
     }
@@ -205,8 +206,8 @@ internal sealed partial class PirateExplorationStore
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
         {
-            using WorldDbContext world = new(database.Path);
-            using var transaction = world.Database.BeginTransaction();
+            using WorldActionScope transaction = new(database, select: world => HackingParticipants(world, pilotId));
+            var world = transaction.World;
             using CatalogDbContext catalog = new(database.CatalogPath);
             var attempt = world.Set<SavedHackingAttempt>().Find(pilotId) ?? throw new InvalidDataException("No hacking attempt is active.");
             var contact = Contact(attempt);
@@ -219,12 +220,11 @@ internal sealed partial class PirateExplorationStore
                 || item.OwnerId != pilotId
                 || item.LocationId != contact.ShipId
                 || !InventoryDefinitions.IsFittedSlot(item.FlagId)
-                || !world.Set<ActiveFittedModule>().Any(a => a.ModuleId == item.Id)
+                || world.Set<ActiveFittedModule>().Find(item.Id) is null
             )
             {
                 throw new InvalidDataException("The original ship and online analyzer are required to continue hacking.");
             }
-            var worldAction = new SqlWorldAction(world);
             var next = HackingRules.Step(contact.Board, action);
             if (next.Outcome == HackingOutcome.Running)
             {
@@ -240,15 +240,13 @@ internal sealed partial class PirateExplorationStore
                 }
                 else
                 {
-                    FailHack(world, worldAction, catalog, access.Site, access.Container, now);
+                    FailHack(world, catalog, access.Site, access.Container, now);
                 }
                 ReleaseModule(world, attempt);
                 world.Remove(attempt);
                 CompleteIfEmpty(world, access.Site, now);
             }
-            world.SaveChanges();
             transaction.Commit();
-            worldAction.PublishActions();
             return new(contact, contact.Board, next, action);
         }
     }
@@ -263,26 +261,23 @@ internal sealed partial class PirateExplorationStore
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
         {
-            using WorldDbContext world = new(database.Path);
-            using var transaction = world.Database.BeginTransaction();
+            using WorldActionScope transaction = new(database, select: world => HackingParticipants(world, pilotId));
+            var world = transaction.World;
             var attempt = world.Set<SavedHackingAttempt>().Find(pilotId);
             if (attempt is null)
             {
                 return;
             }
             using CatalogDbContext catalog = new(database.CatalogPath);
-            var action = new SqlWorldAction(world);
             ReleaseModule(world, attempt);
             world.Remove(attempt);
             if (world.Set<SavedHackingContainer>().Find(attempt.ContainerId) is { Hacked: false, Destroyed: false } container)
             {
                 var site = world.Set<SavedExplorationSite>().Find(container.SiteId)!;
-                FailHack(world, action, catalog, site, container, now);
+                FailHack(world, catalog, site, container, now);
                 CompleteIfEmpty(world, site, now);
             }
-            world.SaveChanges();
             transaction.Commit();
-            action.PublishActions();
         }
     }
 
@@ -296,28 +291,33 @@ internal sealed partial class PirateExplorationStore
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
         {
-            using WorldDbContext world = new(database.Path);
             using CatalogDbContext catalog = new(database.CatalogPath);
-            var access = Access(world, catalog, Pilot(world, pilotId), containerId, HackingRules.LootRange, now);
-            if (!access.Container.Hacked || access.Container.OwnerId != pilotId)
-            {
-                throw new InvalidDataException("Hack this container successfully before retrieving its contents.");
-            }
-            var body = access.Object;
-            return new(
-                new(
-                    body.Id,
-                    body.TypeId,
-                    pilotId,
-                    access.Site.SystemId,
-                    (int)InventoryFlag.AutoFit,
-                    1,
-                    body.GroupId,
-                    body.CategoryId,
-                    PilotInventoryStore.Volume(catalog, body.TypeId),
-                    true
-                ),
-                PilotInventoryStore.List(world, catalog, pilotId, containerId)
+            return WorldActionScope.Inspect(
+                database,
+                world =>
+                {
+                    var access = Access(world, catalog, Pilot(world, pilotId), containerId, HackingRules.LootRange, now);
+                    if (!access.Container.Hacked || access.Container.OwnerId != pilotId)
+                    {
+                        throw new InvalidDataException("Hack this container successfully before retrieving its contents.");
+                    }
+                    var body = access.Object;
+                    return new ExplorationContainerInventory(
+                        new(
+                            body.Id,
+                            body.TypeId,
+                            pilotId,
+                            access.Site.SystemId,
+                            (int)InventoryFlag.AutoFit,
+                            1,
+                            body.GroupId,
+                            body.CategoryId,
+                            PilotInventoryStore.Volume(catalog, body.TypeId),
+                            true
+                        ),
+                        PilotInventoryStore.List(world, catalog, pilotId, containerId)
+                    );
+                }
             );
         }
     }
@@ -332,8 +332,8 @@ internal sealed partial class PirateExplorationStore
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
         {
-            using WorldDbContext world = new(database.Path);
-            using var transaction = world.Database.BeginTransaction();
+            using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+            var world = transaction.World;
             using CatalogDbContext catalog = new(database.CatalogPath);
             var pilot = Pilot(world, pilotId);
             var access = Access(world, catalog, pilot, request.SourceId, HackingRules.LootRange, now);
@@ -352,9 +352,8 @@ internal sealed partial class PirateExplorationStore
                 (InventoryFlag)request.FlagId
             );
             world.SaveChanges();
-            access.Container.Empty = !world.Set<OwnedItem>().Any(i => i.LocationId == request.SourceId && i.Quantity > 0);
+            access.Container.Empty = !world.Filter<OwnedItem>(i => i.LocationId == request.SourceId && i.Quantity > 0).Any();
             CompleteIfEmpty(world, access.Site, now);
-            world.SaveChanges();
             transaction.Commit();
             return changes;
         }

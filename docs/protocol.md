@@ -239,6 +239,9 @@ correct dense simulated-pilot membership updates and distinguish saved, paused, 
 [Resident combat and resource sites](protocol/information.md#resident-combat-and-resource-sites)
 covers anomaly lifecycle, DED access, expeditions, gas and ice, and Agency counts.
 
+[Resident probes and pirate exploration](protocol/information.md#resident-probes-and-pirate-exploration)
+covers scan state, analyzer actions, loot, and Ghost Site settlement.
+
 ## Topics
 
 [Tech II supply audit](protocol/industry.md#tech-ii-supply-audit-and-refinery-bootstrap),

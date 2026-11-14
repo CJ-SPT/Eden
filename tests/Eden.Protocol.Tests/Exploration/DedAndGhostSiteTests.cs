@@ -170,11 +170,14 @@ public sealed class DedAndGhostSiteTests
         Assert.DoesNotContain(check.Set<WorldNpc>(), n => n.EncounterId == saved.InstanceId && n.RetiredAt == null);
     }
 
-    [Fact]
-    public void GhostResponseAndBlastPersistAndPreserveTheBonusCache()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task GhostResponseAndBlastPersistAndPreserveTheBonusCache(bool resident)
     {
         using Fixture f = new();
         PassiveCatalogFixture.LoadDedAndGhost(f.CatalogPath);
+        using var live = resident ? new LiveWorld(new(f.Db.Path), f.Clock, _ => { }) : null;
         var exploration = f.Db.Services.GetRequiredService<IPirateExploration>();
         int system = CombatAnomalyRules.SystemId;
         var site = Assert.Single(exploration.Signatures(system, f.Clock.Now), s => s.Exploration == ExplorationKind.Ghost);
@@ -201,11 +204,19 @@ public sealed class DedAndGhostSiteTests
         f.Db.Store.SetPosition(f.ShipId, ordinary.Position, system);
         long originalShip = f.ShipId;
         long blast = response + GhostSiteRules.VisibleCountdown;
-        WorldInitialization.Initialize(new(f.Db.Path), f.Clock);
+        if (live is null)
+        {
+            WorldInitialization.Initialize(new(f.Db.Path), f.Clock);
+        }
         var after = Assert.Single(exploration.Signatures(system, blast), s => s.Id == site.Id);
         Assert.DoesNotContain(after.Objects, c => c.Id == ordinary.Id);
         Assert.Contains(after.Objects, c => c.Id == bonus.Id);
         _ = exploration.Signatures(system, blast);
+        if (live is not null)
+        {
+            await live.FlushAsync();
+            live.Dispose();
+        }
         using WorldDbContext saved = new(f.Db.Path);
         Assert.True(saved.Set<SavedExplorationSite>().Find(site.Id)!.Detonated);
         Assert.Single(saved.Set<ShipLoss>().Where(l => l.ShipId == originalShip));

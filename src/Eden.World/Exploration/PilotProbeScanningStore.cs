@@ -19,10 +19,10 @@ using Eden.World.Combat;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Eden.World.Thermal;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Exploration;
 
@@ -32,29 +32,27 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
     private const int CapsuleGroup = 29;
     private static readonly JsonSerializerOptions s_json = new() { IgnoreReadOnlyProperties = true };
 
-    private T Write<T>(Func<WorldDbContext, CatalogDbContext, T> action)
+    private T Write<T>(long pilotId, Func<WorldAction, CatalogDbContext, T> action)
     {
-        return LiveWorld.Execute(database.Path, () => WriteOwned<T>(action), nameof(Write));
+        return LiveWorld.Execute(database.Path, () => WriteOwned<T>(pilotId, action), nameof(Write));
     }
 
-    private T WriteOwned<T>(Func<WorldDbContext, CatalogDbContext, T> action)
+    private T WriteOwned<T>(long pilotId, Func<WorldAction, CatalogDbContext, T> action)
     {
         using var owner = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
         {
-            using WorldDbContext world = new(database.Path);
             using CatalogDbContext catalog = new(database.CatalogPath);
-            using var transaction = world.Database.BeginTransaction();
-            var result = action(world, catalog);
-            world.SaveChanges();
+            using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+            var result = action(transaction.World, catalog);
             transaction.Commit();
             return result;
         }
     }
 
-    private static Pilot Pilot(WorldDbContext world, CatalogDbContext catalog, long pilotId, long now)
+    private static Pilot Pilot(WorldAction world, CatalogDbContext catalog, long pilotId, long now)
     {
-        var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+        var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown scanning pilot.");
         if (pilot.ActiveShip.Position is null || catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId == CapsuleGroup)
         {
             throw new InvalidDataException("Operate probes from a ship in space.");
@@ -77,46 +75,43 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
         return position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
     }
 
-    public IReadOnlyList<ScanProbe> List(long pilotId, int systemId, long now)
-    {
-        using WorldDbContext world = new(database.Path);
-        return world
-            .Set<SavedScanProbe>()
-            .Where(p => p.PilotId == pilotId && p.SystemId == systemId && p.ExpiresAt > now)
-            .OrderBy(p => p.Id)
-            .AsEnumerable()
-            .Select(Read)
-            .ToArray();
-    }
+    public IReadOnlyList<ScanProbe> List(long pilotId, int systemId, long now) =>
+        WorldActionScope.Inspect(
+            database,
+            world =>
+                world
+                    .Filter<SavedScanProbe>(p => p.PilotId == pilotId && p.SystemId == systemId && p.ExpiresAt > now)
+                    .OrderBy(p => p.Id)
+                    .AsEnumerable()
+                    .Select(Read)
+                    .ToArray()
+        );
 
-    public bool IsLauncher(long pilotId, long moduleId)
+    public bool IsLauncher(long pilotId, long moduleId) => IsLauncher(pilotId, moduleId, ProbeScanRules.LauncherGroup);
+
+    public ProbeScan? Pending(long pilotId) =>
+        WorldActionScope.Inspect(
+            database,
+            world => world.Set<SavedProbeScan>().Find(pilotId) is { } saved ? JsonSerializer.Deserialize<ProbeScan>(saved.ScanJson) : null
+        );
+
+    public bool IsSurveyLauncher(long pilotId, long moduleId) => IsLauncher(pilotId, moduleId, ProbeScanRules.SurveyLauncherGroup);
+
+    private bool IsLauncher(long pilotId, long moduleId, int group)
     {
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var type = world
-            .Set<OwnedItem>()
-            .Where(i => i.Id == moduleId && i.OwnerId == pilotId)
-            .Select(i => (int?)i.TypeId)
-            .SingleOrDefault();
-        return type is int id && catalog.FittingType(id)?.GroupId == ProbeScanRules.LauncherGroup;
-    }
-
-    public ProbeScan? Pending(long pilotId)
-    {
-        using WorldDbContext world = new(database.Path);
-        return world.Set<SavedProbeScan>().Find(pilotId) is { } saved ? JsonSerializer.Deserialize<ProbeScan>(saved.ScanJson) : null;
-    }
-
-    public bool IsSurveyLauncher(long pilotId, long moduleId)
-    {
-        using WorldDbContext world = new(database.Path);
-        using CatalogDbContext catalog = new(database.CatalogPath);
-        var module = world.Set<OwnedItem>().Find(moduleId);
-        return module?.OwnerId == pilotId && catalog.FittingType(module.TypeId)?.GroupId == ProbeScanRules.SurveyLauncherGroup;
+        return WorldActionScope.Inspect(
+            database,
+            world =>
+                world.Set<OwnedItem>().Find(moduleId) is { } module
+                && module.OwnerId == pilotId
+                && catalog.FittingType(module.TypeId)?.GroupId == group
+        );
     }
 
     public MoonSurveyLaunch LaunchSurvey(long pilotId, long moduleId, SpacePosition heading, long now) =>
         Write(
+            pilotId,
             (world, catalog) =>
             {
                 var pilot = Pilot(world, catalog, pilotId, now);
@@ -181,6 +176,7 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
 
     public ProbeLaunch Launch(long pilotId, long moduleId, int count, long now) =>
         Write(
+            pilotId,
             (world, catalog) =>
             {
                 if (count is < 1 or > ProbeScanRules.MaximumProbes)
@@ -219,8 +215,8 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
                     throw new InvalidDataException("Load compatible scanner probes into the launcher.");
                 }
                 PilotSkillReader.CheckRequirements(world, catalog, pilotId, charge.TypeId);
-                world.RemoveRange(world.Set<SavedScanProbe>().Where(p => p.PilotId == pilotId && p.ExpiresAt <= now));
-                int deployed = world.Set<SavedScanProbe>().Count(p => p.PilotId == pilotId && p.SystemId == system && p.ExpiresAt > now);
+                world.RemoveRange(world.Filter<SavedScanProbe>(p => p.PilotId == pilotId && p.ExpiresAt <= now).ToArray());
+                int deployed = world.Filter<SavedScanProbe>(p => p.PilotId == pilotId && p.SystemId == system && p.ExpiresAt > now).Count();
                 int quantity = Math.Min(count, Math.Min(charge.Quantity, ProbeScanRules.MaximumProbes - deployed));
                 if (quantity <= 0)
                 {
@@ -234,13 +230,7 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
                     throw new InvalidDataException("The probe has no valid flight lifetime.");
                 }
                 var position = pilot.ActiveShip.Position!;
-                long next = Math.Max(
-                    ProbeScanRules.FirstProbeId,
-                    world
-                        .Database.SqlQueryRaw<long>("SELECT COALESCE(MAX(seq),0) AS Value FROM sqlite_sequence WHERE name='WorldScanProbe'")
-                        .AsEnumerable()
-                        .Single() + 1
-                );
+                long next = world.Next("WorldScanProbe", ProbeScanRules.FirstProbeId - 1);
                 List<ScanProbe> launched = [];
                 for (int i = 0; i < quantity; i++)
                 {
@@ -277,15 +267,16 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
             }
         );
 
-    private static SavedScanProbe[] Owned(WorldDbContext world, long pilotId, int systemId, IReadOnlyList<long> ids, long now)
+    private static SavedScanProbe[] Owned(WorldAction world, long pilotId, int systemId, IReadOnlyList<long> ids, long now)
     {
         if (ids.Count is < 1 or > ProbeScanRules.MaximumProbes || ids.Distinct().Count() != ids.Count)
         {
             throw new InvalidDataException("Select distinct deployed probes.");
         }
         var probes = world
-            .Set<SavedScanProbe>()
-            .Where(p => ids.Contains(p.Id) && p.PilotId == pilotId && p.SystemId == systemId && p.ExpiresAt > now)
+            .Filter<SavedScanProbe>(p =>
+                Enumerable.Contains(ids, p.Id) && p.PilotId == pilotId && p.SystemId == systemId && p.ExpiresAt > now
+            )
             .OrderBy(p => p.Id)
             .ToArray();
         if (probes.Length != ids.Count)
@@ -295,7 +286,7 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
         return probes;
     }
 
-    private static void Idle(WorldDbContext world, long pilotId, long now)
+    private static void Idle(WorldAction world, long pilotId, long now)
     {
         if (world.Set<SavedProbeScan>().Find(pilotId) is { } scan && scan.ReadyAt > now)
         {
@@ -305,6 +296,7 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
 
     public ProbeRecovery Recover(long pilotId, IReadOnlyList<long> ids, long now) =>
         Write(
+            pilotId,
             (world, catalog) =>
             {
                 var pilot = Pilot(world, catalog, pilotId, now);
@@ -338,6 +330,7 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
 
     public void Destroy(long pilotId, long id, long now) =>
         Write(
+            pilotId,
             (world, catalog) =>
             {
                 var pilot = Pilot(world, catalog, pilotId, now);
@@ -357,16 +350,15 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
         using var owner = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
         {
-            // Seed/read sites before opening the scan transaction on another connection.
-            int system;
-            using (WorldDbContext world = new(database.Path))
-            {
-                using CatalogDbContext catalog = new(database.CatalogPath);
-                var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
-                system = SystemId(pilot, catalog);
-            }
+            // Resolve and refresh sites before opening the private scan action.
+            using CatalogDbContext geographic = new(database.CatalogPath);
+            int system = WorldActionScope.Inspect(
+                database,
+                world => SystemId(world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown scanning pilot."), geographic)
+            );
             var signatures = sites.Signatures(system, now);
             return Write(
+                pilotId,
                 (world, catalog) =>
                 {
                     var pilot = Pilot(world, catalog, pilotId, now);
@@ -374,8 +366,7 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
                     var probes = Owned(world, pilotId, system, placements.Select(p => p.Id).ToArray(), now);
                     var launcher =
                         world
-                            .Set<OwnedItem>()
-                            .Where(i => i.OwnerId == pilotId && i.LocationId == pilot.ActiveShipId && i.Singleton && i.Online)
+                            .Filter<OwnedItem>(i => i.OwnerId == pilotId && i.LocationId == pilot.ActiveShipId && i.Singleton && i.Online)
                             .AsEnumerable()
                             .FirstOrDefault(i =>
                                 InventoryDefinitions.IsHighSlot(i.FlagId)
@@ -440,6 +431,7 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
 
     public IReadOnlyList<ProbeScanResult> Complete(long pilotId, ProbeScan scan, long now) =>
         Write(
+            pilotId,
             (world, catalog) =>
             {
                 var saved = world.Set<SavedProbeScan>().Find(pilotId);
@@ -449,7 +441,7 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
                 }
                 var authoritative = JsonSerializer.Deserialize<ProbeScan>(saved.ScanJson)!;
                 world.Remove(saved);
-                var pilot = world.Pilots.Include(p => p.ActiveShip).ThenInclude(s => s.Position).Single(p => p.Id == pilotId);
+                var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown scanning pilot.");
                 if (
                     pilot.ActiveShipId != authoritative.ShipId
                     || pilot.ActiveShip.Position is null
@@ -459,30 +451,14 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
                     return Array.Empty<ProbeScanResult>();
                 }
                 var ids = authoritative.Probes.Select(p => p.Id).ToArray();
-                if (world.Set<SavedScanProbe>().Count(p => ids.Contains(p.Id) && p.PilotId == pilotId && p.ExpiresAt > now) != ids.Length)
+                if (
+                    world.Filter<SavedScanProbe>(p => Enumerable.Contains(ids, p.Id) && p.PilotId == pilotId && p.ExpiresAt > now).Count()
+                    != ids.Length
+                )
                 {
                     return Array.Empty<ProbeScanResult>();
                 }
-                var results = authoritative
-                    .Results.Where(r =>
-                        r.Site.Wormhole && WormholeTravelStore.Exists(catalog, authoritative.SystemId, r.Site.Id)
-                        || world
-                            .Set<WorldCombatAnomaly>()
-                            .Any(s => s.Id == r.Site.Id && s.CompletedAt == null && s.IsSignature && s.SystemId == authoritative.SystemId)
-                        || world
-                            .Set<SavedExplorationSite>()
-                            .Any(s => s.Id == r.Site.Id && s.SystemId == authoritative.SystemId && s.ReplaceAt == null && s.ExpiresAt > now)
-                        || world
-                            .Set<SavedMiningSite>()
-                            .Any(s =>
-                                s.Id == r.Site.Id
-                                && s.SystemId == authoritative.SystemId
-                                && s.Family == Eden.Gameplay.Mining.MiningFamily.Gas
-                                && s.ReplaceAt == null
-                                && s.ExpiresAt > now
-                            )
-                    )
-                    .ToArray();
+                var results = authoritative.Results.Where(r => Available(world, catalog, r.Site.Id, authoritative.SystemId, now)).ToArray();
                 foreach (var result in results.Where(r => r.Certainty >= 1))
                 {
                     if (world.Set<SavedResolvedSignature>().Find(pilotId, result.Site.Id) is null)
@@ -501,28 +477,24 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
             }
         );
 
+    private static bool Available(WorldAction world, CatalogDbContext catalog, long siteId, int systemId, long now) =>
+        WormholeRules.IsEndpoint(siteId) && WormholeTravelStore.Exists(catalog, systemId, siteId)
+        || world.Set<WorldCombatAnomaly>().Find(siteId) is { IsSignature: true, CompletedAt: null } combat && combat.SystemId == systemId
+        || world.Set<SavedExplorationSite>().Find(siteId) is { ReplaceAt: null } exploration
+            && exploration.SystemId == systemId
+            && exploration.ExpiresAt > now
+        || world.Set<SavedMiningSite>().Find(siteId) is { ReplaceAt: null, Family: Eden.Gameplay.Mining.MiningFamily.Gas } gas
+            && gas.SystemId == systemId
+            && gas.ExpiresAt > now;
+
     public bool Resolved(long pilotId, long siteId, int systemId, long now)
     {
-        using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        return world.Set<SavedResolvedSignature>().Any(r => r.PilotId == pilotId && r.SiteId == siteId && r.SystemId == systemId)
-            && (
-                WormholeRules.IsEndpoint(siteId) && WormholeTravelStore.Exists(catalog, systemId, siteId)
-                || world
-                    .Set<WorldCombatAnomaly>()
-                    .Any(s => s.Id == siteId && s.SystemId == systemId && s.IsSignature && s.CompletedAt == null)
-                || world
-                    .Set<SavedExplorationSite>()
-                    .Any(s => s.Id == siteId && s.SystemId == systemId && s.ReplaceAt == null && s.ExpiresAt > now)
-                || world
-                    .Set<SavedMiningSite>()
-                    .Any(s =>
-                        s.Id == siteId
-                        && s.SystemId == systemId
-                        && s.Family == Eden.Gameplay.Mining.MiningFamily.Gas
-                        && s.ReplaceAt == null
-                        && s.ExpiresAt > now
-                    )
-            );
+        return WorldActionScope.Inspect(
+            database,
+            world =>
+                world.Set<SavedResolvedSignature>().Find(pilotId, siteId)?.SystemId == systemId
+                && Available(world, catalog, siteId, systemId, now)
+        );
     }
 }

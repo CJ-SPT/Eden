@@ -3271,6 +3271,9 @@ internal sealed partial class EconomyTransaction
     {
         switch (row)
         {
+            case Eden.Data.World.Exploration.SavedScanProbe value:
+                Reserve("WorldScanProbe", value.Id);
+                break;
             case Eden.Data.World.Agents.SavedResearchProject value:
                 value.Id = value.Id == 0 ? Next("WorldResearchProject") : value.Id;
                 Reserve("WorldResearchProject", value.Id);

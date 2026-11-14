@@ -55,8 +55,8 @@ internal sealed partial class PirateExplorationStore(
                 _views[systemId] = new(generation, long.MaxValue, enabled, []);
                 return _views[systemId].Sites;
             }
-            using WorldDbContext world = new(database.Path);
-            using var transaction = world.Database.BeginTransaction();
+            using WorldActionScope transaction = new(database, select: world => GhostParticipants(world, systemId, now));
+            var world = transaction.World;
             double security = catalog.Read(CatalogData.Client.Systems, (long)systemId)?.SecurityStatus ?? 0.7;
             int band =
                 security >= 0.45 ? 0
@@ -65,7 +65,6 @@ internal sealed partial class PirateExplorationStore(
             List<CombatAnomaly> sites = [];
             long deadline = long.MaxValue;
             bool wormhole = WormholeRules.IsWormholeSystem(systemId);
-            var action = new SqlWorldAction(world);
             foreach (var kind in Enum.GetValues<ExplorationKind>())
             {
                 if (wormhole && kind != ExplorationKind.Ghost)
@@ -73,8 +72,7 @@ internal sealed partial class PirateExplorationStore(
                     continue;
                 }
                 var row = world
-                    .Set<SavedExplorationSite>()
-                    .Where(s => s.SystemId == systemId && s.Kind == (int)kind)
+                    .Filter<SavedExplorationSite>(s => s.SystemId == systemId && s.Kind == (int)kind)
                     .OrderByDescending(s => s.Id)
                     .FirstOrDefault();
                 if (row is not null && row.ExpiresAt <= now && row.ReplaceAt is null)
@@ -98,7 +96,10 @@ internal sealed partial class PirateExplorationStore(
                     {
                         continue;
                     }
-                    long id = Math.Max(HackingRules.FirstSiteId, (world.Set<SavedExplorationSite>().Max(s => (long?)s.Id) ?? 0) + 1);
+                    long id = Math.Max(
+                        HackingRules.FirstSiteId,
+                        (world.Filter<SavedExplorationSite>(_ => true).Max(s => (long?)s.Id) ?? 0) + 1
+                    );
                     var definition = eligible[(int)((id + systemId) % eligible.Length)];
                     var anchor = catalog.CelestialsInSystem(systemId).OrderBy(c => c.Id).FirstOrDefault();
                     if (anchor is null)
@@ -142,19 +143,18 @@ internal sealed partial class PirateExplorationStore(
                 var profile = Definition(catalog, row);
                 if (kind == ExplorationKind.Ghost)
                 {
-                    deadline = Math.Min(deadline, AdvanceGhostSite(world, action, catalog, row, profile, now));
+                    deadline = Math.Min(deadline, AdvanceGhostSite(world, catalog, row, profile, now));
                 }
-                var containers = world.Set<SavedHackingContainer>().Where(c => c.SiteId == row.Id).OrderBy(c => c.Index).ToArray();
+                var containers = world.Filter<SavedHackingContainer>(c => c.SiteId == row.Id).OrderBy(c => c.Index).ToArray();
                 if (containers.All(c => c.Destroyed || c.Hacked && c.Empty))
                 {
                     Retire(world, row, now);
                     deadline = Math.Min(deadline, row.ReplaceAt!.Value);
                     continue;
                 }
-                var busy = world
-                    .Set<SavedHackingAttempt>()
-                    .Where(a => containers.Select(c => c.Id).Contains(a.ContainerId))
-                    .Select(a => a.ContainerId)
+                var busy = containers
+                    .Where(c => world.Filter<SavedHackingAttempt>(a => a.ContainerId == c.Id).Any())
+                    .Select(c => c.Id)
                     .ToHashSet();
                 sites.Add(
                     new(
@@ -192,9 +192,7 @@ internal sealed partial class PirateExplorationStore(
                 );
                 deadline = Math.Min(deadline, row.ExpiresAt);
             }
-            world.SaveChanges();
             transaction.Commit();
-            action.PublishActions();
             _views[systemId] = new(generation, deadline, enabled, sites.ToArray());
             return _views[systemId].Sites;
         }
@@ -237,32 +235,43 @@ internal sealed partial class PirateExplorationStore(
         };
     }
 
-    private void Retire(WorldDbContext world, SavedExplorationSite site, long now)
+    private void Retire(WorldAction world, SavedExplorationSite site, long now)
     {
         site.ReplaceAt = checked(now + HackingRules.ReplacementDelay);
         RetireResponse(world, site, now);
-        var ids = world.Set<SavedHackingContainer>().Where(c => c.SiteId == site.Id).Select(c => c.Id).ToArray();
-        foreach (var attempt in world.Set<SavedHackingAttempt>().Where(a => ids.Contains(a.ContainerId)).ToArray())
+        var containers = world.Filter<SavedHackingContainer>(c => c.SiteId == site.Id).ToArray();
+        foreach (var container in containers)
         {
-            ReleaseModule(world, attempt);
-            world.Remove(attempt);
+            if (
+                world
+                    .Filter<SavedHackingAttempt>(a => a.ContainerId == container.Id)
+                    .AsEnumerable()
+                    .SingleOrDefault(a => world.Entry(a).State != EntityState.Deleted) is
+                { } attempt
+            )
+            {
+                ReleaseModule(world, attempt);
+                world.Remove(attempt);
+            }
+            world.RemoveRange(world.Filter<OwnedItem>(i => i.LocationId == container.Id).ToArray());
         }
-        world.Set<OwnedItem>().Where(i => ids.Contains(i.LocationId)).ExecuteDelete();
-        _views.TryRemove(site.SystemId, out _);
+        Invalidate(world, site.SystemId);
     }
 
-    private void CompleteIfEmpty(WorldDbContext world, SavedExplorationSite site, long now)
+    private void CompleteIfEmpty(WorldAction world, SavedExplorationSite site, long now)
     {
         world.SaveChanges();
-        if (!world.Set<SavedHackingContainer>().Any(c => c.SiteId == site.Id && !c.Destroyed && (!c.Hacked || !c.Empty)))
+        if (!world.Filter<SavedHackingContainer>(c => c.SiteId == site.Id && !c.Destroyed && (!c.Hacked || !c.Empty)).Any())
         {
             Retire(world, site, now);
         }
-        _views.TryRemove(site.SystemId, out _);
+        Invalidate(world, site.SystemId);
     }
 
+    private void Invalidate(WorldAction world, int system) => world.AfterCommit(() => _views.TryRemove(system, out _));
+
     private static void GrantLoot(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         SavedHackingContainer container,
         ExplorationDefinition definition,

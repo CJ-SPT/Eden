@@ -822,6 +822,8 @@ internal sealed partial class ResidentEconomy
     {
         RegisterBotTables();
         RegisterExplorationSites();
+        RegisterProbeScanning();
+        RegisterHacking();
         RegisterMissionRewardTables();
         RegisterWormholeJumps();
         RegisterCommandBursts();

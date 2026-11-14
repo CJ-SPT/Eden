@@ -479,3 +479,31 @@ suites and formatting verification passed.
 **Live acceptance.** Not performed. Agent client testing is disabled.
 
 **Optional maintainer checks.** None.
+
+
+## Resident probes and pirate exploration
+
+Probe launch, recovery, destruction, pending scans, resolution, and moon surveys read and update
+resident state. Probe reservations, launcher charges, and cooldowns commit together. Scan completion
+rechecks the ship, system, probe lifetimes, and current signature before granting warp access.
+Detached checkpoints keep probes, scan results, and signature rights from the same generation.
+
+Pirate site creation and retirement, analyzer activation and board moves, container claims, loot,
+and Ghost Site responses now use resident actions. Blast settlement uses current positions,
+damage, and loss state for pilots in the affected system. Damage notifications publish after commit.
+Restart retains the existing reconciliation of abandoned hacking attempts.
+
+Gameplay references are [probe scanning](https://wiki.eveuniversity.org/Probe_scanning),
+[moon surveying](https://wiki.eveuniversity.org/Moon_mining#Moon_Scanning), and
+[Ghost Sites](https://wiki.eveuniversity.org/Ghost_Site). The EveJS 261108.1 comparison used
+`probeScanRuntime.js`, `surveyProbeRuntime.js` and `hackingContainerState.js`
+(SHA-256 prefixes `4973D4AFE1C46906`, `0A9EA2C4CA852EA2` and `FD64BD3CE4F31EC9`).
+
+**Automated validation.** The build passed with zero warnings or errors. The focused probe,
+hacking, DED/Ghost, Agency, moon mining and wormhole filter passed 132 cases in 1 minute 19 seconds.
+The probe read regression measured zero SQL commands and connections. The Ghost Site test covered
+response arrival, ship loss, bonus cache survival and checkpoint reopen in both persistence modes.
+
+**Live acceptance.** Not performed. Agent client testing is disabled.
+
+**Optional maintainer checks.** None.

@@ -1,6 +1,8 @@
 using Eden.Data.Catalog.Exploration;
+using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
+using Eden.Data.World.Docking;
 using Eden.Data.World.Exploration;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Characters;
@@ -41,24 +43,76 @@ internal sealed partial class PirateExplorationStore
             {
                 using var ownership = LiveWorld.Find(database.Path)?.Enter();
                 using var movement = database.EnterMovement();
-                using WorldDbContext world = new(database.Path);
-                using var transaction = world.Database.BeginTransaction();
+                using WorldActionScope transaction = new(database, new(systems: [systemId]));
+                var world = transaction.World;
                 var site = world.Set<SavedExplorationSite>().Find(contact.Id);
                 if (site is { ResponseAt: null, ReplaceAt: null } && site.ExpiresAt > now)
                 {
                     site.ResponseAt = GhostSiteRules.ResponseAt(now, site.Id);
-                    world.SaveChanges();
+                    Invalidate(world, systemId);
                     transaction.Commit();
-                    _views.TryRemove(systemId, out _);
                 }
             },
             nameof(ArriveUncloaked)
         );
     }
 
+    private static IEnumerable<Pilot> PosedPilots(WorldAction world, int system) =>
+        world
+            .Filter<FlightPosition>(p => p.SystemId == system || p.SystemId == null)
+            .AsEnumerable()
+            .Select(p => world.Filter<Pilot>(pilot => pilot.ActiveShipId == p.ShipId).SingleOrDefault())
+            .OfType<Pilot>();
+
+    private TransactionParticipants GhostParticipants(WorldAction world, int system, long now)
+    {
+        bool blastDue = world
+            .Filter<SavedExplorationSite>(s =>
+                s.SystemId == system
+                && s.Kind == (int)ExplorationKind.Ghost
+                && s.ReplaceAt == null
+                && !s.Detonated
+                && s.ExpiresAt > now
+                && s.ResponseAt.HasValue
+            )
+            .AsEnumerable()
+            .Any(s => s.ResponseAt + GhostSiteRules.VisibleCountdown <= now);
+        return blastDue ? BlastParticipants(world, system) : new(systems: [system]);
+    }
+
+    private TransactionParticipants HackingParticipants(WorldAction world, long pilot)
+    {
+        if (
+            world.Set<SavedHackingAttempt>().Find(pilot) is { } attempt
+            && world.Set<SavedHackingContainer>().Find(attempt.ContainerId) is { } container
+            && world.Set<SavedExplorationSite>().Find(container.SiteId) is { Kind: (int)ExplorationKind.Ghost } site
+        )
+        {
+            return BlastParticipants(world, site.SystemId, pilot);
+        }
+        return new(pilots: [pilot]);
+    }
+
+    private TransactionParticipants BlastParticipants(WorldAction world, int system, long? actor = null)
+    {
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var pilots = PosedPilots(world, system)
+            .Where(p => (p.ActiveShip.Position?.SystemId ?? catalog.RequireStation(p.ActiveShip.StationId).SolarSystemId) == system)
+            .Select(p => (p.Id, p.ActiveShipId))
+            .ToArray();
+        var ids = pilots.Select(p => p.Id).ToHashSet();
+        if (actor.HasValue)
+        {
+            ids.Add(actor.Value);
+        }
+        var targets = pilots
+            .SelectMany(p => ShipLossPersistence.LossNpcParticipants(world, database.Path, p.ActiveShipId))
+            .Select(id => new SimulationResource(SharedSimulationResource.Npc, id));
+        return new(systems: [system], pilots: ids, resources: targets);
+    }
+
     private long AdvanceGhostSite(
-        WorldDbContext world,
-        WorldAction action,
+        WorldAction world,
         CatalogDbContext catalog,
         SavedExplorationSite site,
         ExplorationDefinition profile,
@@ -82,12 +136,11 @@ internal sealed partial class PirateExplorationStore
         if (!site.Detonated && now >= explosionAt)
         {
             site.Detonated = true;
-            var containers = world.Set<SavedHackingContainer>().Where(c => c.SiteId == site.Id && !c.Destroyed).ToArray();
+            var containers = world.Filter<SavedHackingContainer>(c => c.SiteId == site.Id && !c.Destroyed).ToArray();
             foreach (var container in containers.Where(c => !GhostSiteRules.IsBonusCache(profile.Containers[c.Index].TypeId)))
             {
-                Detonate(world, action, catalog, site, profile, container, now);
+                Detonate(world, catalog, site, profile, container, now);
             }
-            world.SaveChanges();
         }
         if (now >= departureAt)
         {
@@ -102,7 +155,7 @@ internal sealed partial class PirateExplorationStore
     }
 
     private static void SpawnResponse(
-        WorldDbContext world,
+        WorldAction world,
         CatalogDbContext catalog,
         SavedExplorationSite site,
         ExplorationDefinition profile,
@@ -160,7 +213,7 @@ internal sealed partial class PirateExplorationStore
         }
     }
 
-    private static void RetireResponse(WorldDbContext world, SavedExplorationSite site, long now)
+    private static void RetireResponse(WorldAction world, SavedExplorationSite site, long now)
     {
         if (!site.ResponseSpawned)
         {
@@ -168,8 +221,7 @@ internal sealed partial class PirateExplorationStore
         }
         foreach (
             var npc in world
-                .Set<WorldNpc>()
-                .Where(n =>
+                .Filter<WorldNpc>(n =>
                     n.EncounterId == site.Id && n.AnchorKind == NpcAnchorKind.GhostSite && n.RetiredAt == null && n.DestroyedAt == null
                 )
                 .ToArray()
@@ -179,19 +231,12 @@ internal sealed partial class PirateExplorationStore
         }
     }
 
-    private void FailHack(
-        WorldDbContext world,
-        WorldAction action,
-        CatalogDbContext catalog,
-        SavedExplorationSite site,
-        SavedHackingContainer container,
-        long now
-    )
+    private void FailHack(WorldAction world, CatalogDbContext catalog, SavedExplorationSite site, SavedHackingContainer container, long now)
     {
         container.Failures++;
         if (site.Kind == (int)ExplorationKind.Ghost)
         {
-            Detonate(world, action, catalog, site, Definition(catalog, site), container, now);
+            Detonate(world, catalog, site, Definition(catalog, site), container, now);
         }
         else
         {
@@ -200,8 +245,7 @@ internal sealed partial class PirateExplorationStore
     }
 
     private void Detonate(
-        WorldDbContext world,
-        WorldAction action,
+        WorldAction world,
         CatalogDbContext catalog,
         SavedExplorationSite site,
         ExplorationDefinition profile,
@@ -211,28 +255,15 @@ internal sealed partial class PirateExplorationStore
     {
         var body = Object(catalog, site, container, profile: profile);
         container.Destroyed = true;
-        world.Set<OwnedItem>().Where(i => i.LocationId == container.Id).ExecuteDelete();
-        var attempt = world.Set<SavedHackingAttempt>().SingleOrDefault(a => a.ContainerId == container.Id);
+        world.RemoveRange(world.Filter<OwnedItem>(i => i.LocationId == container.Id).ToArray());
+        var attempt = world.Filter<SavedHackingAttempt>(a => a.ContainerId == container.Id).SingleOrDefault();
         if (attempt is not null && world.Entry(attempt).State != EntityState.Deleted)
         {
             ReleaseModule(world, attempt);
             world.Remove(attempt);
         }
         double range = GhostSiteRules.ExplosionRange;
-        var pilots = world
-            .Pilots.Include(p => p.ActiveShip)
-                .ThenInclude(s => s.Position)
-            .Where(p =>
-                p.ActiveShip.Position != null
-                && (p.ActiveShip.Position.SystemId == site.SystemId || p.ActiveShip.Position.SystemId == null)
-                && p.ActiveShip.Position.X >= body.Position.X - range
-                && p.ActiveShip.Position.X <= body.Position.X + range
-                && p.ActiveShip.Position.Y >= body.Position.Y - range
-                && p.ActiveShip.Position.Y <= body.Position.Y + range
-                && p.ActiveShip.Position.Z >= body.Position.Z - range
-                && p.ActiveShip.Position.Z <= body.Position.Z + range
-            )
-            .ToArray();
+        var pilots = PosedPilots(world, site.SystemId).ToArray();
         var damage = GhostSiteRules.Explosion(profile.Band);
         var attacker = new CombatParty(body.Id, null, 0, profile.FactionId, body.TypeId, body.TypeId, null, 0);
         foreach (var pilot in pilots)
@@ -249,16 +280,16 @@ internal sealed partial class PirateExplorationStore
             long ship = pilot.ActiveShipId;
             if (
                 world.Set<ShipLoss>().Find(ship) is not null
-                || action.Set<ShipLoss>().Local.Any(l => l.PilotId == pilot.Id && l.Time == now)
+                || world.Set<ShipLoss>().Local.Any(l => l.PilotId == pilot.Id && l.Time == now)
             )
             {
                 continue;
             }
-            var defense = ShipHealth.DefenseFrom(PilotFittingStore.ShipAttributes(world, catalog, pilot.Id));
+            var defense = ShipHealth.DefenseFrom(PilotFittingStore.ShipAttributes(world, catalog, pilot));
             var result = PilotHealthStore.Apply(world, ship, defense, damage, now);
-            PilotInteractionHistoryStore.Damage(action, ship, attacker, result.Applied);
+            PilotInteractionHistoryStore.Damage(world, ship, attacker, result.Applied);
             var loss = result.Remaining.Destroyed
-                ? losses.Apply(action, catalog, pilot, ship, site.SystemId, position, now, attacker)
+                ? losses.Apply(world, catalog, pilot, ship, site.SystemId, position, now, attacker)
                 : null;
             DockedPilot? replacement = null;
             if (loss is not null)
@@ -282,7 +313,7 @@ internal sealed partial class PirateExplorationStore
             {
                 InventoryChanges = loss?.Changes ?? [],
             };
-            action.AfterCommit(() => damageEvents.Publish(notification));
+            world.AfterCommit(() => damageEvents.Publish(notification));
         }
     }
 }

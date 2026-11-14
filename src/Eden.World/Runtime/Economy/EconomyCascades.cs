@@ -48,6 +48,16 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Filter<Eden.Data.World.Agents.SavedMissionGateUnlock>(child => child.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Agents.SavedResearchProject>(child => child.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Exploration.SavedDedGateUnlock>(child => child.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Exploration.SavedScanProbe>(child => child.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Exploration.SavedResolvedSignature>(child => child.PilotId == removed.Id));
+                if (Set<Eden.Data.World.Exploration.SavedHackingAttempt>().Find(removed.Id) is { } attempt)
+                {
+                    Remove(attempt);
+                }
+                if (Set<Eden.Data.World.Exploration.SavedProbeScan>().Find(removed.Id) is { } scan)
+                {
+                    Remove(scan);
+                }
                 RemoveRange(Filter<Eden.Data.World.Calendar.SavedCalendarEvent>(c => c.OwnerId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Calendar.SavedCalendarParticipant>(c => c.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Calendar.SavedCalendarChange>(c => c.PilotId == removed.Id));

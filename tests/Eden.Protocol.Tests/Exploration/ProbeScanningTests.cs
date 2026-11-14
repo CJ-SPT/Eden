@@ -553,9 +553,12 @@ public sealed partial class ProbeScanningTests
         Assert.Equal(8, captured.Set<SavedScanProbe>().Count());
         Assert.Equal(scan.ReadyAt, captured.Set<SavedProbeScan>().Single().ReadyAt);
         Assert.Empty(captured.Set<SavedResolvedSignature>());
+        using var metrics = SessionPerformance.Begin("resident probe state", _ => { }, force: true)!;
         Assert.Empty(scanning.List(f.PilotId, site.SystemId, f.Clock.Now));
         Assert.Null(scanning.Pending(f.PilotId));
         Assert.True(scanning.Resolved(f.PilotId, site.Id, site.SystemId, f.Clock.Now));
+        Assert.Equal(0, metrics.Commands);
+        Assert.Equal(0, metrics.Connections);
     }
 
     [Fact]
