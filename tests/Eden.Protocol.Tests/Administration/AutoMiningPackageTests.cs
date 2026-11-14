@@ -25,6 +25,7 @@ public sealed class AutoMiningPackageTests
         var package = ModPackages.Read(archive);
         Assert.Equal(AutoMiningFilter.ModId, package.Manifest.Id);
         Assert.Equal("client/automining.py", package.Manifest.ClientEntry);
+        Assert.Equal("1.1.0", package.Manifest.Version);
         string hash = store.Install(archive);
         store.Enable(hash, true);
         var set = await new ModPublisher(database, store).Build(Environment.GetEnvironmentVariable("EDEN_TEST_CLIENT_ROOT")!);
@@ -41,8 +42,13 @@ public sealed class AutoMiningPackageTests
         Assert.True(runtime.AutoMiningEnabled);
         store.CompleteActivation();
 
+        const long stationId = 60003760;
         var replies = await Exchange("Veldspar");
-        Assert.Equal(["", "Veldspar", "Veldspar"], replies.Select(reply => BlueMarshal.Text(reply["oreFilter"])));
+        Assert.Equal(["", "Veldspar", "Veldspar", "Veldspar"], replies.Select(reply => BlueMarshal.Text(reply["oreFilter"])));
+        Assert.Equal(0L, replies[0]["unloadStation"]);
+        Assert.Equal(95L, replies[0]["unloadThreshold"]);
+        Assert.Equal(stationId, replies[^1]["unloadStation"]);
+        Assert.Equal(80L, replies[^1]["unloadThreshold"]);
         Assert.All(
             replies,
             reply =>
@@ -51,7 +57,10 @@ public sealed class AutoMiningPackageTests
                 Assert.Equal("Stopped", BlueMarshal.Text(reply["status"]));
             }
         );
-        Assert.Equal("Veldspar", BlueMarshal.Text(Assert.Single(await Exchange(null))["oreFilter"]));
+        var reconnected = Assert.Single(await Exchange(null));
+        Assert.Equal("Veldspar", BlueMarshal.Text(reconnected["oreFilter"]));
+        Assert.Equal(stationId, reconnected["unloadStation"]);
+        Assert.Equal(80L, reconnected["unloadThreshold"]);
 
         async Task<List<Dictionary<string, object?>>> Exchange(string? filter)
         {
@@ -65,9 +74,12 @@ public sealed class AutoMiningPackageTests
             if (filter is not null)
             {
                 calls.Enqueue(PilotServicesTests.Request(service, "SaveFilter", [filter]));
+                calls.Enqueue(PilotServicesTests.Request(service, "GetStations", []));
+                calls.Enqueue(PilotServicesTests.Request(service, "SaveHauling", [stationId, 80L]));
                 calls.Enqueue(PilotServicesTests.Request(service, "Stop", []));
             }
             List<Dictionary<string, object?>> result = [];
+            bool listedStations = false;
             await Assert.ThrowsAsync<EndOfStreamException>(() =>
                 session.RunAsync(
                     () => calls.TryDequeue(out var call) ? Task.FromResult(call) : throw new EndOfStreamException(),
@@ -77,12 +89,15 @@ public sealed class AutoMiningPackageTests
                         if (message.Name.EndsWith(".CallRsp", StringComparison.Ordinal))
                         {
                             var body = BlueRead.Tuple(BlueRead.Tuple(message.State, 14)[4], 1);
-                            if (
-                                BlueMarshal.Decode(BlueRead.Bytes(body[0])) is Dictionary<string, object?> status
-                                && status.ContainsKey("running")
-                            )
+                            var value = BlueMarshal.Decode(BlueRead.Bytes(body[0]));
+                            if (value is Dictionary<string, object?> status && status.ContainsKey("running"))
                             {
                                 result.Add(status);
+                            }
+                            else if (value is List<object?> stations)
+                            {
+                                Assert.Contains(stations, entry => Equals(BlueRead.Tuple(entry, 2)[0], stationId));
+                                listedStations = true;
                             }
                         }
                         Assert.False(message.Name.EndsWith(".ErrorResponse", StringComparison.Ordinal));
@@ -95,6 +110,7 @@ public sealed class AutoMiningPackageTests
                     CancellationToken.None
                 )
             );
+            Assert.Equal(filter is not null, listedStations);
             return result;
         }
     }

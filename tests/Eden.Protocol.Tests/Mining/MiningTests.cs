@@ -399,7 +399,8 @@ public sealed partial class MiningTests
             long account = 1000001,
             bool locked = true,
             MiningLaserType laser = MiningLaserType.Civilian,
-            StaticSpaceObject? warpDestination = null
+            StaticSpaceObject? warpDestination = null,
+            SpacePosition? initialPosition = null
         )
         {
             var pilot = Db.Store.FindPilot(account)!;
@@ -424,12 +425,29 @@ public sealed partial class MiningTests
                 account,
                 pilot.Account,
                 [pilot],
-                selected => new(Db.Store, selected, Clock, Space, objects, [new(module, (int)laser, (int)InventoryFlag.HighSlot0)]),
+                selected =>
+                    new(
+                        Db.Store,
+                        selected,
+                        Clock,
+                        Space,
+                        objects,
+                        [new(module, (int)laser, (int)InventoryFlag.HighSlot0)],
+                        docking: Db.Services.GetRequiredService<IStationDocking>()
+                    ),
                 account,
                 SignedSettings.Empty
             );
+            if (initialPosition is { } position)
+            {
+                Db.Store.SetPosition(pilot.ShipId, position);
+                pilot = Db.Store.FindPilot(account)!;
+            }
             context.Select(pilot);
-            _ = context.Flight.CallWire("ship", "Undock", [pilot.ShipId]);
+            if (initialPosition is null)
+            {
+                _ = context.Flight.CallWire("ship", "Undock", [pilot.ShipId]);
+            }
             _ = context.Flight.CallWire("beyonce", "CmdStop", []);
             context.Flight.Snapshot();
             TargetingHandler targeting = new(Clock, fitting, Locks);

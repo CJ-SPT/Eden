@@ -19,6 +19,7 @@ internal static class EconomyOwnership
             SavedMarketPayment payment => payment.PilotId,
             SavedMarketChange change => change.PilotId,
             SavedTaskCounter counter => counter.PilotId,
+            SavedCharacterSetting setting => setting.PilotId,
             SavedCompletedTask task => task.PilotId,
             _ => 0,
         };

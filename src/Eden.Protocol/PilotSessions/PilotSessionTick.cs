@@ -18,7 +18,8 @@ internal sealed class PilotSessionTick(
     Eden.Protocol.Exploration.CombatAnomalyHandler? anomalies = null,
     ICapsuleerHandoff? handoff = null,
     ICapsuleerPresentation? presentation = null,
-    Eden.Gameplay.Structures.IStructureContacts? structures = null
+    Eden.Gameplay.Structures.IStructureContacts? structures = null,
+    Eden.Protocol.Mining.AutoMiningHandler? autoMining = null
 )
 {
     public async Task AdvanceAsync(
@@ -117,6 +118,7 @@ internal sealed class PilotSessionTick(
             using (SessionPerformance.Begin("updates", diagnostics?.Trace ?? report))
             {
                 beforeAttack = updates.Advance(context);
+                autoMining?.Advance(context, sessionTick: true);
             }
         }
         if (handoff is not null)
@@ -132,7 +134,8 @@ internal sealed class PilotSessionTick(
         if (
             beforeAttack is not null
             && (
-                beforeAttack.ShipId != context.Pilot.ShipId
+                beforeAttack.LocationId != context.Pilot.LocationId
+                || beforeAttack.ShipId != context.Pilot.ShipId
                 || beforeAttack.CorpId != context.Pilot.CorpId
                 || beforeAttack.Identity.Fleet != context.Pilot.Identity.Fleet
                 || beforeAttack.Identity.CorporationRoles != context.Pilot.Identity.CorporationRoles

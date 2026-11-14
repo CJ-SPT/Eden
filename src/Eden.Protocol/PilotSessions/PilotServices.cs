@@ -29,7 +29,8 @@ internal sealed class PilotServices(
     SessionDiagnostics? diagnostics = null,
     ICapsuleerHandoff? handoff = null,
     ICapsuleerPresentation? presentation = null,
-    Eden.Modding.IModSessionEvents? modEvents = null
+    Eden.Modding.IModSessionEvents? modEvents = null,
+    Eden.Protocol.Mining.AutoMiningHandler? autoMining = null
 ) : IPilotSession
 {
     public async Task RunAsync(
@@ -74,7 +75,18 @@ internal sealed class PilotServices(
             handoff,
             presentation
         );
-        PilotSessionTick tick = new(clock, updates, skills, asteroids, operations, diagnostics, anomalies, handoff, presentation);
+        PilotSessionTick tick = new(
+            clock,
+            updates,
+            skills,
+            asteroids,
+            operations,
+            diagnostics,
+            anomalies,
+            handoff,
+            presentation,
+            autoMining: autoMining
+        );
         async Task<(object? Packet, long Received)> ReadArrivalAsync()
         {
             var packet = await read();

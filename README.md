@@ -44,7 +44,7 @@ The default data directory is `src/Eden.Server/data` when running from source an
 If you’re keeping an existing world, stop the old server and copy its data before starting the updated server.
 [Save migration guide](docs/development-client.md#moving-an-existing-server)
 
-[AutoMining](docs/modding.md#automining) adds opt-in current-grid ore mining and retargeting through the Eden Mods menu.
+[AutoMining](docs/modding.md#automining) adds opt-in ore mining, retargeting and automatic same-system station hauling through Eden Mods.
 
 ## Build and run
 

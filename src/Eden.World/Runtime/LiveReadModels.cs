@@ -95,6 +95,17 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
     internal IReadOnlyList<AutoMiningModule> AutoMiningModules(long pilot, long ship, Func<IReadOnlyList<AutoMiningModule>> load) =>
         Read(_autoMiningModules, (pilot, ship), load);
 
+    private readonly ResidentSnapshot<(long Pilot, long Ship), AutoMiningHold> _autoMiningHolds = new(
+        "resident.autoMiningHold",
+        "WorldFitRevision",
+        "WorldConfigurationState",
+        "WorldAccount",
+        "WorldItem",
+        "ShipOreHoldContents"
+    );
+
+    internal AutoMiningHold AutoMiningHold(long pilot, long ship, Func<AutoMiningHold> load) => Read(_autoMiningHolds, (pilot, ship), load);
+
     private readonly ResidentSnapshot<int, IReadOnlyList<StaticSpaceObject>> _asteroids = new("resident.asteroids", "WorldAsteroid");
     private readonly ResidentSnapshot<(int System, MiningFamily Family, long Catalog), MiningSiteView> _miningSites = new(
         "resident.miningSites",
@@ -337,6 +348,17 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _listHead.Observe(changes);
         _fits.Observe(changes, (pilot, change) => change.Table == "WorldAccount" || pilot == change.Id);
         _autoMiningModules.Observe(changes, (key, change) => change.Table != "WorldFitRevision" || key.Pilot == change.Id);
+        _autoMiningHolds.Observe(
+            changes,
+            (key, change) =>
+                change.Table switch
+                {
+                    "WorldFitRevision" => key.Pilot == change.Id,
+                    "ShipOreHoldContents" => key.Ship == change.Id,
+                    "WorldItem" => !change.Resident,
+                    _ => true,
+                }
+        );
         ObserveDefenseProfiles(changes);
         if (changes.Any(change => change.Table == "WorldAsteroid" && !MissionMiningRules.IsDeposit(change.Id)))
         {
@@ -382,6 +404,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _defenseProfiles.Clear();
         _asteroids.Clear();
         _autoMiningModules.Clear();
+        _autoMiningHolds.Clear();
         _unfinishedMissiles.Clear();
         _miningSites.Clear();
         _structures.Clear();

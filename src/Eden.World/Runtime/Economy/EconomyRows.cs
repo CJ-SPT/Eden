@@ -845,6 +845,7 @@ internal sealed partial class ResidentEconomy
         RegisterBotTables();
         RegisterCommandBursts();
         RegisterCloneTrainingTables();
+        RegisterCharacterSettings();
         Register(
             new EconomyTable<InventoryOwner, EconomyInventoryOwner>(
                 "WorldInventoryOwner",

@@ -40,6 +40,10 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
 
     public bool IsActive(long module) => _cycles.ContainsKey(module);
 
+    internal int? AutoRepeatThreshold { get; set; }
+
+    internal bool HasManualCycle => _cycles.Values.Any(cycle => !cycle.Automatic);
+
     internal bool IsAutomatic(long module) => _cycles.TryGetValue(module, out var cycle) && cycle.Automatic;
 
     internal bool IsMiningTarget(long target) => _cycles.Values.Any(cycle => cycle.Target == target);
@@ -112,7 +116,13 @@ internal sealed class MiningHandler(TimeProvider clock, IPilotMining mining, Tar
             try
             {
                 var result = Collect(context, cycle, 1, true);
-                if (module != suppressRepeat && cycle.Repeats > 0 && !result.Depleted && !result.CargoFull)
+                if (
+                    module != suppressRepeat
+                    && cycle.Repeats > 0
+                    && !result.Depleted
+                    && !result.CargoFull
+                    && (!cycle.Automatic || AutoRepeatThreshold is not int threshold || !result.HoldFill.Reached(threshold))
+                )
                 {
                     Start(context, module, cycle.Target, cycle.Repeats - 1, cycle);
                 }

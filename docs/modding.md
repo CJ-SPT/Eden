@@ -40,12 +40,18 @@ dotnet run --project src/Eden.Server -- --mod-build E:\EdenDev\3662168
 ```
 
 Use the hash printed by install. Append the same `--world PATH` to all four commands for a nondefault world.
+When upgrading from AutoMining 1.0.0, use a fresh export path and disable the old package hash before enabling 1.1.0.
 Restart Eden, then launch through Eden Launcher to receive the active mod set. In space, open **Eden Mods →
 AutoMining** from the Neocom context menu. Enter comma-separated ore group names such as `Veldspar, Scordite`,
 or leave the field empty for all supported ore. Select **Save Filter**, then **Start**. The filter is saved for the
 selected character. **Stop** ends the automated run, and the panel displays changes in run status.
 
-See the [AutoMining protocol record](protocol/industry.md#automining-the-current-grid) for cycle behavior.
+To haul automatically, choose an **Unload station** in your current system and select **Save Hauling**. The default
+threshold is **95%**. At the threshold, or when the next eligible unit will not fit, AutoMining docks, moves ore to
+your personal Item Hangar, undocks, and returns to its saved mining position. **Keep ore on board** disables hauling.
+
+See the protocol records for [mining cycles](protocol/industry.md#automining-the-current-grid) and
+[automatic station hauling](protocol/industry.md#automining-station-hauling).
 
 ## Identity and persistence
 

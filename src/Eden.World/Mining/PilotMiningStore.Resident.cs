@@ -309,13 +309,8 @@ internal sealed partial class PilotMiningStore
         {
             throw new InvalidDataException("Invalid ore volume.");
         }
-        var collected = MiningRules.Collect(
-            asteroid.Quantity,
-            Available(world, catalog, pilotId, pilot.ActiveShipId, capacity, hold),
-            oreVolume,
-            laser,
-            collection
-        );
+        double available = Available(world, catalog, pilotId, pilot.ActiveShipId, capacity, hold);
+        var collected = MiningRules.Collect(asteroid.Quantity, available, oreVolume, laser, collection);
         Magazine? crystalState = null;
         if (PilotAmmunitionStore.Contents(world, moduleId) is { } crystal)
         {
@@ -380,7 +375,17 @@ internal sealed partial class PilotMiningStore
             }
             world.SaveChanges();
         }
-        return new(change, asteroid.TypeId, extracted, bonus, collected.Residue, depleted, collected.CargoFull, crystalState);
+        return new(
+            change,
+            asteroid.TypeId,
+            extracted,
+            bonus,
+            collected.Residue,
+            depleted,
+            collected.CargoFull,
+            crystalState,
+            new(capacity, capacity - available + (extracted + bonus) * oreVolume)
+        );
     }
 
     internal static void Stop(WorldAction world, long pilotId, long moduleId, long expectedCompletesAt)

@@ -38,6 +38,11 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
 
     public void SetPosition(long shipId, SpacePosition? position, int? systemId = null)
     {
+        if (LiveWorld.Find(_database.Path) is { } live)
+        {
+            SetResidentPosition(live, shipId, position, systemId);
+            return;
+        }
         using WorldDbContext world = new(_database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(_database.CatalogPath);
@@ -140,6 +145,15 @@ public sealed partial class SqliteWorld : IDockedWorld, IStationDocking, ISystem
 
     public DockedPilot Dock(long pilotId, long shipId, long stationId)
     {
+        if (stationId is > 0 and <= int.MaxValue && LiveWorld.Find(_database.Path) is { } live)
+        {
+            using CatalogDbContext source = new(_database.CatalogPath);
+            using var action = live.Economy.Begin(new(pilots: [pilotId], ships: [shipId]));
+            var docked = Dock(action, source, pilotId, shipId, (int)stationId);
+            action.Commit();
+            live.Heat.ClearSelection(pilotId, shipId);
+            return docked;
+        }
         using WorldDbContext world = new(_database.Path);
         using var transaction = world.Database.BeginTransaction();
         using CatalogDbContext catalog = new(_database.CatalogPath);

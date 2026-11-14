@@ -14,7 +14,12 @@ using Eden.World.Storage;
 namespace Eden.World.Mining;
 
 [Injectable]
-internal sealed class PilotAutoMiningStore(WorldDatabase database, IPilotCharacterSettings settings) : IPilotAutoMining
+internal sealed partial class PilotAutoMiningStore(
+    WorldDatabase database,
+    IPilotCharacterSettings settings,
+    IPilotFitting fitting,
+    TimeProvider clock
+) : IPilotAutoMining, IPilotAutoMiningHauling
 {
     private const string FilterKey = "eden.automining.oreFilter";
 

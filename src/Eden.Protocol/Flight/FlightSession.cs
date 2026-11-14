@@ -129,6 +129,15 @@ internal sealed partial class FlightSession(
     }
 
     internal bool PreparingWarp => _navigation.WarpDestination is not null;
+    internal long PilotNavigationRevision { get; private set; }
+
+    internal StaticSpaceObject? LocalStation(long id) =>
+        Scene.Objects.FirstOrDefault(body => body.Id == id && body.CategoryId == (int)InventoryCategory.Station);
+
+    internal bool NearEnoughToDock(StaticSpaceObject station) =>
+        Pilot.Position is { } position
+        && position.DistanceTo(station.Position) <= station.Radius + Pilot.Flight.ShipRadius + DockingDefinitions.MaximumRange;
+
     public bool MicrowarpdriveBlocked => ModuleEffects.MwdBlocked;
 
     // Pinned shieldBoosting effect 4 is warp-safe. Gate/session transitions and
@@ -951,6 +960,7 @@ internal sealed partial class FlightSession(
             return departure.Result;
         }
         // Keep the source scene alive for the camera handoff before transferring the pilot.
+        PilotNavigationRevision++;
         _travel.BeginGate(transit, Stamp, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
         drones?.Release(Pilot.PilotId, Pilot.ShipId);
@@ -972,6 +982,7 @@ internal sealed partial class FlightSession(
         }
         var destination = travel.Prepare(Pilot.PilotId, Pilot.ShipId, entrance);
         var objects = systems.Load(destination.System.Id);
+        PilotNavigationRevision++;
         _travel.BeginGate(
             new(entrance, destination.Exit, destination.System, objects, travel),
             Stamp,
@@ -1134,13 +1145,18 @@ internal sealed partial class FlightSession(
         return PilotCallResult.None;
     }
 
-    public PilotCallResult Execute(FlightCommand command)
+    public PilotCallResult Execute(FlightCommand command, bool automatic = false)
     {
         using (space.UseSystem(Pilot.SystemId))
         {
             try
             {
-                return ExecuteCommand(command);
+                var result = ExecuteCommand(command);
+                if (!automatic && command is not FlightCommand.RefreshState && result is PilotCallResult.Success)
+                {
+                    PilotNavigationRevision++;
+                }
+                return result;
             }
             finally
             {
@@ -1176,7 +1192,7 @@ internal sealed partial class FlightSession(
             _navigation.SetVelocity(launch.Velocity);
             return PilotCallResult.None;
         }
-        if (command is FlightCommand.Undock || Pilot.Position is not { } position)
+        if (command is FlightCommand.Undock || Pilot.Position is null)
         {
             return PilotCallResult.Unsupported;
         }
@@ -1298,11 +1314,9 @@ internal sealed partial class FlightSession(
                 {
                     return denied;
                 }
-                position = Pilot.Position!;
                 if (
-                    position.DistanceTo(destination.Position)
-                        > destination.Radius + Pilot.Flight.ShipRadius + DockingDefinitions.MaximumRange
-                    || (docking is null && (station != Pilot.StationId || Pilot.SystemId != Pilot.HomeSystemId))
+                    !NearEnoughToDock(destination)
+                    || docking is null && (station != Pilot.StationId || Pilot.SystemId != Pilot.HomeSystemId)
                 )
                 {
                     return PilotCallResult.Unsupported;

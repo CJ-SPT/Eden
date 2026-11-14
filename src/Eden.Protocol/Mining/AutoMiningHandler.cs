@@ -1,4 +1,5 @@
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Registration;
@@ -10,13 +11,14 @@ using Eden.Protocol.Targeting;
 namespace Eden.Protocol.Mining;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class AutoMiningHandler(
+internal sealed partial class AutoMiningHandler(
     TimeProvider clock,
     IPilotAutoMining store,
     IPilotFitting fitting,
     TargetingHandler targeting,
     MiningHandler mining,
-    IAutoMiningAvailability? availability = null
+    IAutoMiningAvailability? availability = null,
+    IPilotAutoMiningHauling? hauling = null
 ) : ISelectedPilotCallHandler
 {
     internal const string Service = "edenAutoMining";
@@ -38,7 +40,7 @@ internal sealed class AutoMiningHandler(
         Dictionary<string, object?>? keywords = null
     )
     {
-        if (service != Service || method is not ("Start" or "Stop" or "GetStatus" or "SaveFilter"))
+        if (service != Service || method is not ("Start" or "Stop" or "GetStatus" or "SaveFilter" or "GetStations" or "SaveHauling"))
         {
             return PilotCallResult.Unsupported;
         }
@@ -48,7 +50,13 @@ internal sealed class AutoMiningHandler(
         }
         try
         {
-            if (keywords is { Count: > 0 } || (method == "SaveFilter" ? args is not [string or byte[]] : args.Length != 0))
+            bool validArguments = method switch
+            {
+                "SaveFilter" => args is [string or byte[]],
+                "SaveHauling" => args is [long, long and >= int.MinValue and <= int.MaxValue],
+                _ => args.Length == 0,
+            };
+            if (keywords is { Count: > 0 } || !validArguments)
             {
                 return new PilotCallResult.Failure("Invalid AutoMining arguments.");
             }
@@ -57,12 +65,30 @@ internal sealed class AutoMiningHandler(
             {
                 _pilotId = context.Pilot.PilotId;
                 _filter = null;
+                _haulSettings = null;
                 _status = "Stopped";
             }
             _filter ??= store.ReadFilter(_pilotId);
+            _haulSettings ??= hauling?.ReadHauling(_pilotId) ?? AutoMiningHaulSettings.Disabled;
             switch (method)
             {
+                case "GetStations":
+                    return new AutoMiningStations(hauling?.Stations(context.Pilot.SystemId) ?? []);
+                case "SaveHauling":
+                    if (hauling is null)
+                    {
+                        return new PilotCallResult.Failure("AutoMining hauling is unavailable.");
+                    }
+                    var settings = new AutoMiningHaulSettings((long)args[0]!, checked((int)(long)args[1]!));
+                    hauling.SaveHauling(_pilotId, context.Pilot.SystemId, settings);
+                    _haulSettings = settings;
+                    mining.AutoRepeatThreshold = _flight is not null && settings.Enabled ? settings.Threshold : null;
+                    break;
                 case "Start":
+                    if (_trip is not null)
+                    {
+                        break;
+                    }
                     context.Flight.Checkpoint();
                     CheckFlight(context);
                     if (!CanRun(context.Flight))
@@ -76,10 +102,17 @@ internal sealed class AutoMiningHandler(
                     _flight = context.Flight;
                     _ship = context.Pilot.ShipId;
                     _system = context.Pilot.SystemId;
+                    _navigationRevision = _flight.PilotNavigationRevision;
+                    _miningOrigin = null;
+                    mining.AutoRepeatThreshold = _haulSettings.Enabled ? _haulSettings.Threshold : null;
                     mining.ResetManualStops();
                     targeting.ResetAutoMiningExclusions();
                     _nextDecision = clock.GetTimestamp();
                     targeting.Advance(context);
+                    if (_haulSettings.Enabled)
+                    {
+                        UpdateStatus(context, "Starting AutoMining");
+                    }
                     Advance(context);
                     break;
                 case "Stop":
@@ -89,6 +122,10 @@ internal sealed class AutoMiningHandler(
                         CheckFlight(context);
                         targeting.Advance(context);
                     }
+                    if (_trip is not null && context.Pilot.Position is not null)
+                    {
+                        _ = context.Flight.Execute(new FlightCommand.Stop(), automatic: true);
+                    }
                     Cancel(context, "Stopped", settleDue: true);
                     break;
                 case "SaveFilter":
@@ -96,7 +133,7 @@ internal sealed class AutoMiningHandler(
                     store.SaveFilter(_pilotId, filter);
                     bool changed = filter.Text != _filter.Text;
                     _filter = filter;
-                    if (_flight is not null && changed)
+                    if (_flight is not null && _trip is null && changed)
                     {
                         context.Flight.Checkpoint();
                         CheckFlight(context);
@@ -111,7 +148,7 @@ internal sealed class AutoMiningHandler(
                     }
                     break;
             }
-            return new AutoMiningStatus(_flight is not null, _status, _filter.Text);
+            return new AutoMiningStatus(_flight is not null, _status, _filter.Text, _haulSettings);
         }
         catch (InvalidDataException error)
         {
@@ -121,17 +158,30 @@ internal sealed class AutoMiningHandler(
 
     public void CheckFlight(PilotCallContext context)
     {
-        if (
-            _flight is not null
-            && (
-                !ReferenceEquals(context.ActiveFlight, _flight)
-                || context.Pilot.ShipId != _ship
-                || context.Pilot.SystemId != _system
-                || !CanRun(_flight)
-            )
-        )
+        if (_flight is not { } flight)
+        {
+            return;
+        }
+        if (!ReferenceEquals(context.ActiveFlight, flight) || context.Pilot.ShipId != _ship || context.Pilot.SystemId != _system)
+        {
+            Cancel(context, "Stopped after changing ship or system");
+        }
+        else if (_trip is not null && _navigationRevision != flight.PilotNavigationRevision)
+        {
+            Cancel(context, "Stopped for manual navigation");
+        }
+        else if (_trip is null && !CanRun(flight))
         {
             Cancel(context, "Stopped after leaving the grid or losing targeting");
+        }
+        else if (_trip is not null && (flight.Translocating || flight.Cloaked || flight.MicroJumpSpooling))
+        {
+            Cancel(context, "Stopped after a manual ship maneuver");
+        }
+        else if (_navigationRevision != flight.PilotNavigationRevision)
+        {
+            _navigationRevision = flight.PilotNavigationRevision;
+            _miningOrigin = null;
         }
     }
 
@@ -149,17 +199,45 @@ internal sealed class AutoMiningHandler(
             mining.ResetManualStops();
             targeting.ResetAutoMiningExclusions();
             _flight = null;
+            _trip = null;
+            _miningOrigin = null;
+            mining.AutoRepeatThreshold = null;
         }
         UpdateStatus(context, status);
     }
 
-    public void Advance(PilotCallContext context)
+    public void Advance(PilotCallContext context, bool sessionTick = false)
     {
         CheckFlight(context);
+        if (_trip is not null)
+        {
+            if (sessionTick)
+            {
+                AdvanceHaul(context);
+            }
+            return;
+        }
         if (_flight is null || clock.GetTimestamp() < _nextDecision)
         {
             return;
         }
+        if (_haulSettings is { Enabled: true })
+        {
+            if (!sessionTick)
+            {
+                return;
+            }
+            if (TryBeginHaul(context))
+            {
+                return;
+            }
+        }
+        else if (sessionTick)
+        {
+            // The RPC and tick coordinators already advance ordinary grid mining.
+            return;
+        }
+
         var modules = store.Modules(_pilotId, _ship);
         var idle = modules.Where(module => !mining.IsActive(module.Id) && !mining.WasManuallyStopped(module.Id)).ToArray();
         if (idle.Length == 0)
@@ -240,7 +318,10 @@ internal sealed class AutoMiningHandler(
         }
         else if (holdFull)
         {
-            SetStatus(context, "Ore hold is full", s_blockedInterval);
+            if (!sessionTick || !TryBeginHaul(context, unitDoesNotFit: true))
+            {
+                SetStatus(context, "Ore hold has no room for another unit", s_blockedInterval);
+            }
         }
         else
         {
@@ -272,7 +353,18 @@ internal sealed record AutoMiningStatusChanged(string Status) : PilotNotificatio
     public override object?[] Arguments => [new BlueUnicode(Status)];
 }
 
-internal sealed record AutoMiningStatus(bool Running, string Status, string OreFilter) : BlueModel
+internal sealed record AutoMiningStations(IReadOnlyList<AutoMiningStation> Stations) : BlueModel
+{
+    public override object ToBlue() =>
+        new BlueList<AutoMiningStationRow>(Stations.Select(station => new AutoMiningStationRow(station)).ToArray());
+}
+
+internal sealed record AutoMiningStationRow(AutoMiningStation Station) : BlueModel
+{
+    public override object ToBlue() => new object[] { Station.Id, new BlueUnicode(Station.Name) };
+}
+
+internal sealed record AutoMiningStatus(bool Running, string Status, string OreFilter, AutoMiningHaulSettings Hauling) : BlueModel
 {
     public override object ToBlue() =>
         new Dictionary<string, object?>
@@ -280,5 +372,7 @@ internal sealed record AutoMiningStatus(bool Running, string Status, string OreF
             ["running"] = Running,
             ["status"] = new BlueUnicode(Status),
             ["oreFilter"] = new BlueUnicode(OreFilter),
+            ["unloadStation"] = Hauling.StationId,
+            ["unloadThreshold"] = Hauling.Threshold,
         };
 }

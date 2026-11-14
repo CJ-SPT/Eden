@@ -1,6 +1,8 @@
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Skills;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Server;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,6 +37,37 @@ public sealed class CharacterSettingsTests
         Assert.Equal("Wing", Assert.IsType<CharacterSettingValue.Text>(Assert.Single(saved.Read(WingId)).Value).Value);
         WorldInitialization.Open(db.Path);
         Assert.Equal("overview", Assert.Single(saved.Read(PilotId)).Key);
+    }
+
+    [Fact]
+    public void ResidentSettingsCommitBinaryTextAndDeletionThroughCheckpoint()
+    {
+        using TestWorld db = new(liveWorld: true);
+        var live = LiveWorld.Find(db.Path)!;
+        live.Economy.Warm();
+        var settings = db.Services.GetRequiredService<IPilotCharacterSettings>();
+        using (var metrics = SessionPerformance.Begin("resident settings", _ => { }, force: true)!)
+        {
+            settings.Save(PilotId, new("text", new CharacterSettingValue.Text("検証")));
+            settings.Save(PilotId, new("binary", new CharacterSettingValue.Binary([0, 255, 128])));
+            settings.Save(PilotId, new("empty", new CharacterSettingValue.Binary([])));
+            settings.Save(PilotId, new("removed", new CharacterSettingValue.Text("delete")));
+            settings.Delete(PilotId, "removed");
+            Assert.Equal(3, settings.Read(PilotId).Count);
+            Assert.Equal(0, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+        }
+        live.Dispose();
+
+        using var reopened = new LiveWorld(new(db.Path), TimeProvider.System);
+        Assert.Equal("検証", Assert.IsType<CharacterSettingValue.Text>(settings.Read(PilotId, "text")!.Value).Value);
+        Assert.Equal(
+            new byte[] { 0, 255, 128 },
+            Assert.IsType<CharacterSettingValue.Binary>(settings.Read(PilotId, "binary")!.Value).Value
+        );
+        Assert.Empty(Assert.IsType<CharacterSettingValue.Binary>(settings.Read(PilotId, "empty")!.Value).Value);
+        Assert.Null(settings.Read(PilotId, "removed"));
+        Assert.Empty(settings.Read(WingId));
     }
 
     [Fact]

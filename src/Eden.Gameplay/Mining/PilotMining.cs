@@ -42,7 +42,8 @@ public sealed record MiningYield(
     int Residue,
     bool Depleted,
     bool CargoFull,
-    Magazine? Crystal = null
+    Magazine? Crystal = null,
+    MiningHoldFill HoldFill = default
 );
 
 public interface IPilotMining

@@ -219,6 +219,7 @@ records the first gas-resource cohort, native targeting/mining and persistent si
 
 [AutoMining the current grid](protocol/industry.md#automining-the-current-grid) covers the Eden Mods panel,
 per-character ore filters, target selection and paid cycle ownership.
+[AutoMining station hauling](protocol/industry.md#automining-station-hauling) records the resident unload-and-return loop.
 
 [Modulated ore mining and crystals, November 9, 2026](protocol/industry.md#modulated-ore-mining-and-crystals-november-9-2026)
 records loaded-crystal modifiers, target compatibility, persistent wear and native shattering updates.

@@ -119,6 +119,61 @@ Not performed; agent client testing is disabled. The pinned archive checks compi
 
 Open AutoMining through Eden Mods, save a filter, and verify the status, beam and target change when the first rock depletes.
 
+## AutoMining station hauling
+
+The **Unload station** list contains NPC stations in the current system. **Save Hauling** stores that station and a
+whole-number threshold from 1 to 100 percent on the selected character. The default is 95 percent. Selecting
+**Keep ore on board** disables hauling. Changes saved during a trip apply to subsequent trips.
+
+The live world uses the same ore-hold selection and capacity rules as manual mining. Reaching the threshold stops
+automatic repeats after a paid cycle. A hold with ore aboard and too little room for the next eligible unit can also
+trigger a trip below the threshold. The unload transaction moves only ore from the active mining destination hold into
+the pilot's Item Hangar. The trip waits for an active manual mining cycle to stop before departing.
+
+The session issues regular flight commands for warp, approach, dock, undock and return. It publishes the normal
+session changes and waits for the native flight binding after undock before issuing the return order. It retains the
+mining origin across trips. Manual movement during mining allows the next trip to choose a new origin, and accepted
+manual navigation during hauling ends the run. Docking and transfer rejections pause the run and display the reason.
+After returning, AutoMining checks for matching ore within mining range before resuming.
+
+Hold observations, NPC-station docking, the undock position, character settings and inventory transfers use the
+resident world during live sessions. SQLite receives detached checkpoint projections. The client panel is bundled as
+AutoMining 1.1.0. Inert inspection of build 3662168 confirmed `GameUI.OnSessionChanged` activates the station and
+inflight views, Michelle owns the ballpark, and the bundled station picker uses `carbonui.control.combo.Combo`.
+Original archive SHA-256: `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`.
+
+The fixed origin and resumed mining were compared with upstream v1.2.27 source at
+`0986770cbc186287e9e72c0eb2377fcf1c670c89` and its earlier hauling release. Carbon Destiny remains the reference
+for movement, and Eden retains its existing warp calculations.
+[Upstream hauling](https://github.com/V0nCleef/EveJS-Automining/blob/v1.2.27/lib/hauling.js) ·
+[Upstream return qualification](https://github.com/V0nCleef/EveJS-Automining/releases/tag/v1.2.23) ·
+[EVE University mining](https://wiki.eveuniversity.org/Mining#Mining_mechanics) ·
+[EVE University timers](https://wiki.eveuniversity.org/Timers#Session_Change_Timer) ·
+[Carbon Destiny](https://github.com/carbonengine/destiny/tree/27ee40b38a563d29054b32f64c3ebc87fabaec1f)
+
+### Automated validation
+
+The final resident implementation built with zero warnings or errors in 6.54 seconds. The focused .NET run passed
+223 cases in 2 minutes 45 seconds. Three two-trip cases exercise the threshold and the next-unit capacity boundary,
+including the 100-percent setting. They verify station and space session changes, waiting for the native bind, ore and
+ledger conservation, and reopened settings and inventory. Other cases cover manual navigation, a rejected transfer,
+a depleted return site and resident character-setting projection and reopen. Warmed hold reads issued zero SQL commands,
+opened zero connections and performed zero fit calculations. Both Python policy suites passed (8 and 9 tests).
+
+The final filter matched these fully qualified name substrings: `MiningTests.AutoMining`,
+`MiningTests.SkillPointCallWithDueMiningCycle`, `MiningMissionTests`, `AutoMiningPackageTests`,
+`ModRuntimeTests`, `ModLauncherApiTests`, `FlightSessionTests`, `StationUndockTests`, `AutoNavigationTests`,
+`TranslocationTests`, `PilotServicesTests`, `CharacterLogoffTests`, `CharacterSettingsTests`,
+`CharacterSettingsServiceTests`, `PilotInventoryTests` and `GameplayDependenciesTests`.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. The pinned archive test compiles the panel without starting the game.
+
+### Optional maintainer checks
+
+Choose a station in the panel, then watch one unload and return cycle through the station and in-flight views.
+
 ## Deep-core mining and Morphite
 
 The three Mercoxit variants in the pinned belt catalog require a deep-core module. The static Deep Core Mining Laser I,

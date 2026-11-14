@@ -218,7 +218,7 @@ internal sealed partial class PilotMiningStore(WorldDatabase database, TimeProvi
         return new(pilot, asteroid, laser, ship);
     }
 
-    private static InventoryFlag OreHold(CatalogDbContext catalog, int hull, MiningFamily family) =>
+    internal static InventoryFlag OreHold(CatalogDbContext catalog, int hull, MiningFamily family) =>
         family == MiningFamily.Gas && PilotInventoryStore.HoldCapacity(catalog, hull, (int)InventoryFlag.GasHold) > 0
             ? InventoryFlag.GasHold
         : family == MiningFamily.Ice && PilotInventoryStore.HoldCapacity(catalog, hull, (int)InventoryFlag.IceHold) > 0
@@ -379,13 +379,8 @@ internal sealed partial class PilotMiningStore(WorldDatabase database, TimeProvi
         {
             throw new InvalidDataException("Invalid ore volume.");
         }
-        var collected = MiningRules.Collect(
-            asteroid.Quantity,
-            Available(world, catalog, pilotId, pilot.ActiveShipId, capacity, hold),
-            oreVolume,
-            laser,
-            collection
-        );
+        double available = Available(world, catalog, pilotId, pilot.ActiveShipId, capacity, hold);
+        var collected = MiningRules.Collect(asteroid.Quantity, available, oreVolume, laser, collection);
         Magazine? crystalState = null;
         if (PilotAmmunitionStore.Contents(world, moduleId) is { } crystal)
         {
@@ -454,7 +449,17 @@ internal sealed partial class PilotMiningStore(WorldDatabase database, TimeProvi
             }
             world.SaveChanges();
         }
-        return new(change, asteroid.TypeId, extracted, bonus, collected.Residue, depleted, collected.CargoFull, crystalState);
+        return new(
+            change,
+            asteroid.TypeId,
+            extracted,
+            bonus,
+            collected.Residue,
+            depleted,
+            collected.CargoFull,
+            crystalState,
+            new(capacity, capacity - available + (extracted + bonus) * oreVolume)
+        );
     }
 
     public void Stop(long pilotId, long moduleId, long expectedCompletesAt)

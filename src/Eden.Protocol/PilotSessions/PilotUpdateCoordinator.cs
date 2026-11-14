@@ -95,7 +95,8 @@ internal sealed class PilotUpdateCoordinator(
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
     public bool IsMonitoring =>
-        hacking?.IsMonitoring == true
+        autoMining?.IsHauling == true
+        || hacking?.IsMonitoring == true
         || overload.IsMonitoring
         || corporations.IsMonitoring
         || fleets.IsMonitoring
