@@ -67,7 +67,7 @@ internal sealed record ShipLabelChanged(long ShipId, string Label) : PilotNotifi
     public override object?[] Arguments => ["evelocations", new List<object?> { ShipId, new BlueUnicode(Label), null, 0d, 0d, 0d, null }];
 }
 
-internal sealed record LocationRow(long Id, string Name, int SystemId, double X, double Y, double Z) : BlueModel
+internal sealed record LocationRow(long Id, string? Name, int? SystemId, double X, double Y, double Z) : BlueModel
 {
     public override object ToBlue() => new object?[] { Id, Name, SystemId, X, Y, Z, null };
 }
