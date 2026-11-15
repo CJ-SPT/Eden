@@ -3,9 +3,11 @@ using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Corporations;
 using Eden.Gameplay.Corporations;
+using Eden.Gameplay.Mail;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
+using Eden.World.Mail;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -164,6 +166,7 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
         if (update.Status == CorporationApplicationStatus.Joined)
         {
             Move(world, pilot, corporation.Id, Now);
+            DeliverWelcomeMail(world, pilot.Id, corporation, Now);
         }
         application.Status = update.Status;
         // A recruiter cannot replace the applicant's statement while sending an offer or rejection.
@@ -306,6 +309,22 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
         {
             world.Add(new SavedCorporationChange { PilotId = recipient, MembershipJson = JsonSerializer.Serialize(change) });
         }
+    }
+
+    private static void DeliverWelcomeMail(WorldAction world, long pilotId, SavedCorporation joined, long now)
+    {
+        var welcome = joined.Snapshot(0).Details.Communications?.WelcomeMail;
+        string body = welcome?.Body ?? "";
+        long sender = welcome?.EditorId is long editor && world.PilotExists(editor) ? editor : joined.CeoId;
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            body = $"Welcome to {joined.Name}.";
+        }
+        PilotMailStore.Deliver(
+            world,
+            new(sender, sender, new MailDraft([pilotId], $"Welcome to {joined.Name}", body, null, null), [pilotId], now, Automated: true),
+            Guid.Empty
+        );
     }
 
     internal static void WithdrawOtherApplications(WorldAction world, long pilotId, long? keepId, long now)

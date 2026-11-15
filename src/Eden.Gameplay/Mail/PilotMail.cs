@@ -127,13 +127,18 @@ public static partial class MailRules
         {
             throw new InvalidDataException("Mail subjects need 1 to 150 characters.");
         }
-        if (draft.Body.Length > MaximumTaggedBody || Tags().Replace(draft.Body, "").Length > MaximumBody || draft.Body.Contains('\0'))
-        {
-            throw new InvalidDataException("Mail exceeds the body size limit.");
-        }
+        Body(draft.Body);
         if (draft.ReplyTo <= 0 || draft.ForwardedFrom <= 0 || (draft.ReplyTo.HasValue && draft.ForwardedFrom.HasValue))
         {
             throw new InvalidDataException("Choose one valid reply or forward source.");
+        }
+    }
+
+    public static void Body(string body)
+    {
+        if (body.Length > MaximumTaggedBody || Tags().Replace(body, "").Length > MaximumBody || body.Contains('\0'))
+        {
+            throw new InvalidDataException("Mail exceeds the body size limit.");
         }
     }
 

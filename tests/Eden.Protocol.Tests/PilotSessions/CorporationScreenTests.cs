@@ -55,7 +55,7 @@ public sealed class CorporationScreenTests
     [InlineData(true)]
     public async Task OpportunitiesReadsTheNativeUnenlistedTuple(bool playerCorporation)
     {
-        using TestWorld db = new();
+        using TestWorld db = new(liveWorld: true);
         if (playerCorporation)
         {
             PlayerCorporationTests.Prepare(db);
@@ -115,7 +115,7 @@ public sealed class CorporationScreenTests
     [InlineData(true)]
     public async Task DetailsStartupRoutesTheNativeEnlistmentQueryAndItsSurroundingReads(bool playerCorporation)
     {
-        using TestWorld db = new();
+        using TestWorld db = new(liveWorld: true);
         using (CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true))
         {
             catalog.Database.ExecuteSqlRaw(
@@ -179,7 +179,7 @@ public sealed class CorporationScreenTests
     [InlineData(true)]
     public void EnlistmentReadRequiresSelectionAndValidArgumentsWithoutEnablingFactionWarfare(bool playerCorporation)
     {
-        using TestWorld db = new();
+        using TestWorld db = new(liveWorld: true);
         if (playerCorporation)
         {
             PlayerCorporationTests.Prepare(db);
@@ -227,7 +227,7 @@ public sealed class CorporationScreenTests
     [InlineData(true)]
     public async Task WindowVotingCapabilityReturnsNativeFalseOnRepeatedOpensForNpcMembersAndPlayerCeos(bool playerCorporation)
     {
-        using TestWorld db = new();
+        using TestWorld db = new(liveWorld: true);
         if (playerCorporation)
         {
             PlayerCorporationTests.Prepare(db);
@@ -279,7 +279,7 @@ public sealed class CorporationScreenTests
     [InlineData(true)]
     public void VotingCapabilityRequiresSelectionAndValidArgumentsAndDoesNotEnableVoteOperations(bool playerCorporation)
     {
-        using TestWorld db = new();
+        using TestWorld db = new(liveWorld: true);
         if (playerCorporation)
         {
             PlayerCorporationTests.Prepare(db);

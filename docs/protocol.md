@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Corporation bulletins and welcome mail](protocol/corporations.md#bulletins-and-welcome-mail-november-14-2026)
+records saved communications, delegated permissions and atomic welcome delivery.
+
 [Corporation title row decoding](protocol/corporations.md#corporation-title-row-decoding-november-14-2026)
 records the captured GetTitles failure and native new-style row correction.
 

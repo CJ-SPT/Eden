@@ -281,7 +281,7 @@ public sealed class CorporationRoleTests
     [Fact]
     public async Task RoleRefreshPreservesTheCurrentCorporationBindingAndAnnouncesScopedSessionFields()
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         int id = CorporationAdministrationTests.CreateAndJoin(world);
         var roles = world.Services.GetRequiredService<ICorporationRoles>();
         using var scope = world.Services.CreateScope();
@@ -302,6 +302,10 @@ public sealed class CorporationRoleTests
                         if (++read == 3)
                         {
                             roles.UpdateMembers(90000001, [Update(90000002, new(RolesAtHQ: (long)CorporationRole.HangarCanQuery1))]);
+                            Assert.Equal(
+                                (long)CorporationRole.HangarCanQuery1,
+                                world.Services.GetRequiredService<IPlayerCorporations>().Identity(90000002).Access?.Roles.RolesAtHQ
+                            );
                         }
                         return input.TryDequeue(out var packet) ? Task.FromResult(packet) : throw new EndOfStreamException();
                     },

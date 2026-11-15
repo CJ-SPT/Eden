@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Bulletins and welcome mail, November 14, 2026](#bulletins-and-welcome-mail-november-14-2026)
 - [Corporation title row decoding, November 14, 2026](#corporation-title-row-decoding-november-14-2026)
 - [Corporation construction failure capture, November 14, 2026](#corporation-construction-failure-capture-november-14-2026)
 - [Direct invitations and corporation window reads, November 14, 2026](#direct-invitations-and-corporation-window-reads-november-14-2026)
@@ -34,6 +35,48 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Corporation window voting-capability startup correction](#corporation-window-voting-capability-startup-correction)
 - [Player corporation applications and membership](#player-corporation-applications-and-membership)
 - [Player corporations: creation foundation](#player-corporations-creation-foundation)
+
+## Bulletins and welcome mail, November 14, 2026
+
+The maintainer confirmed that the title-row correction allows Corporation to load, and requested completion of standalone
+corporation features. Alliances and wars remain separate. The first completion milestone implements `GetBulletins`,
+`AddBulletin`, `DeleteBulletin`, `UpdateBulletinOrder`, `GetCorpWelcomeMail` and `SetCorpWelcomeMail`.
+
+Bulletins use native DBRow replies, the pinned ten-bulletin limit, 100-character titles and 4,000-character bodies.
+Editing passes `bulletinID` and `editDateTime` as keywords to `AddBulletin`; stale revisions, missing IDs and incomplete or
+duplicate ordering lists are rejected without changes. Editing timestamps advance even within the same clock tick.
+Communications Officers (`ChatManager`), Directors and CEOs manage bulletins. Personnel Managers, Directors and CEOs edit
+welcome mail, which uses native tagged/plain mail-body limits and `OnCorporationWelcomeMailChanged` cache invalidation.
+Bulletin edits follow the native initiating client's `RefreshBulletins`; other clients retain the native 15-minute cache.
+
+Bounded communication state is typed within the existing saved corporation details, so old saves default to empty
+bulletins and welcome-mail settings without a schema migration. Operations use the resident world transaction and existing
+checkpoint projection. Joining delivers one automated mail from the last editor (or current CEO if unavailable) and a sent
+copy in the same transaction as membership; an unset body uses a short standard welcome. Rejected or repeated acceptance cannot produce extra mail. Renaming or editing
+other corporation settings preserves communication state.
+
+Sources: build 3662168 archive SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**,
+`base_corporation.GetBulletins/AddBulletin/UpdateBulletin`, `corp_ui_bulletins.BulletinsOrder.ApplyCurrentOrder`,
+`bco_applications.GetCorpWelcomeMail` and `welcomeMailWindow`. Existing Blue DBRow encoding is unchanged.
+[EVE University recruitment](https://wiki.eveuniversity.org/Recruiting_corporation_members) and
+[CCP's recruitment changes](https://www.eveonline.com/news/view/corporation-recruitment-changes) describe automatic welcome mail.
+
+Resident corporation change and member-access rows now identify their pilot owners, so committed role and welcome-mail
+changes invalidate connected members' system caches. The existing role-refresh session regression exposed this gap when
+its fixture was moved to the resident world required by the current session coordinator.
+
+**Automated validation.** Tool and solution restore, solution build (zero warnings/errors), both Python policy suites
+(8 catalog and 9 formatting tests), and formatting verification (2,157 files) passed. The focused filter
+`FullyQualifiedName~CorporationCommunicationTests|FullyQualifiedName~CorporationMembershipTests|FullyQualifiedName~CorporationAdministrationTests|FullyQualifiedName~CorporationScreenTests|FullyQualifiedName~CorporationRoleTests|FullyQualifiedName~MailServiceTests|FullyQualifiedName~MailArrivalContractTests`
+passed 81 tests in 29 seconds; the complete final validation took 86.38 seconds. Tests cover CRUD/order/revision conflicts,
+permission boundaries, native replies, NPC read-only behavior, limits, notifications, checkpoint/restart and single mail
+delivery on joining. Earlier validation caught an extra founder welcome mail and the resident role-cache issue; both were
+corrected before this final run. No full .NET suite was run.
+
+**Live acceptance.** Not performed; agent client testing is disabled. The maintainer's successful window-load report applies
+to the earlier title-row change, not these newly implemented controls.
+
+**Optional maintainer checks.** Add/edit/reorder a bulletin. Set a welcome mail and accept a corporation invitation on another pilot.
 
 ## Corporation title row decoding, November 14, 2026
 
