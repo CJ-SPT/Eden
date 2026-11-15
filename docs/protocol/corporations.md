@@ -9,6 +9,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 ## Contents
 
 - [Corporation Show Info market activity latency, November 15, 2026](#corporation-show-info-market-activity-latency-november-15-2026)
+- [Bulk member removal, November 15, 2026](#bulk-member-removal-november-15-2026)
 - [Member-expulsion votes, November 15, 2026](#member-expulsion-votes-november-15-2026)
 - [General and share-creation votes, November 15, 2026](#general-and-share-creation-votes-november-15-2026)
 - [Corporation closure, November 15, 2026](#corporation-closure-november-15-2026)
@@ -42,6 +43,53 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Corporation window voting-capability startup correction](#corporation-window-voting-capability-startup-correction)
 - [Player corporation applications and membership](#player-corporation-applications-and-membership)
 - [Player corporations: creation foundation](#player-corporations-creation-foundation)
+
+## Bulk member removal, November 15, 2026
+
+`corpRegistry.KickOutMembers(characterIDs)` now returns the native dictionary with Python lists under `kicked` and
+`notKicked`. A current CEO or Director can remove eligible members together. Unknown pilots, foreign members, the CEO,
+members with effective or grantable roles (including title roles), members within the role-removal cooldown, and protected
+shareholders remain unchanged and appear in `notKicked`. Targets are deduplicated in request order. Empty, oversized,
+malformed, unauthorized and self-containing requests reject before any changes. The 1,000-target cap is Eden's local
+request limit, matching the existing bounded member lookup.
+
+The operation requires the active resident world and uses a single economy transaction under its owner. Membership,
+employment, member counts, wallet-selection and member-access cleanup, bookmark access and ordered corporation events
+commit together and use the existing checkpoint mechanism. A failed destination lookup rolls back earlier departures
+and their notifications. Personal property, money and share holdings stay with the departing member. There is no saved-world
+SQL implementation or offline fallback for this call. Original NPC corporation names come from the immutable catalog cache.
+
+This follows the existing ordinary-removal policy, including immediate membership changes for pilots in space. Deferring
+ordinary removals until docking is separate remaining work; the docked-removal queue implemented for sanctioned expulsion
+votes is unchanged. The new batch call does not claim the full corporation window is complete.
+
+Sources: [EVE University member management](https://wiki.eveuniversity.org/Managing_corporation_members) establishes role
+removal and cooldown behavior; [corporation logistics](https://wiki.eveuniversity.org/Corporation_logistics) establishes
+shareholder protection. Previously captured inert build **3662168** disassembly of
+`base_corporation.KickOutMultipleMembers` confirms the single list argument, Director/self checks and both result keys.
+The local EveJS **261108.1** `corpRegistryRuntime.js` comparison (SHA-256
+`41D691387FF45DCE3CF4680DA40291557B868F0B3F589234D0EB244B77C4E35C`) agrees on the result shape. Existing dictionary/list
+adapters follow [Carbon Blue Marshal.cpp revision fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp),
+`ReadObjectDict` and `ReadObjectList`; no codec behavior changes or client-script execution were needed.
+
+**Automated validation.** Development began with the exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.CorporationBulkRemovalTests.NativeBatchReturnsMixedListsAndPersistsMembershipAndOrderedNotifications`.
+The ten new cases cover native list/dictionary shapes, real mixed batches and duplicates, repeated calls, malformed and
+unselected requests, current Director authority and revocation, role/title/grantable-role/cooldown/shareholder protections,
+rollback, ordered notifications and resident checkpoint reopen. The measured resident removal executes zero SQL commands,
+opens zero connections and performs zero fitting calculations. Initial development failures corrected a duplicate catalog
+fixture insertion, an incomplete notification expectation and an invalid grantable-role fixture value.
+
+The final sequence passed tool/solution restore, a zero-warning solution build, **100 focused .NET tests** in **42.77 s**,
+both Python policy suites (**8 catalog and 9 formatting tests**), formatting for **2,226 files**, the 140-column check and
+`git diff --check` in **85.79 s**. Documentation checks resolved **656 local paths** and verified the new protocol anchor.
+The final filter was
+`FullyQualifiedName~CorporationBulkRemovalTests|FullyQualifiedName~CorporationMembershipTests|FullyQualifiedName~CorporationRoleTests|FullyQualifiedName~CorporationExpulsionVoteTests|FullyQualifiedName~CorporationLeadershipTests|FullyQualifiedName~CorporationClosureTests|FullyQualifiedName~CorporationScreenTests|FullyQualifiedName~CorporationWalletTests|FullyQualifiedName~SharedBookmarkServiceTests|FullyQualifiedName~SharedBookmarksTests`.
+The full .NET suite was not requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Select multiple eligible and protected members, run Expel Members and inspect the result dialog.
 
 ## Corporation Show Info market activity latency, November 15, 2026
 

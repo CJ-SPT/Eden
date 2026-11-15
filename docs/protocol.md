@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Corporation bulk member removal](protocol/corporations.md#bulk-member-removal-november-15-2026)
+records native mixed-result replies, resident batch settlement and membership protections.
+
 [Resident cargo container access](protocol/inventory.md#resident-cargo-container-access-november-15-2026)
 records native opening, names, passwords, previews and resident checkpoint recovery.
 

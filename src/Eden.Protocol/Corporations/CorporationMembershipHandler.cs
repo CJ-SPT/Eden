@@ -183,6 +183,7 @@ internal sealed partial class CorporationHandler
                     or "CanLeaveCurrentCorporation"
                     or "CanBeKickedOut"
                     or "KickOutMember"
+                    or "KickOutMembers"
                     or "GetMembersPaged"
                     or "GetMembersByIds"
                     or "GetAggressionSettings"
@@ -256,6 +257,12 @@ internal sealed partial class CorporationHandler
                     membership.Remove(pilot, target);
                     Advance(context);
                     return PilotCallResult.None;
+                case ("KickOutMembers", [List<object?> targets])
+                    when targets.Count is >= 1 and <= CorporationMembershipRules.MaximumMemberRemoval
+                        && targets.All(id => id is long number && number > 0):
+                    var removed = membership.RemoveMany(pilot, targets.Cast<long>().ToArray());
+                    Advance(context);
+                    return new CorporationMemberRemovalReply(removed);
                 case ("GetMembersByIds", [List<object?> ids])
                     when ids.Count <= CorporationMembershipRules.MaximumMemberLookup && ids.All(id => id is long number && number > 0):
                     return new BlueList<PlayerCorporationMemberReply>(
@@ -286,6 +293,17 @@ internal sealed partial class CorporationHandler
             return new PilotCallResult.Failure(error.Message);
         }
     }
+}
+
+internal sealed record CorporationMemberRemovalReply(CorporationMemberRemovalResult Result) : BlueModel
+{
+    // Build 3662168 base_corporation.KickOutMultipleMembers indexes both native Python lists.
+    public override object ToBlue() =>
+        new Dictionary<string, object?>
+        {
+            ["kicked"] = Result.Kicked.Select(id => (object?)id).ToList(),
+            ["notKicked"] = Result.NotKicked.Select(id => (object?)id).ToList(),
+        };
 }
 
 internal sealed record CharacterEnlistmentReply : BlueModel

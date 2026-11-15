@@ -15,7 +15,7 @@ using Eden.World.Storage;
 namespace Eden.World.Corporations;
 
 [Injectable]
-internal sealed class CorporationMembershipStore(WorldDatabase database, TimeProvider clock) : ICorporationMembership
+internal sealed partial class CorporationMembershipStore(WorldDatabase database, TimeProvider clock) : ICorporationMembership
 {
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 

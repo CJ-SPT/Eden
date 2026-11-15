@@ -57,6 +57,8 @@ public sealed record CorporationChange(
 
 public sealed record CorporationLeavePermission(bool Allowed, string Reason, string ErrorName = "CustomInfo");
 
+public sealed record CorporationMemberRemovalResult(IReadOnlyList<long> Kicked, IReadOnlyList<long> NotKicked);
+
 public interface ICorporationMembership
 {
     IReadOnlyList<CorporationApplication> Applications(long pilotId, bool forCorporation);
@@ -65,6 +67,7 @@ public interface ICorporationMembership
     CorporationApplication Update(long actorId, CorporationApplicationUpdate update);
     CorporationLeavePermission CanRemove(long actorId, long pilotId);
     void Remove(long actorId, long pilotId);
+    CorporationMemberRemovalResult RemoveMany(long actorId, IReadOnlyList<long> pilotIds);
     long Head(long pilotId);
     IReadOnlyList<CorporationChange> Changes(long pilotId, long after);
 }
@@ -75,6 +78,19 @@ public static class CorporationMembershipRules
     public const int MemberPageSize = 50;
     public const int ChangePageSize = 100;
     public const int MaximumMemberLookup = 1000;
+    public const int MaximumMemberRemoval = 1000;
+
+    public static void CheckRemovalTargets(long actorId, IReadOnlyList<long> pilotIds)
+    {
+        if (pilotIds.Count is < 1 or > MaximumMemberRemoval || pilotIds.Any(id => id <= 0))
+        {
+            throw new InvalidDataException("Choose between one and 1,000 corporation members to remove.");
+        }
+        if (pilotIds.Contains(actorId))
+        {
+            throw new InvalidDataException("You cannot remove yourself in a bulk member removal.");
+        }
+    }
 
     public static bool Closed(CorporationApplicationStatus status) =>
         status
