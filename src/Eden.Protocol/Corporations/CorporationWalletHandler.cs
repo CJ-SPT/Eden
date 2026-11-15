@@ -155,7 +155,7 @@ internal sealed class CorporationWalletHandler(ICorporationWallet wallet, IPlaye
     private static string Text(object? value) =>
         value is string or byte[] ? BlueMarshal.Text(value) : throw new InvalidDataException("Choose a wallet transfer reason.");
 
-    private static long Cents(object? value)
+    internal static long Cents(object? value)
     {
         double isk = value switch
         {

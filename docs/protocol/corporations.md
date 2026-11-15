@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Dividends and CEO succession, November 15, 2026](#dividends-and-ceo-succession-november-15-2026)
 - [Member search and tracking, November 14, 2026](#member-search-and-tracking-november-14-2026)
 - [Recruitment advertisements, November 14, 2026](#recruitment-advertisements-november-14-2026)
 - [Bulletins and welcome mail, November 14, 2026](#bulletins-and-welcome-mail-november-14-2026)
@@ -37,6 +38,40 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Corporation window voting-capability startup correction](#corporation-window-voting-capability-startup-correction)
 - [Player corporation applications and membership](#player-corporation-applications-and-membership)
 - [Player corporations: creation foundation](#player-corporations-creation-foundation)
+
+## Dividends and CEO succession, November 15, 2026
+
+`corpRegistry.PayoutDividend` accepts the native integer mode (one for shareholders, zero for members) and a total ISK
+amount. Only the current CEO may spend the master wallet this way. Member payments divide equally; shareholder payments
+use current positive holdings, including corporation holdings. Eden allocates whole cents by largest remainder with owner
+ID as the deterministic tie-breaker. This local rounding policy conserves the total exactly, even at Int64 balance limits.
+Debits, all recipient credits and journal reference 38 commit together; recipient overflow rolls everything back.
+
+Despite its name, `GetNumberOfPotentialCEOs` returns a list of eligible member IDs. The native resignation flow first calls
+`ResignFromCEO(None)` for that list, then passes the selected member ID. Transfer requires a docked current CEO, current
+membership, injected Corporation Management and acceptance of roles. Stored roles remain intact while CEO powers override
+them; resignation restores those roles and starts the role-removal cooldown. The saved CEO, per-member role events and
+`OnCorporationChanged` CEO pair publish together. The caller refreshes its identity before the reply; other sessions follow
+the existing corporation event cursor. No schema change is needed. Closure with no successor remains a separate milestone.
+
+Sources: inert build **3662168** inspection of `corp_ui_home.PayoutDividendForm`, `base_corporation.ResignFromCEO`,
+`bco_members.GetNumberOfPotentialCEOs` and `appConst.refCorporationDividendPayment`, using the pinned archive recorded above.
+[EVE University corporation formation](https://wiki.eveuniversity.org/Forming_a_corporation) describes succession and closure.
+[CCP CEO and Directors](https://support.eveonline.com/hc/en-us/articles/203279841-CEO-and-Directors) explicitly permits an
+injected, untrained management skill; this newer clarification takes precedence over the older CEO Change article's level-I
+wording. Existing scalar/list/None adapters are unchanged from the recorded Carbon Blue revision.
+
+**Automated validation.** Tool/solution restore, solution build (zero warnings/errors), both Python policy suites
+(8 catalog and 9 formatting tests), formatting verification (2,184 files), and documentation/diff checks passed.
+After integrating main through `a5c9e350`, filter
+`FullyQualifiedName~CorporationLeadershipTests|FullyQualifiedName~CorporationShareTests|FullyQualifiedName~CorporationWalletTests|FullyQualifiedName~CorporationRoleTests|FullyQualifiedName~CorporationMembershipTests|FullyQualifiedName~CorporationAdministrationTests`
+passed 75 tests in 25 seconds; the complete sequence took 63.01 seconds. Regressions cover native payments and candidate
+lists, exact allocation, rollback, permissions, role blocking, repeated succession, notifications and restart persistence.
+No full .NET suite was run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Pay a small member/shareholder dividend. Transfer CEO between two docked pilots and inspect roles.
 
 ## Member search and tracking, November 14, 2026
 
