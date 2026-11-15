@@ -177,7 +177,7 @@ public sealed class SharedBookmarkServiceTests
     [Fact]
     public void CorporationGrantsUseSavedMembershipAndLeavingRevokesPrimedFoldersBeforeTheSessionRefreshes()
     {
-        using TestWorld db = new();
+        using TestWorld db = new(liveWorld: true);
         int corporation = CorporationAdministrationTests.CreateAndJoin(db);
         using CorporationTestClient client = new(db, 1000002);
         var groups = db.Services.GetRequiredService<IPilotAccessGroups>();

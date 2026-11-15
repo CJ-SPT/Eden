@@ -304,7 +304,7 @@ public sealed class CorporationStorageTests
     [Fact]
     public void QueryAndTakeRightsAreIndependentAndRevokedCachedReferencesFailImmediately()
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         int corporation = Prepare(world);
         var storage = Storage(world);
         var office = Rent(world);
@@ -696,7 +696,7 @@ public sealed class CorporationStorageTests
     [Fact]
     public void StationCapacityIsSharedAcrossCorporationsAndChangingStationInvalidatesInventoryAccess()
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         int corporation = Prepare(world);
         using (WorldDbContext saved = new(world.Path))
         {

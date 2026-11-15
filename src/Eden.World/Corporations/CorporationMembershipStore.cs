@@ -197,31 +197,25 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
 
     public CorporationLeavePermission CanRemove(long actorId, long pilotId)
     {
-        return WorldActionScope.Inspect<CorporationLeavePermission>(
-            database,
-            world =>
-            {
-                return Permission(world, actorId, pilotId);
-            }
-        );
+        return Resident.Economy.Inspect(world => Permission(world, actorId, pilotId, Now));
     }
 
     public void Remove(long actorId, long pilotId)
     {
-        using WorldActionScope transaction = new(database, TransactionParticipants.None);
-        var world = transaction.World;
-        var permission = Permission(world, actorId, pilotId);
+        using var world = Resident.Economy.Begin(TransactionParticipants.None);
+        var permission = Permission(world, actorId, pilotId, Now);
         if (!permission.Allowed)
         {
             throw new InvalidDataException(permission.Reason);
         }
         var pilot = Pilot(world, pilotId);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        Move(world, pilot, OriginalCorporation(world, catalog, pilotId), Now);
-        world.SaveChanges();
-        Eden.World.Bookmarks.PilotBookmarksStore.PruneUnavailableConnections(world, pilot.Id);
-        transaction.Commit();
-        database.NotifyAccessGroupsChanged();
+        bool departed = RequestRemoval(world, catalog, actorId, pilot, Now);
+        world.Commit();
+        if (departed)
+        {
+            database.NotifyAccessGroupsChanged();
+        }
     }
 
     internal static int OriginalCorporation(WorldAction world, CatalogDbContext catalog, long pilotId)
@@ -240,7 +234,7 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
         return destination;
     }
 
-    private CorporationLeavePermission Permission(WorldAction world, long actorId, long pilotId)
+    internal static CorporationLeavePermission Permission(WorldAction world, long actorId, long pilotId, long now)
     {
         var actor = Pilot(world, actorId);
         var pilot = Pilot(world, pilotId);
@@ -266,10 +260,7 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
         {
             return new(false, "Remove corporation roles and titles before leaving or removing this member.", "CrpCantQuitNotInStasis");
         }
-        if (
-            access.RolesRemovedAt is long removed
-            && clock.GetUtcNow().UtcDateTime.ToFileTimeUtc() < removed + CorporationRoleRules.RemovalDelay.Ticks
-        )
+        if (access.RolesRemovedAt is long removed && now < removed + CorporationRoleRules.RemovalDelay.Ticks)
         {
             return new(false, "Wait 24 hours after the last corporation role was removed.");
         }

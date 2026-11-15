@@ -5,7 +5,8 @@ using Eden.Infrastructure.Registration;
 namespace Eden.Server.Maintenance;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class CorporationMaintenance(ICorporationVoting voting, TimeProvider clock) : IDisposable
+internal sealed class CorporationMaintenance(ICorporationVoting voting, ICorporationMemberRemovals removals, TimeProvider clock)
+    : IDisposable
 {
     private Task _loop = Task.CompletedTask;
     private PeriodicTimer? _timer;
@@ -15,6 +16,7 @@ internal sealed class CorporationMaintenance(ICorporationVoting voting, TimeProv
         if (_timer is null)
         {
             voting.Advance();
+            removals.Advance();
             _timer = new PeriodicTimer(TimeSpan.FromSeconds(1), clock);
             _loop = Run(_timer);
         }
@@ -27,6 +29,7 @@ internal sealed class CorporationMaintenance(ICorporationVoting voting, TimeProv
             try
             {
                 voting.Advance();
+                removals.Advance();
             }
             catch (Exception error)
             {

@@ -185,13 +185,11 @@ public sealed class CorporationRoleTests
         Assert.Throws<InvalidDataException>(() => roles.UpdateMembers(90000002, [Update(90000001, new())]));
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void RemovingRolesBlocksReassignmentAndLeavingUntilThePersisted24HourBoundary(bool liveWorld)
+    [Fact]
+    public async Task RemovingRolesBlocksReassignmentAndLeavingUntilThePersisted24HourBoundary()
     {
         TestClock clock = new();
-        using TestWorld world = new(liveWorld: liveWorld, clock: clock);
+        using TestWorld world = new(liveWorld: true, clock: clock);
         int id = CorporationAdministrationTests.CreateAndJoin(world);
         var roles = world.Services.GetRequiredService<ICorporationRoles>();
         var membership = world.Services.GetRequiredService<ICorporationMembership>();
@@ -210,7 +208,7 @@ public sealed class CorporationRoleTests
         Assert.Throws<InvalidDataException>(() => roles.UpdateMembers(90000001, [Update(90000002, new((long)CorporationRole.Accountant))]));
         world.Services.Dispose();
         WorldInitialization.Initialize(new(world.Path), clock);
-        using var reopened = ServerServices.Build(new(world.Path), clock);
+        using var reopened = ServerServices.Build(new(world.Path), clock, liveWorld: true);
         var savedMembership = reopened.GetRequiredService<ICorporationMembership>();
         clock.AdvanceWallTime(CorporationRoleRules.RemovalDelay - TimeSpan.FromTicks(1));
         Assert.False(savedMembership.CanRemove(90000002, 90000002).Allowed);
@@ -219,6 +217,7 @@ public sealed class CorporationRoleTests
         savedMembership.Remove(90000002, 90000002);
         Assert.Equal(1000044, reopened.GetRequiredService<IPlayerCorporations>().Identity(90000002).Id);
         Assert.Equal(1, reopened.GetRequiredService<IPlayerCorporations>().Read(id)!.MemberCount);
+        await reopened.GetRequiredService<Eden.World.Runtime.LiveWorld>().FlushAsync();
         using WorldDbContext check = new(world.Path);
         Assert.Empty(check.Set<SavedCorporationMemberAccess>().Where(m => m.PilotId == 90000002));
     }

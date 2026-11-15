@@ -184,6 +184,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         Eden.World.Corporations.CorporationContactSchema.Configure(model);
         Eden.World.Corporations.CorporationRecruitmentSchema.Configure(model);
         Eden.World.Corporations.CorporationVotingSchema.Configure(model);
+        Eden.World.Corporations.CorporationRemovalSchema.Configure(model);
         Eden.World.Characters.PilotActivitySchema.Configure(model);
         Eden.World.Bookmarks.SharedBookmarkSchema.Configure(model);
         model.Entity<SavedFittingRecord>().ToTable("WorldSavedFitting").HasKey(f => f.Id);

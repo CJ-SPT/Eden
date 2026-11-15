@@ -60,7 +60,6 @@ public sealed partial class InformationTests
     }
 
     [Theory]
-    [InlineData(false)]
     [InlineData(true)]
     public void CorporationTractorAccessUsesCurrentMembershipAndStopsOnDeparture(bool resident)
     {

@@ -6,7 +6,8 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Corporations;
 
 [Injectable]
-internal sealed class CorporationGovernanceHandler(ICorporationVoting voting) : ISelectedPilotCallHandler
+internal sealed class CorporationGovernanceHandler(ICorporationVoting voting, ICorporationMemberRemovals removals)
+    : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -48,7 +49,7 @@ internal sealed class CorporationGovernanceHandler(ICorporationVoting voting) : 
             switch (method, args)
             {
                 case ("GetPendingAutoKicks", []):
-                    return new CorporationPendingExpulsionsReply(voting.PendingExpulsions(actor));
+                    return new CorporationPendingExpulsionsReply(removals.Pending(actor));
                 case ("CanViewVotes", [long corporation]) when corporation is > 0 and <= int.MaxValue:
                     return voting.CanView(actor, (int)corporation);
                 case ("CanRunForCEO", []):

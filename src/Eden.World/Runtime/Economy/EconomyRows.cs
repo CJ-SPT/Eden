@@ -851,6 +851,7 @@ internal sealed partial class ResidentEconomy
         RegisterCorporationRecruitment();
         RegisterCorporationVoting();
         RegisterCorporationBlueprintLocks();
+        RegisterCorporationRemovals();
         RegisterPilotActivity();
         RegisterCommandBursts();
         RegisterCloneTrainingTables();

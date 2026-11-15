@@ -26,12 +26,10 @@ public sealed partial class CorporationMembershipTests
     private static CorporationApplicationUpdate Change(CorporationApplication application, CorporationApplicationStatus status) =>
         new(application.Id, application.PilotId, application.CorporationId, application.Text, status, "Welcome", application.AppliedAt);
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void OfferRequiresApplicantConsentAndJoinLeavePersistWithoutMovingAssetsOrMoney(bool liveWorld)
+    [Fact]
+    public void OfferRequiresApplicantConsentAndJoinLeavePersistWithoutMovingAssetsOrMoney()
     {
-        using TestWorld db = new(liveWorld: liveWorld);
+        using TestWorld db = new(liveWorld: true);
         PlayerCorporationTests.Prepare(db);
         var corporations = db.Services.GetRequiredService<IPlayerCorporations>();
         int id = corporations.Create(Ceo, PlayerCorporationTests.Details()).Corporation.Id;
@@ -81,7 +79,7 @@ public sealed partial class CorporationMembershipTests
     [Fact]
     public void PrivateApplicationsAndMembershipMutationsRejectForgedActorsTargetsAndFullCorps()
     {
-        using TestWorld db = new();
+        using TestWorld db = new(liveWorld: true);
         PlayerCorporationTests.Prepare(db);
         var corporations = db.Services.GetRequiredService<IPlayerCorporations>();
         int id = corporations.Create(Ceo, PlayerCorporationTests.Details()).Corporation.Id;
@@ -251,7 +249,7 @@ public sealed partial class CorporationMembershipTests
     public async Task ConnectedSessionsReceiveOrderedChangesOnceAndMoveChatBeforeTheNextRequest()
     {
         TestClock clock = new();
-        using TestWorld db = new(clock: clock);
+        using TestWorld db = new(clock: clock, liveWorld: true);
         PlayerCorporationTests.Prepare(db);
         int id = db.Services.GetRequiredService<IPlayerCorporations>().Create(Ceo, PlayerCorporationTests.Details()).Corporation.Id;
         using Client ceo = new(db, 1000001);
@@ -406,7 +404,7 @@ public sealed partial class CorporationMembershipTests
     public void RenegotiationAndRepeatedMembershipCyclesKeepOrderedChangesAndExpectedCounts()
     {
         TestClock clock = new();
-        using TestWorld db = new(clock: clock);
+        using TestWorld db = new(clock: clock, liveWorld: true);
         PlayerCorporationTests.Prepare(db);
         var corporations = db.Services.GetRequiredService<IPlayerCorporations>();
         int id = corporations.Create(Ceo, PlayerCorporationTests.Details()).Corporation.Id;
@@ -452,7 +450,7 @@ public sealed partial class CorporationMembershipTests
     [InlineData(90000002L)]
     public void MalformedMembershipCallsCannotSelectActorsOrBypassPermissions(long accountPilot)
     {
-        using TestWorld db = new();
+        using TestWorld db = new(liveWorld: true);
         PlayerCorporationTests.Prepare(db);
         int id = db.Services.GetRequiredService<IPlayerCorporations>().Create(Ceo, PlayerCorporationTests.Details()).Corporation.Id;
         using Client client = new(db, accountPilot == Ceo ? 1000001 : 1000002);

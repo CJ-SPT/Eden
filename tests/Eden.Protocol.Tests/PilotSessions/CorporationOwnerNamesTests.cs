@@ -67,7 +67,6 @@ public sealed class CorporationOwnerNamesTests(ITestOutputHelper output)
     }
 
     [Theory]
-    [InlineData(false)]
     [InlineData(true)]
     public void NamesFollowMembershipAndRenamesWithoutPublishingRollbackAndSurviveReopen(bool resident)
     {

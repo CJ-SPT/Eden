@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Ordinary corporation member auto-removal](protocol/corporations.md#ordinary-member-auto-removal-november-15-2026)
+records resident single/bulk requests, next-dock settlement, native pending rows and protection against stale removals.
+
 [Corporation blueprint lock/unlock votes](protocol/corporations.md#blueprint-lock-and-unlock-votes-november-15-2026)
 records immediate lockdowns, permanent lock results, CEO sanctions, native lock caches and resident inventory enforcement.
 

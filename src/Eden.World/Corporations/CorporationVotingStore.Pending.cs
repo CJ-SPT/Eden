@@ -11,20 +11,21 @@ internal sealed partial class CorporationVotingStore
     public IReadOnlyList<CorporationPendingExpulsion> PendingExpulsions(long actorId)
     {
         Advance();
-        return Resident.Economy.Inspect(world =>
-        {
-            var corporation = CorporationRoleStore.Current(world, actorId);
-            CorporationRoleStore.RequireDirector(world, actorId, corporation);
-            return (IReadOnlyList<CorporationPendingExpulsion>)
-                world
-                    .Set<SavedCorporationVote>()
-                    .Where(row => row.CorporationId == corporation.Id)
-                    .AsEnumerable()
-                    .Select(row => row.Snapshot())
-                    .Where(vote => vote.Data.PendingExpulsionActorId.HasValue)
-                    .Select(vote => new CorporationPendingExpulsion(vote.Data.Draft.Parameter, vote.Data.PendingExpulsionActorId!.Value))
-                    .ToArray();
-        });
+        return Resident.Economy.Inspect(world => PendingExpulsions(world, actorId));
+    }
+
+    internal static IReadOnlyList<CorporationPendingExpulsion> PendingExpulsions(WorldAction world, long actorId)
+    {
+        var corporation = CorporationRoleStore.Current(world, actorId);
+        CorporationRoleStore.RequireDirector(world, actorId, corporation);
+        return world
+            .Set<SavedCorporationVote>()
+            .Where(row => row.CorporationId == corporation.Id)
+            .AsEnumerable()
+            .Select(row => row.Snapshot())
+            .Where(vote => vote.Data.PendingExpulsionActorId.HasValue)
+            .Select(vote => new CorporationPendingExpulsion(vote.Data.Draft.Parameter, vote.Data.PendingExpulsionActorId!.Value))
+            .ToArray();
     }
 
     private void AdvancePendingExpulsions()

@@ -83,7 +83,7 @@ public sealed class CorporationShareTests
     [Fact]
     public void PersonalHoldingsRemainOwnedAndTransferableAfterLeavingTheIssuerCorporation()
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         int corporation = CorporationAdministrationTests.CreateAndJoin(world);
         var shares = world.Services.GetRequiredService<ICorporationShares>();
         shares.Transfer(90000001, new(corporation, true, 90000002, 100));

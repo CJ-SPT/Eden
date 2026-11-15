@@ -59,6 +59,9 @@ If you’re keeping an existing world, stop the old server and copy its data bef
 [Cargo container access](docs/protocol/inventory.md#resident-cargo-container-access-november-15-2026) supports
 native opening, names, passwords and content previews through the resident world and its checkpoints.
 
+[Corporation auto-removal](docs/protocol/corporations.md#ordinary-member-auto-removal-november-15-2026) queues
+ordinary expulsions in space and settles them when the member docks, with persistent requests and current protection checks.
+
 [Agency Agents & Missions](docs/protocol/agency.md#agents-and-missions-browsing-and-actions--november-15-2026)
 supports native agent browsing, locator filtering, mission previews and existing mission conversations/actions.
 

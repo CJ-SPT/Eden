@@ -28,6 +28,7 @@ Each milestone includes typed rules, authenticated native calls, persistence, fo
 | Native administration and inventory blockers | Implemented: member audit reads, current membership dates, headquarters relocation, Goals Deliveries queries and corporate Deliveries binding |
 | CEO elections | Implemented: personal-share eligibility, incumbent suspension, automatic succession and a persistent successor authority delay |
 | Blueprint lock/unlock votes | Implemented: immediate resident holds, automatic permanent locks, CEO-only unlock sanctions and inventory enforcement |
+| Ordinary member auto-removal | Implemented: resident single/bulk queues, next-dock settlement, stale-request cancellation and native Auto Removal reads |
 
 See [corporation protocol findings](protocol/corporations.md) for native call shapes and milestone validation evidence, and [inventory ownership](inventory-ownership.md) for the storage boundary. This table records implemented scope, not live client acceptance.
 
@@ -36,5 +37,5 @@ now covers the remaining standalone tabs and actions, including recruitment, mem
 and corporation wars remain explicitly outside this request.
 
 Implementation resumed after the member-expulsion vote milestone. Remaining standalone work includes full historical
-auditing/decorations, outstanding home settings, recent combat records, ordinary removal queues
+auditing/decorations, outstanding home settings, recent combat records, automatic downtime removal sweeps
 and office billing/impound recovery. The complete corporation window is not yet implemented.

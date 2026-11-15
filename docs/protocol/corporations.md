@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Ordinary member auto-removal, November 15, 2026](#ordinary-member-auto-removal-november-15-2026)
 - [Blueprint lock and unlock votes, November 15, 2026](#blueprint-lock-and-unlock-votes-november-15-2026)
 - [CEO elections, November 15, 2026](#ceo-elections-november-15-2026)
 - [Administration and inventory blockers, November 15, 2026](#administration-and-inventory-blockers-november-15-2026)
@@ -46,6 +47,80 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Corporation window voting-capability startup correction](#corporation-window-voting-capability-startup-correction)
 - [Player corporation applications and membership](#player-corporation-applications-and-membership)
 - [Player corporations: creation foundation](#player-corporations-creation-foundation)
+
+## Ordinary member auto-removal, November 15, 2026
+
+Ordinary `corpRegistry.KickOutMember` requests for another pilot now defer departure while the subject is in space.
+The authorized request records its corporation, requester, exact employment generation, original NPC destination and
+request time. Duplicate valid requests preserve the original requester and timestamp; an authorized new request replaces
+an already-invalid request. Docked subjects still depart immediately.
+`KickOutMembers` commits mixed immediate departures and queued requests together: its native `kicked` list identifies
+accepted requests, including subjects waiting to dock; ineligible and unknown targets remain in `notKicked`.
+An unexpected failure rolls back all earlier departures, queue entries, employment and notifications in that batch.
+
+The existing one-second corporation maintenance loop checks outstanding resident requests. It removes a docked subject
+only if the original employment still matches and current removal permission still allows the action. Departure/rejoin,
+closure, new CEO status, new authority-bearing roles/titles or shareholder protection, and loss of the requester's authority cancel
+stale requests. Cancellation does not remove the member or emit a departure. Existing self-quit rules, role-removal delays,
+shareholder-vote requirements and CEO protection remain unchanged. Self-quitting to the original NPC corporation continues
+to take effect immediately, including in space; this milestone changes ordinary expulsions of other members.
+
+`GetPendingAutoKicks()` now combines ordinary requests and sanctioned vote expulsions in one coherent resident read,
+deduplicated by subject. It retains the existing Director gate and native list of `(characterID, kickedByCharacterID)`
+tuples. Connected subjects retain their corporation until settlement; existing membership, session, count, chat and
+bookmark-access notifications then follow the committed departure, without replay on later maintenance cycles.
+Opening the panel also advances ready removals. No new client notification or Blue/transport/Destiny format is introduced.
+
+Schema **167** adds `WorldCorporationRemoval` with an explicit resident mapping, corporation index and checkpoint projection.
+Only outstanding requests are polled. Idle maintenance looks up their subjects' membership and docking state without
+role/share/history scans, write transactions or projection; panel reads and settlement recheck complete permission.
+Single removal and removal-permission reads now require the resident world, matching bulk removal and voting; affected
+legacy tests were moved to resident worlds. There is no SQL gameplay implementation or offline removal fallback.
+Schema creation/upgrades, initial loading and checkpoint projection remain persistence boundaries.
+Requests survive restarts and continue waiting for docking. Eden has no scheduled daily-downtime removal sweep yet;
+restarting the server does not forcibly expel a subject still in space.
+
+References: [EVE University managing corporation members](https://wiki.eveuniversity.org/Managing_corporation_members)
+describes role delays, docked removal and the Auto Removal list; its modern immediate self-quit guidance does not replace
+Eden's existing role cooldown policy in this milestone. Inert inspection of pinned build **3662168** checked
+`base_corporation.KickOut`, `KickOutMultipleMembers`, `GetPendingAutoKicks` and `corp_ui_member_autokicks.CorpAutoKicks.Load`.
+The panel unpacks each pending row into the subject and requester's IDs. Prepared archive SHA-256:
+`AC15883C14B8547F4846A74E125A0E30073880C4EDF55E214DCAED804A4A19C6`.
+EveJS **261108.1** `corpRegistryRuntime.js` (SHA-256
+`41D691387FF45DCE3CF4680DA40291557B868F0B3F589234D0EB244B77C4E35C`) was a behavioral comparison; its immediate
+ordinary-removal implementation and stored pending-list stub do not establish Eden's queue semantics. No reference code
+was copied, and no client code was executed.
+
+**Automated validation.** Development started with exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.CorporationRemovalQueueTests.NativeKickInSpacePersistsUntilDockingAndPublishesDepartureExactlyOnce`.
+Thirteen new cases cover native single/bulk requests, duplicate timestamps, motion preservation, next-dock settlement,
+connected notifications, exact employment generations, changed CEO/roles/shares/requester authority, combined sanctioned
+and ordinary panel rows, rollback, schema-166 upgrade and checkpoint/reopen. Warmed queue creation, repeated waiting reads
+and settlement assert zero SQL commands, connections and fitting calculations. Initial build checks caught test-analyzer
+violations, corrected by awaiting checkpoints and using the filtered `Assert.Single` overload. A broader development run
+passed 127 of 132 tests; the five failures required resident fixtures, whose affected rerun then passed 19 cases.
+The added mixed-batch and duplicate-timestamp checks then passed their two exact filters.
+The broader stable sequence then passed **163 tests** in **53.39 s**, tool/solution restore, a zero-warning build,
+both Python suites (**8 catalog and 9 formatting tests**), formatting of **2,252 files**, width and diff checks in **113.23 s**.
+A final review regression reproduced a lost authorized retry after revoking the original requester. Valid requests remain
+idempotent; invalid requests can now be replaced by a newly authorized request. Its exact-method rerun passed.
+After this correction and the idle-maintenance lookup refinement, the final sequence passed **164 focused tests** in
+**54.09 s**, tool/solution restore, a zero-warning solution build, both Python policy suites, formatting of **2,252 files**,
+the 140-column check and `git diff --check` in **102.22 s**. Documentation checks resolved **662 local paths** and verified
+the auto-removal topic anchor. The full .NET suite was not run.
+
+The final filter ORs `FullyQualifiedName~` matches for `CorporationRemovalQueueTests`, `CorporationBulkRemovalTests`,
+`CorporationMembershipTests`, `CorporationRoleTests`, `CorporationExpulsionVoteTests`, `CorporationCeoElectionTests`,
+`CorporationClosureTests`, `CorporationLeadershipTests`, `CorporationMemberAuditTests`, `CorporationOwnerNamesTests`,
+`CorporationShareTests`, `CorporationStorageTests`, `SharedBookmarkServiceTests`,
+`CorporationTractorAccessUsesCurrentMembershipAndStopsOnDeparture`, `CorporationVotingTests`, `CorporationBlueprintVoteTests`
+and `WorldInitializationTests`, plus exact method
+`Eden.Protocol.Tests.Market.ResidentEconomyTests.RegisteredResidentRowsCoverEveryScalarColumnOfTheirSavedModels`.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Expel a member in space and inspect Auto Removal; dock that member and verify their
+corporation/session refresh and disappearance from the list.
 
 ## Blueprint lock and unlock votes, November 15, 2026
 
