@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Inactive ship transfers and move-rule audit, November 15, 2026](#inactive-ship-transfers-and-move-rule-audit-november-15-2026)
+
 - [Container stacking and fitting, November 15, 2026](#container-stacking-and-fitting-november-15-2026)
 
 - [Container item context menus, November 15, 2026](#container-item-context-menus-november-15-2026)
@@ -33,6 +35,81 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Venture ownership, boarding and mining holds](#venture-ownership-boarding-and-mining-holds)
 - [Native recovery corvettes, November 2, 2026](#native-recovery-corvettes-november-2-2026)
 - [Inventory refresh during capsule adoption, November 2, 2026](#inventory-refresh-during-capsule-adoption-november-2-2026)
+
+## Inactive ship transfers and move-rule audit, November 15, 2026
+
+The reported inability to remove items from an inactive ship came from the resident move operation's active-ship-only
+source gate. The protocol also rejected additions to inactive ships, and `InventoryTransfers` always chose the active
+ship as its ship destination. Stack splitting, merging, Stack All, corporation transfers and cargo-container access
+repeated the same restriction independently.
+
+Owned ships directly in the current station or structure hangar now support cargo transfers without boarding them.
+`Add` and `MultiAdd` retain the actual bound ship ID. Resident access checks validate both inventories independently;
+capacity and hold eligibility use the destination hull and its own fitting. Transfers can run between two local ships,
+between a local ship and the hangar, or between a local ship and an authorized corporation division. Inactive cargo
+containers can be opened and used, and container withdrawals use the selected destination hold's rules. SplitStack,
+MultiMerge and Stack All share the same local access rule. Whole-batch rejection and checkpoint persistence are retained.
+
+Additional corrections from the audit:
+
+- A same-hold ordinary drag is an unchanged-state success even when that hold is overloaded.
+- Unfitting from an inactive ship captures and resizes that ship's resources. Online-effect notifications identify the
+  source hull, and the active ship does not receive an unrelated attribute refresh.
+- Corporation and container withdrawals reject unavailable specialized holds even for zero-volume cargo.
+- Partial resident loot pickups retain singleton state, volume override, crystal condition and blueprint metadata.
+  Ordinary resident splits/transfers and the shared split operation also retain blueprint research/run metadata.
+- A ship cannot be placed inside itself. Structure-service withdrawals explicitly reject unsupported inactive
+  destinations instead of silently delivering to the active ship.
+
+The reviewed boundaries are recorded here to distinguish ordinary inventory access from feature-specific operations:
+
+| Move path | Rules checked and resulting boundary |
+| --- | --- |
+| Personal Add/MultiAdd | Owned direct local ships and personal hangar; real source, distinct IDs, positive available quantities, installed-blueprint rejection, destination filter/capacity and atomic rejection. |
+| Split/MultiMerge/Stack All | Same access scope; packaged compatible stacks, metadata compatibility, selected quantities, overflow, occupied-container rejection and transaction rollback. Same-hold changes consume no extra capacity. |
+| Fitted modules, rigs and magazines | Unfit uses the source hull's fitting checkpoint, returns loaded rounds atomically and destroys removed rigs. Direct fitting remains routed to the active ship; saved-fitting operations retain their separate contract. |
+| Assembled ship storage | Native hold eligibility, permitted retained cargo, nested-ship rejection, escape-bay skill/one-ship limits, active-hull rejection and self-containment rejection. Carried/wreck ships remain readable under the existing rules but must be unloaded before their contents can be changed. |
+| Cargo containers | Local owned parent, password/open permissions, audit locks, no assembled-container nesting, destination hold eligibility/capacity and unchanged batch rejection. In-space container transfers retain the ordinary-cargo boundary. |
+| Corporation storage | Current local office and division permissions, ownership changes, industry/locked-asset protections, local owned ship access and destination capacity. Corporation-owned hull internals remain outside personal inventory access. |
+| Wreck, jetcan, mission and hacking loot | Active in-space ship, relevant source rights/hacking state, range/system/deadlines, cloak/warp guards, destination hold filter/capacity and atomic transfer. Partial pickup metadata corrected. |
+| Planetary orbit and structure-service stores | Existing range/access, commodity eligibility, customs-office capacity and specialized service boundaries. Structure-service withdrawals support personal hangar/active ordinary cargo; use personal inventory as an intermediate for inactive ships. |
+| Direct trade, contracts and industry | Existing quote/settlement or job rules remain separate from Add/MultiAdd. Direct trade still requires offered loose stacks in the hangar or active ship; move inactive cargo to the hangar first. Courier packages, installed blueprints and corporate drops keep their feature-specific restrictions. |
+
+No SQLite gameplay implementation or new offline fallback was added. New regressions use resident worlds, native
+request round trips and the existing checkpoint/reopen mechanism. Existing offline compatibility tests remain historical
+coverage; the inactive-ship behavior in this record is resident behavior.
+
+**References.** [EVE University Neocom inventory](https://wiki.eveuniversity.org/Neocom#Inventory) describes access to
+contents of docked ships, and [Managing Your Assets](https://wiki.eveuniversity.org/Managing_Your_Assets) distinguishes
+remote inspection from local movement. The existing build-3662168 native Add/MultiAdd, SplitStack and MultiMerge evidence
+in this page supplies the unchanged call shapes; `NativeShipInventory.json` supplies pinned hold filters and capacities.
+The recorded archive SHA-256 is `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`.
+[Carbon Blue Marshal.cpp at af0d65b](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp)
+was consulted for the existing list/tuple/None boundary; serialization was unchanged. EveJS package 261108.1 was compared
+for local ship custody ancestry in `server/src/services/inventory/invBrokerService.js`, SHA-256
+`8CEC4112DE1B312B547E39B789391B0D8E18DFCA95AA61170F82AEFADC1E9651`. That AGPL reference supplied behavioral comparison;
+no source was copied. No new live observations were collected.
+
+**Automated validation.** The final affected run passed **805 tests**, including 17 new cases, with zero failures or skips (269.37 seconds for the test command). Tool restore (0.21 seconds), solution restore (1.34 seconds), solution build (9.75 seconds; zero warnings/errors), both Python policy suites (8 catalog and 9 formatting cases), and formatting verification (26.29 seconds) passed. The final validation sequence took 308.31 seconds. Documentation links and the new section anchor passed. The final affected filter was:
+
+```text
+FullyQualifiedName~InactiveShipInventoryTests|FullyQualifiedName~PilotInventoryTests|FullyQualifiedName~InventoryPersistenceTests|FullyQualifiedName~InventoryOwnershipTests|FullyQualifiedName~InventoryStackMergeTests|FullyQualifiedName~InventoryStackSplitTests|FullyQualifiedName~ShipInventoryRulesTests|FullyQualifiedName~TypedInventoryTests|FullyQualifiedName~CargoContainer|FullyQualifiedName~CorporationStorageTests|FullyQualifiedName~ShipStorageTests|FullyQualifiedName~HullHoldTests|FullyQualifiedName~MiningHoldConfigurationTests|FullyQualifiedName~PilotFittingTests|FullyQualifiedName~PassiveFittingTests|FullyQualifiedName~ModuleFittingTests|FullyQualifiedName~ApplyFittingTests|FullyQualifiedName~WreckTests|FullyQualifiedName~Jetcan|FullyQualifiedName~PlayerTradeTests|FullyQualifiedName~PlanetaryIndustryTests|FullyQualifiedName~MissionSingletonTests|FullyQualifiedName~ProductionInventoryTests|FullyQualifiedName~IndustryContainerTests|FullyQualifiedName~Structures.StructureTests|FullyQualifiedName~Hosting.GameplayDependenciesTests|FullyQualifiedName~Hosting.DataModelOwnershipTests
+```
+
+Development began with the exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Persistence.InactiveShipInventoryTests.NativeMovesUseTheBoundInactiveShipAndSurviveCheckpointReopening`.
+An initial expression-tree build error was corrected. Early test runs exposed fixture errors (an over-capacity success
+case, missing spare-hull structure attributes and an absent drone category); those fixtures were corrected before the
+final affected run. The dedicated partial-loot metadata/checkpoint regression also passed. The full .NET suite was not run.
+
+Merge validation against main `444d88fb` passed 21 focused inventory/gateway cases, the solution build (zero warnings/errors),
+both Python policy suites and formatting verification in 47.11 seconds. The only merge conflict was the protocol index;
+both gateway and inventory entries were retained. The full .NET suite was not rerun.
+
+**Live acceptance.** Not performed; agent client testing is disabled. Native repaint and drag/drop input remain unverified.
+
+**Optional maintainer checks.** Drag cargo from an inactive docked ship to the hangar and back; split and merge one stack
+in that ship; open a container aboard it and transfer an unlocked item.
 
 ## Container stacking and fitting, November 15, 2026
 

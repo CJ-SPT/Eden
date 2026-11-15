@@ -50,7 +50,7 @@ internal sealed class InventoryHandler(
         return new(result);
     }
 
-    private static long ShipContainer(string service, DockedPilot pilot) =>
+    internal static long ShipContainer(string service, DockedPilot pilot) =>
         service == "@ship" ? pilot.ShipId
         : service.StartsWith(ShipInventoryPrefix, StringComparison.Ordinal)
         && long.TryParse(service.AsSpan(ShipInventoryPrefix.Length), out long id)
@@ -191,11 +191,14 @@ internal sealed class InventoryHandler(
                 return new PilotCallResult.Failure(error.Message);
             }
         }
-        var item = inventory.List(owner, station).Concat(inventory.List(owner, pilot.ShipId)).FirstOrDefault(item => item.Id == itemId);
+        var item = inventory
+            .List(owner, station)
+            .Concat(fleet.Ships(owner, station).SelectMany(ship => inventory.List(owner, ship.Id)))
+            .FirstOrDefault(item => item.Id == itemId);
         string? destination = item switch
         {
             { LocationId: var location, FlagId: (int)InventoryFlag.Hangar } when location == station => "@hangar",
-            { LocationId: var location, FlagId: var flag } when location == pilot.ShipId && ShipHoldRules.IsHold(flag) => "@ship",
+            { LocationId: var location, FlagId: var flag } when ShipHoldRules.IsHold(flag) => $"{ShipInventoryPrefix}{location}",
             _ => null,
         };
         return destination is null || item is null
@@ -354,9 +357,7 @@ internal sealed class InventoryHandler(
             }
             if (method is "Add" or "MultiAdd")
             {
-                return container == pilot.ShipId
-                    ? MoveFromWire(context, "@ship", method, args, keywords)
-                    : new PilotCallResult.Failure("Activate the ship before changing its cargo or fitting.");
+                return MoveFromWire(context, service, method, args, keywords);
             }
         }
         return (service, method) switch

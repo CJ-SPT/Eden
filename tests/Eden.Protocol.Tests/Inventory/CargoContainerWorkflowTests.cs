@@ -13,6 +13,50 @@ namespace Eden.Protocol.Tests.Inventory;
 
 public sealed partial class CargoContainerAssemblyTests
 {
+    [Fact]
+    public void ContainersInInactiveShipsOpenAndTransferThroughTheActualShipInventory()
+    {
+        using Fixture f = new();
+        const long spare = 1000000000098;
+        using (var world = f.Db.Services.GetRequiredService<Eden.World.Runtime.LiveWorld>().Economy.Begin())
+        {
+            world.Add(
+                new Eden.Data.World.Inventory.Ship
+                {
+                    Id = spare,
+                    OwnerId = Owner,
+                    TypeId = f.Context.Pilot.ShipTypeId,
+                    StationId = f.Context.Pilot.StationId,
+                    Name = "Container carrier",
+                }
+            );
+            world.Commit();
+        }
+        long container = f.Assembled(SmallStandardContainer);
+        Assert.Same(PilotCallResult.None, f.Service("Add", [container, (long)ContractAssetTestData.Station], $"@ship:{spare}"));
+        string binding = f.Open(container);
+        long cargo = f.Add(InventoryDefinitions.CivilianMinerType, 2, spare, flag: InventoryFlag.Cargo);
+        Assert.Same(PilotCallResult.None, f.Service("Add", [cargo, spare], binding, new() { ["flag"] = (long)InventoryFlag.None }));
+        Assert.Equal(cargo, Assert.Single(f.Items(container, InventoryDefinitions.CivilianMinerType)).Id);
+        using (var world = f.Db.Services.GetRequiredService<Eden.World.Runtime.LiveWorld>().Economy.Begin())
+        {
+            world.Set<Eden.Data.World.Inventory.OwnedItem>().Find(cargo)!.VolumeOverride = 0;
+            world.Commit();
+        }
+        Assert.IsType<PilotCallResult.Failure>(
+            f.Service("Add", [cargo, container], $"@ship:{spare}", new() { ["flag"] = (long)InventoryFlag.FleetHangar })
+        );
+        Assert.Equal(cargo, Assert.Single(f.Items(container, InventoryDefinitions.CivilianMinerType)).Id);
+        Assert.IsType<PilotCallResult.Failure>(
+            f.Service("Add", [cargo, container], $"@ship:{spare}", new() { ["flag"] = (long)InventoryFlag.DroneBay })
+        );
+        Assert.Equal(cargo, Assert.Single(f.Items(container, InventoryDefinitions.CivilianMinerType)).Id);
+        Assert.Same(PilotCallResult.None, f.Service("Add", [cargo, container], $"@ship:{spare}"));
+        Assert.Equal(cargo, Assert.Single(f.Items(spare, InventoryDefinitions.CivilianMinerType)).Id);
+        Assert.Empty(f.Items(container, InventoryDefinitions.CivilianMinerType));
+        Assert.Empty(f.Items(f.Context.Pilot.ShipId, InventoryDefinitions.CivilianMinerType));
+    }
+
     [Theory]
     [InlineData(SmallStandardContainer)]
     [InlineData(3465)]

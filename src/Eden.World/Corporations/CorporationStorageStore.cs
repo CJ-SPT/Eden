@@ -253,6 +253,9 @@ internal sealed partial class CorporationStorageStore(WorldDatabase database, Ti
             world.Set<SavedCorporationOffice>().SingleOrDefault(o => o.CorporationId == corporation.Id && o.StationId == station)
             ?? throw new InvalidDataException("Your corporation does not rent an office here.");
         var pilot = world.Pilots.Single(p => p.Id == actorId);
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var sourceShip = PilotInventoryStore.InventoryShip(world, pilot, request.SourceId);
+        var destinationShip = PilotInventoryStore.InventoryShip(world, pilot, destinationId);
         bool fromOffice = request.SourceId == office.Id;
         bool toOffice = destinationId == office.Id;
         if (
@@ -261,8 +264,8 @@ internal sealed partial class CorporationStorageStore(WorldDatabase database, Ti
             || request.ItemIds.Distinct().Count() != request.ItemIds.Count
             || request.Quantity is <= 0
             || (request.Quantity.HasValue && request.ItemIds.Count != 1)
-            || (!fromOffice && request.SourceId != station && request.SourceId != pilot.ActiveShipId)
-            || (!toOffice && destinationId != station && destinationId != pilot.ActiveShipId)
+            || (!fromOffice && request.SourceId != station && sourceShip is null)
+            || (!toOffice && destinationId != station && destinationShip is null)
             || (
                 toOffice ? !CorporationStorageRules.IsDivision(request.FlagId)
                 : destinationId == station ? request.FlagId != (int)InventoryFlag.Hangar
@@ -274,7 +277,6 @@ internal sealed partial class CorporationStorageStore(WorldDatabase database, Ti
         }
         long sourceOwner = fromOffice ? corporation.Id : actorId;
         long targetOwner = toOffice ? corporation.Id : actorId;
-        using CatalogDbContext catalog = new(database.CatalogPath);
         var source = (
             fromOffice
                 ? PilotInventoryStore.List(world, catalog, sourceOwner, office.Id)
@@ -320,11 +322,14 @@ internal sealed partial class CorporationStorageStore(WorldDatabase database, Ti
                 throw new InvalidDataException("The source asset, quantity or hangar withdrawal permission is unavailable.");
             }
         }
-        if (!toOffice && destinationId == pilot.ActiveShipId)
+        if (!toOffice && destinationShip is not null)
         {
             var hold = ShipHoldRules.Definition(request.FlagId)!;
             double capacity = PilotInventoryStore.HoldCapacity(world, catalog, actorId, destinationId, request.FlagId);
-            if (source.Any(i => !hold.Allows(i) || i.Singleton && i.CategoryId == (int)InventoryCategory.Ship))
+            if (
+                (capacity <= 0 && request.FlagId != (int)InventoryFlag.Cargo)
+                || source.Any(i => !hold.Allows(i) || i.Singleton && i.CategoryId == (int)InventoryCategory.Ship)
+            )
             {
                 throw new InvalidDataException("This ship hold does not accept the requested assets.");
             }

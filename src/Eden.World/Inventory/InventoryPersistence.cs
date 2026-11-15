@@ -120,6 +120,9 @@ internal static partial class InventoryPersistence
                     Quantity = split.Quantity,
                     CrystalDamage = stack.CrystalDamage,
                     VolumeOverride = stack.VolumeOverride,
+                    BlueprintRuns = stack.BlueprintRuns,
+                    MaterialEfficiency = stack.MaterialEfficiency,
+                    TimeEfficiency = stack.TimeEfficiency,
                 }
             )
             .Entity;

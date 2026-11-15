@@ -30,9 +30,14 @@ internal sealed partial class PilotInventoryStackStore
         var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown pilot.");
         var ids = operations.SelectMany(operation => new[] { operation.SourceItemId, operation.TargetItemId }).Distinct().ToArray();
         var items = world.Set<OwnedItem>().Where(item => Enumerable.Contains(ids, item.Id)).ToDictionary(item => item.Id);
-        if (items.Count != ids.Length || items.Values.Any(item => item.OwnerId != pilotId || !Accessible(item.LocationId, item.FlagId)))
+        if (
+            items.Count != ids.Length
+            || items.Values.Any(item =>
+                item.OwnerId != pilotId || !PilotInventoryStore.AccessibleItems(world, pilot, item.LocationId, item.FlagId)
+            )
+        )
         {
-            throw new InvalidDataException("Merge your own stacks in the current station hangar or active ship hold.");
+            throw new InvalidDataException("Merge your own stacks in a ship hold or hangar at your current location.");
         }
         if (
             world.Set<OwnedItem>().Any(item => Enumerable.Contains(ids, item.LocationId))
@@ -101,10 +106,6 @@ internal sealed partial class PilotInventoryStackStore
         world.SaveChanges();
         world.Commit();
         return changes;
-
-        bool Accessible(long location, int flag) =>
-            location == pilot.ActiveShipId && ShipHoldRules.IsHold(flag)
-            || location == pilot.ActiveShip.DockedLocationId && flag == (int)InventoryFlag.Hangar && pilot.ActiveShip.Position is null;
     }
 
     private IReadOnlyList<InventoryChange> ResidentStackAll(Eden.World.Runtime.LiveWorld live, long pilotId, long locationId, int flagId)
@@ -115,13 +116,9 @@ internal sealed partial class PilotInventoryStackStore
         world.SetAttributes(pilotId, attributes);
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown pilot.");
-        var ship = pilot.ActiveShip;
-        if (
-            !(locationId == ship.DockedLocationId && flagId == (int)InventoryFlag.Hangar && ship.Position is null)
-            && !(locationId == ship.Id && ShipHoldRules.IsHold(flagId))
-        )
+        if (!PilotInventoryStore.AccessibleItems(world, pilot, locationId, flagId))
         {
-            throw new InvalidDataException("Stack items in your current station hangar or active ship hold.");
+            throw new InvalidDataException("Stack items in an owned ship hold or the hangar at your current location.");
         }
         var stacks = world
             .Set<OwnedItem>()

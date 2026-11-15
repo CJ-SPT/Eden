@@ -47,14 +47,16 @@ internal sealed partial class CargoContainerStore
         }
         long looseLocation = depositing ? request.SourceId : destination;
         bool hangar = ship.Position is null && looseLocation == ship.DockedLocationId;
-        bool cargo = looseLocation == ship.Id;
+        var looseShip = PilotInventoryStore.InventoryShip(world, pilot, looseLocation);
+        bool cargo = looseShip is not null;
         if (
             (!hangar && !cargo)
             || request.ItemIds.Count == 0
             || request.ItemIds.Distinct().Count() != request.ItemIds.Count
             || request.Quantity is <= 0
             || request.Quantity.HasValue && request.ItemIds.Count != 1
-            || !depositing && request.FlagId != (int)(hangar ? InventoryFlag.Hangar : InventoryFlag.Cargo)
+            || !depositing && ship.Position is not null && request.FlagId != (int)InventoryFlag.Cargo
+            || !depositing && !(hangar && request.FlagId == (int)InventoryFlag.Hangar || cargo && ShipHoldRules.IsHold(request.FlagId))
             || depositing && request.FlagId is not ((int)InventoryFlag.None or (int)InventoryFlag.Unlocked or (int)InventoryFlag.Locked)
         )
         {
@@ -72,7 +74,8 @@ internal sealed partial class CargoContainerStore
                 || item.Singleton && CargoContainerAssemblyRules.IsContainer(PilotInventoryStore.Read(catalog, item))
                 || (
                     depositing
-                        ? item.FlagId != (int)(hangar ? InventoryFlag.Hangar : InventoryFlag.Cargo)
+                        ? !PilotInventoryStore.AccessibleItems(world, pilot, item.LocationId, item.FlagId)
+                            || ship.Position is not null && item.FlagId != (int)InventoryFlag.Cargo
                         : item.FlagId is not ((int)InventoryFlag.None or (int)InventoryFlag.Unlocked)
                 )
                 || request.Quantity > item.Quantity
@@ -81,15 +84,24 @@ internal sealed partial class CargoContainerStore
         {
             throw new InvalidDataException("Choose available, unlocked cargo. Assembled containers cannot be nested.");
         }
+        var hold = !depositing && cargo ? ShipHoldRules.Definition(request.FlagId) : null;
+        if (hold is not null && items.Any(item => !hold.Allows(PilotInventoryStore.Read(catalog, item))))
+        {
+            throw new InvalidDataException("This hold does not permit the requested cargo.");
+        }
         double added = items.Sum(item => PilotInventoryStore.Read(catalog, item).Volume * (request.Quantity ?? item.Quantity));
         if (depositing || cargo)
         {
             double capacity = depositing
                 ? catalog.RequireItem(container.TypeId).Capacity ?? 0
-                : ShipHoldRules.Capacity((int)InventoryFlag.Cargo, PilotFittingStore.ShipAttributes(world, catalog, pilot, ship));
+                : ShipHoldRules.Capacity(request.FlagId, PilotFittingStore.ShipAttributes(world, catalog, pilot, looseShip!));
+            if (!depositing && capacity <= 0 && request.FlagId != (int)InventoryFlag.Cargo)
+            {
+                throw new InvalidDataException("This hold is unavailable.");
+            }
             double used = PilotInventoryStore
                 .List(world, catalog, pilotId, destination)
-                .Where(item => depositing || item.FlagId == (int)InventoryFlag.Cargo)
+                .Where(item => depositing || item.FlagId == request.FlagId)
                 .Sum(item => item.Volume * item.Quantity);
             if (added > capacity - used + InventoryDefinitions.ResourceTolerance)
             {
