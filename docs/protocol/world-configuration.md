@@ -35,6 +35,12 @@ The full .NET suite was not requested or run. Final filter with `EDEN_TEST_ADMIN
 FullyQualifiedName~Eden.Protocol.Tests.Administration.AdministrationTests|FullyQualifiedName~Eden.Protocol.Tests.Administration.WorldSettingsPageTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting.GameplayDependenciesTests
 ```
 
+Remote verification: deployed `71923416` through the existing Docker Compose configuration. The replacement
+container contains the framework script, reports all listeners ready, and serves both `/login` and
+`/_framework/blazor.web.js` with HTTP 200; the JavaScript payload is 200,645 bytes. These public asset checks
+do not establish authenticated browser interaction on the deployed world. Local automated browser tests use
+disposable credentials and worlds.
+
 Live acceptance: Not performed; agent client testing is disabled.
 
 Optional maintainer checks: refresh the administration page and select Travel after updating the server.
