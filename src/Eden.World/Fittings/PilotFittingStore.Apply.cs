@@ -30,6 +30,14 @@ internal sealed partial class PilotFittingStore
         {
             throw new InvalidDataException("Apply the fitting to your docked active ship of the matching type.");
         }
+        var result = Apply(world, catalog, pilot, ship, request);
+        transaction.Commit();
+        return result;
+    }
+
+    private AppliedFitting Apply(WorldAction world, CatalogDbContext catalog, Pilot pilot, Ship ship, ApplyFittingRequest request)
+    {
+        long pilotId = pilot.Id;
         CheckFittingService(world, ship, pilotId);
 
         long source = request.SourceId;
@@ -72,7 +80,7 @@ internal sealed partial class PilotFittingStore
         Dictionary<long, InventoryItem?> before = [];
         if (placements.Count > 0)
         {
-            var checkpoint = FittingChanges.Capture(world, catalog, pilot, now);
+            var checkpoint = FittingChanges.Capture(world, catalog, pilot, now, ship);
             long[] displaced = placements.Select(p => p.DisplacedId).OfType<long>().ToArray();
             if (displaced.Length > 0)
             {
@@ -84,7 +92,8 @@ internal sealed partial class PilotFittingStore
                         source,
                         new(displaced, ship.Id, (int)InventoryFlag.Hangar, null),
                         now,
-                        deferFittingChanges: true
+                        deferFittingChanges: true,
+                        fittingShip: ship
                     )
                 );
             }
@@ -99,7 +108,8 @@ internal sealed partial class PilotFittingStore
                     source,
                     placement.FlagId,
                     now,
-                    batchCheckpoint: checkpoint
+                    batchCheckpoint: checkpoint,
+                    fittingShip: ship
                 );
                 Track(changes);
                 if (!InventoryDefinitions.IsRigSlot(placement.FlagId))
@@ -119,7 +129,7 @@ internal sealed partial class PilotFittingStore
                     module.Online = true;
                 }
             }
-            Track(FittingChanges.Finish(world, catalog, pilot, checkpoint, now));
+            Track(FittingChanges.Finish(world, catalog, pilot, checkpoint, now, ship));
         }
 
         foreach (var group in request.Supplies.GroupBy(item => (item.Flag, item.TypeId)))
@@ -140,7 +150,9 @@ internal sealed partial class PilotFittingStore
                     break;
                 }
                 int quantity = Math.Min(available[id], needed);
-                Track(PilotInventoryStore.Move(world, catalog, pilotId, ship.Id, new([id], source, flag, quantity), now));
+                Track(
+                    PilotInventoryStore.Move(world, catalog, pilotId, ship.Id, new([id], source, flag, quantity), now, fittingShip: ship)
+                );
                 available[id] -= quantity;
                 needed -= quantity;
             }
@@ -151,7 +163,6 @@ internal sealed partial class PilotFittingStore
             .Select(pair => new InventoryChange(PilotInventoryStore.Read(catalog, world.Set<OwnedItem>().Find(pair.Key)!), pair.Value))
             .Where(change => change.Item != change.Previous)
             .ToArray();
-        transaction.Commit();
         return new(
             changesToPublish,
             missing.OrderBy(pair => pair.Key).Select(pair => new MissingFittingItem(pair.Key, pair.Value)).ToArray()

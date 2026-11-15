@@ -707,6 +707,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Characters and skills
 
+- [Ship Tree recent-skill lookup, November 15, 2026](protocol/characters.md#ship-tree-recent-skill-lookup-november-15-2026)
 - [Resident character, clone, and skill services](protocol/characters.md#resident-character-clone-and-skill-services)
 - [Neocom skill startup, November 11, 2026](protocol/characters.md#neocom-skill-startup-november-11-2026)
 - [Direct skill purchasing, November 11, 2026](protocol/characters.md#direct-skill-purchasing-november-11-2026)
@@ -883,6 +884,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Fitting and module families
 
+- [Native Multifit batches, November 15, 2026](protocol/fitting.md#native-multifit-batches-november-15-2026)
 - [Resident inventory and fitting commands](protocol/fitting.md#resident-inventory-and-fitting-commands)
 - [Apply a simulated fitting to the active ship](protocol/fitting.md#apply-a-simulated-fitting-to-the-active-ship)
 - [Bulk and corporation saved fittings, November 11, 2026](protocol/fitting.md#bulk-and-corporation-saved-fittings--november-11-2026)

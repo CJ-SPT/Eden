@@ -47,13 +47,18 @@ internal sealed partial class PilotInventoryStore
         InventoryMoveRequest request,
         long now,
         IReadOnlyDictionary<DogmaAttributeId, double>? attributes = null,
-        bool deferFittingChanges = false
+        bool deferFittingChanges = false,
+        Ship? fittingShip = null
     )
     {
-        attributes ??= world.Attributes(pilotId);
         var (itemIds, sourceId, flagId, quantity) = request;
         var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown pilot.");
-        var ship = pilot.ActiveShip;
+        var ship = fittingShip ?? pilot.ActiveShip;
+        if (fittingShip is not null)
+        {
+            PilotFittingStore.RequireFittingShip(pilot, ship);
+        }
+        attributes ??= fittingShip is null ? world.Attributes(pilotId) : PilotFittingStore.ShipAttributes(world, catalog, pilot, ship);
         world.RequireUncloaked(ship.Id);
         bool sameShipQuantityMove = sourceId == ship.Id && destinationId == ship.Id && quantity.HasValue;
         if (
@@ -134,7 +139,7 @@ internal sealed partial class PilotInventoryStore
             return splitChanges;
         }
         var unfittedIds = items.Where(i => InventoryDefinitions.IsFittedSlot(i.FlagId)).Select(i => i.Id).ToArray();
-        var checkpoint = unfittedIds.Length > 0 && !deferFittingChanges ? FittingChanges.Capture(world, catalog, pilot, now) : null;
+        var checkpoint = unfittedIds.Length > 0 && !deferFittingChanges ? FittingChanges.Capture(world, catalog, pilot, now, ship) : null;
         var magazines = world
             .Set<OwnedItem>()
             .Where(i => i.OwnerId == pilotId && Enumerable.Contains(unfittedIds, i.LocationId))
@@ -260,7 +265,7 @@ internal sealed partial class PilotInventoryStore
         world.SaveChanges();
         if (checkpoint is not null)
         {
-            changes.AddRange(FittingChanges.Finish(world, catalog, pilot, checkpoint, now));
+            changes.AddRange(FittingChanges.Finish(world, catalog, pilot, checkpoint, now, ship));
         }
         return changes;
     }

@@ -30,6 +30,67 @@ policy suites, and formatting verification passed.
 
 **Optional maintainer checks.** None.
 
+## Native Multifit batches, November 15, 2026
+
+The reported `Unsupported local call ship.MachoBindObject (FitShips)` came from the native Multifit window.
+`ship.FitShips` now accepts the keyword-only request, including when embedded in the initial binding call,
+and assembles and fits packaged hulls in the pilot's current personal item hangar. The operation leaves the
+active ship selected and preserves its rack. The existing supported-hull and module rules, skill checks,
+online effects, rig confirmation, fitting limits and hold capacities apply to each new hull.
+
+One resident transaction checks all stock, splits packages without losing units, installs the requested
+modules, supplies cargo/drone/fighter holds and assigns ship names. The final package retains its item ID
+when it becomes an assembled hull. Successful batches return Python `None`; shortages return
+`(listOfTypeQuantityPairs, None)` and assemble nothing. A later fitting or capacity error rolls back the
+whole batch, including earlier completed hulls. Notifications publish only committed final item changes
+and names. Competing batches serialize under the world owner, and its checkpoints persist the result.
+No SQLite gameplay fallback or schema change was added.
+
+Eden bounds a batch to **100 ships**. Stock must be in the current personal item hangar; nested or
+corporation containers are rejected. The public-QA item-creation capability remains disabled.
+
+Inert inspection of build **3662168** `fittingSvc.DoFitManyShips` established the eight keywords
+`shipTypeID`, `fitInfo`, `itemLocationID`, `cargoItemsByType`, `fitRigs`, `name`, `numToFit`, and
+`itemContainerID`, plus the two-field shortage result. The prepared `fittingSvc.pyj` decoded payload
+SHA-256 was `a614ecacf2e78c3256c89a0f65bf6e47e7a01b7864c44046eed0fd2c8f822c4b`.
+The local EVE.js `shipService.js` snapshot SHA-256 was
+`c34c3573c11cbaeca041d2cdc4791e19db7db6759a94f73125ad71e6b62848f1` (no Git metadata; older build 3396210).
+It was consulted as a behavior reference without copying implementation; the pinned client determines the
+wire shape. Existing explicit Blue adapters are reused without codec changes; the Carbon serialization
+reference remains [Marshal.cpp at fcbf0c2](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp).
+The [EVE University fitting-management guide](https://wiki.eveuniversity.org/NeoCom#Fitting_Management)
+describes Multifit from saved fitting plans; the
+[historical ship-supply procedure](https://wiki.eveuniversity.org/Archive%3ANSC_Campus_Defense_Ship_Supply/Creating_the_contracts)
+provides supporting evidence for packaged-hull batches and the rig confirmation option.
+
+**Automated validation.** Development began with exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Fittings.MultifitTests.NativeBoundMultifitSplitsPackagesFitsInactiveHullsAndSurvivesCheckpoint`.
+Its first two runs exposed incomplete hull-admission metadata in the test fixture, followed by an outbound
+bound-reference decoding limitation in the test helper. The corrected fixture uses an admitted Venture and
+decodes only the embedded payload; the exact test passed in **7.28 seconds**, with a **5.31-second** build.
+The initial **11-case** Multifit selection passed in **12.41 seconds**. After adding full-stack,
+competing-batch, in-space and typed-limit coverage, the combined `MultifitTests`, `ApplyFittingTests` and
+`PilotFleetTests` selection passed **38 tests** in **17.20 seconds**, with a **5.01-second** build.
+An intermediate feature build caught a missing namespace import in the added concurrency test; it was
+corrected before that successful run.
+
+Final tool/solution restore passed. The solution build passed with **zero warnings/errors** in **12.97 seconds**.
+The following focused filter passed **169 tests**, zero failed/skipped, in **77.40 seconds** command wall time:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Fittings|FullyQualifiedName~Eden.Protocol.Tests.Persistence.PilotFleetTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.PilotFittingTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.FittingConstraintTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ModuleFittingTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ShipRigTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.PilotInventoryTests|FullyQualifiedName~Eden.Protocol.Tests.Ammunition.AmmunitionTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.ShipTreeSkillServiceTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.FreeSkillPointServiceTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.PilotTrainingTests
+```
+
+Both Python policy suites passed (**8 catalog + 9 formatting tests**) in **1.50 seconds**. Formatting verification
+passed for **2,261 files** in **31.64 seconds**, along with the 140-character width policy and `git diff --check`.
+The build-through-verification sequence took **123.61 seconds**. No full .NET regression suite was requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled. The supplied screenshot is evidence
+of the original failure. Native rendering, input and gameplay feel remain unverified.
+
+**Optional maintainer checks.** From a saved fitting, Multifit two packaged hulls with stock in the Item
+Hangar, then confirm their names and contents while the original ship remains active.
+
 ## Apply a simulated fitting to the active ship
 
 Build **3662168** routes **Fit Ship** through `hullAndHardwareTypeBrowser.FitShip` and `fittingSvc.LoadFitting`.

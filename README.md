@@ -42,6 +42,12 @@ with saved deadlines and fleet reward sharing.
 The [feature notes](docs/feature-notes.md) detail supported content and limits. The [protocol records](docs/protocol.md)
 document automated coverage and any live client observations.
 
+The [Ship Tree recent-skill lookup](docs/protocol/characters.md#ship-tree-recent-skill-lookup-november-15-2026)
+now returns successfully; recent-training highlights remain unavailable.
+
+[Multifit](docs/protocol/fitting.md#native-multifit-batches-november-15-2026) assembles and fits up to 100 packaged
+hulls per batch from stock in your current personal item hangar.
+
 Use the [personal notepad and shared settings](docs/protocol/social.md#notepad-and-shared-settings--november-14-2026)
 to save private notes and folders, and share overview profiles, inventory filters and fleet broadcast settings with other pilots.
 

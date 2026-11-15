@@ -104,11 +104,13 @@ internal sealed partial class PilotFittingStore
         long now,
         IReadOnlyDictionary<long, int>? placements = null,
         bool completeOnline = false,
-        FittingCheckpoint? batchCheckpoint = null
+        FittingCheckpoint? batchCheckpoint = null,
+        Ship? fittingShip = null
     )
     {
         var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
-        var ship = pilot.ActiveShip;
+        var ship = fittingShip ?? pilot.ActiveShip;
+        RequireFittingShip(pilot, ship);
         CheckFittingService(world, ship, pilotId);
         if (
             ship.Position is not null
@@ -140,7 +142,7 @@ internal sealed partial class PilotFittingStore
         {
             throw new InvalidDataException("Equipment is unavailable.");
         }
-        var checkpoint = batchCheckpoint ?? FittingChanges.Capture(world, catalog, pilot, now);
+        var checkpoint = batchCheckpoint ?? FittingChanges.Capture(world, catalog, pilot, now, ship);
         var before = PilotInventoryStore.List(world, catalog, pilotId, sourceId).ToDictionary(i => i.Id);
         var capacity = checkpoint.Capacity;
         var rack = world
@@ -307,7 +309,7 @@ internal sealed partial class PilotFittingStore
             OnlineCompleteFit(world, catalog, pilotId, ship.Id, now, checkpoint);
             return result;
         }
-        var cascaded = batchCheckpoint is null ? FittingChanges.Finish(world, catalog, pilot, checkpoint, now) : [];
+        var cascaded = batchCheckpoint is null ? FittingChanges.Finish(world, catalog, pilot, checkpoint, now, ship) : [];
         return result.Concat(cascaded).ToArray();
 
         (int First, int Count) SlotsFor(int typeId)
@@ -320,6 +322,20 @@ internal sealed partial class PilotFittingStore
             int first = definition.FirstFlag;
             int slots = capacity.Slots(definition.Rack);
             return (first, slots);
+        }
+    }
+
+    internal static void RequireFittingShip(Pilot pilot, Ship ship)
+    {
+        if (
+            ship.OwnerId != pilot.Id
+            || ship.Position is not null
+            || ship.StoredInId is not null
+            || pilot.ActiveShip.Position is not null
+            || ship.DockedLocationId != pilot.ActiveShip.DockedLocationId
+        )
+        {
+            throw new InvalidDataException("Fit an owned ship in your current station hangar while docked.");
         }
     }
 

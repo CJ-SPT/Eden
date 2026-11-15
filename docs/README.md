@@ -83,6 +83,12 @@ records SQL-free warm remote navigation and routine settlement, retained compact
 [Neocom skill startup](protocol/characters.md#neocom-skill-startup-november-11-2026) records the built-in service-manager
 lookup correction and automated native skill-button startup regression.
 
+[Ship Tree skill lookup](protocol/characters.md#ship-tree-recent-skill-lookup-november-15-2026) fixes the unsupported
+`GetSkillChangesForISIS` call; recent-training highlight deltas remain unavailable.
+
+[Native Multifit batches](protocol/fitting.md#native-multifit-batches-november-15-2026) assemble and fit packaged
+hangar hulls in an atomic resident transaction, with checkpoint persistence and unchanged active-ship selection.
+
 [Arrival movement and fitting costs](protocol/performance.md#arrival-movement-and-fitting-costs-november-11-2026)
 covers repeated movement reads, docking fit reuse, schema-141 invalidation and matched remote-action work counts.
 

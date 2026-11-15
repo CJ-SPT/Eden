@@ -119,6 +119,19 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
         using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: itemIds));
         var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var result = Assemble(world, catalog, pilotId, itemIds, name);
+        transaction.Commit();
+        return result;
+    }
+
+    internal static ShipAssembly Assemble(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        IReadOnlyList<long> itemIds,
+        string? name
+    )
+    {
         var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
         if (
             pilot.ActiveShip.Position is not null
@@ -194,7 +207,6 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
             ships.Add(shipId);
         }
         world.SaveChanges();
-        transaction.Commit();
         return new(ships, changes);
     }
 

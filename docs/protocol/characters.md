@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Ship Tree recent-skill lookup, November 15, 2026](#ship-tree-recent-skill-lookup-november-15-2026)
+
 - [Player corporation banners in Character Show Info, November 13, 2026](#player-corporation-banners-in-character-show-info-november-13-2026)
 
 - [Player-created portrait settings, November 12, 2026](#player-created-portrait-settings-november-12-2026)
@@ -1018,3 +1020,44 @@ MovementPersistenceTests, DetachedCheckpointTests, ResidentHandoffTests
 ```
 
 **Live acceptance.** Not performed. Agent client testing is disabled.
+
+## Ship Tree recent-skill lookup, November 15, 2026
+
+The reported Ship Tree startup error was `Unsupported local call @skills.GetSkillChangesForISIS`.
+`SkillHandler` now handles the native zero-argument call after pilot selection and returns a Python list.
+Unexpected positional arguments and nonempty keyword arguments remain unsupported.
+
+Build 3662168's `SkillsSvc.GetRecentlyTrainedSkills` calls this method without arguments, iterates
+`(typeID, pointChange)` pairs, and subtracts each delta from the separately loaded current skill points to
+identify newly gained levels. `ShipTree.GetRecentlyChangedSkills` caches that result for its highlights.
+Static inspection used the prepared client at `E:/EdenDev/3662168`, whose `start.ini` reports build 3662168;
+the decoded `skillsvc.pyj` payload SHA-256 is
+`89dc3dd0164bc4dc9705af8168d97e7e4ee0dabb6a6b499b960b473110f047fc`.
+This is a prepared archive, not the untouched archive used by the historical route inventory.
+The [EVE University Ship Tree guide](https://wiki.eveuniversity.org/ISIS) describes current-skill hull unlocks
+and mastery; those continue to use Eden's existing skill data.
+
+The reply intentionally contains no highlight pairs: Eden does not retain the previous Ship Tree skill-point
+snapshot needed to report those deltas. Absolute skill totals and unrestricted history cannot be substituted
+for deltas without inventing newly trained levels. This correction removes the unsupported-call failure;
+recent-training highlights remain unavailable. It adds no saved state or persistence path.
+
+The local EVE.js reference was inspected for the response contract only, without copying implementation.
+Its `skillMgrService.js` snapshot SHA-256 is
+`64d7e60fc25c835cbb87c535bc10758afade4d17b23ce163bb8ded3c37451b5f`; its
+`certificates/skillChangeTracker.js` snapshot SHA-256 is
+`b7d192bd4c3cf942fdeedff9c26fe001cd096b3b57b1cb7b19f1bc40bb62dad8`.
+That checkout has no Git metadata and targets older build 3396210; the prepared pinned client is the wire authority.
+
+**Automated validation.** The initial exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.ShipTreeSkillServiceTests.ShipTreeRecentSkillCallReturnsAnEmptyListWithoutChangingCurrentSkillsOrHistory`
+passed **1 test** in **9.20 seconds**, with a **23.68-second** feature build. The resident-world regression
+checks selection gating, list encoding, repeated reads, and unchanged skill balances, history and notifications.
+A second regression covers malformed arguments and forged pilot keywords. The final combined milestone run
+passed **169 tests**, with build, both Python policy suites and formatting verification passing; the
+[Multifit record](fitting.md#native-multifit-batches-november-15-2026) retains the complete filter and timings.
+
+**Live acceptance.** Not performed; agent client testing is disabled. The supplied screenshot establishes
+the reported failure, not acceptance of this correction. Native rendering and gameplay feel remain unverified.
+
+**Optional maintainer checks.** Open the Ship Tree after updating the server and confirm that the dialog no longer appears.

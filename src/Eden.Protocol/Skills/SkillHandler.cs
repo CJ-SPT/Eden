@@ -46,6 +46,9 @@ internal sealed class SkillHandler(
                 ("@skills", "GetRespecInfo") when args.Length == 0 => new NeuralRemapReply(sheet.ReadAttributes(pilotId)),
                 ("@skills", "RespecCharacter") => Remap(context, CharacterAttributesWire.Read(args)),
                 ("@skills", "GetSkillHistory") => History(pilotId, args),
+                // The Ship Tree consumes optional (typeID, pointChange) highlights separately from current skills.
+                // Eden does not retain a per-pilot last-viewed skill snapshot, so there are no highlight deltas to report.
+                ("@skills", "GetSkillChangesForISIS") when args.Length == 0 && keywords is not { Count: > 0 } => BlueEmpty.List,
                 ("@skills", "SaveNewQueue") => Save(context, args, keywords),
                 ("@skills", "AbortTraining") when args.Length == 0 => Pause(context),
                 ("@skills", "CheckAndSendNotifications") => PilotCallResult.None,
