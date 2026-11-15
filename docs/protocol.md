@@ -455,6 +455,7 @@ records loaded-crystal modifiers, target compatibility, persistent wear and nati
 - [LP-store Resource Wars presence read, November 8, 2026](protocol/industry.md#lp-store-resource-wars-presence-read-november-8-2026)
 
 - [Loyalty point stores, November 8, 2026](protocol/industry.md#loyalty-point-stores-november-8-2026)
+- [Datacores in empire LP stores](protocol/industry.md#datacores-in-empire-lp-stores)
 
 - [Scanners and salvage operations, November 8, 2026](protocol/information.md#scanners-and-salvage-operations-november-8-2026)
 
