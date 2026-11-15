@@ -354,7 +354,9 @@ internal sealed partial class PilotInventoryStore(WorldDatabase database, TimePr
             return volume;
         }
         type ??= catalog.FittingType(typeId) ?? throw new InvalidDataException("Unknown inventory type.");
-        return type.CategoryId == (int)InventoryCategory.Ship ? ShipVolumeRules.Packaged(typeId, (HullClass)type.GroupId, volume) : volume;
+        return type.CategoryId == (int)InventoryCategory.Ship
+            ? ShipVolumeRules.Packaged(typeId, (HullClass)type.GroupId, volume)
+            : CargoContainerAssemblyRules.PackagedVolume(typeId, volume);
     }
 
     internal static void GrantStarterEquipment(WorldDbContext world, long pilotId, int stationId)

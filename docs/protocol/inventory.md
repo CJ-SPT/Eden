@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Cargo container assembly and personal asset worth](#cargo-container-assembly-and-personal-asset-worth)
 - [Criminal loot and lawful recovery, November 14, 2026](#criminal-loot-and-lawful-recovery-november-14-2026)
 
 - [Loot abandonment and theft, November 14, 2026](#loot-abandonment-and-theft-november-14-2026)
@@ -28,6 +29,48 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Venture ownership, boarding and mining holds](#venture-ownership-boarding-and-mining-holds)
 - [Native recovery corvettes, November 2, 2026](#native-recovery-corvettes-november-2-2026)
 - [Inventory refresh during capsule adoption, November 2, 2026](#inventory-refresh-during-capsule-adoption-november-2-2026)
+
+## Cargo container assembly and personal asset worth
+
+The November 15, 2026 client screenshots reported `Invalid Packet Destination` on the first calls embedded in
+`invbroker.MachoBindObject` and `charMgr.MachoBindObject`. Inert inspection of stock build 3662168 `code.ccp`
+(`37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`) confirmed both requests.
+
+`menusvc.MenuSvc.AssembleContainer` sends `AssembleCargoContainer(itemID, None, 0.0)` for each selected row and discards
+the result. The resident world assembles one unit per call in the pilot's local personal hangar, a local owned docked
+ship's cargo hold, or a local corporation division with query and take rights. A one-unit package keeps its ID. A stack
+retains its original ID and remainder and gets a new singleton row for the assembled unit. The transaction enforces hold
+capacity using the difference between assembled and packaged volume. Packaged overrides come from the pinned
+`inventorycommon.const`. Eden returns Python None and sends `OnItemChange` for committed rows. Changes persist in the
+existing checkpoint. [EVE University containers](https://wiki.eveuniversity.org/Containers)
+
+`invCache.inv5MinCacheContainer.GetAssetWorth` binds the global inventory moniker and calls `GetAssetWorth()` without
+arguments. `AssetNetWorthNotifier.calculate_progression` unpacks two numbers in order, asset worth and PLEX worth. Eden
+values the selected pilot's owned assets rooted in a station or structure, including contents of assembled containers
+and docked ships. The calculation excludes blueprints, courier wraps, escrow and in-space assets. It prefers the same
+reference estimates as the inventory price feed and uses positive catalog base prices for other priced types. Physical
+PLEX contributes to the second total. [EVE University personal assets](https://wiki.eveuniversity.org/Managing_Your_Assets)
+
+The older EveJS package **261108.1** supplied behavioral comparisons. Local SHA-256 values are
+`0935A89DE41FCB48F892AB1E8651478C2983181B0F45776123AE46818A338191` for `invBroker/packaging.js` and
+`65FD0F253351BA899B97EA9C2C2F76C67285621C18947A9A4C6EA26C3C4E289C` for `charMgrGlobalAssets.js`. The pinned client
+supplied the request arguments. Eden reuses its existing tuple, None and inventory DBRow adapters.
+
+**Automated validation.** The initial exact-method filter passed 4 cases covering first-call binding, checkpoint reopen,
+corporation permissions and the valuation reply (25.92 seconds build, 8.08 seconds tests). The final focused run passed
+443 cases in 34.17 seconds, including capacity rejection, inventory notifications and ownership. Tool restore (0.19 seconds),
+solution restore (1.00 second), solution build (1.64 seconds, zero warnings and errors), catalog policy (8 cases, 1.27 seconds),
+formatting policy (9 cases, 0.15 seconds) and formatting verification (32.95 seconds) passed. Full-suite coverage was outside
+this focused run. The final filter was:
+
+```text
+FullyQualifiedName~CargoContainerAssemblyTests|FullyQualifiedName~PersonalAssetServiceTests|FullyQualifiedName~PersonalAssetRulesTests|FullyQualifiedName~CorporationStorageTests|FullyQualifiedName~PilotInventoryTests|FullyQualifiedName~InventoryOwnershipTests|FullyQualifiedName~InventoryPersistenceTests|FullyQualifiedName~InventoryStackSplitTests|FullyQualifiedName~InventoryStackMergeTests|FullyQualifiedName~ShipInventoryRulesTests|FullyQualifiedName~TypedInventoryTests|FullyQualifiedName~PilotBindingsTests|FullyQualifiedName~TypedCallResultTests|FullyQualifiedName~MarketValuationTests|FullyQualifiedName~ServerServicesTests|FullyQualifiedName~GameplayDependenciesTests|FullyQualifiedName~DataModelOwnershipTests
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** On the updated server, assemble a packaged station container and reopen the personal
+inventory to check estimated worth.
 
 ## Criminal loot and lawful recovery, November 14, 2026
 

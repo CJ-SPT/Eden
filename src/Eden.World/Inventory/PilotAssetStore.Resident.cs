@@ -1,11 +1,13 @@
 using Eden.Data.Catalog;
 using Eden.Data.World.Industry;
 using Eden.Data.World.Inventory;
+using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Corporations;
+using Eden.World.Market;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +16,43 @@ namespace Eden.World.Inventory;
 
 internal sealed partial class PilotAssetStore
 {
+    public PersonalAssetWorth Worth(long pilotId)
+    {
+        var live = LiveWorld.Find(database.Path) ?? throw new InvalidOperationException("Asset worth requires a resident world.");
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var quantities = live.Economy.Inspect(world =>
+        {
+            CheckPilot(world, pilotId);
+            var holdings = AvailableItems(world, pilotId)
+                .Select(i => new PersonalAssetHolding(i.Id, i.LocationId, i.TypeId, i.Quantity, i.Singleton))
+                .Concat(
+                    world
+                        .Ships.Where(s => s.OwnerId == pilotId && s.Position == null)
+                        .Select(s => new PersonalAssetHolding(s.Id, s.StoredInId ?? s.StructureId ?? s.StationId, s.TypeId, 1, true))
+                )
+                .ToArray();
+            var docked = holdings.Select(i => i.LocationId).Distinct().Where(id => Location(world, catalog, id) is not null).ToHashSet();
+            return PersonalAssetRules.DockedQuantities(holdings, docked);
+        });
+        var estimates = MarketValuations.ReferencePrices(catalog);
+        var pricedTypes = quantities.Keys.Where(id =>
+            id != CourierRules.PackageType && catalog.FittingType(id) is { CategoryId: not (int)InventoryCategory.Blueprint }
+        );
+        Dictionary<int, decimal> prices = [];
+        foreach (int id in pricedTypes)
+        {
+            if (estimates.TryGetValue(id, out decimal estimate))
+            {
+                prices.Add(id, estimate);
+            }
+            else if (catalog.Read(CatalogData.Client.Types, (long)id)?.BasePrice is > 0 and <= (double)long.MaxValue and var basePrice)
+            {
+                prices.Add(id, (decimal)basePrice);
+            }
+        }
+        return PersonalAssetRules.EstimateWorth(quantities, prices);
+    }
+
     public IReadOnlyList<PersonalAssetName> StationItemNames(long pilotId, IReadOnlySet<long> itemIds)
     {
         if (itemIds.Count == 0 || LiveWorld.Find(database.Path) is not { } live)

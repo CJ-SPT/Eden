@@ -498,7 +498,7 @@ internal sealed class CorporationStorageStore(WorldDatabase database, TimeProvid
         return corporation;
     }
 
-    private static SavedCorporationOffice LocalOffice(WorldAction world, long actorId, long officeId)
+    internal static SavedCorporationOffice LocalOffice(WorldAction world, long actorId, long officeId)
     {
         int station = DockedStation(world, actorId);
         var corporation = CorporationRoleStore.Current(world, actorId);

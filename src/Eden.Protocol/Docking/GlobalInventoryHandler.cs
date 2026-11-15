@@ -20,7 +20,10 @@ internal sealed class GlobalInventoryHandler(IPilotAssets assets) : ISelectedPil
         Dictionary<string, object?>? keywords = null
     )
     {
-        if (service != BoundService || method is not ("ListStations" or "ListStationItems" or "List" or "ListIncludingContainers"))
+        if (
+            service != BoundService
+            || method is not ("ListStations" or "ListStationItems" or "List" or "ListIncludingContainers" or "GetAssetWorth")
+        )
         {
             return PilotCallResult.Unsupported;
         }
@@ -37,6 +40,7 @@ internal sealed class GlobalInventoryHandler(IPilotAssets assets) : ISelectedPil
                 ("List", []) => Rows(assets.Items(pilot, new())),
                 ("ListIncludingContainers", []) => Rows(assets.Items(pilot, new(IncludeContainers: true))),
                 ("ListStationItems", [long station]) when station > 0 => Rows(assets.Items(pilot, new(station))),
+                ("GetAssetWorth", []) => new GlobalInventoryWorth(assets.Worth(pilot)),
                 _ => new PilotCallResult.Failure("Invalid personal asset request."),
             };
         }
@@ -47,6 +51,11 @@ internal sealed class GlobalInventoryHandler(IPilotAssets assets) : ISelectedPil
     }
 
     private static BlueList<InventoryRow> Rows(IReadOnlyList<InventoryItem> items) => new(items.Select(InventoryRow.From).ToArray());
+}
+
+internal sealed record GlobalInventoryWorth(PersonalAssetWorth Worth) : BlueModel
+{
+    public override object ToBlue() => new object?[] { (double)Worth.AssetsIsk, (double)Worth.PlexIsk };
 }
 
 internal sealed record GlobalInventoryStations(IReadOnlyList<PersonalAssetLocation> Stations) : BlueModel

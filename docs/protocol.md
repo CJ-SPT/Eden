@@ -773,6 +773,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 - <a id="venture-ownership-boarding-and-mining-holds"></a>[Venture ownership, boarding and mining holds](protocol/inventory.md#venture-ownership-boarding-and-mining-holds)
 - <a id="native-recovery-corvettes-november-2-2026"></a>[Native recovery corvettes, November 2, 2026](protocol/inventory.md#native-recovery-corvettes-november-2-2026)
 - <a id="inventory-refresh-during-capsule-adoption-november-2-2026"></a>[Inventory refresh during capsule adoption, November 2, 2026](protocol/inventory.md#inventory-refresh-during-capsule-adoption-november-2-2026)
+- [Cargo container assembly and personal asset worth](protocol/inventory.md#cargo-container-assembly-and-personal-asset-worth)
 
 ### Mining, industry and markets
 

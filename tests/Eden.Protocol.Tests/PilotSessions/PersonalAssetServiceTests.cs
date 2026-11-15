@@ -4,12 +4,14 @@ using Eden.Gameplay.Contracts;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Market;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Persistence;
 using Eden.Server;
 using Eden.World.Catalog;
+using Eden.World.Market;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,6 +20,65 @@ namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class PersonalAssetServiceTests
 {
+    [Fact]
+    public void NativeAssetWorthReturnsOwnedDockedHoldingsAndPlexAsSeparateTotals()
+    {
+        using Fixture f = new(live: true);
+        ContractAssetTestData.AddRemoteStation(f.Db);
+        AddContainerType(f.Db);
+        string catalogPath = new WorldDatabase(f.Db.Path).CatalogPath;
+        using (CatalogDbContext catalog = new(catalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT OR IGNORE INTO ItemType(Id,Name,GroupId) VALUES (44992,'PLEX',12);
+                INSERT OR REPLACE INTO SourceRecord VALUES
+                    ('client/types','44992','{{"volume":0.01,"published":1,"marketGroupID":1923}}');
+                """
+            );
+        }
+        var bound = f.SelectAndBind("GetAssetWorth", []);
+        double[] before = ReadWorth(bound.Reply);
+        long container = ContractAssetTestData.Stack(f.Db, quantity: 1, location: ContractAssetTestData.RemoteStation);
+        long packaged = ContractAssetTestData.Stack(f.Db, quantity: 5, location: container, flag: (int)InventoryFlag.Unlocked);
+        long fitted = ContractAssetTestData.Stack(
+            f.Db,
+            quantity: 2,
+            location: f.Db.Store.FindPilot(1000001)!.ShipId,
+            flag: (int)InventoryFlag.Cargo
+        );
+        long plex = ContractAssetTestData.Stack(f.Db, quantity: 4);
+        long foreign = ContractAssetTestData.Stack(f.Db, quantity: 200, owner: ContractAssetTestData.Other);
+        long orphan = ContractAssetTestData.Stack(f.Db, quantity: 200, location: long.MaxValue);
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            var items = world.Set<OwnedItem>();
+            items.Find(container)!.Singleton = true;
+            foreach (long id in new[] { container, packaged, fitted, foreign, orphan })
+            {
+                items.Find(id)!.TypeId = ContainerType;
+            }
+            items.Find(plex)!.TypeId = MarketDefinitions.PlexTypeId;
+            world.SaveChanges();
+        }
+        using CatalogDbContext reader = new(catalogPath);
+        decimal plexPrice = MarketValuations.ReferencePrices(reader)[MarketDefinitions.PlexTypeId];
+        var result = CurrentWorth();
+        Assert.Equal(before[0] + 8 * 125, result[0], 2);
+        Assert.Equal(before[1] + (double)decimal.Round(4 * plexPrice, 2), result[1], 2);
+        Assert.IsType<PilotCallResult.Failure>(f.Call("GetAssetWorth", [ContractAssetTestData.Other]));
+        Assert.IsType<PilotCallResult.Failure>(f.Call("GetAssetWorth", [], keywords: new() { ["ownerID"] = ContractAssetTestData.Other }));
+        Assert.Empty(f.Context.Notifications);
+
+        f.Db.Store.SetPosition(f.Context.Pilot.ShipId, SpacePosition.Zero);
+        Assert.Equal(before[0] + 6 * 125, CurrentWorth()[0], 2);
+
+        double[] CurrentWorth() => ReadWorth(Assert.IsType<PilotCallResult.Success>(f.Call("GetAssetWorth", [])).Reply);
+
+        static double[] ReadWorth(BlueModel worth) =>
+            Assert.IsType<object?[]>(BlueMarshal.Decode(BlueMarshal.Encode(worth))).Select(Assert.IsType<double>).ToArray();
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -257,7 +318,7 @@ public sealed class PersonalAssetServiceTests
         catalog.Database.ExecuteSqlRaw(
             """
             INSERT INTO ItemType(Id,Name,GroupId) VALUES (3293,'Small Standard Container',12);
-            INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('client/types','3293','{{"volume":100}}');
+            INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('client/types','3293','{{"volume":100,"basePrice":125}}');
             """
         );
     }
@@ -284,12 +345,13 @@ public sealed class PersonalAssetServiceTests
             );
         }
 
-        public void SelectAndBind(string method, object?[] args)
+        public BoundPilotReply SelectAndBind(string method, object?[] args)
         {
             Context.Select(Db.Store.FindPilot(1000001)!);
             var result = Call("MachoBindObject", [new object?[] { ContractAssetTestData.Pilot, 10002L }, new object?[] { method, args }]);
             var bound = Assert.IsType<BoundPilotReply>(Assert.IsType<PilotCallResult.Success>(result).Reply);
             Service = Context.ResolveReference(bound.Reference.Id)!;
+            return bound;
         }
 
         public PilotCallResult Call(string method, object?[] args, string? service = null, Dictionary<string, object?>? keywords = null) =>

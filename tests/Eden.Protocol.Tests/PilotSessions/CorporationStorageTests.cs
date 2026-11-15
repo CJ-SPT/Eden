@@ -61,6 +61,48 @@ public sealed class CorporationStorageTests
     }
 
     [Fact]
+    public void ContainerAssemblyUsesDivisionTakeRightsAndPublishesToOtherMembers()
+    {
+        using TestWorld world = new(liveWorld: true);
+        int corporation = Prepare(world);
+        var office = Rent(world);
+        long itemId;
+        using (WorldDbContext saved = new(world.Path))
+        {
+            itemId = InventoryPersistence.NextId(saved);
+            saved.Add(
+                new OwnedItem
+                {
+                    Id = itemId,
+                    OwnerId = corporation,
+                    LocationId = office.Id,
+                    FlagId = FirstDivision,
+                    TypeId = Eden.Gameplay.Loot.JetcanRules.TypeId,
+                    Quantity = 1,
+                }
+            );
+            saved.SaveChanges();
+        }
+        Access(world, corporation, new(RolesAtHQ: (long)CorporationRole.HangarCanQuery1));
+        using CorporationTestClient member = new(world, 1000002);
+        using CorporationTestClient ceo = new(world, 1000001);
+        var args = new object?[] { itemId, null, 0d };
+        Assert.IsType<PilotCallResult.Failure>(member.CallService("invbroker", "AssembleCargoContainer", args));
+        Assert.False(Assert.Single(Storage(world).List(Ceo, office.Id, FirstDivision)).Singleton);
+        Assert.Empty(member.Context.Notifications.OfType<ItemChanged>());
+
+        Access(world, corporation, new(RolesAtHQ: (long)(CorporationRole.HangarCanQuery1 | CorporationRole.HangarCanTake1)));
+        Assert.Same(PilotCallResult.None, member.CallService("invbroker", "AssembleCargoContainer", args));
+        var item = Assert.Single(Storage(world).List(Ceo, office.Id, FirstDivision));
+        Assert.Equal(corporation, item.OwnerId);
+        Assert.Equal(office.Id, item.LocationId);
+        Assert.True(item.Singleton);
+        Assert.Contains(member.Context.Notifications.OfType<ItemChanged>(), change => change.Item.Id == itemId);
+        ceo.Advance();
+        Assert.Contains(ceo.Context.Notifications.OfType<ItemChanged>(), change => change.Item.Id == itemId);
+    }
+
+    [Fact]
     public void RentalAndLocalNativeInventoryTransfersChargeOnceAndConserveOwnership()
     {
         using TestWorld world = new();
