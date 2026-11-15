@@ -141,7 +141,12 @@ internal sealed partial class CorporationRoleStore(WorldDatabase database, TimeP
             bool selfRelinquish = actorId == update.PilotId && !after.Roles.HasAuthority && after.TitleMask == 0;
             if (!selfRelinquish)
             {
-                CorporationRoleRules.Authorize(corporation.CeoId == actorId, actor.Roles, effectiveBefore.Roles, effectiveAfter.Roles);
+                CorporationRoleRules.Authorize(
+                    corporation.CeoId == actorId && actor.Roles.Has(CorporationRole.Director),
+                    actor.Roles,
+                    effectiveBefore.Roles,
+                    effectiveAfter.Roles
+                );
                 if (
                     (
                         after.Title != before.Title

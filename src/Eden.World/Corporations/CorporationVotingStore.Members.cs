@@ -13,6 +13,11 @@ internal sealed partial class CorporationVotingStore
         {
             throw new InvalidDataException("Choose an ordinary member of this corporation for expulsion.");
         }
+        HoldAuthority(world, corporation, pilotId, voteId, now);
+    }
+
+    private static void HoldAuthority(WorldAction world, SavedCorporation corporation, long pilotId, long voteId, long now)
+    {
         var access = CorporationRoleStore.Read(world, pilotId, corporation.Id);
         if (access.AuthorityHoldVoteId.HasValue)
         {
@@ -35,7 +40,11 @@ internal sealed partial class CorporationVotingStore
 
     private static void ReleaseMember(WorldAction world, CorporationVoteCase vote)
     {
-        long pilotId = vote.Data.Draft.Parameter;
+        ReleaseAuthority(world, vote, vote.Data.Draft.Parameter);
+    }
+
+    private static void ReleaseAuthority(WorldAction world, CorporationVoteCase vote, long pilotId)
+    {
         var corporation = world.Set<SavedCorporation>().Find(vote.CorporationId)!;
         var access = CorporationRoleStore.Read(world, pilotId, corporation.Id);
         // A departure/rejoin or closure must never resurrect the old membership's authority.

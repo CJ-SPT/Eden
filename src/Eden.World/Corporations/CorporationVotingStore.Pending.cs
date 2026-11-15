@@ -11,26 +11,20 @@ internal sealed partial class CorporationVotingStore
     public IReadOnlyList<CorporationPendingExpulsion> PendingExpulsions(long actorId)
     {
         Advance();
-        return WorldActionScope.Inspect(
-            database,
-            world =>
-            {
-                var corporation = CorporationRoleStore.Current(world, actorId);
-                CorporationRoleStore.RequireDirector(world, actorId, corporation);
-                return (IReadOnlyList<CorporationPendingExpulsion>)
-                    world
-                        .Set<SavedCorporationVote>()
-                        .Where(row => row.CorporationId == corporation.Id)
-                        .AsEnumerable()
-                        .Select(row => row.Snapshot())
-                        .Where(vote => vote.Data.PendingExpulsionActorId.HasValue)
-                        .Select(vote => new CorporationPendingExpulsion(
-                            vote.Data.Draft.Parameter,
-                            vote.Data.PendingExpulsionActorId!.Value
-                        ))
-                        .ToArray();
-            }
-        );
+        return Resident.Economy.Inspect(world =>
+        {
+            var corporation = CorporationRoleStore.Current(world, actorId);
+            CorporationRoleStore.RequireDirector(world, actorId, corporation);
+            return (IReadOnlyList<CorporationPendingExpulsion>)
+                world
+                    .Set<SavedCorporationVote>()
+                    .Where(row => row.CorporationId == corporation.Id)
+                    .AsEnumerable()
+                    .Select(row => row.Snapshot())
+                    .Where(vote => vote.Data.PendingExpulsionActorId.HasValue)
+                    .Select(vote => new CorporationPendingExpulsion(vote.Data.Draft.Parameter, vote.Data.PendingExpulsionActorId!.Value))
+                    .ToArray();
+        });
     }
 
     private void AdvancePendingExpulsions()
@@ -41,25 +35,22 @@ internal sealed partial class CorporationVotingStore
             return;
         }
         // Only outstanding subjects are inspected. Waiting in space never scans vote history or opens a write transaction.
-        bool ready = WorldActionScope.Inspect(
-            database,
-            world =>
-                pending.Any(id =>
-                {
-                    var vote = world.Set<SavedCorporationVote>().Find(id)?.Snapshot();
-                    return vote is null
-                        || world.Pilots.Find(vote.Data.Draft.Parameter) is not { } pilot
-                        || pilot.CorporationId != vote.CorporationId
-                        || pilot.ActiveShip.Position is null
-                        || CorporationRoleStore.Read(world, pilot.Id, vote.CorporationId).AuthorityHoldVoteId != vote.Id;
-                })
+        bool ready = Resident.Economy.Inspect(world =>
+            pending.Any(id =>
+            {
+                var vote = world.Set<SavedCorporationVote>().Find(id)?.Snapshot();
+                return vote is null
+                    || world.Pilots.Find(vote.Data.Draft.Parameter) is not { } pilot
+                    || pilot.CorporationId != vote.CorporationId
+                    || pilot.ActiveShip.Position is null
+                    || CorporationRoleStore.Read(world, pilot.Id, vote.CorporationId).AuthorityHoldVoteId != vote.Id;
+            })
         );
         if (!ready)
         {
             return;
         }
-        using WorldActionScope transaction = new(database, TransactionParticipants.None);
-        var world = transaction.World;
+        using var world = Resident.Economy.Begin(TransactionParticipants.None);
         List<long> remaining = [];
         foreach (long id in Volatile.Read(ref _pendingExpulsions))
         {
@@ -68,7 +59,7 @@ internal sealed partial class CorporationVotingStore
                 remaining.Add(id);
             }
         }
-        transaction.Commit();
+        world.Commit();
         Volatile.Write(ref _pendingExpulsions, remaining.ToArray());
         database.NotifyAccessGroupsChanged();
     }

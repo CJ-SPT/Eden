@@ -114,10 +114,23 @@ internal sealed partial class CorporationLeadershipStore(WorldDatabase database,
             throw new InvalidDataException("Choose a current member with Corporation Management who accepts roles.");
         }
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        ChangeCeo(world, corporation, successorId, now);
+        transaction.Commit();
+    }
+
+    internal static void ChangeCeo(WorldAction world, SavedCorporation corporation, long successorId, long now, long? electionVoteId = null)
+    {
+        long actorId = corporation.CeoId;
         var former = CorporationRoleStore.Effective(world, actorId, corporation);
         var successor = CorporationRoleStore.Effective(world, successorId, corporation);
         corporation.CeoId = successorId;
         var previousAccess = CorporationRoleStore.Read(world, actorId, corporation.Id) with { RolesRemovedAt = now };
+        if (electionVoteId.HasValue)
+        {
+            previousAccess = previousAccess with { Roles = new(), TitleMask = 0, AuthorityHoldVoteId = null };
+            var successorAccess = CorporationRoleStore.Read(world, successorId, corporation.Id);
+            CorporationRoleStore.Save(world, successorId, corporation.Id, successorAccess with { AuthorityHoldVoteId = electionVoteId });
+        }
         var saved =
             world.Set<SavedCorporationMemberAccess>().Find(actorId)
             ?? world.Add(new SavedCorporationMemberAccess { PilotId = actorId, CorporationId = corporation.Id }).Entity;
@@ -149,7 +162,6 @@ internal sealed partial class CorporationLeadershipStore(WorldDatabase database,
             );
             world.Add(new SavedCorporationChange { PilotId = member, RoleJson = newRoles });
         }
-        transaction.Commit();
     }
 
     private static IReadOnlyList<long> Successors(WorldAction world, SavedCorporation corporation) =>
@@ -168,6 +180,8 @@ internal sealed partial class CorporationLeadershipStore(WorldDatabase database,
     private static SavedCorporation RequireCeo(WorldAction world, long actorId)
     {
         var corporation = CorporationRoleStore.Current(world, actorId);
-        return corporation.CeoId == actorId ? corporation : throw new InvalidDataException("Only the CEO can perform this action.");
+        return corporation.CeoId == actorId && CorporationRoleStore.Has(world, actorId, corporation, CorporationRole.Director)
+            ? corporation
+            : throw new InvalidDataException("Only the CEO with active authority can perform this action.");
     }
 }

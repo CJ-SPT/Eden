@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Corporation CEO elections](protocol/corporations.md#ceo-elections-november-15-2026)
+records eligibility, suspended authority, automatic succession and checkpointed activation deadlines.
+
 [Corporation administration and inventory blockers](protocol/corporations.md#administration-and-inventory-blockers-november-15-2026)
 records member auditing, correct membership dates, moving headquarters and native deliveries access.
 

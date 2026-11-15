@@ -2,6 +2,7 @@ using System.Text.Json;
 using Eden.Data.World.Corporations;
 using Eden.Gameplay.Corporations;
 using Eden.Infrastructure.Registration;
+using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
@@ -10,19 +11,21 @@ namespace Eden.World.Corporations;
 [Injectable(InjectionType.Singleton)]
 internal sealed partial class CorporationVotingStore(WorldDatabase database, TimeProvider clock) : ICorporationVoting
 {
+    private LiveWorld Resident =>
+        LiveWorld.Find(database.Path) ?? throw new InvalidDataException("Corporation voting requires an active resident world.");
     private long _nextDeadline = long.MinValue;
     private long[] _pendingExpulsions = [];
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
-    public bool CanView(long actorId, int corporationId) =>
-        WorldActionScope.Inspect(database, world => CanView(world, actorId, corporationId));
+    public bool CanView(long actorId, int corporationId) => Resident.Economy.Inspect(world => CanView(world, actorId, corporationId));
 
     private static bool CanView(WorldAction world, long actorId, int corporationId)
     {
         var corporation = world.Set<SavedCorporation>().Find(corporationId);
         return corporation is { ClosedAt: null }
             && (
-                CorporationRoleStore.Has(world, actorId, corporation, CorporationRole.Director)
+                corporation.CeoId == actorId
+                || CorporationRoleStore.Has(world, actorId, corporation, CorporationRole.Director)
                 || Owners(world, actorId).Any(owner => world.Set<SavedCorporationShareHolding>().Find(corporationId, owner)?.Shares > 0)
             );
     }
@@ -31,8 +34,9 @@ internal sealed partial class CorporationVotingStore(WorldDatabase database, Tim
         world
             .Set<SavedCorporation>()
             .Where(row => row.CeoId == actorId && row.ClosedAt == null)
-            .Select(row => (long)row.Id)
             .AsEnumerable()
+            .Where(row => CorporationRoleStore.Has(world, actorId, row, CorporationRole.Director))
+            .Select(row => (long)row.Id)
             .Prepend(actorId)
             .ToArray();
 
@@ -47,51 +51,59 @@ internal sealed partial class CorporationVotingStore(WorldDatabase database, Tim
     public CorporationVoteListing List(long actorId, int corporationId)
     {
         Advance();
-        return WorldActionScope.Inspect(
-            database,
-            world =>
-            {
-                RequireView(world, actorId, corporationId);
-                var votes = world
-                    .Set<SavedCorporationVote>()
-                    .Where(row => row.CorporationId == corporationId)
-                    .OrderByDescending(row => row.Id)
-                    .AsEnumerable()
-                    .Select(row => row.Snapshot())
-                    .ToArray();
-                return new CorporationVoteListing(
-                    votes.Where(vote => vote.EndsAt > Now).ToArray(),
-                    votes.Where(vote => vote.EndsAt <= Now).Take(CorporationVotingRules.ClosedPageSize).ToArray()
-                );
-            }
-        );
+        return Resident.Economy.Inspect(world =>
+        {
+            RequireView(world, actorId, corporationId);
+            var votes = world
+                .Set<SavedCorporationVote>()
+                .Where(row => row.CorporationId == corporationId)
+                .OrderByDescending(row => row.Id)
+                .AsEnumerable()
+                .Select(row => row.Snapshot())
+                .ToArray();
+            return new CorporationVoteListing(
+                votes.Where(vote => vote.EndsAt > Now).ToArray(),
+                votes.Where(vote => vote.EndsAt <= Now).Take(CorporationVotingRules.ClosedPageSize).ToArray()
+            );
+        });
     }
 
     public CorporationVoteCase Read(long actorId, int corporationId, long caseId)
     {
         Advance();
-        return WorldActionScope.Inspect(
-            database,
-            world =>
-            {
-                RequireView(world, actorId, corporationId);
-                return Case(world, corporationId, caseId).Snapshot();
-            }
-        );
+        return Resident.Economy.Inspect(world =>
+        {
+            RequireView(world, actorId, corporationId);
+            return Case(world, corporationId, caseId).Snapshot();
+        });
     }
 
     public long Create(long actorId, CorporationVoteDraft draft)
     {
         CorporationVotingRules.Validate(draft);
         Advance();
-        if (draft.Type is not (CorporationVoteType.General or CorporationVoteType.Shares or CorporationVoteType.Expel))
+        if (
+            draft.Type
+            is not (CorporationVoteType.General or CorporationVoteType.Shares or CorporationVoteType.Expel or CorporationVoteType.Ceo)
+        )
         {
             throw new InvalidDataException("This type of corporation vote is not available yet.");
         }
-        using WorldActionScope transaction = new(database, TransactionParticipants.None);
-        var world = transaction.World;
+        using var world = Resident.Economy.Begin(TransactionParticipants.None);
         var corporation = CorporationRoleStore.Current(world, actorId);
-        CorporationRoleStore.RequireDirector(world, actorId, corporation);
+        CorporationCeoElection? election = null;
+        if (draft.Type == CorporationVoteType.Ceo)
+        {
+            if (draft.Parameter != actorId || draft.Parameter1 != 0 || draft.Parameter2 != 0 || !CanRunForCeo(world, actorId))
+            {
+                throw new InvalidDataException("Only an eligible member may propose themselves for CEO.");
+            }
+            election = new(corporation.CeoId, MembershipId(world, actorId));
+        }
+        else
+        {
+            CorporationRoleStore.RequireDirector(world, actorId, corporation);
+        }
         long now = Now;
         if (
             world.Set<SavedCorporationVote>().Count(row => row.CorporationId == corporation.Id && row.EndsAt > now)
@@ -113,7 +125,7 @@ internal sealed partial class CorporationVotingStore(WorldDatabase database, Tim
                     CorporationId = corporation.Id,
                     StartedAt = now,
                     EndsAt = checked(now + draft.Days * TimeSpan.TicksPerDay),
-                    DataJson = JsonSerializer.Serialize(new CorporationVoteData(actorId, draft, rights, [])),
+                    DataJson = JsonSerializer.Serialize(new CorporationVoteData(actorId, draft, rights, [], Election: election)),
                 }
             )
             .Entity;
@@ -122,16 +134,19 @@ internal sealed partial class CorporationVotingStore(WorldDatabase database, Tim
         {
             HoldMember(world, corporation, draft.Parameter, row.Id, now);
         }
+        else if (election is not null)
+        {
+            HoldAuthority(world, corporation, election.IncumbentId, row.Id, now);
+        }
         Notify(world, row.Snapshot(), CorporationVoteEvent.Created);
-        transaction.Commit();
+        world.Commit();
         Interlocked.Exchange(ref _nextDeadline, Math.Min(Volatile.Read(ref _nextDeadline), row.EndsAt));
         return row.Id;
     }
 
     public void Cast(long actorId, int corporationId, long caseId, int optionId)
     {
-        using WorldActionScope transaction = new(database, TransactionParticipants.None);
-        var world = transaction.World;
+        using var world = Resident.Economy.Begin(TransactionParticipants.None);
         RequireView(world, actorId, corporationId);
         var row = Case(world, corporationId, caseId);
         var vote = row.Snapshot();
@@ -152,44 +167,41 @@ internal sealed partial class CorporationVotingStore(WorldDatabase database, Tim
             .ToArray();
         row.DataJson = JsonSerializer.Serialize(vote.Data with { Ballots = ballots });
         Notify(world, row.Snapshot(), CorporationVoteEvent.Cast);
-        transaction.Commit();
+        world.Commit();
     }
 
     public IReadOnlyList<CorporationVoteCase> Actions(long actorId)
     {
         Advance();
-        return WorldActionScope.Inspect(
-            database,
-            world =>
-            {
-                var corporation = CorporationRoleStore.Current(world, actorId);
-                CorporationRoleStore.RequireDirector(world, actorId, corporation);
-                return (IReadOnlyList<CorporationVoteCase>)
-                    world
-                        .Set<SavedCorporationVote>()
-                        .Where(row => row.CorporationId == corporation.Id)
-                        .AsEnumerable()
-                        .Select(row => row.Snapshot())
-                        .Where(vote =>
-                            vote.Data.Settled
-                            && vote.Data.Draft.Type is CorporationVoteType.Shares or CorporationVoteType.Expel
-                            && CorporationVotingRules.Winner(vote.Data) == 0
-                        )
-                        .ToArray();
-            }
-        );
+        return Resident.Economy.Inspect(world =>
+        {
+            var corporation = CorporationRoleStore.Current(world, actorId);
+            CorporationRoleStore.RequireDirector(world, actorId, corporation);
+            return (IReadOnlyList<CorporationVoteCase>)
+                world
+                    .Set<SavedCorporationVote>()
+                    .Where(row => row.CorporationId == corporation.Id)
+                    .AsEnumerable()
+                    .Select(row => row.Snapshot())
+                    .Where(vote =>
+                        vote.Data.Settled
+                        && vote.Data.Draft.Type is CorporationVoteType.Shares or CorporationVoteType.Expel
+                        && CorporationVotingRules.Winner(vote.Data) == 0
+                    )
+                    .ToArray();
+        });
     }
 
     public void Activate(long actorId, long caseId)
     {
         Advance();
-        using WorldActionScope transaction = new(database, TransactionParticipants.None);
-        var world = transaction.World;
+        using var world = Resident.Economy.Begin(TransactionParticipants.None);
         var corporation = CorporationRoleStore.Current(world, actorId);
         var row = Case(world, corporation.Id, caseId);
         var vote = row.Snapshot();
         if (
             corporation.CeoId != actorId
+            || !CorporationRoleStore.Has(world, actorId, corporation, CorporationRole.Director)
             || !vote.Data.Settled
             || vote.Data.AppliedAt.HasValue
             || Now >= CorporationVotingRules.Expires(vote)
@@ -217,7 +229,7 @@ internal sealed partial class CorporationVotingStore(WorldDatabase database, Tim
             }
         );
         Notify(world, row.Snapshot(), CorporationVoteEvent.Sanctioned);
-        transaction.Commit();
+        world.Commit();
         if (!completed)
         {
             Volatile.Write(ref _pendingExpulsions, [.. Volatile.Read(ref _pendingExpulsions), vote.Id]);
@@ -250,14 +262,18 @@ internal sealed partial class CorporationVotingStore(WorldDatabase database, Tim
         {
             return;
         }
-        using WorldActionScope transaction = new(database, TransactionParticipants.None);
-        var world = transaction.World;
+        using var world = Resident.Economy.Begin(TransactionParticipants.None);
         long next = long.MaxValue;
         List<long> pending = [];
         bool departed = false;
         foreach (var row in world.Set<SavedCorporationVote>())
         {
             var vote = row.Snapshot();
+            if (vote.Data.Election is not null)
+            {
+                next = Math.Min(next, AdvanceElection(world, row, now));
+                continue;
+            }
             if (vote.Data.PendingExpulsionActorId.HasValue)
             {
                 if (CompletePendingExpulsion(world, row, now))
@@ -296,7 +312,7 @@ internal sealed partial class CorporationVotingStore(WorldDatabase database, Tim
             row.DataJson = JsonSerializer.Serialize(vote.Data with { Settled = true });
             Notify(world, row.Snapshot(), CorporationVoteEvent.Closed);
         }
-        transaction.Commit();
+        world.Commit();
         Interlocked.Exchange(ref _nextDeadline, next);
         Volatile.Write(ref _pendingExpulsions, pending.ToArray());
         if (departed)

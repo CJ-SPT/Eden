@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [CEO elections, November 15, 2026](#ceo-elections-november-15-2026)
 - [Administration and inventory blockers, November 15, 2026](#administration-and-inventory-blockers-november-15-2026)
 - [Corporation Show Info market activity latency, November 15, 2026](#corporation-show-info-market-activity-latency-november-15-2026)
 - [Bulk member removal, November 15, 2026](#bulk-member-removal-november-15-2026)
@@ -44,6 +45,64 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Corporation window voting-capability startup correction](#corporation-window-voting-capability-startup-correction)
 - [Player corporation applications and membership](#player-corporation-applications-and-membership)
 - [Player corporations: creation foundation](#player-corporations-creation-foundation)
+
+## CEO elections, November 15, 2026
+
+`voteManager.CanRunForCEO()` and native type **0** `InsertVoteCase` now support shareholder-initiated CEO elections.
+The candidate must propose themselves, belong to an active player corporation, accept roles, have Corporation Management
+injected and personally hold at least **5%** of issued shares. Corporate holdings represented by a CEO do not satisfy the
+personal-share requirement. Exact integer comparison avoids overflow and rounding. Forged candidates or auxiliary action
+parameters, ineligible members and a second election during an unresolved authority hold reject without opening a case.
+
+Opening the vote suspends the incumbent's effective roles through the existing vote hold, preserving saved assignments
+until the outcome is known. This also blocks CEO-only role grants, treasury share representation, sanctions, dividends,
+voluntary succession and closure; storing the CEO ID is not sufficient authority. Personal shareholders retain their own
+ballots, including the incumbent. Existing weighted, frozen voting rights and strict majority-of-cast-weight rules apply.
+Ties and empty or defeated elections restore the incumbent once the saved vote deadline passes. The current CEO can still
+read the case while suspended even without personal shares.
+
+A successful vote automatically changes the CEO at its deadline without a sanction. The candidate must still be the same
+membership, have the injected skill, accept roles and be free of another authority hold. Departure or departure/rejoin
+cannot inherit an old election. The replaced CEO's assigned and title roles are cleared, and the existing role-removal
+cooldown begins. Corporation identity and both role changes publish with the vote outcome in one resident transaction.
+The new CEO title is immediate; the new CEO's effective authority remains held until **three days after the vote deadline**.
+This explicit local delay interprets CCP's unspecified "few days" policy. Late advancement applies already-expired delays
+immediately. Saved deadlines survive checkpoint/reopen and callbacks cannot apply succession or activation twice.
+
+All voting reads, mutations, pending expulsions and deadline maintenance now require the active resident world. They no
+longer use the legacy SQL action fallback. Existing vote/member-access JSON records gain an optional typed election record;
+schema **165** needs no new table or migration, and old general/share/expulsion votes retain their behavior.
+
+References: [EVE University corporation logistics](https://wiki.eveuniversity.org/Corporation_logistics),
+[CCP CEO Change](https://support.eveonline.com/hc/en-us/articles/203268861-CEO-Change) and
+[CCP CEO and Directors](https://support.eveonline.com/hc/en-us/articles/203279841-CEO-and-Directors). The CCP pages disagree
+on exactly 5% ("5% or more" versus "more than 5%"); Eden follows CEO Change and EVE University. Inert inspection of pinned
+build **3662168** `CorporationVotes.CanRunForCEO` checks `skills.GetSkill`, not a trained-level threshold, before the
+zero-argument remote call. `CorporationVotes.CreateVote` sends the candidate's own ID in the binary option payload.
+The prepared archive hash is recorded in the blocker correction below. EveJS **261108.1** `voteRuntimeState.js` (SHA-256
+`65D62D89ED4FA4553686A10A457DA863D67280DA9D7963F37C9A01B19A1D1DED`) was a behavioral comparison; its any-share
+eligibility and immediate successor authority do not establish Eden's rules. Existing adapters reuse the previously
+recorded Carbon Blue revision; no serialization or Destiny shape changed.
+
+**Automated validation.** Development began with exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.CorporationCeoElectionTests.NativeElectionSuspendsIncumbentTransfersLeadershipAndRestoresSuccessorAfterRestart`.
+Nine new cases cover native eligibility and proposal calls, personal/share thresholds, injected-skill and role preferences,
+incumbent suspension and bypass rejection, personal ballots and ties, failed/empty votes, exact deadlines, late callbacks,
+repeated settlement, saved-role clearing, candidate departure/rejoin and checkpoint/reopen. The measured resident
+creation/casting/late-settlement path performs zero SQL commands, connections or fitting calculations.
+The final sequence passed tool/solution restore, a zero-warning solution build, **117 focused tests** in **36.97 s**,
+both Python policy suites (**8 catalog and 9 formatting tests**), formatting for **2,238 files**, the 140-column check and
+`git diff --check` in **79.99 s**. Documentation checks resolved **615 local paths** and verified the election anchor.
+The final `FullyQualifiedName~` filter joined `CorporationCeoElectionTests`, `CorporationVotingTests`,
+`CorporationExpulsionVoteTests`, `CorporationLeadershipTests`, `CorporationRoleTests`, `CorporationMembershipTests`,
+`CorporationClosureTests`, `CorporationScreenTests`, `CorporationShareTests`, `CorporationMemberAuditTests`,
+`CorporationHeadquartersTests`, `CorporationHangarStartupTests` and `CorporationWalletTests`.
+The full .NET suite was not requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Open Run for CEO with an eligible shareholder and inspect role changes on both connected
+pilots; inspect the saved vote and successor authority after the delay.
 
 ## Administration and inventory blockers, November 15, 2026
 

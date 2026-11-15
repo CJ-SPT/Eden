@@ -50,6 +50,7 @@ internal sealed class CorporationShareStore(WorldDatabase database, TimeProvider
                 bool companyHolder =
                     world.Set<SavedCorporation>().Find(actor.CorporationId) is { } company
                     && company.CeoId == actorId
+                    && CorporationRoleStore.Has(world, actorId, company, CorporationRole.Director)
                     && company.ClosedAt == null
                     && world.Set<SavedCorporationShareHolding>().Find(corporationId, (long)company.Id)?.Shares > 0;
                 if (!ownFinancial && !privateHolder && !companyHolder)

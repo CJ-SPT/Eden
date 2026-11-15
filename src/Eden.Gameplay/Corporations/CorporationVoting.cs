@@ -46,8 +46,11 @@ public sealed record CorporationVoteData(
     bool Settled = false,
     long? AppliedAt = null,
     bool HoldReleased = false,
-    long? PendingExpulsionActorId = null
+    long? PendingExpulsionActorId = null,
+    CorporationCeoElection? Election = null
 );
+
+public sealed record CorporationCeoElection(long IncumbentId, long CandidateMembershipId, long? AuthorityAvailableAt = null);
 
 public sealed record CorporationPendingExpulsion(long PilotId, long ActorId);
 
@@ -58,6 +61,7 @@ public sealed record CorporationVoteListing(IReadOnlyList<CorporationVoteCase> O
 public interface ICorporationVoting
 {
     bool CanView(long actorId, int corporationId);
+    bool CanRunForCeo(long actorId);
     CorporationVoteListing List(long actorId, int corporationId);
     CorporationVoteCase Read(long actorId, int corporationId, long caseId);
     long Create(long actorId, CorporationVoteDraft draft);
@@ -70,6 +74,16 @@ public interface ICorporationVoting
 
 public static class CorporationVotingRules
 {
+    public const int MinimumCeoSharePercent = 5;
+    private const int PercentScale = 100;
+
+    // The pinned client gates on an injected Corporation Management skill. CEO Change documents at least five percent.
+    public static bool HasCeoElectionShares(long shares, long issued) =>
+        issued > 0 && shares > 0 && (BigInteger)shares * PercentScale >= (BigInteger)issued * MinimumCeoSharePercent;
+
+    // Local, explicit interpretation of CCP's "few days" successor authority delay.
+    public static readonly TimeSpan CeoAuthorityDelay = TimeSpan.FromDays(3);
+
     public static bool RequiresExpulsionVote(long shares, long issued, int shareholders) =>
         shares > 0 && (BigInteger)shares * shareholders > issued;
 
