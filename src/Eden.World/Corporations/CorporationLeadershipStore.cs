@@ -159,6 +159,7 @@ internal sealed partial class CorporationLeadershipStore(WorldDatabase database,
             .Where(pilot =>
                 world.Set<PilotSkill>().Find(pilot.Id, CorporationRules.ManagementSkill) is not null
                 && !CorporationRoleStore.Read(world, pilot.Id, corporation.Id).BlockRoles
+                && !CorporationRoleStore.Read(world, pilot.Id, corporation.Id).AuthorityHoldVoteId.HasValue
             )
             .Select(pilot => pilot.Id)
             .Order()

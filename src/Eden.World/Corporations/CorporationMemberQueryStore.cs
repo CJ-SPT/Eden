@@ -96,7 +96,7 @@ internal sealed class CorporationMemberQueryStore(WorldDatabase database) : ICor
                             names.Add(title.Name);
                         }
                     }
-                    if (access.BlockRoles && pilot.Id != corporation.CeoId)
+                    if (access.AuthorityHoldVoteId.HasValue || access.BlockRoles && pilot.Id != corporation.CeoId)
                     {
                         roles = new();
                     }

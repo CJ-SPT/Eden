@@ -72,7 +72,8 @@ public sealed record CorporationMemberAccess(
     bool BlockRoles = false,
     long? RolesRemovedAt = null,
     int? DivisionId = null,
-    int? SquadronId = null
+    int? SquadronId = null,
+    long? AuthorityHoldVoteId = null
 );
 
 public sealed record CorporationMemberUpdate(

@@ -17,20 +17,23 @@ internal sealed class CorporationGovernanceHandler(ICorporationVoting voting) : 
     )
     {
         if (
-            service != "voteManager"
-            || method
-                is not (
-                    "CanViewVotes"
-                    or "CanRunForCEO"
-                    or "GetVoteCasesByCorporation"
-                    or "GetVoteCase"
-                    or "GetVoteCaseOptions"
-                    or "GetVotes"
-                    or "InsertVoteCase"
-                    or "InsertVote"
-                    or "GetCorpSanctionedActions"
-                    or "ActivateSanctionedAction"
-                )
+            !(service == "corpRegistry" && method == "GetPendingAutoKicks")
+            && (
+                service != "voteManager"
+                || method
+                    is not (
+                        "CanViewVotes"
+                        or "CanRunForCEO"
+                        or "GetVoteCasesByCorporation"
+                        or "GetVoteCase"
+                        or "GetVoteCaseOptions"
+                        or "GetVotes"
+                        or "InsertVoteCase"
+                        or "InsertVote"
+                        or "GetCorpSanctionedActions"
+                        or "ActivateSanctionedAction"
+                    )
+            )
         )
         {
             return PilotCallResult.Unsupported;
@@ -44,6 +47,8 @@ internal sealed class CorporationGovernanceHandler(ICorporationVoting voting) : 
             long actor = context.Pilot.PilotId;
             switch (method, args)
             {
+                case ("GetPendingAutoKicks", []):
+                    return new CorporationPendingExpulsionsReply(voting.PendingExpulsions(actor));
                 case ("CanViewVotes", [long corporation]) when corporation is > 0 and <= int.MaxValue:
                     return voting.CanView(actor, (int)corporation);
                 case ("CanRunForCEO", []):

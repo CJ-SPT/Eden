@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Member-expulsion votes, November 15, 2026](#member-expulsion-votes-november-15-2026)
 - [General and share-creation votes, November 15, 2026](#general-and-share-creation-votes-november-15-2026)
 - [Corporation closure, November 15, 2026](#corporation-closure-november-15-2026)
 - [Dividends and CEO succession, November 15, 2026](#dividends-and-ceo-succession-november-15-2026)
@@ -40,6 +41,48 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Corporation window voting-capability startup correction](#corporation-window-voting-capability-startup-correction)
 - [Player corporation applications and membership](#player-corporation-applications-and-membership)
 - [Player corporations: creation foundation](#player-corporations-creation-foundation)
+
+## Member-expulsion votes, November 15, 2026
+
+`voteManager.InsertVoteCase` accepts native type 3 (Expel Member), with the target pilot in the binary option parameter.
+Opening the vote suspends that member's effective roles, including title and grantable roles, without destroying their saved
+assignments. Role edits and voluntary CEO succession cannot bypass the suspension. A failed vote restores authority;
+a successful vote retains the suspension until its CEO sanction or the existing seven-day local sanction expiry.
+Ordinary expulsion rejects a shareholder whose holding exceeds the average per positive shareholder, using exact integer
+comparison. Voluntary departure remains possible after the normal role-removal cooldown.
+
+A sanctioned docked member returns to their original NPC corporation atomically, retaining personal shares and property.
+If the member is in space, the sanctioned removal waits until docking. The pending state survives restart and sanction
+expiry; `corpRegistry.GetPendingAutoKicks()` exposes native `(characterID, kickedByCharacterID)` tuples to Directors/CEO.
+Host maintenance inspects only cached pending vote IDs while waiting, and performs the normal membership/access/bookmark
+transition once the member docks. This docking trigger is Eden's local scheduling policy; it does not model Tranquility's
+daily downtime. A departure/rejoin cancels the old membership's pending removal and cannot resurrect its old roles.
+Existing JSON records gain optional fields; schema 164 remains compatible with earlier saved votes and role assignments.
+
+Sources: [EVE University corporation logistics](https://wiki.eveuniversity.org/Corporation_logistics),
+[managing members](https://wiki.eveuniversity.org/Managing_corporation_members) and
+[CCP Corporation Votes](https://support.eveonline.com/hc/en-us/articles/203268841-Corporation-Votes).
+Inert pinned build **3662168** inspection of `corporation/voting.pyj`, `corp_ui_votes.pyj`,
+`base_corporation.pyj.GetPendingAutoKicks` and `corp_ui_member_autokicks.pyj.Load` established wire arguments and row shape.
+The archive hash is recorded in the earlier corporation records; no codec behavior changed.
+
+**Automated validation.** Tool/solution restore and solution build passed. The focused filter joining
+`CorporationExpulsionVoteTests`, `CorporationVotingTests`, `CorporationRoleTests`, `CorporationMembershipTests`,
+`CorporationLeadershipTests`, `CorporationMemberQueryTests`, `CorporationClosureTests` and `CorporationScreenTests`
+passed **78 tests in 25 seconds**. Both Python policy suites passed (8 and 9 tests); formatting checked 2,205 files and
+the 140-column limit; documentation links and `git diff --check` passed. The final sequence took **68.23 seconds**.
+An earlier docking regression exposed a test fixture writing a navigation property instead of using the resident position
+operation; it passed after the fixture used `SqliteWorld.SetPosition`. Coverage includes exact share thresholds, invalid
+targets, role suspension/restoration, rejected edits, single-use sanctions, native pending rows, docking after restart,
+and departure/rejoin. The full .NET suite was not run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Run an expulsion vote and inspect suspended/restored roles. Sanction a passed vote for a
+member in space, then verify removal after docking.
+
+The maintainer requested stopping after this feature. CEO elections, blueprint votes and other remaining standalone work
+are still pending; this milestone does not claim completion of the entire corporation window.
 
 ## General and share-creation votes, November 15, 2026
 

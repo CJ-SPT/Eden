@@ -126,3 +126,8 @@ internal sealed record CorporationVoteNotification(string Event, int Corporation
 {
     public override object?[] Arguments => [CorporationId, CaseId];
 }
+
+internal sealed record CorporationPendingExpulsionsReply(IReadOnlyList<CorporationPendingExpulsion> Members) : BlueModel
+{
+    public override object ToBlue() => Members.Select(member => (object?)new object?[] { member.PilotId, member.ActorId }).ToList();
+}

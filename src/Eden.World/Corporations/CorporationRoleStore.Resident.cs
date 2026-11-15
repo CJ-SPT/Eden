@@ -18,6 +18,10 @@ internal sealed partial class CorporationRoleStore
             return new(new());
         }
         var access = Read(world, pilotId, corporation.Id);
+        if (access.AuthorityHoldVoteId.HasValue)
+        {
+            return access with { Roles = new() };
+        }
         if (corporation.CeoId == pilotId)
         {
             return access with { Roles = new(CorporationRules.CeoRoles), BlockRoles = false };

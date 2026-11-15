@@ -257,6 +257,10 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
         {
             return new(false, "The CEO must transfer ownership before leaving.");
         }
+        if (actorId != pilotId && ProtectedShareholder(world, corporation.Id, pilotId))
+        {
+            return new(false, "This shareholder can only be expelled by a successful corporation vote.");
+        }
         var access = CorporationRoleStore.Effective(world, pilotId, corporation);
         if (access.Roles.HasAuthority)
         {
@@ -314,6 +318,14 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
         {
             world.Add(new SavedCorporationChange { PilotId = recipient, MembershipJson = JsonSerializer.Serialize(change) });
         }
+    }
+
+    internal static bool ProtectedShareholder(WorldAction world, int corporationId, long pilotId)
+    {
+        long shares = world.Set<SavedCorporationShareHolding>().Find(corporationId, pilotId)?.Shares ?? 0;
+        long issued = world.Set<SavedCorporationShareIssue>().Find(corporationId)?.Shares ?? 0;
+        int holders = world.Set<SavedCorporationShareHolding>().Count(row => row.CorporationId == corporationId && row.Shares > 0);
+        return CorporationVotingRules.RequiresExpulsionVote(shares, issued, holders);
     }
 
     private static void DeliverWelcomeMail(WorldAction world, long pilotId, SavedCorporation joined, long now)

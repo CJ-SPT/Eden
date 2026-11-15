@@ -44,8 +44,12 @@ public sealed record CorporationVoteData(
     IReadOnlyList<CorporationVoteRight> Rights,
     IReadOnlyList<CorporationBallot> Ballots,
     bool Settled = false,
-    long? AppliedAt = null
+    long? AppliedAt = null,
+    bool HoldReleased = false,
+    long? PendingExpulsionActorId = null
 );
+
+public sealed record CorporationPendingExpulsion(long PilotId, long ActorId);
 
 public sealed record CorporationVoteCase(long Id, int CorporationId, long StartedAt, long EndsAt, CorporationVoteData Data);
 
@@ -61,10 +65,14 @@ public interface ICorporationVoting
     IReadOnlyList<CorporationVoteCase> Actions(long actorId);
     void Activate(long actorId, long caseId);
     void Advance();
+    IReadOnlyList<CorporationPendingExpulsion> PendingExpulsions(long actorId);
 }
 
 public static class CorporationVotingRules
 {
+    public static bool RequiresExpulsionVote(long shares, long issued, int shareholders) =>
+        shares > 0 && (BigInteger)shares * shareholders > issued;
+
     public const int MaximumOpen = 1000;
     public const int ClosedPageSize = 20;
     public const int MaximumOptions = 50;

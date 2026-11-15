@@ -23,10 +23,15 @@ Each milestone includes typed rules, authenticated native calls, persistence, fo
 | Dividends and CEO succession | Implemented: exact member/shareholder payments and docked CEO transfer |
 | Corporation closure | Implemented: member departures, archived identity/assets and released office slots |
 | General polls and share-creation votes | Implemented: weighted ballots, deadlines, CEO sanction and persistent share supply |
-| CEO elections, member sanctions and blueprint lock/unlock votes | Pending |
+| Member-expulsion votes | Implemented: shareholder protection, suspended roles, CEO sanctions and persistent docked-removal queue |
+| CEO elections and blueprint lock/unlock votes | Pending |
 
 See [corporation protocol findings](protocol/corporations.md) for native call shapes and milestone validation evidence, and [inventory ownership](inventory-ownership.md) for the storage boundary. This table records implemented scope, not live client acceptance.
 
 The maintainer confirmed that the corporation window loads after the November 14 title-row correction. Completion work
 now covers the remaining standalone tabs and actions, including recruitment, member queries and governance. Alliances
 and corporation wars remain explicitly outside this request.
+
+At the maintainer's request, implementation stops after the member-expulsion vote milestone. Remaining standalone work
+includes CEO elections, blueprint voting, bulk member removal, member auditing/decorations, outstanding home settings,
+recent combat records and office billing/impound recovery. The complete corporation window is not yet implemented.

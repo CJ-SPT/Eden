@@ -24,6 +24,10 @@ internal sealed partial class CorporationRoleStore(WorldDatabase database, TimeP
             return new(new());
         }
         var access = Read(world, pilotId, corporation.Id);
+        if (access.AuthorityHoldVoteId.HasValue)
+        {
+            return access with { Roles = new() };
+        }
         if (corporation.CeoId == pilotId)
         {
             return access with { Roles = new(CorporationRules.CeoRoles), BlockRoles = false };
@@ -92,6 +96,10 @@ internal sealed partial class CorporationRoleStore(WorldDatabase database, TimeP
                 throw new InvalidDataException("Choose an ordinary member of your corporation; the CEO's roles are fixed.");
             }
             var before = Read(world, update.PilotId, corporation.Id);
+            if (before.AuthorityHoldVoteId.HasValue)
+            {
+                throw new InvalidDataException("A corporation vote currently suspends this member's roles.");
+            }
             var effectiveBefore = Effective(world, update.PilotId, corporation);
             var after = before with
             {
@@ -248,7 +256,7 @@ internal sealed partial class CorporationRoleStore(WorldDatabase database, TimeP
         }
     }
 
-    private static void Save(WorldAction world, long pilot, int corporation, CorporationMemberAccess access)
+    internal static void Save(WorldAction world, long pilot, int corporation, CorporationMemberAccess access)
     {
         var saved =
             world.Set<SavedCorporationMemberAccess>().Find(pilot) ?? world.Add(new SavedCorporationMemberAccess { PilotId = pilot }).Entity;
@@ -271,7 +279,7 @@ internal sealed partial class CorporationRoleStore(WorldDatabase database, TimeP
         }
     }
 
-    private static void Notify(WorldAction world, int corporation, CorporationRoleChange? member, CorporationTitleChange? title)
+    internal static void Notify(WorldAction world, int corporation, CorporationRoleChange? member, CorporationTitleChange? title)
     {
         foreach (long recipient in world.Pilots.Where(p => p.CorporationId == corporation).Select(p => p.Id))
         {

@@ -8,9 +8,10 @@ using Eden.World.Storage;
 namespace Eden.World.Corporations;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class CorporationVotingStore(WorldDatabase database, TimeProvider clock) : ICorporationVoting
+internal sealed partial class CorporationVotingStore(WorldDatabase database, TimeProvider clock) : ICorporationVoting
 {
     private long _nextDeadline = long.MinValue;
+    private long[] _pendingExpulsions = [];
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
     public bool CanView(long actorId, int corporationId) =>
@@ -82,7 +83,8 @@ internal sealed class CorporationVotingStore(WorldDatabase database, TimeProvide
     public long Create(long actorId, CorporationVoteDraft draft)
     {
         CorporationVotingRules.Validate(draft);
-        if (draft.Type is not (CorporationVoteType.General or CorporationVoteType.Shares))
+        Advance();
+        if (draft.Type is not (CorporationVoteType.General or CorporationVoteType.Shares or CorporationVoteType.Expel))
         {
             throw new InvalidDataException("This type of corporation vote is not available yet.");
         }
@@ -116,6 +118,10 @@ internal sealed class CorporationVotingStore(WorldDatabase database, TimeProvide
             )
             .Entity;
         world.SaveChanges();
+        if (draft.Type == CorporationVoteType.Expel)
+        {
+            HoldMember(world, corporation, draft.Parameter, row.Id, now);
+        }
         Notify(world, row.Snapshot(), CorporationVoteEvent.Created);
         transaction.Commit();
         Interlocked.Exchange(ref _nextDeadline, Math.Min(Volatile.Read(ref _nextDeadline), row.EndsAt));
@@ -166,7 +172,7 @@ internal sealed class CorporationVotingStore(WorldDatabase database, TimeProvide
                         .Select(row => row.Snapshot())
                         .Where(vote =>
                             vote.Data.Settled
-                            && vote.Data.Draft.Type == CorporationVoteType.Shares
+                            && vote.Data.Draft.Type is CorporationVoteType.Shares or CorporationVoteType.Expel
                             && CorporationVotingRules.Winner(vote.Data) == 0
                         )
                         .ToArray();
@@ -188,14 +194,44 @@ internal sealed class CorporationVotingStore(WorldDatabase database, TimeProvide
             || vote.Data.AppliedAt.HasValue
             || Now >= CorporationVotingRules.Expires(vote)
             || CorporationVotingRules.Winner(vote.Data) != 0
-            || vote.Data.Draft.Type != CorporationVoteType.Shares
+            || vote.Data.Draft.Type is not (CorporationVoteType.Shares or CorporationVoteType.Expel)
         )
         {
             throw new InvalidDataException("Only the CEO may enact an unused, successful and unexpired sanction.");
         }
-        var issue = world.Set<SavedCorporationShareIssue>().Find(corporation.Id)!;
-        var treasury = world.Set<SavedCorporationShareHolding>().Find(corporation.Id, (long)corporation.Id)!;
-        long quantity = vote.Data.Draft.Parameter;
+        bool completed = true;
+        if (vote.Data.Draft.Type == CorporationVoteType.Expel)
+        {
+            completed = ExpelMember(world, corporation, vote, Now);
+        }
+        else
+        {
+            IssueShares(world, corporation.Id, vote.Data.Draft.Parameter);
+        }
+        row.DataJson = JsonSerializer.Serialize(
+            vote.Data with
+            {
+                AppliedAt = Now,
+                HoldReleased = completed,
+                PendingExpulsionActorId = completed ? null : actorId,
+            }
+        );
+        Notify(world, row.Snapshot(), CorporationVoteEvent.Sanctioned);
+        transaction.Commit();
+        if (!completed)
+        {
+            Volatile.Write(ref _pendingExpulsions, [.. Volatile.Read(ref _pendingExpulsions), vote.Id]);
+        }
+        if (vote.Data.Draft.Type == CorporationVoteType.Expel)
+        {
+            database.NotifyAccessGroupsChanged();
+        }
+    }
+
+    private static void IssueShares(WorldAction world, int corporationId, long quantity)
+    {
+        var issue = world.Set<SavedCorporationShareIssue>().Find(corporationId)!;
+        var treasury = world.Set<SavedCorporationShareHolding>().Find(corporationId, (long)corporationId)!;
         if (quantity > long.MaxValue - issue.Shares || quantity > long.MaxValue - treasury.Shares)
         {
             throw new InvalidDataException("The share issuance exceeds the supported supply.");
@@ -203,14 +239,12 @@ internal sealed class CorporationVotingStore(WorldDatabase database, TimeProvide
         long before = treasury.Shares;
         issue.Shares += quantity;
         treasury.Shares += quantity;
-        CorporationShareStore.Notify(world, new(corporation.Id, corporation.Id, before, treasury.Shares));
-        row.DataJson = JsonSerializer.Serialize(vote.Data with { AppliedAt = Now });
-        Notify(world, row.Snapshot(), CorporationVoteEvent.Sanctioned);
-        transaction.Commit();
+        CorporationShareStore.Notify(world, new(corporationId, corporationId, before, treasury.Shares));
     }
 
     public void Advance()
     {
+        AdvancePendingExpulsions();
         long now = Now;
         if (now < Volatile.Read(ref _nextDeadline))
         {
@@ -219,9 +253,37 @@ internal sealed class CorporationVotingStore(WorldDatabase database, TimeProvide
         using WorldActionScope transaction = new(database, TransactionParticipants.None);
         var world = transaction.World;
         long next = long.MaxValue;
+        List<long> pending = [];
+        bool departed = false;
         foreach (var row in world.Set<SavedCorporationVote>())
         {
             var vote = row.Snapshot();
+            if (vote.Data.PendingExpulsionActorId.HasValue)
+            {
+                if (CompletePendingExpulsion(world, row, now))
+                {
+                    departed = true;
+                }
+                else
+                {
+                    pending.Add(vote.Id);
+                }
+                continue;
+            }
+            if (vote.Data.Draft.Type == CorporationVoteType.Expel && !vote.Data.HoldReleased)
+            {
+                long release = CorporationVotingRules.Winner(vote.Data) == 0 ? CorporationVotingRules.Expires(vote) : vote.EndsAt;
+                if (now >= release)
+                {
+                    ReleaseMember(world, vote);
+                    row.DataJson = JsonSerializer.Serialize(vote.Data with { HoldReleased = true });
+                    vote = row.Snapshot();
+                }
+                else
+                {
+                    next = Math.Min(next, release);
+                }
+            }
             if (vote.Data.Settled)
             {
                 continue;
@@ -236,6 +298,11 @@ internal sealed class CorporationVotingStore(WorldDatabase database, TimeProvide
         }
         transaction.Commit();
         Interlocked.Exchange(ref _nextDeadline, next);
+        Volatile.Write(ref _pendingExpulsions, pending.ToArray());
+        if (departed)
+        {
+            database.NotifyAccessGroupsChanged();
+        }
     }
 
     private static SavedCorporationVote Case(WorldAction world, int corporationId, long caseId) =>
