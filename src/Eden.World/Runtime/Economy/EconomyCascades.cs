@@ -179,6 +179,9 @@ internal sealed partial class EconomyTransaction
                 break;
             case Eden.Data.World.Corporations.SavedCorporation removed:
                 RemoveRange(Set<Eden.Data.World.Corporations.SavedCorporationTitle>().Where(child => child.CorporationId == removed.Id));
+                RemoveRange(
+                    Set<Eden.Data.World.Corporations.SavedCorporationRecruitmentAd>().Where(child => child.CorporationId == removed.Id)
+                );
                 break;
             case Eden.Data.World.Insurance.SavedInsurancePolicy removed:
                 if (Set<Eden.Data.World.Insurance.SavedInsuranceLedger>().Any(child => child.PolicyId == removed.Id))

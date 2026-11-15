@@ -15,7 +15,8 @@ public sealed record CorporationDetails(
     bool ApplicationsEnabled,
     bool FriendlyFireEnabled,
     CorporationDivisions? Divisions = null,
-    CorporationCommunications? Communications = null
+    CorporationCommunications? Communications = null,
+    long RecruitmentRevision = 0
 );
 
 public sealed record PlayerCorporation(

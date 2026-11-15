@@ -125,6 +125,9 @@ public enum WalletEntryType
     CorporationAccountWithdrawal = 37,
     BountyPrizeCorporationTax = 92,
     CorporationRegistration = 39,
+
+    // Build 3662168 appConst.refCorporationAdvertisementFee.
+    CorporationAdvertisementFee = 86,
     RepairBill = 15,
     OfficeRentalFee = 13,
     Insurance = 19,

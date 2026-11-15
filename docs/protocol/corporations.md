@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Recruitment advertisements, November 14, 2026](#recruitment-advertisements-november-14-2026)
 - [Bulletins and welcome mail, November 14, 2026](#bulletins-and-welcome-mail-november-14-2026)
 - [Corporation title row decoding, November 14, 2026](#corporation-title-row-decoding-november-14-2026)
 - [Corporation construction failure capture, November 14, 2026](#corporation-construction-failure-capture-november-14-2026)
@@ -35,6 +36,50 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Corporation window voting-capability startup correction](#corporation-window-voting-capability-startup-correction)
 - [Player corporation applications and membership](#player-corporation-applications-and-membership)
 - [Player corporations: creation foundation](#player-corporations-creation-foundation)
+
+## Recruitment advertisements, November 14, 2026
+
+The standalone recruitment panel now owns all eight pinned `corpRecProxy` calls: create, update, delete, recruiter lookup,
+single-ad lookup, corporation public listings, corporation management listings and criteria search. Management returns
+native DBRow lists; public listings/search return `(grade, DBRow)` pairs. Single-ad lookup returns one DBRow. Search grades
+count matching advertised selections; deterministic ties use ad ID. Eden's matching policy requires overlap in each requested
+activity, area, language and time category, all requested other flags, and the requested membership, tax and skill-point limits.
+This is a local search policy; no Tranquility ranking formula was available. Alliance exclusion is satisfied by the current
+standalone corporation model, which has no alliance membership.
+
+Personnel Managers, Directors and CEOs may manage ads. The master wallet pays the pinned 500,000 ISK creation fee plus
+250,000 ISK per day; extensions charge only the daily fee. Editing without extension is free and deletion gives no refund.
+Payment, journal reference 86, saved advertisement and member cache invalidation commit together. Unknown/foreign ads,
+insufficient funds, malformed masks, nonmembers as recruiters and limit violations leave state unchanged.
+
+Build-3662168 limits are three active ads, 28 days, six recruiters, 40 title characters, 1,000 description characters,
+four activities from one activity group, two operating areas and eight active hours. Recruiter lookups exclude pilots who
+have since left. Public reads exclude ads at their exact expiry; management can extend an expired ad. Creating a new ad
+removes expired entries. Saved global IDs never reuse deleted IDs. Schema 160 adds the advertisement table and resident
+checkpoint projection. A typed revision in corporation details uses the existing durable member event stream to emit
+the native zero-argument `OnCorporationRecruitmentAdChanged` notification.
+
+Sources: inert inspection of build **3662168** archive SHA-256
+**37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**, `base_corporation`, `bco_recruitment`,
+`corpRecruitmentContainer`, `recruitmentEntry`, `evecorporation.recruitmentUtil`, `corp_ui_recruitment_const` and `appConst`.
+The current native create request has nine positional arguments and omits the older second timezone mask; update has eight
+positional arguments plus `minSP` and `otherMask` keywords. Search has eleven positional arguments and fractional tax rates.
+[EVE University recruitment](https://wiki.eveuniversity.org/Recruiting_corporation_members) and
+[CCP recruitment changes](https://www.eveonline.com/news/view/corporation-recruitment-changes) support the fee, duration and
+recruiter workflow. Existing Blue DBRow encoding is reused unchanged.
+
+**Automated validation.** Tool and solution restore, solution build (zero warnings/errors), both Python policy suites
+(8 catalog and 9 formatting tests), formatting verification (2,164 files), and 625 documentation links/anchors passed.
+The filter `FullyQualifiedName~CorporationRecruitmentTests|FullyQualifiedName~CorporationCommunicationTests|FullyQualifiedName~CorporationMembershipTests|FullyQualifiedName~CorporationAdministrationTests|FullyQualifiedName~CorporationRoleTests|FullyQualifiedName~CorporationWalletTests|FullyQualifiedName~WorldMigrationTests`
+passed 79 tests in 27 seconds; final validation took 65.02 seconds. Tests cover native requests/replies/notifications,
+master-wallet payment and rollback, delegated/foreign-corporation authorization, departed and forged recruiters, search
+exclusions, limits, exact expiry, extension, deletion, schema-159 migration and checkpoint/restart identity preservation.
+An earlier migration-test failure was corrected by invoking normal world initialization before constructing the resident
+service provider. No full .NET suite was run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Publish and edit an ad from Recruitment. Find it from another pilot using the search filters.
 
 ## Bulletins and welcome mail, November 14, 2026
 

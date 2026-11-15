@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Corporation recruitment advertisements](protocol/corporations.md#recruitment-advertisements-november-14-2026)
+records paid ads, native management/search replies, expiry and recruiter permissions.
+
 [Corporation bulletins and welcome mail](protocol/corporations.md#bulletins-and-welcome-mail-november-14-2026)
 records saved communications, delegated permissions and atomic welcome delivery.
 

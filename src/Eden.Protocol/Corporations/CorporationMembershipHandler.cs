@@ -73,6 +73,10 @@ internal sealed partial class CorporationHandler
             }
             if (change.Administration is { } administrationChange)
             {
+                if (administrationChange.Before.RecruitmentRevision != administrationChange.After.RecruitmentRevision)
+                {
+                    context.Notifications.Add(new CorporationRecruitmentChanged());
+                }
                 var welcome = administrationChange.After.Communications?.WelcomeMail;
                 if (welcome is not null && welcome != administrationChange.Before.Communications?.WelcomeMail)
                 {
