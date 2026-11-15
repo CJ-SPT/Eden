@@ -145,6 +145,7 @@ internal static class WorldMigration
         }
         Eden.World.Exploration.HackingSchema.Upgrade(world);
         Eden.World.Exploration.WormholeTravelSchema.Upgrade(world);
+        Eden.World.Inventory.MutationSchema.Upgrade(world);
         Eden.World.Exploration.AbyssalSchema.Upgrade(world);
         Eden.World.Mining.MiningSiteSchema.Upgrade(world);
         Eden.World.Propulsion.SpatialNavigationSchema.Upgrade(world);

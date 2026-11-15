@@ -10,6 +10,7 @@ using Eden.Gameplay.Flight;
 using Eden.World.Catalog;
 using Eden.World.Runtime;
 using Eden.World.Storage;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Fixture = Eden.Protocol.Tests.Persistence.PassiveFittingTests.Fixture;
 
@@ -157,6 +158,44 @@ public sealed class AbyssalCooperativeTests
         Assert.Empty(reopened.Economy.Inspect(w => w.Filter<ShipLoss>(_ => true).ToArray()));
         Assert.Null(reopened.Economy.Inspect(w => w.Set<OwnedItem>().Find(filament)));
         await reopened.FlushAsync();
+    }
+
+    [Fact]
+    public void HigherTierSafetyRejectsWithoutConsumptionAndSuspectTimerStartsOnReturn()
+    {
+        using Fixture f = new();
+        AbyssalTests.Prepare(f);
+        long ship = f.ShipId;
+        int system = f.Db.Store.FindPilot(1000001)!.SystemId;
+        using (CatalogDbContext catalog = new(f.CatalogPath, writable: true))
+        {
+            string classification = """{"securityStatus":0.8}""";
+            catalog.Database.ExecuteSql(
+                $"UPDATE SourceRecord SET Data={classification} WHERE Dataset='client/systems' AND Key={system.ToString()}"
+            );
+        }
+        long filament = f.Grant(47894, cargo: true);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        var abyss = f.Db.Services.GetRequiredService<IAbyssalDeadspace>();
+        Assert.Throws<InvalidDataException>(() => abyss.Deploy(f.PilotId, ship, filament, AbyssalMode.Cruiser));
+        Assert.Equal(1, live.Economy.Inspect(w => w.Set<OwnedItem>().Find(filament)!.Quantity));
+        using (var tx = live.Economy.Begin(new(pilots: [f.PilotId])))
+        {
+            tx.Pilots.Find(f.PilotId)!.SafetyLevel = ShipSafetyLevel.Partial;
+            tx.Commit();
+        }
+        var run = abyss.Deploy(f.PilotId, ship, filament, AbyssalMode.Cruiser).Run;
+        f.Clock.AdvanceWallTime(TimeSpan.FromMinutes(16));
+        for (int room = 0; room < 3; room++)
+        {
+            AbyssalTests.KillRoom(f, live, run.Id);
+            f.Db.Store.SetPosition(ship, AbyssalRules.ConduitPosition(room), run.SystemId);
+            abyss.Activate(f.PilotId, ship, AbyssalRules.Conduit(run.Id, room));
+        }
+        Assert.Equal(
+            f.Clock.Now + CrimewatchRules.FlagDuration.Ticks,
+            live.Economy.Inspect(w => w.Set<SavedCrimewatch>().Find(f.PilotId)!.SuspectUntil)
+        );
     }
 
     [Fact]

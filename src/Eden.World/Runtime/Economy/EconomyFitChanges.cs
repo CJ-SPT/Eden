@@ -159,6 +159,9 @@ internal sealed partial class EconomyTransaction
                 case ActiveFittedModule active:
                     Ship(active.ShipId);
                     break;
+                case SavedMutatedItem mutation:
+                    Module(mutation.ItemId);
+                    break;
                 case SavedModuleCondition condition:
                     Module(condition.ModuleId);
                     break;

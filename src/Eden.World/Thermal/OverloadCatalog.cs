@@ -99,7 +99,7 @@ internal static class OverloadCatalog
         var source = catalog.Read(CatalogData.Client.Types, (long)type);
         if (
             source?.Published != 1
-            || source.MetaGroupID == AbyssalMetaGroup
+            || source.MetaGroupID == AbyssalMetaGroup && Eden.World.Inventory.MutationCatalog.BaseType(catalog, type) == type
             || catalog.FittingType(type)?.CategoryId != (int)InventoryCategory.Module
             || FittingCatalog.Definition(catalog, type) is not { Rack: not ModuleRack.Rig } fitting
         )

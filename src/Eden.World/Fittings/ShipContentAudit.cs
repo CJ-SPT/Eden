@@ -80,13 +80,16 @@ internal static class ShipContentAudit
         {
             issues.Add(new(ContentSupportState.ExternalDependency, ShipContentMilestone.StaticCatalogClosure, ExternalReason(category)));
         }
-        else if (source.MetaGroupID == AbyssalMetaGroup || roadmap.SpecialGroups.Contains(type.GroupId))
+        else if (
+            (source.MetaGroupID == AbyssalMetaGroup && Eden.World.Inventory.MutationCatalog.BaseType(catalog, type.Id) == type.Id)
+            || roadmap.SpecialGroups.Contains(type.GroupId)
+        )
         {
             issues.Add(
                 new(
                     ContentSupportState.DeferredSpecial,
                     ShipContentMilestone.StaticCatalogClosure,
-                    "Mutations or festival content are deferred."
+                    "Unsupported mutation families or festival content are deferred."
                 )
             );
         }

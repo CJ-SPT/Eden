@@ -18,8 +18,17 @@ namespace Eden.World.Thermal;
 
 internal static partial class ModuleConditionPersistence
 {
-    internal static ModuleCondition Read(WorldAction world, CatalogDbContext catalog, OwnedItem item) =>
-        Read(catalog, item, world.Set<SavedModuleCondition>().Find(item.Id)?.Damage ?? 0);
+    internal static ModuleCondition Read(WorldAction world, CatalogDbContext catalog, OwnedItem item)
+    {
+        var condition = Read(catalog, item, world.Set<SavedModuleCondition>().Find(item.Id)?.Damage ?? 0);
+        return world.Set<SavedMutatedItem>().Find(item.Id) is { } saved
+            ? ModuleConditionRules.Define(
+                item.Id,
+                Eden.World.Inventory.MutaplasmidStore.Decode(saved).Attributes.GetValueOrDefault(DogmaAttributeId.StructureHitPoints),
+                world.Set<SavedModuleCondition>().Find(item.Id)?.Damage ?? 0
+            )
+            : condition;
+    }
 
     internal static void BurnOut(WorldAction world, CatalogDbContext catalog, long module, long now)
     {

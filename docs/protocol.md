@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Abyssal Deadspace](protocol/abyssal.md) records resident pockets, environmental combat,
+cooperative tiers and rewards, persistent mutaplasmids, and validation for all four milestones.
+
 [Corporation member search and tracking](protocol/corporations.md#member-search-and-tracking-november-14-2026)
 records typed native queries, activity history and tracking permissions.
 

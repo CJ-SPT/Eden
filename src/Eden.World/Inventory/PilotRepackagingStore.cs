@@ -90,6 +90,10 @@ internal sealed class PilotRepackagingStore(WorldDatabase database) : IPilotRepa
                 {
                     throw new InvalidDataException("This item is unavailable in your station hangar.");
                 }
+                if (world.Set<SavedMutatedItem>().Find(item.Id) is not null)
+                {
+                    throw new InvalidDataException("Abyssal modules cannot be repackaged.");
+                }
                 var before = PilotInventoryStore.Read(catalog, item);
                 bool supported =
                     before.CategoryId == (int)InventoryCategory.Module

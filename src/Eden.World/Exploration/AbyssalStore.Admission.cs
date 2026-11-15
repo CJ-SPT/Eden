@@ -42,10 +42,20 @@ internal sealed partial class AbyssalStore
             {
                 throw new InvalidDataException("Lower your safety before activating a filament that creates a suspect flag.");
             }
-            var state = CrimewatchPersistence.State(world, pilot.Id);
-            state.SystemId = system;
-            state.Apply(state.Timers() with { Suspect = CrimewatchRules.Extend(timers.Suspect, Now, CrimewatchRules.FlagDuration) });
         }
+    }
+
+    private void ApplyReturnFlag(WorldAction world, CatalogDbContext catalog, SavedAbyssalRun run, long pilotId)
+    {
+        double security = Math.Round(CrimewatchPersistence.Security(catalog, run.OriginSystemId), 1);
+        if (security < 0.5 || run.Tier < 4 || run.Tier + (int)Math.Round(security * 10) < 12)
+        {
+            return;
+        }
+        var state = CrimewatchPersistence.State(world, pilotId);
+        state.SystemId = run.OriginSystemId;
+        var timers = state.Timers();
+        state.Apply(timers with { Suspect = CrimewatchRules.Extend(timers.Suspect, Now, CrimewatchRules.FlagDuration) });
     }
 
     private void EnterTrace(

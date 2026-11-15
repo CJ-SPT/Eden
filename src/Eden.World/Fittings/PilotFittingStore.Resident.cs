@@ -478,7 +478,7 @@ internal sealed partial class PilotFittingStore
         {
             attributes = snapshot.Modules.TryGetValue(module.Id, out var fitted)
                 ? fitted.ToDictionary()
-                : ReadAttributes(catalog, module.TypeId).ToDictionary();
+                : MutaplasmidStore.Attributes(world, catalog, module.Id, module.TypeId).ToDictionary();
         }
         else
         {
@@ -486,7 +486,7 @@ internal sealed partial class PilotFittingStore
             attributes = (
                 calculation.Modules.Any(m => m.Item.Id == module.Id)
                     ? calculation.Graph.Attributes(module.Id)
-                    : ReadAttributes(catalog, module.TypeId)
+                    : MutaplasmidStore.Attributes(world, catalog, module.Id, module.TypeId)
             ).ToDictionary();
         }
         if (isModule)
