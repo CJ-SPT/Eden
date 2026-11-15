@@ -114,13 +114,9 @@ internal sealed partial class PilotMissionStore
     {
         var kind = MissionRules.KindForDivision(agent.DivisionId);
         return MissionCatalog
-            .Read(catalog)
+            .ForLevel(catalog, level, storyline)
             .Where(profile =>
-                profile.Definition.Level == level
-                && profile.Definition.Storyline == storyline
-                && (storyline || profile.Kind == kind)
-                && !profile.AttacksFaction(agent.FactionId)
-                && profile.AvailableTo(agent)
+                (storyline || profile.Kind == kind) && !profile.AttacksFaction(agent.FactionId) && profile.AvailableTo(agent)
             );
     }
 

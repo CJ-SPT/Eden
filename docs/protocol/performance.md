@@ -5052,3 +5052,95 @@ Not performed. Agent client testing is disabled.
 ### Optional maintainer checks
 
 None.
+
+## Server lock contention, November 15, 2026
+
+The remote container at `4eb8e30c` logged a 2,812.91 ms `resident pilot roster` hold and agent `DoAction`
+holds of 477.49–1,629.61 ms between 3:22 and 3:45 p.m. ET. Other sessions recorded waits behind resident
+inspection and transaction participants. Traffic maintenance, presentation and a 4,061.45 ms tick also held
+ownership. The average-price calls in this log spent most of their latency writing output. These observations
+identify several paths; they do not attribute every stall to the changes below. The collected log is retained
+locally under ignored `artifacts/lock-contention/remote.log` in the main checkout.
+
+Agent pools now filter authored definitions by level and storyline status before building catalog profiles.
+The final division, faction and supplier filters and offer ordering are unchanged. Mission closure looks up
+the 1,000 indexed container locations reserved for that mission, including locations from older content
+revisions. It no longer evaluates a range predicate against every saved item. Closure, inventory cleanup and
+the saved mission state remain one resident action and reach the existing checkpoint together.
+
+The checkpoint regressions also exposed an idle polling problem on unmodified main `be67bf09`. Mail and mailing-list
+polls entered resident inspection before checking their acknowledged cursors. Their existing per-pilot feed
+heads now use concurrent maps, and acknowledged polls return without world ownership. New events enter the
+ordinary coordinated read. Local speculative actions and unpublished SQL changes retain the coordinated
+path. Heads follow resident publication, imported SQL commits, deletion and hydration; rolled-back actions
+do not publish them. Feed batches, pilot isolation and notification ordering retain their existing contracts.
+
+Gameplay references are [EVE University missions](https://wiki.eveuniversity.org/Mission) and
+[EVE Mail](https://wiki.eveuniversity.org/EVE_Mail). This work changes query and ownership costs. The pinned
+build-3662168 mission and mail replies remain covered by protocol tests. The local older EveJS copy has no
+Git metadata. Reference checks covered status transitions in `services/agent/missionRuntimeState.js`
+(SHA-256 `832356BEC80A8AB79FC1BC9E4A7BE115E464EA18F101F471AE6A9001F77822BE`), joined-list replies in
+`services/mail/mailingListsMgrService.js` (`C1973FA7D32C00247FC637CAD735A598205DEFE32100010F542ECD91F1CBCB70`)
+and label replies in `services/mail/mailMgrService.js`
+(`CF0491958C104E50B6514CED94626CEDDA2C6405468FAD8C58C032E7FE066845`). No reference implementation was copied.
+
+### Automated validation
+
+The exact-method development filters selected
+`MissionContentionTests.ClosingMissionKeepsWorkBoundedWithUnrelatedInventoryAndPreservesContainerBoundaries`,
+`MissionCatalogLookupTests.ColdAgentPoolLoadsOnlyItsLevelAndStorylineProfiles`,
+`CheckpointOwnershipTests.WarmDockedCallsCompleteDuringCheckpointCopyOnFirstPeriodicPoll` and
+`MailFeedContentionTests.FeedHeadsFollowCommitRollbackDeletionAndReopenedCheckpoint`, each prefixed with
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.` or `FullyQualifiedName=Eden.Protocol.Tests.Persistence.` as appropriate.
+
+The mission regressions reproduced the original work. With 8,192 unrelated inventory rows, closure allocated
+2,273,400 bytes before and 725,616 after the change, with zero SQL commands, connections or fitting calculations
+in both samples. The small fixtures allocated 713,528 and 737,168 bytes respectively. These single samples
+include first-use overhead and establish bounded allocation, rather than a frame-time improvement. The cleanup
+test checks both inclusive and exclusive location boundaries and the reopened checkpoint. Cold level-four
+storyline lookup loaded 1,979 catalog records through the full directory and 105 through the filtered pool.
+All level/storyline pools are compared with the full directory for equality.
+
+All four checkpoint RPC cases failed on unchanged main in 22.78 seconds. Each waited until the test released
+its deliberate two-second copy pause. After the feed change, all four finish while copying remains paused,
+with identical encoded replies and zero SQL commands, connections and fitting calculations. The first
+corrected samples measured complete calls of 0.79 ms for `GetGuests`, 1.75 ms for `GetRegionBest`, 0.83 ms for
+`GetMultiOwnersEx` and 2.85 ms for `QuickQuery`. These are simulated sessions with immediate output sinks,
+not installed-server latency measurements. The strengthened test repeats three periodic polls during the pause.
+The feed regression covers committed events, rollback, acknowledged cursors, head deletion, later events and
+reopened checkpoints. The five-case development run passed in 9.50 seconds.
+
+An initial broader selection was stopped after the four checkpoint failures were identified: 171 cases had
+passed and four failed; the run was aborted and is not a complete affected run. A diagnostic build attempted
+during that run could not replace the loaded test assembly; subsequent builds and test runs were serialized.
+An exploratory copied-save probe was excluded from acceptance because its catalog activation inputs were incomplete.
+
+The completed affected selection passed 240 of 249 cases in 167.04 seconds. All nine failures are variants of
+`TransactionParticipantTests.ClassifiedProjectionDoesNotGrowWithRemotePopulationOrObserverCount`, expecting
+two SQL commands and receiving four. All nine reproduced on unmodified main `be67bf09` in a 41.50-second run with
+the exact method filter. The affected selection combines `FullyQualifiedName~` clauses for:
+
+```text
+MissionCatalogLookupTests, MissionPersistenceTests, MissionDeadlineTests, MissionBonusTests,
+MissionSingletonTests, MissionTrackerTests, MissionRetrievalTests, MissionProtocolTests, MiningMissionTests,
+MissionContentionTests, MailFeedContentionTests, MailTests, MailingListTests, MailingListLifecycleTests,
+MailServiceTests, MailingListServiceTests, CheckpointOwnershipTests, EconomicProjectionTests,
+ResidentEconomyTests, TransactionParticipantTests
+```
+
+Tool and solution restores passed. The final solution build passed in 5.91 seconds with zero warnings or
+errors. Both Python policy suites passed all eight catalog and nine formatting checks. .NET style,
+CSharpier, the 140-character width check and Git whitespace verification passed. The full .NET suite was not run.
+After the final test-constant cleanup, all eight cases selected by `MissionContentionTests`,
+`MissionCatalogLookupTests`, `MailFeedContentionTests` and the exact paused-checkpoint method passed in
+17.97 seconds. The three class clauses use `FullyQualifiedName~`; the checkpoint clause uses
+`FullyQualifiedName=Eden.Protocol.Tests.Persistence.CheckpointOwnershipTests.WarmDockedCallsCompleteDuringCheckpointCopyOnFirstPeriodicPoll`.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. The remote server was read for logs and was not deployed or restarted.
+Cold roster construction, traffic actions and the long tick remain separate observed contention paths.
+
+### Optional maintainer checks
+
+After deployment, compare agent-action holds and checkpoint-time docked RPC latency with several sessions online.

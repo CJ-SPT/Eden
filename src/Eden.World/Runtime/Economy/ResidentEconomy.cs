@@ -151,7 +151,7 @@ internal sealed partial class ResidentEconomy
     }
 
     internal IReadOnlyDictionary<Type, IEconomyTable> Mappings => _tables;
-    private bool _loaded;
+    private volatile bool _loaded;
     internal bool IsLoaded => _loaded;
 
     internal bool HasActiveAction => _transaction;

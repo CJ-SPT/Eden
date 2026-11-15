@@ -6,6 +6,7 @@ using Eden.Gameplay.Mail;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
+using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
@@ -438,6 +439,10 @@ internal sealed class PilotMailingListStore(WorldDatabase database, TimeProvider
     public MailingListChanges Changes(long pilotId, long cursor)
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("read.listChanges");
+        if (LiveWorld.Find(database.Path) is { } live && !live.Economy.HasMailingListChanges(pilotId, cursor))
+        {
+            return new(cursor, false, []);
+        }
         return WorldActionScope.Inspect<MailingListChanges>(
             database,
             world =>

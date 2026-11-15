@@ -35,6 +35,7 @@ public sealed class CheckpointOwnershipTests(ITestOutputHelper report)
     [InlineData("search", "QuickQuery")]
     public async Task WarmDockedCallsCompleteDuringCheckpointCopyOnFirstPeriodicPoll(string service, string method)
     {
+        const int PausedPolls = 3;
         TestClock clock = new();
         using TestWorld fixture = new(clock: clock);
         using PausedCopy copy = new();
@@ -106,13 +107,17 @@ public sealed class CheckpointOwnershipTests(ITestOutputHelper report)
                     force: true,
                     command: sql => report.WriteLine("SQL " + sql.ReplaceLineEndings(" "))
                 )!;
-                await calls.ProcessAsync(request);
+                for (int poll = 0; poll < PausedPolls; poll++)
+                {
+                    clock.Seconds++;
+                    await calls.ProcessAsync(request);
+                }
                 return (metrics.Commands, metrics.Connections, metrics.FittingCalculations);
             });
             Assert.Same(call, await Task.WhenAny(call, Task.Delay(TimeSpan.FromSeconds(2))));
             Assert.Equal((0, 0, 0), await call);
-            Assert.Equal(2, replies.Count);
-            Assert.Equal(replies[0], replies[1]);
+            Assert.Equal(PausedPolls + 1, replies.Count);
+            Assert.All(replies, reply => Assert.Equal(replies[0], reply));
         }
         finally
         {

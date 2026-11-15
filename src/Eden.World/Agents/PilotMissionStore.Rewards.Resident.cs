@@ -98,10 +98,10 @@ internal sealed partial class PilotMissionStore
             world.RemoveRange(MissionDeposits(world.Set<WorldAsteroid>(), mission.Id));
         }
         long firstContainer = MissionContainerRules.Id(mission.Id, 0);
-        long endContainer = checked(firstContainer + MissionRules.NpcsPerMission);
-        world.RemoveRange(
-            world.Set<Eden.Data.World.Inventory.OwnedItem>().Where(i => i.LocationId >= firstContainer && i.LocationId < endContainer)
-        );
+        // Query the indexed locations in the complete reserved range, including
+        // containers from older content revisions, without scanning every saved item.
+        var containers = Enumerable.Range(0, MissionRules.NpcsPerMission).Select(index => checked(firstContainer + index)).ToHashSet();
+        world.RemoveRange(world.Set<Eden.Data.World.Inventory.OwnedItem>().Where(i => containers.Contains(i.LocationId)));
         mission.State = state;
         mission.ClosedAt = now;
         foreach (
