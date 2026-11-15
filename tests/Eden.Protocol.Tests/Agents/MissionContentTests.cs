@@ -50,7 +50,7 @@ public sealed partial class MissionContentTests
         using CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath);
         var profiles = MissionCatalog.Read(catalog);
         Assert.Equal(Content().Missions.Length, profiles.Length);
-        Assert.Equal(63, profiles.Count(p => p.Kind == MissionKind.Combat));
+        Assert.Equal(69, profiles.Count(p => p.Kind == MissionKind.Combat));
         Assert.Equal(274, profiles.Count(p => p.Kind == MissionKind.Courier));
         Assert.Equal(23, profiles.Count(p => p.Kind == MissionKind.Mining));
         foreach (var profile in profiles)

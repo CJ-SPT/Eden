@@ -2,6 +2,69 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Level-three combat content and Sansha outposts — November 15, 2026
+
+Combat-content milestone two admits six more definitions after the first milestone was verified on the remote branch.
+The pool now contains **366 admitted / 2,526 blocked**: **69 combat**, 182 ordinary deliveries, 92 delivery storylines
+and 23 mining definitions. The broad missing-roster/script bucket falls from 591 to **585**, ten fewer than the
+original 595. These are content additions under the existing resident world/checkpoint owner; no gameplay SQL
+fallback, schema, reward rules or wire-format changes were introduced.
+
+| Encounter | Mission IDs | Dungeon / combat entry | Required objective | Optional guards |
+| --- | --- | --- | --- | --- |
+| Seek and Destroy, Guristas level 3 | 924 | 184 / 758889 | Four frigates and one battlecruiser in group 2 | 6 |
+| Seek and Destroy, Angel level 3 | 927 | 193 / 758924 | All 9 initial enemies | 0 |
+| Seek and Destroy, Blood level 3 | 930 | 208 / 758998 | Three frigates and one battlecruiser in group 2 | 6 |
+| Seek and Destroy, Serpentis level 3 | 936 | 202 / 758984 | All 7 initial enemies | 0 |
+| Retribution, Sansha level 3 | 1186, 1189 | 286 / 593785 | Outpost object 593786, type 17381 | 17 |
+
+Each pocket retains its catalog entrance and acceleration gate. The exporter resolves all reported NPC alternatives
+to exact pinned types. Report revisions reviewed directly and compared with evejs:
+[Guristas Seek 218636](https://wiki.eveuniversity.org/index.php?title=Seek_and_Destroy_(Guristas_Pirates)_(Level_3)&oldid=218636),
+[Angel Seek 201875](https://wiki.eveuniversity.org/index.php?title=Seek_and_Destroy_(Angel_Cartel)_(Level_3)&oldid=201875),
+[Blood Seek 211495](https://wiki.eveuniversity.org/index.php?title=Seek_and_Destroy_(Blood_Raiders)_(Level_3)&oldid=211495),
+[Serpentis Seek 193399](https://wiki.eveuniversity.org/index.php?title=Seek_and_Destroy_(Serpentis)_(Level_3)&oldid=193399), and
+[Sansha Retribution 191886](https://wiki.eveuniversity.org/index.php?title=Retribution_(Sansha%27s_Nation)&oldid=191886).
+Blood's generic objective header says all enemies, but its explicit blitz identifies group 2; Eden follows that
+specific completion description. Serpentis gives no group distance, so its 25 km placement hint is explicit Eden
+policy. Its optional Chief Guard after completion has no published timing/count and is not fabricated.
+
+The evejs level-three pack is the same hash and cross-build snapshot recorded in milestone one. Its selected
+reports and initial quantities match, but Blood and Sansha Retribution retain provisional kill-all completion.
+Eden uses the explicit group-2/outpost blitzes instead. **Correction to milestone one's initial inference:** a wider
+pinned catalog search resolves the report's `Sansha Berserker/Demon` aliases to **16568 `Sansha's Berserker`** and
+**16567 `Sansha's Demon`**, both elite frigates in group 624. The earlier exact-name lookup missed the possessive
+spelling. The new bindings use those types rather than evejs's `Centii Butcher` substitute. No reference implementation
+or generated template was copied. Report-specific aggro choreography and optional scenery loot remain excluded.
+
+Seek IDs 933/939 still remain blocked: their catalog dungeon 199 differs from reviewed level-one dungeon 197,
+while the level-three Sansha report cannot establish that catalog variant's roster/level binding. Empire Retribution
+and the previously identified timed/unknown reinforcement variants also remain blocked.
+The fixture adds 26 types and 102 source records over milestone one, with existing values unchanged.
+
+**Automated validation:** The exact development filter is
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionContentTests.LevelThreeSeekRequiresItsReportedTargetsAndResumesIncompleteCombatAcrossCheckpoint`.
+All **6 cases passed** (22.63 s feature build, 16.99 s test invocation). They check entrance isolation, required
+versus optional kills, failed turn-in, rolled-back final kills, unfinished checkpoints, stable NPC identities,
+completion with optional survivors and exactly-once turn-in. Sansha adds four cases to the outpost theory from
+milestone one; the existing all-content combat theory also covers all six added definitions.
+Final tool restore, solution restore and build passed (6.87 s build, no warnings/errors). This combined filter
+passed **201 tests** in **3 m 24 s**:
+
+```text
+(FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionContentTests&FullyQualifiedName!~EveryAdmittedDeliveryCanBeOfferedTransportedReopenedAndPaidExactlyOnce)|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionLayoutTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionGateTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionGateAccessTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionTrackerTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionStructureTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionEncounterTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionRulesTests
+```
+
+The unchanged 274-case delivery theory passed in milestone one and was not repeated for these combat additions.
+Both Python policy suites passed (8 catalog and 9 formatting tests), as did all 12 mission-admission tests
+(1.32 s combined). Formatting verification and the 140-column check passed. Re-exported manifest, audit and fixture
+bytes matched exactly; semantic comparison found no modified prior definitions or fixture values. No full .NET
+suite was requested or run. Native rendering, input and gameplay feel remain unverified.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Check one group-2 blitz and the Sansha outpost/elite names in the native client.
+
 ## Retribution outpost missions — November 15, 2026
 
 Combat-content milestone one admits four formerly roster/script-blocked definitions. All require destruction of

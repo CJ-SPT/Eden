@@ -3028,6 +3028,283 @@
       ]
     },
     {
+      "missionId": 924,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Seek_and_Destroy_(Guristas_Pirates)_(Level_3)",
+      "sourceRevision": "oldid=218636",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17006,
+                17001
+              ],
+              "count": 4,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                16995,
+                16991
+              ],
+              "count": 2,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                17001,
+                17006
+              ],
+              "count": 4,
+              "range": 110000,
+              "required": true
+            },
+            {
+              "types": [
+                24015
+              ],
+              "count": 1,
+              "range": 110000,
+              "required": true
+            }
+          ],
+          "roomId": 17113
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 17114,
+          "entryObjectId": 758894
+        },
+        {
+          "roomId": 17113,
+          "entryObjectId": 758889
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 758893,
+          "destinationRoomId": 17113
+        }
+      ]
+    },
+    {
+      "missionId": 927,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Seek_and_Destroy_(Angel_Cartel)_(Level_3)",
+      "sourceRevision": "oldid=201875",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16561,
+                16562
+              ],
+              "count": 1,
+              "range": 25000,
+              "required": true
+            },
+            {
+              "types": [
+                23974,
+                23975
+              ],
+              "count": 2,
+              "range": 25000,
+              "required": true
+            },
+            {
+              "types": [
+                16896,
+                16891
+              ],
+              "count": 1,
+              "range": 25000,
+              "required": true
+            },
+            {
+              "types": [
+                16874,
+                16885
+              ],
+              "count": 4,
+              "range": 55000,
+              "required": true
+            },
+            {
+              "types": [
+                24004
+              ],
+              "count": 1,
+              "range": 55000,
+              "required": true
+            }
+          ],
+          "roomId": 17124
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 17125,
+          "entryObjectId": 758931
+        },
+        {
+          "roomId": 17124,
+          "entryObjectId": 758924
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 758930,
+          "destinationRoomId": 17124
+        }
+      ]
+    },
+    {
+      "missionId": 930,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Seek_and_Destroy_(Blood_Raiders)_(Level_3)",
+      "sourceRevision": "oldid=211495",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16564
+              ],
+              "count": 1,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                23981,
+                23980
+              ],
+              "count": 4,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                24100
+              ],
+              "count": 1,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                16953,
+                16940
+              ],
+              "count": 3,
+              "range": 50000,
+              "required": true
+            },
+            {
+              "types": [
+                24011
+              ],
+              "count": 1,
+              "range": 50000,
+              "required": true
+            }
+          ],
+          "roomId": 17143
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 17144,
+          "entryObjectId": 759006
+        },
+        {
+          "roomId": 17143,
+          "entryObjectId": 758998
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 759005,
+          "destinationRoomId": 17143
+        }
+      ]
+    },
+    {
+      "missionId": 936,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Seek_and_Destroy_(Serpentis)_(Level_3)",
+      "sourceRevision": "oldid=193399",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16569
+              ],
+              "count": 2,
+              "range": 25000,
+              "required": true
+            },
+            {
+              "types": [
+                17042
+              ],
+              "count": 4,
+              "range": 25000,
+              "required": true
+            },
+            {
+              "types": [
+                24024
+              ],
+              "count": 1,
+              "range": 25000,
+              "required": true
+            }
+          ],
+          "roomId": 17139
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 17140,
+          "entryObjectId": 758989
+        },
+        {
+          "roomId": 17139,
+          "entryObjectId": 758984
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 758988,
+          "destinationRoomId": 17139
+        }
+      ]
+    },
+    {
       "missionId": 1180,
       "level": 1,
       "difficulty": 500,
@@ -3768,6 +4045,127 @@
       ]
     },
     {
+      "missionId": 1186,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Retribution_(Sansha's_Nation)",
+      "sourceRevision": "oldid=191886",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17072,
+                17063
+              ],
+              "count": 2,
+              "range": 35000,
+              "required": false
+            },
+            {
+              "types": [
+                17062,
+                17083
+              ],
+              "count": 2,
+              "range": 35000,
+              "required": false
+            },
+            {
+              "types": [
+                17059,
+                17067
+              ],
+              "count": 1,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                16568,
+                16567
+              ],
+              "count": 2,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                17083,
+                17062
+              ],
+              "count": 1,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                17059,
+                17067
+              ],
+              "count": 1,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                17070,
+                17080
+              ],
+              "count": 2,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                17059,
+                17067
+              ],
+              "count": 4,
+              "range": 75000,
+              "required": false
+            },
+            {
+              "types": [
+                24075,
+                24076
+              ],
+              "count": 2,
+              "range": 75000,
+              "required": false
+            }
+          ],
+          "roomId": 14123
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 14122,
+          "entryObjectId": 593784
+        },
+        {
+          "roomId": 14123,
+          "entryObjectId": 593785
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 593783,
+          "destinationRoomId": 14123
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 593786,
+          "required": true,
+          "completesMission": true
+        }
+      ]
+    },
+    {
       "missionId": 937,
       "level": 1,
       "difficulty": 500,
@@ -3873,6 +4271,127 @@
         {
           "fromObjectId": 758958,
           "destinationRoomId": 17131
+        }
+      ]
+    },
+    {
+      "missionId": 1189,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Retribution_(Sansha's_Nation)",
+      "sourceRevision": "oldid=191886",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17072,
+                17063
+              ],
+              "count": 2,
+              "range": 35000,
+              "required": false
+            },
+            {
+              "types": [
+                17062,
+                17083
+              ],
+              "count": 2,
+              "range": 35000,
+              "required": false
+            },
+            {
+              "types": [
+                17059,
+                17067
+              ],
+              "count": 1,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                16568,
+                16567
+              ],
+              "count": 2,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                17083,
+                17062
+              ],
+              "count": 1,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                17059,
+                17067
+              ],
+              "count": 1,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                17070,
+                17080
+              ],
+              "count": 2,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                17059,
+                17067
+              ],
+              "count": 4,
+              "range": 75000,
+              "required": false
+            },
+            {
+              "types": [
+                24075,
+                24076
+              ],
+              "count": 2,
+              "range": 75000,
+              "required": false
+            }
+          ],
+          "roomId": 14123
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 14122,
+          "entryObjectId": 593784
+        },
+        {
+          "roomId": 14123,
+          "entryObjectId": 593785
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 593783,
+          "destinationRoomId": 14123
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 593786,
+          "required": true,
+          "completesMission": true
         }
       ]
     },

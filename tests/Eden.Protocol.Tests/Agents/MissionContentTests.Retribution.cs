@@ -14,10 +14,14 @@ namespace Eden.Protocol.Tests.Agents;
 public sealed partial class MissionContentTests
 {
     [Theory]
+    [InlineData(1186, 17381, 593786, 17, false)]
+    [InlineData(1186, 17381, 593786, 17, true)]
     [InlineData(1187, 17382, 60753, 16, false)]
     [InlineData(1187, 17382, 60753, 16, true)]
     [InlineData(1188, 16859, 60799, 20, false)]
     [InlineData(1188, 16859, 60799, 20, true)]
+    [InlineData(1189, 17381, 593786, 17, false)]
+    [InlineData(1189, 17381, 593786, 17, true)]
     [InlineData(1190, 16855, 56336, 21, false)]
     [InlineData(1190, 16855, 56336, 21, true)]
     [InlineData(1191, 16855, 56336, 21, false)]

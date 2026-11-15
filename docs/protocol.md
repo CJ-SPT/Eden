@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Level-three combat content and Sansha outposts](protocol/agents.md#level-three-combat-content-and-sansha-outposts--november-15-2026)
+adds six more verified definitions, explicit elite type bindings and saved incomplete combat progress.
+
 [Retribution outpost missions](protocol/agents.md#retribution-outpost-missions--november-15-2026)
 adds four level-three definitions with verified outpost blitz objectives and resident checkpoint coverage.
 

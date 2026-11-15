@@ -108,7 +108,8 @@ class MissionAdmissionTests(unittest.TestCase):
     def test_retribution_uses_reviewed_outposts_and_keeps_unverified_factions_blocked(self):
         manifest = json.loads((ROOT / 'src/Eden.World/Agents/missions-3662168.json').read_text(encoding='utf-8'))
         missions = {m['missionId']: m for m in manifest['missions']}
-        for mid, target, guards in [(1187, 60753, 16), (1188, 60799, 20),
+        for mid, target, guards in [(1186, 593786, 17), (1189, 593786, 17),
+                                    (1187, 60753, 16), (1188, 60799, 20),
                                     (1190, 56336, 21), (1191, 56336, 21)]:
             with self.subTest(mission=mid):
                 mission = missions[mid]
@@ -119,7 +120,30 @@ class MissionAdmissionTests(unittest.TestCase):
                 self.assertEqual(guards, sum(g['count'] for w in mission['waves'] for g in w['groups']))
                 self.assertTrue(all(not g['required'] for w in mission['waves'] for g in w['groups']))
                 self.assertTrue(mission['source'].startswith('https://wiki.eveuniversity.org/Retribution_'))
-        for mid in [1186, 1189, 1192, 1194, 1196, 1197]:
+        for mid in [1186, 1189]:
+            elite = [g for w in missions[mid]['waves'] for g in w['groups'] if g['types'] == [16568, 16567]]
+            self.assertEqual(1, len(elite))
+            self.assertEqual(2, elite[0]['count'])
+        for mid in [1192, 1194, 1196, 1197]:
+            self.assertNotIn(mid, missions)
+
+    def test_level_three_seek_objectives_use_report_blitz_groups(self):
+        manifest = json.loads((ROOT / 'src/Eden.World/Agents/missions-3662168.json').read_text(encoding='utf-8'))
+        missions = {m['missionId']: m for m in manifest['missions']}
+        for mid, required, optional in [(924, 5, 6), (927, 9, 0), (930, 4, 6), (936, 7, 0)]:
+            with self.subTest(mission=mid):
+                mission = missions[mid]
+                groups = mission['waves'][0]['groups']
+                self.assertEqual(3, mission['level'])
+                self.assertEqual(1, len(mission['waves']))
+                self.assertEqual(2, len(mission['rooms']))
+                self.assertEqual(required, sum(g['count'] for g in groups if g['required']))
+                self.assertEqual(optional, sum(g['count'] for g in groups if not g['required']))
+                self.assertTrue(all(not g.get('completesMission') and not g.get('trigger') for g in groups))
+                self.assertNotIn('structures', mission)
+        # These catalog pockets differ from the reviewed Sansha level-one dungeon;
+        # the level-three report cannot establish their difficulty/roster binding.
+        for mid in [933, 939]:
             self.assertNotIn(mid, missions)
 
 

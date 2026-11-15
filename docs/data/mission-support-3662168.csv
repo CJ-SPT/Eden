@@ -30,19 +30,19 @@ missionId,name,template,status,reason
 921,The Disgruntled Employee,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 922,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 923,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
-924,Seek and Destroy,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+924,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 925,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 926,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
-927,Seek and Destroy,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+927,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 928,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 929,Seek and Destroy,BasicKillMission,blocked,Requires a verified reinforcement trigger
-930,Seek and Destroy,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+930,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 931,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 932,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 933,Seek and Destroy,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 934,Seek and Destroy,BasicKillMission,blocked,Requires a verified reinforcement trigger
 935,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
-936,Seek and Destroy,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+936,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 937,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 938,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 939,Seek and Destroy,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -90,10 +90,10 @@ missionId,name,template,status,reason
 1183,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1184,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1185,Desperate Measures,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1186,Retribution,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+1186,Retribution,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1187,Retribution,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1188,Retribution,BasicKillMission,admitted,Catalog cargo or reviewed encounter
-1189,Retribution,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+1189,Retribution,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1190,Retribution,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1191,Retribution,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1192,Retribution,BasicKillMission,blocked,Requires verified NPC roster and objective scripts

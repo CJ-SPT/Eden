@@ -11,6 +11,8 @@ from collections import Counter
 
 # Build-3662168 destructible Habitat; the similarly named scenery is not an objective.
 HABITAT_TYPE = 19715
+# Explicit Eden placement hint when a report supplies no NPC-group distances.
+UNREPORTED_GROUP_RANGE = 25000
 
 KNOWN_BLOCKERS = {
     895: 'Requires timed reinforcements',
@@ -211,6 +213,24 @@ def extend(db, missions, group):
         (935, 500020, 'Serpentis', 2, 191920, 758969,
          [('Coreli Guard/Coreli Safeguard', 4, 25000, False),
           ('Coreli Guard/Coreli Safeguard/Coreli Protector/Coreli Defender', 4, 75000, True)]),
+        (924, 500010, 'Guristas_Pirates', 3, 218636, 758889,
+         [('Pithi Wrecker/Pithi Plunderer', 4, 50000, False),
+          ('Pithum Mortifier/Pithum Inferno', 2, 50000, False),
+          ('Pithi Plunderer/Pithi Wrecker', 4, 110000, True), ('Pithatis Assaulter', 1, 110000, True)]),
+        (927, 500011, 'Angel_Cartel', 3, 201875, 758924,
+         [('Angel Viper/Angel Webifier', 1, 25000, True), ('Gistior Defacer/Gistior Haunter', 2, 25000, True),
+          ('Gistum Liquidator/Gistum Marauder', 1, 25000, True),
+          ('Gistii Ambusher/Gistii Raider', 4, 55000, True), ('Gistatis Primus', 1, 55000, True)]),
+        (930, 500012, 'Blood_Raiders', 3, 211495, 758998,
+         [('Blood Disciple', 1, 40000, False), ('Corpior Devoter/Corpior Templar', 4, 40000, False),
+          ('Corpum Dark Priest', 1, 40000, False), ('Corpii Engraver/Corpii Reaver', 3, 50000, True),
+          ('Corpatis Fanatic', 1, 50000, True)]),
+        # The report's optional post-completion Chief Guard has no timing/count contract.
+        # Admit its verified initial objective, without inventing that later spawn.
+        (936, 500020, 'Serpentis', 3, 193399, 758984,
+         [('Guardian Veteran', 2, UNREPORTED_GROUP_RANGE, True),
+          ('Corelum Chief Safeguard', 4, UNREPORTED_GROUP_RANGE, True),
+          ('Corelatis Squad Leader', 1, UNREPORTED_GROUP_RANGE, True)]),
     ]
     for mid, faction, variant, level, revision, entry, roster in seek:
         encounter(mid, faction, f'Seek_and_Destroy_({variant})_(Level_{level})', revision,
@@ -276,6 +296,19 @@ def extend(db, missions, group):
                group('Guardian Veteran', 1, 77000, required=False),
                group('Corelatis Squad Leader/Corelatis Wing Leader', 1, 77000, required=False)],
               56324, structure_type=16855)
+    # The report omits the possessive apostrophe. Bind the actual elite types,
+    # not evejs's provisional Centii Butcher substitute for the same aliases.
+    encounter(1186, 500019, "Retribution_(Sansha's_Nation)", 191886,
+              [group('Centii Plague/Centii Enslaver', 2, 35000, required=False),
+               group('Centum Slaughterer/Centum Execrator', 2, 35000, required=False),
+               group('Centii Butcher/Centii Manslayer', 1, 45000, required=False),
+               group("Sansha's Berserker/Sansha's Demon", 2, 45000, required=False),
+               group('Centum Execrator/Centum Slaughterer', 1, 45000, required=False),
+               group('Centii Butcher/Centii Manslayer', 1, 45000, required=False),
+               group('Centum Torturer/Centum Mutilator', 2, 45000, required=False),
+               group('Centii Butcher/Centii Manslayer', 4, 75000, required=False),
+               group('Centum Fiend/Centum Hellhound', 2, 75000, required=False)],
+              593785, structure_type=17381)
 
     admitted = {m['missionId'] for m in missions}
     encounters = {tuple(sorted(source(db, 'client/missions', m['missionId'])['killMission'].items())): m
