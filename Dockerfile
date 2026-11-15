@@ -19,7 +19,8 @@ COPY tools/Build-SkillClient.py tools/mod_client_loader.py tools/skill_client_ov
 ARG EDEN_REVISION
 RUN --mount=type=cache,id=eden-nuget,target=/root/.nuget/packages,sharing=locked \
     dotnet publish src/Eden.Server/Eden.Server.csproj -c Release --no-restore -o /publish \
-    -p:UseAppHost=false -p:SourceRevisionId="$EDEN_REVISION"
+    -p:UseAppHost=false -p:SourceRevisionId="$EDEN_REVISION" \
+    && test -s /publish/wwwroot/_framework/blazor.web.js
 
 FROM ubuntu:24.04 AS mod-compiler
 WORKDIR /build

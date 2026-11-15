@@ -2,6 +2,43 @@
 
 [Documentation](../README.md) / [Protocol index](../protocol.md) / [Administrator guide](../world-configuration.md)
 
+## Published administration framework assets, November 15, 2026
+
+The remote administration page rendered its header links and settings categories, but category changes and form
+buttons were inert even after a hard refresh. Read-only inspection of the deployed main revision `05a66e75` found
+`/_framework/blazor.web.js` returning HTTP 404. The container's `wwwroot` contained icons but no framework scripts.
+
+Docker restores the copied project files before copying Razor sources. The pinned .NET 10 SDK infers
+`RequiresAspNetWebAssets` from the presence of `.razor` content at restore time; the project-only restore therefore
+omitted `Microsoft.AspNetCore.App.Internal.Assets`. Publishing with `--no-restore` retained that incomplete graph.
+The server project now sets `RequiresAspNetWebAssets` explicitly, and the Docker publish step rejects a missing
+framework script. No gameplay, configuration revision, authentication or transport policy changed.
+
+References: [Microsoft's Blazor project structure](https://learn.microsoft.com/en-us/aspnet/core/blazor/project-structure?view=aspnetcore-10.0)
+and the [upstream project-only Docker restore issue](https://github.com/dotnet/aspnetcore/issues/69341).
+The owning SDK rules were also inspected in `Microsoft.NET.Sdk.Web.ProjectSystem.targets` and
+`Microsoft.NET.Sdk.FrameworkReferenceResolution.targets` for SDK 10.0.403.
+
+`python tools/Test-AdministrationPublish.py` reproduces Docker's restore-before-sources sequence in an isolated
+temporary tree, checks the restored framework-assets dependency, publishes without another restore, and verifies
+both Blazor script payloads and endpoint mappings. It failed before the property change and passed afterward
+(8.24 seconds for the passing invocation). Automated Firefox and Chromium checks now exercise every category
+before and after saves, preserving Travel draft edits across tab changes and verifying their saved values.
+
+Automated validation: project-only restore/publish regression passed after first reproducing the missing-assets
+failure. Tool/solution restores and the solution build passed with zero warnings/errors (1.10-second build).
+All 40 affected .NET tests passed without skips in 18 seconds, including the expanded automated Firefox and
+Chromium scenarios. Both Python policy suites (8 catalog and 9 formatting tests) and formatting verification passed.
+The full .NET suite was not requested or run. Final filter with `EDEN_TEST_ADMIN_BROWSER=1`:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Administration.AdministrationTests|FullyQualifiedName~Eden.Protocol.Tests.Administration.WorldSettingsPageTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting.GameplayDependenciesTests
+```
+
+Live acceptance: Not performed; agent client testing is disabled.
+
+Optional maintainer checks: refresh the administration page and select Travel after updating the server.
+
 ## Mining hold capacity, November 14, 2026
 
 The Gathering page stages independent capacity multipliers for dogma attributes 1556 (general mining), 3136 (ice)

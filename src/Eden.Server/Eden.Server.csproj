@@ -3,6 +3,8 @@
     <OutputType>Exe</OutputType>
     <ApplicationIcon>../../assets/icons/eden-server.ico</ApplicationIcon>
     <IncludeSourceRevisionInInformationalVersion>true</IncludeSourceRevisionInInformationalVersion>
+    <!-- Docker restores before copying Razor sources; always restore the administration framework scripts. -->
+    <RequiresAspNetWebAssets>true</RequiresAspNetWebAssets>
     <DefaultItemExcludes>$(DefaultItemExcludes);data/**;data.copy-*/**</DefaultItemExcludes>
   </PropertyGroup>
   <ItemGroup>

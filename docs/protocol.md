@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Published administration assets](protocol/world-configuration.md#published-administration-framework-assets-november-15-2026)
+fix missing Blazor startup scripts in Docker images and record the project-only restore regression.
+
 [Travel configuration](protocol/navigation.md#travel-configuration-november-15-2026) adds player warp speed,
 align speed and autopilot gate landing controls in a dedicated Settings category.
 

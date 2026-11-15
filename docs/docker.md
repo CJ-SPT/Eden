@@ -152,6 +152,12 @@ docker compose run --build --rm eden --config /config/server.json --set-admin-pa
 
 Build and recreate the service with both Compose files, then open `EDEN_ADMIN_ORIGIN` on the remote machine.
 
+If header links work but settings tabs and form buttons are inert, check whether
+`/_framework/blazor.web.js` loads successfully. Current builds explicitly restore the Blazor framework assets
+before Razor sources are copied and reject an image missing that startup script. The automated packaging check is
+`python tools/Test-AdministrationPublish.py`; see the
+[implementation record](protocol/world-configuration.md#published-administration-framework-assets-november-15-2026).
+
 ```sh
 docker compose -f compose.yaml -f compose.admin.yaml config --quiet
 docker compose -f compose.yaml -f compose.admin.yaml up --build -d

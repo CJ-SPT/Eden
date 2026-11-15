@@ -48,6 +48,7 @@ public sealed partial class AdministrationTests
             Assert.Equal(1, state.Active.Id);
             Assert.Equal(3, state.Pending!.Id);
             Assert.Equal(3, state.Pending.Draft.Settings.Rewards.BountyMultiplier);
+            Assert.Equal(new NavigationPolicy(0, 2, 1.25m), state.Pending.Draft.Settings.Navigation);
         }
     }
 

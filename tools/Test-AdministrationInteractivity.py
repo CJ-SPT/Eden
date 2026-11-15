@@ -45,6 +45,24 @@ def main():
             control.fill(value)
             control.blur()
 
+        def check_tabs():
+            tabs = page.get_by_role("navigation", name="World settings categories")
+            for tab in tabs.get_by_role("button").all():
+                tab.click()
+                expect(tab).to_have_attribute("aria-pressed", "true")
+                expect(tabs.locator('[aria-pressed="true"]')).to_have_count(1)
+                expect(page.locator("#" + tab.get_attribute("aria-controls"))).to_be_visible()
+
+        check_tabs()
+        click("Travel")
+        edit("Warp speed (×)", "2")
+        edit("Align speed (×)", "1.25")
+        edit("Autopilot gate landing distance (metres)", "0")
+        check_tabs()
+        click("Travel")
+        expect(page.get_by_label("Warp speed (×)", exact=True)).to_have_value("2")
+        expect(page.get_by_label("Align speed (×)", exact=True)).to_have_value("1.25")
+        expect(page.get_by_label("Autopilot gate landing distance (metres)", exact=True)).to_have_value("0")
         click("Gathering")
         edit("Ore mining yield (×)", "2")
         click("Save for restart")
@@ -57,6 +75,7 @@ def main():
         edit("NPC bounty ISK (×)", "3")
         click("Save for restart")
         expect(page.get_by_text("Revision 3 saved · pending restart.", exact=True)).to_be_visible()
+        check_tabs()
         click("World & economy")
         expect(page.get_by_label("Simulated miners", exact=True)).not_to_be_checked()
         expect(page.get_by_label("Station traffic density (×)", exact=True)).to_have_value("0.5")
