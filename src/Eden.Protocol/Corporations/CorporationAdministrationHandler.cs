@@ -92,6 +92,11 @@ internal sealed record CorporationDetailsChanged(CorporationAdministrationChange
                 before["ceoID"] = Change.PreviousCeoId;
                 after["ceoID"] = ceo;
             }
+            if (Change.ClosedAt.HasValue)
+            {
+                before["deleted"] = false;
+                after["deleted"] = true;
+            }
             return
             [
                 Change.CorporationId,

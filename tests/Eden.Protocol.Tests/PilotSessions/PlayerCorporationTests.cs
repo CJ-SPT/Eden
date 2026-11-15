@@ -71,7 +71,7 @@ public sealed class PlayerCorporationTests
     [InlineData(true)]
     public async Task CreationThenNativeCeoRefreshBindsTitlesWithoutRepeatingFormation(bool embeddedCreation)
     {
-        using TestWorld db = new();
+        using TestWorld db = new(liveWorld: true);
         Prepare(db);
         using var scope = db.Services.CreateScope();
         var session = scope.ServiceProvider.GetRequiredService<IPilotSession>();
@@ -239,7 +239,7 @@ public sealed class PlayerCorporationTests
     [Fact]
     public async Task CreationChangesTheSessionBeforeItsReplyAndInvalidatesTheOldRegistry()
     {
-        using TestWorld db = new();
+        using TestWorld db = new(liveWorld: true);
         Prepare(db);
         using var scope = db.Services.CreateScope();
         var session = scope.ServiceProvider.GetRequiredService<IPilotSession>();

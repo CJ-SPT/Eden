@@ -172,14 +172,14 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
         long balance = CorporationRules.Pay(
             wallet?.Cents ?? 0,
             pilot.ActiveShip.Position is null,
-            world.Set<SavedCorporation>().Any(c => c.CeoId == pilotId),
+            world.Set<SavedCorporation>().Any(c => c.CeoId == pilotId && c.ClosedAt == null),
             level
         );
         if (
             world
                 .Set<SavedCorporation>()
                 .Any(c =>
-                    string.Equals(c.Name, details.Name, StringComparison.OrdinalIgnoreCase)
+                    c.ClosedAt == null && string.Equals(c.Name, details.Name, StringComparison.OrdinalIgnoreCase)
                     || string.Equals(c.Ticker, details.Ticker, StringComparison.OrdinalIgnoreCase)
                 )
             || catalog.NpcCorporationNameExists(details.Name)

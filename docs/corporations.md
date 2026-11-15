@@ -21,7 +21,8 @@ Each milestone includes typed rules, authenticated native calls, persistence, fo
 | Member communications and recruitment services | Direct invitations, bulletins, automatic welcome mail and paid recruitment advertisements implemented |
 | Share holdings, shareholders and transfers | Published; 198 focused tests and required checks passed |
 | Dividends and CEO succession | Implemented: exact member/shareholder payments and docked CEO transfer |
-| Voting, share issuance and corporation closure | Pending |
+| Corporation closure | Implemented: member departures, archived identity/assets and released office slots |
+| Voting and share issuance | Pending |
 
 See [corporation protocol findings](protocol/corporations.md) for native call shapes and milestone validation evidence, and [inventory ownership](inventory-ownership.md) for the storage boundary. This table records implemented scope, not live client acceptance.
 

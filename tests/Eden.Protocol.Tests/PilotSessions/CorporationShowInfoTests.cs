@@ -24,7 +24,7 @@ public sealed class CorporationShowInfoTests
     [InlineData(true)]
     public async Task NativeStartupAndAllTabReadsReturnExpectedShapesWithoutUnsupportedCalls(bool playerCorporation)
     {
-        using TestWorld db = new();
+        using TestWorld db = new(liveWorld: true);
         int corporation = CorporationPublicInfoTests.CreateCorporation(db, playerCorporation);
         using (CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true))
         {

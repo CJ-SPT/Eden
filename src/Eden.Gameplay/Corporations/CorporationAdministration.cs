@@ -52,7 +52,8 @@ public sealed record CorporationAdministrationChange(
     CorporationDetails Before,
     CorporationDetails After,
     long? PreviousCeoId = null,
-    long? CeoId = null
+    long? CeoId = null,
+    long? ClosedAt = null
 );
 
 public interface ICorporationAdministration

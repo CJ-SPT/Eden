@@ -11,7 +11,7 @@ using Eden.World.Storage;
 namespace Eden.World.Corporations;
 
 [Injectable]
-internal sealed class CorporationLeadershipStore(WorldDatabase database, TimeProvider clock) : ICorporationLeadership
+internal sealed partial class CorporationLeadershipStore(WorldDatabase database, TimeProvider clock) : ICorporationLeadership
 {
     public void PayDividend(long actorId, bool shareholders, long amountCents)
     {

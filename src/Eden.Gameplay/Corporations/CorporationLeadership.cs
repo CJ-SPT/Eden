@@ -11,6 +11,7 @@ public interface ICorporationLeadership
     void PayDividend(long actorId, bool shareholders, long amountCents);
     IReadOnlyList<long> Successors(long actorId);
     void Transfer(long actorId, long successorId);
+    void Close(long actorId);
 }
 
 public static class CorporationDividendRules

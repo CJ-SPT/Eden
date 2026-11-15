@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Corporation closure, November 15, 2026](#corporation-closure-november-15-2026)
 - [Dividends and CEO succession, November 15, 2026](#dividends-and-ceo-succession-november-15-2026)
 - [Member search and tracking, November 14, 2026](#member-search-and-tracking-november-14-2026)
 - [Recruitment advertisements, November 14, 2026](#recruitment-advertisements-november-14-2026)
@@ -38,6 +39,42 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Corporation window voting-capability startup correction](#corporation-window-voting-capability-startup-correction)
 - [Player corporation applications and membership](#player-corporation-applications-and-membership)
 - [Player corporations: creation foundation](#player-corporations-creation-foundation)
+
+## Corporation closure, November 15, 2026
+
+The native `ResignFromCEO(None)` flow now closes a corporation when no eligible successor exists. The pinned client asks
+for confirmation before that call. The server independently requires its current CEO to be docked and rechecks successor
+eligibility inside the transaction. All members return to their first recorded NPC corporations, lose corporation access,
+and receive normal membership/session changes. Open applications become rejected, recruitment ads are removed, and rental
+notifications invalidate office lists. Any failure rolls back the complete operation, including already moved members.
+
+Schema 162 records closure time while retaining the last CEO, founder, identity, financial history, shares and asset
+locations. Closed office records preserve inventory references but no longer consume station rental slots or appear as
+tenants. Remaining property and balances stay with the closed corporation and cannot be inherited or withdrawn by former
+members. This is Eden's archival policy; it does not transfer or silently destroy assets. The former CEO can found another
+corporation. Names may be reused after closure; tickers remain reserved. Both resident uniqueness checks and filtered SQLite
+indexes enforce these rules. Public Show Info returns `deleted=True` and the historical CEO ID: the pinned portrait code
+still reads that ID without a deleted-state guard.
+
+Sources: inert build **3662168** inspection of `base_corporation.ResignFromCEO` and
+`corporationInfoWindow.construct_ceo_picture_info`, using the pinned archive recorded above.
+[EVE University formation](https://wiki.eveuniversity.org/Forming_a_corporation) covers closure and identity reuse;
+[CCP CEO and Directors](https://support.eveonline.com/hc/en-us/articles/203279841-CEO-and-Directors) describes the no-successor
+warning and removal of remaining members. [CCP closure guidance](https://support.eveonline.com/hc/en-us/articles/203209062-Corporation-Alliance-Closure)
+states that remaining corporation assets become irrecoverable. Existing Blue adapters and the recorded Carbon revision are unchanged.
+
+**Automated validation.** Tool/solution restore, solution build (zero warnings/errors), both Python policy suites
+(8 catalog and 9 formatting tests), formatting verification (2,186 files), and documentation/diff checks passed.
+Filter `FullyQualifiedName~CorporationClosureTests|FullyQualifiedName~CorporationLeadershipTests|FullyQualifiedName~CorporationStorageTests|FullyQualifiedName~CorporationMembershipTests|FullyQualifiedName~PlayerCorporationTests|FullyQualifiedName~CorporationShowInfoTests|FullyQualifiedName~CharacterDeletionTests`
+passed 107 tests in 31 seconds; the required sequence took 72.42 seconds. Additional dependency filter
+`FullyQualifiedName~CorporationPublicInfoTests|FullyQualifiedName~WorldMigrationTests` passed 18 tests in 11 seconds.
+Regressions exercise file/resident closure, role/session updates, retained property, office slots, successor/permission
+checks, application/ad cleanup, transaction rollback, migration and restart. Five older creation/Show Info session cases
+now use a resident test world, matching main's Abyssal session prerequisite. No full .NET suite was run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Close a disposable corporation with no eligible successor. Inspect its Show Info and former members.
 
 ## Dividends and CEO succession, November 15, 2026
 

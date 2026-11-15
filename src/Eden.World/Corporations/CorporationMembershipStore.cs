@@ -217,6 +217,15 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
         }
         var pilot = Pilot(world, pilotId);
         using CatalogDbContext catalog = new(database.CatalogPath);
+        Move(world, pilot, OriginalCorporation(world, catalog, pilotId), Now);
+        world.SaveChanges();
+        Eden.World.Bookmarks.PilotBookmarksStore.PruneUnavailableConnections(world, pilot.Id);
+        transaction.Commit();
+        database.NotifyAccessGroupsChanged();
+    }
+
+    internal static int OriginalCorporation(WorldAction world, CatalogDbContext catalog, long pilotId)
+    {
         var history = world
             .Set<SavedCorporationEmployment>()
             .Where(e => e.PilotId == pilotId)
@@ -228,11 +237,7 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
         {
             throw new InvalidDataException("No original NPC corporation is recorded for this pilot.");
         }
-        Move(world, pilot, destination, Now);
-        world.SaveChanges();
-        Eden.World.Bookmarks.PilotBookmarksStore.PruneUnavailableConnections(world, pilot.Id);
-        transaction.Commit();
-        database.NotifyAccessGroupsChanged();
+        return destination;
     }
 
     private CorporationLeavePermission Permission(WorldAction world, long actorId, long pilotId)
@@ -346,7 +351,7 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
     private static void CheckJoin(WorldAction world, Pilot pilot, SavedCorporation corporation) =>
         CorporationMembershipRules.CheckJoin(
             pilot.CorporationId == corporation.Id,
-            world.Set<SavedCorporation>().Any(c => c.CeoId == pilot.Id),
+            world.Set<SavedCorporation>().Any(c => c.CeoId == pilot.Id && c.ClosedAt == null),
             world.Pilots.Count(p => p.CorporationId == corporation.Id),
             corporation.MemberLimit
         );
@@ -354,9 +359,11 @@ internal sealed class CorporationMembershipStore(WorldDatabase database, TimePro
     private static Pilot Pilot(WorldAction world, long id) => world.Pilots.Find(id) ?? throw new InvalidDataException("Unknown pilot.");
 
     private static SavedCorporation Corporation(WorldAction world, int id) =>
-        world.Set<SavedCorporation>().Find(id) ?? throw new InvalidDataException("Unknown player corporation.");
+        world.Set<SavedCorporation>().Find(id) is { ClosedAt: null } corporation
+            ? corporation
+            : throw new InvalidDataException("Unknown or closed player corporation.");
 
-    private static void NotifyApplication(WorldAction world, SavedCorporationApplication application)
+    internal static void NotifyApplication(WorldAction world, SavedCorporationApplication application)
     {
         var corporation = Corporation(world, application.CorporationId);
         string json = JsonSerializer.Serialize(application.Snapshot());

@@ -45,7 +45,9 @@ internal sealed class CorporationLeadershipHandler(ICorporationLeadership leader
                     var successors = leadership.Successors(actor);
                     if (successors.Count == 0)
                     {
-                        throw new InvalidDataException("There is no eligible successor. Corporation closure is not available yet.");
+                        leadership.Close(actor);
+                        corporations.Advance(context);
+                        return PilotCallResult.None;
                     }
                     return new BlueList<long>(successors);
                 case ("ResignFromCEO", [long successor]) when successor > 0:

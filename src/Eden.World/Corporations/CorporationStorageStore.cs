@@ -45,12 +45,7 @@ internal sealed class CorporationStorageStore(WorldDatabase database, TimeProvid
             world =>
             {
                 int station = DockedStation(world, actorId);
-                return world
-                    .Set<SavedCorporationOffice>()
-                    .Where(o => o.StationId == station)
-                    .OrderBy(o => o.CorporationId)
-                    .Select(o => o.CorporationId)
-                    .ToArray();
+                return ActiveOffices(world, station).OrderBy(o => o.CorporationId).Select(o => o.CorporationId).ToArray();
             }
         );
     }
@@ -62,7 +57,7 @@ internal sealed class CorporationStorageStore(WorldDatabase database, TimeProvid
             world =>
             {
                 int station = DockedStation(world, actorId);
-                return Math.Max(0, Settings(world).OfficeSlots - world.Set<SavedCorporationOffice>().Count(o => o.StationId == station));
+                return Math.Max(0, Settings(world).OfficeSlots - ActiveOffices(world, station).Count());
             }
         );
     }
@@ -93,7 +88,7 @@ internal sealed class CorporationStorageStore(WorldDatabase database, TimeProvid
         }
         if (
             world.Set<SavedCorporationOffice>().Any(o => o.CorporationId == corporation.Id && o.StationId == station)
-            || world.Set<SavedCorporationOffice>().Count(o => o.StationId == station) >= settings.OfficeSlots
+            || ActiveOffices(world, station).Count() >= settings.OfficeSlots
         )
         {
             throw new InvalidDataException("Your corporation already rents an office here or no office is available.");
@@ -515,7 +510,14 @@ internal sealed class CorporationStorageStore(WorldDatabase database, TimeProvid
             : throw new InvalidDataException("This corporation office is unavailable at your current station.");
     }
 
-    private static void Notify(WorldAction world, CorporationStorageChange change)
+    private static IEnumerable<SavedCorporationOffice> ActiveOffices(WorldAction world, int stationId) =>
+        world
+            .Set<SavedCorporationOffice>()
+            .Where(office => office.StationId == stationId)
+            .AsEnumerable()
+            .Where(office => world.Set<SavedCorporation>().Find(office.CorporationId) is { ClosedAt: null });
+
+    internal static void Notify(WorldAction world, CorporationStorageChange change)
     {
         if (!change.RentalChanged && change.Items.Count == 0)
         {

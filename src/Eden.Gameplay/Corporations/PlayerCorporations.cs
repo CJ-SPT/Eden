@@ -28,7 +28,8 @@ public sealed record PlayerCorporation(
     int SystemId,
     long CreatedAt,
     int MemberLimit,
-    int MemberCount
+    int MemberCount,
+    long? ClosedAt = null
 );
 
 public sealed record CorporationMember(

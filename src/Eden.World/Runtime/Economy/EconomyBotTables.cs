@@ -1710,7 +1710,8 @@ internal sealed partial class ResidentEconomy
                         row.Name,
                         row.StationId,
                         row.SystemId,
-                        row.Ticker
+                        row.Ticker,
+                        row.ClosedAt
                     ),
                 state => new Eden.Data.World.Corporations.SavedCorporation
                 {
@@ -1725,9 +1726,10 @@ internal sealed partial class ResidentEconomy
                     StationId = state.StationId,
                     SystemId = state.SystemId,
                     Ticker = state.Ticker,
+                    ClosedAt = state.ClosedAt,
                 },
                 ProjectSavedCorporation,
-                "Id,BalanceCents,CeoId,CreatedAt,CreatorId,DetailsJson,MemberLimit,Name,StationId,SystemId,Ticker",
+                "Id,BalanceCents,CeoId,CreatedAt,CreatorId,DetailsJson,MemberLimit,Name,StationId,SystemId,Ticker,ClosedAt",
                 reader =>
                     new(
                         reader.GetInt32(1),
@@ -1740,7 +1742,8 @@ internal sealed partial class ResidentEconomy
                         reader.GetString(8),
                         reader.GetInt32(9),
                         reader.GetInt32(10),
-                        reader.GetString(11)
+                        reader.GetString(11),
+                        reader.IsDBNull(12) ? null : reader.GetInt64(12)
                     ),
                 state => new(state.Id),
                 indexes:
@@ -3973,14 +3976,15 @@ internal sealed partial class EconomyTransaction
             if (
                 true
                 && Set<Eden.Data.World.Corporations.SavedCorporation>()
-                    .Any(other => true && other.CeoId == row.CeoId && (other.Id != row.Id))
+                    .Any(other => row.ClosedAt == null && other.ClosedAt == null && other.CeoId == row.CeoId && (other.Id != row.Id))
             )
             {
                 throw new InvalidDataException("Duplicate resident SavedCorporation unique value.");
             }
             if (
                 true
-                && Set<Eden.Data.World.Corporations.SavedCorporation>().Any(other => true && other.Name == row.Name && (other.Id != row.Id))
+                && Set<Eden.Data.World.Corporations.SavedCorporation>()
+                    .Any(other => row.ClosedAt == null && other.ClosedAt == null && other.Name == row.Name && other.Id != row.Id)
             )
             {
                 throw new InvalidDataException("Duplicate resident SavedCorporation unique value.");

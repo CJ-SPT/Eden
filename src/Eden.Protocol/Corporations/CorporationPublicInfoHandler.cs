@@ -52,7 +52,8 @@ internal sealed record CorporationPublicInfoReply(
     long Shares,
     int MemberCount,
     long? CreatorId,
-    double LoyaltyPointTaxRate
+    double LoyaltyPointTaxRate,
+    bool Deleted = false
 ) : BlueModel
 {
     internal CorporationPublicInfoReply(PlayerCorporation corporation)
@@ -70,7 +71,8 @@ internal sealed record CorporationPublicInfoReply(
             CorporationRules.InitialShares,
             corporation.MemberCount,
             corporation.CreatorId,
-            corporation.Details.LoyaltyPointTaxRate
+            corporation.Details.LoyaltyPointTaxRate,
+            corporation.ClosedAt.HasValue
         ) { }
 
     internal CorporationPublicInfoReply(NpcCorporationInfo corporation)
@@ -113,7 +115,7 @@ internal sealed record CorporationPublicInfoReply(
                 ["shares"] = Shares,
                 ["memberCount"] = MemberCount,
                 ["allianceID"] = null,
-                ["deleted"] = false,
+                ["deleted"] = Deleted,
                 ["allowWar"] = false,
             }
         );

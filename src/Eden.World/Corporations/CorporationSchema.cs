@@ -67,6 +67,18 @@ internal static class CorporationSchema
                 CorporationId INTEGER PRIMARY KEY REFERENCES WorldCorporation(Id) ON DELETE CASCADE, DataJson TEXT NOT NULL);
             """
         );
+        if (!world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldCorporation')").Contains("ClosedAt"))
+        {
+            world.Database.ExecuteSqlRaw(
+                """
+                ALTER TABLE WorldCorporation ADD COLUMN ClosedAt INTEGER;
+                DROP INDEX IF EXISTS IX_WorldCorporation_CeoId;
+                CREATE UNIQUE INDEX IX_WorldCorporation_CeoId ON WorldCorporation(CeoId) WHERE ClosedAt IS NULL;
+                DROP INDEX IF EXISTS IX_WorldCorporation_Name;
+                CREATE UNIQUE INDEX IX_WorldCorporation_Name ON WorldCorporation(Name) WHERE ClosedAt IS NULL;
+                """
+            );
+        }
         InventoryOwnershipSchema.Register(world);
         CorporationShareSchema.Upgrade(world);
         if (!world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldNpcBounty')").Contains("TaxCents"))
@@ -102,7 +114,15 @@ internal static class CorporationSchema
         if (
             world
                 .Set<SavedCorporation>()
-                .Any(c => !world.Pilots.Any(p => p.Id == c.CeoId && p.CorporationId == c.Id) || c.MemberLimit < 1 || c.BalanceCents < 0)
+                .Any(c =>
+                    (
+                        c.ClosedAt == null
+                            ? !world.Pilots.Any(p => p.Id == c.CeoId && p.CorporationId == c.Id)
+                            : world.Pilots.Any(p => p.CorporationId == c.Id)
+                    )
+                    || c.MemberLimit < 1
+                    || c.BalanceCents < 0
+                )
         )
         {
             throw new InvalidDataException("Saved player corporation has an invalid CEO, capacity or wallet.");

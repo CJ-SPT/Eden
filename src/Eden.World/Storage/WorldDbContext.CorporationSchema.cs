@@ -90,9 +90,9 @@ public sealed partial class WorldDbContext
         model.Entity<SavedCorporation>().Property(c => c.Id).ValueGeneratedNever();
         model.Entity<SavedCorporation>().Property(c => c.Name).UseCollation("NOCASE");
         model.Entity<SavedCorporation>().Property(c => c.Ticker).UseCollation("NOCASE");
-        model.Entity<SavedCorporation>().HasIndex(c => c.Name).IsUnique();
+        model.Entity<SavedCorporation>().HasIndex(c => c.Name).IsUnique().HasFilter("ClosedAt IS NULL");
         model.Entity<SavedCorporation>().HasIndex(c => c.Ticker).IsUnique();
-        model.Entity<SavedCorporation>().HasIndex(c => c.CeoId).IsUnique();
+        model.Entity<SavedCorporation>().HasIndex(c => c.CeoId).IsUnique().HasFilter("ClosedAt IS NULL");
         model.Entity<SavedCorporation>().HasOne<Pilot>().WithMany().HasForeignKey(c => c.CeoId).OnDelete(DeleteBehavior.Restrict);
         model.Entity<SavedCorporation>().HasOne<Pilot>().WithMany().HasForeignKey(c => c.CreatorId).OnDelete(DeleteBehavior.Restrict);
         model.Entity<SavedCorporationEmployment>().ToTable("WorldCorporationEmployment").HasKey(e => e.Id);

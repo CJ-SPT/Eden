@@ -15,7 +15,8 @@ internal sealed record EconomySavedCorporation(
     string Name,
     int StationId,
     int SystemId,
-    string Ticker
+    string Ticker,
+    long? ClosedAt
 );
 
 internal sealed partial class ResidentEconomy
@@ -44,19 +45,20 @@ internal sealed partial class ResidentEconomy
                 world.Database.ExecuteSql(
                     $"""
                     INSERT INTO WorldCorporation(
-                        Id,BalanceCents,CeoId,CreatedAt,CreatorId,DetailsJson,MemberLimit,Name,StationId,SystemId,Ticker
+                        Id,BalanceCents,CeoId,CreatedAt,CreatorId,DetailsJson,MemberLimit,Name,StationId,SystemId,Ticker,ClosedAt
                     )
                     SELECT
                         json_extract(value,'$.Id'),json_extract(value,'$.BalanceCents'),json_extract(value,'$.CeoId'),
                         json_extract(value,'$.CreatedAt'),json_extract(value,'$.CreatorId'),
                         json_extract(value,'$.DetailsJson'),json_extract(value,'$.MemberLimit'),
                         json_extract(value,'$.Name'),json_extract(value,'$.StationId'),json_extract(value,'$.SystemId'),
-                        json_extract(value,'$.Ticker')
+                        json_extract(value,'$.Ticker'),json_extract(value,'$.ClosedAt')
                     FROM json_each({values}) WHERE 1
                     ON CONFLICT(Id) DO UPDATE SET
                         BalanceCents=excluded.BalanceCents,CeoId=excluded.CeoId,CreatedAt=excluded.CreatedAt,
                         CreatorId=excluded.CreatorId,DetailsJson=excluded.DetailsJson,MemberLimit=excluded.MemberLimit,
-                        Name=excluded.Name,StationId=excluded.StationId,SystemId=excluded.SystemId,Ticker=excluded.Ticker
+                        Name=excluded.Name,StationId=excluded.StationId,SystemId=excluded.SystemId,Ticker=excluded.Ticker,
+                        ClosedAt=excluded.ClosedAt
                     """
                 );
             }
