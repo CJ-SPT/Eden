@@ -277,7 +277,8 @@ internal sealed partial class PilotMissionStore
             return;
         }
         // Native storyline agents are level one. The offer inherits the regular mission level.
-        var busy = world.Set<SavedMission>().Where(m => m.PilotId == pilot.Id && m.ClosedAt == null).Select(m => m.AgentId).ToHashSet();
+        var active = world.Filter<SavedMission>(m => m.PilotId == pilot.Id && m.ClosedAt == null).ToArray();
+        var busy = active.Where(m => !Expire(world, m, now)).Select(m => m.AgentId).ToHashSet();
         var distances = Distances(catalog, agent.SystemId!.Value);
         bool highSecurity =
             (catalog.Read(CatalogData.Client.Systems, (long)agent.SystemId.Value)?.SecurityStatus ?? 0) >= CrimewatchRules.HighSecurity;
@@ -298,6 +299,9 @@ internal sealed partial class PilotMissionStore
             )
             .OrderBy(a => distances[a.SystemId!.Value])
             .ThenBy(a => a.Id)
+            // Missing or supplier-restricted storyline content must not roll back
+            // the ordinary mission's cargo consumption and earned rewards.
+            .Where(a => ProfilesForAgent(catalog, a, level, true).Any())
             .FirstOrDefault();
         if (next is null)
         {

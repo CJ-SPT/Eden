@@ -13,18 +13,22 @@ public sealed record MissionSpawnAnchor(
     int? SentryTypeId = null
 );
 
-public sealed record MissionSpawnMember(int TypeId, int Group, double Range, bool Sentry);
+public sealed record MissionSpawnMember(int TypeId, int Group, double Range, bool Sentry)
+{
+    public float Radius { get; init; }
+}
 
 public sealed record MissionSpawnPlacement(SpacePosition Position, double AcquisitionRange);
 
-public static class MissionSpawnRules
+public static partial class MissionSpawnRules
 {
     private const int MembersPerRing = 8;
 
     public static ImmutableArray<MissionSpawnPlacement> Place(
         bool initial,
         IReadOnlyList<MissionSpawnMember> members,
-        ImmutableArray<MissionSpawnAnchor> anchors
+        ImmutableArray<MissionSpawnAnchor> anchors,
+        IReadOnlyList<StaticSpaceObject>? obstacles = null
     )
     {
         var mobile = anchors.Where(a => a.SentryTypeId is null).ToArray();
@@ -43,9 +47,15 @@ public static class MissionSpawnRules
         for (int slot = 0; slot < members.Count; slot++)
         {
             var member = members[slot];
-            if (member.Group < 0 || !double.IsFinite(member.Range) || member.Range < 0)
+            if (
+                member.Group < 0
+                || !double.IsFinite(member.Range)
+                || member.Range < 0
+                || !float.IsFinite(member.Radius)
+                || member.Radius < 0
+            )
             {
-                throw new InvalidDataException("Invalid mission spawn group or range.");
+                throw new InvalidDataException("Invalid mission spawn group, range or hull radius.");
             }
             if (member.Sentry)
             {
@@ -75,7 +85,7 @@ public static class MissionSpawnRules
             }
             result.Add(new(new SpacePosition(member.Range, 0, 0) + Offset(slot), NpcEncounterDefinitions.VisibilityRange));
         }
-        return result.MoveToImmutable();
+        return ClearScenery(result.MoveToImmutable(), members, obstacles);
     }
 
     private static MissionSpawnAnchor? Nearest(MissionSpawnAnchor[] anchors, MissionSpawnMember member)

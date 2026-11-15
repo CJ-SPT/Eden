@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Mission spawn clearance and storyline settlement](protocol/agents.md#mission-spawn-clearance-and-storyline-settlement--november-15-2026)
+correct embedded mobile NPC spawns, unavailable storyline pools blocking payouts and expired storyline agent occupancy.
+
 [Published administration assets](protocol/world-configuration.md#published-administration-framework-assets-november-15-2026)
 fix missing Blazor startup scripts in Docker images and record the project-only restore regression.
 
