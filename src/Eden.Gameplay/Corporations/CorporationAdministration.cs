@@ -47,7 +47,13 @@ public sealed record CorporationDivisions(
 
 public sealed record CorporationProperties(string Description, string Url, double TaxRate, bool IsRecruiting, double LoyaltyPointTaxRate);
 
-public sealed record CorporationAdministrationChange(int CorporationId, CorporationDetails Before, CorporationDetails After);
+public sealed record CorporationAdministrationChange(
+    int CorporationId,
+    CorporationDetails Before,
+    CorporationDetails After,
+    long? PreviousCeoId = null,
+    long? CeoId = null
+);
 
 public interface ICorporationAdministration
 {

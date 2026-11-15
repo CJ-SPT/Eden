@@ -128,6 +128,9 @@ public enum WalletEntryType
 
     // Build 3662168 appConst.refCorporationAdvertisementFee.
     CorporationAdvertisementFee = 86,
+
+    // Build 3662168 appConst.refCorporationDividendPayment.
+    CorporationDividendPayment = 38,
     RepairBill = 15,
     OfficeRentalFee = 13,
     Insurance = 19,
