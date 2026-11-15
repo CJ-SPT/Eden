@@ -17,8 +17,12 @@ Each milestone includes typed rules, authenticated native calls, persistence, fo
 | Bills panel reads/preferences and corporate market history reads | Published; 203 focused tests and required checks passed; invoice sources/corporate trading remain separate |
 | Corporation inventory ownership storage | Published; 176 focused tests and required checks passed |
 | Offices and corporation asset access | Implemented: rentals, seven hangar divisions, transfers and asset reports; recurring billing/impound recovery deferred |
-| Member communications and recruitment services | Direct invitations implemented; bulletin editing, advertisements and welcome mail pending |
+| Member communications and recruitment services | Direct invitations, bulletin editing/order and automatic welcome mail implemented; recruitment advertisements pending |
 | Share holdings, shareholders and transfers | Published; 198 focused tests and required checks passed |
 | Voting, share issuance/dividends and CEO succession/closure | Pending |
 
 See [corporation protocol findings](protocol/corporations.md) for native call shapes and milestone validation evidence, and [inventory ownership](inventory-ownership.md) for the storage boundary. This table records implemented scope, not live client acceptance.
+
+The maintainer confirmed that the corporation window loads after the November 14 title-row correction. Completion work
+now covers the remaining standalone tabs and actions, including recruitment, member queries and governance. Alliances
+and corporation wars remain explicitly outside this request.
