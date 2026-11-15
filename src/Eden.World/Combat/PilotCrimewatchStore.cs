@@ -186,6 +186,13 @@ internal sealed class PilotCrimewatchStore(WorldDatabase database, TimeProvider 
         row.ShipId = shipId;
         row.SystemId = CrimewatchPersistence.System(catalog, pilot.ActiveShip);
         row.ExpiresAt = Math.Max(row.ExpiresAt, CrimewatchRules.LogoffDeadline(timers, Now));
+        if (
+            world.Set<Eden.Data.World.Exploration.SavedAbyssalParticipant>().Find(pilotId) is { Finished: false } participant
+            && world.Set<Eden.Data.World.Exploration.SavedAbyssalRun>().Find(participant.RunId) is { } run
+        )
+        {
+            row.ExpiresAt = Math.Max(row.ExpiresAt, run.ExpiresAt);
+        }
         action.Commit();
     }
 

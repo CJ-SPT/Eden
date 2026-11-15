@@ -369,6 +369,8 @@ internal sealed partial class FlightSession(
 
     internal void RefreshStructures(IReadOnlyList<StaticSpaceObject> structures) => Scene.RefreshStructures(SceneContext, structures);
 
+    internal void RefreshAbyssal(IReadOnlyList<StaticSpaceObject> contacts) => Scene.RefreshAbyssal(SceneContext, contacts);
+
     private void RefreshVisibleAsteroids() => Scene.RefreshVisibleAsteroids(SceneContext);
 
     private ShipMotion Motion() =>
@@ -828,6 +830,25 @@ internal sealed partial class FlightSession(
         }
     }
 
+    internal void RelocateAbyssal(DockedPilot destination, IReadOnlyList<StaticSpaceObject> objects)
+    {
+        bool samePark = InBallpark && Pilot.SystemId == destination.SystemId;
+        var previous = Scene.Objects;
+        Relocate(destination, objects);
+        if (samePark)
+        {
+            foreach (var removed in previous.ExceptBy(objects.Select(o => o.Id), o => o.Id))
+            {
+                Update(new DestinyCommand.RemoveBall(removed.Id, false));
+            }
+            var added = objects.ExceptBy(previous.Select(o => o.Id), o => o.Id).ToArray();
+            if (added.Length != 0)
+            {
+                Update(new DestinyCommand.AddBalls(Ballpark.AddObjects(added, Stamp)));
+            }
+        }
+    }
+
     public void StartTranslocation(
         IPilotTranslocation travel,
         TranslocationTarget target,
@@ -1097,6 +1118,10 @@ internal sealed partial class FlightSession(
 
     private PilotCallResult StartWarp(long target, double range, SpacePosition? coordinates = null, bool accelerationGate = false)
     {
+        if (AbyssalRules.IsSystem(Pilot.SystemId))
+        {
+            return new PilotCallResult.Failure("Warp is unavailable inside Abyssal Deadspace. Use the conduit.");
+        }
         if (!double.IsFinite(range) || range is < 0 or > NavigationState.MaximumWarpRange)
         {
             return PilotCallResult.Unsupported;

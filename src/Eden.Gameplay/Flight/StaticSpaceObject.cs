@@ -17,6 +17,7 @@ public sealed record StaticSpaceObject(
 )
 {
     public Eden.Gameplay.Exploration.WormholeContact? Wormhole { get; init; }
+    public Eden.Gameplay.Exploration.AbyssalContact? Abyssal { get; init; }
     public int? HackingState { get; init; }
     public bool Solid { get; init; } = true;
     public bool IsGlobal { get; init; } = true;

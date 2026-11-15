@@ -15,7 +15,8 @@ namespace Eden.World.Catalog;
 internal sealed class SystemObjects(
     WorldDatabase database,
     IAsteroidField asteroids,
-    Eden.Gameplay.Structures.IStructureContacts structures
+    Eden.Gameplay.Structures.IStructureContacts structures,
+    Eden.Gameplay.Exploration.IAbyssalDeadspace? abyss = null
 ) : ISystemObjects
 {
     private const long ObjectEstimatedBytes = 192;
@@ -39,6 +40,10 @@ internal sealed class SystemObjects(
 
     public IReadOnlyList<StaticSpaceObject> Load(int systemId)
     {
+        if (Eden.Gameplay.Exploration.AbyssalRules.IsSystem(systemId) && abyss is not null)
+        {
+            return abyss.Objects(systemId);
+        }
         using CatalogDbContext catalog = new(database.CatalogPath);
         var structureContacts = structures.Contacts(systemId);
         return [.. catalog.Definition(s_objects, systemId), .. asteroids.List(systemId), .. structureContacts];

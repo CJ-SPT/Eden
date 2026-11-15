@@ -381,6 +381,33 @@ internal sealed class FlightScene(
         }
     }
 
+    internal void RefreshAbyssal(FlightSceneContext context, IReadOnlyList<StaticSpaceObject> contacts)
+    {
+        var previous = Objects.Where(o => o.Abyssal is not null).ToArray();
+        if (previous.SequenceEqual(contacts))
+        {
+            return;
+        }
+        Objects = Objects.Where(o => o.Abyssal is null).Concat(contacts).ToArray();
+        if (!context.InBallpark)
+        {
+            return;
+        }
+        foreach (var removed in previous.ExceptBy(contacts.Select(o => o.Id), o => o.Id))
+        {
+            update(new DestinyCommand.RemoveBall(removed.Id, false));
+        }
+        foreach (var changed in contacts.Where(o => previous.FirstOrDefault(p => p.Id == o.Id) is { } old && old != o))
+        {
+            update(new DestinyCommand.OnSlimItemChange(changed.Id, new StaticSlimItem(changed)));
+        }
+        var added = contacts.ExceptBy(previous.Select(o => o.Id), o => o.Id).ToArray();
+        if (added.Length > 0)
+        {
+            update(new DestinyCommand.AddBalls(Ballpark.AddObjects(added, space.Stamp(clock))));
+        }
+    }
+
     internal void RefreshVisibleAsteroids(FlightSceneContext context)
     {
         if (!context.InBallpark)

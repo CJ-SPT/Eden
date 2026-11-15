@@ -47,6 +47,8 @@ internal static class PassiveCatalogFixture
 
     internal static void LoadPlanetary(string path) => Load(path, "PlanetaryCatalog.json", null);
 
+    internal static void LoadAbyssal(string path) => Load(path, "AbyssalCatalog.json", null);
+
     internal static void LoadPlayerEwar(string path, IReadOnlySet<int>? types = null) => Load(path, "PlayerEwarCatalog.json", types);
 
     internal static void LoadRemoteRepairs(string path) => Load(path, "RemoteRepairCatalog.json", null);

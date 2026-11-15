@@ -32,7 +32,8 @@ internal sealed class PilotServices(
     ICapsuleerHandoff? handoff = null,
     ICapsuleerPresentation? presentation = null,
     Eden.Modding.IModSessionEvents? modEvents = null,
-    Eden.Protocol.Mining.AutoMiningHandler? autoMining = null
+    Eden.Protocol.Mining.AutoMiningHandler? autoMining = null,
+    Eden.Protocol.Exploration.AbyssalHandler? abyss = null
 ) : IPilotSession
 {
     public async Task RunAsync(
@@ -88,7 +89,8 @@ internal sealed class PilotServices(
             anomalies,
             handoff,
             presentation,
-            autoMining: autoMining
+            autoMining: autoMining,
+            abyss: abyss
         );
         async Task<(object? Packet, long Received)> ReadArrivalAsync()
         {

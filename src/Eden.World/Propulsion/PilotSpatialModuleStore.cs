@@ -109,6 +109,10 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
         var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
         var item = world.Set<OwnedItem>().Find(moduleId);
         bool cloak = SpatialModuleRules.IsCloak(effect);
+        if (cloak && pilot.ActiveShip.Position?.SystemId is int system && Eden.Gameplay.Exploration.AbyssalRules.IsSystem(system))
+        {
+            throw new InvalidDataException("Cloaking is unavailable inside Abyssal Deadspace.");
+        }
         if (
             pilot.ActiveShip.Position is null
             || pilot.ActiveShip.OwnerId != pilotId

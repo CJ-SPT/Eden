@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Abyssal Deadspace](protocol/abyssal.md) records resident runs, pinned client contracts,
+checkpoint recovery, milestone scope and automated validation.
+
 [Notepad and shared settings](protocol/social.md#notepad-and-shared-settings--november-14-2026) covers private notes,
 saved folders and shareable overview, inventory-filter and fleet-broadcast links.
 

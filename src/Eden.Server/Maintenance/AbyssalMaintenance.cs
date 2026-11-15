@@ -1,0 +1,43 @@
+using Eden.Gameplay.Exploration;
+using Eden.Infrastructure.Diagnostics;
+using Eden.Infrastructure.Registration;
+
+namespace Eden.Server.Maintenance;
+
+[Injectable(InjectionType.Singleton)]
+internal sealed class AbyssalMaintenance(IAbyssalDeadspace abyss, TimeProvider clock) : IDisposable
+{
+    private Task _loop = Task.CompletedTask;
+    private PeriodicTimer? _timer;
+
+    internal void Start()
+    {
+        if (_timer is null)
+        {
+            abyss.Advance();
+            _timer = new PeriodicTimer(TimeSpan.FromSeconds(1), clock);
+            _loop = Run(_timer);
+        }
+    }
+
+    private async Task Run(PeriodicTimer timer)
+    {
+        while (await timer.WaitForNextTickAsync().ConfigureAwait(false))
+        {
+            try
+            {
+                abyss.Advance();
+            }
+            catch (Exception error)
+            {
+                ServerLog.Console.Error($"Abyssal maintenance failed; retrying next interval: {error.Message}");
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        _timer?.Dispose();
+        _loop.GetAwaiter().GetResult();
+    }
+}

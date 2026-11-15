@@ -24,6 +24,7 @@ public enum NpcAnchorKind
     Anomaly,
     Mission,
     GhostSite,
+    Abyssal,
 }
 
 public static class NpcPopulationRules

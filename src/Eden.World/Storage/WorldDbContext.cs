@@ -144,6 +144,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         Eden.World.Exploration.ProbeScanningSchema.Configure(model);
         Eden.World.Exploration.HackingSchema.Configure(model);
         Eden.World.Exploration.WormholeTravelSchema.Configure(model);
+        Eden.World.Exploration.AbyssalSchema.Configure(model);
         ModuleConditionSchema.Configure(model);
         SpatialNavigationSchema.Configure(model);
         Eden.World.Capsuleers.CapsuleerCommunityStore.Configure(model);

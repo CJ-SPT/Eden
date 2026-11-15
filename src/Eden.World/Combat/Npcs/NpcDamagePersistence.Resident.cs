@@ -94,6 +94,11 @@ internal static partial class NpcDamagePersistence
                 PilotTaskTrackingStore.Record(world, catalog, pilot.Id, now, TaskEvents.NpcDestroyed);
             }
             npc.DestroyedAt = now;
+            if (npc.AnchorKind == NpcAnchorKind.Abyssal)
+            {
+                Eden.World.Exploration.AbyssalStore.Killed(world, catalog, npc, pilot, now);
+                return new(new(npc.Id, defense, result.Remaining), result.Applied, true, null);
+            }
             NpcPopulationSeeder.RecordKill(world, npc, now);
             Eden.World.Exploration.CombatAnomalyStore.Killed(world, catalog, npc, now, pilot.Id);
             Eden.World.Agents.PilotMissionStore.Killed(world, catalog, npc, now);
