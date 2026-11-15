@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Gateway stream shutdown](protocol/startup.md#gateway-stream-shutdown-november-15-2026) closes open gRPC
+subscriptions when host shutdown begins and records elapsed time for each shutdown step.
+
 [Fleet finder adverts](protocol/fleets.md#fleet-finder-advert-creation-november-15-2026) correct unbound advert
 creation and add resident fleet advertisements, finder visibility and join applications.
 

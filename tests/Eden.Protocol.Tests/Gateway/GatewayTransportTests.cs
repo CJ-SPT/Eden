@@ -14,6 +14,67 @@ namespace Eden.Protocol.Tests.Gateway;
 
 public sealed class GatewayTransportTests
 {
+    [Theory]
+    [InlineData("Requests/Send")]
+    [InlineData("Notices/Consume")]
+    [InlineData("Events/Publish")]
+    public async Task ShutdownCompletesWithAnOpenClientStream(string method)
+    {
+        using TestWorld world = new();
+        await using var app = LocalGateway.Create(world.Services.GetRequiredService<GatewayRequests>(), new() { GatewayPort = 0 });
+        using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(15));
+        await app.StartAsync(timeout.Token);
+        using OpenStreamContent body = new();
+        using HttpClient client = new(new SocketsHttpHandler { UseProxy = false });
+        using HttpRequestMessage request = new(HttpMethod.Post, new Uri(new Uri(Assert.Single(app.Urls)), "/eve_public.gateway." + method))
+        {
+            Version = HttpVersion.Version20,
+            VersionPolicy = HttpVersionPolicy.RequestVersionExact,
+            Content = body,
+        };
+        request.Content.Headers.ContentType = new("application/grpc");
+        request.Headers.TE.ParseAdd("trailers");
+        Task? stopping = null;
+        try
+        {
+            using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            stopping = app.StopAsync(timeout.Token);
+            // The client deliberately keeps uploading. Shutdown must not wait for the host's 30-second deadline.
+            await stopping.WaitAsync(TimeSpan.FromSeconds(5), timeout.Token);
+        }
+        finally
+        {
+            await timeout.CancelAsync();
+            body.Complete();
+            client.Dispose();
+            await (stopping ?? app.StopAsync(timeout.Token)).ConfigureAwait(
+                ConfigureAwaitOptions.SuppressThrowing | ConfigureAwaitOptions.ContinueOnCapturedContext
+            );
+        }
+    }
+
+    private sealed class OpenStreamContent : HttpContent
+    {
+        private readonly TaskCompletionSource _complete = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        internal void Complete() => _complete.TrySetResult();
+
+        protected override async Task SerializeToStreamAsync(Stream stream, TransportContext? context)
+        {
+            // Flush an uncompressed, empty protobuf message, then keep the duplex request open.
+            await stream.WriteAsync(new byte[5]);
+            await stream.FlushAsync();
+            await _complete.Task;
+        }
+
+        protected override bool TryComputeLength(out long length)
+        {
+            length = 0;
+            return false;
+        }
+    }
+
     [Fact]
     public async Task RelayedCleartextHttp2HeadersReachTheTlsGateway()
     {

@@ -1,11 +1,24 @@
+# syntax=docker/dockerfile:1
+
 FROM mcr.microsoft.com/dotnet/sdk:10.0.403-noble AS build
 WORKDIR /source
 COPY global.json Directory.Build.props Directory.Build.targets .editorconfig ./
+# Restore only when project dependencies change, and retain downloaded packages between builds.
+COPY src/Eden.Data/Eden.Data.csproj src/Eden.Data/
+COPY src/Eden.Gameplay/Eden.Gameplay.csproj src/Eden.Gameplay/
+COPY src/Eden.Infrastructure/Eden.Infrastructure.csproj src/Eden.Infrastructure/
+COPY src/Eden.Modding/Eden.Modding.csproj src/Eden.Modding/
+COPY src/Eden.Protocol/Eden.Protocol.csproj src/Eden.Protocol/
+COPY src/Eden.Server/Eden.Server.csproj src/Eden.Server/
+COPY src/Eden.World/Eden.World.csproj src/Eden.World/
+RUN --mount=type=cache,id=eden-nuget,target=/root/.nuget/packages,sharing=locked \
+    dotnet restore src/Eden.Server/Eden.Server.csproj -p:Configuration=Release -p:UseAppHost=false
 COPY src/ src/
 COPY assets/icons/eden-server.ico assets/icons/
 COPY tools/Build-SkillClient.py tools/mod_client_loader.py tools/skill_client_overlay.py tools/
 ARG EDEN_REVISION
-RUN dotnet publish src/Eden.Server/Eden.Server.csproj -c Release -o /publish \
+RUN --mount=type=cache,id=eden-nuget,target=/root/.nuget/packages,sharing=locked \
+    dotnet publish src/Eden.Server/Eden.Server.csproj -c Release --no-restore -o /publish \
     -p:UseAppHost=false -p:SourceRevisionId="$EDEN_REVISION"
 
 FROM ubuntu:24.04 AS mod-compiler
@@ -24,12 +37,13 @@ RUN apt-get update \
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble
 WORKDIR /app
-COPY --from=build /publish/ ./
-COPY --from=mod-compiler /opt/eden-python2/ /opt/eden-python2/
+# Keep OS packages independent of changing server binaries.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends python3 \
     && rm -rf /var/lib/apt/lists/* \
     && install -d -o app -g app /data
+COPY --from=mod-compiler /opt/eden-python2/ /opt/eden-python2/
+COPY --from=build /publish/ ./
 USER $APP_UID
 ENV EDEN_DATA_DIR=/data \
     EDEN_PYTHON=/usr/bin/python3 \

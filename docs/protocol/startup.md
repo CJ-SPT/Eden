@@ -10,6 +10,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 - [Launcher CA certificate downloads](#launcher-ca-certificate-downloads)
 - [Orderly host shutdown](#orderly-host-shutdown)
+- [Gateway stream shutdown (November 15, 2026)](#gateway-stream-shutdown-november-15-2026)
 - [Chat listener and log output failures](#chat-listener-and-log-output-failures)
 - [Encrypted reply size limits](#encrypted-reply-size-limits)
 
@@ -41,6 +42,45 @@ Restore, build, both Python policy suites and formatting verification passed.
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** None.
+
+## Gateway stream shutdown (November 15, 2026)
+
+The public gateway's `Requests.Send`, `Notices.Consume` and `Events.Publish` methods keep duplex HTTP/2 streams open.
+Previously their read loops watched only request cancellation, so a connected subscription could keep `StopAsync`
+waiting until the host's default 30-second shutdown deadline. This is the streaming shutdown case described by
+the [gRPC .NET maintainers](https://github.com/grpc/grpc-dotnet/issues/2357).
+
+Gateway middleware now closes active gateway transports on `ApplicationStopping`, waking the real gRPC request
+cancellation token. Simply replacing `HttpContext.RequestAborted` did not release the transport in the regression.
+This closes idle streams as soon as graceful shutdown begins. It preserves ordinary client cancellation and the
+existing game/chat drain, maintenance stop, mod callbacks and final resident checkpoint. Each registered shutdown
+step logs its name and elapsed seconds, including a failed step, so host logs can distinguish listener drains from
+checkpoint cost. The game listener reports its own completion instead of reporting that all of Eden has stopped.
+
+### Automated validation
+
+The regression opens a real HTTP/2 connection, flushes a protobuf message, keeps the request body open, confirms the
+response headers, and requires `StopAsync` to finish within five seconds. Against the original gateway, all three
+stream methods exceeded that bound. Initial test-harness attempts buffered the request and failed before establishing
+the stream; they were corrected before the baseline comparison. The final fix passed all three cases in a
+7.41-second test command. The initial exact filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Gateway.GatewayTransportTests.ShutdownCompletesWithAnOpenClientStream`.
+The combined filter selected `Eden.Protocol.Tests.Gateway`, `Eden.Protocol.Tests.Hosting`,
+`Eden.Protocol.Tests.Persistence.LiveWorldTests` and `Eden.Protocol.Tests.Administration.ModRuntimeTests`.
+All 84 available tests passed in 9 seconds of runner-reported duration on the final revision; the optional pinned-client plugin packaging
+test was skipped because its client fixture was not configured. The existing shutdown-failure regression still
+reopened the world and verified the mod callback's final saved position. Tool and solution restore and the solution
+build passed in 6.27 seconds with zero warnings and errors; both Python policy suites passed (8 catalog and 9 formatting tests).
+The first formatting check identified one layout correction in the new test, which was applied with `tools/Format.ps1`.
+The final `tools/Format.ps1 -Check` passed. The full .NET suite was not run.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. Remote shutdown duration remains unmeasured.
+
+### Optional maintainer checks
+
+After deploying, compare timestamped shutdown steps in `docker compose logs --timestamps eden` during the next stop.
 
 ## Chat listener and log output failures
 

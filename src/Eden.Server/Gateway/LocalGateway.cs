@@ -40,6 +40,15 @@ internal static class LocalGateway
         builder.Services.AddGrpc();
         builder.Services.AddSingleton(requests);
         var app = builder.Build();
+        app.Use(
+            async (context, next) =>
+            {
+                // These duplex subscriptions cannot drain until their peer closes. Signal the real transport abort
+                // when this gateway stops so gRPC readers wake without waiting for Kestrel's drain deadline.
+                using var stopping = app.Lifetime.ApplicationStopping.Register(context.Abort);
+                await next(context);
+            }
+        );
         if (settings.CertificatePath is not null)
         {
             app.Use(
