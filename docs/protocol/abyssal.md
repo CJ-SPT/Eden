@@ -263,6 +263,10 @@ The excluded offline fitting SQL-budget failure was independently reproduced on 
 baseline code during milestone 2, as recorded above. Full .NET regression was not requested
 or run. Native rendering, input and gameplay feel remain unverified.
 
+After merging remote corporation-leadership and loyalty-store changes, all 59 integration
+tests passed in 22.81 s (build 10.73 s, zero warnings/errors). The filter was
+`FullyQualifiedName~MutaplasmidTests|FullyQualifiedName~CorporationLeadershipTests|FullyQualifiedName~LoyaltyStoreTests|FullyQualifiedName~WorldMigrationTests`.
+
 ### Live acceptance
 
 Not performed; agent client testing is disabled.
