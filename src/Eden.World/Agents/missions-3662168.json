@@ -2485,6 +2485,360 @@
       ]
     },
     {
+      "missionId": 888,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Guristas_Spies_(Level_2)",
+      "sourceRevision": "oldid=192010",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16987
+              ],
+              "count": 5,
+              "range": 30000,
+              "required": false
+            },
+            {
+              "types": [
+                23986
+              ],
+              "count": 1,
+              "range": 30000,
+              "required": false
+            },
+            {
+              "types": [
+                16986,
+                16989
+              ],
+              "count": 2,
+              "range": 57000
+            },
+            {
+              "types": [
+                23985,
+                23984
+              ],
+              "count": 2,
+              "range": 57000
+            }
+          ],
+          "roomId": 2712
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2713,
+          "entryObjectId": 53026
+        },
+        {
+          "roomId": 2712,
+          "entryObjectId": 53018
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 53025,
+          "destinationRoomId": 2712
+        }
+      ]
+    },
+    {
+      "missionId": 898,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Serpentis_Spies_(Level_3)",
+      "sourceRevision": "oldid=223606",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                23995,
+                23994
+              ],
+              "count": 3,
+              "range": 30000,
+              "required": false
+            },
+            {
+              "types": [
+                24063,
+                24064
+              ],
+              "count": 1,
+              "range": 30000,
+              "required": false
+            },
+            {
+              "types": [
+                17159
+              ],
+              "count": 2,
+              "range": 62000,
+              "required": false
+            },
+            {
+              "types": [
+                17118,
+                17279
+              ],
+              "count": 5,
+              "range": 71000
+            },
+            {
+              "types": [
+                2379
+              ],
+              "count": 3,
+              "range": 71000
+            }
+          ],
+          "roomId": 2746
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2747,
+          "entryObjectId": 53202
+        },
+        {
+          "roomId": 2746,
+          "entryObjectId": 53182
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 53201,
+          "destinationRoomId": 2746
+        }
+      ]
+    },
+    {
+      "missionId": 902,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Sansha_Spies_(Level_2)",
+      "sourceRevision": "oldid=192040",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17157
+              ],
+              "count": 2,
+              "range": 60000,
+              "required": false
+            },
+            {
+              "types": [
+                17078
+              ],
+              "count": 7,
+              "range": 60000,
+              "required": false
+            },
+            {
+              "types": [
+                23989
+              ],
+              "count": 2,
+              "range": 60000
+            }
+          ],
+          "roomId": 2728
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2729,
+          "entryObjectId": 53107
+        },
+        {
+          "roomId": 2728,
+          "entryObjectId": 53098
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 53106,
+          "destinationRoomId": 2728
+        }
+      ]
+    },
+    {
+      "missionId": 901,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Sansha_Spies_(Level_3)",
+      "sourceRevision": "oldid=192041",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17157
+              ],
+              "count": 1,
+              "range": 55000,
+              "required": false
+            },
+            {
+              "types": [
+                17072,
+                17063
+              ],
+              "count": 3,
+              "range": 55000,
+              "required": false
+            },
+            {
+              "types": [
+                23989,
+                23990,
+                23991
+              ],
+              "count": 5,
+              "range": 70000,
+              "required": false
+            },
+            {
+              "types": [
+                24019
+              ],
+              "count": 2,
+              "range": 80000
+            }
+          ],
+          "roomId": 2595
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2596,
+          "entryObjectId": 51827
+        },
+        {
+          "roomId": 2595,
+          "entryObjectId": 51807
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 51826,
+          "destinationRoomId": 2595
+        }
+      ]
+    },
+    {
+      "missionId": 900,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Sansha_Spies_(Level_4)",
+      "sourceRevision": "oldid=193406",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17157
+              ],
+              "count": 1,
+              "range": 42000,
+              "required": false
+            },
+            {
+              "types": [
+                17156
+              ],
+              "count": 4,
+              "range": 42000,
+              "required": false
+            },
+            {
+              "types": [
+                23990,
+                23991
+              ],
+              "count": 4,
+              "range": 75000,
+              "required": false
+            },
+            {
+              "types": [
+                24076,
+                24075
+              ],
+              "count": 4,
+              "range": 75000,
+              "required": false
+            },
+            {
+              "types": [
+                17082,
+                17071
+              ],
+              "count": 2,
+              "range": 75000,
+              "required": false
+            },
+            {
+              "types": [
+                24021,
+                24020
+              ],
+              "count": 3,
+              "range": 80000
+            },
+            {
+              "types": [
+                24158,
+                24157
+              ],
+              "count": 1,
+              "range": 80000
+            }
+          ],
+          "roomId": 3531
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 3532,
+          "entryObjectId": 70405
+        },
+        {
+          "roomId": 3531,
+          "entryObjectId": 70402
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 70404,
+          "destinationRoomId": 3531
+        }
+      ]
+    },
+    {
       "missionId": 2248,
       "level": 1,
       "difficulty": 500,

@@ -2,6 +2,100 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Verified spy objectives — November 15, 2026
+
+Combat-content milestone three adds five definitions, bringing the pool to **371 admitted / 2,521 blocked**:
+**74 combat**, 182 ordinary deliveries, 92 delivery storylines and 23 mining definitions. The broad missing-roster/script
+bucket falls from 585 to **580**. Existing resident mission, combat, reward and checkpoint operations own all progress.
+No gameplay SQL fallback, schema or Blue/Destiny format changes were introduced.
+
+| Encounter | Mission / dungeon | Combat entry | Required targets | Optional guards |
+| --- | --- | --- | --- | --- |
+| Guristas Spies level 2 | 888 / 214 | 53018 | Group 2: two frigates and two destroyers | 6 |
+| Serpentis Spies level 3 | 898 / 223 | 53182 | Group 3: five frigates and three cruiser spies | 6 |
+| Sansha Spies level 2 | 902 / 218 | 53098 | Two Centior Cannibal spies | 9 |
+| Sansha Spies level 3 | 901 / 219 | 51807 | Two Centatis Specter spies | 9 |
+| Sansha Spies level 4 | 900 / 220 | 70402 | Group 3: three Centatis Devil/Wraith spies and one Centus Dark Lord/Overlord | 15 |
+
+Each pocket retains the catalog's empty entrance, acceleration gate and native room geometry. Required groups follow
+the explicit University blitzes, including the level-four Sansha battleship; killing spies alone cannot finish that
+variant. No cargo or structure destruction is required. Report counts use the existing upper-bound policy and NPC
+alternatives resolve independently against build 3662168. The Serpentis report's `Infanty` typo resolves to
+`Corelior Infantry`; its `Serpentis Spy` is actual pinned cruiser type **2379**.
+
+Reviewed University revisions:
+[Guristas level 2, 192010](https://wiki.eveuniversity.org/index.php?title=The_Guristas_Spies_(Level_2)&oldid=192010),
+[Serpentis level 3, 223606](https://wiki.eveuniversity.org/index.php?title=The_Serpentis_Spies_(Level_3)&oldid=223606),
+[Sansha level 2, 192040](https://wiki.eveuniversity.org/index.php?title=The_Sansha_Spies_(Level_2)&oldid=192040),
+[Sansha level 3, 192041](https://wiki.eveuniversity.org/index.php?title=The_Sansha_Spies_(Level_3)&oldid=192041), and
+[Sansha level 4, 193406](https://wiki.eveuniversity.org/index.php?title=The_Sansha_Spies_(Level_4)&oldid=193406).
+The Sansha reports give spy display aliases rather than item types. Independent EVE-Survival reports identify
+the underlying hulls explicitly: [level 2, July 3, 2017 10:25 UTC](https://eve-survival.org/?wakka=SanshaSpies2)
+names **23989 Centior Cannibal**; [level 3, July 14, 2012 09:22 UTC](https://eve-survival.org/?wakka=SanshaSpies3)
+names **24019 Centatis Specter**; [level 4, December 26, 2013 13:06 UTC](https://eve-survival.org/?wakka=SanshaSpies4)
+names **24021 Centatis Devil / 24020 Centatis Wraith**. The pinned dungeon's two type-17157 sentries resolve the
+level-two `Sansha Sentry I` alias to `Tower Sentry Sansha I`.
+
+The local evejs content packs (no Git metadata) were compared for levels two, three and four:
+
+| Pack | SHA-256 |
+| --- | --- |
+| `evejs-security-missions-level-2-1.1.9.json` | `04765eddeb4a5825e32d98347babccee1463b5cd5b73a56c6e7af874c4d05df5` |
+| `evejs-security-missions-level-3-1.1.9.json` | `f59bcb999336ddd52045af6ab9e82701431fdefaaf2508871aa8f51d0cb42fd1` |
+| `evejs-security-missions-level-4-1.1.9.json` | `351fe341993c14c2dc039ce9e4f7549175ad07e9950d8d423425dd16dda56376` |
+
+These use dungeon build 3579973 and target build 3396210. Guristas level two and Serpentis level three choose the
+same University reports, but retain provisional kill-all objectives. Sansha levels two/three choose the independently
+reviewed Survival aliases, again with provisional kill-all completion. Level four uses selected encounters, but its
+parsed alternatives lose `Centatis Wraith` and `Centus Mutant Lord`; Eden binds both directly from the reports.
+No evejs code or generated template was copied.
+
+The University level-four Sansha group-3 distance is 80 km, versus Survival's 90–95 km; Eden uses the University
+distance with its existing native-anchor selection policy. Level-three Sansha group 1 uses Survival's reported
+55 km, absent from University. Fixed sentries use native positions. Custom spy labels, report-specific group aggro,
+optional scenery loot and report reward/standing magnitudes are outside this content reconstruction. Existing Eden
+rules apply, and Sansha spies display their actual catalog hull names. Other spies, including timed Serpentis 895,
+remain blocked pending verified content. The fixture adds 23 types and 91 source records, preserving all prior values.
+
+**Automated validation:** The exact development filter
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionContentTests.SpyBlitzRequiresEveryReportedTargetAndPreservesOptionalGuardsAcrossCheckpoint`
+passed **10 cases** (34.17 s build, 25.58 s test invocation). Both blitz and guard-clear cases check empty entrance
+isolation, native objective tracking, early turn-in rejection, every required kill, rolled-back final kills, incomplete
+checkpoint/reopen with stable NPC identities, optional survivors and exactly-once turn-in. The existing Seek theory
+shares the same assertions and all six of its cases passed in the broader run.
+
+The first ordered root sequence passed tool/solution restore and build, then stopped after **215 passed / 1 failed**
+in the **216-case** affected run (3 m 58 s test duration). The failure was the layout test's stale expected combat
+count of 69, before its geometry assertions. After correcting it to 74, the exact
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionLayoutTests.EveryExistingMissionRetainsNativeSceneryAndRoomLocalSpawnAnchors`
+filter passed (11.99 s build, 12.04 s test invocation), including clearance and scenery checks for all new pockets.
+Broader filter:
+
+```text
+(FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionContentTests&FullyQualifiedName!~EveryAdmittedDeliveryCanBeOfferedTransportedReopenedAndPaidExactlyOnce)|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionLayoutTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionGateTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionGateAccessTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionTrackerTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionStructureTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionEncounterTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionRulesTests
+```
+
+The unchanged 274-case delivery theory was not repeated. Final ordered root validation passed in **60.83 seconds**:
+tool restore, solution restore/build (zero warnings/errors), two focused .NET cases, both Python policy suites
+(8 catalog and 9 formatting cases), all 13 mission-admission checks, formatting verification across 2,242 files and
+the 140-column check. The final .NET filter combines these exact methods with `|`:
+
+```text
+FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionLayoutTests.EveryExistingMissionRetainsNativeSceneryAndRoomLocalSpawnAnchors|FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionContentTests.ExpandedContentLoadsEveryDefinitionAndCorrectsNuisanceFactionRosters
+```
+
+Manifest/audit/fixture reproduction was byte-identical. Semantic and serialized comparison found no changes to
+previous definitions, types or fixture records; the fixture diff consists entirely of additions. Documentation
+links, UTF-8, whitespace and `git diff --check` passed. Broader TRX:
+`artifacts/feature-tests/results/spy-content/spy-content.trx`; final TRX:
+`artifacts/feature-tests/results/spy-content-final/spy-content-final.trx`.
+No full .NET suite was requested or run. Native rendering, input and gameplay feel remain unverified.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Inspect native spy hull names and objective progress; complete a level-four Sansha
+group-3 blitz with the other groups alive.
+
 ## Level-three combat content and Sansha outposts — November 15, 2026
 
 Combat-content milestone two admits six more definitions after the first milestone was verified on the remote branch.

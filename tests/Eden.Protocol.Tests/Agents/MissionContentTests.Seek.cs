@@ -26,7 +26,12 @@ public sealed partial class MissionContentTests
         bool clearOptional
     )
     {
-        using var f = Create(id, 3, MissionRules.SecurityDivision, live: true);
+        await VerifyReportedGroupCompletion(id, 3, total, requiredCount, clearOptional);
+    }
+
+    private static async Task VerifyReportedGroupCompletion(int id, int level, int total, int requiredCount, bool clearOptional)
+    {
+        using var f = Create(id, level, MissionRules.SecurityDivision, live: true);
         var offer = f.Accept(f.Request());
         Assert.Equal(id, offer.MissionId);
         Assert.Null(offer.Cargo);

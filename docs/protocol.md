@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Verified spy objectives](protocol/agents.md#verified-spy-objectives--november-15-2026) adds five definitions,
+report-backed Sansha hull aliases and required-group blitzes with resident checkpoint coverage.
+
 [Level-three combat content and Sansha outposts](protocol/agents.md#level-three-combat-content-and-sansha-outposts--november-15-2026)
 adds six more verified definitions, explicit elite type bindings and saved incomplete combat progress.
 

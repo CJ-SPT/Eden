@@ -183,6 +183,37 @@ def extend(db, missions, group):
               [group('Coreli Initiate', 2, 4000), group('Coreli Agent/Coreli Spy', 2, 40000)], 53120)
     encounter(894, 500020, 'The_Serpentis_Spies_(Level_2)', 192058,
               [group('Coreli Agent/Coreli Initiate/Coreli Safeguard', 5, 20000), group('Coreli Spy', 3, 70000)], 53179)
+    encounter(888, 500010, 'The_Guristas_Spies_(Level_2)', 192010,
+              [group('Pithi Despoiler', 5, 30000, required=False),
+               group('Pithior Guerilla', 1, 30000, required=False),
+               group('Pithi Demolisher/Pithi Destructor', 2, 57000),
+               group('Pithior Renegade/Pithior Anarchist', 2, 57000)], 53018)
+    # The report's "Infanty" is a typo for the pinned Corelior Infantry type.
+    encounter(898, 500020, 'The_Serpentis_Spies_(Level_3)', 223606,
+              [group('Corelior Infantry/Corelior Soldier', 3, 30000, required=False),
+               group('Corelum Chief Infantry/Corelum Chief Sentinel', 1, 30000, required=False),
+               group('Tower Sentry Serpentis I', 2, 62000, required=False),
+               group('Coreli Agent/Coreli Spy', 5, 71000), group('Serpentis Spy', 3, 71000)], 53182)
+    # University reports give the spy display names. The corresponding EVE-Survival
+    # SanshaSpies2/3/4 reports explicitly identify their underlying catalog hulls:
+    # Centior Cannibal; Centatis Specter; and Centatis Devil/Wraith, respectively.
+    # Native dungeon sentry types also resolve the level-two "Sansha Sentry I" alias.
+    encounter(902, 500019, 'The_Sansha_Spies_(Level_2)', 192040,
+              [group('Tower Sentry Sansha I', 2, 60000, required=False),
+               group('Centii Servant', 7, 60000, required=False), group('Centior Cannibal', 2, 60000)], 53098)
+    encounter(901, 500019, 'The_Sansha_Spies_(Level_3)', 192041,
+              [group('Tower Sentry Sansha I', 1, 55000, required=False),
+               group('Centii Plague/Centii Enslaver', 3, 55000, required=False),
+               group('Centior Cannibal/Centior Devourer/Centior Abomination', 5, 70000, required=False),
+               group('Centatis Specter', 2, 80000)], 51807)
+    encounter(900, 500019, 'The_Sansha_Spies_(Level_4)', 193406,
+              [group('Tower Sentry Sansha I', 1, 42000, required=False),
+               group('Tower Sentry Sansha II', 4, 42000, required=False),
+               group('Centior Devourer/Centior Abomination', 4, 75000, required=False),
+               group('Centum Hellhound/Centum Fiend', 4, 75000, required=False),
+               group('Centus Savage Lord/Centus Mutant Lord', 2, 75000, required=False),
+               group('Centatis Devil/Centatis Wraith', 3, 80000),
+               group('Centus Dark Lord/Centus Overlord', 1, 80000)], 70402)
     encounter(2248, 500019, "Eliminate_the_Pirate_Campers_(Sansha's_Nation)", 203023,
               [group('Centii Servant/Centii Minion', 6, 10000)], deadspace=False)
     encounter(2249, 500020, 'Eliminate_the_Pirate_Campers_(Serpentis)', 203018,

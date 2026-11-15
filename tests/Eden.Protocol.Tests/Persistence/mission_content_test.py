@@ -127,6 +127,31 @@ class MissionAdmissionTests(unittest.TestCase):
         for mid in [1192, 1194, 1196, 1197]:
             self.assertNotIn(mid, missions)
 
+    def test_spy_objectives_keep_report_groups_and_resolve_sansha_display_aliases(self):
+        manifest = json.loads((ROOT / 'src/Eden.World/Agents/missions-3662168.json').read_text(encoding='utf-8'))
+        missions = {m['missionId']: m for m in manifest['missions']}
+        for mid, level, required, optional in [(888, 2, 4, 6), (898, 3, 8, 6),
+                                                (902, 2, 2, 9), (901, 3, 2, 9), (900, 4, 4, 15)]:
+            with self.subTest(mission=mid):
+                mission = missions[mid]
+                groups = mission['waves'][0]['groups']
+                self.assertEqual(level, mission['level'])
+                self.assertEqual(1, len(mission['waves']))
+                self.assertEqual(2, len(mission['rooms']))
+                self.assertEqual(1, len(mission['gates']))
+                self.assertEqual(mission['rooms'][1]['roomId'], mission['waves'][0]['roomId'])
+                self.assertEqual(required, sum(g['count'] for g in groups if g.get('required', True)))
+                self.assertEqual(optional, sum(g['count'] for g in groups if not g.get('required', True)))
+                self.assertTrue(all(not g.get('completesMission') and not g.get('trigger') for g in groups))
+                self.assertNotIn('structures', mission)
+        # Report display aliases identify explicit hulls, rather than arbitrary NPC substitutes.
+        for mid, expected in [(902, [[23989]]), (901, [[24019]]), (900, [[24021, 24020], [24158, 24157]])]:
+            groups = missions[mid]['waves'][0]['groups']
+            self.assertEqual(expected, [g['types'] for g in groups if g.get('required', True)])
+        # Unreviewed spies and the known timed Serpentis variant remain unavailable.
+        for mid in [891, 893, 895, 899, 903, 1062, 1063, 1064, 1065]:
+            self.assertNotIn(mid, missions)
+
     def test_level_three_seek_objectives_use_report_blitz_groups(self):
         manifest = json.loads((ROOT / 'src/Eden.World/Agents/missions-3662168.json').read_text(encoding='utf-8'))
         missions = {m['missionId']: m for m in manifest['missions']}

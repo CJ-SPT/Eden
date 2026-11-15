@@ -1,6 +1,6 @@
 missionId,name,template,status,reason
 875,The Guristas Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
-888,The Guristas Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+888,The Guristas Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 890,The Angel Cartel Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 891,The Guristas Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 892,The Angel Cartel Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
@@ -9,11 +9,11 @@ missionId,name,template,status,reason
 895,The Serpentis Spies,BasicKillMission,blocked,Requires timed reinforcements
 896,The Angel Cartel Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 897,The Angel Cartel Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
-898,The Serpentis Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+898,The Serpentis Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 899,The Serpentis Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-900,The Sansha Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-901,The Sansha Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-902,The Sansha Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+900,The Sansha Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+901,The Sansha Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+902,The Sansha Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 903,The Sansha Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 909,The Seven's Brothel,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 910,The Seven's Prison Facility,BasicKillMission,blocked,Requires verified NPC roster and objective scripts

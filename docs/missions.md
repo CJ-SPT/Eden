@@ -2,7 +2,7 @@
 
 [Documentation index](README.md) / [Implementation and validation record](protocol/agents.md#supported-mission-content-expansion--november-9-2026)
 
-The build-3662168 pool contains **366 definitions: 69 combat encounters, 182 ordinary deliveries, 92 delivery storylines and 23 mining missions**. The [complete catalog audit](data/mission-support-3662168.csv) lists all **2,892** source records, including the **2,526** that remain unavailable. A blocked encounter may need verified content rather than a new engine capability.
+The build-3662168 pool contains **371 definitions: 74 combat encounters, 182 ordinary deliveries, 92 delivery storylines and 23 mining missions**. The [complete catalog audit](data/mission-support-3662168.csv) lists all **2,892** source records, including the **2,521** that remain unavailable. A blocked encounter may need verified content rather than a new engine capability.
 
 New offers include a timed ISK bonus: an additional **50% of the quoted base reward** for turn-in within **six hours of acceptance**.
 The base reward remains available after that window. Existing saved offers keep their original rewards.
@@ -31,8 +31,9 @@ mission chains are outside the admitted mining pool. See the [implementation rec
 | Avenge a Fallen Comrade | Angel level 1 (two templates), Guristas level 2, Serpentis level 2 (two templates), DED levels 1–2 (two templates each) | 9 |
 | Retribution | Angel, Guristas, Sansha (two templates) and Serpentis (two templates); level 3 | 6 |
 | Angel Cartel Spies | Levels 1–4 | 4 |
-| Guristas Spies | Level 1 | 1 |
-| Serpentis Spies | Level 2 | 1 |
+| Guristas Spies | Levels 1–2 | 2 |
+| Serpentis Spies | Levels 2–3 | 2 |
+| Sansha Spies | Levels 2–4 | 3 |
 | Eliminate a Pirate Nuisance | Angel, Blood, Guristas, Sansha, Serpentis; level 1 | 5 |
 | The Blockade | Guristas, level 1 | 1 |
 | The Assault | Guristas, level 4 | 1 |
@@ -44,6 +45,12 @@ mission chains are outside the admitted mining pool. See the [implementation rec
 | Seek and Destroy | Angel and Guristas levels 1–3; Sansha levels 1–2; Blood levels 1 and 3; Serpentis levels 2–3; two Thukker-supplier templates using the same Sansha dungeons | 14 |
 
 Avenge a Fallen Comrade requires destruction of the **Habitat** in the Angel, Guristas, Serpentis and level-two DED pockets; guards are optional and no cargo is required. Level-one DED instead requires all six DED soldiers. Each variant retains its empty entrance room and acceleration gate. The remaining variants with unverified reinforcement triggers stay blocked. See the [evejs comparison and validation](protocol/agents.md#avenge-a-fallen-comrade--november-14-2026).
+
+The [spy-content milestone](protocol/agents.md#verified-spy-objectives--november-15-2026) adds Guristas level two
+(destroy group 2), Serpentis level three (destroy group 3), and Sansha levels two through four.
+Sansha levels two and three require the spy hulls; level four requires the entire third group, including its battleship.
+Other guards and sentries are optional. Sansha spies display their pinned hull names: Centior Cannibal, Centatis Specter,
+and Centatis Devil/Wraith, respectively. Report-specific group aggro and custom spy labels are not reconstructed.
 
 Retribution completes when the **outpost** is destroyed; clearing its guards alone does not complete the mission.
 The empty entrance and acceleration gate remain present. Optional armory loot and report-specific group aggro are
@@ -126,4 +133,4 @@ python tools/Export-MissionFixture.py --catalog src/Eden.Server/data/catalog.sql
 python tests/Eden.Protocol.Tests/Persistence/mission_content_test.py
 ```
 
-The first command emits the runtime manifest and exhaustive CSV audit. The second captures **764 types and 4,495 source records** for offline tests, including all authored NPC alternatives, objective cargo, geometry, faction/corporation references and ordinary/commander loot dependencies. SDE mission records retain only the English name fallback; native English messages are captured separately. No game launch or runtime network access is involved.
+The first command emits the runtime manifest and exhaustive CSV audit. The second captures **787 types and 4,586 source records** for offline tests, including all authored NPC alternatives, objective cargo, geometry, faction/corporation references and ordinary/commander loot dependencies. SDE mission records retain only the English name fallback; native English messages are captured separately. No game launch or runtime network access is involved.
