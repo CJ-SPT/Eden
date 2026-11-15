@@ -3,10 +3,14 @@ using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Drones;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Diagnostics;
+using Eden.Protocol.Docking;
+using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Serialization;
 using Eden.World.Catalog;
 using Eden.World.Combat.Npcs;
 using Eden.World.Drones;
@@ -22,6 +26,99 @@ namespace Eden.Protocol.Tests.Combat;
 
 public sealed class ResidentDroneTests
 {
+    [Theory]
+    [InlineData(0, 50, 5)]
+    [InlineData(2, 50, 3)]
+    [InlineData(0, 17, 3)]
+    public void FullStackLaunchUsesOnlyAvailableControlAndBandwidth(int alreadyLaunched, double bandwidth, int expected)
+    {
+        const int brutix = 16229;
+        const int warriorTwo = 2488;
+        const int quantity = 12;
+        const int systemId = 30000144;
+        using Fixture f = new();
+        using (CatalogDbContext catalog = new(f.Base.CatalogPath, writable: true))
+        {
+            catalog
+                .Set<TypeAttribute>()
+                .Where(attribute => attribute.ItemTypeId == brutix && attribute.AttributeId == (int)DogmaAttributeId.DroneBandwidth)
+                .ExecuteUpdate(set => set.SetProperty(attribute => attribute.Value, bandwidth));
+        }
+        long stack = f.Bay(warriorTwo, quantity);
+        long initialStack = alreadyLaunched == 0 ? 0 : f.Bay(warriorTwo, alreadyLaunched);
+        var database = f.Base.Db.Services.GetRequiredService<WorldDatabase>();
+        using LiveWorld live = new(database, f.Base.Clock, _ => { });
+        f.Space();
+        if (initialStack != 0)
+        {
+            Assert.Equal(
+                alreadyLaunched,
+                f.Drones.Launch(f.Pilot, [new(initialStack, alreadyLaunched)], f.Now).Launches.Single().DroneIds.Count
+            );
+        }
+        using var scope = f.Base.Db.Services.CreateScope();
+        using var context = DroneSynchronizationTests.Context(f, scope.ServiceProvider, 1000001);
+        context.Flight.Snapshot();
+        var args = new List<object?> { new object?[] { stack, (long)quantity } };
+        var result = DroneSynchronizationTests.Bound(scope.ServiceProvider, context, "ship", "LaunchDrones", args, null, false);
+        var reply = DroneSynchronizationTests.Reply(result);
+        var decoded = Assert.IsType<Dictionary<long, object?>>(BlueMarshal.Decode(BlueMarshal.Encode(reply)));
+        var ids = Assert.IsType<List<object?>>(Assert.Single(decoded).Value).Select(Assert.IsType<long>).ToArray();
+        Assert.Equal(stack, Assert.Single(decoded).Key);
+        Assert.Equal(expected, ids.Distinct().Count());
+        Assert.Equal(alreadyLaunched + expected, context.Flight.VisibleDrones.Count);
+        Assert.Equal((alreadyLaunched + expected) * DroneRules.LightBandwidth, f.Drones.Control(f.Pilot).UsedBandwidth);
+
+        int remainder = quantity - expected;
+        var change = Assert.Single(context.Notifications.OfType<ItemChanged>(), row => row.Item.Id == stack);
+        Assert.Equal(quantity, change.Previous[InventoryColumn.StackSize]);
+        Assert.Equal(remainder, change.Item.Quantity);
+        Assert.Equal(remainder, Assert.Single(f.Base.Inventory.List(f.Pilot, f.Ship), row => row.Id == stack).Quantity);
+
+        args[0] = new object?[] { stack, (long)remainder };
+        context.Notifications.Clear();
+        Assert.IsType<PilotCallResult.Failure>(
+            DroneSynchronizationTests.Bound(scope.ServiceProvider, context, "ship", "LaunchDrones", args, null, false)
+        );
+        Assert.Empty(context.Notifications.OfType<ItemChanged>());
+        Assert.Equal(remainder, Assert.Single(f.Base.Inventory.List(f.Pilot, f.Ship), row => row.Id == stack).Quantity);
+
+        using var checkpoint = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
+        checkpoint.Project();
+        using WorldDbContext reopened = new(checkpoint.Database);
+        Assert.Equal(remainder, reopened.Set<OwnedItem>().Find(stack)!.Quantity);
+        Assert.Equal(alreadyLaunched + expected, reopened.Set<WorldDrone>().Count(row => row.SystemId == systemId));
+    }
+
+    [Fact]
+    public void MixedLaunchUsesRemainingBandwidthOnLaterStacksAndValidatesAllSelectionsBeforeMutation()
+    {
+        const int sentryDrone = 23561;
+        const int warriorTwo = 2488;
+        using Fixture f = new();
+        long medium = f.Bay(2185, 3);
+        long sentry = f.Bay(sentryDrone, 1);
+        long light = f.Bay(warriorTwo, 4);
+        using LiveWorld live = new(f.Base.Db.Services.GetRequiredService<WorldDatabase>(), f.Base.Clock, _ => { });
+        f.Space();
+        var before = f.Base.Inventory.List(f.Pilot, f.Ship).ToArray();
+        Assert.Throws<InvalidDataException>(() => f.Drones.Launch(f.Pilot, [new(medium, 3), new(light, 5)], f.Now));
+        Assert.Equal(before, f.Base.Inventory.List(f.Pilot, f.Ship));
+        Assert.Empty(f.Drones.List(f.Npc.SystemId, f.Now));
+
+        var result = f.Drones.Launch(f.Pilot, [new(medium, 3), new(sentry, 1), new(light, 4)], f.Now);
+        Assert.Collection(
+            result.Launches,
+            launch => Assert.Equal((medium, 3), (launch.StackId, launch.DroneIds.Count)),
+            launch => Assert.Equal((light, 2), (launch.StackId, launch.DroneIds.Count))
+        );
+        Assert.DoesNotContain(result.Changes, change => change.Item.Id == sentry);
+        var after = f.Base.Inventory.List(f.Pilot, f.Ship);
+        Assert.Equal(1, Assert.Single(after, row => row.Id == sentry).Quantity);
+        Assert.Equal(2, Assert.Single(after, row => row.Id == light).Quantity);
+        Assert.Equal(40, f.Drones.Control(f.Pilot).UsedBandwidth);
+    }
+
     [Fact]
     public async Task UnrelatedClassifiedInventoryCommitPreservesDirtyDroneFlightAndWarmObservers()
     {

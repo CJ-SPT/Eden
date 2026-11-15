@@ -199,7 +199,7 @@ public sealed class CombatDroneTests
     [Theory]
     [InlineData(Brutix, "docked")]
     [InlineData(Brutix, "skill")]
-    [InlineData(Brutix, "count")]
+    [InlineData(Brutix, "quantity")]
     [InlineData(Brutix, "bandwidth")]
     [InlineData(Brutix, "duplicate")]
     [InlineData(Brutix, "foreign")]
@@ -209,7 +209,7 @@ public sealed class CombatDroneTests
     [InlineData(Brutix, "hull")]
     [InlineData(BrutixNavyIssue, "docked")]
     [InlineData(BrutixNavyIssue, "skill")]
-    [InlineData(BrutixNavyIssue, "count")]
+    [InlineData(BrutixNavyIssue, "quantity")]
     [InlineData(BrutixNavyIssue, "bandwidth")]
     [InlineData(BrutixNavyIssue, "duplicate")]
     [InlineData(BrutixNavyIssue, "foreign")]
@@ -226,10 +226,7 @@ public sealed class CombatDroneTests
             "sentry-skill" => 23561,
             _ => HammerheadTwo,
         };
-        int quantity =
-            failure is "heavy-skill" or "sentry-skill" ? 1
-            : failure == "count" ? 6
-            : 5;
+        int quantity = failure is "heavy-skill" or "sentry-skill" ? 1 : 5;
         long stack = f.Bay(type, quantity);
         if (failure != "docked")
         {
@@ -253,7 +250,7 @@ public sealed class CombatDroneTests
             catalog
                 .Set<TypeAttribute>()
                 .Where(a => a.ItemTypeId == hullType && a.AttributeId == (int)DogmaAttributeId.DroneBandwidth)
-                .ExecuteUpdate(set => set.SetProperty(a => a.Value, 40));
+                .ExecuteUpdate(set => set.SetProperty(a => a.Value, DroneRules.LightBandwidth));
         }
         using (WorldDbContext world = new(f.Base.Db.Path))
         {
@@ -273,7 +270,13 @@ public sealed class CombatDroneTests
             }
             world.SaveChanges();
         }
-        IReadOnlyList<DroneStack> request = failure == "duplicate" ? [new(stack, 1), new(stack, 1)] : [new(stack, quantity)];
+        IReadOnlyList<DroneStack> request = failure switch
+        {
+            "duplicate" => [new(stack, 1), new(stack, 1)],
+            "quantity" => [new(stack, quantity + 1)],
+            _ => [new(stack, quantity)],
+        };
+        using LiveWorld live = new(f.Base.Db.Services.GetRequiredService<WorldDatabase>(), f.Base.Clock, _ => { });
         var error = Assert.Throws<InvalidDataException>(() => f.Drones.Launch(f.Pilot, request, f.Now));
         if (failure is "skill" or "heavy-skill" or "sentry-skill")
         {

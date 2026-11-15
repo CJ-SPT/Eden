@@ -517,6 +517,7 @@ records loaded-crystal modifiers, target compatibility, persistent wear and nati
 
 - [Capsule destruction and home-station respawn, November 7, 2026](protocol/combat.md#capsule-destruction-and-home-station-respawn-november-7-2026)
 
+- [Partial drone stack launches](protocol/drones.md#partial-drone-stack-launches)
 - [Fleet drone assist and guard, November 7, 2026](protocol/drones.md#fleet-drone-assist-and-guard-november-7-2026)
 - [Drone delegation combat triggers, November 7, 2026](protocol/drones.md#drone-delegation-combat-triggers-november-7-2026)
 - [Drone equipment, scripts and combat-rig consumers, November 7, 2026](protocol/drones.md#drone-equipment-scripts-and-combat-rig-consumers-november-7-2026)

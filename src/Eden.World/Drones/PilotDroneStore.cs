@@ -172,23 +172,26 @@ internal sealed partial class PilotDroneStore(
             .Where(d => d.ControllerShipId == ship.Id && d.PilotId == pilotId && d.SystemId != null)
             .ToArray();
         double used = active.Sum(d => DroneCatalog.Profile(catalog, world.Set<OwnedItem>().Find(d.ItemId)!.TypeId).Bandwidth);
-        DroneRules.CheckLaunch(
-            active.Length,
-            used,
-            pending.Sum(p => p.Request.Quantity),
-            pending.Sum(p => p.Profile.Bandwidth * p.Request.Quantity),
-            DroneCatalog.ControlLimit(fitting),
-            shipAttributes.GetValueOrDefault(DogmaAttributeId.DroneBandwidth)
-        );
+        int maximumCount = DroneCatalog.ControlLimit(fitting);
+        double maximumBandwidth = shipAttributes.GetValueOrDefault(DogmaAttributeId.DroneBandwidth);
+        int remainingSlots = maximumCount - active.Length;
+        double remainingBandwidth = maximumBandwidth - used;
         List<InventoryChange> changes = [];
         List<DroneLaunch> launches = [];
         int systemId = CurrentSystem(catalog, pilot);
         double launchOffset = (catalog.FittingType(ship.TypeId)?.Radius ?? 0) + DroneRules.LaunchOffset;
         foreach (var (stack, request, profile) in pending)
         {
+            int quantity = DroneRules.LaunchableCount(request.Quantity, profile.Bandwidth, remainingSlots, remainingBandwidth);
+            if (quantity == 0)
+            {
+                continue;
+            }
+            remainingSlots -= quantity;
+            remainingBandwidth -= quantity * profile.Bandwidth;
             var previous = PilotInventoryStore.Read(catalog, stack);
             List<long> ids = [];
-            for (int index = 0; index < request.Quantity; index++)
+            for (int index = 0; index < quantity; index++)
             {
                 OwnedItem item;
                 InventoryItem? old = null;
@@ -262,6 +265,10 @@ internal sealed partial class PilotDroneStore(
                 changes.Add(new(PilotInventoryStore.Read(catalog, stack), previous));
             }
             launches.Add(new(stack.Id, ids));
+        }
+        if (launches.Count == 0)
+        {
+            DroneRules.CheckLaunch(active.Length, used, 1, pending[0].Profile.Bandwidth, maximumCount, maximumBandwidth);
         }
         world.SaveChanges();
         transaction.Commit();

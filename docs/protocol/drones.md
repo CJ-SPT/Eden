@@ -6,6 +6,40 @@ Drone motion, observer reads and nonfatal direct combat use shared resident stat
 
 Legal capsule targets now use the shared [capsule destruction and home-station respawn lifecycle](combat.md#capsule-destruction-and-home-station-respawn-november-7-2026). The original pilot-target milestone below records its earlier capsule exclusion.
 
+## Partial drone stack launches
+
+Selecting an oversized stack now launches the drones that fit the pilot's remaining control slots and ship bandwidth. For example,
+a stack of twelve light drones leaves seven in the bay when five slots and enough bandwidth are available. Drones already in flight
+consume both limits. The launch evaluates stacks in request order. If the next stack needs more bandwidth than remains, a later
+stack can still launch lighter drones. Drones left in the bay keep their original stack ID. The resident transaction validates
+ownership, quantities, bay location and skills across the selection before committing the launches and stack changes. It rejects
+a request that cannot launch any drone. [EVE University drone mechanics](https://wiki.eveuniversity.org/Using_Drones)
+
+Inert inspection of build **3662168** `code.ccp` (`37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`)
+confirms `menuSvcExtras.droneFunctions.LaunchDrones` calls `eveMisc.LaunchFromShip` with the selected items. `LaunchFromShip`
+sends their requested quantities to `ship.LaunchDrones` and emits `OnItemLaunch` with the returned IDs grouped by source stack.
+EveJS **261108.1** also checks the limits per drone in selection order. Its local `droneRuntime.js` has SHA-256
+`163795E56D651C4B1803488B3F82708583DFA076E751669A3B7A33D7B1DA72FF`. Eden uses its existing launch reply and bay notifications
+for the drones actually launched.
+
+**Automated validation.** The exact `FullStackLaunchUsesOnlyAvailableControlAndBandwidth` filter reproduced the rejection in
+all three cases before the fix. Afterward, the two resident launch regression methods and the existing invalid-launch method
+passed all 24 cases (10.84 seconds build, 24.56 seconds tests). The resident tests cover twelve-unit stacks, drones already in
+flight, a bandwidth-limited hull, mixed selections, the wire reply, bay updates and reopened checkpoints.
+
+The final focused run passed 369 cases in 312.55 seconds. Tool restore (0.14 seconds), solution restore (0.66 seconds),
+solution build (1.05 seconds, zero warnings and errors), catalog policy (8 cases, 1.34 seconds), formatting policy (9 cases,
+0.17 seconds), and formatting verification (33.17 seconds) passed. The final filter was:
+
+```text
+FullyQualifiedName~CombatDroneTests|FullyQualifiedName~ResidentDroneTests|FullyQualifiedName~DroneSynchronizationTests|FullyQualifiedName~DroneHullTests|FullyQualifiedName~DroneRecoveryTests|FullyQualifiedName~DroneDelegationTests|FullyQualifiedName~CapsuleerDefenseTests|FullyQualifiedName~TypedInventoryTests|FullyQualifiedName~PilotBindingsTests
+```
+
+**Live acceptance.** Not performed. Agent client testing is disabled.
+
+**Optional maintainer checks.** Launch a stack of twelve light drones with five available slots and sufficient bandwidth.
+Verify five drones appear in space and seven stay in the bay.
+
 ## Fleet drone assist and guard, November 7, 2026
 
 The final combat-drone checkpoint implements native **CmdAssist(characterID, droneIDs)** and **CmdGuard(characterID, droneIDs)**. The recipient must be another online non-capsule pilot in the same fleet, system and local grid, within the owner's effective drone-control range when assigned. The selection must belong to the owner's current supported ship and retain its earned skills, count and bandwidth. Assist and guard share the pinned **20-drone** recipient limit across all owners. Reassigning the same flight does not consume extra slots; concurrent requests cannot overbook, and invalidated assignments do not retain reservations.

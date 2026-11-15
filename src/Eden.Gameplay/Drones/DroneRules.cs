@@ -99,6 +99,15 @@ public static class DroneRules
         + AvionicsRangePerLevel * skills.GetValueOrDefault(DroneSkill.DroneAvionics)
         + AdvancedAvionicsRangePerLevel * skills.GetValueOrDefault(DroneSkill.AdvancedDroneAvionics);
 
+    public static int LaunchableCount(int requested, double unitBandwidth, int remainingSlots, double remainingBandwidth)
+    {
+        if (remainingSlots <= 0 || remainingBandwidth <= 0 || !double.IsFinite(remainingBandwidth))
+        {
+            return 0;
+        }
+        return (int)Math.Min(Math.Min(requested, remainingSlots), Math.Floor(remainingBandwidth / unitBandwidth));
+    }
+
     public static void CheckLaunch(
         int active,
         double usedBandwidth,
