@@ -27,7 +27,7 @@ Each milestone includes typed rules, authenticated native calls, persistence, fo
 | Bulk member removal | Implemented: resident batch settlement, native mixed results, current Director permissions and existing removal protections |
 | Native administration and inventory blockers | Implemented: member audit reads, current membership dates, headquarters relocation, Goals Deliveries queries and corporate Deliveries binding |
 | CEO elections | Implemented: personal-share eligibility, incumbent suspension, automatic succession and a persistent successor authority delay |
-| Blueprint lock/unlock votes | Pending |
+| Blueprint lock/unlock votes | Implemented: immediate resident holds, automatic permanent locks, CEO-only unlock sanctions and inventory enforcement |
 
 See [corporation protocol findings](protocol/corporations.md) for native call shapes and milestone validation evidence, and [inventory ownership](inventory-ownership.md) for the storage boundary. This table records implemented scope, not live client acceptance.
 
@@ -35,6 +35,6 @@ The maintainer confirmed that the corporation window loads after the November 14
 now covers the remaining standalone tabs and actions, including recruitment, member queries and governance. Alliances
 and corporation wars remain explicitly outside this request.
 
-Implementation resumed after the member-expulsion vote milestone. Remaining standalone work includes blueprint voting,
-full historical auditing/decorations, outstanding home settings, recent combat records, ordinary removal queues
+Implementation resumed after the member-expulsion vote milestone. Remaining standalone work includes full historical
+auditing/decorations, outstanding home settings, recent combat records, ordinary removal queues
 and office billing/impound recovery. The complete corporation window is not yet implemented.

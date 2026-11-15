@@ -82,13 +82,6 @@ internal sealed partial class CorporationVotingStore(WorldDatabase database, Tim
     {
         CorporationVotingRules.Validate(draft);
         Advance();
-        if (
-            draft.Type
-            is not (CorporationVoteType.General or CorporationVoteType.Shares or CorporationVoteType.Expel or CorporationVoteType.Ceo)
-        )
-        {
-            throw new InvalidDataException("This type of corporation vote is not available yet.");
-        }
         using var world = Resident.Economy.Begin(TransactionParticipants.None);
         var corporation = CorporationRoleStore.Current(world, actorId);
         CorporationCeoElection? election = null;
@@ -138,7 +131,10 @@ internal sealed partial class CorporationVotingStore(WorldDatabase database, Tim
         {
             HoldAuthority(world, corporation, election.IncumbentId, row.Id, now);
         }
-        Notify(world, row.Snapshot(), CorporationVoteEvent.Created);
+        var blueprintChange = draft.Type is CorporationVoteType.LockBlueprint or CorporationVoteType.UnlockBlueprint
+            ? PrepareBlueprintVote(world, corporation, row)
+            : null;
+        Notify(world, row.Snapshot(), CorporationVoteEvent.Created, blueprintChange);
         world.Commit();
         Interlocked.Exchange(ref _nextDeadline, Math.Min(Volatile.Read(ref _nextDeadline), row.EndsAt));
         return row.Id;
@@ -185,7 +181,10 @@ internal sealed partial class CorporationVotingStore(WorldDatabase database, Tim
                     .Select(row => row.Snapshot())
                     .Where(vote =>
                         vote.Data.Settled
-                        && vote.Data.Draft.Type is CorporationVoteType.Shares or CorporationVoteType.Expel
+                        && vote.Data.Draft.Type
+                            is CorporationVoteType.Shares
+                                or CorporationVoteType.Expel
+                                or CorporationVoteType.UnlockBlueprint
                         && CorporationVotingRules.Winner(vote.Data) == 0
                     )
                     .ToArray();
@@ -206,15 +205,20 @@ internal sealed partial class CorporationVotingStore(WorldDatabase database, Tim
             || vote.Data.AppliedAt.HasValue
             || Now >= CorporationVotingRules.Expires(vote)
             || CorporationVotingRules.Winner(vote.Data) != 0
-            || vote.Data.Draft.Type is not (CorporationVoteType.Shares or CorporationVoteType.Expel)
+            || vote.Data.Draft.Type is not (CorporationVoteType.Shares or CorporationVoteType.Expel or CorporationVoteType.UnlockBlueprint)
         )
         {
             throw new InvalidDataException("Only the CEO may enact an unused, successful and unexpired sanction.");
         }
         bool completed = true;
+        CorporationBlueprintLockChange? blueprintChange = null;
         if (vote.Data.Draft.Type == CorporationVoteType.Expel)
         {
             completed = ExpelMember(world, corporation, vote, Now);
+        }
+        else if (vote.Data.Draft.Type == CorporationVoteType.UnlockBlueprint)
+        {
+            blueprintChange = UnlockBlueprint(world, corporation, vote);
         }
         else
         {
@@ -228,7 +232,7 @@ internal sealed partial class CorporationVotingStore(WorldDatabase database, Tim
                 PendingExpulsionActorId = completed ? null : actorId,
             }
         );
-        Notify(world, row.Snapshot(), CorporationVoteEvent.Sanctioned);
+        Notify(world, row.Snapshot(), CorporationVoteEvent.Sanctioned, blueprintChange);
         world.Commit();
         if (!completed)
         {
@@ -272,6 +276,11 @@ internal sealed partial class CorporationVotingStore(WorldDatabase database, Tim
             if (vote.Data.Election is not null)
             {
                 next = Math.Min(next, AdvanceElection(world, row, now));
+                continue;
+            }
+            if (vote.Data.Draft.Type == CorporationVoteType.LockBlueprint)
+            {
+                next = Math.Min(next, AdvanceBlueprintVote(world, row, now));
                 continue;
             }
             if (vote.Data.PendingExpulsionActorId.HasValue)
@@ -326,7 +335,12 @@ internal sealed partial class CorporationVotingStore(WorldDatabase database, Tim
             ? row
             : throw new InvalidDataException("Unknown corporation vote.");
 
-    private static void Notify(WorldAction world, CorporationVoteCase vote, CorporationVoteEvent kind)
+    private static void Notify(
+        WorldAction world,
+        CorporationVoteCase vote,
+        CorporationVoteEvent kind,
+        CorporationBlueprintLockChange? blueprintChange = null
+    )
     {
         var corporation = world.Set<SavedCorporation>().Find(vote.CorporationId)!;
         var before = corporation.Snapshot(0).Details;
@@ -347,7 +361,7 @@ internal sealed partial class CorporationVotingStore(WorldDatabase database, Tim
             .Select(pilot => pilot.Id)
             .ToArray();
         string json = JsonSerializer.Serialize(
-            new CorporationAdministrationChange(corporation.Id, before, after, Vote: new(vote.Id, kind))
+            new CorporationAdministrationChange(corporation.Id, before, after, Vote: new(vote.Id, kind), BlueprintLock: blueprintChange)
         );
         foreach (long recipient in recipients)
         {

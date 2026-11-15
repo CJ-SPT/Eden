@@ -47,7 +47,8 @@ public sealed record CorporationVoteData(
     long? AppliedAt = null,
     bool HoldReleased = false,
     long? PendingExpulsionActorId = null,
-    CorporationCeoElection? Election = null
+    CorporationCeoElection? Election = null,
+    long? BlueprintLockVoteId = null
 );
 
 public sealed record CorporationCeoElection(long IncumbentId, long CandidateMembershipId, long? AuthorityAvailableAt = null);

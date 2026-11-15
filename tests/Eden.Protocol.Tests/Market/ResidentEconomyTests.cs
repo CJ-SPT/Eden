@@ -707,7 +707,15 @@ public sealed class ResidentEconomyTests
             Assert.Equal(entity.GetTableName(), mapping.Value.Name);
             Assert.Equal(
                 entity.GetProperties().Select(p => p.GetColumnName()).Order(StringComparer.Ordinal),
-                mapping.Value.Columns.Order(StringComparer.Ordinal)
+                mapping
+                    .Value.Columns.Select(column =>
+                        // Nullable blobs use two SQL expressions for one saved column.
+                        column is "hex(Binary)" or "Binary IS NULL"
+                            ? "Binary"
+                            : column.Trim('"')
+                    )
+                    .Distinct(StringComparer.Ordinal)
+                    .Order(StringComparer.Ordinal)
             );
         }
     }
