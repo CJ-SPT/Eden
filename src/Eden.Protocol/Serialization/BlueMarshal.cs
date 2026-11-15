@@ -23,6 +23,7 @@ internal sealed record BlueNewObject(string Name, object? State)
     internal const string IndustryLocationClass = "industry.job.Location";
     internal const string ContractClass = "contracts.contractStruct.ContractStruct";
     internal const string StructureHangarClass = "structures.structureHangarViewState.StructureHangarViewState";
+    internal const string RowClass = "carbon.common.script.sys.row.Row";
 }
 
 internal sealed record PaperDollRow(string Name, object?[] Fields);
@@ -256,7 +257,7 @@ internal static class BlueMarshal
         object ReadNewObject(int depth)
         {
             // Carbon NEWOBJ (35) stores ((class,), state) and empty iterators.
-            // Retain only known brain/location/contract values as inert data; never allocate a
+            // Retain only allowlisted data objects as inert state; never allocate a
             // Python class or invoke a client-provided __new__ implementation.
             if (
                 Read(depth + 1) is not object?[] { Length: 1 or 2 } parts
@@ -280,6 +281,19 @@ internal static class BlueMarshal
             )
             {
                 return new BlueNewObject(name.Name, state);
+            }
+            if (
+                parts.Length == 2
+                && args.Length == 1
+                && name.Name == BlueNewObject.RowClass
+                && parts[1] is object?[] { Length: 2 } row
+                && row[0] is List<object?> header
+                && row[1] is List<object?> line
+                && header.Count == line.Count
+                && header.All(field => field is string or byte[])
+            )
+            {
+                return new BlueNewObject(name.Name, row);
             }
             if (
                 parts.Length == 1

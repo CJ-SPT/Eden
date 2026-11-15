@@ -175,8 +175,12 @@ internal sealed record CorporationTitleReply(CorporationTitle Title) : BlueModel
     public override object ToBlue()
     {
         var fields = Fields();
-        // Native Row.__setstate__ unpacks (header, line); title events reuse its header.
-        return new BlueInstance("util.Row", new object?[] { new BlueList<string>(fields.Keys.ToArray()), fields.Values.ToList() });
+        // Build 3662168 Row inherits object: legacy INSTANCE fails before __setstate__.
+        // NEWOBJ retains its mutable (header, line) state for title labels and events.
+        return new BlueNewObject(
+            BlueNewObject.RowClass,
+            new object?[] { new BlueList<string>(fields.Keys.ToArray()), fields.Values.ToList() }
+        );
     }
 }
 

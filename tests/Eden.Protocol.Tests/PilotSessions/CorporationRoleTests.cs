@@ -101,8 +101,8 @@ public sealed class CorporationRoleTests
             Assert.Equal((long)CorporationRole.HangarCanQuery1, identity.CorporationAccess!.Roles.RolesAtHQ);
             var titles = Assert.IsType<Dictionary<long, object?>>(member.Reply("GetTitles", []));
             Assert.Equal(CorporationRoleRules.TitleCount, titles.Count);
-            var title = Assert.IsType<BlueInstance>(titles[1]);
-            Assert.Equal("util.Row", title.Name);
+            var title = Assert.IsType<BlueNewObject>(titles[1]);
+            Assert.Equal(BlueNewObject.RowClass, title.Name);
             var state = BlueRead.Tuple(title.State, 2);
             var titleFields = Assert
                 .IsType<List<object?>>(state[0])

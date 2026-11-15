@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Corporation title row decoding](protocol/corporations.md#corporation-title-row-decoding-november-14-2026)
+records the captured GetTitles failure and native new-style row correction.
+
 [Corporation construction failure capture](protocol/corporations.md#corporation-construction-failure-capture-november-14-2026)
 records the still-unresolved window failure and bounded local traceback diagnostics.
 

@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Corporation title row decoding, November 14, 2026](#corporation-title-row-decoding-november-14-2026)
 - [Corporation construction failure capture, November 14, 2026](#corporation-construction-failure-capture-november-14-2026)
 - [Direct invitations and corporation window reads, November 14, 2026](#direct-invitations-and-corporation-window-reads-november-14-2026)
 - [Corporation registry lifetime and application replies](#corporation-registry-lifetime-and-application-replies)
@@ -33,6 +34,48 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Corporation window voting-capability startup correction](#corporation-window-voting-capability-startup-correction)
 - [Player corporation applications and membership](#player-corporation-applications-and-membership)
 - [Player corporations: creation foundation](#player-corporations-creation-foundation)
+
+## Corporation title row decoding, November 14, 2026
+
+The maintainer's next run produced `eden-corporation-21084.log`: ordinary corporation panels completed,
+then administration construction failed with `UnmarshalError`. The traceback ends in `ObjectCallGPCS.FromPickle`,
+called by `bco_titles.GetTitles` at line 73 while `CorpQueryMembersForm` is being constructed. No invitation attempt
+appears in this capture. This identifies the title response as the blocker behind the overlapping window controls.
+
+Eden sent each title as legacy Blue INSTANCE (`0x17`) named `util.Row`. Build **3662168** defines
+`carbon.common.script.sys.row.Row` as an `object` subclass with slots `header` and `line`; it needs new-style allocation.
+The reply now uses the existing NEWOBJ (`0x23`) encoder and the full class name, retaining the tuple of mutable header
+and value lists. This lets native `bco_titles.GetTitles` fill blank title names and preserves later field mutations.
+The inbound decoder recognizes only this additional explicit class and validates its two equally sized lists with
+string column names. It retains inert data and never constructs a Python object.
+
+Sources: original client archive SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**,
+`carbon/common/script/sys/row.pyj`, `bco_titles.pyj` and the recorded maintainer traceback.
+[Carbon Marshal.cpp at fcbf0c2](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp)
+distinguishes legacy instance and protocol-2 object reconstruction; its Python 3 compatibility implementation is not
+treated as the pinned Python 2 allocator. A headless check with the pinned `python27.dll` confirms that its
+`PyInstance_NewRaw` rejects this native Row class while `Row.__new__` and its actual `__setstate__` succeed.
+[EVE University member management](https://wiki.eveuniversity.org/Managing_corporation_members) supplies the gameplay
+reference for titles and roles; this repair changes serialization, not role permissions or membership rules.
+
+**Automated validation.** The exact-method registry regression first failed because
+the response contained `BlueInstance`. It now checks all 16 title slots, Unicode names, role values and NEWOBJ encoding.
+The native-method regression checks blank-name initialization, repeated cached reads, 64-bit roles and row mutation
+using pinned code with test doubles for localization and registry access. It does not execute the Blue DLL, transport,
+renderer or a game session. Development also corrected two harness assumptions: legacy raw allocation reports
+`SystemError`, and extracted functions require an explicit builtins scope. An initial build in the shared checkout was
+blocked by unrelated in-progress Abyssal code; validation moved to an isolated worktree.
+
+Final tool restore, solution restore/build (zero warnings/errors), both Python policy suites (8 catalog and 9 formatting
+cases), formatting (2,142 files) and 616 documentation links/anchors passed. With the pinned-client test enabled,
+`FullyQualifiedName~CorporationRoleTests|FullyQualifiedName~CorporationTitleWireTests|FullyQualifiedName~CorporationMembershipTests|FullyQualifiedName~CorporationScreenTests|FullyQualifiedName~BlueMarshalTests|FullyQualifiedName~PilotBindingsTests|FullyQualifiedName~CorporationClientDiagnosticsTests`
+passed **108 tests in 30 seconds**. The validation sequence took **97 seconds**. The full .NET suite was not run.
+
+**Live acceptance.** Not performed; agent client testing is disabled. The maintainer's trace establishes the old failure;
+the corrected window rendering remains unverified. Bounded diagnostics remain installed for the next run.
+
+**Optional maintainer checks.** Update the server, reconnect and reopen Corporation. If invitations still fail, attempt
+one so the retained diagnostic captures that separate path.
 
 ## Corporation construction failure capture, November 14, 2026
 
