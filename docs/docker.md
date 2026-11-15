@@ -40,6 +40,50 @@ docker compose up -d
 Windows development tickets still require a Windows host. The container builds mod sets from a verified original client
 archive and publishes them to remote players through Eden Launcher.
 
+### Build caching on a remote host
+
+Use a current Docker Engine with BuildKit and Compose v2. The Dockerfile restores NuGet dependencies before copying
+source files and shares a NuGet package cache between restore and publish. Ordinary source updates can reuse the
+restore layer; project changes can reuse already downloaded packages. Python 3 installation and the standalone
+Python 2 compiler are independent of server binaries, so a source update does not reinstall or rebuild them.
+This follows [Docker's cache guidance](https://docs.docker.com/build/cache/optimize/).
+
+Keep using the same builder on the remote host. Avoid `--no-cache` and routine `docker builder prune` or
+`docker system prune` calls when retaining build speed matters. A cold builder still downloads dependencies and
+compiles Python 2 once. The first build after the Dockerfile changes also needs to populate the new cache layers;
+subsequent builds benefit from them. Server source changes still require a Release compilation.
+
+To capture step timings without stopping the running server:
+
+```sh
+docker compose --progress plain build eden
+```
+
+After the cache is warm, source-only updates should show `CACHED` for NuGet restore, Python 3 installation and
+Python 2 compilation. To measure an unchanged build, repeat that command with the same `EDEN_REVISION` value.
+Changing `EDEN_REVISION` intentionally republishes the server so its startup banner records the correct commit.
+Once the image build succeeds, deploy it with `docker compose up -d eden`, including any Compose overrides used
+by the running service. Include the same overrides when collecting timings.
+
+#### Automated validation
+
+On November 15, 2026, tool and solution restore passed, the solution built with zero warnings and errors in 13.82 seconds,
+and a separate Release restore followed by `publish --no-restore` succeeded with `UseAppHost=false`. The exact initial
+filter was `FullyQualifiedName=Eden.Protocol.Tests.Hosting.ServerDataPathsTests.SourceAndPublishedServersUseTheirOwnDataDirectory`;
+it passed one test. The combined filter selected `ServerDataPathsTests` and `GameplayDependenciesTests`; all 12 tests
+passed in a 5.62-second test command. Both Python policy suites passed (8 catalog and 9 formatting tests),
+and `tools/Format.ps1 -Check` passed.
+Docker was unavailable in the workspace, so Linux image construction, cache hits and remote build speed remain unmeasured.
+
+#### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+#### Optional maintainer checks
+
+Run the timing command on the Docker host for a source update after warming the cache and compare its publish time
+with the previous build. Build the replacement image while Eden is running, then recreate the service after it succeeds.
+
 ## Enable AutoMining on a Docker host
 
 Copy the original **build 3662168** archive to `./deploy/.eden-original-code.ccp` on the Docker host. If you use
