@@ -73,6 +73,13 @@ internal sealed partial class CorporationHandler
             }
             if (change.Administration is { } administrationChange)
             {
+                if (
+                    administrationChange.BlueprintLock is { } blueprintLock
+                    && blueprintLock.CorporationId == corporations.Identity(context.Pilot.PilotId).Id
+                )
+                {
+                    context.Notifications.Add(new CorporationBlueprintLockNotification(blueprintLock));
+                }
                 if (administrationChange.Before.RecruitmentRevision != administrationChange.After.RecruitmentRevision)
                 {
                     context.Notifications.Add(new CorporationRecruitmentChanged());

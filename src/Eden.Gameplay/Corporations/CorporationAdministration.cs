@@ -55,7 +55,8 @@ public sealed record CorporationAdministrationChange(
     long? CeoId = null,
     long? ClosedAt = null,
     CorporationVoteChange? Vote = null,
-    CorporationHeadquartersChange? Headquarters = null
+    CorporationHeadquartersChange? Headquarters = null,
+    CorporationBlueprintLockChange? BlueprintLock = null
 );
 
 public sealed record CorporationHeadquartersChange(int PreviousStationId, int PreviousSystemId, int StationId, int SystemId);

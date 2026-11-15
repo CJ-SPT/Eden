@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Blueprint lock and unlock votes, November 15, 2026](#blueprint-lock-and-unlock-votes-november-15-2026)
 - [CEO elections, November 15, 2026](#ceo-elections-november-15-2026)
 - [Administration and inventory blockers, November 15, 2026](#administration-and-inventory-blockers-november-15-2026)
 - [Corporation Show Info market activity latency, November 15, 2026](#corporation-show-info-market-activity-latency-november-15-2026)
@@ -45,6 +46,80 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Corporation window voting-capability startup correction](#corporation-window-voting-capability-startup-correction)
 - [Player corporation applications and membership](#player-corporation-applications-and-membership)
 - [Player corporations: creation foundation](#player-corporations-creation-foundation)
+
+## Blueprint lock and unlock votes, November 15, 2026
+
+Native `voteManager.InsertVoteCase` now accepts type **5** (Lock Blueprint) and **6** (Unlock Blueprint), with item ID,
+blueprint type ID and location in the existing binary option payload. A current CEO or Director must select one original
+blueprint owned by their corporation, directly in a numbered division of a rented office. Copies, stacks of multiple
+originals, installed blueprints, non-blueprints, personal assets, non-office locations, mismatched types/locations and
+unauthorized proposals reject atomically. Both the office inventory ID and its station ID identify the same eligible
+location; the native lock cache uses station IDs.
+
+Starting lockdown immediately creates a resident hold. The standard weighted vote decides its outcome at the saved
+deadline: a strict majority of cast weight makes it permanent without a sanction; defeat, ties and empty votes release
+the temporary hold. An unlock vote requires that permanent lock and leaves it in place while open or pending sanction.
+A successful unlock requires a separate, current, active CEO sanction within the existing seven-day local sanction
+window. Failed or expired unlocks leave the original locked. Duplicate lockdowns and overlapping unlock votes/pending
+sanctions reject. An unlock records its source lock's vote ID; it cannot unlock a replacement generation. Consumed
+sanctions cannot apply twice, and a later unlock vote may follow a failed or expired one.
+
+Schema **166** adds `WorldCorporationBlueprintLock`, keyed by item ID and indexed by corporation, with an explicit
+resident mapping and checkpoint projection. The world owner commits holds, vote state and notifications together.
+Inventory commit validation rejects changing a locked original's owner, office, division, type, quantity or original/copy
+state, or deleting it, even through a service that does not consult the client lock cache. A rejected mixed withdrawal
+rolls back every item and its events. In-place research attributes remain mutable. This milestone does not add corporation
+industry jobs; that existing industry boundary remains. No SQL gameplay implementation or offline lock fallback is added.
+SQL is limited to schema setup, initial resident loading and checkpoint projection.
+
+`itemLocking.GetItemsByLocation(locationID)` returns an item-keyed dictionary of native KeyVals, and
+`GetLockedItemLocations()` returns a native Python set of stations. Both reads use the caller's current resident membership
+and division query rights; revocation takes effect immediately. Pending deadlines advance before reading. A named
+`OnLockedItemChange(itemID, ownerID, stationID, isLocked)` notification invalidates connected members' native caches through
+the existing corporation event cursor. Repeated advancement produces no duplicate transitions. The previous personal-
+location-only empty `itemLocking` route is replaced by this owner. NPC members still receive empty committed-state reads.
+
+Sources: [CCP Corporation Votes](https://support.eveonline.com/hc/en-us/articles/203268841-Corporation-Votes) specifies
+the immediate temporary lock, automatic successful lockdown and CEO-sanctioned unlock;
+[EVE University corporation logistics](https://wiki.eveuniversity.org/Corporation_logistics) describes blueprint governance.
+Inert inspection of client build **3662168**, prepared `code.ccp` SHA-256
+`AC15883C14B8547F4846A74E125A0E30073880C4EDF55E214DCAED804A4A19C6`, checked
+`CorporationVotes.CreateVote`, the pending/active blueprint checks, and `itemLocking.GetLockedItemsByLocation`,
+`GetLockedItemLocations`, `IsItemLocked` and `OnLockedItemChange`. EveJS **261108.1** `itemLockingService.js` (SHA-256
+`3DC727F916A2D8569709BBF8433B72684DEB49933BE5E3B2AA202771C1B24FFD`) and its recorded voting runtime were behavioral
+comparisons. Existing dictionary, KeyVal and Python set adapters use the recorded
+[Carbon Blue revision fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp).
+No client code execution or game launch was performed.
+
+**Automated validation.** The exact development filter was
+`FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.CorporationBlueprintVoteTests.NativeLockAndUnlockVotesPublishLocksAndRequireOneCeoSanctionAfterRestart`.
+The 22 new cases cover native requests, item dictionaries and location sets, notifications, current permissions,
+immediate holds, weighted rejection/ties, permanent results, unlock consent and expiry, duplicate/stale sanctions,
+invalid targets, installed originals, atomic withdrawal rejection, direct resident mutation/deletion rejection, in-place
+research metadata, version-165 upgrade, open and permanent lock recovery, and successful checkpoint deletion after unlock.
+Measured creation, casting, settlement and reads used zero SQL commands, connections and fitting calculations. Development
+corrected a raw CLR set response to the existing native Python-set adapter and wrapped a checkpoint SQL line to meet the
+140-column policy. A broader affected run passed **176 of 177 tests** in **50.01 s**. Its existing scalar-column audit
+incorrectly compared SQL expressions with saved column names; the audit now normalizes quoted identifiers and the two
+nullable-blob expressions before comparing distinct source columns. Its exact-method rerun passed.
+
+The broader filter ORed `FullyQualifiedName~` matches for `CorporationBlueprintVoteTests`, `CorporationVotingTests`,
+`CorporationCeoElectionTests`, `CorporationExpulsionVoteTests`, `CorporationStorageTests`, `CorporationRoleTests`,
+`CorporationScreenTests`, `CorporationHangarStartupTests`, `CorporationClosureTests`, `PlayerTradeTests`, `PilotInventoryTests`,
+`CargoContainerAssemblyTests`, `EconomicProjectionTests`, `ResidentEconomyTests`, `Eden.Protocol.Tests.Industry.IndustryTests`
+and `WorldInitializationTests`.
+
+After aligning fresh-world and upgrade foreign keys, final filter
+`FullyQualifiedName~CorporationBlueprintVoteTests|FullyQualifiedName=Eden.Protocol.Tests.Market.ResidentEconomyTests.RegisteredResidentRowsCoverEveryScalarColumnOfTheirSavedModels`
+passed **23 tests** in **13.65 s**. The final stable sequence passed tool/solution restore, a zero-warning solution build,
+both Python policy suites (**8 catalog and 9 formatting tests**), formatting for **2,245 files**, the 140-column check and
+`git diff --check` in **56.97 s**. Documentation checks resolved **659 local paths** and verified the blueprint topic anchor.
+The full .NET suite was not run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Propose a lockdown, inspect the locked icon and attempt withdrawal; inspect a successful
+unlock under Sanctionable Actions and enact it as CEO; reconnect and inspect the office lock state.
 
 ## CEO elections, November 15, 2026
 
