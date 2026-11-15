@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Mail;
@@ -74,8 +75,8 @@ internal sealed record EconomySavedBlockedContact(long PilotId, long ContactId);
 
 internal sealed partial class ResidentEconomy
 {
-    private readonly Dictionary<long, long> _mailHeads = [];
-    private readonly Dictionary<long, long> _listHeads = [];
+    private readonly ConcurrentDictionary<long, long> _mailHeads = [];
+    private readonly ConcurrentDictionary<long, long> _listHeads = [];
 
     private void MailChangePublished(EconomySavedMailChange? before, EconomySavedMailChange? after) =>
         UpdateFeedHead<SavedMailChange, EconomySavedMailChange>(_mailHeads, before?.PilotId, before?.Id, after?.PilotId, after?.Id);
@@ -89,7 +90,13 @@ internal sealed partial class ResidentEconomy
             after?.Id
         );
 
-    private void UpdateFeedHead<TRow, TRowState>(Dictionary<long, long> heads, long? oldPilot, long? oldId, long? newPilot, long? newId)
+    private void UpdateFeedHead<TRow, TRowState>(
+        ConcurrentDictionary<long, long> heads,
+        long? oldPilot,
+        long? oldId,
+        long? newPilot,
+        long? newId
+    )
         where TRow : class
         where TRowState : class
     {
@@ -99,7 +106,7 @@ internal sealed partial class ResidentEconomy
             long remaining = table.Indexed("PilotId", previous).Select(key => key.Id).DefaultIfEmpty().Max();
             if (remaining == 0)
             {
-                heads.Remove(previous);
+                heads.TryRemove(previous, out _);
             }
             else
             {
@@ -115,6 +122,14 @@ internal sealed partial class ResidentEconomy
     internal long MailHead(long pilot) => _mailHeads.GetValueOrDefault(pilot);
 
     internal long MailingListHead(long pilot) => _listHeads.GetValueOrDefault(pilot);
+
+    // A changed head only admits the ordinary coordinated read. An acknowledged
+    // feed needs no owner; speculative local actions still read their private rows.
+    internal bool HasMailChanges(long pilot, long cursor) =>
+        !_loaded || _active is not null || _owner.HasUnpublishedSqlChanges || cursor < MailHead(pilot);
+
+    internal bool HasMailingListChanges(long pilot, long cursor) =>
+        !_loaded || _active is not null || _owner.HasUnpublishedSqlChanges || cursor < MailingListHead(pilot);
 
     private void RegisterMailTables()
     {

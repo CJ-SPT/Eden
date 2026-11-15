@@ -1,3 +1,4 @@
+using Eden.Gameplay.Agents;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Agents;
 using Eden.World.Catalog;
@@ -8,6 +9,40 @@ namespace Eden.Protocol.Tests.Agents;
 
 public sealed class MissionCatalogLookupTests
 {
+    [Fact]
+    public void ColdAgentPoolLoadsOnlyItsLevelAndStorylineProfiles()
+    {
+        using MissionFixture fixture = new();
+        using CatalogDbContext catalog = new(new WorldDatabase(fixture.Db.Path).CatalogPath);
+        var before = catalog.Definitions.Statistics;
+        var selected = MissionCatalog.ForLevel(catalog, 4, storyline: true).ToArray();
+        long loads = catalog.Definitions.Statistics.Loads - before.Loads;
+        Assert.NotEmpty(selected);
+        Assert.All(
+            selected,
+            profile =>
+            {
+                Assert.Equal(4, profile.Definition.Level);
+                Assert.True(profile.Definition.Storyline);
+            }
+        );
+        Assert.InRange(loads, 1, 150);
+        Assert.Equal(
+            MissionCatalog.Read(catalog).Where(profile => profile.Definition.Level == 4 && profile.Definition.Storyline),
+            selected
+        );
+        for (int level = 1; level <= MissionRules.MaximumAgentLevel; level++)
+        {
+            foreach (bool storyline in new[] { false, true })
+            {
+                var expected = MissionCatalog
+                    .Read(catalog)
+                    .Where(profile => profile.Definition.Level == level && profile.Definition.Storyline == storyline);
+                Assert.Equal(expected, MissionCatalog.ForLevel(catalog, level, storyline));
+            }
+        }
+    }
+
     [Fact]
     public void ColdLookupLoadsOnlyRequestedMissionAndSharesItWithTheFullDirectory()
     {

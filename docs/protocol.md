@@ -3,6 +3,9 @@
 [Fleet finder adverts](protocol/fleets.md#fleet-finder-advert-creation-november-15-2026) correct unbound advert
 creation and add resident fleet advertisements, finder visibility and join applications.
 
+[Server lock contention](protocol/performance.md#server-lock-contention-november-15-2026)
+records recent server lock holds, bounded mission work and idle mail polling during checkpoints.
+
 [Corporation chat MOTD](protocol/social.md#corporation-chat-motd-november-15-2026) fixes the native
 `XmppChatMgr.SetMotd` call with authorized resident storage and subject delivery on edits and joins.
 

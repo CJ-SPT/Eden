@@ -92,6 +92,12 @@ internal static class MissionCatalog
 
     internal static ImmutableArray<MissionProfile> Read(CatalogDbContext catalog) => catalog.Definition(s_profiles, 0);
 
+    internal static IEnumerable<MissionProfile> ForLevel(CatalogDbContext catalog, int level, bool storyline) =>
+        s_content
+            .Value.Missions.Where(definition => definition.Level == level && definition.Storyline == storyline)
+            .Select(definition => catalog.Definition(s_profile, definition.MissionId))
+            .OfType<MissionProfile>();
+
     internal static bool IsMining(int missionId) => s_content.Value.Missions.Any(m => m.MissionId == missionId && m.Mining);
 
     internal static IEnumerable<int> MiningObjectiveTypes(CatalogDbContext catalog) =>
