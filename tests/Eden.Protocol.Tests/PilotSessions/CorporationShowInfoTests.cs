@@ -1,18 +1,22 @@
+using System.Diagnostics;
 using Eden.Data.Catalog;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Corporations;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Server;
 using Eden.World.Catalog;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Xunit.Abstractions;
 
 namespace Eden.Protocol.Tests.PilotSessions;
 
-public sealed class CorporationShowInfoTests
+public sealed class CorporationShowInfoTests(ITestOutputHelper output)
 {
     private const long Viewer = 90000002;
     private const int NpcCorporation = 1000044;
@@ -165,27 +169,73 @@ public sealed class CorporationShowInfoTests
     }
 
     [Fact]
-    public void MarketActivityReturnsLatestPublicNpcTradesWithNativeUnitsAndSurvivesReopen()
+    public void MarketActivityReadDoesNotScaleWithUnrelatedResidentExecutions()
+    {
+        using TestWorld db = new(liveWorld: true);
+        var live = db.Services.GetRequiredService<LiveWorld>();
+        var market = db.Services.GetRequiredService<ICorporationMarketInformation>();
+        using (var action = live.Economy.Begin(TransactionParticipants.None))
+        {
+            action.Add(Order(9000001, NpcCorporation, 601, false));
+            action.Add(Order(9000002, 1000035, 601, false));
+            action.Add(Trade(1, 9000001, NpcCorporation, true, 345, 7));
+            action.Add(Trade(2, 9000002, 1000035, true, 345, 7));
+            action.Commit();
+        }
+        Assert.Single(market.Read(NpcCorporation));
+        var small = Read();
+
+        const int unrelatedExecutions = 2_000;
+        using (var action = live.Economy.Begin(TransactionParticipants.None))
+        {
+            for (int i = 0; i < unrelatedExecutions; i++)
+            {
+                action.Add(Trade(3 + i, 9000002, 1000035, true, 345, 7));
+            }
+            action.Commit();
+        }
+        var populated = Read();
+        output.WriteLine($"Small ledger {small.Elapsed.TotalMilliseconds:F2} ms, {small.Allocated:N0} bytes.");
+        output.WriteLine($"Populated ledger {populated.Elapsed.TotalMilliseconds:F2} ms, {populated.Allocated:N0} bytes.");
+        Assert.InRange(populated.Allocated, 0, small.Allocated + 64 * 1024);
+
+        (long Allocated, TimeSpan Elapsed) Read()
+        {
+            using var measured = SessionPerformance.Begin("corporation market activity", _ => { }, force: true)!;
+            long start = Stopwatch.GetTimestamp();
+            long allocated = GC.GetAllocatedBytesForCurrentThread();
+            var activity = market.Read(NpcCorporation);
+            allocated = GC.GetAllocatedBytesForCurrentThread() - allocated;
+            var elapsed = Stopwatch.GetElapsedTime(start);
+            Assert.Equal(new CorporationMarketActivity(601, new(345, 7, 1, StationId), null), Assert.Single(activity));
+            Assert.Equal(0, measured.Commands);
+            Assert.Equal(0, measured.Connections);
+            Assert.Equal(0, measured.FittingCalculations);
+            return (allocated, elapsed);
+        }
+    }
+
+    [Fact]
+    public async Task MarketActivityReturnsLatestPublicNpcTradesWithNativeUnitsAndSurvivesReopen()
     {
         using Fixture fixture = new();
+        var live = fixture.Db.Services.GetRequiredService<LiveWorld>();
         fixture.Select();
-        using (WorldDbContext world = new(fixture.Db.Path))
+        using (var action = live.Economy.Begin(TransactionParticipants.None))
         {
-            world.AddRange(
-                Order(9000001, NpcCorporation, 601, false),
-                Order(9000002, NpcCorporation, 601, true),
-                Order(9000003, 1000035, 601, false),
-                Order(9000004, NpcCorporation, 3651, false)
-            );
-            world.AddRange(
-                Trade(1, 9000001, NpcCorporation, true, 200, 1),
-                Trade(2, 9000001, NpcCorporation, true, 345, 7),
-                Trade(3, 9000002, NpcCorporation, false, 123, 4),
-                Trade(4, 9000003, 1000035, true, 999, 8),
-                Trade(5, 9999999, NpcCorporation, true, 888, 9),
-                Trade(6, 9000004, NpcCorporation, true, 12345, 2, 3651)
-            );
-            world.SaveChanges();
+            action.Add(Order(9000001, NpcCorporation, 601, false));
+            action.Add(Order(9000002, NpcCorporation, 601, true));
+            action.Add(Order(9000003, 1000035, 601, false));
+            action.Add(Order(9000004, NpcCorporation, 3651, false));
+            action.Add(Trade(1, 9000001, NpcCorporation, true, 200, 1));
+            action.Add(Trade(2, 9000001, NpcCorporation, true, 345, 7));
+            action.Add(Trade(3, 9000002, NpcCorporation, false, 123, 4));
+            action.Add(Trade(4, 9000003, 1000035, true, 999, 8));
+            action.Add(Trade(5, 9999999, NpcCorporation, true, 888, 9));
+            action.Add(Trade(6, 9000004, NpcCorporation, true, 12345, 2, 3651));
+            action.Add(Trade(7, 9000003, NpcCorporation, true, 666, 7));
+            action.Add(Trade(8, 9000001, 1000035, true, 777, 8));
+            action.Commit();
         }
         var result = Assert.IsType<PilotCallResult.Success>(fixture.Call("corporationSvc", "GetCorpInfo", [NpcCorporation]));
         var rows = Rows(BlueMarshal.Decode(BlueMarshal.Encode(result.Reply)));
@@ -193,15 +243,17 @@ public sealed class CorporationShowInfoTests
         var row = Assert.IsType<object?[]>(rows[0]);
         Assert.Equal(new object?[] { 601L, 3.45, 7L, 2L, (long)StationId, 1.23, 4L, 3L, (long)StationId }, row);
         Assert.Equal(new object?[] { 3651L, 123.45, 2L, 6L, (long)StationId, null, null, null, null }, rows[1]);
-        using var reopened = ServerServices.Build(new(fixture.Db.Path), TimeProvider.System);
+        Assert.Empty(fixture.Context.Notifications);
+        await live.FlushAsync();
+        fixture.Db.Services.Dispose();
+        using var reopened = ServerServices.Build(new(fixture.Db.Path), liveWorld: true);
         var activity = reopened.GetRequiredService<ICorporationMarketInformation>().Read(NpcCorporation).First();
         Assert.Equal(601, activity.TypeId);
         Assert.Equal(new(345, 7, 2, StationId), activity.Sell);
         Assert.Equal(new(123, 4, 3, StationId), activity.Buy);
         using WorldDbContext saved = new(fixture.Db.Path);
-        Assert.Equal(6, saved.Set<MarketExecution>().Count());
+        Assert.Equal(8, saved.Set<MarketExecution>().Count());
         Assert.Equal(4, saved.Set<NpcMarketOrder>().Count());
-        Assert.Empty(fixture.Context.Notifications);
     }
 
     private static NpcMarketOrder Order(long id, int owner, int type, bool bid) =>
@@ -247,7 +299,7 @@ public sealed class CorporationShowInfoTests
     private sealed class Fixture : IDisposable
     {
         private readonly IServiceScope _scope;
-        public TestWorld Db { get; } = new();
+        public TestWorld Db { get; } = new(liveWorld: true);
         public PilotCallContext Context { get; }
         private PilotCallRouter Router { get; }
 

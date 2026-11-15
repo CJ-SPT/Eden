@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Corporation Show Info market activity latency, November 15, 2026](#corporation-show-info-market-activity-latency-november-15-2026)
 - [Member-expulsion votes, November 15, 2026](#member-expulsion-votes-november-15-2026)
 - [General and share-creation votes, November 15, 2026](#general-and-share-creation-votes-november-15-2026)
 - [Corporation closure, November 15, 2026](#corporation-closure-november-15-2026)
@@ -41,6 +42,42 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Corporation window voting-capability startup correction](#corporation-window-voting-capability-startup-correction)
 - [Player corporation applications and membership](#player-corporation-applications-and-membership)
 - [Player corporations: creation foundation](#player-corporations-creation-foundation)
+
+## Corporation Show Info market activity latency, November 15, 2026
+
+The reported Royal Khanid Navy window drew its logo, headquarters, and faction membership, with the tabs still blank.
+The deployed host held the resident world owner in `corporationSvc.GetCorpInfo` for **18.26 s** at 06:40:31 UTC
+and **15.57 s** at 06:42:23 UTC. In pinned client build **3662168**, `Info.UpdateDataCorp` waits for this NPC market
+activity reply before the information window constructs its tabs. The pinned catalog confirms Royal Khanid Navy
+**1000156**, headquarters **60013933**, and faction **500008**. EveJS **261108.1**
+(`server/src/services/corporation/corpService.js`, SHA-256
+`A9EF788E32125B80E5725D00C919BF837365CB5187954C93068F765CB8212D6A`) also treats the reply as iterable market
+activity. See [EVE University's corporation Show Info path](https://wiki.eveuniversity.org/Datacore_Farming).
+
+The resident query evaluated a deferred join and grouping for each execution. It now collects the corporation's
+NPC order IDs once using the owner index, restricts executions with the order index and counterparty ID, and takes
+the highest execution ID for each item and direction. The native nine-column Rowset still carries prices in ISK
+and Python None for a missing buy or sell. The service reads committed resident state, including after checkpoint
+reopen. It reuses the existing [Carbon Blue marshal format](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp).
+
+**Automated validation.** The exact development filter was
+`FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.CorporationShowInfoTests.MarketActivityReadDoesNotScaleWithUnrelatedResidentExecutions`.
+With 2,000 unrelated executions, the original lookup took **2,604 ms** and allocated **3.32 GB**.
+The same warmed lookup after the fix took **0.27 ms** and allocated **38 KB**, with zero SQL commands, connections,
+or fitting calculations. The two focused development cases also verified native reply values and reopen behavior.
+
+The final validation sequence completed in **52.44 s**. Restore, the zero-warning solution build, **68 focused .NET
+tests** in **11 s**, both Python policy suites (**8 catalog and 9 formatting cases**), and formatting and width
+checks for **2,209 files** passed. The final populated lookup took **0.38 ms**. The initial combined run hit a
+Windows seed-directory rename error. Moving test data to the repository drive let the run reach the assertions,
+where one argument-validation case still used an offline fixture. The final run uses a resident fixture for those calls.
+
+Final filter:
+`FullyQualifiedName~CorporationShowInfoTests|FullyQualifiedName~CorporationPublicInfoTests|FullyQualifiedName~CorporationScreenTests|FullyQualifiedName~StationDirectoryTests|FullyQualifiedName~ResidentQueryIndexTests|FullyQualifiedName~Eden.Protocol.Tests.Market.MarketTests.`.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** After updating the server, open Royal Khanid Navy's Show Info and confirm the tabs appear.
 
 ## Member-expulsion votes, November 15, 2026
 

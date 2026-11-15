@@ -1,7 +1,7 @@
 using Eden.Data.World.Market;
 using Eden.Gameplay.Corporations;
 using Eden.Infrastructure.Registration;
-using Eden.World.Runtime.Economy;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 
 namespace Eden.World.Corporations;
@@ -11,31 +11,33 @@ internal sealed class CorporationMarketInformation(WorldDatabase database) : ICo
 {
     public IReadOnlyList<CorporationMarketActivity> Read(int corporationId)
     {
-        return WorldActionScope.Inspect<IReadOnlyList<CorporationMarketActivity>>(
-            database,
+        var live = LiveWorld.Find(database.Path) ?? throw new InvalidDataException("The world is not running.");
+        return live.Economy.Inspect(
             world =>
             {
                 // Only completed NPC trades are public here. Personal orders and wallet
                 // entries never contribute; reading Show Info must not seed or refresh markets.
-                var executions =
-                    from trade in world.Set<MarketExecution>()
-                    join order in world.Set<NpcMarketOrder>() on trade.OrderId equals order.Id
-                    where order.OwnerId == corporationId && trade.CounterpartyId == corporationId
-                    select trade;
-                var latestIds = executions
-                    .GroupBy(trade => new { trade.TypeId, trade.IsBuy })
-                    .Select(group => group.Max(trade => trade.Id));
-                var trades = world.Set<MarketExecution>().Where(trade => Enumerable.Contains(latestIds, trade.Id)).ToArray();
-                return trades
+                // Materialize the indexed owner lookup before filtering by the indexed OrderId.
+                // A deferred aggregation inside Contains runs again for every execution.
+                var orderIds = world
+                    .Set<NpcMarketOrder>()
+                    .Where(order => order.OwnerId == corporationId)
+                    .Select(order => order.Id)
+                    .ToHashSet();
+                return world
+                    .Set<MarketExecution>()
+                    .Where(trade => orderIds.Contains(trade.OrderId) && trade.CounterpartyId == corporationId)
+                    .AsEnumerable()
                     .GroupBy(trade => trade.TypeId)
                     .OrderBy(group => group.Key)
                     .Select(group => new CorporationMarketActivity(
                         group.Key,
-                        Snapshot(group.SingleOrDefault(trade => trade.IsBuy)),
-                        Snapshot(group.SingleOrDefault(trade => !trade.IsBuy))
+                        Snapshot(group.Where(trade => trade.IsBuy).MaxBy(trade => trade.Id)),
+                        Snapshot(group.Where(trade => !trade.IsBuy).MaxBy(trade => trade.Id))
                     ))
                     .ToArray();
-            }
+            },
+            TransactionParticipants.None
         );
     }
 
