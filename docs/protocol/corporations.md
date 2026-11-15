@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Member search and tracking, November 14, 2026](#member-search-and-tracking-november-14-2026)
 - [Recruitment advertisements, November 14, 2026](#recruitment-advertisements-november-14-2026)
 - [Bulletins and welcome mail, November 14, 2026](#bulletins-and-welcome-mail-november-14-2026)
 - [Corporation title row decoding, November 14, 2026](#corporation-title-row-decoding-november-14-2026)
@@ -36,6 +37,45 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Corporation window voting-capability startup correction](#corporation-window-voting-capability-startup-correction)
 - [Player corporation applications and membership](#player-corporation-applications-and-membership)
 - [Player corporations: creation foundation](#player-corporations-creation-foundation)
+
+## Member search and tracking, November 14, 2026
+
+`corpRegistry.GetMemberIDsByQuery` parses the pinned list-of-lists query: three values in its first term and four values
+(including AND/OR) in subsequent terms. It accepts only the twelve native fields and their permitted operators. Names use
+case-insensitive contains, equality, prefix/suffix or bounded SQL-LIKE matching (`%` and `_`); no supplied SQL or regular
+expression is executed. The local evaluator gives AND precedence over OR. Empty queries return no IDs. Implied-role
+search includes title roles and Director powers; title-name search adds assigned title names and the member's title to
+name matching. Results contain only current corporation members. The above-average-shareholder lookup compares individual
+member holdings to total issued holdings divided by current membership, using exact integer arithmetic.
+
+Full and simple tracking now return the fields consumed by `CorpMemberTracking.ShowMemberTracking`. Full tracking requires
+CEO/Director authority. Simple tracking omits locations, hulls and exact session timestamps. The native `lastOnline` field
+is elapsed hours, with a negative value for online members and None for unknown history. Private Abyssal system IDs are
+redacted from full tracking. Corporation membership dates, roles, titles and bases come from saved authoritative state.
+
+Schema 161 adds per-pilot login/logout history with resident checkpoint projection and pilot-deletion cleanup. The existing
+station-presence lifecycle records selection and disconnect once per transition; routine presence polling does not write
+history. Unknown pre-upgrade timestamps stay unknown. If a crash prevents logout recording, offline elapsed time uses the
+last recorded session event; it does not invent a shutdown timestamp. Simultaneous connections retain the latest observed
+connection timestamps while shared presence determines whether any connection remains online.
+
+Sources: inert build **3662168** inspection of `corp_ui_member_find` operator/property definitions and query construction,
+`base_corporation.GetMemberTrackingInfo`, and `corp_ui_member_tracking.ShowMemberTracking/GetLastLoggedOnText`, using the same
+pinned archive hash recorded above. [EVE University member management](https://wiki.eveuniversity.org/Managing_corporation_members)
+describes role, title and tracking workflows. Local EveJS 261108.1 `corpMemberQueryState.js` was consulted as a behavioral
+comparison, including its recorded empty-query observation; no implementation was copied.
+
+**Automated validation.** Tool and solution restore, solution build (zero warnings/errors), both Python policy suites
+(8 catalog and 9 formatting tests), formatting verification (2,177 files), and 628 documentation links/anchors passed.
+After integrating main through `5a5a9e79`, the filter
+`FullyQualifiedName~CorporationMemberQueryTests|FullyQualifiedName~CorporationRoleTests|FullyQualifiedName~CorporationMembershipTests|FullyQualifiedName~CorporationShareTests|FullyQualifiedName~StationGuestTests|FullyQualifiedName~OnlineStatusTests|FullyQualifiedName~CharacterDeletionTests`
+passed 93 tests in 35 seconds; the complete final sequence took 72.67 seconds. Regressions cover native query shapes,
+role/title switches, malformed conditions, exact share thresholds, tracking privacy, online/offline transitions,
+disconnect cleanup, migration and restart. No full .NET suite was run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Search members by role/title. Compare member tracking as CEO and an ordinary member.
 
 ## Recruitment advertisements, November 14, 2026
 

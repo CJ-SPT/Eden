@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Corporation member search and tracking](protocol/corporations.md#member-search-and-tracking-november-14-2026)
+records typed native queries, activity history and tracking permissions.
+
 [Corporation recruitment advertisements](protocol/corporations.md#recruitment-advertisements-november-14-2026)
 records paid ads, native management/search replies, expiry and recruiter permissions.
 

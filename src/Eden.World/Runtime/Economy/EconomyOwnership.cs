@@ -23,6 +23,7 @@ internal static class EconomyOwnership
             SavedMarketChange change => change.PilotId,
             SavedTaskCounter counter => counter.PilotId,
             SavedCharacterSetting setting => setting.PilotId,
+            SavedPilotActivity activity => activity.PilotId,
             SavedCorporationChange change => change.PilotId,
             SavedCorporationMemberAccess access => access.PilotId,
             SavedJetcan can => can.OwnerId,
