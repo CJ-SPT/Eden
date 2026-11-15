@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Login ticket checkpoint isolation](protocol/performance.md#login-ticket-checkpoint-isolation-november-15-2026)
+removes full-world save waits from native ticket authentication and rejects restored tickets after restart.
+
 [Ordinary corporation member auto-removal](protocol/corporations.md#ordinary-member-auto-removal-november-15-2026)
 records resident single/bulk requests, next-dock settlement, native pending rows and protection against stale removals.
 

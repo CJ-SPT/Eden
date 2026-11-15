@@ -6,6 +6,69 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Login ticket checkpoint isolation, November 15, 2026
+
+The maintainer reported slow reconnects before character selection after an overnight run,
+especially with multiple clients, while the administration page remained responsive.
+The running Docker revision was `341f08ecb22e2dbdeda84b6562d97d1ad36219b1`.
+At 19:15:36 UTC, checkpoint 7199 reported 15,809.68 ms projection, 886.88 ms copy
+and 2,176.90 ms writing. Authentication had no dedicated phase timings, so that log
+cannot establish the exact duration or stage of each reported login. Four concurrent
+raw TCP probes from the development machine received greeting bytes within 218–251 ms;
+these probes did not authenticate or measure the native startup sequence.
+
+Code inspection found that both launch-ticket issuance and consumption awaited
+`LiveWorld.FlushAsync()`. That joins an in-progress full-world save and may require
+another generation before returning. Login therefore waited on unrelated checkpoint
+projection and disk work even after the ticket transaction had committed in the resident world.
+
+Tickets now carry a random prefix belonging to the singleton host `LauncherStore`.
+Issuance and single-use removal still commit atomically under the resident owner, with
+the existing account, session, revocation and 180-second expiry checks. Their mutations
+join normal checkpoints without waiting for a save. A new host rejects every previous
+host's ticket before lookup, including an unused ticket and one restored from a checkpoint
+that predates its consumption. This preserves replay rejection without requiring a
+durable deletion on the login path. A restart requires a new launch ticket; remembered
+sessions, password changes, refresh rotation and revocation retain durable-save behavior.
+No database schema, packet layout, launcher API shape or compatibility script changed.
+
+The older local EveJS reference `server/src/network/tcp/handshake.js`, SHA-256
+`204FB9808BBF0AFCA502A265C1FC0ECD63312C14D3FFCA6BA712F7A329716D82`, was checked for the
+credential/challenge sequence. Carbon Blue revision `fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae`
+[`Marshal.cpp`](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp)
+remains the serialization reference. Host ticket lifetime and checkpoint scheduling are
+Eden policy; no reference implementation was copied.
+
+**Automated validation.** The initial exact filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Launcher.LoginTicketCheckpointTests.ConcurrentTicketsDoNotWaitForAnUnrelatedCheckpoint`.
+It failed on the original implementation because four ticket operations could not finish
+while the injected checkpoint writer was paused. The corrected test completes all four
+with the writer still paused and asserts zero SQL commands, connection opens and fitting
+calculations. Recovery coverage reopens an older checkpoint containing both a consumed
+and an unused ticket, rejects both, rotates the remembered refresh token successfully,
+and permits exactly one of four concurrent attempts to consume a newly issued ticket.
+Existing persistence tests now assert normal-checkpoint ticket durability separately from
+immediate credential/session durability. An initial broader run was interrupted after
+those two tests failed because they still required the former forced-save ticket policy.
+The four corrected checkpoint tests passed in 9.20 seconds including runner startup
+(6.33-second focused build).
+
+The final affected filter joined `FullyQualifiedName~` clauses for
+`Eden.Protocol.Tests.Launcher`, `Eden.Protocol.Tests.Hosting.ConnectionOwnershipTests`,
+`Eden.Protocol.Tests.PilotSessions.PilotLoginTests` and
+`Eden.Protocol.Tests.Persistence.LiveWorldTests`. It passed 59 cases in 30.88 seconds
+including runner startup (1.68-second focused build); the optional pinned-manifest case
+was skipped because `EDEN_TEST_CLIENT_ROOT` was not configured. Tool and solution
+restores passed; the final solution build passed in 1.11 seconds with zero warnings/errors.
+Both Python policy suites passed (8 catalog-setup and 9 formatting-policy tests).
+Formatting application and verification passed, as did Git whitespace checks.
+The full .NET suite was not run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** After applying the server update, reconnect several clients
+and compare the wait before the character list. Native startup and client rendering remain unverified.
+
 ## Static scene frame costs, November 14, 2026
 
 The moving saved-world session replay found repeated allocations in static collision

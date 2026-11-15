@@ -70,6 +70,11 @@ API v1 provides metadata, registration, sign-in, refresh, logout and launch tick
 Remembered sign-ins survive server restarts and Docker updates that reuse the same world save. Keep **Remember me on this
 computer** selected when signing in to the launcher. The launcher saves the sign-in for the API address you used.
 
+Launch tickets belong to the current server process and expire on restart. Launch again to obtain a fresh ticket;
+remembered sign-in remains valid. Issuance and consumption commit under the resident world owner and join normal
+checkpoints without forcing a full-world save before login. Credentials, remembered sessions, refresh rotation and
+revocation still wait for durable checkpoints. See [login checkpoint isolation](protocol/performance.md#login-ticket-checkpoint-isolation-november-15-2026).
+
 The password hasher uses ASP.NET Core's versioned format with 210,000 iterations. Passwords contain 6–128 characters. Usernames contain 3–32 ASCII letters, digits, spaces, dots, underscores or hyphens and are unique without case distinctions. New standard and developer accounts are Omega and have three empty character slots. The server assigns the clone grade during registration; existing launcher builds use this default without an update. Registration does not change existing accounts' clone grades.
 
 API responses disable caching. Registration and authentication are rate limited. Manifest signing validates the exact pinned prefix and permits the chat bundle and active client package hashes to vary. Windows uses the local Windows key store. On Linux, Eden generates a process-local signing key and embeds the public verification key in each signed manifest. Legacy development tickets require Windows and explicit `--development-login` on the host and provisioning command, with loopback-only hosting.

@@ -23,6 +23,10 @@ internal sealed partial class LauncherStore(WorldDatabase database, TimeProvider
     private const long FirstAccountFloor = 1000000;
     private readonly ILauncherPasswords _passwords = passwords ?? new LauncherPasswords();
 
+    // This store is a host singleton. A new host cannot accept tickets recovered
+    // from a checkpoint predating their consumption, even if that save failed.
+    private readonly string _ticketPrefix = "eden3." + Token() + ".";
+
     private long Now => clock.GetUtcNow().ToUnixTimeSeconds();
 
     public void Initialize() => Maintain();
@@ -187,10 +191,10 @@ internal sealed partial class LauncherStore(WorldDatabase database, TimeProvider
             .Filter<SavedLauncherSession>(row => row.AccessHash == hash && row.AccessExpires > now && !row.Revoked && row.Expires > now)
             .SingleOrDefault();
 
-    public async Task<string> IssueTicketAsync(string access, CancellationToken cancellationToken = default)
+    public Task<string> IssueTicketAsync(string access, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        string ticket = "eden3." + Token();
+        string ticket = _ticketPrefix + Token();
         string hash = Hash(access);
         Commit(world =>
         {
@@ -200,8 +204,9 @@ internal sealed partial class LauncherStore(WorldDatabase database, TimeProvider
             world.Add(new SavedLauncherTicket(Hash(ticket), session.Id, now + TicketSeconds));
             return true;
         });
-        await Persist().WaitAsync(cancellationToken).ConfigureAwait(false);
-        return ticket;
+        // Short-lived tickets commit to the resident owner and its normal
+        // checkpoint. Login must not wait for projecting/saving the whole world.
+        return Task.FromResult(ticket);
     }
 
     public void AuthorizeAccess(string access)
@@ -212,33 +217,29 @@ internal sealed partial class LauncherStore(WorldDatabase database, TimeProvider
         }
     }
 
-    public async Task<long?> ConsumeTicketAsync(string ticket, CancellationToken cancellationToken = default)
+    public Task<long?> ConsumeTicketAsync(string ticket, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        string hash = Hash(ticket);
-        var consumed = Commit(world =>
+        if (ticket?.StartsWith(_ticketPrefix, StringComparison.Ordinal) != true)
         {
-            var saved = world.Set<SavedLauncherTicket>().Find(0, hash);
-            if (saved is null)
-            {
-                return new TicketConsumption(false, null);
-            }
-            var session = world.Set<SavedLauncherSession>().Find(0, saved.SessionId);
-            world.Remove(saved);
-            long now = Now;
-            return new TicketConsumption(
-                true,
-                saved.Expires > now && session is { Revoked: false } && session.Expires > now ? session.AccountId : null
-            );
-        });
-        if (consumed.Removed)
-        {
-            await Persist().WaitAsync(cancellationToken).ConfigureAwait(false);
+            return Task.FromResult<long?>(null);
         }
-        return consumed.AccountId;
+        string hash = Hash(ticket);
+        return Task.FromResult(
+            Commit<long?>(world =>
+            {
+                var saved = world.Set<SavedLauncherTicket>().Find(0, hash);
+                if (saved is null)
+                {
+                    return null;
+                }
+                var session = world.Set<SavedLauncherSession>().Find(0, saved.SessionId);
+                world.Remove(saved);
+                long now = Now;
+                return saved.Expires > now && session is { Revoked: false } && session.Expires > now ? session.AccountId : null;
+            })
+        );
     }
-
-    private sealed record TicketConsumption(bool Removed, long? AccountId);
 
     public void SetPassword(string userName, string password)
     {

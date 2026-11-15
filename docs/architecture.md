@@ -122,7 +122,7 @@ Nearby deadlines retain the existing 50 ms batching resolution; idle and paused 
 See [deadline-driven maintenance](protocol/capsuleers.md#deadline-driven-maintenance-november-9-2026) for wake,
 revision, retry, shutdown and checkpoint guarantees.
 
-Normal server startup loads the saved world into an authoritative SQLite image in RAM. Existing gameplay transactions, constraints and revision triggers operate on that image. A background worker captures committed state every 15 seconds and writes a complete checkpoint after releasing the world owner. Graceful shutdown flushes remaining changes. Authentication mutations also request a durable checkpoint before returning.
+Normal server startup loads the saved world into an authoritative SQLite image in RAM. Existing gameplay transactions, constraints and revision triggers operate on that image. A background worker captures committed state every 15 seconds and writes a complete checkpoint after releasing the world owner. Graceful shutdown flushes remaining changes. Credentials, remembered authentication sessions, refresh rotation and revocation request a durable checkpoint before returning. Short-lived launch tickets are bound to the current host and use normal checkpoints without delaying login; restored tickets cannot authenticate after a restart.
 
 Live systems have stable, independent ownership leases. Resident work enters its system directly; SQLite operations
 enter the persistence coordinator before participating systems in ascending ID order. Live movement no longer adds a

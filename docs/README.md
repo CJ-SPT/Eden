@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Login ticket checkpoint isolation](protocol/performance.md#login-ticket-checkpoint-isolation-november-15-2026)
+covers concurrent reconnects, host-bound tickets and remembered-sign-in recovery.
+
 [Container item menus](protocol/inventory.md#container-item-context-menus-november-15-2026) and
 [job facility lookups](protocol/industry.md#job-facility-batch-lookups-november-15-2026) cover native context-menu
 ancestry and completed-job facility-cache fixes.

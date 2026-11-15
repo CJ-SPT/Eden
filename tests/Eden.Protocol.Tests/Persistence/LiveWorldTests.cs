@@ -340,7 +340,7 @@ public sealed class LiveWorldTests
     }
 
     [Fact]
-    public async Task AuthenticationMutationsAreDurableBeforeReturning()
+    public async Task AuthenticationCredentialsAreDurableAndTicketsUseNormalCheckpoints()
     {
         using TestWorld db = new();
         using LiveWorld live = new(new(db.Path), new TestClock(), _ => { });
@@ -359,8 +359,12 @@ public sealed class LiveWorldTests
         Assert.Equal(1, DiskValue(db.Path, $"SELECT COUNT(*) FROM LauncherCredential WHERE AccountId={account.AccountId}"));
         var session = launcher.SignIn(new("Resident account", "resident test password", true));
         string ticket = await launcher.IssueTicketAsync(session.AccessToken);
+        Assert.Equal(0, DiskValue(db.Path, "SELECT COUNT(*) FROM LauncherTicket"));
+        await live.FlushAsync();
         Assert.Equal(1, DiskValue(db.Path, "SELECT COUNT(*) FROM LauncherTicket"));
         Assert.Equal(account.AccountId, await launcher.ConsumeTicketAsync(ticket));
+        Assert.Equal(1, DiskValue(db.Path, "SELECT COUNT(*) FROM LauncherTicket"));
+        await live.FlushAsync();
         Assert.Equal(0, DiskValue(db.Path, "SELECT COUNT(*) FROM LauncherTicket"));
         launcher.Revoke(session.AccessToken);
         Assert.Equal(1, DiskValue(db.Path, "SELECT Revoked FROM LauncherSession"));
@@ -371,7 +375,7 @@ public sealed class LiveWorldTests
     }
 
     [Fact]
-    public async Task ConcurrentTicketConsumptionYieldsUntilBothDeletionsAreDurable()
+    public async Task ConcurrentTicketConsumptionCompletesBeforeCheckpointAndDeletionsSaveLater()
     {
         using TestWorld db = new();
         TaskCompletionSource writing = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -398,16 +402,18 @@ public sealed class LiveWorldTests
         var second = launcher.Register(new("Second concurrent pilot", password));
         string firstTicket = await launcher.IssueTicketAsync(launcher.SignIn(new(first.UserName, password, false)).AccessToken);
         string secondTicket = await launcher.IssueTicketAsync(launcher.SignIn(new(second.UserName, password, false)).AccessToken);
+        await live.FlushAsync();
         Interlocked.Exchange(ref pauseNextWrite, 1);
-
-        Task<long?> firstLogin = launcher.ConsumeTicketAsync(firstTicket);
-        Task<long?>? secondLogin = null;
+        live.ObjectsChanged();
+        Task saving = live.FlushAsync();
         try
         {
             await writing.Task.WaitAsync(TimeSpan.FromSeconds(5));
-            secondLogin = launcher.ConsumeTicketAsync(secondTicket);
-            Assert.False(firstLogin.IsCompleted);
-            Assert.False(secondLogin.IsCompleted);
+            var firstLogin = launcher.ConsumeTicketAsync(firstTicket);
+            var secondLogin = launcher.ConsumeTicketAsync(secondTicket);
+            Assert.Equal(first.AccountId, await firstLogin.WaitAsync(TimeSpan.FromSeconds(2)));
+            Assert.Equal(second.AccountId, await secondLogin.WaitAsync(TimeSpan.FromSeconds(2)));
+            Assert.False(saving.IsCompleted);
             Assert.Null(await launcher.ConsumeTicketAsync(firstTicket));
             Assert.Null(await launcher.ConsumeTicketAsync(secondTicket));
             Assert.Equal(2, DiskValue(db.Path, "SELECT COUNT(*) FROM LauncherTicket"));
@@ -415,14 +421,9 @@ public sealed class LiveWorldTests
         finally
         {
             release.Set();
-            await firstLogin;
-            if (secondLogin is not null)
-            {
-                await secondLogin;
-            }
+            await saving;
         }
-        Assert.Equal(first.AccountId, await firstLogin);
-        Assert.Equal(second.AccountId, await secondLogin!);
+        await live.FlushAsync();
         Assert.Equal(0, DiskValue(db.Path, "SELECT COUNT(*) FROM LauncherTicket"));
     }
 
