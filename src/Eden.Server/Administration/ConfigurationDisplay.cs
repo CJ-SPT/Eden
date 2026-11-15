@@ -63,11 +63,15 @@ internal static class ConfigurationDisplay
         ["simulation.marketPollMilliseconds"] = "Market polling (milliseconds)",
         ["simulation.resourceCheckSeconds"] = "Resource checks (seconds)",
         ["navigation.autopilotGateLandingMeters"] = "Autopilot gate landing distance (metres)",
+        ["navigation.warpSpeedMultiplier"] = "Warp speed",
+        ["navigation.alignSpeedMultiplier"] = "Align speed",
     };
 
     private static readonly HashSet<string> s_multipliers =
     [
         "capsuleers.trafficMultiplier",
+        "navigation.warpSpeedMultiplier",
+        "navigation.alignSpeedMultiplier",
         "resources.oreYieldMultiplier",
         "resources.iceYieldMultiplier",
         "resources.gasYieldMultiplier",

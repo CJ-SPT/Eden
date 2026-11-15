@@ -82,7 +82,11 @@ public sealed record CapsuleerPopulationPolicy(
 
 public sealed record SimulationPolicy(int CheckpointSeconds = 15, int MarketPollMilliseconds = 1000, int ResourceCheckSeconds = 60);
 
-public sealed record NavigationPolicy(int AutopilotGateLandingMeters = NavigationDefinitions.AutopilotLandingMeters);
+public sealed record NavigationPolicy(
+    int AutopilotGateLandingMeters = NavigationDefinitions.AutopilotLandingMeters,
+    decimal WarpSpeedMultiplier = 1,
+    decimal AlignSpeedMultiplier = 1
+);
 
 public sealed record WorldSettings
 {

@@ -47,6 +47,8 @@ public sealed class WorldTuningTests
     [InlineData("industry", "copyingSpeed", false)]
     [InlineData("industry", "inventionSpeed", false)]
     [InlineData("industry", "reprocessingEfficiency", false)]
+    [InlineData("navigation", "warpSpeedMultiplier", false)]
+    [InlineData("navigation", "alignSpeedMultiplier", false)]
     [InlineData("structures", "anchoringSpeed", false)]
     [InlineData("structures", "onliningSpeed", false)]
     [InlineData("structures", "unanchoringSpeed", false)]

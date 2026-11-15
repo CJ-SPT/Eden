@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Travel configuration](protocol/navigation.md#travel-configuration-november-15-2026) adds player warp speed,
+align speed and autopilot gate landing controls in a dedicated Settings category.
+
 [Gateway stream shutdown](protocol/startup.md#gateway-stream-shutdown-november-15-2026) closes open gRPC
 subscriptions when host shutdown begins and records elapsed time for each shutdown step.
 

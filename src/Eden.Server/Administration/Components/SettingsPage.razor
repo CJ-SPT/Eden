@@ -187,13 +187,23 @@ else
                     when gates are watched. Traffic density and gate visitors are separate limits. These controls do not change NPC pirates or mining fleets.</p>
             </section>
             </div>
-            <div id="settings-Advanced" hidden="@(Workspace.Activity != SettingsActivity.Advanced)">
-            <section class="card"><h2>Navigation</h2>
+            <section id="settings-Travel" class="card" hidden="@(Workspace.Activity != SettingsActivity.Travel)">
+                <h2>Travel</h2>
+                <MultiplierControl Label="Warp speed" @bind-Value="Form.WarpSpeedMultiplier"
+                    Description="Scales fitted warp speed after skills and modules, including normal warp acceleration and braking."
+                    ExampleAmount="3" ExampleUnit="AU/s" />
+                <MultiplierControl Label="Align speed" @bind-Value="Form.AlignSpeedMultiplier"
+                    Description="2× halves inertia time. Also improves turning and acceleration; top subwarp speed is unchanged."
+                    ExampleAmount="10" ExampleUnit="seconds to align from rest" Speed="true" />
                 <label>Autopilot gate landing distance (metres)
                     <InputNumber @bind-Value="Form.AutopilotGateLandingMeters" min="0" max="100000" step="1" />
                 </label>
-                <p class="muted">Default: 15000 metres. Choose 0 to warp close to gates. Changes apply after restart.</p>
+                <p class="muted">Default: 15000 metres. Choose 0 to warp close to gates; normal hull clearance still applies.</p>
+                <p class="muted">Suggested solo settings: 2× warp speed, 1.25× align speed and 0 metres autopilot gate landing.
+                    Defaults preserve current travel. Changes apply to player ships after restart.
+                    Warp disruption, gate range checks and travel timers still apply.</p>
             </section>
+            <div id="settings-Advanced" hidden="@(Workspace.Activity != SettingsActivity.Advanced)">
             <section class="card"><h2>Simulation</h2>
                 <label>Checkpoint interval (seconds)<InputNumber @bind-Value="Form.CheckpointSeconds" min="1" max="300" /></label>
                 <label>Market polling interval (milliseconds)<InputNumber @bind-Value="Form.MarketPollMilliseconds" min="100" max="60000" /></label>

@@ -19,26 +19,26 @@ A draft saves as **pending restart**. Saving, restoring and importing use the sa
 | Structures | Anchoring, core onlining and decommissioning speeds for new timers; saved deadlines retain their original terms. |
 | Simulated pilots | Enable or pause simulated pilots/miners, station traffic density (0–10×), and visitors per watched gate (0–16). |
 | Simulation | Checkpoint interval, market maintenance interval and resource check interval. |
-| Navigation | Autopilot gate landing distance, from 0 to 100,000 metres; default 15,000 metres. |
+| Travel | Warp speed and align speed multipliers; autopilot gate landing distance, from 0 to 100,000 metres. |
 
 Changes affect future operations. Balances, installed jobs and paid costs, quoted obligations, historical transactions and saved deadlines are not rewritten. Existing grants are not replayed. Testing NPC market orders refresh under the selected policy on subsequent market operations; personal orders and escrow keep their saved terms. Disabling an NPC population prevents new spawns without deleting residents or changing their mechanics. Simulated-pilot limits also pause and despawn excess saved pilots at restart, as described below.
 
 ## World tuning
 
-The Settings page groups controls into **Gathering**, **Rewards**, **Progression**, **Structures**, **Industry**, **Planetary industry**, **World & economy** and **Advanced**.
+The Settings page groups controls into **Gathering**, **Rewards**, **Progression**, **Structures**, **Industry**, **Planetary industry**, **Travel**, **World & economy** and **Advanced**.
 Switching categories retains the draft. Activity reward/yield multipliers show their unit, range, explanation and an illustrative example.
 **Reset to 1×** resets that control; **Reset draft to original** restores the world's original revision into the draft.
 **Discard unsaved changes** returns to the last loaded or saved draft, including any already pending revision.
 The shared **Save for restart** bar shows unsaved, active or pending-restart status. Review the changed-values summary before saving;
 expand **Original, active and pending values** for the complete comparison. Economic overrides are under Advanced.
 
-**Advanced → Navigation → Autopilot gate landing distance (metres)** controls the requested stand-off for future autopilot
+**Travel → Autopilot gate landing distance (metres)** controls the requested stand-off for future autopilot
 gate warps after restart. Set it to **0** for close gate landings, or keep **15000** for the usual approach leg.
 The existing hull clearance and deterministic warp landing offset still apply. Manual warp ranges and autopilot station
 landings retain their existing/requested distances. Historical configuration documents that omit Navigation use 15000 metres.
 
 All new multipliers default to **1× current Eden behavior**, including when loading historical documents that omit the new fields.
-Gathering, planetary industry, structure/industry speed and reprocessing multipliers accept **0.1–100×**. Reward multipliers accept **0–100×**;
+Gathering, travel, planetary industry, structure/industry speed and reprocessing multipliers accept **0.1–100×**. Reward multipliers accept **0–100×**;
 zero disables that reward. Forms, command imports and the administrator API enforce the same bounds. These policies belong to the
 saved world; they do not modify shared catalog definitions or autonomous NPC gathering/production.
 
@@ -77,6 +77,38 @@ saved world; they do not modify shared catalog definitions or autonomous NPC gat
 
 Training speed, combat difficulty, travel, ship-loss rules, loot and salvage tuning are outside this version. No client package
 update is required. Native visual presentation remains unverified; see the [implementation record](protocol/world-configuration.md).
+
+## Travel
+
+Open **Settings → Travel**, edit the draft and choose **Save for restart**. The next server start applies the policy
+to resident player-ship fits after normal hull, skill and module bonuses. Defaults preserve existing behavior.
+
+| Option | Default | Effect |
+| --- | --- | --- |
+| Warp speed | 1× | Multiplies fitted AU/s. Native warp acceleration and braking derive from that speed, retaining their existing limits. |
+| Align speed | 1× | Divides fitted agility (inertia modifier). 2× halves inertia time, including turning and subwarp acceleration. |
+| Autopilot gate landing distance | 15,000 m | Requested gate stand-off; 0 lands close to gates with existing hull clearance and landing offsets. |
+
+Try **2× warp speed, 1.25× align speed and 0 m autopilot gate landing** for a moderate solo convenience setup.
+Align speed leaves mass and maximum subwarp velocity unchanged. Exact time savings depend on the hull, fit, starting
+velocity, warp distance and simulation ticks. Warp speed alone does not shorten alignment. Gate transitions, arrival
+timers, warp disruption, minimum warp distances and gate activation ranges retain their existing rules.
+NPC travel profiles and static catalog type attributes are unchanged. Active-ship dogma and native brain modifiers
+carry the same travel multipliers used by the resident fit; cached reads and reconnects do not compound bonuses.
+
+Exports retain the existing `settings.navigation` group for compatibility:
+
+```json
+"navigation": {
+  "autopilotGateLandingMeters": 0,
+  "warpSpeedMultiplier": 2,
+  "alignSpeedMultiplier": 1.25
+}
+```
+
+Older exports missing the multipliers load them as 1×; exports missing the entire navigation group also keep the
+15,000 m gate default. Forms, imports and command/API validation share the 0.1–100× multiplier bounds.
+See the [protocol record](protocol/navigation.md#travel-configuration-november-15-2026).
 
 ## Planetary industry
 
