@@ -1,4 +1,5 @@
 using System.Globalization;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
@@ -10,7 +11,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Fleets;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed partial class CooperativeFleetHandler(ICooperativeFleets fleets, ISystemObjects systems)
+internal sealed partial class CooperativeFleetHandler(ICooperativeFleets fleets, ISystemObjects systems, IPilotSecurityStatus security)
     : ISelectedPilotCallHandler,
         IDisposable
 {
@@ -101,7 +102,15 @@ internal sealed partial class CooperativeFleetHandler(ICooperativeFleets fleets,
                     context.Notifications.Add(new FleetHierarchyNotification(hierarchy));
                     break;
                 case FleetEvent.Options options when identity is not null:
-                    context.Notifications.Add(new FleetOptionsNotification(options.Before, options.After));
+                    context.Notifications.Add(new FleetOptionsNotification(options.Before, options.After, options.Registered));
+                    break;
+                case FleetEvent.Registration registration:
+                    context.Notifications.Add(
+                        new FleetRegistrationNotification(registration.Before, registration.After, registration.FreeMove)
+                    );
+                    break;
+                case FleetEvent.JoinRequest request:
+                    context.Notifications.Add(new FleetJoinRequestNotification(request.Pilot));
                     break;
                 case FleetEvent.Motd motd when identity is not null:
                     context.Notifications.Add(new FleetMotdNotification(motd.Text));
@@ -339,9 +348,13 @@ internal sealed partial class CooperativeFleetHandler(ICooperativeFleets fleets,
         long actor = context.Pilot.PilotId;
         try
         {
-            if (service == "fleetProxy" && method is "GetAvailableFleetAds" or "GetMyFleetFinderAdvert" && keywords is not { Count: > 0 })
+            if (service == "fleetProxy")
             {
-                return method == "GetMyFleetFinderAdvert" ? PilotCallResult.None : BlueEmpty.Dictionary;
+                if (keywords is { Count: > 0 })
+                {
+                    throw new InvalidDataException("Unexpected fleet advert arguments.");
+                }
+                return AdvertCall(context, method, args);
             }
             if (service == "fleetObjectHandler" && method == "CreateFleet" && args.Length == 0 && keywords is not { Count: > 0 })
             {
@@ -468,9 +481,14 @@ internal sealed partial class CooperativeFleetHandler(ICooperativeFleets fleets,
                 case ("GetMembers", []):
                     return new BlueMap<long, FleetMemberReply>(fleet.Members.ToDictionary(m => m.Pilot.Id, m => new FleetMemberReply(m)));
                 case ("GetOptions", []):
-                    return new FleetOptionsReply(fleet.FreeMove);
+                    return new FleetOptionsReply(fleet.FreeMove, fleet.Registered);
                 case ("GetJoinRequests", []):
-                    return BlueEmpty.Dictionary;
+                    return new BlueMap<long, FleetApplicantReply>(
+                        fleets.JoinRequests(actor, id).ToDictionary(p => p.Id, p => new FleetApplicantReply(p))
+                    );
+                case ("RejectJoinRequest", [long applicant]):
+                    fleets.RejectApplication(actor, id, applicant);
+                    return PilotCallResult.None;
                 case ("GetMotd", []):
                     return fleet.Motd;
                 case ("Init", [var ship, null]) when ship is null || Equals(ship, (long)context.Pilot.ShipTypeId):
@@ -512,7 +530,7 @@ internal sealed partial class CooperativeFleetHandler(ICooperativeFleets fleets,
                     var fields = options is BlueInstance instance ? BlueRead.Fields(instance.State) : BlueRead.Fields(options);
                     if (
                         fields.Keys.Any(k => k is not ("isFreeMove" or "isRegistered" or "autoJoinSquadID"))
-                        || fields.GetValueOrDefault("isRegistered") is not (null or false)
+                        || fields.GetValueOrDefault("isRegistered") is { } registered && !Equals(registered, fleet.Registered)
                         || fields.GetValueOrDefault("autoJoinSquadID") is not null
                         || fields.GetValueOrDefault("isFreeMove") is not bool enabled
                     )

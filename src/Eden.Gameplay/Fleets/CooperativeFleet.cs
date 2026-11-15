@@ -70,7 +70,8 @@ public sealed record CooperativeFleet(
     IReadOnlyList<FleetMember> Members,
     IReadOnlyList<FleetWing> Wings,
     bool FreeMove,
-    string Motd
+    string Motd,
+    bool Registered = false
 );
 
 public sealed record FleetTargetTag(long ItemId, int SystemId, string Tag);
@@ -104,7 +105,11 @@ public abstract record FleetEvent
 
     public sealed record Hierarchy(long WingId, long? SquadId, bool Deleted, string? Name = null) : FleetEvent;
 
-    public sealed record Options(bool Before, bool After) : FleetEvent;
+    public sealed record Options(bool Before, bool After, bool Registered = false) : FleetEvent;
+
+    public sealed record Registration(bool Before, bool After, bool FreeMove) : FleetEvent;
+
+    public sealed record JoinRequest(FleetPilot Pilot) : FleetEvent;
 
     public sealed record Motd(string Text) : FleetEvent;
 
@@ -121,6 +126,13 @@ public sealed record FleetDelivery(long FleetId, FleetEvent Event);
 
 public interface ICooperativeFleets
 {
+    FleetAdvert? MyAdvert(long actor);
+    FleetAdvert SetAdvert(long actor, FleetAdvertSettings settings);
+    void RemoveAdvert(long actor);
+    IReadOnlyList<FleetAdvert> AvailableAdverts(long actor, double security);
+    bool ApplyToFleet(long actor, long fleet, double security);
+    IReadOnlyList<FleetPilot> JoinRequests(long actor, long fleet);
+    void RejectApplication(long actor, long fleet, long target);
     void Update(Guid session, FleetPilot? pilot);
     FleetIdentity? Identity(long actor);
     IReadOnlySet<long> MembersInFleet(long actor, IReadOnlyList<long> candidates);
@@ -172,6 +184,9 @@ public static class FleetRules
     public const int MaximumMembers = 256;
     public const int MaximumWings = 25;
     public const int MaximumSquads = 25;
+    public const int MaximumAdvertNameLength = 100;
+    public const int MaximumAdvertDescriptionLength = 250;
+    public const int MaximumAdvertEntities = 1000;
     public const int MaximumNameLength = 10;
     public const int MaximumMotdLength = 4000;
     public const int MaximumPendingEvents = 256;

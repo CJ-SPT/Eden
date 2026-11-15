@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Fleet finder adverts](protocol/fleets.md#fleet-finder-advert-creation-november-15-2026) correct unbound advert
+creation and add resident fleet advertisements, finder visibility and join applications.
+
 [Corporation chat MOTD](protocol/social.md#corporation-chat-motd-november-15-2026) fixes the native
 `XmppChatMgr.SetMotd` call with authorized resident storage and subject delivery on edits and joins.
 
