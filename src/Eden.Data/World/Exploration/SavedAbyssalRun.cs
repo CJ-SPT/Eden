@@ -18,4 +18,6 @@ public sealed class SavedAbyssalRun
     public long ExpiresAt { get; set; }
     public int Status { get; set; }
     public int Seed { get; set; }
+    public long EnvironmentAt { get; set; }
+    public int DisabledFields { get; set; }
 }

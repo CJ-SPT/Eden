@@ -32,13 +32,15 @@ internal sealed partial class AbyssalStore
                 world.Filter<SavedAbyssalParticipant>(p => p.RunId == id && !p.Finished).Select(p => p.PilotId).ToArray()
             );
             AdvanceDisconnected(id, owners, now);
-            using var transaction = Live.Economy.Begin(new(pilots: owners));
+            int system = Live.Economy.Inspect(world => world.Set<SavedAbyssalRun>().Find(id)!.SystemId);
+            using var transaction = Live.Economy.Begin(new(pilots: owners, systems: [system]));
             using CatalogDbContext catalog = new(database.CatalogPath);
             var run = transaction.Set<SavedAbyssalRun>().Find(id)!;
             if (run.Status != (int)AbyssalStatus.Active)
             {
                 continue;
             }
+            Environment(transaction, catalog, run, now);
             foreach (long pilotId in owners)
             {
                 var participant = transaction.Set<SavedAbyssalParticipant>().Find(pilotId)!;
@@ -163,6 +165,13 @@ internal sealed partial class AbyssalStore
 
     internal static void Killed(WorldAction world, CatalogDbContext catalog, WorldNpc npc, Pilot pilot, long now)
     {
+        if (
+            npc.TypeId is AbyssalEnvironmentRules.ShortTracking or AbyssalEnvironmentRules.MediumTracking
+            && world.Set<SavedAbyssalRun>().Find(npc.EncounterId) is { } environment
+        )
+        {
+            environment.DisabledFields |= (int)(AbyssalFieldMask.ShortTracking | AbyssalFieldMask.MediumTracking);
+        }
         if (npc.TypeId != AbyssalRules.CacheType)
         {
             return;

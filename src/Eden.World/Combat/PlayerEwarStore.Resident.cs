@@ -111,5 +111,10 @@ internal sealed partial class PlayerEwarStore
         long npcId,
         IReadOnlyDictionary<DogmaAttributeId, double> attributes,
         double missileRange = 0
-    ) => PlayerEwarRules.NpcAttributes(attributes, Active(world, npcId), missileRange);
+    ) =>
+        PlayerEwarRules.NpcAttributes(
+            Eden.World.Exploration.AbyssalEnvironmentStore.NpcAttributes(world, npcId, attributes),
+            Active(world, npcId),
+            missileRange
+        );
 }

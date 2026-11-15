@@ -290,6 +290,21 @@ internal sealed partial class LiveCombatRuntime
             return;
         }
         owner.TrackShip(id, system);
+        bool fieldChanged = false;
+        if (Eden.Gameplay.Exploration.AbyssalRules.IsSystem(system) && _positions.TryGetValue(id, out var oldPosition))
+        {
+            fieldChanged = owner.Economy.Inspect(world =>
+            {
+                var run = world
+                    .Filter<Eden.Data.World.Exploration.SavedAbyssalRun>(r =>
+                        r.SystemId == system && r.Status == (int)Eden.Gameplay.Exploration.AbyssalStatus.Active
+                    )
+                    .SingleOrDefault();
+                return run is not null
+                    && Eden.Gameplay.Exploration.AbyssalEnvironmentRules.Fields(run.Room, run.Seed, oldPosition.Position)
+                        != Eden.Gameplay.Exploration.AbyssalEnvironmentRules.Fields(run.Room, run.Seed, position);
+            });
+        }
         if (_positions.TryGetValue(id, out var previous) && previous.Position != position)
         {
             _acquisitions.Clear();
@@ -305,11 +320,26 @@ internal sealed partial class LiveCombatRuntime
         {
             _ships[pilot] = ship with { Position = position, SystemId = system };
         }
+        if (fieldChanged)
+        {
+            // Project this crossing once so the ordinary fit revision publishes to every observer.
+            owner.Economy.Read(_ => true, new(ships: [id]));
+        }
     }
 
     private LiveCombatNpc PublishNpc(LiveCombatNpc npc)
     {
         var previous = _npcs[npc.Id];
+        if (
+            npc.AnchorKind == NpcAnchorKind.Abyssal
+            && owner.Economy.Peek<Eden.Data.World.Exploration.SavedAbyssalRun>(npc.EncounterId) is { } run
+            && Eden.Gameplay.Exploration.AbyssalEnvironmentRules.Fields(run.Room, run.Seed, previous.Position)
+                != Eden.Gameplay.Exploration.AbyssalEnvironmentRules.Fields(run.Room, run.Seed, npc.Position)
+        )
+        {
+            npc = RefreshAbyssalNpc(npc, run);
+            _effectiveNpcs.Remove(npc.Id);
+        }
         if (previous == npc)
         {
             return previous;
@@ -322,6 +352,26 @@ internal sealed partial class LiveCombatRuntime
         _dirtyNpcs.Add(npc.Id);
         owner.ObjectsChanged();
         return npc;
+    }
+
+    private LiveCombatNpc RefreshAbyssalNpc(LiveCombatNpc npc, Eden.Data.World.Exploration.SavedAbyssalRun run)
+    {
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var profile = _simulationProfiles.Read(catalog, npc.TypeId);
+        var attributes = PlayerEwarRules.NpcAttributes(
+            Eden.Gameplay.Exploration.AbyssalEnvironmentRules.Apply(
+                profile.Attributes,
+                Eden.World.Exploration.AbyssalEnvironmentStore.At(run, npc.Position)
+            ),
+            npc.IncomingElectronicWarfare,
+            npc.MissileRange
+        );
+        return npc with
+        {
+            Attributes = attributes,
+            SignatureRadius = attributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius),
+            RepairProfile = NpcRepairRules.Profile(attributes),
+        };
     }
 
     private LiveCombatShip Positioned(LiveCombatShip ship) =>

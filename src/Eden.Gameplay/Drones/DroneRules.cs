@@ -171,6 +171,7 @@ public static class DroneRules
 
     public static DroneContact Move(DroneContact drone, SpacePosition target, float targetRadius, bool orbit, int stamp, double seconds)
     {
+        drone = Eden.Gameplay.Exploration.AbyssalDroneEnvironment.Refresh(drone);
         var profile = drone.Profile;
         if (profile.Kind == CombatDroneKind.Sentry)
         {
@@ -190,7 +191,15 @@ public static class DroneRules
         var desired = direction * speed;
         var velocity = desired + (drone.Velocity - desired) * decay;
         var position = drone.Position + desired * seconds + (drone.Velocity - desired) * (inertia * (1 - decay));
-        return drone with { Position = position, Velocity = velocity, SpeedLimit = speed, Orbiting = orbiting };
+        return Eden.Gameplay.Exploration.AbyssalDroneEnvironment.Refresh(
+            drone with
+            {
+                Position = position,
+                Velocity = velocity,
+                SpeedLimit = speed,
+                Orbiting = orbiting,
+            }
+        );
     }
 
     public static DamageVector Shot(DroneContact drone, SpacePosition target, SpacePosition velocity, double signature, double roll)

@@ -16,6 +16,7 @@ internal sealed partial class EconomyTransaction
     internal IEnumerable<CombatRowChange> FitChanges(object? before, object? after)
     {
         HashSet<long> pilots = [];
+        long? environmentRun = null;
         if (before is OwnedItem oldItem || after is OwnedItem)
         {
             var previous = before as OwnedItem;
@@ -33,6 +34,49 @@ internal sealed partial class EconomyTransaction
             {
                 Item(previous);
                 Item(current);
+            }
+        }
+        else if (before is Eden.Data.World.Docking.FlightPosition || after is Eden.Data.World.Docking.FlightPosition)
+        {
+            var previous = before as Eden.Data.World.Docking.FlightPosition;
+            var current = after as Eden.Data.World.Docking.FlightPosition;
+            if (
+                Eden.World.Exploration.AbyssalEnvironmentStore.At(this, previous)
+                != Eden.World.Exploration.AbyssalEnvironmentStore.At(this, current)
+            )
+            {
+                Ship((current ?? previous)!.ShipId);
+            }
+        }
+        else if (before is Eden.Data.World.Exploration.SavedAbyssalRun || after is Eden.Data.World.Exploration.SavedAbyssalRun)
+        {
+            var previous = before as Eden.Data.World.Exploration.SavedAbyssalRun;
+            var current = after as Eden.Data.World.Exploration.SavedAbyssalRun;
+            if (
+                previous?.Weather != current?.Weather
+                || previous?.Seed != current?.Seed
+                || previous?.Room != current?.Room
+                || previous?.Status != current?.Status
+                || previous?.DisabledFields != current?.DisabledFields
+            )
+            {
+                long run = (current ?? previous)!.Id;
+                environmentRun = run;
+                pilots.UnionWith(Filter<Eden.Data.World.Exploration.SavedAbyssalParticipant>(p => p.RunId == run).Select(p => p.PilotId));
+            }
+        }
+        else if (
+            before is Eden.Data.World.Exploration.SavedAbyssalParticipant
+            || after is Eden.Data.World.Exploration.SavedAbyssalParticipant
+        )
+        {
+            if (before is Eden.Data.World.Exploration.SavedAbyssalParticipant previous)
+            {
+                pilots.Add(previous.PilotId);
+            }
+            if (after is Eden.Data.World.Exploration.SavedAbyssalParticipant current)
+            {
+                pilots.Add(current.PilotId);
             }
         }
         else if (before is Ship || after is Ship)
@@ -57,6 +101,10 @@ internal sealed partial class EconomyTransaction
             Row(after);
         }
         var changes = pilots.Where(store.IsPilot).Select(pilot => new CombatRowChange("WorldFitRevision", pilot, Resident: true));
+        if (environmentRun is long environment)
+        {
+            changes = changes.Append(new("AbyssalEnvironment", environment, Resident: true));
+        }
         return (before ?? after) is Eden.Data.World.Fleets.WorldCommandBurst burst
             ? [.. changes, new("CommandBurstRecipient", burst.ShipId, Resident: true)]
             : changes.ToArray();

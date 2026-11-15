@@ -452,7 +452,8 @@ internal sealed partial class LiveCombatRuntime
         {
             throw new InvalidDataException("Invalid NPC weapon cycle attributes.");
         }
-        var signature = DroneSignature(contact.Profile.TypeId);
+        var signature =
+            DroneSignature(contact.Profile.TypeId) * Eden.Gameplay.Exploration.AbyssalDroneEnvironment.SignatureMultiplier(contact);
         var retaliation = DroneRules.Retaliation(contact, npc.Position, npc.Velocity, signature, weapon, roll);
         if (retaliation.Result.Remaining.Destroyed)
         {

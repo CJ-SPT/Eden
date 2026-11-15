@@ -42,7 +42,7 @@ internal sealed partial class PilotDroneStore
             world.Set<OwnedItem>().Find(drone.ItemId)!.TypeId,
             drone.ControllerShipId
         );
-        return new(
+        DroneContact contact = new(
             drone.ItemId,
             drone.PilotId,
             drone.ControllerShipId,
@@ -68,5 +68,30 @@ internal sealed partial class PilotDroneStore
             drone.Orbiting,
             DroneDelegationPersistence.Read(drone)
         );
+        if (
+            drone.SystemId is int system
+            && Eden.Gameplay.Exploration.AbyssalRules.IsSystem(system)
+            && world
+                .Filter<Eden.Data.World.Exploration.SavedAbyssalRun>(r =>
+                    r.SystemId == system && r.Status == (int)Eden.Gameplay.Exploration.AbyssalStatus.Active
+                )
+                .SingleOrDefault()
+                is { } run
+        )
+        {
+            contact = contact with
+            {
+                Abyssal = new(
+                    profile,
+                    (Eden.Gameplay.Exploration.AbyssalWeather)run.Weather,
+                    Eden.Gameplay.Exploration.AbyssalEnvironmentRules.Penalty(run.Tier, run.Seed),
+                    run.Room,
+                    run.Seed,
+                    (Eden.Gameplay.Exploration.AbyssalFieldMask)run.DisabledFields
+                ),
+            };
+            contact = Eden.Gameplay.Exploration.AbyssalDroneEnvironment.Refresh(contact);
+        }
+        return contact;
     }
 }

@@ -6,4 +6,5 @@ public sealed class SavedAbyssalParticipant
     public long RunId { get; set; }
     public long ShipId { get; set; }
     public bool Finished { get; set; }
+    public long OutsideSince { get; set; }
 }

@@ -12,7 +12,8 @@ internal static class AbyssalSchema
         model.Entity<SavedAbyssalParticipant>().ToTable("WorldAbyssalParticipant").HasKey(row => row.PilotId);
     }
 
-    internal static void Upgrade(WorldDbContext world) =>
+    internal static void Upgrade(WorldDbContext world)
+    {
         world.Database.ExecuteSqlRaw(
             """
             CREATE TABLE IF NOT EXISTS WorldAbyssalRun (
@@ -41,4 +42,23 @@ internal static class AbyssalSchema
             );
             """
         );
+        if (!world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldAbyssalRun')").Contains("EnvironmentAt"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldAbyssalRun ADD COLUMN EnvironmentAt INTEGER NOT NULL DEFAULT 0");
+        }
+        if (
+            !world
+                .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldAbyssalParticipant')")
+                .Contains("OutsideSince")
+        )
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldAbyssalParticipant ADD COLUMN OutsideSince INTEGER NOT NULL DEFAULT 0");
+        }
+        if (
+            !world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldAbyssalRun')").Contains("DisabledFields")
+        )
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldAbyssalRun ADD COLUMN DisabledFields INTEGER NOT NULL DEFAULT 0");
+        }
+    }
 }

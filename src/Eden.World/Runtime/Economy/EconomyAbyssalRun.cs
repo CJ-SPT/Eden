@@ -21,7 +21,9 @@ internal sealed record EconomyAbyssalRun(
     long CreatedAt,
     long ExpiresAt,
     int Status,
-    int Seed
+    int Seed,
+    long EnvironmentAt,
+    int DisabledFields
 );
 
 internal sealed partial class ResidentEconomy
@@ -48,7 +50,9 @@ internal sealed partial class ResidentEconomy
                         row.CreatedAt,
                         row.ExpiresAt,
                         row.Status,
-                        row.Seed
+                        row.Seed,
+                        row.EnvironmentAt,
+                        row.DisabledFields
                     ),
                 state => new SavedAbyssalRun
                 {
@@ -68,10 +72,12 @@ internal sealed partial class ResidentEconomy
                     ExpiresAt = state.ExpiresAt,
                     Status = state.Status,
                     Seed = state.Seed,
+                    EnvironmentAt = state.EnvironmentAt,
+                    DisabledFields = state.DisabledFields,
                 },
                 ProjectAbyssalRun,
                 "Id,OwnerPilotId,SystemId,OriginSystemId,OriginX,OriginY,OriginZ,FilamentTypeId,"
-                    + "Mode,Tier,Weather,Room,CreatedAt,ExpiresAt,Status,Seed",
+                    + "Mode,Tier,Weather,Room,CreatedAt,ExpiresAt,Status,Seed,EnvironmentAt,DisabledFields",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -89,7 +95,9 @@ internal sealed partial class ResidentEconomy
                         reader.GetInt64(13),
                         reader.GetInt64(14),
                         reader.GetInt32(15),
-                        reader.GetInt32(16)
+                        reader.GetInt32(16),
+                        reader.GetInt64(17),
+                        reader.GetInt32(18)
                     ),
                 state => new(state.Id),
                 indexes:
@@ -116,18 +124,19 @@ internal sealed partial class ResidentEconomy
                 $"""
                 INSERT INTO WorldAbyssalRun(
                     Id,OwnerPilotId,SystemId,OriginSystemId,OriginX,OriginY,OriginZ,FilamentTypeId,
-                    Mode,Tier,Weather,Room,CreatedAt,ExpiresAt,Status,Seed)
+                    Mode,Tier,Weather,Room,CreatedAt,ExpiresAt,Status,Seed,EnvironmentAt,DisabledFields)
                 SELECT json_extract(value,'$.Id'),json_extract(value,'$.OwnerPilotId'),json_extract(value,'$.SystemId'),
                     json_extract(value,'$.OriginSystemId'),json_extract(value,'$.OriginX'),json_extract(value,'$.OriginY'),
                     json_extract(value,'$.OriginZ'),json_extract(value,'$.FilamentTypeId'),json_extract(value,'$.Mode'),
                     json_extract(value,'$.Tier'),json_extract(value,'$.Weather'),json_extract(value,'$.Room'),
                     json_extract(value,'$.CreatedAt'),json_extract(value,'$.ExpiresAt'),json_extract(value,'$.Status'),
-                    json_extract(value,'$.Seed')
+                    json_extract(value,'$.Seed'),json_extract(value,'$.EnvironmentAt'),json_extract(value,'$.DisabledFields')
                 FROM json_each({rows}) WHERE 1
                 ON CONFLICT(Id) DO UPDATE SET OwnerPilotId=excluded.OwnerPilotId,SystemId=excluded.SystemId,
                     OriginSystemId=excluded.OriginSystemId,OriginX=excluded.OriginX,OriginY=excluded.OriginY,OriginZ=excluded.OriginZ,
                     FilamentTypeId=excluded.FilamentTypeId,Mode=excluded.Mode,Tier=excluded.Tier,Weather=excluded.Weather,
-                    Room=excluded.Room,CreatedAt=excluded.CreatedAt,ExpiresAt=excluded.ExpiresAt,Status=excluded.Status,Seed=excluded.Seed
+                    Room=excluded.Room,CreatedAt=excluded.CreatedAt,ExpiresAt=excluded.ExpiresAt,Status=excluded.Status,
+                    Seed=excluded.Seed,EnvironmentAt=excluded.EnvironmentAt,DisabledFields=excluded.DisabledFields
                 """
             );
         }

@@ -80,14 +80,28 @@ internal sealed class AbyssalHandler(IAbyssalDeadspace abyss, ISystemObjects sys
     {
         if (run.Status == AbyssalStatus.Active)
         {
+            context.Notifications.Add(new EnteringAbyssalDungeon(run));
             context.Notifications.Add(new AbyssalLocationEntered(run));
             context.Notifications.Add(new AbyssalDeadline(run.ExpiresAt));
         }
         else
         {
+            context.Notifications.Add(new ExitingExplorationDungeon(AbyssalRules.Scene(run.Room).DungeonId));
             context.Notifications.Add(new AbyssalFinished(run.Id));
         }
     }
+}
+
+internal sealed record EnteringAbyssalDungeon(AbyssalRun Run) : PilotNotification("OnEnteringDungeonRoom")
+{
+    public override object?[] Arguments =>
+        [
+            AbyssalRules.Scene(Run.Room).DungeonId,
+            AbyssalRules.Scene(Run.Room).RoomId,
+            new object[] { AbyssalRules.Center(Run.Room).X, AbyssalRules.Center(Run.Room).Y, AbyssalRules.Center(Run.Room).Z },
+            null,
+            null,
+        ];
 }
 
 internal sealed record AbyssalLocationEntered(AbyssalRun Run) : PilotNotification("OnAbyssalLocationEntered")

@@ -71,7 +71,8 @@ internal static class DroneNpcCombat
             contact,
             NpcMotion.Position(npc),
             NpcMotion.Velocity(npc),
-            targetAttributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius),
+            targetAttributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius)
+                * Eden.Gameplay.Exploration.AbyssalDroneEnvironment.SignatureMultiplier(contact),
             weaponProfile,
             roll
         );

@@ -117,6 +117,7 @@ internal sealed partial class LiveCombatRuntime
     }
 
     private LiveCombatNpc HydrateNpc(
+        WorldAction world,
         CatalogDbContext catalog,
         WorldNpc npc,
         WorldNpcMiningMember? mining,
@@ -127,8 +128,8 @@ internal sealed partial class LiveCombatRuntime
     {
         var profile = _simulationProfiles.Read(catalog, npc.TypeId);
         var type = profile.Type;
-        var attributes = profile.Attributes;
-        var defense = profile.Defense;
+        var attributes = Eden.World.Exploration.AbyssalEnvironmentStore.NpcAttributes(world, npc.Id, profile.Attributes);
+        var defense = ShipHealth.DefenseFrom(attributes);
         double missileRange = 0;
         if (attributes.GetValueOrDefault(DogmaAttributeId.EntityMissileType) is > 0 and var missile)
         {
@@ -136,7 +137,7 @@ internal sealed partial class LiveCombatRuntime
             var charge = PilotFittingStore.ReadAttributes(catalog, chargeId);
             missileRange = NpcMissileRules.Drive(MissileChargeCatalog.Drive(catalog, chargeId, charge), attributes).NominalRange;
         }
-        attributes = PlayerEwarRules.NpcAttributes(profile.Attributes, effects, missileRange);
+        attributes = PlayerEwarRules.NpcAttributes(attributes, effects, missileRange);
         return new(
             npc.Id,
             npc.TypeId,

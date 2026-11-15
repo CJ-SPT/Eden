@@ -43,7 +43,9 @@ public sealed record AbyssalRun(
 
 public sealed record AbyssalTransition(DockedPilot Pilot, AbyssalRun Run, IReadOnlyList<InventoryChange> Items);
 
-public sealed record AbyssalContact(long RunId, int FilamentTypeId, AbyssalMode Mode, bool Open, bool Trace);
+public sealed record AbyssalScene(int DungeonId, int RoomId, int NebulaGraphicId);
+
+public sealed record AbyssalContact(long RunId, int FilamentTypeId, AbyssalMode Mode, bool Open, bool Trace, bool Environment = false);
 
 public interface IAbyssalDeadspace
 {
@@ -56,6 +58,16 @@ public interface IAbyssalDeadspace
 
 public static class AbyssalRules
 {
+    // Build 3662168 client/dungeons and client/graphicids; original environment tracker consumes these identities.
+    public static AbyssalScene Scene(int room) =>
+        room switch
+        {
+            0 => new(6204, 24754, 22209),
+            1 => new(6207, 24753, 22210),
+            2 => new(6205, 24751, 22211),
+            _ => throw new ArgumentOutOfRangeException(nameof(room)),
+        };
+
     public const int RoomCount = 3;
     public const long Duration = 20 * TimeSpan.TicksPerMinute;
     public const long TraceDuration = 30 * TimeSpan.TicksPerMinute;

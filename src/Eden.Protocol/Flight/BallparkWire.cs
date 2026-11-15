@@ -107,7 +107,7 @@ internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
         {
             fields["hackingSecurityState"] = hackingState;
         }
-        if (Body.Abyssal is { } abyss)
+        if (Body.Abyssal is { Environment: false } abyss)
         {
             fields["isAbyssGateOpen"] = abyss.Open;
             fields["activationState"] = abyss.Open ? 1 : 0;

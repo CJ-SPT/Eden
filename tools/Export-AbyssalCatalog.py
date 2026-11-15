@@ -16,12 +16,16 @@ def export(catalog, output):
             records[dataset, key] = json.loads(row[0])
             return records[dataset, key]
 
-        needed = {56132, 47458, 47685, 47686, 47951, 48120, 47847, 47848, 47849, 48112, 48121, 621, 670}
+        needed = {56132, 47458, 47685, 47686, 47951, 48120, 47847, 47848, 47849, 48112, 48121, 621, 670,
+                  47472, 47440, 80876, 47437, 47438, 47469, 47470, 47465, 210, *range(47378, 47393)}
         types = []
         add('client/factions', 500025)
         for system in (32000001, 32000002):
             add('client/systems', system)
-        add('client/graphicids', 22209)
+        for graphic in (22209, 22210, 22211):
+            add('client/graphicids', graphic)
+        for dungeon in (6204, 6207, 6205):
+            add('client/dungeons', dungeon)
         while needed:
             type_id = min(needed)
             needed.remove(type_id)

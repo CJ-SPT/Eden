@@ -651,6 +651,18 @@ internal sealed partial class LiveCombatRuntime(
                     _ships.Remove(change.Id);
                     _savedShips.Remove(change.Id);
                     break;
+                case "AbyssalEnvironment":
+                    if (owner.Economy.Peek<Eden.Data.World.Exploration.SavedAbyssalRun>(change.Id) is { } run)
+                    {
+                        foreach (
+                            var npc in _npcs.Values.Where(n => n.EncounterId == run.Id && n.AnchorKind == NpcAnchorKind.Abyssal).ToArray()
+                        )
+                        {
+                            SetNpc(RefreshAbyssalNpc(npc, run));
+                            _effectiveNpcs.Remove(npc.Id);
+                        }
+                    }
+                    break;
                 case "WorldPilot":
                 case "WorldShip":
                     _acquisitionShips.Clear();

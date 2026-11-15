@@ -88,7 +88,10 @@ public sealed record DroneContact(
     float SpeedLimit = 0,
     bool Orbiting = true,
     DroneDelegation? Delegation = null
-);
+)
+{
+    public Eden.Gameplay.Exploration.AbyssalDroneEnvironment? Abyssal { get; init; }
+}
 
 public sealed record DroneLaunch(long StackId, IReadOnlyList<long> DroneIds);
 

@@ -38,7 +38,7 @@ automated fixture. The catalog is authoritative for hulls, NPC dogma and graphic
 encounter compositions and reward quantities are explicit Eden policies, not a claim
 to reproduce CCP's private encounter or drop distributions.
 
-## Milestone 1: resident solo foundation — November 14, 2026
+## Milestone 1: resident solo foundation â€” November 14, 2026
 
 Tranquil Dark filament 56132 admits a solo cruiser in open space. Admission validates
 ownership, cargo, hull, cloak and travel state, plus 1,000 km clearance from gates,
@@ -91,3 +91,62 @@ Not performed; agent client testing is disabled.
 
 - Check native entry, timer, conduit activation and return rendering with a Tranquil Dark filament.
 - Confirm reconnect shows the original timer and room.
+
+## Milestone 2: environmental combat â€” November 15, 2026
+
+Resident combat now applies all five weather rule sets, with seeded penalty strength
+and one or two rogue-drone hostiles selected per room. T0 Dark remains the admitted
+filament at this milestone. Clouds rotate between filament, bioluminescence and tachyon
+layouts. Tracking pylons and suppressors are destructible optional targets; destroying
+a pylon invalidates the affected fits and NPC profiles without blocking the conduit.
+
+Weather and cloud modifiers feed actual ship/module dogma, NPC movement and weapons,
+and deployed combat-drone profiles. Same-field movement retains the fit cache; field
+crossings publish a new fit revision under the resident owner. Shared catalog profiles
+are never mutated. Short/medium suppressors use pinned ranges, damage and target classes,
+including the excluded drone types. Their pulses damage NPC drones and player drones,
+and accumulate damage on missile payloads until the projectile expires. Cache structures
+and player hulls are excluded. Saved pulse timestamps prevent duplicate callbacks.
+
+The visible 75 km boundary applies resistance-independent depth damage on a one-second
+cadence. Continuous exposure ends in ship/capsule settlement after fifteen seconds;
+exposure state and pulse state survive checkpoints. The depth curve, terminal exposure,
+layout selection and encounter probabilities are explicit Eden policies informed by the
+evejs boundary profile, not authenticated CCP formulas. Long server gaps do not replay an
+unbounded backlog of environmental damage; the saved exposure deadline still settles.
+
+The pinned catalog supplies weather types 47378â€“47392, clouds 47440/47472, suppressors
+47437/47438, tracking pylons 47469/47470 and boundary object 47465. Tachyon cloud 80876
+has no dogma program in this catalog; its x4 speed/x0.5 agility gameplay rule follows the
+public gameplay reference and is explicitly authored. The catalog-export fixture includes
+the actual room/dungeon and graphic records. Original-client inspection also verified
+`EnvironmentService.OnEnteringDungeonRoom(dungeonID, roomID, position, instanceID, values)`:
+room entry sends the matched 6204/24754, 6207/24753 or 6205/24751 identity, coordinate tuple
+and None for the two optional arguments. Exit clears that environment template.
+
+### Automated validation
+
+Focused tests exercise typed weather values, inclusive cloud/boundary edges, real resident
+fit invalidation with zero warm SQL/connections/fitting calculations, cumulative suppressor
+damage and exclusions, native environment notifications, checkpointed terminal exposure
+and the complete three-room foundation. Tool and solution restore passed; the final
+solution build passed in 3.03 s with zero warnings/errors. The final focused run passed
+78 tests in 42.27 s (build 5.62 s). Both Python policy suites passed (8 catalog and
+9 formatting tests), and formatting verification passed across 2,158 files.
+
+The focused filter was
+`(FullyQualifiedName~AbyssalTests|FullyQualifiedName~AbyssalEnvironmentTests|FullyQualifiedName~FittingSnapshotTests|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~NpcOrbitTests|FullyQualifiedName~LiveDroneRulesTests|FullyQualifiedName~ResidentDroneTests|FullyQualifiedName~SmartbombTests|FullyQualifiedName~ResidentMissileLaunchTests|FullyQualifiedName~WorldMigrationTests)&FullyQualifiedName!~ModuleAndBrainReadsShareTheCommittedGraphAndReturnIndependentAttributes`.
+The initial combined run passed 78 and failed one existing offline fitting SQL-budget
+assertion (10 commands versus a maximum of 9). An isolated checkout of unchanged
+`8ad33204` reproduced that exact failure; its evidence is retained locally at
+`artifacts/abyssal/milestone2-baseline-fitting.trx`. No SQL fallback was added or changed
+to satisfy that assertion. Full .NET regression was not requested or run.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+- Inspect room backdrop, cloud/boundary rendering and conduit transitions in the native client.
+- Check displayed module attributes when crossing clouds and destroying a tracking pylon.

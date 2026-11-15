@@ -22,7 +22,7 @@ namespace Eden.Protocol.Tests.Exploration;
 
 public sealed class AbyssalTests
 {
-    private static void Prepare(Fixture f)
+    internal static void Prepare(Fixture f)
     {
         PassiveCatalogFixture.LoadAbyssal(f.CatalogPath);
         using (CatalogDbContext catalog = new(f.CatalogPath, writable: true))
@@ -82,7 +82,7 @@ public sealed class AbyssalTests
         Assert.Equal(6, saved.Set<OwnedItem>().Where(i => i.LocationId == ship && i.TypeId == 48112).Sum(i => i.Quantity));
     }
 
-    private static void KillRoom(Fixture f, LiveWorld live, long run)
+    internal static void KillRoom(Fixture f, LiveWorld live, long run)
     {
         using var transaction = live.Economy.Begin(new(pilots: [f.PilotId]));
         using CatalogDbContext catalog = new(f.CatalogPath);
@@ -155,16 +155,21 @@ public sealed class AbyssalTests
         var run = abyss.Read(f.PilotId)!;
         Assert.Equal(run.SystemId, context.Pilot.SystemId);
         Assert.Contains(context.Notifications, n => n is AbyssalLocationEntered);
+        var environment = Assert.Single(context.Notifications.OfType<EnteringAbyssalDungeon>());
+        Assert.Equal(6204, environment.Arguments[0]);
+        Assert.Equal(24754, environment.Arguments[1]);
+        Assert.Null(environment.Arguments[3]);
+        Assert.Null(environment.Arguments[4]);
         Assert.Contains(context.Notifications, n => n is AbyssalDeadline d && d.EndsAt == run.ExpiresAt);
-        Assert.False(Assert.Single(abyss.Objects(run.SystemId)).Abyssal!.Open);
+        Assert.False(Assert.Single(abyss.Objects(run.SystemId), o => o.Abyssal is { Environment: false }).Abyssal!.Open);
         var encounters = f.Db.Services.GetRequiredService<INpcEncounters>();
-        Assert.Equal(2, encounters.ReadScene(run.SystemId, AbyssalRules.Center(0), f.Clock.Now).Visible.Count);
+        Assert.InRange(encounters.ReadScene(run.SystemId, AbyssalRules.Center(0), f.Clock.Now).Visible.Count, 4, 5);
         _ = abyss.Objects(pilot.SystemId);
         using var measured = SessionPerformance.Begin("Abyssal observer", _ => { }, force: true)!;
         for (int read = 0; read < 3; read++)
         {
             Assert.Equal(run, abyss.Read(f.PilotId));
-            Assert.Single(abyss.Objects(run.SystemId));
+            Assert.Equal(3, abyss.Objects(run.SystemId).Count);
             Assert.Single(abyss.Objects(pilot.SystemId));
             Assert.Equal(PilotCallResult.None, handler.Call(context, "abyssalMgr", "ClientIsReady", []));
         }

@@ -46,6 +46,7 @@ internal sealed partial class LiveCombatRuntime
         }
         using CatalogDbContext catalog = new(database.CatalogPath);
         return HydrateNpc(
+            world,
             catalog,
             npc,
             world.Set<WorldNpcMiningMember>().Find(id),

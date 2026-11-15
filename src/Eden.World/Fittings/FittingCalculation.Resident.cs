@@ -553,6 +553,25 @@ internal sealed partial record FittingCalculation
             }
             modifiers.AddRange(OverloadRules.Modifiers(profile, module.Item.Id, true));
         }
+        if (Eden.World.Exploration.AbyssalEnvironmentStore.ForShip(world, ship) is { } environment)
+        {
+            modifiers.AddRange(Eden.Gameplay.Exploration.AbyssalEnvironmentRules.Modifiers(ship.Id, hullAttributes, environment));
+            foreach (var module in modules)
+            {
+                var values = moduleAttributes[module.Item.TypeId];
+                bool turret =
+                    CombatDefinitions.IsSupportedAmmoTurret(module.GroupId, values) || CombatDefinitions.IsAdvancedTurret(module.GroupId);
+                modifiers.AddRange(
+                    Eden.Gameplay.Exploration.AbyssalEnvironmentRules.Modifiers(
+                        module.Item.Id,
+                        values,
+                        environment,
+                        turret,
+                        module.GroupId == 40
+                    )
+                );
+            }
+        }
         var requested = modifiers
             .Select(m => m.Attribute)
             .Concat([DogmaAttributeId.ModuleRepairRate, DogmaAttributeId.ModuleRepairCostMultiplier])

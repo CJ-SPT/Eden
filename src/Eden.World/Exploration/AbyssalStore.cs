@@ -33,7 +33,6 @@ internal sealed partial class AbyssalStore(
     IPilotCombatPresence? presence = null
 ) : IAbyssalDeadspace
 {
-    private const int DarkNebula = 22209;
     private const int DroneFaction = 500025;
     private const int Sparkneedle = 47847;
     private const int Emberneedle = 47848;
@@ -62,7 +61,7 @@ internal sealed partial class AbyssalStore(
             (AbyssalStatus)run.Status,
             run.ExpiresAt,
             AbyssalRules.Conduit(run.Id, run.Room),
-            DarkNebula
+            AbyssalRules.Scene(run.Room).NebulaGraphicId
         );
 
     public AbyssalTransition Deploy(long pilotId, long shipId, long filamentId, AbyssalMode mode)
@@ -152,6 +151,8 @@ internal sealed partial class AbyssalStore(
         participant.RunId = run.Id;
         participant.ShipId = shipId;
         participant.Finished = false;
+        participant.OutsideSince = 0;
+        run.EnvironmentAt = Now;
         var previous = PilotInventoryStore.Read(catalog, item);
         item.Quantity--;
         var change = new InventoryChange(previous with { Quantity = item.Quantity }, previous);
@@ -206,7 +207,7 @@ internal sealed partial class AbyssalStore(
             .Filter<WorldNpc>(n =>
                 n.AnchorKind == NpcAnchorKind.Abyssal
                 && n.EncounterId == run.Id
-                && n.TypeId != AbyssalRules.CacheType
+                && n.Role != NpcRole.MissionStructure
                 && n.DestroyedAt == null
                 && n.RetiredAt == null
             )
@@ -222,6 +223,9 @@ internal sealed partial class AbyssalStore(
         else
         {
             run.Room++;
+            run.DisabledFields = 0;
+            run.EnvironmentAt = Now;
+            participant.OutsideSince = 0;
             Spawn(transaction, catalog, run, Now);
             SqliteWorld.SetPosition(transaction, catalog, shipId, AbyssalRules.Center(run.Room), run.SystemId, Now);
         }
@@ -270,7 +274,7 @@ internal sealed partial class AbyssalStore(
                 .Filter<WorldNpc>(n =>
                     n.AnchorKind == NpcAnchorKind.Abyssal
                     && n.EncounterId == run.Id
-                    && n.TypeId != AbyssalRules.CacheType
+                    && n.Role != NpcRole.MissionStructure
                     && n.DestroyedAt == null
                     && n.RetiredAt == null
                 )
@@ -290,24 +294,52 @@ internal sealed partial class AbyssalStore(
                     Solid = false,
                     Abyssal = new(run.Id, run.FilamentTypeId, (AbyssalMode)run.Mode, open, false),
                 },
+                .. AbyssalEnvironmentRules
+                    .Layout(run.Room, run.Seed)
+                    .Where(field => field.Slot is 0 or 3)
+                    .Select(field =>
+                    {
+                        var definition = database.Catalog.Items[field.TypeId];
+                        return new StaticSpaceObject(
+                            AbyssalEnvironmentRules.FieldId(run.Id, run.Room, field.Slot),
+                            field.TypeId,
+                            definition.GroupId,
+                            definition.CategoryId,
+                            1,
+                            field.Position,
+                            (float)field.Range
+                        )
+                        {
+                            Solid = false,
+                            Abyssal = new(run.Id, run.FilamentTypeId, (AbyssalMode)run.Mode, false, false, true),
+                        };
+                    }),
             ];
         });
 
     private static void Spawn(WorldAction world, CatalogDbContext catalog, SavedAbyssalRun run, long now)
     {
-        int typeId = run.Room switch
+        int typeId = ((run.Seed % 3 + run.Room) % 3) switch
         {
             0 => Sparkneedle,
             1 => Emberneedle,
             _ => Strikeneedle,
         };
         int corporation = checked((int)catalog.Require(CatalogData.Client.Factions, (long)DroneFaction).CorporationID!.Value);
-        Add(typeId, 0, NpcRole.Pirate);
+        int count = 1 + (run.Seed % 2 + run.Room) % 2;
+        for (int slot = 0; slot < count; slot++)
+        {
+            Add(typeId, slot, NpcRole.Pirate);
+        }
         Add(AbyssalRules.CacheType, CacheSlot, NpcRole.MissionStructure);
-        void Add(int type, int slot, NpcRole role)
+        foreach (var field in AbyssalEnvironmentRules.Layout(run.Room, run.Seed).Where(field => field.Slot is 1 or 2))
+        {
+            Add(field.TypeId, CacheSlot - field.Slot, NpcRole.MissionStructure, field.Position);
+        }
+        void Add(int type, int slot, NpcRole role, SpacePosition? at = null)
         {
             var profile = new NpcProfileCatalog().Read(catalog, type);
-            var point = AbyssalRules.Center(run.Room) + new SpacePosition(30_000, slot * 100, 0);
+            var point = at ?? AbyssalRules.Center(run.Room) + new SpacePosition(30_000, slot * 100, 0);
             world.Add(
                 new WorldNpc
                 {
@@ -327,7 +359,9 @@ internal sealed partial class AbyssalStore(
                     HomeX = point.X,
                     HomeY = point.Y,
                     HomeZ = point.Z,
-                    ShieldCharge = profile.Defense.Shield,
+                    ShieldCharge = ShipHealth
+                        .DefenseFrom(AbyssalEnvironmentRules.Apply(profile.Attributes, AbyssalEnvironmentStore.At(run, point)))
+                        .Shield,
                     UpdatedAt = now,
                     MotionAt = now,
                 }
