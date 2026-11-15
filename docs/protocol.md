@@ -3,6 +3,10 @@
 [Corporation chat MOTD](protocol/social.md#corporation-chat-motd-november-15-2026) fixes the native
 `XmppChatMgr.SetMotd` call with authorized resident storage and subject delivery on edits and joins.
 
+[Container stacking and fitting](protocol/inventory.md#container-stacking-and-fitting-november-15-2026) and
+[container industry workflows](protocol/industry.md#container-industry-workflows-november-15-2026) cover
+native stacking, direct fitting, blueprint discovery and container job input/output with checkpoint recovery.
+
 [Login ticket checkpoint isolation](protocol/performance.md#login-ticket-checkpoint-isolation-november-15-2026)
 removes full-world save waits from native ticket authentication and rejects restored tickets after restart.
 

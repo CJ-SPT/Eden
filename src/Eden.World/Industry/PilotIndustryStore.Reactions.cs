@@ -30,8 +30,7 @@ internal sealed partial class PilotIndustryStore
         if (
             item is null
             || item.OwnerId != pilotId
-            || item.LocationId != station.Id
-            || item.FlagId != (int)InventoryFlag.Hangar
+            || BlueprintStation(world, catalog, item) != station.Id
             || item.TypeId != request.BlueprintTypeId
             || item.BlueprintRuns >= 0
             || IsInstalled(world, item.Id)
@@ -42,6 +41,7 @@ internal sealed partial class PilotIndustryStore
         {
             throw new InvalidDataException("Use an available reaction formula in this refinery's Item Hangar.");
         }
+        CheckBlueprintContainer(world, catalog, item, request);
         if (
             station.StructureServices?.Contains(recipe.Service) != true
             || !double.IsFinite(security)
@@ -79,7 +79,7 @@ internal sealed partial class PilotIndustryStore
         }
 
         List<InventoryChange> changes = [];
-        ConsumeMaterials(world, catalog, pilotId, station.Id, plan.Materials, changes);
+        ConsumeMaterials(world, catalog, pilotId, Storage(world, catalog, pilotId, station.Id, request.Input), plan.Materials, changes);
         item = ReserveBlueprint(world, catalog, item, changes);
         IndustryJob job = new()
         {
@@ -98,6 +98,7 @@ internal sealed partial class PilotIndustryStore
             MaterialsJson = JsonSerializer.Serialize(plan.Materials),
             CostCents = charge.TotalCents,
         };
+        SetJobOutput(world, catalog, job, request);
         world.Add(job);
         world.SaveChanges();
         long? balance =

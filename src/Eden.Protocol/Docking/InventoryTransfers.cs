@@ -41,7 +41,23 @@ internal sealed class InventoryTransfers(
         {
             if (containers?.Handles(source) == true && containerHandler is not null)
             {
-                return containerHandler.Move(context, destination, request, containerHandler.Access(context, source));
+                var banksBefore = fittingOperations.ReadBanks(context);
+                var containerChanges = containers.Move(
+                    context.Pilot.PilotId,
+                    destination,
+                    request,
+                    containerHandler.Access(context, source)
+                );
+                foreach (var change in containerChanges)
+                {
+                    InventoryChangesWire.NotifyItemChange(context, change);
+                }
+                if (containerChanges.Any(change => InventoryDefinitions.IsFittedSlot(change.Item.FlagId)))
+                {
+                    fittingOperations.NotifyOnlineChanges(context, containerChanges);
+                    fittingOperations.NotifyShipAttributes(context, banksBefore);
+                }
+                return PilotCallResult.None;
             }
             if (
                 structures is not null

@@ -422,6 +422,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         model.Entity<SavedContractItem>().Property(i => i.MaterialEfficiency).HasDefaultValue(0);
         model.Entity<SavedContractItem>().Property(i => i.TimeEfficiency).HasDefaultValue(0);
         model.Entity<IndustryJob>().Property(j => j.Activity).HasDefaultValue(IndustryActivity.Manufacturing);
+        model.Entity<IndustryJob>().Property(j => j.OutputFlagId).HasDefaultValue((int)InventoryFlag.Hangar);
         model.Entity<IndustryJob>().Property(j => j.LicensedRuns).HasDefaultValue(0);
         model.Entity<IndustryJob>().Property(j => j.BlueprintCopy).HasDefaultValue(false);
         model.Entity<IndustryJob>().Property(j => j.MaterialEfficiency).HasDefaultValue(0);

@@ -93,6 +93,34 @@ internal sealed class CargoContainerHandler(ICargoContainers containers) : ISele
             {
                 return Move(context, id, MoveRequest(method, args, keywords), access);
             }
+            if (method == "StackAll")
+            {
+                if (
+                    args.Length > 1
+                    || args.Length == 1 && args[0] is not (null or long)
+                    || keywords?.Keys.Any(key => key != "flag") == true
+                    || args.Length == 1 && keywords?.ContainsKey("flag") == true
+                )
+                {
+                    throw new InvalidDataException("Choose one container flag to stack.");
+                }
+                object? flag = args.Length == 1 ? args[0] : keywords?.GetValueOrDefault("flag");
+                if (flag is not (null or long))
+                {
+                    throw new InvalidDataException("Invalid container stacking flag.");
+                }
+                return Notify(context, containers.StackAll(pilot, id, flag is long value ? checked((int)value) : null, access));
+            }
+            if (method == "MultiMerge" && args is [List<object?> rows, long source] && source == id && keywords is not { Count: > 0 })
+            {
+                var operations = rows.Select(row =>
+                        BlueRead.Tuple(row, 3) is [long from, long target, long quantity] && quantity is > 0 and <= int.MaxValue
+                            ? new InventoryStackMerge(from, target, (int)quantity)
+                            : throw new InvalidDataException("Invalid container stack merge.")
+                    )
+                    .ToArray();
+                return Notify(context, containers.Merge(pilot, id, operations, access));
+            }
             if (method == "List" && args.Length <= 1)
             {
                 object? flag = args.Length == 1 ? args[0] : keywords?.GetValueOrDefault("flag");
@@ -172,6 +200,10 @@ internal sealed class CargoContainerHandler(ICargoContainers containers) : ISele
         catch (InvalidDataException error)
         {
             return new PilotCallResult.Failure(error.Message);
+        }
+        catch (OverflowException)
+        {
+            return new PilotCallResult.Failure("The combined stack exceeds the supported quantity.");
         }
     }
 

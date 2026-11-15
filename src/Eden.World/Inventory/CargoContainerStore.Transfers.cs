@@ -2,6 +2,7 @@ using Eden.Data.World.Inventory;
 using Eden.Gameplay.Inventory;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
+using Eden.World.Industry;
 using Eden.World.Runtime.Economy;
 
 namespace Eden.World.Inventory;
@@ -20,6 +21,29 @@ internal sealed partial class CargoContainerStore
         if (container.OwnerId != pilotId)
         {
             throw new InvalidDataException("Transfer container contents through personal inventory.");
+        }
+        if (
+            !depositing
+            && destination == ship.Id
+            && (request.FlagId == (int)InventoryFlag.AutoFit || InventoryDefinitions.IsFittedSlot(request.FlagId))
+        )
+        {
+            if (request.Quantity.HasValue)
+            {
+                throw new InvalidDataException("Fit individual modules without a transfer quantity.");
+            }
+            var fitted = PilotFittingStore.Fit(
+                world,
+                catalog,
+                pilotId,
+                request.ItemIds,
+                request.SourceId,
+                request.FlagId,
+                clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(),
+                containerAccess: access
+            );
+            world.Commit();
+            return fitted;
         }
         long looseLocation = depositing ? request.SourceId : destination;
         bool hangar = ship.Position is null && looseLocation == ship.DockedLocationId;
@@ -44,6 +68,7 @@ internal sealed partial class CargoContainerStore
                 item.Id == container.Id
                 || item.OwnerId != pilotId
                 || item.LocationId != request.SourceId
+                || PilotIndustryStore.IsInstalled(world, item.Id)
                 || item.Singleton && CargoContainerAssemblyRules.IsContainer(PilotInventoryStore.Read(catalog, item))
                 || (
                     depositing
@@ -71,14 +96,7 @@ internal sealed partial class CargoContainerStore
                 throw new CargoCapacityException(Math.Max(0, capacity - used), added);
             }
         }
-        var settings = world.Set<SavedCargoContainer>().Find(container.Id);
-        int flag = depositing
-            ? (int)(
-                settings?.Configuration.HasFlag(CargoContainerConfiguration.LockAddedItems) == true
-                    ? InventoryFlag.Locked
-                    : InventoryFlag.Unlocked
-            )
-            : request.FlagId;
+        int flag = depositing ? AddedFlag(world, catalog, container) : request.FlagId;
         List<InventoryChange> changes = [];
         foreach (var item in items)
         {
@@ -147,4 +165,10 @@ internal sealed partial class CargoContainerStore
         world.Commit();
         return changes;
     }
+
+    internal static int AddedFlag(WorldAction world, CatalogDbContext catalog, OwnedItem container) =>
+        catalog.RequireItem(container.TypeId).GroupId != (int)PersonalAssetContainerGroup.AuditLogSecure ? (int)InventoryFlag.None
+        : world.Set<SavedCargoContainer>().Find(container.Id)?.Configuration.HasFlag(CargoContainerConfiguration.LockAddedItems) == true
+            ? (int)InventoryFlag.Locked
+        : (int)InventoryFlag.Unlocked;
 }

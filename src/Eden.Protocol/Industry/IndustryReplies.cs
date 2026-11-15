@@ -25,6 +25,11 @@ internal sealed record IndustryLocationReply(IndustryFacility Facility, long Pil
     public override object ToBlue() => IndustryWire.Location(Facility, PilotId);
 }
 
+internal sealed record IndustryInventoryLocationReply(IndustryInventoryLocation Location) : BlueModel
+{
+    public override object ToBlue() => IndustryWire.Location(Location);
+}
+
 internal sealed record BlueprintLimits(int MaximumResults) : BlueModel
 {
     public override object ToBlue() => new Dictionary<string, object?> { ["maxBlueprintResults"] = MaximumResults };
