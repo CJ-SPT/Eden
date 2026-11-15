@@ -80,6 +80,50 @@ public sealed class PersonalAssetServiceTests
     }
 
     [Theory]
+    [InlineData(false, "Contract hull")]
+    [InlineData(true, null)]
+    public void RemoteAssetExpansionPrimesOwnedItemNames(bool container, string? name)
+    {
+        using Fixture f = new(live: true);
+        ContractAssetTestData.AddRemoteStation(f.Db);
+        AddContainerType(f.Db);
+        const int station = ContractAssetTestData.RemoteStation;
+        long foreign = ContractAssetTestData.Hull(f.Db, station: station, owner: ContractAssetTestData.Other);
+        long hull = container ? foreign : ContractAssetTestData.Hull(f.Db, station: station);
+        long carried = ContractAssetTestData.Hull(f.Db, hull, station);
+        long assetId = hull;
+        if (container)
+        {
+            assetId = ContractAssetTestData.Stack(f.Db, location: station);
+            using WorldDbContext world = new(f.Db.Path);
+            var item = world.Set<OwnedItem>().Find(assetId)!;
+            item.TypeId = ContainerType;
+            item.Singleton = true;
+            world.SaveChanges();
+        }
+        f.SelectAndBind("ListStations", []);
+        var directory = BlueRead.Fields(Assert.IsType<BlueInstance>(f.Decode("ListStations", [])).State);
+        var location = Assert.Single(
+            Assert.IsType<List<object?>>(directory["lines"]).Select(Assert.IsType<object?[]>),
+            line => Equals(line[0], (long)station)
+        );
+        Assert.Equal(1L, location[1]);
+        var row = Assert.Single(f.Rows("ListStationItems", [(long)station]));
+        Assert.Equal(assetId, row[0]);
+        Assert.Equal((long)station, row[3]);
+        Assert.Equal(-1L, row[5]);
+
+        // The client primes names after reading the station's items and before creating the scroll entries.
+        var ids = new List<object?> { assetId, foreign, carried, long.MaxValue };
+        var names = Assert.IsType<object?[]>(f.Decode("GetMultiLocationsEx", [ids], "config"));
+        var named = Assert.IsType<object?[]>(Assert.Single(Assert.IsType<List<object?>>(names[1])));
+        Assert.Equal(assetId, named[0]);
+        Assert.Equal(name, named[1] is null ? null : BlueMarshal.Text(named[1]));
+        Assert.Null(named[2]);
+        Assert.Empty(f.Context.Notifications);
+    }
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public void EscrowRemovalDisappearsFromListsAndStationDirectoryImmediately(bool live)

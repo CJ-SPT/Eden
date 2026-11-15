@@ -6,6 +6,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Corporations;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,7 +14,44 @@ namespace Eden.World.Inventory;
 
 internal sealed partial class PilotAssetStore
 {
-    private IReadOnlyList<PersonalAssetLocation> ResidentLocations(Eden.World.Runtime.LiveWorld live, long pilotId)
+    public IReadOnlyList<PersonalAssetName> StationItemNames(long pilotId, IReadOnlySet<long> itemIds)
+    {
+        if (itemIds.Count == 0 || LiveWorld.Find(database.Path) is not { } live)
+        {
+            return [];
+        }
+        return live.Economy.Inspect<IReadOnlyList<PersonalAssetName>>(world =>
+        {
+            using CatalogDbContext catalog = new(database.CatalogPath);
+            List<PersonalAssetName> names = [];
+            var items = world.Set<OwnedItem>();
+            foreach (long id in itemIds)
+            {
+                if (world.Ships.Find(id) is { Position: null, StoredInId: null } ship)
+                {
+                    if (ship.OwnerId == pilotId && Location(world, catalog, ship.DockedLocationId) is not null)
+                    {
+                        names.Add(new(ship.Id, ship.Name));
+                    }
+                    continue;
+                }
+                if (
+                    items.Find(id) is { Singleton: true, FlagId: (int)InventoryFlag.Hangar } item
+                    && item.OwnerId == pilotId
+                    && catalog.FittingType(item.TypeId) is { } type
+                    && Enum.IsDefined((PersonalAssetContainerGroup)type.GroupId)
+                    && Location(world, catalog, item.LocationId) is not null
+                )
+                {
+                    // Containers have no saved custom name. The native client falls back to its localized type name.
+                    names.Add(new(item.Id, null));
+                }
+            }
+            return names;
+        });
+    }
+
+    private IReadOnlyList<PersonalAssetLocation> ResidentLocations(LiveWorld live, long pilotId)
     {
         using var world = live.Economy.Begin(new(pilots: [pilotId]));
         using CatalogDbContext catalog = new(database.CatalogPath);
@@ -39,7 +77,7 @@ internal sealed partial class PilotAssetStore
             .ToArray();
     }
 
-    private IReadOnlyList<InventoryItem> ResidentItems(Eden.World.Runtime.LiveWorld live, long pilotId, PersonalAssetQuery query)
+    private IReadOnlyList<InventoryItem> ResidentItems(LiveWorld live, long pilotId, PersonalAssetQuery query)
     {
         using var world = live.Economy.Begin(new(pilots: [pilotId]));
         using CatalogDbContext catalog = new(database.CatalogPath);

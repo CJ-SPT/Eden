@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Corporation member search and tracking](protocol/corporations.md#member-search-and-tracking-november-14-2026)
+records typed native queries, activity history and tracking permissions.
+
 [Corporation recruitment advertisements](protocol/corporations.md#recruitment-advertisements-november-14-2026)
 records paid ads, native management/search replies, expiry and recruiter permissions.
 
@@ -753,6 +756,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 - [Loot abandonment and theft, November 14, 2026](protocol/inventory.md#loot-abandonment-and-theft-november-14-2026)
 
 - [Personal Assets window (November 8, 2026)](protocol/inventory.md#personal-assets-window-november-8-2026)
+- [Remote Personal Assets expansion (November 14, 2026)](protocol/inventory.md#remote-personal-assets-expansion-november-14-2026)
 
 - [Production stack consolidation and repackaging (November 6, 2026)](protocol/inventory.md#production-stack-consolidation-and-repackaging-november-6-2026)
 

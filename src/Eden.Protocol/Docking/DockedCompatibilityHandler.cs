@@ -11,6 +11,7 @@ namespace Eden.Protocol.Docking;
 [Injectable]
 internal sealed class DockedCompatibilityHandler(
     IPilotFleet fleet,
+    IPilotAssets assets,
     DirectionalScanHandler scanner,
     Eden.Gameplay.Structures.IPilotStructures structures,
     PlayerTradeHandler trades
@@ -52,7 +53,9 @@ internal sealed class DockedCompatibilityHandler(
             ("clientStatLogger", "LogString") => PilotCallResult.None,
             ("shipKillCounter", "GetItemKillCountPlayer") => 0,
             ("userSvc", "GetMultiCharactersTrainingSlots") => BlueEmpty.Dictionary,
-            ("config", "GetMultiLocationsEx") when args is [List<object?> ids] => new LocationTable(
+            ("config", "GetMultiLocationsEx") when args is [List<object?> ids] => LocationsWithAssetNames(
+                pilot.PilotId,
+                ids,
                 context
                     .Flight.VisiblePilots()
                     .Where(owner => ids.Contains(owner.ShipId))
@@ -103,8 +106,6 @@ internal sealed class DockedCompatibilityHandler(
                             .Names(ids.OfType<long>().Where(id => id >= Eden.Gameplay.Structures.StructureRules.FirstStructureId).ToArray())
                             .Select(s => new LocationRow(s.Id, s.Name, s.SystemId, s.Position.X, s.Position.Y, s.Position.Z))
                     )
-                    .DistinctBy(location => location.Id)
-                    .ToArray()
             ),
             ("shipCosmeticsMgr", "GetEnabledCosmetics") => BlueEmpty.Dictionary,
             ("@ship", "GetAvailableTurretSlots") => pilot.TurretSlots,
@@ -131,5 +132,16 @@ internal sealed class DockedCompatibilityHandler(
             ("structureDirectory", "GetMyDockableStructures") or ("insurgencySolarsystem", "GetAllVisibleCampaigns") => BlueEmpty.List,
             _ => PilotCallResult.Unsupported,
         };
+    }
+
+    private LocationTable LocationsWithAssetNames(long pilotId, List<object?> ids, IEnumerable<LocationRow> known)
+    {
+        var locations = known.DistinctBy(location => location.Id).ToList();
+        var missing = ids.OfType<long>().Except(locations.Select(location => location.Id)).ToHashSet();
+        // Personal Assets primes names before rendering. The cached row only needs the item's name.
+        locations.AddRange(
+            assets.StationItemNames(pilotId, missing).Select(asset => new LocationRow(asset.ItemId, asset.Name, null, 0, 0, 0))
+        );
+        return new(locations);
     }
 }

@@ -41,7 +41,7 @@ internal static class ContractAssetTestData
         return item.Id;
     }
 
-    internal static long Hull(TestWorld db, long? parent = null)
+    internal static long Hull(TestWorld db, long? parent = null, int station = Station, long owner = Pilot)
     {
         using WorldDbContext world = new(db.Path);
         var ship = world
@@ -49,9 +49,9 @@ internal static class ContractAssetTestData
                 new Ship
                 {
                     Id = InventoryPersistence.NextId(world),
-                    OwnerId = Pilot,
+                    OwnerId = owner,
                     TypeId = 601,
-                    StationId = Station,
+                    StationId = station,
                     Name = "Contract hull",
                     StoredInId = parent,
                     StorageFlagId = parent is null ? (int)InventoryFlag.Hangar : (int)InventoryFlag.ShipMaintenanceBay,

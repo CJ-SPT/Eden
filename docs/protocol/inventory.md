@@ -17,6 +17,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Targeted stack merging, November 9, 2026](#targeted-stack-merging-november-9-2026)
 
 - [Trashing personal items and ships (November 8, 2026)](#trashing-personal-items-and-ships-november-8-2026)
+- [Remote Personal Assets expansion (November 14, 2026)](#remote-personal-assets-expansion-november-14-2026)
 - [Personal Assets window (November 8, 2026)](#personal-assets-window-november-8-2026)
 - [Capsule retirement on boarding (November 6, 2026)](#capsule-retirement-on-boarding-november-6-2026)
 - [Personal ship insurance](#personal-ship-insurance)
@@ -437,6 +438,40 @@ References: [EVE University: Managing Your Assets](https://wiki.eveuniversity.or
 **Live acceptance:** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks:** With the updated server, reopen Personal Assets, expand a remote station and search for an owned item; confirm location filters/sorting and the empty Asset Safety tab. Wait for the native cache expiry when inspecting recent asset changes.
+
+## Remote Personal Assets expansion (November 14, 2026)
+
+Build 3662168's `AssetsWindow.GetSubContent` gets remote inventory from `ListStationItems` and primes named items before
+creating the scroll entries. `uix.GetItemName` then reads `cfg.evelocations.Get(itemID).name` for assembled ships and
+nameable containers. The earlier `config.GetMultiLocationsEx` handler only resolved ships within the normal inventory
+access scope. For a remote ship whose row was already counted and returned, the missing cache entry caused
+`Recordset.Get` to raise `KeyError("RecordNotFound", itemID)` while building the expanded station list.
+
+The location cache lookup now resolves missing IDs for the selected pilot's resident, top-level docked ships and assembled
+cargo containers in valid personal hangars. It returns the ship's saved name. An unnamed container receives a cache row
+with Python `None` for the name so the client displays its localized type name. Supplemental rows have a null system and
+zero coordinates. The ordinary inventory access rules continue to govern requests for the ship and its contents.
+
+Inspected the original build-3662168 archive recorded above, including `assetsWindow.pyj`, `uix.pyj`, `eveCfg.pyj` and
+Carbon's `cfg.pyj`. The local EveJS 261108.1 reference's `configService.js` records the native ship location row layout.
+The existing inventory DBRow representation was checked against [Carbon Blue at fcbf0c2](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/PyRowSet.cpp).
+Personal Assets station browsing is described in [EVE University's inventory guide](https://wiki.eveuniversity.org/Managing_Your_Assets).
+
+**Automated validation.** The two cases under
+`FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.PersonalAssetServiceTests.RemoteAssetExpansionPrimesOwnedItemNames`
+reproduced the absent cache rows before the fix and passed afterward. The tests check the one-item station count,
+the returned assembled inventory row and its name cache entry. They also check that foreign, carried and unknown IDs
+are absent from the cache reply. Tool restore and solution restore passed. The solution build passed in 1.77 seconds
+with zero warnings or errors. Both Python policy suites passed, and formatting verification passed in 29.97 seconds.
+The final focused run passed 199 tests in 101.46 seconds with this filter. The full .NET suite was outside this run.
+
+```text
+FullyQualifiedName~PersonalAsset|FullyQualifiedName~ContractAsset|FullyQualifiedName~PilotFleetTests|FullyQualifiedName~ShipStorageTests|FullyQualifiedName~Information.InformationTests|FullyQualifiedName~Structures.StructureTests|FullyQualifiedName~Hosting.ServerServicesTests|FullyQualifiedName~Hosting.GameplayDependenciesTests|FullyQualifiedName~Hosting.DataModelOwnershipTests
+```
+
+**Live acceptance.** Not performed. Agent client testing is disabled.
+
+**Optional maintainer checks.** After restarting the client against the updated server, expand the affected remote stations.
 
 ## Targeted stack merging, November 9, 2026
 

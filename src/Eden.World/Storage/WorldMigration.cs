@@ -168,6 +168,7 @@ internal static class WorldMigration
         Eden.World.Mining.MiningLedgerSchema.Upgrade(world);
         CorporationContactSchema.Upgrade(world);
         CorporationRecruitmentSchema.Upgrade(world);
+        Eden.World.Characters.PilotActivitySchema.Upgrade(world);
         Eden.World.Bookmarks.SharedBookmarkSchema.Upgrade(world, catalog);
         JetcanStore.Expire(world, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         Eden.World.Fleets.CommandBurstSchema.Upgrade(world);

@@ -2,12 +2,15 @@ namespace Eden.Gameplay.Inventory;
 
 public sealed record PersonalAssetLocation(long StationId, int SolarSystemId, int TypeId, int ItemCount);
 
+public sealed record PersonalAssetName(long ItemId, string? Name);
+
 public sealed record PersonalAssetQuery(long? StationId = null, bool IncludeContainers = false);
 
 public interface IPilotAssets
 {
     IReadOnlyList<PersonalAssetLocation> Locations(long pilotId);
     IReadOnlyList<InventoryItem> Items(long pilotId, PersonalAssetQuery query);
+    IReadOnlyList<PersonalAssetName> StationItemNames(long pilotId, IReadOnlySet<long> itemIds);
 }
 
 // Build 3662168 inventorycommon.const and eveAssets.assetSearching.GetSearchResults.

@@ -1,3 +1,4 @@
+using Eden.Gameplay.Characters;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -5,8 +6,11 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Docking;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class StationGuestHandler(SharedStationGuests guests) : ISelectedPilotCallHandler, IDisposable
+internal sealed class StationGuestHandler(SharedStationGuests guests, IPilotActivity? activity = null)
+    : ISelectedPilotCallHandler,
+        IDisposable
 {
+    private long? _pilotId;
     private long? _stationId;
     private StationGuest[] _observed = [];
 
@@ -66,6 +70,7 @@ internal sealed class StationGuestHandler(SharedStationGuests guests) : ISelecte
     private StationGuest[] Read(PilotCallContext context)
     {
         var pilot = context.ActiveFlight?.Pilot;
+        Track(pilot?.PilotId);
         guests.Update(this, pilot);
         _stationId = pilot is { Position: null } ? pilot.DockedLocationId : null;
         return pilot is null ? [] : guests.List(pilot).Select(guest => new StationGuest(guest.PilotId, guest.CorpId)).ToArray();
@@ -73,8 +78,32 @@ internal sealed class StationGuestHandler(SharedStationGuests guests) : ISelecte
 
     public void Dispose()
     {
-        guests.Update(this, null);
-        _stationId = null;
-        _observed = [];
+        try
+        {
+            Track(null);
+        }
+        finally
+        {
+            guests.Update(this, null);
+            _stationId = null;
+            _observed = [];
+        }
+    }
+
+    private void Track(long? pilotId)
+    {
+        if (_pilotId == pilotId)
+        {
+            return;
+        }
+        if (_pilotId is long previous)
+        {
+            activity?.Record(previous, false);
+        }
+        _pilotId = pilotId;
+        if (pilotId is long current)
+        {
+            activity?.Record(current, true);
+        }
     }
 }
