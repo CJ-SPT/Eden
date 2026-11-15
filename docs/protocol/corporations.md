@@ -48,7 +48,7 @@ eligibility inside the transaction. All members return to their first recorded N
 and receive normal membership/session changes. Open applications become rejected, recruitment ads are removed, and rental
 notifications invalidate office lists. Any failure rolls back the complete operation, including already moved members.
 
-Schema 162 records closure time while retaining the last CEO, founder, identity, financial history, shares and asset
+Schema 163 records closure time while retaining the last CEO, founder, identity, financial history, shares and asset
 locations. Closed office records preserve inventory references but no longer consume station rental slots or appear as
 tenants. Remaining property and balances stay with the closed corporation and cannot be inherited or withdrawn by former
 members. This is Eden's archival policy; it does not transfer or silently destroy assets. The former CEO can found another
@@ -74,6 +74,12 @@ now use a resident test world, matching main's Abyssal session prerequisite. Aft
 combined 125-case filter passed 123 and exposed the same fixture issue in two additional public-info session cases.
 Both corrected cases passed the exact `FullyQualifiedName~ShowInfoReturnsPublicFieldsThroughTheSessionForNpcAndOtherPlayerCorporations`
 filter (4 seconds), with a clean build and formatting verification. No full .NET suite was run.
+
+The final main integration includes the independently developed mutaplasmid schema, which also used version 162 on its
+branch. Version 163 identifies the combined schema; both idempotent migrations accept saves from either branch.
+With main through `051f4395`, the combined corporation/migration filters above plus `FullyQualifiedName~MutaplasmidTests`
+passed **141 tests in 39 seconds**. Tool/solution restore, clean solution build, both Python suites, formatting verification
+(2,194 files) and documentation/diff checks all passed; the final sequence took **77.60 seconds**.
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
