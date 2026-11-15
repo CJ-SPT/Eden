@@ -71,6 +71,10 @@ internal sealed class PilotBrain(
             {
                 effects.Add(new(shipId, BrainModifier.Item, attribute, BrainOperation.PostMultiply, [], [], multiplier));
             }
+            foreach (var (attribute, multiplier) in WorldTuningRules.TravelMultipliers(tuning.Settings.Navigation))
+            {
+                effects.Add(new(shipId, BrainModifier.Item, attribute, BrainOperation.PostMultiply, [], [], multiplier));
+            }
         }
         effects.AddRange(
             MiningDefinitions

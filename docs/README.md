@@ -1,5 +1,7 @@
 # Eden documentation
 
+[Travel settings](world-configuration.md#travel) configure player warp speed, alignment and autopilot gate landings.
+
 [Inactive ship transfers and move-rule audit](protocol/inventory.md#inactive-ship-transfers-and-move-rule-audit-november-15-2026)
 cover local ship cargo, stacking, corporation/container transfers, capacity checks and partial-loot metadata preservation.
 

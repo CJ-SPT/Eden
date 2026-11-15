@@ -17,6 +17,35 @@ namespace Eden.Protocol.Tests.Administration;
 public sealed class WorldSettingsPageTests
 {
     [Fact]
+    public void TravelControlsRoundTripValidateAndAppearInRevisionChanges()
+    {
+        NavigationPolicy policy = new(0, 2, 1.25m);
+        var form = SettingsForm.From(new() { Navigation = policy });
+        Assert.Equal(policy, form.Build().Navigation);
+        Assert.Equal(new NavigationPolicy(), SettingsForm.From(new()).Build().Navigation);
+        form.WarpSpeedMultiplier = 0;
+        form.AlignSpeedMultiplier = 100.01m;
+        List<ValidationResult> errors = [];
+        Assert.False(Validator.TryValidateObject(form, new(form), errors, true));
+        Assert.Contains(errors, error => error.MemberNames.Contains(nameof(form.WarpSpeedMultiplier)));
+        Assert.Contains(errors, error => error.MemberNames.Contains(nameof(form.AlignSpeedMultiplier)));
+        form.WarpSpeedMultiplier = 2;
+        form.AlignSpeedMultiplier = 1.25m;
+        Assert.True(Validator.TryValidateObject(form, new(form), [], true));
+        var changes = ConfigurationDisplay.Compare(new(), new() { Settings = form.Build() });
+        Assert.Contains(changes, change => change.Field == "Warp speed" && change.After == "2×");
+        Assert.Contains(changes, change => change.Field == "Align speed" && change.After == "1.25×");
+        SettingsWorkspace workspace = new();
+        workspace.Load(new());
+        workspace.Activity = SettingsActivity.Travel;
+        workspace.Form.WarpSpeedMultiplier = 2;
+        workspace.Activity = SettingsActivity.Advanced;
+        Assert.Equal(2, workspace.Current.Settings.Navigation.WarpSpeedMultiplier);
+        workspace.Discard();
+        Assert.Equal(1, workspace.Current.Settings.Navigation.WarpSpeedMultiplier);
+    }
+
+    [Fact]
     public void AutopilotDistanceRoundTripsValidatesAndAppearsInRevisionChanges()
     {
         Assert.Equal(15000, SettingsForm.From(new()).AutopilotGateLandingMeters);

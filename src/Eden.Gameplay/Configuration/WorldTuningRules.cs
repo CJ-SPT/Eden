@@ -34,6 +34,8 @@ public static class WorldTuningRules
         {
             throw new InvalidDataException("Autopilot gate landing distance must be between 0 and 100000 metres.");
         }
+        ValidateRate(settings.Navigation.WarpSpeedMultiplier);
+        ValidateRate(settings.Navigation.AlignSpeedMultiplier);
         ValidateRate(settings.Resources.OreYieldMultiplier);
         ValidateRate(settings.Resources.IceYieldMultiplier);
         ValidateRate(settings.Resources.GasYieldMultiplier);
@@ -60,6 +62,30 @@ public static class WorldTuningRules
         ValidateRate(settings.Structures.AnchoringSpeed);
         ValidateRate(settings.Structures.OnliningSpeed);
         ValidateRate(settings.Structures.UnanchoringSpeed);
+    }
+
+    public static IEnumerable<KeyValuePair<DogmaAttributeId, double>> TravelMultipliers(NavigationPolicy policy)
+    {
+        if (policy.WarpSpeedMultiplier != 1)
+        {
+            yield return new(DogmaAttributeId.WarpSpeedMultiplier, (double)policy.WarpSpeedMultiplier);
+        }
+        if (policy.AlignSpeedMultiplier != 1)
+        {
+            // Inertia time is mass times agility; divide agility to make higher settings faster.
+            yield return new(DogmaAttributeId.Agility, 1 / (double)policy.AlignSpeedMultiplier);
+        }
+    }
+
+    public static void ScaleTravel(NavigationPolicy policy, Dictionary<DogmaAttributeId, double> attributes)
+    {
+        foreach (var (attribute, multiplier) in TravelMultipliers(policy))
+        {
+            if (attributes.TryGetValue(attribute, out double value) && value > 0)
+            {
+                attributes[attribute] = value * multiplier;
+            }
+        }
     }
 
     public static IEnumerable<KeyValuePair<DogmaAttributeId, double>> MiningHoldMultipliers(MiningHoldPolicy policy)

@@ -60,6 +60,14 @@ public sealed class SettingsForm
     public int AutopilotGateLandingMeters { get; set; } = NavigationDefinitions.AutopilotLandingMeters;
 
     [Range(typeof(decimal), "0.1", "100")]
+    [Display(Name = "Warp speed")]
+    public decimal WarpSpeedMultiplier { get; set; } = 1;
+
+    [Range(typeof(decimal), "0.1", "100")]
+    [Display(Name = "Align speed")]
+    public decimal AlignSpeedMultiplier { get; set; } = 1;
+
+    [Range(typeof(decimal), "0.1", "100")]
     [Display(Name = "Ore mining yield")]
     public decimal OreYieldMultiplier { get; set; } = 1;
 
@@ -215,6 +223,8 @@ public sealed class SettingsForm
             MarketPollMilliseconds = settings.Simulation.MarketPollMilliseconds,
             ResourceCheckSeconds = settings.Simulation.ResourceCheckSeconds,
             AutopilotGateLandingMeters = settings.Navigation.AutopilotGateLandingMeters,
+            WarpSpeedMultiplier = settings.Navigation.WarpSpeedMultiplier,
+            AlignSpeedMultiplier = settings.Navigation.AlignSpeedMultiplier,
         };
 
     internal WorldSettings Build() =>
@@ -250,7 +260,7 @@ public sealed class SettingsForm
             ),
             Capsuleers = new(GlobalProvisioning, SimulatedPilots, SimulatedMiners, TrafficMultiplier, GateVisitors),
             Simulation = new(CheckpointSeconds, MarketPollMilliseconds, ResourceCheckSeconds),
-            Navigation = new(AutopilotGateLandingMeters),
+            Navigation = new(AutopilotGateLandingMeters, WarpSpeedMultiplier, AlignSpeedMultiplier),
         };
 
     private static long Cents(decimal isk)

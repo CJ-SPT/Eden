@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Travel configuration, November 15, 2026](#travel-configuration-november-15-2026)
 - [Stargate handoff timing, November 14, 2026](#stargate-handoff-timing-november-14-2026)
 - [Shared bookmark folders and access lists, November 11, 2026](#shared-bookmark-folders-and-access-lists--november-11-2026)
 
@@ -43,6 +44,56 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Stargate travel, November 2, 2026](#stargate-travel-november-2-2026)
 - [Native player Orbit and moving navigation targets](#native-player-orbit-and-moving-navigation-targets)
 - [Shared ship motion and collision correction](#shared-ship-motion-and-collision-correction)
+
+## Travel configuration, November 15, 2026
+
+The administration Settings page now groups warp speed, align speed and the existing autopilot gate landing
+distance under **Travel**. `settings.navigation` remains the export group; new multipliers default to 1 and accept
+0.1–100. Configuration revisions retain the existing pending-restart activation and restore workflow.
+
+Resident player fitting applies warp speed to dogma attribute 600 (`WarpSpeedMultiplier`) and inverse align speed
+to attribute 70 (`Agility`) after the ordinary fit graph. The native brain receives matching item post-multipliers.
+Flight snapshots, refits and warp factors consume the resident fitted values. Alignment changes also affect turning
+and acceleration because inertia time is mass times agility. Static catalog definitions and NPC movement are unchanged.
+There is no new saved-world SQL gameplay path. Gate timers, tackle, minimum warp distance and landing clearance are unchanged.
+
+References checked November 15: [EVE University warp mechanics](https://wiki.eveuniversity.org/Warp_Mechanics) and
+[warp time calculation](https://wiki.eveuniversity.org/Warp_time_calculation), reconciled with build-3662168
+dogma/flight adapters and Eden's existing warp equations. Carbon Destiny
+[`27ee40b38a563d29054b32f64c3ebc87fabaec1f`, `Ballpark.cpp`](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp)
+uses the same warp factor for speed, acceleration and braking, including the existing braking ceiling. No independent
+warp time scaling or Blue/Destiny layout changes were introduced. The local evejs reference's
+`server/src/space/destiny/simulation/warp.js` documents the same Carbon mappings; that checkout has no Git metadata.
+
+Automated validation: tool and solution restores passed; the solution build passed with zero warnings/errors
+in 5.54 seconds. All 193 focused .NET tests passed without skips in 37 seconds, covering typed short/long warps,
+alignment, native brain wire values, resident fit caching, checkpoint reopening, configuration restoration,
+legacy defaults, import rejection, administration, autopilot, propulsion, tackle and project dependencies.
+The catalog policy suite (8 tests), formatting policy suite (9 tests) and formatting verification passed.
+The full .NET suite was not requested or run. The first development filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Flight.TravelConfigurationTests.ResidentTravelMatchesNativeModifiersAndSurvivesCheckpointRestartAndRestore`
+(1 passed; 24.17-second build and 6.11-second test invocation). Final focused filter:
+
+```powershell
+$filter = @(
+  'FullyQualifiedName~Eden.Protocol.Tests.Flight.TravelConfigurationTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Administration.WorldSettingsPageTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldTuningTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldConfigurationTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Persistence.PilotBrainTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Flight.AutoNavigationTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Flight.FlightSessionTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Propulsion.PropulsionTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Propulsion.TackleTests'
+  'FullyQualifiedName~Eden.Protocol.Tests.Hosting.GameplayDependenciesTests'
+) -join '|'
+dotnet test --no-build --artifacts-path artifacts/feature-tests --filter $filter
+```
+
+Live acceptance: Not performed; agent client testing is disabled.
+
+Optional maintainer checks: after restart, compare a familiar route with the suggested solo settings and inspect
+the active ship's fitting readouts and warp animation.
 
 ## Stargate handoff timing, November 14, 2026
 

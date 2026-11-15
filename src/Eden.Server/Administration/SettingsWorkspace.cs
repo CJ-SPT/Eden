@@ -10,6 +10,7 @@ internal enum SettingsActivity
     Industry,
     PlanetaryIndustry,
     Structures,
+    Travel,
     World,
     Advanced,
 }
