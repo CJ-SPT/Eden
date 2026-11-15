@@ -6,6 +6,75 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Multi-buy price-history queries, November 15, 2026
+
+The remote server logged 13 slow `marketProxy.GetOldPriceHistory` and
+`GetNewPriceHistory` calls between 19:30:54 and 19:31:13 UTC. They took 254.68–3,075.11 ms
+each, totaling 10,841.46 ms of session processing. The worst call held the world owner
+for 2,204.82 ms; other sessions waited more than two seconds. The subsequent
+`BuyMultipleItems` call took 480.79 ms. Its source checkout was `db3e435f`; this does not identify
+the running image revision. These are maintainer-session logs, not agent gameplay acceptance.
+
+The resident history query joined the complete NPC order book before applying the item,
+date and region predicate. Each old/new request therefore cloned unrelated orders and
+executions under the shared world owner. It now selects the requested types and time
+window through the existing execution index first, resolves only those trades' order IDs,
+and uses catalog station lookups for personal fills. NPC buys and sells still contribute
+once, personal fills contribute only their seller side, and missing NPC orders remain excluded.
+There is no result cache: committed trades, rollbacks, region changes and exact clock
+boundaries remain visible on the next read. Checkpoint persistence and the native history
+rowset format are unchanged.
+
+The gameplay reference is [EVE University trading](https://wiki.eveuniversity.org/Trading).
+The older local EveJS `marketProxyService.js`, SHA-256
+`F457CB1B181CEB570A5FA346C718D71A7CE7B84B8734C88CEE7F2546A8CE175B`, routes both history
+calls to the same history source before splitting old/new rows. The pinned build 3662168
+contracts and Carbon codec revision are recorded in
+[regional market history](industry.md#mining-upgrades-and-regional-trade-history-november-2-2026).
+No reference implementation code was copied.
+
+**Automated validation.** The warmed regression measures four old/new RPC reply pairs,
+including dispatch and Blue encoding, with empty and populated requested histories before
+and after adding 4,096 unrelated orders and executions. On the unchanged query, the populated
+case grew from 4.53 ms / 551,744 bytes to 195.82 ms / 73,884,120 bytes. The updated query
+measured 2.59 ms / 275,264 bytes and 2.61 ms / 275,600 bytes for the same workload.
+The empty case measured 2.41 ms / 243,040 bytes and 1.25 ms / 243,376 bytes after the fix.
+Both variants assert identical reply bytes and zero SQL commands, connections and fitting
+calculations. These local timings measure RPC dispatch/encoding; they exclude socket output,
+concurrent maintenance and client rendering. Checkpoint cost is not an optimization target.
+The initial affected selection passed 108 of 109 cases in 51.84 seconds. The existing
+`RegionalMarketTests.FailedPaymentRollsBackStockGoodsAndHistoryAndRetrySettlesOnce` failed
+with a locked `world.sqlite.owner` during fixture disposal. Its exact-method rerun in a
+clean detached `db3e435f` worktree failed identically (11.01 seconds, plus a 15.51-second
+build). That test uses a SQL payment trigger with a resident host; it is excluded from
+the final affected selection. Initial new-fixture duplicate-assortment and catalog foreign-key
+setup failures were corrected before the passing regressions; the performance baseline
+above uses the corrected fixture with the unchanged production query.
+
+The final selection passed all 108 cases with no skips in 49.46 seconds, including all
+three new regressions. It joins these `FullyQualifiedName~Eden.Protocol.Tests.Market.`
+class suffixes with `|`, groups them, and applies
+`&FullyQualifiedName!~FailedPaymentRollsBackStockGoodsAndHistoryAndRetrySettlesOnce`:
+
+```text
+ResidentMarketHistoryTests, MarketTests, MarketReadCompatibilityTests, MarketReferenceHistoryTests,
+PersonalMarketTests, ResidentEconomyTests, RegionalMarketTests
+```
+
+The new exact-method runs used `FullyQualifiedName=Eden.Protocol.Tests.Market.` plus
+`ResidentMarketHistoryTests.WarmHistoryRepliesDoNotScaleWithUnrelatedOrdersAndExecutions`
+and `ResidentMarketHistoryTests.HistoryPreservesRegionsBoundariesAndCommittedChangesAcrossCheckpoint`.
+Tool and solution restore passed; the solution build passed in 6.89 seconds with zero
+warnings or errors. Both Python policy suites passed (8 catalog and 9 formatting cases)
+in 1.81 seconds. Formatting verification passed in 38.30 seconds, as did Git whitespace
+checks. The full .NET suite was not run. The change has not been deployed to
+the remote container.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Populate the same multi-buy list after updating the server
+and check its native fill time.
+
 ## Login ticket checkpoint isolation, November 15, 2026
 
 The maintainer reported slow reconnects before character selection after an overnight run,

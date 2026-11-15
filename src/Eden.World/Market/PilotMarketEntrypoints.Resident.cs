@@ -384,27 +384,19 @@ internal sealed partial class PilotMarketStore
         var now = clock.GetUtcNow().UtcDateTime;
         long end = now.ToFileTimeUtc();
         long start = now.Date.AddDays(-MarketDefinitions.HistoryDays).ToFileTimeUtc();
-        // The ledger contains one execution per NPC trade. Aggregate actual
-        // regional volume, not the seeded book, personal balances or remote data.
-        var executions =
-            from trade in world.Set<MarketExecution>().AsNoTracking()
-            join order in world.Set<NpcMarketOrder>() on trade.OrderId equals order.Id
-            where order.RegionId == region && Enumerable.Contains(typeIds, trade.TypeId) && trade.Time >= start && trade.Time <= end
-            select trade;
+        // Filter the indexed ledger before resolving orders. A resident LINQ join
+        // materializes the entire NPC book before applying its trailing predicate.
+        var trades = world
+            .Set<MarketExecution>()
+            .Where(t => Enumerable.Contains(typeIds, t.TypeId) && t.Time >= start && t.Time <= end)
+            .ToArray();
+        var orders = world.Set<NpcMarketOrder>();
+        var executions = trades.Where(t => orders.Find(t.OrderId)?.RegionId == region);
         // Personal fills have two wallet entries, but only the seller contributes
         // regional price/volume. NPC executions already contain just one side.
-        var stations = catalog.Stations().Where(s => s.RegionId == region).Select(s => s.Id).ToArray();
-        var personalFills = world
-            .Set<MarketExecution>()
-            .AsNoTracking()
-            .Where(t =>
-                t.OrderId > PersonalMarketRules.FirstOrderId
-                && !t.IsBuy
-                && Enumerable.Contains(stations, t.StationId)
-                && Enumerable.Contains(typeIds, t.TypeId)
-                && t.Time >= start
-                && t.Time <= end
-            );
+        var personalFills = trades.Where(t =>
+            t.OrderId > PersonalMarketRules.FirstOrderId && !t.IsBuy && catalog.FindStation(t.StationId)?.RegionId == region
+        );
         var local = executions
             .AsEnumerable()
             .Concat(personalFills.AsEnumerable())
