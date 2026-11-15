@@ -143,6 +143,37 @@ public sealed class ResourceRenewalTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public void ColdRenewalBatchesOnlyRequestedBeltGeometryAndSkipsMismatchedSystems()
+    {
+        using TestWorld db = new();
+        Prepare(db);
+        Assert.NotEmpty(db.Services.GetRequiredService<IAsteroidField>().List(SystemId));
+        using WorldDbContext world = new(db.Path);
+        var belts = world.Set<SavedBeltRenewal>().AsNoTracking().OrderBy(belt => belt.BeltId).ToArray();
+        world.Database.ExecuteSqlRaw("UPDATE WorldAsteroid SET Quantity=0");
+        // Neither a stale system membership nor a non-belt celestial is renewable.
+        belts[0].SystemId++;
+        var requested = belts.Append(new() { BeltId = 40009087, SystemId = 30000142 }).ToArray();
+        string path = new WorldDatabase(db.Path).CatalogPath;
+        CatalogProvider.Invalidate(path);
+        using var reads = new CatalogReadScope().Begin();
+        using CatalogDbContext catalog = new(path);
+        catalog.Definitions.PreloadCore();
+        using var transaction = world.Database.BeginTransaction();
+        List<string> commands = [];
+        using (var metrics = SessionPerformance.Begin("cold renewal geometry", output.WriteLine, force: true, command: commands.Add)!)
+        {
+            AsteroidFieldStore.Renew(world, catalog, requested);
+            Assert.Equal(3, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+            Assert.Single(commands, sql => sql.Contains("FROM \"Celestial\"", StringComparison.Ordinal));
+        }
+        transaction.Commit();
+        Assert.Equal(RocksPerBelt, world.Set<WorldAsteroid>().Count(rock => rock.Quantity == 0));
+        Assert.Equal((BeltCount - 1) * RocksPerBelt, world.Set<WorldAsteroid>().Count(rock => rock.Quantity > 0));
+    }
+
+    [Fact]
     public void FailedFileDeadlineUpdateRollsBackOreBeforeRetry()
     {
         TestClock clock = new();
@@ -215,6 +246,56 @@ public sealed class ResourceRenewalTests(ITestOutputHelper output)
         Assert.Equal(RocksPerBelt, reopened.Set<WorldAsteroid>().Count(rock => rock.Quantity == 0));
         Assert.All(reopened.Set<WorldAsteroid>().Where(rock => rock.BeltId != FirstBelt), rock => Assert.True(rock.Quantity > 0));
         Assert.Equal(future, reopened.Set<SavedBeltRenewal>().Find(FirstBelt)!.NextRenewal);
+        Assert.All(reopened.Set<SavedBeltRenewal>(), belt => Assert.True(belt.NextRenewal > clock.Now));
+    }
+
+    [Fact]
+    public void StartupRenewalRollsBackEarlierBatchesWhenALaterDeadlineFails()
+    {
+        TestClock clock = new();
+        using TestWorld db = new(clock: clock);
+        Prepare(db);
+        Assert.NotEmpty(db.Services.GetRequiredService<IAsteroidField>().List(SystemId));
+        long deadline;
+        using (WorldDbContext world = new(db.Path))
+        {
+            deadline = world.Set<SavedBeltRenewal>().Min(belt => belt.NextRenewal);
+            for (int index = BeltCount; index <= ResourceRenewalRules.BatchSize; index++)
+            {
+                world.Add(
+                    new SavedBeltRenewal
+                    {
+                        BeltId = FirstBelt + index,
+                        SystemId = SystemId,
+                        NextRenewal = deadline,
+                    }
+                );
+            }
+            world.SaveChanges();
+            world.Database.ExecuteSqlRaw("UPDATE WorldAsteroid SET Quantity=0");
+            world.Database.ExecuteSqlRaw(
+                """
+                CREATE TRIGGER RejectStartupRenewal BEFORE UPDATE OF NextRenewal ON WorldBeltRenewal
+                WHEN OLD.BeltId=(SELECT MAX(BeltId) FROM WorldBeltRenewal)
+                BEGIN SELECT RAISE(ABORT,'test later startup batch rollback'); END;
+                """
+            );
+        }
+        clock.UtcNow = DateTimeOffset.FromFileTime(deadline);
+        using (var reads = new CatalogReadScope().Begin())
+        using (CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath))
+        using (WorldDbContext world = new(db.Path))
+        {
+            Assert.Throws<SqliteException>(() => ResourceRenewalStore.ReconcileStartup(world, catalog, clock.Now));
+            Assert.All(world.Set<WorldAsteroid>().AsNoTracking(), rock => Assert.Equal(0, rock.Quantity));
+            Assert.All(world.Set<SavedBeltRenewal>().AsNoTracking(), belt => Assert.Equal(deadline, belt.NextRenewal));
+            world.Database.ExecuteSqlRaw("DROP TRIGGER RejectStartupRenewal");
+            using var metrics = SessionPerformance.Begin("startup renewal retry", output.WriteLine, force: true)!;
+            ResourceRenewalStore.ReconcileStartup(world, catalog, clock.Now);
+            Assert.InRange(metrics.Connections, 0, 1);
+        }
+        using WorldDbContext reopened = new(db.Path);
+        Assert.Equal(BeltCount * RocksPerBelt, reopened.Set<WorldAsteroid>().Count(rock => rock.Quantity > 0));
         Assert.All(reopened.Set<SavedBeltRenewal>(), belt => Assert.True(belt.NextRenewal > clock.Now));
     }
 }

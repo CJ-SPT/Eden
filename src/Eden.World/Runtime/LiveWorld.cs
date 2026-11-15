@@ -456,18 +456,23 @@ internal sealed partial class LiveWorld : IDisposable
                 {
                     throw new IOException("The saved world could not leave WAL mode. Stop other users of this world before opening it.");
                 }
+                using var copyPhase = SessionPerformance.Phase("startup.worldCopy");
                 disk.BackupDatabase(_memory);
             }
             _observedDataVersion = DataVersion();
             using (WorldDbContext directory = new(_memory))
             {
+                using var directoryPhase = SessionPerformance.Phase("startup.ownerDirectory");
                 OwnerDirectory = new(directory);
             }
             if (!s_worlds.TryAdd(_path, this))
             {
                 throw new InvalidOperationException("This world already has a resident owner.");
             }
-            Heat.Warm();
+            using (SessionPerformance.Phase("startup.heat"))
+            {
+                Heat.Warm();
+            }
             using (Enter())
             {
                 Nanites.Advance(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());

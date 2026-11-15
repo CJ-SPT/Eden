@@ -16,7 +16,6 @@ using Eden.Server.Logging;
 using Eden.Server.Maintenance;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
-using Eden.World.Market;
 using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -171,6 +170,7 @@ internal static class Program
             }
             Directory.CreateDirectory(Path.GetDirectoryName(worldPath)!);
             using FileStream startupOwnership = new(worldPath + ".owner", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+            using var reconciliationPerformance = SessionPerformance.Begin("startup.reconciliation", ServerLog.Console.Trace);
             long reconciliationStarted = Stopwatch.GetTimestamp();
             Eden.Gameplay.Market.WorldEconomySettings? startingEconomy = File.Exists(worldPath)
                 ? null
@@ -190,15 +190,17 @@ internal static class Program
                 $"World reconciliation completed in {Stopwatch.GetElapsedTime(reconciliationStarted).TotalSeconds:F2}s."
             );
         }
-        long hostStarted = Stopwatch.GetTimestamp();
         // Ticket preparation signs a local claim without opening the saved world.
-        using var services = ServerServices.Build(
-            database,
-            options: options,
-            liveWorld: preparationRoot is null,
-            loadConfiguration: preparationRoot is null
+        using var services = ServerStartup.Measure(
+            "host creation",
+            () =>
+                ServerServices.Build(
+                    database,
+                    options: options,
+                    liveWorld: preparationRoot is null,
+                    loadConfiguration: preparationRoot is null
+                )
         );
-        ServerLog.Console.Information($"Host creation completed in {Stopwatch.GetElapsedTime(hostStarted).TotalSeconds:F2}s.");
         if (preparationRoot is { } root)
         {
             if (!OperatingSystem.IsWindows())
@@ -246,18 +248,19 @@ internal static class Program
             lifetime.OnStop("resident world", world.Dispose);
             // Load the canonical world image before accepting players or starting bot turns.
             // The first economic action must not pay the full saved-world hydration cost.
-            long residentStarted = Stopwatch.GetTimestamp();
-            world.Economy.Warm();
-            ServerLog.Console.Information($"Resident world loaded in {Stopwatch.GetElapsedTime(residentStarted).TotalSeconds:F2}s.");
-            accounts.Initialize();
+            ServerStartup.Measure("resident readiness", world.Economy.Warm);
+            ServerStartup.Measure("accounts", accounts.Initialize);
             var mods = services.GetRequiredService<Eden.Server.Modding.ModRuntime>();
             lifetime.OnStop("mods", mods.Stop);
-            mods.Start();
-            services.GetRequiredService<Eden.World.Modding.ModStore>().CompleteActivation();
-            services.GetRequiredService<CatalogProvider>().PreloadCore();
-            services.GetRequiredService<PilotMarketStore>().WarmMarketCatalog();
-            services.GetRequiredService<Eden.Protocol.Industry.EconomicPriceCache>().Warm();
-            services.GetRequiredService<Eden.World.Combat.Npcs.NpcPopulationSeeder>().WarmCatalog(database);
+            ServerStartup.Measure(
+                "mod activation",
+                () =>
+                {
+                    mods.Start();
+                    services.GetRequiredService<Eden.World.Modding.ModStore>().CompleteActivation();
+                }
+            );
+            ServerStartup.WarmCatalogs(services, database);
             if (shutdown.IsCancellationRequested)
             {
                 return;

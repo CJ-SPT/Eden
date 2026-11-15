@@ -8,6 +8,33 @@ namespace Eden.Protocol.Tests.Persistence;
 public sealed class CatalogGeographyTests
 {
     [Fact]
+    public void CelestialBatchesShareCachedIdentityAndMissingEntriesWithSingleLookups()
+    {
+        using TestWorld world = new();
+        var provider = CatalogProvider.Open(new WorldDatabase(world.Path).CatalogPath);
+        int[] ids = [40009087, 50002185, int.MaxValue, 40009087];
+        using (var metrics = SessionPerformance.Begin("cold celestial batch", _ => { }, force: true)!)
+        {
+            var bodies = provider.FindCelestials(ids);
+            Assert.Equal(new[] { 40009087, 50002185 }, bodies.Keys.Order());
+            Assert.Equal(1, metrics.Commands);
+            Assert.Equal(1, metrics.Connections);
+        }
+        var original = provider.FindCelestials(ids);
+        using (var metrics = SessionPerformance.Begin("warm celestial batch", _ => { }, force: true)!)
+        {
+            var bodies = provider.FindCelestials(ids);
+            Assert.Same(original[40009087], bodies[40009087]);
+            Assert.Same(bodies[40009087], provider.FindCelestial(40009087));
+            Assert.Same(bodies[50002185], provider.FindCelestial(50002185));
+            Assert.Null(provider.FindCelestial(int.MaxValue));
+            Assert.Empty(provider.FindCelestials([]));
+            Assert.Equal(0, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+        }
+    }
+
+    [Fact]
     public void StationDirectoriesShareSnapshotsAndFixtureEditsInvalidateTheirGeneration()
     {
         using TestWorld world = new();
@@ -39,7 +66,8 @@ public sealed class CatalogGeographyTests
             fixture.Database.ExecuteSqlRaw("UPDATE Celestial SET X=123 WHERE Id=40009087");
         }
         var provider = CatalogProvider.Open(path);
-        var current = provider.FindCelestial(original.Id)!;
+        var current = provider.FindCelestials([original.Id])[original.Id];
+        Assert.Same(current, provider.FindCelestial(original.Id));
         Assert.Equal(123, current.X);
         Assert.Equal(0, original.X);
         Assert.Same(current, provider.CelestialsInSystem(current.SolarSystemId).Single(body => body.Id == current.Id));

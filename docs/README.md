@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Startup reconciliation and catalog warm-up](protocol/startup.md#startup-reconciliation-and-catalog-warm-up-november-15-2026)
+covers batched belt geometry, atomic downtime renewal, shared catalog reads and per-phase startup diagnostics.
+
 [Travel settings](world-configuration.md#travel) configure player warp speed, alignment and autopilot gate landings.
 
 [Inactive ship transfers and move-rule audit](protocol/inventory.md#inactive-ship-transfers-and-move-rule-audit-november-15-2026)

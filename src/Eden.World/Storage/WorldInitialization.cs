@@ -51,6 +51,9 @@ public static class WorldInitialization
                 database.CatalogPath
             );
         }
+        // Activation can replace the catalog. Capture its resulting generation and
+        // reuse one read connection throughout reconciliation, including belt batches.
+        using var catalogReads = new CatalogReadScope().Begin();
         using WorldDbContext world = new(database.Path);
         using CatalogDbContext catalog = new(database.CatalogPath);
         if (economics is not null)
@@ -88,10 +91,7 @@ public static class WorldInitialization
         }
         using (SessionPerformance.Phase("startup.beltRenewal"))
         {
-            while (new ResourceRenewalStore(database, clock ?? TimeProvider.System).Renew() > 0)
-            {
-                // Reconcile overdue catalog belts before admitting connections.
-            }
+            ResourceRenewalStore.ReconcileStartup(world, catalog, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc());
         }
         var market = new PilotMarketStore(database, clock ?? TimeProvider.System, new MarketChangeSignal());
         using (SessionPerformance.Phase("startup.marketExpiry"))

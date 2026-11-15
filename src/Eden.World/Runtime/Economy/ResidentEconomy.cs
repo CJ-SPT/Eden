@@ -288,7 +288,10 @@ internal sealed partial class ResidentEconomy
         _owner.ProjectShared(null);
         using WorldDbContext world = new(_database.Path) { IsResidentProjection = true };
         world.Database.OpenConnection();
-        LoadProjectionDependencies(world);
+        using (SessionPerformance.Phase("resident.projectionDependencies"))
+        {
+            LoadProjectionDependencies(world);
+        }
         _structures.Clear();
         _cloaked.Clear();
         _sequences.Clear();
@@ -303,6 +306,7 @@ internal sealed partial class ResidentEconomy
         _staleHeads.Clear();
         foreach (var table in _tables.Values)
         {
+            using var phase = SessionPerformance.Phase($"resident.load.{table.Name}");
             table.Load(world);
         }
         using var command = world.Database.GetDbConnection().CreateCommand();

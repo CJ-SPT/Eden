@@ -43,6 +43,35 @@ internal sealed class ResourceRenewalStore(WorldDatabase database, TimeProvider 
             live?.Reads?.ScheduleResources(long.MaxValue);
             return 0;
         }
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        int renewed = RenewSaved(world, catalog, now, limit, policy);
+        long? nextDeadline = renewed == 0 ? world.Set<SavedBeltRenewal>().Min(b => (long?)b.NextRenewal) ?? long.MaxValue : null;
+        transaction.Commit();
+        if (nextDeadline is long scheduled)
+        {
+            live?.Reads?.ScheduleResources(scheduled);
+        }
+        return renewed;
+    }
+
+    // Startup owns the stopped save. Keep bounded generation batches in one
+    // transaction instead of reopening and synchronizing the file for each batch.
+    internal static void ReconcileStartup(WorldDbContext world, CatalogDbContext catalog, long now)
+    {
+        using var transaction = world.Database.BeginTransaction();
+        var policy = EconomicStore.Policy(world);
+        if (policy.RenewBelts)
+        {
+            while (RenewSaved(world, catalog, now, ResourceRenewalRules.BatchSize, policy) > 0)
+            {
+                // All overdue deadlines and their deposits commit together before admission.
+            }
+        }
+        transaction.Commit();
+    }
+
+    private static int RenewSaved(WorldDbContext world, CatalogDbContext catalog, long now, int limit, SavedEconomicPolicy policy)
+    {
         var due = world
             .Set<SavedBeltRenewal>()
             .AsNoTracking()
@@ -51,7 +80,6 @@ internal sealed class ResourceRenewalStore(WorldDatabase database, TimeProvider 
             .ThenBy(b => b.BeltId)
             .Take(limit)
             .ToArray();
-        using CatalogDbContext catalog = new(database.CatalogPath);
         AsteroidFieldStore.Renew(world, catalog, due);
         if (due.Length > 0)
         {
@@ -62,12 +90,6 @@ internal sealed class ResourceRenewalStore(WorldDatabase database, TimeProvider 
                 .Set<SavedBeltRenewal>()
                 .Where(belt => belts.Contains(belt.BeltId))
                 .ExecuteUpdate(setters => setters.SetProperty(belt => belt.NextRenewal, next));
-        }
-        long? nextDeadline = due.Length == 0 ? world.Set<SavedBeltRenewal>().Min(b => (long?)b.NextRenewal) ?? long.MaxValue : null;
-        transaction.Commit();
-        if (nextDeadline is long scheduled)
-        {
-            live?.Reads?.ScheduleResources(scheduled);
         }
         return due.Length;
     }
