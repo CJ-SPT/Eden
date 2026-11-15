@@ -43,7 +43,7 @@ internal sealed class LoopbackServer(
         finally
         {
             Console.CancelKeyPress -= OnCancel;
-            ServerLog.Console.Information("Eden stopped.");
+            ServerLog.Console.Information("Game listener stopped.");
         }
     }
 

@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Gateway stream shutdown](protocol/startup.md#gateway-stream-shutdown-november-15-2026) closes open gRPC
+subscriptions when host shutdown begins and records elapsed time for each shutdown step.
+
 [Corporation chat MOTD](protocol/social.md#corporation-chat-motd-november-15-2026) fixes the native
 `XmppChatMgr.SetMotd` call with authorized resident storage and subject delivery on edits and joins.
 
