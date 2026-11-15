@@ -597,6 +597,10 @@ internal sealed partial class PilotMissionStore(
             PilotId = row.PilotId,
             CombatComplete = row.ObjectiveComplete,
             Bonus = Bonus(row),
+            EnemyFactionId = profile.EnemyFaction,
+            HasShipRestrictions = profile
+                .Rooms.SelectMany(r => r.Gates)
+                .Any(g => g.Access.AllowedShips is not null || g.Access.AllowedRaces.Count > 0),
             Retrieval =
                 profile.Kind != MissionKind.Courier && profile.CargoType > 0
                     ? new(

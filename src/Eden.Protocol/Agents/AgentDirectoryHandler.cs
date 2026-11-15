@@ -19,25 +19,36 @@ internal sealed class AgentDirectoryHandler(INpcDirectory directory) : ISelected
         Dictionary<string, object?>? keywords = null
     )
     {
-        if (
-            service != "agentMgr"
-            || method
-                is not (
-                    "GetAgents"
+        bool supported = (service, method) switch
+        {
+            ("epicArcStatus", "AgentHasEpicMissionsForCharacter") => true,
+            (
+                "agentMgr",
+                "GetAgents"
                     or "GetAgentStaticInfo"
                     or "GetAgentByID"
                     or "GetSolarSystemOfAgent"
                     or "GetCompletedCareerAgentIDs"
                     or "GetMyEpicArcStatus"
                     or "GetMessagesForEpicArcMissions"
-                )
-        )
+            ) => true,
+            _ => false,
+        };
+        if (!supported)
         {
             return PilotCallResult.Unsupported;
         }
         if (keywords is { Count: > 0 })
         {
             return new PilotCallResult.Failure("Unexpected agent directory keywords.");
+        }
+        if (service == "epicArcStatus")
+        {
+            // The Agent Finder checks this even though Eden has no authored epic arcs.
+            // False keeps these catalog agents browsable without advertising playable missions.
+            return args is [long epicAgent] && directory.Agent(epicAgent) is not null
+                ? false
+                : new PilotCallResult.Failure("Choose an active NPC agent.");
         }
         switch (method, args)
         {
@@ -90,7 +101,7 @@ internal sealed record AgentDirectoryReply(IReadOnlyList<CatalogAgent> Agents) :
                 "divisionID",
                 "level",
                 "quality",
-                "isLocator",
+                "isLocatorAgent",
                 "bloodlineID",
             ],
             Agents.Select(agent => new AgentDirectoryRow(agent)).ToArray()

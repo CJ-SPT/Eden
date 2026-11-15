@@ -59,6 +59,9 @@ If you’re keeping an existing world, stop the old server and copy its data bef
 [Cargo container access](docs/protocol/inventory.md#resident-cargo-container-access-november-15-2026) supports
 native opening, names, passwords and content previews through the resident world and its checkpoints.
 
+[Agency Agents & Missions](docs/protocol/agency.md#agents-and-missions-browsing-and-actions--november-15-2026)
+supports native agent browsing, locator filtering, mission previews and existing mission conversations/actions.
+
 ## Build and run
 
 Use the Windows commands in [Start here](#start-here) to prepare data and run a local server. For code milestones, run

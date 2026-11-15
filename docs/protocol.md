@@ -251,6 +251,8 @@ native docking/storage, supported services, configuration speeds and explicit re
 
 [The Agency](protocol/agency.md#native-agency-directories--november-10-2026) records native provider contracts,
 saved signature and ice discovery, source fingerprints and automated validation.
+[Agents & Missions browsing](protocol/agency.md#agents-and-missions-browsing-and-actions--november-15-2026)
+covers Agent Finder locator fields, mission previews, native actions and the remaining special-agent boundary.
 
 [Checkpoint copy outside system ownership](protocol/performance.md#checkpoint-copy-outside-system-ownership-november-10-2026)
 records milestone 5 coherent capture, independently measured copy/projection and queued database writes.

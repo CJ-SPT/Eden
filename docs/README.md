@@ -110,6 +110,8 @@ structure timing settings, automated validation and the remaining specialized sy
 
 [The Agency](protocol/agency.md#native-agency-directories--november-10-2026) covers native discovery providers,
 saved signature counts, known/unknown ice fields and activities with empty directories.
+[Agents & Missions browsing and actions](protocol/agency.md#agents-and-missions-browsing-and-actions--november-15-2026)
+records the Agent Finder, mission-card previews and supported conversation/journal integration.
 
 [Checkpoint copy outside system ownership](protocol/performance.md#checkpoint-copy-outside-system-ownership-november-10-2026)
 records milestone 5 coherent capture, independently measured copy/projection and queued database writes.

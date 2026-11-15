@@ -1,10 +1,30 @@
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Market;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Agents;
+
+internal sealed record MissionEntryPoint(SpacePosition Position) : BlueModel
+{
+    public override object ToBlue() => new object?[] { Position.X, Position.Y, Position.Z };
+}
+
+internal sealed record MissionShipRestrictionsReply(MissionShipRestrictions Restrictions) : BlueModel
+{
+    public override object ToBlue() =>
+        new BlueInstance(
+            "utillib.KeyVal",
+            new Dictionary<string, object?>
+            {
+                ["allowedShipTypes"] = new BlueList<int>(Restrictions.AllowedShipTypes),
+                ["restrictedShipTypes"] = new BlueList<int>(Restrictions.RestrictedShipTypes),
+                ["nonDefaultShipRestrictions"] = Restrictions.NonDefaultShipRestrictions,
+            }
+        );
+}
 
 internal sealed record AgentMissionChanged(string Action, long AgentId) : PilotNotification("OnAgentMissionChange")
 {
@@ -192,6 +212,14 @@ internal sealed record MissionObjectives(MissionOffer Offer, long Now) : BlueMod
             // Pinned agentDialogueUtil._ProcessDungeonData branches on key presence:
             // shipRestrictions must be an integer index, and completionStatus=0
             // marks a failed, struck-out site. Omit unavailable optional values.
+            if (Offer.EnemyFactionId > 0)
+            {
+                dungeon["ownerID"] = Offer.EnemyFactionId;
+            }
+            if (Offer.HasShipRestrictions)
+            {
+                dungeon["shipRestrictions"] = 1;
+            }
             if (combatComplete)
             {
                 dungeon["completionStatus"] = 1;

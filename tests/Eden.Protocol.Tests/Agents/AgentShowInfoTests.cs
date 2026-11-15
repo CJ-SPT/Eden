@@ -23,7 +23,7 @@ public sealed class AgentShowInfoTests
     [InlineData(true)]
     public async Task NativeAgentInfoBindsAndLoadsServiceDetailsWithAdjacentDirectoryReads(bool embedded)
     {
-        using MissionFixture fixture = new();
+        using MissionFixture fixture = new(live: true);
         using var scope = fixture.Services.CreateScope();
         var session = scope.ServiceProvider.GetRequiredService<IPilotSession>();
         const string reference = "N=10001:42-2";

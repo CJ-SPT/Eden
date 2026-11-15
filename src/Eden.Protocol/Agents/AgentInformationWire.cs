@@ -82,6 +82,7 @@ internal sealed record AgentStaticInfoReply(CatalogAgent Agent) : BlueModel
                 ["level"] = Agent.Level,
                 ["quality"] = AgentDirectoryRow.RetiredAgentQuality,
                 ["isLocator"] = Agent.Locator,
+                ["isLocatorAgent"] = Agent.Locator,
                 ["bloodlineID"] = Agent.BloodlineId,
             }
         );

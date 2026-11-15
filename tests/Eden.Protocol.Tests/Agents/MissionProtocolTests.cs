@@ -184,7 +184,7 @@ public sealed class MissionProtocolTests
     public void CombatObjectiveOmitsUnavailableNativeOptionalFieldsAndOnlyReportsSettledCompletion(bool completed)
     {
         using MissionFixture f = new(division: MissionRules.SecurityDivision);
-        var offer = f.Request() with { ObjectiveComplete = completed };
+        var offer = f.Request() with { ObjectiveComplete = completed, EnemyFactionId = 0, HasShipRestrictions = false };
         var objectives = BlueRead.Fields(MissionFixture.Reply(new MissionObjectives(offer, f.Clock.Now)));
         var dungeon = BlueRead.Fields(Assert.Single(Assert.IsType<List<object?>>(objectives["dungeons"])));
         // The native renderer branches on key presence, then uses restrictions as

@@ -144,7 +144,7 @@ public sealed class AgentDirectoryServiceTests
                 "divisionID",
                 "level",
                 "quality",
-                "isLocator",
+                "isLocatorAgent",
                 "bloodlineID",
             },
             Assert.IsType<List<object?>>(rows["header"]).Select(BlueMarshal.Text)

@@ -4,6 +4,7 @@ using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Persistence;
 using Eden.Protocol.Tests.PilotSessions;
+using Eden.Server;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Maps;
@@ -133,6 +134,7 @@ public sealed class MapNavigationTests
         {
             world.Store.SetPosition(world.Store.FindPilot(1000001)!.ShipId, new SpacePosition(1_000_000, 0, 0));
         }
+        using var resident = ServerServices.Build(new(world.Path), clock, liveWorld: true);
         var before = world.Store.FindPilot(1000001)!;
         object?[] requests =
         [
@@ -149,7 +151,7 @@ public sealed class MapNavigationTests
         ];
         Queue<object?> input = new(requests.Select(packet => BlueMarshal.Decode(BlueMarshal.Encode(packet))));
         List<BlueInstance> output = [];
-        using var scope = world.Services.CreateScope();
+        using var scope = resident.CreateScope();
         var session = scope.ServiceProvider.GetRequiredService<IPilotSession>();
         await Assert.ThrowsAsync<EndOfStreamException>(() =>
             session.RunAsync(

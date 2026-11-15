@@ -28,12 +28,7 @@ public static class MissionGateAccessRules
 
     public static void ValidateShip(MissionGateAccess access, InventoryItem ship, int raceId, IReadOnlyList<InventoryItem> fitted)
     {
-        bool explicitShips = access.AllowedShips is not null || access.AllowedRaces.Count > 0;
-        if (
-            access.AllowedShips is not null && !access.AllowedShips.Contains(ship)
-            || access.AllowedRaces.Count > 0 && raceId != 0 && !access.AllowedRaces.Contains(raceId)
-            || !explicitShips && MissionGateRules.DefaultRestricted(ship.GroupId)
-        )
+        if (!AllowsShip(access, ship.TypeId, ship.GroupId, ship.CategoryId, raceId))
         {
             throw new InvalidDataException("This ship is not permitted through this acceleration gate.");
         }
@@ -42,6 +37,11 @@ public static class MissionGateAccessRules
             throw new InvalidDataException("Remove the prohibited fitted equipment before activating this acceleration gate.");
         }
     }
+
+    public static bool AllowsShip(MissionGateAccess access, int typeId, int groupId, int categoryId, int raceId) =>
+        (access.AllowedShips is null || access.AllowedShips.Contains(typeId, groupId, categoryId))
+        && (access.AllowedRaces.Count == 0 || raceId == 0 || access.AllowedRaces.Contains(raceId))
+        && (access.AllowedShips is not null || access.AllowedRaces.Count > 0 || !MissionGateRules.DefaultRestricted(groupId));
 
     public static bool RequiresKey(MissionGateKey? key, bool unlocked)
     {

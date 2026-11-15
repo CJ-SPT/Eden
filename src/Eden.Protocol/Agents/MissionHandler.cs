@@ -102,6 +102,28 @@ internal sealed partial class MissionHandler(
                 // before displaying its entries. Eden has no mission cheat overrides.
                 return false;
             }
+            if (method == "GetDungeonShipRestrictions")
+            {
+                if (
+                    args is not ([long] or [long, null or long])
+                    || (long)args[0]! is <= 0 or > int.MaxValue
+                    || args.Length == 2 && args[1] is long gate && gate <= 0
+                )
+                {
+                    throw new InvalidDataException("Choose a mission dungeon and optional catalog gate ID.");
+                }
+                return new MissionShipRestrictionsReply(
+                    missions.ShipRestrictions(pilotId, agentId, checked((int)(long)args[0]!), args.Length == 2 ? (long?)args[1] : null)
+                );
+            }
+            if (method == "GetEntryPoint")
+            {
+                // Epic-arc previews ask before an offer exists. Only an accepted
+                // mission's resident entrance is exposed; absent/expired sites return None.
+                return args.Length != 0 ? new PilotCallResult.Failure("Read the mission entrance without additional arguments.")
+                    : missions.EntryPoint(pilotId, agentId) is { } position ? new MissionEntryPoint(position)
+                    : PilotCallResult.None;
+            }
             if (method == "GetAgentLocationWrap" && args.Length == 0)
             {
                 // Build 3662168 AgentDialogueWindow.GetAgentHeader reads this before

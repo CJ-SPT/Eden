@@ -112,6 +112,8 @@ public sealed record MissionOffer(
     public MissionRetrieval? Retrieval { get; init; }
     public bool CombatComplete { get; init; }
     public MissionBonus? Bonus { get; init; }
+    public int EnemyFactionId { get; init; }
+    public bool HasShipRestrictions { get; init; }
 }
 
 public sealed record MissionStandingChange(long SourceId, double Before, double After);
@@ -156,6 +158,8 @@ public interface IPilotMissions
     AgentServiceInformation Information(long pilotId, long agentId);
     IReadOnlyList<MissionOffer> Journal(long pilotId, long? agentId = null);
     MissionOffer? Current(long pilotId, long agentId);
+    SpacePosition? EntryPoint(long pilotId, long agentId);
+    MissionShipRestrictions ShipRestrictions(long pilotId, long agentId, int dungeonId, long? gateId = null);
     MissionUpdate Act(long pilotId, long agentId, MissionAction action, long? offerId = null);
     bool CanShareReward(long pilotId, long agentId, long offerId);
     MissionUpdate CompleteWithFleet(long pilotId, long agentId, long offerId);
