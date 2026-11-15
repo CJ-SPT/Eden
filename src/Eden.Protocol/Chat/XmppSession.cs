@@ -9,6 +9,8 @@ namespace Eden.Protocol.Chat;
 [Injectable]
 public sealed class XmppSession(IXmppChat chat, TimeProvider? clock = null)
 {
+    private static readonly TimeSpan KeepAliveInterval = TimeSpan.FromMinutes(1);
+
     public async Task RunAsync(Stream stream, CancellationToken cancellation, Action<long>? established = null)
     {
         using var lifetime = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
@@ -17,6 +19,7 @@ public sealed class XmppSession(IXmppChat chat, TimeProvider? clock = null)
         using SemaphoreSlim output = new(1);
         XmppChatConnection? connection = null;
         Task? events = null;
+        Task? keepAlive = null;
         string domain = chat.Endpoint.Domain;
         string? jid = null;
         bool opened = false;
@@ -60,6 +63,34 @@ public sealed class XmppSession(IXmppChat chat, TimeProvider? clock = null)
                             )
                         );
                     }
+                }
+            }
+            finally
+            {
+                await lifetime.CancelAsync();
+            }
+        }
+        async Task KeepAliveAsync()
+        {
+            using PeriodicTimer timer = new(KeepAliveInterval, clock ?? TimeProvider.System);
+            try
+            {
+                while (await timer.WaitForNextTickAsync(lifetime.Token))
+                {
+                    // Build 3662168 answers server pings, but sends no periodic keepalive.
+                    // Exercise both directions before an idle network path can expire.
+                    await WriteAsync(
+                        XmppWire.Xml(
+                            new XElement(
+                                "iq",
+                                new XAttribute("type", "get"),
+                                new XAttribute("id", "keepalive-" + Guid.NewGuid().ToString("N")),
+                                new XAttribute("from", domain),
+                                new XAttribute("to", jid!),
+                                new XElement(XName.Get("ping", "urn:xmpp:ping"))
+                            )
+                        )
+                    );
                 }
             }
             finally
@@ -157,6 +188,7 @@ public sealed class XmppSession(IXmppChat chat, TimeProvider? clock = null)
                         ready = true;
                         lifetime.CancelAfter(Timeout.InfiniteTimeSpan);
                         established?.Invoke(connection.Pilot.Id);
+                        keepAlive = KeepAliveAsync();
                         events = DeliverAsync(connection);
                         continue;
                     }
@@ -215,7 +247,11 @@ public sealed class XmppSession(IXmppChat chat, TimeProvider? clock = null)
                             }
                             break;
                         case "iq":
-                            await WriteAsync(XmppWire.Xml(HandleIq(connection, stanza, to, payload)));
+                            // IQ results/errors acknowledge requests; replying to them creates an IQ loop.
+                            if ((string?)stanza.Attribute("type") is not ("result" or "error"))
+                            {
+                                await WriteAsync(XmppWire.Xml(HandleIq(connection, stanza, to, payload)));
+                            }
                             break;
                         default:
                             throw new InvalidDataException("Unsupported chat stanza.");
@@ -234,14 +270,11 @@ public sealed class XmppSession(IXmppChat chat, TimeProvider? clock = null)
                 chat.Disconnect(connection.Id);
             }
             await lifetime.CancelAsync();
-            if (events is not null)
+            try
             {
-                try
-                {
-                    await events;
-                }
-                catch (OperationCanceledException) { }
+                await Task.WhenAll(new[] { events, keepAlive }.OfType<Task>());
             }
+            catch (OperationCanceledException) { }
         }
     }
 

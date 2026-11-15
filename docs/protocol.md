@@ -209,6 +209,9 @@ records human Local arrivals, participant roles, and races between snapshots and
 [Chat channel handoffs and queued station signals](protocol/social.md#chat-channel-handoffs-and-queued-station-signals-november-14-2026)
 records source-room roster leakage and stale station callbacks after a controller replacement.
 
+[Chat idle connection keepalives](protocol/social.md#chat-idle-connection-keepalives-november-15-2026)
+records the six-minute reconnect reports, native ping contract and deterministic idle-session coverage.
+
 [Player-created portrait settings](protocol/characters.md#player-created-portrait-settings-november-12-2026)
 records how saved camera and pose fields are adapted for the native scene renderer.
 

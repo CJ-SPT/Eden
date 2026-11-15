@@ -10,6 +10,7 @@ using Eden.Gameplay.Chat;
 using Eden.Protocol.Chat;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Tests.Persistence;
 using Eden.Server.Chat;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,6 +18,68 @@ namespace Eden.Protocol.Tests.Chat;
 
 public sealed class XmppChatTests
 {
+    [Theory]
+    [InlineData("result")]
+    [InlineData("error")]
+    public async Task IdleSessionsExchangeKeepalivesAcrossMultipleReconnectIntervalsWithoutLosingMembership(string acknowledgement)
+    {
+        TestClock time = new();
+        CheckpointClock clock = new(time);
+        using TestWorld world = new(clock: clock, liveWorld: true);
+        var runtime = world.Services.GetRequiredService<ChatRuntime>();
+        var certificate = world.Services.GetRequiredService<ChatCertificate>();
+        await using var server = world.Services.GetRequiredService<ChatServer>();
+        await server.StartAsync(new(IPAddress.Loopback, 0));
+        Guid session = Guid.NewGuid();
+        const long pilot = 90000001;
+        runtime.Update(session, new(pilot, "Idle pilot", 1000044, 30000142, 0));
+        await using var client = await NativeClient.ConnectAsync(
+            server.Endpoint!,
+            certificate.Certificate,
+            pilot,
+            runtime.IssueToken(session)
+        );
+        await client.JoinAsync("local_30000142", "joined");
+        await client.UntilAsync(e => (string?)e.Attribute("id") == "joined");
+        await client.UntilAsync(IsRoster);
+        HashSet<string> requests = [];
+        const int minutes = 13;
+        for (int minute = 1; minute <= minutes; minute++)
+        {
+            time.Seconds = minute * (long)TimeSpan.FromMinutes(1).TotalSeconds;
+            clock.FireDueTimers();
+            var ping = await client.ReadAsync();
+            Assert.Equal("iq", ping.Name.LocalName);
+            Assert.Equal("get", (string?)ping.Attribute("type"));
+            Assert.Equal("eden.chat", (string?)ping.Attribute("from"));
+            Assert.Equal(pilot + "@eden.chat/eveclient", (string?)ping.Attribute("to"));
+            Assert.Equal(XName.Get("ping", "urn:xmpp:ping"), Assert.Single(ping.Elements()).Name);
+            string id = ping.Attribute("id")!.Value;
+            Assert.True(requests.Add(id));
+            // This is the native _handle_ping reply shape, with an error variant for unsupported peers.
+            string payload =
+                acknowledgement == "error"
+                    ? "<ping xmlns='urn:xmpp:ping'/><error type='cancel'>"
+                        + "<service-unavailable xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/></error>"
+                    : "";
+            await client.SendAsync(
+                "<iq type='" + acknowledgement + "' id='" + id + "' from='90000001@eden.chat/eveclient' to='eden.chat'>" + payload + "</iq>"
+            );
+            await client.SendAsync("<iq type='get' id='barrier' to='eden.chat'><ping xmlns='urn:xmpp:ping'/></iq>");
+            var barrier = await client.ReadAsync();
+            Assert.Equal("barrier", (string?)barrier.Attribute("id"));
+            Assert.Equal("result", (string?)barrier.Attribute("type"));
+        }
+        await client.MessageAsync("local_30000142", "still-joined", "after thirteen idle minutes");
+        var message = await client.ReadAsync();
+        Assert.Equal("still-joined", (string?)message.Attribute("id"));
+        Assert.Equal("after thirteen idle minutes", message.Elements().Single(e => e.Name.LocalName == "body").Value);
+        await server.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(10));
+        time.Seconds += (long)TimeSpan.FromMinutes(1).TotalSeconds;
+        clock.FireDueTimers();
+        await Assert.ThrowsAnyAsync<IOException>(client.ReadAsync);
+    }
+
     [Fact]
     public void PeerLocalArrivalCarriesNativeParticipantDataAndDepartureUsesExplicitLeave()
     {

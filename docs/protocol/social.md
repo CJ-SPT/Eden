@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Chat idle connection keepalives, November 15, 2026](#chat-idle-connection-keepalives-november-15-2026)
 - [Corporation owner cache width, November 14, 2026](#corporation-owner-cache-width-november-14-2026)
 - [Presence failure diagnostics, November 14, 2026](#presence-failure-diagnostics-november-14-2026)
 - [Chat channel handoffs and queued station signals, November 14, 2026](#chat-channel-handoffs-and-queued-station-signals-november-14-2026)
@@ -26,6 +27,65 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Mail compose optional source defaults](#mail-compose-optional-source-defaults)
 - [Persistent personal EVE Mail](#persistent-personal-eve-mail)
 - [Station guests, November 4, 2026](#station-guests-november-4-2026)
+
+## Chat idle connection keepalives, November 15, 2026
+
+The user supplied consecutive Docker logs showing pilot 90001835's chat connections ending after
+362.40 and 367.39 seconds, each immediately followed by a replacement connection. No delivery-queue
+exhaustion or game-session disconnect appears in the supplied excerpt. Existing local chat logs also
+record repeated losses approximately six minutes after connection. These are historical observations
+of the problem, not acceptance of this change.
+
+Eden disabled its 30-second login deadline after session establishment, but sent no periodic traffic
+on an otherwise idle XMPP stream. Build 3662168's `XmppConnection` receives and sends application
+traffic without initiating periodic pings; `XmppHandler._handle_ping` answers server pings. An idle
+transport expiry is the working explanation for the repeatable interval; the supplied logs do not
+identify which socket implementation or network intermediary imposed it. `OperationCanceledException`
+alone is not proof of a server timeout: ending the old delivery loop cancels its pending reader too.
+
+Established sessions now send an [XEP-0199 server-to-client ping](https://xmpp.org/extensions/xep-0199.html#server)
+every minute, addressed from `eden.chat` to the authenticated full JID with a unique request ID. The
+native client replies on the same connection, keeping traffic flowing in both directions. IQ result
+and error stanzas are consumed without a reply, including errors carrying the original ping payload.
+The session owns and drains the timer task; writes retain the existing serialization and deadline.
+The keepalive does not require a timely pong to retain membership or impose a new reconnect timer.
+
+Sources: inert inspection of `xmpp/xmppConnection` and `xmpp/xmpphandler` from the pinned client, plus
+execution of the native `_handle_ping` code object with inert attributes and a captured send callback.
+The replay used the verified stock build-3662168 archive SHA-256
+`37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368` and returned the tested IQ-result shape.
+[Carbon IO](https://github.com/carbonengine/io/tree/22af74b8eb81863cc9f62f3dc65b263e7dec5ea3)
+revision `22af74b8eb81863cc9f62f3dc65b263e7dec5ea3` was consulted for socket/SSL ownership; it provides
+low-level transport, not the pinned Python XMPP application heartbeat. The local evejs
+`xmppStubServer.js` was compared (SHA-256
+`9058203c0dc4253b2edde87df5f45a977ec51d44e08425e58ba18af7308afb65`, no Git metadata); its ready-IQ
+handler answers client pings. No reference code was copied. Gameplay context:
+[EVE University chat channels](https://wiki.eveuniversity.org/Chat_Channels_and_Mailing_Lists).
+
+**Automated validation.** The exact regression filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Chat.XmppChatTests.IdleSessionsExchangeKeepalivesAcrossMultipleReconnectIntervalsWithoutLosingMembership`.
+Against the original session code, both cases failed waiting for the first server ping (37.04 seconds
+including setup). With the fix, both passed in 6.91 seconds including setup. The TLS integration test
+uses the resident world and deterministic clock to advance thirteen idle minutes, checks each unique
+ping and acknowledgement handling, then sends a message through the retained Local membership and
+checks shutdown. This establishes the heartbeat contract, not the affected live network path.
+The first test build needed explicit whole-second conversion for `TestClock`; an intermediate
+baseline build referenced the new implementation constant before the test was made independent.
+Tool/solution restore passed, and the solution built with zero warnings/errors in 5.26 seconds.
+The final combined filter was
+`FullyQualifiedName~Eden.Protocol.Tests.Chat|FullyQualifiedName~Eden.Protocol.Tests.Transport.StreamDeadlineTests`:
+53 tests passed in 13.35 seconds including runner setup (feature build 1.98 seconds). Both Python policy
+suites passed: catalog setup, 8 cases in 1.177 seconds; formatting policy, 9 cases in 0.020 seconds.
+Formatting application/verification and diff checks passed. The final build/test/policy/format sequence
+took 70.89 seconds. No full .NET suite was run.
+After rebasing onto concurrent main commit `269a5698`, the same 53 tests passed again in 9.10 seconds
+including runner setup, with a 9.22-second feature build and no warnings/errors.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Rebuild/restart the Docker server with this commit and leave chat idle
+for at least fifteen minutes; verify Local/corporation membership and a subsequent message, retaining
+connection logs if a reconnect still occurs. No client patch or client-file update is required.
 
 ## Corporation owner cache width, November 14, 2026
 
