@@ -14,7 +14,8 @@ internal sealed class DockedCompatibilityHandler(
     IPilotAssets assets,
     DirectionalScanHandler scanner,
     Eden.Gameplay.Structures.IPilotStructures structures,
-    PlayerTradeHandler trades
+    PlayerTradeHandler trades,
+    ICargoContainers containers
 ) : ISelectedPilotCallHandler
 {
     private static CompatibilityRowset Rows(string[] header, params IBlueWritable[] lines) => new(header, lines);
@@ -101,6 +102,11 @@ internal sealed class DockedCompatibilityHandler(
                     )
                     .Concat(scanner.Names(context, ids.OfType<long>().ToHashSet()))
                     .Concat(trades.Locations(ids.OfType<long>().ToHashSet()))
+                    .Concat(
+                        containers
+                            .Names(pilot.PilotId, ids.OfType<long>().ToHashSet())
+                            .Select(item => new LocationRow(item.ItemId, item.Name, null, 0, 0, 0))
+                    )
                     .Concat(
                         structures
                             .Names(ids.OfType<long>().Where(id => id >= Eden.Gameplay.Structures.StructureRules.FirstStructureId).ToArray())

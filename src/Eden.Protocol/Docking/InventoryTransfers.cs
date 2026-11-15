@@ -25,7 +25,9 @@ internal sealed class InventoryTransfers(
     DeferredRefitPrimes refits,
     ICorporationStorage corporationStorage,
     Eden.Gameplay.Exploration.IPilotHacking? hacking = null,
-    Eden.Gameplay.Structures.IPilotStructures? structures = null
+    Eden.Gameplay.Structures.IPilotStructures? structures = null,
+    ICargoContainers? containers = null,
+    CargoContainerHandler? containerHandler = null
 )
 {
     internal PilotCallResult Move(PilotCallContext context, string service, InventoryMoveRequest request)
@@ -37,6 +39,10 @@ internal sealed class InventoryTransfers(
         long destination = service == "@hangar" ? context.Pilot.DockedLocationId : context.Pilot.ShipId;
         try
         {
+            if (containers?.Handles(source) == true && containerHandler is not null)
+            {
+                return containerHandler.Move(context, destination, request, containerHandler.Access(context, source));
+            }
             if (
                 structures is not null
                 && source >= Eden.Gameplay.Structures.StructureRules.FirstStructureId
@@ -162,6 +168,10 @@ internal sealed class InventoryTransfers(
         catch (CargoCapacityException error)
         {
             return new PilotCallResult.NamedFailure("NotEnoughCargoSpace", new CargoSpaceErrorValues(error.Available, error.Required));
+        }
+        catch (CargoContainerPasswordRequiredException error)
+        {
+            return CargoContainerHandler.PasswordRequired(error);
         }
         catch (InvalidDataException error)
         {

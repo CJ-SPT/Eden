@@ -32,6 +32,10 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Set<Eden.Data.World.Market.SavedRegionalMarketStock>().Where(child => child.OrderId == removed.Id));
                 break;
             case Eden.Data.World.Inventory.OwnedItem removed:
+                if (Set<Eden.Data.World.Inventory.SavedCargoContainer>().Find(removed.Id) is { } container)
+                {
+                    Remove(container);
+                }
                 if (Set<Eden.Data.World.Inventory.SavedMutatedItem>().Find(removed.Id) is { } mutation)
                 {
                     Remove(mutation);

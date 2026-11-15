@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Resident cargo container access](protocol/inventory.md#resident-cargo-container-access-november-15-2026)
+records native opening, names, passwords, previews and resident checkpoint recovery.
+
 [Abyssal Deadspace](protocol/abyssal.md) records resident pockets, environmental combat,
 cooperative tiers and rewards, persistent mutaplasmids, and validation for all four milestones.
 

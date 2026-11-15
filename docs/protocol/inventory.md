@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Resident cargo container access, November 15, 2026](#resident-cargo-container-access-november-15-2026)
 - [Cargo container assembly and personal asset worth](#cargo-container-assembly-and-personal-asset-worth)
 - [Criminal loot and lawful recovery, November 14, 2026](#criminal-loot-and-lawful-recovery-november-14-2026)
 
@@ -29,6 +30,75 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Venture ownership, boarding and mining holds](#venture-ownership-boarding-and-mining-holds)
 - [Native recovery corvettes, November 2, 2026](#native-recovery-corvettes-november-2-2026)
 - [Inventory refresh during capsule adoption, November 2, 2026](#inventory-refresh-during-capsule-adoption-november-2-2026)
+
+## Resident cargo container access, November 15, 2026
+
+The supplied screenshots showed the ship-only rename rejection and unsupported bound
+`invbroker.GetInventoryFromId` / `GetContainerContents` calls for assembled containers.
+Cargo, secure cargo, audit log secure and freight containers now receive location-bound inventories.
+`SetLabel` retains its single dispatch owner and routes containers to resident naming.
+`GetSelfInvItem`, `List`, `GetCapacity`, content previews and native pre-open validation use
+the authoritative resident item, including when the client supplies a packed row with stale fields.
+Names publish `OnCfgDataChanged(evelocations, ...)` and survive subsequent name-cache reads.
+
+General and configuration passwords support existence checks, change with old-password verification,
+entry and authorized retrieval. Audit-container configuration and item lock/unlock calls use the pinned
+bit flags. Every operation rechecks ownership, assembly and physical location; corporation reads
+require current division query rights and administration also requires equipment configuration rights.
+Passwords entered in one client context do not authorize another. Rotation revokes previously entered
+passwords, and another pilot selection clears the session cache. Retrieve Password displays a native
+information dialog because the stock client discards the RPC return value.
+
+Personal containers accept whole or partial stacks from the current hangar or active cargo hold and
+return unlocked contents through those inventories. Capacity, lock state, quantities and batch rejection
+are checked before publication. Assembled containers cannot be nested. Corporation container content
+transfers, audit history/log viewing and container stacking remain outside this change;
+existing container repackaging restrictions remain in force.
+Personal asset previews may read a remote station container after validating its real owner and station;
+remote previews do not authorize opening a writable inventory or changing its metadata.
+
+All new gameplay reads and mutations run through `LiveWorld.Economy`. Schema **165** adds
+`WorldCargoContainer` solely as the checkpoint projection of resident names, passwords and configuration.
+There is no gameplay SQL implementation or offline fallback. Item deletion cascades the resident settings
+and their checkpoint row. Detached projection failure rolls back the checkpoint without losing resident
+changes; retries capture the same committed metadata.
+
+Gameplay references: [EVE University Containers](https://wiki.eveuniversity.org/Containers) and
+[Corporation logistics](https://wiki.eveuniversity.org/Corporation_logistics).
+Inert inspection used stock client build **3662168**, archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, specifically
+`invCache.PasswordHandlerCallWrapper`, `menuFunctions.AskNewContainerPassword`, `ConfigureALSC`,
+`RetrievePasswordALSC`, `containerContentWindow.GetContentsList` and `appConst.SCCPasswordType*` / `ALSC*`.
+The existing Blue inventory descriptor and packed-row decoder are reused.
+The local EveJS reference has no Git metadata: `invBroker/secureContainers.js` SHA-256 prefix
+`E0231FF9A9FEA596` and `invBrokerService.js` prefix `8CEC4112DE1B312B` were compared for service behavior;
+no implementation was copied. [Carbon Blue Marshal.cpp](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp)
+at revision `fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae` was consulted for the serialization boundary;
+native service contracts come from the pinned client.
+
+**Automated validation.** Tool restore, solution restore and build passed in 10.2 seconds with no warnings.
+The affected .NET run passed **256 tests** in 101.2 seconds including runner startup. Both Python policy
+suites passed (**8 catalog tests**, **9 formatting tests**); formatting and the 140-column check passed.
+Documentation links, the new anchor, UTF-8, final newlines, whitespace and `git diff --check` passed.
+The full .NET suite was not requested or run. Earlier fixture setup omissions were corrected before this run.
+
+After incorporating the unrelated chat keepalive commit `cae61118`, the integrated solution build passed
+in 9.6 seconds and **27 container/service-registration tests** passed in 9.4 seconds including runner startup.
+Container source was unchanged by that integration. The complete required check sequence took about
+2 minutes 18 seconds; the additional integration build/tests took about 20 seconds.
+
+Development started with exact method filters, including
+`FullyQualifiedName=Eden.Protocol.Tests.Inventory.CargoContainerAssemblyTests.NativeContainerCallsRenameOpenViewContentsAndPersistBothPasswords`.
+The final affected filter was:
+
+```text
+FullyQualifiedName~CargoContainerAssemblyTests|FullyQualifiedName~CorporationStorageTests|FullyQualifiedName~PersonalAssetServiceTests|FullyQualifiedName~PilotFleetTests|FullyQualifiedName~PilotInventoryTests|FullyQualifiedName~ShipStorageTests|FullyQualifiedName~TypedInventoryTests|FullyQualifiedName~InventoryStackSplitTests|FullyQualifiedName~InventoryStackMergeTests|FullyQualifiedName~ItemTrashTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~PilotBindingsTests|FullyQualifiedName~PlayerTradeTests|FullyQualifiedName~ServerServicesTests|FullyQualifiedName~GameplayDependenciesTests|FullyQualifiedName~DataModelOwnershipTests|FullyQualifiedName~CorporationShowInfoTests
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** On the updated server, rename and reopen a station container; set both
+passwords and retrieve them; verify the native content preview and password prompt in a fresh login.
 
 ## Cargo container assembly and personal asset worth
 

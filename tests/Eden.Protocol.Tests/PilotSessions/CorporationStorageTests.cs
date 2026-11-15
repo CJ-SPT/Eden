@@ -61,6 +61,58 @@ public sealed class CorporationStorageTests
     }
 
     [Fact]
+    public void ContainerPasswordsAndNamesRequireCurrentDivisionQueryAndEquipmentConfigurationRights()
+    {
+        using TestWorld world = new(liveWorld: true);
+        int corporation = Prepare(world);
+        var office = Rent(world);
+        const int containerType = 17366;
+        using (Eden.World.Catalog.CatalogDbContext catalog = new(new WorldDatabase(world.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES(448,'Audit Log Secure Container',2);
+                INSERT INTO ItemType(Id,Name,GroupId,Capacity) VALUES(17366,'Station Container',448,1000000);
+                INSERT INTO SourceRecord VALUES('client/types','17366','{{"volume":2000000}}');
+                """
+            );
+        }
+        long id;
+        using (var action = world.Services.GetRequiredService<Eden.World.Runtime.LiveWorld>().Economy.Begin())
+        {
+            id = action.NextItemId();
+            action.Add(
+                new OwnedItem
+                {
+                    Id = id,
+                    OwnerId = corporation,
+                    LocationId = office.Id,
+                    FlagId = FirstDivision,
+                    TypeId = containerType,
+                    Quantity = 1,
+                    Singleton = true,
+                }
+            );
+            action.Commit();
+        }
+        var containers = world.Services.GetRequiredService<ICargoContainers>();
+        containers.Rename(Ceo, id, "Corporate supplies");
+        Access(world, corporation, new(RolesAtHQ: (long)CorporationRole.HangarCanQuery1));
+        Assert.Equal(id, containers.Read(Member, id, new()).Item.Id);
+        Assert.Throws<InvalidDataException>(() => containers.Rename(Member, id, "Unauthorized"));
+        Assert.Throws<InvalidDataException>(() => containers.SetPassword(Member, id, CargoContainerPasswordType.General, null, "secret"));
+        Assert.Throws<InvalidDataException>(() => containers.RetrievePassword(Member, id, CargoContainerPasswordType.General));
+        Access(world, corporation, new((long)CorporationRole.EquipmentConfig, RolesAtHQ: (long)CorporationRole.HangarCanQuery1));
+        containers.SetPassword(Member, id, CargoContainerPasswordType.General, null, "secret");
+        Assert.Equal("secret", containers.RetrievePassword(Member, id, CargoContainerPasswordType.General));
+        Assert.Equal("Corporate supplies", Assert.Single(containers.Names(Member, new HashSet<long> { id })).Name);
+        Access(world, corporation, new((long)CorporationRole.EquipmentConfig));
+        Assert.Throws<InvalidDataException>(() => containers.Read(Member, id, new()));
+        Assert.Throws<InvalidDataException>(() => containers.RetrievePassword(Member, id, CargoContainerPasswordType.General));
+        Assert.Empty(containers.Names(Member, new HashSet<long> { id }));
+    }
+
+    [Fact]
     public void ContainerAssemblyUsesDivisionTakeRightsAndPublishesToOtherMembers()
     {
         using TestWorld world = new(liveWorld: true);

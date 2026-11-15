@@ -82,8 +82,7 @@ internal sealed partial class PilotAssetStore
                     && Location(world, catalog, item.LocationId) is not null
                 )
                 {
-                    // Containers have no saved custom name. The native client falls back to its localized type name.
-                    names.Add(new(item.Id, null));
+                    names.Add(new(item.Id, world.Set<SavedCargoContainer>().Find(item.Id)?.Name));
                 }
             }
             return names;

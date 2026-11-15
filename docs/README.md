@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Cargo container access](protocol/inventory.md#resident-cargo-container-access-november-15-2026) covers native
+opening, renaming, both passwords, configuration and resident checkpoint persistence.
+
 [Abyssal Deadspace](protocol/abyssal.md) records resident runs, pinned client contracts,
 checkpoint recovery, milestone scope and automated validation.
 

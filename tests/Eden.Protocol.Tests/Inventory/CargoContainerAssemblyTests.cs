@@ -13,7 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Inventory;
 
-public sealed class CargoContainerAssemblyTests
+public sealed partial class CargoContainerAssemblyTests
 {
     private const long Owner = ContractAssetTestData.Pilot;
     private const int StationContainer = 17366;
@@ -138,10 +138,13 @@ public sealed class CargoContainerAssemblyTests
                 catalog.Database.ExecuteSqlRaw(
                     """
                     INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (448,'Audit Log Secure Container',2);
+                    INSERT OR IGNORE INTO ItemGroup(Id,Name,CategoryId) VALUES (340,'Secure Cargo',2),(649,'Freight',2);
                     INSERT INTO ItemType(Id,Name,GroupId,Capacity) VALUES
-                        (17366,'Station Container',448,1000000),(3297,'Small Standard Container',12,120);
+                        (17366,'Station Container',448,1000000),(3297,'Small Standard Container',12,120),
+                        (3465,'Small Secure Container',340,120),(33009,'Medium Freight Container',649,5000);
                     INSERT INTO SourceRecord VALUES ('client/types','17366','{{"volume":2000000}}'),
-                        ('client/types','3297','{{"volume":100}}');
+                        ('client/types','3297','{{"volume":100}}'),('client/types','3465','{{"volume":100}}'),
+                        ('client/types','33009','{{"volume":5000}}');
                     """
                 );
             }
@@ -187,6 +190,44 @@ public sealed class CargoContainerAssemblyTests
             );
 
         internal PilotCallResult Call(object?[] args) => Invoke("AssembleCargoContainer", args);
+
+        internal PilotCallResult Service(
+            string method,
+            object?[] args,
+            string service = "invbroker",
+            Dictionary<string, object?>? keywords = null,
+            PilotCallContext? context = null
+        ) => _router.Call(context ?? Context, service, method, BlueMarshal.Decode(BlueMarshal.Encode(args)), _ => { }, keywords);
+
+        internal string Open(long id, PilotCallContext? context = null)
+        {
+            var result = Assert.IsType<PilotCallResult.Success>(Service("GetInventoryFromId", [id, 0L], context: context));
+            var reference = Assert.IsType<BlueObjectReference>(result.Reply.ToBlue());
+            return (context ?? Context).ResolveReference(reference.Id)!;
+        }
+
+        internal long Assembled(int type = StationContainer)
+        {
+            long id = Add(type, 1);
+            Assert.Same(PilotCallResult.None, Call([id, null, 0d]));
+            Context.Notifications.Clear();
+            return id;
+        }
+
+        internal PilotCallContext AnotherContext()
+        {
+            var pilot = Db.Store.FindPilot(1000001)!;
+            var context = new PilotCallContext(
+                1000001,
+                pilot.Account,
+                [pilot],
+                p => new(Db.Store, p, TimeProvider.System, new(), Db.Objects),
+                43,
+                SignedSettings.Empty
+            );
+            context.Select(pilot);
+            return context;
+        }
 
         private PilotCallResult Invoke(string method, object?[] args) =>
             _router.Call(Context, "invbroker", method, BlueMarshal.Decode(BlueMarshal.Encode(args)), _ => { });

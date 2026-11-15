@@ -1,4 +1,5 @@
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -7,8 +8,13 @@ using Eden.Protocol.Skills;
 namespace Eden.Protocol.Docking;
 
 [Injectable]
-internal sealed class FleetHandler(IPilotFleet fleet, ShipDogmaBuilder dogma, DeferredRefitPrimes refits, PilotBrain brain)
-    : ISelectedPilotCallHandler
+internal sealed class FleetHandler(
+    IPilotFleet fleet,
+    ShipDogmaBuilder dogma,
+    DeferredRefitPrimes refits,
+    PilotBrain brain,
+    ICargoContainers containers
+) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -20,7 +26,7 @@ internal sealed class FleetHandler(IPilotFleet fleet, ShipDogmaBuilder dogma, De
     {
         if ((service, method) == ("invbroker", "SetLabel"))
         {
-            return RenameShip(context, args, keywords);
+            return RenameItem(context, args, keywords);
         }
         if ((service, method) == ("ship", "GetShipConfiguration"))
         {
@@ -104,15 +110,17 @@ internal sealed class FleetHandler(IPilotFleet fleet, ShipDogmaBuilder dogma, De
         }
     }
 
-    private PilotCallResult RenameShip(PilotCallContext context, object?[] args, Dictionary<string, object?>? keywords)
+    private PilotCallResult RenameItem(PilotCallContext context, object?[] args, Dictionary<string, object?>? keywords)
     {
         try
         {
             if (args is not [long id, string or byte[]] || keywords is { Count: > 0 })
             {
-                throw new InvalidDataException("Choose a ship and a valid name.");
+                throw new InvalidDataException("Choose a ship or container and a valid name.");
             }
-            string name = fleet.RenameDockedShip(context.Pilot.PilotId, id, BlueMarshal.Text(args[1]));
+            string name = containers.Handles(id)
+                ? containers.Rename(context.Pilot.PilotId, id, BlueMarshal.Text(args[1]))
+                : fleet.RenameDockedShip(context.Pilot.PilotId, id, BlueMarshal.Text(args[1]));
             if (id == context.Pilot.ShipId)
             {
                 context.Flight.RenameShip(name);
