@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Channels;
 using Eden.Gameplay.Chat;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Fleets;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Registration;
@@ -11,11 +12,20 @@ using Eden.Server.Launcher;
 namespace Eden.Server.Chat;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class ChatRuntime(LauncherOptions options, TimeProvider clock, ICooperativeFleets fleets) : IPilotChat, IXmppChat
+internal sealed class ChatRuntime(
+    LauncherOptions options,
+    TimeProvider clock,
+    ICooperativeFleets fleets,
+    ICorporationCommunications? communications = null
+) : IPilotChat, IXmppChat
 {
     private const int QueueCapacity = 256;
     private static readonly TimeSpan TokenLifetime = TimeSpan.FromMinutes(1);
     private readonly object _gate = new();
+
+    // Serialize saved subjects with joins without holding the chat gate while
+    // entering the resident owner (traffic publication takes those locks in reverse).
+    private readonly object _motdGate = new();
 
     // Give transient rooms a fresh namespace after restart so a saved client
     // window cannot accidentally address another newly created conversation.
@@ -116,13 +126,34 @@ internal sealed class ChatRuntime(LauncherOptions options, TimeProvider clock, I
 
     public void Join(Guid connection, ChatRoom room, string? requestId)
     {
-        lock (_gate)
+        lock (_motdGate)
         {
-            if (room.Kind == ChatRoomKind.Fleet && _world.ConnectedPilot(connection) is { } pilot)
+            string motd = "";
+            if (room.Kind == ChatRoomKind.Corporation)
             {
-                Dispatch(_world.UpdateFleet(connection, fleets.Identity(pilot.Id)?.FleetId));
+                lock (_gate)
+                {
+                    _ = _world.RoomInfo(connection, room);
+                }
+                if (room.Id >= CorporationRules.FirstCorporationId)
+                {
+                    motd = (communications ?? throw new InvalidDataException("Corporation communications are unavailable.")).ReadMotd(
+                        checked((int)room.Id)
+                    );
+                }
             }
-            Dispatch(_world.Join(connection, room, requestId, clock.GetElapsedTime(0, clock.GetTimestamp()).Ticks));
+            lock (_gate)
+            {
+                if (room.Kind == ChatRoomKind.Fleet && _world.ConnectedPilot(connection) is { } pilot)
+                {
+                    Dispatch(_world.UpdateFleet(connection, fleets.Identity(pilot.Id)?.FleetId));
+                }
+                Dispatch(_world.Join(connection, room, requestId, clock.GetElapsedTime(0, clock.GetTimestamp()).Ticks));
+                if (room.Kind == ChatRoomKind.Corporation)
+                {
+                    Dispatch([new(connection, new ChatEvent.Subject(room, motd))]);
+                }
+            }
         }
     }
 
@@ -175,6 +206,31 @@ internal sealed class ChatRuntime(LauncherOptions options, TimeProvider clock, I
         lock (_gate)
         {
             return _world.CreatePublic(session, name);
+        }
+    }
+
+    public void SetMotd(Guid session, ChatRoom room, string text)
+    {
+        lock (_motdGate)
+        {
+            ChatPilot pilot;
+            lock (_gate)
+            {
+                pilot = _world.Pilot(session) ?? throw new InvalidDataException("Select a pilot before editing chat.");
+                if (room.Kind != ChatRoomKind.Corporation || room.Id != pilot.CorporationId)
+                {
+                    throw new InvalidDataException("Choose your corporation's channel.");
+                }
+            }
+            (communications ?? throw new InvalidDataException("Corporation communications are unavailable.")).SetMotd(
+                pilot.Id,
+                pilot.CorporationId,
+                text
+            );
+            lock (_gate)
+            {
+                Dispatch(_world.Subject(room, text));
+            }
         }
     }
 

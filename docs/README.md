@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Corporation chat MOTD](protocol/social.md#corporation-chat-motd-november-15-2026) fixes the native
+`XmppChatMgr.SetMotd` call with authorized resident storage and subject delivery on edits and joins.
+
 [Login ticket checkpoint isolation](protocol/performance.md#login-ticket-checkpoint-isolation-november-15-2026)
 covers concurrent reconnects, host-bound tickets and remembered-sign-in recovery.
 

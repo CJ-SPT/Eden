@@ -122,6 +122,13 @@ internal static class XmppWire
                 new XAttribute("id", message.Id),
                 new XElement("body", message.Text)
             ),
+            ChatEvent.Subject subject => new XElement(
+                "message",
+                new XAttribute("from", RoomJid(subject.Room, domain)),
+                new XAttribute("to", recipient),
+                new XAttribute("type", "groupchat"),
+                new XElement("subject", subject.Text)
+            ),
             ChatEvent.Invitation invite => new XElement(
                 "message",
                 new XAttribute("from", RoomJid(invite.Room, domain)),

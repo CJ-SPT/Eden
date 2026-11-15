@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Eden.Data.World.Corporations;
+using Eden.Gameplay.Chat;
 using Eden.Gameplay.Corporations;
 using Eden.Infrastructure.Registration;
 using Eden.World.Runtime;
@@ -21,6 +22,17 @@ internal sealed class CorporationCommunicationStore(WorldDatabase database, Time
             return world.Set<SavedCorporation>().Find(pilot.CorporationId)?.Snapshot(0).Details.Communications
                 ?? CorporationCommunications.Empty;
         });
+
+    public string ReadMotd(int corporationId) =>
+        Resident.Economy.Inspect(world =>
+            world.Set<SavedCorporation>().Find(corporationId)?.Snapshot(0).Details.Communications?.Motd ?? ""
+        );
+
+    public void SetMotd(long actorId, int corporationId, string text)
+    {
+        ChatRules.CheckMotd(text);
+        Change(actorId, CorporationRole.ChatManager, state => state with { Motd = text }, corporationId);
+    }
 
     public long SaveBulletin(long actorId, string title, string body, long? id, long? editedAt)
     {
@@ -113,10 +125,19 @@ internal sealed class CorporationCommunicationStore(WorldDatabase database, Time
         );
     }
 
-    private void Change(long actorId, CorporationRole role, Func<CorporationCommunications, CorporationCommunications> update)
+    private void Change(
+        long actorId,
+        CorporationRole role,
+        Func<CorporationCommunications, CorporationCommunications> update,
+        int? expectedCorporation = null
+    )
     {
         using var transaction = Resident.Economy.Begin(TransactionParticipants.None);
         var corporation = Current(transaction, actorId);
+        if (expectedCorporation is { } target && corporation.Id != target)
+        {
+            throw new InvalidDataException("You cannot edit another corporation's channel.");
+        }
         if (!CorporationRoleStore.Has(transaction, actorId, corporation, role))
         {
             throw new InvalidDataException("You do not have the corporation role required for this action.");

@@ -415,6 +415,14 @@ public sealed class ChatWorld(long roomSeed = 0)
         return events;
     }
 
+    public IReadOnlyList<ChatDelivery> Subject(ChatRoom room, string text) =>
+        _members.TryGetValue(room, out var members)
+            ? members
+                .Where(member => ConnectedPilot(member) is { } pilot && Eligible(pilot, room))
+                .Select(member => new ChatDelivery(member, new ChatEvent.Subject(room, text)))
+                .ToArray()
+            : [];
+
     public IReadOnlyList<ChatDelivery> Invite(Guid connection, ChatRoom room, long target)
     {
         var pilot = RequireMember(connection, room);

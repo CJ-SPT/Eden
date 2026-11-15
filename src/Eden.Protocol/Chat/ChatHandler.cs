@@ -60,6 +60,10 @@ internal sealed class ChatHandler(IPilotChat chat) : ISelectedPilotCallHandler, 
                 ("XmppChatMgr", "CreatePlayerOwnedChannel", [var name]) when name is string or byte[] => XmppWire.Channel(
                     chat.CreatePublic(_session, BlueMarshal.Text(name))
                 ),
+                ("XmppChatMgr", "SetMotd", [var room, var text]) when room is string or byte[] && text is string or byte[] => SetMotd(
+                    BlueMarshal.Text(room),
+                    BlueMarshal.Text(text)
+                ),
                 ("XmppChatMgr", "AddCharacterToChannel", [var channel, long id, ..]) when channel is string or byte[] && id > 0 => Allow(
                     BlueMarshal.Text(channel),
                     id
@@ -69,7 +73,8 @@ internal sealed class ChatHandler(IPilotChat chat) : ISelectedPilotCallHandler, 
                     "ResyncSystemChannelAccess"
                         or "CreatePrivateChannel"
                         or "CreatePlayerOwnedChannel"
-                        or "AddCharacterToChannel",
+                        or "AddCharacterToChannel"
+                        or "SetMotd",
                     _
                 ) => new PilotCallResult.Failure("Invalid chat request."),
                 ("chatAuthenticationService", "GetAuthenticationToken", _) => new PilotCallResult.Failure("Invalid chat token request."),
@@ -80,6 +85,12 @@ internal sealed class ChatHandler(IPilotChat chat) : ISelectedPilotCallHandler, 
         {
             return new PilotCallResult.Failure(error.Message);
         }
+    }
+
+    private PilotCallResult SetMotd(string room, string text)
+    {
+        chat.SetMotd(_session, XmppWire.ParseRoom(room, chat.Endpoint.Domain), text);
+        return PilotCallResult.None;
     }
 
     private PilotCallResult Allow(string name, long pilot)
