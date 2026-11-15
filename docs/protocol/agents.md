@@ -2,6 +2,28 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Acceleration gate facing — November 15, 2026
+
+The reported gate model pointed away from the ship's warp course. Eden's mission and
+DED gates used the bound destination pocket for warp and omitted the model's direction. Their scene contacts now
+derive a unit vector from the gate's center to that pocket's entry point. This works for existing sites because
+their positions and gate links already determine the direction. [EVE University acceleration gate reference](https://wiki.eveuniversity.org/Acceleration_gate)
+
+Inert inspection of build 3662168 (`code.ccp` SHA-256 `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`)
+confirmed that `spaceMgr.GetTypeData` reads `slimItem.dunDirection` and `WarpGate.Assemble` calls
+`SetStaticDirection`. `SpaceObject.AlignToDirection` writes the negated input into the
+matrix's model Z basis. The pinned `wgs01_fx.black` and `wgl01_fx.black` assets place their activation stream on
+model +Z, so Eden sends the opposite of the travel vector as the native three-float tuple. The evejs 261108.1
+snapshot also supplies this vector in the static slim item. The existing warp commands still target the destination
+pocket. [Carbon Destiny warp reference at 114e89fa](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Ball.cpp)
+
+The automated mission test decodes the gate slim item from the scene addition, checks its axis against the emitted
+`WarpTo` course, and advances the flight to the destination room. The DED test compares the scene contact's facing
+with its authorized destination. Live client rendering was not exercised.
+
+Focused test classes were `MissionGateTests`, `MissionGateAccessTests`, `MissionLayoutTests`, `DedAndGhostSiteTests`,
+`TypedFlightTests`, and `AbyssalTests`.
+
 ## Singleton mission cargo — November 14, 2026
 
 The remaining courier inventory blocker affected eight Transaction Data Delivery templates (**2305–2312**) and

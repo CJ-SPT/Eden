@@ -128,17 +128,20 @@ internal sealed partial class CombatAnomalyStore
             .Rooms.SelectMany(
                 (room, index) =>
                     room.Objects.Select(body =>
-                        body with
+                    {
+                        var gate = room.Gates.FirstOrDefault(g => g.Body.Id == body.Id);
+                        return body with
                         {
-                            Id = room.Gates.FirstOrDefault(g => g.Body.Id == body.Id) is { } gate
+                            Id = gate is not null
                                 ? DedGateId(site.Id, gate.Slot)
                                 : CombatAnomalyRules.FirstObjectId
                                     + (site.Id - CombatAnomalyRules.FirstSiteId) * AnomalyEncounterRules.ObjectsPerSite
                                     + profile.Rooms.Take(index).Sum(r => r.Objects.Length)
                                     + room.Objects.IndexOf(body),
                             Position = origin + body.Position,
-                        }
-                    )
+                            AccelerationGateDirection = gate is null ? null : (profile.Rooms[gate.Destination].Offset - body.Position).Unit,
+                        };
+                    })
             )
             .ToArray();
         return new(

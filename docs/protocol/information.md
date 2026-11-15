@@ -9,6 +9,7 @@
 acceleration gates to move between shared pockets. Room coordinates use pinned placements relative to their entry
 beacons. Eden spaces the rooms 50,000 km apart. The entry lobby and later rooms spawn their saved encounters on arrival.
 Ordinary warps into inner pockets redirect to the lobby from outside the complex. Within the complex, use the gates.
+Each gate model faces its destination pocket. [Acceleration gate facing](agents.md#acceleration-gate-facing--november-15-2026)
 
 The Drug Outlet's room sequence is 4437, 4434, 4435, 4436. Gate objects 96282, 96198 and 96203 use pinned ship
 type list 482. The last gate requires clearing the retail pocket and a Drugdealer Passcard to Storage Area (17892)

@@ -306,6 +306,8 @@ correct dense simulated-pilot membership updates and distinguish saved, paused, 
 [DED complexes and Ghost Sites](protocol/information.md#ded-complexes-and-ghost-sites) and
 [DED catalog expansion and escalations](protocol/information.md#ded-catalog-expansion-and-escalations)
 
+[Acceleration gate facing](protocol/agents.md#acceleration-gate-facing--november-15-2026) covers mission and DED gate models.
+
 [Resident combat and resource sites](protocol/information.md#resident-combat-and-resource-sites)
 covers anomaly lifecycle, DED access, expeditions, gas and ice, and Agency counts.
 

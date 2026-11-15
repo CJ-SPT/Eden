@@ -245,14 +245,20 @@ internal static class MissionCatalog
         {
             throw new InvalidDataException("Every catalog gate needs an explicit destination binding.");
         }
-        List<MissionRoomProfile> rooms = [];
-        for (int index = 0; index < bindings.Length; index++)
+        var roomPositions = bindings
+            .Select((room, index) => (room.RoomId, Position: new SpacePosition(index * MissionGateRules.RoomSpacing, 0, 0)))
+            .ToDictionary(r => r.RoomId, r => r.Position);
+        if (definition.Gates.Any(g => !roomPositions.ContainsKey(g.DestinationRoomId)))
         {
-            var binding = bindings[index];
+            throw new InvalidDataException($"Mission {definition.MissionId}: invalid gate destination.");
+        }
+        List<MissionRoomProfile> rooms = [];
+        foreach (var binding in bindings)
+        {
             var room = source[binding.RoomId.ToString(System.Globalization.CultureInfo.InvariantCulture)];
             var entry = room.Objects!.Values.Single(o => o.ObjectID == binding.EntryObjectId);
             var origin = Position(entry.Position!);
-            var offset = new SpacePosition(index * MissionGateRules.RoomSpacing, 0, 0);
+            var offset = roomPositions[binding.RoomId];
             var anchors = room
                 .Objects.Values.Where(o => o.TypeID.HasValue && o.Position is not null)
                 .OrderBy(o => o.ObjectID)
@@ -274,7 +280,7 @@ internal static class MissionCatalog
             foreach (var item in room.Objects.Values.Where(o => o.TypeID.HasValue && o.Position is not null))
             {
                 var type = catalog.FittingType(item.TypeID!.Value);
-                bool gate = definition.Gates.Any(g => g.FromObjectId == item.ObjectID);
+                var gate = definition.Gates.FirstOrDefault(g => g.FromObjectId == item.ObjectID);
                 bool container = definition.Containers.Any(c => c.ObjectId == item.ObjectID);
                 bool structure = definition.Structures.Any(s => s.ObjectId == item.ObjectID);
                 if (
@@ -287,10 +293,11 @@ internal static class MissionCatalog
                 {
                     continue;
                 }
-                if (type.GroupId == MissionGateRules.AccelerationGateGroup && !gate)
+                if (type.GroupId == MissionGateRules.AccelerationGateGroup && gate is null)
                 {
                     throw new InvalidDataException("Unbound acceleration gate in mission room.");
                 }
+                var position = offset + Position(item.Position!) - origin;
                 objects.Add(
                     new(
                         item.ObjectID!.Value,
@@ -298,7 +305,7 @@ internal static class MissionCatalog
                         type.GroupId,
                         type.CategoryId,
                         corporation,
-                        offset + Position(item.Position!) - origin,
+                        position,
                         DungeonObjectGeometry.Radius(
                             type.CategoryId,
                             type.Radius,
@@ -308,7 +315,8 @@ internal static class MissionCatalog
                     )
                     {
                         IsGlobal = false,
-                        Solid = !gate && DungeonObjectGeometry.IsSolid(type.GroupId),
+                        Solid = gate is null && DungeonObjectGeometry.IsSolid(type.GroupId),
+                        AccelerationGateDirection = gate is null ? null : (roomPositions[gate.DestinationRoomId] - position).Unit,
                         Name =
                             (container || structure) && item.ObjectNameID is long name
                                 ? catalog.Read(CatalogData.Client.LocalizationFsdEnUs, name)?.Text
@@ -338,16 +346,9 @@ internal static class MissionCatalog
                     return new MissionRoomGate(g.FromObjectId, g.DestinationRoomId, g.RequiresClear, access);
                 })
                 .ToImmutableArray();
-            if (
-                gates.Any(g =>
-                    !objects.Any(o => o.Id == g.ObjectId && o.GroupId == MissionGateRules.AccelerationGateGroup)
-                    || !bindings.Any(r => r.RoomId == g.DestinationRoomId)
-                )
-            )
+            if (gates.Any(g => !objects.Any(o => o.Id == g.ObjectId && o.GroupId == MissionGateRules.AccelerationGateGroup)))
             {
-                throw new InvalidDataException(
-                    $"Mission {definition.MissionId}, room {binding.RoomId}: invalid gate source or destination."
-                );
+                throw new InvalidDataException($"Mission {definition.MissionId}, room {binding.RoomId}: invalid gate source.");
             }
             rooms.Add(new(binding.RoomId, offset, objects.ToImmutableArray(), gates) { SpawnAnchors = anchors });
         }

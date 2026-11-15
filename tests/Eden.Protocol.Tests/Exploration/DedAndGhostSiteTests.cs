@@ -260,6 +260,9 @@ public sealed class DedAndGhostSiteTests
         {
             f.Db.Store.SetPosition(ship, gates[i].Position, system);
             var gate = store.Gate(f.PilotId, gates[i].Id, f.Clock.Now);
+            var facing = Assert.IsType<SpacePosition>(gates[i].AccelerationGateDirection);
+            Assert.Equal(1, facing.Length, 10);
+            Assert.Equal(1, facing.Dot((gate.Destination - gate.Position).Unit), 10);
             store.ActivateGate(f.PilotId, gate.Id, gate.Destination, f.Clock.Now);
             f.Db.Store.SetPosition(ship, gate.Destination, system);
             store.Arrive(system, gate.Destination, f.Clock.Now);

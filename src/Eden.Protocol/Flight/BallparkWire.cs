@@ -118,6 +118,11 @@ internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
                 fields["abyssFilamentTypeID"] = abyss.FilamentTypeId;
             }
         }
+        if (Body.AccelerationGateDirection is { } direction && direction != SpacePosition.Zero)
+        {
+            // Build 3662168's AlignToDirection negates the model's +Z axis, which is the launch axis in the gate assets.
+            fields["dunDirection"] = new object?[] { -direction.X, -direction.Y, -direction.Z };
+        }
         if (Body.Container is { } container)
         {
             fields["isEmpty"] = container.Empty;

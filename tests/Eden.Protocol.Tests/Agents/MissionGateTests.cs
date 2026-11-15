@@ -12,6 +12,7 @@ using Eden.Gameplay.Propulsion;
 using Eden.Protocol.Exploration;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Serialization;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -224,10 +225,22 @@ public sealed class MissionGateTests
         Move(f, mission.SystemId, gate.Position);
         var monitor = new CombatAnomalyHandler(f.Services.GetRequiredService<ICombatAnomalies>(), f.Missions, f.Clock);
         monitor.Advance(f.Context);
-        Assert.Contains(
-            f.Context.Flight.Updates.Select(u => u.Command).OfType<DestinyCommand.AddBalls>(),
-            addition => addition.Addition.Slims.OfType<StaticSlimItem>().Any(s => s.Body.Id == gate.Id)
+        var gateSlim = Assert.Single(
+            f.Context.Flight.Updates.Select(u => u.Command)
+                .OfType<DestinyCommand.AddBalls>()
+                .SelectMany(addition => addition.Addition.Slims)
+                .OfType<StaticSlimItem>(),
+            slim => slim.Body.Id == gate.Id
         );
+        var slimFields = BlueRead.Fields(Assert.IsType<BlueInstance>(BlueMarshal.Decode(BlueMarshal.Encode(gateSlim))).State);
+        var axis = Assert.IsType<object?[]>(slimFields["dunDirection"]);
+        Assert.Equal(3, axis.Length);
+        var modelDirection = new SpacePosition(
+            Assert.IsType<double>(axis[0]),
+            Assert.IsType<double>(axis[1]),
+            Assert.IsType<double>(axis[2])
+        );
+        Assert.Equal(1, modelDirection.Length, 10);
         foreach (var args in new object?[][] { [], [null], ["gate"], [gate.Id, 1L], [-1L] })
         {
             Assert.IsType<PilotCallResult.Failure>(f.Call("keeper", "ActivateAccelerationGate", args));
@@ -236,7 +249,9 @@ public sealed class MissionGateTests
         Assert.Null(MissionFixture.Reply(f.Call("keeper", "ActivateAccelerationGate", [gate.Id], new())));
         Assert.Null(MissionFixture.Reply(f.Call("keeper", "ActivateAccelerationGate", [gate.Id])));
         var warp = Assert.Single(f.Context.Flight.Updates.Select(u => u.Command).OfType<DestinyCommand.WarpTo>());
-        Assert.InRange(new SpacePosition(warp.X, warp.Y, warp.Z).DistanceTo(gate.Destination), 0, 2000);
+        var landing = new SpacePosition(warp.X, warp.Y, warp.Z);
+        Assert.InRange(landing.DistanceTo(gate.Destination), 0, 2000);
+        Assert.Equal(-1, modelDirection.Dot((landing - gate.Position).Unit), 10);
         f.Clock.Seconds += 120;
         f.Context.Flight.Checkpoint();
         Assert.InRange(f.Context.Pilot.Position!.DistanceTo(gate.Destination), 0, 2000);
