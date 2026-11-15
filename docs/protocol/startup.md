@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Startup reconciliation and catalog warm-up (November 15, 2026)](#startup-reconciliation-and-catalog-warm-up-november-15-2026)
 - [Launcher CA certificate downloads](#launcher-ca-certificate-downloads)
 - [Orderly host shutdown](#orderly-host-shutdown)
 - [Gateway stream shutdown (November 15, 2026)](#gateway-stream-shutdown-november-15-2026)
@@ -26,6 +27,92 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Two pilots in Jita, November 2, 2026](#two-pilots-in-jita-november-2-2026)
 - [Character logoff to selection, November 4, 2026](#character-logoff-to-selection-november-4-2026)
 - [Client-requested exit logging, November 4, 2026](#client-requested-exit-logging-november-4-2026)
+
+## Startup reconciliation and catalog warm-up (November 15, 2026)
+
+The supplied production log reported 57.83 seconds until listeners were ready: 16.28 seconds reconciling the save,
+18.58 seconds creating the host (including a 13.11-second world constructor), then approximately 23 seconds before
+readiness. The separate 0.15-second resident message measured a later, already-hydrated read. It did not measure
+the constructor's saved-world copy and typed table loading.
+
+Startup now shares one catalog generation and read connection after mod/skill activation. Overdue belt renewal
+looks up just the requested celestial IDs in batches, caching both found and absent IDs alongside ordinary
+single-object lookups. It no longer loads every celestial in each belt's system. All startup renewal batches use
+one transaction and the existing world context. Generation remains bounded to 32 belts at a time; deadlines and
+ore commit together after all overdue batches finish. A failed later batch rolls back earlier batches too.
+Ordinary resident renewal continues through the resident owner and checkpoint mechanism.
+
+Catalog warm-up shares one catalog read scope across core definitions, market supply, public prices and NPC
+profiles. Information logs now time host creation, resident readiness, account maintenance, mod activation and
+each catalog warm-up separately. `EDEN_TRACE_PERFORMANCE=1` additionally reports saved-world copying, owner
+directory loading, heat initialization, projection dependency discovery and individual resident table hydration.
+
+The gameplay reference is [EVE University mining](https://wiki.eveuniversity.org/Mining), which describes depleted
+belt replenishment at downtime. Eden retains its existing scheduled renewal policy, pinned catalog generation,
+deterministic deposit identities/geometry, preservation of above-baseline quantities and next future deadlines.
+The local `evejs/server/bootstrap.js` was consulted for startup organization; no reference code was copied, and
+its optional belt-reset policy was not adopted.
+
+### Automated validation
+
+The automated replay copies a frozen saved world and its effective catalog using read-only SQLite backups, then
+measures reconciliation, population readiness, host construction, accounts and the same catalog warm-up used by
+the server. Copying and final disposal are outside the reported readiness interval. It uses a fixed test clock
+and opens no listeners. Set `EDEN_STARTUP_REPLAY_SOURCE` to the directory containing `world.sqlite` to run
+`Eden.Protocol.Tests.Hosting.StartupPerformanceTests.ReplaySavedWorldReadinessWithoutListeners`.
+
+The measured fixture contains a 396,730,368-byte save and a roughly 2.31 GB catalog. The replay intentionally
+omits mod/skill package activation, package/editor sidecar metadata, HTTP/TLS/game listeners and background
+maintenance. It is a local Windows Debug comparison, not a prediction of the production machine's startup time.
+
+Three separate-process runs per version used the same frozen source and fixed clock. The baseline was
+`05a66e75` with the replay and phase instrumentation added. Results:
+
+| Measurement | Baseline | Optimized |
+| --- | ---: | ---: |
+| Median readiness without listeners/mod activation | 33.139 s | 20.218 s |
+| Readiness range | 28.229–37.110 s | 16.910–20.533 s |
+| Median overdue belt renewal | 17.715 s | 5.408 s |
+| Renewal database connections | 3,404–3,511 | 1 |
+| Median total startup database connections | 4,081 | 38 |
+| Renewal commands | 5,321–5,431 | 3,243 |
+| NPC warm-up connections | 542 | 0 additional (shared with core warm-up) |
+
+Median measured readiness improved by 39%; this does not imply that the supplied production log's 57.83 seconds
+will improve by the same percentage. Saved-world copying itself took about 0.3 seconds locally. Typed hydration
+still dominates host creation: asteroid and pilot-skill tables were the largest measured loads. Account maintenance
+also includes a durable checkpoint. Those existing costs remain visible in the new diagnostics.
+
+Focused regressions cover batched geometry reads, missing-ID caching, duplicate IDs, shared object identity,
+catalog-edit invalidation, stale system membership, non-belt celestials, rollback across multiple batches,
+retry/reopen, future deadlines and preservation of deposit contents. Existing resident renewal tests retain
+their world-SQL, connection and fitting-count checks.
+
+The initial method filters selected `ResourceRenewalTests.ColdRenewalBatchesOnlyRequestedBeltGeometryAndSkipsMismatchedSystems`,
+`CatalogGeographyTests.CelestialBatchesShareCachedIdentityAndMissingEntriesWithSingleLookups`,
+`ResourceRenewalTests.StartupRenewsOverdueBeltsOnceAndLeavesLaterDeadlinesAlone` and
+`ResourceRenewalTests.StartupRenewalRollsBackEarlierBatchesWhenALaterDeadlineFails` by exact fully qualified name.
+Fixture-ID and reused-connection assertions were corrected during test development before the final run.
+
+The final OR-combined `FullyQualifiedName~Eden.Protocol.Tests.` filter selected `Hosting`,
+`Persistence.WorldInitializationTests`, `Persistence.LiveWorldTests`, `Persistence.CatalogGeographyTests`,
+`Persistence.CatalogProviderTests`, `Mining.ResourceRenewalTests`, `Mining.AsteroidFieldTests`,
+`Economy.EconomicLifecycleTests`, `Capsuleers.CapsuleerStartupPerformanceTests`, `Administration.SkillEditorTests`,
+`Administration.ModRuntimeTests` and `Administration.ModFoundationTests`. It passed 125 tests in 29.60 seconds of
+command wall time (27 seconds runner duration), with three pinned-client package tests skipped because
+`EDEN_TEST_CLIENT_ROOT` was not configured. The optional replay was exercised separately against the full fixture.
+Tool and solution restore and the solution build passed with zero warnings/errors; solution restore/build took
+9.05 seconds. Both Python policy suites passed (8 catalog tests and 9 formatting tests) in 1.95 seconds.
+`tools/Format.ps1 -Check` passed, including C# style, CSharpier and the 140-character code-width policy.
+The full .NET suite was not run.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. Production readiness after this change remains unmeasured.
+
+### Optional maintainer checks
+
+Compare the next normal production boot's per-phase timings and final listener readiness with the supplied log.
 
 ## Orderly host shutdown
 

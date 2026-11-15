@@ -3,6 +3,9 @@
 [Published administration assets](protocol/world-configuration.md#published-administration-framework-assets-november-15-2026)
 fix missing Blazor startup scripts in Docker images and record the project-only restore regression.
 
+[Startup reconciliation and catalog warm-up](protocol/startup.md#startup-reconciliation-and-catalog-warm-up-november-15-2026)
+reduces repeated catalog reads and file transactions before readiness, and exposes individual startup costs.
+
 [Travel configuration](protocol/navigation.md#travel-configuration-november-15-2026) adds player warp speed,
 align speed and autopilot gate landing controls in a dedicated Settings category.
 

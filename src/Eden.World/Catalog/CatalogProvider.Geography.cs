@@ -28,6 +28,39 @@ public sealed partial class CatalogProvider
 
     public ImmutableArray<CatalogGateDefinition> GatesInSystem(int systemId) => _systemGates.Value.GetValueOrDefault(systemId, []);
 
+    internal IReadOnlyDictionary<int, CatalogCelestialDefinition> FindCelestials(IEnumerable<int> ids)
+    {
+        Dictionary<int, CatalogCelestialDefinition> result = [];
+        List<int> missing = [];
+        foreach (int id in ids.Distinct())
+        {
+            if (!_celestials.TryRead(id, out var cached))
+            {
+                missing.Add(id);
+            }
+            else if (cached.Value is { } body)
+            {
+                result.Add(id, body);
+            }
+        }
+        if (missing.Count > 0)
+        {
+            RequireCurrent();
+            using CatalogDbContext catalog = new(Identity.Path);
+            Interlocked.Increment(ref _loads);
+            var rows = CelestialRows(catalog.Set<Celestial>().Where(body => missing.Contains(body.Id))).ToDictionary(body => body.Id);
+            foreach (int id in missing)
+            {
+                var value = _celestials.Read(id, () => new(rows.ContainsKey(id), rows.GetValueOrDefault(id), CelestialEstimatedBytes));
+                if (value.Value is { } body)
+                {
+                    result.Add(id, body);
+                }
+            }
+        }
+        return result;
+    }
+
     public CatalogCelestialDefinition? FindCelestial(long id) =>
         id is >= int.MinValue and <= int.MaxValue
             ? _celestials

@@ -206,13 +206,15 @@ internal sealed partial class AsteroidFieldStore(WorldDatabase database, TimePro
 
     private static WorldAsteroid[] RenewalDeposits(CatalogDbContext catalog, IReadOnlyList<SavedBeltRenewal> belts)
     {
+        var bodies = catalog.Definitions.FindCelestials(belts.Select(belt => belt.BeltId));
         _ = catalog.ReadMany(CatalogData.Client.Asteroidcountbytypeidbeltid, belts.Select(belt => (long)belt.BeltId));
         return belts
             .SelectMany(belt =>
-                catalog
-                    .CelestialsInSystem(belt.SystemId)
-                    .Where(body => body.Id == belt.BeltId && body.GroupId == AsteroidDefinitions.BeltGroup)
-                    .SelectMany(body => Generate(catalog, body))
+                bodies.TryGetValue(belt.BeltId, out var body)
+                && body.SolarSystemId == belt.SystemId
+                && body.GroupId == AsteroidDefinitions.BeltGroup
+                    ? Generate(catalog, body)
+                    : []
             )
             .ToArray();
     }
