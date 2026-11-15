@@ -71,6 +71,27 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
 
     private static bool IsTrue(object? value) => value is true or 1L;
 
+    private static IReadOnlyList<long> FacilityIds(object?[] args, Dictionary<string, object?>? keywords)
+    {
+        if (args is not [var selection] || keywords is { Count: > 0 })
+        {
+            throw new InvalidDataException("Choose one collection of industry facility IDs.");
+        }
+        IEnumerable<object?> values = selection switch
+        {
+            List<object?> list => list,
+            object?[] tuple => tuple,
+            HashSet<long> set => set.Cast<object?>(),
+            _ => throw new InvalidDataException("Invalid industry facility ID collection."),
+        };
+        return values
+            .Select(value =>
+                value is long id && id > 0 ? id : throw new InvalidDataException("Industry facility IDs must be positive integers.")
+            )
+            .Distinct()
+            .ToArray();
+    }
+
     private long CheckLocation(PilotCallContext context, Dictionary<string, object?> request, string key)
     {
         var location = Values(request.GetValueOrDefault(key));
@@ -270,6 +291,14 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
                     );
                 case ("facilityManager", "GetFacility") when args is [long station]:
                     return Facility(industry.Facility(pilotId, station));
+                case ("facilityManager", "GetFacilitiesByID"):
+                    var selectedFacilities = industry.FacilitiesById(pilotId, FacilityIds(args, keywords));
+                    var selectedCategories = industry.ScienceProductCategories();
+                    return new BlueList<IndustryFacilityReply>(
+                        selectedFacilities
+                            .Select(f => new IndustryFacilityReply(f, industry.ProductTypes(f.Id), selectedCategories))
+                            .ToArray()
+                    );
                 case ("facilityManager", "GetFacilityLocations") when args is [long station, long owner] && owner == pilotId:
                     industry.CheckStation(pilotId, station);
                     return new BlueList<IndustryLocationReply>([Location(industry.Facility(pilotId, station), pilotId)]);

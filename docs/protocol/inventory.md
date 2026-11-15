@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Container item context menus, November 15, 2026](#container-item-context-menus-november-15-2026)
 - [Resident cargo container access, November 15, 2026](#resident-cargo-container-access-november-15-2026)
 - [Cargo container assembly and personal asset worth](#cargo-container-assembly-and-personal-asset-worth)
 - [Criminal loot and lawful recovery, November 14, 2026](#criminal-loot-and-lawful-recovery-november-14-2026)
@@ -30,6 +31,60 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Venture ownership, boarding and mining holds](#venture-ownership-boarding-and-mining-holds)
 - [Native recovery corvettes, November 2, 2026](#native-recovery-corvettes-november-2-2026)
 - [Inventory refresh during capsule adoption, November 2, 2026](#inventory-refresh-during-capsule-adoption-november-2-2026)
+
+## Container item context menus, November 15, 2026
+
+The follow-up client screenshot reported unsupported `invbroker.MachoBindObject(GetInventoryFromId)`
+when right-clicking an item inside a container. In stock build **3662168**,
+`menucheckers.ItemChecker.IsInAssetSafety` and `IsInTradeSession` walk upward with
+`invCache.GetInventoryFromId(locationID).GetItem()`. The local `GetItem` fetches `GetSelfInvItem`.
+A container in a station leads to a second inventory bind for the station; a container in cargo
+leads through its ship first. The earlier container implementation supported the container and ship
+steps but had no station-by-ID binding. The automated ancestry regression reproduced that exact
+unsupported result for both locked and unlocked contents before the correction.
+
+The selected-pilot inventory handler now maps the pilot's current docked location ID to the existing
+personal hangar inventory. This supplies the existing station metadata row and terminates the native
+menu walk. The binding uses location lifetime and expires on departure. Remote IDs, extra arguments
+and station binds while undocked remain unsupported. Parent reads preserve contained item flags and
+ownership, and the station listing continues to show only direct hangar contents.
+
+The reference is [EVE University Containers](https://wiki.eveuniversity.org/Containers).
+Inert inspection used the pinned archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+The local EveJS `invBrokerService.js` (SHA-256 prefix `8CEC4112DE1B312B`, no Git metadata)
+also recognizes the current station as an inventory target. No reference implementation was copied.
+The existing Blue codec and inventory row models are reused.
+
+**Automated validation.** The final affected run passed **220 tests** in 1 minute 46 seconds
+(110.5 seconds including runner startup), including the 11 new container-menu/facility cases.
+Tool/solution restore and solution build passed; the build took 19.2 seconds with no warnings.
+Both Python policy suites passed (eight catalog and nine formatting tests), and formatting verification
+and the 140-column check passed. Policy/format verification took 49.5 seconds. Documentation links,
+anchors, UTF-8, final newlines, whitespace and `git diff --check` passed. The final required check sequence
+took about three minutes, excluding diagnostic runs. No full .NET suite was requested or run.
+The exact initial filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Inventory.CargoContainerAssemblyTests.NativeItemMenuWalksFromContainerThroughItsParentsToTheDockedStation`.
+All four cases first failed at the missing station bind, then passed with the fix. The container class
+subsequently passed 30 tests. Warm repeated station ancestry reads assert zero database commands,
+connections and fitting calculations. No saved-world SQL implementation or fallback was added.
+
+The first expanded selection included `PilotServicesTests` and was stopped after 163 passes and four
+failures (167 completed tests, 1 minute 12 seconds). These failures came from its offline fixture reaching
+the resident-only Abyssal tick. On unchanged main `f83a659c`, the first failing method passed in isolation,
+but a broader baseline reproduced the same four failures and three additional failures with the identical
+`Abyssal runs require the resident world` error; that run was stopped at 82 passes / seven failures
+(89 completed tests, 54 seconds). These timing-sensitive baseline fixture failures remain outside this
+change. The successful final selection excluded `PilotServicesTests` and used:
+
+```text
+FullyQualifiedName~CargoContainerAssemblyTests|FullyQualifiedName~PilotBindingsTests|FullyQualifiedName~TypedInventoryTests|FullyQualifiedName~PilotInventoryTests|FullyQualifiedName~ShipStorageTests|FullyQualifiedName~CorporationStorageTests|FullyQualifiedName~ServerServicesTests|FullyQualifiedName~IndustryFacilityLookupTests|FullyQualifiedName~Eden.Protocol.Tests.Industry.IndustryTests|FullyQualifiedName~BulkIndustryDeliveryTests|FullyQualifiedName~ProductionCatalogTests|FullyQualifiedName~ReactionJobTests|FullyQualifiedName~Eden.Protocol.Tests.Structures.StructureTests
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** On the updated server, right-click locked and unlocked items inside
+a station container, then repeat with a container in ship cargo.
 
 ## Resident cargo container access, November 15, 2026
 

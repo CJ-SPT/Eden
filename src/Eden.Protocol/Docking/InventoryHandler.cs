@@ -369,6 +369,11 @@ internal sealed class InventoryHandler(
                 "@hangar",
                 PilotBindingLifetime.Location
             ),
+            // Native item menus walk container/ship ancestors with GetInventoryFromId
+            // until GetSelfInvItem reaches the station. Reuse the existing personal hangar binding.
+            ("invbroker", "GetInventoryFromId")
+                when pilot.Position is null && args is [long id, ..] && args.Length is 1 or 2 && id == pilot.DockedLocationId =>
+                context.Reference("@hangar", PilotBindingLifetime.Location),
             ("invbroker", "GetInventoryFromId")
                 when args is [long id, ..] && fleet.Find(pilot.PilotId, id) is { } ship && CanReadShip(context, ship) => context.Reference(
                 $"{ShipInventoryPrefix}{id}",

@@ -7,6 +7,43 @@ Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP
 [Planetary industry](planetary.md) now covers surface colonies, extraction, all 68 processing schematics,
 command launches and NPC customs import/export. Earlier milestone scope statements below remain historical.
 
+## Job facility batch lookups, November 15, 2026
+
+The supplied Industry job-window screenshot reported unsupported `facilityManager.GetFacilitiesByID`
+while displaying a completed manufacturing job. In build **3662168**,
+`eve/client/script/industry/facilitySvc.FacilityService.GetFacilities` fetches a collection of facility IDs
+missing from its cache and primes every returned facility. Eden supplied single-facility and regional
+browser calls but had no owner for this batch method. The new wire regression reproduced the unsupported call.
+
+The handler accepts native lists, sets and tuples of positive facility IDs, deduplicates them, and returns
+the existing named facility models as a Python list. Invalid request shapes return an ordinary validation
+error; unknown facilities are omitted. A typed `IPilotIndustry.FacilitiesById` operation resolves the batch
+in one resident inspection, sharing the catalog context and current economic inputs. NPC facilities can be
+looked up outside the pilot's current regional browser. Structure access, destruction and active service
+capabilities are checked against resident state on every read. An accessible structure retains its job
+metadata when an industry service goes offline, with that activity removed from the reply.
+
+The reference is [EVE University Industry](https://wiki.eveuniversity.org/Industry).
+Inert inspection used pinned client archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+The local EveJS `facilityManagerService.js` (SHA-256 prefix `0BC9E82C23845780`, no Git metadata)
+was compared for the list reply and missing-ID behavior. No implementation was copied.
+The existing facility reply schema and Blue codec are reused.
+
+**Automated validation.** All five new facility lookup cases passed in the final **220-test affected run**
+(1 minute 46 seconds). See the [shared validation record](inventory.md#container-item-context-menus-november-15-2026)
+for the final filter and the separately reproduced baseline session-fixture failures.
+The exact initial filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Industry.IndustryFacilityLookupTests.JobWindowBatchPrimesRequestedFacilitiesAndStillDeliversReadyJobs`.
+The regression checks serialized facility fields, manufacturing product data, duplicate and unknown IDs,
+out-of-region lookup, unchanged ready-job state, actual delivery and its notification. Additional cases
+cover malformed and empty batches and immediate resident structure access, offline-service and destruction
+changes. New lookup tests use resident worlds; a warmed batch asserts zero saved-world SQL commands.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Reopen the completed job in the updated server's Industry window and deliver it.
+
 ## Refreshing market quotes after an immediate fill
 
 The November 13 client log reported repeated stale-price rejections following a Venture purchase at Kihtaled VIII.

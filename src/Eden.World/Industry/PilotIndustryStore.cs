@@ -225,6 +225,54 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         );
     }
 
+    public IReadOnlyList<IndustryFacility> FacilitiesById(long pilotId, IReadOnlyList<long> facilityIds)
+    {
+        var live =
+            Eden.World.Runtime.LiveWorld.Find(database.Path)
+            ?? throw new InvalidOperationException("Industry facility batches require a resident world.");
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        return live.Economy.Inspect<IReadOnlyList<IndustryFacility>>(world =>
+        {
+            _ = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown pilot.");
+            List<IndustryFacility> facilities = [];
+            foreach (long id in facilityIds.Distinct())
+            {
+                IndustryStation station;
+                if (id >= StructureRules.FirstStructureId)
+                {
+                    var structure = world.Set<SavedStructure>().Find(id);
+                    if (
+                        structure is null
+                        || structure.State == StructureState.Destroyed
+                        || !PilotStructureStore.Access(world, structure, pilotId)
+                    )
+                    {
+                        continue;
+                    }
+                    station = IndustryStation.From(PilotStructureStore.Snapshot(world, catalog, structure));
+                }
+                else
+                {
+                    if (catalog.Definitions.FindStation(id) is not { } npc)
+                    {
+                        continue;
+                    }
+                    station = IndustryStation.From(npc);
+                }
+                // An existing job still needs its structure metadata when its service goes offline.
+                if (
+                    station.StructureServices is not null
+                    || HasService(catalog, station)
+                    || HasService(catalog, station, StationService.Laboratory)
+                )
+                {
+                    facilities.Add(PricedFacility(world, catalog, station));
+                }
+            }
+            return facilities;
+        });
+    }
+
     private static IReadOnlyDictionary<DogmaAttributeId, double> Attributes(CatalogDbContext catalog, int typeId) =>
         catalog.Definitions.Attributes(typeId);
 

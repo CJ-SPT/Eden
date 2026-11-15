@@ -3,6 +3,10 @@
 [Ordinary corporation member auto-removal](protocol/corporations.md#ordinary-member-auto-removal-november-15-2026)
 records resident single/bulk requests, next-dock settlement, native pending rows and protection against stale removals.
 
+[Container item menus](protocol/inventory.md#container-item-context-menus-november-15-2026) and
+[job facility lookups](protocol/industry.md#job-facility-batch-lookups-november-15-2026) correct native parent binding
+and missing facility-cache batch calls.
+
 [Corporation blueprint lock/unlock votes](protocol/corporations.md#blueprint-lock-and-unlock-votes-november-15-2026)
 records immediate lockdowns, permanent lock results, CEO sanctions, native lock caches and resident inventory enforcement.
 

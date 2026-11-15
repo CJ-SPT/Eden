@@ -122,6 +122,7 @@ public interface IPilotIndustry : IPilotIndustrySkills
     void CheckAccess(long pilotId, long stationId);
     void CheckStation(long pilotId, long stationId);
     IReadOnlyList<IndustryFacility> Facilities(long pilotId);
+    IReadOnlyList<IndustryFacility> FacilitiesById(long pilotId, IReadOnlyList<long> facilityIds);
     IndustryFacility Facility(long pilotId, long stationId);
     IReadOnlyList<int> ProductTypes(long? stationId = null);
     IReadOnlyList<int> ScienceProductCategories();

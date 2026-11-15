@@ -1,5 +1,9 @@
 # Eden documentation
 
+[Container item menus](protocol/inventory.md#container-item-context-menus-november-15-2026) and
+[job facility lookups](protocol/industry.md#job-facility-batch-lookups-november-15-2026) cover native context-menu
+ancestry and completed-job facility-cache fixes.
+
 [Cargo container access](protocol/inventory.md#resident-cargo-container-access-november-15-2026) covers native
 opening, renaming, both passwords, configuration and resident checkpoint persistence.
 
