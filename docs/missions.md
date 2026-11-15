@@ -2,7 +2,7 @@
 
 [Documentation index](README.md) / [Implementation and validation record](protocol/agents.md#supported-mission-content-expansion--november-9-2026)
 
-The build-3662168 pool contains **371 definitions: 74 combat encounters, 182 ordinary deliveries, 92 delivery storylines and 23 mining missions**. The [complete catalog audit](data/mission-support-3662168.csv) lists all **2,892** source records, including the **2,521** that remain unavailable. A blocked encounter may need verified content rather than a new engine capability.
+The build-3662168 pool contains **383 definitions: 74 combat encounters, 194 ordinary deliveries, 92 delivery storylines and 23 mining missions**. The [complete catalog audit](data/mission-support-3662168.csv) lists all **2,892** source records, including the **2,509** that remain unavailable. A blocked encounter may need verified content rather than a new engine capability.
 
 New offers include a timed ISK bonus: an additional **50% of the quoted base reward** for turn-in within **six hours of acceptance**.
 The base reward remains available after that window. Existing saved offers keep their original rewards.
@@ -68,6 +68,34 @@ Duo of Death requires both named combatants, with optional sentries/spider drone
 
 Each encounter selects one deterministic alternative from each reported group. Variable counts use the report's upper bound. Reported distances guide selection among the pinned room's native NPC anchors; missing distances retain explicit Eden hints (typically 20–25 km). Fixed batteries use their own catalog positions, and ship groups use deterministic spacing around the selected anchors. See [mission layout corrections](protocol/agents.md#mission-layout-corrections--november-9-2026) for placement policy and save compatibility. Catalog twins are admitted only when their full `killMission` payload matches a reviewed encounter and they do not declare chains or extra scripts. This is a content reconstruction, not recovery of CCP's hidden mission selection or NPC-group tables.
 
+## Mission chains
+
+Ordinary mission chains now have reusable, resident-backed sequential progression. Four complete level-one
+Distribution chains contribute **12 stages**, included in the 194 ordinary deliveries above:
+
+| Chain | Ordered catalog mission IDs | Supplier faction |
+| --- | --- | --- |
+| Save the Trees | 4838 → 4839 → 4840 | Minmatar |
+| Hauling Fur | 4841 → 4842 → 4843 | Gallente |
+| Hunting a Heretic | 4844 → 4845 → 4846 | Amarr |
+| For the Troops | 4847 → 4849 → 4853 | Caldari |
+
+Only the first stage enters the ordinary offer pool. Completing a stage atomically pays its rewards, consumes its
+cargo and offers the next stage through the same agent. Reopen the conversation or request the next mission to view
+that saved offer. Its cargo is issued only when accepted. Later stages require the immediately preceding completed
+stage for the same pilot and agent; they cannot be rolled independently. Missing or ineligible later content excludes
+the whole chain. Checkpoints retain offers, progression and exactly-once settlement.
+
+Declining, quitting or expiring a stage ends that run; the agent returns to its ordinary root pool. Existing Eden
+reward, supplier and route rules apply per stage, including the issuing-station pickup policy. Each completed ordinary
+stage advances the storyline counter once. Each stage uses its own seven-day offer and acceptance deadline and
+six-hour bonus; shared chain timers and alternate branches are not inferred from mission titles.
+See the [engine, evidence and validation record](protocol/agents.md#resident-mission-chain-progression--november-15-2026).
+
+The previous blanket chain-progression exclusion covered 278 ordinary definitions. The engine now handles complete
+linear sequences, while the remaining **266** require complete verified bindings or additional mechanics for their
+parts. Their unsupported encounters are not bypassed. Special-agent and epic-arc lifecycles remain separate blockers.
+
 ## Singleton courier cargo
 
 Nine definitions require a single indivisible item rather than a packaged stack:
@@ -119,7 +147,7 @@ The client catalog omits courier agent-level assignments. Existing eight level a
 
 These bands are not CCP level assignments. Rewards use Eden's existing level/difficulty/social-skill rules. Pickup is the issuing agent's station; the existing route policy selects a neighboring station, preferring the corporation, then a local fallback. Missing catalog deadlines retain seven days. Authored positive deadlines apply to both the offer and the completion window; acceptance starts a fresh window. The existing twenty definitions stay first in their eligible offer pools, followed by the expansion in stable order. Supplier restrictions mean an individual agent offers only a subset of the total pool. Generic delivery storylines still require sixteen completed missions for the same faction and level.
 
-Chain parts, scripted objectives/node graphs, initial gifts, other singleton forms, non-expiring or longer-than-seven-day lifecycles and fixed item rewards are excluded. Non-generic storyline, career, epic-arc, COSMOS, research, mining and other specialized agent lifecycles are outside the courier pool. Many excluded combat records reference hidden `npcGroupingID` values without publishing roster contents or objective triggers; those require verified reports and explicit bindings. Level-five combat remains outside the admitted encounter policy.
+Chain parts outside the complete reviewed sequences above, scripted objectives/node graphs, initial gifts, other singleton forms, non-expiring or longer-than-seven-day lifecycles and fixed item rewards are excluded. Non-generic storyline, career, epic-arc, COSMOS, research, mining and other specialized agent lifecycles are outside the courier pool. Many excluded combat records reference hidden `npcGroupingID` values without publishing roster contents or objective triggers; those require verified reports and explicit bindings. Level-five combat remains outside the admitted encounter policy.
 
 Gameplay references: [University distribution reports](https://wiki.eveuniversity.org/Distribution_mission_reports), [agent types and divisions](https://wiki.eveuniversity.org/Agent), and the revision-specific encounter links recorded per definition. The source reports describe gameplay; pinned catalog records determine build-specific identities. Source inspection and automated checks do not establish native client acceptance.
 
@@ -133,4 +161,4 @@ python tools/Export-MissionFixture.py --catalog src/Eden.Server/data/catalog.sql
 python tests/Eden.Protocol.Tests/Persistence/mission_content_test.py
 ```
 
-The first command emits the runtime manifest and exhaustive CSV audit. The second captures **787 types and 4,586 source records** for offline tests, including all authored NPC alternatives, objective cargo, geometry, faction/corporation references and ordinary/commander loot dependencies. SDE mission records retain only the English name fallback; native English messages are captured separately. No game launch or runtime network access is involved.
+The first command emits the runtime manifest and exhaustive CSV audit. The second captures **796 types and 4,786 source records** for automated tests, including all authored NPC alternatives, objective cargo, geometry, faction/corporation references and ordinary/commander loot dependencies. SDE mission records retain only the English name fallback; native English messages are captured separately. No game launch or runtime network access is involved. Chain execution tests use the resident world.

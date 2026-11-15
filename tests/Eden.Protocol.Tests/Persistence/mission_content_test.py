@@ -3,12 +3,13 @@ import copy
 import csv
 import json
 import pathlib
+import sqlite3
 import sys
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / 'tools'))
-from mission_content import delivery_rejection
+from mission_content import delivery_rejection, courier_chain_definitions
 
 
 class MissionAdmissionTests(unittest.TestCase):
@@ -40,6 +41,48 @@ class MissionAdmissionTests(unittest.TestCase):
                 mission = copy.deepcopy(self.mission)
                 mission.update(change)
                 self.assertIsNotNone(delivery_rejection(mission, 'A delivery', 100))
+
+    def test_reviewed_chains_do_not_bypass_scripts_inventory_or_deadline_rejections(self):
+        for change in [dict(nodeGraphID=1), dict(expirationTime=0),
+                       dict(courierMission=dict(objectiveTypeID=16044, objectiveQuantity=2, objectiveSingleton=1))]:
+            mission = copy.deepcopy(self.mission)
+            mission.update(change)
+            self.assertIsNotNone(delivery_rejection(mission, 'A delivery (1 of 3)', 100, reviewed_chain=True))
+
+    def test_complete_courier_chain_bindings_fail_closed_on_catalog_drift(self):
+        fixture = json.loads((ROOT / 'tests/Eden.Protocol.Tests/Fixtures/MissionCatalog.json').read_text(encoding='utf-8'))
+        with sqlite3.connect(':memory:') as db:
+            db.execute('CREATE TABLE SourceRecord (Dataset TEXT, Key TEXT, Data TEXT, PRIMARY KEY(Dataset,Key))')
+            db.executemany('INSERT INTO SourceRecord VALUES (?,?,?)',
+                           [(r['dataset'], str(r['key']), json.dumps(r['data'])) for r in fixture['records']])
+            self.assertEqual(12, len(courier_chain_definitions(db)))
+            original = db.execute("SELECT Data FROM SourceRecord WHERE Dataset='client/missions' AND Key='4839'").fetchone()[0]
+            for field, value in [('factionID', 500003), ('courierMission.objectiveTypeID', 34),
+                                 ('courierMission.objectiveSingleton', 0)]:
+                with self.subTest(field=field):
+                    db.execute("UPDATE SourceRecord SET Data=json_set(Data,?,?) WHERE Dataset='client/missions' AND Key='4839'",
+                               ('$.' + field, value))
+                    with self.assertRaises(ValueError):
+                        courier_chain_definitions(db)
+                    db.execute("UPDATE SourceRecord SET Data=? WHERE Dataset='client/missions' AND Key='4839'", (original,))
+            db.execute("DELETE FROM SourceRecord WHERE Dataset='client/missions' AND Key='4839'")
+            with self.assertRaises(ValueError):
+                courier_chain_definitions(db)
+
+    def test_chain_manifest_preserves_all_ordered_links_and_excludes_unreviewed_chains(self):
+        manifest = json.loads((ROOT / 'src/Eden.World/Agents/missions-3662168.json').read_text(encoding='utf-8'))
+        missions = {m['missionId']: m for m in manifest['missions']}
+        chains = [(4838, 4839, 4840), (4841, 4842, 4843), (4844, 4845, 4846), (4847, 4849, 4853)]
+        self.assertEqual(12, sum('chain' in m for m in missions.values()))
+        for parts in chains:
+            for index, mid in enumerate(parts):
+                mission = missions[mid]
+                self.assertEqual(dict(rootMissionId=parts[0], previousMissionId=parts[index - 1] if index else 0,
+                                      nextMissionId=parts[index + 1] if index < len(parts) - 1 else 0), mission['chain'])
+                self.assertEqual(1, mission['level'])
+                self.assertFalse(mission['storyline'])
+        for mid in [1280, 1285, 1382, 1383, 2091, 13516, 13517, 13519]:
+            self.assertNotIn(mid, missions)
     def test_singleton_delivery_requires_exactly_one_item(self):
         cargo = self.mission['courierMission']
         cargo.update(objectiveSingleton=1, objectiveQuantity=1)

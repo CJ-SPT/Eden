@@ -26,7 +26,7 @@ dotnet run --no-build --project src/Eden.Server
 | Area | What you can do |
 | --- | --- |
 | Flight and fitting | Fly, dock, use gates and autopilot, save bookmarks, and fit supported ships and modules, including all published Tech II subcapital hulls. Specialist module support varies by hull. [Feature notes](docs/feature-notes.md#fitting-weapons-and-modules) |
-| Combat and exploration | Fight other pilots or NPCs, [abandon, steal, or recover lawful loot](docs/protocol/inventory.md#criminal-loot-and-lawful-recovery-november-14-2026), run anomalies and 371 level 1–4 combat, delivery and mining mission definitions, or probe down DED complexes, Ghost Sites and ordinary data and relic sites. [Combat](docs/protocol/combat.md), [mission inventory](docs/missions.md), [scanning and hacking](docs/protocol/information.md) |
+| Combat and exploration | Fight other pilots or NPCs, [abandon, steal, or recover lawful loot](docs/protocol/inventory.md#criminal-loot-and-lawful-recovery-november-14-2026), run anomalies and 383 level 1–4 combat, delivery and mining mission definitions, or probe down DED complexes, Ghost Sites and ordinary data and relic sites. [Combat](docs/protocol/combat.md), [mission inventory](docs/missions.md), [scanning and hacking](docs/protocol/information.md) |
 | Abyssal Deadspace | Run three-room T0–T6 solo-cruiser or cooperative frigate/destroyer pockets with weather, environmental hazards, loot and checkpointed deadlines. Roll supported modules with mutaplasmids. Encounter and reward distributions use authored Eden policies. [Scope and validation](docs/protocol/abyssal.md) |
 | Industry and trade | Mine ore, ice and gas, [jettison cargo](docs/protocol/inventory.md#cargo-jettison-november-13-2026), run planetary colonies, research blueprints, manufacture, place market orders, and [trade items and ISK with docked players](docs/protocol/inventory.md#direct-player-trading). In progressive regional markets, claiming manufactured output unlocks generated NPC sell orders for eligible products. [Industry and markets](docs/protocol/industry.md), [planetary industry](docs/protocol/planetary.md), [market settings](docs/world-configuration.md#progressive-regional-markets) |
 | Persistent capsuleers | Encounter simulated travelers, miners, haulers and ratters. Their routines advance while a connected player has a character in the system and resume from saved state when players return. [Population guide](docs/capsuleer-population.md), [simulation rules](docs/protocol/capsuleers.md#occupied-system-simulation---november-12-2026) |
@@ -34,7 +34,7 @@ dotnet run --no-build --project src/Eden.Server
 | World settings and mods | Tune gathering, rewards, progression, industry and structure timers through administration. Install skill mods, C# server plugins and Python client extensions. [World settings](docs/world-configuration.md), [remote administration in Docker](docs/docker.md#remote-administration), [modding guide](docs/modding.md) |
 
 Mission support includes [short-deadline deliveries](docs/missions.md#short-deadline-deliveries) and
-[singleton courier cargo](docs/missions.md#singleton-courier-cargo), for 371 supported definitions.
+[singleton courier cargo](docs/missions.md#singleton-courier-cargo), for 383 supported definitions, including [sequential courier chains](docs/missions.md#mission-chains).
 
 New mission offers include a [timed ISK bonus](docs/protocol/agents.md#timed-mission-bonuses--november-14-2026),
 with saved deadlines and fleet reward sharing.

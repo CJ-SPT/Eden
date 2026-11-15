@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Resident mission-chain progression](protocol/agents.md#resident-mission-chain-progression--november-15-2026)
+adds ordered same-agent continuation, atomic settlement and checkpoint-safe active-slot replacement, with four complete courier chains.
+
 [Verified spy objectives](protocol/agents.md#verified-spy-objectives--november-15-2026) adds five definitions,
 report-backed Sansha hull aliases and required-group blitzes with resident checkpoint coverage.
 

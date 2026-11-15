@@ -2,6 +2,107 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Resident mission-chain progression — November 15, 2026
+
+This milestone targets a shared capability behind **278** blocked ordinary mission definitions. Typed linear-chain
+rules validate complete topology, positive identities, consistent level/lifecycle, predecessor links, reachability and
+cycle rejection. Explicit root/previous/next metadata applies to any supported mission kind. Chain members after the
+root are excluded from normal offer rotation, and the entire chain must have available catalog content and eligible
+supplier/enemy factions before its root can be offered. Title similarity never selects a continuation at runtime.
+
+The existing resident action closes the completed stage, consumes cargo, pays ISK/bonus/LP/standing, advances the
+ordinary storyline counter and creates the next offer in one commit. Any failure rolls all of these back, including
+continuation identity allocation. Accepting a later stage requires the immediate preceding saved row for that pilot
+and agent to be its completed predecessor. The ordinary mission rows themselves persist chain progress; no second
+progress store, schema migration or gameplay SQL fallback is added. Chain mutation requires the resident owner.
+
+The completion reply retains the finished mission and its completion flag. After the committed settlement the
+protocol queues `OnAgentMissionChange("completed", agent)` followed by `("offered", agent)`. The next offer is already
+in the journal and current-agent reads; the existing Request/View action opens it with its own acceptance token.
+No Blue, transport, Destiny or new client wire format is introduced. Reward sharing still advances only the issuing
+pilot's chain. No client was launched or acceptance observed.
+
+Cancellation tests exposed a checkpoint projection ordering defect: dirty mission rows could insert a replacement
+active offer before closing the prior row, violating the existing unique active pilot/agent index. Saved-mission
+projection now orders closed/deleted rows before active rows across all projection batches. The owner captures the
+same immutable generation as before; relational projection and file writing remain outside the world owner.
+
+Four complete level-one Distribution sequences exercise the engine and add **12** ordinary courier definitions:
+
+| Chain | Ordered mission IDs | Evidence |
+| --- | --- | --- |
+| Save the Trees | 4838, 4839, 4840 | [University revision 215978](https://wiki.eveuniversity.org/index.php?title=Save_the_Trees&oldid=215978) |
+| Hauling Fur | 4841, 4842, 4843 | Pinned numbered native records, cargo, faction and continuation-message markers |
+| Hunting a Heretic | 4844, 4845, 4846 | [University revision 192145](https://wiki.eveuniversity.org/index.php?title=Hunting_a_Heretic&oldid=192145) |
+| For the Troops | 4847, 4849, 4853 | [University revision 231115](https://wiki.eveuniversity.org/index.php?title=For_the_Troops&oldid=231115) |
+
+The [general University chain contract, revision 230834](https://wiki.eveuniversity.org/index.php?title=Missions&oldid=230834)
+describes automatic continuation and possible mixed mission types/shared timers. The three dedicated reports supply
+ordered level-one courier objectives; Hauling Fur's sequence is reconstructed independently from its unique complete
+native numbered family and next-mission messages. The compiler checks every bound mission's exact cargo type,
+quantity, singleton state, supplier faction, stage number, lifecycle and nonterminal continuation marker. Missing or
+changed fields fail export. No hidden server chain IDs are claimed to have been recovered.
+
+Compared the local evejs reference (no Git metadata):
+
+| Source | SHA-256 |
+| --- | --- |
+| `server/src/config/securityMissionChains.js` | `836a2aa75f6e9778cd015110ff0d03038f0127fba5f5c16a2da8e234ff1aa630` |
+| `server/src/config/securityMissionChains.json` | `550919b0091f901cee4b1ce5dc08430a34b1fbc0aea6e1426b0284a1700b4d3e` |
+| `server/src/services/agent/missionAuthority.js` | `969438da844056806b3bd989388881f0522d8a5f4fc69bee51227b12233ae5b1` |
+| `server/src/services/agent/agentMissionRuntime.js` | `f9039040331e109b166e9e73d916e11b58c16f13b652d40ba1fa0c4838daf7fa` |
+
+The reference separates chain-continuation selection from the ordinary pool and stages continuation with reward
+settlement. Its baseline explicitly marks title/wiki pairings and closest-ID tie breaks provisional. Eden uses
+explicit complete sequences with topology validation and independently binds native build-3662168 records;
+none of that implementation or generated chain data was copied.
+
+Existing Eden policy applies per stage: ordinary supplier restrictions, cargo volume level bands (all added stages
+are level one), station routes and issuing-station pickup, rewards and six-hour bonus. Each ordinary stage counts
+once toward the sixteen-mission storyline threshold. Each stage receives a fresh seven-day offer timer, and acceptance
+starts its completion timer. These are explicit reconstruction policies. Decline, quit or expiry ends the current
+run without offering another part; normal root rotation resumes. Shared timers, alternate branches, fixed-agent
+career/COSMOS lifecycles and unsourced combat parts remain blocked rather than being inferred.
+
+The pool is **383 admitted / 2,509 blocked**: 74 combat, **194 ordinary courier** (182 standalone plus 12 chain stages),
+92 delivery storylines and 23 mining definitions. The remaining **266** ordinary chain records are now labeled
+`Requires complete mission-chain bindings or additional part mechanics`, distinguishing content/part dependencies
+from the implemented linear sequence owner. The separate 1,505 special-lifecycle and 580 roster/script buckets are
+not bypassed. The fixture adds 9 types and 200 source records, preserving all previous values.
+
+**Automated validation:** The exact initial development filter
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionChainTests.EveryCourierChainOffersOnlyItsRootAndAdvancesOnceAcrossCheckpoint`
+passed all four complete sequences (9.21 s build, 17.60 s test invocation), after correcting two test-fixture compile
+errors. The first combined chain/rule run passed 25 cases and failed four cancellation cases, exposing the unique
+active-slot checkpoint ordering defect above. The corrected exact cancellation and continuation-allocation filters
+passed all five cases (16.38 s build, 18.45 s tests). Those cases explicitly flush and reopen checkpoints.
+
+Final ordered root validation passed in **341.70 seconds**: tool restore, solution restore/build (13.84 s build,
+zero warnings/errors), **440 affected .NET tests** (4 m 53 s test duration), both Python policy suites (8 catalog and
+9 formatting cases), all **16 mission-admission checks**, formatting verification across 2,246 files and the
+140-column check. The final .NET run includes all 274 existing delivery variants and 30 new chain/rule cases.
+Filter:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionChain|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionPersistenceTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionProtocolTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionRulesTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionBonusTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionDeadlineTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionSingletonTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionContentTests.EveryAdmittedDeliveryCanBeOfferedTransportedReopenedAndPaidExactlyOnce|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionContentTests.ExpandedContentLoadsEveryDefinitionAndCorrectsNuisanceFactionRosters|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionContentTests.SupplierRestrictionsFilterOffersAndRejectInvalidSavedAcceptanceWithoutCargo|FullyQualifiedName~Eden.Protocol.Tests.Persistence.IncrementalCheckpointTests
+```
+
+Coverage includes complete root-only sequences, saved continuation identities/quotes/deadlines after restart,
+immediate predecessor and supplier rejection, incomplete content exclusion, concurrent exactly-once turn-in,
+base/bonus payout overflow, continuation identity exhaustion after settlement begins, rollback of cargo/rewards/
+closure/storyline progress, native completion/offer notification order and stale tokens. Decline, quit and exact
+offer/acceptance expiry return to the root pool and survive checkpoints. Pure rules reject missing, disconnected,
+duplicate, cyclic, wrong-level and wrong-lifecycle chains and unfinished/incorrect predecessors.
+Manifest/audit/fixture reproduction was byte-identical; existing definitions and serialized fixture records remain
+unchanged. Documentation links, UTF-8, whitespace and `git diff --check` passed. Final TRX:
+`artifacts/feature-tests/results/mission-chains/mission-chains.trx`.
+No full .NET suite was requested or run. Native rendering, input and gameplay feel remain unverified.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Complete one full chain and inspect the automatic next offer in the native journal;
+decline a later stage and verify that the agent returns to ordinary offers.
+
 ## Verified spy objectives — November 15, 2026
 
 Combat-content milestone three adds five definitions, bringing the pool to **371 admitted / 2,521 blocked**:

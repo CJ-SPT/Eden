@@ -26,6 +26,17 @@
       ]
     },
     {
+      "id": 45,
+      "name": "Frozen Plant Seeds",
+      "groupId": 281,
+      "groupName": "Frozen",
+      "categoryId": 17,
+      "mass": 400.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
       "id": 185,
       "name": "EMP S",
       "groupId": 83,
@@ -53354,6 +53365,17 @@
       "attributes": []
     },
     {
+      "id": 22208,
+      "name": "Prostitute",
+      "groupId": 283,
+      "groupName": "Livestock",
+      "categoryId": 17,
+      "mass": 50.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
       "id": 22222,
       "name": "Classified Report - Station Defenses",
       "groupId": 314,
@@ -82181,6 +82203,83 @@
           "value": 1.0
         }
       ]
+    },
+    {
+      "id": 28827,
+      "name": "Encrypted Data Crystals",
+      "groupId": 314,
+      "groupName": "Miscellaneous",
+      "categoryId": 17,
+      "mass": 50.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 28886,
+      "name": "Prisoner",
+      "groupId": 283,
+      "groupName": "Livestock",
+      "categoryId": 17,
+      "mass": 80.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 28972,
+      "name": "Cryogenic Stasis Capsule",
+      "groupId": 314,
+      "groupName": "Miscellaneous",
+      "categoryId": 17,
+      "mass": 400.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 28973,
+      "name": "Dem's Galactical Botanical",
+      "groupId": 314,
+      "groupName": "Miscellaneous",
+      "categoryId": 17,
+      "mass": 2.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 28975,
+      "name": "Cargo Manifest",
+      "groupId": 314,
+      "groupName": "Miscellaneous",
+      "categoryId": 17,
+      "mass": 1.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 28995,
+      "name": "Prop Comedian",
+      "groupId": 283,
+      "groupName": "Livestock",
+      "categoryId": 17,
+      "mass": 600.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 28996,
+      "name": "Fraudulent Pax Amarria",
+      "groupId": 314,
+      "groupName": "Miscellaneous",
+      "categoryId": 17,
+      "mass": 1.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": []
     },
     {
       "id": 30786,
@@ -130397,6 +130496,106 @@
     },
     {
       "dataset": "client/localization_fsd_en-us",
+      "key": 56905,
+      "data": {
+        "language": "en-us",
+        "text": "Save the Trees - Seeding a Future (1 of 3)",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 56906,
+      "data": {
+        "language": "en-us",
+        "text": "Save the Trees – Forest's Revenge (2 of 3)",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 56907,
+      "data": {
+        "language": "en-us",
+        "text": "Save the Trees – Save the People (3 of 3)",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 56908,
+      "data": {
+        "language": "en-us",
+        "text": "Hauling Fur (1 of 3)",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 56909,
+      "data": {
+        "language": "en-us",
+        "text": "Hauling Fur (3 of 3)",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 56910,
+      "data": {
+        "language": "en-us",
+        "text": "Hunting a Heretic  - Tracking a Crackpot (1 of 3)",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 56911,
+      "data": {
+        "language": "en-us",
+        "text": "Hunting a Heretic - Book Burning (2 of 3)",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 56912,
+      "data": {
+        "language": "en-us",
+        "text": "Hunting a Heretic - Crackpot Captured! (3 of 3)",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 56914,
+      "data": {
+        "language": "en-us",
+        "text": "For the Troops - Error of Comedy (2 of 3)",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 56918,
+      "data": {
+        "language": "en-us",
+        "text": "For the Troops - Final Negotiations (3 of 3)",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
       "key": 56924,
       "data": {
         "language": "en-us",
@@ -131837,6 +132036,16 @@
     },
     {
       "dataset": "client/localization_fsd_en-us",
+      "key": 57965,
+      "data": {
+        "language": "en-us",
+        "text": "Hauling Fur (2 of 3)",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
       "key": 57985,
       "data": {
         "language": "en-us",
@@ -131861,6 +132070,16 @@
       "data": {
         "language": "en-us",
         "text": "Cigarettes",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 57989,
+      "data": {
+        "language": "en-us",
+        "text": "For the Troops - Food for Fun (1 of 3)",
         "metadata": null,
         "tokens": null
       }
@@ -141196,6 +141415,1537 @@
     },
     {
       "dataset": "client/localization_fsd_en-us",
+      "key": 134983,
+      "data": {
+        "language": "en-us",
+        "text": "Some of our scientists have discovered a strange species of tree previously unknown to us. We need to transport the seeds for further study. But the tree has the most peculiar means of procreation: The seeds must be germinated inside a living animal host. Our scientists on {[location]objectiveDestinationID.name} have prepared some suitable livestock to serve as host for the germination. Take the seeds to this station so the tests can begin. <br><br>\r\n<font color = #EE3B3B>Remember to move the seeds to your cargo hold before you undock.</font>\r\n",
+        "metadata": null,
+        "tokens": {
+          "{[location]objectiveDestinationID.name}": {
+            "conditionalValues": [],
+            "variableType": 3,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "objectiveDestinationID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134984,
+      "data": {
+        "language": "en-us",
+        "text": "Some of our scientists have discovered a strange species of tree previously unknown to us. We need to transport the seeds for further study. The nearby planet has vast, ancient forests, and this new species lies deep within one of its densest rain forests; no human has ever seen its like before. We have obtained a sample of one of its seeds and we will attempt to grow it in the laboratory. <br><br>\r\nThe tree has the most peculiar means of procreation. The seeds must be germinated inside a living animal host. Our scientists on {[location]objectiveDestinationID.name} have prepared some suitable livestock to serve as host for the germination. Take the seeds to this station so the tests can begin. \r\n",
+        "metadata": null,
+        "tokens": {
+          "{[location]objectiveDestinationID.name}": {
+            "conditionalValues": [],
+            "variableType": 3,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "objectiveDestinationID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134985,
+      "data": {
+        "language": "en-us",
+        "text": "Splendid! But be careful: They're quite fragile.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134986,
+      "data": {
+        "language": "en-us",
+        "text": "You have done well. Contact me again and I'll tell you how the research is progressing.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134987,
+      "data": {
+        "language": "en-us",
+        "text": "You disappoint me. I thought you could handle a simple courier mission, but apparently I was wrong. I suppose I'll have to limit your work to garbage runs. I've found someone else to take care of this.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134988,
+      "data": {
+        "language": "en-us",
+        "text": "You disappoint me. I thought you could handle a simple courier mission, but apparently I was wrong. I suppose I'll have to limit your work to garbage runs. I've found someone else to take care of this.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134989,
+      "data": {
+        "language": "en-us",
+        "text": "Courier mission failed ",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134990,
+      "data": {
+        "language": "en-us",
+        "text": "Courier mission failed ",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134991,
+      "data": {
+        "language": "en-us",
+        "text": "I'm on my way.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134992,
+      "data": {
+        "language": "en-us",
+        "text": "Plant seeds delivered. They were certainly strange-looking things.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134993,
+      "data": {
+        "language": "en-us",
+        "text": "I think so. Courier runs are always such easy money.  ",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134994,
+      "data": {
+        "language": "en-us",
+        "text": "Interesting, yes. Also disgusting. <br><br>\r\nOne of the seeds had thoughts of its own on whom or what might be its host. Unbeknownst to us, a botanist here named Horei Falcosis took one of the seeds for examination before you shipped the package; a short time ago, as he worked with it, it shot out a tendril and sank it into his flesh. It was several minutes before he was discovered, and by that time, the seed's tendrils had penetrated his body in several locations. Falcosis was unconscious by this time, and the seed had pulled itself close to his body and started to secrete a protective resin. <br><br>\r\nBrings new meaning to giving one's body to science, don't you think? <br><br>\r\nIn any case, this station does not have the proper facilities to care for him. And since this tree has now been designated noxious and dangerous — the other seeds were all incinerated safely, I understand — Falcosis has been placed in cryogenic stasis for transport. Deliver his cryo-tank for me, would you?\r\n",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134995,
+      "data": {
+        "language": "en-us",
+        "text": "You cannot make a simple courier run on something this important? A man's life is at stake!",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134996,
+      "data": {
+        "language": "en-us",
+        "text": "I'm sure Horei Falcosis would thank you to hurry, were he able.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134997,
+      "data": {
+        "language": "en-us",
+        "text": "You have done well. No word, no. Time will tell if Falcosis survives this ordeal. Come and see me again when you have time. ",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134998,
+      "data": {
+        "language": "en-us",
+        "text": "You disappoint me, and Horei Falcosis has since died thanks to your lack of initiative. I suppose I'll have to limit your work to garbage runs from now on.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 134999,
+      "data": {
+        "language": "en-us",
+        "text": "You disappoint me, and Horei Falcosis has since died thanks to your lack of initiative. I suppose I'll have to limit your work to garbage runs from now on.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135000,
+      "data": {
+        "language": "en-us",
+        "text": "Scientist dies",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135001,
+      "data": {
+        "language": "en-us",
+        "text": "Scientist dies",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135002,
+      "data": {
+        "language": "en-us",
+        "text": "I'm on my way.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135003,
+      "data": {
+        "language": "en-us",
+        "text": "I've delivered the cryogenic stasis capsule, as you requested. How's the patient? Any word?",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135004,
+      "data": {
+        "language": "en-us",
+        "text": "Uh, not sure, but I'm guessing it might be interesting… ",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135005,
+      "data": {
+        "language": "en-us",
+        "text": "There's no time to waste.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135006,
+      "data": {
+        "language": "en-us",
+        "text": "You have proven your resourcefulness. Enjoy your reward.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135007,
+      "data": {
+        "language": "en-us",
+        "text": "Dem's Galactical Botanical",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135008,
+      "data": {
+        "language": "en-us",
+        "text": "Dem's Galactical Botanical",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135009,
+      "data": {
+        "language": "en-us",
+        "text": "I'm on my way, don't worry!",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135010,
+      "data": {
+        "language": "en-us",
+        "text": "I've delivered the book. Crisis averted, I hope. ",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135011,
+      "data": {
+        "language": "en-us",
+        "text": "You bet. What can I do? ",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135012,
+      "data": {
+        "language": "en-us",
+        "text": "The easiest way to travel to a destination station quickly is to use the Overview. Stargates are marked in the Overview settings panel under the \"Celestial\" group. Once you have selected \"stargate\" in the Overview settings, right-click on the hyperlinked destination system in the mission details in your Opportunities and choose \"set destination.\" You will notice that the applicable stargate in your Overview is now yellow, as well as the one in space that leads to the next system along your route. <br><br>\r\nNext, simply right-click on the yellow stargate in the Overview (or in space) and hit \"warp to within 0m\"; turn on your Autopilot and simply sit back and relax until you are in the destination system. <br><br>\r\nOnce you have arrived in the correct star system, simply right-click anywhere in space. In the drop-down window that appears, your current mission information appears at the bottom. From there, select the \"dock\" option and your Autopilot will bring you into the station momentarily. <br><br>\r\nOnce the courier item is delivered, return to your agent's home station (also available via the drop-down simply by right-clicking anywhere in space) to collect your reward.\r\n",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135013,
+      "data": {
+        "language": "en-us",
+        "text": "No doubt you've see that little furrier that's been bouncing around the station for the last few days, {[character]player.name}? You haven't? Well, <i>I</i> certainly have — nasty little creature. It bites, you know. <br><br>\r\nIn any event, it was part of a shipment of exotic pets intended for delivery to {[location]objectiveDestinationID.name}, but it got left behind because I spilled a drink all over the cargo manifest. We need someone to take this furrier, special delivery, over to {[location]objectiveDestinationID.name} and get it the hell out of our hair. <br><br>\r\n<font color = #EE3B3B>Remember to move the \"special delivery\" container into your cargo hold before you go.</font>\r\n",
+        "metadata": null,
+        "tokens": {
+          "{[character]player.name}": {
+            "conditionalValues": [],
+            "variableType": 0,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "player"
+          },
+          "{[location]objectiveDestinationID.name}": {
+            "conditionalValues": [],
+            "variableType": 3,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "objectiveDestinationID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135014,
+      "data": {
+        "language": "en-us",
+        "text": "Helpful Hints",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135015,
+      "data": {
+        "language": "en-us",
+        "text": " You'll do it? Hey guys — he says he'll do it!",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135016,
+      "data": {
+        "language": "en-us",
+        "text": "So the little monster didn't ruin your upholstery? Good job, my friend. You may have a future in the animal transport business! Check back to me in a while. ",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135017,
+      "data": {
+        "language": "en-us",
+        "text": "Okay, I'll take the damned furrier. ",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135018,
+      "data": {
+        "language": "en-us",
+        "text": "The furrier's delivered. Man those things stink. ",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135019,
+      "data": {
+        "language": "en-us",
+        "text": "Hi. I'm looking for some gainful employment. ",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135020,
+      "data": {
+        "language": "en-us",
+        "text": "That furrier you delivered was carrying some kind of disease, and it's running rampant since the thing bit a few folks here. We haven't got the right vaccine here. Since you were the one who brought the damned furrier that started it all, I think it's only fitting that you get the vaccine and bring it back here for us. ",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135021,
+      "data": {
+        "language": "en-us",
+        "text": "Ha. Good one… <br><br>\r\nListen, about that furrier? Things have gotten a little complicated, {[character]player.name}. That thing was carrying some kind of disease, and it's running rampant since the thing bit a few folks here. We haven't got the right vaccine here, and god the place is in bad shape — people turning green and swelling up like balloons everywhere. Since you were the one who brought the damned furrier that started it all, I think it's only fitting that you get the vaccine and bring it back here for us. <br><br>\r\nOh, yeah — we'll vaccinate you before you leave, too. What do you say, champ?\r\n",
+        "metadata": null,
+        "tokens": {
+          "{[character]player.name}": {
+            "conditionalValues": [],
+            "variableType": 0,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "player"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135022,
+      "data": {
+        "language": "en-us",
+        "text": "I knew you'd want to help. Please make it snappy.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135023,
+      "data": {
+        "language": "en-us",
+        "text": "Great job, {[character]player.name}. Come back later and I'll see if I can scrounge up another job for you.",
+        "metadata": null,
+        "tokens": {
+          "{[character]player.name}": {
+            "conditionalValues": [],
+            "variableType": 0,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "player"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135024,
+      "data": {
+        "language": "en-us",
+        "text": "I'll deliver the vaccine, but only if you stop calling me a furrier-hauler.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135025,
+      "data": {
+        "language": "en-us",
+        "text": "Vaccine delivered, boss.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135026,
+      "data": {
+        "language": "en-us",
+        "text": "Who are you calling a furrier-hauler, drink-spiller?",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135027,
+      "data": {
+        "language": "en-us",
+        "text": "It seems that the folks at one of our other offices can't find the proper paperwork about this last pet shipment, and they need this manifest. Or at least what's left of it after I spilled my drink on it. They're begging us to send it over. So, can you run this manifest over there so we can put this entire sordid affair behind us? <br><br>\r\n<font color = #EE3B3B>Remember to put the manifest in your cargo hold or you'll have to come back and relive the whole, sad incident all over again.</font>\r\n",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135028,
+      "data": {
+        "language": "en-us",
+        "text": "Ha! Smartass! No, nothing like that {[character]player.name}. Er, well, sort of… <br><br>\r\nIt seems that the folks at one of our other offices can't find the proper paperwork about this last pet shipment, and they need this manifest. Or at least what's left of it after I spilled my drink on it. They're begging us to send it over. So, can you run this manifest over there so we can put this entire sordid affair behind us? \r\n",
+        "metadata": null,
+        "tokens": {
+          "{[character]player.name}": {
+            "conditionalValues": [],
+            "variableType": 0,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "player"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135029,
+      "data": {
+        "language": "en-us",
+        "text": "Here's the manifest. Now get going.  ",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135030,
+      "data": {
+        "language": "en-us",
+        "text": "Thank goodness. That's the last furrier we'll be transporting out of <i>this</i> station, let me tell you.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135031,
+      "data": {
+        "language": "en-us",
+        "text": "Okay, but just this one more time.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135032,
+      "data": {
+        "language": "en-us",
+        "text": "Done, {[character]agentID.name}. Hope that helped.",
+        "metadata": null,
+        "tokens": {
+          "{[character]agentID.name}": {
+            "conditionalValues": [],
+            "variableType": 0,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "agentID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135033,
+      "data": {
+        "language": "en-us",
+        "text": "You are? Why? Spill another drink and you need me to get some wipes for you? ",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135034,
+      "data": {
+        "language": "en-us",
+        "text": "One of the functions of my job is to ensure things operate smoothly in this region.  I have a number of informants that keep me in the loop of the less visible happenings.  They tend to be skittish by nature, but recently one of my informants was noticeably shaken. He won't send the information, and he won't meet me in person. He's insisted that I send a third party to pick up the data. <br> \r\n<br>Normally I'd just find another informant, but this one was on the trail of a particularly virulent heretic. The man can't be anything but mad—he calls himself The Crackpot, for one thing—but it's damned hard to track a madman. He's been attracting attention, even followers from among the weak-minded, and it's long past time to put a stop to his nonsense.<br>\r\n<br>If you'll go and pick up that data, it could help us track this menace down.\r\n",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135035,
+      "data": {
+        "language": "en-us",
+        "text": "Not so loyal after all.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135036,
+      "data": {
+        "language": "en-us",
+        "text": "Go quickly. I can't afford to lose this lead.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135037,
+      "data": {
+        "language": "en-us",
+        "text": "Well done. Once I get this decrypted, I may have more work for you.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135038,
+      "data": {
+        "language": "en-us",
+        "text": "Not so loyal after all.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135039,
+      "data": {
+        "language": "en-us",
+        "text": "Something spooked the snitch and he ran off. Now we'll have to find a new source for intel on this heretic, and who knows where he'll be by then.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135040,
+      "data": {
+        "language": "en-us",
+        "text": "Something spooked the snitch and he ran off. Now we'll have to find a new source for intel on this heretic, and who knows where he'll be by then.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135041,
+      "data": {
+        "language": "en-us",
+        "text": "You blew it.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135042,
+      "data": {
+        "language": "en-us",
+        "text": "You blew it.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135043,
+      "data": {
+        "language": "en-us",
+        "text": "That sounds simple enough. I'll get the data for you.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135044,
+      "data": {
+        "language": "en-us",
+        "text": "I've got the data.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135045,
+      "data": {
+        "language": "en-us",
+        "text": "I'm not interested.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135046,
+      "data": {
+        "language": "en-us",
+        "text": "I don't like the sound of this. I quit.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135047,
+      "data": {
+        "language": "en-us",
+        "text": "Of course I am.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135048,
+      "data": {
+        "language": "en-us",
+        "text": "From the publisher's description: \"This is the most remarkable book published in the last century. Here, the great Emperor Heideran VII records his dreams for peace throughout the galaxy; it is this vision that propelled him into becoming a champion of interstellar relations. His relentless struggle toward this goal has brought unparalleled harmony among the empires; his constant search for peaceful solutions to any problem having many times quelled the storms of hostilities on the horizon. His determination and his powers of persuasion have compelled his own people and others to sacrifice many things they thought sacred to ensure that tranquility will prevail, now and forever.\"",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135049,
+      "data": {
+        "language": "en-us",
+        "text": "The Crackpot has been hiding his heretical nonsense in copies of the Pax Amarria! This is absolutely intolerable! Needless to say, we've been seizing copies as they're found, and of course those in possession of such an insulting piece of work have been detained for questioning. Still, that leaves us with a pile of gilded filth on our hands. <br>\r\n<br>I want you to go pick up the copies that are being held and bring them back here. We're having the Pax Amarria covers stripped off before we send them along for the ceremonial burning.\r\n",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135050,
+      "data": {
+        "language": "en-us",
+        "text": "The Pax Amarria",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135051,
+      "data": {
+        "language": "en-us",
+        "text": "That Crackpot has been hiding his heretical nonsense in copies of the Pax Amarria! This is absolutely intolerable! Needless to say, we've been seizing copies as they're found, and of course those in possession of such an insulting piece of work have been detained for questioning. Still, that leaves us with a pile of gilded filth on our hands. <br>\r\n<br>I want you to go pick up the copies that are being held and bring them back here. We're having the Pax Amarria covers stripped off before we send them along for the ceremonial burning.\r\n",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135052,
+      "data": {
+        "language": "en-us",
+        "text": "I thought you were better than that.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135053,
+      "data": {
+        "language": "en-us",
+        "text": "Remember, we can't get rid of this trash fast enough.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135054,
+      "data": {
+        "language": "en-us",
+        "text": "We'll get these stripped down and shipped out as quickly as possible. They'll be burned at a more appropriate location.<br>\r\n<br>By the way, some of our detainees have proved… most informative. I should have more work for you soon. \r\n",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135055,
+      "data": {
+        "language": "en-us",
+        "text": "I thought you were better than that.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135056,
+      "data": {
+        "language": "en-us",
+        "text": "I'll find someone who understands that, and can help us dispose of this garbage in a more timely fashion.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135057,
+      "data": {
+        "language": "en-us",
+        "text": "I'll find someone who understands that, and can help us dispose of this garbage in a more timely fashion.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135058,
+      "data": {
+        "language": "en-us",
+        "text": "This is a sensitive matter.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135059,
+      "data": {
+        "language": "en-us",
+        "text": "This is a sensitive matter.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135060,
+      "data": {
+        "language": "en-us",
+        "text": "I'll go and get the books immediately.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135061,
+      "data": {
+        "language": "en-us",
+        "text": "I have the heretical nonsense you requested.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135062,
+      "data": {
+        "language": "en-us",
+        "text": "I'm not helping with any book-burning.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135063,
+      "data": {
+        "language": "en-us",
+        "text": "I don't like the sound of this. I quit.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135064,
+      "data": {
+        "language": "en-us",
+        "text": "What else can I do?",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135065,
+      "data": {
+        "language": "en-us",
+        "text": "We've finally got The Crackpot. I need you to go pick him up and bring him here. We've made sure to keep him anonymous. Go and get him before some other loon tries to break him out.\r\n",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135066,
+      "data": {
+        "language": "en-us",
+        "text": "We've finally got The Crackpot. It turns out his real name was Russell. I need you to go pick him up and bring him here for transport. We want him there when his books burn—he'll need to recant publicly, throw the books on the fire, that sort of thing. After all, we wouldn't want him martyred. <br>\r\n<br>He's in confinement a few jumps away. We've made sure to keep him anonymous. There are still some crazed sympathizers on the loose, and we don't want them endangering themselves any further. Go and get him before some other loon tries to break him out.\r\n",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135067,
+      "data": {
+        "language": "en-us",
+        "text": "Well, I'm sure I can find someone who will properly appreciate the honor of this assignment.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135068,
+      "data": {
+        "language": "en-us",
+        "text": "I thought you would be. Remember, this must be done quickly, before word gets out.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135069,
+      "data": {
+        "language": "en-us",
+        "text": "The Empire thanks you for your assistance in disposing of this trash.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135070,
+      "data": {
+        "language": "en-us",
+        "text": "I thought you'd be pleased at the chance to finally bring this menace in.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135071,
+      "data": {
+        "language": "en-us",
+        "text": "Someone broke that madman out. Now we'll have to start the hunt all over again.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135072,
+      "data": {
+        "language": "en-us",
+        "text": "Someone broke that madman out. Now we'll have to start the hunt all over again.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135073,
+      "data": {
+        "language": "en-us",
+        "text": "The Crackpot is gone.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135074,
+      "data": {
+        "language": "en-us",
+        "text": "The Crackpot is gone.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135075,
+      "data": {
+        "language": "en-us",
+        "text": "I'm honored to be of service the Empire.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135076,
+      "data": {
+        "language": "en-us",
+        "text": "I have the Crackpot.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135077,
+      "data": {
+        "language": "en-us",
+        "text": "I don't like the sound of this. I think I'll pass.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135078,
+      "data": {
+        "language": "en-us",
+        "text": "I don't like the direction this is going. I quit.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135079,
+      "data": {
+        "language": "en-us",
+        "text": "You do?",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135080,
+      "data": {
+        "language": "en-us",
+        "text": "The problem is information networks. Our soldiers are well cared for and would normally be content, but they find that pictures and holoreels all tend to be from Gallente producers. They see the decadence and excess of our enemies. Our men are revolted by the excess of the Gallente, yes, but there is jealousy among them as well. And this jealousy is eating away at the core of our efforts.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135081,
+      "data": {
+        "language": "en-us",
+        "text": "Why is morale faltering? ",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135082,
+      "data": {
+        "language": "en-us",
+        "text": "The State should support its soldiers not out of concern for the soldier, but for the services he renders.  Remember this in your future travels.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135083,
+      "data": {
+        "language": "en-us",
+        "text": "And do hurry.  Our chefs are grumpy and impatient.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135084,
+      "data": {
+        "language": "en-us",
+        "text": "Not very appetizing, is it?  I have faith our chefs will be able to make ...something... out of it.  But come, there is still more to do.  ",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135085,
+      "data": {
+        "language": "en-us",
+        "text": "The State should support its soldiers not out of concern for the soldier, but for the services he renders.  Remember this in your future travels. ",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135086,
+      "data": {
+        "language": "en-us",
+        "text": "You have taken too long.  Our chefs have quit in disgust.  This will delay SPLET for weeks.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135087,
+      "data": {
+        "language": "en-us",
+        "text": "You have taken too long.  Our chefs have quit in disgust.  This will delay SPLET for weeks.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135088,
+      "data": {
+        "language": "en-us",
+        "text": "SPLET Delayed",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135089,
+      "data": {
+        "language": "en-us",
+        "text": "SPLET Delayed",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135090,
+      "data": {
+        "language": "en-us",
+        "text": "Food?  You got it.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135091,
+      "data": {
+        "language": "en-us",
+        "text": "Food has arrived.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135092,
+      "data": {
+        "language": "en-us",
+        "text": "To hell with food delivery.  The soldiers should be happy simply serving the State.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135093,
+      "data": {
+        "language": "en-us",
+        "text": "I tire of trafficking food.  The soldiers should be happy simply serving the State.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135094,
+      "data": {
+        "language": "en-us",
+        "text": "How can I aid the mighty State? ",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135104,
+      "data": {
+        "language": "en-us",
+        "text": "According to recent studies, the typical foot soldier's sense of humor tends towards the ironic, with a particular fondness for satire and gallows humor. Yet to hear Command tell it, these types of humor are the most dangerous to morale.  As a result, most government-sponsored entertainment is consciously light-hearted, even if nobody really enjoys it.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135105,
+      "data": {
+        "language": "en-us",
+        "text": "There is a man awaiting pick-up at a nearby station-- I'll upload the coordinates to your Neocom. The man is a comedian of a specialized sort.  You‘ll know him when you see him.  Bring him back here for me.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135106,
+      "data": {
+        "language": "en-us",
+        "text": "Why this guy?",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135107,
+      "data": {
+        "language": "en-us",
+        "text": "No, the State cannot afford the lofty prices of professional entertainers of such caliber.  We have booked far worse, I'm afraid.<br><br>\r\nThere is a man awaiting pick-up at a nearby station-- I'll upload the coordinates to your NeoCom. The man is a comedian of a specialized sort.  You‘ll know him when you see him.  Bring him back here for me.\r\n",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135108,
+      "data": {
+        "language": "en-us",
+        "text": "Inane or not, this job posed no threat to your safety.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135109,
+      "data": {
+        "language": "en-us",
+        "text": "Trust me, this isn't any less weird on my side.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135110,
+      "data": {
+        "language": "en-us",
+        "text": "I share your misgivings, but if this is the worst thing we do to our men, then we will be well on our way to perfection.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135111,
+      "data": {
+        "language": "en-us",
+        "text": "Indeed he could, but the State wants him here now, and if you will not get him, I will have someone else do it.  ",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135112,
+      "data": {
+        "language": "en-us",
+        "text": "Our prop comedian is dead.  He was reportedly beaten and stabbed to death by citizens who were simply \"annoyed into a murderous rage.\"  Had you acted faster, we might have acquired his services before he was brutally killed at the hands of a vengeful mob.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135113,
+      "data": {
+        "language": "en-us",
+        "text": "Our prop comedian is dead.  He was reportedly beaten and stabbed to death by citizens who were simply \"annoyed into a murderous rage.\"  Had you acted faster, we might have acquired his services before he was brutally killed at the hands of a vengeful mob.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135114,
+      "data": {
+        "language": "en-us",
+        "text": "\"Comedian's Act Ends Early\"",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135115,
+      "data": {
+        "language": "en-us",
+        "text": "\"Comedian's Act Ends Early\"",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135116,
+      "data": {
+        "language": "en-us",
+        "text": "This is getting slightly weird, but okay.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135117,
+      "data": {
+        "language": "en-us",
+        "text": "Though it may constitute some form of war-crime, here is your prop comedian.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135118,
+      "data": {
+        "language": "en-us",
+        "text": "I will not bother with this.  The comedian can take a transport like everyone else. ",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135119,
+      "data": {
+        "language": "en-us",
+        "text": "I have delivered many inane objects in my time, but I will never deliver a comedian.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135120,
+      "data": {
+        "language": "en-us",
+        "text": "What are we talking about?  Musical acts?  Stunts?",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135156,
+      "data": {
+        "language": "en-us",
+        "text": "The Nugoeihuvi Corporation, or NOH, is the only Caldari mega-corporation that has focused on the entertainment industry. They have always been suspected of strong ties to the Caldari underworld, mainly because many of their products cater to that social element or are on the borderline of legality.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135157,
+      "data": {
+        "language": "en-us",
+        "text": "We are working closely with several bathhouses through Nugoeihuvi to acquire the large number of companions required for SPLET.  We are close to completing the contracts.  All that is required to finalize is a final inspection, to be performed by the SPLET organizer.<br><br>\r\nPick up the NOH prostitute-- I'll upload the station address to your NeoCom-- and return her here.  After this last mission, I believe the program will be ready to launch.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135158,
+      "data": {
+        "language": "en-us",
+        "text": "NOH",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135159,
+      "data": {
+        "language": "en-us",
+        "text": "Originally, we were going to be hiring the best dancers in Caldari space.  It was to be a dazzling performance, with custom arranged music and specially choreographed numbers.  It would have been a show both tantalizing and tasteful.  But such things are expensive.<br><br>\r\nWe found the best cost-effective solution by working with NOH's bathhouses.  Traveling with SPLET will be a \"companion army.\"  We are close to completing the contracts.  All that is left is a final round of...negotiation by the SPLET chairman.<br><br>\r\nPick up the NOH prostitute-- I'll upload the station address to your NeoCom-- and return her here.  After this last mission, I believe the program will be ready to launch. ",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135160,
+      "data": {
+        "language": "en-us",
+        "text": "Damn it, the chairman will have my head for this.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135161,
+      "data": {
+        "language": "en-us",
+        "text": "Good.  Although SPLET has not become what was originally envisioned, I doubt the soldiers will complain too loudly...",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135162,
+      "data": {
+        "language": "en-us",
+        "text": "Excellent.  Thanks to your help, SPLET will soon be making its way through the Caldari ranks.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135163,
+      "data": {
+        "language": "en-us",
+        "text": "But we were so close to finally being done with this!",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135164,
+      "data": {
+        "language": "en-us",
+        "text": "The chairman has grown impatient with the negotiator's delayed arrival.  He has cancelled SPLET, citing a “personal insult” on the part of NOH.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135165,
+      "data": {
+        "language": "en-us",
+        "text": "The chairman has grown impatient with the negotiator's delayed arrival.  He has cancelled SPLET, citing a “personal insult” on the part of NOH.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135166,
+      "data": {
+        "language": "en-us",
+        "text": "SPLET Insulted",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135167,
+      "data": {
+        "language": "en-us",
+        "text": "SPLET Insulted",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135168,
+      "data": {
+        "language": "en-us",
+        "text": "I will do this last thing.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135169,
+      "data": {
+        "language": "en-us",
+        "text": "I have brought the— uh— negotiator.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135170,
+      "data": {
+        "language": "en-us",
+        "text": "This task seems to favor the chairman more than the Caldari soldiers.  I will not do it.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135171,
+      "data": {
+        "language": "en-us",
+        "text": "I will not continue this mission.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135172,
+      "data": {
+        "language": "en-us",
+        "text": "What's been cut?",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
       "key": 135237,
       "data": {
         "language": "en-us",
@@ -142207,6 +143957,16 @@
             "variableName": "dungeonLocationID"
           }
         }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 135796,
+      "data": {
+        "language": "en-us",
+        "text": "Even with the best of equipment and space superiority, any long-term military engagement has to rely on ground and station personnel.  And personnel are only as reliable as their morale.  I won't lie to you, the morale of our soldiers could be better.<br><br>\r\nTo fix this, a number of the mega-corporations have joined together to produce SPLET—the State Personnel Life Enrichment Tour.  This program will tour to various parts of the State, providing entertainment and other morale services for our soldiers.<br><br>\r\nThe first thing we need is food, and there are crates of frozen food waiting not too far from here. Bring the food here so our chefs can start to figure out how to stretch it into an appropriately festive-- but still economical-- dish. ",
+        "metadata": null,
+        "tokens": null
       }
     },
     {
@@ -144046,6 +145806,26 @@
       "data": {
         "language": "en-us",
         "text": "A few of those dratted Guristas pirate vessels have been terrorizing passersby in a nearby system.  Find and destroy them.  We'll upload the last known location of the enemy ships to your NeoCom.  We need to put them out of business ASAP.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 142310,
+      "data": {
+        "language": "en-us",
+        "text": "Dozens have been killed so far. That tree is vicious! It almost took over the entire station. And it's still growing! <br><br>\r\nAs soon as Horei Falcosis was taken out of cryo-stasis, the tree started using his body for food. Fortunately for him, he didn't survive long. But the tree exploded with immediate growth. It reached a height of 4 meters in less than hour. And it is semi-mobile! It can move slowly on its roots as if they were tentacles! And it's predatory! Its vines killed several lab technicians. Apparently human body fluids kick the tree's metabolism into high gear. Its growth became rampant, and it's now trying to propagate itself some enormous, striated greenish-red fruit. We need to stop it before it takes over the whole station. <br><br>\r\nSince we don't yet know much about its biology, we need more information. I've uploaded the destination station in the mission details in your Opportunity interface: Go there and pick up the copy of <i>Dem's Galactical Botanical</i> I've ordered, and bring it back to me here. Perhaps in that book there will be some clues about how to contain or destroy this thing.\r\n",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 142311,
+      "data": {
+        "language": "en-us",
+        "text": "As soon as Horei Falcosis was taken out of cryo-stasis, the tree started using his body for food. Fortunately for him, he didn't survive long. But the tree exploded with immediate growth. And it is semi-mobile! It can move slowly on its roots as if they were tentacles! And it's predatory! Its vines killed several lab technicians. We need to stop it before it takes over the whole station. <br><br>\nSince we don't yet know much about its biology, we need more information. I'll upload a destination to your Bookmarks: Go there and pick up the copy of <i>Dem's Galactical Botanical</i> I've ordered, and bring it back to me here. Perhaps in that book there will be some clues about how to contain or destroy this thing.\n",
         "metadata": null,
         "tokens": null
       }
@@ -153943,6 +155723,73 @@
     },
     {
       "dataset": "client/localization_fsd_en-us",
+      "key": 144487,
+      "data": {
+        "language": "en-us",
+        "text": "Unbeknownst to us, a botanist here named Horei Falcosis took one of the seeds for examination before you shipped the package; a short time ago, as he worked with it, it shot out a tendril and sank it into his flesh. It was several minutes before he was discovered, and by that time, the seed's tendrils had penetrated his body in several locations. Falcosis was unconscious by this time, and the seed had pulled itself close to his body and started to secrete a protective resin. <br><br>\r\nSadly, this station does not have the proper facilities to care for him. And since this tree has now been designated noxious and dangerous--the other seeds were all incinerated safely, I understand--Falcosis has been placed in cryogenic stasis for transport. <br><br>\r\nDeliver him to the station I've included in the mission details, would you?\r\n",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 144488,
+      "data": {
+        "language": "en-us",
+        "text": "We couldn't wait for you any longer. We sent someone else after the book. Because of your delay, it will now be months before we can reclaim that part of the station, if not the whole thing. Who knows?",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 144489,
+      "data": {
+        "language": "en-us",
+        "text": "We couldn't wait for you any longer. We sent someone else after the book. Because of your delay, it will now be months before we can reclaim that part of the station, if not the whole thing. Who knows?",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 144490,
+      "data": {
+        "language": "en-us",
+        "text": "No doubt you've see that little furrier that's been bouncing around the station for the last few days, {[character]player.name}? You haven't? Well, <i>I</i> certainly have. Nasty little creature. It bites, you know. <br><br>\nIn any event, it was part of a shipment of exotic pets intended for delivery to {[location]objectiveDestinationID.name}, but it got left behind because I spilled a drink all over the cargo manifest. We need someone to take this furrier, special delivery, over to {[location]objectiveDestinationID.name} and get it the hell out of our hair. We need a special pilot, a pilot with skill and daring, a pilot who doesn't know the meaning of the word \"fear\"… and who isn't allergic to furriers. You interested? \n",
+        "metadata": null,
+        "tokens": {
+          "{[character]player.name}": {
+            "conditionalValues": [],
+            "variableType": 0,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "player"
+          },
+          "{[location]objectiveDestinationID.name}": {
+            "conditionalValues": [],
+            "variableType": 3,
+            "propertyName": "name",
+            "args": 0,
+            "kwargs": {},
+            "variableName": "objectiveDestinationID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 144491,
+      "data": {
+        "language": "en-us",
+        "text": "One of the functions of my job is to ensure things operate smoothly in this region.  I have a number of informants that keep me in the loop of the less visible happenings.  They tend to be skittish by nature, but recently one of my informants was noticeably shaken. He won't send the information, and he won't meet me in person. He's insisted that I send a third party to pick up the data. <br> \n<br>Normally I'd just find another informant, but this one was on the trail of a particularly virulent heretic. The man can't be anything but mad--he calls himself The Crackpot, for one thing--but it's damned hard to track a madman. He's been attracting attention, even followers from among the weak-minded, and it's long past time to put a stop to his nonsense.<br>\n<br>If you'll go and pick up that data, it could help us track this menace down.\n",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
       "key": 144503,
       "data": {
         "language": "en-us",
@@ -153957,6 +155804,16 @@
       "data": {
         "language": "en-us",
         "text": "Polygypsum is widely considered worthless because of the dangers associated with storing and reprocessing it. As a result, you won't find this ore on the market. In fact, for this reason, most sensor manufacturers don't even bother putting it as a unique entry in the computers when they install standard ship scanners. <br><br>\r\nIf you're having trouble finding the correct ore at the mission location, you can right-click the \"Polygypsum\" icon in the mission details in your Opportunities interface and select \"Add to Overview.\" \r\n",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 144519,
+      "data": {
+        "language": "en-us",
+        "text": "A number of the mega-corporations have joined together to produce SPLET: the State Personnel Life Enrichment Tour. <br><br>\nThe first thing we need is food, and there are crates of frozen food waiting not too far from here. Bring the food here so our chefs can start to figure out how to stretch it into an appropriately festive-- but still economical-- dish. \n",
         "metadata": null,
         "tokens": null
       }
@@ -160840,6 +162697,391 @@
         "courierMission": {
           "objectiveSingleton": 1,
           "objectiveTypeID": 26904,
+          "objectiveQuantity": 1
+        }
+      }
+    },
+    {
+      "dataset": "client/missions",
+      "key": 4838,
+      "data": {
+        "contentTemplate": "agent.missionTemplatizedContent_BasicCourierMission",
+        "hasStandingRewards": 1,
+        "fixedLpRewardAlpha": 0,
+        "messages": {
+          "messages.mission.offerexpired.email.header": 134990,
+          "messages.mission.briefing": 134983,
+          "messages.mission.offered.agentsays": 134984,
+          "messages.mission.complete.charsays": 134992,
+          "messages.mission.accept.charsays": 134991,
+          "messages.mission.timeout.emailheader": 134989,
+          "messages.mission.completed.nextmission.agentsays": 134986,
+          "messages.mission.accepted.agentsays": 134985,
+          "messages.mission.ask.charsays": 134993,
+          "messages.mission.timeout.emailbody": 134987,
+          "messages.mission.offerexpired.email.body": 134988
+        },
+        "fixedLpRewardOmega": 0,
+        "factionID": 500002,
+        "nameID": 56905,
+        "courierMission": {
+          "objectiveSingleton": 1,
+          "objectiveTypeID": 45,
+          "objectiveQuantity": 1
+        }
+      }
+    },
+    {
+      "dataset": "client/missions",
+      "key": 4839,
+      "data": {
+        "contentTemplate": "agent.missionTemplatizedContent_BasicCourierMission",
+        "hasStandingRewards": 1,
+        "fixedLpRewardAlpha": 0,
+        "messages": {
+          "messages.mission.offerexpired.email.header": 135001,
+          "messages.mission.briefing": 144487,
+          "messages.mission.offered.agentsays": 134994,
+          "messages.mission.complete.charsays": 135003,
+          "messages.mission.quitted.agentsays": 134995,
+          "messages.mission.accept.charsays": 135002,
+          "messages.mission.timeout.emailheader": 135000,
+          "messages.mission.completed.nextmission.agentsays": 134997,
+          "messages.mission.accepted.agentsays": 134996,
+          "messages.mission.ask.charsays": 135004,
+          "messages.mission.timeout.emailbody": 134998,
+          "messages.mission.offerexpired.email.body": 134999
+        },
+        "fixedLpRewardOmega": 0,
+        "factionID": 500002,
+        "nameID": 56906,
+        "courierMission": {
+          "objectiveSingleton": 1,
+          "objectiveTypeID": 28972,
+          "objectiveQuantity": 1
+        }
+      }
+    },
+    {
+      "dataset": "client/missions",
+      "key": 4840,
+      "data": {
+        "contentTemplate": "agent.missionTemplatizedContent_BasicCourierMission",
+        "hasStandingRewards": 1,
+        "fixedLpRewardAlpha": 0,
+        "messages": {
+          "messages.mission.offerexpired.email.header": 135008,
+          "messages.mission.briefing": 142311,
+          "messages.mission.offered.agentsays": 142310,
+          "messages.mission.complete.charsays": 135010,
+          "messages.mission.accept.charsays": 135009,
+          "messages.mission.timeout.emailheader": 135007,
+          "messages.mission.accepted.agentsays": 135005,
+          "messages.mission.ask.charsays": 135011,
+          "messages.mission.timeout.emailbody": 144488,
+          "messages.mission.completed.agentsays": 135006,
+          "messages.mission.offerexpired.email.body": 144489
+        },
+        "fixedLpRewardOmega": 0,
+        "factionID": 500002,
+        "nameID": 56907,
+        "courierMission": {
+          "objectiveSingleton": 0,
+          "objectiveTypeID": 28973,
+          "objectiveQuantity": 1
+        }
+      }
+    },
+    {
+      "dataset": "client/missions",
+      "key": 4841,
+      "data": {
+        "contentTemplate": "agent.missionTemplatizedContent_BasicCourierMission",
+        "hasStandingRewards": 1,
+        "fixedLpRewardAlpha": 0,
+        "messages": {
+          "messages.mission.offered.agentsays": 144490,
+          "messages.mission.complete.charsays": 135018,
+          "messages.mission.extrainfo.header": 135014,
+          "messages.mission.accept.charsays": 135017,
+          "messages.mission.extrainfo.body": 135012,
+          "messages.mission.completed.nextmission.agentsays": 135016,
+          "messages.mission.accepted.agentsays": 135015,
+          "messages.mission.ask.charsays": 135019,
+          "messages.mission.briefing": 135013
+        },
+        "fixedLpRewardOmega": 0,
+        "factionID": 500004,
+        "nameID": 56908,
+        "courierMission": {
+          "objectiveSingleton": 1,
+          "objectiveTypeID": 11068,
+          "objectiveQuantity": 1
+        }
+      }
+    },
+    {
+      "dataset": "client/missions",
+      "key": 4842,
+      "data": {
+        "hasStandingRewards": 1,
+        "contentTemplate": "agent.missionTemplatizedContent_BasicCourierMission",
+        "fixedLpRewardAlpha": 0,
+        "messages": {
+          "messages.mission.offered.agentsays": 135021,
+          "messages.mission.complete.charsays": 135025,
+          "messages.mission.accept.charsays": 135024,
+          "messages.mission.completed.nextmission.agentsays": 135023,
+          "messages.mission.accepted.agentsays": 135022,
+          "messages.mission.ask.charsays": 135026,
+          "messages.mission.briefing": 135020
+        },
+        "fixedLpRewardOmega": 0,
+        "factionID": 500004,
+        "expirationTime": 10080,
+        "nameID": 57965,
+        "courierMission": {
+          "objectiveSingleton": 0,
+          "objectiveTypeID": 2653,
+          "objectiveQuantity": 1
+        }
+      }
+    },
+    {
+      "dataset": "client/missions",
+      "key": 4843,
+      "data": {
+        "contentTemplate": "agent.missionTemplatizedContent_BasicCourierMission",
+        "hasStandingRewards": 1,
+        "fixedLpRewardAlpha": 0,
+        "messages": {
+          "messages.mission.offered.agentsays": 135028,
+          "messages.mission.complete.charsays": 135032,
+          "messages.mission.accept.charsays": 135031,
+          "messages.mission.accepted.agentsays": 135029,
+          "messages.mission.ask.charsays": 135033,
+          "messages.mission.briefing": 135027,
+          "messages.mission.completed.agentsays": 135030
+        },
+        "fixedLpRewardOmega": 0,
+        "factionID": 500004,
+        "nameID": 56909,
+        "courierMission": {
+          "objectiveSingleton": 1,
+          "objectiveTypeID": 28975,
+          "objectiveQuantity": 1
+        }
+      }
+    },
+    {
+      "dataset": "client/missions",
+      "key": 4844,
+      "data": {
+        "contentTemplate": "agent.missionTemplatizedContent_BasicCourierMission",
+        "hasStandingRewards": 1,
+        "fixedLpRewardAlpha": 0,
+        "messages": {
+          "messages.mission.offerexpired.email.header": 135042,
+          "messages.mission.briefing": 144491,
+          "messages.mission.offered.agentsays": 135034,
+          "messages.mission.complete.charsays": 135044,
+          "messages.mission.quitted.agentsays": 135035,
+          "messages.mission.declined.agentsays": 135038,
+          "messages.mission.accept.charsays": 135043,
+          "messages.mission.timeout.emailheader": 135041,
+          "messages.mission.decline.charsays": 135045,
+          "messages.mission.quit.charsays": 135046,
+          "messages.mission.accepted.agentsays": 135036,
+          "messages.mission.ask.charsays": 135047,
+          "messages.mission.timeout.emailbody": 135039,
+          "messages.mission.offerexpired.email.body": 135040,
+          "messages.mission.completed.nextmission.agentsays": 135037
+        },
+        "fixedLpRewardOmega": 0,
+        "factionID": 500003,
+        "nameID": 56910,
+        "courierMission": {
+          "objectiveSingleton": 1,
+          "objectiveTypeID": 28827,
+          "objectiveQuantity": 1
+        }
+      }
+    },
+    {
+      "dataset": "client/missions",
+      "key": 4845,
+      "data": {
+        "contentTemplate": "agent.missionTemplatizedContent_BasicCourierMission",
+        "hasStandingRewards": 1,
+        "fixedLpRewardAlpha": 0,
+        "messages": {
+          "messages.mission.offerexpired.email.header": 135059,
+          "messages.mission.timeout.emailbody": 135056,
+          "messages.mission.offered.agentsays": 135051,
+          "messages.mission.complete.charsays": 135061,
+          "messages.mission.extrainfo.header": 135050,
+          "messages.mission.quitted.agentsays": 135052,
+          "messages.mission.declined.agentsays": 135055,
+          "messages.mission.accept.charsays": 135060,
+          "messages.mission.extrainfo.body": 135048,
+          "messages.mission.timeout.emailheader": 135058,
+          "messages.mission.decline.charsays": 135062,
+          "messages.mission.completed.nextmission.agentsays": 135054,
+          "messages.mission.accepted.agentsays": 135053,
+          "messages.mission.ask.charsays": 135064,
+          "messages.mission.briefing": 135049,
+          "messages.mission.offerexpired.email.body": 135057,
+          "messages.mission.quit.charsays": 135063
+        },
+        "fixedLpRewardOmega": 0,
+        "factionID": 500003,
+        "nameID": 56911,
+        "courierMission": {
+          "objectiveSingleton": 0,
+          "objectiveTypeID": 28996,
+          "objectiveQuantity": 1
+        }
+      }
+    },
+    {
+      "dataset": "client/missions",
+      "key": 4846,
+      "data": {
+        "contentTemplate": "agent.missionTemplatizedContent_BasicCourierMission",
+        "hasStandingRewards": 1,
+        "fixedLpRewardAlpha": 0,
+        "messages": {
+          "messages.mission.offerexpired.email.header": 135074,
+          "messages.mission.briefing": 135065,
+          "messages.mission.offered.agentsays": 135066,
+          "messages.mission.complete.charsays": 135076,
+          "messages.mission.quitted.agentsays": 135067,
+          "messages.mission.declined.agentsays": 135070,
+          "messages.mission.accept.charsays": 135075,
+          "messages.mission.timeout.emailheader": 135073,
+          "messages.mission.decline.charsays": 135077,
+          "messages.mission.quit.charsays": 135078,
+          "messages.mission.accepted.agentsays": 135068,
+          "messages.mission.ask.charsays": 135079,
+          "messages.mission.timeout.emailbody": 135071,
+          "messages.mission.completed.agentsays": 135069,
+          "messages.mission.offerexpired.email.body": 135072
+        },
+        "fixedLpRewardOmega": 0,
+        "factionID": 500003,
+        "nameID": 56912,
+        "courierMission": {
+          "objectiveSingleton": 1,
+          "objectiveTypeID": 28886,
+          "objectiveQuantity": 1
+        }
+      }
+    },
+    {
+      "dataset": "client/missions",
+      "key": 4847,
+      "data": {
+        "hasStandingRewards": 1,
+        "contentTemplate": "agent.missionTemplatizedContent_BasicCourierMission",
+        "fixedLpRewardAlpha": 0,
+        "messages": {
+          "messages.mission.offerexpired.email.header": 135089,
+          "messages.mission.timeout.emailbody": 135086,
+          "messages.mission.offered.agentsays": 135796,
+          "messages.mission.complete.charsays": 135091,
+          "messages.mission.extrainfo.header": 135081,
+          "messages.mission.quitted.agentsays": 135082,
+          "messages.mission.declined.agentsays": 135085,
+          "messages.mission.accept.charsays": 135090,
+          "messages.mission.extrainfo.body": 135080,
+          "messages.mission.timeout.emailheader": 135088,
+          "messages.mission.decline.charsays": 135092,
+          "messages.mission.completed.nextmission.agentsays": 135084,
+          "messages.mission.accepted.agentsays": 135083,
+          "messages.mission.ask.charsays": 135094,
+          "messages.mission.briefing": 144519,
+          "messages.mission.offerexpired.email.body": 135087,
+          "messages.mission.quit.charsays": 135093
+        },
+        "fixedLpRewardOmega": 0,
+        "factionID": 500001,
+        "expirationTime": 10080,
+        "nameID": 57989,
+        "courierMission": {
+          "objectiveSingleton": 0,
+          "objectiveTypeID": 2610,
+          "objectiveQuantity": 1
+        }
+      }
+    },
+    {
+      "dataset": "client/missions",
+      "key": 4849,
+      "data": {
+        "contentTemplate": "agent.missionTemplatizedContent_BasicCourierMission",
+        "hasStandingRewards": 1,
+        "fixedLpRewardAlpha": 0,
+        "messages": {
+          "messages.mission.offerexpired.email.header": 135115,
+          "messages.mission.timeout.emailbody": 135112,
+          "messages.mission.offered.agentsays": 135107,
+          "messages.mission.complete.charsays": 135117,
+          "messages.mission.extrainfo.header": 135106,
+          "messages.mission.quitted.agentsays": 135108,
+          "messages.mission.declined.agentsays": 135111,
+          "messages.mission.accept.charsays": 135116,
+          "messages.mission.extrainfo.body": 135104,
+          "messages.mission.timeout.emailheader": 135114,
+          "messages.mission.decline.charsays": 135118,
+          "messages.mission.completed.nextmission.agentsays": 135110,
+          "messages.mission.accepted.agentsays": 135109,
+          "messages.mission.ask.charsays": 135120,
+          "messages.mission.briefing": 135105,
+          "messages.mission.offerexpired.email.body": 135113,
+          "messages.mission.quit.charsays": 135119
+        },
+        "fixedLpRewardOmega": 0,
+        "factionID": 500001,
+        "nameID": 56914,
+        "courierMission": {
+          "objectiveSingleton": 0,
+          "objectiveTypeID": 28995,
+          "objectiveQuantity": 1
+        }
+      }
+    },
+    {
+      "dataset": "client/missions",
+      "key": 4853,
+      "data": {
+        "contentTemplate": "agent.missionTemplatizedContent_BasicCourierMission",
+        "hasStandingRewards": 1,
+        "fixedLpRewardAlpha": 0,
+        "messages": {
+          "messages.mission.offerexpired.email.header": 135167,
+          "messages.mission.briefing": 135157,
+          "messages.mission.offered.agentsays": 135159,
+          "messages.mission.complete.charsays": 135169,
+          "messages.mission.extrainfo.header": 135158,
+          "messages.mission.quitted.agentsays": 135160,
+          "messages.mission.declined.agentsays": 135163,
+          "messages.mission.accept.charsays": 135168,
+          "messages.mission.extrainfo.body": 135156,
+          "messages.mission.timeout.emailheader": 135166,
+          "messages.mission.decline.charsays": 135170,
+          "messages.mission.quit.charsays": 135171,
+          "messages.mission.accepted.agentsays": 135161,
+          "messages.mission.ask.charsays": 135172,
+          "messages.mission.timeout.emailbody": 135164,
+          "messages.mission.completed.agentsays": 135162,
+          "messages.mission.offerexpired.email.body": 135165
+        },
+        "fixedLpRewardOmega": 0,
+        "factionID": 500001,
+        "nameID": 56918,
+        "courierMission": {
+          "objectiveSingleton": 0,
+          "objectiveTypeID": 22208,
           "objectiveQuantity": 1
         }
       }
@@ -252206,6 +254448,25 @@
     },
     {
       "dataset": "client/types",
+      "key": 45,
+      "data": {
+        "descriptionID": 87144,
+        "typeID": 45,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 76492,
+        "iconID": 1200,
+        "published": 1,
+        "marketGroupID": 492,
+        "volume": 0.5,
+        "mass": 400.0,
+        "basePrice": 75.0,
+        "portionSize": 1,
+        "groupID": 281
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 185,
       "data": {
         "descriptionID": 86603,
@@ -262120,6 +264381,24 @@
     },
     {
       "dataset": "client/types",
+      "key": 22208,
+      "data": {
+        "descriptionID": 91885,
+        "typeID": 22208,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 101849,
+        "iconID": 2543,
+        "published": 1,
+        "volume": 1.0,
+        "mass": 50.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 283
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 22222,
       "data": {
         "descriptionID": 90038,
@@ -264851,6 +267130,133 @@
         "basePrice": 2000.0,
         "portionSize": 1,
         "groupID": 711
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 28827,
+      "data": {
+        "descriptionID": 90756,
+        "typeID": 28827,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 100511,
+        "iconID": 2886,
+        "published": 1,
+        "volume": 1.0,
+        "mass": 50.0,
+        "basePrice": 80.0,
+        "portionSize": 1,
+        "groupID": 314
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 28886,
+      "data": {
+        "descriptionID": 90774,
+        "typeID": 28886,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 100529,
+        "iconID": 2545,
+        "published": 1,
+        "volume": 1.0,
+        "mass": 80.0,
+        "basePrice": 100.0,
+        "portionSize": 1,
+        "groupID": 283
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 28972,
+      "data": {
+        "descriptionID": 82833,
+        "typeID": 28972,
+        "graphicID": 2092,
+        "capacity": 0.0,
+        "typeNameID": 71758,
+        "iconID": 1171,
+        "published": 1,
+        "radius": 1.0,
+        "volume": 25.0,
+        "mass": 400.0,
+        "basePrice": 100.0,
+        "portionSize": 1,
+        "groupID": 314
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 28973,
+      "data": {
+        "descriptionID": 90777,
+        "typeID": 28973,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 100536,
+        "iconID": 1192,
+        "published": 1,
+        "volume": 0.1,
+        "mass": 2.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 314
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 28975,
+      "data": {
+        "descriptionID": 90778,
+        "typeID": 28975,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 100537,
+        "iconID": 1192,
+        "published": 1,
+        "volume": 3.0,
+        "mass": 1.0,
+        "basePrice": 100.0,
+        "portionSize": 1,
+        "groupID": 314
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 28995,
+      "data": {
+        "descriptionID": 90779,
+        "typeID": 28995,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 100538,
+        "iconID": 2542,
+        "published": 1,
+        "volume": 3.0,
+        "mass": 600.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 283
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 28996,
+      "data": {
+        "descriptionID": 90780,
+        "typeID": 28996,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 100539,
+        "iconID": 2176,
+        "published": 1,
+        "volume": 0.1,
+        "mass": 1.0,
+        "basePrice": 3328.0,
+        "portionSize": 1,
+        "groupID": 314
       }
     },
     {
@@ -269684,6 +272090,114 @@
       "data": {
         "name": {
           "en": "Salve for Sis"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
+      "key": 4838,
+      "data": {
+        "name": {
+          "en": "Save the Trees - Seeding a Future (1 of 3)"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
+      "key": 4839,
+      "data": {
+        "name": {
+          "en": "Save the Trees – Forest's Revenge (2 of 3)"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
+      "key": 4840,
+      "data": {
+        "name": {
+          "en": "Save the Trees – Save the People (3 of 3)"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
+      "key": 4841,
+      "data": {
+        "name": {
+          "en": "Hauling Fur (1 of 3)"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
+      "key": 4842,
+      "data": {
+        "name": {
+          "en": "Hauling Fur (2 of 3)"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
+      "key": 4843,
+      "data": {
+        "name": {
+          "en": "Hauling Fur (3 of 3)"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
+      "key": 4844,
+      "data": {
+        "name": {
+          "en": "Hunting a Heretic  - Tracking a Crackpot (1 of 3)"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
+      "key": 4845,
+      "data": {
+        "name": {
+          "en": "Hunting a Heretic - Book Burning (2 of 3)"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
+      "key": 4846,
+      "data": {
+        "name": {
+          "en": "Hunting a Heretic - Crackpot Captured! (3 of 3)"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
+      "key": 4847,
+      "data": {
+        "name": {
+          "en": "For the Troops - Food for Fun (1 of 3)"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
+      "key": 4849,
+      "data": {
+        "name": {
+          "en": "For the Troops - Error of Comedy (2 of 3)"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
+      "key": 4853,
+      "data": {
+        "name": {
+          "en": "For the Troops - Final Negotiations (3 of 3)"
         }
       }
     },

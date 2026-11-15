@@ -54,6 +54,7 @@ public sealed record MissionDefinition(
     public bool Deadspace { get; init; } = true;
     public int OfferOrder { get; init; }
     public bool Mining { get; init; }
+    public MissionChainPart? Chain { get; init; }
 }
 
 public sealed record MissionContent(int Build, ImmutableArray<MissionDefinition> Missions);

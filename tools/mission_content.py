@@ -29,18 +29,33 @@ MINING_MISSIONS = {
     4859, 4862, 4863, 4864, 4865, 4866, 4884, 13822,
 }
 
+# Complete, unambiguous native sequences. The first three reports independently
+# describe each part; Hauling Fur's numbered records and next-mission messages
+# identify its sequence, under the University's general mission-chain contract.
+COURIER_CHAINS = [
+    ('Save the Trees', 'Save_the_Trees', 215978, 500002,
+     [(4838, 45, True), (4839, 28972, True), (4840, 28973, False)]),
+    ('Hauling Fur', 'Missions', 230834, 500004,
+     [(4841, 11068, True), (4842, 2653, False), (4843, 28975, True)]),
+    ('Hunting a Heretic', 'Hunting_a_Heretic', 192145, 500003,
+     [(4844, 28827, True), (4845, 28996, False), (4846, 28886, True)]),
+    ('For the Troops', 'For_the_Troops', 231115, 500001,
+     [(4847, 2610, False), (4849, 28995, False), (4853, 22208, False)]),
+]
+
 
 def source(db, dataset, key):
     row = db.execute('SELECT Data FROM SourceRecord WHERE Dataset=? AND Key=?', (dataset, str(key))).fetchone()
     return json.loads(row[0]) if row else None
 
 
-def delivery_rejection(mission, name, volume):
+def delivery_rejection(mission, name, volume, reviewed_chain=False):
     template = mission['contentTemplate'].rsplit('_', 1)[-1]
     if template not in ('BasicCourierMission', 'GenericStorylineCourierMission'):
         return 'Requires another mission or agent lifecycle'
-    if re.search(r'\b\d+\s+of\s+\d+\b', name, re.IGNORECASE) or any('nextmission' in k for k in mission.get('messages', {})):
-        return 'Requires mission-chain progression'
+    if not reviewed_chain and (re.search(r'\b\d+\s+of\s+\d+\b', name, re.IGNORECASE)
+                               or any('nextmission' in k for k in mission.get('messages', {}))):
+        return 'Requires complete mission-chain bindings or additional part mechanics'
     if any(mission.get(k) for k in ('nodeGraphID', 'clientObjectives', 'contentTags', 'initialAgentGiftTypeID')):
         return 'Requires authored scripts, objectives or initial gifts'
     cargo = mission.get('courierMission', {})
@@ -58,6 +73,32 @@ def delivery_rejection(mission, name, volume):
         if isinstance(reward, dict) and reward.get('rewardTypeID', 29) != 29:
             return 'Requires fixed item rewards'
     return None
+
+
+def courier_chain_definitions(db):
+    definitions = []
+    for family, report, revision, faction, parts in COURIER_CHAINS:
+        for index, (mid, cargo_type, singleton) in enumerate(parts):
+            mission = source(db, 'client/missions', mid)
+            sde = source(db, 'sde/missions', mid) or {}
+            name = sde.get('name', {}).get('en', '')
+            cargo = (mission or {}).get('courierMission', {})
+            item = source(db, 'client/types', cargo_type) or {}
+            volume = item.get('volume', 0) * cargo.get('objectiveQuantity', 0)
+            next_message = any('nextmission' in k for k in (mission or {}).get('messages', {}))
+            if (not mission or not name.startswith(family) or f'({index + 1} of {len(parts)})' not in name
+                    or mission['contentTemplate'] != 'agent.missionTemplatizedContent_BasicCourierMission'
+                    or mission.get('factionID') != faction or mission.get('corporationID')
+                    or cargo != dict(objectiveTypeID=cargo_type, objectiveQuantity=1, objectiveSingleton=int(singleton))
+                    or next_message != (index < len(parts) - 1)
+                    or not 0 < volume <= 320 or delivery_rejection(mission, name, volume, reviewed_chain=True)):
+                raise ValueError(f'Unreviewed courier chain part {mid}: {family}')
+            definitions.append(dict(missionId=mid, level=1, difficulty=500, storyline=False, offerOrder=1,
+                                    source='https://wiki.eveuniversity.org/' + report,
+                                    sourceRevision=f'oldid={revision}; build-3662168 numbered chain and cargo', waves=[],
+                                    chain=dict(rootMissionId=parts[0][0], previousMissionId=parts[index - 1][0] if index else 0,
+                                               nextMissionId=parts[index + 1][0] if index < len(parts) - 1 else 0)))
+    return definitions
 
 
 def mining_definition(db, mission_id, mission):
@@ -341,6 +382,7 @@ def extend(db, missions, group):
                group('Centum Fiend/Centum Hellhound', 2, 75000, required=False)],
               593785, structure_type=17381)
 
+    missions.extend(courier_chain_definitions(db))
     admitted = {m['missionId'] for m in missions}
     encounters = {tuple(sorted(source(db, 'client/missions', m['missionId'])['killMission'].items())): m
                   for m in missions if m['waves']}
@@ -383,7 +425,7 @@ def extend(db, missions, group):
                 reason = None
             else:
                 reason = ('Requires level-five encounter policy' if dungeon.get('difficulty') == 5
-                          else 'Requires mission-chain progression' if chain
+                          else 'Requires complete mission-chain bindings or additional part mechanics' if chain
                           else 'Requires authored scripts or initial gifts' if special
                           else 'Requires verified NPC roster and objective scripts')
         else:

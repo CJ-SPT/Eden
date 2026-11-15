@@ -303,6 +303,10 @@ internal sealed partial class MissionHandler(
         {
             context.Notifications.Add(new AgentMissionChanged(update.Event, agentId));
         }
+        if (update.Continuation is not null)
+        {
+            context.Notifications.Add(new AgentMissionChanged("offered", agentId));
+        }
     }
 }
 

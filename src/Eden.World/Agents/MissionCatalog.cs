@@ -76,6 +76,12 @@ internal static class MissionCatalog
         {
             throw new InvalidDataException("Mission content targets a different client build.");
         }
+        MissionChainRules.Validate(
+            content
+                .Missions.Where(m => m.Chain is not null)
+                .Select(m => new MissionChainNode(m.MissionId, m.Level, m.Storyline, m.Chain!))
+                .ToArray()
+        );
         return content;
     });
     private static readonly CatalogDefinition<MissionProfile?> s_profile = new("agent-mission", Load, EstimatedBytes: 16384);
@@ -101,6 +107,19 @@ internal static class MissionCatalog
 
     internal static MissionProfile Find(CatalogDbContext catalog, int missionId) =>
         catalog.Definition(s_profile, missionId) ?? throw new InvalidDataException("This mission's content is unavailable.");
+
+    internal static bool ChainAvailable(CatalogDbContext catalog, MissionProfile profile, CatalogAgent agent)
+    {
+        if (profile.Definition.Chain is not { } chain)
+        {
+            return true;
+        }
+        return s_content
+            .Value.Missions.Where(m => m.Chain?.RootMissionId == chain.RootMissionId)
+            .All(m =>
+                catalog.Definition(s_profile, m.MissionId) is { } part && part.AvailableTo(agent) && !part.AttacksFaction(agent.FactionId)
+            );
+    }
 
     private static MissionProfile? Load(CatalogDbContext catalog, int missionId)
     {

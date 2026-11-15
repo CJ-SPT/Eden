@@ -4520,6 +4520,186 @@
       ]
     },
     {
+      "missionId": 4838,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Save_the_Trees",
+      "sourceRevision": "oldid=215978; build-3662168 numbered chain and cargo",
+      "waves": [],
+      "chain": {
+        "rootMissionId": 4838,
+        "previousMissionId": 0,
+        "nextMissionId": 4839
+      }
+    },
+    {
+      "missionId": 4839,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Save_the_Trees",
+      "sourceRevision": "oldid=215978; build-3662168 numbered chain and cargo",
+      "waves": [],
+      "chain": {
+        "rootMissionId": 4838,
+        "previousMissionId": 4838,
+        "nextMissionId": 4840
+      }
+    },
+    {
+      "missionId": 4840,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Save_the_Trees",
+      "sourceRevision": "oldid=215978; build-3662168 numbered chain and cargo",
+      "waves": [],
+      "chain": {
+        "rootMissionId": 4838,
+        "previousMissionId": 4839,
+        "nextMissionId": 0
+      }
+    },
+    {
+      "missionId": 4841,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Missions",
+      "sourceRevision": "oldid=230834; build-3662168 numbered chain and cargo",
+      "waves": [],
+      "chain": {
+        "rootMissionId": 4841,
+        "previousMissionId": 0,
+        "nextMissionId": 4842
+      }
+    },
+    {
+      "missionId": 4842,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Missions",
+      "sourceRevision": "oldid=230834; build-3662168 numbered chain and cargo",
+      "waves": [],
+      "chain": {
+        "rootMissionId": 4841,
+        "previousMissionId": 4841,
+        "nextMissionId": 4843
+      }
+    },
+    {
+      "missionId": 4843,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Missions",
+      "sourceRevision": "oldid=230834; build-3662168 numbered chain and cargo",
+      "waves": [],
+      "chain": {
+        "rootMissionId": 4841,
+        "previousMissionId": 4842,
+        "nextMissionId": 0
+      }
+    },
+    {
+      "missionId": 4844,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Hunting_a_Heretic",
+      "sourceRevision": "oldid=192145; build-3662168 numbered chain and cargo",
+      "waves": [],
+      "chain": {
+        "rootMissionId": 4844,
+        "previousMissionId": 0,
+        "nextMissionId": 4845
+      }
+    },
+    {
+      "missionId": 4845,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Hunting_a_Heretic",
+      "sourceRevision": "oldid=192145; build-3662168 numbered chain and cargo",
+      "waves": [],
+      "chain": {
+        "rootMissionId": 4844,
+        "previousMissionId": 4844,
+        "nextMissionId": 4846
+      }
+    },
+    {
+      "missionId": 4846,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Hunting_a_Heretic",
+      "sourceRevision": "oldid=192145; build-3662168 numbered chain and cargo",
+      "waves": [],
+      "chain": {
+        "rootMissionId": 4844,
+        "previousMissionId": 4845,
+        "nextMissionId": 0
+      }
+    },
+    {
+      "missionId": 4847,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/For_the_Troops",
+      "sourceRevision": "oldid=231115; build-3662168 numbered chain and cargo",
+      "waves": [],
+      "chain": {
+        "rootMissionId": 4847,
+        "previousMissionId": 0,
+        "nextMissionId": 4849
+      }
+    },
+    {
+      "missionId": 4849,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/For_the_Troops",
+      "sourceRevision": "oldid=231115; build-3662168 numbered chain and cargo",
+      "waves": [],
+      "chain": {
+        "rootMissionId": 4847,
+        "previousMissionId": 4847,
+        "nextMissionId": 4853
+      }
+    },
+    {
+      "missionId": 4853,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/For_the_Troops",
+      "sourceRevision": "oldid=231115; build-3662168 numbered chain and cargo",
+      "waves": [],
+      "chain": {
+        "rootMissionId": 4847,
+        "previousMissionId": 4849,
+        "nextMissionId": 0
+      }
+    },
+    {
       "missionId": 937,
       "level": 1,
       "difficulty": 500,
