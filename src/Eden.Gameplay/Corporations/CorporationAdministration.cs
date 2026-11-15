@@ -54,8 +54,16 @@ public sealed record CorporationAdministrationChange(
     long? PreviousCeoId = null,
     long? CeoId = null,
     long? ClosedAt = null,
-    CorporationVoteChange? Vote = null
+    CorporationVoteChange? Vote = null,
+    CorporationHeadquartersChange? Headquarters = null
 );
+
+public sealed record CorporationHeadquartersChange(int PreviousStationId, int PreviousSystemId, int StationId, int SystemId);
+
+public interface ICorporationHeadquarters
+{
+    void MoveHere(long actorId);
+}
 
 public interface ICorporationAdministration
 {

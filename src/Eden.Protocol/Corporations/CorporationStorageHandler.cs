@@ -76,7 +76,7 @@ internal sealed class CorporationStorageHandler(ICorporationStorage storage) : I
                     && keywords is { Count: 1 }
                     && keywords.GetValueOrDefault("flags") is List<object?> flags
                     && flags.All(f =>
-                        f is long value && value is >= CorporationStorageRules.FirstFlag and <= CorporationStorageRules.LastFlag
+                        f is long value && value is >= int.MinValue and <= int.MaxValue && CorporationStorageRules.IsHangarFlag((int)value)
                     )
                 )
                 {

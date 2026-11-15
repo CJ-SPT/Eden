@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Administration and inventory blockers, November 15, 2026](#administration-and-inventory-blockers-november-15-2026)
 - [Corporation Show Info market activity latency, November 15, 2026](#corporation-show-info-market-activity-latency-november-15-2026)
 - [Bulk member removal, November 15, 2026](#bulk-member-removal-november-15-2026)
 - [Member-expulsion votes, November 15, 2026](#member-expulsion-votes-november-15-2026)
@@ -43,6 +44,79 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Corporation window voting-capability startup correction](#corporation-window-voting-capability-startup-correction)
 - [Player corporation applications and membership](#player-corporation-applications-and-membership)
 - [Player corporations: creation foundation](#player-corporations-creation-foundation)
+
+## Administration and inventory blockers, November 15, 2026
+
+The maintainer supplied an Administration panel stuck behind `Unsupported local call corpmgr.AuditMember`, a character
+header showing three days in a corporation while its employment row showed one day, an unsupported
+`corpStationMgr.MachoBindObject (MoveCorpHQHere)` dialog, and a corporation hangar permission denial while playing its CEO.
+The local Death Scout game log dated November 15 also records `invbroker.MachoBindObject (GetInventory)` at 08:30:43 UTC,
+followed by the hangar denials at 08:31:26 and 08:31:36 UTC. The precise clicked inventory entry was not established.
+
+`corpmgr.AuditMember(memberID, fromDate, toDate, rowsPerPage)` now returns the native tuple of event and role-history
+CRowsets, including both rowsets for empty results. The resident reader requires current Director/CEO or Auditor authority,
+filters the inclusive-start/exclusive-end interval, and bounds each stream to the requested page size. Employment records
+provide dated corporation creation, join and leave events for the caller's corporation. New member-role edits and effective
+title-role changes retain their issuer and timestamp in the existing checkpointed corporation change journal. Searches
+work for either the affected member or issuer without counting notification fan-out more than once. Pre-existing role
+events lack trustworthy timestamps and issuers and are not fabricated into dated audit records. The native role payload
+combines location masks; changes that only move the same permission between locations, vanity-title history and complete
+legacy administrative history remain outside this correction. No new schema or SQL gameplay fallback is added.
+
+`GetPublicInfo3.startDateTime` now reports the current corporation membership's latest employment start from the same
+resident snapshot as the public profile. Character birth remains `GetPublicInfo.createDateTime`. Rejoining the same
+corporation selects the new membership, and checkpoint reopen retains the date. NPC profiles without saved membership
+history keep their existing creation-date fallback.
+
+The station-bound zero-argument `MoveCorpHQHere` call now moves headquarters to the actor's current rented office. It
+requires current CEO/Director authority and docking at a station. Station/system identifiers and a named administration
+event commit together in the resident world, and `OnCorporationChanged` carries the native `stationID` and `solarSystemID`
+old/new pairs. Repeated moves to the same headquarters emit no changes; forged locations, missing offices, undocked pilots
+and unauthorized actors reject. Office contents and corporation money are unchanged by the move.
+
+Build 3662168 includes **Goals Deliveries (flag 184, division index 14)** in `flagCorpSAGs`. Eden previously recognized only
+the seven numbered flags **115–121**: its permission helper rejected flag 184 before considering Director authority, and
+its native `ListByFlags` adapter rejected the combined list. The read paths now recognize this native entry with deliveries
+query permissions. Invalid flags and unauthorized/revoked members remain rejected. The separate corporation Deliveries
+container **10012** now binds and lists real resident station inventory under market-deliveries flag **62**, with current
+corporation and query-authority checks on every read. This adds reads, not corporate market trading, project delivery
+mutations or withdrawal actions.
+
+Sources: inert inspection of prepared client build **3662168**, `code.ccp` SHA-256
+`AC15883C14B8547F4846A74E125A0E30073880C4EDF55E214DCAED804A4A19C6`, particularly
+`CorpAuditing.ShowJournal`, `CharacterInfoWindow.construct_header_character`, `StationController.SetHQ`,
+`inventorycommon.const`, `BaseCorpContainer` and `invCache.GetInventory`/`invCacheContainer.List`.
+[EVE University member management](https://wiki.eveuniversity.org/Managing_corporation_members) describes role auditing;
+[corporation logistics](https://wiki.eveuniversity.org/Corporation_logistics) describes moving headquarters to an office.
+EveJS **261108.1** `corpmgrService.js` (SHA-256
+`0CEAC2C9C0982F00E714A1F17700ACC8A968FFC4EF9C83CCB763B51D8BD1368F`) supplied an older-client response comparison.
+Native DBRow/CRowset adapters reuse the recorded [Carbon Blue revision fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp).
+No client code was executed and no game was launched by the agent.
+
+**Automated validation.** Exact development filters targeted
+`CorporationMemberAuditTests.NativeAuditReturnsTwoRowsetsAndSubsequentCorporationReadsSucceed`,
+`CorporationHeadquartersTests.NativeEmbeddedHeadquartersCallPublishesLocationAndPersistsOnce` and
+`CorporationHangarStartupTests.CeoAndDirectorCanReadAllNativeHangarsIncludingGoalsAndBindCorporateDeliveries`.
+An initial stale exact role-test name matched no tests; subsequent development used the named regressions. Development
+corrections fixed an unsupported CLR short in a wire model and assertions that tried to round-trip outbound-only
+CRowset/object-reference reductions through the restricted inbound decoder. The inbound decoder was not widened.
+The final sequence passed tool/solution restore, the zero-warning solution build, **131 focused tests** in **40.58 s**,
+both Python policy suites (**8 catalog and 9 formatting cases**), formatting for **2,236 files**, the 140-column check and
+`git diff --check` in **80.50 s**. Documentation checks resolved **614 local paths** and verified the new protocol anchor.
+The focused filter joined `CorporationMemberAuditTests`, `CorporationHeadquartersTests`, `CorporationHangarStartupTests`,
+`CorporationRoleTests`, `CorporationStorageTests`, `CorporationWalletStartupTests`, `CorporationAdministrationTests`,
+`CorporationMembershipTests`, `CorporationShowInfoTests`, `CorporationPublicInfoTests`, `CharacterSheetServiceTests`,
+`AgentDirectoryServiceTests`, `DockedServicesTests` and `CorporationScreenTests` with `FullyQualifiedName~` clauses.
+Coverage includes native embedded binding, real resident item reads, CEO/Director access and immediate revocation, empty
+audit rowsets, timestamp boundaries, no-op and rejected edits, role-history and headquarters checkpoint reopen, membership
+departure/rejoin dates and unchanged character birth. The measured audit reader used zero SQL commands, connections or
+fitting calculations. The full .NET suite was not requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled. Screenshots and the game log establish the original
+failures; corrected native rendering and the exact clicked hangar entry remain unverified.
+
+**Optional maintainer checks.** Update/restart the server and reconnect; open Administration/Auditing and compare the
+character membership header with employment history; move headquarters and open numbered hangars, Goals Deliveries and Deliveries.
 
 ## Bulk member removal, November 15, 2026
 

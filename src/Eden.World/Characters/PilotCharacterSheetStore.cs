@@ -1,4 +1,5 @@
 using Eden.Data.World.Characters;
+using Eden.Data.World.Corporations;
 using Eden.Gameplay.Characters;
 using Eden.Infrastructure.Registration;
 using Eden.World.Runtime.Economy;
@@ -26,7 +27,14 @@ internal sealed class PilotCharacterSheetStore(WorldDatabase database, PilotTrai
                         p.SchoolId,
                         p.AncestryId,
                         p.CreatedAt,
-                        world.Set<SavedCharacterSheet>().Find(pilotId)?.Biography ?? ""
+                        world.Set<SavedCharacterSheet>().Find(pilotId)?.Biography ?? "",
+                        world
+                            .Set<SavedCorporationEmployment>()
+                            .Where(row => row.PilotId == pilotId && row.CorporationId == p.CorporationId)
+                            .OrderByDescending(row => row.Id)
+                            .Select(row => (long?)row.StartedAt)
+                            .FirstOrDefault()
+                            ?? p.CreatedAt
                     )
                     : null,
             consistentFileRead: true

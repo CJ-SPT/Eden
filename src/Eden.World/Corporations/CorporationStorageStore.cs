@@ -18,7 +18,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Corporations;
 
 [Injectable]
-internal sealed class CorporationStorageStore(WorldDatabase database, TimeProvider clock) : ICorporationStorage
+internal sealed partial class CorporationStorageStore(WorldDatabase database, TimeProvider clock) : ICorporationStorage
 {
     public IReadOnlyList<CorporationOffice> Offices(long actorId)
     {

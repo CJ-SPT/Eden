@@ -25,6 +25,7 @@ public interface ICorporationStorage
     IReadOnlyList<InventoryChange> Move(long actorId, long destinationId, InventoryMoveRequest request);
     IReadOnlyList<InventoryChange> Stack(long actorId, long officeId, int flag);
     bool CanObserve(long actorId, long officeId, int flag);
+    IReadOnlyList<InventoryItem> Deliveries(long actorId);
 }
 
 public static class CorporationStorageRules
@@ -33,6 +34,11 @@ public static class CorporationStorageRules
     public const int FirstFlag = 115;
     public const int LastFlag = 121;
     public const int DivisionCount = 7;
+
+    // Build 3662168 inventorycommon.const includes Goals Deliveries in flagCorpSAGs, at division index 14.
+    public const int GoalDeliveriesFlag = 184;
+    public const int MarketDeliveriesContainer = 10012;
+    public const int MarketDeliveriesFlag = 62;
     public const int MaximumBatch = 1000;
     public const long FirstOfficeId = 66000000;
     public const long LastOfficeId = 67999999;
@@ -44,6 +50,8 @@ public static class CorporationStorageRules
 
     public static bool IsDivision(int flag) => flag is >= FirstFlag and <= LastFlag;
 
+    public static bool IsHangarFlag(int flag) => IsDivision(flag) || flag == GoalDeliveriesFlag;
+
     public static bool CanQuery(CorporationMemberAccess member, int station, int headquarters, int flag) =>
         Has(member, station, headquarters, flag, CorporationRole.HangarCanQuery1);
 
@@ -52,6 +60,12 @@ public static class CorporationStorageRules
 
     private static bool Has(CorporationMemberAccess member, int station, int headquarters, int flag, CorporationRole first)
     {
+        if (flag == GoalDeliveriesFlag)
+        {
+            return member.Roles.Has(
+                first == CorporationRole.HangarCanQuery1 ? CorporationRole.DeliveriesHangarQuery : CorporationRole.DeliveriesHangarTake
+            );
+        }
         if (!IsDivision(flag))
         {
             return false;

@@ -162,7 +162,7 @@ internal sealed partial class CorporationRoleStore(WorldDatabase database, TimeP
             }
             if (before != after)
             {
-                Notify(world, corporation.Id, new(corporation.Id, update.PilotId, effectiveBefore, effectiveAfter), null);
+                Notify(world, corporation.Id, new(corporation.Id, update.PilotId, effectiveBefore, effectiveAfter, actorId, now), null);
             }
         }
         transaction.Commit();
@@ -203,7 +203,7 @@ internal sealed partial class CorporationRoleStore(WorldDatabase database, TimeP
             Notify(world, corporation.Id, null, new(corporation.Id, title.Id, before, title));
         }
         world.SaveChanges();
-        NotifyAffectedMembers(world, corporation, beforeMembers);
+        NotifyAffectedMembers(world, corporation, beforeMembers, actorId);
         transaction.Commit();
     }
 
@@ -229,14 +229,15 @@ internal sealed partial class CorporationRoleStore(WorldDatabase database, TimeP
         }
         Notify(world, corporation.Id, null, new(corporation.Id, titleId, title.Snapshot(), null));
         world.SaveChanges();
-        NotifyAffectedMembers(world, corporation, before);
+        NotifyAffectedMembers(world, corporation, before, actorId);
         transaction.Commit();
     }
 
     private void NotifyAffectedMembers(
         WorldAction world,
         SavedCorporation corporation,
-        IReadOnlyDictionary<long, CorporationMemberAccess> before
+        IReadOnlyDictionary<long, CorporationMemberAccess> before,
+        long actorId
     )
     {
         foreach (var member in before)
@@ -252,7 +253,12 @@ internal sealed partial class CorporationRoleStore(WorldDatabase database, TimeP
                 Save(world, member.Key, corporation.Id, saved);
                 after = after with { RolesRemovedAt = saved.RolesRemovedAt };
             }
-            Notify(world, corporation.Id, new(corporation.Id, member.Key, member.Value, after), null);
+            Notify(
+                world,
+                corporation.Id,
+                new(corporation.Id, member.Key, member.Value, after, actorId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()),
+                null
+            );
         }
     }
 

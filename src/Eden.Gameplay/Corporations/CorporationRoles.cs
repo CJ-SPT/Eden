@@ -89,7 +89,14 @@ public sealed record CorporationMemberUpdate(
 
 public sealed record CorporationTitle(long Id, string Name, CorporationRoleSet Roles);
 
-public sealed record CorporationRoleChange(int CorporationId, long PilotId, CorporationMemberAccess Before, CorporationMemberAccess After);
+public sealed record CorporationRoleChange(
+    int CorporationId,
+    long PilotId,
+    CorporationMemberAccess Before,
+    CorporationMemberAccess After,
+    long IssuerId = 0,
+    long ChangedAt = 0
+);
 
 public sealed record CorporationTitleChange(int CorporationId, long TitleId, CorporationTitle? Before, CorporationTitle? After);
 

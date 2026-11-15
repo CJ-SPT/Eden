@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Corporation administration and inventory blockers](protocol/corporations.md#administration-and-inventory-blockers-november-15-2026)
+records member auditing, correct membership dates, moving headquarters and native deliveries access.
+
 [Corporation bulk member removal](protocol/corporations.md#bulk-member-removal-november-15-2026)
 records native mixed-result replies, resident batch settlement and membership protections.
 

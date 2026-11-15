@@ -35,7 +35,8 @@ public sealed record PublicCharacterProfile(
     int? SchoolId,
     int? AncestryId,
     long? CreatedAt,
-    string Biography
+    string Biography,
+    long? CorporationJoinedAt = null
 );
 
 public interface IPilotCharacterSheet

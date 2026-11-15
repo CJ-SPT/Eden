@@ -87,6 +87,13 @@ internal sealed record CorporationDetailsChanged(CorporationAdministrationChange
         {
             var before = Fields(Change.Before);
             var after = Fields(Change.After);
+            if (Change.Headquarters is { } headquarters)
+            {
+                before["stationID"] = headquarters.PreviousStationId;
+                after["stationID"] = headquarters.StationId;
+                before["solarSystemID"] = headquarters.PreviousSystemId;
+                after["solarSystemID"] = headquarters.SystemId;
+            }
             if (Change.CeoId is long ceo)
             {
                 before["ceoID"] = Change.PreviousCeoId;

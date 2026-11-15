@@ -118,7 +118,7 @@ internal sealed record PublicCharacterInfoRow(PublicCharacterProfile Profile) : 
             Profile.GenderId,
             Profile.SchoolId,
             Profile.AncestryId,
-            Profile.CreatedAt,
+            Profile.CorporationJoinedAt ?? Profile.CreatedAt,
             // CharacterInfoWindow reads this on the public row before constructing any tabs.
             null,
             new BlueUnicode(Profile.Biography),
