@@ -137,6 +137,29 @@ public sealed partial class WreckTests
     }
 
     [Fact]
+    public void PartialPickupPreservesConditionAndVolumeAcrossCheckpointReopening()
+    {
+        using Fixture f = new();
+        long original = f.Item;
+        using (var world = f.Db.Services.GetRequiredService<Eden.World.Runtime.LiveWorld>().Economy.Begin())
+        {
+            var item = world.Set<OwnedItem>().Find(original)!;
+            item.CrystalDamage = 0.125;
+            item.VolumeOverride = 0.5;
+            world.Commit();
+        }
+        var before = Assert.Single(f.Store.Read(f.Pilot.PilotId, f.Wreck.Id, Now).Items);
+        var moved = Assert.Single(f.Take(25), change => change.Previous is null).Item;
+        Assert.Equal(before with { Id = moved.Id, LocationId = f.Pilot.ShipId, FlagId = (int)InventoryFlag.Cargo, Quantity = 25 }, moved);
+        Assert.Equal(before with { Quantity = 75 }, Assert.Single(f.Store.Read(f.Pilot.PilotId, f.Wreck.Id, Now).Items));
+        long shipId = f.Pilot.ShipId;
+        long pilotId = f.Pilot.PilotId;
+        f.Db.Services.Dispose();
+        using var reopened = Eden.Server.ServerServices.Build(new(f.Db.Path), liveWorld: true);
+        Assert.Equal(moved, Assert.Single(reopened.GetRequiredService<IPilotInventory>().List(pilotId, shipId)));
+    }
+
+    [Fact]
     public void CapacityFailurePreservesContentsAndAnExactFittingPartialQuantitySucceeds()
     {
         using Fixture f = new();

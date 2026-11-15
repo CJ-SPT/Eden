@@ -21,6 +21,47 @@ namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class CorporationStorageTests
 {
+    [Fact]
+    public void CorporationTransfersAcceptLocalInactiveShipHoldsAndPreserveOwnership()
+    {
+        using TestWorld world = new(liveWorld: true);
+        int corporation = Prepare(world);
+        var office = Rent(world);
+        var item = PersonalItem(world);
+        using (var action = world.Services.GetRequiredService<Eden.World.Runtime.LiveWorld>().Economy.Begin())
+        {
+            action.Add(
+                new Ship
+                {
+                    Id = HullId,
+                    OwnerId = Ceo,
+                    TypeId = 601,
+                    StationId = StationId,
+                    Name = "Spare",
+                }
+            );
+            action.Commit();
+        }
+        var inventory = world.Services.GetRequiredService<IPilotInventory>();
+        inventory.Move(Ceo, HullId, new([item.Id], StationId, (int)InventoryFlag.Cargo, null));
+        Storage(world).Move(Ceo, office.Id, new([item.Id], HullId, FirstDivision, null));
+        Assert.Equal(corporation, Assert.Single(Storage(world).List(Ceo, office.Id, FirstDivision)).OwnerId);
+        Assert.Empty(inventory.List(Ceo, HullId));
+        using (var action = world.Services.GetRequiredService<Eden.World.Runtime.LiveWorld>().Economy.Begin())
+        {
+            action.Set<OwnedItem>().Find(item.Id)!.VolumeOverride = 0;
+            action.Commit();
+        }
+        Assert.Throws<InvalidDataException>(() =>
+            Storage(world).Move(Ceo, HullId, new([item.Id], office.Id, (int)InventoryFlag.FleetHangar, null))
+        );
+        Assert.Equal(corporation, Assert.Single(Storage(world).List(Ceo, office.Id, FirstDivision)).OwnerId);
+        Assert.Empty(inventory.List(Ceo, HullId));
+        Storage(world).Move(Ceo, HullId, new([item.Id], office.Id, (int)InventoryFlag.Cargo, null));
+        Assert.Equal(Ceo, Assert.Single(inventory.List(Ceo, HullId)).OwnerId);
+        Assert.Empty(Storage(world).List(Ceo, office.Id, FirstDivision));
+    }
+
     private const long Ceo = 90000001;
     private const long Member = 90000002;
     private const int StationId = 60003760;

@@ -53,33 +53,30 @@ internal sealed partial class PilotInventoryStore
     {
         var (itemIds, sourceId, flagId, quantity) = request;
         var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown pilot.");
-        var ship = fittingShip ?? pilot.ActiveShip;
+        var active = pilot.ActiveShip;
+        var sourceShip = InventoryShip(world, pilot, sourceId);
+        var destinationShip = InventoryShip(world, pilot, destinationId);
+        var ship = fittingShip ?? sourceShip ?? destinationShip ?? active;
         if (fittingShip is not null)
         {
             PilotFittingStore.RequireFittingShip(pilot, ship);
         }
-        attributes ??= fittingShip is null ? world.Attributes(pilotId) : PilotFittingStore.ShipAttributes(world, catalog, pilot, ship);
-        world.RequireUncloaked(ship.Id);
-        bool sameShipQuantityMove = sourceId == ship.Id && destinationId == ship.Id && quantity.HasValue;
+        world.RequireUncloaked(active.Id);
+        bool sameShipQuantityMove = sourceId == active.Id && destinationId == active.Id && quantity.HasValue;
+        bool sourceHangar = active.Position is null && sourceId == active.DockedLocationId;
+        bool destinationHangar = active.Position is null && destinationId == active.DockedLocationId;
         if (
-            (ship.Position is not null && !sameShipQuantityMove)
-            || !(
-                (sourceId == ship.Id && destinationId == ship.DockedLocationId && flagId == (int)InventoryFlag.Hangar)
-                || (
-                    sourceId == ship.DockedLocationId
-                    && destinationId == ship.DockedLocationId
-                    && flagId == (int)InventoryFlag.Hangar
-                    && quantity.HasValue
-                )
-                || ((sourceId == ship.DockedLocationId || sourceId == ship.Id) && destinationId == ship.Id && ShipHoldRules.IsHold(flagId))
-            )
+            (active.Position is not null && !sameShipQuantityMove)
+            || !(sourceHangar || sourceShip is not null)
+            || !(destinationHangar && flagId == (int)InventoryFlag.Hangar || destinationShip is not null && ShipHoldRules.IsHold(flagId))
+            || sourceHangar && destinationHangar && !quantity.HasValue
             || itemIds.Count == 0
             || itemIds.Distinct().Count() != itemIds.Count
             || quantity is <= 0
             || (quantity.HasValue && itemIds.Count != 1)
         )
         {
-            throw new InvalidDataException("Items can only move between your docked ship's cargo and its station hangar.");
+            throw new InvalidDataException("Move items between owned ships and the hangar at your current docked location.");
         }
 
         var holdFlags = ShipHoldRules.Definitions.Select(h => (int)h.Flag).ToArray();
@@ -90,7 +87,7 @@ internal sealed partial class PilotInventoryStore
                 && i.OwnerId == pilotId
                 && i.LocationId == sourceId
                 && (
-                    sourceId == ship.Id
+                    sourceShip != null
                         ? Enumerable.Contains(holdFlags, i.FlagId)
                             || (i.FlagId >= (int)InventoryFlag.LowSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7)
                             || (i.FlagId >= (int)InventoryFlag.RigSlot0 && i.FlagId <= (int)InventoryFlag.RigSlot2)
@@ -105,15 +102,15 @@ internal sealed partial class PilotInventoryStore
             .AsEnumerable()
             .Where(s =>
                 s.Position is null
-                && (sourceId == ship.Id ? s.StoredInId == ship.Id : s.StoredInId is null && s.DockedLocationId == sourceId)
+                && (sourceShip is not null ? s.StoredInId == sourceId : s.StoredInId is null && s.DockedLocationId == sourceId)
             )
             .OrderBy(s => s.Id)
             .ToArray();
         if (
             items.Length + storedShips.Length != itemIds.Count
             || items.Any(i => quantity > i.Quantity)
-            || storedShips.Any(s => quantity is > 1 || world.Pilots.Any(p => p.ActiveShipId == s.Id))
-            || (ship.Position is not null && (items.Any(item => item.FlagId != flagId) || storedShips.Length > 0))
+            || storedShips.Any(s => s.Id == destinationId || quantity is > 1 || world.Pilots.Any(p => p.ActiveShipId == s.Id))
+            || (active.Position is not null && (items.Any(item => item.FlagId != flagId) || storedShips.Length > 0))
         )
         {
             throw new InvalidDataException("The requested items or quantity are unavailable.");
@@ -122,7 +119,7 @@ internal sealed partial class PilotInventoryStore
         {
             throw new InvalidDataException("Deliver or cancel the industry job before moving its blueprint.");
         }
-        if (sourceId == destinationId && destinationId == ship.DockedLocationId && storedShips.Length > 0)
+        if (sourceId == destinationId && destinationHangar && storedShips.Length > 0)
         {
             throw new InvalidDataException("Only packaged item stacks can be divided.");
         }
@@ -138,6 +135,14 @@ internal sealed partial class PilotInventoryStore
             world.SaveChanges();
             return splitChanges;
         }
+        if (
+            sourceId == destinationId
+            && items.All(item => item.FlagId == flagId)
+            && storedShips.All(stored => stored.StorageFlagId == flagId)
+        )
+        {
+            return [];
+        }
         var unfittedIds = items.Where(i => InventoryDefinitions.IsFittedSlot(i.FlagId)).Select(i => i.Id).ToArray();
         var checkpoint = unfittedIds.Length > 0 && !deferFittingChanges ? FittingChanges.Capture(world, catalog, pilot, now, ship) : null;
         var magazines = world
@@ -145,9 +150,13 @@ internal sealed partial class PilotInventoryStore
             .Where(i => i.OwnerId == pilotId && Enumerable.Contains(unfittedIds, i.LocationId))
             .OrderBy(i => i.Id)
             .ToArray();
-        if (destinationId == ship.Id)
+        if (destinationShip is not null)
         {
-            double capacity = ShipHoldRules.Capacity(flagId, attributes);
+            var destinationAttributes =
+                destinationShip.Id == active.Id && fittingShip is null
+                    ? attributes ?? world.Attributes(pilotId)
+                    : PilotFittingStore.ShipAttributes(world, catalog, pilot, destinationShip);
+            double capacity = ShipHoldRules.Capacity(flagId, destinationAttributes);
             var hold = ShipHoldRules.Definition(flagId)!;
             if (
                 (capacity <= 0 && flagId != (int)InventoryFlag.Cargo)
@@ -168,17 +177,17 @@ internal sealed partial class PilotInventoryStore
                     world.Ships.Any(s => s.StoredInId == contained.Id)
                 );
             }
-            double used = InventoryPersistence.UsedVolume(world, catalog, pilotId, ship.Id, flagId);
+            double used = InventoryPersistence.UsedVolume(world, catalog, pilotId, destinationId, flagId);
             double added = items
-                .Where(i => !InventoryDefinitions.IsRigSlot(i.FlagId) && (i.LocationId != ship.Id || i.FlagId != flagId))
+                .Where(i => !InventoryDefinitions.IsRigSlot(i.FlagId) && (i.LocationId != destinationId || i.FlagId != flagId))
                 .Sum(i => hold.RequiredCapacity(Read(catalog, i), quantity ?? i.Quantity));
             added += magazines.Sum(i => hold.RequiredCapacity(Read(catalog, i), i.Quantity));
             added += storedShips
-                .Where(s => s.StoredInId != ship.Id || s.StorageFlagId != flagId)
+                .Where(s => s.StoredInId != destinationId || s.StorageFlagId != flagId)
                 .Sum(s => hold.RequiredCapacity(PilotFleetStore.Read(catalog, s), 1));
             if (
                 flagId == (int)InventoryFlag.FrigateEscapeBay
-                && world.Ships.Count(s => s.StoredInId == ship.Id && s.StorageFlagId == flagId && !Enumerable.Contains(itemIds, s.Id))
+                && world.Ships.Count(s => s.StoredInId == destinationId && s.StorageFlagId == flagId && !Enumerable.Contains(itemIds, s.Id))
                     + storedShips.Length
                     > 1
             )
@@ -230,6 +239,9 @@ internal sealed partial class PilotInventoryStore
                             Singleton = item.Singleton,
                             CrystalDamage = item.CrystalDamage,
                             VolumeOverride = item.VolumeOverride,
+                            BlueprintRuns = item.BlueprintRuns,
+                            MaterialEfficiency = item.MaterialEfficiency,
+                            TimeEfficiency = item.TimeEfficiency,
                         }
                     )
                     .Entity;
@@ -246,7 +258,7 @@ internal sealed partial class PilotInventoryStore
         foreach (var stored in storedShips)
         {
             var previous = PilotFleetStore.Read(catalog, stored);
-            stored.StoredInId = destinationId == ship.Id ? ship.Id : null;
+            stored.StoredInId = destinationShip?.Id;
             stored.StorageFlagId = flagId;
             if (stored.StoredInId is not null)
             {
@@ -270,6 +282,34 @@ internal sealed partial class PilotInventoryStore
         return changes;
     }
 
+    internal static Ship? InventoryShip(WorldAction world, Eden.Data.World.Characters.Pilot pilot, long id)
+    {
+        var ship = world.Ships.Find(id);
+        if (ship is null || ship.Position is not null && ship.Id != pilot.ActiveShipId || ship.StoredInId is not null)
+        {
+            return null;
+        }
+        var active = pilot.ActiveShip;
+        return InventoryMoveRules.CanUseShip(
+            new(pilot.Id, active.Id, active.DockedLocationId, active.Position is null),
+            new(ship.Id, ship.OwnerId, ship.DockedLocationId, ship.StorageFlagId)
+        )
+            ? ship
+            : null;
+    }
+
+    internal static bool AccessibleItems(WorldAction world, Eden.Data.World.Characters.Pilot pilot, long location, int flag)
+    {
+        var active = pilot.ActiveShip;
+        var ship = InventoryShip(world, pilot, location);
+        return InventoryMoveRules.CanUseItems(
+            new(pilot.Id, active.Id, active.DockedLocationId, active.Position is null),
+            location,
+            flag,
+            ship is null ? null : new(ship.Id, ship.OwnerId, ship.DockedLocationId, ship.StorageFlagId)
+        );
+    }
+
     private static IReadOnlyList<InventoryChange> SplitInPlace(WorldAction world, CatalogDbContext catalog, OwnedItem stack, int quantity)
     {
         var previous = Read(catalog, stack);
@@ -291,6 +331,9 @@ internal sealed partial class PilotInventoryStore
                     Quantity = split.Quantity,
                     CrystalDamage = stack.CrystalDamage,
                     VolumeOverride = stack.VolumeOverride,
+                    BlueprintRuns = stack.BlueprintRuns,
+                    MaterialEfficiency = stack.MaterialEfficiency,
+                    TimeEfficiency = stack.TimeEfficiency,
                 }
             )
             .Entity;
@@ -318,10 +361,9 @@ internal sealed partial class PilotInventoryStore
     internal static double HoldCapacity(WorldAction world, CatalogDbContext catalog, long pilotId, long shipId, int flagId)
     {
         var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown pilot.");
-        if (pilot.ActiveShipId != shipId)
-        {
-            throw new InvalidDataException("Use the active ship's hold.");
-        }
-        return ShipHoldRules.Capacity(flagId, world.Attributes(pilotId));
+        var ship = InventoryShip(world, pilot, shipId) ?? throw new InvalidDataException("Use an owned ship at your current location.");
+        var attributes =
+            ship.Id == pilot.ActiveShipId ? world.Attributes(pilotId) : PilotFittingStore.ShipAttributes(world, catalog, pilot, ship);
+        return ShipHoldRules.Capacity(flagId, attributes);
     }
 }

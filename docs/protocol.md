@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Inactive ship transfers and move-rule audit](protocol/inventory.md#inactive-ship-transfers-and-move-rule-audit-november-15-2026)
+cover local ship cargo, stacking, corporation/container transfers, capacity checks and partial-loot metadata preservation.
+
 [Fleet finder adverts](protocol/fleets.md#fleet-finder-advert-creation-november-15-2026) correct unbound advert
 creation and add resident fleet advertisements, finder visibility and join applications.
 

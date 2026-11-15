@@ -68,7 +68,18 @@ internal sealed class FittingOperations(
         {
             context.Notifications.Add(
                 new ShipEffectChanged(
-                    new(change.Item.Id, context.Pilot.PilotId, context.Pilot.ShipId, null, DogmaEffect.Online, now, null, 0),
+                    new(
+                        change.Item.Id,
+                        context.Pilot.PilotId,
+                        change.Previous is { } previous && InventoryDefinitions.IsFittedSlot(previous.FlagId)
+                            ? previous.LocationId
+                            : change.Item.LocationId,
+                        null,
+                        DogmaEffect.Online,
+                        now,
+                        null,
+                        0
+                    ),
                     now,
                     change.Item.Online,
                     change.Item.Online

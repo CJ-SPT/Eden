@@ -214,12 +214,10 @@ internal sealed partial class CargoContainerStore(WorldDatabase database, TimePr
         {
             throw new InvalidDataException("Choose an assembled cargo container.");
         }
-        var ship = pilot.ActiveShip;
         if (item.OwnerId == pilotId)
         {
             if (
-                !(ship.Position is null && item.LocationId == ship.DockedLocationId && item.FlagId == (int)InventoryFlag.Hangar)
-                && !(item.LocationId == ship.Id && ShipHoldRules.IsHold(item.FlagId))
+                !PilotInventoryStore.AccessibleItems(world, pilot, item.LocationId, item.FlagId)
                 && !(
                     previewStation == item.LocationId
                     && item.FlagId == (int)InventoryFlag.Hangar
@@ -227,7 +225,7 @@ internal sealed partial class CargoContainerStore(WorldDatabase database, TimePr
                 )
             )
             {
-                throw new InvalidDataException("Use a container in your current hangar or active ship hold.");
+                throw new InvalidDataException("Use a container in an owned ship hold or hangar at your current location.");
             }
         }
         else if (item.OwnerId == pilot.CorporationId)

@@ -101,6 +101,12 @@ internal static partial class SpaceLootTransfer
                             LocationId = shipId,
                             FlagId = (int)destinationFlag,
                             Quantity = moved,
+                            Singleton = item.Singleton,
+                            CrystalDamage = item.CrystalDamage,
+                            VolumeOverride = item.VolumeOverride,
+                            BlueprintRuns = item.BlueprintRuns,
+                            MaterialEfficiency = item.MaterialEfficiency,
+                            TimeEfficiency = item.TimeEfficiency,
                         }
                     )
                     .Entity;

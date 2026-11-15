@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Inactive ship transfers and move-rule audit](protocol/inventory.md#inactive-ship-transfers-and-move-rule-audit-november-15-2026)
+cover local ship cargo, stacking, corporation/container transfers, capacity checks and partial-loot metadata preservation.
+
 [Server lock contention](protocol/performance.md#server-lock-contention-november-15-2026)
 records recent server lock holds, bounded mission work and idle mail polling during checkpoints.
 

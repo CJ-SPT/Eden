@@ -36,7 +36,7 @@ internal sealed class InventoryTransfers(
         long source = request.SourceId;
         int flag = request.FlagId;
         int? quantity = request.Quantity;
-        long destination = service == "@hangar" ? context.Pilot.DockedLocationId : context.Pilot.ShipId;
+        long destination = service == "@hangar" ? context.Pilot.DockedLocationId : InventoryHandler.ShipContainer(service, context.Pilot);
         try
         {
             if (containers?.Handles(source) == true && containerHandler is not null)
@@ -71,7 +71,10 @@ internal sealed class InventoryTransfers(
                 var contents = structures.Inventory(context.Pilot.PilotId, source);
                 if (contents.SingleOrDefault(i => i.Id == ids[0]) is { } owned)
                 {
-                    if (flag != (int)(service == "@hangar" ? InventoryFlag.Hangar : InventoryFlag.Cargo))
+                    if (
+                        flag != (int)(service == "@hangar" ? InventoryFlag.Hangar : InventoryFlag.Cargo)
+                        || destination != context.Pilot.DockedLocationId && destination != context.Pilot.ShipId
+                    )
                     {
                         throw new InvalidDataException("Withdraw structure contents into personal hangar or ordinary cargo.");
                     }
@@ -162,7 +165,17 @@ internal sealed class InventoryTransfers(
                 // OnGodmaPrimeItem replaces its inventory row with an incompatible
                 // godma row in build 3662168, removing it from clientDogmaLocation.
                 fittingOperations.NotifyOnlineChanges(context, changes);
-                fittingOperations.NotifyShipAttributes(context, previousBanks);
+                if (
+                    changes.Any(change =>
+                        change.Item.LocationId == context.Pilot.ShipId && InventoryDefinitions.IsFittedSlot(change.Item.FlagId)
+                        || change.Previous is { } old
+                            && old.LocationId == context.Pilot.ShipId
+                            && InventoryDefinitions.IsFittedSlot(old.FlagId)
+                    )
+                )
+                {
+                    fittingOperations.NotifyShipAttributes(context, previousBanks);
+                }
             }
             var movedMagazines = changedMagazines
                 .Where(m => currentMagazines.ContainsKey(m.ModuleId))
