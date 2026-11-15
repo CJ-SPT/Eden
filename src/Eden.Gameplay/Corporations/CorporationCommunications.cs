@@ -9,7 +9,8 @@ public sealed record CorporationWelcomeMail(string Body, long? EditorId = null, 
 public sealed record CorporationCommunications(
     IReadOnlyList<CorporationBulletin> Bulletins,
     CorporationWelcomeMail WelcomeMail,
-    long NextBulletinId = 1
+    long NextBulletinId = 1,
+    string Motd = ""
 )
 {
     public static CorporationCommunications Empty { get; } = new([], new(""));
@@ -22,6 +23,8 @@ public interface ICorporationCommunications
     void DeleteBulletin(long actorId, long id);
     void OrderBulletins(long actorId, IReadOnlyList<long> ids);
     void SetWelcomeMail(long actorId, string body);
+    string ReadMotd(int corporationId);
+    void SetMotd(long actorId, int corporationId, string text);
 }
 
 public static class CorporationCommunicationRules

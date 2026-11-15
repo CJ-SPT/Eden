@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Corporation chat MOTD, November 15, 2026](#corporation-chat-motd-november-15-2026)
+
 - [Chat idle connection keepalives, November 15, 2026](#chat-idle-connection-keepalives-november-15-2026)
 - [Corporation owner cache width, November 14, 2026](#corporation-owner-cache-width-november-14-2026)
 - [Presence failure diagnostics, November 14, 2026](#presence-failure-diagnostics-november-14-2026)
@@ -27,6 +29,83 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Mail compose optional source defaults](#mail-compose-optional-source-defaults)
 - [Persistent personal EVE Mail](#persistent-personal-eve-mail)
 - [Station guests, November 4, 2026](#station-guests-november-4-2026)
+
+
+## Corporation chat MOTD (November 15, 2026)
+
+The maintainer supplied an **Invalid Packet Destination** screenshot with
+`Unsupported local call XmppChatMgr.SetMotd`. The selected-pilot chat handler had no owner for that method;
+its join transport also always sent an empty XMPP subject.
+
+Inert inspection of build **3662168** `xmppchatclient/xmppchatsvc.pyj` confirms that `SetMotd(channelName, motd)`
+expands the name with `GetFullRoomName` and calls `XmppChatMgr.SetMotd(fullRoomJid, motd)` for corporation/alliance
+categories. Fleet editing uses `fleet.SetRemoteMotd`; other categories use `SendXmppSubject`. This fix implements
+the existing player-corporation category. Alliance chat and player/private XMPP subject editing remain outside its scope.
+`ChannelSettingsDlg.OnGeneralTab` caps the MOTD editor at **4000 characters**. `OnOK` does not inspect the remote
+return value. `_HandleGroupchat` consumes a groupchat `<subject>` through `window.SetMotd(sender, text)`;
+a bare room sender becomes the native system/admin sender.
+
+The handler now accepts the full room JID and Unicode or UTF-8 byte text, returning Python None after success.
+The resident corporation communications transaction checks current membership, the requested corporation and
+effective Chat Manager/Director authority (including existing CEO authority rules). NPC corporation edits,
+foreign corporations/domains, unsupported categories, malformed arguments, extra keywords, overlong text and
+control codes are rejected without changing saved text. Empty text clears the MOTD. Rich-text markup, links,
+Unicode and ordinary line breaks are retained; the existing XML adapter escapes transport text.
+
+`CorporationCommunications.Motd` is an additive field in the existing `SavedCorporation.DetailsJson` resident
+record. Missing fields in older saves default to empty. No schema version or gameplay SQL path is added.
+Successful changes use the existing checkpoint projection. Bulletins and welcome mail retain their values when
+MOTD changes, and their edits retain MOTD. Connected room members receive a named `ChatEvent.Subject` after commit;
+corporation joins/retries receive the saved subject in order after their presence acknowledgement. A separate
+subject/join gate serializes commits and deliveries without holding the chat gate while entering the resident
+owner, avoiding inversion with traffic presence publication.
+
+Sources: verified `E:\EdenDev\3662168\.eden-original-code.ccp`, SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`;
+[EVE University MOTD guide](https://wiki.eveuniversity.org/Message_of_the_Day);
+[Carbon Blue Marshal.cpp at fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp)
+for the unchanged Blue None/text contract. The local `evejs` reference's
+`server/src/services/chat/xmppChatMgrService.js:Handle_SetMotd` independently uses corporation authorization,
+saved room text and subject broadcast. That local snapshot has no Git metadata; it is an older-client reference,
+not the pinned wire authority. No reference implementation code was copied.
+
+**Automated validation.** The exact development filter
+`FullyQualifiedName=Eden.Protocol.Tests.Chat.ChatMotdTests.NativeCorporationMotdCallBroadcastsSubjectAndRejoinsReceiveSavedText`
+passed one loopback TLS regression (build **20.98 seconds**, test command **13.05 seconds**).
+The development formatter initially found a Windows shell encoding problem in a new test character literal;
+Unicode escape literals corrected the fixture before the final build.
+
+The first combined selection passed **142** cases, including all **12** new MOTD cases, and failed **three**
+existing `PilotServicesTests` cases: both variants of
+`CharacterLogoffClearsSessionFieldsBeforeReplyAndAllowsAnotherOwnedPilotOnTheSameConnection` and
+`SheetReadsRosterProfilesBeforeSelectionAndOtherPilotsAfterSelection`. All three reproduce on unchanged
+`origin/main` **4eb8e30c** with `InvalidOperationException: Abyssal runs require the resident world`;
+their fixtures do not enable resident hosting. The baseline exact-method filter combines those two fully
+qualified names with `|` (three cases; baseline build **13.56 seconds**, tests **20.76 seconds**).
+These unrelated failures are excluded from the final affected selection; their fixture behavior is unchanged.
+
+The final filter was:
+
+```text
+(FullyQualifiedName~Eden.Protocol.Tests.Chat|FullyQualifiedName~CorporationCommunicationTests|FullyQualifiedName~CorporationRoleTests|FullyQualifiedName~CorporationAdministrationTests|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting|FullyQualifiedName~CharacterLogoffTests)&FullyQualifiedName!~CharacterLogoffClearsSessionFieldsBeforeReplyAndAllowsAnotherOwnedPilotOnTheSameConnection&FullyQualifiedName!~SheetReadsRosterProfilesBeforeSelectionAndOtherPilotsAfterSelection
+```
+
+Tool and solution restore passed. The solution built with **zero warnings/errors** in **6.78 seconds**.
+The final affected selection passed **142 tests**, zero failed/skipped, in **46.38 seconds** command time
+(**43 seconds** runner duration), with `xUnit.MaxParallelThreads=4`. Both Python policy suites passed
+(**8 catalog**, **9 formatting**, **1.51 seconds** combined). Coverage includes actual Blue routing and loopback
+TLS subjects, edit/clear/rejoin/reconnect, old JSON defaults, reopened checkpoints, failed projection/retry,
+zero SQL commands for warmed resident MOTD operations, concurrent ordered edits/joins, role revocation,
+foreign/NPC edits, malformed calls and Unicode/XML preservation. `Format.ps1 -Check` passed across **2257 files**
+in **51.83 seconds**, including style, CSharpier and the 140-character check. Build, affected tests, policies and
+format verification took **106.50 seconds** combined, excluding restores and earlier development/baseline runs.
+New documentation links, anchor, whitespace/final-newline checks and `git diff --check` passed.
+No full .NET suite was requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Restart the updated server, edit and clear the corporation chat MOTD, then
+reconnect a second member and inspect the native text and formatting. Native rendering and input remain unverified.
 
 ## Chat idle connection keepalives, November 15, 2026
 

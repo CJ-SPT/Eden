@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Corporation chat MOTD](protocol/social.md#corporation-chat-motd-november-15-2026) fixes the native
+`XmppChatMgr.SetMotd` call with authorized resident storage and subject delivery on edits and joins.
+
 [Login ticket checkpoint isolation](protocol/performance.md#login-ticket-checkpoint-isolation-november-15-2026)
 removes full-world save waits from native ticket authentication and rejects restored tickets after restart.
 

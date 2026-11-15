@@ -34,6 +34,8 @@ public abstract record ChatEvent
 
     public sealed record Message(ChatRoom Room, ChatPilot Sender, string Text, string Id) : ChatEvent;
 
+    public sealed record Subject(ChatRoom Room, string Text) : ChatEvent;
+
     public sealed record Invitation(ChatRoom Room, ChatPilot Sender) : ChatEvent;
 
     public sealed record Closed : ChatEvent;
@@ -52,10 +54,13 @@ public interface IPilotChat
     ChatRoom CreatePrivate(Guid session, long otherPilot);
     ChatRoom CreatePublic(Guid session, string name);
     void AllowPrivate(Guid session, ChatRoom room, long pilotId);
+    void SetMotd(Guid session, ChatRoom room, string text);
 }
 
 public static class ChatRules
 {
+    // Build 3662168 ChannelSettingsDlg.OnGeneralTab uses a 4000-character MOTD editor.
+    public const int MaximumMotdLength = 4000;
     public const int MaximumMessageLength = 1024;
     public const int MessagesPerSecond = 3;
     public const int MaximumRoomNameLength = 60;
@@ -73,6 +78,14 @@ public static class ChatRules
         : ChatRoomKind.Local;
 
     public static bool Delayed(ChatRoom room) => room.Kind is ChatRoomKind.Wormhole or ChatRoomKind.Triglavian;
+
+    public static void CheckMotd(string text)
+    {
+        if (text.Length > MaximumMotdLength || text.Any(c => char.IsControl(c) && c is not '\n' and not '\r' and not '\t'))
+        {
+            throw new InvalidDataException("Channel MOTD must contain at most 4000 characters without control codes.");
+        }
+    }
 
     public static void CheckMessage(string text)
     {
