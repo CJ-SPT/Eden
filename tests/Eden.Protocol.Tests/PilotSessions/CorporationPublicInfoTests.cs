@@ -21,7 +21,7 @@ public sealed class CorporationPublicInfoTests
     [InlineData(true)]
     public async Task ShowInfoReturnsPublicFieldsThroughTheSessionForNpcAndOtherPlayerCorporations(bool playerCorporation)
     {
-        using TestWorld db = new();
+        using TestWorld db = new(liveWorld: true);
         int corporation = CreateCorporation(db, playerCorporation);
         using var scope = db.Services.CreateScope();
         var session = scope.ServiceProvider.GetRequiredService<IPilotSession>();

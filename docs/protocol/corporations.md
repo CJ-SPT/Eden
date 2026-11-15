@@ -69,8 +69,11 @@ Filter `FullyQualifiedName~CorporationClosureTests|FullyQualifiedName~Corporatio
 passed 107 tests in 31 seconds; the required sequence took 72.42 seconds. Additional dependency filter
 `FullyQualifiedName~CorporationPublicInfoTests|FullyQualifiedName~WorldMigrationTests` passed 18 tests in 11 seconds.
 Regressions exercise file/resident closure, role/session updates, retained property, office slots, successor/permission
-checks, application/ad cleanup, transaction rollback, migration and restart. Five older creation/Show Info session cases
-now use a resident test world, matching main's Abyssal session prerequisite. No full .NET suite was run.
+checks, application/ad cleanup, transaction rollback, migration and restart. Seven older creation/Show Info session cases
+now use a resident test world, matching main's Abyssal session prerequisite. After merging main through `ff5c5495`, the
+combined 125-case filter passed 123 and exposed the same fixture issue in two additional public-info session cases.
+Both corrected cases passed the exact `FullyQualifiedName~ShowInfoReturnsPublicFieldsThroughTheSessionForNpcAndOtherPlayerCorporations`
+filter (4 seconds), with a clean build and formatting verification. No full .NET suite was run.
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
