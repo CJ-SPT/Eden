@@ -4,7 +4,7 @@ using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Fleets;
 
-internal sealed record FleetOptionsReply(bool FreeMove) : BlueModel
+internal sealed record FleetOptionsReply(bool FreeMove, bool Registered = false) : BlueModel
 {
     public override object ToBlue() =>
         new BlueInstance(
@@ -12,7 +12,7 @@ internal sealed record FleetOptionsReply(bool FreeMove) : BlueModel
             new Dictionary<string, object?>
             {
                 ["isFreeMove"] = FreeMove,
-                ["isRegistered"] = false,
+                ["isRegistered"] = Registered,
                 ["autoJoinSquadID"] = null,
             }
         );
@@ -81,7 +81,7 @@ internal sealed record FleetInitReply(CooperativeFleet Fleet) : BlueModel
                 ["fleetID"] = Fleet.Id,
                 ["members"] = Fleet.Members.ToDictionary(m => m.Pilot.Id, m => (object?)new FleetMemberReply(m)),
                 ["wings"] = new FleetWingsReply(Fleet.Wings),
-                ["options"] = new FleetOptionsReply(Fleet.FreeMove),
+                ["options"] = new FleetOptionsReply(Fleet.FreeMove, Fleet.Registered),
                 ["motd"] = Fleet.Motd,
             }
         );
@@ -146,9 +146,10 @@ internal sealed record FleetHierarchyNotification(FleetEvent.Hierarchy Change)
         : [Change.WingId];
 }
 
-internal sealed record FleetOptionsNotification(bool Before, bool After) : FleetNotification("OnFleetOptionsChanged")
+internal sealed record FleetOptionsNotification(bool Before, bool After, bool Registered = false)
+    : FleetNotification("OnFleetOptionsChanged")
 {
-    public override object?[] Arguments => [new FleetOptionsReply(Before), new FleetOptionsReply(After)];
+    public override object?[] Arguments => [new FleetOptionsReply(Before, Registered), new FleetOptionsReply(After, Registered)];
 }
 
 internal sealed record FleetMotdNotification(string Text) : FleetNotification("OnFleetMotdChanged")

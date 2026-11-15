@@ -2,6 +2,73 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Fleet finder advert creation, November 15, 2026
+
+The maintainer's Create Advert screenshot showed **Use a bound fleet reference.** after Submit.
+`fleetProxy.AddFleetFinderAdvert` reached the ordinary fleet handler's bound-reference guard, while
+`GetAvailableFleetAds` and `GetMyFleetFinderAdvert` always returned empty results. The unbound proxy
+now has its own typed dispatch for creating, editing, reading, listing and removing adverts, maintaining
+standings entity sets, updating the boss, and applying through the finder. Registration changes publish
+native `OnFleetOptionsChanged` notifications; init and options replies retain the actual registration state.
+Free-move changes preserve that state.
+
+Advertisements live under the existing serialized, transient fleet owner. Names, descriptions, visibility,
+approval, hidden details, boss-update settings and join limits round-trip through named models. Own-advert
+replies contain native entity sets; finder entries omit those sets with None. Text uses Python Unicode.
+Membership counts, leader identity and location come from current fleet state, ignoring the client's claimed
+member count. Corporation and public visibility enforce security thresholds and the boss's standing-derived
+allow/disallow sets. Alliance and militia scopes reject explicitly because this fleet owner does not model
+those memberships. This change does not add alliance or militia fleet recruitment.
+
+Open applications issue the existing expiring fleet invitation. Approval applications enter a bounded,
+deduplicated queue and notify the boss and fleet commander; existing invitations approve them, and the native
+reject call removes them. Advert invitations recheck visibility, security and capacity on acceptance, and
+reject after advert removal. Departures, accepted invitations, disbanding and boss changes update or clear
+advertisements and requests. Auto-update disabled removes the advert when the boss changes. Like fleets,
+adverts are intentionally transient and disappear on server restart; no database storage or SQL fallback was added.
+
+Build **3662168** was inspected statically from the original script archive, SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+`fleetSvc.RegisterFleet` calls `AddFleetFinderAdvert`, which sends `adInfoObject.GetData()` to
+`sm.ProxySvc('fleetProxy').AddFleetFinderAdvert` and constructs `FleetAdvertObject(**reply)`.
+`GetFleetAdsForChar` expects a fleet-ID dictionary; `GetMyFleetFinderAdvert` and removal use single-advert
+replies or None. `fleetAdvertObject.GetDefaultAdvancedOptions` defines the four entity sets and the approval,
+hidden-info, boss-update and join-limit fields. `fleetSvc.OnFleetJoinRequest` consumes an info KeyVal with
+`charID` and `corpID`. The existing Blue codec, set constructor and notification transport are unchanged.
+No client code was launched. The screenshot is maintainer evidence of the original failure, not acceptance
+of this correction.
+
+The local evejs **261108.1** comparison has no Git revision. Its
+`server/src/services/fleets/fleetProxyService.js` maps advert methods to a separate proxy service (SHA-256
+`b89c3e852b8abf03ded9434cf3f2ab0dcd5a8431c862a229ad3e18c712384a62`). Eden's implementation was authored
+against the pinned client and existing typed fleet owner.
+[EVE University Fleet interface](https://wiki.eveuniversity.org/Fleet_interface#Fleet_advert) describes advert
+creation, approval authority, hidden details, boss changes and advert join limits.
+
+**Automated validation.** Tool restore, solution restore/build (zero warnings/errors), **130 focused .NET tests**,
+both Python policy suites (8 catalog and 9 formatting cases), and formatting/140-column verification passed.
+The final sequence took **292.64 seconds**; the .NET runner reported **3 minutes 55 seconds**.
+The final filter combines `FullyQualifiedName~FleetRulesTests`, `FullyQualifiedName~CooperativeFleetTests`,
+`FullyQualifiedName~ChatWorldTests`, `FullyQualifiedName~CommandBurstTests`, `FullyQualifiedName~ResidentFitFleetTests`,
+`FullyQualifiedName~PilotFleetTests`, `FullyQualifiedName~Eden.Protocol.Tests.Hosting`, and
+`FullyQualifiedName~SecurityStatusServiceTests` with `|`. New protocol regressions use resident-backed worlds.
+Coverage includes native proxy dispatch and Unicode/set round trips, edit/removal, registration notifications,
+standings entity replacements/deltas, current authoritative counts, permission and unchanged-state rejection,
+corporation/public filtering, security thresholds, immutable snapshots, approval queues, bounded requests,
+boss changes, disbanding and acceptance-time invitation checks. Native rendering and interaction remain unverified.
+Development started with
+`tools/Test-Feature.ps1 -Filter FullyQualifiedName~NativeFleetProxyCreatesEditsListsAndRemovesAdvertWithoutBoundReference`.
+The first run reached removal and exposed an incorrect test expectation for the decoded empty dictionary;
+that assertion was corrected. A subsequent build identified the new security dependency in three existing
+chat fixtures and an xUnit analyzer violation; both were corrected. The exact regression then passed,
+and the affected fleet and chat classes passed 68 cases before the final Unicode/resident and entity-update
+coverage additions. No full .NET suite was requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Create and edit a corporation advert, inspect it from another pilot's finder,
+and apply once with approval enabled. Native rendering and interaction remain unverified.
+
 ## Fleet target tags, November 14, 2026
 
 The next evejs comparison found that Eden always published an empty `targetTags` map and did not handle

@@ -1,3 +1,4 @@
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Chat;
 using Eden.Server.Chat;
 using Eden.Server.Launcher;
@@ -351,7 +352,7 @@ public sealed class ChatWorldTests
     public void TokensExpireAreSingleUseAndCannotAuthenticateAnotherPilotOrOutliveSelection()
     {
         TestClock clock = new();
-        ChatRuntime runtime = new(new LauncherOptions(), clock, new CooperativeFleetStore(clock));
+        ChatRuntime runtime = new(new LauncherOptions(), clock, new CooperativeFleetStore(clock, new UnusedSecurity()));
         Guid session = Guid.NewGuid();
         runtime.Update(session, First);
         string token = runtime.IssueToken(session);
@@ -371,7 +372,7 @@ public sealed class ChatWorldTests
     [Fact]
     public async Task ConcurrentPilotsReceiveTheSameOrderedMessagesExactlyOnce()
     {
-        ChatRuntime runtime = new(new LauncherOptions(), new TestClock(), new CooperativeFleetStore(new TestClock()));
+        ChatRuntime runtime = new(new LauncherOptions(), new TestClock(), new CooperativeFleetStore(new TestClock(), new UnusedSecurity()));
         Guid a = Guid.NewGuid(),
             b = Guid.NewGuid();
         runtime.Update(a, First);
@@ -405,7 +406,7 @@ public sealed class ChatWorldTests
     [Fact]
     public void SelectingAnotherCharacterRevokesPreviouslyIssuedCredentials()
     {
-        ChatRuntime runtime = new(new LauncherOptions(), new TestClock(), new CooperativeFleetStore(new TestClock()));
+        ChatRuntime runtime = new(new LauncherOptions(), new TestClock(), new CooperativeFleetStore(new TestClock(), new UnusedSecurity()));
         Guid session = Guid.NewGuid();
         runtime.Update(session, First);
         string old = runtime.IssueToken(session);
@@ -445,5 +446,14 @@ public sealed class ChatWorldTests
             result.Add(item);
         }
         return result;
+    }
+
+    private sealed class UnusedSecurity : IPilotSecurityStatus
+    {
+        public long Revision => throw new NotSupportedException();
+
+        public SecurityStatusView Read(long pilotId) => throw new NotSupportedException();
+
+        public IReadOnlyList<SecurityStatusTransaction> History(long pilotId) => throw new NotSupportedException();
     }
 }

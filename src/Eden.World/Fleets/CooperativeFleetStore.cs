@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Infrastructure.Registration;
@@ -6,7 +7,7 @@ using Eden.Infrastructure.Registration;
 namespace Eden.World.Fleets;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class CooperativeFleetStore(TimeProvider clock) : ICooperativeFleets
+internal sealed class CooperativeFleetStore(TimeProvider clock, IPilotSecurityStatus security) : ICooperativeFleets
 {
     private readonly object _gate = new();
     private readonly FleetWorld _world = new(BitConverter.ToInt64(RandomNumberGenerator.GetBytes(sizeof(long))) & (long.MaxValue / 2));
@@ -27,6 +28,20 @@ internal sealed class CooperativeFleetStore(TimeProvider clock) : ICooperativeFl
             action();
         }
     }
+
+    public FleetAdvert? MyAdvert(long actor) => Read(() => _world.MyAdvert(actor));
+
+    public FleetAdvert SetAdvert(long actor, FleetAdvertSettings settings) => Read(() => _world.SetAdvert(actor, settings, Now));
+
+    public void RemoveAdvert(long actor) => Write(() => _world.RemoveAdvert(actor));
+
+    public IReadOnlyList<FleetAdvert> AvailableAdverts(long actor, double security) => Read(() => _world.AvailableAdverts(actor, security));
+
+    public bool ApplyToFleet(long actor, long fleet, double security) => Read(() => _world.ApplyToFleet(actor, fleet, security, Now));
+
+    public IReadOnlyList<FleetPilot> JoinRequests(long actor, long fleet) => Read(() => _world.JoinRequests(actor, fleet));
+
+    public void RejectApplication(long actor, long fleet, long target) => Write(() => _world.RejectApplication(actor, fleet, target));
 
     public void Update(Guid session, FleetPilot? pilot) => Write(() => _world.Update(session, pilot));
 
@@ -61,7 +76,11 @@ internal sealed class CooperativeFleetStore(TimeProvider clock) : ICooperativeFl
     public void Invite(long actor, long fleet, long target, FleetPlacement placement) =>
         Write(() => _world.Invite(actor, fleet, target, placement, Now));
 
-    public void Accept(long actor, long fleet) => Write(() => _world.Accept(actor, fleet, Now));
+    public void Accept(long actor, long fleet)
+    {
+        double status = security.Read(actor).Value;
+        Write(() => _world.Accept(actor, fleet, Now, status));
+    }
 
     public void Reject(long actor, long fleet) => Write(() => _world.Reject(actor, fleet));
 

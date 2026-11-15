@@ -9,11 +9,15 @@ public sealed partial class FleetWorld(long seed)
         public Dictionary<long, FleetMember> Members { get; } = [];
         public Dictionary<long, FleetWing> Wings { get; } = [];
         public bool FreeMove { get; set; }
+        public FleetAdvertSettings? Advert { get; set; }
+        public long AdvertCreatedAt { get; set; }
+        public long AdvertUpdatedAt { get; set; }
+        public Dictionary<long, FleetPilot> JoinRequests { get; } = [];
         public string Motd { get; set; } = "";
         public IReadOnlyList<FleetTargetTag> TargetTags { get; set; } = Array.Empty<FleetTargetTag>();
     }
 
-    private sealed record Invitation(long FleetId, long Inviter, FleetPlacement Placement, long Expires);
+    private sealed record Invitation(long FleetId, long Inviter, FleetPlacement Placement, long Expires, bool FromAdvert = false);
 
     private readonly Dictionary<long, Fleet> _fleets = [];
     private readonly Dictionary<long, FleetPilot> _online = [];
@@ -39,6 +43,10 @@ public sealed partial class FleetWorld(long seed)
                 if (Identity(previous) is { } identity)
                 {
                     Leave(previous, identity.FleetId);
+                }
+                foreach (var fleet in _fleets.Values)
+                {
+                    fleet.JoinRequests.Remove(previous);
                 }
                 _online.Remove(previous);
                 _owners.Remove(previous);
@@ -143,7 +151,8 @@ public sealed partial class FleetWorld(long seed)
             Array.AsReadOnly(fleet.Members.Values.OrderBy(m => m.Pilot.Id).ToArray()),
             Array.AsReadOnly(fleet.Wings.Values.OrderBy(w => w.Id).ToArray()),
             fleet.FreeMove,
-            fleet.Motd
+            fleet.Motd,
+            fleet.Advert is not null
         );
 
     private Fleet MemberFleet(long actor, long fleetId) =>
@@ -192,6 +201,10 @@ public sealed partial class FleetWorld(long seed)
         // Joining initializes the whole roster. Pending events from a previous membership
         // must not clear or populate that new client cache, even when rejoining the same fleet.
         _events[member.Pilot.Id].Clear();
+        foreach (var other in _fleets.Values)
+        {
+            other.JoinRequests.Remove(member.Pilot.Id);
+        }
         fleet.Members.Add(member.Pilot.Id, member);
         var membership = new FleetMembership(fleet.Id, checked(++_membershipVersion));
         _memberships[member.Pilot.Id] = membership;
@@ -287,11 +300,12 @@ public sealed partial class FleetWorld(long seed)
         {
             throw new InvalidDataException("Invite an online pilot outside a fleet with an available position.");
         }
+        fleet.JoinRequests.Remove(target);
         _invitations[target] = new(fleetId, actor, placement, checked(now + FleetRules.InvitationLifetime.Ticks));
         Queue(target, fleetId, new FleetEvent.Invitation(fleetId, actor));
     }
 
-    public void Accept(long actor, long fleetId, long now)
+    public void Accept(long actor, long fleetId, long now, double security = 0)
     {
         if (
             !_invitations.TryGetValue(actor, out var invitation)
@@ -305,6 +319,17 @@ public sealed partial class FleetWorld(long seed)
         )
         {
             throw new InvalidDataException("This fleet invitation is no longer valid.");
+        }
+        if (
+            invitation.FromAdvert
+            && (
+                fleet.Advert is not { } advert
+                || !Visible(fleet, pilot, security)
+                || fleet.Members.Count >= (advert.JoinLimit ?? FleetRules.MaximumMembers)
+            )
+        )
+        {
+            throw new InvalidDataException("This fleet advert is no longer accepting your application.");
         }
         var placement = Placement(fleet, invitation.Placement);
         AuthorizePlacement(fleet, invitation.Inviter, actor, placement);
@@ -342,6 +367,10 @@ public sealed partial class FleetWorld(long seed)
         }
         else if (boss)
         {
+            if (fleet.Advert is { UpdateOnBossChange: false })
+            {
+                ClearAdvert(fleet);
+            }
             long successor = fleet.Members.Values.OrderBy(m => m.Placement.Role).ThenBy(m => m.Pilot.Id).First().Pilot.Id;
             ChangeMember(fleet, fleet.Members[successor] with { Job = FleetRules.BossJob });
         }
@@ -387,6 +416,10 @@ public sealed partial class FleetWorld(long seed)
         if (actor == target)
         {
             return;
+        }
+        if (fleet.Advert is { UpdateOnBossChange: false })
+        {
+            ClearAdvert(fleet);
         }
         ChangeMember(fleet, fleet.Members[actor] with { Job = 0 });
         ChangeMember(fleet, fleet.Members[target] with { Job = FleetRules.BossJob });
@@ -489,7 +522,7 @@ public sealed partial class FleetWorld(long seed)
         var fleet = BossFleet(actor, fleetId);
         bool old = fleet.FreeMove;
         fleet.FreeMove = enabled;
-        Publish(fleet, new FleetEvent.Options(old, enabled));
+        Publish(fleet, new FleetEvent.Options(old, enabled, fleet.Advert is not null));
     }
 
     public void SetMotd(long actor, long fleetId, string text)
