@@ -1,5 +1,9 @@
 # Protocol findings and milestone records
 
+[Container stacking and fitting](protocol/inventory.md#container-stacking-and-fitting-november-15-2026) and
+[container industry workflows](protocol/industry.md#container-industry-workflows-november-15-2026) cover
+native stacking, direct fitting, blueprint discovery and container job input/output with checkpoint recovery.
+
 [Login ticket checkpoint isolation](protocol/performance.md#login-ticket-checkpoint-isolation-november-15-2026)
 removes full-world save waits from native ticket authentication and rejects restored tickets after restart.
 

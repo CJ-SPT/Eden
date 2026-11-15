@@ -11,18 +11,20 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Industry;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotCallHandler
+internal sealed class IndustryHandler(IPilotIndustry industry, CargoContainerHandler? containers = null) : ISelectedPilotCallHandler
 {
     private const int BlueprintResultLimit = 10_000;
     private long _nextMonitor;
     private long _monitor;
     private long? _station;
+    private IndustryStorage? _input;
     private IReadOnlyDictionary<int, long> _available = new Dictionary<int, long>();
     public bool IsMonitoring => _station.HasValue;
 
     public void Reset()
     {
         _station = null;
+        _input = null;
         _monitor = 0;
         _available = new Dictionary<int, long>();
     }
@@ -33,8 +35,6 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
     private static BlueprintReply Blueprint(OwnedBlueprint blueprint) => new(blueprint);
 
     private static IndustryJobReply Job(IndustryJobDetails job) => new(job);
-
-    private static IndustryLocationReply Location(IndustryFacility facility, long pilotId) => new(facility, pilotId);
 
     public void Advance(PilotCallContext context)
     {
@@ -47,7 +47,18 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
             _station = null;
             return;
         }
-        var current = industry.Materials(context.Pilot.PilotId, station);
+        IReadOnlyDictionary<int, long> current;
+        try
+        {
+            current = industry.Materials(context.Pilot.PilotId, station, Access(context, _input));
+        }
+        catch (Exception error) when (error is InvalidDataException or CargoContainerPasswordRequiredException)
+        {
+            _station = null;
+            _available = new Dictionary<int, long>();
+            context.Notifications.Add(new IndustryMaterialsChanged(_monitor, _available));
+            return;
+        }
         if (current.Count != _available.Count || current.Any(v => _available.GetValueOrDefault(v.Key) != v.Value))
         {
             _available = current;
@@ -92,37 +103,45 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
             .ToArray();
     }
 
-    private long CheckLocation(PilotCallContext context, Dictionary<string, object?> request, string key)
+    private IndustryStorage? Access(PilotCallContext context, IndustryStorage? location) =>
+        location is null ? null : location with { Access = containers?.Access(context, location.Id) };
+
+    private IndustryStorage CheckLocation(PilotCallContext context, Dictionary<string, object?> request, string key)
     {
         var location = Values(request.GetValueOrDefault(key));
-        long station = Number(location, "itemID");
+        long station = Number(request, "facilityID");
+        long id = Number(location, "itemID");
+        int flag = Integer(location, "flagID");
         if (
             Number(location, "ownerID") != context.Pilot.PilotId
-            || Number(location, "flagID") != (int)InventoryFlag.Hangar
-            || station != Number(request, "facilityID")
+            || !industry.Locations(context.Pilot.PilotId, station).Any(entry => entry.Id == id && entry.FlagId == flag)
         )
         {
-            throw new InvalidDataException("Choose your current station's personal Item Hangar for industry.");
+            throw new InvalidDataException("Choose your personal hangar or a container at this industry facility.");
         }
-        industry.CheckStation(context.Pilot.PilotId, station);
-        return station;
+        return Access(context, new(id, flag))!;
     }
 
     private IndustryMonitorReply Connect(PilotCallContext context, object? request)
     {
         var values = Values(request);
-        long station = CheckLocation(context, values, "inputLocation");
+        var input = CheckLocation(context, values, "inputLocation");
+        long station = Number(values, "facilityID");
+        var available = industry.Materials(context.Pilot.PilotId, station, input);
         _monitor = checked(++_nextMonitor);
         _station = station;
-        _available = industry.Materials(context.Pilot.PilotId, station);
+        _available = available;
+        _input = input;
         return new IndustryMonitorReply(_monitor, _available);
     }
 
     private long Install(PilotCallContext context, object? request)
     {
         var values = Values(request);
-        long station = CheckLocation(context, values, "inputLocation");
-        _ = CheckLocation(context, values, "outputLocation");
+        var input = CheckLocation(context, values, "inputLocation");
+        long station = Number(values, "facilityID");
+        var output = CheckLocation(context, values, "outputLocation");
+        var blueprint = industry.Blueprint(context.Pilot.PilotId, Number(values, "blueprintID"));
         // Build 3662168 AttachSessionToJob includes the pilot's corporation even for personal jobs.
         // Personal ownership and payment are enforced by the hangar and wallet checks.
         var corporation = values.GetValueOrDefault("corporationID");
@@ -188,7 +207,10 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
                 materials,
                 new ManufacturingCharge(QuotedCents(values, "cost"), QuotedCents(values, "tax"), 0),
                 activity,
-                licensedRuns
+                licensedRuns,
+                input,
+                output,
+                containers?.Access(context, blueprint.Item.LocationId)
             )
         );
         Notify(context, result);
@@ -301,7 +323,9 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
                     );
                 case ("facilityManager", "GetFacilityLocations") when args is [long station, long owner] && owner == pilotId:
                     industry.CheckStation(pilotId, station);
-                    return new BlueList<IndustryLocationReply>([Location(industry.Facility(pilotId, station), pilotId)]);
+                    return new BlueList<IndustryInventoryLocationReply>(
+                        industry.Locations(pilotId, station).Select(location => new IndustryInventoryLocationReply(location)).ToArray()
+                    );
                 case ("facilityManager", "GetMaxActivityModifiers") when args.Length == 0:
                     return new BlueMap<IndustryActivity, double>(IndustryDefinitions.Activities.ToDictionary(a => a, _ => 1d));
                 case ("industryManager", "GetJobsByOwner") when args is [long owner, var completed] && owner == pilotId:
@@ -345,6 +369,14 @@ internal sealed class IndustryHandler(IPilotIndustry industry) : ISelectedPilotC
                 default:
                     return PilotCallResult.Unsupported;
             }
+        }
+        catch (CargoContainerPasswordRequiredException error)
+        {
+            return CargoContainerHandler.PasswordRequired(error);
+        }
+        catch (CargoCapacityException error)
+        {
+            return new PilotCallResult.NamedFailure("NotEnoughCargoSpace", new CargoSpaceErrorValues(error.Available, error.Required));
         }
         catch (InvalidDataException error)
         {

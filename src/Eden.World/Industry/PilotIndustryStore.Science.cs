@@ -37,6 +37,7 @@ internal sealed partial class PilotIndustryStore
         var item =
             world.Set<OwnedItem>().SingleOrDefault(i => i.Id == request.BlueprintId && i.OwnerId == pilotId)
             ?? throw new InvalidDataException("The blueprint is unavailable or belongs to another pilot.");
+        CheckBlueprintContainer(world, catalog, item, request);
         var blueprint = ReadBlueprint(world, catalog, item);
         if (blueprint.JobId.HasValue || blueprint.Facility.Id != request.FacilityId || item.TypeId != request.BlueprintTypeId)
         {
@@ -156,7 +157,7 @@ internal sealed partial class PilotIndustryStore
             )
         );
         List<InventoryChange> changes = [];
-        ConsumeMaterials(world, catalog, pilotId, station.Id, plan.Materials, changes);
+        ConsumeMaterials(world, catalog, pilotId, Storage(world, catalog, pilotId, station.Id, request.Input), plan.Materials, changes);
         if (blueprint.Item.CategoryId != (int)InventoryCategory.Relic)
         {
             item = ReserveBlueprint(world, catalog, item, changes);
@@ -192,6 +193,7 @@ internal sealed partial class PilotIndustryStore
                 }
             )
             .Entity;
+        SetJobOutput(world, catalog, job, request);
         double value = EconomicStore.Enabled(world)
             ? BlueprintValue(catalog, EconomicStore.Prices(world), job.ProductTypeId) * plan.CostMultiplier
             : 0;
@@ -245,7 +247,7 @@ internal sealed partial class PilotIndustryStore
         WorldAction world,
         CatalogDbContext catalog,
         long pilotId,
-        long station,
+        IndustryStorage storage,
         IReadOnlyDictionary<int, int> materials,
         List<InventoryChange> changes
     )
@@ -253,14 +255,10 @@ internal sealed partial class PilotIndustryStore
         foreach (var material in materials)
         {
             var stacks = world
-                .Filter<OwnedItem>(i =>
-                    i.OwnerId == pilotId
-                    && i.LocationId == station
-                    && i.FlagId == (int)InventoryFlag.Hangar
-                    && i.TypeId == material.Key
-                    && !i.Singleton
-                )
+                .Filter<OwnedItem>(i => i.OwnerId == pilotId && i.LocationId == storage.Id && i.TypeId == material.Key && !i.Singleton)
                 .OrderBy(i => i.Id)
+                .ToArray()
+                .Where(i => InStorage(i, storage))
                 .ToArray();
             if (stacks.Sum(i => (long)i.Quantity) < material.Value)
             {
@@ -333,8 +331,8 @@ internal sealed partial class PilotIndustryStore
                         Id = checked(next + i),
                         OwnerId = job.PilotId,
                         TypeId = job.ProductTypeId,
-                        LocationId = job.StationId,
-                        FlagId = (int)InventoryFlag.Hangar,
+                        LocationId = job.OutputLocationId ?? job.StationId,
+                        FlagId = job.OutputFlagId,
                         Quantity = 1,
                         Singleton = true,
                         MaterialEfficiency = job.MaterialEfficiency,

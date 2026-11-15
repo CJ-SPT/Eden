@@ -403,7 +403,7 @@ internal sealed partial class ResidentEconomy
                     Id,SuspendedAt,Activity,LicensedRuns,BlueprintCopy,MaterialEfficiency,TimeEfficiency,OutputRuns,
                     Probability,SuccessfulRuns,OptionalTypeId,PilotId,BlueprintId,BlueprintTypeId,StationId,ProductTypeId,
                     Runs,OutputQuantity,StartTime,EndTime,DurationSeconds,Status,CompletedAt,MaterialsJson,
-                    CostCents
+                    CostCents,OutputLocationId,OutputFlagId
                 )
                 SELECT
                     json_extract(value,'$.Id'),json_extract(value,'$.SuspendedAt'),json_extract(value,'$.Activity'),
@@ -414,7 +414,7 @@ internal sealed partial class ResidentEconomy
                     json_extract(value,'$.ProductTypeId'),json_extract(value,'$.Runs'),json_extract(value,'$.OutputQuantity'),
                     json_extract(value,'$.StartTime'),json_extract(value,'$.EndTime'),json_extract(value,'$.DurationSeconds'),
                     json_extract(value,'$.Status'),json_extract(value,'$.CompletedAt'),json_extract(value,'$.MaterialsJson'),
-                    json_extract(value,'$.CostCents')
+                    json_extract(value,'$.CostCents'),json_extract(value,'$.OutputLocationId'),json_extract(value,'$.OutputFlagId')
                 FROM json_each({values}) WHERE 1
                 ON CONFLICT(Id) DO UPDATE SET
                     SuspendedAt=excluded.SuspendedAt,Activity=excluded.Activity,LicensedRuns=excluded.LicensedRuns,
@@ -425,7 +425,8 @@ internal sealed partial class ResidentEconomy
                     BlueprintTypeId=excluded.BlueprintTypeId,StationId=excluded.StationId,ProductTypeId=excluded.ProductTypeId,
                     Runs=excluded.Runs,OutputQuantity=excluded.OutputQuantity,StartTime=excluded.StartTime,
                     EndTime=excluded.EndTime,DurationSeconds=excluded.DurationSeconds,Status=excluded.Status,
-                    CompletedAt=excluded.CompletedAt,MaterialsJson=excluded.MaterialsJson,CostCents=excluded.CostCents
+                    CompletedAt=excluded.CompletedAt,MaterialsJson=excluded.MaterialsJson,CostCents=excluded.CostCents,
+                    OutputLocationId=excluded.OutputLocationId,OutputFlagId=excluded.OutputFlagId
                 """
             );
         }

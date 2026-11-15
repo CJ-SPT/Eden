@@ -104,15 +104,25 @@ internal sealed partial class PilotFittingStore
         long now,
         IReadOnlyDictionary<long, int>? placements = null,
         bool completeOnline = false,
-        FittingCheckpoint? batchCheckpoint = null
+        FittingCheckpoint? batchCheckpoint = null,
+        CargoContainerAccess? containerAccess = null
     )
     {
         var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
         var ship = pilot.ActiveShip;
         CheckFittingService(world, ship, pilotId);
+        bool fromContainer = sourceId != ship.Id && sourceId != ship.DockedLocationId;
+        if (fromContainer)
+        {
+            var container = CargoContainerStore.Require(world, catalog, pilotId, sourceId);
+            CargoContainerStore.RequireOpen(world, catalog, container, containerAccess ?? new());
+            if (container.OwnerId != pilotId)
+            {
+                throw new InvalidDataException("Fit equipment from your own container.");
+            }
+        }
         if (
             ship.Position is not null
-            || (sourceId != ship.Id && sourceId != ship.DockedLocationId)
             || itemIds.Count == 0
             || itemIds.Distinct().Count() != itemIds.Count
             || placements is not null && (placements.Count != itemIds.Count || itemIds.Any(id => !placements.ContainsKey(id)))
@@ -131,7 +141,8 @@ internal sealed partial class PilotFittingStore
                     sourceId == ship.Id
                         ? i.FlagId == (int)InventoryFlag.Cargo
                             || (i.FlagId >= (int)InventoryFlag.LowSlot0 && i.FlagId <= (int)InventoryFlag.HighSlot7)
-                        : i.FlagId == (int)InventoryFlag.Hangar
+                    : fromContainer ? i.FlagId == (int)InventoryFlag.None || i.FlagId == (int)InventoryFlag.Unlocked
+                    : i.FlagId == (int)InventoryFlag.Hangar
                 )
             )
             .OrderBy(i => i.Id)

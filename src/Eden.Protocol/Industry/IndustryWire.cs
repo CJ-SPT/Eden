@@ -76,8 +76,8 @@ internal static class IndustryWire
                 ["materialEfficiency"] = blueprint.MaterialEfficiency,
                 ["runs"] = blueprint.RunsRemaining,
                 ["locationID"] = item.LocationId,
-                ["locationTypeID"] = blueprint.Facility.TypeId,
-                ["locationFlagID"] = item.FlagId,
+                ["locationTypeID"] = blueprint.LocationTypeId ?? blueprint.Facility.TypeId,
+                ["locationFlagID"] = blueprint.LocationFlagId ?? item.FlagId,
                 ["flagID"] = item.FlagId,
                 ["facilityID"] = blueprint.Facility.Id,
                 ["solarSystemID"] = blueprint.Facility.SystemId,
@@ -97,7 +97,7 @@ internal static class IndustryWire
                 ["blueprintID"] = job.BlueprintId,
                 ["blueprintTypeID"] = job.BlueprintTypeId,
                 ["blueprintCopy"] = job.BlueprintCopy,
-                ["blueprintLocationID"] = job.Facility.Id,
+                ["blueprintLocationID"] = job.BlueprintLocationId ?? job.Facility.Id,
                 ["blueprintLocationFlagID"] = (int)InventoryFlag.Hangar,
                 ["facilityID"] = job.Facility.Id,
                 ["stationID"] = job.Facility.Id,
@@ -117,23 +117,26 @@ internal static class IndustryWire
                 ["productTypeID"] = job.ProductTypeId,
                 ["optionalTypeID"] = job.OptionalTypeId,
                 ["optionalTypeID2"] = null,
-                ["outputLocationID"] = job.Facility.Id,
+                ["outputLocationID"] = job.OutputLocationId ?? job.Facility.Id,
                 ["outputFlagID"] = (int)InventoryFlag.Hangar,
             }
         );
 
     internal static object Location(IndustryFacility facility, long pilotId) =>
+        Location(new IndustryInventoryLocation(facility.Id, facility.TypeId, pilotId, (int)InventoryFlag.Hangar, facility.SystemId));
+
+    internal static object Location(IndustryInventoryLocation location) =>
         new BlueNewObject(
             BlueNewObject.IndustryLocationClass,
             new Dictionary<string, object?>
             {
-                ["itemID"] = facility.Id,
-                ["typeID"] = facility.TypeId,
-                ["ownerID"] = pilotId,
-                ["flagID"] = (int)InventoryFlag.Hangar,
+                ["itemID"] = location.Id,
+                ["typeID"] = location.TypeId,
+                ["ownerID"] = location.OwnerId,
+                ["flagID"] = location.FlagId,
                 ["canView"] = true,
                 ["canTake"] = true,
-                ["solarSystemID"] = facility.SystemId,
+                ["solarSystemID"] = location.SystemId,
             }
         );
 }
