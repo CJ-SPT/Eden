@@ -78,7 +78,7 @@ def mining_definition(db, mission_id, mission):
 
 def extend(db, missions, group):
     def encounter(mid, faction, title, revision, groups, entry=None, warehouse=False, delivery=False, deadspace=True,
-                  habitat=False):
+                  habitat=False, structure_type=None):
         mission = source(db, 'client/missions', mid)
         dungeon = source(db, 'client/dungeons', mission['killMission']['dungeonID'])
         if dungeon['factionID'] != faction:
@@ -120,11 +120,12 @@ def extend(db, missions, group):
                 raise ValueError('One explicit objective carrier group is required')
             carriers[0].update(lootTypeId=mission['killMission']['objectiveTypeID'],
                                lootQuantity=mission['killMission']['objectiveQuantity'])
-        if habitat:
-            # Build 3662168 uses the overseer structure type, not decorative habitation scenery.
-            targets = [o for r in rooms.values() for o in r['objects'].values() if o['typeID'] == HABITAT_TYPE]
+        objective_type = HABITAT_TYPE if habitat else structure_type
+        if objective_type is not None:
+            # Bind the reviewed destructible type, not similarly named decorative scenery.
+            targets = [o for r in rooms.values() for o in r['objects'].values() if o['typeID'] == objective_type]
             if len(targets) != 1 or mission['killMission'].get('objectiveTypeID'):
-                raise ValueError(f'Unreviewed habitat objective for mission {mid}')
+                raise ValueError(f'Unreviewed structure objective for mission {mid}')
             definition['structures'] = [dict(objectId=targets[0]['objectID'], required=True, completesMission=True)]
         missions.append(definition)
 
@@ -245,6 +246,36 @@ def extend(db, missions, group):
                group('DED Special Ops Piranha', 4, 55000, required=False),
                group('DED Soldier 2nd Class', 4, 55000, required=False),
                group('DED Officer 1st Class', 1, 55000, required=False)], 57908, habitat=True)
+
+    # Retribution completes on the outpost alone. The evejs Guristas kill-all
+    # objective is provisional; the University's explicit blitz takes precedence.
+    # Outpost type IDs below are build-3662168 mission objects (group 319).
+    encounter(1188, 500011, 'Retribution_(Angel_Cartel)', 201368,
+              [group('Gistii Nomad/Gistii Ruffian', 2, 30000, required=False),
+               group('Gistum Breaker/Gistum Defeater', 2, 30000, required=False),
+               group('Gistum Centurion/Gistum Phalanx', 3, 45000, required=False),
+               group('Gistii Hijacker/Gistii Rogue', 6, 50000, required=False),
+               group('Gistum Depredator/Gistum Predator', 3, 50000, required=False),
+               group('Angel Viper/Angel Webifier', 3, 75000, required=False),
+               group('Gistatis Legionnaire/Gistatis Primus', 1, 75000, required=False)],
+              60787, structure_type=16859)
+    encounter(1187, 500010, 'Retribution_(Guristas_Pirates)', 218717,
+              [group('Pithum Killer/Pithum Murderer', 4, 30000, required=False),
+               group('Pithum Ascriber/Pithum Silencer', 5, 40000, required=False),
+               group('Pithum Inferno/Pithum Mortifier', 3, 40000, required=False),
+               group('Guristas Kyoukan/Guristas Webifier', 3, 75000, required=False),
+               group('Pithatis Enforcer', 1, 75000, required=False)],
+              60741, structure_type=17382)
+    encounter(1190, 500020, 'Retribution_(Serpentis)', 207699,
+              [group('Coreli Guard/Coreli Safeguard', 2, 33000, required=False),
+               group('Corelum Chief Defender/Corelum Chief Protector', 2, 33000, required=False),
+               group('Guardian Veteran', 2, 40000, required=False),
+               group('Corelum Chief Scout/Corelum Chief Spy', 2, 40000, required=False),
+               group('Coreli Patroller/Coreli Watchman', 8, 51000, required=False),
+               group('Coreli Protector/Coreli Defender', 3, 77000, required=False),
+               group('Guardian Veteran', 1, 77000, required=False),
+               group('Corelatis Squad Leader/Corelatis Wing Leader', 1, 77000, required=False)],
+              56324, structure_type=16855)
 
     admitted = {m['missionId'] for m in missions}
     encounters = {tuple(sorted(source(db, 'client/missions', m['missionId'])['killMission'].items())): m

@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Retribution outpost missions](protocol/agents.md#retribution-outpost-missions--november-15-2026)
+adds four level-three definitions with verified outpost blitz objectives and resident checkpoint coverage.
+
 [Corporation CEO elections](protocol/corporations.md#ceo-elections-november-15-2026)
 records eligibility, suspended authority, automatic succession and checkpointed activation deadlines.
 

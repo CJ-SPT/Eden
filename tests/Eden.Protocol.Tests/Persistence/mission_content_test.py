@@ -105,6 +105,23 @@ class MissionAdmissionTests(unittest.TestCase):
         for mid in [1178, 1182, 1183, 1184, 1198]:
             self.assertNotIn(mid, missions)
 
+    def test_retribution_uses_reviewed_outposts_and_keeps_unverified_factions_blocked(self):
+        manifest = json.loads((ROOT / 'src/Eden.World/Agents/missions-3662168.json').read_text(encoding='utf-8'))
+        missions = {m['missionId']: m for m in manifest['missions']}
+        for mid, target, guards in [(1187, 60753, 16), (1188, 60799, 20),
+                                    (1190, 56336, 21), (1191, 56336, 21)]:
+            with self.subTest(mission=mid):
+                mission = missions[mid]
+                self.assertEqual(3, mission['level'])
+                self.assertEqual(2, len(mission['rooms']))
+                self.assertEqual(1, len(mission['gates']))
+                self.assertEqual([dict(objectId=target, required=True, completesMission=True)], mission['structures'])
+                self.assertEqual(guards, sum(g['count'] for w in mission['waves'] for g in w['groups']))
+                self.assertTrue(all(not g['required'] for w in mission['waves'] for g in w['groups']))
+                self.assertTrue(mission['source'].startswith('https://wiki.eveuniversity.org/Retribution_'))
+        for mid in [1186, 1189, 1192, 1194, 1196, 1197]:
+            self.assertNotIn(mid, missions)
+
 
 if __name__ == '__main__':
     unittest.main()

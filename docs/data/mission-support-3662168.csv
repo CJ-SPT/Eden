@@ -91,11 +91,11 @@ missionId,name,template,status,reason
 1184,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1185,Desperate Measures,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1186,Retribution,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1187,Retribution,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1188,Retribution,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+1187,Retribution,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+1188,Retribution,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1189,Retribution,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1190,Retribution,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1191,Retribution,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+1190,Retribution,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+1191,Retribution,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1192,Retribution,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1194,Retribution,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1196,Retribution,BasicKillMission,blocked,Requires verified NPC roster and objective scripts

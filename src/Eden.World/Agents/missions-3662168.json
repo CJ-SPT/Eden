@@ -3471,6 +3471,303 @@
       ]
     },
     {
+      "missionId": 1188,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Retribution_(Angel_Cartel)",
+      "sourceRevision": "oldid=201368",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16882,
+                16887
+              ],
+              "count": 2,
+              "range": 30000,
+              "required": false
+            },
+            {
+              "types": [
+                16889,
+                16898
+              ],
+              "count": 2,
+              "range": 30000,
+              "required": false
+            },
+            {
+              "types": [
+                24112,
+                24111
+              ],
+              "count": 3,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                16877,
+                16886
+              ],
+              "count": 6,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                16875,
+                16884
+              ],
+              "count": 3,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                16561,
+                16562
+              ],
+              "count": 3,
+              "range": 75000,
+              "required": false
+            },
+            {
+              "types": [
+                23999,
+                24004
+              ],
+              "count": 1,
+              "range": 75000,
+              "required": false
+            }
+          ],
+          "roomId": 3200
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 3199,
+          "entryObjectId": 60785
+        },
+        {
+          "roomId": 3200,
+          "entryObjectId": 60787
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 60784,
+          "destinationRoomId": 3200
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 60799,
+          "required": true,
+          "completesMission": true
+        }
+      ]
+    },
+    {
+      "missionId": 1187,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Retribution_(Guristas_Pirates)",
+      "sourceRevision": "oldid=218717",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16980,
+                17000
+              ],
+              "count": 4,
+              "range": 30000,
+              "required": false
+            },
+            {
+              "types": [
+                16982,
+                17004
+              ],
+              "count": 5,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                16991,
+                16995
+              ],
+              "count": 3,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                16565,
+                16566
+              ],
+              "count": 3,
+              "range": 75000,
+              "required": false
+            },
+            {
+              "types": [
+                24014
+              ],
+              "count": 1,
+              "range": 75000,
+              "required": false
+            }
+          ],
+          "roomId": 3196
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 3195,
+          "entryObjectId": 60739
+        },
+        {
+          "roomId": 3196,
+          "entryObjectId": 60741
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 60738,
+          "destinationRoomId": 3196
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 60753,
+          "required": true,
+          "completesMission": true
+        }
+      ]
+    },
+    {
+      "missionId": 1190,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Retribution_(Serpentis)",
+      "sourceRevision": "oldid=207699",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17278,
+                17113
+              ],
+              "count": 2,
+              "range": 33000,
+              "required": false
+            },
+            {
+              "types": [
+                17044,
+                17033
+              ],
+              "count": 2,
+              "range": 33000,
+              "required": false
+            },
+            {
+              "types": [
+                16569
+              ],
+              "count": 2,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                17112,
+                17114
+              ],
+              "count": 2,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                17120,
+                17116
+              ],
+              "count": 8,
+              "range": 51000,
+              "required": false
+            },
+            {
+              "types": [
+                17122,
+                17119
+              ],
+              "count": 3,
+              "range": 77000,
+              "required": false
+            },
+            {
+              "types": [
+                16569
+              ],
+              "count": 1,
+              "range": 77000,
+              "required": false
+            },
+            {
+              "types": [
+                24024,
+                24003
+              ],
+              "count": 1,
+              "range": 77000,
+              "required": false
+            }
+          ],
+          "roomId": 2966
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2965,
+          "entryObjectId": 56322
+        },
+        {
+          "roomId": 2966,
+          "entryObjectId": 56324
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 56321,
+          "destinationRoomId": 2966
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 56336,
+          "required": true,
+          "completesMission": true
+        }
+      ]
+    },
+    {
       "missionId": 937,
       "level": 1,
       "difficulty": 500,
@@ -3576,6 +3873,116 @@
         {
           "fromObjectId": 758958,
           "destinationRoomId": 17131
+        }
+      ]
+    },
+    {
+      "missionId": 1191,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Retribution_(Serpentis)",
+      "sourceRevision": "oldid=207699",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17278,
+                17113
+              ],
+              "count": 2,
+              "range": 33000,
+              "required": false
+            },
+            {
+              "types": [
+                17044,
+                17033
+              ],
+              "count": 2,
+              "range": 33000,
+              "required": false
+            },
+            {
+              "types": [
+                16569
+              ],
+              "count": 2,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                17112,
+                17114
+              ],
+              "count": 2,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                17120,
+                17116
+              ],
+              "count": 8,
+              "range": 51000,
+              "required": false
+            },
+            {
+              "types": [
+                17122,
+                17119
+              ],
+              "count": 3,
+              "range": 77000,
+              "required": false
+            },
+            {
+              "types": [
+                16569
+              ],
+              "count": 1,
+              "range": 77000,
+              "required": false
+            },
+            {
+              "types": [
+                24024,
+                24003
+              ],
+              "count": 1,
+              "range": 77000,
+              "required": false
+            }
+          ],
+          "roomId": 2966
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2965,
+          "entryObjectId": 56322
+        },
+        {
+          "roomId": 2966,
+          "entryObjectId": 56324
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 56321,
+          "destinationRoomId": 2966
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 56336,
+          "required": true,
+          "completesMission": true
         }
       ]
     },

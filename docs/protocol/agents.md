@@ -2,6 +2,63 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Retribution outpost missions — November 15, 2026
+
+Combat-content milestone one admits four formerly roster/script-blocked definitions. All require destruction of
+the outpost, with no mission cargo. Clearing guards alone cannot complete them; the outpost can complete them while
+guards remain alive. The pinned catalog supplies the empty entrance, one acceleration gate, combat pocket, objective
+object identity and localized name. Existing resident combat, tracking, rollback, reward and checkpoint owners apply.
+No gameplay SQL path or client/Blue/Destiny changes were added.
+
+| Variant | Mission IDs | Dungeon | Outpost object / type | Guards |
+| --- | --- | --- | --- | --- |
+| Angel | 1188 | 289 | 60799 / 16859 | 20 |
+| Guristas | 1187 | 288 | 60753 / 17382 | 16 |
+| Serpentis | 1190, 1191 | 290 | 56336 / 16855 | 21 |
+
+Reviewed University reports: [Angel, oldid 201368](https://wiki.eveuniversity.org/index.php?title=Retribution_(Angel_Cartel)&oldid=201368),
+[Guristas, oldid 218717](https://wiki.eveuniversity.org/index.php?title=Retribution_(Guristas_Pirates)&oldid=218717), and
+[Serpentis, oldid 207699](https://wiki.eveuniversity.org/index.php?title=Retribution_(Serpentis)&oldid=207699).
+Report alternatives resolve independently against build 3662168. The report's `Watchmen` resolves to pinned
+`Coreli Watchman`; no similarly named NPC or estimated type substitutes for missing data. Distances use each
+reported group's upper bound as an anchor-selection hint under the existing placement policy.
+
+Compared local evejs `evejs-security-missions-level-3-1.1.9.json`, SHA-256
+`f59bcb999336ddd52045af6ab9e82701431fdefaaf2508871aa8f51d0cb42fd1` (no Git metadata).
+It selects the same report revisions, with dungeon build 3579973 and target build 3396210. Angel and Serpentis
+already name the same objective objects; Guristas still has provisional `destroy_all_encounters`, which conflicts
+with the University's explicit outpost blitz. Eden independently binds that blitz to its own catalog's object 60753.
+No evejs implementation or generated template was copied.
+
+The same comparison found false Angel-report associations for empire-faction Retribution IDs 1192, 1194 and 1196.
+Those remain blocked. Sansha IDs 1186/1189 remain blocked because report aliases `Sansha Berserker/Demon` have no
+unambiguous pinned type binding; evejs substitutes a non-elite `Centii Butcher` and retains provisional completion.
+Optional armory loot and report-specific aggro choreography remain outside the reconstruction, as in earlier content.
+
+The regenerated pool contains **360 admitted / 2,532 blocked**, with **63 combat**, 182 ordinary deliveries,
+92 delivery storylines and 23 mining definitions. The broad missing-roster/script bucket falls from **595 to 591**.
+The offline fixture adds 22 types and 84 source records, retaining previous values.
+
+**Automated validation:** The exact development filter is
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionContentTests.RetributionRequiresItsOutpostAndPreservesBlitzOrGuardClearAcrossCheckpoint`.
+The first run exposed an incorrect test assumption that structure identities are allocated only on pocket arrival;
+sites allocate them earlier. The corrected assertion checks that entrance arrival spawns no guards.
+All **8 cases passed** (5.29 s feature build, 17.06 s test invocation). Final tool restore, solution restore and build
+passed (0.91 s build, no warnings/errors). The combined filter below passed **416 tests** in **7 m 47 s**:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionContentTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionLayoutTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionGateTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionTrackerTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionStructureTests
+```
+
+Both Python policy suites passed (8 catalog and 9 formatting tests), as did all 11 mission-admission tests
+(2.85 s combined). Formatting verification and the 140-column check passed. Re-exported manifest, audit and fixture
+hashes exactly matched the committed files; semantic comparison found no changed prior definitions or fixture values.
+No full .NET suite was requested or run. Native rendering, input and gameplay feel remain unverified.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Verify native outpost names/tracker presentation and one outpost blitz in the client.
+
 ## Acceleration gate facing — November 15, 2026
 
 The reported gate model pointed away from the ship's warp course. Eden's mission and
