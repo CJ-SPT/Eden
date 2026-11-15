@@ -3,8 +3,10 @@
     <OutputType>Exe</OutputType>
     <ApplicationIcon>../../assets/icons/eden-server.ico</ApplicationIcon>
     <IncludeSourceRevisionInInformationalVersion>true</IncludeSourceRevisionInInformationalVersion>
-    <!-- Docker restores before copying Razor sources; always restore the administration framework scripts. -->
+    <!-- Always restore administration framework scripts, including during project-only restores. -->
     <RequiresAspNetWebAssets>true</RequiresAspNetWebAssets>
+    <!-- Stamp the banner without invalidating unchanged library compilations on every Docker revision. -->
+    <SourceRevisionId Condition="'$(EdenBuildRevision)' != ''">$(EdenBuildRevision)</SourceRevisionId>
     <DefaultItemExcludes>$(DefaultItemExcludes);data/**;data.copy-*/**</DefaultItemExcludes>
   </PropertyGroup>
   <ItemGroup>
