@@ -144,14 +144,18 @@ internal sealed partial class PilotMissionStore
                 spawns.Add(
                     new(
                         group,
-                        new(type, groupIndex, group.Range, npcProfile.Type.GroupId == NpcEncounterDefinitions.SentryGroup),
+                        new(type, groupIndex, group.Range, npcProfile.Type.GroupId == NpcEncounterDefinitions.SentryGroup)
+                        {
+                            Radius = (float)(npcProfile.Type.Radius ?? 0),
+                        },
                         npcProfile
                     )
                 );
             }
         }
         bool initial = !Enumerable.Range(0, wave).Any(w => profile.WaveRoom(w) == roomId);
-        var placements = MissionSpawnRules.Place(initial, spawns.Select(s => s.Member).ToArray(), room.SpawnAnchors);
+        var obstacles = profile.Rooms.SelectMany(r => r.Objects).Select(o => o with { Position = o.Position - room.Position }).ToArray();
+        var placements = MissionSpawnRules.Place(initial, spawns.Select(s => s.Member).ToArray(), room.SpawnAnchors, obstacles);
         for (int slot = 0; slot < spawns.Count; slot++)
         {
             var spawn = spawns[slot];

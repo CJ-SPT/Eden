@@ -2,6 +2,53 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Mission spawn clearance and storyline settlement — November 15, 2026
+
+The user reported mission NPCs appearing inside a structure and being ejected at high speed; the mission name was unknown.
+An automated audit reproduced **477 overlapping placements** across the admitted combat waves and hull variants, including
+The Angel Cartel Spies (mission 897). Native entity anchors can be the centers of solid scenery. Eden placed mobile NPCs
+at those anchors and applied member offsets without checking either the hull radius or surrounding collision spheres.
+
+Mobile spawn placement now checks solid mission scenery in the room's coordinate frame, fixed batteries and earlier members
+of the same wave. A deterministic ray-interval search finds a nearby clear position even within overlapping scenery bounds.
+It retains the native anchor when unobstructed, preserves acquisition ranges and leaves individually authored fixed batteries
+at their catalog positions. Initial waves, reinforcements and fallback placements share the correction. The resident spawn
+transaction saves the corrected current and home positions through the existing checkpoint mechanism. Existing saved NPCs
+are not relocated, and no collision response, client packet or save schema changed.
+
+The review also found two storyline progression defects. A sixteenth ordinary completion selected a storyline agent before
+checking its eligible content; an empty or supplier-restricted pool threw from offer creation and rolled back the earned payout.
+Selection now skips agents without eligible content and retains the completion counter when no candidate is available. Expired
+offers are closed before collecting busy agents, so an old storyline does not occupy its agent after the exact saved deadline.
+
+References: [EVE University missions](https://wiki.eveuniversity.org/Missions) and
+[warp mechanics](https://wiki.eveuniversity.org/Warp_Mechanics) describe mission rewards and collision envelopes.
+Consulted [Carbon Destiny Ballpark.cpp at 27ee40b38a563d29054b32f64c3ebc87fabaec1f](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp),
+`Potential`, for combined-radius collision and penetration response. Build-3662168 dungeon objects, physical type radii and
+the existing mission bindings remain authoritative. The local evejs snapshot has no Git metadata; its
+`server/src/services/agent/missionAuthority.js` was reviewed for mission eligibility boundaries, with no source copied
+(SHA-256 `969438da844056806b3bd989388881f0522d8a5f4fc69bee51227b12233ae5b1`).
+
+**Automated validation.** Focused development reproduced the placement audit and both storyline failures before correction.
+The new tests cover all admitted combat wave/hull variants, overlapping scenery, deterministic placement, fixed/non-solid
+objects, no immediate static collision impulse, resident checkpoints/restart, exact storyline expiry and atomic payout when
+storyline content is missing or restricted. The exact development filters selected
+`Eden.Protocol.Tests.Agents.MissionSpawnClearanceTests.EveryCombatWaveAndHullVariantSpawnsOutsideSolidScenery`,
+`Eden.Protocol.Tests.Agents.MissionStorylineProgressTests.MissingEligibleStorylineContentCannotRollbackEarnedMissionRewards`
+and `Eden.Protocol.Tests.Agents.MissionStorylineProgressTests.ExpiredStorylineOffersReleaseTheirAgentAtTheExactDeadline`
+with `FullyQualifiedName=` through `tools/Test-Feature.ps1`.
+
+Tool and solution restore passed. The solution built with zero warnings/errors in **6.32 seconds**. The final combined filter
+`FullyQualifiedName~Eden.Protocol.Tests.Agents|FullyQualifiedName~Eden.Protocol.Tests.Flight.ShipCollisionTests|FullyQualifiedName~Eden.Protocol.Tests.Flight.CollisionIndexTests`
+passed **670/670 tests** in **446.65 seconds** wall time. Both Python policy suites passed (**8** catalog-setup cases in
+1.49 seconds and **9** formatting-policy cases in 0.02 seconds). `tools/Format.ps1 -Check` passed, including 2,283 CSharpier
+files and line-width verification. The full .NET suite was not requested or run; native rendering and gameplay feel remain
+unverified.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Observe a newly spawned Angel Cartel Spies group near its structure and confirm natural motion.
+
 ## Acceleration gate facing — November 15, 2026
 
 The reported gate model pointed away from the ship's warp course. Eden's mission and

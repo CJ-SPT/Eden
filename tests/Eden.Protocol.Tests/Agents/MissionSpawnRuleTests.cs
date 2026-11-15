@@ -70,4 +70,51 @@ public sealed class MissionSpawnRuleTests
     {
         Assert.Throws<InvalidDataException>(() => MissionSpawnRules.Place(true, [new(10, 0, range, false)], Anchors));
     }
+
+    [Fact]
+    public void EmbeddedGroupsClearOverlappingSceneryAndEachOtherWithoutChangingAcquisitionRanges()
+    {
+        StaticSpaceObject[] obstacles =
+        [
+            new(100, 1, 1, 2, 0, SpacePosition.Zero, 10000),
+            new(101, 1, 1, 2, 0, new(5000, 0, 0), 15000),
+            new(102, 1, 1, 2, 0, new(-5000, 0, 0), 15000),
+        ];
+        MissionSpawnMember[] members = Enumerable
+            .Range(0, 20)
+            .Select(index => new MissionSpawnMember(10, index, 0, false) { Radius = 500 })
+            .ToArray();
+        ImmutableArray<MissionSpawnAnchor> anchors = [new(1, SpacePosition.Zero, 30000, true, true)];
+        var placements = MissionSpawnRules.Place(true, members, anchors, obstacles);
+        Assert.Equal(placements.ToArray(), MissionSpawnRules.Place(true, members, anchors, obstacles.Reverse().ToArray()).ToArray());
+        for (int index = 0; index < placements.Length; index++)
+        {
+            Assert.Equal(30000, placements[index].AcquisitionRange);
+            Assert.All(
+                obstacles,
+                obstacle => Assert.True(placements[index].Position.DistanceTo(obstacle.Position) > members[index].Radius + obstacle.Radius)
+            );
+            for (int other = 0; other < index; other++)
+            {
+                Assert.True(
+                    placements[index].Position.DistanceTo(placements[other].Position) > members[index].Radius + members[other].Radius
+                );
+            }
+        }
+    }
+
+    [Fact]
+    public void ClearancePreservesUnobstructedSpawnsFixedBatteriesAndNonsolidScenery()
+    {
+        MissionSpawnMember[] members = [new(10, 0, 20000, false) { Radius = 100 }, new(100, 1, 20000, true) { Radius = 100 }];
+        StaticSpaceObject[] obstacles =
+        [
+            new(100, 1, 1, 2, 0, Anchors[0].Position, 50000) { Solid = false },
+            new(101, 1, 1, 2, 0, Anchors[4].Position, 500),
+        ];
+        Assert.Equal(
+            MissionSpawnRules.Place(true, members, Anchors).ToArray(),
+            MissionSpawnRules.Place(true, members, Anchors, obstacles).ToArray()
+        );
+    }
 }
