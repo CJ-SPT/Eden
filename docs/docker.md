@@ -42,16 +42,24 @@ archive and publishes them to remote players through Eden Launcher.
 
 ### Build caching on a remote host
 
-Use a current Docker Engine with BuildKit and Compose v2. The Dockerfile restores NuGet dependencies before copying
-source files and shares a NuGet package cache between restore and publish. Ordinary source updates can reuse the
-restore layer; project changes can reuse already downloaded packages. Python 3 installation and the standalone
-Python 2 compiler are independent of server binaries, so a source update does not reinstall or rebuild them.
-This follows [Docker's cache guidance](https://docs.docker.com/build/cache/optimize/).
+Use a current Docker Engine with BuildKit and Compose v2. The Dockerfile retains both NuGet downloads and an
+SDK- and architecture-specific compilation cache between builds. The compilation cache keeps a source workspace and
+[MSBuild artifacts](https://learn.microsoft.com/dotnet/core/sdk/artifacts-output), including intermediate files
+and compiled assemblies. Unchanged projects can skip compilation even when a source change reruns the publish step.
+Python 3 installation and the standalone Python 2 compiler are independent of server binaries, so a source update
+does not reinstall or rebuild them. This follows [Docker's cache guidance](https://docs.docker.com/build/cache/optimize/).
+
+`tools/Publish-Docker.sh` compares source contents, preserves unchanged input timestamps and removes deleted inputs.
+Changed contents receive a fresh timestamp even if the checkout supplied an older one. This keeps incremental
+compilation valid across fresh checkouts and source deletions. Restore runs inside each publish invocation so an
+evicted cache is rebuilt automatically. Compiler warnings, analyzers and style checks remain enabled.
 
 Keep using the same builder on the remote host. Avoid `--no-cache` and routine `docker builder prune` or
 `docker system prune` calls when retaining build speed matters. A cold builder still downloads dependencies and
 compiles Python 2 once. The first build after the Dockerfile changes also needs to populate the new cache layers;
-subsequent builds benefit from them. Server source changes still require a Release compilation.
+subsequent builds benefit from them. A changed project and affected dependents still require Release compilation;
+changing a widely shared Gameplay input can rebuild most of the server. This cache helps updates without changing
+the server's runtime optimization settings.
 
 To capture step timings without stopping the running server:
 
@@ -59,21 +67,52 @@ To capture step timings without stopping the running server:
 docker compose --progress plain build eden
 ```
 
-After the cache is warm, source-only updates should show `CACHED` for NuGet restore, Python 3 installation and
-Python 2 compilation. To measure an unchanged build, repeat that command with the same `EDEN_REVISION` value.
-Changing `EDEN_REVISION` intentionally republishes the server so its startup banner records the correct commit.
+After the cache is warm, source-only updates should show `CACHED` for Python 3 installation and Python 2 compilation.
+The publish step prints updated/deleted input counts and its .NET publish time in milliseconds. It can reuse compiled
+projects while the Docker step itself runs again. To measure an unchanged build, repeat that command with the same
+`EDEN_REVISION` value. Changing `EDEN_REVISION` updates the server executable's banner without stamping and recompiling
+every unchanged library. Normal source builds retain the SDK's existing Git revision behavior.
 Once the image build succeeds, deploy it with `docker compose up -d eden`, including any Compose overrides used
 by the running service. Include the same overrides when collecting timings.
 
 #### Automated validation
 
-On November 15, 2026, tool and solution restore passed, the solution built with zero warnings and errors in 13.82 seconds,
+For the initial dependency-only change on November 15, 2026, tool and solution restore passed, the solution built
+with zero warnings and errors in 13.82 seconds,
 and a separate Release restore followed by `publish --no-restore` succeeded with `UseAppHost=false`. The exact initial
 filter was `FullyQualifiedName=Eden.Protocol.Tests.Hosting.ServerDataPathsTests.SourceAndPublishedServersUseTheirOwnDataDirectory`;
 it passed one test. The combined filter selected `ServerDataPathsTests` and `GameplayDependenciesTests`; all 12 tests
 passed in a 5.62-second test command. Both Python policy suites passed (8 catalog and 9 formatting tests),
 and `tools/Format.ps1 -Check` passed.
 Docker was unavailable in the workspace, so Linux image construction, cache hits and remote build speed remain unmeasured.
+
+The incremental compilation follow-up was verified with
+`python tests/Eden.Protocol.Tests/Hosting/docker_publish_test.py`, using the real seven projects, Bash and the pinned
+SDK on Windows without launching Eden. All eight Release publishes and the overlapping-cache rejection passed in
+110.00 seconds. DLL hashes and modification times verified that unchanged assemblies remained untouched; the server's
+generated assembly information contained the new revision. Tests also covered changed input contents with old
+timestamps, source deletion, a Gameplay dependency edit, a World edit and complete compilation-cache eviction.
+Every publish also verified that the administration page's `wwwroot/_framework/blazor.web.js` was present and nonempty.
+An early per-file-comparison implementation was interrupted after its cold phase and replaced with batched hashing.
+
+The final helper's measured total times, with NuGet packages already available, were:
+
+| Publish scenario | Elapsed |
+| --- | ---: |
+| Cold compilation cache | 21.23 s |
+| Unchanged contents with refreshed checkout timestamps | 3.10 s |
+| Revision-only update | 7.81 s |
+| Server source edit with an old timestamp | 9.80 s |
+| Source deletion | 9.70 s |
+| Shared Gameplay dependency edit | 21.44 s |
+| World source edit | 12.55 s |
+| Evicted compilation cache | 22.74 s |
+
+These are native Windows/Git Bash measurements for this workload, not remote Linux container timings. Tool and
+solution restore passed, the solution built in 1.00 second with zero warnings and errors, and all 12 focused
+`ServerDataPathsTests` and `GameplayDependenciesTests` passed. The exact initial .NET filter above passed one test
+before the combined filter. Both Python policy suites (8 catalog and 9 formatting tests) and final formatting verification passed.
+The integration test uses Bash from PATH, Git Bash on Windows, or the executable selected by `EDEN_TEST_BASH`.
 
 #### Live acceptance
 

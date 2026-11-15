@@ -3,6 +3,8 @@
     <OutputType>Exe</OutputType>
     <ApplicationIcon>../../assets/icons/eden-server.ico</ApplicationIcon>
     <IncludeSourceRevisionInInformationalVersion>true</IncludeSourceRevisionInInformationalVersion>
+    <!-- Stamp the banner without invalidating unchanged library compilations on every Docker revision. -->
+    <SourceRevisionId Condition="'$(EdenBuildRevision)' != ''">$(EdenBuildRevision)</SourceRevisionId>
     <DefaultItemExcludes>$(DefaultItemExcludes);data/**;data.copy-*/**</DefaultItemExcludes>
   </PropertyGroup>
   <ItemGroup>

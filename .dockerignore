@@ -12,6 +12,7 @@
 !tools/Build-SkillClient.py
 !tools/mod_client_loader.py
 !tools/skill_client_overlay.py
+!tools/Publish-Docker.sh
 src/Eden.Server/data*
 **/bin
 **/obj
