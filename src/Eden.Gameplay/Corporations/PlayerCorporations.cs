@@ -16,7 +16,8 @@ public sealed record CorporationDetails(
     bool FriendlyFireEnabled,
     CorporationDivisions? Divisions = null,
     CorporationCommunications? Communications = null,
-    long RecruitmentRevision = 0
+    long RecruitmentRevision = 0,
+    long GovernanceRevision = 0
 );
 
 public sealed record PlayerCorporation(
@@ -29,7 +30,8 @@ public sealed record PlayerCorporation(
     long CreatedAt,
     int MemberLimit,
     int MemberCount,
-    long? ClosedAt = null
+    long? ClosedAt = null,
+    long Shares = CorporationRules.InitialShares
 );
 
 public sealed record CorporationMember(

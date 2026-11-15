@@ -264,7 +264,7 @@ internal sealed record PlayerCorporationReply(PlayerCorporation Corporation) : B
                     null,
                     Corporation.CeoId,
                     details.TaxRate,
-                    CorporationRules.InitialShares,
+                    Corporation.Shares,
                     (long)Corporation.MemberLimit,
                     details.Url,
                     Corporation.CreatorId,

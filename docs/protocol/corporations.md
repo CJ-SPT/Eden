@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [General and share-creation votes, November 15, 2026](#general-and-share-creation-votes-november-15-2026)
 - [Corporation closure, November 15, 2026](#corporation-closure-november-15-2026)
 - [Dividends and CEO succession, November 15, 2026](#dividends-and-ceo-succession-november-15-2026)
 - [Member search and tracking, November 14, 2026](#member-search-and-tracking-november-14-2026)
@@ -39,6 +40,46 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Corporation window voting-capability startup correction](#corporation-window-voting-capability-startup-correction)
 - [Player corporation applications and membership](#player-corporation-applications-and-membership)
 - [Player corporations: creation foundation](#player-corporations-creation-foundation)
+
+## General and share-creation votes, November 15, 2026
+
+`voteManager` now serves native voting capability, case lists/single cases, options, the caller's ballots, vote creation,
+casting, sanction lists and sanction activation. Case lists are status-keyed dictionaries of native CRowsets, options and
+ballots are KeyVal lists, and sanctions are keyed by case ID. NPC members have no voting capability; CEOs, Directors and
+represented shareholders can read eligible player-corporation votes. General polls and share-creation votes are enabled.
+CEO elections and member/blueprint sanctions are separate follow-on work and reject until implemented.
+
+Schema 164 saves typed vote definitions, deadlines, ownership snapshots, ballots and sanction state. Each share represents
+one vote. An option needs strictly more than half of cast weight; ties and empty polls have no winner. Eden freezes the
+owner/weight snapshot when a vote opens, so transferring shares cannot multiply their voting power. A current CEO may cast
+the rights belonging to their corporation; one owner cannot vote twice, including across CEO changes. These snapshot rules
+are local anti-replay policy. New shares require a successful vote and a separate current-CEO sanction. Supply, treasury
+holdings, saved action state and notifications commit together; overflow or repeated activation leaves them unchanged.
+Public corporation rows report the actual issued supply.
+
+The pinned limits are 1,000 open cases, 20 recent closed cases, 50 options and 30 days. Eden bounds titles/descriptions/options
+and uses a seven-day sanction window as a local expiry policy. Host maintenance processes saved deadlines, emits case/action
+notifications once, and skips world access until the next known deadline. Restart recomputes that deadline from saved votes.
+The existing corporation change cursor carries named vote events, including to personal shareholders and corporate-holder
+CEOs outside the issuer. Existing foreign-shareholder reads now authorize those corporate representatives.
+
+Sources: inert build **3662168** inspection of `corporation/voting.pyj`, `corp_ui_votes.pyj`, the native voting constants and
+the previously recorded archive hash. [EVE University corporation logistics](https://wiki.eveuniversity.org/Corporation_logistics)
+provides the shareholder workflow; [CCP Corporation Votes](https://support.eveonline.com/hc/en-us/articles/203268841-Corporation-Votes)
+defines share weights, majority and CEO sanctioning. EveJS 261108.1 was consulted for response-field comparison only;
+no implementation was copied. Native CRowsets reuse the existing Market adapter pattern and recorded Carbon Blue revision.
+
+**Automated validation.** Tool/solution restore and solution build passed. The focused filter joining
+`CorporationVotingTests`, `CorporationScreenTests`, `CorporationShareTests`, `CorporationLeadershipTests`,
+`CorporationPublicInfoTests`, `CorporationClosureTests` and `WorldMigrationTests` passed **61 tests in 21 seconds**.
+Both Python policy suites passed (8 and 9 tests); formatting checked 2,202 files and the 140-column limit;
+documentation links and `git diff --check` passed. Coverage includes native wire forms, permission failures, frozen weights,
+duplicate ballots, exact deadline closure, repeated polling, overflow rollback, sanction expiry, migration and restart.
+The full .NET suite was not run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Open Votes as CEO and shareholder. Complete a short poll and sanction a passed share-creation vote.
 
 ## Corporation closure, November 15, 2026
 

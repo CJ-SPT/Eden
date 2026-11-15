@@ -1,10 +1,12 @@
+using Eden.Gameplay.Corporations;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Corporations;
 
 [Injectable]
-internal sealed class CorporationGovernanceHandler : ISelectedPilotCallHandler
+internal sealed class CorporationGovernanceHandler(ICorporationVoting voting) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -14,17 +16,101 @@ internal sealed class CorporationGovernanceHandler : ISelectedPilotCallHandler
         Dictionary<string, object?>? keywords = null
     )
     {
-        if (service != "voteManager" || method != "CanViewVotes")
+        if (
+            service != "voteManager"
+            || method
+                is not (
+                    "CanViewVotes"
+                    or "CanRunForCEO"
+                    or "GetVoteCasesByCorporation"
+                    or "GetVoteCase"
+                    or "GetVoteCaseOptions"
+                    or "GetVotes"
+                    or "InsertVoteCase"
+                    or "InsertVote"
+                    or "GetCorpSanctionedActions"
+                    or "ActivateSanctionedAction"
+                )
+        )
         {
             return PilotCallResult.Unsupported;
         }
-        if (args is not [long corporation] || corporation is <= 0 or > int.MaxValue || keywords is { Count: > 0 })
+        try
         {
-            return new PilotCallResult.Failure("Choose a corporation to query voting access.");
+            if (keywords is { Count: > 0 })
+            {
+                throw new InvalidDataException("Unexpected voting arguments.");
+            }
+            long actor = context.Pilot.PilotId;
+            switch (method, args)
+            {
+                case ("CanViewVotes", [long corporation]) when corporation is > 0 and <= int.MaxValue:
+                    return voting.CanView(actor, (int)corporation);
+                case ("CanRunForCEO", []):
+                    return false;
+                case ("GetVoteCasesByCorporation", [long corporation]) when corporation is > 0 and <= int.MaxValue:
+                    return new CorporationVoteCasesReply(voting.List(actor, (int)corporation));
+                case ("GetVoteCase" or "GetVoteCaseOptions" or "GetVotes", [long corporation, long id])
+                    when corporation is > 0 and <= int.MaxValue && id > 0:
+                    var vote = voting.Read(actor, (int)corporation, id);
+                    return method switch
+                    {
+                        "GetVoteCase" => new CorporationVoteRow(vote),
+                        "GetVoteCaseOptions" => new CorporationVoteOptions(vote),
+                        _ => new CorporationBallotsReply(vote.Id, vote.Data.Ballots.Where(ballot => ballot.PilotId == actor).ToArray()),
+                    };
+                case ("InsertVoteCase", [var title, var description, long type, var options, long days])
+                    when type is >= 0 and <= 6 && Enum.IsDefined(typeof(CorporationVoteType), (int)type) && days is >= 1 and <= 30:
+                    return voting.Create(actor, Draft(Text(title), Text(description), (CorporationVoteType)type, (int)days, options));
+                case ("InsertVote", [long corporation, long id, long option])
+                    when corporation is > 0 and <= int.MaxValue && id > 0 && option is >= 0 and < CorporationVotingRules.MaximumOptions:
+                    voting.Cast(actor, (int)corporation, id, (int)option);
+                    return PilotCallResult.None;
+                case ("GetCorpSanctionedActions", []):
+                    return new CorporationSanctionsReply(voting.Actions(actor));
+                case ("ActivateSanctionedAction", [long id]) when id > 0:
+                    voting.Activate(actor, id);
+                    return PilotCallResult.None;
+                default:
+                    throw new InvalidDataException("Invalid corporation voting request.");
+            }
         }
-        // Build 3662168 corporationWindow.construct_corporation_panels asks for
-        // this capability on every open, including NPC corporations. Voting is
-        // not implemented yet; False omits its panels without failing startup.
-        return false;
+        catch (InvalidDataException error)
+        {
+            return new PilotCallResult.Failure(error.Message);
+        }
     }
+
+    private static CorporationVoteDraft Draft(string title, string description, CorporationVoteType type, int days, object? options)
+    {
+        if (type == CorporationVoteType.General && options is List<object?> labels)
+        {
+            return new(title, description, type, days, labels.Select(Text).ToArray());
+        }
+        var tuple = BlueRead.Tuple(options, 5);
+        // Native binary votes send localization labels. Only the numeric payload selects an action.
+        foreach (var label in tuple.Take(2))
+        {
+            if (
+                label is not object?[] parts
+                || parts.Length is < 1 or > 2
+                || parts[0] is not (string or BlueUnicode or byte[])
+                || parts.Length == 2 && parts[1] is not Dictionary<string, object?>
+            )
+            {
+                throw new InvalidDataException("Invalid vote option label.");
+            }
+        }
+        static long Parameter(object? value) =>
+            value switch
+            {
+                null => 0,
+                long number when number >= 0 => number,
+                _ => throw new InvalidDataException("Invalid vote parameter."),
+            };
+        return new(title, description, type, days, ["Yes", "No"], Parameter(tuple[2]), Parameter(tuple[3]), Parameter(tuple[4]));
+    }
+
+    private static string Text(object? value) =>
+        value is string or BlueUnicode or byte[] ? BlueMarshal.Text(value) : throw new InvalidDataException("Expected text.");
 }

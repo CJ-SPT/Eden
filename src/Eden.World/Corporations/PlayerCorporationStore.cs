@@ -32,10 +32,16 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
             database,
             world =>
             {
-                return world
+                var snapshot = world
                     .Set<SavedCorporation>()
                     .Find(corporationId)
                     ?.Snapshot(world.Pilots.Count(p => p.CorporationId == corporationId));
+                return snapshot is null
+                    ? null
+                    : snapshot with
+                    {
+                        Shares = world.Set<SavedCorporationShareIssue>().Find(corporationId)?.Shares ?? CorporationRules.InitialShares,
+                    };
             }
         );
     }

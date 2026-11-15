@@ -82,7 +82,26 @@ internal sealed partial class CorporationHandler
                 {
                     context.Notifications.Add(new CorporationWelcomeMailChanged(welcome));
                 }
-                context.Notifications.Add(new CorporationDetailsChanged(administrationChange));
+                if (administrationChange.Vote is { } vote)
+                {
+                    context.Notifications.Add(
+                        new CorporationVoteNotification(
+                            vote.Event == CorporationVoteEvent.Cast ? "OnVoteCast" : "OnVoteCaseChanged",
+                            administrationChange.CorporationId,
+                            vote.CaseId
+                        )
+                    );
+                    if (vote.Event is CorporationVoteEvent.Closed or CorporationVoteEvent.Sanctioned)
+                    {
+                        context.Notifications.Add(
+                            new CorporationVoteNotification("OnSanctionedActionChanged", administrationChange.CorporationId, vote.CaseId)
+                        );
+                    }
+                }
+                else
+                {
+                    context.Notifications.Add(new CorporationDetailsChanged(administrationChange));
+                }
             }
             if (change.Roles is { } roleChange)
             {

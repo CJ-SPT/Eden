@@ -47,7 +47,12 @@ internal sealed class CorporationShareStore(WorldDatabase database, TimeProvider
                     actor.CorporationId == issuer.Id
                     && CorporationRoleStore.Has(world, actorId, issuer, CorporationRole.Accountant | CorporationRole.JuniorAccountant);
                 bool privateHolder = world.Set<SavedCorporationShareHolding>().Find(corporationId, actorId)?.Shares > 0;
-                if (!ownFinancial && !privateHolder)
+                bool companyHolder =
+                    world.Set<SavedCorporation>().Find(actor.CorporationId) is { } company
+                    && company.CeoId == actorId
+                    && company.ClosedAt == null
+                    && world.Set<SavedCorporationShareHolding>().Find(corporationId, (long)company.Id)?.Shares > 0;
+                if (!ownFinancial && !privateHolder && !companyHolder)
                 {
                     throw new InvalidDataException("Financial authority or personal shares in this corporation are required.");
                 }
@@ -169,7 +174,7 @@ internal sealed class CorporationShareStore(WorldDatabase database, TimeProvider
         }
     }
 
-    private static void Notify(WorldAction world, CorporationShareChange change)
+    internal static void Notify(WorldAction world, CorporationShareChange change)
     {
         long[] recipients;
         if (world.Pilots.Find(change.ShareholderId) is not null)

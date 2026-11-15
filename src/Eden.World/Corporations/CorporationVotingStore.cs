@@ -1,0 +1,274 @@
+using System.Text.Json;
+using Eden.Data.World.Corporations;
+using Eden.Gameplay.Corporations;
+using Eden.Infrastructure.Registration;
+using Eden.World.Runtime.Economy;
+using Eden.World.Storage;
+
+namespace Eden.World.Corporations;
+
+[Injectable(InjectionType.Singleton)]
+internal sealed class CorporationVotingStore(WorldDatabase database, TimeProvider clock) : ICorporationVoting
+{
+    private long _nextDeadline = long.MinValue;
+    private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+
+    public bool CanView(long actorId, int corporationId) =>
+        WorldActionScope.Inspect(database, world => CanView(world, actorId, corporationId));
+
+    private static bool CanView(WorldAction world, long actorId, int corporationId)
+    {
+        var corporation = world.Set<SavedCorporation>().Find(corporationId);
+        return corporation is { ClosedAt: null }
+            && (
+                CorporationRoleStore.Has(world, actorId, corporation, CorporationRole.Director)
+                || Owners(world, actorId).Any(owner => world.Set<SavedCorporationShareHolding>().Find(corporationId, owner)?.Shares > 0)
+            );
+    }
+
+    private static long[] Owners(WorldAction world, long actorId) =>
+        world
+            .Set<SavedCorporation>()
+            .Where(row => row.CeoId == actorId && row.ClosedAt == null)
+            .Select(row => (long)row.Id)
+            .AsEnumerable()
+            .Prepend(actorId)
+            .ToArray();
+
+    private static void RequireView(WorldAction world, long actorId, int corporationId)
+    {
+        if (!CanView(world, actorId, corporationId))
+        {
+            throw new InvalidDataException("Corporation leadership or shares are required to view these votes.");
+        }
+    }
+
+    public CorporationVoteListing List(long actorId, int corporationId)
+    {
+        Advance();
+        return WorldActionScope.Inspect(
+            database,
+            world =>
+            {
+                RequireView(world, actorId, corporationId);
+                var votes = world
+                    .Set<SavedCorporationVote>()
+                    .Where(row => row.CorporationId == corporationId)
+                    .OrderByDescending(row => row.Id)
+                    .AsEnumerable()
+                    .Select(row => row.Snapshot())
+                    .ToArray();
+                return new CorporationVoteListing(
+                    votes.Where(vote => vote.EndsAt > Now).ToArray(),
+                    votes.Where(vote => vote.EndsAt <= Now).Take(CorporationVotingRules.ClosedPageSize).ToArray()
+                );
+            }
+        );
+    }
+
+    public CorporationVoteCase Read(long actorId, int corporationId, long caseId)
+    {
+        Advance();
+        return WorldActionScope.Inspect(
+            database,
+            world =>
+            {
+                RequireView(world, actorId, corporationId);
+                return Case(world, corporationId, caseId).Snapshot();
+            }
+        );
+    }
+
+    public long Create(long actorId, CorporationVoteDraft draft)
+    {
+        CorporationVotingRules.Validate(draft);
+        if (draft.Type is not (CorporationVoteType.General or CorporationVoteType.Shares))
+        {
+            throw new InvalidDataException("This type of corporation vote is not available yet.");
+        }
+        using WorldActionScope transaction = new(database, TransactionParticipants.None);
+        var world = transaction.World;
+        var corporation = CorporationRoleStore.Current(world, actorId);
+        CorporationRoleStore.RequireDirector(world, actorId, corporation);
+        long now = Now;
+        if (
+            world.Set<SavedCorporationVote>().Count(row => row.CorporationId == corporation.Id && row.EndsAt > now)
+            >= CorporationVotingRules.MaximumOpen
+        )
+        {
+            throw new InvalidDataException("Close existing corporation votes before starting another.");
+        }
+        var rights = world
+            .Set<SavedCorporationShareHolding>()
+            .Where(row => row.CorporationId == corporation.Id && row.Shares > 0)
+            .Select(row => new CorporationVoteRight(row.ShareholderId, row.Shares))
+            .ToArray();
+        var row = world
+            .Add(
+                new SavedCorporationVote
+                {
+                    Id = world.Next("WorldCorporationVote"),
+                    CorporationId = corporation.Id,
+                    StartedAt = now,
+                    EndsAt = checked(now + draft.Days * TimeSpan.TicksPerDay),
+                    DataJson = JsonSerializer.Serialize(new CorporationVoteData(actorId, draft, rights, [])),
+                }
+            )
+            .Entity;
+        world.SaveChanges();
+        Notify(world, row.Snapshot(), CorporationVoteEvent.Created);
+        transaction.Commit();
+        Interlocked.Exchange(ref _nextDeadline, Math.Min(Volatile.Read(ref _nextDeadline), row.EndsAt));
+        return row.Id;
+    }
+
+    public void Cast(long actorId, int corporationId, long caseId, int optionId)
+    {
+        using WorldActionScope transaction = new(database, TransactionParticipants.None);
+        var world = transaction.World;
+        RequireView(world, actorId, corporationId);
+        var row = Case(world, corporationId, caseId);
+        var vote = row.Snapshot();
+        var owners = Owners(world, actorId);
+        var rights = vote.Data.Rights.Where(right => owners.Contains(right.OwnerId)).ToArray();
+        if (
+            Now >= vote.EndsAt
+            || optionId < 0
+            || optionId >= vote.Data.Draft.Options.Count
+            || rights.Length == 0
+            || vote.Data.Ballots.Any(ballot => ballot.PilotId == actorId || owners.Contains(ballot.OwnerId))
+        )
+        {
+            throw new InvalidDataException("Choose an open vote and an unused voting right with a valid option.");
+        }
+        var ballots = vote
+            .Data.Ballots.Concat(rights.Select(right => new CorporationBallot(right.OwnerId, actorId, optionId, right.Weight, Now)))
+            .ToArray();
+        row.DataJson = JsonSerializer.Serialize(vote.Data with { Ballots = ballots });
+        Notify(world, row.Snapshot(), CorporationVoteEvent.Cast);
+        transaction.Commit();
+    }
+
+    public IReadOnlyList<CorporationVoteCase> Actions(long actorId)
+    {
+        Advance();
+        return WorldActionScope.Inspect(
+            database,
+            world =>
+            {
+                var corporation = CorporationRoleStore.Current(world, actorId);
+                CorporationRoleStore.RequireDirector(world, actorId, corporation);
+                return (IReadOnlyList<CorporationVoteCase>)
+                    world
+                        .Set<SavedCorporationVote>()
+                        .Where(row => row.CorporationId == corporation.Id)
+                        .AsEnumerable()
+                        .Select(row => row.Snapshot())
+                        .Where(vote =>
+                            vote.Data.Settled
+                            && vote.Data.Draft.Type == CorporationVoteType.Shares
+                            && CorporationVotingRules.Winner(vote.Data) == 0
+                        )
+                        .ToArray();
+            }
+        );
+    }
+
+    public void Activate(long actorId, long caseId)
+    {
+        Advance();
+        using WorldActionScope transaction = new(database, TransactionParticipants.None);
+        var world = transaction.World;
+        var corporation = CorporationRoleStore.Current(world, actorId);
+        var row = Case(world, corporation.Id, caseId);
+        var vote = row.Snapshot();
+        if (
+            corporation.CeoId != actorId
+            || !vote.Data.Settled
+            || vote.Data.AppliedAt.HasValue
+            || Now >= CorporationVotingRules.Expires(vote)
+            || CorporationVotingRules.Winner(vote.Data) != 0
+            || vote.Data.Draft.Type != CorporationVoteType.Shares
+        )
+        {
+            throw new InvalidDataException("Only the CEO may enact an unused, successful and unexpired sanction.");
+        }
+        var issue = world.Set<SavedCorporationShareIssue>().Find(corporation.Id)!;
+        var treasury = world.Set<SavedCorporationShareHolding>().Find(corporation.Id, (long)corporation.Id)!;
+        long quantity = vote.Data.Draft.Parameter;
+        if (quantity > long.MaxValue - issue.Shares || quantity > long.MaxValue - treasury.Shares)
+        {
+            throw new InvalidDataException("The share issuance exceeds the supported supply.");
+        }
+        long before = treasury.Shares;
+        issue.Shares += quantity;
+        treasury.Shares += quantity;
+        CorporationShareStore.Notify(world, new(corporation.Id, corporation.Id, before, treasury.Shares));
+        row.DataJson = JsonSerializer.Serialize(vote.Data with { AppliedAt = Now });
+        Notify(world, row.Snapshot(), CorporationVoteEvent.Sanctioned);
+        transaction.Commit();
+    }
+
+    public void Advance()
+    {
+        long now = Now;
+        if (now < Volatile.Read(ref _nextDeadline))
+        {
+            return;
+        }
+        using WorldActionScope transaction = new(database, TransactionParticipants.None);
+        var world = transaction.World;
+        long next = long.MaxValue;
+        foreach (var row in world.Set<SavedCorporationVote>())
+        {
+            var vote = row.Snapshot();
+            if (vote.Data.Settled)
+            {
+                continue;
+            }
+            if (vote.EndsAt > now)
+            {
+                next = Math.Min(next, vote.EndsAt);
+                continue;
+            }
+            row.DataJson = JsonSerializer.Serialize(vote.Data with { Settled = true });
+            Notify(world, row.Snapshot(), CorporationVoteEvent.Closed);
+        }
+        transaction.Commit();
+        Interlocked.Exchange(ref _nextDeadline, next);
+    }
+
+    private static SavedCorporationVote Case(WorldAction world, int corporationId, long caseId) =>
+        world.Set<SavedCorporationVote>().Find(caseId) is { } row && row.CorporationId == corporationId
+            ? row
+            : throw new InvalidDataException("Unknown corporation vote.");
+
+    private static void Notify(WorldAction world, CorporationVoteCase vote, CorporationVoteEvent kind)
+    {
+        var corporation = world.Set<SavedCorporation>().Find(vote.CorporationId)!;
+        var before = corporation.Snapshot(0).Details;
+        var after = before with { GovernanceRevision = checked(before.GovernanceRevision + 1) };
+        corporation.DetailsJson = JsonSerializer.Serialize(after);
+        var holders = vote.Data.Rights.Select(right => right.OwnerId).ToArray();
+        var companyVoters = world
+            .Set<SavedCorporation>()
+            .Where(row => Enumerable.Contains(holders, (long)row.Id) && row.ClosedAt == null)
+            .Select(row => row.CeoId)
+            .ToArray();
+        var recipients = world
+            .Pilots.Where(pilot =>
+                pilot.CorporationId == corporation.Id
+                || Enumerable.Contains(holders, pilot.Id)
+                || Enumerable.Contains(companyVoters, pilot.Id)
+            )
+            .Select(pilot => pilot.Id)
+            .ToArray();
+        string json = JsonSerializer.Serialize(
+            new CorporationAdministrationChange(corporation.Id, before, after, Vote: new(vote.Id, kind))
+        );
+        foreach (long recipient in recipients)
+        {
+            world.Add(new SavedCorporationChange { PilotId = recipient, AdministrationJson = json });
+        }
+    }
+}

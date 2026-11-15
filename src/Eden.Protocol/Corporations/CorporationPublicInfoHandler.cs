@@ -68,7 +68,7 @@ internal sealed record CorporationPublicInfoReply(
             corporation.Details.Description,
             corporation.Details.Url,
             corporation.Details.TaxRate,
-            CorporationRules.InitialShares,
+            corporation.Shares,
             corporation.MemberCount,
             corporation.CreatorId,
             corporation.Details.LoyaltyPointTaxRate,

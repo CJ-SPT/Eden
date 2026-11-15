@@ -162,7 +162,7 @@ public sealed class CorporationScreenTests
         Assert.DoesNotContain(packets, p => p.Name.EndsWith(".ErrorResponse", StringComparison.Ordinal));
         var replies = packets.Where(p => p.Name.EndsWith(".CallRsp", StringComparison.Ordinal)).ToArray();
         Assert.Equal(8, replies.Length);
-        Assert.False(Assert.IsType<bool>(Reply(replies[1])));
+        Assert.Equal(playerCorporation, Assert.IsType<bool>(Reply(replies[1])));
         Assert.NotEmpty(BlueRead.Bytes(BlueRead.Tuple(BlueRead.Tuple(replies[2].State, 14)[4], 1)[0]));
         Assert.Empty(Assert.IsType<List<object?>>(Reply(replies[3])));
         Assert.False(Assert.IsType<bool>(Reply(replies[4])));
@@ -225,7 +225,7 @@ public sealed class CorporationScreenTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task WindowVotingCapabilityReturnsNativeFalseOnRepeatedOpensForNpcMembersAndPlayerCeos(bool playerCorporation)
+    public async Task WindowVotingCapabilityReflectsNpcMembershipAndPlayerLeadershipOnRepeatedOpens(bool playerCorporation)
     {
         using TestWorld db = new(liveWorld: true);
         if (playerCorporation)
@@ -265,7 +265,7 @@ public sealed class CorporationScreenTests
         {
             var state = BlueRead.Tuple(reply.State, 14);
             var result = BlueMarshal.Decode(BlueRead.Bytes(BlueRead.Tuple(state[4], 1)[0]));
-            Assert.False(Assert.IsType<bool>(result));
+            Assert.Equal(playerCorporation, Assert.IsType<bool>(result));
         }
         Assert.Equal(corporation, db.Store.FindPilot(1000001)!.CorpId);
         using WorldDbContext saved = new(db.Path);
@@ -277,7 +277,7 @@ public sealed class CorporationScreenTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void VotingCapabilityRequiresSelectionAndValidArgumentsAndDoesNotEnableVoteOperations(bool playerCorporation)
+    public void VotingCapabilityRequiresSelectionAndValidArgumentsAndAuthorizesVoteReads(bool playerCorporation)
     {
         using TestWorld db = new(liveWorld: true);
         if (playerCorporation)
@@ -305,9 +305,17 @@ public sealed class CorporationScreenTests
             Assert.IsType<PilotCallResult.Failure>(Call("CanViewVotes", args));
         }
         Assert.IsType<PilotCallResult.Failure>(Call("CanViewVotes", [(long)pilot.CorpId], new() { ["characterID"] = pilot.PilotId }));
-        Assert.Same(PilotCallResult.Unsupported, Call("InsertVoteCase", []));
-        Assert.Same(PilotCallResult.Unsupported, Call("GetVoteCasesByCorporation", [(long)pilot.CorpId]));
-        Assert.False(
+        Assert.IsType<PilotCallResult.Failure>(Call("InsertVoteCase", []));
+        if (playerCorporation)
+        {
+            Assert.IsType<PilotCallResult.Success>(Call("GetVoteCasesByCorporation", [(long)pilot.CorpId]));
+        }
+        else
+        {
+            Assert.IsType<PilotCallResult.Failure>(Call("GetVoteCasesByCorporation", [(long)pilot.CorpId]));
+        }
+        Assert.Equal(
+            playerCorporation,
             Assert.IsType<bool>(
                 Assert
                     .IsType<PilotCallResult.Success>(Call("CanViewVotes", [(long)pilot.CorpId], new() { ["machoVersion"] = 1L }))
