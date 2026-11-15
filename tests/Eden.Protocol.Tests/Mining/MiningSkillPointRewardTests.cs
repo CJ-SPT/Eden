@@ -59,6 +59,49 @@ public sealed class MiningSkillPointRewardTests
         Assert.Throws<InvalidDataException>(() => ActivitySkillPointRewards.FromValue(1, 1, -1));
         Assert.Throws<InvalidDataException>(() => ActivitySkillPointRewards.FromValue(1, 1, 101));
         Assert.Throws<OverflowException>(() => ActivitySkillPointRewards.FromValue(decimal.MaxValue, 2));
+        foreach (decimal cost in new[] { 0, -1, 0.009m, 1_000_000_001m, decimal.MaxValue })
+        {
+            Assert.Throws<InvalidDataException>(() => ActivitySkillPointRewards.FromValue(1, 1, iskPerSkillPoint: cost));
+        }
+    }
+
+    [Theory]
+    [InlineData(483, 601, 1230, 100)]
+    [InlineData(16278, 17478, 16265, 800)]
+    [InlineData(25266, 32880, 28694, 125.5)]
+    [InlineData(483, 601, 1230, 0.01)]
+    [InlineData(483, 601, 1230, 1000000000)]
+    public async Task ResidentHarvestUsesConfiguredBaseCostAndPersistsExactlyOnce(int tool, int hull, int resource, double baseCost)
+    {
+        using Fixture f = Create(tool, hull, resource, out long module);
+        decimal cost = (decimal)baseCost;
+        WorldTuningTests.Activate(
+            f.Db,
+            settings =>
+                settings with
+                {
+                    Progression = settings.Progression with { MiningSkillPointMultiplier = 20, MiningIskPerSkillPoint = cost },
+                }
+        );
+        using var live = new LiveWorld(new(f.Db.Path), f.Clock);
+        var mining = f.Db.Services.GetRequiredService<IPilotMining>();
+        mining.Begin(f.PilotId, module, Rock, f.Clock.Now);
+        var result = mining.Collect(f.PilotId, module, Rock, new(1, true, Rolls));
+        int delivered = result.Extracted + result.CriticalBonus;
+        Assert.True(delivered > 0);
+        var quote = MarketSnapshotCatalog.Quotes[resource];
+        decimal price = MarketValuationRules.EstimateIsk(quote.BuyCents, quote.SellCents)!.Value;
+        long expected = InitialPoints + (long)decimal.Floor(price * delivered * 20 / cost);
+        var points = f.Db.Services.GetRequiredService<IPilotFreeSkillPoints>();
+        Assert.Equal(new(expected, InitialRevision), points.Observe(f.PilotId));
+        Assert.Throws<InvalidDataException>(() => mining.Collect(f.PilotId, module, Rock, new(1, true, Rolls)));
+        Assert.Equal(expected, points.Balance(f.PilotId));
+        await live.FlushAsync();
+        live.Dispose();
+        WorldInitialization.Open(f.Db.Path);
+        using WorldDbContext reopened = new(f.Db.Path);
+        Assert.Equal(expected, reopened.Set<SavedFreeSkillPoints>().Find(f.PilotId)!.Points);
+        Assert.Equal(cost, new WorldDatabase(f.Db.Path).Settings.Progression.MiningIskPerSkillPoint);
     }
 
     [Theory]

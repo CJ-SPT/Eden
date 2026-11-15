@@ -115,6 +115,8 @@ public sealed class WorldTuningTests
         Assert.Equal(new IndustryPolicy(), legacy.Settings.Industry);
         Assert.Equal(1, legacy.Settings.Progression.KillSkillPointMultiplier);
         Assert.Equal(1, legacy.Settings.Progression.MiningSkillPointMultiplier);
+        Assert.Equal(0.25m, legacy.Settings.Progression.KillSkillPointPercent);
+        Assert.Equal(400, legacy.Settings.Progression.MiningIskPerSkillPoint);
         WorldTuningRules.Validate(legacy.Settings);
         foreach (decimal value in new[] { 0.1m, 1m, 100m })
         {
@@ -130,6 +132,23 @@ public sealed class WorldTuningTests
         Assert.Throws<InvalidDataException>(() => WorldTuningRules.ValidateRate(100.001m, true));
     }
 
+    [Theory]
+    [InlineData("killSkillPointPercent", -0.01)]
+    [InlineData("killSkillPointPercent", 100.01)]
+    [InlineData("miningIskPerSkillPoint", 0)]
+    [InlineData("miningIskPerSkillPoint", 0.009)]
+    [InlineData("miningIskPerSkillPoint", 1000000001)]
+    public void InvalidBaseRatesCannotBeImportedOrStaged(string field, double value)
+    {
+        using TestWorld db = new();
+        WorldConfigurationStore store = new(new(db.Path), TimeProvider.System);
+        var before = store.Read();
+        var document = JsonNode.Parse(store.Export(before.Active.Id))!;
+        document["settings"]!["progression"]![field] = (decimal)value;
+        Assert.Throws<InvalidDataException>(() => store.Import(before.Generation, document.ToJsonString(), "invalid-base-rate"));
+        Assert.Equal(before, store.Read());
+    }
+
     [Fact]
     public void RestartExportImportRestoreAndInvalidDraftsPreserveWorldIsolationAndHistory()
     {
@@ -143,7 +162,12 @@ public sealed class WorldTuningTests
         {
             Resources = new(OreYieldMultiplier: 2, IceYieldMultiplier: 3, GasYieldMultiplier: 4),
             Rewards = new(5, 6, 7, 8),
-            Progression = new(KillSkillPointMultiplier: 9, MiningSkillPointMultiplier: 2.5m),
+            Progression = new(
+                KillSkillPointMultiplier: 9,
+                MiningSkillPointMultiplier: 2.5m,
+                KillSkillPointPercent: 1.5m,
+                MiningIskPerSkillPoint: 125
+            ),
             Industry = new(10, 11, 12, 13, 14),
         };
         var pending = store.Save(original.Generation, original.Active.Draft with { Settings = settings }, "tuning-test");
@@ -174,7 +198,7 @@ public sealed class WorldTuningTests
     }
 
     [Fact]
-    public void ScaledRewardsRoundOnceAndKeepBountiesAndSkillPointsIndependent()
+    public void ScaledRewardsRoundOnceAndApplyTheSeparateSkillPointRate()
     {
         Assert.Equal(2, WorldTuningRules.Reward(1, 1.5m));
         Assert.Equal(2, WorldTuningRules.Reward(5, 0.5m));
@@ -189,34 +213,51 @@ public sealed class WorldTuningTests
     }
 
     [Theory]
-    [InlineData(0, 0, 15)]
-    [InlineData(2, 600000, 15)]
-    [InlineData(3, 900000, 15)]
-    public void FatalShotsScaleIskAndOriginalBountySpOnceAndSurviveReopen(int factor, long cents, long sp)
+    [InlineData(0, 0, 0, 0.25)]
+    [InlineData(2, 600000, 30, 0.25)]
+    [InlineData(3, 900000, 45, 0.25)]
+    [InlineData(10, 3000000, 150, 0.25)]
+    [InlineData(10, 3000000, 600, 1)]
+    [InlineData(10, 3000000, 0, 0)]
+    public async Task FatalShotsScaleIskAndMultipliedBountySpOnceAndSurviveReopen(int factor, long cents, long sp, double basePercent)
     {
         using PilotCombatTests.Fixture f = new();
-        Activate(f.Db, settings => settings with { Rewards = new(factor), Progression = new(KillSkillPointMultiplier: 2) });
+        Activate(
+            f.Db,
+            settings =>
+                settings with
+                {
+                    Rewards = new(factor),
+                    Progression = new(KillSkillPointMultiplier: 2, KillSkillPointPercent: (decimal)basePercent),
+                }
+        );
         f.AlmostDefeated();
+        using var live = new LiveWorld(new(f.Db.Path), f.Clock);
         var shot = f.Fire();
         Assert.True(shot.Destroyed);
         Assert.Equal(cents, shot.Reward?.AmountCents ?? 0);
         Assert.Throws<InvalidDataException>(() => f.Fire());
+        await live.FlushAsync();
+        live.Dispose();
+        _ = WorldInitialization.Open(f.Db.Path);
         using WorldDbContext saved = new(f.Db.Path);
         Assert.Equal(cents, saved.Set<PilotWallet>().Sum(w => w.Cents));
-        var points = Assert.Single(saved.Set<SavedFreeSkillPoints>());
-        Assert.Equal(sp, points.Points);
-        Assert.Equal(0, points.Revision);
+        Assert.Equal(sp, saved.Set<SavedFreeSkillPoints>().Sum(points => points.Points));
+        Assert.All(saved.Set<SavedFreeSkillPoints>(), points => Assert.Equal(0, points.Revision));
         Assert.Equal(factor == 0 ? 0 : 1, saved.Set<NpcBounty>().Count());
         WorldConfigurationStore.LoadActive(new(f.Db.Path));
         Assert.Equal(factor, new WorldDatabase(f.Db.Path).Settings.Rewards.BountyMultiplier);
+        Assert.Equal((decimal)basePercent, new WorldDatabase(f.Db.Path).Settings.Progression.KillSkillPointPercent);
     }
 
     [Theory]
-    [InlineData(false, 0, 2, 0, 15)]
-    [InlineData(false, 1.125005, 3, 337502, 22)]
+    [InlineData(false, 0, 2, 0, 0)]
+    [InlineData(false, 1.125005, 3, 337502, 25)]
     [InlineData(true, 1.125, 0, 337500, 0)]
-    [InlineData(true, 2, 1, 600000, 7)]
-    public void NpcBountyDisplayAndSettlementUseActivatedIskRateAndIndependentKillSkillPoints(
+    [InlineData(true, 2, 1, 600000, 15)]
+    [InlineData(true, 10, 20, 3000000, 1500)]
+    [InlineData(true, 0.5, 1, 150000, 3)]
+    public void NpcBountyDisplayAndSettlementUseActivatedIskRateAndMultipliedBountySkillPoints(
         bool resident,
         double bountyRate,
         int skillPointRate,
@@ -267,7 +308,7 @@ public sealed class WorldTuningTests
     }
 
     [Fact]
-    public void ScaledGrossBountyIsTaxedBeforeTheNetWalletCredit()
+    public async Task ScaledGrossBountyGrantsPreTaxSkillPointsBeforeTheNetWalletCredit()
     {
         using PilotCombatTests.Fixture f = new();
         var pilot = f.Db.Store.FindPilot(1000001)!;
@@ -282,12 +323,14 @@ public sealed class WorldTuningTests
             before = world.Set<PilotWallet>().Find(pilot.PilotId)!.Cents;
         }
         f.AlmostDefeated();
+        using var live = new LiveWorld(new(f.Db.Path), f.Clock);
         var reward = f.Fire().Reward!;
         Assert.Equal(30_000_000, reward.AmountCents);
         Assert.Equal(3_000_000, reward.TaxCents);
         Assert.Equal(before + 27_000_000, reward.BalanceCents);
+        await live.FlushAsync();
         using WorldDbContext saved = new(f.Db.Path);
-        Assert.Equal(7, Assert.Single(saved.Set<SavedFreeSkillPoints>()).Points);
+        Assert.Equal(750, Assert.Single(saved.Set<SavedFreeSkillPoints>()).Points);
     }
 
     [Fact]

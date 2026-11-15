@@ -3,6 +3,9 @@
 [Corporation CEO elections](protocol/corporations.md#ceo-elections-november-15-2026)
 records eligibility, suspended authority, automatic succession and checkpointed activation deadlines.
 
+[Multiplied bounty SP](protocol/combat.md#multiplied-bounty-sp--november-15-2026) records combat progression based on the
+scaled gross bounty, configurable combat/mining base conversions and administration previews, with checkpoint coverage.
+
 [Corporation administration and inventory blockers](protocol/corporations.md#administration-and-inventory-blockers-november-15-2026)
 records member auditing, correct membership dates, moving headquarters and native deliveries access.
 

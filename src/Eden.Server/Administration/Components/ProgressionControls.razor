@@ -1,0 +1,155 @@
+@using Eden.Gameplay.Combat
+@using Eden.Gameplay.Mining
+
+<p class="muted">Set the base conversion, then scale it with the SP multiplier. Draft previews update before saving.
+    Save changes for restart to activate them.</p>
+<div class="grid progression-grid">
+    <section class="card" aria-labelledby="combat-progression-title">
+        <h3 id="combat-progression-title">NPC combat</h3>
+        <label for="combat-base-rate">Base SP rate (% of gross bounty)</label>
+        <div class="multiplier-input">
+            <InputNumber @key="CombatInputRevision" id="combat-base-rate" @bind-Value="Form.KillSkillPointPercent" @bind-Value:after="NotifyChanged"
+                         min="0" max="100" step="any" aria-describedby="combat-base-help" />
+            <button type="button" class="secondary" @onclick="ResetCombatBase">Reset to 0.25%</button>
+        </div>
+        <ValidationMessage For="() => Form.KillSkillPointPercent" />
+        <p id="combat-base-help" class="muted">0–100%. Uses the multiplied bounty before corporation tax or fleet sharing.
+            A base rate of 0% disables combat SP.</p>
+        <MultiplierControl Label="NPC kill skill points" @bind-Value="Form.KillSkillPointMultiplier"
+                           @bind-Value:after="NotifyChanged" Description="Scales the base SP rate. Credits stay silent."
+                           Reward="true" ShowExample="false" ShowPresets="true" />
+        <p>Bounty payout multiplier: <strong>@Number(Form.BountyMultiplier)×</strong></p>
+        <button type="button" class="secondary" @onclick="EditRewards">Edit bounty in Rewards</button>
+        <label for="combat-preview-value">Example base bounty (ISK per kill)</label>
+        <input id="combat-preview-value" type="number" min="0" step="0.01" @bind="CombatExampleIsk" @bind:event="oninput" />
+        <div class="progression-preview" aria-live="polite" aria-atomic="true">
+            @if (DraftCombat is { } combat)
+            {
+                <p class="metric">@Number(combat.SkillPoints) <small>SP per kill</small></p>
+                <p>@Number(combat.RewardValueIsk) ISK gross bounty · @Number(combat.BaseValueMultiplier)× combined multipliers</p>
+                <p class="muted">@Number(Form.KillSkillPointPercent)% base × @Number(Form.KillSkillPointMultiplier)× SP
+                    = @Number(Form.KillSkillPointPercent * Form.KillSkillPointMultiplier)% of gross bounty as SP.</p>
+            }
+            else
+            {
+                <p class="error">Enter supported rates and a nonnegative example bounty to preview combat SP.</p>
+            }
+            <p class="muted">Active now: @Points(Combat(ActiveSettings)) SP for this example.</p>
+        </div>
+    </section>
+    <section class="card" aria-labelledby="mining-progression-title">
+        <h3 id="mining-progression-title">Mining</h3>
+        <label for="mining-base-rate">Reference ISK per SP</label>
+        <div class="multiplier-input">
+            <InputNumber @key="MiningInputRevision" id="mining-base-rate" @bind-Value="Form.MiningIskPerSkillPoint" @bind-Value:after="NotifyChanged"
+                         min="0.01" max="1000000000" step="any" aria-describedby="mining-base-help" />
+            <button type="button" class="secondary" @onclick="ResetMiningBase">Reset to 400 ISK</button>
+        </div>
+        <ValidationMessage For="() => Form.MiningIskPerSkillPoint" />
+        <p id="mining-base-help" class="muted">0.01–1,000,000,000 ISK per SP. Lower values award more SP.
+            Uses harvested resource reference value; selling or reprocessing does not award additional SP.</p>
+        <MultiplierControl Label="Mining skill points" @bind-Value="Form.MiningSkillPointMultiplier"
+                           @bind-Value:after="NotifyChanged" Description="Scales SP from delivered ore, ice and gas. Credits stay silent."
+                           Reward="true" ShowExample="false" ShowPresets="true" />
+        <label for="mining-preview-family">Preview resource</label>
+        <select id="mining-preview-family" @bind="PreviewFamily">
+            <option value="@MiningFamily.Ore">Ore</option>
+            <option value="@MiningFamily.Ice">Ice</option>
+            <option value="@MiningFamily.Gas">Gas</option>
+        </select>
+        <label for="mining-preview-value">Example reference value before yield multiplier (ISK per collection)</label>
+        <input id="mining-preview-value" type="number" min="0" step="0.01" @bind="MiningExampleIsk" @bind:event="oninput" />
+        <div class="progression-preview" aria-live="polite" aria-atomic="true">
+            @if (DraftMining is { } mining)
+            {
+                <p class="metric">@Number(mining.SkillPoints) <small>SP per collection</small></p>
+                <p>@Number(mining.RewardValueIsk) ISK harvested reference value · @Number(mining.BaseValueMultiplier)× combined multipliers</p>
+                @if (Form.MiningSkillPointMultiplier > 0)
+                {
+                    <p class="muted">Effective conversion: @(EffectiveMiningConversion).</p>
+                }
+                <p class="muted">Yield multipliers: ore @Number(Form.OreYieldMultiplier)× · ice @Number(Form.IceYieldMultiplier)× ·
+                    gas @Number(Form.GasYieldMultiplier)×.</p>
+            }
+            else
+            {
+                <p class="error">Enter supported rates and a nonnegative example value to preview mining SP.</p>
+            }
+            <p class="muted">Active now: @Points(Mining(ActiveSettings)) SP for this example.</p>
+        </div>
+        <button type="button" class="secondary" @onclick="EditGathering">Edit yields in Gathering</button>
+        <p class="muted">Preview assumes the full yield fits in the hold and the deposit has enough resources. Only delivered
+            base and critical yield earns SP; residue earns none. Set the SP multiplier to 0× to disable mining SP.</p>
+    </section>
+</div>
+<p class="muted">Whole SP are rounded down for each kill or collection. Example amounts are calculator inputs and are not saved.</p>
+
+@code {
+    [Parameter, EditorRequired] public SettingsForm Form { get; set; } = default!;
+    [Parameter, EditorRequired] public WorldSettings ActiveSettings { get; set; } = default!;
+    [Parameter] public EventCallback Changed { get; set; }
+    [Parameter] public EventCallback EditRewards { get; set; }
+    [Parameter] public EventCallback EditGathering { get; set; }
+    [CascadingParameter] private EditContext? Context { get; set; }
+
+    private decimal CombatExampleIsk = 1_000_000;
+    private decimal MiningExampleIsk = 1_000_000;
+    private MiningFamily PreviewFamily = MiningFamily.Ore;
+    private int CombatInputRevision;
+    private int MiningInputRevision;
+
+    private static string Number(decimal value) =>
+        value.ToString("#,0.############################", System.Globalization.CultureInfo.InvariantCulture);
+    private static string Points(ProgressionPreview? value) => value is null ? "—" : Number(value.SkillPoints);
+    private ProgressionPreview? DraftCombat => Preview(() => ProgressionPreview.Combat(Form.Build(), CombatExampleIsk));
+    private ProgressionPreview? DraftMining => Preview(() => ProgressionPreview.Mining(Form.Build(), MiningExampleIsk, PreviewFamily));
+    private ProgressionPreview? Combat(WorldSettings settings) => Preview(() => ProgressionPreview.Combat(settings, CombatExampleIsk));
+    private ProgressionPreview? Mining(WorldSettings settings) => Preview(() => ProgressionPreview.Mining(settings, MiningExampleIsk, PreviewFamily));
+
+    private string EffectiveMiningConversion
+    {
+        get
+        {
+            try
+            {
+                return $"{Number(Form.MiningIskPerSkillPoint / Form.MiningSkillPointMultiplier)} "
+                    + "ISK of delivered reference value per SP";
+            }
+            catch (OverflowException)
+            {
+                return $"{Number(Form.MiningSkillPointMultiplier)} SP per "
+                    + $"{Number(Form.MiningIskPerSkillPoint)} ISK of delivered reference value";
+            }
+        }
+    }
+
+    private static ProgressionPreview? Preview(Func<ProgressionPreview> calculate)
+    {
+        try
+        {
+            return calculate();
+        }
+        catch (Exception error) when (error is InvalidDataException or OverflowException)
+        {
+            return null;
+        }
+    }
+
+    private Task NotifyChanged() => Changed.InvokeAsync();
+
+    private async Task ResetCombatBase()
+    {
+        Form.KillSkillPointPercent = NpcSkillPointRewards.DefaultPercent;
+        CombatInputRevision++;
+        Context?.NotifyFieldChanged(new(Form, nameof(Form.KillSkillPointPercent)));
+        await NotifyChanged();
+    }
+
+    private async Task ResetMiningBase()
+    {
+        Form.MiningIskPerSkillPoint = ActivitySkillPointRewards.IskPerSkillPoint;
+        MiningInputRevision++;
+        Context?.NotifyFieldChanged(new(Form, nameof(Form.MiningIskPerSkillPoint)));
+        await NotifyChanged();
+    }
+}

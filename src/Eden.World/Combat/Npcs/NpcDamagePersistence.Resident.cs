@@ -123,7 +123,11 @@ internal static partial class NpcDamagePersistence
             PilotInteractionHistoryStore.FactionLoss(world, catalog, pilot, npc, attributes, now);
             long originalCents = NpcBountyRules.BaseCents(npc.Role, attributes);
             long cents = WorldTuningRules.Reward(originalCents, world.Settings.Rewards.BountyMultiplier);
-            long skillPoints = NpcSkillPointRewards.FromBounty(originalCents, world.Settings.Progression.KillSkillPointMultiplier);
+            long skillPoints = NpcSkillPointRewards.FromBounty(
+                cents,
+                world.Settings.Progression.KillSkillPointMultiplier,
+                world.Settings.Progression.KillSkillPointPercent
+            );
             if (skillPoints > 0)
             {
                 PilotTrainingStore.CreditSilentFreePoints(world, pilot.Id, skillPoints);

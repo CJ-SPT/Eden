@@ -1,7 +1,9 @@
 using System.Collections.Immutable;
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Market;
+using Eden.Gameplay.Skills;
 
 namespace Eden.Gameplay.Configuration;
 
@@ -65,7 +67,9 @@ public sealed record NpcPopulationPolicy(
 public sealed record ProgressionPolicy(
     bool GrantStartingSkills = true,
     decimal KillSkillPointMultiplier = 1,
-    decimal MiningSkillPointMultiplier = 1
+    decimal MiningSkillPointMultiplier = 1,
+    decimal KillSkillPointPercent = NpcSkillPointRewards.DefaultPercent,
+    decimal MiningIskPerSkillPoint = ActivitySkillPointRewards.IskPerSkillPoint
 );
 
 public sealed record CapsuleerPopulationPolicy(

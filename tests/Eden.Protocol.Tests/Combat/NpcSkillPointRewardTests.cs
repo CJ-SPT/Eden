@@ -39,6 +39,21 @@ public sealed class NpcSkillPointRewardTests
     public void NegativeBountyIsRejected() => Assert.Throws<InvalidDataException>(() => NpcSkillPointRewards.FromBounty(-1));
 
     [Theory]
+    [InlineData(0, 0)]
+    [InlineData(0.25, 50000)]
+    [InlineData(0.1, 20000)]
+    [InlineData(1, 200000)]
+    [InlineData(100, 20000000)]
+    public void ConfiguredBasePercentageCombinesWithTheSkillPointMultiplier(double percent, long expected) =>
+        Assert.Equal(expected, NpcSkillPointRewards.FromBounty(100_000_000, 20, (decimal)percent));
+
+    [Theory]
+    [InlineData(-0.01)]
+    [InlineData(100.01)]
+    public void UnsupportedBasePercentageIsRejected(double percent) =>
+        Assert.Throws<InvalidDataException>(() => NpcSkillPointRewards.FromBounty(100_000_000, 20, (decimal)percent));
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public async Task KillAddsToTheSavedPoolWithoutSkillPointNotifications(bool resident)

@@ -51,6 +51,9 @@ inventory and ship attributes to compare its 10,000 m³ capacity.
 
 ## NPC bounty display, November 13, 2026
 
+The original-bounty SP behavior below is historical and is superseded by
+[multiplied bounty SP](combat.md#multiplied-bounty-sp--november-15-2026).
+
 The in-space Selected Item panel and Show Info for a visible NPC display the gross ISK bounty from the active world revision.
 The NPC scene snapshot and additions carry the same catalog base, role eligibility and cents rounding used at settlement.
 The signed login adapter makes the native bounty helper read that amount from the NPC's slim item. It accepts an explicit
@@ -145,6 +148,9 @@ FullyQualifiedName~Eden.Protocol.Tests.Administration.AdministrationTests|FullyQ
 and confirm the pending-restart status appears without refreshing.
 
 ## World tuning — November 9, 2026
+
+The original-bounty SP policy recorded here is superseded by
+[multiplied bounty SP and configurable base rates](combat.md#multiplied-bounty-sp--november-15-2026).
 
 The existing saved-world revision system now carries decimal player gathering, reward and industry multipliers. Historical
 format-version-1 documents omit these fields and receive neutral 1× defaults. Revision documents remain immutable; save, import,

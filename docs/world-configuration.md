@@ -51,15 +51,21 @@ saved world; they do not modify shared catalog definitions or autonomous NPC gat
   still limit extraction, and existing critical/residue rules remain. Ice requires a completed cycle; its control changes blocks
   per completed cycle rather than cycle duration. Ore and gas retain proportional partial-cycle collection.
 - Bounty ISK scales the gross amount before corporation tax. Selecting an NPC in space shows that gross amount.
-  Kill SP uses the original bounty independently. The default remains
-  0.25% of original bounty ISK, multiplied by the kill-SP setting, then rounded down to whole points. For example, a 3,000 ISK NPC
-  with a 2× kill-SP multiplier awards 15 SP. Bounty ISK set to zero can still award SP. These credits remain silent.
+  Kill SP uses that multiplied gross bounty before corporation tax or fleet sharing. The configurable base rate defaults to
+  0.25% of gross bounty ISK, multiplied by the kill-SP setting, then rounded down to whole points. For example, a 3,000 ISK NPC
+  with 10× bounty and 20× kill SP awards 1,500 SP. Bounty ISK set to zero also disables kill SP. These credits remain silent.
 - Mining SP uses the reference ISK value of units actually delivered to the hold: multiply that value by the mining-SP
-  setting, divide by 400 and round down once per collection. Ore, ice and gas yield multipliers therefore also scale SP
+  setting, divide by the configurable reference ISK per SP (default 400) and round down once per collection. Yield multipliers also scale SP
   when they increase delivered resources. One ice unit is a whole block: a single block can award SP based on its value,
   and 3 blocks award three blocks' value before rounding. Critical cargo counts; residue, full holds and empty interrupted
   ice cycles do not. Credits are silent and saved atomically with the harvest. The Progression control accepts 0–100×,
   defaults to 1× for existing worlds, and activates after **Save for restart** and a restart. Zero disables mining SP.
+  The Progression panel exposes both base conversions: `progression.killSkillPointPercent` accepts 0–100%, and
+  `progression.miningIskPerSkillPoint` accepts 0.01–1,000,000,000 ISK per SP. Lower mining costs grant more SP.
+  Omitted base fields retain 0.25% and 400 in existing revision documents. These rates are saved, exported and compared
+  with original, active and pending values, and activate after restart. They do not alter past rewards or training speed.
+  Live draft previews compare against active settings using editable example amounts, with ore/ice/gas selection,
+  combined multipliers, effective conversion and SP per kill or collection. Example amounts are not saved.
 - Mission ISK, LP and positive standing gains are calculated when an offer is created and saved with it. Existing offers and
   accepted missions keep their terms. Standing gain fractions cap at 100%; penalties remain unchanged.
 - Industry speed divides normal duration: 2× means half the time, retaining ordinary skill/blueprint bonuses and rounding.

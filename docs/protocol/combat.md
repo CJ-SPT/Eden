@@ -6,6 +6,65 @@ Targeting, health, weapons, NPC populations and behavior, losses, wrecks and rep
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Multiplied bounty SP — November 15, 2026
+
+NPC kill SP now uses the multiplied gross bounty in cents, before corporation tax or fleet sharing:
+`floor(multiplied bounty ISK × base SP percent × kill-SP multiplier / 100)`. Bounty multiplication and cents rounding
+happen once, before whole-SP rounding. At the default 0.25% base rate, 10× bounty and 20× kill SP, a 1,000,000 ISK
+base bounty pays 10,000,000 ISK gross and
+grants 500,000 SP. Zero bounty or zero kill-SP multipliers grant no points. Reduced bounty rates reduce points too.
+This supersedes the original-bounty SP policy in earlier world-configuration records.
+
+Credits remain silent and belong to the final-blow pilot. Existing destruction, wallet, tax, wreck and SP settlement stays
+atomic, and repeated fatal commands cannot replay the reward. Resident checkpoints retain the scaled SP balance.
+There is no retroactive adjustment to previous kills and no client package or save-schema change.
+
+`ProgressionPolicy` now persists `KillSkillPointPercent` (0–100%, default 0.25%) and `MiningIskPerSkillPoint`
+(0.01–1,000,000,000, default 400). Mining uses `floor(delivered reference ISK × mining-SP multiplier / reference ISK per SP)`.
+Omitted fields in existing format-version-1 documents receive the original defaults. Server validation, revision import,
+export and restore, the administration form and revision comparisons include both fields. Invalid rates cannot be staged.
+The existing resident checkpoint saves rewards and active configuration; no SQLite gameplay fallback is introduced.
+
+The Progression panel now groups combat and mining controls with base-rate resets, SP presets (Off, 1×, 10×, 20×, 100×),
+editable sample values, active-versus-draft SP readouts, effective conversions and combined multipliers. Mining previews
+select ore, ice or gas and describe hold/deposit limits. Links open the related bounty/yield controls without losing edits.
+Previews call typed Gameplay reward rules; calculator inputs are not persisted. Settings still activate on restart.
+
+The [UniWiki ratting reference](https://wiki.eveuniversity.org/Ratting#Bounties) distinguishes catalog bounties, payout
+modifiers and fleet sharing. SP conversion and these world multipliers are explicit Eden policy. The local EveJS
+261108.1 bounty/skills source search found no corresponding bounty-to-SP policy; no reference code was imported.
+No Blue, transport or Destiny behavior changes.
+
+**Automated validation:** Tool restore, solution restore and solution build passed (zero warnings/errors, 4.74-second build).
+The final affected filter passed **562 tests, zero failures/skips, in 3 minutes 14 seconds**; both Python policy suites
+passed (8 catalog and 9 formatting cases), as did format/width verification. That validation sequence took 223.17 seconds.
+The exact combined filter and results are saved under `artifacts/feature-tests/results/progression-rates-final/`.
+It covers WorldTuningTests, WorldConfigurationTests, NpcSkillPointRewardTests, MiningSkillPointRewardTests,
+CorporationWalletTests, FreeSkillPointTests, SkillPointRewardTests, FreeSkillPointServiceTests, PilotCombatTests,
+MissileCombatTests, CombatDroneTests, Hosting, WorldSettingsPageTests, AdministrationComponentTests, AdministrationTests
+and the exact on-grid fleet bounty-sharing case. The opt-in Firefox/Chromium browser test was excluded; no full .NET
+regression was requested or run. Server-side rendering and Blazor event dispatch are covered; visual browser layout is unverified.
+
+The initial exact resident checkpoint regression
+`FullyQualifiedName=Eden.Protocol.Tests.Persistence.WorldTuningTests.FatalShotsScaleIskAndMultipliedBountySpOnceAndSurviveReopen`
+passed four cases (8.89-second build, 8.05-second test invocation).
+After adding the configurable bases and controls, the exact interaction regression
+`FullyQualifiedName=Eden.Protocol.Tests.Administration.AdministrationTests.ProgressionBaseRatesAndPresetsUpdatePreviewsValidateAndSaveForRestart`
+passed (8.66-second build, 6.22-second test invocation). A focused follow-up passed 29 cases in 11.64 seconds with a
+1.15-second build, covering custom combat/mining rates, resident reopen, rejection, legacy defaults, form rendering and API export.
+The first wider run stopped at a stale assertion for the fixed 400 ISK description. Updating it to assert the new base
+controls and active readout passed the exact page case (6.49-second build, 7.47-second test invocation), before the final
+562-case run. Final review added a bounded display fallback for valid tiny multipliers whose inverse exceeds decimal range,
+and preserved fractional-rate precision. The final UI-only follow-up passed **14 cases** (5.09-second build, 6.34-second tests):
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Administration.WorldSettingsPageTests|FullyQualifiedName=Eden.Protocol.Tests.Administration.AdministrationTests.ProgressionBaseRatesAndPresetsUpdatePreviewsValidateAndSaveForRestart|FullyQualifiedName=Eden.Protocol.Tests.Administration.AdministrationTests.WorldSettingsPageRendersAllActivityTabsAndTheSharedRestartSaveBar
+```
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** After deployment, inspect the Progression panel at a narrow browser width.
+
 ## Resident NPC spawn-slot replacement
 
 On November 13, 2026, a server log showed SQLite rejecting a duplicate `WorldNpc(EncounterId, SpawnSlot)` during the

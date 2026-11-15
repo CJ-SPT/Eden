@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
 using System.Net;
 using Eden.Gameplay.Configuration;
+using Eden.Gameplay.Mining;
 using Eden.Server.Administration;
 using Eden.Server.Administration.Components;
 using Microsoft.AspNetCore.Components;
@@ -95,7 +96,12 @@ public sealed class WorldSettingsPageTests
             Resources = new(OreYieldMultiplier: 2, IceYieldMultiplier: 3, GasYieldMultiplier: 4),
             MiningHolds = new(1.5m, .5m, 2),
             Rewards = new(5, 6, 7, 8),
-            Progression = new(KillSkillPointMultiplier: 9, MiningSkillPointMultiplier: 2.5m),
+            Progression = new(
+                KillSkillPointMultiplier: 9,
+                MiningSkillPointMultiplier: 2.5m,
+                KillSkillPointPercent: 1.25m,
+                MiningIskPerSkillPoint: 125.5m
+            ),
             Industry = new(10, 11, 12, 13, 14),
             Structures = new(2, 3, 4),
         };
@@ -111,6 +117,8 @@ public sealed class WorldSettingsPageTests
         form.IceHoldMultiplier = 0;
         form.BountyMultiplier = -1;
         form.MiningSkillPointMultiplier = 101;
+        form.KillSkillPointPercent = 100.01m;
+        form.MiningIskPerSkillPoint = 0;
         form.InventionSpeed = 101;
         form.StructureAnchoringSpeed = 0;
         form.StructureOnliningSpeed = 101;
@@ -121,6 +129,8 @@ public sealed class WorldSettingsPageTests
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.IceHoldMultiplier)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.BountyMultiplier)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.MiningSkillPointMultiplier)));
+        Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.KillSkillPointPercent)));
+        Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.MiningIskPerSkillPoint)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.InventionSpeed)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.StructureAnchoringSpeed)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.StructureOnliningSpeed)));
@@ -129,6 +139,8 @@ public sealed class WorldSettingsPageTests
         form.IceHoldMultiplier = .1m;
         form.BountyMultiplier = 0;
         form.MiningSkillPointMultiplier = 0;
+        form.KillSkillPointPercent = 0;
+        form.MiningIskPerSkillPoint = 0.01m;
         form.InventionSpeed = 100;
         form.StructureAnchoringSpeed = .1m;
         form.StructureOnliningSpeed = 100;
@@ -178,6 +190,94 @@ public sealed class WorldSettingsPageTests
             Assert.Contains("Reset Ore mining yield to 1×", html);
             Assert.Contains(excessive ? "Enter a multiplier within the supported range" : "100 units becomes 200 units", html);
             Assert.Contains("Choose a supported mining multiplier.", html);
+        });
+    }
+
+    [Theory]
+    [InlineData(MiningFamily.Ore, 2000000, 200)]
+    [InlineData(MiningFamily.Ice, 4000000, 400)]
+    [InlineData(MiningFamily.Gas, 6000000, 600)]
+    public void ProgressionPreviewsApplyTheConfiguredBaseRatesAndResourceYield(MiningFamily family, long expectedSp, decimal expectedScale)
+    {
+        WorldSettings settings = new()
+        {
+            Resources = new(OreYieldMultiplier: 10, IceYieldMultiplier: 20, GasYieldMultiplier: 30),
+            Rewards = new(BountyMultiplier: 10),
+            Progression = new(
+                KillSkillPointMultiplier: 20,
+                MiningSkillPointMultiplier: 20,
+                KillSkillPointPercent: 1,
+                MiningIskPerSkillPoint: 100
+            ),
+        };
+        Assert.Equal(new ProgressionPreview(10_000_000, 2_000_000, 200), ProgressionPreview.Combat(settings, 1_000_000));
+        var mining = ProgressionPreview.Mining(settings, 1_000_000, family);
+        Assert.Equal(expectedSp, mining.SkillPoints);
+        Assert.Equal(expectedScale, mining.BaseValueMultiplier);
+        Assert.Throws<InvalidDataException>(() => ProgressionPreview.Combat(settings, -1));
+        Assert.Throws<InvalidDataException>(() => ProgressionPreview.Mining(settings, -1, family));
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public async Task ProgressionControlsRenderBaseUnitsActiveDraftReadoutsAndInvalidRateGuidance(bool invalid, bool tinyMultiplier)
+    {
+        using var services = new ServiceCollection().AddLogging().BuildServiceProvider();
+        await using HtmlRenderer renderer = new(services, services.GetRequiredService<ILoggerFactory>());
+        var form = SettingsForm.From(
+            new()
+            {
+                Rewards = new(BountyMultiplier: 10),
+                Resources = new(OreYieldMultiplier: 10),
+                Progression = new(KillSkillPointMultiplier: 20, MiningSkillPointMultiplier: 20),
+            }
+        );
+        if (invalid)
+        {
+            form.KillSkillPointPercent = decimal.MaxValue;
+            form.MiningIskPerSkillPoint = 0;
+        }
+        if (tinyMultiplier)
+        {
+            form.MiningSkillPointMultiplier = 0.0000000000000000000000000001m;
+            form.MiningIskPerSkillPoint = 1_000_000_000;
+        }
+        EditContext context = new(form);
+        await renderer.Dispatcher.InvokeAsync(async () =>
+        {
+            RenderFragment content = builder =>
+            {
+                builder.OpenComponent<ProgressionControls>(0);
+                builder.AddAttribute(1, nameof(ProgressionControls.Form), form);
+                builder.AddAttribute(2, nameof(ProgressionControls.ActiveSettings), new WorldSettings());
+                builder.CloseComponent();
+            };
+            var rendered = await renderer.RenderComponentAsync<CascadingValue<EditContext>>(
+                ParameterView.FromDictionary(
+                    new Dictionary<string, object?>
+                    {
+                        [nameof(CascadingValue<EditContext>.Value)] = context,
+                        [nameof(CascadingValue<EditContext>.ChildContent)] = content,
+                    }
+                )
+            );
+            string html = WebUtility.HtmlDecode(rendered.ToHtmlString());
+            Assert.Contains("Base SP rate (% of gross bounty)", html);
+            Assert.Contains("Reference ISK per SP", html);
+            Assert.Contains("Reset to 0.25%", html);
+            Assert.Contains("Reset to 400 ISK", html);
+            Assert.Contains("aria-live=\"polite\"", html);
+            Assert.Contains("Active now: 2,500 SP", html);
+            Assert.Contains("NPC kill skill points presets", html);
+            Assert.Contains("Mining skill points presets", html);
+            Assert.DoesNotContain("independently of bounty", html);
+            Assert.Contains(invalid ? "Enter supported rates" : "500,000", html);
+            if (tinyMultiplier)
+            {
+                Assert.Contains("0.0000000000000000000000000001 SP per 1,000,000,000 ISK", html);
+            }
         });
     }
 

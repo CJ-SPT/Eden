@@ -1,8 +1,10 @@
 using Eden.Gameplay.Agents;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Mining;
+using Eden.Gameplay.Skills;
 
 namespace Eden.Gameplay.Configuration;
 
@@ -44,6 +46,8 @@ public static class WorldTuningRules
         ValidateRate(settings.Rewards.MissionStandingMultiplier, true);
         ValidateRate(settings.Progression.KillSkillPointMultiplier, true);
         ValidateRate(settings.Progression.MiningSkillPointMultiplier, true);
+        NpcSkillPointRewards.ValidatePercent(settings.Progression.KillSkillPointPercent);
+        ActivitySkillPointRewards.ValidateIskPerSkillPoint(settings.Progression.MiningIskPerSkillPoint);
         ValidateRate(settings.Industry.ManufacturingSpeed);
         ValidateRate(settings.Industry.ResearchSpeed);
         ValidateRate(settings.Industry.CopyingSpeed);

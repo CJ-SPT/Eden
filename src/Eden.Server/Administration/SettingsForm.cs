@@ -1,11 +1,13 @@
 using System.ComponentModel.DataAnnotations;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Market;
+using Eden.Gameplay.Skills;
 
 namespace Eden.Server.Administration;
 
-internal sealed class SettingsForm
+public sealed class SettingsForm
 {
     public bool ServiceCosts { get; set; }
     public bool ProgressiveMarkets { get; set; }
@@ -105,6 +107,14 @@ internal sealed class SettingsForm
     [Display(Name = "Mining skill points")]
     public decimal MiningSkillPointMultiplier { get; set; } = 1;
 
+    [Range(typeof(decimal), "0", "100")]
+    [Display(Name = "NPC kill base SP rate")]
+    public decimal KillSkillPointPercent { get; set; } = NpcSkillPointRewards.DefaultPercent;
+
+    [Range(typeof(decimal), "0.01", "1000000000")]
+    [Display(Name = "Mining reference ISK per SP")]
+    public decimal MiningIskPerSkillPoint { get; set; } = ActivitySkillPointRewards.IskPerSkillPoint;
+
     [Range(typeof(decimal), "0.1", "100")]
     [Display(Name = "Manufacturing speed")]
     public decimal ManufacturingSpeed { get; set; } = 1;
@@ -165,6 +175,8 @@ internal sealed class SettingsForm
             MissionStandingMultiplier = settings.Rewards.MissionStandingMultiplier,
             KillSkillPointMultiplier = settings.Progression.KillSkillPointMultiplier,
             MiningSkillPointMultiplier = settings.Progression.MiningSkillPointMultiplier,
+            KillSkillPointPercent = settings.Progression.KillSkillPointPercent,
+            MiningIskPerSkillPoint = settings.Progression.MiningIskPerSkillPoint,
             ManufacturingSpeed = settings.Industry.ManufacturingSpeed,
             ResearchSpeed = settings.Industry.ResearchSpeed,
             CopyingSpeed = settings.Industry.CopyingSpeed,
@@ -229,7 +241,13 @@ internal sealed class SettingsForm
             ),
             Structures = new(StructureAnchoringSpeed, StructureOnliningSpeed, StructureUnanchoringSpeed),
             NpcPopulation = new(Pirates, Guards, Convoys, Mining, MajorThreatAnomalies),
-            Progression = new(StartingSkills, KillSkillPointMultiplier, MiningSkillPointMultiplier),
+            Progression = new(
+                StartingSkills,
+                KillSkillPointMultiplier,
+                MiningSkillPointMultiplier,
+                KillSkillPointPercent,
+                MiningIskPerSkillPoint
+            ),
             Capsuleers = new(GlobalProvisioning, SimulatedPilots, SimulatedMiners, TrafficMultiplier, GateVisitors),
             Simulation = new(CheckpointSeconds, MarketPollMilliseconds, ResourceCheckSeconds),
             Navigation = new(AutopilotGateLandingMeters),

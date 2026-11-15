@@ -23,6 +23,8 @@ internal static class ConfigurationDisplay
         ["rewards.missionStandingMultiplier"] = "Positive mission standings",
         ["progression.killSkillPointMultiplier"] = "NPC kill skill points",
         ["progression.miningSkillPointMultiplier"] = "Mining skill points",
+        ["progression.killSkillPointPercent"] = "NPC kill base SP rate (%)",
+        ["progression.miningIskPerSkillPoint"] = "Mining reference ISK per SP",
         ["industry.manufacturingSpeed"] = "Manufacturing speed",
         ["industry.researchSpeed"] = "Research speed",
         ["industry.copyingSpeed"] = "Copying speed",

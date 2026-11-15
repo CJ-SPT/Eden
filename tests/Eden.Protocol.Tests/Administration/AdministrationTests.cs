@@ -35,7 +35,10 @@ public sealed partial class AdministrationTests
         Assert.Contains("aria-pressed=\"true\"", html);
         Assert.Contains("Reset Ore mining yield to 1×", html);
         Assert.Contains("Reset Mining skill points to 1\u00d7", html);
-        Assert.Contains("1 SP per 400 ISK of collected ore, ice or gas reference value", html);
+        Assert.Contains("Reference ISK per SP", html);
+        Assert.Contains("Base SP rate (% of gross bounty)", html);
+        Assert.Contains("Reset to 400 ISK", html);
+        Assert.Contains("Active now: 2,500 SP", html);
         Assert.Contains("Training speed and skill requirements are unchanged", html);
     }
 
@@ -79,7 +82,12 @@ public sealed partial class AdministrationTests
         await using var fixture = await Fixture.Start();
         await fixture.SignIn();
         var state = (await fixture.Client.GetFromJsonAsync<ConfigurationState>("/api/admin/configuration"))!;
-        var policy = state.Active.Draft.Settings.Progression with { MiningSkillPointMultiplier = 2.5m };
+        var policy = state.Active.Draft.Settings.Progression with
+        {
+            MiningSkillPointMultiplier = 2.5m,
+            KillSkillPointPercent = 1.25m,
+            MiningIskPerSkillPoint = 125.5m,
+        };
         var draft = state.Active.Draft with { Settings = state.Active.Draft.Settings with { Progression = policy } };
         using var saved = await fixture.Client.PostAsJsonAsync("/api/admin/revisions", new AdminSaveRequest(state.Generation, draft));
         Assert.Equal(HttpStatusCode.OK, saved.StatusCode);
@@ -90,6 +98,8 @@ public sealed partial class AdministrationTests
         Assert.Equal(policy, (await export.Content.ReadFromJsonAsync<WorldConfigurationDraft>())!.Settings.Progression);
         var differences = await fixture.Client.GetFromJsonAsync<RevisionDifference[]>("/api/admin/compare?left=1&right=2");
         Assert.Contains(differences!, c => c.Field == "Mining skill points" && c.After == "2.5\u00d7");
+        Assert.Contains(differences!, c => c.Field == "NPC kill base SP rate (%)" && c.After == "1.25");
+        Assert.Contains(differences!, c => c.Field == "Mining reference ISK per SP" && c.After == "125.5");
     }
 
     private const string Password = "local administrator password";

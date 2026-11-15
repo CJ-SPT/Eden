@@ -363,7 +363,8 @@ internal sealed partial class PilotMiningStore
             long points = ActivitySkillPointRewards.FromValue(
                 value,
                 checked(extracted + bonus),
-                world.Settings.Progression.MiningSkillPointMultiplier
+                world.Settings.Progression.MiningSkillPointMultiplier,
+                world.Settings.Progression.MiningIskPerSkillPoint
             );
             if (points > 0)
             {

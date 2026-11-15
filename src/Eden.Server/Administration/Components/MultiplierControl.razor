@@ -7,14 +7,24 @@
                      min="@(Reward ? 0 : 0.1m)" max="100" step="any" aria-describedby="@(Id + "-help")" />
         <button type="button" class="secondary" @onclick="Reset" aria-label="@($"Reset {Label} to 1×")">Reset to 1×</button>
     </div>
+    @if (ShowPresets)
+    {
+        <div class="toolbar multiplier-presets" role="group" aria-label="@($"{Label} presets")">
+            @foreach (decimal preset in new decimal[] { 0, 1, 10, 20, 100 })
+            {
+                <button type="button" class="secondary" aria-pressed="@(Value == preset ? "true" : "false")"
+                        @onclick="() => SetValue(preset)">@(preset == 0 ? "Off" : $"{preset}×")</button>
+            }
+        </div>
+    }
     <ValidationMessage For="ValueExpression" />
     <p id="@(Id + "-help")" class="muted">
         @Description Range: @(Reward ? "0" : "0.1")–100×. 1× keeps current Eden behavior.<br />
-        @if (Supported)
+        @if (ShowExample && Supported)
         {
             <span>Example: @ExampleAmount.ToString("0.##") @ExampleUnit becomes @ExampleResult.ToString("0.##") @ExampleUnit.</span>
         }
-        else
+        else if (!Supported)
         {
             <span>Enter a multiplier within the supported range to preview its effect.</span>
         }
@@ -32,6 +42,8 @@
     [Parameter] public bool Efficiency { get; set; }
     [Parameter] public decimal ExampleAmount { get; set; } = 100;
     [Parameter] public string ExampleUnit { get; set; } = "units";
+    [Parameter] public bool ShowExample { get; set; } = true;
+    [Parameter] public bool ShowPresets { get; set; }
     [CascadingParameter] private EditContext? Context { get; set; }
 
     private readonly string Id = "multiplier-" + Guid.NewGuid().ToString("N");
@@ -41,9 +53,11 @@
         : Speed ? Value > 0 ? ExampleAmount / Value : 0
         : ExampleAmount * Value;
 
-    private async Task Reset()
+    private Task Reset() => SetValue(1);
+
+    private async Task SetValue(decimal value)
     {
-        await ValueChanged.InvokeAsync(1);
+        await ValueChanged.InvokeAsync(value);
         InputRevision++;
         Context?.NotifyFieldChanged(FieldIdentifier.Create(ValueExpression));
     }
