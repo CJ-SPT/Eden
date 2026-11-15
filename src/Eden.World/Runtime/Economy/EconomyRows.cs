@@ -776,6 +776,8 @@ internal sealed partial class ResidentEconomy
 }
 
 internal sealed record EconomyIndustryJob(
+    long? OutputLocationId,
+    int OutputFlagId,
     long? SuspendedAt,
     IndustryActivity Activity,
     int LicensedRuns,
@@ -1566,6 +1568,8 @@ internal sealed partial class ResidentEconomy
                 row => new(row.Id),
                 row =>
                     new(
+                        row.OutputLocationId,
+                        row.OutputFlagId,
                         row.SuspendedAt,
                         row.Activity,
                         row.LicensedRuns,
@@ -1594,6 +1598,8 @@ internal sealed partial class ResidentEconomy
                     ),
                 state => new IndustryJob
                 {
+                    OutputLocationId = state.OutputLocationId,
+                    OutputFlagId = state.OutputFlagId,
                     SuspendedAt = state.SuspendedAt,
                     Activity = state.Activity,
                     LicensedRuns = state.LicensedRuns,
@@ -1623,9 +1629,11 @@ internal sealed partial class ResidentEconomy
                 ProjectIndustryJob,
                 "SuspendedAt,Activity,LicensedRuns,BlueprintCopy,MaterialEfficiency,TimeEfficiency,OutputRuns,Probability,"
                     + "SuccessfulRuns,OptionalTypeId,Id,PilotId,BlueprintId,BlueprintTypeId,StationId,ProductTypeId,Runs,OutputQuantity,"
-                    + "StartTime,EndTime,DurationSeconds,Status,CompletedAt,MaterialsJson,CostCents",
+                    + "StartTime,EndTime,DurationSeconds,Status,CompletedAt,MaterialsJson,CostCents,OutputLocationId,OutputFlagId",
                 reader =>
                     new(
+                        reader.IsDBNull(26) ? null : reader.GetInt64(26),
+                        reader.GetInt32(27),
                         reader.IsDBNull(1) ? null : reader.GetInt64(1),
                         (IndustryActivity)reader.GetInt32(2),
                         reader.GetInt32(3),

@@ -85,6 +85,15 @@ Both Python policy suites passed (**8 catalog + 9 formatting tests**) in **1.50 
 passed for **2,261 files** in **31.64 seconds**, along with the 140-character width policy and `git diff --check`.
 The build-through-verification sequence took **123.61 seconds**. No full .NET regression suite was requested or run.
 
+Integration with the later container-workflow merge on `main` retained both `containerAccess` and the explicit
+target-hull parameter in the resident fitting helper. The final integration filter below passed **46 tests**,
+zero failed/skipped, with solution/tool restore, a clean solution build, both Python policy suites and formatting
+verification (**2,267 files**) passing. The integration sequence took **76.19 seconds**.
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Fittings.MultifitTests|FullyQualifiedName~Eden.Protocol.Tests.Fittings.ApplyFittingTests|FullyQualifiedName~Eden.Protocol.Tests.Inventory.CargoContainerWorkflowTests|FullyQualifiedName~Eden.Protocol.Tests.Industry.IndustryContainerTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.ShipTreeSkillServiceTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.PilotFittingTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ModuleFittingTests
+```
+
 **Live acceptance.** Not performed; agent client testing is disabled. The supplied screenshot is evidence
 of the original failure. Native rendering, input and gameplay feel remain unverified.
 

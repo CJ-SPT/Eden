@@ -7,6 +7,81 @@ Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP
 [Planetary industry](planetary.md) now covers surface colonies, extraction, all 68 processing schematics,
 command launches and NPC customs import/export. Earlier milestone scope statements below remain historical.
 
+## Container industry workflows, November 15, 2026
+
+Personal assembled containers in the current station or structure Item Hangar now appear in
+`facilityManager.GetFacilityLocations`. Blueprint owner searches and individual blueprint reads resolve
+container ancestry to the facility while retaining the container ID and type. Manufacturing, science
+and reaction installation accept container blueprints and selected container input/output locations.
+Ship-held, nested, remote and foreign containers remain unavailable as industry locations.
+
+Industry locations use the parent Item Hangar flag, separately from the physical contents' None,
+Unlocked or Locked flags. This matters to the native `industryCommon.MatchLocation` selection and
+`ItemLocationFlag`/`ItemOutputFlag` helpers. Material monitoring reads only the selected inventory's
+unlocked stacks and clears its subscription when the container or password authorization becomes
+unavailable. Blueprint, input and output access are checked independently at installation; locked
+blueprints and locked material stacks cannot be consumed. Failed quotes, missing materials and invalid
+output choices roll back all mutations. Installed blueprints cannot be withdrawn through container moves.
+
+World version **168** adds the output location and physical output flag to industry jobs, including
+resident immutable capture, checkpoint projection and reload. Existing jobs default to Item Hangar.
+Delivery checks the container's current owner, facility, assembly and remaining capacity, and only
+completes the job after output is committed. Research without new output requires no additional space.
+A moved or full destination leaves the ready job unchanged for a later retry; duplicate delivery adds nothing.
+Personal container ownership and native UI rendering remain subject to the acceptance limits below.
+
+Inert inspection used build **3662168** archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, specifically
+`industrySvc.LoadLocations`, `industryCommon.MatchLocation`, `ItemLocationFlag` and `ItemOutputFlag`.
+The local EveJS package **261108.1**, targeting an older client, was compared for parent location flags
+and locked-content exclusion. Its `industryRuntimeState.js` snapshot SHA-256 is
+`BF6AB290BD622ED029FD8ED6E2214B4604FF874F6BECD585842FFE4EAC01D63C`; no Git revision metadata
+was available and no implementation was copied. The existing Blue model codec is reused.
+Gameplay references: [EVE University manufacturing](https://wiki.eveuniversity.org/Manufacturing),
+[containers](https://wiki.eveuniversity.org/Containers), and
+[copying from industry hangars](https://wiki.eveuniversity.org/Copying_from_Industry_Hangars).
+
+**Automated validation.** The final affected run passed **263/263 cases**, with no skips, in **134.33 seconds**
+including runner startup. All **12 new container regression cases** passed. Tool and solution restore passed;
+the final solution build passed in **5.06 seconds** with zero warnings/errors. The Python catalog suite passed
+8 cases in 1.482 seconds and the formatting-policy suite passed 9 cases in 0.019 seconds. Formatting verification
+checked 2,261 files and the 140-character limit in **51.08 seconds**. Documentation links/anchors, UTF-8,
+final newlines, whitespace and `git diff --check` passed.
+
+New resident tests exercise native location and
+blueprint replies, monitor notifications, manufacturing and copying, password/session changes,
+locked materials and blueprints, atomic rejection, exact delivery capacity, installed-blueprint withdrawal,
+version-167 migration and delivery after reopening a checkpoint. A measured install and monitor cycle
+asserts no saved-world SQL commands. Initial exact filters selected
+`IndustryContainerTests.IndustryDiscoversContainerBlueprintsMonitorsInputsAndDeliversToSavedContainerAfterRestart`
+and `CargoContainerAssemblyTests.FittingFromAContainerSplitsTheStackAndRefreshesShipAttributes`
+with the `FullyQualifiedName=Eden.Protocol.Tests.` prefix. Initial development failures exposed an overly
+broad SQL assertion counting catalog reads and missing fitting-slot metadata in the test fixture; those
+fixtures were corrected. The initial expanded run was deliberately stopped after **225 passes / one failure**
+(226 completed cases; 2 minutes 9 seconds of completed-test time) when the version-26 migration recreated an
+industry table without the new columns before market-progression reconciliation read it. The container schema
+upgrade now precedes those historical reads. The exact
+`FullyQualifiedName=Eden.Protocol.Tests.Industry.IndustryTests.SchemaTwentySixMigrationRetainsEveryItemAndCreatesNoJobsOrGrants`
+regression passed after correction (6.63 seconds including startup), and passes in the final run.
+The full .NET suite was not requested or run.
+
+The final focused filter was:
+
+```text
+FullyQualifiedName~IndustryContainerTests|FullyQualifiedName~CargoContainerAssemblyTests|FullyQualifiedName~Eden.Protocol.Tests.Industry.IndustryTests|FullyQualifiedName~IndustryFacilityLookupTests|FullyQualifiedName~ScienceJobTests|FullyQualifiedName~ReactionJobTests|FullyQualifiedName~BulkIndustryDeliveryTests|FullyQualifiedName~ProductionInventoryTests|FullyQualifiedName~ManufacturingRulesTests|FullyQualifiedName~ScienceRulesTests|FullyQualifiedName~InventoryStackMergeTests|FullyQualifiedName~ModuleFittingTests|FullyQualifiedName~PilotFittingTests|FullyQualifiedName~FittingConstraintTests|FullyQualifiedName~InventoryOwnershipTests|FullyQualifiedName~ShipStorageTests|FullyQualifiedName~TypedInventoryTests|FullyQualifiedName~TypedServiceModelsTests|FullyQualifiedName~Hosting.ServerServicesTests|FullyQualifiedName~Hosting.GameplayDependenciesTests|FullyQualifiedName~Hosting.DataModelOwnershipTests
+```
+
+Integration with main `c1205a1a` preserved both protocol-index records. The affected feature build passed
+with zero warnings/errors in 11.30 seconds, and **57/57 integration cases** passed in 25.89 seconds including
+runner startup. The filter was
+`FullyQualifiedName~CargoContainerAssemblyTests|FullyQualifiedName~IndustryContainerTests|FullyQualifiedName~ChatMotdTests|FullyQualifiedName~Hosting.ServerServicesTests`.
+The merged index links/anchors, text hygiene and `git diff --check` passed. The full .NET suite was not rerun.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Select a container blueprint in Industry, choose container inputs and
+outputs, start a job and verify native selections and notifications after reconnecting.
+
 ## Job facility batch lookups, November 15, 2026
 
 The supplied Industry job-window screenshot reported unsupported `facilityManager.GetFacilitiesByID`

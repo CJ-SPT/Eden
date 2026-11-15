@@ -320,21 +320,36 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         if (
             inventory.CategoryId is not ((int)InventoryCategory.Blueprint or (int)InventoryCategory.Relic)
                 && !ReactionCatalog.Recipes(catalog).ContainsKey(item.TypeId)
-            || item.FlagId != (int)InventoryFlag.Hangar
-            || item.LocationId <= 0
+            || BlueprintStation(world, catalog, item) is null
         )
         {
             throw new InvalidDataException("Use an owned blueprint or ancient relic in a station Item Hangar.");
         }
-        var station = Station(world, catalog, item.LocationId, null);
+        var station = Station(world, catalog, BlueprintStation(world, catalog, item)!.Value, null);
         var facility = ReadFacility(catalog, station);
         long? job = world
             .Filter<IndustryJob>(j => j.BlueprintId == item.Id && j.Status == IndustryJobStatus.Installed)
             .Select(j => (long?)j.Id)
             .SingleOrDefault();
         return inventory.CategoryId == (int)InventoryCategory.Relic
-            ? new(inventory, facility, job, RunsRemaining: item.Quantity)
-            : new(inventory, facility, job, item.MaterialEfficiency, item.TimeEfficiency, item.BlueprintRuns);
+            ? new(
+                inventory,
+                facility,
+                job,
+                RunsRemaining: item.Quantity,
+                LocationTypeId: world.Set<OwnedItem>().Find(item.LocationId)?.TypeId,
+                LocationFlagId: (int)InventoryFlag.Hangar
+            )
+            : new(
+                inventory,
+                facility,
+                job,
+                item.MaterialEfficiency,
+                item.TimeEfficiency,
+                item.BlueprintRuns,
+                world.Set<OwnedItem>().Find(item.LocationId)?.TypeId,
+                (int)InventoryFlag.Hangar
+            );
     }
 
     public IReadOnlyList<OwnedBlueprint> Blueprints(long pilotId, long? stationId = null)
@@ -350,16 +365,18 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
                     .Concat(ReactionCatalog.Recipes(catalog).Keys)
                     .ToHashSet();
                 return world
-                    .Filter<OwnedItem>(i =>
-                        i.OwnerId == pilotId && i.FlagId == (int)InventoryFlag.Hangar && (!stationId.HasValue || i.LocationId == stationId)
-                    )
+                    .Filter<OwnedItem>(i => i.OwnerId == pilotId)
                     .OrderBy(i => i.Id)
                     .AsEnumerable()
                     .Where(i =>
                         types.Contains(i.TypeId)
                         && (
-                            catalog.Definitions.FindStation(i.LocationId) is not null
-                            || world.Structure(i.LocationId) is { State: not StructureState.Destroyed }
+                            BlueprintStation(world, catalog, i) is long location
+                            && (!stationId.HasValue || location == stationId)
+                            && (
+                                catalog.Definitions.FindStation(location) is not null
+                                || world.Structure(location) is { State: not StructureState.Destroyed }
+                            )
                         )
                     )
                     .Select(i => ReadBlueprint(world, catalog, i))
@@ -383,7 +400,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         );
     }
 
-    public IReadOnlyDictionary<int, long> Materials(long pilotId, long stationId)
+    public IReadOnlyDictionary<int, long> Materials(long pilotId, long stationId, IndustryStorage? input = null)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
         return WorldActionScope.Inspect(
@@ -391,11 +408,11 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             world =>
             {
                 _ = CurrentStation(world, catalog, pilotId, stationId, null);
+                var storage = Storage(world, catalog, pilotId, stationId, input);
                 return world
-                    .Filter<OwnedItem>(i =>
-                        i.OwnerId == pilotId && i.LocationId == stationId && i.FlagId == (int)InventoryFlag.Hangar && !i.Singleton
-                    )
+                    .Filter<OwnedItem>(i => i.OwnerId == pilotId && i.LocationId == storage.Id && !i.Singleton)
                     .AsEnumerable()
+                    .Where(i => InStorage(i, storage))
                     .GroupBy(i => i.TypeId)
                     .ToDictionary(g => g.Key, g => g.Sum(i => (long)i.Quantity));
             }
@@ -510,7 +527,10 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             job.Probability,
             job.Status == IndustryJobStatus.Delivered ? job.SuccessfulRuns ?? job.Runs : null,
             job.OptionalTypeId,
-            job.SuspendedAt
+            job.SuspendedAt,
+            job.OutputLocationId,
+            job.OutputFlagId,
+            world.Set<OwnedItem>().Find(job.BlueprintId)?.LocationId
         );
 
     public IReadOnlyList<IndustryJobDetails> Jobs(long pilotId, bool includeCompleted)
@@ -594,6 +614,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         var item =
             world.Filter<OwnedItem>(i => i.Id == request.BlueprintId && i.OwnerId == pilotId).SingleOrDefault()
             ?? throw new InvalidDataException("The blueprint is unavailable or belongs to another pilot.");
+        CheckBlueprintContainer(world, catalog, item, request);
         var blueprint = ReadBlueprint(world, catalog, item);
         if (
             blueprint.JobId.HasValue
@@ -647,7 +668,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         long duration = calculation.DurationSeconds;
         var materials = calculation.Materials;
         List<InventoryChange> changes = [];
-        ConsumeMaterials(world, catalog, pilotId, request.FacilityId, materials, changes);
+        ConsumeMaterials(world, catalog, pilotId, Storage(world, catalog, pilotId, request.FacilityId, request.Input), materials, changes);
         item = ReserveBlueprint(world, catalog, item, changes);
         long now = Now;
         var job = world
@@ -671,6 +692,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
                 }
             )
             .Entity;
+        SetJobOutput(world, catalog, job, request);
         double? security = catalog.Definitions.Find(CatalogData.Client.Systems, (long)station.SolarSystemId)?.SecurityStatus;
         if (EconomicStore.Enabled(world) && security is null)
         {
@@ -746,6 +768,10 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             throw new InvalidDataException("This industry job cannot be completed yet.");
         }
         List<InventoryChange> changes = [];
+        if (!cancel)
+        {
+            CheckOutputCapacity(world, catalog, job);
+        }
         if (!cancel && job.Activity is not (IndustryActivity.Manufacturing or IndustryActivity.Reaction))
         {
             DeliverScience(world, catalog, job, changes);
@@ -757,8 +783,8 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
                     world,
                     catalog,
                     pilotId,
-                    job.StationId,
-                    (int)InventoryFlag.Hangar,
+                    job.OutputLocationId ?? job.StationId,
+                    job.OutputFlagId,
                     job.ProductTypeId,
                     job.OutputQuantity
                 )

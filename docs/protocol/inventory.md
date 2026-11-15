@@ -8,6 +8,8 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Container stacking and fitting, November 15, 2026](#container-stacking-and-fitting-november-15-2026)
+
 - [Container item context menus, November 15, 2026](#container-item-context-menus-november-15-2026)
 - [Resident cargo container access, November 15, 2026](#resident-cargo-container-access-november-15-2026)
 - [Cargo container assembly and personal asset worth](#cargo-container-assembly-and-personal-asset-worth)
@@ -31,6 +33,31 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Venture ownership, boarding and mining holds](#venture-ownership-boarding-and-mining-holds)
 - [Native recovery corvettes, November 2, 2026](#native-recovery-corvettes-november-2-2026)
 - [Inventory refresh during capsule adoption, November 2, 2026](#inventory-refresh-during-capsule-adoption-november-2-2026)
+
+## Container stacking and fitting, November 15, 2026
+
+Cargo-container bindings now own native `StackAll` and same-container `MultiMerge` calls. Both operations
+use resident transactions and the existing stack rules, preserve metadata and quantities, reject locked
+stacks, and publish committed item changes. Stack All skips locked and singleton rows. Invalid later
+merge operations roll back earlier changes, and opening-password checks use the connection's current
+container authorization.
+
+Fitting from a personal container now routes into the authoritative fitting operation in the same
+resident transaction. It retains skill, slot, resource, docked-service, ownership and unlocked-content
+checks, splits module stacks as required, and queues both inventory and ship-dogma updates. Ordinary
+containers receive items at flag None; audit-log containers use their configured Locked/Unlocked flag,
+matching build 3662168 `industryCommon.ItemOutputFlag`. The existing invCache `StackAll` and `MultiMerge`
+call shapes were checked in the inert pinned archive identified in the linked industry record.
+See [EVE University containers](https://wiki.eveuniversity.org/Containers) and
+[assembling and repackaging](https://wiki.eveuniversity.org/Assembling_and_Repackaging).
+
+**Automated validation.** See the [shared container workflow validation](industry.md#container-industry-workflows-november-15-2026).
+Regressions cover Stack All, partial MultiMerge, unchanged locked stacks, merge rollback, password checks,
+checkpoint reopen, module-stack splitting, occupied-slot rejection and dogma notifications.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Stack unlocked container contents and drag a module onto the docked ship's fitting window.
 
 ## Container item context menus, November 15, 2026
 

@@ -11,7 +11,7 @@ using Eden.World.Storage;
 namespace Eden.World.Inventory;
 
 [Injectable]
-internal sealed partial class CargoContainerStore(WorldDatabase database) : ICargoContainers
+internal sealed partial class CargoContainerStore(WorldDatabase database, TimeProvider clock) : ICargoContainers
 {
     private LiveWorld Live => LiveWorld.Find(database.Path) ?? throw new InvalidOperationException("Containers require a resident world.");
 

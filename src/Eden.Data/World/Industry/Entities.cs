@@ -31,6 +31,8 @@ public sealed class IndustryJob
     public long BlueprintId { get; set; }
     public int BlueprintTypeId { get; set; }
     public long StationId { get; set; }
+    public long? OutputLocationId { get; set; }
+    public int OutputFlagId { get; set; } = (int)InventoryFlag.Hangar;
     public int ProductTypeId { get; set; }
     public int Runs { get; set; }
     public int OutputQuantity { get; set; }

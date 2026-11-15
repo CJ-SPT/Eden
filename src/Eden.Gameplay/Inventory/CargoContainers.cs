@@ -40,6 +40,13 @@ public interface ICargoContainers
     CargoContainerConfiguration Configuration(long pilotId, long itemId, CargoContainerAccess access);
     void Configure(long pilotId, long itemId, CargoContainerConfiguration configuration, CargoContainerAccess access);
     IReadOnlyList<InventoryChange> Move(long pilotId, long destination, InventoryMoveRequest request, CargoContainerAccess access);
+    IReadOnlyList<InventoryChange> StackAll(long pilotId, long itemId, int? flagId, CargoContainerAccess access);
+    IReadOnlyList<InventoryChange> Merge(
+        long pilotId,
+        long itemId,
+        IReadOnlyList<InventoryStackMerge> operations,
+        CargoContainerAccess access
+    );
     IReadOnlyList<InventoryChange> Lock(long pilotId, long itemId, IReadOnlyList<long> ids, bool locked, CargoContainerAccess access);
 }
 
