@@ -301,8 +301,16 @@ internal sealed partial class LiveCombatRuntime
                     )
                     .SingleOrDefault();
                 return run is not null
-                    && Eden.Gameplay.Exploration.AbyssalEnvironmentRules.Fields(run.Room, run.Seed, oldPosition.Position)
-                        != Eden.Gameplay.Exploration.AbyssalEnvironmentRules.Fields(run.Room, run.Seed, position);
+                    && Eden.Gameplay.Exploration.AbyssalEnvironmentRules.Fields(
+                        Eden.Gameplay.Exploration.AbyssalContent.RoomAt(oldPosition.Position),
+                        run.Seed,
+                        oldPosition.Position
+                    )
+                        != Eden.Gameplay.Exploration.AbyssalEnvironmentRules.Fields(
+                            Eden.Gameplay.Exploration.AbyssalContent.RoomAt(position),
+                            run.Seed,
+                            position
+                        );
             });
         }
         if (_positions.TryGetValue(id, out var previous) && previous.Position != position)
@@ -333,8 +341,16 @@ internal sealed partial class LiveCombatRuntime
         if (
             npc.AnchorKind == NpcAnchorKind.Abyssal
             && owner.Economy.Peek<Eden.Data.World.Exploration.SavedAbyssalRun>(npc.EncounterId) is { } run
-            && Eden.Gameplay.Exploration.AbyssalEnvironmentRules.Fields(run.Room, run.Seed, previous.Position)
-                != Eden.Gameplay.Exploration.AbyssalEnvironmentRules.Fields(run.Room, run.Seed, npc.Position)
+            && Eden.Gameplay.Exploration.AbyssalEnvironmentRules.Fields(
+                Eden.Gameplay.Exploration.AbyssalContent.RoomAt(previous.Position),
+                run.Seed,
+                previous.Position
+            )
+                != Eden.Gameplay.Exploration.AbyssalEnvironmentRules.Fields(
+                    Eden.Gameplay.Exploration.AbyssalContent.RoomAt(npc.Position),
+                    run.Seed,
+                    npc.Position
+                )
         )
         {
             npc = RefreshAbyssalNpc(npc, run);

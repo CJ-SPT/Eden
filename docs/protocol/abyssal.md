@@ -150,3 +150,55 @@ Not performed; agent client testing is disabled.
 
 - Inspect room backdrop, cloud/boundary rendering and conduit transitions in the native client.
 - Check displayed module attributes when crossing clouds and destroying a tracking pylon.
+
+## Milestone 3: tiers, supply and cooperative recovery — November 15, 2026
+
+All 35 pinned filaments (tiers 0–6, five weathers) now admit ships through client type
+lists 57, 92 and 233. These include T2/faction cruisers and permitted advanced frigates
+and destroyers, and exclude strategic cruisers. Original `abyss/game_mode.pyj` confirms
+mode IDs 1/2/3, costs and capacities 1/3/2, and deferred entry for cooperative modes.
+Cooperative deployment consumes the matching stack and creates trace 48964; its first
+activation starts the shared twenty-minute deadline. Unused traces expire after thirty
+minutes without destroying ships or refunding consumed filaments. The fleet roster at
+deployment supplies saved admission rights, which survive restart. Capacity is enforced
+under the resident owner, and entry closes when the first pilot advances beyond room one.
+
+Each participant stores entry state and current room. Conduits move only their activator;
+cleared rooms remain for teammates to loot, then retire when their last participant leaves.
+Room-local pylons, suppressors, boundary exposure and gate locks remain independent.
+Abandoned deployed drones are removed when their room retires. Death/timeout settles each
+entered pilot independently, and unused invitations never cause ship destruction.
+
+Ordinary successful data hacks can supply Tranquil filaments. Cache rewards increase with
+tier and cooperative capacity, include next-tier filaments in the last room, and supply
+stasis-webifier mutaplasmids for the next milestone. Higher tiers add their pinned Overmind
+and more rogue drones. These encounter/reward distributions are explicit Eden policies,
+not a claim to reproduce CCP's private spawn/drop tables. Other retail encounter families,
+side-cache distributions and exhaustive scenery layouts are not represented. Weather-specific
+nebula IDs are pinned; the three existing dungeon geometry templates remain shared.
+
+Admission checks capsuleer combat timers, security/suspect restrictions and safety settings,
+station/gate/structure clearance, and nearby active mission/anomaly sites. Public gameplay
+reference: [EVE University Abyssal Deadspace](https://wiki.eveuniversity.org/Abyssal_Deadspace).
+The local evejs filament/admission/environment catalogs were compared read-only; its T0
+restriction is older than the pinned client and is not copied as the supported tier limit.
+
+### Automated validation
+
+Focused development checks passed 26 tests in 18.91 s, including both cooperative modes,
+independent room travel across checkpoint reopening, exact pinned filament mappings,
+higher-tier encounter admission, unchanged inventory on rejection and actual data-hack
+filament rewards. Final tool/solution restore and build passed (7.03 s, zero warnings/errors).
+The focused run passed all 108 tests in 49.85 s using
+`FullyQualifiedName~AbyssalTests|FullyQualifiedName~AbyssalEnvironmentTests|FullyQualifiedName~AbyssalCooperativeTests|FullyQualifiedName~HackingWorldTests|FullyQualifiedName~CooperativeFleetTests|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~WorldMigrationTests`.
+Both Python policy suites passed (8 catalog and 9 formatting tests), and formatting
+verification passed across 2,172 files. Full .NET regression was not requested or run.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+- Exercise two native clients entering one trace and crossing conduits at different times.
+- Inspect weather backdrops and cooperative cache rendering.

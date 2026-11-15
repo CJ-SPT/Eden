@@ -324,6 +324,15 @@ internal sealed partial class PirateExplorationStore(
             }
             return;
         }
+        if (
+            world is Eden.World.Runtime.Economy.EconomyTransaction
+            && definition.Kind == ExplorationKind.Data
+            && AbyssalContent.DataSiteFilament(container.LootSeed) is int filament
+            && catalog.FittingType(filament) is not null
+        )
+        {
+            InventoryPersistence.MergeOutput(world, catalog, pilotId, container.Id, (int)InventoryFlag.Cargo, filament, 1);
+        }
         var datacores = definition.Kind == ExplorationKind.Data ? HackingCatalog.Loot(catalog, HackingCatalog.DatacoreGroup) : [];
         var decryptors = definition.Kind == ExplorationKind.Data ? HackingCatalog.Loot(catalog, HackingCatalog.DecryptorGroup) : [];
         var loot = ExplorationLootRules.Roll(

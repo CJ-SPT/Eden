@@ -85,9 +85,12 @@ internal sealed partial class PilotDroneStore
                     profile,
                     (Eden.Gameplay.Exploration.AbyssalWeather)run.Weather,
                     Eden.Gameplay.Exploration.AbyssalEnvironmentRules.Penalty(run.Tier, run.Seed),
-                    run.Room,
+                    Eden.Gameplay.Exploration.AbyssalContent.RoomAt(contact.Position),
                     run.Seed,
-                    (Eden.Gameplay.Exploration.AbyssalFieldMask)run.DisabledFields
+                    Eden.Gameplay.Exploration.AbyssalContent.Disabled(
+                        run.DisabledFields,
+                        Eden.Gameplay.Exploration.AbyssalContent.RoomAt(contact.Position)
+                    )
                 ),
             };
             contact = Eden.Gameplay.Exploration.AbyssalDroneEnvironment.Refresh(contact);

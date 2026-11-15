@@ -101,6 +101,34 @@ public sealed class HackingWorldTests
         Assert.Single(saved.Set<ShipLoss>().Where(l => l.ShipId == ship));
     }
 
+    [Fact]
+    public async Task DataSiteWinSuppliesCheckpointedAbyssalFilament()
+    {
+        using var f = Prepare();
+        PassiveCatalogFixture.LoadAbyssal(f.CatalogPath);
+        var (store, site, module, container) = Start(f);
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Set<SavedHackingContainer>().Find(container.Id)!.LootSeed = 0;
+            world.SaveChanges();
+        }
+        using (LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { }))
+        {
+            store.Begin(f.PilotId, module, container.Id, new HashSet<long> { container.Id }, f.Clock.Now);
+            Finish(store, f);
+            var loot = store.Read(f.PilotId, container.Id, f.Clock.Now);
+            Assert.Contains(loot.Items, i => i.TypeId == AbyssalRules.TranquilDarkFilament && i.Quantity == 1);
+            await live.FlushAsync();
+        }
+        using (LiveWorld reopened = new(new(f.Db.Path), f.Clock, _ => { }))
+        {
+            Assert.Contains(
+                store.Read(f.PilotId, container.Id, f.Clock.Now).Items,
+                i => i.TypeId == AbyssalRules.TranquilDarkFilament && i.Quantity == 1
+            );
+        }
+    }
+
     private static Fixture Prepare()
     {
         Fixture f = new();

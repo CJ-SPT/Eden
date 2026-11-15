@@ -28,7 +28,8 @@ internal static class AbyssalEnvironmentStore
         new(
             (AbyssalWeather)run.Weather,
             AbyssalEnvironmentRules.Penalty(run.Tier, run.Seed),
-            AbyssalEnvironmentRules.Fields(run.Room, run.Seed, position) & ~(AbyssalFieldMask)run.DisabledFields
+            AbyssalEnvironmentRules.Fields(AbyssalContent.RoomAt(position), run.Seed, position)
+                & ~AbyssalContent.Disabled(run.DisabledFields, AbyssalContent.RoomAt(position))
         );
 
     internal static IReadOnlyDictionary<DogmaAttributeId, double> NpcAttributes(

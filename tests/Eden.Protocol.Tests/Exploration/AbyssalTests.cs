@@ -25,8 +25,12 @@ public sealed class AbyssalTests
     internal static void Prepare(Fixture f)
     {
         PassiveCatalogFixture.LoadAbyssal(f.CatalogPath);
+        int origin = f.Db.Store.FindPilot(1000001)!.SystemId;
         using (CatalogDbContext catalog = new(f.CatalogPath, writable: true))
         {
+            catalog.Database.ExecuteSql(
+                $"INSERT OR REPLACE INTO SourceRecord VALUES ('client/systems',{origin.ToString()},'{{\"securityStatus\":0.5}}')"
+            );
             catalog.Database.ExecuteSqlRaw("INSERT INTO SolarSystem VALUES (32000001,'AD001',20000020),(32000002,'AD002',20000020)");
         }
         using (WorldDbContext world = new(f.Db.Path))
@@ -77,7 +81,7 @@ public sealed class AbyssalTests
         var completed = Assert.Single(saved.Set<SavedAbyssalRun>());
         Assert.Equal((int)AbyssalStatus.Completed, completed.Status);
         Assert.Equal(origin.SystemId, saved.Positions.Find(ship)!.SystemId);
-        Assert.Equal(4, saved.Set<OwnedItem>().Where(i => i.LocationId == ship && i.TypeId == 56132).Sum(i => i.Quantity));
+        Assert.Equal(3, saved.Set<OwnedItem>().Where(i => i.LocationId == ship && i.TypeId == 56132).Sum(i => i.Quantity));
         Assert.Equal(3, saved.Set<WorldWreck>().Count());
         Assert.Equal(6, saved.Set<OwnedItem>().Where(i => i.LocationId == ship && i.TypeId == 48112).Sum(i => i.Quantity));
     }

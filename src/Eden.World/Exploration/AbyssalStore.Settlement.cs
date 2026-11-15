@@ -24,18 +24,28 @@ internal sealed partial class AbyssalStore
     {
         long now = Now;
         var runs = Live.Economy.Inspect(world =>
-            world.Filter<SavedAbyssalRun>(r => r.Status == (int)AbyssalStatus.Active).Select(r => r.Id).ToArray()
+            world.Filter<SavedAbyssalRun>(r => r.Status < (int)AbyssalStatus.Completed).Select(r => r.Id).ToArray()
         );
         foreach (long id in runs)
         {
             var owners = Live.Economy.Inspect(world =>
-                world.Filter<SavedAbyssalParticipant>(p => p.RunId == id && !p.Finished).Select(p => p.PilotId).ToArray()
+                world.Filter<SavedAbyssalParticipant>(p => p.RunId == id && p.Entered && !p.Finished).Select(p => p.PilotId).ToArray()
             );
             AdvanceDisconnected(id, owners, now);
             int system = Live.Economy.Inspect(world => world.Set<SavedAbyssalRun>().Find(id)!.SystemId);
             using var transaction = Live.Economy.Begin(new(pilots: owners, systems: [system]));
             using CatalogDbContext catalog = new(database.CatalogPath);
             var run = transaction.Set<SavedAbyssalRun>().Find(id)!;
+            if (run.Status == (int)AbyssalStatus.Deployed)
+            {
+                if (run.ExpiresAt <= now)
+                {
+                    run.Status = (int)AbyssalStatus.Failed;
+                    CloseInvitations(transaction, run);
+                    transaction.Commit();
+                }
+                continue;
+            }
             if (run.Status != (int)AbyssalStatus.Active)
             {
                 continue;
@@ -50,10 +60,11 @@ internal sealed partial class AbyssalStore
                     Fail(transaction, catalog, run, participant, pilot, now);
                 }
             }
-            if (transaction.Filter<SavedAbyssalParticipant>(p => p.RunId == id && !p.Finished).Any() == false)
+            if (transaction.Filter<SavedAbyssalParticipant>(p => p.RunId == id && p.Entered && !p.Finished).Any() == false)
             {
                 run.Status = (int)AbyssalStatus.Failed;
                 Retire(transaction, run, now);
+                CloseInvitations(transaction, run);
             }
             transaction.Commit();
         }
@@ -170,9 +181,10 @@ internal sealed partial class AbyssalStore
             && world.Set<SavedAbyssalRun>().Find(npc.EncounterId) is { } environment
         )
         {
-            environment.DisabledFields |= (int)(AbyssalFieldMask.ShortTracking | AbyssalFieldMask.MediumTracking);
+            environment.DisabledFields |=
+                (int)(AbyssalFieldMask.ShortTracking | AbyssalFieldMask.MediumTracking) << (npc.SpawnSlot / AbyssalRules.ObjectsPerRun * 5);
         }
-        if (npc.TypeId != AbyssalRules.CacheType)
+        if (npc.TypeId is not (AbyssalRules.CacheType or AbyssalRules.CooperativeCacheType))
         {
             return;
         }
@@ -189,7 +201,7 @@ internal sealed partial class AbyssalStore
                 NpcId = npc.Id,
                 OwnerId = pilot.Id,
                 CorporationId = pilot.CorporationId,
-                TypeId = AbyssalRules.CacheWreckType,
+                TypeId = npc.TypeId == AbyssalRules.CacheType ? AbyssalRules.CacheWreckType : AbyssalRules.CooperativeCacheWreckType,
                 SystemId = run.SystemId,
                 Name = "Triglavian Bioadaptive Cache Wreck",
                 X = npc.X,
@@ -198,12 +210,17 @@ internal sealed partial class AbyssalStore
                 ExpiresAt = run.ExpiresAt,
             }
         );
-        // Eden's initial low-tier reward policy. Saved cache destruction and these stacks commit together.
-        const int SurveyDatabase = 48121;
-        const int ZeroPointCondensate = 48112;
-        foreach (var (type, quantity) in new[] { (SurveyDatabase, 1), (ZeroPointCondensate, 2), (run.FilamentTypeId, 1) })
+        foreach (
+            var reward in AbyssalContent.Rewards(
+                run.Tier,
+                (AbyssalMode)run.Mode,
+                (AbyssalWeather)run.Weather,
+                npc.SpawnSlot / AbyssalRules.ObjectsPerRun,
+                run.Seed
+            )
+        )
         {
-            _ = catalog.RequireItem(type);
+            _ = catalog.RequireItem(reward.TypeId);
             world.Add(
                 new OwnedItem
                 {
@@ -211,8 +228,8 @@ internal sealed partial class AbyssalStore
                     OwnerId = pilot.Id,
                     LocationId = id,
                     FlagId = (int)InventoryFlag.Cargo,
-                    TypeId = type,
-                    Quantity = quantity,
+                    TypeId = reward.TypeId,
+                    Quantity = reward.Quantity,
                 }
             );
         }

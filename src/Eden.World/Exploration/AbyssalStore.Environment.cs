@@ -26,14 +26,14 @@ internal sealed partial class AbyssalStore
         }
         long previous = run.EnvironmentAt;
         run.EnvironmentAt = now;
-        foreach (var participant in world.Filter<SavedAbyssalParticipant>(p => p.RunId == run.Id && !p.Finished).ToArray())
+        foreach (var participant in world.Filter<SavedAbyssalParticipant>(p => p.RunId == run.Id && p.Entered && !p.Finished).ToArray())
         {
             var pilot = world.Pilots.Find(participant.PilotId)!;
             if (pilot.ActiveShipId != participant.ShipId || pilot.ActiveShip.Position is not { } position)
             {
                 continue;
             }
-            double distance = new SpacePosition(position.X, position.Y, position.Z).DistanceTo(AbyssalRules.Center(run.Room));
+            double distance = new SpacePosition(position.X, position.Y, position.Z).DistanceTo(AbyssalRules.Center(participant.Room));
             double amount = AbyssalEnvironmentRules.BoundaryDamage(distance);
             if (amount == 0)
             {
@@ -61,7 +61,7 @@ internal sealed partial class AbyssalStore
                 var notification = new PilotDamage(
                     pilot.Id,
                     0,
-                    AbyssalEnvironmentRules.FieldId(run.Id, run.Room, 3),
+                    AbyssalEnvironmentRules.FieldId(run.Id, participant.Room, 3),
                     new(pilot.ActiveShipId, defense, result.Remaining),
                     damage,
                     result.Applied,
@@ -80,8 +80,9 @@ internal sealed partial class AbyssalStore
             return;
         }
         foreach (
-            var field in AbyssalEnvironmentRules
-                .Layout(run.Room, run.Seed)
+            var field in Enumerable
+                .Range(0, run.Room + 1)
+                .SelectMany(room => AbyssalEnvironmentRules.Layout(room, run.Seed))
                 .Where(f => f.TypeId is AbyssalEnvironmentRules.ShortSuppressor or AbyssalEnvironmentRules.MediumSuppressor)
         )
         {
@@ -97,6 +98,7 @@ internal sealed partial class AbyssalStore
                     n.EncounterId == run.Id
                     && n.AnchorKind == NpcAnchorKind.Abyssal
                     && n.TypeId == field.TypeId
+                    && n.SpawnSlot / AbyssalRules.ObjectsPerRun == AbyssalContent.RoomAt(field.Position)
                     && n.DestroyedAt == null
                     && n.RetiredAt == null
                 )

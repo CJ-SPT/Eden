@@ -18,11 +18,15 @@ def export(catalog, output):
 
         needed = {56132, 47458, 47685, 47686, 47951, 48120, 47847, 47848, 47849, 48112, 48121, 621, 670,
                   47472, 47440, 80876, 47437, 47438, 47469, 47470, 47465, 210, *range(47378, 47393)}
+        needed.update(row[0] for row in db.execute("SELECT Id FROM ItemType WHERE GroupId=1979"))
+        needed.update({48964, 49689, 49692, 47876, 47877, 47878, 47879, 47880, 56213, 47699, 47700, 47701, 587, 16242})
+        for list_id in (50, 57, 92, 233):
+            add('client/typelist', list_id)
         types = []
         add('client/factions', 500025)
         for system in (32000001, 32000002):
             add('client/systems', system)
-        for graphic in (22209, 22210, 22211):
+        for graphic in (*range(22042, 22049), *range(22207, 22215)):
             add('client/graphicids', graphic)
         for dungeon in (6204, 6207, 6205):
             add('client/dungeons', dungeon)

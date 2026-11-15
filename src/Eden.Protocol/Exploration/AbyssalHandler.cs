@@ -84,7 +84,7 @@ internal sealed class AbyssalHandler(IAbyssalDeadspace abyss, ISystemObjects sys
             context.Notifications.Add(new AbyssalLocationEntered(run));
             context.Notifications.Add(new AbyssalDeadline(run.ExpiresAt));
         }
-        else
+        else if (run.Status is AbyssalStatus.Completed or AbyssalStatus.Failed)
         {
             context.Notifications.Add(new ExitingExplorationDungeon(AbyssalRules.Scene(run.Room).DungeonId));
             context.Notifications.Add(new AbyssalFinished(run.Id));

@@ -80,6 +80,9 @@ public static class AbyssalRules
     public const int TransferConduit = 47685;
     public const int OriginConduit = 47686;
     public const int TraceType = 47458;
+    public const int CooperativeTraceType = 48964;
+    public const int CooperativeCacheType = 49689;
+    public const int CooperativeCacheWreckType = 49692;
     public const int CacheType = 47951;
     public const int CacheWreckType = 48120;
     public const int CruiserGroup = 26;

@@ -60,5 +60,18 @@ internal static class AbyssalSchema
         {
             world.Database.ExecuteSqlRaw("ALTER TABLE WorldAbyssalRun ADD COLUMN DisabledFields INTEGER NOT NULL DEFAULT 0");
         }
+        if (
+            !world
+                .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldAbyssalParticipant')")
+                .Contains("Entered")
+        )
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldAbyssalParticipant ADD COLUMN Entered INTEGER NOT NULL DEFAULT 1");
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldAbyssalParticipant ADD COLUMN Room INTEGER NOT NULL DEFAULT 0");
+            world.Database.ExecuteSqlRaw("UPDATE WorldAbyssalRun SET DisabledFields = DisabledFields << (Room * 5)");
+            world.Database.ExecuteSqlRaw(
+                "UPDATE WorldAbyssalParticipant SET Room = COALESCE((SELECT Room FROM WorldAbyssalRun WHERE Id=RunId),0)"
+            );
+        }
     }
 }

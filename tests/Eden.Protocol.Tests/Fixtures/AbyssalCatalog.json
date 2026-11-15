@@ -118,6 +118,378 @@
       ]
     },
     {
+      "id": 587,
+      "name": "Rifter",
+      "groupId": 25,
+      "groupName": "Frigate",
+      "categoryId": 6,
+      "mass": 1067000.0,
+      "radius": 31.0,
+      "capacity": 140.0,
+      "attributes": [
+        {
+          "id": 3,
+          "value": 0.0
+        },
+        {
+          "id": 9,
+          "value": 350.0
+        },
+        {
+          "id": 11,
+          "value": 41.0
+        },
+        {
+          "id": 12,
+          "value": 4.0
+        },
+        {
+          "id": 13,
+          "value": 3.0
+        },
+        {
+          "id": 14,
+          "value": 3.0
+        },
+        {
+          "id": 15,
+          "value": 0.0
+        },
+        {
+          "id": 19,
+          "value": 1.0
+        },
+        {
+          "id": 21,
+          "value": 0.0
+        },
+        {
+          "id": 37,
+          "value": 365.0
+        },
+        {
+          "id": 48,
+          "value": 130.0
+        },
+        {
+          "id": 49,
+          "value": 0.0
+        },
+        {
+          "id": 55,
+          "value": 125000.0
+        },
+        {
+          "id": 70,
+          "value": 3.2
+        },
+        {
+          "id": 76,
+          "value": 22500.0
+        },
+        {
+          "id": 79,
+          "value": 1500.0
+        },
+        {
+          "id": 101,
+          "value": 2.0
+        },
+        {
+          "id": 102,
+          "value": 3.0
+        },
+        {
+          "id": 109,
+          "value": 0.67
+        },
+        {
+          "id": 110,
+          "value": 0.67
+        },
+        {
+          "id": 111,
+          "value": 0.67
+        },
+        {
+          "id": 113,
+          "value": 0.67
+        },
+        {
+          "id": 124,
+          "value": 16777215.0
+        },
+        {
+          "id": 129,
+          "value": 2.0
+        },
+        {
+          "id": 136,
+          "value": 1.0
+        },
+        {
+          "id": 153,
+          "value": 2.24e-06
+        },
+        {
+          "id": 182,
+          "value": 3329.0
+        },
+        {
+          "id": 188,
+          "value": 0.0
+        },
+        {
+          "id": 192,
+          "value": 4.0
+        },
+        {
+          "id": 208,
+          "value": 0.0
+        },
+        {
+          "id": 209,
+          "value": 8.0
+        },
+        {
+          "id": 210,
+          "value": 0.0
+        },
+        {
+          "id": 211,
+          "value": 0.0
+        },
+        {
+          "id": 217,
+          "value": 397.0
+        },
+        {
+          "id": 246,
+          "value": 397.0
+        },
+        {
+          "id": 263,
+          "value": 450.0
+        },
+        {
+          "id": 265,
+          "value": 450.0
+        },
+        {
+          "id": 267,
+          "value": 0.4
+        },
+        {
+          "id": 268,
+          "value": 0.9
+        },
+        {
+          "id": 269,
+          "value": 0.75
+        },
+        {
+          "id": 270,
+          "value": 0.65
+        },
+        {
+          "id": 271,
+          "value": 1.0
+        },
+        {
+          "id": 272,
+          "value": 0.5
+        },
+        {
+          "id": 273,
+          "value": 0.6
+        },
+        {
+          "id": 274,
+          "value": 0.8
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 283,
+          "value": 0.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 460,
+          "value": -7.5
+        },
+        {
+          "id": 479,
+          "value": 625000.0
+        },
+        {
+          "id": 482,
+          "value": 250.0
+        },
+        {
+          "id": 484,
+          "value": 0.75
+        },
+        {
+          "id": 511,
+          "value": 0.0
+        },
+        {
+          "id": 524,
+          "value": 0.75
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 35.0
+        },
+        {
+          "id": 564,
+          "value": 660.0
+        },
+        {
+          "id": 587,
+          "value": 10.0
+        },
+        {
+          "id": 600,
+          "value": 5.0
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 661,
+          "value": 3000.0
+        },
+        {
+          "id": 662,
+          "value": 0.05
+        },
+        {
+          "id": 974,
+          "value": 1.0
+        },
+        {
+          "id": 975,
+          "value": 1.0
+        },
+        {
+          "id": 976,
+          "value": 1.0
+        },
+        {
+          "id": 977,
+          "value": 1.0
+        },
+        {
+          "id": 1132,
+          "value": 400.0
+        },
+        {
+          "id": 1137,
+          "value": 3.0
+        },
+        {
+          "id": 1154,
+          "value": 3.0
+        },
+        {
+          "id": 1178,
+          "value": 100.0
+        },
+        {
+          "id": 1179,
+          "value": 0.01
+        },
+        {
+          "id": 1196,
+          "value": 0.01
+        },
+        {
+          "id": 1198,
+          "value": 0.01
+        },
+        {
+          "id": 1199,
+          "value": 100.0
+        },
+        {
+          "id": 1200,
+          "value": 100.0
+        },
+        {
+          "id": 1224,
+          "value": 1.0
+        },
+        {
+          "id": 1259,
+          "value": 0.5
+        },
+        {
+          "id": 1261,
+          "value": 0.5
+        },
+        {
+          "id": 1262,
+          "value": 0.63
+        },
+        {
+          "id": 1271,
+          "value": 0.0
+        },
+        {
+          "id": 1281,
+          "value": 1.0
+        },
+        {
+          "id": 1547,
+          "value": 1.0
+        },
+        {
+          "id": 1555,
+          "value": 25.0
+        },
+        {
+          "id": 1768,
+          "value": 11342.0
+        },
+        {
+          "id": 2045,
+          "value": 1.0
+        },
+        {
+          "id": 2112,
+          "value": 1.0
+        },
+        {
+          "id": 2113,
+          "value": 1.0
+        },
+        {
+          "id": 2115,
+          "value": 1.0
+        },
+        {
+          "id": 5796,
+          "value": 2147483647000.0
+        },
+        {
+          "id": 6364,
+          "value": 4000.0
+        }
+      ]
+    },
+    {
       "id": 621,
       "name": "Caracal",
       "groupId": 26,
@@ -758,6 +1130,362 @@
       ]
     },
     {
+      "id": 16242,
+      "name": "Thrasher",
+      "groupId": 420,
+      "groupName": "Destroyer",
+      "categoryId": 6,
+      "mass": 1600000.0,
+      "radius": 138.0,
+      "capacity": 400.0,
+      "attributes": [
+        {
+          "id": 3,
+          "value": 0.0
+        },
+        {
+          "id": 9,
+          "value": 750.0
+        },
+        {
+          "id": 11,
+          "value": 70.0
+        },
+        {
+          "id": 12,
+          "value": 2.0
+        },
+        {
+          "id": 13,
+          "value": 3.0
+        },
+        {
+          "id": 14,
+          "value": 8.0
+        },
+        {
+          "id": 15,
+          "value": 0.0
+        },
+        {
+          "id": 19,
+          "value": 1.0
+        },
+        {
+          "id": 21,
+          "value": 0.0
+        },
+        {
+          "id": 37,
+          "value": 270.0
+        },
+        {
+          "id": 48,
+          "value": 170.0
+        },
+        {
+          "id": 49,
+          "value": 0.0
+        },
+        {
+          "id": 55,
+          "value": 290000.0
+        },
+        {
+          "id": 70,
+          "value": 2.8
+        },
+        {
+          "id": 76,
+          "value": 27000.0
+        },
+        {
+          "id": 79,
+          "value": 5000.0
+        },
+        {
+          "id": 101,
+          "value": 1.0
+        },
+        {
+          "id": 102,
+          "value": 7.0
+        },
+        {
+          "id": 109,
+          "value": 0.67
+        },
+        {
+          "id": 110,
+          "value": 0.67
+        },
+        {
+          "id": 111,
+          "value": 0.67
+        },
+        {
+          "id": 113,
+          "value": 0.67
+        },
+        {
+          "id": 124,
+          "value": 16777215.0
+        },
+        {
+          "id": 129,
+          "value": 450.0
+        },
+        {
+          "id": 136,
+          "value": 1.0
+        },
+        {
+          "id": 153,
+          "value": 8.13e-07
+        },
+        {
+          "id": 182,
+          "value": 33094.0
+        },
+        {
+          "id": 188,
+          "value": 0.0
+        },
+        {
+          "id": 192,
+          "value": 6.0
+        },
+        {
+          "id": 208,
+          "value": 0.0
+        },
+        {
+          "id": 209,
+          "value": 9.0
+        },
+        {
+          "id": 210,
+          "value": 0.0
+        },
+        {
+          "id": 211,
+          "value": 0.0
+        },
+        {
+          "id": 217,
+          "value": 397.0
+        },
+        {
+          "id": 246,
+          "value": 397.0
+        },
+        {
+          "id": 263,
+          "value": 800.0
+        },
+        {
+          "id": 265,
+          "value": 750.0
+        },
+        {
+          "id": 267,
+          "value": 0.4
+        },
+        {
+          "id": 268,
+          "value": 0.9
+        },
+        {
+          "id": 269,
+          "value": 0.75
+        },
+        {
+          "id": 270,
+          "value": 0.65
+        },
+        {
+          "id": 271,
+          "value": 1.0
+        },
+        {
+          "id": 272,
+          "value": 0.5
+        },
+        {
+          "id": 273,
+          "value": 0.6
+        },
+        {
+          "id": 274,
+          "value": 0.8
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 283,
+          "value": 0.0
+        },
+        {
+          "id": 351,
+          "value": 50.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        },
+        {
+          "id": 479,
+          "value": 625000.0
+        },
+        {
+          "id": 482,
+          "value": 550.0
+        },
+        {
+          "id": 484,
+          "value": 0.75
+        },
+        {
+          "id": 524,
+          "value": 0.75
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 56.0
+        },
+        {
+          "id": 564,
+          "value": 550.0
+        },
+        {
+          "id": 600,
+          "value": 4.5
+        },
+        {
+          "id": 633,
+          "value": 0.0
+        },
+        {
+          "id": 661,
+          "value": 2000.0
+        },
+        {
+          "id": 662,
+          "value": 0.25
+        },
+        {
+          "id": 729,
+          "value": 5.0
+        },
+        {
+          "id": 740,
+          "value": 10.0
+        },
+        {
+          "id": 1132,
+          "value": 400.0
+        },
+        {
+          "id": 1137,
+          "value": 3.0
+        },
+        {
+          "id": 1154,
+          "value": 3.0
+        },
+        {
+          "id": 1178,
+          "value": 100.0
+        },
+        {
+          "id": 1179,
+          "value": 0.01
+        },
+        {
+          "id": 1196,
+          "value": 0.01
+        },
+        {
+          "id": 1198,
+          "value": 0.01
+        },
+        {
+          "id": 1199,
+          "value": 100.0
+        },
+        {
+          "id": 1200,
+          "value": 100.0
+        },
+        {
+          "id": 1224,
+          "value": 0.85
+        },
+        {
+          "id": 1259,
+          "value": 0.82
+        },
+        {
+          "id": 1261,
+          "value": 0.5
+        },
+        {
+          "id": 1262,
+          "value": 0.25
+        },
+        {
+          "id": 1271,
+          "value": 0.0
+        },
+        {
+          "id": 1281,
+          "value": 1.0
+        },
+        {
+          "id": 1547,
+          "value": 1.0
+        },
+        {
+          "id": 1555,
+          "value": 40.0
+        },
+        {
+          "id": 1768,
+          "value": 11342.0
+        },
+        {
+          "id": 2045,
+          "value": 1.0
+        },
+        {
+          "id": 2112,
+          "value": 1.0
+        },
+        {
+          "id": 2113,
+          "value": 1.0
+        },
+        {
+          "id": 2115,
+          "value": 1.0
+        },
+        {
+          "id": 5796,
+          "value": 2147483647000.0
+        },
+        {
+          "id": 6364,
+          "value": 6000.0
+        }
+      ]
+    },
+    {
       "id": 26495,
       "name": "Caldari Cruiser Wreck",
       "groupId": 186,
@@ -782,6 +1510,62 @@
         {
           "id": 901,
           "value": 20.0
+        }
+      ]
+    },
+    {
+      "id": 26540,
+      "name": "Minmatar Destroyer Wreck",
+      "groupId": 186,
+      "groupName": "Wreck",
+      "categoryId": 2,
+      "mass": 10000.0,
+      "radius": 14.0,
+      "capacity": 27500.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 1000.0
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 5000.0
+        },
+        {
+          "id": 901,
+          "value": 30.0
+        }
+      ]
+    },
+    {
+      "id": 26550,
+      "name": "Minmatar Frigate Wreck",
+      "groupId": 186,
+      "groupName": "Wreck",
+      "categoryId": 2,
+      "mass": 10000.0,
+      "radius": 14.0,
+      "capacity": 27500.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 700.0
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 5000.0
+        },
+        {
+          "id": 901,
+          "value": 30.0
         }
       ]
     },
@@ -1956,6 +2740,159 @@
       "attributes": []
     },
     {
+      "id": 47699,
+      "name": "Decayed Stasis Webifier Mutaplasmid",
+      "groupId": 1964,
+      "groupName": "Mutaplasmids",
+      "categoryId": 17,
+      "mass": 1.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 47700,
+      "name": "Unstable Stasis Webifier Mutaplasmid",
+      "groupId": 1964,
+      "groupName": "Mutaplasmids",
+      "categoryId": 17,
+      "mass": 1.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 47701,
+      "name": "Gravid Stasis Webifier Mutaplasmid",
+      "groupId": 1964,
+      "groupName": "Mutaplasmids",
+      "categoryId": 17,
+      "mass": 1.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
+      "id": 47711,
+      "name": "basic_key_placeholder",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47866.0
+        },
+        {
+          "id": 2761,
+          "value": 4.0
+        }
+      ]
+    },
+    {
+      "id": 47761,
+      "name": "Calm Exotic Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47862.0
+        },
+        {
+          "id": 2761,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 47762,
+      "name": "Calm Dark Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47863.0
+        },
+        {
+          "id": 2761,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 47763,
+      "name": "Calm Firestorm Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47864.0
+        },
+        {
+          "id": 2761,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 47764,
+      "name": "Calm Gamma Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47866.0
+        },
+        {
+          "id": 2761,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 47765,
+      "name": "Calm Electrical Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47865.0
+        },
+        {
+          "id": 2761,
+          "value": 1.0
+        }
+      ]
+    },
+    {
       "id": 47847,
       "name": "Sparkneedle Tessella",
       "groupId": 1997,
@@ -2580,6 +3517,1326 @@
       ]
     },
     {
+      "id": 47876,
+      "name": "Photic Abyssal Overmind",
+      "groupId": 1982,
+      "groupName": "Abyssal Spaceship Entities",
+      "categoryId": 11,
+      "mass": 100250000.0,
+      "radius": 499.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 10625.0
+        },
+        {
+          "id": 37,
+          "value": 200.0
+        },
+        {
+          "id": 51,
+          "value": 4212.0
+        },
+        {
+          "id": 54,
+          "value": 30000.0
+        },
+        {
+          "id": 55,
+          "value": 825000.0
+        },
+        {
+          "id": 64,
+          "value": 14.3
+        },
+        {
+          "id": 70,
+          "value": 0.085
+        },
+        {
+          "id": 76,
+          "value": 105000.0
+        },
+        {
+          "id": 109,
+          "value": 0.67
+        },
+        {
+          "id": 110,
+          "value": 0.67
+        },
+        {
+          "id": 111,
+          "value": 0.67
+        },
+        {
+          "id": 113,
+          "value": 0.67
+        },
+        {
+          "id": 114,
+          "value": 0.0
+        },
+        {
+          "id": 116,
+          "value": 0.0
+        },
+        {
+          "id": 117,
+          "value": 20.0
+        },
+        {
+          "id": 118,
+          "value": 12.0
+        },
+        {
+          "id": 158,
+          "value": 15000.0
+        },
+        {
+          "id": 160,
+          "value": 3.6
+        },
+        {
+          "id": 192,
+          "value": 7.0
+        },
+        {
+          "id": 208,
+          "value": 0.0
+        },
+        {
+          "id": 209,
+          "value": 0.0
+        },
+        {
+          "id": 210,
+          "value": 26.4
+        },
+        {
+          "id": 211,
+          "value": 0.0
+        },
+        {
+          "id": 245,
+          "value": 572.0
+        },
+        {
+          "id": 246,
+          "value": 395.0
+        },
+        {
+          "id": 263,
+          "value": 9000.0
+        },
+        {
+          "id": 265,
+          "value": 10000.0
+        },
+        {
+          "id": 267,
+          "value": 0.375
+        },
+        {
+          "id": 268,
+          "value": 0.675
+        },
+        {
+          "id": 269,
+          "value": 0.4875
+        },
+        {
+          "id": 270,
+          "value": 0.4875
+        },
+        {
+          "id": 271,
+          "value": 1.0
+        },
+        {
+          "id": 272,
+          "value": 0.5
+        },
+        {
+          "id": 273,
+          "value": 0.6
+        },
+        {
+          "id": 274,
+          "value": 0.8
+        },
+        {
+          "id": 479,
+          "value": 1875000.0
+        },
+        {
+          "id": 481,
+          "value": 0.0
+        },
+        {
+          "id": 482,
+          "value": 7500.0
+        },
+        {
+          "id": 552,
+          "value": 465.0
+        },
+        {
+          "id": 562,
+          "value": 0.0
+        },
+        {
+          "id": 564,
+          "value": 112.5
+        },
+        {
+          "id": 620,
+          "value": 40000.0
+        }
+      ]
+    },
+    {
+      "id": 47877,
+      "name": "Twilit Abyssal Overmind",
+      "groupId": 1982,
+      "groupName": "Abyssal Spaceship Entities",
+      "categoryId": 11,
+      "mass": 100250000.0,
+      "radius": 499.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 10625.0
+        },
+        {
+          "id": 37,
+          "value": 250.0
+        },
+        {
+          "id": 51,
+          "value": 3220.0
+        },
+        {
+          "id": 54,
+          "value": 36000.0
+        },
+        {
+          "id": 55,
+          "value": 825000.0
+        },
+        {
+          "id": 64,
+          "value": 24.0
+        },
+        {
+          "id": 70,
+          "value": 0.084
+        },
+        {
+          "id": 76,
+          "value": 105000.0
+        },
+        {
+          "id": 109,
+          "value": 0.4
+        },
+        {
+          "id": 110,
+          "value": 0.4
+        },
+        {
+          "id": 111,
+          "value": 0.4
+        },
+        {
+          "id": 113,
+          "value": 0.4
+        },
+        {
+          "id": 114,
+          "value": 0.0
+        },
+        {
+          "id": 116,
+          "value": 0.0
+        },
+        {
+          "id": 117,
+          "value": 23.0
+        },
+        {
+          "id": 118,
+          "value": 13.8
+        },
+        {
+          "id": 158,
+          "value": 15000.0
+        },
+        {
+          "id": 160,
+          "value": 4.26
+        },
+        {
+          "id": 192,
+          "value": 7.0
+        },
+        {
+          "id": 208,
+          "value": 0.0
+        },
+        {
+          "id": 209,
+          "value": 0.0
+        },
+        {
+          "id": 210,
+          "value": 26.4
+        },
+        {
+          "id": 211,
+          "value": 0.0
+        },
+        {
+          "id": 245,
+          "value": 3114.0
+        },
+        {
+          "id": 246,
+          "value": 395.0
+        },
+        {
+          "id": 263,
+          "value": 9000.0
+        },
+        {
+          "id": 265,
+          "value": 10000.0
+        },
+        {
+          "id": 267,
+          "value": 0.32
+        },
+        {
+          "id": 268,
+          "value": 0.32
+        },
+        {
+          "id": 269,
+          "value": 0.23
+        },
+        {
+          "id": 270,
+          "value": 0.41
+        },
+        {
+          "id": 271,
+          "value": 0.875
+        },
+        {
+          "id": 272,
+          "value": 0.4375
+        },
+        {
+          "id": 273,
+          "value": 0.525
+        },
+        {
+          "id": 274,
+          "value": 0.7
+        },
+        {
+          "id": 479,
+          "value": 1875000.0
+        },
+        {
+          "id": 481,
+          "value": 0.0
+        },
+        {
+          "id": 482,
+          "value": 7500.0
+        },
+        {
+          "id": 552,
+          "value": 465.0
+        },
+        {
+          "id": 562,
+          "value": 0.0
+        },
+        {
+          "id": 564,
+          "value": 112.5
+        },
+        {
+          "id": 620,
+          "value": 40000.0
+        }
+      ]
+    },
+    {
+      "id": 47878,
+      "name": "Bathyic Abyssal Overmind",
+      "groupId": 1982,
+      "groupName": "Abyssal Spaceship Entities",
+      "categoryId": 11,
+      "mass": 100250000.0,
+      "radius": 499.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 10625.0
+        },
+        {
+          "id": 37,
+          "value": 300.0
+        },
+        {
+          "id": 51,
+          "value": 4280.0
+        },
+        {
+          "id": 54,
+          "value": 29025.0
+        },
+        {
+          "id": 55,
+          "value": 825000.0
+        },
+        {
+          "id": 64,
+          "value": 30.0
+        },
+        {
+          "id": 70,
+          "value": 0.084
+        },
+        {
+          "id": 76,
+          "value": 105000.0
+        },
+        {
+          "id": 109,
+          "value": 0.4
+        },
+        {
+          "id": 110,
+          "value": 0.4
+        },
+        {
+          "id": 111,
+          "value": 0.4
+        },
+        {
+          "id": 113,
+          "value": 0.4
+        },
+        {
+          "id": 114,
+          "value": 0.0
+        },
+        {
+          "id": 116,
+          "value": 0.0
+        },
+        {
+          "id": 117,
+          "value": 32.2
+        },
+        {
+          "id": 118,
+          "value": 23.0
+        },
+        {
+          "id": 158,
+          "value": 28750.0
+        },
+        {
+          "id": 160,
+          "value": 2.89
+        },
+        {
+          "id": 192,
+          "value": 7.0
+        },
+        {
+          "id": 208,
+          "value": 0.0
+        },
+        {
+          "id": 209,
+          "value": 0.0
+        },
+        {
+          "id": 210,
+          "value": 26.4
+        },
+        {
+          "id": 211,
+          "value": 0.0
+        },
+        {
+          "id": 245,
+          "value": 12356.0
+        },
+        {
+          "id": 246,
+          "value": 395.0
+        },
+        {
+          "id": 263,
+          "value": 9000.0
+        },
+        {
+          "id": 265,
+          "value": 20000.0
+        },
+        {
+          "id": 267,
+          "value": 0.32
+        },
+        {
+          "id": 268,
+          "value": 0.32
+        },
+        {
+          "id": 269,
+          "value": 0.41
+        },
+        {
+          "id": 270,
+          "value": 0.41
+        },
+        {
+          "id": 271,
+          "value": 0.875
+        },
+        {
+          "id": 272,
+          "value": 0.4375
+        },
+        {
+          "id": 273,
+          "value": 0.525
+        },
+        {
+          "id": 274,
+          "value": 0.7
+        },
+        {
+          "id": 479,
+          "value": 1875000.0
+        },
+        {
+          "id": 481,
+          "value": 0.0
+        },
+        {
+          "id": 482,
+          "value": 9530.0
+        },
+        {
+          "id": 552,
+          "value": 465.0
+        },
+        {
+          "id": 562,
+          "value": 0.0
+        },
+        {
+          "id": 564,
+          "value": 112.5
+        },
+        {
+          "id": 620,
+          "value": 40000.0
+        }
+      ]
+    },
+    {
+      "id": 47879,
+      "name": "Hadal Abyssal Overmind",
+      "groupId": 1982,
+      "groupName": "Abyssal Spaceship Entities",
+      "categoryId": 11,
+      "mass": 100250000.0,
+      "radius": 499.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 13750.0
+        },
+        {
+          "id": 37,
+          "value": 350.0
+        },
+        {
+          "id": 51,
+          "value": 3390.0
+        },
+        {
+          "id": 54,
+          "value": 20790.0
+        },
+        {
+          "id": 55,
+          "value": 825000.0
+        },
+        {
+          "id": 64,
+          "value": 29.0
+        },
+        {
+          "id": 70,
+          "value": 0.081
+        },
+        {
+          "id": 76,
+          "value": 105000.0
+        },
+        {
+          "id": 109,
+          "value": 0.4
+        },
+        {
+          "id": 110,
+          "value": 0.4
+        },
+        {
+          "id": 111,
+          "value": 0.4
+        },
+        {
+          "id": 113,
+          "value": 0.4
+        },
+        {
+          "id": 114,
+          "value": 0.0
+        },
+        {
+          "id": 116,
+          "value": 0.0
+        },
+        {
+          "id": 117,
+          "value": 32.2
+        },
+        {
+          "id": 118,
+          "value": 23.0
+        },
+        {
+          "id": 158,
+          "value": 19820.0
+        },
+        {
+          "id": 160,
+          "value": 4.33
+        },
+        {
+          "id": 192,
+          "value": 7.0
+        },
+        {
+          "id": 208,
+          "value": 0.0
+        },
+        {
+          "id": 209,
+          "value": 0.0
+        },
+        {
+          "id": 210,
+          "value": 32.4
+        },
+        {
+          "id": 211,
+          "value": 0.0
+        },
+        {
+          "id": 245,
+          "value": 3114.0
+        },
+        {
+          "id": 246,
+          "value": 395.0
+        },
+        {
+          "id": 263,
+          "value": 11875.0
+        },
+        {
+          "id": 265,
+          "value": 22500.0
+        },
+        {
+          "id": 267,
+          "value": 0.23
+        },
+        {
+          "id": 268,
+          "value": 0.32
+        },
+        {
+          "id": 269,
+          "value": 0.3
+        },
+        {
+          "id": 270,
+          "value": 0.3
+        },
+        {
+          "id": 271,
+          "value": 0.875
+        },
+        {
+          "id": 272,
+          "value": 0.4375
+        },
+        {
+          "id": 273,
+          "value": 0.525
+        },
+        {
+          "id": 274,
+          "value": 0.7
+        },
+        {
+          "id": 479,
+          "value": 2542500.0
+        },
+        {
+          "id": 481,
+          "value": 0.0
+        },
+        {
+          "id": 482,
+          "value": 8906.0
+        },
+        {
+          "id": 552,
+          "value": 455.0
+        },
+        {
+          "id": 562,
+          "value": 0.0
+        },
+        {
+          "id": 564,
+          "value": 112.5
+        },
+        {
+          "id": 620,
+          "value": 40000.0
+        }
+      ]
+    },
+    {
+      "id": 47880,
+      "name": "Benthic Abyssal Overmind",
+      "groupId": 1982,
+      "groupName": "Abyssal Spaceship Entities",
+      "categoryId": 11,
+      "mass": 100250000.0,
+      "radius": 499.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 13750.0
+        },
+        {
+          "id": 20,
+          "value": -55.0
+        },
+        {
+          "id": 37,
+          "value": 400.0
+        },
+        {
+          "id": 51,
+          "value": 3970.0
+        },
+        {
+          "id": 54,
+          "value": 29160.0
+        },
+        {
+          "id": 55,
+          "value": 825000.0
+        },
+        {
+          "id": 64,
+          "value": 41.0
+        },
+        {
+          "id": 70,
+          "value": 0.081
+        },
+        {
+          "id": 76,
+          "value": 105000.0
+        },
+        {
+          "id": 109,
+          "value": 0.32
+        },
+        {
+          "id": 110,
+          "value": 0.32
+        },
+        {
+          "id": 111,
+          "value": 0.32
+        },
+        {
+          "id": 113,
+          "value": 0.32
+        },
+        {
+          "id": 114,
+          "value": 0.0
+        },
+        {
+          "id": 116,
+          "value": 0.0
+        },
+        {
+          "id": 117,
+          "value": 33.6
+        },
+        {
+          "id": 118,
+          "value": 24.0
+        },
+        {
+          "id": 158,
+          "value": 29000.0
+        },
+        {
+          "id": 160,
+          "value": 3.23
+        },
+        {
+          "id": 192,
+          "value": 7.0
+        },
+        {
+          "id": 208,
+          "value": 0.0
+        },
+        {
+          "id": 209,
+          "value": 0.0
+        },
+        {
+          "id": 210,
+          "value": 32.4
+        },
+        {
+          "id": 211,
+          "value": 0.0
+        },
+        {
+          "id": 245,
+          "value": 13874.0
+        },
+        {
+          "id": 246,
+          "value": 395.0
+        },
+        {
+          "id": 263,
+          "value": 11875.0
+        },
+        {
+          "id": 265,
+          "value": 25750.0
+        },
+        {
+          "id": 267,
+          "value": 0.24
+        },
+        {
+          "id": 268,
+          "value": 0.3
+        },
+        {
+          "id": 269,
+          "value": 0.32
+        },
+        {
+          "id": 270,
+          "value": 0.32
+        },
+        {
+          "id": 271,
+          "value": 0.79
+        },
+        {
+          "id": 272,
+          "value": 0.39
+        },
+        {
+          "id": 273,
+          "value": 0.47
+        },
+        {
+          "id": 274,
+          "value": 0.63
+        },
+        {
+          "id": 479,
+          "value": 2542500.0
+        },
+        {
+          "id": 481,
+          "value": 0.0
+        },
+        {
+          "id": 482,
+          "value": 8906.0
+        },
+        {
+          "id": 552,
+          "value": 455.0
+        },
+        {
+          "id": 562,
+          "value": 0.0
+        },
+        {
+          "id": 564,
+          "value": 112.5
+        },
+        {
+          "id": 620,
+          "value": 40000.0
+        },
+        {
+          "id": 2499,
+          "value": 5000.0
+        },
+        {
+          "id": 2500,
+          "value": 15000.0
+        },
+        {
+          "id": 2501,
+          "value": 0.0
+        },
+        {
+          "id": 2502,
+          "value": 3.75
+        }
+      ]
+    },
+    {
+      "id": 47888,
+      "name": "Agitated Exotic Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47862.0
+        },
+        {
+          "id": 2761,
+          "value": 2.0
+        }
+      ]
+    },
+    {
+      "id": 47889,
+      "name": "Fierce Exotic Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47862.0
+        },
+        {
+          "id": 2761,
+          "value": 3.0
+        }
+      ]
+    },
+    {
+      "id": 47890,
+      "name": "Raging Exotic Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47862.0
+        },
+        {
+          "id": 2761,
+          "value": 4.0
+        }
+      ]
+    },
+    {
+      "id": 47891,
+      "name": "Chaotic Exotic Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47862.0
+        },
+        {
+          "id": 2761,
+          "value": 5.0
+        }
+      ]
+    },
+    {
+      "id": 47892,
+      "name": "Agitated Dark Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47863.0
+        },
+        {
+          "id": 2761,
+          "value": 2.0
+        }
+      ]
+    },
+    {
+      "id": 47893,
+      "name": "Fierce Dark Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47863.0
+        },
+        {
+          "id": 2761,
+          "value": 3.0
+        }
+      ]
+    },
+    {
+      "id": 47894,
+      "name": "Raging Dark Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47863.0
+        },
+        {
+          "id": 2761,
+          "value": 4.0
+        }
+      ]
+    },
+    {
+      "id": 47895,
+      "name": "Chaotic Dark Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47863.0
+        },
+        {
+          "id": 2761,
+          "value": 5.0
+        }
+      ]
+    },
+    {
+      "id": 47896,
+      "name": "Agitated Firestorm Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47864.0
+        },
+        {
+          "id": 2761,
+          "value": 2.0
+        }
+      ]
+    },
+    {
+      "id": 47897,
+      "name": "Fierce Firestorm Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47864.0
+        },
+        {
+          "id": 2761,
+          "value": 3.0
+        }
+      ]
+    },
+    {
+      "id": 47898,
+      "name": "Raging Firestorm Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47864.0
+        },
+        {
+          "id": 2761,
+          "value": 4.0
+        }
+      ]
+    },
+    {
+      "id": 47899,
+      "name": "Chaotic Firestorm Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47864.0
+        },
+        {
+          "id": 2761,
+          "value": 5.0
+        }
+      ]
+    },
+    {
+      "id": 47900,
+      "name": "Agitated Gamma Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47866.0
+        },
+        {
+          "id": 2761,
+          "value": 2.0
+        }
+      ]
+    },
+    {
+      "id": 47901,
+      "name": "Fierce Gamma Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47866.0
+        },
+        {
+          "id": 2761,
+          "value": 3.0
+        }
+      ]
+    },
+    {
+      "id": 47902,
+      "name": "Raging Gamma Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47866.0
+        },
+        {
+          "id": 2761,
+          "value": 4.0
+        }
+      ]
+    },
+    {
+      "id": 47903,
+      "name": "Chaotic Gamma Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47866.0
+        },
+        {
+          "id": 2761,
+          "value": 5.0
+        }
+      ]
+    },
+    {
+      "id": 47904,
+      "name": "Agitated Electrical Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47865.0
+        },
+        {
+          "id": 2761,
+          "value": 2.0
+        }
+      ]
+    },
+    {
+      "id": 47905,
+      "name": "Fierce Electrical Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47865.0
+        },
+        {
+          "id": 2761,
+          "value": 3.0
+        }
+      ]
+    },
+    {
+      "id": 47906,
+      "name": "Raging Electrical Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47865.0
+        },
+        {
+          "id": 2761,
+          "value": 4.0
+        }
+      ]
+    },
+    {
+      "id": 47907,
+      "name": "Chaotic Electrical Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47865.0
+        },
+        {
+          "id": 2761,
+          "value": 5.0
+        }
+      ]
+    },
+    {
       "id": 47951,
       "name": "Triglavian Bioadaptive Cache",
       "groupId": 2009,
@@ -2710,6 +4967,154 @@
       "attributes": []
     },
     {
+      "id": 48964,
+      "name": "Abyssal Trace",
+      "groupId": 1991,
+      "groupName": "Filament Trace",
+      "categoryId": 2,
+      "mass": 1.0,
+      "radius": 500.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 211,
+          "value": 18.0
+        },
+        {
+          "id": 552,
+          "value": 100.0
+        }
+      ]
+    },
+    {
+      "id": 49689,
+      "name": "Triglavian Biocombinative Cache",
+      "groupId": 2009,
+      "groupName": "Precursor Cache",
+      "categoryId": 11,
+      "mass": 100000.0,
+      "radius": 1226.0,
+      "capacity": 10000.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 100.0
+        },
+        {
+          "id": 54,
+          "value": 0.0
+        },
+        {
+          "id": 158,
+          "value": 0.0
+        },
+        {
+          "id": 160,
+          "value": 0.0
+        },
+        {
+          "id": 247,
+          "value": 0.0
+        },
+        {
+          "id": 250,
+          "value": 1.0
+        },
+        {
+          "id": 251,
+          "value": 30.0
+        },
+        {
+          "id": 252,
+          "value": 0.0
+        },
+        {
+          "id": 263,
+          "value": 100.0
+        },
+        {
+          "id": 265,
+          "value": 100.0
+        },
+        {
+          "id": 416,
+          "value": 0.0
+        },
+        {
+          "id": 456,
+          "value": 5.0
+        },
+        {
+          "id": 457,
+          "value": 10.0
+        },
+        {
+          "id": 479,
+          "value": 86400000.0
+        },
+        {
+          "id": 524,
+          "value": 1.0
+        },
+        {
+          "id": 525,
+          "value": 1.0
+        },
+        {
+          "id": 552,
+          "value": 1000.0
+        },
+        {
+          "id": 562,
+          "value": 0.0
+        },
+        {
+          "id": 665,
+          "value": 0.0
+        },
+        {
+          "id": 854,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 49692,
+      "name": "Biocombinative Cache Wreck",
+      "groupId": 186,
+      "groupName": "Wreck",
+      "categoryId": 2,
+      "mass": 10000.0,
+      "radius": 250.0,
+      "capacity": 25000.0,
+      "attributes": [
+        {
+          "id": 552,
+          "value": 1000.0
+        }
+      ]
+    },
+    {
+      "id": 56131,
+      "name": "Tranquil Electrical Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47865.0
+        },
+        {
+          "id": 2761,
+          "value": 0.0
+        }
+      ]
+    },
+    {
       "id": 56132,
       "name": "Tranquil Dark Filament",
       "groupId": 1979,
@@ -2726,6 +5131,386 @@
         {
           "id": 2761,
           "value": 0.0
+        }
+      ]
+    },
+    {
+      "id": 56133,
+      "name": "Tranquil Exotic Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47862.0
+        },
+        {
+          "id": 2761,
+          "value": 0.0
+        }
+      ]
+    },
+    {
+      "id": 56134,
+      "name": "Tranquil Firestorm Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47864.0
+        },
+        {
+          "id": 2761,
+          "value": 0.0
+        }
+      ]
+    },
+    {
+      "id": 56136,
+      "name": "Tranquil Gamma Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47866.0
+        },
+        {
+          "id": 2761,
+          "value": 0.0
+        }
+      ]
+    },
+    {
+      "id": 56139,
+      "name": "Cataclysmic Electrical Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47865.0
+        },
+        {
+          "id": 2761,
+          "value": 6.0
+        }
+      ]
+    },
+    {
+      "id": 56140,
+      "name": "Cataclysmic Dark Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47863.0
+        },
+        {
+          "id": 2761,
+          "value": 6.0
+        }
+      ]
+    },
+    {
+      "id": 56141,
+      "name": "Cataclysmic Exotic Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47862.0
+        },
+        {
+          "id": 2761,
+          "value": 6.0
+        }
+      ]
+    },
+    {
+      "id": 56142,
+      "name": "Cataclysmic Firestorm Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47864.0
+        },
+        {
+          "id": 2761,
+          "value": 6.0
+        }
+      ]
+    },
+    {
+      "id": 56143,
+      "name": "Cataclysmic Gamma Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47866.0
+        },
+        {
+          "id": 2761,
+          "value": 6.0
+        }
+      ]
+    },
+    {
+      "id": 56213,
+      "name": "Endobenthic Abyssal Overmind",
+      "groupId": 1982,
+      "groupName": "Abyssal Spaceship Entities",
+      "categoryId": 11,
+      "mass": 100250000.0,
+      "radius": 499.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 9,
+          "value": 17000.0
+        },
+        {
+          "id": 20,
+          "value": -55.0
+        },
+        {
+          "id": 37,
+          "value": 400.0
+        },
+        {
+          "id": 51,
+          "value": 3970.0
+        },
+        {
+          "id": 54,
+          "value": 29160.0
+        },
+        {
+          "id": 55,
+          "value": 825000.0
+        },
+        {
+          "id": 64,
+          "value": 50.0
+        },
+        {
+          "id": 70,
+          "value": 0.081
+        },
+        {
+          "id": 76,
+          "value": 105000.0
+        },
+        {
+          "id": 109,
+          "value": 0.32
+        },
+        {
+          "id": 110,
+          "value": 0.32
+        },
+        {
+          "id": 111,
+          "value": 0.32
+        },
+        {
+          "id": 113,
+          "value": 0.32
+        },
+        {
+          "id": 114,
+          "value": 0.0
+        },
+        {
+          "id": 116,
+          "value": 0.0
+        },
+        {
+          "id": 117,
+          "value": 33.6
+        },
+        {
+          "id": 118,
+          "value": 24.0
+        },
+        {
+          "id": 158,
+          "value": 29000.0
+        },
+        {
+          "id": 160,
+          "value": 3.23
+        },
+        {
+          "id": 192,
+          "value": 7.0
+        },
+        {
+          "id": 208,
+          "value": 0.0
+        },
+        {
+          "id": 209,
+          "value": 0.0
+        },
+        {
+          "id": 210,
+          "value": 32.4
+        },
+        {
+          "id": 211,
+          "value": 0.0
+        },
+        {
+          "id": 245,
+          "value": 13874.0
+        },
+        {
+          "id": 246,
+          "value": 395.0
+        },
+        {
+          "id": 263,
+          "value": 14850.0
+        },
+        {
+          "id": 265,
+          "value": 32180.0
+        },
+        {
+          "id": 267,
+          "value": 0.24
+        },
+        {
+          "id": 268,
+          "value": 0.3
+        },
+        {
+          "id": 269,
+          "value": 0.32
+        },
+        {
+          "id": 270,
+          "value": 0.32
+        },
+        {
+          "id": 271,
+          "value": 0.79
+        },
+        {
+          "id": 272,
+          "value": 0.39
+        },
+        {
+          "id": 273,
+          "value": 0.47
+        },
+        {
+          "id": 274,
+          "value": 0.63
+        },
+        {
+          "id": 479,
+          "value": 2542500.0
+        },
+        {
+          "id": 481,
+          "value": 0.0
+        },
+        {
+          "id": 482,
+          "value": 8906.0
+        },
+        {
+          "id": 552,
+          "value": 455.0
+        },
+        {
+          "id": 562,
+          "value": 0.0
+        },
+        {
+          "id": 564,
+          "value": 112.5
+        },
+        {
+          "id": 620,
+          "value": 40000.0
+        },
+        {
+          "id": 2499,
+          "value": 5000.0
+        },
+        {
+          "id": 2500,
+          "value": 15000.0
+        },
+        {
+          "id": 2501,
+          "value": 0.0
+        },
+        {
+          "id": 2502,
+          "value": 3.75
+        }
+      ]
+    },
+    {
+      "id": 60596,
+      "name": "Demo Filament",
+      "groupId": 1979,
+      "groupName": "Abyssal Filaments",
+      "categoryId": 17,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 2760,
+          "value": 47866.0
+        },
+        {
+          "id": 2761,
+          "value": 1002.0
         }
       ]
     },
@@ -2832,6 +5617,35 @@
     },
     {
       "dataset": "client/dogmaeffects",
+      "key": 2132,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 2132,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 54,
+            "modifyingAttributeID": 351,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3302
+          }
+        ],
+        "effectName": "smallProjectileMaxRangeBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
       "key": 2809,
       "data": {
         "sfxName": "None",
@@ -2902,6 +5716,113 @@
         "guid": "",
         "propulsionChance": 0,
         "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 5317,
+      "data": {
+        "descriptionID": 286849,
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 5317,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 64,
+            "modifyingAttributeID": 729,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3302
+          }
+        ],
+        "effectName": "shipProjectileDamageMD1",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 5318,
+      "data": {
+        "descriptionID": 286850,
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 5318,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 160,
+            "modifyingAttributeID": 740,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3302
+          }
+        ],
+        "effectName": "shipProjectileTracking1MD2",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 5779,
+      "data": {
+        "descriptionID": 294516,
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 5779,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 158,
+            "modifyingAttributeID": 587,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3302
+          }
+        ],
+        "effectName": "shipBonusSPTFalloffMF2",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 6743,
+      "data": {
+        "rangeChance": 0,
+        "guid": "effects.ModifyTargetSpeed",
+        "isAssistance": 0,
+        "isOffensive": 1,
+        "effectCategory": 2,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "published": 0,
+        "disallowAutoRepeat": 0,
+        "resistanceAttributeID": 2115,
+        "effectID": 6743,
+        "rangeAttributeID": 2500,
+        "propulsionChance": 0,
+        "effectName": "npcBehaviorWebifier",
+        "dischargeAttributeID": 2502,
+        "durationAttributeID": 2499,
+        "falloffAttributeID": 2501
       }
     },
     {
@@ -3075,6 +5996,34 @@
         "effectName": "weather_xenon_gas",
         "guid": "",
         "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 7248,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 7248,
+        "modifierInfo": [
+          {
+            "domain": "shipID",
+            "modifiedAttributeID": 51,
+            "modifyingAttributeID": 460,
+            "func": "LocationRequiredSkillModifier",
+            "operation": 6,
+            "skillTypeID": 3302
+          }
+        ],
+        "effectName": "shipPBonusROFMF",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 1
       }
     },
     {
@@ -8577,6 +11526,69 @@
     },
     {
       "dataset": "client/graphicids",
+      "key": 22042,
+      "data": {
+        "graphicFile": "res:/dx9/scene/abyssal/ad02_A_cube.red"
+      }
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": 22043,
+      "data": {
+        "graphicFile": "res:/dx9/scene/abyssal/ad02_B_cube.red"
+      }
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": 22044,
+      "data": {
+        "graphicFile": "res:/dx9/scene/abyssal/ad02_C_cube.red"
+      }
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": 22045,
+      "data": {
+        "graphicFile": "res:/dx9/scene/abyssal/ad03_A_cube.red"
+      }
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": 22046,
+      "data": {
+        "graphicFile": "res:/dx9/scene/abyssal/ad03_B_cube.red"
+      }
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": 22047,
+      "data": {
+        "graphicFile": "res:/dx9/scene/abyssal/ad03_C_cube.red"
+      }
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": 22048,
+      "data": {
+        "graphicFile": "res:/dx9/scene/abyssal/ad04_A_cube.red"
+      }
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": 22207,
+      "data": {
+        "graphicFile": "res:/dx9/scene/abyssal/ad04_B_cube.red"
+      }
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": 22208,
+      "data": {
+        "graphicFile": "res:/dx9/scene/abyssal/ad04_C_cube.red"
+      }
+    },
+    {
+      "dataset": "client/graphicids",
       "key": 22209,
       "data": {
         "graphicFile": "res:/dx9/scene/abyssal/ad05_A_cube.red"
@@ -8594,6 +11606,27 @@
       "key": 22211,
       "data": {
         "graphicFile": "res:/dx9/scene/abyssal/ad05_C_cube.red"
+      }
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": 22212,
+      "data": {
+        "graphicFile": "res:/dx9/scene/abyssal/ad06_A_cube.red"
+      }
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": 22213,
+      "data": {
+        "graphicFile": "res:/dx9/scene/abyssal/ad06_B_cube.red"
+      }
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": 22214,
+      "data": {
+        "graphicFile": "res:/dx9/scene/abyssal/ad06_C_cube.red"
       }
     },
     {
@@ -8754,6 +11787,384 @@
           {
             "effectID": 9,
             "isDefault": 1
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 587,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 3,
+            "value": 0.0
+          },
+          {
+            "attributeID": 9,
+            "value": 350.0
+          },
+          {
+            "attributeID": 11,
+            "value": 41.0
+          },
+          {
+            "attributeID": 12,
+            "value": 4.0
+          },
+          {
+            "attributeID": 13,
+            "value": 3.0
+          },
+          {
+            "attributeID": 14,
+            "value": 3.0
+          },
+          {
+            "attributeID": 15,
+            "value": 0.0
+          },
+          {
+            "attributeID": 19,
+            "value": 1.0
+          },
+          {
+            "attributeID": 21,
+            "value": 0.0
+          },
+          {
+            "attributeID": 37,
+            "value": 365.0
+          },
+          {
+            "attributeID": 48,
+            "value": 130.0
+          },
+          {
+            "attributeID": 49,
+            "value": 0.0
+          },
+          {
+            "attributeID": 55,
+            "value": 125000.0
+          },
+          {
+            "attributeID": 70,
+            "value": 3.2
+          },
+          {
+            "attributeID": 76,
+            "value": 22500.0
+          },
+          {
+            "attributeID": 79,
+            "value": 1500.0
+          },
+          {
+            "attributeID": 101,
+            "value": 2.0
+          },
+          {
+            "attributeID": 102,
+            "value": 3.0
+          },
+          {
+            "attributeID": 109,
+            "value": 0.67
+          },
+          {
+            "attributeID": 110,
+            "value": 0.67
+          },
+          {
+            "attributeID": 111,
+            "value": 0.67
+          },
+          {
+            "attributeID": 113,
+            "value": 0.67
+          },
+          {
+            "attributeID": 124,
+            "value": 16777215.0
+          },
+          {
+            "attributeID": 129,
+            "value": 2.0
+          },
+          {
+            "attributeID": 136,
+            "value": 1.0
+          },
+          {
+            "attributeID": 153,
+            "value": 2.24e-06
+          },
+          {
+            "attributeID": 182,
+            "value": 3329.0
+          },
+          {
+            "attributeID": 188,
+            "value": 0.0
+          },
+          {
+            "attributeID": 192,
+            "value": 4.0
+          },
+          {
+            "attributeID": 208,
+            "value": 0.0
+          },
+          {
+            "attributeID": 209,
+            "value": 8.0
+          },
+          {
+            "attributeID": 210,
+            "value": 0.0
+          },
+          {
+            "attributeID": 211,
+            "value": 0.0
+          },
+          {
+            "attributeID": 217,
+            "value": 397.0
+          },
+          {
+            "attributeID": 246,
+            "value": 397.0
+          },
+          {
+            "attributeID": 263,
+            "value": 450.0
+          },
+          {
+            "attributeID": 265,
+            "value": 450.0
+          },
+          {
+            "attributeID": 267,
+            "value": 0.4
+          },
+          {
+            "attributeID": 268,
+            "value": 0.9
+          },
+          {
+            "attributeID": 269,
+            "value": 0.75
+          },
+          {
+            "attributeID": 270,
+            "value": 0.65
+          },
+          {
+            "attributeID": 271,
+            "value": 1.0
+          },
+          {
+            "attributeID": 272,
+            "value": 0.5
+          },
+          {
+            "attributeID": 273,
+            "value": 0.6
+          },
+          {
+            "attributeID": 274,
+            "value": 0.8
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 283,
+            "value": 0.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          },
+          {
+            "attributeID": 460,
+            "value": -7.5
+          },
+          {
+            "attributeID": 479,
+            "value": 625000.0
+          },
+          {
+            "attributeID": 482,
+            "value": 250.0
+          },
+          {
+            "attributeID": 484,
+            "value": 0.75
+          },
+          {
+            "attributeID": 511,
+            "value": 0.0
+          },
+          {
+            "attributeID": 524,
+            "value": 0.75
+          },
+          {
+            "attributeID": 525,
+            "value": 1.0
+          },
+          {
+            "attributeID": 552,
+            "value": 35.0
+          },
+          {
+            "attributeID": 564,
+            "value": 660.0
+          },
+          {
+            "attributeID": 587,
+            "value": 10.0
+          },
+          {
+            "attributeID": 600,
+            "value": 5.0
+          },
+          {
+            "attributeID": 633,
+            "value": 0.0
+          },
+          {
+            "attributeID": 661,
+            "value": 3000.0
+          },
+          {
+            "attributeID": 662,
+            "value": 0.05
+          },
+          {
+            "attributeID": 974,
+            "value": 1.0
+          },
+          {
+            "attributeID": 975,
+            "value": 1.0
+          },
+          {
+            "attributeID": 976,
+            "value": 1.0
+          },
+          {
+            "attributeID": 977,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1132,
+            "value": 400.0
+          },
+          {
+            "attributeID": 1137,
+            "value": 3.0
+          },
+          {
+            "attributeID": 1154,
+            "value": 3.0
+          },
+          {
+            "attributeID": 1178,
+            "value": 100.0
+          },
+          {
+            "attributeID": 1179,
+            "value": 0.01
+          },
+          {
+            "attributeID": 1196,
+            "value": 0.01
+          },
+          {
+            "attributeID": 1198,
+            "value": 0.01
+          },
+          {
+            "attributeID": 1199,
+            "value": 100.0
+          },
+          {
+            "attributeID": 1200,
+            "value": 100.0
+          },
+          {
+            "attributeID": 1224,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1259,
+            "value": 0.5
+          },
+          {
+            "attributeID": 1261,
+            "value": 0.5
+          },
+          {
+            "attributeID": 1262,
+            "value": 0.63
+          },
+          {
+            "attributeID": 1271,
+            "value": 0.0
+          },
+          {
+            "attributeID": 1281,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1547,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1555,
+            "value": 25.0
+          },
+          {
+            "attributeID": 1768,
+            "value": 11342.0
+          },
+          {
+            "attributeID": 2045,
+            "value": 1.0
+          },
+          {
+            "attributeID": 2112,
+            "value": 1.0
+          },
+          {
+            "attributeID": 2113,
+            "value": 1.0
+          },
+          {
+            "attributeID": 2115,
+            "value": 1.0
+          },
+          {
+            "attributeID": 5796,
+            "value": 2147483647000.0
+          },
+          {
+            "attributeID": 6364,
+            "value": 4000.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 5779,
+            "isDefault": 0
+          },
+          {
+            "effectID": 7248,
+            "isDefault": 0
           }
         ]
       }
@@ -9407,6 +12818,372 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 16242,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 3,
+            "value": 0.0
+          },
+          {
+            "attributeID": 9,
+            "value": 750.0
+          },
+          {
+            "attributeID": 11,
+            "value": 70.0
+          },
+          {
+            "attributeID": 12,
+            "value": 2.0
+          },
+          {
+            "attributeID": 13,
+            "value": 3.0
+          },
+          {
+            "attributeID": 14,
+            "value": 8.0
+          },
+          {
+            "attributeID": 15,
+            "value": 0.0
+          },
+          {
+            "attributeID": 19,
+            "value": 1.0
+          },
+          {
+            "attributeID": 21,
+            "value": 0.0
+          },
+          {
+            "attributeID": 37,
+            "value": 270.0
+          },
+          {
+            "attributeID": 48,
+            "value": 170.0
+          },
+          {
+            "attributeID": 49,
+            "value": 0.0
+          },
+          {
+            "attributeID": 55,
+            "value": 290000.0
+          },
+          {
+            "attributeID": 70,
+            "value": 2.8
+          },
+          {
+            "attributeID": 76,
+            "value": 27000.0
+          },
+          {
+            "attributeID": 79,
+            "value": 5000.0
+          },
+          {
+            "attributeID": 101,
+            "value": 1.0
+          },
+          {
+            "attributeID": 102,
+            "value": 7.0
+          },
+          {
+            "attributeID": 109,
+            "value": 0.67
+          },
+          {
+            "attributeID": 110,
+            "value": 0.67
+          },
+          {
+            "attributeID": 111,
+            "value": 0.67
+          },
+          {
+            "attributeID": 113,
+            "value": 0.67
+          },
+          {
+            "attributeID": 124,
+            "value": 16777215.0
+          },
+          {
+            "attributeID": 129,
+            "value": 450.0
+          },
+          {
+            "attributeID": 136,
+            "value": 1.0
+          },
+          {
+            "attributeID": 153,
+            "value": 8.13e-07
+          },
+          {
+            "attributeID": 182,
+            "value": 33094.0
+          },
+          {
+            "attributeID": 188,
+            "value": 0.0
+          },
+          {
+            "attributeID": 192,
+            "value": 6.0
+          },
+          {
+            "attributeID": 208,
+            "value": 0.0
+          },
+          {
+            "attributeID": 209,
+            "value": 9.0
+          },
+          {
+            "attributeID": 210,
+            "value": 0.0
+          },
+          {
+            "attributeID": 211,
+            "value": 0.0
+          },
+          {
+            "attributeID": 217,
+            "value": 397.0
+          },
+          {
+            "attributeID": 246,
+            "value": 397.0
+          },
+          {
+            "attributeID": 263,
+            "value": 800.0
+          },
+          {
+            "attributeID": 265,
+            "value": 750.0
+          },
+          {
+            "attributeID": 267,
+            "value": 0.4
+          },
+          {
+            "attributeID": 268,
+            "value": 0.9
+          },
+          {
+            "attributeID": 269,
+            "value": 0.75
+          },
+          {
+            "attributeID": 270,
+            "value": 0.65
+          },
+          {
+            "attributeID": 271,
+            "value": 1.0
+          },
+          {
+            "attributeID": 272,
+            "value": 0.5
+          },
+          {
+            "attributeID": 273,
+            "value": 0.6
+          },
+          {
+            "attributeID": 274,
+            "value": 0.8
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 283,
+            "value": 0.0
+          },
+          {
+            "attributeID": 351,
+            "value": 50.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          },
+          {
+            "attributeID": 479,
+            "value": 625000.0
+          },
+          {
+            "attributeID": 482,
+            "value": 550.0
+          },
+          {
+            "attributeID": 484,
+            "value": 0.75
+          },
+          {
+            "attributeID": 524,
+            "value": 0.75
+          },
+          {
+            "attributeID": 525,
+            "value": 1.0
+          },
+          {
+            "attributeID": 552,
+            "value": 56.0
+          },
+          {
+            "attributeID": 564,
+            "value": 550.0
+          },
+          {
+            "attributeID": 600,
+            "value": 4.5
+          },
+          {
+            "attributeID": 633,
+            "value": 0.0
+          },
+          {
+            "attributeID": 661,
+            "value": 2000.0
+          },
+          {
+            "attributeID": 662,
+            "value": 0.25
+          },
+          {
+            "attributeID": 729,
+            "value": 5.0
+          },
+          {
+            "attributeID": 740,
+            "value": 10.0
+          },
+          {
+            "attributeID": 1132,
+            "value": 400.0
+          },
+          {
+            "attributeID": 1137,
+            "value": 3.0
+          },
+          {
+            "attributeID": 1154,
+            "value": 3.0
+          },
+          {
+            "attributeID": 1178,
+            "value": 100.0
+          },
+          {
+            "attributeID": 1179,
+            "value": 0.01
+          },
+          {
+            "attributeID": 1196,
+            "value": 0.01
+          },
+          {
+            "attributeID": 1198,
+            "value": 0.01
+          },
+          {
+            "attributeID": 1199,
+            "value": 100.0
+          },
+          {
+            "attributeID": 1200,
+            "value": 100.0
+          },
+          {
+            "attributeID": 1224,
+            "value": 0.85
+          },
+          {
+            "attributeID": 1259,
+            "value": 0.82
+          },
+          {
+            "attributeID": 1261,
+            "value": 0.5
+          },
+          {
+            "attributeID": 1262,
+            "value": 0.25
+          },
+          {
+            "attributeID": 1271,
+            "value": 0.0
+          },
+          {
+            "attributeID": 1281,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1547,
+            "value": 1.0
+          },
+          {
+            "attributeID": 1555,
+            "value": 40.0
+          },
+          {
+            "attributeID": 1768,
+            "value": 11342.0
+          },
+          {
+            "attributeID": 2045,
+            "value": 1.0
+          },
+          {
+            "attributeID": 2112,
+            "value": 1.0
+          },
+          {
+            "attributeID": 2113,
+            "value": 1.0
+          },
+          {
+            "attributeID": 2115,
+            "value": 1.0
+          },
+          {
+            "attributeID": 5796,
+            "value": 2147483647000.0
+          },
+          {
+            "attributeID": 6364,
+            "value": 6000.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 2132,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5317,
+            "isDefault": 0
+          },
+          {
+            "effectID": 5318,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 26495,
       "data": {
         "dogmaAttributes": [
@@ -9425,6 +13202,56 @@
           {
             "attributeID": 901,
             "value": 20.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 26540,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 1000.0
+          },
+          {
+            "attributeID": 525,
+            "value": 1.0
+          },
+          {
+            "attributeID": 552,
+            "value": 5000.0
+          },
+          {
+            "attributeID": 901,
+            "value": 30.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 26550,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 700.0
+          },
+          {
+            "attributeID": 525,
+            "value": 1.0
+          },
+          {
+            "attributeID": 552,
+            "value": 5000.0
+          },
+          {
+            "attributeID": 901,
+            "value": 30.0
           }
         ],
         "dogmaEffects": []
@@ -10616,6 +14443,108 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 47711,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47866.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 4.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47761,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47862.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47762,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47863.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47763,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47864.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47764,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47866.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47765,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47865.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 47847,
       "data": {
         "dogmaAttributes": [
@@ -11246,6 +15175,1280 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 47876,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 10625.0
+          },
+          {
+            "attributeID": 37,
+            "value": 200.0
+          },
+          {
+            "attributeID": 51,
+            "value": 4212.0
+          },
+          {
+            "attributeID": 54,
+            "value": 30000.0
+          },
+          {
+            "attributeID": 55,
+            "value": 825000.0
+          },
+          {
+            "attributeID": 64,
+            "value": 14.3
+          },
+          {
+            "attributeID": 70,
+            "value": 0.085
+          },
+          {
+            "attributeID": 76,
+            "value": 105000.0
+          },
+          {
+            "attributeID": 109,
+            "value": 0.67
+          },
+          {
+            "attributeID": 110,
+            "value": 0.67
+          },
+          {
+            "attributeID": 111,
+            "value": 0.67
+          },
+          {
+            "attributeID": 113,
+            "value": 0.67
+          },
+          {
+            "attributeID": 114,
+            "value": 0.0
+          },
+          {
+            "attributeID": 116,
+            "value": 0.0
+          },
+          {
+            "attributeID": 117,
+            "value": 20.0
+          },
+          {
+            "attributeID": 118,
+            "value": 12.0
+          },
+          {
+            "attributeID": 158,
+            "value": 15000.0
+          },
+          {
+            "attributeID": 160,
+            "value": 3.6
+          },
+          {
+            "attributeID": 192,
+            "value": 7.0
+          },
+          {
+            "attributeID": 208,
+            "value": 0.0
+          },
+          {
+            "attributeID": 209,
+            "value": 0.0
+          },
+          {
+            "attributeID": 210,
+            "value": 26.4
+          },
+          {
+            "attributeID": 211,
+            "value": 0.0
+          },
+          {
+            "attributeID": 245,
+            "value": 572.0
+          },
+          {
+            "attributeID": 246,
+            "value": 395.0
+          },
+          {
+            "attributeID": 263,
+            "value": 9000.0
+          },
+          {
+            "attributeID": 265,
+            "value": 10000.0
+          },
+          {
+            "attributeID": 267,
+            "value": 0.375
+          },
+          {
+            "attributeID": 268,
+            "value": 0.675
+          },
+          {
+            "attributeID": 269,
+            "value": 0.4875
+          },
+          {
+            "attributeID": 270,
+            "value": 0.4875
+          },
+          {
+            "attributeID": 271,
+            "value": 1.0
+          },
+          {
+            "attributeID": 272,
+            "value": 0.5
+          },
+          {
+            "attributeID": 273,
+            "value": 0.6
+          },
+          {
+            "attributeID": 274,
+            "value": 0.8
+          },
+          {
+            "attributeID": 479,
+            "value": 1875000.0
+          },
+          {
+            "attributeID": 481,
+            "value": 0.0
+          },
+          {
+            "attributeID": 482,
+            "value": 7500.0
+          },
+          {
+            "attributeID": 552,
+            "value": 465.0
+          },
+          {
+            "attributeID": 562,
+            "value": 0.0
+          },
+          {
+            "attributeID": 564,
+            "value": 112.5
+          },
+          {
+            "attributeID": 620,
+            "value": 40000.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 10,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47877,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 10625.0
+          },
+          {
+            "attributeID": 37,
+            "value": 250.0
+          },
+          {
+            "attributeID": 51,
+            "value": 3220.0
+          },
+          {
+            "attributeID": 54,
+            "value": 36000.0
+          },
+          {
+            "attributeID": 55,
+            "value": 825000.0
+          },
+          {
+            "attributeID": 64,
+            "value": 24.0
+          },
+          {
+            "attributeID": 70,
+            "value": 0.084
+          },
+          {
+            "attributeID": 76,
+            "value": 105000.0
+          },
+          {
+            "attributeID": 109,
+            "value": 0.4
+          },
+          {
+            "attributeID": 110,
+            "value": 0.4
+          },
+          {
+            "attributeID": 111,
+            "value": 0.4
+          },
+          {
+            "attributeID": 113,
+            "value": 0.4
+          },
+          {
+            "attributeID": 114,
+            "value": 0.0
+          },
+          {
+            "attributeID": 116,
+            "value": 0.0
+          },
+          {
+            "attributeID": 117,
+            "value": 23.0
+          },
+          {
+            "attributeID": 118,
+            "value": 13.8
+          },
+          {
+            "attributeID": 158,
+            "value": 15000.0
+          },
+          {
+            "attributeID": 160,
+            "value": 4.26
+          },
+          {
+            "attributeID": 192,
+            "value": 7.0
+          },
+          {
+            "attributeID": 208,
+            "value": 0.0
+          },
+          {
+            "attributeID": 209,
+            "value": 0.0
+          },
+          {
+            "attributeID": 210,
+            "value": 26.4
+          },
+          {
+            "attributeID": 211,
+            "value": 0.0
+          },
+          {
+            "attributeID": 245,
+            "value": 3114.0
+          },
+          {
+            "attributeID": 246,
+            "value": 395.0
+          },
+          {
+            "attributeID": 263,
+            "value": 9000.0
+          },
+          {
+            "attributeID": 265,
+            "value": 10000.0
+          },
+          {
+            "attributeID": 267,
+            "value": 0.32
+          },
+          {
+            "attributeID": 268,
+            "value": 0.32
+          },
+          {
+            "attributeID": 269,
+            "value": 0.23
+          },
+          {
+            "attributeID": 270,
+            "value": 0.41
+          },
+          {
+            "attributeID": 271,
+            "value": 0.875
+          },
+          {
+            "attributeID": 272,
+            "value": 0.4375
+          },
+          {
+            "attributeID": 273,
+            "value": 0.525
+          },
+          {
+            "attributeID": 274,
+            "value": 0.7
+          },
+          {
+            "attributeID": 479,
+            "value": 1875000.0
+          },
+          {
+            "attributeID": 481,
+            "value": 0.0
+          },
+          {
+            "attributeID": 482,
+            "value": 7500.0
+          },
+          {
+            "attributeID": 552,
+            "value": 465.0
+          },
+          {
+            "attributeID": 562,
+            "value": 0.0
+          },
+          {
+            "attributeID": 564,
+            "value": 112.5
+          },
+          {
+            "attributeID": 620,
+            "value": 40000.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 10,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47878,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 10625.0
+          },
+          {
+            "attributeID": 37,
+            "value": 300.0
+          },
+          {
+            "attributeID": 51,
+            "value": 4280.0
+          },
+          {
+            "attributeID": 54,
+            "value": 29025.0
+          },
+          {
+            "attributeID": 55,
+            "value": 825000.0
+          },
+          {
+            "attributeID": 64,
+            "value": 30.0
+          },
+          {
+            "attributeID": 70,
+            "value": 0.084
+          },
+          {
+            "attributeID": 76,
+            "value": 105000.0
+          },
+          {
+            "attributeID": 109,
+            "value": 0.4
+          },
+          {
+            "attributeID": 110,
+            "value": 0.4
+          },
+          {
+            "attributeID": 111,
+            "value": 0.4
+          },
+          {
+            "attributeID": 113,
+            "value": 0.4
+          },
+          {
+            "attributeID": 114,
+            "value": 0.0
+          },
+          {
+            "attributeID": 116,
+            "value": 0.0
+          },
+          {
+            "attributeID": 117,
+            "value": 32.2
+          },
+          {
+            "attributeID": 118,
+            "value": 23.0
+          },
+          {
+            "attributeID": 158,
+            "value": 28750.0
+          },
+          {
+            "attributeID": 160,
+            "value": 2.89
+          },
+          {
+            "attributeID": 192,
+            "value": 7.0
+          },
+          {
+            "attributeID": 208,
+            "value": 0.0
+          },
+          {
+            "attributeID": 209,
+            "value": 0.0
+          },
+          {
+            "attributeID": 210,
+            "value": 26.4
+          },
+          {
+            "attributeID": 211,
+            "value": 0.0
+          },
+          {
+            "attributeID": 245,
+            "value": 12356.0
+          },
+          {
+            "attributeID": 246,
+            "value": 395.0
+          },
+          {
+            "attributeID": 263,
+            "value": 9000.0
+          },
+          {
+            "attributeID": 265,
+            "value": 20000.0
+          },
+          {
+            "attributeID": 267,
+            "value": 0.32
+          },
+          {
+            "attributeID": 268,
+            "value": 0.32
+          },
+          {
+            "attributeID": 269,
+            "value": 0.41
+          },
+          {
+            "attributeID": 270,
+            "value": 0.41
+          },
+          {
+            "attributeID": 271,
+            "value": 0.875
+          },
+          {
+            "attributeID": 272,
+            "value": 0.4375
+          },
+          {
+            "attributeID": 273,
+            "value": 0.525
+          },
+          {
+            "attributeID": 274,
+            "value": 0.7
+          },
+          {
+            "attributeID": 479,
+            "value": 1875000.0
+          },
+          {
+            "attributeID": 481,
+            "value": 0.0
+          },
+          {
+            "attributeID": 482,
+            "value": 9530.0
+          },
+          {
+            "attributeID": 552,
+            "value": 465.0
+          },
+          {
+            "attributeID": 562,
+            "value": 0.0
+          },
+          {
+            "attributeID": 564,
+            "value": 112.5
+          },
+          {
+            "attributeID": 620,
+            "value": 40000.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 10,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47879,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 13750.0
+          },
+          {
+            "attributeID": 37,
+            "value": 350.0
+          },
+          {
+            "attributeID": 51,
+            "value": 3390.0
+          },
+          {
+            "attributeID": 54,
+            "value": 20790.0
+          },
+          {
+            "attributeID": 55,
+            "value": 825000.0
+          },
+          {
+            "attributeID": 64,
+            "value": 29.0
+          },
+          {
+            "attributeID": 70,
+            "value": 0.081
+          },
+          {
+            "attributeID": 76,
+            "value": 105000.0
+          },
+          {
+            "attributeID": 109,
+            "value": 0.4
+          },
+          {
+            "attributeID": 110,
+            "value": 0.4
+          },
+          {
+            "attributeID": 111,
+            "value": 0.4
+          },
+          {
+            "attributeID": 113,
+            "value": 0.4
+          },
+          {
+            "attributeID": 114,
+            "value": 0.0
+          },
+          {
+            "attributeID": 116,
+            "value": 0.0
+          },
+          {
+            "attributeID": 117,
+            "value": 32.2
+          },
+          {
+            "attributeID": 118,
+            "value": 23.0
+          },
+          {
+            "attributeID": 158,
+            "value": 19820.0
+          },
+          {
+            "attributeID": 160,
+            "value": 4.33
+          },
+          {
+            "attributeID": 192,
+            "value": 7.0
+          },
+          {
+            "attributeID": 208,
+            "value": 0.0
+          },
+          {
+            "attributeID": 209,
+            "value": 0.0
+          },
+          {
+            "attributeID": 210,
+            "value": 32.4
+          },
+          {
+            "attributeID": 211,
+            "value": 0.0
+          },
+          {
+            "attributeID": 245,
+            "value": 3114.0
+          },
+          {
+            "attributeID": 246,
+            "value": 395.0
+          },
+          {
+            "attributeID": 263,
+            "value": 11875.0
+          },
+          {
+            "attributeID": 265,
+            "value": 22500.0
+          },
+          {
+            "attributeID": 267,
+            "value": 0.23
+          },
+          {
+            "attributeID": 268,
+            "value": 0.32
+          },
+          {
+            "attributeID": 269,
+            "value": 0.3
+          },
+          {
+            "attributeID": 270,
+            "value": 0.3
+          },
+          {
+            "attributeID": 271,
+            "value": 0.875
+          },
+          {
+            "attributeID": 272,
+            "value": 0.4375
+          },
+          {
+            "attributeID": 273,
+            "value": 0.525
+          },
+          {
+            "attributeID": 274,
+            "value": 0.7
+          },
+          {
+            "attributeID": 479,
+            "value": 2542500.0
+          },
+          {
+            "attributeID": 481,
+            "value": 0.0
+          },
+          {
+            "attributeID": 482,
+            "value": 8906.0
+          },
+          {
+            "attributeID": 552,
+            "value": 455.0
+          },
+          {
+            "attributeID": 562,
+            "value": 0.0
+          },
+          {
+            "attributeID": 564,
+            "value": 112.5
+          },
+          {
+            "attributeID": 620,
+            "value": 40000.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 10,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47880,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 13750.0
+          },
+          {
+            "attributeID": 20,
+            "value": -55.0
+          },
+          {
+            "attributeID": 37,
+            "value": 400.0
+          },
+          {
+            "attributeID": 51,
+            "value": 3970.0
+          },
+          {
+            "attributeID": 54,
+            "value": 29160.0
+          },
+          {
+            "attributeID": 55,
+            "value": 825000.0
+          },
+          {
+            "attributeID": 64,
+            "value": 41.0
+          },
+          {
+            "attributeID": 70,
+            "value": 0.081
+          },
+          {
+            "attributeID": 76,
+            "value": 105000.0
+          },
+          {
+            "attributeID": 109,
+            "value": 0.32
+          },
+          {
+            "attributeID": 110,
+            "value": 0.32
+          },
+          {
+            "attributeID": 111,
+            "value": 0.32
+          },
+          {
+            "attributeID": 113,
+            "value": 0.32
+          },
+          {
+            "attributeID": 114,
+            "value": 0.0
+          },
+          {
+            "attributeID": 116,
+            "value": 0.0
+          },
+          {
+            "attributeID": 117,
+            "value": 33.6
+          },
+          {
+            "attributeID": 118,
+            "value": 24.0
+          },
+          {
+            "attributeID": 158,
+            "value": 29000.0
+          },
+          {
+            "attributeID": 160,
+            "value": 3.23
+          },
+          {
+            "attributeID": 192,
+            "value": 7.0
+          },
+          {
+            "attributeID": 208,
+            "value": 0.0
+          },
+          {
+            "attributeID": 209,
+            "value": 0.0
+          },
+          {
+            "attributeID": 210,
+            "value": 32.4
+          },
+          {
+            "attributeID": 211,
+            "value": 0.0
+          },
+          {
+            "attributeID": 245,
+            "value": 13874.0
+          },
+          {
+            "attributeID": 246,
+            "value": 395.0
+          },
+          {
+            "attributeID": 263,
+            "value": 11875.0
+          },
+          {
+            "attributeID": 265,
+            "value": 25750.0
+          },
+          {
+            "attributeID": 267,
+            "value": 0.24
+          },
+          {
+            "attributeID": 268,
+            "value": 0.3
+          },
+          {
+            "attributeID": 269,
+            "value": 0.32
+          },
+          {
+            "attributeID": 270,
+            "value": 0.32
+          },
+          {
+            "attributeID": 271,
+            "value": 0.79
+          },
+          {
+            "attributeID": 272,
+            "value": 0.39
+          },
+          {
+            "attributeID": 273,
+            "value": 0.47
+          },
+          {
+            "attributeID": 274,
+            "value": 0.63
+          },
+          {
+            "attributeID": 479,
+            "value": 2542500.0
+          },
+          {
+            "attributeID": 481,
+            "value": 0.0
+          },
+          {
+            "attributeID": 482,
+            "value": 8906.0
+          },
+          {
+            "attributeID": 552,
+            "value": 455.0
+          },
+          {
+            "attributeID": 562,
+            "value": 0.0
+          },
+          {
+            "attributeID": 564,
+            "value": 112.5
+          },
+          {
+            "attributeID": 620,
+            "value": 40000.0
+          },
+          {
+            "attributeID": 2499,
+            "value": 5000.0
+          },
+          {
+            "attributeID": 2500,
+            "value": 15000.0
+          },
+          {
+            "attributeID": 2501,
+            "value": 0.0
+          },
+          {
+            "attributeID": 2502,
+            "value": 3.75
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 10,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6743,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47888,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47862.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 2.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47889,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47862.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 3.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47890,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47862.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 4.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47891,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47862.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 5.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47892,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47863.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 2.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47893,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47863.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 3.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47894,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47863.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 4.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47895,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47863.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 5.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47896,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47864.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 2.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47897,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47864.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 3.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47898,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47864.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 4.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47899,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47864.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 5.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47900,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47866.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 2.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47901,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47866.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 3.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47902,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47866.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 4.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47903,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47866.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 5.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47904,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47865.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 2.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47905,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47865.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 3.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47906,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47865.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 4.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 47907,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47865.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 5.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 47951,
       "data": {
         "dogmaAttributes": [
@@ -11348,6 +16551,142 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 48964,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 211,
+            "value": 18.0
+          },
+          {
+            "attributeID": 552,
+            "value": 100.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 49689,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 100.0
+          },
+          {
+            "attributeID": 54,
+            "value": 0.0
+          },
+          {
+            "attributeID": 158,
+            "value": 0.0
+          },
+          {
+            "attributeID": 160,
+            "value": 0.0
+          },
+          {
+            "attributeID": 247,
+            "value": 0.0
+          },
+          {
+            "attributeID": 250,
+            "value": 1.0
+          },
+          {
+            "attributeID": 251,
+            "value": 30.0
+          },
+          {
+            "attributeID": 252,
+            "value": 0.0
+          },
+          {
+            "attributeID": 263,
+            "value": 100.0
+          },
+          {
+            "attributeID": 265,
+            "value": 100.0
+          },
+          {
+            "attributeID": 416,
+            "value": 0.0
+          },
+          {
+            "attributeID": 456,
+            "value": 5.0
+          },
+          {
+            "attributeID": 457,
+            "value": 10.0
+          },
+          {
+            "attributeID": 479,
+            "value": 86400000.0
+          },
+          {
+            "attributeID": 524,
+            "value": 1.0
+          },
+          {
+            "attributeID": 525,
+            "value": 1.0
+          },
+          {
+            "attributeID": 552,
+            "value": 1000.0
+          },
+          {
+            "attributeID": 562,
+            "value": 0.0
+          },
+          {
+            "attributeID": 665,
+            "value": 0.0
+          },
+          {
+            "attributeID": 854,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 49692,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 552,
+            "value": 1000.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 56131,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47865.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 0.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 56132,
       "data": {
         "dogmaAttributes": [
@@ -11358,6 +16697,365 @@
           {
             "attributeID": 2761,
             "value": 0.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 56133,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47862.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 0.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 56134,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47864.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 0.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 56136,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47866.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 0.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 56139,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47865.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 6.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 56140,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47863.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 6.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 56141,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47862.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 6.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 56142,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47864.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 6.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 56143,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47866.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 6.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 56213,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 9,
+            "value": 17000.0
+          },
+          {
+            "attributeID": 20,
+            "value": -55.0
+          },
+          {
+            "attributeID": 37,
+            "value": 400.0
+          },
+          {
+            "attributeID": 51,
+            "value": 3970.0
+          },
+          {
+            "attributeID": 54,
+            "value": 29160.0
+          },
+          {
+            "attributeID": 55,
+            "value": 825000.0
+          },
+          {
+            "attributeID": 64,
+            "value": 50.0
+          },
+          {
+            "attributeID": 70,
+            "value": 0.081
+          },
+          {
+            "attributeID": 76,
+            "value": 105000.0
+          },
+          {
+            "attributeID": 109,
+            "value": 0.32
+          },
+          {
+            "attributeID": 110,
+            "value": 0.32
+          },
+          {
+            "attributeID": 111,
+            "value": 0.32
+          },
+          {
+            "attributeID": 113,
+            "value": 0.32
+          },
+          {
+            "attributeID": 114,
+            "value": 0.0
+          },
+          {
+            "attributeID": 116,
+            "value": 0.0
+          },
+          {
+            "attributeID": 117,
+            "value": 33.6
+          },
+          {
+            "attributeID": 118,
+            "value": 24.0
+          },
+          {
+            "attributeID": 158,
+            "value": 29000.0
+          },
+          {
+            "attributeID": 160,
+            "value": 3.23
+          },
+          {
+            "attributeID": 192,
+            "value": 7.0
+          },
+          {
+            "attributeID": 208,
+            "value": 0.0
+          },
+          {
+            "attributeID": 209,
+            "value": 0.0
+          },
+          {
+            "attributeID": 210,
+            "value": 32.4
+          },
+          {
+            "attributeID": 211,
+            "value": 0.0
+          },
+          {
+            "attributeID": 245,
+            "value": 13874.0
+          },
+          {
+            "attributeID": 246,
+            "value": 395.0
+          },
+          {
+            "attributeID": 263,
+            "value": 14850.0
+          },
+          {
+            "attributeID": 265,
+            "value": 32180.0
+          },
+          {
+            "attributeID": 267,
+            "value": 0.24
+          },
+          {
+            "attributeID": 268,
+            "value": 0.3
+          },
+          {
+            "attributeID": 269,
+            "value": 0.32
+          },
+          {
+            "attributeID": 270,
+            "value": 0.32
+          },
+          {
+            "attributeID": 271,
+            "value": 0.79
+          },
+          {
+            "attributeID": 272,
+            "value": 0.39
+          },
+          {
+            "attributeID": 273,
+            "value": 0.47
+          },
+          {
+            "attributeID": 274,
+            "value": 0.63
+          },
+          {
+            "attributeID": 479,
+            "value": 2542500.0
+          },
+          {
+            "attributeID": 481,
+            "value": 0.0
+          },
+          {
+            "attributeID": 482,
+            "value": 8906.0
+          },
+          {
+            "attributeID": 552,
+            "value": 455.0
+          },
+          {
+            "attributeID": 562,
+            "value": 0.0
+          },
+          {
+            "attributeID": 564,
+            "value": 112.5
+          },
+          {
+            "attributeID": 620,
+            "value": 40000.0
+          },
+          {
+            "attributeID": 2499,
+            "value": 5000.0
+          },
+          {
+            "attributeID": 2500,
+            "value": 15000.0
+          },
+          {
+            "attributeID": 2501,
+            "value": 0.0
+          },
+          {
+            "attributeID": 2502,
+            "value": 3.75
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 10,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6743,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 60596,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 2760,
+            "value": 47866.0
+          },
+          {
+            "attributeID": 2761,
+            "value": 1002.0
           }
         ],
         "dogmaEffects": []
@@ -11389,6 +17087,97 @@
       }
     },
     {
+      "dataset": "client/typelist",
+      "key": 50,
+      "data": {
+        "description": "This is a list of types that prevent players from activating abyssal filaments within a certain distance",
+        "excludedTypeIDs": [],
+        "name": "Abyssal Filament Proximity Restrictions",
+        "includedCategoryIDs": [
+          65,
+          40,
+          23,
+          3,
+          22
+        ],
+        "includedTypeIDs": [],
+        "excludedGroupIDs": [],
+        "includedGroupIDs": [
+          10,
+          925,
+          6,
+          995,
+          366,
+          988,
+          1991
+        ],
+        "excludedCategoryIDs": []
+      }
+    },
+    {
+      "dataset": "client/typelist",
+      "key": 57,
+      "data": {
+        "description": "A list of ships that are allowed to activate abyssal filaments solo",
+        "excludedTypeIDs": [],
+        "name": "Abyssal Deadspace Solo - Allowed Cruisers",
+        "includedCategoryIDs": [],
+        "includedTypeIDs": [],
+        "excludedGroupIDs": [],
+        "includedGroupIDs": [
+          26,
+          833,
+          906,
+          358,
+          894,
+          832
+        ],
+        "excludedCategoryIDs": []
+      }
+    },
+    {
+      "dataset": "client/typelist",
+      "key": 92,
+      "data": {
+        "description": "A list of ships that are allowed to enter co-op abyssal deadspace in fleets",
+        "excludedTypeIDs": [],
+        "name": "Abyssal Deadspace Fleet - Allowed Frigates",
+        "includedCategoryIDs": [],
+        "includedTypeIDs": [],
+        "excludedGroupIDs": [],
+        "includedGroupIDs": [
+          324,
+          25,
+          831,
+          1527,
+          830,
+          893,
+          834,
+          1283
+        ],
+        "excludedCategoryIDs": []
+      }
+    },
+    {
+      "dataset": "client/typelist",
+      "key": 233,
+      "data": {
+        "description": "A list of ships that are allowed to enter two player abyssal deadspace",
+        "excludedTypeIDs": [],
+        "name": "Abyssal Deadspace two player- Allowed Destroyers",
+        "includedCategoryIDs": [],
+        "includedTypeIDs": [],
+        "excludedGroupIDs": [],
+        "includedGroupIDs": [
+          420,
+          1305,
+          541,
+          1534
+        ],
+        "excludedCategoryIDs": []
+      }
+    },
+    {
       "dataset": "client/types",
       "key": 210,
       "data": {
@@ -11409,6 +17198,40 @@
         "portionSize": 100,
         "techLevel": 1,
         "groupID": 384
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 587,
+      "data": {
+        "quoteID": 870703,
+        "raceID": 2,
+        "typeNameID": 105320,
+        "designerIDs": [
+          1000049
+        ],
+        "radius": 31.0,
+        "factionID": 500002,
+        "quoteAuthorID": 870704,
+        "typeID": 587,
+        "graphicID": 46,
+        "capacity": 140.0,
+        "isDynamicType": 0,
+        "soundID": 20078,
+        "wreckTypeID": 26550,
+        "techLevel": 1,
+        "basePrice": 400000.0,
+        "marketGroupID": 64,
+        "volume": 27289.0,
+        "portionSize": 1,
+        "descriptionID": 93841,
+        "metaLevel": 0,
+        "metaGroupID": 1,
+        "isisGroupID": 8,
+        "mass": 1067000.0,
+        "published": 1,
+        "certificateTemplate": 101,
+        "groupID": 25
       }
     },
     {
@@ -11479,6 +17302,39 @@
     },
     {
       "dataset": "client/types",
+      "key": 16242,
+      "data": {
+        "quoteID": 870735,
+        "raceID": 2,
+        "typeNameID": 104724,
+        "designerIDs": [
+          1000057
+        ],
+        "radius": 138.0,
+        "factionID": 500002,
+        "quoteAuthorID": 870736,
+        "typeID": 16242,
+        "graphicID": 2390,
+        "capacity": 400.0,
+        "soundID": 20074,
+        "wreckTypeID": 26540,
+        "techLevel": 1,
+        "basePrice": 800000.0,
+        "marketGroupID": 468,
+        "volume": 43000.0,
+        "portionSize": 1,
+        "descriptionID": 93271,
+        "metaLevel": 0,
+        "metaGroupID": 1,
+        "isisGroupID": 14,
+        "mass": 1600000.0,
+        "published": 1,
+        "certificateTemplate": 111,
+        "groupID": 420
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 26495,
       "data": {
         "descriptionID": 82127,
@@ -11486,6 +17342,42 @@
         "graphicID": 3116,
         "capacity": 27500.0,
         "typeNameID": 70961,
+        "published": 0,
+        "radius": 14.0,
+        "volume": 27500.0,
+        "mass": 10000.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 186
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 26540,
+      "data": {
+        "descriptionID": 82168,
+        "typeID": 26540,
+        "graphicID": 3116,
+        "capacity": 27500.0,
+        "typeNameID": 71002,
+        "published": 0,
+        "radius": 14.0,
+        "volume": 27500.0,
+        "mass": 10000.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 186
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 26550,
+      "data": {
+        "descriptionID": 82178,
+        "typeID": 26550,
+        "graphicID": 3117,
+        "capacity": 27500.0,
+        "typeNameID": 71012,
         "published": 0,
         "radius": 14.0,
         "volume": 27500.0,
@@ -11940,6 +17832,193 @@
     },
     {
       "dataset": "client/types",
+      "key": 47699,
+      "data": {
+        "descriptionID": 536969,
+        "typeID": 47699,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 534585,
+        "iconID": 21992,
+        "published": 1,
+        "marketGroupID": 2442,
+        "volume": 1.0,
+        "mass": 1.0,
+        "basePrice": 1000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1964
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47700,
+      "data": {
+        "descriptionID": 536971,
+        "typeID": 47700,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 534587,
+        "iconID": 22014,
+        "published": 1,
+        "marketGroupID": 2442,
+        "volume": 1.0,
+        "mass": 1.0,
+        "basePrice": 1000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1964
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47701,
+      "data": {
+        "descriptionID": 536970,
+        "typeID": 47701,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 534586,
+        "iconID": 22003,
+        "published": 1,
+        "marketGroupID": 2442,
+        "volume": 1.0,
+        "mass": 1.0,
+        "basePrice": 1000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1964
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47711,
+      "data": {
+        "typeID": 47711,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 534595,
+        "iconID": 2039,
+        "published": 0,
+        "volume": 0.1,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47761,
+      "data": {
+        "descriptionID": 535545,
+        "typeID": 47761,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 535015,
+        "iconID": 21924,
+        "published": 1,
+        "marketGroupID": 2457,
+        "volume": 0.1,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47762,
+      "data": {
+        "descriptionID": 535546,
+        "typeID": 47762,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 535016,
+        "iconID": 21924,
+        "published": 1,
+        "marketGroupID": 2458,
+        "volume": 0.1,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47763,
+      "data": {
+        "descriptionID": 535547,
+        "typeID": 47763,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 535017,
+        "iconID": 21924,
+        "published": 1,
+        "marketGroupID": 2459,
+        "volume": 0.1,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47764,
+      "data": {
+        "descriptionID": 535548,
+        "typeID": 47764,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 535018,
+        "iconID": 21924,
+        "published": 1,
+        "marketGroupID": 2460,
+        "volume": 0.1,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47765,
+      "data": {
+        "descriptionID": 535549,
+        "typeID": 47765,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 535019,
+        "iconID": 21924,
+        "published": 1,
+        "marketGroupID": 2461,
+        "volume": 0.1,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 47847,
       "data": {
         "descriptionID": 537246,
@@ -11999,6 +18078,531 @@
         "basePrice": 0.0,
         "portionSize": 1,
         "groupID": 1997
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47876,
+      "data": {
+        "descriptionID": 537262,
+        "typeID": 47876,
+        "graphicID": 1718,
+        "capacity": 0.0,
+        "raceID": 134,
+        "typeNameID": 535299,
+        "published": 0,
+        "radius": 499.0,
+        "volume": 454500.0,
+        "soundID": 11,
+        "mass": 100250000.0,
+        "factionID": 500025,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 1982
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47877,
+      "data": {
+        "descriptionID": 537263,
+        "typeID": 47877,
+        "graphicID": 1718,
+        "capacity": 0.0,
+        "raceID": 134,
+        "typeNameID": 535300,
+        "published": 0,
+        "radius": 499.0,
+        "volume": 454500.0,
+        "soundID": 11,
+        "mass": 100250000.0,
+        "factionID": 500025,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 1982
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47878,
+      "data": {
+        "descriptionID": 537264,
+        "typeID": 47878,
+        "graphicID": 1718,
+        "capacity": 0.0,
+        "raceID": 134,
+        "typeNameID": 535301,
+        "published": 0,
+        "radius": 499.0,
+        "volume": 454500.0,
+        "soundID": 11,
+        "mass": 100250000.0,
+        "factionID": 500025,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 1982
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47879,
+      "data": {
+        "descriptionID": 537265,
+        "typeID": 47879,
+        "graphicID": 1718,
+        "capacity": 0.0,
+        "raceID": 134,
+        "typeNameID": 535302,
+        "published": 0,
+        "radius": 499.0,
+        "volume": 454500.0,
+        "soundID": 11,
+        "mass": 100250000.0,
+        "factionID": 500025,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 1982
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47880,
+      "data": {
+        "descriptionID": 537266,
+        "typeID": 47880,
+        "graphicID": 1718,
+        "capacity": 0.0,
+        "raceID": 134,
+        "typeNameID": 535303,
+        "published": 0,
+        "radius": 499.0,
+        "volume": 454500.0,
+        "soundID": 11,
+        "mass": 100250000.0,
+        "factionID": 500025,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 1982
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47888,
+      "data": {
+        "descriptionID": 535550,
+        "typeID": 47888,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 535373,
+        "iconID": 21925,
+        "published": 1,
+        "marketGroupID": 2457,
+        "volume": 0.1,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47889,
+      "data": {
+        "descriptionID": 535551,
+        "typeID": 47889,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 535374,
+        "iconID": 21926,
+        "published": 1,
+        "marketGroupID": 2457,
+        "volume": 0.1,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47890,
+      "data": {
+        "descriptionID": 535552,
+        "typeID": 47890,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 535375,
+        "iconID": 21927,
+        "published": 1,
+        "marketGroupID": 2457,
+        "volume": 0.1,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47891,
+      "data": {
+        "descriptionID": 535553,
+        "typeID": 47891,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 535376,
+        "iconID": 21928,
+        "published": 1,
+        "marketGroupID": 2457,
+        "volume": 0.1,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47892,
+      "data": {
+        "descriptionID": 535554,
+        "typeID": 47892,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 535377,
+        "iconID": 21925,
+        "published": 1,
+        "marketGroupID": 2458,
+        "volume": 0.1,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47893,
+      "data": {
+        "descriptionID": 535555,
+        "typeID": 47893,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 535378,
+        "iconID": 21926,
+        "published": 1,
+        "marketGroupID": 2458,
+        "volume": 0.1,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47894,
+      "data": {
+        "descriptionID": 535556,
+        "typeID": 47894,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 535379,
+        "iconID": 21927,
+        "published": 1,
+        "marketGroupID": 2458,
+        "volume": 0.1,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47895,
+      "data": {
+        "descriptionID": 535557,
+        "typeID": 47895,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 535380,
+        "iconID": 21928,
+        "published": 1,
+        "marketGroupID": 2458,
+        "volume": 0.1,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47896,
+      "data": {
+        "descriptionID": 535558,
+        "typeID": 47896,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 535381,
+        "iconID": 21925,
+        "published": 1,
+        "marketGroupID": 2459,
+        "volume": 0.1,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47897,
+      "data": {
+        "descriptionID": 535559,
+        "typeID": 47897,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 535382,
+        "iconID": 21926,
+        "published": 1,
+        "marketGroupID": 2459,
+        "volume": 0.1,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47898,
+      "data": {
+        "descriptionID": 535560,
+        "typeID": 47898,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 535383,
+        "iconID": 21927,
+        "published": 1,
+        "marketGroupID": 2459,
+        "volume": 0.1,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47899,
+      "data": {
+        "descriptionID": 535561,
+        "typeID": 47899,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 535384,
+        "iconID": 21928,
+        "published": 1,
+        "marketGroupID": 2459,
+        "volume": 0.1,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47900,
+      "data": {
+        "descriptionID": 535562,
+        "typeID": 47900,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 535385,
+        "iconID": 21925,
+        "published": 1,
+        "marketGroupID": 2460,
+        "volume": 0.1,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47901,
+      "data": {
+        "descriptionID": 535563,
+        "typeID": 47901,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 535386,
+        "iconID": 21926,
+        "published": 1,
+        "marketGroupID": 2460,
+        "volume": 0.1,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47902,
+      "data": {
+        "descriptionID": 535564,
+        "typeID": 47902,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 535387,
+        "iconID": 21927,
+        "published": 1,
+        "marketGroupID": 2460,
+        "volume": 0.1,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47903,
+      "data": {
+        "descriptionID": 535565,
+        "typeID": 47903,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 535388,
+        "iconID": 21928,
+        "published": 1,
+        "marketGroupID": 2460,
+        "volume": 0.1,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47904,
+      "data": {
+        "descriptionID": 535566,
+        "typeID": 47904,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 535389,
+        "iconID": 21925,
+        "published": 1,
+        "marketGroupID": 2461,
+        "volume": 0.1,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47905,
+      "data": {
+        "descriptionID": 535567,
+        "typeID": 47905,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 535390,
+        "iconID": 21926,
+        "published": 1,
+        "marketGroupID": 2461,
+        "volume": 0.1,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47906,
+      "data": {
+        "descriptionID": 535568,
+        "typeID": 47906,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 535391,
+        "iconID": 21927,
+        "published": 1,
+        "marketGroupID": 2461,
+        "volume": 0.1,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 47907,
+      "data": {
+        "descriptionID": 535569,
+        "typeID": 47907,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "typeNameID": 535392,
+        "iconID": 21928,
+        "published": 1,
+        "marketGroupID": 2461,
+        "volume": 0.1,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
       }
     },
     {
@@ -12085,6 +18689,91 @@
     },
     {
       "dataset": "client/types",
+      "key": 48964,
+      "data": {
+        "descriptionID": 541375,
+        "typeID": 48964,
+        "graphicID": 22198,
+        "capacity": 0.0,
+        "isDynamicType": 0,
+        "typeNameID": 541374,
+        "published": 0,
+        "radius": 500.0,
+        "volume": 1.0,
+        "mass": 1.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1991
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 49689,
+      "data": {
+        "descriptionID": 543556,
+        "typeID": 49689,
+        "graphicID": 22311,
+        "capacity": 10000.0,
+        "isDynamicType": 0,
+        "typeNameID": 542990,
+        "published": 0,
+        "radius": 1226.0,
+        "volume": 100000000.0,
+        "soundID": 20217,
+        "wreckTypeID": 49692,
+        "mass": 100000.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 2009
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 49692,
+      "data": {
+        "descriptionID": 543562,
+        "typeID": 49692,
+        "graphicID": 22312,
+        "capacity": 25000.0,
+        "isDynamicType": 0,
+        "typeNameID": 542994,
+        "published": 0,
+        "radius": 250.0,
+        "volume": 25000.0,
+        "mass": 10000.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 186
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 56131,
+      "data": {
+        "descriptionID": 569348,
+        "typeID": 56131,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "isDynamicType": 0,
+        "typeNameID": 569347,
+        "volume": 0.1,
+        "iconID": 24510,
+        "published": 1,
+        "marketGroupID": 2461,
+        "metaGroupID": 1,
+        "isisGroupID": 4,
+        "raceID": 4,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 56132,
       "data": {
         "descriptionID": 569350,
@@ -12098,6 +18787,243 @@
         "iconID": 24510,
         "published": 1,
         "marketGroupID": 2458,
+        "metaGroupID": 1,
+        "isisGroupID": 4,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 56133,
+      "data": {
+        "descriptionID": 569352,
+        "typeID": 56133,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "isDynamicType": 0,
+        "typeNameID": 569351,
+        "volume": 0.1,
+        "iconID": 24510,
+        "published": 1,
+        "marketGroupID": 2457,
+        "metaGroupID": 1,
+        "isisGroupID": 4,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 56134,
+      "data": {
+        "descriptionID": 569354,
+        "typeID": 56134,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "isDynamicType": 0,
+        "typeNameID": 569353,
+        "volume": 0.1,
+        "iconID": 24510,
+        "published": 1,
+        "marketGroupID": 2459,
+        "metaGroupID": 1,
+        "isisGroupID": 4,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 56136,
+      "data": {
+        "descriptionID": 569356,
+        "typeID": 56136,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "isDynamicType": 0,
+        "typeNameID": 569355,
+        "volume": 0.1,
+        "iconID": 24510,
+        "published": 1,
+        "marketGroupID": 2460,
+        "metaGroupID": 1,
+        "isisGroupID": 4,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 56139,
+      "data": {
+        "descriptionID": 569363,
+        "typeID": 56139,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "isDynamicType": 0,
+        "typeNameID": 569362,
+        "volume": 0.1,
+        "iconID": 24511,
+        "published": 1,
+        "marketGroupID": 2461,
+        "metaGroupID": 1,
+        "isisGroupID": 4,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 56140,
+      "data": {
+        "descriptionID": 569365,
+        "typeID": 56140,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "isDynamicType": 0,
+        "typeNameID": 569364,
+        "volume": 0.1,
+        "iconID": 24511,
+        "published": 1,
+        "marketGroupID": 2458,
+        "metaGroupID": 1,
+        "isisGroupID": 4,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 56141,
+      "data": {
+        "descriptionID": 569367,
+        "typeID": 56141,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "isDynamicType": 0,
+        "typeNameID": 569366,
+        "volume": 0.1,
+        "iconID": 24511,
+        "published": 1,
+        "marketGroupID": 2457,
+        "metaGroupID": 1,
+        "isisGroupID": 4,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 56142,
+      "data": {
+        "descriptionID": 569370,
+        "typeID": 56142,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "isDynamicType": 0,
+        "typeNameID": 569369,
+        "volume": 0.1,
+        "iconID": 24511,
+        "published": 1,
+        "marketGroupID": 2459,
+        "metaGroupID": 1,
+        "isisGroupID": 4,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 56143,
+      "data": {
+        "descriptionID": 569372,
+        "typeID": 56143,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "isDynamicType": 0,
+        "typeNameID": 569371,
+        "volume": 0.1,
+        "iconID": 24511,
+        "published": 1,
+        "marketGroupID": 2460,
+        "metaGroupID": 1,
+        "isisGroupID": 4,
+        "mass": 0.0,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 1979
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 56213,
+      "data": {
+        "descriptionID": 569674,
+        "typeID": 56213,
+        "graphicID": 1718,
+        "capacity": 0.0,
+        "raceID": 134,
+        "isDynamicType": 0,
+        "typeNameID": 569673,
+        "published": 0,
+        "radius": 499.0,
+        "volume": 454500.0,
+        "soundID": 11,
+        "mass": 100250000.0,
+        "factionID": 500025,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 1982
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 60596,
+      "data": {
+        "descriptionID": 588527,
+        "typeID": 60596,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "metaLevel": 0,
+        "isDynamicType": 0,
+        "typeNameID": 588526,
+        "volume": 0.1,
+        "iconID": 24510,
+        "published": 0,
         "metaGroupID": 1,
         "isisGroupID": 4,
         "mass": 0.0,
