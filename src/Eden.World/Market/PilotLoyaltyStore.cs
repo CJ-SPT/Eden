@@ -6,6 +6,8 @@ using Eden.Data.World.Corporations;
 using Eden.Data.World.Economy;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
+using Eden.Gameplay.Agents;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
@@ -24,6 +26,11 @@ namespace Eden.World.Market;
 [Injectable]
 internal sealed class PilotLoyaltyStore(WorldDatabase database, TimeProvider clock) : IPilotLoyaltyStore
 {
+    private const int ImperialCrusade = 1000179;
+    private const int StateProtectorate = 1000180;
+    private const int FederalDefenseUnion = 1000181;
+    private const int TribalLiberationForce = 1000182;
+
     private static readonly LoyaltyOfferSnapshot Snapshot = Load();
     private static readonly IReadOnlyDictionary<int, LoyaltyOfferDefinition> Definitions = Snapshot.Offers.ToDictionary(offer => offer.Id);
 
@@ -72,9 +79,7 @@ internal sealed class PilotLoyaltyStore(WorldDatabase database, TimeProvider clo
         {
             throw new InvalidDataException("Choose a known NPC loyalty point issuer.");
         }
-        return Snapshot
-            .Stores.GetValueOrDefault(corporationId, [])
-            .Select(id => Definitions[id])
+        return StoreDefinitions(catalog, corporationId)
             .Where(offer => Supported(catalog, offer))
             .Select(offer => new LoyaltyOffer(
                 offer.Id,
@@ -86,6 +91,38 @@ internal sealed class PilotLoyaltyStore(WorldDatabase database, TimeProvider clo
                 offer.RequiredItems
             ))
             .ToArray();
+    }
+
+    private static IEnumerable<LoyaltyOfferDefinition> StoreDefinitions(CatalogDbContext catalog, int corporationId)
+    {
+        if (!Snapshot.Stores.TryGetValue(corporationId, out var offerIds))
+        {
+            return [];
+        }
+        var offers = offerIds.Select(id => Definitions[id]);
+        int militia = catalog.Read(CatalogData.Client.Npccorporations, corporationId)?.FactionID switch
+        {
+            (int)NpcEmpireFaction.Amarr => ImperialCrusade,
+            (int)NpcEmpireFaction.Caldari => StateProtectorate,
+            (int)NpcEmpireFaction.Gallente => FederalDefenseUnion,
+            (int)NpcEmpireFaction.Minmatar => TribalLiberationForce,
+            _ => 0,
+        };
+        if (militia == corporationId || !Snapshot.Stores.TryGetValue(militia, out var militiaOfferIds))
+        {
+            return offers;
+        }
+        // Share the same-empire militia's datacore bundles and pricing, and keep any issuer's existing datacore offer.
+        var offeredTypes = offers.Select(offer => offer.TypeId).ToHashSet();
+        return offers.Concat(
+            militiaOfferIds
+                .Select(id => Definitions[id])
+                .Where(offer =>
+                    !offeredTypes.Contains(offer.TypeId)
+                    && catalog.Definitions.Items.GetValueOrDefault(offer.TypeId)?.GroupId == ResearchRules.DatacoreGroup
+                    && catalog.Read(CatalogData.Client.Types, (long)offer.TypeId)?.Published == 1
+                )
+        );
     }
 
     private static bool Supported(CatalogDbContext catalog, LoyaltyOfferDefinition offer)

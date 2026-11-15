@@ -130,6 +130,76 @@ public sealed class LoyaltyStoreTests
     private static object? Reply(PilotCallResult result) =>
         BlueMarshal.Decode(BlueMarshal.Encode(Assert.IsType<PilotCallResult.Success>(result).Reply));
 
+    [Fact]
+    public void RegularEmpireStoreSellsMilitiaDatacoresForMatchingLpAndIsk()
+    {
+        const int Militia = 1000180;
+        const int QuantumPhysicsOffer = 15761;
+        const int QuantumPhysics = 20414;
+        const int LaserPhysicsOffer = 15754;
+        const int GravitonPhysicsOffer = 15751;
+        const int OtherFaction = 1000130;
+        using var db = Create(resident: true);
+        using (CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT OR IGNORE INTO NpcCorporation VALUES (1000180,'State Protectorate'),(1000130,'Sisters of EVE');
+                INSERT INTO SourceRecord VALUES ('client/npccorporations','1000035','{{"factionID":500001}}'),
+                    ('client/npccorporations','1000180','{{"factionID":500001}}'),
+                    ('client/npccorporations','1000130','{{"factionID":500016}}');
+                INSERT OR IGNORE INTO ItemCategory VALUES (17,'Commodity');
+                INSERT INTO ItemGroup VALUES (333,'Datacores',17);
+                INSERT INTO ItemType(Id,Name,GroupId) VALUES
+                    (20414,'Datacore - Quantum Physics',333),(20413,'Datacore - Laser Physics',333),
+                    (20419,'Datacore - Graviton Physics',333);
+                INSERT INTO SourceRecord VALUES ('client/types','20414','{{"published":1,"volume":1}}'),
+                    ('client/types','20413','{{"published":1,"volume":1}}'),
+                    ('client/types','20419','{{"published":0,"volume":1}}');
+                """
+            );
+        }
+
+        var store = Store(db);
+        var militiaOffer = Assert.Single(store.Offers(Pilot, Militia), offer => offer.Id == QuantumPhysicsOffer);
+        Assert.Equal(
+            (QuantumPhysics, 5, 250L, 25_000_000L),
+            (militiaOffer.TypeId, militiaOffer.Quantity, militiaOffer.LpCost, militiaOffer.IskCents)
+        );
+        Assert.DoesNotContain(store.Offers(Pilot, OtherFaction), offer => offer.Id == QuantumPhysicsOffer);
+
+        using (CorporationTestClient client = new(db, 1000001))
+        {
+            var rows = Assert.IsType<List<object?>>(Reply(client.CallService("LPStoreMgr", "GetAvailableOffersFromCorp", [(long)Navy])));
+            var offers = rows.Select(row => Assert.IsType<Dictionary<string, object?>>(Assert.IsType<BlueInstance>(row).State)).ToArray();
+            var datacore = Assert.Single(offers, row => Equals(row["offerID"], (long)QuantumPhysicsOffer));
+            Assert.Equal((long)Navy, datacore["corpID"]);
+            Assert.Equal((long)QuantumPhysics, datacore["typeID"]);
+            Assert.Equal(5L, datacore["qty"]);
+            Assert.Equal(250L, datacore["lpCost"]);
+            Assert.Equal(250_000d, datacore["iskCost"]);
+            Assert.Empty(Assert.IsType<List<object?>>(datacore["reqItems"]));
+            Assert.DoesNotContain(offers, row => row["offerID"] is (long)LaserPhysicsOffer or (long)GravitonPhysicsOffer);
+            Assert.Throws<InvalidDataException>(() => store.Purchase(Pilot, Militia, QuantumPhysicsOffer, 1));
+            Assert.Throws<InvalidDataException>(() => store.Purchase(Pilot, Navy, LaserPhysicsOffer, 1));
+            Assert.Equal(true, Reply(client.CallService("LPStoreMgr", "TakeOfferForCharacter", [(long)Navy, QuantumPhysicsOffer, 2L])));
+            var points = Assert.Single(client.Context.Notifications.OfType<LoyaltyBalanceChanged>());
+            Assert.Equal((Navy, 100_000L, 99_500L), (points.IssuerCorporationId, points.Before, points.After));
+            Assert.Equal(99_500_000d, Assert.Single(client.Context.Notifications.OfType<AccountBalanceChanged>()).Balance);
+            Assert.Single(client.Context.Notifications, notification => notification.Name == "OnItemChange");
+        }
+
+        db.Services.Dispose();
+        WorldInitialization.Open(db.Path);
+        using WorldDbContext saved = new(db.Path);
+        Assert.Equal(99_500, saved.Set<SavedLoyaltyBalance>().Find(Pilot, Navy)!.Points);
+        Assert.Equal(Budget - 50_000_000, saved.Set<PilotWallet>().Find(Pilot)!.Cents);
+        var item = Assert.Single(saved.Set<OwnedItem>(), item => item.TypeId == QuantumPhysics);
+        Assert.Equal((Pilot, (long)Station, (int)InventoryFlag.Hangar, 10), (item.OwnerId, item.LocationId, item.FlagId, item.Quantity));
+        var payment = Assert.Single(saved.Set<SavedServicePayment>());
+        Assert.Equal((Navy, QuantumPhysicsOffer, -50_000_000L), (payment.CounterpartyId, payment.ContextId, payment.AmountCents));
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

@@ -1175,6 +1175,33 @@ The final required sequence passed tool/solution restore, a zero-warning/error s
 
 **Optional maintainer checks:** Open a station LP store, inspect its offers, and complete a funded personal/corporate exchange to check native layout, refresh and input behavior. Check CONCORD conversion presentation if that issuer has a saved balance.
 
+## Datacores in empire LP stores
+
+Existing NPC LP stores for the Amarr, Caldari, Gallente and Minmatar empires also list their own militia's
+published datacores from the embedded CCP ESI snapshot. Each bundle delivers **5 datacores for 250 LP and
+250,000 ISK**, with no required items. The pinned client catalog supplies the issuer's faction and admits
+published items in Datacore group 333. Stores retain any datacore offers already present in their inventory.
+The same store list drives native browsing and purchases. Pilots spend the docked station owner's LP and
+receive the datacores in their personal Item Hangar through the existing resident purchase transaction.
+
+The pinned catalog and November 8 snapshot yield 786 additional listings across 131 issuers, 127 of which
+own stations with an LP store. The local evejs 261108.1 reference also uses an offline CCP ESI offer catalog.
+The ESI snapshot includes newer offers such as Upwell Starship Engineering. Retail pricing and the original faction
+assortments are documented in [CCP's datacore guidance](https://support.eveonline.com/hc/en-us/articles/203210652-Datacores),
+[Inferno patch notes](https://www.eveonline.com/news/view/patch-notes-for-inferno), and
+[EVE University's datacore guide](https://wiki.eveuniversity.org/Datacore_farming).
+
+**Automated validation** exercised the native offer list and a two-bundle purchase, LP and ISK charges, item
+delivery and notifications, rejection of another issuer's offer, and checkpoint persistence after reopening.
+The exact `RegularEmpireStoreSellsMilitiaDatacoresForMatchingLpAndIsk` test passed in 6 seconds.
+The `FullyQualifiedName~LoyaltyStoreTests|FullyQualifiedName~LoyaltyWalletServiceTests|FullyQualifiedName~CorporationLoyaltyTests`
+filter passed 37 cases in 19 seconds. Tool and solution restore, solution build, both Python policy suites, and
+formatting verification passed. The full validation sequence took 87 seconds.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Open the Caldari Navy LP store and check the Quantum Physics bundle.
+
 ## Currency redemption and loyalty wallets
 
 Pinned `inventorycommon.const` identifies **52996** as `typeKredits` and **73277** as `typeLoyaltyPointsHeraldry`; the catalog names them **InterStellar Kredits (ISK)** and **EverMarks**. Both have zero volume and portion size one. ISK is in Money group **17**, category **4**, so the earlier broad material-delivery rule incorrectly allowed it to become an ordinary packaged item. Claims now classify these two currency types before inventory delivery. Quantity credits **one ISK** (100 saved cents) or **one EverMark** per unit, creates no inventory, and consumes the pending token atomically. Fixed-station issuance rejects these automatic rewards. They work in space and before selection, including alongside SP rewards; ordinary inventory failures retain their normal per-token errors. Expiry, authenticated-account/recipient checks and replay protection apply unchanged.
