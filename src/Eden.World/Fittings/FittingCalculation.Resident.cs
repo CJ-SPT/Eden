@@ -73,16 +73,13 @@ internal sealed partial record FittingCalculation
                 )
             )
             .ToArray();
-        var moduleAttributes = items
-            .Select(i => i.TypeId)
-            .Distinct()
-            .ToDictionary(id => id, id => PilotFittingStore.ReadAttributes(catalog, id));
+        var moduleAttributes = items.ToDictionary(i => i.Id, i => MutaplasmidStore.Attributes(world, catalog, i.Id, i.TypeId));
         var modules = items
             .Select(i => new FittingLocation(
                 i,
                 catalog.FittingType(i.TypeId)!.GroupId,
                 InventoryDefinitions
-                    .RequiredSkills.Select(p => moduleAttributes[i.TypeId].GetValueOrDefault(p.Skill))
+                    .RequiredSkills.Select(p => moduleAttributes[i.Id].GetValueOrDefault(p.Skill))
                     .Where(v => v > 0)
                     .Select(v => checked((int)v))
                     .ToHashSet()
@@ -125,7 +122,7 @@ internal sealed partial record FittingCalculation
             ),
         ];
         nodes.AddRange(loaded.Select(i => new DogmaNode(i.Id, chargeAttributes[i.TypeId])));
-        nodes.AddRange(items.Select(i => new DogmaNode(i.Id, moduleAttributes[i.TypeId])));
+        nodes.AddRange(items.Select(i => new DogmaNode(i.Id, moduleAttributes[i.Id])));
         // Pinned IsOwnerModifiable excludes fitted modules. Pilot-owner modifiers
         // select loaded ammunition and explicit deployed-drone/fighter profiles.
         // Including modules lets mixed weapon/drone upgrades modify their own source bonuses.
@@ -154,7 +151,7 @@ internal sealed partial record FittingCalculation
             if (
                 !MiningLaserCatalog.Supported(catalog, parent.Item.TypeId, parent.GroupId)
                 || !MiningCrystalCatalog.Supported(catalog, charge.Item.TypeId, charge.GroupId)
-                || !MiningCrystalRules.Compatible(moduleAttributes[parent.Item.TypeId], charge.GroupId)
+                || !MiningCrystalRules.Compatible(moduleAttributes[parent.Item.Id], charge.GroupId)
                 || charge.Item.Quantity != 1
             )
             {
@@ -191,7 +188,7 @@ internal sealed partial record FittingCalculation
                 || !SupportModuleDefinitions.CompatibleScript(
                     parent.GroupId,
                     charge.GroupId,
-                    moduleAttributes[parent.Item.TypeId],
+                    moduleAttributes[parent.Item.Id],
                     chargeAttributes[charge.Item.TypeId]
                 )
                 || charge.Item.Quantity != 1
@@ -217,7 +214,7 @@ internal sealed partial record FittingCalculation
         foreach (var charge in charges.Where(c => CommandBurstRules.IsCharge(c.GroupId)))
         {
             var parent = modules.Single(m => m.Item.Id == charge.Item.LocationId);
-            if (!CommandBurstRules.Compatible(parent.GroupId, charge.GroupId, moduleAttributes[parent.Item.TypeId]))
+            if (!CommandBurstRules.Compatible(parent.GroupId, charge.GroupId, moduleAttributes[parent.Item.Id]))
             {
                 throw new InvalidDataException("Invalid loaded command burst charge.");
             }
@@ -344,7 +341,7 @@ internal sealed partial record FittingCalculation
                 && module.Item.TypeId != BreacherRules.CounterType
             )
             {
-                var control = AssaultDamageControlRules.Define(module.Item.Id, module.Item.TypeId, moduleAttributes[module.Item.TypeId]);
+                var control = AssaultDamageControlRules.Define(module.Item.Id, module.Item.TypeId, moduleAttributes[module.Item.Id]);
                 modifiers.AddRange(AssaultDamageControlRules.Modifiers(control, ship.Id, true, activeModules.ContainsKey(module.Item.Id)));
             }
             if (
@@ -558,7 +555,7 @@ internal sealed partial record FittingCalculation
             modifiers.AddRange(Eden.Gameplay.Exploration.AbyssalEnvironmentRules.Modifiers(ship.Id, hullAttributes, environment));
             foreach (var module in modules)
             {
-                var values = moduleAttributes[module.Item.TypeId];
+                var values = moduleAttributes[module.Item.Id];
                 bool turret =
                     CombatDefinitions.IsSupportedAmmoTurret(module.GroupId, values) || CombatDefinitions.IsAdvancedTurret(module.GroupId);
                 modifiers.AddRange(

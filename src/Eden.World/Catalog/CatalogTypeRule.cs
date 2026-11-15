@@ -6,7 +6,8 @@ internal sealed class CatalogTypeRule(string name, Func<CatalogDbContext, int, i
 {
     private readonly CatalogDefinition<bool> _definition = new(
         name,
-        (catalog, typeId) => evaluate(catalog, typeId, catalog.RequireItem(typeId).GroupId),
+        (catalog, typeId) =>
+            evaluate(catalog, Eden.World.Inventory.MutationCatalog.BaseType(catalog, typeId), catalog.RequireItem(typeId).GroupId),
         128
     );
 

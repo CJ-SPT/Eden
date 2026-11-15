@@ -38,7 +38,7 @@ automated fixture. The catalog is authoritative for hulls, NPC dogma and graphic
 encounter compositions and reward quantities are explicit Eden policies, not a claim
 to reproduce CCP's private encounter or drop distributions.
 
-## Milestone 1: resident solo foundation â€” November 14, 2026
+## Milestone 1: resident solo foundation — November 14, 2026
 
 Tranquil Dark filament 56132 admits a solo cruiser in open space. Admission validates
 ownership, cargo, hull, cloak and travel state, plus 1,000 km clearance from gates,
@@ -92,7 +92,7 @@ Not performed; agent client testing is disabled.
 - Check native entry, timer, conduit activation and return rendering with a Tranquil Dark filament.
 - Confirm reconnect shows the original timer and room.
 
-## Milestone 2: environmental combat â€” November 15, 2026
+## Milestone 2: environmental combat — November 15, 2026
 
 Resident combat now applies all five weather rule sets, with seeded penalty strength
 and one or two rogue-drone hostiles selected per room. T0 Dark remains the admitted
@@ -115,7 +115,7 @@ layout selection and encounter probabilities are explicit Eden policies informed
 evejs boundary profile, not authenticated CCP formulas. Long server gaps do not replay an
 unbounded backlog of environmental damage; the saved exposure deadline still settles.
 
-The pinned catalog supplies weather types 47378â€“47392, clouds 47440/47472, suppressors
+The pinned catalog supplies weather types 47378–47392, clouds 47440/47472, suppressors
 47437/47438, tracking pylons 47469/47470 and boundary object 47465. Tachyon cloud 80876
 has no dogma program in this catalog; its x4 speed/x0.5 agility gameplay rule follows the
 public gameplay reference and is explicitly authored. The catalog-export fixture includes
@@ -202,3 +202,72 @@ Not performed; agent client testing is disabled.
 
 - Exercise two native clients entering one trace and crossing conduits at different times.
 - Inspect weather backdrops and cooperative cache rendering.
+
+## Milestone 4: persistent mutaplasmids — November 15, 2026
+
+The native `dynamicItemService.CreateDynamicItem(mutatorID, sourceID)` consumes one
+mutaplasmid and one compatible owned module atomically in the resident world, creates a
+unique singleton Abyssal module, and saves its source identities, creator, timestamp,
+normalized rolls and complete resulting attributes in the same checkpoint generation.
+Inputs must be in the current docked personal hangar. Wrong ownership/location, incompatible
+mappings, already-mutated items and unsupported module families reject without consumption.
+
+Build 3662168 `dynamicItemSvc.pyj`, crafting UI and dynamic-item tooltip bytecode confirm
+the two-argument create call, returned item ID, and `GetDynamicItemInfo(itemID)` KeyVal
+fields. Attribute and modifier dictionaries use numeric dogma keys. Published client
+`dynamicitemattributes` mappings supply allowed source types, result types and per-attribute
+bounds. The calculation is source value multiplied by the interpolated bound, including
+negative-valued bonuses. Client module requirements override source requirements.
+
+Abyssal result types contain partial dogma records. Catalog validation now resolves an
+ordinary source with matching group and effect program; saved per-item attributes supply
+actual fitting nodes. Two modules with the same Abyssal type retain independent rolls.
+Fits, activation and module condition use these values, while shared type profiles remain
+immutable. Items retain identity and attributes through inventory moves, player trading
+and checkpoint reopening. Repackaging is rejected, and ordinary market singleton rejection
+continues to apply. The public mutation read supports native item links and inspection.
+
+The service admits module mappings whose source/result fitting programs are supported;
+it does not introduce mutated drones, fighters or new unsupported effect programs. Current
+Abyssal cache supply includes the three webifier mutaplasmid qualities; exhaustive retail
+mutaplasmid loot distributions remain outside the authored encounter/reward policy.
+
+References: [EVE University Abyssal modules](https://wiki.eveuniversity.org/Abyssal_modules),
+the original client archive/revision recorded above, and read-only local evejs
+`server/src/services/dogma/dynamicItemService.js` (SHA-256
+`a5cba6f04661ebdeef0f53e00277464f4bdb264f120c3fbd3d8c483efbd4a3ac`).
+No AGPL implementation source was copied. Eden uses a single resident transaction for
+both consumption and result creation, with no offline SQL gameplay implementation.
+The final lifecycle review also moved high-tier suspect application to successful return:
+admission checks safety, while the saved run determines the full return-time flag. The
+local evejs participant-return/final-exit owners corroborate this ordering.
+
+### Automated validation
+
+The first 15 focused tests passed in 14.98 s. They cover the native create/read payload,
+rejection with unchanged inputs, published bounds for all three qualities of webifiers
+and afterburners, actual mutated web activation, fitting cost, warm zero-SQL/zero-fit
+reads, repackaging rejection, trade preservation and checkpoint reopening.
+
+Tool restore, solution restore and solution build passed (6.92 s, zero warnings/errors).
+The combined affected-dependency run passed 341 tests and failed one new test assertion
+in 129.34 s: it rounded total CPU instead of summing individually rounded module CPU.
+After correcting only that assertion, its exact-method run passed (9.51 s), followed by
+all 16 `FullyQualifiedName~MutaplasmidTests` cases (11.58 s). No production correction
+was needed. Both Python policy suites passed (8 catalog and 9 formatting tests), and
+`tools/Format.ps1 -Check` passed across 2,188 files after formatting.
+
+The combined filter was
+`(FullyQualifiedName~MutaplasmidTests|FullyQualifiedName~AbyssalTests|FullyQualifiedName~AbyssalEnvironmentTests|FullyQualifiedName~AbyssalCooperativeTests|FullyQualifiedName~FittingSnapshotTests|FullyQualifiedName~PassiveFittingTests|FullyQualifiedName~TackleTests|FullyQualifiedName~PropulsionTests|FullyQualifiedName~Overload|FullyQualifiedName~PlayerTradeTests|FullyQualifiedName~ContractAssetTests|FullyQualifiedName~ShipContentCoverageTests|FullyQualifiedName~WorldMigrationTests)&FullyQualifiedName!~ModuleAndBrainReadsShareTheCommittedGraphAndReturnIndependentAttributes`.
+The excluded offline fitting SQL-budget failure was independently reproduced on unchanged
+baseline code during milestone 2, as recorded above. Full .NET regression was not requested
+or run. Native rendering, input and gameplay feel remain unverified.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+- Open the native mutation window and inspect the resulting module tooltip.
+- Fit and trade a rolled module between two clients, then reconnect and inspect its values.

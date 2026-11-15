@@ -294,6 +294,7 @@ internal sealed partial class AbyssalStore(
             if (room + 1 == AbyssalRules.RoomCount)
             {
                 participant.Finished = true;
+                ApplyReturnFlag(transaction, catalog, run, pilotId);
                 SqliteWorld.SetPosition(transaction, catalog, shipId, new(run.OriginX, run.OriginY, run.OriginZ), run.OriginSystemId, Now);
             }
             else

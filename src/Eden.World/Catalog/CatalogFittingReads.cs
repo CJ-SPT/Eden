@@ -56,7 +56,12 @@ public sealed partial class CatalogDbContext
         return Definitions.Items.GetValueOrDefault(typeId);
     }
 
-    internal IReadOnlyDictionary<DogmaAttributeId, double> FittingAttributes(int typeId)
+    internal IReadOnlyDictionary<DogmaAttributeId, double> FittingAttributes(int typeId) =>
+        Eden.World.Inventory.MutationCatalog.BaseType(this, typeId) != typeId
+            ? Eden.World.Inventory.MutationCatalog.Attributes(this, typeId)
+            : RawFittingAttributes(typeId);
+
+    internal IReadOnlyDictionary<DogmaAttributeId, double> RawFittingAttributes(int typeId)
     {
         if (!writable)
         {
