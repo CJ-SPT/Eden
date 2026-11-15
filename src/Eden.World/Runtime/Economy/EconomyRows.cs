@@ -846,6 +846,7 @@ internal sealed partial class ResidentEconomy
         RegisterWormholeJumps();
         RegisterAbyssalRun();
         RegisterAbyssalParticipant();
+        RegisterCorporationRecruitment();
         RegisterCommandBursts();
         RegisterCloneTrainingTables();
         RegisterCharacterServices();
