@@ -190,6 +190,72 @@ establish the failure context, not acceptance of the corrected rendering.
 **Optional maintainer checks:** After updating the server, reconnect and check the existing Athanor's construction model
 and timer; confirm a future deployment appears immediately after Anchor.
 
+## Structure discovery, docked login and access reads — November 16, 2026
+
+The user's docking attempt persisted the ship inside the Athanor, then the docked UI queried the missing
+`structureSettings.CharacterHasSetting` method. On reconnect, the selection card exposed the compatibility `StationId`
+property, which is zero for long structure IDs. Native `ccSvc.PrimeCharacterDetails` added that zero to location priming,
+which correctly rejected it with "Supply a list of positive location IDs." Cards now send `DockedLocationId`; before
+selection, location priming resolves the structures occupied by this account's docked roster. Arbitrary saved structure
+names remain outside that account-level lookup. No save repair or inventory replacement is needed.
+
+Comparison with the local EVE.js package and inert inspection of the pinned client found these additional gaps:
+
+| Native call or display | Finding and resulting behavior |
+| --- | --- |
+| `GetMyDockableStructures(systemID)` | The empty compatibility stub shadowed the real handler, which also accepted only zero arguments and returned info dictionaries. One owner now returns accessible structure IDs in the requested system; zero arguments use the current system. |
+| `CheckMyDockingAccessToStructures(ids)` | Added the missing batch read, returning distinct allowed IDs through the existing authoritative docking service checks. |
+| `GetStructureMapData(systemID)` | Replaced the unconditional empty payload with deployed structure map rows, including long item ID, Unicode name, system, sun orbit and coordinates. Empty systems retain the existing empty list and cache envelope. |
+| `CharacterHasSetting(structureID, settingID)` | Added the boolean read with explicit native setting-to-service mapping. Settings and services have different numeric namespaces. Unknown settings are denied. |
+| Structure control | Eden has no player structure-control session. Setting 17 therefore returns false, keeping the docked Control button disabled instead of advertising an unavailable feature. The native control/coring UI remains a gap. |
+| Construction timer | The native bracket shows a valid countdown when selected/hovered or damaged, while visible on grid. It is not a persistent ship HUD timer. Onlining without a quantum core has no end deadline. |
+
+The map wire adapter uses the existing `BlueRows`/`blue.DBRow`/`CRowset` constructors; no Blue codec or transport behavior
+changed. Directory and access reads use `IPilotStructures`, including its resident world path and lifecycle advancement.
+
+Read-only inspection of the active saved checkpoint confirmed the reported Athanor was `Onlining` (102), had no quantum
+core, and had no state end deadline; the active ship's `StructureId` referenced that Athanor. This supports the failure
+diagnosis, not client acceptance. [EVE University quantum cores](https://wiki.eveuniversity.org/Quantum_Cores) explains that
+the post-core 15-minute repair timer starts after installation; the core-free waiting stage has no running countdown.
+
+**Reference evidence:** The signed original build-3662168 archive at `.eden-original-code.ccp` has SHA-256
+`37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368` (V24.01). Inert inspection covered `ccSvc.pyj`,
+`structureDirectory.pyj`, `structureBracket.pyj`, `environment/spaceObject/structure.pyj`, and `structures/settings.pyj`.
+The local EVE.js package `261108.1` has no Git revision metadata; independently implemented behavior references are:
+
+- `structureDirectoryService.js`: SHA-256 `FB55BC45C7EB5DF1C39C908197BAF2C72EFCADCD2DA416E6968C0D265411A8FD`.
+- `structurePayloads.js`: SHA-256 `A2FC5FFFBBE84386EC003F441414EE9F311AE945A945B9E4EB30713481CF7BA9`.
+- `structureSettingsService.js`: SHA-256 `863BD687A8B353C9702D0A60576E46118C12FA34469C8836A97D6CAFB5CA0A2D`.
+
+EVE.js is an older-client AGPL reference; no source was copied. The archive hash differs from historical V24.02 archive
+records above; this pass checked the signed original used by the running prepared client.
+
+**Automated validation:** The exact existing method
+`FullyQualifiedName=Eden.Protocol.Tests.Structures.StructureTests.NativeStructureDirectoryHangarAndUndockUseLongStructureIds`
+passed in 6.27 seconds. Initial runs exposed test assertions attempting to decode outbound-only constructor shapes and read
+an unencoded Unicode wrapper; those assertions were corrected without broadening the inbound codec. The final filter was:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Structures|
+FullyQualifiedName~Eden.Protocol.Tests.Maps.MapNavigationTests|
+FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.PilotServicesTests|
+FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.StationDirectoryTests|
+FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.CharacterLogoffTests|
+FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.CharacterCreationTests|
+FullyQualifiedName~Eden.Protocol.Tests.Market.MarketReadCompatibilityTests
+```
+
+Joined without line breaks, this passed **152 existing cases in 42.76 seconds**, including resident structure reads,
+long-ID docking/undocking and character-card priming, native directory shapes, map caching with zero warmed SQL commands,
+and immediate startup dependencies. No new cases or classes were added. Tool and solution restore and solution build
+(zero warnings/errors, 0.70 seconds) passed. Both Python policy suites passed (8 catalog cases in 1.034 seconds and
+9 formatting cases in 0.017 seconds); formatting and whitespace checks passed. The full .NET suite was not run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** After updating the server, log back into the docked character; check the Athanor in the
+system map/right-click menu and off-grid overview; select its bracket during a timed lifecycle phase.
+
 ## Structure compression and gas decompression — November 11, 2026
 
 Milestone 7 implements all three pinned `structureCompressionMgr` calls: `CompressItemInStructure(itemID)`,

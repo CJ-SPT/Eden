@@ -19,7 +19,8 @@ internal sealed class AccountCompatibilityHandler(
     IPlayerCorporationDirectory players,
     IUniversalSearch search,
     IPublicLocations locations,
-    IAlliances alliances
+    IAlliances alliances,
+    Eden.Gameplay.Structures.IPilotStructures structures
 ) : IPilotCallHandler
 {
     public PilotCallResult Call(
@@ -94,6 +95,24 @@ internal sealed class AccountCompatibilityHandler(
             ));
         return new LocationTable(
             known
+                .Concat(
+                    structures
+                        .Names(
+                            context
+                                .Roster.Where(pilot => pilot.Position is null && requested.Contains(pilot.DockedLocationId))
+                                .Select(pilot => pilot.DockedLocationId)
+                                .Where(id => id >= Eden.Gameplay.Structures.StructureRules.FirstStructureId)
+                                .ToArray()
+                        )
+                        .Select(location => new LocationRow(
+                            location.Id,
+                            location.Name,
+                            location.SystemId,
+                            location.Position.X,
+                            location.Position.Y,
+                            location.Position.Z
+                        ))
+                )
                 .Concat(
                     locations
                         .Read(requested.ToArray())

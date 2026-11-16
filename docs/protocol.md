@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Structure discovery and docked login](protocol/structures.md#structure-discovery-docked-login-and-access-reads--november-16-2026)
+fixes long structure location IDs, native directory/map reads and docking UI permission queries, and records timer/control gaps.
+
 [Corporation Edit Member identity](protocol/corporations.md#edit-member-private-identity-reply-november-16-2026)
 adds the missing native `charMgr.GetPrivateInfo` reply used to construct the member editor.
 

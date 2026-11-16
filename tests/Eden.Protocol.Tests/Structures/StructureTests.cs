@@ -11,9 +11,11 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Reprocessing;
 using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Diagnostics;
+using Eden.Protocol.Characters;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Structures;
 using Eden.Protocol.Tests.PilotSessions;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -408,14 +410,64 @@ public sealed class StructureTests
     [Fact]
     public void NativeStructureDirectoryHangarAndUndockUseLongStructureIds()
     {
-        using Fixture f = new();
+        using Fixture f = new(liveWorld: true);
         var structure = f.Online();
         var docked = f.Db.Services.GetRequiredService<IStationDocking>().Dock(f.PilotId, f.ShipId, structure.Id);
         using var scope = f.Db.Services.CreateScope();
         var factory = scope.ServiceProvider.GetRequiredService<FlightSessionFactory>();
         using PilotCallContext context = new(1000001, docked.Account, [docked], factory.Create, 42, SignedSettings.Empty);
-        context.Select(docked);
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        var card = Assert.IsType<BlueInstance>(new CharacterSelectionCard(docked, 0, null, null, 0).ToBlue());
+        Assert.Equal(structure.Id, BlueRead.Fields(card.State)["stationID"]);
+        var primed = Assert.IsType<PilotCallResult.Success>(
+            router.Call(context, "config", "GetMultiLocationsEx", new object?[] { new List<object?> { structure.Id } }, _ => { })
+        );
+        Assert.Equal(structure.Name, Assert.Single(Assert.IsType<Eden.Protocol.Docking.LocationTable>(primed.Reply).Locations).Name);
+        context.Select(docked);
+        foreach (long setting in new long[] { 17, 19, long.MaxValue })
+        {
+            var permission = router.Call(
+                context,
+                "structureSettings",
+                "CharacterHasSetting",
+                new object?[] { structure.Id, setting },
+                _ => { }
+            );
+            if (setting == long.MaxValue)
+            {
+                Assert.IsType<PilotCallResult.Failure>(permission);
+            }
+            else
+            {
+                Assert.Equal(setting == 19, Assert.IsType<bool>(Assert.IsType<PilotCallResult.Success>(permission).Reply.ToBlue()));
+            }
+        }
+        foreach (string method in new[] { "GetMyDockableStructures", "CheckMyDockingAccessToStructures" })
+        {
+            object?[] args =
+                method == "GetMyDockableStructures"
+                    ? [(long)Fixture.SystemId]
+                    : [new List<object?> { structure.Id, long.MaxValue, structure.Id }];
+            var dockable = Assert.IsType<PilotCallResult.Success>(router.Call(context, "structureDirectory", method, args, _ => { }));
+            Assert.Equal(structure.Id, Assert.Single(Assert.IsType<List<object?>>(BlueMarshal.Decode(BlueMarshal.Encode(dockable.Reply)))));
+        }
+        var otherSystem = Assert.IsType<PilotCallResult.Success>(
+            router.Call(context, "structureDirectory", "GetMyDockableStructures", new object?[] { 30000142L }, _ => { })
+        );
+        Assert.Empty(Assert.IsType<List<object?>>(otherSystem.Reply.ToBlue()));
+        var map = Assert.IsType<PilotCallResult.Success>(
+            router.Call(context, "structureDirectory", "GetStructureMapData", new object?[] { (long)Fixture.SystemId }, _ => { })
+        );
+        var cachedMap = Assert.IsType<BlueInstance>(BlueMarshal.Decode(BlueMarshal.Encode(map.Reply)));
+        Assert.NotEmpty(BlueRead.Bytes(BlueRead.Tuple(cachedMap.State, 3)[1]));
+        var mapReply = Assert.IsType<StructureMapReply>(map.Reply);
+        var mapRows = Assert.IsType<BlueConstructor>(new StructureMapRows(mapReply.Structures, mapReply.SunId).ToBlue());
+        var mapRow = Assert.IsType<BlueConstructor>(Assert.Single(Assert.IsType<List<object?>>(mapRows.Arguments[1])));
+        var mapValues = Assert.IsType<object?[]>(mapRow.Arguments[1]);
+        Assert.Equal(structure.Id, mapValues[2]);
+        Assert.Equal(new BlueUnicode(structure.Name), mapValues[3]);
+        Assert.Equal(Fixture.SystemId, mapValues[4]);
+        Assert.Equal(structure.Position.X, mapValues[7]);
         var has = Assert.IsType<PilotCallResult.Success>(
             router.Call(context, "structureSettings", "CharacterHasService", new object?[] { structure.Id, 1L }, _ => { })
         );

@@ -12,7 +12,8 @@ internal sealed class StructureHandler(
     IPilotStructures structures,
     Eden.Gameplay.Corporations.IPlayerCorporations corporations,
     TimeProvider clock,
-    IStructureContacts contacts
+    IStructureContacts contacts,
+    ISystemObjects systemObjects
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -101,9 +102,44 @@ internal sealed class StructureHandler(
             long pilot = context.Pilot.PilotId;
             if (service == "structureDirectory" && method == "GetStructureMapData")
             {
-                return args is [long systemId] && systemId is > 0 and <= int.MaxValue
-                    ? new StructureMapReply(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
-                    : new PilotCallResult.Failure("Choose a valid solar system for structure map data.");
+                if (args is not [long systemId] || systemId is <= 0 or > int.MaxValue)
+                {
+                    return new PilotCallResult.Failure("Choose a valid solar system for structure map data.");
+                }
+                var mapped = structures.List(pilot, (int)systemId).Where(s => s.State != StructureState.Unanchored).ToArray();
+                // Native map rows attach deployed structures to the system's sun (celestial group 6).
+                const int sunGroupId = 6;
+                int? sun =
+                    mapped.Length == 0
+                        ? null
+                        : checked((int?)systemObjects.Load((int)systemId).FirstOrDefault(body => body.GroupId == sunGroupId)?.Id);
+                return new StructureMapReply(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(), mapped, sun);
+            }
+            if (service == "structureDirectory" && method == "GetMyDockableStructures")
+            {
+                int system = args switch
+                {
+                    [] => context.Pilot.SystemId,
+                    [long requested] when requested is > 0 and <= int.MaxValue => (int)requested,
+                    _ => throw new InvalidDataException("Choose a valid solar system for dockable structures."),
+                };
+                return new BlueList<long>(
+                    structures
+                        .List(pilot, system)
+                        .Where(s => structures.HasService(pilot, s.Id, StructureService.Docking))
+                        .Select(s => s.Id)
+                        .ToArray()
+                );
+            }
+            if (service == "structureDirectory" && method == "CheckMyDockingAccessToStructures")
+            {
+                if (args is not [List<object?> requested] || requested.Any(id => id is not long value || value <= 0))
+                {
+                    throw new InvalidDataException("Supply a list of positive structure IDs.");
+                }
+                return new BlueList<long>(
+                    requested.Cast<long>().Distinct().Where(id => structures.HasService(pilot, id, StructureService.Docking)).ToArray()
+                );
             }
             if (service == "structureDeployment")
             {
@@ -124,6 +160,15 @@ internal sealed class StructureHandler(
             }
             if (service == "structureSettings")
             {
+                if (method == "CharacterHasSetting")
+                {
+                    if (args is not [long structureId, long setting] || structureId <= 0 || setting is < 0 or > int.MaxValue)
+                    {
+                        throw new InvalidDataException("Choose a valid structure and access setting.");
+                    }
+                    return StructureSettingAccess.Service((StructureSetting)setting) is { } required
+                        && structures.HasService(pilot, structureId, required);
+                }
                 if (args is [long id] && method == "CharacterGetServices")
                 {
                     var s = structures.Read(pilot, id);
@@ -163,10 +208,6 @@ internal sealed class StructureHandler(
                     .ToArray(),
                 ("GetStructuresInSystem" or "GetSolarsystemStructures", [long system]) when system is > 0 and <= int.MaxValue =>
                     structures.List(pilot, (int)system),
-                ("GetMyDockableStructures", []) => structures
-                    .List(pilot)
-                    .Where(s => structures.HasService(pilot, s.Id, StructureService.Docking))
-                    .ToArray(),
                 ("GetStructures", [List<object?> ids]) when ids.All(i => i is long) => structures
                     .List(pilot)
                     .Where(s => ids.Contains(s.Id))

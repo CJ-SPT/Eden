@@ -15,7 +15,7 @@ public sealed class MapNavigationTests
     public void StructureMapCacheUsesCurrentFileTimeOnEveryRefresh()
     {
         var clock = CalendarTestData.Clock();
-        using TestWorld world = new(clock: clock);
+        using TestWorld world = new(clock: clock, liveWorld: true);
         using var scope = world.Services.CreateScope();
         var pilot = world.Store.FindPilot(1000001)!;
         using PilotCallContext context = new(

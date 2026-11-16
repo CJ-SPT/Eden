@@ -9,20 +9,68 @@ internal sealed record StructureReinforceDefaultReply : BlueModel
     public override object ToBlue() => new object?[] { StructureRules.NoReinforcementWeekday, StructureRules.DefaultReinforceHour };
 }
 
-internal sealed record StructureMapReply(long VersionTime) : BlueModel
+internal sealed record StructureMapReply(long VersionTime, IReadOnlyList<StructureSnapshot> Structures, int? SunId) : BlueModel
 {
-    // Build 3662168 iterates this result to append dynamic structures to the local map rows.
-    private static readonly byte[] s_emptyRows = BlueMarshal.Encode(BlueEmpty.List);
-
     public override object ToBlue() =>
         new BlueInstance(
             "carbon.common.script.net.objectCaching.CachedMethodCallResult",
             new object?[]
             {
                 new Dictionary<string, object?> { ["versionCheck"] = "5 minutes", ["sessionInfo"] = "charid" },
-                s_emptyRows,
+                BlueMarshal.Encode(Structures.Count == 0 ? BlueEmpty.List : new StructureMapRows(Structures, SunId)),
                 new object?[] { VersionTime, 0L },
             }
+        );
+}
+
+internal sealed record StructureMapRows(IReadOnlyList<StructureSnapshot> Structures, int? SunId) : BlueModel
+{
+    internal static BlueConstructor Header() =>
+        BlueRows.Descriptor([
+            ("groupID", BlueColumnType.Int32),
+            ("typeID", BlueColumnType.Int32),
+            ("itemID", BlueColumnType.Int64),
+            ("itemName", BlueColumnType.Unicode),
+            ("locationID", BlueColumnType.Int32),
+            ("orbitID", BlueColumnType.Int32),
+            ("connector", BlueColumnType.Boolean),
+            ("x", BlueColumnType.Float64),
+            ("y", BlueColumnType.Float64),
+            ("z", BlueColumnType.Float64),
+            ("celestialIndex", BlueColumnType.Int32),
+            ("orbitIndex", BlueColumnType.Int32),
+        ]);
+
+    public override object ToBlue() =>
+        new BlueConstructor(
+            "carbon.common.script.sys.crowset.CRowset",
+            [Header(), Structures.Select(s => (object?)new StructureMapRow(s, SunId).ToBlue()).ToList()]
+        );
+}
+
+internal sealed record StructureMapRow(StructureSnapshot Structure, int? SunId) : BlueModel
+{
+    public override object ToBlue() =>
+        new BlueConstructor(
+            "blue.DBRow",
+            [
+                StructureMapRows.Header(),
+                new object?[]
+                {
+                    Structure.Profile.GroupId,
+                    Structure.Profile.TypeId,
+                    Structure.Id,
+                    new BlueUnicode(Structure.Name),
+                    Structure.SystemId,
+                    SunId,
+                    false,
+                    Structure.Position.X,
+                    Structure.Position.Y,
+                    Structure.Position.Z,
+                    null,
+                    null,
+                },
+            ]
         );
 }
 

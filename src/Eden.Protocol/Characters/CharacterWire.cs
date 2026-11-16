@@ -275,7 +275,7 @@ internal sealed record CharacterSelectionCard(
                 ["characterID"] = Pilot.PilotId,
                 ["characterName"] = Pilot.Name,
                 ["name"] = Pilot.Name,
-                ["stationID"] = Pilot.Position is null ? Pilot.StationId : null,
+                ["stationID"] = Pilot.Position is null ? Pilot.DockedLocationId : null,
                 ["solarSystemID"] = Pilot.SystemId,
                 ["shipTypeID"] = Pilot.ShipTypeId,
                 ["corporationID"] = Pilot.CorpId,
