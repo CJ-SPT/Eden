@@ -334,6 +334,8 @@ transactional orbital cargo, saved deadlines, native reply contracts and source-
 native validation, grandfathered colonies and skill extraction.
 [Planet-limit UI correction](protocol/planetary.md#planet-limit-directory-and-build-button-correction--november-16-2026)
 extends the override to the native colony directory and command-center build button.
+[Planetary adapter import correction](protocol/planetary.md#planetary-adapter-import-correction--november-16-2026)
+records the namespaced-module mismatch that prevented installation and the headless native 100-slot evaluation.
 [Command-center market supply](protocol/planetary.md#command-center-market-supply--november-14-2026)
 records regional hub availability for all eight published command centers and resident purchase persistence.
 

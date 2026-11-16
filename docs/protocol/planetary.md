@@ -2,6 +2,58 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Planetary adapter import correction — November 16, 2026
+
+The next client report still showed six empty colony slots. Read-only verification found the running server at
+`b342d418`, with active configuration revision **51**, no pending revision, and `maximumPlanets: 100`.
+The clients had authenticated after that server started, ruling out an older deployment or pending setting.
+
+The adapter imported top-level `planetCommon`, which is absent from the pinned stock archive. Build **3662168**
+instead provides `eve.common.script.util.planetCommon`; the native `CommandPin` imports this exact module.
+The headless scaffolding had supplied a synthetic top-level module, concealing the import mismatch.
+The adapter and its default-restoration lookup now use the real fully qualified module name.
+
+Pinned `GPS.__Execute` catches signed-expression exceptions and returns their traceback in the login proof's output
+buffer; Eden's existing proof parser reads only the response hash. This explains why an adapter import failure
+could leave login successful and the native directory unchanged without appearing in the ordinary client exception
+log. Adapter failures now also use the existing bounded local error logger with stage `planetary-tuning`, retaining
+the configured maximum and original exception. A separate helper frame preserves the original exception under
+Python 2.7 even if the diagnostic logger is unavailable.
+
+### Automated validation
+
+No regression tests or new cases/assertions were added. Existing adapter scaffolding was corrected to expose only
+the real namespaced module; its existing lazy-login assertion now checks that same module name.
+
+An isolated headless evaluation used the stock **3662168** `ColoniesPanel.ConstructEmptyEntries` code object under
+the pinned Python 2.7 runtime, with inert UI/service stubs. The corrected adapter produced **100 slots**, each with
+`slotsTotal = 100`; seven owned colonies left **93 placeholders**. Shared Interplanetary Consolidation stayed at
+level V. Reinstalling the default policy restored **six placeholders**. These are native method results, not rendered
+UI or deployment acceptance. No game session or client module body was executed.
+
+Existing-check results:
+
+- Initial exact method filter through `tools/Test-Feature.ps1 -Filter`:
+  `FullyQualifiedName=Eden.Protocol.Tests.Planetary.PlanetaryClientTests.SignedAdapterScalesFittingAndProductsWithoutCompoundingAndRestoresDefaults`;
+  **1 passed**, **18.30 seconds** build and **4.67 seconds** test-command wall time.
+- Final tool/solution restore and build passed with zero warnings/errors (**5.76 seconds** combined).
+- The [four-part existing affected filter](#planet-limit-directory-and-build-button-correction--november-16-2026)
+  passed **5 checks**, none skipped (**9.62 seconds** wall time).
+- Both Python policy suites passed: **8 catalog/setup + 9 formatting-policy checks**, **1.54 seconds** combined.
+- Formatting verification passed (**31.34 seconds**), along with `git diff --check`.
+- The full .NET suite was not run.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. The running server and saved active configuration were inspected
+read-only. This correction was not deployed during that inspection. The user screenshots show the preceding failure;
+rendering and deployment beyond six colonies remain unverified until the updated server is installed and reconnected.
+
+### Optional maintainer checks
+
+- Update/restart the server, reconnect, reopen the directory and verify 100 slots and placement beyond six colonies.
+- If initialization fails, inspect `%LOCALAPPDATA%/Eden/ClientErrors/character-selection-<pid>.log` for `planetary-tuning`.
+
 ## Planet-limit directory and build-button correction — November 16, 2026
 
 A client screenshot after the configurable-limit change showed the native Planetary Industry directory retaining

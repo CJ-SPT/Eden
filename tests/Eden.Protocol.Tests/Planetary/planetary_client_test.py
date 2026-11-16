@@ -8,7 +8,7 @@ from types import ModuleType, SimpleNamespace
 expressions = [marshal.loads(Path(path).read_bytes()) for path in sys.argv[1:]]
 # A default login must not eagerly load the planetary client.
 assert eval(expressions[2], {}) == {}
-assert 'planetCommon' not in sys.modules
+assert 'eve.common.script.util.planetCommon' not in sys.modules
 
 names = ['eve', 'eve.common', 'eve.common.script', 'eve.common.script.planet',
          'eve.common.script.planet.entities', 'eve.common.script.planet.entities.processPin',
@@ -18,7 +18,8 @@ names = ['eve', 'eve.common', 'eve.common.script', 'eve.common.script.planet',
          'eve.client.script.ui.shared', 'eve.client.script.ui.shared.planet',
          'eve.client.script.ui.shared.planet.planetEditModeContainer',
          'eve.client.script.ui.shared.planet.planetsWindow',
-         'eve.client.script.ui.shared.planet.planetsWindow.coloniesPanel', 'planetCommon']
+         'eve.client.script.ui.shared.planet.planetsWindow.coloniesPanel',
+         'eve.common.script.util', 'eve.common.script.util.planetCommon']
 for name in names:
     module = ModuleType(name)
     module.__path__ = []
@@ -29,7 +30,7 @@ for name in names:
 
 cpu = [1675, 7057, 12136, 17215, 21315, 25415]
 power = [6000, 9000, 12000, 15000, 17000, 19000]
-common = sys.modules['planetCommon']
+common = sys.modules['eve.common.script.util.planetCommon']
 common.GetCPUOutput = lambda level: cpu[level]
 common.GetPowerOutput = lambda level: power[level]
 

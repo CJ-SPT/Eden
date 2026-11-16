@@ -6,9 +6,9 @@ def install_planetary_tuning():
     # Keep default logins lazy; also restore defaults after reconnecting from a
     # tuned world in the same process. The values come from the signed prelude.
     if (eden_planetary_maximum == 0 and all(float(value) == 1.0 for value in eden_planetary_policy)
-            and not getattr(sys.modules.get('planetCommon'), '_eden_planetary', False)):
+            and not getattr(sys.modules.get('eve.common.script.util.planetCommon'), '_eden_planetary', False)):
         return
-    import planetCommon
+    from eve.common.script.util import planetCommon
     from decimal import Decimal, ROUND_FLOOR
     from eve.common.script.planet.entities.processPin import ProcessPin
 
@@ -97,4 +97,20 @@ def install_planetary_tuning():
     tune_method(ColoniesPanel, 'ConstructEmptyEntries', {'sm': service_view, 'MAX_NUM_COLONIES': maximum})
 
 
-install_planetary_tuning()
+def record_planetary_failure():
+    # GPS captures signed-expression exceptions in its login response. Preserve
+    # this adapter's failure in the existing bounded local client-error log too.
+    import sys
+    error = sys.exc_info()
+    try:
+        import eden_skill_overlay
+        eden_skill_overlay.record_client_error('planetary-tuning', eden_planetary_maximum, error)
+    except Exception:
+        pass
+
+
+try:
+    install_planetary_tuning()
+except Exception:
+    record_planetary_failure()
+    raise
