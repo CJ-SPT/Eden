@@ -90,6 +90,11 @@ public sealed class ChatWorld(long roomSeed = 0)
             : [];
     }
 
+    public IReadOnlyList<ChatDelivery> UpdateAlliance(Guid connection, int? alliance) =>
+        _connections.TryGetValue(connection, out var session) && Pilot(session) is { } pilot
+            ? Update(session, pilot with { AllianceId = alliance })
+            : [];
+
     public IReadOnlyList<ChatDelivery> Update(Guid session, ChatPilot? pilot)
     {
         List<ChatDelivery> events = [];
@@ -157,6 +162,10 @@ public sealed class ChatWorld(long roomSeed = 0)
     {
         var pilot = Pilot(session) ?? throw new InvalidDataException("Select a pilot before joining chat.");
         List<ChatRoom> rooms = [new(pilot.LocalKind, pilot.SystemId), new(ChatRoomKind.Corporation, pilot.CorporationId)];
+        if (pilot.AllianceId is int alliance)
+        {
+            rooms.Add(new(ChatRoomKind.Alliance, alliance));
+        }
         if (pilot.FleetId is { } fleet)
         {
             rooms.Add(new(ChatRoomKind.Fleet, fleet));
@@ -229,6 +238,7 @@ public sealed class ChatWorld(long roomSeed = 0)
             ChatRoomKind.Local or ChatRoomKind.Wormhole or ChatRoomKind.Triglavian => room.Id == pilot.SystemId
                 && room.Kind == pilot.LocalKind,
             ChatRoomKind.Corporation => room.Id == pilot.CorporationId,
+            ChatRoomKind.Alliance => room.Id == pilot.AllianceId,
             ChatRoomKind.Fleet => room.Id == pilot.FleetId,
             ChatRoomKind.Private => _privateAccess.TryGetValue(room, out var allowed) && allowed.Contains(pilot.Id),
             ChatRoomKind.Player => _rooms.ContainsKey(room),
@@ -356,7 +366,12 @@ public sealed class ChatWorld(long roomSeed = 0)
         {
             var selected = ConnectedPilot(connection);
             bool systemRoom =
-                room.Kind is ChatRoomKind.Local or ChatRoomKind.Wormhole or ChatRoomKind.Triglavian or ChatRoomKind.Corporation;
+                room.Kind
+                is ChatRoomKind.Local
+                    or ChatRoomKind.Wormhole
+                    or ChatRoomKind.Triglavian
+                    or ChatRoomKind.Corporation
+                    or ChatRoomKind.Alliance;
             if (selected is null || !systemRoom || !Eligible(selected, room))
             {
                 throw new InvalidDataException("Join an authorized channel before using it.");
@@ -460,6 +475,7 @@ public sealed class ChatWorld(long roomSeed = 0)
             ?? new(
                 room,
                 room.Kind == ChatRoomKind.Corporation ? "Corporation"
+                    : room.Kind == ChatRoomKind.Alliance ? "Alliance"
                     : room.Kind == ChatRoomKind.Fleet ? "Fleet"
                     : "Local"
             );

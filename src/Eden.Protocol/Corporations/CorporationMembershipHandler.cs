@@ -27,6 +27,7 @@ internal sealed partial class CorporationHandler
         _observedPilot = null;
         _cursor = 0;
         _allianceCursor = 0;
+        allianceSocial.Reset();
     }
 
     private void DrainChanges(PilotCallContext context)

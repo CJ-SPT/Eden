@@ -1,6 +1,9 @@
 using System.Text.Json;
+using Eden.Data.World.Alliances;
 using Eden.Data.World.Characters;
+using Eden.Data.World.Corporations;
 using Eden.Data.World.Mail;
+using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Mail;
 using Eden.Infrastructure.Registration;
 using Eden.World.Characters;
@@ -16,7 +19,9 @@ internal sealed record MailDeliveryPlan(
     MailDraft Draft,
     IReadOnlyList<long> Audience,
     long Time,
-    bool Automated = false
+    bool Automated = false,
+    SystemMailLabel OrganizationLabel = SystemMailLabel.None,
+    IReadOnlySet<long>? OrganizationAudience = null
 );
 
 [Injectable]
@@ -189,6 +194,10 @@ internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock)
     public long Send(long pilotId, MailDraft draft, Guid origin)
     {
         MailRules.Draft(draft);
+        if (draft.OrganizationId.HasValue && LiveWorld.Find(database.Path) is null)
+        {
+            throw new InvalidDataException("Organization mail requires the resident world.");
+        }
         using var transaction = new WorldActionScope(database, TransactionParticipants.None);
         var world = transaction.World;
         Pilot(world, pilotId);
@@ -201,6 +210,36 @@ internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock)
             throw new InvalidDataException("A recipient is blocking mail from you.");
         }
         HashSet<long> audience = draft.Recipients.ToHashSet();
+        HashSet<long> organizationAudience = [];
+        var organizationLabel = SystemMailLabel.None;
+        if (draft.OrganizationId is long organization)
+        {
+            var sender = world.Pilots.Find(pilotId)!;
+            if (organization == sender.CorporationId && world.Set<SavedCorporation>().Find(sender.CorporationId) is { ClosedAt: null })
+            {
+                organizationAudience.UnionWith(world.Pilots.Where(p => p.CorporationId == sender.CorporationId).Select(p => p.Id));
+                organizationLabel = SystemMailLabel.Corporation;
+            }
+            else if (
+                organization is >= AllianceRules.FirstAllianceId and <= int.MaxValue
+                && world.Set<SavedAllianceMember>().Find(sender.CorporationId)?.AllianceId == organization
+                && world.Set<SavedAlliance>().Find((int)organization) is { ClosedAt: null }
+            )
+            {
+                foreach (
+                    int corporation in world.Filter<SavedAllianceMember>(m => m.AllianceId == organization).Select(m => m.CorporationId)
+                )
+                {
+                    organizationAudience.UnionWith(world.Pilots.Where(p => p.CorporationId == corporation).Select(p => p.Id));
+                }
+                organizationLabel = SystemMailLabel.Alliance;
+            }
+            else
+            {
+                throw new InvalidDataException("Mail only your own player corporation or current alliance.");
+            }
+            audience.UnionWith(organizationAudience);
+        }
         if (draft.ListId is long listId)
         {
             audience.UnionWith(PilotMailingListStore.Audience(world, pilotId, listId));
@@ -217,7 +256,19 @@ internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock)
             var source = Entry(world, pilotId, sourceId.Value);
             source.Status |= draft.ReplyTo.HasValue ? MailStatus.Replied : MailStatus.Forwarded;
         }
-        long id = Deliver(world, new(pilotId, pilotId, draft, audience.Order().ToArray(), now), origin);
+        long id = Deliver(
+            world,
+            new(
+                pilotId,
+                pilotId,
+                draft,
+                audience.Order().ToArray(),
+                now,
+                OrganizationLabel: organizationLabel,
+                OrganizationAudience: organizationAudience
+            ),
+            origin
+        );
         transaction.Commit();
         return id;
     }
@@ -231,6 +282,7 @@ internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock)
                     SenderId = plan.SenderId,
                     SentAt = plan.Time,
                     ListId = plan.Draft.ListId,
+                    OrganizationId = plan.Draft.OrganizationId,
                     Subject = plan.Draft.Subject,
                     Body = plan.Draft.Body,
                     RecipientsJson = JsonSerializer.Serialize(plan.Draft.Recipients),
@@ -241,7 +293,14 @@ internal sealed class PilotMailStore(WorldDatabase database, TimeProvider clock)
         var owners = plan.SentCopyPilotId is long sender ? plan.Audience.Append(sender) : plan.Audience;
         foreach (long owner in owners.Distinct())
         {
-            var initial = MailRules.InitialState(mail.Id, owner, plan.SentCopyPilotId, plan.Draft, plan.Automated);
+            var initial = MailRules.InitialState(
+                mail.Id,
+                owner,
+                plan.SentCopyPilotId,
+                plan.Draft,
+                plan.Automated,
+                plan.OrganizationAudience?.Contains(owner) == true ? plan.OrganizationLabel : SystemMailLabel.None
+            );
             var entry = world
                 .Add(
                     new SavedMailEntry

@@ -30,7 +30,8 @@ public sealed record AllianceChange(
     AllianceMember? MemberBefore = null,
     AllianceMember? MemberAfter = null,
     AllianceApplication? ApplicationBefore = null,
-    AllianceApplication? ApplicationAfter = null
+    AllianceApplication? ApplicationAfter = null,
+    Eden.Gameplay.Calendar.CalendarChange? Calendar = null
 );
 
 public interface IAllianceMembership

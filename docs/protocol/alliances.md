@@ -167,3 +167,54 @@ identity, persisted notification data and SQL/connection/fitting-free warmed mai
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** Inspect native bills and the maintenance notification; pay a bill from a non-master division.
+
+## Diplomacy and communication — November 16, 2026
+
+Schema 177 adds a resident alliance social aggregate and an organization recipient on saved mail headers. The aggregate
+contains typed contacts, labels, bulletins, chat MOTD and alliance calendar entries. It is checkpointed as a saved JSON
+payload and published through immutable, per-alliance cached views. Unchanged readers share records and poll only the
+saved revision. Contacts are directional; targets can be known pilots, corporations or alliances. Executor directors
+edit contacts, labels, bulletins and MOTD. Bulletin edits check their saved edit time and ordering must include each
+current bulletin exactly once. The fifteen-bulletin storage limit is an Eden policy, not verified Tranquility behavior.
+
+Native contact and legacy relationship reads retain descriptors, label masks and before/after cache notifications.
+The core alliance handler now claims only its own methods before validating arguments, allowing other owners' native
+keyword arguments such as bulletin edit revisions and payment divisions to reach the correct handler.
+
+Alliance chat uses `alliance_<ID>`, advertises alliance user data and delivers saved MOTD on joins. A lock-free published
+owner-directory affiliation map updates from committed pilot and corporation-alliance changes. Sender, recipient and
+room checks use that current map under the chat gate, without taking the resident owner in the reverse lock order.
+Departed users cannot join/send or receive subsequent alliance messages/subjects through a stale XMPP game-session identity.
+
+[UniWiki EVE Mail](https://wiki.eveuniversity.org/EVE_Mail) describes corporation/alliance recipients and dedicated labels.
+Organization mail snapshots all current local members at send time, retains the organization header and native Corp/Alliance
+label, and uses the existing rate limits and committed per-recipient delivery feed. Ordinary members may send to their own
+organization; NPC corporation broadcasts remain unavailable. Membership changes affect future delivery, while already
+received mail remains personal mailbox history. Mailing-list and direct recipients retain their existing behavior.
+
+Alliance calendar events belong to the alliance aggregate, independent of the creator's corporation or character lifetime.
+They share the existing calendar ID allocator, date/title/duration rules and native replies/notifications. Current members
+can read and RSVP; executor directors create, edit and cancel. Rescheduling invalidates prior attendance according to
+the shared rules. Native month/response reads combine personal and current alliance data. Owner routing checks actual
+alliance identity rather than assuming every sufficiently large pilot ID is an alliance. Former members lose event
+details, RSVP and future event-feed access immediately. Corporation-owned calendar events remain outside this milestone.
+
+Reference evejs snapshots: `allianceRegistryRuntime.js` SHA-256
+`073f759c9ea8d219d6d72f89829a6c30737aba63dd1be31b1cf87d5b6ee7a5e1`,
+`calendar/calendarMgrService.js` SHA-256
+`8a1f814f2efd9cbda7a259056bc78162bd3c1e92a5bab1a2c58b491fff01c807`.
+
+**Automated validation.** The exact social/reopen test passed (build 3.42 s, tests 5.76 s) after a new regression exposed
+and corrected the missing membership publication hook in the owner directory. An intermediate run passed **97 tests**
+covering social behavior and immediate chat/mail/calendar dependencies (build 1.10 s, tests 26.87 s).
+Stable checks passed in **117.99 s**: tool/solution restore, zero-warning build, **195 focused tests** selected by
+`FullyQualifiedName~Eden.Protocol.Tests.Alliances|FullyQualifiedName~Eden.Protocol.Tests.Chat|FullyQualifiedName~MailTests|FullyQualifiedName~MailServiceTests|FullyQualifiedName~MailRulesTests|FullyQualifiedName~MailLifecycleTests|FullyQualifiedName~MailingListServiceTests|FullyQualifiedName~CalendarTests|FullyQualifiedName~CalendarServiceTests|FullyQualifiedName~CorporationContactsTests|FullyQualifiedName~CorporationOwnerNamesTests|FullyQualifiedName~UniversalSearchTests|FullyQualifiedName~DetachedCheckpointTests`,
+both Python policy suites (**8 + 9**) and formatting/width verification (**2,417 files**). Coverage includes shared contacts,
+label masks/removal, stale bulletin edits, unauthorized atomic rejections, saved MOTD and monotonic bulletin IDs after
+reopen, chat sender/recipient revocation through stale sessions, mail recipient snapshots and labels, calendar membership,
+native event notifications and shared ID allocation, plus SQL/connection/fitting-free warmed social reads. No full suite ran.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Inspect alliance contact/bulletin panels; verify alliance chat/MOTD presentation;
+compose alliance mail and open an alliance calendar event.

@@ -11,5 +11,6 @@ internal sealed partial class ResidentEconomy
         RegisterAllianceChange();
         RegisterAllianceBill();
         RegisterAllianceLifecycle();
+        RegisterAllianceSocial();
     }
 }

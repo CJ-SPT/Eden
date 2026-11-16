@@ -148,7 +148,7 @@ internal sealed partial class LiveWorld : IDisposable
             return;
         }
         ObserveWalletBalances(changes);
-        if (changes.Any(change => change.Table is "WorldPilot" or "WorldCorporation" or "schema"))
+        if (changes.Any(change => change.Table is "WorldPilot" or "WorldCorporation" or "WorldAllianceMember" or "schema"))
         {
             using WorldDbContext directory = new(_memory);
             OwnerDirectory.Observe(directory, Economy, changes);

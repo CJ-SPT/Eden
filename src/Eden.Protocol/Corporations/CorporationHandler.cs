@@ -18,7 +18,8 @@ internal sealed partial class CorporationHandler(
     ICorporationRoles roles,
     ICorporationShares shares,
     ICorporationStorage storage,
-    IAllianceMembership allianceMembership
+    IAllianceMembership allianceMembership,
+    AllianceSocialMonitor allianceSocial
 ) : ISelectedPilotCallHandler
 {
     public void Advance(PilotCallContext context)
@@ -29,6 +30,7 @@ internal sealed partial class CorporationHandler(
         }
         DrainChanges(context);
         DrainAllianceChanges(context);
+        allianceSocial.Advance(context);
         var identity = corporations.Identity(context.Pilot.PilotId);
         if (
             context.Pilot.CorpId == identity.Id

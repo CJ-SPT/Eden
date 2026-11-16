@@ -12,7 +12,9 @@ namespace Eden.World.Alliances;
 internal sealed partial class AllianceStore(WorldDatabase database, TimeProvider clock, InboxChangeSignal inbox)
     : IAlliances,
         IAllianceMembership,
-        IAllianceBilling
+        IAllianceBilling,
+        IAllianceSocial,
+        IAllianceCalendar
 {
     private LiveWorld Resident =>
         LiveWorld.Find(database.Path) ?? throw new InvalidDataException("Alliances require an active resident world.");
@@ -22,7 +24,19 @@ internal sealed partial class AllianceStore(WorldDatabase database, TimeProvider
     public Alliance? Read(int allianceId) => Resident.Economy.Inspect(world => Snapshot(world, allianceId));
 
     public int? Affiliation(int corporationId) =>
-        LiveWorld.Find(database.Path)?.Economy.Inspect(world => world.Set<SavedAllianceMember>().Find(corporationId)?.AllianceId);
+        LiveWorld.Find(database.Path)?.OwnerDirectory.Snapshot.AllianceMemberships.GetValueOrDefault(corporationId) is > 0 and var id
+            ? id
+            : null;
+
+    public int? PilotAffiliation(long pilotId)
+    {
+        var snapshot = LiveWorld.Find(database.Path)?.OwnerDirectory.Snapshot;
+        return
+            snapshot?.Pilots.GetValueOrDefault(pilotId) is { } pilot
+            && snapshot.AllianceMemberships.TryGetValue(pilot.CorporationId, out int alliance)
+            ? alliance
+            : null;
+    }
 
     public IReadOnlyList<Alliance> List() =>
         Resident.Economy.Inspect(world =>

@@ -9,6 +9,7 @@ public enum ChatRoomKind
     Private,
     Player,
     Fleet,
+    Alliance,
 }
 
 public sealed record ChatRoom(ChatRoomKind Kind, long Id);
@@ -21,7 +22,8 @@ public sealed record ChatPilot(
     long Roles,
     int GenderId = 0,
     ChatRoomKind LocalKind = ChatRoomKind.Local,
-    long? FleetId = null
+    long? FleetId = null,
+    int? AllianceId = null
 );
 
 public sealed record ChatRoomInfo(ChatRoom Room, string Name, long? OwnerId = null);

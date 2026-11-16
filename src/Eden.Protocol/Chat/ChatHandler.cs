@@ -1,3 +1,4 @@
+using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Chat;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
@@ -6,7 +7,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Chat;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class ChatHandler(IPilotChat chat) : ISelectedPilotCallHandler, IDisposable
+internal sealed class ChatHandler(IPilotChat chat, IAlliances? alliances = null) : ISelectedPilotCallHandler, IDisposable
 {
     private readonly Guid _session = Guid.NewGuid();
     private ChatPilot? _pilot;
@@ -24,7 +25,8 @@ internal sealed class ChatHandler(IPilotChat chat) : ISelectedPilotCallHandler, 
                 context.Roles,
                 selected.Profile.GenderId,
                 ChatRules.LocalKind(selected.SystemId, selected.RegionId),
-                selected.Identity.Fleet?.FleetId
+                selected.Identity.Fleet?.FleetId,
+                alliances is null ? selected.Identity.AllianceId : alliances.PilotAffiliation(selected.PilotId)
             );
         if (_pilot != pilot)
         {

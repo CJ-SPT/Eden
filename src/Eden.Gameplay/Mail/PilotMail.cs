@@ -17,6 +17,7 @@ public enum MailStatus
 [Flags]
 public enum SystemMailLabel
 {
+    None = 0,
     Inbox = 1,
     Sent = 2,
     Corporation = 4,
@@ -26,11 +27,13 @@ public enum SystemMailLabel
 public sealed record MailDraft(IReadOnlyList<long> Recipients, string Subject, string Body, long? ReplyTo, long? ForwardedFrom)
 {
     public long? ListId { get; init; }
+    public long? OrganizationId { get; init; }
 }
 
 public sealed record MailHeader(long Id, long SenderId, long SentAt, IReadOnlyList<long> Recipients, string Subject)
 {
     public long? ListId { get; init; }
+    public long? OrganizationId { get; init; }
 }
 
 public sealed record MailEntryState(long Id, MailStatus Status, long Labels);
@@ -115,8 +118,9 @@ public static partial class MailRules
     {
         if (
             draft.Recipients.Count > MaximumRecipients
-            || (draft.Recipients.Count == 0 && !draft.ListId.HasValue)
+            || (draft.Recipients.Count == 0 && !draft.ListId.HasValue && !draft.OrganizationId.HasValue)
             || draft.ListId <= 0
+            || draft.OrganizationId <= 0
             || draft.Recipients.Any(id => id <= 0)
             || draft.Recipients.Distinct().Count() != draft.Recipients.Count
         )
@@ -158,13 +162,22 @@ public static partial class MailRules
         }
     }
 
-    public static MailEntryState InitialState(long message, long owner, long? sentCopy, MailDraft draft, bool automated)
+    public static MailEntryState InitialState(
+        long message,
+        long owner,
+        long? sentCopy,
+        MailDraft draft,
+        bool automated,
+        SystemMailLabel organizationLabel = SystemMailLabel.None
+    )
     {
         bool direct = draft.Recipients.Contains(owner);
-        long labels = (owner == sentCopy ? (long)SystemMailLabel.Sent : 0) | (direct ? (long)SystemMailLabel.Inbox : 0);
+        long labels =
+            (owner == sentCopy ? (long)SystemMailLabel.Sent : 0) | (direct ? (long)SystemMailLabel.Inbox : 0) | (long)organizationLabel;
         // Native OnMailSent marks only an outgoing, non-received personal copy
         // read. Self-mail and the sender's subscribed list copy start unread.
-        var status = owner == sentCopy && !direct && !draft.ListId.HasValue ? MailStatus.Read : MailStatus.None;
+        var status =
+            owner == sentCopy && !direct && !draft.ListId.HasValue && !draft.OrganizationId.HasValue ? MailStatus.Read : MailStatus.None;
         return new(message, status | (automated ? MailStatus.Automated : MailStatus.None), labels);
     }
 

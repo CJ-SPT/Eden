@@ -18,7 +18,18 @@ internal sealed partial class AllianceHandler(IAlliances alliances) : ISelectedP
         Dictionary<string, object?>? keywords = null
     )
     {
-        if (service != "allianceRegistry" && !(service == "corpRegistry" && method is "CreateAlliance" or "GetSuggestedAllianceShortNames"))
+        if (
+            !(
+                service == "allianceRegistry"
+                && method
+                    is "GetAlliance"
+                        or "GetAlliancePublicInfo"
+                        or "GetRankedAlliances"
+                        or "GetAllianceMembers"
+                        or "GetMembers"
+                        or "UpdateAlliance"
+            ) && !(service == "corpRegistry" && method is "CreateAlliance" or "GetSuggestedAllianceShortNames")
+        )
         {
             return PilotCallResult.Unsupported;
         }

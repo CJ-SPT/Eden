@@ -24,6 +24,7 @@ public interface IAlliances
 {
     Alliance? Read(int allianceId);
     int? Affiliation(int corporationId);
+    int? PilotAffiliation(long pilotId);
     IReadOnlyList<Alliance> List();
     IReadOnlyList<AllianceMember> Members(int allianceId);
     AllianceCreation Create(long actorId, AllianceDetails details);

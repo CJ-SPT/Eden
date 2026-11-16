@@ -128,15 +128,12 @@ internal sealed class MailHandler(IPilotMail mail, TimeProvider clock) : ISelect
                 case ("GetBody", [long id, bool read]) when id > 0:
                     return new MailBodyReply(mail.Body(pilot, id, read, _origin));
                 case ("SendMail", [List<object?> recipients, var list, var corporation, var subject, var body, var reply, var forward]):
-                    if (OptionalId(corporation).HasValue)
-                    {
-                        throw new InvalidDataException("Corporation/alliance mail is not available.");
-                    }
                     return mail.Send(
                         pilot,
                         new MailDraft(Ids(recipients), Text(subject), Text(body), OptionalId(reply), OptionalId(forward))
                         {
                             ListId = OptionalId(list),
+                            OrganizationId = OptionalId(corporation),
                         },
                         _origin
                     );

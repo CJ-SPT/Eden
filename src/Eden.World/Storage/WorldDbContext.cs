@@ -137,6 +137,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         Eden.World.Alliances.AllianceSchema.Configure(model);
         Eden.World.Alliances.AllianceMembershipSchema.Configure(model);
         Eden.World.Alliances.AllianceBillingSchema.Configure(model);
+        Eden.World.Alliances.AllianceSocialSchema.Configure(model);
         Eden.World.Planetary.PlanetarySchema.Configure(model);
         JetcanSchema.Configure(model);
         Eden.World.Structures.StructureSchema.Configure(model);
