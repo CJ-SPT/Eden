@@ -13,6 +13,7 @@ A draft saves as **pending restart**. Saving, restoring and importing use the sa
 | Gathering | Separate ore, ice and gas yield multipliers, mining hold capacity multipliers, and belt renewal settings. |
 | Rewards | NPC bounty ISK, mission ISK, mission loyalty points and positive mission standing-gain multipliers. |
 | NPC population | Enable new pirates/anomalies, guards, convoys and mining populations independently. Existing living residents remain. An optional Major Threat anomaly override enables the six advanced nullsec families without sovereignty upgrades. |
+| Exploration | Always resolve cosmic signatures for every pilot, without scanner probes. Off by default. |
 | Progression | NPC kill-SP and mining-SP multipliers; starting skills and initial wallet grants for future pilots. Native training formulas remain unchanged. |
 | Industry | Manufacturing, research, copying and invention speed; reprocessing efficiency. |
 | Planetary industry | Extraction yield, factory output, command-center CPU and powergrid multipliers. |
@@ -77,6 +78,19 @@ saved world; they do not modify shared catalog definitions or autonomous NPC gat
 
 Training speed, combat difficulty, travel, ship-loss rules, loot and salvage tuning are outside this version. No client package
 update is required. Native visual presentation remains unverified; see the [implementation record](protocol/world-configuration.md).
+
+## Exploration
+
+Open **Settings → World & economy → Exploration** and enable **Always resolve cosmic signatures**,
+then choose **Save for restart**. After the next server start, current-system signatures appear at 100%
+with their exact positions and available site details for every pilot. Warping and bookmarking require no probes.
+This includes combat/DED, data, relic, gas and wormhole signatures supported by the world.
+Newly spawned signatures are revealed automatically; retired sites lose access as usual.
+
+The option defaults to off, including when importing older configuration documents. Exported configuration uses
+`settings.exploration.alwaysResolvedSignatures`. Turning it off and restarting restores normal probe scanning;
+automatic visibility does not permanently add per-pilot scan resolutions. Previously earned probe resolutions
+and saved bookmarks retain their normal behavior. Site populations, rewards and exploration equipment stay unchanged.
 
 ## Travel
 

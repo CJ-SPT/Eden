@@ -1,4 +1,5 @@
 using Eden.Gameplay.Agents;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Mining;
@@ -13,7 +14,8 @@ internal sealed class CombatAnomalyHandler(
     Eden.Gameplay.Agents.IPilotMissions missions,
     TimeProvider clock,
     ProbeScanningHandler? probes = null,
-    IDedEscalations? escalations = null
+    IDedEscalations? escalations = null,
+    IWorldTuning? tuning = null
 ) : ISelectedPilotCallHandler
 {
     private int? _system;
@@ -65,6 +67,7 @@ internal sealed class CombatAnomalyHandler(
             _signatures = sites.Signatures(_system.Value, Now);
             context.Notifications.Add(new SignalTrackerFullState(_system.Value, _known, _signatures));
             probes?.Enter(context);
+            RevealSignatures(context, _signatures, []);
             return PilotCallResult.None;
         }
         if (service == "scanMgr" && method == "GetSystemScanMgr" && args.Length == 0)
@@ -74,7 +77,9 @@ internal sealed class CombatAnomalyHandler(
         if (service == "@systemScan" && method == "GetFullState" && args.Length == 0)
         {
             probes?.Enter(context);
-            return new SignalTrackerState(sites.List(context.Pilot.SystemId, Now), sites.Signatures(context.Pilot.SystemId, Now));
+            var signatures = sites.Signatures(context.Pilot.SystemId, Now);
+            RevealSignatures(context, signatures, []);
+            return new SignalTrackerState(sites.List(context.Pilot.SystemId, Now), signatures);
         }
         return PilotCallResult.Unsupported;
     }
@@ -151,9 +156,18 @@ internal sealed class CombatAnomalyHandler(
         if (signatureAdded.Length > 0 || signatureRemoved.Length > 0)
         {
             context.Notifications.Add(new SignalTrackerSignatureUpdate(system, signatureAdded, signatureRemoved));
+            RevealSignatures(context, signatureAdded, _signatures.Where(s => signatureRemoved.Contains(s.Id)).ToArray());
         }
         _signatures = signatures;
         _known = current;
+    }
+
+    private void RevealSignatures(PilotCallContext context, IReadOnlyList<CombatAnomaly> added, IReadOnlyList<CombatAnomaly> removed)
+    {
+        if (tuning?.Settings.Exploration.AlwaysResolvedSignatures == true && (added.Count > 0 || removed.Count > 0))
+        {
+            context.Notifications.Add(new AutomaticSignatureResults(added, removed));
+        }
     }
 
     private void TrackGhostSite(PilotCallContext context, SpacePosition? position, IReadOnlyList<CombatAnomaly> signatures)

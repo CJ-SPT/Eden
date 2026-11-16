@@ -52,6 +52,7 @@ internal static class ConfigurationDisplay
         ["npcPopulation.convoys"] = "New convoys",
         ["npcPopulation.mining"] = "New mining populations",
         ["npcPopulation.majorThreatAnomalies"] = "Major Threat anomaly tiers",
+        ["exploration.alwaysResolvedSignatures"] = "Always resolve cosmic signatures",
         ["economy.progressiveMarkets"] = "Progressive regional markets",
         ["capsuleers.enabled"] = "Simulated pilots",
         ["capsuleers.miners"] = "Simulated miners",

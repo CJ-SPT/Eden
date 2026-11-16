@@ -180,3 +180,16 @@ internal sealed record RecoveredProbeIds(IReadOnlyList<long> Ids) : BlueModel
 {
     public override object ToBlue() => Ids.Select(id => (object?)id).ToList();
 }
+
+internal sealed record AutomaticSignatureResults(IReadOnlyList<CombatAnomaly> Added, IReadOnlyList<CombatAnomaly> Removed)
+    : PilotNotification("OnSystemScanStopped")
+{
+    // Build 3662168 initializes overlay signatures at zero strength. Its scan-result handler
+    // accepts an empty probe list and registers perfect results even without a running scan.
+    public override object?[] Arguments =>
+        [
+            new List<object?>(),
+            Added.Select(site => (object?)ProbeScanningWire.Result(new(site, 1, site.Position, 0))).ToList(),
+            Removed.Select(site => (object?)site.TargetId).ToList(),
+        ];
+}

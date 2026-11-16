@@ -17,6 +17,25 @@ namespace Eden.Protocol.Tests.Administration;
 public sealed class WorldSettingsPageTests
 {
     [Fact]
+    public void AutomaticSignatureControlRoundTripsAndAppearsInRevisionChanges()
+    {
+        Assert.False(SettingsForm.From(new()).AlwaysResolvedSignatures);
+        var form = SettingsForm.From(new() { Exploration = new(true) });
+        Assert.True(form.AlwaysResolvedSignatures);
+        Assert.True(form.Build().Exploration.AlwaysResolvedSignatures);
+        Assert.Contains(
+            ConfigurationDisplay.Compare(new(), new() { Settings = form.Build() }),
+            change => change.Field == "Always resolve cosmic signatures" && change.Before == "Off" && change.After == "On"
+        );
+        SettingsWorkspace workspace = new();
+        workspace.Load(new());
+        workspace.Form.AlwaysResolvedSignatures = true;
+        Assert.True(workspace.Unsaved);
+        workspace.Discard();
+        Assert.False(workspace.Form.AlwaysResolvedSignatures);
+    }
+
+    [Fact]
     public void TravelControlsRoundTripValidateAndAppearInRevisionChanges()
     {
         NavigationPolicy policy = new(0, 2, 1.25m);

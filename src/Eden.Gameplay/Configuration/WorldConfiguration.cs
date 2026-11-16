@@ -88,6 +88,8 @@ public sealed record NavigationPolicy(
     decimal AlignSpeedMultiplier = 1
 );
 
+public sealed record ExplorationPolicy(bool AlwaysResolvedSignatures = false);
+
 public sealed record WorldSettings
 {
     public EconomicPolicy Economy { get; init; } = new();
@@ -103,6 +105,7 @@ public sealed record WorldSettings
     public CapsuleerPopulationPolicy Capsuleers { get; init; } = new();
     public SimulationPolicy Simulation { get; init; } = new();
     public NavigationPolicy Navigation { get; init; } = new();
+    public ExplorationPolicy Exploration { get; init; } = new();
 }
 
 // Read-only access to the active in-memory policy, never a pending administrator draft.

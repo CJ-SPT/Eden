@@ -493,8 +493,10 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
         return WorldActionScope.Inspect(
             database,
             world =>
-                world.Set<SavedResolvedSignature>().Find(pilotId, siteId)?.SystemId == systemId
-                && Available(world, catalog, siteId, systemId, now)
+                (
+                    database.Settings.Exploration.AlwaysResolvedSignatures
+                    || world.Set<SavedResolvedSignature>().Find(pilotId, siteId)?.SystemId == systemId
+                ) && Available(world, catalog, siteId, systemId, now)
         );
     }
 }

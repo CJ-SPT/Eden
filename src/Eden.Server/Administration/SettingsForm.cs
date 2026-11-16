@@ -33,6 +33,7 @@ public sealed class SettingsForm
     public bool Convoys { get; set; }
     public bool Mining { get; set; }
     public bool MajorThreatAnomalies { get; set; }
+    public bool AlwaysResolvedSignatures { get; set; }
     public bool StartingSkills { get; set; }
     public bool GlobalProvisioning { get; set; }
     public bool SimulatedPilots { get; set; }
@@ -213,6 +214,7 @@ public sealed class SettingsForm
             Convoys = settings.NpcPopulation.Convoys,
             Mining = settings.NpcPopulation.Mining,
             MajorThreatAnomalies = settings.NpcPopulation.MajorThreatAnomalies,
+            AlwaysResolvedSignatures = settings.Exploration.AlwaysResolvedSignatures,
             StartingSkills = settings.Progression.GrantStartingSkills,
             GlobalProvisioning = settings.Capsuleers.GlobalProvisioning,
             SimulatedPilots = settings.Capsuleers.Enabled,
@@ -261,6 +263,7 @@ public sealed class SettingsForm
             Capsuleers = new(GlobalProvisioning, SimulatedPilots, SimulatedMiners, TrafficMultiplier, GateVisitors),
             Simulation = new(CheckpointSeconds, MarketPollMilliseconds, ResourceCheckSeconds),
             Navigation = new(AutopilotGateLandingMeters, WarpSpeedMultiplier, AlignSpeedMultiplier),
+            Exploration = new(AlwaysResolvedSignatures),
         };
 
     private static long Cents(decimal isk)

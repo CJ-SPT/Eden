@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Automatic signature resolution](world-configuration.md#exploration) makes cosmic signatures fully scanned
+for every pilot through an optional World & economy setting.
+
 [Client package retention](modding.md#client-package-retention) preserves active, pending and rollback generations
 while automatically pruning obsolete catalogs and abandoned builds.
 

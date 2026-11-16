@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Automatic signature resolution](protocol/information.md#automatic-signature-resolution--november-15-2026)
+adds an optional World & economy setting for fully resolved signatures without probes.
+
 [Client package retention](protocol/modding.md#client-package-retention--november-15-2026)
 bounds generated catalog history and removes abandoned builds under shared publisher ownership.
 

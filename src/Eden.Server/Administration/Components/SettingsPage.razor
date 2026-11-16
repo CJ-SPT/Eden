@@ -162,6 +162,11 @@ else
                 <label>Testing stock<InputNumber @bind-Value="Form.TestingStock" min="1" max="1000000000" /></label>
                 <label>Testing price (ISK)<InputNumber @bind-Value="Form.TestingPriceIsk" min="0.01" step="0.01" /></label>
             </section>
+            <section class="card"><h2>Exploration</h2>
+                <label><InputCheckbox @bind-Value="Form.AlwaysResolvedSignatures" />Always resolve cosmic signatures</label>
+                <p class="muted">Show all current-system signatures at 100% and allow warping and bookmarking without probes.
+                    Applies to every pilot after restart.</p>
+            </section>
             <section class="card"><h2>NPC population</h2>
                 <p class="muted">These switches control new spawns. Living residents remain in the world.</p>
                 <label><InputCheckbox @bind-Value="Form.Pirates" />Pirates</label>

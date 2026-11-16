@@ -534,3 +534,49 @@ suites and formatting checks passed.
 **Live acceptance.** Not performed. Agent client testing is disabled.
 
 **Optional maintainer checks.** None.
+
+## Automatic signature resolution — November 15, 2026
+
+The administrator's **World & economy → Exploration → Always resolve cosmic signatures** option stages
+`settings.exploration.alwaysResolvedSignatures` through the existing revision/import/export workflow.
+It defaults to false for new worlds and older documents, and activates only after restart.
+Enabled worlds publish exact 100% scanner results at subscription, full-state refresh and signature creation,
+and clear retired scanner results. Warp and bookmark authorization uses the active setting while still checking
+the current resident site's availability and system. Automatic discovery creates no permanent per-pilot scan grants;
+disabling the setting after restart restores normal probe requirements.
+
+Gameplay reference: [EVE University probe scanning](https://wiki.eveuniversity.org/Probe_scanning) describes
+normal 25% group, 75% name and 100% warp thresholds. This option is an explicit Eden convenience policy.
+Pinned build-3662168 `sensorsuite.overlay.signatures.SignatureHandler.GetSiteData` initializes overlay signals
+at zero strength regardless of extra fields. `probescanning.scanHandler.ScanHandler.OnSystemScanStopped`
+accepts an empty probe list and registers results without a running scan. Eden reuses that notification and
+its existing perfect-result adapter for categories, names and exact positions, following each signature update.
+The local EveJS `scanMgrService.js` comparison (SHA-256 prefix `A565E0C5064A3115`) also emits
+`OnSystemScanStopped(probeIDs, results, absentTargets)` and records server warp authority separately.
+No Carbon-owned codec, transport or Destiny behavior changes.
+
+**Automated validation.** The ordered tool/solution restore, solution build, affected tests, both Python policy
+suites and formatting verification passed in **92.97 seconds**. The build had zero warnings/errors;
+**257 .NET tests passed** in **58 seconds**, with seven unrelated opt-in package/browser tests skipped.
+The catalog policy suite passed eight cases, formatting policy passed nine, and formatting checked 2,316 files.
+Documentation targets/anchors, UTF-8/newlines and `git diff --check` also passed. No full regression suite was requested.
+
+Development began with exact filters
+`FullyQualifiedName=Eden.Protocol.Tests.Exploration.ProbeScanningTests.AutomaticSignaturesActivateAfterRestartAndPermitNativeWarpAndBookmarksWithoutProbes`
+and
+`FullyQualifiedName=Eden.Protocol.Tests.Exploration.ProbeScanningTests.AutomaticSignaturesRemoveRetiredResultsAndRevealReplacements`.
+The final OR filter used `FullyQualifiedName~` for each of these prefixes:
+`Eden.Protocol.Tests.Exploration.ProbeScanning`, `Eden.Protocol.Tests.Exploration.WormholeTravelTests`,
+`Eden.Protocol.Tests.Administration`, `Eden.Protocol.Tests.Persistence.WorldConfigurationTests`,
+`Eden.Protocol.Tests.Persistence.WorldTuningTests`, `Eden.Protocol.Tests.Persistence.PilotBookmarksTests`,
+and `Eden.Protocol.Tests.PilotSessions.BookmarkServiceTests`.
+Coverage includes legacy import, staged activation, export/reopen, disabling the policy, native 100% result fields,
+warp/bookmark calls without probes, unavailable/foreign-system rejection, retirement/replacement notifications,
+and detached checkpoints without permanent automatic scan grants. Initial test-only failures from expecting a
+Unicode string instead of native bytes and reading the fixture's ship ID inside a resident transaction were corrected
+before the passing final run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** After enabling and restarting, open the scanner without probes,
+verify 100% signatures and warp/bookmark actions, then check a newly entered system.

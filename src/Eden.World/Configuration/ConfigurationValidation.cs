@@ -42,6 +42,7 @@ internal static class ConfigurationValidation
             || settings.PlanetaryIndustry is null
             || settings.Industry is null
             || settings.Navigation is null
+            || settings.Exploration is null
         )
         {
             throw new InvalidDataException("Every typed settings group is required.");
