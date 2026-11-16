@@ -14,6 +14,7 @@ def export(catalog, output):
     factions = set()
     corporations = set()
     pending = {i for m in content['missions'] for w in m['waves'] for g in w['groups'] for i in g['types']}
+    pending.update(i for m in content['missions'] for i in m.get('itemReward', {}).get('types', []))
     pending.update([23, 2076, 670, 3355, 3356, 3357, 3359, 3361, 3893, 3894, 3895])
     # Existing NPC loss settlement uses the shared Eden ordinary/commander loot policy.
     pending.update([222, 230, 238, 185, 193, 201, 246, 250, 254, 210, 209, 203, 399, 10836, 10838,

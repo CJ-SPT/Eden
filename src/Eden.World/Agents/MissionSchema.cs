@@ -126,5 +126,13 @@ internal static class MissionSchema
         {
             world.Database.ExecuteSqlRaw("ALTER TABLE WorldMission ADD COLUMN BonusWindowTicks INTEGER NOT NULL DEFAULT 0");
         }
+        if (!missionColumns.Contains("ItemRewardTypeId"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldMission ADD COLUMN ItemRewardTypeId INTEGER NOT NULL DEFAULT 0");
+        }
+        if (!missionColumns.Contains("ItemRewardQuantity"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldMission ADD COLUMN ItemRewardQuantity INTEGER NOT NULL DEFAULT 0");
+        }
     }
 }

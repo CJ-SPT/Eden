@@ -456,6 +456,7 @@ internal sealed partial class PilotMissionStore(
                     throw new InvalidDataException("This mission is unavailable to this agent's corporation or faction.");
                 }
                 RequireChainAcceptance(world, catalog, agent, row, profile);
+                RequireResidentReward(world, row, profile);
                 row.State = MissionState.Accepted;
                 row.AcceptedAt = now;
                 row.ExpiresAt = checked(now + profile.Lifetime.Ticks);
@@ -475,8 +476,9 @@ internal sealed partial class PilotMissionStore(
                 RequireState(row, MissionState.Accepted);
                 var mission = MissionCatalog.Find(catalog, row!.MissionId);
                 RequireChainAcceptance(world, catalog, agent, row, mission);
+                RequireResidentReward(world, row, mission);
                 RequireStation(pilot, mission.Kind == MissionKind.Courier ? row.DestinationStation : agent.StationId);
-                if (mission.Kind != MissionKind.Courier && !row.ObjectiveComplete)
+                if (mission.Kind is MissionKind.Combat or MissionKind.Mining && !row.ObjectiveComplete)
                 {
                     throw new InvalidDataException(
                         mission.Kind == MissionKind.Mining
@@ -489,6 +491,10 @@ internal sealed partial class PilotMissionStore(
                     ConsumeCargo(world, catalog, pilot, row, mission, changes);
                 }
                 payment = Pay(world, pilot, agent, row, now, standings, sharers);
+                if (GrantItemReward(world, catalog, row, agent.StationId!.Value) is { } rewardChange)
+                {
+                    changes.Add(rewardChange);
+                }
                 Close(world, row, MissionState.Completed, now);
                 if (!row.Storyline)
                 {
@@ -577,7 +583,11 @@ internal sealed partial class PilotMissionStore(
         bool hasCargo = profile.CargoType > 0 && Cargo(world, pilot, row, profile).Sum(i => (long)i.Quantity) >= profile.CargoQuantity;
         bool complete =
             row.State == MissionState.Completed
-            || (profile.Kind == MissionKind.Courier ? hasCargo : row.ObjectiveComplete && (profile.CargoType == 0 || hasCargo));
+            || (
+                profile.Kind is MissionKind.Courier or MissionKind.Trade
+                    ? hasCargo
+                    : row.ObjectiveComplete && (profile.CargoType == 0 || hasCargo)
+            );
         return new(
             row.Id,
             row.MissionId,
@@ -608,6 +618,7 @@ internal sealed partial class PilotMissionStore(
             HasShipRestrictions = profile
                 .Rooms.SelectMany(r => r.Gates)
                 .Any(g => g.Access.AllowedShips is not null || g.Access.AllowedRaces.Count > 0),
+            ItemReward = row.ItemRewardTypeId > 0 && row.ItemRewardQuantity > 0 ? new(row.ItemRewardTypeId, row.ItemRewardQuantity) : null,
             Retrieval =
                 profile.Kind != MissionKind.Courier && profile.CargoType > 0
                     ? new(

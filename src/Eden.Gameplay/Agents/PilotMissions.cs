@@ -32,6 +32,7 @@ public enum MissionKind
     Courier,
     Combat,
     Mining,
+    Trade,
 }
 
 // Build 3662168 appConst factionsPirates and factionsWhoseStandingsAreNotAffectedBySkillBonuses.
@@ -114,6 +115,7 @@ public sealed record MissionOffer(
     public MissionBonus? Bonus { get; init; }
     public int EnemyFactionId { get; init; }
     public bool HasShipRestrictions { get; init; }
+    public MissionItemReward? ItemReward { get; init; }
 }
 
 public sealed record MissionStandingChange(long SourceId, double Before, double After);

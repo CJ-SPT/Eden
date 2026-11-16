@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Resident trade objectives and item rewards](protocol/agents.md#resident-trade-objectives-and-item-rewards--november-15-2026)
+adds player-sourced ore turn-in, durable implant quotes and four Materials For War Preparation storylines.
+
 [NPC weapon capability correction](protocol/combat.md#npc-weapon-capability-correction--november-15-2026)
 removes unintended missile fire from 19 mission NPC hulls and the support-only Spider Drone I's phantom turret.
 

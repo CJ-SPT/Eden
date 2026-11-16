@@ -245,128 +245,128 @@ missionId,name,template,status,reason
 1404,Nomads - The Minmatar Squadrons (5 of 5),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1405,Infiltrated Outposts,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1406,A Mad Scientist's Dream - Payment (1 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1407,A Mad Scientist's Dream - Simple Microorganisms (2 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1418,A Mad Scientist's Dream - Transportation (3 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1419,A Mad Scientist's Dream - The Drill (4 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1420,A Mad Scientist's Dream - Last Hindrance (5 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1422,Lost Love - Manchura The Pirate (1 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1407,A Mad Scientist's Dream - Simple Microorganisms (2 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1418,A Mad Scientist's Dream - Transportation (3 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1419,A Mad Scientist's Dream - The Drill (4 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1420,A Mad Scientist's Dream - Last Hindrance (5 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1422,Lost Love - Manchura The Pirate (1 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1424,Lost Love - Wei Todaki (2 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1425,Lost Love - Brain Washed (3 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1426,Mercantile Settlers - Confirmation For Your Good Intentions (1 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1427,Mercantile Settlers - Jorek Lephny (2 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1426,Mercantile Settlers - Confirmation For Your Good Intentions (1 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1427,Mercantile Settlers - Jorek Lephny (2 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1428,Mercantile Settlers - To The Health Clinic (3 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1429,Mercantile Settlers - Laser Shortage (4 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1431,Mercantile Settlers - Outlaws (5 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1429,Mercantile Settlers - Laser Shortage (4 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1431,Mercantile Settlers - Outlaws (5 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1432,Nefarious Business - A Small Favor (1 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1433,Nefarious Business - Songbird (2 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1434,Hidden Treasure - The Treasure Map (1 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1433,Nefarious Business - Songbird (2 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1434,Hidden Treasure - The Treasure Map (1 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1435,Hidden Treasure - Retrieve The Keycard (2 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1436,Hidden Treasure - Retrieve The Keycard (3 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1436,Hidden Treasure - Retrieve The Keycard (3 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1437,Nugoeihuvi Servant - Proving One's Loyalty (1 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1438,Hidden Treasure - Find The Gallente Fortune (4 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1439,Artifact Excavations - Food for the Needy (1 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1439,Artifact Excavations - Food for the Needy (1 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1440,Artifact Excavations - Tools in Short Supply (2 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1441,Artifact Excavations - Bandits Beware (3 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1442,Artifact Excavations - Final Blow (4 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1441,Artifact Excavations - Bandits Beware (3 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1442,Artifact Excavations - Final Blow (4 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1443,Artifact Excavations - Deliver the Special Report (5 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1444,Station In Crisis - Caldari Troublemakers (1 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1444,Station In Crisis - Caldari Troublemakers (1 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1445,Station In Crisis - Militia Equipment (2 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1446,Station In Crisis - Hooligan Gang Leaders (3 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1446,Station In Crisis - Hooligan Gang Leaders (3 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1447,Foul Play - Organizing The Search (1 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1448,Foul Play - Ryoke's Friend (2 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1449,Foul Play - Finding Ryoke (3 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1450,Wrongfully Accused - Prove Your Worth (1 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1452,Wrongfully Accused - Who Shot the Sheriff (2 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1453,Wrongfully Accused - The Cloaking Device (3 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1454,Wrongfully Accused - Last Hindrance (4 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1455,Gambler's Debt - The Stolen Shuttle (1 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1448,Foul Play - Ryoke's Friend (2 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1449,Foul Play - Finding Ryoke (3 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1450,Wrongfully Accused - Prove Your Worth (1 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1452,Wrongfully Accused - Who Shot the Sheriff (2 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1453,Wrongfully Accused - The Cloaking Device (3 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1454,Wrongfully Accused - Last Hindrance (4 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1455,Gambler's Debt - The Stolen Shuttle (1 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1456,Gambler's Debt - Dopamine Needed (2 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1457,Gambler's Debt - Repay The Debt (3 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1457,Gambler's Debt - Repay The Debt (3 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1458,Wagon Christ - Scanning The Heavens (1 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1459,Wagon Christ - Lost Supplies (2 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1459,Wagon Christ - Lost Supplies (2 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1460,Wagon Christ - Into The Darkness (3 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1461,Hotaru's Dilemma - Trespasser (1 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1461,Hotaru's Dilemma - Trespasser (1 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1462,Hotaru's Dilemma - Empty The Load (2 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1463,Hotaru's Dilemma - Break The Blockade (3 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1463,Hotaru's Dilemma - Break The Blockade (3 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1464,Hotaru's Dilemma - Moa Parts (4 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1465,Nefarious Business - Friendly Competition (3 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1466,The Lai Dai Research Project - Ore Shipment - (1 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1467,The Lai Dai Research Project - A Little More For My Friends - (2 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1467,The Lai Dai Research Project - A Little More For My Friends - (2 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1469,The Lai Dai Research Project - Rogue Drone Risk - (3 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1470,Nugoeihuvi Servant - Creating Trust (2 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1471,Nugoeihuvi Servant - Advancing in Rank (3 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1473,Wiyrkomi Freelancing - Missing Weapons Stash (1 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1473,Wiyrkomi Freelancing - Missing Weapons Stash (1 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1474,Wiyrkomi Freelancing - Another Task (2 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1475,Wiyrkomi Freelancing - An Ancient Monument (3 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1476,Wiyrkomi Freelancing - Unsuccessful Excavation (4 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1477,Interested in Work? (1 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1478,Troubles With Outlaws (2 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1479,Community Service - Pirates at Large (1 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1476,Wiyrkomi Freelancing - Unsuccessful Excavation (4 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1477,Interested in Work? (1 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1478,Troubles With Outlaws (2 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1479,Community Service - Pirates at Large (1 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1480,We Caught a Spy... (3 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1481,Pirates Brought to Justice (4 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1482,Protecting the Vault - Stirring the Nest (1 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1481,Pirates Brought to Justice (4 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1482,Protecting the Vault - Stirring the Nest (1 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1483,Community Service - Terrorist at Large (2 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1484,Protecting the Vault - Bad Money (2 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1484,Protecting the Vault - Bad Money (2 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1485,Nefarious Business - Texas Scramble (4 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1486,Protecting the Vault - Counterfeit Courier (3 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1487,Community Service - Important Delivery (3 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1488,Community Service - Cheri Mirei (4 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1489,Protecting the Vault - Dry Credit Death (4 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1488,Community Service - Cheri Mirei (4 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1489,Protecting the Vault - Dry Credit Death (4 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1490,Bank Security - The Fence (1 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1491,Bank Security - Bug Error (2 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1491,Bank Security - Bug Error (2 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1492,Time for Goodbyes (5 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1493,Those Bastards! (1 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1494,Got Milk? (2 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1495,Ancient Weaponry (3 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1496,Training Ground Destruction (4 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1495,Ancient Weaponry (3 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1496,Training Ground Destruction (4 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1497,Bank Security - The Safe (3 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1498,The Medicine Man - A Pinch of Spice (1 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1499,Escape From The Lion's Den - Mission Impossible (1 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1500,Escape From The Lion's Den - Key To Survival (2 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1501,The Bank Heist - Good To Go (1 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1502,Escape From The Lion's Den - The Getaway (3 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1498,The Medicine Man - A Pinch of Spice (1 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1499,Escape From The Lion's Den - Mission Impossible (1 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1500,Escape From The Lion's Den - Key To Survival (2 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1501,The Bank Heist - Good To Go (1 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1502,Escape From The Lion's Den - The Getaway (3 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1503,The Medicine Man - Satisfaction Guaranteed (3 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1504,The Bank Heist - Dynamite! (2 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1505,The Bank Heist - Hit List (3 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1506,The Bank Heist - Crisis Control (4 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1507,The Bank Heist - Inside Track (5 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1508,Will You Help? (1 of 2),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1507,The Bank Heist - Inside Track (5 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1508,Will You Help? (1 of 2),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1509,The Break In Expert - Wiretap (1 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1510,The Uprising (2 of 2),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1511,The Break In Expert - Sabotage (2 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1512,The Break In Expert - Keychain (3 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1513,Time for Payback (3 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1512,The Break In Expert - Keychain (3 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1513,Time for Payback (3 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1514,It Gets Worse... (2 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1515,"Look, I Need Your Help (1 of 3)",StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1516,Lookin' For Work? (1 of 2),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1517,I Lost My Stuff (2 of 2),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1518,Nugoeihuvi Freelancer - Bad News (4 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1519,Nugoeihuvi Freelancer - Workers Need Air... (3 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1515,"Look, I Need Your Help (1 of 3)",StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1516,Lookin' For Work? (1 of 2),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1517,I Lost My Stuff (2 of 2),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1518,Nugoeihuvi Freelancer - Bad News (4 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1519,Nugoeihuvi Freelancer - Workers Need Air... (3 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1520,Nugoeihuvi Freelancer - Construction Blocks (2 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1521,Nugoeihuvi Freelancer - Station Schematic Delivery (1 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1522,The Medicine Man - Snakebite (2 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1523,Pit Stop Slash Saloon - Need A Helping Hand (1 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1524,Pit Stop Slash Saloon - Materials For Construction (2 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1525,Pit Stop Slash Saloon - The Construction Tools (3 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1526,Designated Driver - The Garage (1 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1525,Pit Stop Slash Saloon - The Construction Tools (3 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1526,Designated Driver - The Garage (1 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1527,Designated Driver - The Decoder (2 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1528,Pit Stop Slash Saloon - Eliminate The Competition (4 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1529,The Caldari Migrants - Reconnaissance Point 1 (1 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1530,Designated Driver - State of Mind (4 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1531,Designated Driver - Clean Out (3 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1532,The Caldari Migrants - Reconnaissance Point 2 (2 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1533,The Caldari Migrants - Reconnaissance Point 3 (3 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1534,The Caldari Migrants - Quao (4 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1532,The Caldari Migrants - Reconnaissance Point 2 (2 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1533,The Caldari Migrants - Reconnaissance Point 3 (3 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1534,The Caldari Migrants - Quao (4 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1535,The Caldari Migrants - Criminal Brought To Justice (5 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1536,Banker's Stash - Stolen Goods (1 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1536,Banker's Stash - Stolen Goods (1 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1537,Banker's Stash - Complete the Transportation (2 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1538,Banker's Stash - Bury the Dead (3 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1539,Cattle Thieves - Brigands at Large (1 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1540,Cattle Thieves - Making Ends Meet (2 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1541,Cattle Thieves - Revenge Is Sweet (3 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1542,The Regiment - Stolen Deed (1 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1541,Cattle Thieves - Revenge Is Sweet (3 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1542,The Regiment - Stolen Deed (1 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1544,The Regiment - Break Out (3 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1545,The Regiment - Unforgiving (4 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1545,The Regiment - Unforgiving (4 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1546,The Regiment - Arms Race (2 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1548,The Southern Front - Gather Ye Rosebuds (1 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1549,The Southern Front - Restock (2 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
@@ -396,43 +396,43 @@ missionId,name,template,status,reason
 1580,Vengeance,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1581,Whispers in the Dark - First Contact (1 of 4),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1582,Whispers in the Dark - First Contact (1 of 4),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
-1591,Serpentis Gangsters - Enemies Of The Federation (1 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1592,Serpentis Gangsters - Clear The Way (2 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1593,Serpentis Gangsters - The Serpentis Officer (3 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1591,Serpentis Gangsters - Enemies Of The Federation (1 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1592,Serpentis Gangsters - Clear The Way (2 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1593,Serpentis Gangsters - The Serpentis Officer (3 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1602,Requiem for a Peace - Sacrament (1 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1603,Requiem for a Peace - Sepulture (2 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1604,Requiem for a Peace - Sentiment (3 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1604,Requiem for a Peace - Sentiment (3 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1611,The Sansha Renegades,StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1624,Transputer Orb - The Trace (1 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1625,Transputer Orb - The Rap (2 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1626,Transputer Orb - The Redemption (3 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1629,Interception - Data Miner (1 of 2),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1630,Ghost War - Shadows (1 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1624,Transputer Orb - The Trace (1 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1625,Transputer Orb - The Rap (2 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1626,Transputer Orb - The Redemption (3 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1629,Interception - Data Miner (1 of 2),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1630,Ghost War - Shadows (1 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1631,Ghost War - Mist (2 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1632,Ghost War - Gloom (3 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1632,Ghost War - Gloom (3 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1633,Kutill's Warez - Hacker's Equipment (1 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1634,Kutill's Warez - Hack The Station Mainframe! (2 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1635,Kutill's Warez - Machul Mu'Shabba (3 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1636,The Quartermaster - MIA (1 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1635,Kutill's Warez - Machul Mu'Shabba (3 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1636,The Quartermaster - MIA (1 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1637,The Quartermaster - RIP (2 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1638,The Quartermaster - AWOL (3 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1639,The Quartermaster - FUBAR (4 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1640,The Quartermaster - DOA (5 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1641,Angel Accord - The Envoy (1 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1640,The Quartermaster - DOA (5 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1641,Angel Accord - The Envoy (1 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1642,Angel Accord - The Courier (2 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1643,Angel Accord - The Pest (3 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1643,Angel Accord - The Pest (3 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1644,Angel Accord - The Ferret (4 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1645,Reign of Chaos - Pidgeon Shooting (1 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1646,Reign of Chaos - Take Two (2 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1645,Reign of Chaos - Pidgeon Shooting (1 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1646,Reign of Chaos - Take Two (2 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1647,Reign of Chaos - Motherload (3 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1648,Corpse Dealer - The Bodypart Trade (1 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1649,Corpse Dealer - Bring Back the Goods (2 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1650,Corpse Dealer - Kutill's Hacker Program (3 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1650,Corpse Dealer - Kutill's Hacker Program (3 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1651,Scandal In Barkrik - Deliver The Ambassador (1 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1652,Scandal In Barkrik - Retrieve The Inspector (2 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1653,Scandal In Barkrik - Deliver The Inspector (3 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1654,Scandal In Barkrik - The Final Inspection (4 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1655,Cyberganker - Secret Codes (1 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1654,Scandal In Barkrik - The Final Inspection (4 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1655,Cyberganker - Secret Codes (1 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1656,Cyberganker - Critical Report (2 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1657,Interception - The Messenger (2 of 2),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1658,Cyberganker - Kael Nutan (3 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
@@ -440,118 +440,118 @@ missionId,name,template,status,reason
 1660,Infiltration - Molding Character (2 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1661,Infiltration - Kill the Messenger (3 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1662,The Plantation Workers - Caught In A Storm (1 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1664,The Plantation Workers - Treat The Injured (2 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1664,The Plantation Workers - Treat The Injured (2 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1665,The Plantation Workers - Save The Plantation (4 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1666,The Plantation Workers - Extra Hands (3 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1667,House of Flowers - Lucia (1 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1668,House of Flowers - Escort Service (2 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1669,House of Flowers - Hell Hath No Fury (3 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1670,Treasure Hunter - The Vherokior Medallion (1 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1671,High Noon - A Few Cards Short (1 of 2),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1670,Treasure Hunter - The Vherokior Medallion (1 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1671,High Noon - A Few Cards Short (1 of 2),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1672,High Noon - Tipping the Scales (2 of 2),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1673,Treasure Hunter - Hraldar's Sculpture (2 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1674,Treasure Hunter - Telligman's Stone (3 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1673,Treasure Hunter - Hraldar's Sculpture (2 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1674,Treasure Hunter - Telligman's Stone (3 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1675,Treasure Hunter - Transportation (4 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1676,Attack of the Killer Drones - ST 58 (1 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1677,Attack of the Killer Drones - ST 59 (2 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1678,Attack of the Killer Drones - ST 60 (3 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1679,Blind Seer - Bones (1 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1678,Attack of the Killer Drones - ST 60 (3 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1679,Blind Seer - Bones (1 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1680,Blind Seer - Divination (2 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1681,Blind Seer - Trauma (3 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1682,Blind Seer - Tit for Tat (4 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1682,Blind Seer - Tit for Tat (4 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1683,Anarchy - Burning Need (1 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1684,Anarchy - Home Sweet Home (2 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1684,Anarchy - Home Sweet Home (2 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1685,Anarchy - Innocence Lost (3 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1686,Urban Management's Census - Civilian In Custody (1 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1687,Urban Management's Census - Trapped (2 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1686,Urban Management's Census - Civilian In Custody (1 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1687,Urban Management's Census - Trapped (2 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1688,Urban Management's Census - Stranded (3 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1689,Deputy - The Outpost (1 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1690,Deputy - The Sting (2 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1691,WANTED! - On The Run (1 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1691,WANTED! - On The Run (1 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1692,Deputy - The Gunship (4 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1693,Deputy - The C-Wing (3 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1694,WANTED! - The ID Card Generator (2 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1695,WANTED! - Means For Hasty Escape (3 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1694,WANTED! - The ID Card Generator (2 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1695,WANTED! - Means For Hasty Escape (3 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1696,WANTED! - Mercenary Threat (4 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1697,Breaking Tradition - The Shaman's Abode (1 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1698,Breaking Tradition - Maru Report (2 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1699,Breaking Tradition - Betrayal (3 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1699,Breaking Tradition - Betrayal (3 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1700,Bottleneck - Dark Tidings (1 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1701,In the Name of Science - Runes (1 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1701,In the Name of Science - Runes (1 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1702,In the Name of Science - Stakes (2 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1703,In the Name of Science - Taint (3 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1704,In the Name of Science - Portal (4 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1705,Utopian Signs - Radio Sociology (1 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1704,In the Name of Science - Portal (4 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1705,Utopian Signs - Radio Sociology (1 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1706,Utopian Signs - Antenna in the Sky (2 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1707,Utopian Signs - Navy Issue Amplifier (3 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1720,Bottleneck - Human Traffic (2 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1707,Utopian Signs - Navy Issue Amplifier (3 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1720,Bottleneck - Human Traffic (2 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1721,Decorum - We Like to Know (1 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1722,Decorum - Spy vs. Spy (2 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1722,Decorum - Spy vs. Spy (2 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1723,Decorum - Hacker's Haven (3 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1752,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1752,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1753,Epidemic - Aiding the Needy (1 of 2),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1754,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1755,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1756,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1754,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1755,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1756,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1757,Epidemic - Out of Hand (2 of 2),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1758,Extremely Unfortunate Incident (3 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1758,Extremely Unfortunate Incident (3 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1759,Unfolding a Mistery (2 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1760,Hidden Truths (1 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1761,Undercover Clone - A Delivery (1 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1762,Undercover Clone - Hardware Retrieval (2 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1763,Undercover Clone - A Little Extra... (3 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1762,Undercover Clone - Hardware Retrieval (2 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1763,Undercover Clone - A Little Extra... (3 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1764,Undercover Clone - A Failed Plan (4 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1765,Godun's Flunky - Listen and Learn (1 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1766,Godun's Flunky - Item Retrieval (2 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1767,Godun's Flunky - Another Item Retrieval (3 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1765,Godun's Flunky - Listen and Learn (1 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1766,Godun's Flunky - Item Retrieval (2 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1767,Godun's Flunky - Another Item Retrieval (3 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1768,Godun's Flunky - Not Impressed (4 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1769,Opportunities (1 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1770,The Spy Stash,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1771,Keep It Secret (2 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1772,"Hitman, You (3 of 3)",StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1773,Thukker Agency - Assistance Appreciated (1 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1772,"Hitman, You (3 of 3)",StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1773,Thukker Agency - Assistance Appreciated (1 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1774,Thukker Agency - Substances (2 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1775,Thukker Agency - Business Threats (3 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1775,Thukker Agency - Business Threats (3 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1776,Thukker Agency - A Dirty Cop (4 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1777,Drug Trade - Creating Illicit Substances (1 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1777,Drug Trade - Creating Illicit Substances (1 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1778,Drug Trade - Laboratory Maintenance (2 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1779,Drug Trade - Narcotics Officers (3 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1780,Drug Trade - Stolen Shipment (4 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1779,Drug Trade - Narcotics Officers (3 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1780,Drug Trade - Stolen Shipment (4 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1781,Criminal Minds - Looking Out for Number One (1 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1782,Criminal Minds - The Investigation (2 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1783,Criminal Minds - A Way Out (3 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1784,Criminal Minds - Our Ways Must Part (4 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1783,Criminal Minds - A Way Out (3 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1784,Criminal Minds - Our Ways Must Part (4 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1785,The Spy Stash,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1786,Caldari Incursion - Rogue Brigand Attack (1 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1787,Caldari Incursion - The Missing Logs (2 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1789,Hacker Ethics,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1790,Secrets for Sale,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1791,Partners in Crime,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1792,Information at a Cost,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1793,The Lullaby,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1794,Too Good to be True,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1795,Ripple Effects,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1796,Curiosity Shop,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1786,Caldari Incursion - Rogue Brigand Attack (1 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1787,Caldari Incursion - The Missing Logs (2 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1789,Hacker Ethics,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1790,Secrets for Sale,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1791,Partners in Crime,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1792,Information at a Cost,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1793,The Lullaby,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1794,Too Good to be True,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1795,Ripple Effects,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1796,Curiosity Shop,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1797,The Ani Buildup - Extra Medical Supplies (1 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1798,Caldari Incursion - The Thukker Tribe Envoy (3 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1799,The Ani Buildup - Carrot On A Stick (2 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1800,The Ani Buildup - Strike 'Em Where It Hurts (3 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1801,Purging Ani - The Amarrian Plantation (1 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1798,Caldari Incursion - The Thukker Tribe Envoy (3 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1799,The Ani Buildup - Carrot On A Stick (2 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1800,The Ani Buildup - Strike 'Em Where It Hurts (3 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1801,Purging Ani - The Amarrian Plantation (1 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1802,Purging Ani - Arming The Marines (2 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1803,Purging Ani - Kyan Magdesh (3 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1803,Purging Ani - Kyan Magdesh (3 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1804,Operation: Rattlesnake - Hidden Dangers (1 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1805,Operation: Rattlesnake - Filling The Ranks (2 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1806,Operation: Rattlesnake - The Scanner Tower (3 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1807,Deadly Diploma,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1808,League of My Own,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1809,The More the Merrier,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1810,Rush to the Head,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1811,Edge of Reason,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1812,Finders Keepers,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1806,Operation: Rattlesnake - The Scanner Tower (3 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1807,Deadly Diploma,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1808,League of My Own,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1809,The More the Merrier,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1810,Rush to the Head,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1811,Edge of Reason,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1812,Finders Keepers,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1813,Bottleneck - Liberation (3 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1814,Supplies For The Colony - Transporting The Goods (1 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1815,Gladiators - Saving Grace (2 of 2),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1818,Gladiators - Breathing Space (1 of 2),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1818,Gladiators - Breathing Space (1 of 2),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1819,Furthering the Cause - Keeping Tabs (1 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1820,Furthering the Cause - State of Readiness (2 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1821,Furthering the Cause - Withdrawal (3 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
@@ -561,131 +561,131 @@ missionId,name,template,status,reason
 1825,Supplies For The Colony - Tricky Terrain (2 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1826,Supplies For The Colony - For The Police (3 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1835,The Test Of Competence - Utrainen's Reports (1 of 2),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1836,The Test Of Competence - The Roaving Brigands (2 of 2),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1837,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1838,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1839,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1841,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1842,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1843,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1844,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1845,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1846,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1847,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1848,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1849,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1850,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1851,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1852,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1853,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1854,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1855,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1856,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1857,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1858,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1859,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1860,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1861,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1862,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1863,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1864,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1865,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1866,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1867,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1868,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1870,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1871,Improving Relations,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1872,"The Audesder War Effort, Hand In The Voucher (1 of 8)",StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1836,The Test Of Competence - The Roaving Brigands (2 of 2),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1837,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1838,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1839,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1841,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1842,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1843,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1844,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1845,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1846,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1847,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1848,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1849,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1850,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1851,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1852,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1853,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1854,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1855,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1856,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1857,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1858,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1859,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1860,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1861,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1862,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1863,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1864,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1865,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1866,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1867,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1868,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1870,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1871,Improving Relations,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1872,"The Audesder War Effort, Hand In The Voucher (1 of 8)",StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1873,"The Audesder War Effort, The Gallente Spy Drones (2 of 8)",StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1874,"The Audesder War Effort, The Ammatar Traitor (3 of 8)",StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1874,"The Audesder War Effort, The Ammatar Traitor (3 of 8)",StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1875,"The Audesder War Effort, Planting The Spy (4 of 8)",StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1876,"The Audesder War Effort, Damaging Their Surveillance Capabilities (5 of 8)",StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1877,"The Audesder War Effort, Recovering the Spy (6 of 8)",StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1878,"The Audesder War Effort, Striking At The Blockade (7 of 8)",StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1877,"The Audesder War Effort, Recovering the Spy (6 of 8)",StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1878,"The Audesder War Effort, Striking At The Blockade (7 of 8)",StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1879,"The Audesder War Effort, The Dreadnought Manufacturing Facility (8 of 8)",StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1880,Proving Your Mettle,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1881,"The Audesder War Effort, The Voucher (1 of 8)",StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1880,Proving Your Mettle,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1881,"The Audesder War Effort, The Voucher (1 of 8)",StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1882,"The Audesder War Effort, End The Propaganda (2 of 8)",StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1883,"The Audesder War Effort, Strike At The Caldari (3 of 8)",StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1884,"The Audesder War Effort, Smuggling The Marines (4 of 8)",StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1885,"The Audesder War Effort, The Khanid Outpost (5 of 8)",StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1886,"The Audesder War Effort, Espionage (6 of 8)",StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1886,"The Audesder War Effort, Espionage (6 of 8)",StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1887,"The Audesder War Effort, Freeing The Kameiras (7 of 8)",StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1888,"The Audesder War Effort, The Dreadnought Manufacturing Facility (8 of 8)",StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1889,Proving Your Mettle,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1890,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1889,Proving Your Mettle,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1890,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1891,The Missing Reporters - Minmatar Smugglers (1 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1892,The Missing Reporters - Political Foes (2 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 1893,The Missing Reporters - Miners Beware (3 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 1894,The Missing Reporters - Slavers Beware (3 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 1895,The Missing Reporters - Caldari Smugglers (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 1896,The Missing Reporters - Bad Timing (2 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
-1897,Supplies For The Resistance,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1897,Supplies For The Resistance,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1898,More Supplies For The Resistance,StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1900,Civilian Pullout - More Civilians to Evacuate,StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1901,The Azure Canyon (1 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1902,The Azure Canyon (2 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1903,The Azure Canyon (3 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1904,The Azure Canyon (4 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1905,The Wiyrkomi Operation (1 of 6),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1906,Seal Of Approval (prequel),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1904,The Azure Canyon (4 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1905,The Wiyrkomi Operation (1 of 6),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1906,Seal Of Approval (prequel),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1907,The Wiyrkomi Operation (2 of 6),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1908,The Wiyrkomi Operation (3 of 6),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1908,The Wiyrkomi Operation (3 of 6),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1909,The Wiyrkomi Operation (4 of 6),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1910,The Wiyrkomi Operation (5 of 6),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1911,The Wiyrkomi Operation (6 of 6),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1910,The Wiyrkomi Operation (5 of 6),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1911,The Wiyrkomi Operation (6 of 6),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1912,The War Against Terrorism (1 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1913,Seal Of Approval (prequel),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1913,Seal Of Approval (prequel),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1914,On the Trail (1 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1915,The War Against Terrorism (2 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1916,On The Trail (2 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1917,On The Trail (3 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1918,The War Against Terrorism (3 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1918,The War Against Terrorism (3 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1919,On The Trail (4 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1920,The War Against Terrorism (4 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1920,The War Against Terrorism (4 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1921,The War Against Terrorism (5 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1922,Concerned Citizens - Store Credit (1 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1923,Concerned Citizens - Lost Stash (2 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1923,Concerned Citizens - Lost Stash (2 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1924,"Concerned Citizens - Run, Boy, Run! (3 of 3)",StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1925,Business Associates - Hit Man (1 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1926,Business Associates - Bag Man (2 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1926,Business Associates - Bag Man (2 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1927,Business Associates - Dirty Laundry (3 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1928,Business Associates - Kill the Competition (4 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1929,The Forgery - Framed! (1 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1929,The Forgery - Framed! (1 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1930,The Forgery - Mark it for Market (2 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1931,The Forgery - Dollhouse (3 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1932,The Forgery - Fogeddaboutid (4 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1933,The Forgery - Tie the Knot (5 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1934,Power to the People - Seed (1 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1934,Power to the People - Seed (1 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1935,Power to the People - Toil (2 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1936,Power to the People - Reap (3 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1937,Tourist Run (1 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1938,Business Associates - Prelude,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1938,Business Associates - Prelude,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1939,Tourist Run (2 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1940,Courier,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1941,Warning Message,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1940,Courier,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1941,Warning Message,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1943,Tourist Run (3 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1944,Federal Inspection (1 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1945,Federal Inspection (2 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1946,A Storm Brewing (1 of 6),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1946,A Storm Brewing (1 of 6),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1947,A Storm Brewing (2 of 6),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1948,Federal Inspection (3 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1949,Federal Inspection (4 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1948,Federal Inspection (3 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1949,Federal Inspection (4 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1950,Federal Inspection (5 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1951,Rescue Isone Flosin,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1952,Revenge Is Sweet (1 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1953,Revenge Is Sweet (2 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1951,Rescue Isone Flosin,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1952,Revenge Is Sweet (1 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1953,Revenge Is Sweet (2 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1954,Revenge Is Sweet (3 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1955,Revenge Is Sweet (4 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1957,Ore Harvesting (1 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1957,Ore Harvesting (1 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1959,Ore Harvesting (2 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1960,Ore Harvesting (3 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1961,Maschteri Markan,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1961,Maschteri Markan,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1962,A Storm Brewing (3 of 6),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1963,A Storm Brewing (4 of 6),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1964,A Storm Brewing (5 of 6),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1964,A Storm Brewing (5 of 6),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1965,A Storm Brewing (6 of 6),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1966,Uproot (Prologue),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1966,Uproot (Prologue),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1967,Uproot (1 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1968,Uproot (4 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1969,Uproot (5 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
@@ -693,18 +693,18 @@ missionId,name,template,status,reason
 1971,Uproot (3 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1972,Antagonism - Empty Cargo (1 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1973,Rogue Crop - Root of the Problem (3 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1974,Antagonism - Sending a Message (2 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1975,Antagonism - No Contest (4 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1976,Rogue Crop - Trimming the Edges (1 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1977,Rogue Crop - Neither Safe nor Sorry (2 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-1978,Drone Mind - 01010011 01001111 01010011 (1 of 2),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1974,Antagonism - Sending a Message (2 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1975,Antagonism - No Contest (4 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1976,Rogue Crop - Trimming the Edges (1 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1977,Rogue Crop - Neither Safe nor Sorry (2 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1978,Drone Mind - 01010011 01001111 01010011 (1 of 2),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1980,Drone Mind - Embryo (2 of 2),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1981,Antagonism - Mean Business (3 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1984,Rogue Crop - Alpha Strike (4 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1985,Governor's Aide (1 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1986,Governor's Aide (2 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1987,Governor's Aide (3 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1989,Activist Fuel (1 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+1989,Activist Fuel (1 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1990,Activist Fuel (2 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1991,Activist Fuel (3 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1992,Activist Fuel (4 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
@@ -714,22 +714,22 @@ missionId,name,template,status,reason
 1996,Fanning the Flames (1 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1997,Fanning the Flames (2 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1998,Fanning the Flames (3 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-2001,Governor's Aide (5 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2002,Manel's Disappearance (1 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2003,Contacting Ader (1 of 2),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2001,Governor's Aide (5 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2002,Manel's Disappearance (1 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2003,Contacting Ader (1 of 2),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2004,Contacting Ader (2 of 2),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-2005,Manel's Disappearance (2 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2005,Manel's Disappearance (2 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2006,Manel's Disappearance (3 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2007,Manel's Disappearance (4 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-2008,Manel's Disappearance (5 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2009,Neutralizing The Threat (1 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2010,Neutralizing The Threat (2 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2011,Neutralizing The Threat (3 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2008,Manel's Disappearance (5 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2009,Neutralizing The Threat (1 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2010,Neutralizing The Threat (2 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2011,Neutralizing The Threat (3 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2012,Guild Wars (1 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2013,Guild Wars (2 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2014,Guild Wars (3 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-2015,Guild Wars (4 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2016,Culprit Revealed!,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2015,Guild Wars (4 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2016,Culprit Revealed!,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2019,Data Sheets for Lai Dai,StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2020,Data Sheets for Lai Dai,StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2021,Data Sheets for Lai Dai,StorylineCourierMission,blocked,Requires another mission or agent lifecycle
@@ -754,17 +754,17 @@ missionId,name,template,status,reason
 2057,Construction Supplies,StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2058,More Quafe Please ...,StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2059,To Quench The Thirst ...,StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-2060,Clean Hands - Blood Trail (1 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2060,Clean Hands - Blood Trail (1 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2061,Clean Hands - Rampart Cyst (2 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2062,Clean Hands - Iron Lady (3 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-2063,Clean Hands - Rust in Peace (4 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2063,Clean Hands - Rust in Peace (4 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2064,Clean Hands - Corpse Cauldron (5 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-2065,Clear Head - Throwing Down the Gauntlet (1 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2065,Clear Head - Throwing Down the Gauntlet (1 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2066,Clear Head - Code of Chivalry (2 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2067,Clear Head - The Joust (3 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2068,Clear Head - Black Barbican (4 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2069,Clear Head - Dragon in a Dungeon (5 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-2070,The Herald,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2070,The Herald,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2071,VIP Transportation,StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2074,Retrieve The Ammo (1 of 2),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2075,Uranium Transportation (2 of 2),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
@@ -787,20 +787,20 @@ missionId,name,template,status,reason
 2093,Illegal Activity (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2094,Illegal Activity (2 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2095,Illegal Activity (3 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
-2096,Secrets Of The Mire Keep (1 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2097,Blood Hunt - Symptoms (1 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2098,Blood Hunt - Morbid Burden (2 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2096,Secrets Of The Mire Keep (1 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2097,Blood Hunt - Symptoms (1 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2098,Blood Hunt - Morbid Burden (2 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2099,Blood Hunt - Remains (3 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-2100,Blood Hunt - Cut to the Heart (4 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2100,Blood Hunt - Cut to the Heart (4 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2101,Blood Hunt - Surgical Strike (5 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2102,Pilgrim - Festival (1 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-2103,Pilgrim - Heretics (2 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2103,Pilgrim - Heretics (2 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2104,Pilgrim - Funeral (3 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2105,Pilgrim - Shroud (4 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2106,Pilgrim - Temple (5 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2107,Secrets Of The Mire Keep (2 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2108,Secrets Of The Mire Keep (3 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-2109,Secrets Of The Mire Keep (4 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2109,Secrets Of The Mire Keep (4 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2110,Technological Secrets (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2112,Technological Secrets (3 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2113,Technological Secrets (2 of 3),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
@@ -810,21 +810,21 @@ missionId,name,template,status,reason
 2117,Federation Attack! (1 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2118,King of the Hill (1 of 13),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2119,King of the Hill (2 of 13),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-2120,King of the Hill (3 of 13),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2121,King of the Hill (3 of 13) (part 2),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2122,King of the Hill (3 of 13) (part 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2120,King of the Hill (3 of 13),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2121,King of the Hill (3 of 13) (part 2),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2122,King of the Hill (3 of 13) (part 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2123,King of the Hill (4 of 13),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-2126,King of the Hill (5 of 13),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2126,King of the Hill (5 of 13),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2127,King of the Hill (6 of 13),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-2128,King of the Hill (7 of 13),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2128,King of the Hill (7 of 13),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2129,King of the Hill (8 of 13),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-2131,King of the Hill (9 of 13),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2132,King of the Hill (10 of 13),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2131,King of the Hill (9 of 13),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2132,King of the Hill (10 of 13),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2133,King of the Hill (11 of 13),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-2136,King of the Hill (12 of 13),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2136,King of the Hill (12 of 13),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2137,King of the Hill (13 of 13),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-2138,Governor's Aide (4 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2139,Pawns on the Board (2 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2138,Governor's Aide (4 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2139,Pawns on the Board (2 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2140,Pawns on the Board (3 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2141,Pawns on the Board (4 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2142,Pawns on the Board (5 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
@@ -833,10 +833,10 @@ missionId,name,template,status,reason
 2145,Arachnan's Maneuver (5 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2146,Pawns on the Board (1 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2147,Arachnan's Maneuver (2 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-2148,Arachnan's Maneuver (Prelude),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2150,Path to Enlightenment - Deception (1 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2151,Path to Enlightenment - Destruction (2 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2152,Path to Enlightenment - Discovery (3 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2148,Arachnan's Maneuver (Prelude),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2150,Path to Enlightenment - Deception (1 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2151,Path to Enlightenment - Destruction (2 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2152,Path to Enlightenment - Discovery (3 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2153,Arachnan's Maneuver (3 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2154,Enemies Abound (1 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2156,Enemies Abound (2 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
@@ -849,7 +849,7 @@ missionId,name,template,status,reason
 2165,Enemies Abound (4 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2166,Enemies Abound (5 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2167,Arming Araz (1 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-2168,Arming Araz (2 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2168,Arming Araz (2 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2169,Human Cattle (1 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2170,Human Cattle (2 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2171,Human Cattle (3 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
@@ -862,16 +862,16 @@ missionId,name,template,status,reason
 2178,Portal To War (2 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2179,Portal To War (3 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2180,Portal To War (4 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
-2181,Trial of Skill (1 of 1),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2181,Trial of Skill (1 of 1),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2182,Portal To War (5 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2183,In the Midst of Deadspace (1 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2184,In the Midst of Deadspace (2 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2185,In the Midst of Deadspace (3 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2186,In the Midst of Deadspace (4 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
-2187,Unearthing the Ancients (1 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2188,Unearthing the Ancients (2 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2189,Unearthing the Ancients (2 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2190,Unearthing the Ancients (3 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2187,Unearthing the Ancients (1 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2188,Unearthing the Ancients (2 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2189,Unearthing the Ancients (2 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2190,Unearthing the Ancients (3 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2191,In the Midst of Deadspace (5 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2193,Covering Your Tracks,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 2194,Covering Your Tracks,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
@@ -938,37 +938,37 @@ missionId,name,template,status,reason
 2268,Downing The Slavers (2 of 2),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2270,Downing The Slavers (2 of 2),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2272,The Graduation Certificate,StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-2273,License To Fly (prequel),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2273,License To Fly (prequel),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2274,The Celestial Imperative (1 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2275,The Celestial Imperative (2 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2276,The Celestial Imperative (3 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-2277,The Celestial Imperative (4 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2278,The Hapless Thief (1 of 2),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2277,The Celestial Imperative (4 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2278,The Hapless Thief (1 of 2),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2279,Valuable Records (2 of 2),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2280,The Celestial Imperative (5 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2281,The Graduation Certificate,StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-2282,License To Fly (prequel),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2282,License To Fly (prequel),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2283,Beizan Picholen (1 of 6),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2284,Beizan Picholen (2 of 6),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-2285,Beizan Picholen (3 of 6),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2286,The Plot Thickens (1 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2287,The Plot Thickens (2 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2285,Beizan Picholen (3 of 6),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2286,The Plot Thickens (1 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2287,The Plot Thickens (2 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2288,The Plot Thickens (3 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2289,Beizan Picholen (4 of 6),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2290,Beizan Picholen (6 of 6),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2291,Beizan Picholen (5 of 6),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2292,Quelling The Insurgency (1 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2293,Quelling The Insurgency (2 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-2294,Quelling The Insurgency (3 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2295,Quelling The Insurgency (4 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2294,Quelling The Insurgency (3 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2295,Quelling The Insurgency (4 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2296,Choonka's Request (1 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2297,Choonka's Request (2 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2298,Choonka's Request (3 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2299,Choonka's Request (4 of 4),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2300,Quelling The Insurgency (5 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2301,The Graduation Certificate,StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-2302,License To Fly (prequel),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2303,License To Fly (prequel),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2302,License To Fly (prequel),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2303,License To Fly (prequel),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2304,The Graduation Certificate,StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2305,Transaction Data Delivery,GenericStorylineCourierMission,admitted,Catalog cargo or reviewed encounter
 2306,Transaction Data Delivery,GenericStorylineCourierMission,admitted,Catalog cargo or reviewed encounter
@@ -991,8 +991,8 @@ missionId,name,template,status,reason
 2328,Shaman Secrets (1 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2329,Shaman Secrets (2 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2330,Shaman Secrets (3 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-2331,Shaman Secrets (4 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2333,Snatching The Shaman,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2331,Shaman Secrets (4 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2333,Snatching The Shaman,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2334,The Shaman's Will,StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2335,Shaman Secrets (5 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2336,Worlds Collide,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -1103,32 +1103,32 @@ missionId,name,template,status,reason
 2567,Pirate Business,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2568,Pirate Business,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2569,Pirate Business,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2570,Heads Of Management (1 of 2),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2571,Heads Of Management (2 of 2),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2570,Heads Of Management (1 of 2),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2571,Heads Of Management (2 of 2),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2572,The Score,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2573,The Score,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2574,The Admiral's Task (1 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2575,The Admiral's Task (2 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2574,The Admiral's Task (1 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2575,The Admiral's Task (2 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2576,The Admiral's Task (3 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-2577,Pirate Escapade (1 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2578,Pirate Escapade (2 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2579,Pirate Escapade (3 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2577,Pirate Escapade (1 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2578,Pirate Escapade (2 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2579,Pirate Escapade (3 of 4),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2580,Pirate Escapade (4 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-2582,Pirate Dealings (1 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2583,If The Price Is Right ...,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2582,Pirate Dealings (1 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2583,If The Price Is Right ...,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2584,Pirate Dealings (2 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2585,Corporate Documents,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
-2586,Pirate Dealings (3 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2587,Booster Manufacturing - E-8CSQ,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2586,Pirate Dealings (3 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2587,Booster Manufacturing - E-8CSQ,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2588,All Things Come to an End (1 of 2),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-2589,All Things Come to an End (2 of 2),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2590,Booster Manufacturing - 09-4XW,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2591,Booster Manufacturing - I-3ODK,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2592,Booster Manufacturing - Assilot,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2593,Booster Manufacturing - Pegasus,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2594,Booster Manufacturing - OK-FEM,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2595,Booster Manufacturing - 9HXQ-G,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2596,Booster Manufacturing - 760-9C,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2589,All Things Come to an End (2 of 2),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2590,Booster Manufacturing - 09-4XW,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2591,Booster Manufacturing - I-3ODK,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2592,Booster Manufacturing - Assilot,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2593,Booster Manufacturing - Pegasus,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2594,Booster Manufacturing - OK-FEM,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2595,Booster Manufacturing - 9HXQ-G,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2596,Booster Manufacturing - 760-9C,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2597,Massive Attack,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2598,Massive Attack,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2599,Massive Attack,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -1315,10 +1315,10 @@ missionId,name,template,status,reason
 2789,From Bad To Worse,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 2790,High Spirits,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 2791,Transmitter Replacement,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
-2792,Mineral Acquisition,ResearchTradeMission,blocked,Requires another mission or agent lifecycle
-2793,Mineral Acquisition,ResearchTradeMission,blocked,Requires another mission or agent lifecycle
-2794,Mineral Acquisition,ResearchTradeMission,blocked,Requires another mission or agent lifecycle
-2795,Mineral Acquisition,ResearchTradeMission,blocked,Requires another mission or agent lifecycle
+2792,Mineral Acquisition,ResearchTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2793,Mineral Acquisition,ResearchTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2794,Mineral Acquisition,ResearchTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2795,Mineral Acquisition,ResearchTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2804,The Special Delivery,ResearchCourierMission,blocked,Requires another mission or agent lifecycle
 2805,Threat From Abroad (1 of 2),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2806,Threat From Abroad (2 of 2),StorylineKillMission,blocked,Requires another mission or agent lifecycle
@@ -1364,58 +1364,58 @@ missionId,name,template,status,reason
 2860,Little Sister (1 of 2),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2861,Little Sister (2 of 2),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2862,The Search Party (1 of 2),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-2864,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2865,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2866,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2867,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2868,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2869,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2870,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2871,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2872,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2873,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2874,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2875,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2876,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2877,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2878,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2879,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2880,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2881,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2882,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2883,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2884,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2885,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2886,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2887,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2888,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2889,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2890,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2891,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2892,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2893,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2894,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2895,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2896,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2897,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2898,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2899,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2900,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2901,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2902,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2903,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2904,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2905,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2906,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2907,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2908,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2864,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2865,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2866,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2867,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2868,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2869,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2870,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2871,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2872,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2873,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2874,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2875,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2876,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2877,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2878,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2879,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2880,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2881,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2882,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2883,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2884,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2885,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2886,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2887,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2888,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2889,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2890,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2891,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2892,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2893,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2894,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2895,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2896,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2897,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2898,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2899,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2900,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2901,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2902,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2903,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2904,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2905,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2906,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2907,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2908,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2909,Next of Kin (2 of 2),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2912,Move The Goods,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 2913,Move The Goods,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 2914,Move The Goods,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 2915,Move The Goods,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 2916,A Worthy Task,StorylineKillMission,blocked,Requires another mission or agent lifecycle
-2917,The Crazed Drone Scientist,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2917,The Crazed Drone Scientist,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 2919,A Special Delivery,GenericStorylineCourierMission,admitted,Catalog cargo or reviewed encounter
 2920,A Special Delivery,GenericStorylineCourierMission,admitted,Catalog cargo or reviewed encounter
 2921,A Special Delivery,GenericStorylineCourierMission,admitted,Catalog cargo or reviewed encounter
@@ -1468,56 +1468,56 @@ missionId,name,template,status,reason
 2973,Cargo Delivery,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2974,Cargo Delivery,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2984,Recon (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
-2987,Angel Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2988,Angel Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2989,Angel Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2990,Angel Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2991,Angel Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2992,Angel Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2993,Angel Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2994,Angel Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2995,Angel Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2996,Angel Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2997,Guristas Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2998,Guristas Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2999,Guristas Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3000,Guristas Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3001,Guristas Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3002,Guristas Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3003,Guristas Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3004,Guristas Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3005,Guristas Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3006,Guristas Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3007,Blood Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3008,Blood Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3009,Blood Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3010,Blood Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3011,Blood Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3012,Blood Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3013,Blood Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3014,Blood Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3015,Blood Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3016,Blood Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3017,Serpentis Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3018,Serpentis Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3019,Serpentis Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3020,Serpentis Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3021,Serpentis Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3022,Serpentis Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3023,Serpentis Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3024,Serpentis Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3025,Serpentis Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3026,Serpentis Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3027,Sansha Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3028,Sansha Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3029,Sansha Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3030,Sansha Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3031,Sansha Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3032,Sansha Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3033,Sansha Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3034,Sansha Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3035,Sansha Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3036,Sansha Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+2987,Angel Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2988,Angel Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2989,Angel Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2990,Angel Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2991,Angel Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2992,Angel Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2993,Angel Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2994,Angel Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2995,Angel Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2996,Angel Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2997,Guristas Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2998,Guristas Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2999,Guristas Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3000,Guristas Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3001,Guristas Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3002,Guristas Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3003,Guristas Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3004,Guristas Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3005,Guristas Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3006,Guristas Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3007,Blood Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3008,Blood Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3009,Blood Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3010,Blood Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3011,Blood Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3012,Blood Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3013,Blood Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3014,Blood Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3015,Blood Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3016,Blood Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3017,Serpentis Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3018,Serpentis Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3019,Serpentis Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3020,Serpentis Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3021,Serpentis Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3022,Serpentis Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3023,Serpentis Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3024,Serpentis Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3025,Serpentis Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3026,Serpentis Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3027,Sansha Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3028,Sansha Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3029,Sansha Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3030,Sansha Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3031,Sansha Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3032,Sansha Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3033,Sansha Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3034,Sansha Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3035,Sansha Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3036,Sansha Taghunter,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 3037,Recon (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 3038,Recon (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 3039,Recon (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
@@ -1575,7 +1575,7 @@ missionId,name,template,status,reason
 3094,Deadly Arrival,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 3095,Deadly Arrival,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 3096,Balancing the Books (1 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-3105,Making Mountains of Molehills (10 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+3105,Making Mountains of Molehills (10 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 3106,Making Mountains of Molehills (9 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 3107,Balancing the Books (4 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 3108,Balancing the Books (4 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
@@ -1586,10 +1586,10 @@ missionId,name,template,status,reason
 3113,Balancing the Books (5 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 3114,Balancing the Books (5 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 3115,Balancing the Books (5 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-3116,Balancing the Books (6 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3117,Balancing the Books (6 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3118,Balancing the Books (6 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3119,Balancing the Books (6 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+3116,Balancing the Books (6 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3117,Balancing the Books (6 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3118,Balancing the Books (6 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3119,Balancing the Books (6 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 3120,Cash Flow for Capsuleers (1 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 3121,Cash Flow for Capsuleers (1 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 3122,Cash Flow for Capsuleers (1 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
@@ -1632,15 +1632,15 @@ missionId,name,template,status,reason
 3165,Cash Flow for Capsuleers (3 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 3166,Making Mountains of Molehills (1 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 3168,Making Mountains of Molehills (1 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3170,Balancing the Books (9 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+3170,Balancing the Books (9 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 3172,Making Mountains of Molehills (4 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3173,Balancing the Books (10 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+3173,Balancing the Books (10 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 3174,Making Mountains of Molehills (4 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 3177,Balancing the Books (8 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 3179,Balancing the Books (2 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 3180,Balancing the Books (2 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 3181,Balancing the Books (2 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3182,Making Mountains of Molehills (3 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+3182,Making Mountains of Molehills (3 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 3185,Balancing the Books (2 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 3198,Making Mountains of Molehills (5 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 3201,Balancing the Books (1 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
@@ -1650,31 +1650,31 @@ missionId,name,template,status,reason
 3210,Balancing the Books (8 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 3211,Balancing the Books (8 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 3212,Making Mountains of Molehills (9 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3213,Balancing the Books (9 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3214,Balancing the Books (9 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3215,Balancing the Books (9 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3217,Balancing the Books (10 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3218,Balancing the Books (10 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3219,Balancing the Books (10 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3221,Making Mountains of Molehills (8 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+3213,Balancing the Books (9 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3214,Balancing the Books (9 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3215,Balancing the Books (9 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3217,Balancing the Books (10 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3218,Balancing the Books (10 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3219,Balancing the Books (10 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3221,Making Mountains of Molehills (8 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 3227,Making Mountains of Molehills (5 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-3228,Making Mountains of Molehills (10 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3229,Making Mountains of Molehills (3 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3233,Making Mountains of Molehills (8 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+3228,Making Mountains of Molehills (10 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3229,Making Mountains of Molehills (3 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+3233,Making Mountains of Molehills (8 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 3234,Making Mountains of Molehills (1 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 3235,Making Mountains of Molehills (4 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3236,Making Mountains of Molehills (3 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+3236,Making Mountains of Molehills (3 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 3240,Making Mountains of Molehills (5 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-3241,Making Mountains of Molehills (8 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+3241,Making Mountains of Molehills (8 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 3242,Making Mountains of Molehills (9 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3243,Making Mountains of Molehills (10 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+3243,Making Mountains of Molehills (10 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 3244,Making Mountains of Molehills (1 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 3245,Making Mountains of Molehills (4 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3246,Making Mountains of Molehills (3 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+3246,Making Mountains of Molehills (3 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 3250,Making Mountains of Molehills (5 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-3251,Making Mountains of Molehills (8 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+3251,Making Mountains of Molehills (8 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 3252,Making Mountains of Molehills (9 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-3253,Making Mountains of Molehills (10 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+3253,Making Mountains of Molehills (10 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 3258,A Feast Fit for a King,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 3259,A Feast Fit for a King,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 3318,What Slavery Begets,BasicKillMission,blocked,Requires level-five encounter policy
@@ -1809,7 +1809,7 @@ missionId,name,template,status,reason
 4735,Vitoc Vector - Mounting a Defense (3 of 4),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 4736,Vitoc Vector - A Terrible Thing (4 of 4),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 4739,Delivering the Goods (2 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
-4740,Delivering the Goods (3 of 5),BasicTradeMission,blocked,Requires another mission or agent lifecycle
+4740,Delivering the Goods (3 of 5),BasicTradeMission,blocked,Requires verified trade content or another agent lifecycle
 4741,Delivering the Goods (4 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 4742,Delivering the Goods (5 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 4743,New Slaves - Indoctrination (1 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
@@ -1858,13 +1858,13 @@ missionId,name,template,status,reason
 4827,Greater Good – Poisoning the Well (3 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 4828,Greater Good - Drastic Measures (4 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 4829,Greater Good - Strong Stomach (5 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
-4830,Hungry for Entertainment,BasicTradeMission,blocked,Requires another mission or agent lifecycle
-4831,Hungry for Entertainment,BasicTradeMission,blocked,Requires another mission or agent lifecycle
+4830,Hungry for Entertainment,BasicTradeMission,blocked,Requires verified trade content or another agent lifecycle
+4831,Hungry for Entertainment,BasicTradeMission,blocked,Requires verified trade content or another agent lifecycle
 4832,Slave Shipment,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 4833,Bump and Grind,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 4834,Send in the Marines,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 4835,Warriors and Their Weapons,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
-4836,"You, Trit",BasicTradeMission,blocked,Requires another mission or agent lifecycle
+4836,"You, Trit",BasicTradeMission,blocked,Requires verified trade content or another agent lifecycle
 4837,Salve for Sis,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 4838,Save the Trees - Seeding a Future (1 of 3),BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 4839,Save the Trees – Forest's Revenge (2 of 3),BasicCourierMission,admitted,Catalog cargo or reviewed encounter
@@ -2276,14 +2276,14 @@ missionId,name,template,status,reason
 13867,Cash Flow for Capsuleers (9 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 13868,Cash Flow for Capsuleers (9 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 13869,Cash Flow for Capsuleers (9 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-13871,Making Mountains of Molehills (2 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-13872,Making Mountains of Molehills (2 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-13873,Making Mountains of Molehills (2 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-13874,Making Mountains of Molehills (2 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-13875,Making Mountains of Molehills (6 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-13876,Making Mountains of Molehills (6 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-13877,Making Mountains of Molehills (6 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-13878,Making Mountains of Molehills (6 of 10),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+13871,Making Mountains of Molehills (2 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+13872,Making Mountains of Molehills (2 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+13873,Making Mountains of Molehills (2 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+13874,Making Mountains of Molehills (2 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+13875,Making Mountains of Molehills (6 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+13876,Making Mountains of Molehills (6 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+13877,Making Mountains of Molehills (6 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+13878,Making Mountains of Molehills (6 of 10),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 13879,Making Mountains of Molehills (7 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 13880,Making Mountains of Molehills (7 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 13881,Making Mountains of Molehills (7 of 10),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
@@ -2367,7 +2367,7 @@ missionId,name,template,status,reason
 14576,Return to Isha,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
 14597,Almost Unmasked,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
 14599,Some Light Theatrics,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14601,Proof of Intent,EpicArcTradeMission,blocked,Requires another mission or agent lifecycle
+14601,Proof of Intent,EpicArcTradeMission,blocked,Requires verified trade content or another agent lifecycle
 14602,Untouchable,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
 14603,Meet Sinas,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
 14607,A General's Best Friend,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
@@ -2402,7 +2402,7 @@ missionId,name,template,status,reason
 14847,Right Tool for the Job.,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
 14848,Right Tool for the Job,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
 14849,The Intermediary,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
-14851,A Demonstration,EpicArcTradeMission,blocked,Requires another mission or agent lifecycle
+14851,A Demonstration,EpicArcTradeMission,blocked,Requires verified trade content or another agent lifecycle
 14852,The Cost of Preservation,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
 14853,Written by the Victors,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
 14854,Glowing Embers,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
@@ -2413,8 +2413,8 @@ missionId,name,template,status,reason
 14862,An Unfortunate End,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
 14863,Panic Response,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
 14864,The Right to Rule,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
-14882,The Breakout,EpicArcTradeMission,blocked,Requires another mission or agent lifecycle
-14884,The Breakout,EpicArcTradeMission,blocked,Requires another mission or agent lifecycle
+14882,The Breakout,EpicArcTradeMission,blocked,Requires verified trade content or another agent lifecycle
+14884,The Breakout,EpicArcTradeMission,blocked,Requires verified trade content or another agent lifecycle
 14885,Whisper of a Conspiracy,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
 14886,Whisper of a Conspiracy,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
 14888,The High or Low Road,EpicArcAgentInteractionMission,blocked,Requires another mission or agent lifecycle
@@ -2469,30 +2469,30 @@ missionId,name,template,status,reason
 14975,Across the Line,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
 14976,Slipping Away,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
 14980,Where's the Line?,EpicArcAgentInteractionMission,blocked,Requires another mission or agent lifecycle
-14990,Cosmic Anomalies (1 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+14990,Cosmic Anomalies (1 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 14991,An Introduction to Cosmic Signatures (2 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-14992,Ore Site Scanning,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-14993,Relic Site Scanning (4 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-14995,Data Site Scanning (3 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-14996,Gas Site Scanning (5 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-14997,Cosmic Anomalies (1 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-14998,Cosmic Anomalies (1 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-14999,Cosmic Anomalies (1 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+14992,Ore Site Scanning,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+14993,Relic Site Scanning (4 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+14995,Data Site Scanning (3 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+14996,Gas Site Scanning (5 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+14997,Cosmic Anomalies (1 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+14998,Cosmic Anomalies (1 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+14999,Cosmic Anomalies (1 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 15000,An Introduction to Cosmic Signatures (2 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 15001,An Introduction to Cosmic Signatures (2 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 15002,An Introduction to Cosmic Signatures (2 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-15003,Ore Site Scanning,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-15004,Ore Site Scanning,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-15005,Ore Site Scanning,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-15006,Relic Site Scanning (4 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-15007,Relic Site Scanning (4 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-15008,Relic Site Scanning (4 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-15009,Data Site Scanning (3 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-15010,Data Site Scanning (3 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-15011,Data Site Scanning (3 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-15012,Gas Site Scanning (5 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-15013,Gas Site Scanning (5 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-15014,Gas Site Scanning (5 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
+15003,Ore Site Scanning,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+15004,Ore Site Scanning,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+15005,Ore Site Scanning,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+15006,Relic Site Scanning (4 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+15007,Relic Site Scanning (4 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+15008,Relic Site Scanning (4 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+15009,Data Site Scanning (3 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+15010,Data Site Scanning (3 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+15011,Data Site Scanning (3 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+15012,Gas Site Scanning (5 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+15013,Gas Site Scanning (5 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+15014,Gas Site Scanning (5 of 5),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 15015,Enemy of my Enemy,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
 15017,Recruitment Drive,EpicArcTalkToAgentMission,blocked,Requires another mission or agent lifecycle
 15018,Intelligence Mining,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
@@ -2715,11 +2715,11 @@ missionId,name,template,status,reason
 15325,The Governor's Ball,GenericStorylineCourierMission,admitted,Catalog cargo or reviewed encounter
 15326,Evacuation,GenericStorylineCourierMission,admitted,Catalog cargo or reviewed encounter
 15549,Data Transportation,StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-15552,Materials For War Preparation,GenericStorylineTradeMission,blocked,Requires another mission or agent lifecycle
-15553,Materials For War Preparation,GenericStorylineTradeMission,blocked,Requires another mission or agent lifecycle
-15554,Materials For War Preparation,GenericStorylineTradeMission,blocked,Requires another mission or agent lifecycle
-15555,Materials For War Preparation,GenericStorylineTradeMission,blocked,Requires another mission or agent lifecycle
-15556,Materials For War Preparation,GenericStorylineTradeMission,blocked,Requires another mission or agent lifecycle
+15552,Materials For War Preparation,GenericStorylineTradeMission,blocked,Requires level-five storyline reward policy
+15553,Materials For War Preparation,GenericStorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+15554,Materials For War Preparation,GenericStorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+15555,Materials For War Preparation,GenericStorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+15556,Materials For War Preparation,GenericStorylineTradeMission,admitted,Catalog cargo or reviewed encounter
 15565,Covering the Basics,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
 15566,Combat Basics,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
 15568,The Academy,EpicArcKillMission,blocked,Requires another mission or agent lifecycle

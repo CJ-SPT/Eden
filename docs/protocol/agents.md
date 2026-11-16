@@ -2,6 +2,117 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Resident trade objectives and item rewards — November 15, 2026
+
+Trade missions are a 460-definition gap: 443 `StorylineTradeMission`, five `GenericStorylineTradeMission`, and four
+each of `BasicTradeMission`, `ResearchTradeMission` and `EpicArcTradeMission`. This milestone implements reusable
+player-sourced trade objectives and one quoted normal packaged item reward, under the resident owner, then admits
+the four level-one through level-four Materials For War Preparation storylines. Other agent lifecycles, scripted
+objectives, blueprint copies and timed item rewards are not inferred or admitted by this capability change.
+
+| Mission | Level | Exact native cargo | Quoted implant alternatives |
+| --- | --- | --- | --- |
+| 15553 | 1 | 1,000 Veldspar, type 1230 | 13283, 13284, 13285, 13287, 13286 |
+| 15554 | 2 | 1,500 Scordite, type 1228 | 14295, 14297, 14296, 14298, 14299 |
+| 15555 | 3 | 10,000 Omber, type 1227 | 9899, 9941, 9942, 9943, 9956 |
+| 15556 | 4 | 8,000 Kernite, type 20 | 10216, 10208, 10212, 10221, 10225 |
+
+Gameplay sources: [Materials For War Preparation, revision 229167](https://wiki.eveuniversity.org/index.php?title=Materials_For_War_Preparation&oldid=229167)
+supplies levels, ore quantities and implant grades; [missions](https://wiki.eveuniversity.org/Missions) distinguishes
+player-sourced trade from courier cargo and describes the storyline threshold. Five attribute families resolve by
+exact name to the pinned group-745 Attribute Enhancers above. The native reward has quantity one but omits its type,
+so a uniformly selected member of the sourced grade family is explicit Eden selection policy, not a recovered CCP
+weighting table. The exporter verifies each cargo, template, seven-day lifetime, reward shape and absence of extra
+scripts before admission. Unrecognized changes fail export.
+
+The normal storyline counter chooses these through the existing level/faction, nearest eligible agent and supplier
+rules. A level-one storyline agent inherits the completed mission level. Offer creation selects and saves the item
+type and quantity. Existing offer rotation, ISK/direct-standing and six-hour ISK bonus rules apply; these are Eden
+policy, beyond the report's item reward. Storyline LP remains zero and derived faction changes remain unimplemented.
+
+Acceptance supplies no objective cargo. Completion requires docking at the agent's station and personally owned,
+packaged ore from the active Cargo Hold or that station's personal Hangar. It combines eligible stacks, consumes the
+exact quantity, preserves excess and rejects foreign owners/stations, nested items, specialized holds, singleton
+lookalikes and other ore types. The resident transaction grants the saved implant to the issuing pilot's station
+hangar together with cargo consumption, currency, standing and mission closure. Ordinary stack merging applies;
+item rewards belong to the issuing pilot even when currency rewards are shared. Decline, quit and exact expiry
+cannot grant an implant. A late turn-in after the ISK bonus window still receives the normal implant and base ISK.
+Failed inventory allocation rolls back all settlement, and stale/concurrent actions cannot pay twice.
+
+World version **169** adds `ItemRewardTypeId` and `ItemRewardQuantity` with zero defaults. The resident immutable row,
+relational projection and load/capture mappings include both fields. Legacy offers retain no invented item reward,
+and migration is idempotent. New trade/item-reward mutation requires the resident world; no SQL gameplay fallback
+is added. Positive saved quotes survive offer reads, acceptance and checkpoint/reopen without rerolling.
+
+Inert inspection of build-3662168 original `code.ccp` (SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`) checked
+`eve/client/script/ui/station/agents/agentDialogueUtil.pyj`: `_ProcessObjectiveEntry` consumes fetch as
+`(dropoffOwnerID, dropoffLocation, cargo)` and `GetMissionObjectiveHTML` consumes normal reward triples
+`(typeID, quantity, extra)`. `appConst.pyj` publishes `UI/Agents/MissionTypes/Trade` and `StorylineTrade` labels.
+Replies use those existing forms, no acceptance gifts, no dungeon entries/bookmarks and the agent station as the
+trade keyword destination. Tracker states use existing `MissionFetch`, `TransportItemsPresent` and
+`AllObjectivesComplete` forms; no mining or combat objective is fabricated for trade. No client code was executed
+or game launched. Consulted unchanged [Carbon Blue Marshal.cpp at af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp)
+for tuple/list preservation; no Blue, transport or Destiny codec changes were needed.
+
+The local evejs snapshot has no Git metadata. Compared `agentMissionRuntime.js` (SHA-256
+`f9039040331e109b166e9e73d916e11b58c16f13b652d40ba1fa0c4838daf7fa`) for fetch/present/complete state and native
+reward display boundaries, and `missionRewardSettlementState.js` (SHA-256
+`cea5a6666a554e7faf175b7e494b619cbb8fd96bce078c6f405fb953742045b4`) for complete cargo/reward/owner settlement
+inputs and duplicate-operation protection. Eden uses its own existing resident transaction and checkpoint model;
+no reference implementation was copied.
+
+The catalog also supplies nonempty `npccharacters.agent.storyLineMissions` assignments for 468 special agents.
+Those arrays are not ordered chain graphs: Remy Ouche's native list is `[1760, 1758, 1759]`. They are useful evidence
+for a later fixed-agent lifecycle milestone, rather than permission to put COSMOS/career missions in a generic pool.
+
+The pool is **387 admitted / 2,505 blocked**: 74 combat, 194 ordinary deliveries, 92 delivery storylines, four trade
+storylines and 23 mining definitions. The remaining trade audit separates **455** definitions requiring verified
+trade content or another agent lifecycle, plus **15552**, which requires level-five storyline/reward policy.
+The fixture adds 22 types and 74 source records while preserving previous values.
+
+**Automated validation:** Required ordered checks passed in **644.35 seconds**: tool restore, solution restore,
+solution build (zero warnings/errors), **772** affected .NET cases (zero failed/skipped), eight catalog policy,
+nine formatting policy and 18 mission-content Python cases, and formatting verification across 2,295 files
+with the 140-character policy. The .NET run took 9 minutes 45 seconds and used this exact filter:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Agents|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldMigrationTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldInitializationTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.IncrementalCheckpointTests
+```
+
+The initial exact development filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionTradeTests.TradeOffersQuoteOneImplantAndConsumePlayerOreOnceAcrossCheckpoint`
+(four cases passed). The broader development run initially passed 28 of 29 cases; its migration fixture omitted
+normal startup migration. After adding `WorldInitialization.Initialize`, the corrected migration and three added
+deadline/station/quote boundary cases passed, followed by the final run above. Coverage includes all four ore/reward
+grades, saved quotes, native objectives/journal/rewards, eligible and rejected cargo, concurrency, allocation rollback,
+closure/expiry and checkpoint/reopen. The final TRX is
+`artifacts/feature-tests/results/mission-trade/mission-trade.trx`.
+
+Re-exported manifest, audit and fixture match committed payloads after newline normalization. All 383 previous
+mission definitions, 796 item types and 4,786 fixture source values remain unchanged. Only the four reviewed trade
+admissions change audit status. Documentation links, UTF-8/final newline and `git diff --check` passed.
+No full .NET regression run was requested or performed.
+
+Integration with main **64fddc16** preserves the later resident NPC population validation and declared-weapon fixes.
+Only the protocol index needed manual conflict resolution; all three milestone links remain. Repeated required
+ordered checks passed in **220.00 seconds**, including a zero-warning/error solution build, **168/168** focused
+.NET cases (2 minutes 44 seconds), the same 8/9/18 Python cases and formatting verification across 2,300 files.
+The integration filter ORed `FullyQualifiedName~Eden.Protocol.Tests.Agents.<selector>` for `MissionTradeTests`,
+`MissionItemRewardRuleTests`, `MissionNpcWeaponTests`, `MissionEncounterTests`, `MissionLayoutTests`,
+`MissionContentTests.EveryNewCombatVariant` and `MissionChainTests`; it also ORed
+`FullyQualifiedName~Eden.Protocol.Tests.Persistence.<selector>` for `WorldMigrationTests`, `WorldInitializationTests`,
+`IncrementalCheckpointTests` and `NpcPopulationValidationTests`, plus
+`FullyQualifiedName~Eden.Protocol.Tests.Combat.NpcPopulationFrameTests`.
+Both TRX reports are retained under the main checkout's `artifacts/feature-tests/results/mission-trade/` and
+`artifacts/feature-tests/results/mission-trade-integration/` directories. The existing delivery matrix was already
+covered by the 772-case run; integration checks target the changed boundaries rather than repeat that matrix.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Inspect a trade fetch objective and quoted implant in the native mission UI;
+turn in player-acquired ore and verify the implant appears in the agent-station hangar.
+
 ## Mission branch integration — November 15, 2026
 
 Merged the verified combat-content and resident-chain work (`c7a49531`, `a8c66532`, `26036127`, `353bcc70`) with
