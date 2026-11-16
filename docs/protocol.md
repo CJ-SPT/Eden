@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Client package retention](protocol/modding.md#client-package-retention--november-15-2026)
+bounds generated catalog history and removes abandoned builds under shared publisher ownership.
+
 [Data Center family and one-time space agents](protocol/agents.md#data-center-family-and-one-time-space-agents--november-15-2026)
 adds all 50 tag-turn-in definitions, 57 native assignments, public agent contacts and obtainable criminal tags.
 

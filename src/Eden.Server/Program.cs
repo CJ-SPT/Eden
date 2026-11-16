@@ -260,6 +260,7 @@ internal static class Program
                     services.GetRequiredService<Eden.World.Modding.ModStore>().CompleteActivation();
                 }
             );
+            Eden.World.Skills.SkillPackageRetention.PruneAfterStartup(database.Path);
             ServerStartup.WarmCatalogs(services, database);
             if (shutdown.IsCancellationRequested)
             {

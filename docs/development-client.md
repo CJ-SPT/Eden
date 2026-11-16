@@ -76,6 +76,7 @@ Stop the old server, then copy the following from `%LOCALAPPDATA%\Eden` or your 
 - `world.sqlite` and `catalog.sqlite`. Keep `world.sqlite.previous` if available. Include any SQLite `-wal` or `-journal` files alongside their matching databases.
 - `chat-tls.pfx` and `traffic.sqlite`, if present.
 - Any `world.sqlite.mods*`, `world.sqlite.skill-packages`, `world.sqlite.skills.sqlite`, and `world.sqlite.skills-active` files or directories. Include any SQLite journals for these databases too.
+- `world.sqlite.skills-previous`, if present, to retain the legacy skill package's rollback generation.
 - `world.sqlite.administrators.json` for an existing administrator. Windows administration cookies are scoped to the save path and their encryption keys are tied to Windows. Sign in again at the new path.
 
 Preserve the old directory as a backup. Startup logs the full path of the save it opens.

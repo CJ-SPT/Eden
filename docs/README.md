@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Client package retention](modding.md#client-package-retention) preserves active, pending and rollback generations
+while automatically pruning obsolete catalogs and abandoned builds.
+
 [Site history discovery and identity maxima](protocol/performance.md#site-history-discovery-and-identity-maxima-november-15-2026)
 cover lower-allocation discovery queries, staged ID visibility and complete two-session frame measurements.
 

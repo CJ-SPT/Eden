@@ -21,8 +21,11 @@ internal sealed class ModPublisher(WorldDatabase database, ModStore store)
     {
         await _gate.WaitAsync(cancellation);
         string? temporary = null;
+        SkillPackageRetention? retention = null;
         try
         {
+            retention = SkillPackageRetention.Acquire(database.Path);
+            retention.Prune();
             var (packages, snapshot) = store.Prepare();
             string parent = Path.GetFullPath(database.Path) + ".skill-packages";
             Directory.CreateDirectory(parent);
@@ -130,11 +133,19 @@ internal sealed class ModPublisher(WorldDatabase database, ModStore store)
         }
         finally
         {
-            if (temporary is not null)
+            try
             {
-                Directory.Delete(temporary, recursive: true);
+                if (temporary is not null && Directory.Exists(temporary))
+                {
+                    Directory.Delete(temporary, recursive: true);
+                }
+                retention?.Prune();
             }
-            _gate.Release();
+            finally
+            {
+                retention?.Dispose();
+                _gate.Release();
+            }
         }
     }
 
@@ -204,6 +215,7 @@ internal sealed class ModPublisher(WorldDatabase database, ModStore store)
             {
                 process.Kill(entireProcessTree: true);
             }
+            await process.WaitForExitAsync(CancellationToken.None);
             throw;
         }
         await stdout;

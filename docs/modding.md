@@ -29,6 +29,20 @@ and CPython 2.7.18. The defaults are `python3` and `python2.7`. Set `EDEN_PYTHON
 The [Docker image](docker.md#enable-automining-on-a-docker-host) includes both. The build compiles inert code and
 stages it in the existing immutable `.skill-packages` directory for Eden Launcher to download after activation.
 
+### Client package retention
+
+Eden automatically prunes obsolete generated client packages before and after publication and after successful
+startup activation. It retains the active package, pending mod and legacy skill packages, and the previous package
+needed for rollback. Legacy skill activation saves its previous identity in `world.sqlite.skills-previous`.
+The original catalog, world checkpoints, installed `.edenmod` archives, and edit history are preserved.
+
+Both publishers and cleanup share a per-world filesystem lease, including CLI builds in another process.
+An overlapping publication is rejected; startup cleanup defers while a publisher owns the lease. Once the lease
+is available, abandoned `.build-<guid>` and `.mod-build-<guid>` directories can be removed without an age cutoff.
+Only recognized generated directories are eligible. Cleanup skips filesystem links and defers on damaged or
+missing saved references; cleanup errors are logged and do not fail an otherwise successful publish or startup.
+Full data backups are separate and still require their own retention policy.
+
 ## AutoMining
 
 AutoMining is an optional Eden-supplied client package with server-side mining controls. Export it for the target

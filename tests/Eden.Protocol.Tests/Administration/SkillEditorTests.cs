@@ -125,6 +125,9 @@ public sealed class SkillEditorTests
         WorldDatabase retired = new(world.Path);
         WorldInitialization.Initialize(retired);
         Assert.Equal(retiredPackage, publisher.Status().Active);
+        Assert.Equal(package.Id, File.ReadAllText(world.Path + ".skills-previous"));
+        SkillPackageRetention.PruneAfterStartup(world.Path);
+        Assert.True(Directory.Exists(SkillPackageActivation.DirectoryPath(world.Path, package.Id)));
         Assert.Equal(0, retired.Catalog.Get(CatalogData.Client.Types, (long)custom.Definition.TypeId).Published);
         Assert.Equal(
             750,

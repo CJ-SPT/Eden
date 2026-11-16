@@ -41,8 +41,11 @@ internal sealed class SkillClientPublisher(WorldDatabase database, SkillEditorSt
     {
         await _gate.WaitAsync(cancellation);
         string? temporary = null;
+        SkillPackageRetention? retention = null;
         try
         {
+            retention = SkillPackageRetention.Acquire(database.Path);
+            retention.Prune();
             var snapshot = editor.Read();
             if (snapshot.Generation != generation)
             {
@@ -157,12 +160,20 @@ internal sealed class SkillClientPublisher(WorldDatabase database, SkillEditorSt
         }
         finally
         {
-            if (temporary is not null && Directory.Exists(temporary))
+            try
             {
-                // This path is created directly under the package folder, never from request input.
-                Directory.Delete(temporary, recursive: true);
+                if (temporary is not null && Directory.Exists(temporary))
+                {
+                    // This path is created directly under the package folder, never from request input.
+                    Directory.Delete(temporary, recursive: true);
+                }
+                retention?.Prune();
             }
-            _gate.Release();
+            finally
+            {
+                retention?.Dispose();
+                _gate.Release();
+            }
         }
     }
 

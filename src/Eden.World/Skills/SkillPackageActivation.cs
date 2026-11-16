@@ -69,6 +69,12 @@ public static class SkillPackageActivation
             }
         }
         string marker = Path.GetFullPath(database.Path) + ".skills-active";
+        if (Active(database.Path) is { } previous && previous.Id != id)
+        {
+            string previousMarker = Path.GetFullPath(database.Path) + ".skills-previous";
+            File.WriteAllText(previousMarker + ".tmp", previous.Id);
+            File.Move(previousMarker + ".tmp", previousMarker, overwrite: true);
+        }
         string temporary = marker + ".tmp";
         File.WriteAllText(temporary, id);
         File.Move(temporary, marker, overwrite: true);

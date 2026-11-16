@@ -1,5 +1,51 @@
 # Modding protocol and activation
 
+## Client package retention — November 15, 2026
+
+Generated packages each contain a complete projected catalog. Retaining every generation and directories left
+by terminated compilers caused approximately 26 GiB of deployed data; pruning obsolete generations and two
+abandoned builds reclaimed 18.6 GiB while preserving active and rollback sets.
+
+World-owned `SkillPackageRetention` now prunes before and after both publisher paths and after successful host
+activation. It reads the active marker, mod Active/Previous/Pending identities and legacy PendingPackage from
+read-only sidecars before selecting any deletions. Legacy activation also writes `.skills-previous` atomically
+before replacing the active marker. Once mods own the catalog, their durable Previous supersedes that legacy marker.
+Interrupted mod activation continues to protect both previous and pending identities.
+
+A shared per-world `.skill-packages.owner` file lease covers compilation, atomic directory publication, staging
+and cleanup across publishers and CLI processes. The owner file persists after closing to avoid unlink/reopen races.
+Cleanup can remove abandoned recognized build directories whenever it acquires the lease; it cannot acquire
+ownership while another updated publisher is building. Concurrent publication fails before creating output.
+Mod compiler cancellation now waits for process exit before releasing ownership and removing temporary output.
+
+Cleanup checks saved references first, rejects filesystem links, preserves unrecognized folders, and logs/defer
+errors without changing successful publication or startup results. It does not prune installed mod archives,
+world saves, original catalogs, edit history or operator backups. No gameplay, Blue or native client wire behavior changes.
+
+### Automated validation
+
+The initial exact development filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Administration.SkillPackageRetentionTests.PruningPreservesAllSavedReferencesAndRemovesOnlyOwnedObsoleteDirectories`:
+one pass, 43.71-second build and 4.47-second runner. Subsequent focused tests exposed an omitted
+`InvalidDataException` cleanup catch and Windows fixture symlink/junction cleanup requirements; these were corrected.
+
+Final pinned tool restore, solution restore/build (zero warnings/errors), the focused filter below, both Python
+policy suites (8 catalog and 9 formatting cases) and formatting verification passed in **71.50 seconds combined**.
+The focused .NET run passed **53 cases, zero failures/skips**, with a reported test duration of 13 seconds.
+`EDEN_TEST_CLIENT_ROOT=E:/EdenDev/3662168` enabled real headless pinned-client publication checks.
+
+```text
+FullyQualifiedName~SkillPackageRetentionTests|FullyQualifiedName~SkillEditorTests|FullyQualifiedName~ModFoundationTests|FullyQualifiedName~ModLauncherApiTests|FullyQualifiedName~ModRuntimeTests|FullyQualifiedName~AutoMiningPackageTests|FullyQualifiedName~ServerServicesTests|FullyQualifiedName~GameplayDependenciesTests
+```
+
+Coverage includes bounded repeated generations, reopened sidecars, legacy rollback, damaged/missing references,
+abandoned directories, shared ownership, filesystem links, actual publication failures and subsequent publisher reuse.
+The full .NET suite was not requested or run.
+
+Live acceptance: Not performed; agent client testing is disabled.
+
+Optional maintainer checks: none required for retention; operator data backup retention remains separate.
+
 ## Package foundation — November 9, 2026
 
 Version-1 portable packages and host composition retain the existing build-3662168 skill overlay and immutable
