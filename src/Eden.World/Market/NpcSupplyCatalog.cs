@@ -140,10 +140,11 @@ internal sealed partial class PilotMarketStore
             {
                 continue;
             }
-            long? price = MarketSnapshotCatalog.Quotes.TryGetValue(typeId, out var quote)
-                ? bid
-                    ? quote.BuyCents
-                    : quote.SellCents
+            long? price =
+                bid && Eden.Gameplay.Exploration.SleeperRules.BlueLootPriceCents(typeId) is long redemption ? redemption
+                : MarketSnapshotCatalog.Quotes.TryGetValue(typeId, out var quote)
+                    ? bid ? quote.BuyCents
+                        : quote.SellCents
                 : null;
             // Preserve catalog supplier eligibility when the snapshot lacks a sell quote for a manufacturing original.
             bool isOriginal = manufacturing?.Products is { Length: > 0 };

@@ -13,6 +13,20 @@ namespace Eden.World.Runtime.Economy;
 
 internal sealed partial class EconomyTransaction
 {
+    private bool DifferentWormholeEnvironment(
+        Eden.Data.World.Docking.FlightPosition? previous,
+        Eden.Data.World.Docking.FlightPosition? current
+    )
+    {
+        if (previous?.SystemId == current?.SystemId || database is null)
+        {
+            return false;
+        }
+        using Eden.World.Catalog.CatalogDbContext catalog = new(database.CatalogPath);
+        return Eden.World.Exploration.WormholeEnvironmentStore.At(catalog, previous)?.TypeId
+            != Eden.World.Exploration.WormholeEnvironmentStore.At(catalog, current)?.TypeId;
+    }
+
     internal IEnumerable<CombatRowChange> FitChanges(object? before, object? after)
     {
         HashSet<long> pilots = [];
@@ -42,7 +56,8 @@ internal sealed partial class EconomyTransaction
             var current = after as Eden.Data.World.Docking.FlightPosition;
             if (
                 Eden.World.Exploration.AbyssalEnvironmentStore.At(this, previous)
-                != Eden.World.Exploration.AbyssalEnvironmentStore.At(this, current)
+                    != Eden.World.Exploration.AbyssalEnvironmentStore.At(this, current)
+                || DifferentWormholeEnvironment(previous, current)
             )
             {
                 Ship((current ?? previous)!.ShipId);

@@ -443,6 +443,8 @@ covers scanners, salvage, tractors, and drone custody and orders.
 [composite reactions](protocol/industry.md#composite-reaction-jobs),
 [deep-core mining](protocol/industry.md#deep-core-mining-and-morphite), and
 [Fullerite reservoirs](protocol/industry.md#fullerite-reservoirs-and-wormhole-access) record the player-supplied production chain.
+[Resident wormholes](protocol/wormholes.md) supersede the original permanent connections with mass/lifetime collapse and replenishment.
+The same topic records class-specific Sleeper combat, blue-loot redemption and native system effects.
 
 [Ice harvesting and public ice fields, November 9, 2026](protocol/industry.md#ice-harvesting-and-public-ice-fields-november-9-2026)
 records six static ice tools, 117 admitted high-security systems and persistent public fields.

@@ -43,6 +43,10 @@ with saved deadlines and fleet reward sharing.
 The [feature notes](docs/feature-notes.md) detail supported content and limits. The [protocol records](docs/protocol.md)
 document automated coverage and any live client observations.
 
+[Resident wormholes](docs/protocol/wormholes.md) provide C1–C6 connections with saved mass, lifetime,
+polarization, collapse and replacement signatures, 57 Sleeper combat/data/relic/gas site definitions, blue loot,
+Tech 3 exploration inputs and native wormhole system effects.
+
 The [Ship Tree recent-skill lookup](docs/protocol/characters.md#ship-tree-recent-skill-lookup-november-15-2026)
 now returns successfully; recent-training highlights remain unavailable.
 

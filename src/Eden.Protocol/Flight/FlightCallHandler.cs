@@ -19,7 +19,8 @@ internal sealed class FlightCallHandler(
     IPilotProbeScanning? scanning = null,
     IPilotPlanetaryIndustry? planetary = null,
     IWorldTuning? tuning = null,
-    IDedEscalations? escalations = null
+    IDedEscalations? escalations = null,
+    IWormholeTravel? wormholes = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -95,6 +96,7 @@ internal sealed class FlightCallHandler(
         if (
             command is FlightCommand.WarpToScan
             || command is FlightCommand.WarpTo { TargetId: >= CombatAnomalyRules.FirstSiteId and < CombatAnomalyRules.FirstObjectId }
+            || command is FlightCommand.WarpTo wormholeWarp && WormholeRules.IsEndpoint(wormholeWarp.TargetId)
         )
         {
             var site = anomalies
@@ -193,11 +195,25 @@ internal sealed class FlightCallHandler(
                 }
                 if (bookmark.Target.ItemId is { } item)
                 {
-                    if (!systems.Load(context.Pilot.SystemId).Any(body => body.Id == item))
+                    if (WormholeRules.IsEndpoint(item))
                     {
-                        throw new InvalidDataException("This bookmark is a map destination rather than a warp target.");
+                        var site = anomalies
+                            .Signatures(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
+                            .SingleOrDefault(s => s.Id == item);
+                        if (site is null)
+                        {
+                            throw new InvalidDataException("The bookmarked wormhole has collapsed.");
+                        }
+                        command = new FlightCommand.WarpToPoint(item, site.Position, warp.Range);
                     }
-                    command = new FlightCommand.WarpTo(item, warp.Range);
+                    else
+                    {
+                        if (!systems.Load(context.Pilot.SystemId).Any(body => body.Id == item))
+                        {
+                            throw new InvalidDataException("This bookmark is a map destination rather than a warp target.");
+                        }
+                        command = new FlightCommand.WarpTo(item, warp.Range);
+                    }
                 }
                 else
                 {
@@ -240,6 +256,21 @@ internal sealed class FlightCallHandler(
         {
             fleets.CancelWarpOrders(context.Pilot.PilotId);
         }
-        return command is FlightCommand.Jump jump ? context.Flight.StartJump(jump, systems) : context.Flight.Execute(command);
+        var result = command is FlightCommand.Jump jump ? context.Flight.StartJump(jump, systems) : context.Flight.Execute(command);
+        long? destination = command switch
+        {
+            FlightCommand.WarpTo warpTo => warpTo.TargetId,
+            FlightCommand.WarpToPoint point => point.OrderId,
+            _ => null,
+        };
+        if (result is not PilotCallResult.Failure && destination is long endpoint && WormholeRules.IsEndpoint(endpoint))
+        {
+            wormholes?.Activate(context.Pilot.SystemId, endpoint);
+        }
+        if (result is not PilotCallResult.Failure && command is FlightCommand.WarpToPoint siteWarp)
+        {
+            anomalies.Activate(context.Pilot.SystemId, siteWarp.Position, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+        }
+        return result;
     }
 }

@@ -1,0 +1,586 @@
+{
+  "npcs": [
+    {
+      "typeId": 30188,
+      "name": "Sleepless Patroller",
+      "source": "https://evewh.ru/sleepers/1/",
+      "drops": [
+        {
+          "typeId": 30744,
+          "quantity": 2
+        },
+        {
+          "typeId": 30745,
+          "quantity": 7
+        }
+      ]
+    },
+    {
+      "typeId": 30189,
+      "name": "Sleepless Watchman",
+      "source": "https://evewh.ru/sleepers/2/",
+      "drops": [
+        {
+          "typeId": 30744,
+          "quantity": 2
+        },
+        {
+          "typeId": 30745,
+          "quantity": 7
+        }
+      ]
+    },
+    {
+      "typeId": 30190,
+      "name": "Sleepless Escort",
+      "source": "https://evewh.ru/sleepers/3/",
+      "drops": [
+        {
+          "typeId": 30744,
+          "quantity": 2
+        },
+        {
+          "typeId": 30745,
+          "quantity": 7
+        }
+      ]
+    },
+    {
+      "typeId": 30191,
+      "name": "Sleepless Outguard",
+      "source": "https://evewh.ru/sleepers/4/",
+      "drops": [
+        {
+          "typeId": 30746,
+          "quantity": 1
+        },
+        {
+          "typeId": 30744,
+          "quantity": 2
+        },
+        {
+          "typeId": 30745,
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "typeId": 30200,
+      "name": "Awakened Patroller",
+      "source": "https://evewh.ru/sleepers/5/",
+      "drops": [
+        {
+          "typeId": 30745,
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "typeId": 30201,
+      "name": "Awakened Watchman",
+      "source": "https://evewh.ru/sleepers/6/",
+      "drops": [
+        {
+          "typeId": 30745,
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "typeId": 30202,
+      "name": "Awakened Escort",
+      "source": "https://evewh.ru/sleepers/7/",
+      "drops": [
+        {
+          "typeId": 30745,
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "typeId": 30209,
+      "name": "Emergent Patroller",
+      "source": "https://evewh.ru/sleepers/8/",
+      "drops": [
+        {
+          "typeId": 30744,
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "typeId": 30210,
+      "name": "Emergent Watchman",
+      "source": "https://evewh.ru/sleepers/9/",
+      "drops": [
+        {
+          "typeId": 30744,
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "typeId": 30211,
+      "name": "Emergent Escort",
+      "source": "https://evewh.ru/sleepers/10/",
+      "drops": [
+        {
+          "typeId": 30744,
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "typeId": 30460,
+      "name": "Vigilant Sentry Tower",
+      "source": "https://evewh.ru/sleepers/11/",
+      "drops": []
+    },
+    {
+      "typeId": 30192,
+      "name": "Sleepless Defender",
+      "source": "https://evewh.ru/sleepers/12/",
+      "drops": [
+        {
+          "typeId": 30746,
+          "quantity": 1
+        },
+        {
+          "typeId": 30744,
+          "quantity": 4
+        },
+        {
+          "typeId": 30745,
+          "quantity": 4
+        },
+        {
+          "typeId": 30747,
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "typeId": 30193,
+      "name": "Sleepless Upholder",
+      "source": "https://evewh.ru/sleepers/13/",
+      "drops": [
+        {
+          "typeId": 30746,
+          "quantity": 1
+        },
+        {
+          "typeId": 30744,
+          "quantity": 4
+        },
+        {
+          "typeId": 30745,
+          "quantity": 4
+        },
+        {
+          "typeId": 30747,
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "typeId": 30194,
+      "name": "Sleepless Preserver",
+      "source": "https://evewh.ru/sleepers/14/",
+      "drops": [
+        {
+          "typeId": 30746,
+          "quantity": 1
+        },
+        {
+          "typeId": 30744,
+          "quantity": 4
+        },
+        {
+          "typeId": 30745,
+          "quantity": 4
+        },
+        {
+          "typeId": 30747,
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "typeId": 30195,
+      "name": "Sleepless Safeguard",
+      "source": "https://evewh.ru/sleepers/15/",
+      "drops": [
+        {
+          "typeId": 30746,
+          "quantity": 4
+        },
+        {
+          "typeId": 30744,
+          "quantity": 2
+        },
+        {
+          "typeId": 30745,
+          "quantity": 2
+        },
+        {
+          "typeId": 30747,
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "typeId": 30203,
+      "name": "Awakened Defender",
+      "source": "https://evewh.ru/sleepers/16/",
+      "drops": [
+        {
+          "typeId": 30746,
+          "quantity": 1
+        },
+        {
+          "typeId": 30744,
+          "quantity": 2
+        },
+        {
+          "typeId": 30745,
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "typeId": 30204,
+      "name": "Awakened Upholder",
+      "source": "https://evewh.ru/sleepers/17/",
+      "drops": [
+        {
+          "typeId": 30746,
+          "quantity": 1
+        },
+        {
+          "typeId": 30744,
+          "quantity": 2
+        },
+        {
+          "typeId": 30745,
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "typeId": 30205,
+      "name": "Awakened Preserver",
+      "source": "https://evewh.ru/sleepers/18/",
+      "drops": [
+        {
+          "typeId": 30746,
+          "quantity": 1
+        },
+        {
+          "typeId": 30744,
+          "quantity": 2
+        },
+        {
+          "typeId": 30745,
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "typeId": 30212,
+      "name": "Emergent Defender",
+      "source": "https://evewh.ru/sleepers/19/",
+      "drops": [
+        {
+          "typeId": 30744,
+          "quantity": 2
+        },
+        {
+          "typeId": 30745,
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "typeId": 30213,
+      "name": "Emergent Upholder",
+      "source": "https://evewh.ru/sleepers/20/",
+      "drops": [
+        {
+          "typeId": 30744,
+          "quantity": 2
+        },
+        {
+          "typeId": 30745,
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "typeId": 30214,
+      "name": "Emergent Preserver",
+      "source": "https://evewh.ru/sleepers/21/",
+      "drops": [
+        {
+          "typeId": 30744,
+          "quantity": 2
+        },
+        {
+          "typeId": 30745,
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "typeId": 30461,
+      "name": "Wakeful Sentry Tower",
+      "source": "https://evewh.ru/sleepers/22/",
+      "drops": []
+    },
+    {
+      "typeId": 30196,
+      "name": "Sleepless Sentinel",
+      "source": "https://evewh.ru/sleepers/23/",
+      "drops": [
+        {
+          "typeId": 30746,
+          "quantity": 3
+        },
+        {
+          "typeId": 30744,
+          "quantity": 2
+        },
+        {
+          "typeId": 30745,
+          "quantity": 2
+        },
+        {
+          "typeId": 30747,
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "typeId": 30197,
+      "name": "Sleepless Keeper",
+      "source": "https://evewh.ru/sleepers/24/",
+      "drops": [
+        {
+          "typeId": 30746,
+          "quantity": 3
+        },
+        {
+          "typeId": 30744,
+          "quantity": 2
+        },
+        {
+          "typeId": 30745,
+          "quantity": 2
+        },
+        {
+          "typeId": 30747,
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "typeId": 30198,
+      "name": "Sleepless Warden",
+      "source": "https://evewh.ru/sleepers/25/",
+      "drops": [
+        {
+          "typeId": 30746,
+          "quantity": 3
+        },
+        {
+          "typeId": 30744,
+          "quantity": 2
+        },
+        {
+          "typeId": 30745,
+          "quantity": 2
+        },
+        {
+          "typeId": 30747,
+          "quantity": 2
+        }
+      ]
+    },
+    {
+      "typeId": 30199,
+      "name": "Sleepless Guardian",
+      "source": "https://evewh.ru/sleepers/26/",
+      "drops": [
+        {
+          "typeId": 30746,
+          "quantity": 3
+        },
+        {
+          "typeId": 30744,
+          "quantity": 2
+        },
+        {
+          "typeId": 30745,
+          "quantity": 2
+        },
+        {
+          "typeId": 30747,
+          "quantity": 3
+        }
+      ]
+    },
+    {
+      "typeId": 30206,
+      "name": "Awakened Sentinel",
+      "source": "https://evewh.ru/sleepers/27/",
+      "drops": [
+        {
+          "typeId": 30746,
+          "quantity": 2
+        },
+        {
+          "typeId": 30744,
+          "quantity": 4
+        },
+        {
+          "typeId": 30745,
+          "quantity": 4
+        }
+      ]
+    },
+    {
+      "typeId": 30207,
+      "name": "Awakened Keeper",
+      "source": "https://evewh.ru/sleepers/28/",
+      "drops": [
+        {
+          "typeId": 30746,
+          "quantity": 2
+        },
+        {
+          "typeId": 30744,
+          "quantity": 4
+        },
+        {
+          "typeId": 30745,
+          "quantity": 4
+        }
+      ]
+    },
+    {
+      "typeId": 30208,
+      "name": "Awakened Warden",
+      "source": "https://evewh.ru/sleepers/29/",
+      "drops": [
+        {
+          "typeId": 30746,
+          "quantity": 2
+        },
+        {
+          "typeId": 30744,
+          "quantity": 4
+        },
+        {
+          "typeId": 30745,
+          "quantity": 4
+        }
+      ]
+    },
+    {
+      "typeId": 30215,
+      "name": "Emergent Sentinel",
+      "source": "https://evewh.ru/sleepers/30/",
+      "drops": [
+        {
+          "typeId": 30744,
+          "quantity": 4
+        },
+        {
+          "typeId": 30745,
+          "quantity": 4
+        }
+      ]
+    },
+    {
+      "typeId": 30216,
+      "name": "Emergent Keeper",
+      "source": "https://evewh.ru/sleepers/31/",
+      "drops": [
+        {
+          "typeId": 30744,
+          "quantity": 4
+        },
+        {
+          "typeId": 30745,
+          "quantity": 4
+        }
+      ]
+    },
+    {
+      "typeId": 30217,
+      "name": "Emergent Warden",
+      "source": "https://evewh.ru/sleepers/32/",
+      "drops": [
+        {
+          "typeId": 30744,
+          "quantity": 4
+        },
+        {
+          "typeId": 30745,
+          "quantity": 4
+        }
+      ]
+    },
+    {
+      "typeId": 30462,
+      "name": "Restless Sentry Tower",
+      "source": "https://evewh.ru/sleepers/33/",
+      "drops": []
+    },
+    {
+      "typeId": 37473,
+      "name": "Drifter Response Battleship",
+      "source": "https://evewh.ru/sleepers/100/",
+      "drops": [
+        {
+          "typeId": 30746,
+          "quantity": 36
+        },
+        {
+          "typeId": 30744,
+          "quantity": 30
+        },
+        {
+          "typeId": 30745,
+          "quantity": 30
+        },
+        {
+          "typeId": 30747,
+          "quantity": 45
+        }
+      ]
+    },
+    {
+      "typeId": 37472,
+      "name": "Upgraded Avenger",
+      "source": "https://evewh.ru/sleepers/101/",
+      "drops": [
+        {
+          "typeId": 30746,
+          "quantity": 1
+        },
+        {
+          "typeId": 30744,
+          "quantity": 2
+        },
+        {
+          "typeId": 30745,
+          "quantity": 2
+        },
+        {
+          "typeId": 30747,
+          "quantity": 2
+        }
+      ]
+    }
+  ]
+}

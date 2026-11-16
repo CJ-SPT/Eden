@@ -20,7 +20,8 @@ internal sealed class PilotSessionTick(
     ICapsuleerPresentation? presentation = null,
     Eden.Gameplay.Structures.IStructureContacts? structures = null,
     Eden.Protocol.Mining.AutoMiningHandler? autoMining = null,
-    Eden.Protocol.Exploration.AbyssalHandler? abyss = null
+    Eden.Protocol.Exploration.AbyssalHandler? abyss = null,
+    Eden.Protocol.Exploration.WormholeEnvironmentHandler? environments = null
 )
 {
     public async Task AdvanceAsync(
@@ -99,6 +100,7 @@ internal sealed class PilotSessionTick(
         {
             anomalies?.Advance(context);
             abyss?.Advance(context);
+            environments?.Advance(context);
             using (SessionLatency.Measure(SessionLatencyPhase.Contacts))
             using (SessionPerformance.Begin("contacts", diagnostics?.Trace ?? report))
             {

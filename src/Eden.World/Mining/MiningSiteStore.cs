@@ -6,6 +6,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
+using Eden.World.Exploration;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -79,6 +80,14 @@ internal sealed partial class MiningSiteStore(WorldDatabase database) : IMiningS
         {
             return new(long.MaxValue, []);
         }
+        if (
+            wormholeClass > 0
+            && LiveWorld.Find(database.Path) is null
+            && eligible.Any(e => SleeperSiteCatalog.Read(catalog).Any(s => s.DungeonId == e.DungeonId))
+        )
+        {
+            throw new InvalidOperationException("Guarded fullerite reservoirs require the resident world.");
+        }
         using WorldActionScope transaction = new(database, new(systems: [systemId]));
         var world = transaction.World;
         long? siteId = world
@@ -127,6 +136,28 @@ internal sealed partial class MiningSiteStore(WorldDatabase database) : IMiningS
             return new(replacement, []);
         }
         var profile = MiningSiteCatalog.Sites.Single(s => s.DungeonId == site.DungeonId);
+        long deadline = site.ExpiresAt;
+        IReadOnlyList<StaticSpaceObject> scenery = [];
+        bool guarded = false;
+        bool started = true;
+        if (
+            profile.WormholeClasses is not null
+            && SleeperSiteCatalog.Read(catalog).FirstOrDefault(s => s.DungeonId == site.DungeonId) is { } sleeper
+        )
+        {
+            var encounter = CombatAnomalyStore.EnsureGuarded(
+                world,
+                catalog,
+                site.Id,
+                systemId,
+                site.DungeonId,
+                new(site.X, site.Y, site.Z)
+            );
+            deadline = Math.Min(deadline, CombatAnomalyStore.AdvanceGuarded(world, catalog, site.Id, now));
+            scenery = CombatAnomalyStore.GuardedObjects(encounter, sleeper);
+            guarded = true;
+            started = world.Set<Eden.Data.World.Exploration.SavedSleeperSite>().Find(encounter.Id)!.ActivatedAt.HasValue;
+        }
         var contact = new CombatAnomaly(
             site.Id,
             ScannerTargetIds.FromMiningSequence(site.Id - MiningSiteRules.FirstSiteId),
@@ -135,14 +166,14 @@ internal sealed partial class MiningSiteStore(WorldDatabase database) : IMiningS
             profile.NameId,
             profile.Difficulty,
             new(site.X, site.Y, site.Z),
-            true,
-            [],
-            FactionId: 0,
+            started,
+            scenery,
+            FactionId: guarded ? SleeperRules.FactionId : 0,
             IsSignature: family == MiningFamily.Gas,
             Mining: site.Family
         );
         transaction.Commit();
-        return new(site.ExpiresAt, [contact]);
+        return new(deadline, [contact]);
     }
 
     private static void CreateDeposits(WorldAction world, SavedMiningSite site, MiningSiteDefinition definition)

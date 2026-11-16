@@ -1,0 +1,7329 @@
+{
+  "build": 3662168,
+  "encounters": [
+    {
+      "name": "Perimeter Ambush Point",
+      "source": "https://wiki.eveuniversity.org/Perimeter_Ambush_Point",
+      "revision": 199934,
+      "locations": "C1",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30460
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": true,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30211
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30202
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30209
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30202
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30202
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30200
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3707": 0
+      },
+      "wormholeClass": 1,
+      "wormholeKind": 0
+    },
+    {
+      "name": "Perimeter Camp",
+      "source": "https://wiki.eveuniversity.org/Perimeter_Camp",
+      "revision": 221683,
+      "locations": "C1",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30460
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": true,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30209
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30210
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30209
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30210
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30200
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30209
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30200
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30201
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3708": 0
+      },
+      "wormholeClass": 1,
+      "wormholeKind": 0
+    },
+    {
+      "name": "Phase Catalyst Node",
+      "source": "https://wiki.eveuniversity.org/Phase_Catalyst_Node",
+      "revision": 199938,
+      "locations": "C1",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30460
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": true,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30211
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30210
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30202
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30200
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30209
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30210
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3801": 0
+      },
+      "wormholeClass": 1,
+      "wormholeKind": 0
+    },
+    {
+      "name": "The Line",
+      "source": "https://wiki.eveuniversity.org/The_Line",
+      "revision": 199949,
+      "locations": "C1",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 0,
+                "maximum": 4,
+                "types": [
+                  30209
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30210
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30201
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2 (70-90 km away)",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30211
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30200
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3 (50 km away)",
+            "groups": [
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30201
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3797": 0
+      },
+      "wormholeClass": 1,
+      "wormholeKind": 0
+    },
+    {
+      "name": "Perimeter Checkpoint",
+      "source": "https://wiki.eveuniversity.org/Perimeter_Checkpoint",
+      "revision": 221687,
+      "locations": "C2",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30460
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": true,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30209
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 3,
+                "types": [
+                  30200
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30202
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30200
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30209
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30188
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3714": 0
+      },
+      "wormholeClass": 2,
+      "wormholeKind": 0
+    },
+    {
+      "name": "Perimeter Hangar",
+      "source": "https://wiki.eveuniversity.org/Perimeter_Hangar",
+      "revision": 199937,
+      "locations": "C2",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30210
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30200
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30202
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30189
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30202
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30190
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3715": 0
+      },
+      "wormholeClass": 2,
+      "wormholeKind": 0
+    },
+    {
+      "name": "The Ruins of Enclave Cohort 27",
+      "source": "https://wiki.eveuniversity.org/The_Ruins_of_Enclave_Cohort_27",
+      "revision": 199952,
+      "locations": "C2",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30209
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30188
+                ],
+                "trigger": false,
+                "optional": true,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30210
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30200
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30190
+                ],
+                "trigger": false,
+                "optional": true,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3795": 0
+      },
+      "wormholeClass": 2,
+      "wormholeKind": 0
+    },
+    {
+      "name": "Sleeper Data Sanctuary",
+      "source": "https://wiki.eveuniversity.org/Sleeper_Data_Sanctuary",
+      "revision": 216697,
+      "locations": "C2",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30460
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": true,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30209
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30202
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30211
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30190
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30191
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3796": 0
+      },
+      "wormholeClass": 2,
+      "wormholeKind": 0
+    },
+    {
+      "name": "Fortification Frontier Stronghold",
+      "source": "https://wiki.eveuniversity.org/Fortification_Frontier_Stronghold",
+      "revision": 221682,
+      "locations": "C3",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30212
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30203
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30203
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30204
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30203
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30205
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30204
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30193
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3710": 0
+      },
+      "wormholeClass": 3,
+      "wormholeKind": 0
+    },
+    {
+      "name": "Outpost Frontier Stronghold",
+      "source": "https://wiki.eveuniversity.org/Outpost_Frontier_Stronghold",
+      "revision": 199933,
+      "locations": "C3",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30461
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": true,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30192
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30203
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30212
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30192
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3713": 0
+      },
+      "wormholeClass": 3,
+      "wormholeKind": 0
+    },
+    {
+      "name": "Solar Cell",
+      "source": "https://wiki.eveuniversity.org/Solar_Cell",
+      "revision": 221226,
+      "locations": "C3",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30214
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30204
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30192
+                ],
+                "trigger": false,
+                "optional": true,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30212
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30213
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30203
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30204
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30203
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30192
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30194
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3809": 0
+      },
+      "wormholeClass": 3,
+      "wormholeKind": 0
+    },
+    {
+      "name": "The Oruze Construct",
+      "source": "https://wiki.eveuniversity.org/The_Oruze_Construct",
+      "revision": 232056,
+      "locations": "C3",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30461
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": true,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30204
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30205
+                ],
+                "trigger": false,
+                "optional": true,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30212
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30192
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30205
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30193
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3800": 0
+      },
+      "wormholeClass": 3,
+      "wormholeKind": 0
+    },
+    {
+      "name": "Frontier Barracks",
+      "source": "https://wiki.eveuniversity.org/Frontier_Barracks",
+      "revision": 199922,
+      "locations": "C4",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30194
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30193
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30205
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30193
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30214
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30205
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30194
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3709": 0
+      },
+      "wormholeClass": 4,
+      "wormholeKind": 0
+    },
+    {
+      "name": "Frontier Command Post",
+      "source": "https://wiki.eveuniversity.org/Frontier_Command_Post",
+      "revision": 199923,
+      "locations": "C4",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30461
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": true,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30212
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30214
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30213
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30203
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30192
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30203
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30205
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30194
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3718": 0
+      },
+      "wormholeClass": 4,
+      "wormholeKind": 0
+    },
+    {
+      "name": "Integrated Terminus",
+      "source": "https://wiki.eveuniversity.org/Integrated_Terminus",
+      "revision": 199926,
+      "locations": "C4",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30461
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": true,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30213
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30203
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30214
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30205
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30204
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30212
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30213
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30195
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3799": 0
+      },
+      "wormholeClass": 4,
+      "wormholeKind": 0
+    },
+    {
+      "name": "Sleeper Information Sanctum",
+      "source": "https://wiki.eveuniversity.org/Sleeper_Information_Sanctum",
+      "revision": 199946,
+      "locations": "C4",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30204
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30194
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30213
+                ],
+                "trigger": false,
+                "optional": true,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30192
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30195
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30214
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30213
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30205
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30204
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3808": 0
+      },
+      "wormholeClass": 4,
+      "wormholeKind": 0
+    },
+    {
+      "name": "Core Garrison",
+      "source": "https://wiki.eveuniversity.org/Core_Garrison",
+      "revision": 216427,
+      "locations": "C5",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30462
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": true,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30215
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30206
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30216
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30206
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30207
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30196
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 4",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30217
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30206
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3716": 0
+      },
+      "wormholeClass": 5,
+      "wormholeKind": 0
+    },
+    {
+      "name": "Core Stronghold",
+      "source": "https://wiki.eveuniversity.org/Core_Stronghold",
+      "revision": 216429,
+      "locations": "C5",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30462
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": true,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30215
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30198
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30217
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 7,
+                "maximum": 7,
+                "types": [
+                  30206
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 4",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30208
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30198
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3717": 0
+      },
+      "wormholeClass": 5,
+      "wormholeKind": 0
+    },
+    {
+      "name": "Oruze Osobnyk",
+      "source": "https://wiki.eveuniversity.org/Oruze_Osobnyk",
+      "revision": 199932,
+      "locations": "C5",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30215
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30196
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30206
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30199
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30216
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30217
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30208
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3803": 0
+      },
+      "wormholeClass": 5,
+      "wormholeKind": 0
+    },
+    {
+      "name": "Quarantine Area",
+      "source": "https://wiki.eveuniversity.org/Quarantine_Area",
+      "revision": 199939,
+      "locations": "C5",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30462
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": true,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30211
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30207
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30206
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30215
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30208
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3812": 0
+      },
+      "wormholeClass": 5,
+      "wormholeKind": 0
+    },
+    {
+      "name": "Core Citadel",
+      "source": "https://wiki.eveuniversity.org/Core_Citadel",
+      "revision": 199902,
+      "locations": "C6",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30198
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 8,
+                "maximum": 8,
+                "types": [
+                  30216
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30198
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 8,
+                "maximum": 8,
+                "types": [
+                  30216
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30197
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30198
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 4",
+            "groups": [
+              {
+                "minimum": 8,
+                "maximum": 8,
+                "types": [
+                  30216
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30199
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3704": 0
+      },
+      "wormholeClass": 6,
+      "wormholeKind": 0
+    },
+    {
+      "name": "Core Bastion",
+      "source": "https://wiki.eveuniversity.org/Core_Bastion",
+      "revision": 199901,
+      "locations": "C6",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30462
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": true,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30206
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30208
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30207
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30216
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30215
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30206
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30208
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30217
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30208
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30199
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 4",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30199
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3706": 0
+      },
+      "wormholeClass": 6,
+      "wormholeKind": 0
+    },
+    {
+      "name": "Strange Energy Readings",
+      "source": "https://wiki.eveuniversity.org/Strange_Energy_Readings",
+      "revision": 199948,
+      "locations": "C6",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30208
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30216
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": true,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30207
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30199
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30216
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30208
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3819": 0
+      },
+      "wormholeClass": 6,
+      "wormholeKind": 0
+    },
+    {
+      "name": "The Mirror",
+      "source": "https://wiki.eveuniversity.org/The_Mirror",
+      "revision": 199951,
+      "locations": "C6",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30462
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": true,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30198
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30208
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30217
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30215
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30199
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30216
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30217
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30207
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30208
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3802": 0
+      },
+      "wormholeClass": 6,
+      "wormholeKind": 0
+    },
+    {
+      "name": "Unsecured Perimeter Amplifier",
+      "source": "https://wiki.eveuniversity.org/Unsecured_Perimeter_Amplifier",
+      "revision": 199965,
+      "locations": "C1",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30200
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30210
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30202
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30202
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30201
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3753": 0
+      },
+      "wormholeClass": 1,
+      "wormholeKind": 1
+    },
+    {
+      "name": "Unsecured Perimeter Information Center",
+      "source": "https://wiki.eveuniversity.org/Unsecured_Perimeter_Information_Center",
+      "revision": 199968,
+      "locations": "C1",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30209
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30210
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30200
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30211
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30200
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30209
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30200
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30201
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3754": 0
+      },
+      "wormholeClass": 1,
+      "wormholeKind": 1
+    },
+    {
+      "name": "Unsecured Perimeter Comms Relay",
+      "source": "https://wiki.eveuniversity.org/Unsecured_Perimeter_Comms_Relay",
+      "revision": 216937,
+      "locations": "C2",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30200
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30201
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30191
+                ],
+                "trigger": false,
+                "optional": true,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30210
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30188
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30209
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30190
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30189
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3759": 0
+      },
+      "wormholeClass": 2,
+      "wormholeKind": 1
+    },
+    {
+      "name": "Unsecured Perimeter Transponder Farm",
+      "source": "https://wiki.eveuniversity.org/Unsecured_Perimeter_Transponder_Farm",
+      "revision": 216693,
+      "locations": "C2",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30211
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30209
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30200
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30211
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30200
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30201
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30211
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30209
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30188
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 4",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30211
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30202
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30200
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3752": 0
+      },
+      "wormholeClass": 2,
+      "wormholeKind": 1
+    },
+    {
+      "name": "Unsecured Frontier Database",
+      "source": "https://wiki.eveuniversity.org/Unsecured_Frontier_Database",
+      "revision": 216318,
+      "locations": "C3",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30214
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30203
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30203
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30204
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30212
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30204
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30193
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 4",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30214
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30204
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30193
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3735": 0
+      },
+      "wormholeClass": 3,
+      "wormholeKind": 1
+    },
+    {
+      "name": "Unsecured Frontier Receiver",
+      "source": "https://wiki.eveuniversity.org/Unsecured_Frontier_Receiver",
+      "revision": 199962,
+      "locations": "C3",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30212
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30205
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30203
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30205
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30204
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30213
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30192
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 2
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 4",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30212
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30194
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3746": 0
+      },
+      "wormholeClass": 3,
+      "wormholeKind": 1
+    },
+    {
+      "name": "Unsecured Frontier Digital Nexus",
+      "source": "https://wiki.eveuniversity.org/Unsecured_Frontier_Digital_Nexus",
+      "revision": 221321,
+      "locations": "C4",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30212
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30203
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30195
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 1
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30214
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30203
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30192
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 1
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30195
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3748": 0
+      },
+      "wormholeClass": 4,
+      "wormholeKind": 1
+    },
+    {
+      "name": "Unsecured Frontier Trinary Hub",
+      "source": "https://wiki.eveuniversity.org/Unsecured_Frontier_Trinary_Hub",
+      "revision": 199964,
+      "locations": "C4",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30212
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30194
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30192
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 1
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30203
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30194
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 2
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30192
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30194
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3744": 0
+      },
+      "wormholeClass": 4,
+      "wormholeKind": 1
+    },
+    {
+      "name": "Unsecured Frontier Enclave Relay",
+      "source": "https://wiki.eveuniversity.org/Unsecured_Frontier_Enclave_Relay",
+      "revision": 199961,
+      "locations": "C5",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30197
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 1
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30216
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30208
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 3,
+                "types": [
+                  30197
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30216
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30217
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30206
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30208
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30197
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 4",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30217
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30208
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30198
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3729": 0
+      },
+      "wormholeClass": 5,
+      "wormholeKind": 1
+    },
+    {
+      "name": "Unsecured Frontier Server Bank",
+      "source": "https://wiki.eveuniversity.org/Unsecured_Frontier_Server_Bank",
+      "revision": 199963,
+      "locations": "C5",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30215
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30207
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30216
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30217
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30207
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30206
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30208
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30217
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30197
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 4",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30207
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30208
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30198
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3732": 0
+      },
+      "wormholeClass": 5,
+      "wormholeKind": 1
+    },
+    {
+      "name": "Unsecured Core Backup Array",
+      "source": "https://wiki.eveuniversity.org/Unsecured_Core_Backup_Array",
+      "revision": 226726,
+      "locations": "C6",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30461
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": true,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30462
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": true,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 10,
+                "maximum": 10,
+                "types": [
+                  30215
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30198
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30199
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 1
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30207
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30198
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30208
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30198
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 4",
+            "groups": [
+              {
+                "minimum": 10,
+                "maximum": 10,
+                "types": [
+                  30215
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 8,
+                "maximum": 8,
+                "types": [
+                  30206
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30199
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3747": 0
+      },
+      "wormholeClass": 6,
+      "wormholeKind": 1
+    },
+    {
+      "name": "Unsecured Core Emergence",
+      "source": "https://wiki.eveuniversity.org/Unsecured_Core_Emergence",
+      "revision": 199958,
+      "locations": "C6",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30461
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": true,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30462
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": true,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 9,
+                "maximum": 9,
+                "types": [
+                  30215
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 9,
+                "maximum": 9,
+                "types": [
+                  30216
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 9,
+                "maximum": 9,
+                "types": [
+                  30217
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30199
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30199
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 1
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30217
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 7,
+                "maximum": 7,
+                "types": [
+                  30206
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 7,
+                "maximum": 7,
+                "types": [
+                  30207
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 7,
+                "maximum": 7,
+                "types": [
+                  30208
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30215
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30198
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30199
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 4",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30215
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30216
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30206
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30207
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30208
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30198
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3741": 0
+      },
+      "wormholeClass": 6,
+      "wormholeKind": 1
+    },
+    {
+      "name": "Forgotten Perimeter Coronation Platform",
+      "source": "https://wiki.eveuniversity.org/Forgotten_Perimeter_Coronation_Platform",
+      "revision": 199917,
+      "locations": "C1",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30211
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30209
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30200
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30211
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30200
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30209
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30200
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30201
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3737": 0
+      },
+      "wormholeClass": 1,
+      "wormholeKind": 2
+    },
+    {
+      "name": "Forgotten Perimeter Power Array",
+      "source": "https://wiki.eveuniversity.org/Forgotten_Perimeter_Power_Array",
+      "revision": 199920,
+      "locations": "C1",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30200
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30210
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30202
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30202
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30201
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3730": 0
+      },
+      "wormholeClass": 1,
+      "wormholeKind": 2
+    },
+    {
+      "name": "Forgotten Perimeter Gateway",
+      "source": "https://wiki.eveuniversity.org/Forgotten_Perimeter_Gateway",
+      "revision": 216708,
+      "locations": "C2",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30200
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30201
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30210
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30188
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30209
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30190
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30189
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3749": 0
+      },
+      "wormholeClass": 2,
+      "wormholeKind": 2
+    },
+    {
+      "name": "Forgotten Perimeter Habitation Coils",
+      "source": "https://wiki.eveuniversity.org/Forgotten_Perimeter_Habitation_Coils",
+      "revision": 216947,
+      "locations": "C2",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30211
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30209
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30200
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30211
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30200
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30211
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30209
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30188
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 4",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30211
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30202
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30200
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30189
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3739": 0
+      },
+      "wormholeClass": 2,
+      "wormholeKind": 2
+    },
+    {
+      "name": "Forgotten Frontier Quarantine Outpost",
+      "source": "https://wiki.eveuniversity.org/Forgotten_Frontier_Quarantine_Outpost",
+      "revision": 199915,
+      "locations": "C3",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30212
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30205
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30203
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30205
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30204
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30213
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30192
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 4",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30212
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30194
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3726": 0
+      },
+      "wormholeClass": 3,
+      "wormholeKind": 2
+    },
+    {
+      "name": "Forgotten Frontier Recursive Depot",
+      "source": "https://wiki.eveuniversity.org/Forgotten_Frontier_Recursive_Depot",
+      "revision": 199916,
+      "locations": "C3",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30214
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30203
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30203
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30204
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30212
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30204
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30193
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 4",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30214
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30204
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30193
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3725": 0
+      },
+      "wormholeClass": 3,
+      "wormholeKind": 2
+    },
+    {
+      "name": "Forgotten Frontier Conversion Module",
+      "source": "https://wiki.eveuniversity.org/Forgotten_Frontier_Conversion_Module",
+      "revision": 199913,
+      "locations": "C4",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30461
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": true,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30212
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30203
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30193
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30195
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 1
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30212
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30203
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30192
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 2
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30195
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3736": 0
+      },
+      "wormholeClass": 4,
+      "wormholeKind": 2
+    },
+    {
+      "name": "Forgotten Frontier Evacuation Center",
+      "source": "https://wiki.eveuniversity.org/Forgotten_Frontier_Evacuation_Center",
+      "revision": 199914,
+      "locations": "C4",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30212
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30194
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30192
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 1
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30203
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30194
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30192
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30194
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3731": 0
+      },
+      "wormholeClass": 4,
+      "wormholeKind": 2
+    },
+    {
+      "name": "Forgotten Core Data Field",
+      "source": "https://wiki.eveuniversity.org/Forgotten_Core_Data_Field",
+      "revision": 199911,
+      "locations": "C5",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30215
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30207
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30216
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30217
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30207
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30206
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30208
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30217
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30197
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 4",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30207
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30208
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30198
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3722": 0
+      },
+      "wormholeClass": 5,
+      "wormholeKind": 2
+    },
+    {
+      "name": "Forgotten Core Information Pen",
+      "source": "https://wiki.eveuniversity.org/Forgotten_Core_Information_Pen",
+      "revision": 199912,
+      "locations": "C5",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30197
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 1
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30216
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30208
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3 (Triggered randomly after 1-3 cans have been hacked or failed.)",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30216
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30217
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30206
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30208
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 3
+          },
+          {
+            "heading": "Wave 4",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30217
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30207
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3728": 0
+      },
+      "wormholeClass": 5,
+      "wormholeKind": 2
+    },
+    {
+      "name": "Forgotten Core Assembly Hall",
+      "source": "https://wiki.eveuniversity.org/Forgotten_Core_Assembly_Hall",
+      "revision": 199908,
+      "locations": "C6",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30462
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": true,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30215
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30198
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30199
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 1
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30207
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30198
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30208
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30198
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 4",
+            "groups": [
+              {
+                "minimum": 10,
+                "maximum": 10,
+                "types": [
+                  30215
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30206
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30199
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3727": 0
+      },
+      "wormholeClass": 6,
+      "wormholeKind": 2
+    },
+    {
+      "name": "Forgotten Core Circuitry Disassembler",
+      "source": "https://wiki.eveuniversity.org/Forgotten_Core_Circuitry_Disassembler",
+      "revision": 199909,
+      "locations": "C6",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30461
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": true,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30462
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": true,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 9,
+                "maximum": 9,
+                "types": [
+                  30215
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 9,
+                "maximum": 9,
+                "types": [
+                  30216
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 9,
+                "maximum": 9,
+                "types": [
+                  30217
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30199
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30217
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 7,
+                "maximum": 7,
+                "types": [
+                  30206
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 7,
+                "maximum": 7,
+                "types": [
+                  30207
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 7,
+                "maximum": 7,
+                "types": [
+                  30208
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30215
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30198
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30199
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 4",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30215
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30216
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30206
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30207
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30208
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30198
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30199
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3723": 0
+      },
+      "wormholeClass": 6,
+      "wormholeKind": 2
+    },
+    {
+      "name": "Barren Perimeter Reservoir",
+      "source": "https://wiki.eveuniversity.org/Barren_Perimeter_Reservoir",
+      "revision": 229856,
+      "locations": "C1",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30209
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30210
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3555": 0
+      },
+      "wormholeClass": 1,
+      "wormholeKind": 3
+    },
+    {
+      "name": "Minor Perimeter Reservoir",
+      "source": "https://wiki.eveuniversity.org/Minor_Perimeter_Reservoir",
+      "revision": 231121,
+      "locations": "C1",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30200
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3557": 0
+      },
+      "wormholeClass": 1,
+      "wormholeKind": 3
+    },
+    {
+      "name": "Ordinary Perimeter Reservoir",
+      "source": "https://wiki.eveuniversity.org/Ordinary_Perimeter_Reservoir",
+      "revision": 231569,
+      "locations": "C1",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30209
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30210
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3558": 0
+      },
+      "wormholeClass": 1,
+      "wormholeKind": 3
+    },
+    {
+      "name": "Sizeable Perimeter Reservoir",
+      "source": "https://wiki.eveuniversity.org/Sizeable_Perimeter_Reservoir",
+      "revision": 229858,
+      "locations": "C1",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30209
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30210
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3559": 0
+      },
+      "wormholeClass": 1,
+      "wormholeKind": 3
+    },
+    {
+      "name": "Token Perimeter Reservoir",
+      "source": "https://wiki.eveuniversity.org/Token_Perimeter_Reservoir",
+      "revision": 229859,
+      "locations": "C1",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30211
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30201
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3556": 0
+      },
+      "wormholeClass": 1,
+      "wormholeKind": 3
+    },
+    {
+      "name": "Bountiful Frontier Reservoir",
+      "source": "https://wiki.eveuniversity.org/Bountiful_Frontier_Reservoir",
+      "revision": 229860,
+      "locations": "C3",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30212
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30203
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30212
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30203
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3560": 0
+      },
+      "wormholeClass": 3,
+      "wormholeKind": 3
+    },
+    {
+      "name": "Vast Frontier Reservoir",
+      "source": "https://wiki.eveuniversity.org/Vast_Frontier_Reservoir",
+      "revision": 229861,
+      "locations": "C3",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30203
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30204
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3561": 0
+      },
+      "wormholeClass": 3,
+      "wormholeKind": 3
+    },
+    {
+      "name": "Instrumental Core Reservoir",
+      "source": "https://wiki.eveuniversity.org/Instrumental_Core_Reservoir",
+      "revision": 229862,
+      "locations": "C5",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3562": 0
+      },
+      "wormholeClass": 5,
+      "wormholeKind": 3
+    },
+    {
+      "name": "Vital Core Reservoir",
+      "source": "https://wiki.eveuniversity.org/Vital_Core_Reservoir",
+      "revision": 229863,
+      "locations": "C5",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30216
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3563": 0
+      },
+      "wormholeClass": 5,
+      "wormholeKind": 3
+    }
+  ],
+  "blocked": []
+}

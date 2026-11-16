@@ -30,6 +30,7 @@ public interface ICombatAnomalies
     IReadOnlyList<CombatAnomaly> Signatures(int systemId, long now) => [];
     void Arrive(int systemId, SpacePosition position, long now);
     void ArriveUncloaked(int systemId, SpacePosition position, long now) { }
+    void Activate(int systemId, SpacePosition target, long now) { }
     IReadOnlyList<AnomalySystemSites> Directory(long now);
 }
 

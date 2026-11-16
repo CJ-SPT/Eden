@@ -28,6 +28,7 @@ internal sealed partial class MiningSiteStore
         site.ReplaceAt = checked(
             now + (site.Family == MiningFamily.Ice ? MiningSiteRules.IceReplacementDelay : MiningSiteRules.ReplacementDelay)
         );
+        Eden.World.Exploration.CombatAnomalyStore.RetireGuarded(world, site.Id, now);
         var members = world.Filter<SavedMiningDeposit>(d => d.SiteId == site.Id).ToArray();
         world.RemoveRange(members.Select(d => world.Set<WorldAsteroid>().Find(d.Id)).OfType<WorldAsteroid>());
         world.RemoveRange(members);

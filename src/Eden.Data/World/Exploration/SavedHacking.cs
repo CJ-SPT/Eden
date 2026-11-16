@@ -34,4 +34,5 @@ public sealed class SavedHackingAttempt
     public long PilotId { get; set; }
     public long ContainerId { get; set; }
     public string ContactJson { get; set; } = string.Empty;
+    public bool RecoveryPending { get; set; }
 }

@@ -27,7 +27,7 @@ internal sealed partial class PirateExplorationStore(
     IPilotDamageEvents damageEvents
 ) : IPirateExploration, IPilotHacking
 {
-    private sealed record View(long Catalog, long Deadline, bool Enabled, IReadOnlyList<CombatAnomaly> Sites);
+    private sealed record View(long Catalog, long Deadline, bool Enabled, IReadOnlyList<CombatAnomaly> Sites, long Version = 0);
 
     private readonly ConcurrentDictionary<int, View> _views = [];
 
@@ -43,7 +43,14 @@ internal sealed partial class PirateExplorationStore(
         {
             long generation = database.Catalog.Identity.Generation;
             bool enabled = database.Settings.NpcPopulation.Pirates;
-            if (_views.TryGetValue(systemId, out var view) && view.Catalog == generation && view.Enabled == enabled && now < view.Deadline)
+            long version = WormholeRules.IsWormholeSystem(systemId) ? CombatAnomalyStore.ResidentVersion(database.Path, systemId) : 0;
+            if (
+                _views.TryGetValue(systemId, out var view)
+                && view.Catalog == generation
+                && view.Enabled == enabled
+                && view.Version == version
+                && now < view.Deadline
+            )
             {
                 return view.Sites;
             }
@@ -52,10 +59,17 @@ internal sealed partial class PirateExplorationStore(
             var faction = system is null ? null : NpcRegions.Pirates(system.RegionId);
             if (system is null || !enabled || faction is null && !WormholeRules.IsWormholeSystem(systemId))
             {
-                _views[systemId] = new(generation, long.MaxValue, enabled, []);
+                _views[systemId] = new(generation, long.MaxValue, enabled, [], version);
                 return _views[systemId].Sites;
             }
-            using WorldActionScope transaction = new(database, select: world => GhostParticipants(world, systemId, now));
+            bool wormhole = WormholeRules.IsWormholeSystem(systemId);
+            int wormholeClass = wormhole ? (int)(catalog.Read(CatalogData.Client.Systems, (long)systemId)?.WormholeClassID ?? 0) : 0;
+            var sleepers = wormhole ? SleeperSiteCatalog.Exploration(catalog) : [];
+            if (sleepers.Any(s => s.WormholeClass == wormholeClass) && LiveWorld.Find(database.Path) is null)
+            {
+                throw new InvalidOperationException("Guarded wormhole exploration requires the resident world.");
+            }
+            using WorldActionScope transaction = new(database, select: world => ExplorationParticipants(world, systemId, now));
             var world = transaction.World;
             double security = catalog.Read(CatalogData.Client.Systems, (long)systemId)?.SecurityStatus ?? 0.7;
             int band =
@@ -64,10 +78,9 @@ internal sealed partial class PirateExplorationStore(
                 : 2;
             List<CombatAnomaly> sites = [];
             long deadline = long.MaxValue;
-            bool wormhole = WormholeRules.IsWormholeSystem(systemId);
             foreach (var kind in Enum.GetValues<ExplorationKind>())
             {
-                if (wormhole && kind != ExplorationKind.Ghost)
+                if (wormhole && kind != ExplorationKind.Ghost && wormholeClass is not (>= 1 and <= 6))
                 {
                     continue;
                 }
@@ -83,14 +96,25 @@ internal sealed partial class PirateExplorationStore(
                 }
                 if (row is null || row.ReplaceAt <= now)
                 {
-                    var eligible = (kind == ExplorationKind.Ghost ? GhostSiteCatalog.Read(catalog) : HackingCatalog.Sites)
+                    IEnumerable<ExplorationDefinition> candidates =
+                        kind == ExplorationKind.Ghost ? GhostSiteCatalog.Read(catalog)
+                        : wormhole ? sleepers
+                        : HackingCatalog.Sites;
+                    var eligible = candidates
                         .Where(s =>
                             (wormhole || s.FactionId == (int?)faction)
                             && s.Kind == kind
-                            && s.Band == (wormhole ? GhostSiteRules.WormholeBand : band)
+                            && (
+                                wormhole && kind != ExplorationKind.Ghost
+                                    ? s.WormholeClass == wormholeClass
+                                    : s.Band == (wormhole ? GhostSiteRules.WormholeBand : band)
+                            )
                             && s.Containers.All(c =>
-                                catalog.FittingType(c.TypeId)?.GroupId
-                                == (kind == ExplorationKind.Ghost ? GhostSiteRules.ContainerGroup : HackingRules.ContainerGroup)
+                                catalog.FittingType(c.TypeId)?.GroupId is int group
+                                && (
+                                    group == (kind == ExplorationKind.Ghost ? GhostSiteRules.ContainerGroup : HackingRules.ContainerGroup)
+                                    || s.WormholeClass > 0 && group == SleeperRules.RelicContainerGroup
+                                )
                             )
                         )
                         .ToArray();
@@ -102,7 +126,11 @@ internal sealed partial class PirateExplorationStore(
                         HackingRules.FirstSiteId,
                         (world.Filter<SavedExplorationSite>(_ => true).Max(s => (long?)s.Id) ?? 0) + 1
                     );
-                    var definition = eligible[(int)((id + systemId) % eligible.Length)];
+                    int prior =
+                        row is not null && wormhole && kind != ExplorationKind.Ghost
+                            ? Array.FindIndex(eligible, candidate => candidate.DungeonId == row.DungeonId)
+                            : -1;
+                    var definition = eligible[(int)((prior >= 0 ? prior + 1 : id + systemId) % eligible.Length)];
                     var anchor = catalog.CelestialsInSystem(systemId).OrderBy(c => c.Id).FirstOrDefault();
                     if (anchor is null)
                     {
@@ -118,11 +146,15 @@ internal sealed partial class PirateExplorationStore(
                         X = anchor.X - offset,
                         Y = anchor.Y + offset,
                         Z = anchor.Z + offset,
-                        ExpiresAt = checked(now + HackingRules.SiteLifetime),
+                        ExpiresAt = checked(now + (definition.WormholeClass > 0 ? SleeperRules.SiteLifetime : HackingRules.SiteLifetime)),
                     };
                     world.Add(row);
                     for (int index = 0; index < definition.Containers.Count; index++)
                     {
+                        if (definition.Containers[index].Optional && !SleeperRules.HasTalocan(id))
+                        {
+                            continue;
+                        }
                         world.Add(
                             new SavedHackingContainer
                             {
@@ -143,11 +175,21 @@ internal sealed partial class PirateExplorationStore(
                     continue;
                 }
                 var profile = Definition(catalog, row);
+                WorldCombatAnomaly? guarded = null;
+                if (profile.WormholeClass > 0)
+                {
+                    guarded = CombatAnomalyStore.EnsureGuarded(world, catalog, row.Id, systemId, row.DungeonId, new(row.X, row.Y, row.Z));
+                    deadline = Math.Min(deadline, CombatAnomalyStore.AdvanceGuarded(world, catalog, row.Id, now));
+                }
                 if (kind == ExplorationKind.Ghost)
                 {
                     deadline = Math.Min(deadline, AdvanceGhostSite(world, catalog, row, profile, now));
                 }
                 var containers = world.Filter<SavedHackingContainer>(c => c.SiteId == row.Id).OrderBy(c => c.Index).ToArray();
+                if (profile.WormholeClass > 0)
+                {
+                    RecoverSleeperHacks(world, catalog, row, containers, now);
+                }
                 if (containers.All(c => c.Destroyed || c.Hacked && c.Empty))
                 {
                     Retire(world, row, now);
@@ -167,7 +209,7 @@ internal sealed partial class PirateExplorationStore(
                         profile.NameId,
                         profile.Difficulty,
                         new(row.X, row.Y, row.Z),
-                        row.ResponseAt is not null,
+                        row.ResponseAt is not null || guarded is { Wave: >= 0 },
                         containers
                             .Where(c => !c.Destroyed)
                             .Select(c => Object(catalog, row, c, busy.Contains(c.Id), profile))
@@ -195,15 +237,17 @@ internal sealed partial class PirateExplorationStore(
                 deadline = Math.Min(deadline, row.ExpiresAt);
             }
             transaction.Commit();
-            _views[systemId] = new(generation, deadline, enabled, sites.ToArray());
+            _views[systemId] = new(generation, deadline, enabled, sites.ToArray(), version);
             return _views[systemId].Sites;
         }
     }
 
     private static ExplorationDefinition Definition(CatalogDbContext catalog, SavedExplorationSite site) =>
-        site.Kind == (int)ExplorationKind.Ghost
-            ? GhostSiteCatalog.Find(catalog, site.DungeonId)
-            : HackingCatalog.Sites.Single(d => d.DungeonId == site.DungeonId);
+        site.Kind == (int)ExplorationKind.Ghost ? GhostSiteCatalog.Find(catalog, site.DungeonId)
+        : WormholeRules.IsWormholeSystem(site.SystemId)
+        && SleeperSiteCatalog.Exploration(catalog).FirstOrDefault(d => d.DungeonId == site.DungeonId) is { } sleeper
+            ? sleeper
+        : HackingCatalog.Sites.Single(d => d.DungeonId == site.DungeonId);
 
     private static StaticSpaceObject Object(
         CatalogDbContext catalog,
@@ -241,6 +285,7 @@ internal sealed partial class PirateExplorationStore(
     {
         site.ReplaceAt = checked(now + HackingRules.ReplacementDelay);
         RetireResponse(world, site, now);
+        CombatAnomalyStore.RetireGuarded(world, site.Id, now);
         var containers = world.Filter<SavedHackingContainer>(c => c.SiteId == site.Id).ToArray();
         foreach (var container in containers)
         {
@@ -280,6 +325,11 @@ internal sealed partial class PirateExplorationStore(
         long pilotId
     )
     {
+        if (definition.WormholeClass > 0)
+        {
+            GrantSleeperLoot(world, catalog, container, definition, pilotId);
+            return;
+        }
         if (definition.Kind == ExplorationKind.Ghost)
         {
             int cache = definition.Containers[container.Index].TypeId;

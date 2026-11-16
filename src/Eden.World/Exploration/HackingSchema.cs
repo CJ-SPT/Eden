@@ -15,6 +15,7 @@ internal static class HackingSchema
         model.Entity<SavedHackingContainer>().HasIndex(c => c.SiteId);
         model.Entity<SavedHackingAttempt>().ToTable("WorldHackingAttempt").HasKey(a => a.PilotId);
         model.Entity<SavedHackingAttempt>().HasIndex(a => a.ContainerId).IsUnique();
+        model.Entity<SavedHackingAttempt>().Property(a => a.RecoveryPending).HasDefaultValue(false);
     }
 
     internal static void Upgrade(WorldDbContext world)
@@ -46,6 +47,13 @@ internal static class HackingSchema
                 """
             );
         }
+        var attemptColumns = world
+            .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldHackingAttempt')")
+            .ToHashSet();
+        if (!attemptColumns.Contains("RecoveryPending"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldHackingAttempt ADD COLUMN RecoveryPending INTEGER NOT NULL DEFAULT 0");
+        }
     }
 
     internal static void Reconcile(WorldDbContext world)
@@ -55,8 +63,14 @@ internal static class HackingSchema
         {
             if (world.Set<SavedHackingContainer>().Find(attempt.ContainerId) is { Hacked: false, Destroyed: false } container)
             {
-                container.Failures++;
                 var site = world.Set<SavedExplorationSite>().Find(container.SiteId);
+                if (site is not null && site.Kind != (int)ExplorationKind.Ghost && WormholeRules.IsWormholeSystem(site.SystemId))
+                {
+                    // Queue startup recovery; the resident owner settles failures and conditional reinforcements together.
+                    attempt.RecoveryPending = true;
+                    continue;
+                }
+                container.Failures++;
                 container.Destroyed = container.Failures >= GhostSiteRules.MaximumFailures((ExplorationKind?)site?.Kind);
             }
             world.Remove(attempt);
