@@ -489,11 +489,11 @@ internal static class ShipContentAudit
             checks.Add(
                 new(
                     ContentOperation.ConsumerCoverage,
-                    stage == ShipContentMilestone.CombatDrones,
+                    stage is ShipContentMilestone.CombatDrones or ShipContentMilestone.Mining or ShipContentMilestone.UtilityDrones,
                     stage,
-                    stage == ShipContentMilestone.CombatDrones
-                        ? "DroneCatalog.Skilled / FittingCalculation; combat-drone attributes and control limits consume these effects."
-                        : "Declared mining, utility-drone or fighter selectors retain their unfinished consumer milestone."
+                    stage == ShipContentMilestone.Fighters
+                        ? "Fighter selectors retain their unfinished consumer milestone."
+                        : "DroneCatalog.Skilled / FittingCalculation; deployed combat, mining and utility drones consume these effects."
                 )
             );
         }
@@ -535,6 +535,17 @@ internal static class ShipContentAudit
         checks.Add(
             new(ContentOperation.Operation, admitted, milestone, "DroneCatalog.Profile; launch still requires an admitted drone hull.")
         );
+        if (UtilityDroneRules.RequiresRorqual(type.Id))
+        {
+            checks.Add(
+                new(
+                    ContentOperation.ConsumerCoverage,
+                    false,
+                    ShipContentMilestone.IndustrialCommand,
+                    "The static profile is verified; launch requires the separately deferred Rorqual hull."
+                )
+            );
+        }
         return admitted;
     }
 

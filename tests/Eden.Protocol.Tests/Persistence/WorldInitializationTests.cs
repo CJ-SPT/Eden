@@ -17,6 +17,7 @@ public sealed class WorldInitializationTests
     [Theory]
     [InlineData(0)]
     [InlineData(84)]
+    [InlineData(WorldMigration.CurrentVersion - 1)]
     [InlineData(WorldMigration.CurrentVersion)]
     public void StartupReconcilesMissingDroneAndMiningSchemaBeforeResidentServicesStart(int version)
     {

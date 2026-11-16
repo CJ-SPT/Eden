@@ -62,7 +62,10 @@ internal sealed class DroneHandler(
                     or "CmdReconnectToDrones"
                     or "CmdAbandonDrone"
                     or "CmdAssist"
-                    or "CmdGuard";
+                    or "CmdGuard"
+                    or "CmdMine"
+                    or "CmdMineRepeatedly"
+                    or "CmdSalvage";
         if (!launch && !command && !scoop)
         {
             return PilotCallResult.Unsupported;
@@ -127,6 +130,9 @@ internal sealed class DroneHandler(
             DroneOrder order = method switch
             {
                 "CmdEngage" => DroneOrder.Engage,
+                "CmdMine" => DroneOrder.Mine,
+                "CmdMineRepeatedly" => DroneOrder.MineRepeatedly,
+                "CmdSalvage" => DroneOrder.Salvage,
                 "CmdReturnBay" => DroneOrder.ReturnToBay,
                 "CmdReconnectToDrones" => DroneOrder.Reconnect,
                 "CmdAbandonDrone" => DroneOrder.Abandon,
@@ -145,14 +151,19 @@ internal sealed class DroneHandler(
             }
             else
             {
-                if (args.Length != (order == DroneOrder.Engage ? 2 : 1))
+                bool targeted = order is DroneOrder.Engage or DroneOrder.Mine or DroneOrder.MineRepeatedly or DroneOrder.Salvage;
+                if (args.Length != (targeted ? 2 : 1))
                 {
                     throw new InvalidDataException("Invalid drone command arguments.");
                 }
                 ids = ReadIds(args[0]);
-                if (order == DroneOrder.Engage)
+                if (targeted)
                 {
-                    target = args[1] as long? ?? throw new InvalidDataException("Choose a locked ship target.");
+                    target = args[1] as long?;
+                    if (target is null && (order != DroneOrder.Salvage || args[1] is not null))
+                    {
+                        throw new InvalidDataException("Choose a locked drone work target.");
+                    }
                 }
             }
             targeting.Advance(context);
@@ -223,7 +234,7 @@ internal sealed class DroneHandler(
             }
         }
         context.Flight.RefreshDrones();
-        if (result.Hits.Count > 0)
+        if (result.Hits.Count > 0 || result.Changes.Count > 0)
         {
             context.Flight.RefreshNpcs();
             context.Flight.RefreshWrecks();

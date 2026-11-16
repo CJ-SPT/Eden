@@ -101,6 +101,7 @@
     <EmbeddedResource Include="Fixtures/SmallHullCatalog.json" />
     <EmbeddedResource Include="Fixtures/CombatHullCatalog.json" />
     <EmbeddedResource Include="Fixtures/CombatDroneCatalog.json" />
+    <EmbeddedResource Include="Fixtures/UtilityDroneCatalog.json" />
     <EmbeddedResource Include="Fixtures/DroneHullCatalog.json" />
     <EmbeddedResource Include="Fixtures/DroneEquipmentCatalog.json" />
     <EmbeddedResource Include="Fixtures/UtilityHullCatalog.json" />

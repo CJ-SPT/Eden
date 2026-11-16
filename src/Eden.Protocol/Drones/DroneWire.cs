@@ -55,8 +55,9 @@ internal static class DroneWire
     internal static IReadOnlyDictionary<DogmaAttributeId, double> Attributes(
         DroneProfile profile,
         IReadOnlyDictionary<DogmaAttributeId, double> basis
-    ) =>
-        new Dictionary<DogmaAttributeId, double>
+    )
+    {
+        var attributes = new Dictionary<DogmaAttributeId, double>
         {
             [DogmaAttributeId.StructureHitPoints] = profile.Defense.Structure,
             [DogmaAttributeId.ArmorHitPoints] = profile.Defense.Armor,
@@ -66,14 +67,40 @@ internal static class DroneWire
             [DogmaAttributeId.AccuracyFalloff] = profile.Falloff,
             [DogmaAttributeId.TrackingSpeed] = profile.Tracking,
             [DogmaAttributeId.DamageMultiplier] =
-                profile.Damage.Total
-                / (
-                    basis.GetValueOrDefault(DogmaAttributeId.EmDamage)
-                    + basis.GetValueOrDefault(DogmaAttributeId.ExplosiveDamage)
-                    + basis.GetValueOrDefault(DogmaAttributeId.KineticDamage)
-                    + basis.GetValueOrDefault(DogmaAttributeId.ThermalDamage)
-                ),
+                profile.Damage.Total == 0
+                    ? basis.GetValueOrDefault(DogmaAttributeId.DamageMultiplier)
+                    : profile.Damage.Total
+                        / (
+                            basis.GetValueOrDefault(DogmaAttributeId.EmDamage)
+                            + basis.GetValueOrDefault(DogmaAttributeId.ExplosiveDamage)
+                            + basis.GetValueOrDefault(DogmaAttributeId.KineticDamage)
+                            + basis.GetValueOrDefault(DogmaAttributeId.ThermalDamage)
+                        ),
         };
+        if (profile.Utility is { } utility)
+        {
+            attributes[DogmaAttributeId.Duration] = utility.DurationMilliseconds;
+            var amount = utility.Kind switch
+            {
+                UtilityDroneKind.ShieldRepair => DogmaAttributeId.ShieldBonus,
+                UtilityDroneKind.ArmorRepair => DogmaAttributeId.ArmorRepairAmount,
+                UtilityDroneKind.HullRepair => DogmaAttributeId.HullRepairAmount,
+                UtilityDroneKind.Neutralizing => DogmaAttributeId.EnergyNeutralizerAmount,
+                UtilityDroneKind.Salvaging => DogmaAttributeId.AccessDifficultyBonus,
+                UtilityDroneKind.Webifying => DogmaAttributeId.SpeedFactor,
+                _ => DogmaAttributeId.MiningAmount,
+            };
+            if (
+                utility.Repair
+                || utility.Mining
+                || utility.Kind is UtilityDroneKind.Neutralizing or UtilityDroneKind.Salvaging or UtilityDroneKind.Webifying
+            )
+            {
+                attributes[amount] = utility.Amount;
+            }
+        }
+        return attributes;
+    }
 }
 
 internal sealed record DroneLaunchReply(IReadOnlyList<DroneLaunch> Launches) : BlueModel

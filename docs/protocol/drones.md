@@ -6,6 +6,107 @@ Drone motion, observer reads and nonfatal direct combat use shared resident stat
 
 Legal capsule targets now use the shared [capsule destruction and home-station respawn lifecycle](combat.md#capsule-destruction-and-home-station-respawn-november-7-2026). The original pilot-target milestone below records its earlier capsule exclusion.
 
+## Utility and mining drones, November 15, 2026
+
+Resident worlds now support **58 published static utility profiles**: 18 shield/armor/hull repair bots, three energy neutralizers,
+12 EWAR drones, four web drones, three salvage drones and 18 combat/utility hybrids. **Eight subcapital ore/ice mining profiles**
+are launchable. Four additional Excavator/Pluto profiles are verified but require the separately deferred Rorqual hull.
+Mutated drones, fighters and repair of NPCs/structures remain outside this scope. This catalog has no gas harvesting drones.
+Existing drone hulls retain their bay, bandwidth, skill and control-count limits. These roles require the resident world;
+no offline gameplay or saved-world SQL implementation was added.
+
+Repair orders use native engage commands against another pilot's locked ship or a locked drone. The source ship and the repair
+bot itself are rejected as targets. Shield repair applies at cycle start; armor and hull repair apply at cycle completion.
+Assistance safety is checked before accepting an order and again before each repair. Repairs consume matching trained skills,
+hull/rig modifiers, target assistance restrictions and repair impedance. Pilot health events publish after commit.
+Repair and harvesting flights do not auto-attack. Fleet assist/guard requires weapon-bearing drones.
+
+Offensive utility drones share existing locked-target, safety, aggression, hostility, control and recovery rules. Neutralizers
+remove real pilot/NPC capacitor. Dampening, disruption, painting and webs feed existing fitting and NPC simulation consumers,
+including stacking rules. ECM uses catalog strengths and target sensors: its **5-second** jam expires independently of its
+**20-second** attempt interval, and the jammer drone remains a legal lock target. Hybrids retain independent weapon and utility
+deadlines, damage bonuses and destruction settlement. Pure utility drones emit no zero-damage hits. Recall/retasking clears
+active effects without resetting paid utility cooldowns.
+
+Native `CmdMine`/`CmdMineRepeatedly(droneIDs, targetID)` and `CmdSalvage(droneIDs, targetID)` route to the drone owner. Mining
+orders require a locked compatible ore/ice deposit within control range. Drones fly to it, work a complete cycle, carry material
+back and deliver into the appropriate mining hold or ordinary cargo hold. Repeated orders start another trip after delivery.
+Return/orbit orders collect proportional ore progress; incomplete ice cycles yield nothing. The shared mining collector owns
+residue, depletion, mission/site/moon expiry, ledgers, task progress and silent mining SP rewards. Ship-miner skill bonuses and
+critical mining effects absent from drone profiles do not apply.
+
+**Gathering configuration applies to drones.** Ore and ice yield multipliers scale effective yield after drone skills, hull and
+rig bonuses. Ice tuning changes blocks per completed cycle. Mining hold capacity uses the existing Gathering multipliers;
+mining SP uses existing Progression settings. Settings retain **Save for restart** activation. Effective native attributes
+report configured yield. Eden's cargo-preservation policy leaves undelivered material on the physical drone; recall/scoop/relaunch and checkpoints
+preserve it without duplication.
+
+Salvage drones can target a locked wreck explicitly or automatically select owner/corporation/fleet wrecks with a None target.
+They use catalog access difficulty, salvage drone skills and the wreck's saved salvage pool. The first successful claim retires
+that pool atomically; loot stays in a cargo container when present. Salvage travels back on the drone and delivers to ordinary
+cargo. Missing/expired targets stop manual work; automatic salvage can wait for a later eligible wreck.
+
+Schema **170** adds nullable `WorldDrone.WorkJson` for typed work, independent deadlines and carried material. Existing identity,
+damage and movement survive migration. Startup retains release/reconnect and never advances offline work. Resident commits,
+target state, inventory and checkpoint projections share a generation. Warmed harvesting and observers assert zero SQL commands,
+connections and fitting calculations. Utility movement/cycles use bounded resident economy transactions; no fleet-scale latency
+claim is made.
+
+Reference and protocol evidence:
+
+- [EVE University drones](https://wiki.eveuniversity.org/Drones), [mechanics](https://wiki.eveuniversity.org/Using_Drones) and
+  [skills](https://wiki.eveuniversity.org/Skills:Drones), consulted November 15, 2026. Pinned catalog values win over balance
+  differences: this build's Ice Harvesting Drone I has a 360-second base cycle.
+- Build **3662168** types/dogma, exported with `tools/Export-DroneCatalog.py --utility-only`, include all static/mutated candidate
+  types and recursive prerequisites. Unknown effects and mutated profiles remain rejected.
+- Inert `code.ccp` inspection (SHA-256 **37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**) confirms
+  `menuSvcExtras/droneFunctions.pyj` passes drone IDs before target ID to `CmdMineRepeatedly`/`CmdSalvage`. `appConst.pyj` defines
+  mining **2**, operating **9**, and salvaging **18**. Named Destiny adapters emit mining, salvage, repair and EWAR effects and
+  finite native attributes, including effect stop/replay handling.
+- [Carbon Destiny Ballpark at 27ee40b](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp)
+  remains the follow/orbit reference. Worker types have zero catalog mass/agility and use `orbitRange` (157). Carbon's
+  `SetBallMass` rejects non-positive mass, so deployed worker physics use explicit Eden minima of 1 kg mass and 1 agility,
+  preserving finite native free-ball inputs and responsive movement without changing shared catalog data.
+- Unversioned local EveJS `server/src/services/drone/droneRuntime.js` was cross-checked, SHA-256
+  **163795E56D651C4B1803488B3F82708583DFA076E751669A3B7A33D7B1DA72FF**. No implementation was copied.
+
+**Automated validation.** The selected affected run passed **1,134 cases**, zero failed/skipped, in **783.96 seconds**.
+After the final worker-physics and resident-only control/scoop changes, **35 focused cases passed**, zero failed/skipped,
+in **58.94 seconds**; the final solution build passed with zero warnings/errors in **18.14 seconds**. An additional 240-case drone
+run passed in 463.23 seconds after the shield-recharge correction, and 11 worker compatibility cases passed after reconciling
+positive native physics inputs. These selections overlap and are not an aggregate test count.
+
+Pinned tool and solution restores, both Python policy suites (**8 catalog + 9 formatting cases**), formatting verification
+(**2,337 files**, 140-column limit), whitespace and new documentation links passed. The final Python/format sequence took
+**77.46 seconds**. The production-backed inventory is
+reproducible, SHA-256 **7AACD08DB4F9D19E7A757032C0AB1199B5694130455A5BB2FD846F1C21F8DD26**. It reports 142 complete drone profiles
+(the previous 76 plus 66 new profiles), four Rorqual-dependent partial profiles and eight deferred mutated profiles.
+
+The first exact filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Combat.UtilityDroneTests.UtilityStrengthAndMiningSkillsHaveSeparateConsumers`.
+The final worker filter selected `UtilityDroneIntegrationTests`, `MiningDroneLifecycleTests`, `UtilityDroneSafetyTests`, and
+`UtilityDroneTests.MiningDronesUseGatheringYieldDeliverCargoAndCheckpoint`. Coverage includes repairs, EWAR/hybrids, native commands
+and effects, configured ore/ice yields and holds after restart, mining SP/ledgers, carried cargo/checkpoints, proportional recall,
+rejection rollback, effect expiry, rigs, one recharge step per interval, and warmed resident reads with zero SQL/connection/fit counts.
+The broad filter was:
+
+```text
+(FullyQualifiedName~Drone|FullyQualifiedName~Eden.Protocol.Tests.Combat.RemoteRepairTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.RemoteRepairProtocolTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.CapacitorWarfareTests|FullyQualifiedName~Eden.Protocol.Tests.Combat.PlayerEwarTests|FullyQualifiedName~TackleTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.IceMiningTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.GasMiningTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~WorldInitializationTests|FullyQualifiedName~ShipContentCoverageTests|FullyQualifiedName~HullSupportTests|FullyQualifiedName~PassiveFittingTests|FullyQualifiedName~WorldTuningTests)&FullyQualifiedName!~CapacitorWarfareTests.AdmittedEnergyHullBonusesConsumeTheirEarnedModifiersOnce
+```
+
+Earlier expanded attempts were stopped after concrete failures. The Myrmidon Navy Issue utility-durability parser omission and
+combat-fixture training of absent utility skill definitions were corrected; later runs cover both corrections. Two independent
+old fixture failures were reproduced on untouched base **b0e906f8**: the capacitor-hull bonus theory lacks Small Precursor Weapon
+probe support (Kikimora/Damavik), and a mutadaptive-repair test still expects the already-admitted Zarmazd to be rejected.
+The broad selection excludes the former theory and uses the directly affected ordinary remote-repair classes. The baseline
+capacitor probe run was interrupted after reproducing failures; it is not reported as a completed pass. An overlapping build
+failed on assemblies held by the running tests; a later isolated solution build passed. No full .NET suite was run for this task.
+
+**Live acceptance.** Not performed; agent client testing is disabled. Native rendering and input remain unverified.
+
+**Optional maintainer checks.** Observe drone activity/effects; compare ore/ice delivery under configured gathering settings after
+restart; verify salvage and repair presentation with another pilot.
+
 ## Partial drone stack launches
 
 Selecting an oversized stack now launches the drones that fit the pilot's remaining control slots and ship bandwidth. For example,

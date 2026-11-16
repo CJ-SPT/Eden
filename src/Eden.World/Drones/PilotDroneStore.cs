@@ -39,7 +39,9 @@ internal sealed partial class PilotDroneStore(
     IPilotDamageEvents damageEvents,
     SqliteWorld lookup,
     PilotLossSettlement losses,
-    ICooperativeFleets fleets
+    ICooperativeFleets fleets,
+    Eden.Gameplay.Repair.IRemoteRepairEvents repairEvents,
+    ICapacitorEvents capacitorEvents
 ) : IPilotDrones
 {
     private const int ProbabilityResolution = 1_000_000;
@@ -164,6 +166,14 @@ internal sealed partial class PilotDroneStore(
                     throw new InvalidDataException("Launch owned drones from your active ship's drone bay.");
                 }
                 PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
+                if (UtilityDroneRules.Group(catalog.RequireItem(item.TypeId).GroupId))
+                {
+                    RequireResident();
+                    if (UtilityDroneRules.RequiresRorqual(item.TypeId) && ship.TypeId != UtilityDroneRules.Rorqual)
+                    {
+                        throw new InvalidDataException("Excavator and Pluto drones require a Rorqual.");
+                    }
+                }
                 return (Item: item, Request: request, Profile: DroneCatalog.Skilled(world, catalog, pilotId, item.TypeId));
             })
             .ToArray();
@@ -275,17 +285,6 @@ internal sealed partial class PilotDroneStore(
         return new(changes, launches);
     }
 
-    private static TransactionParticipants OrderParticipants(WorldAction world, long pilot, long? target)
-    {
-        if (target is not long id)
-        {
-            return new(pilots: [pilot]);
-        }
-        return world.Set<WorldNpc>().Find(id) is not null
-            ? new(pilots: [pilot], resources: [new(SharedSimulationResource.Npc, id)])
-            : new(pilots: [pilot], ships: [id]);
-    }
-
     public void Order(long pilotId, IReadOnlyList<long> drones, DroneOrder order, long? targetId, IReadOnlySet<long> locks, long now)
     {
         CheckIds(drones);
@@ -293,7 +292,16 @@ internal sealed partial class PilotDroneStore(
         {
             throw new InvalidDataException("Unknown drone command.");
         }
-        using WorldActionScope transaction = new(database, select: world => OrderParticipants(world, pilotId, targetId));
+        using WorldActionScope transaction = new(
+            database,
+            select: world =>
+                AdvanceParticipants(
+                    world,
+                    pilotId,
+                    now,
+                    drones.Select(id => world.Set<WorldDrone>().Find(id)?.TargetId ?? 0).Append(targetId ?? 0).ToArray()
+                )
+        );
         var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = InSpace(world, pilotId);
@@ -315,7 +323,8 @@ internal sealed partial class PilotDroneStore(
         {
             throw new InvalidDataException("These drones are unavailable to your current ship.");
         }
-        if (order == DroneOrder.Engage)
+        bool workOrder = ValidateWorkOrder(world, catalog, pilot, selected!, order, targetId, locks, range, systemId, now);
+        if (order == DroneOrder.Engage && !workOrder)
         {
             var sourceDefense = ShipHealth.DefenseFrom(fitting.Graph.Attributes(pilot.ActiveShipId));
             if (PilotHealthStore.Read(world, pilot.ActiveShipId, sourceDefense, now).Remaining.Destroyed)
@@ -384,19 +393,41 @@ internal sealed partial class PilotDroneStore(
             }
             int typeId = world.Set<OwnedItem>().Find(drone.ItemId)!.TypeId;
             PilotSkillReader.CheckRequirements(world, catalog, pilotId, typeId);
+            if (order is DroneOrder.Orbit or DroneOrder.ReturnToBay)
+            {
+                CollectInterruptedMining(world, catalog, pilot, drone, now);
+            }
+            CancelWork(world, drone, now);
+            if (workOrder)
+            {
+                var previous = ReadWork(drone);
+                WriteWork(
+                    drone,
+                    previous with
+                    {
+                        TargetId = targetId ?? 0,
+                        Repeat = order == DroneOrder.MineRepeatedly,
+                        Automatic = order == DroneOrder.Salvage && targetId is null,
+                    }
+                );
+            }
             DroneDelegationPersistence.Write(drone, null);
             drone.ControllerShipId = pilot.ActiveShipId;
             drone.CommandedAt = now;
-            drone.TargetId = order == DroneOrder.Engage ? targetId!.Value : pilot.ActiveShipId;
+            drone.TargetId = order == DroneOrder.Engage || workOrder ? targetId ?? 0 : pilot.ActiveShipId;
             drone.Activity = order switch
             {
-                DroneOrder.Engage => DroneActivity.Fighting,
+                DroneOrder.Engage or DroneOrder.Mine or DroneOrder.MineRepeatedly or DroneOrder.Salvage => DroneActivity.Fighting,
                 DroneOrder.ReturnToBay => DroneActivity.ReturningToBay,
                 DroneOrder.Orbit => DroneActivity.Returning,
                 _ => DroneActivity.Idle,
             };
             drone.Orbiting = false;
             var profile = DroneCatalog.Skilled(world, catalog, pilotId, typeId);
+            if (workOrder)
+            {
+                drone.Activity = UtilityDroneRules.Activity(profile.Utility!.Kind);
+            }
             drone.SpeedLimit = profile.Kind == CombatDroneKind.Sentry ? 0 : profile.MaximumSpeed;
             if (order == DroneOrder.Reconnect)
             {
@@ -576,7 +607,13 @@ internal sealed partial class PilotDroneStore(
                 npcs.UnionWith(ShipLossPersistence.LossNpcParticipants(world, database.Path, id));
             }
         }
-        return new(pilots: [pilot], ships: ships, resources: npcs.Select(id => new SimulationResource(SharedSimulationResource.Npc, id)));
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        return new(
+            systems: [CurrentSystem(catalog, owner)],
+            pilots: [pilot],
+            ships: ships,
+            resources: npcs.Select(id => new SimulationResource(SharedSimulationResource.Npc, id))
+        );
     }
 
     private DroneUpdate SettleAdvance(
@@ -597,12 +634,13 @@ internal sealed partial class PilotDroneStore(
         List<DroneHit> hits = [];
         List<PilotDamage> pilotHits = [];
         var settings = Settings(world, pilotId);
-        var fitting = FittingCalculation.Read(world, catalog, pilot);
-        var shipAttributes = fitting.Graph.Attributes(ship.Id);
-        int allowedCount = DroneCatalog.ControlLimit(fitting);
+        var shipAttributes = PilotFittingStore.ShipAttributes(world, catalog, pilot);
+        var snapshot = world.CachedFittingSnapshot(pilotId, ship.Id, world.FitRevision(pilotId));
+        var fitting = snapshot is null ? FittingCalculation.Read(world, catalog, pilot) : null;
+        int allowedCount = checked((int)(snapshot?.DroneControlLimit ?? DroneCatalog.ControlLimit(fitting!)));
         bool sourceDestroyed = PilotHealthStore.Read(world, ship.Id, ShipHealth.DefenseFrom(shipAttributes), now).Remaining.Destroyed;
-        double allowedBandwidth = fitting.Graph.Read(ship.Id, DogmaAttributeId.DroneBandwidth);
-        double controlRange = fitting.Graph.Read(pilotId, DogmaAttributeId.DroneControlDistance);
+        double allowedBandwidth = shipAttributes.GetValueOrDefault(DogmaAttributeId.DroneBandwidth);
+        double controlRange = snapshot?.DroneControlDistance ?? fitting!.Graph.Read(pilotId, DogmaAttributeId.DroneControlDistance);
         int controlledCount = 0;
         double controlledBandwidth = 0;
         bool released = false;
@@ -657,9 +695,22 @@ internal sealed partial class PilotDroneStore(
             {
                 continue;
             }
+            if (profile.Utility is not null)
+            {
+                RequireResident();
+                if (AdvanceWork(world, catalog, pilot, drone, contact, controlRange, now, stamp, changes))
+                {
+                    continue;
+                }
+            }
             // One bounded step per observed interval. Offline/late callbacks never replay combat.
             double seconds = Math.Min(1, (now - drone.UpdatedAt) / (double)TimeSpan.TicksPerSecond);
-            if (drone.DelegationMode == DroneDelegationMode.None && drone.Activity == DroneActivity.Idle && settings.Aggressive)
+            if (
+                profile.Damage.Total > 0
+                && drone.DelegationMode == DroneDelegationMode.None
+                && drone.Activity == DroneActivity.Idle
+                && settings.Aggressive
+            )
             {
                 var attacking = world
                     .Set<NpcAggression>()
@@ -799,7 +850,8 @@ internal sealed partial class PilotDroneStore(
             );
             drone.UpdatedAt = now;
             if (
-                npc is null && victimContact is null
+                profile.Damage.Total <= 0
+                || npc is null && victimContact is null
                 || drone.ReadyAt > now
                 || contact.Position.DistanceTo(target) - radius - profile.Radius > profile.Optimal + profile.Falloff * 2
             )

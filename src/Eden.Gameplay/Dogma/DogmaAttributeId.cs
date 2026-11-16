@@ -391,6 +391,7 @@ public enum DogmaAttributeId
     EntityKillBounty = 481,
     CapacitorCapacity = 482,
     EntityCruiseSpeed = 508,
+    DroneOrbitRange = 157,
     EntityMissileType = 507,
     EntityMissileCycle = 506,
     EntityMissileVelocityMultiplier = 645,
