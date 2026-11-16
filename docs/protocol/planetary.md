@@ -2,6 +2,60 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Processor output-per-cycle display — November 16, 2026
+
+A maintainer screenshot showed Biomass **20 units** per cycle alongside **760 m³/hour** under a 100× factory
+policy. Native `ProcessorContainer._UpdateInfoCont` reads the unit count from the shared, unmodified schematic,
+but calculates volume through the processor pin's scaled products. Authoritative factory completion already uses
+the active multiplier. A read-only snapshot of Mythic's Oceanic launchpad contained **32,000 Biomass** during this
+investigation. No gameplay quantities, settings or saved-world state were edited.
+
+The signed planetary adapter now lets the original panel update finish, then sets its localized unit count from
+that pin's `GetProducts()` when a schematic is assigned. This covers P1, P2, P3 and P4 processors, preserving the
+native status, cycle gauge, inputs and volume display. The original function and return value are retained;
+reinstallation does not stack wrappers, and 1× factory policy restores the native method. Untuned initial logins
+still avoid importing planetary UI modules. Shared catalog recipe rows remain unchanged.
+
+At 100×, the Biomass panel should show **2,000 units per 30-minute cycle**; `2,000 * 0.19 m³ * 2 = 760 m³/hour`.
+Ordinary P2/P3/P4 batch counts under that policy are **500 / 300 / 100**.
+
+### Reference evidence
+
+[UniWiki planetary commodities](https://wiki.eveuniversity.org/Planetary_Commodities) describes nominal P1 batches
+of 20 units, 0.19 m³ per unit, every 30 minutes. The multiplier is Eden policy. Inert inspection of the unchanged
+original build-3662168 archive, SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, confirmed the two different display sources.
+Decompressed `eve/client/script/ui/shared/planet/pinContainers/ProcessorContainer.pyj` SHA-256 is
+`84fb7eed403640f3c9ff5f90625f47ed2565dae916389f7d1e83e21a4c082c60`.
+No Carbon-owned codec, transport or Destiny behavior changed.
+
+### Automated validation
+
+The exact initial filter through `tools/Test-Feature.ps1 -Filter` was
+`FullyQualifiedName=Eden.Protocol.Tests.Planetary.PlanetaryClientTests.SignedAdapterScalesFittingAndProductsWithoutCompoundingAndRestoresDefaults`.
+The added panel assertions reproduced the nominal-count failure, then passed after the correction (build
+**2.76 seconds**, tests **2.96 seconds**). They cover all four tiers at 0.1×, 1×, 2.5× and 100×, repeated installation,
+repeated panel updates, absent schematics, untouched volume/input/cycle data and restoration of default behavior.
+The actual pinned `_UpdateInfoCont` bytecode also passed the same policy checks under the pinned Python 2.7 runtime
+with inert caption, gauge, recipe and clock stubs. No native module body, renderer or game session was started.
+
+Final validation passed **82 focused tests**, none failed/skipped, in **29.06 seconds**, using
+`FullyQualifiedName~Eden.Protocol.Tests.Planetary|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.PilotLoginTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.ConcordOverviewTests`.
+This includes authoritative output checks for all 68 schematics. Tool/solution restore and solution build passed
+with zero warnings/errors (solution build **1.06 seconds**). Both Python policy suites passed **8 + 9** checks
+(**1.355 + 0.023 seconds**). Formatting verification, `git diff --check` and local documentation links passed.
+The full .NET suite was not requested or run.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. The maintainer requested that the server remain running and owns
+the later update/rebuild and restart. This change has not been deployed to the running process.
+
+### Optional maintainer checks
+
+After updating/rebuilding and restarting the server, reconnect and open the Biomass processor. Confirm the panel
+shows 2,000 units per cycle with the existing 760 m³/hour volume under 100× factory policy.
+
 ## One-way customs transfer dictionaries — November 16, 2026
 
 A maintainer screenshot showed 30,000 Biomass queued for export from Khanid Prime IV, with the server error

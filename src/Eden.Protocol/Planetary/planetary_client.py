@@ -38,6 +38,24 @@ def install_planetary_tuning():
     ProcessPin.SetSchematic = set_schematic
     planetCommon._eden_planetary = True
 
+    from eve.client.script.ui.shared.planet.pinContainers.ProcessorContainer import ProcessorContainer
+    import localization
+
+    original_update = getattr(ProcessorContainer._UpdateInfoCont, '_eden_original', ProcessorContainer._UpdateInfoCont)
+    original_update = getattr(original_update, 'im_func', original_update)
+
+    def update_info(self):
+        result = original_update(self)
+        if self.pin.schematicID:
+            # The native panel reads nominal quantity from shared schematic data,
+            # but its volume/routing displays already use this pin's scaled products.
+            amount = sum(self.pin.GetProducts().values())
+            self.amountPerCycleTxt.SetSubtext(localization.GetByLabel('UI/PI/Common/UnitsAmount', amount=amount))
+        return result
+
+    update_info._eden_original = original_update
+    ProcessorContainer._UpdateInfoCont = original_update if output == 1 else update_info
+
     from eve.client.script.environment.planet.clientColony import ClientColony
     from eve.client.script.ui.shared.planet.planetEditModeContainer import PlanetEditModeContainer
     from eve.client.script.ui.shared.planet.planetsWindow.coloniesPanel import ColoniesPanel

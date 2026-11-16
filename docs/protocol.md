@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[PI processor output counts](protocol/planetary.md#processor-output-per-cycle-display--november-16-2026)
+align the panel's units per cycle with its already modified products and output volume.
+
 [Alliances](protocol/alliances.md) records corporation associations, resident checkpoints and implementation milestones.
 
 [One-way PI customs transfers](protocol/planetary.md#one-way-customs-transfer-dictionaries--november-16-2026)

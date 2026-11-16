@@ -9,6 +9,7 @@ expressions = [marshal.loads(Path(path).read_bytes()) for path in sys.argv[1:]]
 # A default login must not eagerly load the planetary client.
 assert eval(expressions[2], {}) == {}
 assert 'eve.common.script.util.planetCommon' not in sys.modules
+assert 'eve.client.script.ui.shared.planet.pinContainers.ProcessorContainer' not in sys.modules
 
 names = ['eve', 'eve.common', 'eve.common.script', 'eve.common.script.planet',
          'eve.common.script.planet.entities', 'eve.common.script.planet.entities.processPin',
@@ -19,6 +20,8 @@ names = ['eve', 'eve.common', 'eve.common.script', 'eve.common.script.planet',
          'eve.client.script.ui.shared.planet.planetEditModeContainer',
          'eve.client.script.ui.shared.planet.planetsWindow',
          'eve.client.script.ui.shared.planet.planetsWindow.coloniesPanel',
+         'eve.client.script.ui.shared.planet.pinContainers',
+         'eve.client.script.ui.shared.planet.pinContainers.ProcessorContainer', 'localization',
          'eve.common.script.util', 'eve.common.script.util.planetCommon']
 for name in names:
     module = ModuleType(name)
@@ -37,13 +40,47 @@ common.GetPowerOutput = lambda level: power[level]
 
 class ProcessPin:
     def SetSchematic(self, schematicID, schematic=None):
+        self.schematicID = schematicID
         self.products = dict(schematic or {1: 20, 2: 5, 3: 3, 4: 1})
         self.demands = {5: 3000}
         self.cycleTime = 1800
         return schematicID
 
+    def GetProducts(self):
+        return dict(self.products)
+
 
 sys.modules['eve.common.script.planet.entities.processPin'].ProcessPin = ProcessPin
+
+localization = sys.modules['localization']
+localization.GetByLabel = lambda label, **kwargs: (label, kwargs)
+
+
+class Caption:
+    def SetSubtext(self, value):
+        self.value = value
+
+
+class ProcessorContainer:
+    def __init__(self, pin, product_type):
+        self.pin = pin
+        self.product_type = product_type
+        self.amountPerCycleTxt = Caption()
+        self.amountPerHourTxt = Caption()
+        self.native_updates = 0
+
+    def _UpdateInfoCont(self):
+        self.native_updates += 1
+        # Native _UpdateInfoCont reads this number from the unmodified schematic,
+        # while its volume display reads the pin's scaled products.
+        amount = {1: 20, 2: 5, 3: 3, 4: 1}[self.product_type] if self.pin.schematicID else 0
+        self.amountPerCycleTxt.SetSubtext(localization.GetByLabel('UI/PI/Common/UnitsAmount', amount=amount))
+        self.amountPerHourTxt.SetSubtext(('native-volume', dict(self.pin.GetProducts())))
+        return 'native-result'
+
+
+sys.modules['eve.client.script.ui.shared.planet.pinContainers.ProcessorContainer'].ProcessorContainer = ProcessorContainer
+original_update = ProcessorContainer._UpdateInfoCont
 appConst = sys.modules['eve.common.lib.appConst']
 appConst.typeInterplanetaryConsolidation = 2495
 appConst.typeOmnipotent = 19430
@@ -168,4 +205,21 @@ for expression, cpu_scale, power_scale, products, maximum in [
         pin.SetSchematic(121, source)
         assert source == {1: 20, 2: 5, 3: 3, 4: 1}
         assert pin.products == products
+        for product_type, nominal in source.items():
+            single = ProcessPin()
+            recipe = {product_type: nominal}
+            single.SetSchematic(121, recipe)
+            panel = ProcessorContainer(single, product_type)
+            for expected_calls in [1, 2]:
+                assert panel._UpdateInfoCont() == 'native-result'
+                assert panel.amountPerCycleTxt.value == ('UI/PI/Common/UnitsAmount', {'amount': products[product_type]})
+                assert panel.amountPerHourTxt.value == ('native-volume', dict(single.GetProducts()))
+                assert panel.native_updates == expected_calls
+                assert recipe == {product_type: nominal}
+                assert single.demands == {5: 3000} and single.cycleTime == 1800
+            single.schematicID = None
+            panel._UpdateInfoCont()
+            assert panel.amountPerCycleTxt.value == ('UI/PI/Common/UnitsAmount', {'amount': 0})
+        if products == {1: 20, 2: 5, 3: 3, 4: 1}:
+            assert ProcessorContainer._UpdateInfoCont is original_update
 print('Planetary adapter assertions passed')
