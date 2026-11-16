@@ -14,6 +14,7 @@ internal sealed partial class AllianceStore
         {
             return;
         }
+        AdvanceBilling();
         long now = Now;
         if (
             !Resident.Economy.Inspect(world =>
@@ -56,6 +57,10 @@ internal sealed partial class AllianceStore
                     )
                     .Entity;
                 application.Status = AllianceApplicationStatus.Effective;
+                if (world.Set<SavedAllianceLifecycle>().Find(alliance.Id) is { } lifecycle)
+                {
+                    lifecycle.ClosureAt = null;
+                }
                 world.Add(
                     new SavedAllianceHistory
                     {

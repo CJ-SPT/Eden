@@ -1,6 +1,7 @@
 using Eden.Data.World.Alliances;
 using Eden.Gameplay.Alliances;
 using Eden.Infrastructure.Registration;
+using Eden.World.Mail;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -8,7 +9,10 @@ using Eden.World.Storage;
 namespace Eden.World.Alliances;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed partial class AllianceStore(WorldDatabase database, TimeProvider clock) : IAlliances, IAllianceMembership
+internal sealed partial class AllianceStore(WorldDatabase database, TimeProvider clock, InboxChangeSignal inbox)
+    : IAlliances,
+        IAllianceMembership,
+        IAllianceBilling
 {
     private LiveWorld Resident =>
         LiveWorld.Find(database.Path) ?? throw new InvalidDataException("Alliances require an active resident world.");

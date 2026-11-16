@@ -9,5 +9,7 @@ internal sealed partial class ResidentEconomy
         RegisterAllianceApplication();
         RegisterAllianceHistory();
         RegisterAllianceChange();
+        RegisterAllianceBill();
+        RegisterAllianceLifecycle();
     }
 }

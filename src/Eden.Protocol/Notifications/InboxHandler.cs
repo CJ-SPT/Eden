@@ -173,6 +173,9 @@ internal sealed record InboxContactData(ContactNotificationContent Content) : Bl
 
 internal sealed record InboxNotificationReply(InboxNotification Notification) : BlueModel
 {
+    internal static BlueModel Data(InboxNotification notification) =>
+        notification.AllianceId is int alliance ? new InboxAllianceData(alliance) : new InboxContactData(notification.Content);
+
     public override object ToBlue() =>
         new BlueInstance(
             "utillib.KeyVal",
@@ -184,7 +187,7 @@ internal sealed record InboxNotificationReply(InboxNotification Notification) : 
                 ["receiverID"] = Notification.ReceiverId,
                 ["processed"] = Notification.Processed,
                 ["created"] = Notification.Created,
-                ["data"] = new InboxContactData(Notification.Content),
+                ["data"] = Data(Notification),
             }
         );
 }
@@ -192,5 +195,10 @@ internal sealed record InboxNotificationReply(InboxNotification Notification) : 
 internal sealed record InboxNotificationReceived(InboxNotification Notification) : PilotNotification("OnNotificationReceived")
 {
     public override object?[] Arguments =>
-        [Notification.Id, (int)Notification.Type, Notification.SenderId, Notification.Created, new InboxContactData(Notification.Content)];
+        [Notification.Id, (int)Notification.Type, Notification.SenderId, Notification.Created, InboxNotificationReply.Data(Notification)];
+}
+
+internal sealed record InboxAllianceData(int AllianceId) : BlueModel
+{
+    public override object ToBlue() => new Dictionary<string, object?> { ["allianceID"] = AllianceId };
 }

@@ -17,8 +17,10 @@ public sealed class SavedInboxNotification
     public long Created { get; set; }
     public double ContactLevel { get; set; }
     public string Message { get; set; } = "";
+    public int? AllianceId { get; set; }
 
-    public InboxNotification Snapshot() => new(Id, Type, SenderId, ReceiverId, Processed, Deleted, Created, new(ContactLevel, Message));
+    public InboxNotification Snapshot() =>
+        new(Id, Type, SenderId, ReceiverId, Processed, Deleted, Created, new(ContactLevel, Message), AllianceId);
 }
 
 public sealed class SavedMail

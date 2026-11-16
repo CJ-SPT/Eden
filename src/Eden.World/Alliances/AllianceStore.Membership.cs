@@ -258,6 +258,7 @@ internal sealed partial class AllianceStore
         var before = Snapshot(world, member.AllianceId)!;
         var previous = Member(member);
         world.Remove(member);
+        ScheduleEmpty(world, member.AllianceId, now);
         foreach (
             var supporter in world
                 .Filter<SavedAllianceMember>(m => m.AllianceId == member.AllianceId && m.ChosenExecutorId == member.CorporationId)

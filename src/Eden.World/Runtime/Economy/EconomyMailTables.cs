@@ -18,7 +18,8 @@ internal sealed record EconomySavedInboxNotification(
     bool Deleted,
     long Created,
     double ContactLevel,
-    string Message
+    string Message,
+    int? AllianceId
 );
 
 internal sealed record EconomySavedMail(
@@ -147,7 +148,8 @@ internal sealed partial class ResidentEconomy
                         row.Deleted,
                         row.Created,
                         row.ContactLevel,
-                        row.Message
+                        row.Message,
+                        row.AllianceId
                     ),
                 state => new SavedInboxNotification
                 {
@@ -160,9 +162,10 @@ internal sealed partial class ResidentEconomy
                     Created = state.Created,
                     ContactLevel = state.ContactLevel,
                     Message = state.Message,
+                    AllianceId = state.AllianceId,
                 },
                 ProjectSavedInboxNotification,
-                "Id,Type,SenderId,ReceiverId,Processed,Deleted,Created,ContactLevel," + "Message",
+                "Id,Type,SenderId,ReceiverId,Processed,Deleted,Created,ContactLevel,Message,AllianceId",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -173,7 +176,8 @@ internal sealed partial class ResidentEconomy
                         reader.GetBoolean(6),
                         reader.GetInt64(7),
                         reader.GetDouble(8),
-                        reader.GetString(9)
+                        reader.GetString(9),
+                        reader.IsDBNull(10) ? null : reader.GetInt32(10)
                     ),
                 state => new(state.Id),
                 indexes: [new("ReceiverId", row => row.ReceiverId)],
@@ -449,17 +453,18 @@ internal sealed partial class ResidentEconomy
                 $"""
                 INSERT INTO WorldInboxNotification(
                         Id,"Type",SenderId,ReceiverId,Processed,Deleted,Created,
-                        ContactLevel,Message
+                        ContactLevel,Message,AllianceId
                 )
                 SELECT
                         json_extract(value,'$.Id'),json_extract(value,'$.Type'),json_extract(value,'$.SenderId'),
                         json_extract(value,'$.ReceiverId'),json_extract(value,'$.Processed'),json_extract(value,'$.Deleted'),
-                        json_extract(value,'$.Created'),json_extract(value,'$.ContactLevel'),json_extract(value,'$.Message')
+                        json_extract(value,'$.Created'),json_extract(value,'$.ContactLevel'),json_extract(value,'$.Message'),
+                        json_extract(value,'$.AllianceId')
                 FROM json_each({values}) WHERE 1
                 ON CONFLICT(Id) DO UPDATE SET
                         "Type"=excluded."Type",SenderId=excluded.SenderId,ReceiverId=excluded.ReceiverId,
                         Processed=excluded.Processed,Deleted=excluded.Deleted,Created=excluded.Created,
-                        ContactLevel=excluded.ContactLevel,Message=excluded.Message
+                        ContactLevel=excluded.ContactLevel,Message=excluded.Message,AllianceId=excluded.AllianceId
                 """
             );
         }

@@ -2,6 +2,7 @@ namespace Eden.Gameplay.Notifications;
 
 public enum InboxNotificationType
 {
+    AllianceMaintenanceBill = 4,
     ContactAdded = 89,
     ContactEdited = 90,
 }
@@ -38,7 +39,8 @@ public sealed record InboxNotification(
     bool Processed,
     bool Deleted,
     long Created,
-    ContactNotificationContent Content
+    ContactNotificationContent Content,
+    int? AllianceId = null
 );
 
 public sealed record InboxQuery(long AfterId = 0, InboxGroup? Group = null, bool UnreadOnly = false);

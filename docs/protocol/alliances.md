@@ -128,3 +128,42 @@ No full .NET suite was run.
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** Observe admission and departure refreshing the native alliance/member panels without relogging.
+
+## Maintenance billing and dissolution — November 16, 2026
+
+Schema 176 adds resident invoices and an explicit saved empty-alliance closure deadline, plus an optional alliance ID
+on saved inbox notifications. Formation issues an invoice due 30 days later. Each invoice snapshots two million ISK per
+member corporation at issue time. Paid invoices renew from their preceding due date, so late callbacks do not drift the
+schedule. Fixed 30-day months, the first-bill anchor and no proration are explicit Eden policies; public references do not
+establish those exact server details. No separate alliance wallet is created.
+
+Native alliance bill reads and balance reads require current executor-corporation financial authority. Payment also
+requires Accountant authority and withdrawal access to the chosen corporation division. The bill, wallet debit and
+maintenance journal commit together; repeated payment is idempotent. Existing corporation automatic-payment settings
+for bill type 5 select the executor division. Executor changes move payment authority, not wallet money or invoice identity.
+Catch-up can pay and renew successive saved periods using the current executor settings, exactly once per invoice.
+
+An unpaid due invoice closes the alliance at the next 11:00 UTC downtime boundary. The final member's departure saves
+its next downtime deadline immediately; restart cannot postpone it. Closure removes memberships and rejects pending
+applications atomically, retaining alliance identity, bills and history. It does not transfer corporation assets.
+An indexed resident deadline snapshot skips unchanged future billing work. Unpaid invoices retry automatic payment
+until closure; an unsuccessful attempt does not invalidate access-group observers.
+
+Invoice issue produces the pinned maintenance notification type 4 with `allianceID` data for executor financial staff.
+Inbox history, live delivery, Bills grouping and checkpoint hydration preserve that typed payload. The maintenance
+reference is 50 and the creditor is catalog CONCORD corporation 1000125.
+The evejs `allianceMaintenanceBilling.js` reference snapshot SHA-256 is
+`3c5eac04685a4c356126c7dc87a129ae159766f96929935b336c35e7e65ce0ab`.
+
+**Automated validation.** Exact native payment/reopen test passed (build 5.46 s, tests 5.97 s), followed by 36 affected
+membership, billing, inbox and financial-panel tests (build 3.27 s, tests 14.44 s). Stable checks passed in **59.72 s**:
+tool/solution restore, zero-warning build, **75 focused tests** selected by
+`FullyQualifiedName~Eden.Protocol.Tests.Alliances|FullyQualifiedName~InboxTests|FullyQualifiedName~InboxServiceTests|FullyQualifiedName~CorporationFinancialPanelTests|FullyQualifiedName~CorporationWalletTests|FullyQualifiedName~CorporationClosureTests|FullyQualifiedName~DetachedCheckpointTests`,
+both Python policy suites (**8 + 9**) and formatting/width verification (**2,407 files**). Coverage includes native/manual
+and automatic payments, division journals, duplicate payment, insufficient funds/unauthorized unchanged state,
+executor handover, corporation-count snapshots, multi-period restart catch-up, exact saved downtime closure, retained
+identity, persisted notification data and SQL/connection/fitting-free warmed maintenance. No full .NET suite was run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Inspect native bills and the maintenance notification; pay a bill from a non-master division.

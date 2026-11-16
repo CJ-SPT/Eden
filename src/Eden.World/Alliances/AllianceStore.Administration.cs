@@ -104,6 +104,7 @@ internal sealed partial class AllianceStore
             }
         );
         var result = Snapshot(world, id)!;
+        Issue(world, id, now, now + AllianceBillingRules.MaintenancePeriod.Ticks);
         Record(world, new(0, id, corporation.Id, After: result, MemberAfter: new(corporation.Id, id, now, corporation.Id)));
         world.Commit();
         database.NotifyAccessGroupsChanged();
