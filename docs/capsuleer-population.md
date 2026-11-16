@@ -33,6 +33,10 @@ work, requiring shared resident ownership and equivalent rejection/rollback rule
 See [resident routine evidence](protocol/performance.md#resident-remote-bot-routines-november-11-2026).
 The simulation clock still pauses when no humans are selected and while the server is stopped.
 A failed community expansion rolls back that community while others continue. Completed communities survive and are reused on restart.
+Unexpected system and gate-visitor preparation failures retry automatically while their systems remain occupied, with
+backoff from one to thirty seconds. Already committed founders and visitors are reused. Retry waits wake early when
+membership changes, and a busy or failed system does not prevent preparation in other occupied systems.
+See the [retry implementation record](protocol/capsuleers.md#population-preparation-retries---november-16-2026).
 
 New traffic ships are prepared in a separate memory workspace and written in bounded community batches.
 Matching ship setups reuse validated blueprints. Background hauler validation releases the live world owner;
@@ -44,8 +48,8 @@ for measurements and automated persistence checks. A running server must be rebu
 The **Population** page shows the active settings and separates saved, enabled, paused, scheduled and watched-system pilots.
 Saved pilots include retained inactive pilots; watched-system pilots include docked guests. Preparation runs only for regions
 entered in this server session, using the active settings and traffic snapshot. Prepared totals can include dormant saved regions.
-Deferred systems retain a pending-preparation label
-and retry on a visit or another restart. Use **Refresh population** while pilots travel. Local shows the pilots currently in your system, rather than the entire saved population or each gate's reserved
+Deferred systems retain a pending-preparation label. Transient failures retry while occupied; catalog-ineligible slots
+retain their existing deferral rules. Use **Refresh population** while pilots travel. Local shows the pilots currently in your system, rather than the entire saved population or each gate's reserved
 visitors. Ordinary Local receives complete membership batches; delayed Local keeps its normal privacy rules.
 
 

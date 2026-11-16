@@ -30,8 +30,11 @@ internal sealed class CapsuleerPopulationMaintenance(
         }
     }
 
-    internal bool Tick(CancellationToken cancellationToken = default)
+    internal bool Tick(CancellationToken cancellationToken = default) => Tick(out _, cancellationToken);
+
+    private bool Tick(out TimeSpan? retryAfter, CancellationToken cancellationToken)
     {
+        retryAfter = null;
         using var operation = operations.Begin();
         long started = clock.GetTimestamp();
         for (int step = 0; step < MaximumStepsPerTurn; step++)
@@ -48,6 +51,7 @@ internal sealed class CapsuleerPopulationMaintenance(
             }
             if (turn.RetryLater || clock.GetElapsedTime(started) >= ExecutionBudget)
             {
+                retryAfter = turn.RetryAfter;
                 break;
             }
         }
@@ -60,10 +64,11 @@ internal sealed class CapsuleerPopulationMaintenance(
         {
             while (!cancellationToken.IsCancellationRequested)
             {
+                TimeSpan? retryAfter = null;
+                Task changed = preparation.Changed;
                 try
                 {
-                    Task changed = preparation.Changed;
-                    if (Tick(cancellationToken))
+                    if (Tick(out retryAfter, cancellationToken))
                     {
                         await changed.WaitAsync(cancellationToken).ConfigureAwait(false);
                         continue;
@@ -73,7 +78,18 @@ internal sealed class CapsuleerPopulationMaintenance(
                 {
                     ServerLog.Console.Error($"NPC population preparation failed; retrying: {error.Message}");
                 }
-                await Task.Delay(YieldInterval, clock, cancellationToken).ConfigureAwait(false);
+                using var wait = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                try
+                {
+                    var delay = retryAfter is { } retry && retry > YieldInterval ? retry : YieldInterval;
+                    var timer = Task.Delay(delay, clock, wait.Token);
+                    await Task.WhenAny(timer, changed).WaitAsync(cancellationToken).ConfigureAwait(false);
+                }
+                finally
+                {
+                    // A new occupied system cancels a later retry timer immediately.
+                    wait.Cancel();
+                }
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { }

@@ -40,6 +40,49 @@ FullyQualifiedName~CapsuleerFailureTests|FullyQualifiedName~CapsuleerSchedulingT
 
 **Optional maintainer checks:** None. This milestone changes server retry scheduling only.
 
+## Population preparation retries - November 16, 2026
+
+Unexpected system-preparation errors leave the system pending instead of marking it completed for the server session.
+System errors and changed-blueprint retries use the same capped 1, 2, 4, 8, 16 and 30 second backoff as failed bot actions,
+measured on the host's monotonic clock. Preparation visits eligible occupied systems in rotation, so a busy system yields
+to another system. Successful partial batches clear their retry history and continue from committed roster slots.
+
+Gate-visitor errors retain the exact pending request, including its visitor cursor, rather than marking the lane prepared.
+Other gate requests and ordinary system preparation can run during its backoff. Actual unsupported-route/fit results retain
+their existing explicit deferral behavior. Cancellation propagates without converting the request into a failure or completion.
+Leaving removes retry state for inactive systems and gate requests; re-entry uses committed identities and jobs.
+An observer leaving during an in-flight visitor plan does not mark that lane prepared; re-entry can resume its cursor.
+
+When only cooling retries remain, preparation reports their next deadline. The maintenance worker waits until that deadline
+or a membership change, canceling its previous timer on early wake or shutdown. Pending retries never report completion,
+so the worker cannot sleep indefinitely waiting for an unrelated visit. Cooldown probes do not open SQL connections,
+issue SQL commands or recalculate fits. Retry metadata remains transient; checkpointed founder grants, wallets, inventory
+and job revisions remain authoritative. A restarted server reuses committed slots before preparing missing founders.
+
+These are Eden scheduling rules. Gameplay references, pinned build and Carbon revision remain those recorded in
+[bot failure isolation](#bot-failure-isolation---november-16-2026); this milestone adds no native wire or movement behavior.
+
+**Automated validation:** The initial exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerPopulationRetryTests.FailedSystemRetriesWithoutCompletingOrBlockingAnotherOccupiedSystem`
+passed 1/1 in 20.89 seconds including its build. New resident-world tests cover partial-roster recovery, healthy-system
+progress, exact retry boundaries, doubled backoff, zero-work cooldown probes, checkpoint reopen, visitor identity/cursor
+retention, cancellation, leaving/re-entry, busy-system rotation and retry-timer interruption/shutdown. A development check
+command was interrupted to update the historical failure fixture, which previously expected a failed system to be complete;
+that fixture now expects a pending retry. No result is claimed for the interrupted command. The combined retry, background,
+inbound-provisioning, failure and scheduling filter then passed 45/45 in 37.73 seconds including its build. An additional
+exact visitor filter passed 2/2 in 18.02 seconds, covering both exceptions and observer departure during preparation.
+Final tool/solution restores, the solution build with zero warnings/errors, 87/87 affected .NET cases, both Python policy
+suites (8 and 9 cases), formatting verification and added local documentation links passed in 94.72 seconds. The final
+focused test command took 54.40 seconds. No full .NET suite was run. The final filter was:
+
+```text
+FullyQualifiedName~CapsuleerPopulationRetryTests|FullyQualifiedName~CapsuleerBackgroundPreparationTests|FullyQualifiedName~CapsuleerInboundProvisioningTests|FullyQualifiedName~CapsuleerFailureTests|FullyQualifiedName~CapsuleerSchedulingTests|FullyQualifiedName~CapsuleerTrafficPerformanceTests|FullyQualifiedName~OccupiedCapsuleerSimulationTests|FullyQualifiedName~ResidentPopulationTests|FullyQualifiedName~CapsuleerDeadlineTests|FullyQualifiedName~CapsuleerGateWatchTests
+```
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None. Server scheduling and saved-state behavior are covered by automated tests.
+
 ## Occupied-system simulation - November 12, 2026
 
 Each solar system runs its capsuleer jobs while at least one connected player has selected a character there.

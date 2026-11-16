@@ -17,6 +17,12 @@ internal sealed class CapsuleerBackgroundPreparation(
     private readonly Lock _gate = new();
     private readonly CapsuleerProvisioner _provisioner = new(database, clock);
     private readonly Dictionary<int, int> _completed = [];
+    private readonly Dictionary<int, CapsuleerRetry> _systemRetries = [];
+    private readonly Dictionary<CapsuleerScheduler.InboundPreparation, CapsuleerRetry> _inboundRetries = [];
+    private readonly long _started = clock.GetTimestamp();
+    private int _lastSystem;
+
+    private long NowTicks => clock.GetElapsedTime(_started).Ticks;
 
     public Task Changed => activity.MembershipChanged;
 
@@ -26,34 +32,55 @@ internal sealed class CapsuleerBackgroundPreparation(
         lock (_gate)
         {
             var occupied = activity.Read().ActiveSystems;
-            var progress = new CapsuleerPreparationProgress(
-                occupied.Count(_completed.ContainsKey),
-                occupied.Count,
-                occupied.Sum(system => _completed.GetValueOrDefault(system))
-            );
-            if (scheduler.NextInboundPreparation() is { } inbound)
+            var inboundRequests = scheduler.InboundPreparations();
+            foreach (int system in _systemRetries.Keys.Where(system => !occupied.Contains(system)).ToArray())
+            {
+                _systemRetries.Remove(system);
+            }
+            foreach (var request in _inboundRetries.Keys.Where(request => !inboundRequests.Contains(request)).ToArray())
+            {
+                _inboundRetries.Remove(request);
+            }
+            long now = NowTicks;
+            var progress = ReadProgress(occupied);
+            var inbound = inboundRequests.FirstOrDefault(request => Ready(_inboundRetries, request, now));
+            if (inbound is not null)
             {
                 try
                 {
                     long? pilot = _provisioner.PrepareBackgroundInbound(inbound, synchronization, cancellationToken);
                     scheduler.InboundPrepared(inbound, pilot);
+                    _inboundRetries.Remove(inbound);
                 }
                 catch (CapsuleerBlueprintNotPreparedException)
                 {
-                    // Re-plan a changed reservation on the next bounded turn.
+                    Defer(_inboundRetries, inbound);
                 }
                 catch (Exception error) when (error is not OperationCanceledException)
                 {
-                    scheduler.InboundPrepared(inbound, null);
+                    // Keep this exact visitor cursor pending. Already committed visitors
+                    // are reused by the normal provisioning operation on retry.
+                    Defer(_inboundRetries, inbound);
                     return new(progress, inbound.Gate.ObserverSystemId, false) { Failure = error.Message };
                 }
                 return new(progress, inbound.Gate.ObserverSystemId, false);
             }
-            int target = occupied.FirstOrDefault(system => !_completed.ContainsKey(system));
+            int target = occupied
+                .Where(system => !_completed.ContainsKey(system) && Ready(_systemRetries, system, now))
+                .OrderBy(system => system <= _lastSystem)
+                .ThenBy(system => system)
+                .FirstOrDefault();
             if (target == 0)
             {
-                return new(progress, null, true);
+                long? retry = _systemRetries.Values.Concat(_inboundRetries.Values).Select(value => (long?)value.DueTicks).Min();
+                bool complete = progress.CompletedSystems == progress.TotalSystems && inboundRequests.Count == 0;
+                return new(progress, null, complete)
+                {
+                    RetryLater = !complete,
+                    RetryAfter = retry is long deadline ? TimeSpan.FromTicks(Math.Max(0, deadline - now)) : null,
+                };
             }
+            _lastSystem = target;
             try
             {
                 var turn = _provisioner.PrepareBackgroundSystem(
@@ -70,28 +97,45 @@ internal sealed class CapsuleerBackgroundPreparation(
                 {
                     scheduler.PopulationPrepared(target, pilot);
                 }
-                return turn.HasMoreWork ? new(progress, target, false) : Complete(target, turn.PendingCommunities, progress);
+                _systemRetries.Remove(target);
+                if (!turn.HasMoreWork)
+                {
+                    _completed[target] = turn.PendingCommunities;
+                }
+                var updated = ReadProgress(occupied);
+                return new(
+                    updated,
+                    target,
+                    !turn.HasMoreWork && updated.CompletedSystems == updated.TotalSystems && inboundRequests.Count == 0
+                );
             }
             catch (CapsuleerBlueprintNotPreparedException)
             {
-                return new(progress, target, false);
+                Defer(_systemRetries, target);
+                return new(ReadProgress(occupied), target, false);
             }
             catch (Exception error) when (error is not OperationCanceledException)
             {
-                return Complete(target, 1, progress) with { Failure = error.Message };
+                Defer(_systemRetries, target);
+                return new(ReadProgress(occupied), target, false) { Failure = error.Message };
             }
         }
     }
 
-    private CapsuleerBackgroundTurn Complete(int system, int deferred, CapsuleerPreparationProgress progress)
+    private CapsuleerPreparationProgress ReadProgress(IReadOnlyList<int> occupied) =>
+        new(
+            occupied.Count(_completed.ContainsKey),
+            occupied.Count,
+            occupied.Sum(system => _completed.GetValueOrDefault(system)) + occupied.Count(_systemRetries.ContainsKey)
+        );
+
+    private static bool Ready<T>(Dictionary<T, CapsuleerRetry> retries, T key, long now)
+        where T : notnull => !retries.TryGetValue(key, out var retry) || retry.DueTicks <= now;
+
+    private void Defer<T>(Dictionary<T, CapsuleerRetry> retries, T key)
+        where T : notnull
     {
-        _completed[system] = deferred;
-        var updated = progress with
-        {
-            CompletedSystems = progress.CompletedSystems + 1,
-            DeferredSystems = progress.DeferredSystems + deferred,
-        };
-        return new(updated, system, updated.CompletedSystems == updated.TotalSystems);
+        retries[key] = CapsuleerRetry.Next(retries.GetValueOrDefault(key), NowTicks);
     }
 
     public void Dispose() => _provisioner.Dispose();

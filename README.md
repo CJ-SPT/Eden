@@ -25,6 +25,8 @@ dotnet run --no-build --project src/Eden.Server
 
 [Player-bot failure isolation](docs/protocol/capsuleers.md#bot-failure-isolation---november-16-2026) backs off broken pilots
 while healthy bots continue, preserving authoritative jobs and committed economic progress.
+[Population preparation retries](docs/protocol/capsuleers.md#population-preparation-retries---november-16-2026) recover
+failed system and gate-visitor batches automatically while other occupied systems continue preparing.
 
 | Area | What you can do |
 | --- | --- |

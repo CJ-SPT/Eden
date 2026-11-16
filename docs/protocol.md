@@ -500,6 +500,8 @@ resident utility effects, ore/ice harvesting, gathering configuration, cargo che
 
 [Bot failure isolation](protocol/capsuleers.md#bot-failure-isolation---november-16-2026) covers bounded per-pilot retry
 eligibility, continued healthy-job execution and committed-action replay protection.
+[Population preparation retries](protocol/capsuleers.md#population-preparation-retries---november-16-2026) cover system
+and visitor recovery, bounded retry waits and continued progress in other occupied systems.
 
 | Topic | Coverage |
 | --- | --- |

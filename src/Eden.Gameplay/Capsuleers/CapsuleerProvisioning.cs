@@ -48,6 +48,7 @@ public sealed record CapsuleerBackgroundTurn(CapsuleerPreparationProgress Progre
 {
     public string? Failure { get; init; }
     public bool RetryLater { get; init; }
+    public TimeSpan? RetryAfter { get; init; }
 }
 
 public interface ICapsuleerBackgroundPreparation

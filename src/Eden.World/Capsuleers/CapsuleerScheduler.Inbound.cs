@@ -12,13 +12,15 @@ internal sealed partial class CapsuleerScheduler
 
     internal sealed record InboundPreparation(WatchedTrafficGate Gate, bool BothObserved, int Visitor = 0);
 
-    internal InboundPreparation? NextInboundPreparation()
+    internal InboundPreparation? NextInboundPreparation() => InboundPreparations().FirstOrDefault();
+
+    internal IReadOnlyList<InboundPreparation> InboundPreparations()
     {
         using var owner = synchronization.Enter("inbound preparation request");
         var occupied = presence.Read().ActiveSystems;
-        return _inboundPreparation.Values.FirstOrDefault(request =>
-            occupied.Contains(request.Gate.SourceSystemId) && occupied.Contains(request.Gate.ObserverSystemId)
-        );
+        return _inboundPreparation
+            .Values.Where(request => occupied.Contains(request.Gate.SourceSystemId) && occupied.Contains(request.Gate.ObserverSystemId))
+            .ToArray();
     }
 
     internal void InboundPrepared(InboundPreparation request, long? pilot)
@@ -29,7 +31,14 @@ internal sealed partial class CapsuleerScheduler
         {
             return;
         }
-        if (pilot is long committed && presence.Read().ActiveSystems.Contains(request.Gate.SourceSystemId))
+        var occupied = presence.Read().ActiveSystems;
+        if (!occupied.Contains(request.Gate.SourceSystemId) || !occupied.Contains(request.Gate.ObserverSystemId))
+        {
+            // Losing an observer during planning is not an unsupported lane. Retain
+            // the cursor so a later observation can reuse any committed founder.
+            return;
+        }
+        if (pilot is long committed)
         {
             Load(request.Gate.SourceSystemId, committed);
             if (request.Visitor + 1 < _populationSettings.Settings.Capsuleers.GateVisitors)

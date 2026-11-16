@@ -467,7 +467,10 @@ public sealed class CapsuleerBackgroundPreparationTests
             do
             {
                 turn = preparation.PrepareNext();
-            } while (!turn.Complete);
+            } while (!turn.Complete && !turn.RetryLater);
+            Assert.False(turn.Complete);
+            Assert.True(turn.RetryLater);
+            Assert.Equal(CapsuleerRetry.InitialDelay, turn.RetryAfter);
             using WorldDbContext world = new(f.Database.Path);
             Assert.DoesNotContain(world.Set<SavedCapsuleerAgent>(), agent => agent.CommunitySystemId == Source);
             retained = world.Set<SavedCapsuleerAgent>().OrderBy(agent => agent.PilotId).Select(agent => agent.PilotId).ToArray();
