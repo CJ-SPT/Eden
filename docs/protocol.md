@@ -2,6 +2,9 @@
 
 [Alliances](protocol/alliances.md) records corporation associations, resident checkpoints and implementation milestones.
 
+[One-way PI customs transfers](protocol/planetary.md#one-way-customs-transfer-dictionaries--november-16-2026)
+accept the empty opposite-side dictionary sent by native import-only and export-only requests.
+
 [PI scan intensity and extraction previews](protocol/planetary.md#resource-scan-intensity-and-extraction-previews--november-16-2026)
 correct resource abundance bars and heat maps, and quote tuned extraction previews through the authoritative server operation.
 
