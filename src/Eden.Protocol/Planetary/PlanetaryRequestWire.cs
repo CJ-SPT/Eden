@@ -68,6 +68,12 @@ internal static class PlanetaryRequestWire
 
     internal static IReadOnlyList<PlanetaryCargoRequest> Cargo(object? value)
     {
+        // An empty native Python dict has no key type; BlueMarshal decodes it as a
+        // string-keyed map. One-way customs transfers leave the opposite map empty.
+        if (value is Dictionary<string, object?> { Count: 0 })
+        {
+            return [];
+        }
         var dictionary = value as Dictionary<long, object?> ?? throw new InvalidDataException("Expected planetary cargo quantities.");
         if (dictionary.Count > 128)
         {

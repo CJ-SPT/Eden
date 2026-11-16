@@ -2,6 +2,62 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## One-way customs transfer dictionaries — November 16, 2026
+
+A maintainer screenshot showed 30,000 Biomass queued for export from Khanid Prime IV, with the server error
+**Expected planetary cargo quantities** when pressing Transfer. Native build 3662168
+`importExportUI.ConfirmCommodityTransfer` sends `(spaceportPinID, importData, exportData, taxRate)` to the bound
+customs-office inventory. Imports map inventory item IDs to quantities; exports map commodity type IDs to quantities.
+An export-only request contains an empty import dictionary, while an import-only request contains an empty export
+dictionary. Those empty dictionaries carry no key type and the existing inert Blue decoder represents them as
+empty string-keyed maps. The planetary adapter previously required integer-keyed dictionaries even when empty.
+
+`PlanetaryRequestWire.Cargo` now accepts that specific empty map as an empty typed request list. Nonempty maps still
+require integer keys and integer quantities, retaining the 128-entry and Int32 bounds. No Blue codec, gameplay,
+authorization or tax calculation changed. The existing resident customs operation still rejects unavailable goods,
+invalid quantities, inadequate funds, invalid ownership/location and requests with both sides empty. Parsing failure
+occurs before entering that operation, so this failure does not move goods or charge tax.
+
+The shared adapter also serves planetary launch and expedited-transfer quantities. Their existing Gameplay checks
+continue to decide whether an empty commodity list is valid for the requested operation.
+
+### Reference evidence
+
+[UniWiki colony management](https://wiki.eveuniversity.org/Colony_management) confirms launchpad-to-customs-office
+export and the reverse import action. Inert inspection of the original build-3662168 archive, SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, confirmed the two dictionary comprehensions
+and their distinct key meanings. Decompressed `eve/client/script/ui/shared/planet/importExportUI.pyj` SHA-256 is
+`cdad9058b4f4bbf873ce26e9a9383115d6360fa11bf6d7b5172159d11cb9eb26`.
+The local EveJs `inventory/invBroker/planetaryImportExport.js` independently treats either missing side as `{}`;
+snapshot SHA-256 is `b267d900cdb14b90fb4e8d677820079c013dd67e782559c7b49597765c44ff97`.
+No reference implementation was copied and no Carbon-owned behavior changed.
+
+### Automated validation
+
+The exact initial filter through `tools/Test-Feature.ps1 -Filter` was
+`FullyQualifiedName=Eden.Protocol.Tests.Planetary.PlanetaryProtocolTests.CustomsWireTransfersAcceptEmptyOppositeMapsAndPreserveGoodsTaxesAndRejections`.
+After correcting fixture imports and ballpark priming, it reproduced the screenshot's exact error. With the adapter
+correction it passed in **9.75 seconds** (build **11.78 seconds**). It marshals and decodes actual request tuples,
+performs import-only and export-only calls against a resident world, checks quantities, authoritative tax despite a
+zero client quote, inventory/wallet/planet notifications, and reopens the checkpoint to verify goods and balances.
+Over-export, unavailable imports, negative quantities, malformed keys and empty two-sided requests leave goods,
+wallet and notifications unchanged. A separate adapter check covers non-map values, entry limits and integer bounds.
+
+Final validation passed **165 focused tests**, none failed/skipped, in **49.33 seconds** with filter
+`FullyQualifiedName~Eden.Protocol.Tests.Planetary|FullyQualifiedName~Eden.Protocol.Tests.Serialization.BlueMarshalTests|FullyQualifiedName~Eden.Protocol.Tests.Loot.WreckTests`.
+Tool/solution restore and solution build passed with zero warnings/errors (solution build **8.57 seconds**).
+Both Python policy suites passed **8 + 9** checks (**1.056 + 0.016 seconds**); formatting verification,
+`git diff --check` and local documentation links passed. The full .NET suite was not requested or run.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. The screenshot records the failure before this correction.
+
+### Optional maintainer checks
+
+After deployment, reopen the customs-office window and retry a small export, move it into ship cargo, then import
+the required input quantity at Kihtaled II. Check the displayed tax before confirming each transfer.
+
 ## Saved Omega license and generated colony repair — November 16, 2026
 
 Mythic's generated Athanor supply colonies exposed two separate failures. The native planet view divided by zero

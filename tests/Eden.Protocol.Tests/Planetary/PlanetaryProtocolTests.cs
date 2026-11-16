@@ -1,15 +1,22 @@
 using System.Buffers.Binary;
 using System.Globalization;
+using System.Text.Json;
+using Eden.Data.World.Inventory;
+using Eden.Data.World.Market;
+using Eden.Data.World.Planetary;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Planetary;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
+using Eden.Protocol.Loot;
+using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Planetary;
 using Eden.Protocol.Serialization;
 using Eden.World.Configuration;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Fixture = Eden.Protocol.Tests.Persistence.PassiveFittingTests.Fixture;
@@ -18,6 +25,94 @@ namespace Eden.Protocol.Tests.Planetary;
 
 public sealed class PlanetaryProtocolTests
 {
+    [Fact]
+    public void CargoAdapterRejectsMalformedMapsAndRetainsEntryAndIntegerBounds()
+    {
+        object?[] malformed =
+        [
+            null,
+            Array.Empty<object?>(),
+            new List<object?>(),
+            new Dictionary<string, object?> { ["bad"] = 1L },
+            new Dictionary<long, object?> { [1L] = 1d },
+            Enumerable.Range(1, 129).ToDictionary(i => (long)i, _ => (object?)1L),
+        ];
+        foreach (object? value in malformed)
+        {
+            Assert.Throws<InvalidDataException>(() => PlanetaryRequestWire.Cargo(value));
+        }
+        Assert.Throws<OverflowException>(() => PlanetaryRequestWire.Cargo(new Dictionary<long, object?> { [1L] = long.MaxValue }));
+    }
+
+    [Fact]
+    public async Task CustomsWireTransfersAcceptEmptyOppositeMapsAndPreserveGoodsTaxesAndRejections()
+    {
+        using var f = PlanetaryIndustryTests.Prepare();
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        var colony = PlanetaryIndustryTests.Deploy(f);
+        var industry = PlanetaryIndustryTests.Industry(f);
+        long office = PlanetaryRules.OfficeId(PlanetaryIndustryTests.PlanetId);
+        var contact = Assert.Single(industry.OrbitContacts(f.Db.Store.FindPilot(1000001)!.SystemId, f.Clock.Now));
+        f.Db.Store.SetPosition(f.ShipId, contact.Position);
+        long cargo = f.Grant(PlanetaryResources.AqueousLiquids, 6000, cargo: true);
+        industry.MoveOrbitCargo(f.PilotId, office, true, new([cargo], f.ShipId, (int)InventoryFlag.Hangar, null));
+        var importedStack = Assert.Single(industry.OrbitInventory(f.PilotId, office).Items);
+        long port = colony.Pins.Single(p => p.TypeId == PlanetaryIndustryTests.Launchpad).Id;
+        using var context = Context(f);
+        context.Flight.Snapshot();
+        var handler = new PlanetaryInventoryHandler(industry);
+        PilotCallResult Transfer(object imports, object exports)
+        {
+            // Exercise the native marshal boundary: an empty Python dictionary has no key type.
+            var args = BlueRead.Tuple(BlueMarshal.Decode(BlueMarshal.Encode(new object?[] { port, imports, exports, 0d })), 4);
+            return handler.Call(context, WreckWireDefinitions.BindingPrefix + office, "ImportExportWithPlanet", args);
+        }
+        Dictionary<long, object?> empty = [];
+        Assert.Same(PilotCallResult.None, Transfer(new Dictionary<long, object?> { [importedStack.Id] = 6000L }, empty));
+        Assert.Empty(industry.OrbitInventory(f.PilotId, office).Items);
+        Assert.Equal(
+            0,
+            PlanetarySimulation.Quantity(
+                industry.Read(f.PilotId, PlanetaryIndustryTests.PlanetId).Colony!.Pins.Single(p => p.Id == port),
+                PlanetaryResources.AqueousLiquids
+            )
+        );
+        double afterImport = Assert.Single(context.Notifications.OfType<AccountBalanceChanged>()).Balance;
+        Assert.Single(context.Notifications.OfType<PlanetaryStateChanged>());
+        Assert.Contains(context.Notifications, n => n is ItemChanged);
+        context.Notifications.Clear();
+        f.Clock.Seconds += 1800;
+        colony = industry.Read(f.PilotId, PlanetaryIndustryTests.PlanetId).Colony!;
+        Assert.Equal(20, PlanetarySimulation.Quantity(colony.Pins.Single(p => p.Id == port), PlanetaryIndustryTests.Water));
+        Assert.Same(PilotCallResult.None, Transfer(empty, new Dictionary<long, object?> { [PlanetaryIndustryTests.Water] = 5L }));
+        colony = industry.Read(f.PilotId, PlanetaryIndustryTests.PlanetId).Colony!;
+        Assert.Equal(15, PlanetarySimulation.Quantity(colony.Pins.Single(p => p.Id == port), PlanetaryIndustryTests.Water));
+        var exportedStack = Assert.Single(industry.OrbitInventory(f.PilotId, office).Items);
+        Assert.Equal(PlanetaryIndustryTests.Water, exportedStack.TypeId);
+        Assert.Equal(5, exportedStack.Quantity);
+        // P1 export: 5 units * 400 ISK base value * 17% authoritative tax, despite the zero client quote.
+        double afterExport = Assert.Single(context.Notifications.OfType<AccountBalanceChanged>()).Balance;
+        Assert.Equal(afterImport - 340, afterExport);
+        Assert.Single(context.Notifications.OfType<PlanetaryStateChanged>());
+        context.Notifications.Clear();
+        string before = JsonSerializer.Serialize(colony);
+        Assert.IsType<PilotCallResult.Failure>(Transfer(empty, new Dictionary<long, object?> { [PlanetaryIndustryTests.Water] = 20L }));
+        Assert.IsType<PilotCallResult.Failure>(Transfer(new Dictionary<long, object?> { [exportedStack.Id] = 6L }, empty));
+        Assert.IsType<PilotCallResult.Failure>(Transfer(empty, new Dictionary<long, object?> { [PlanetaryIndustryTests.Water] = -1L }));
+        Assert.IsType<PilotCallResult.Failure>(Transfer(new Dictionary<string, object?> { ["bad"] = 1L }, empty));
+        Assert.IsType<PilotCallResult.Failure>(Transfer(empty, new Dictionary<string, object?> { ["bad"] = 1L }));
+        Assert.IsType<PilotCallResult.Failure>(Transfer(empty, empty));
+        Assert.Empty(context.Notifications);
+        Assert.Equal(before, JsonSerializer.Serialize(industry.Read(f.PilotId, PlanetaryIndustryTests.PlanetId).Colony));
+        Assert.Equal(exportedStack, Assert.Single(industry.OrbitInventory(f.PilotId, office).Items));
+        await live.FlushAsync();
+        live.Dispose();
+        using WorldDbContext saved = new(f.Db.Path);
+        Assert.Equal(before, saved.Set<SavedPlanetaryColony>().Find(f.PilotId, PlanetaryIndustryTests.PlanetId)!.StateJson);
+        Assert.Equal(Convert.ToInt64(afterExport * 100), saved.Set<PilotWallet>().Find(f.PilotId)!.Cents);
+        Assert.Equal(5, saved.Set<OwnedItem>().Find(exportedStack.Id)!.Quantity);
+    }
+
     [Theory]
     [InlineData(PlanetaryResources.Temperate)]
     [InlineData(PlanetaryResources.Ice)]
