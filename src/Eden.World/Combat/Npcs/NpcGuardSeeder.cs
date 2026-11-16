@@ -79,7 +79,7 @@ internal sealed class NpcGuardSeeder
         var type = catalog.FittingType(typeId);
         var faction = catalog.Read(CatalogData.Client.Factions, (long)factionId);
         int corporation = checked((int)(faction?.CorporationID ?? 0));
-        var attributes = PilotFittingStore.ReadAttributes(catalog, typeId);
+        var attributes = NpcProfileCatalog.ReadAttributes(catalog, typeId);
         var definition = catalog.Read(CatalogData.Client.Types, (long)typeId);
         if (
             type?.Mass is not > 0

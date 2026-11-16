@@ -56,6 +56,8 @@ public sealed partial class NpcMissileTests
                 """
                 INSERT OR IGNORE INTO DogmaAttribute VALUES (507,'entityMissileTypeID'),(506,'missileLaunchDuration');
                 INSERT OR REPLACE INTO TypeAttribute VALUES (30380,507,212),(30380,506,2500);
+                INSERT OR REPLACE INTO SourceRecord VALUES
+                    ('client/typedogma','30380','{{"dogmaEffects":[{{"effectID":10}},{{"effectID":569}}]}}');
                 """
             );
             if (!turret)
@@ -73,6 +75,29 @@ public sealed partial class NpcMissileTests
 
     private static NpcShot? Fire(Fixture f) =>
         f.Combat.Fire(f.Pilot.PilotId, f.Pilot.ShipId, f.Npc.Id, SpacePosition.Zero, f.Clock.Now, 0.5, 1);
+
+    [Fact]
+    public async Task SavedMissilesFromHullsWithoutALauncherExpireWithoutApplyingDamage()
+    {
+        using Fixture f = new(liveWorld: true, useTestClock: true);
+        Prepare(f);
+        Assert.Null(Fire(f));
+        var before = f.Health.Read(f.Pilot.PilotId, f.Clock.Now);
+        var live = Eden.World.Runtime.LiveWorld.Find(f.Db.Path)!;
+        await live.FlushAsync();
+        using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw("DELETE FROM SourceRecord WHERE Dataset='client/typedogma' AND Key='30380'");
+        }
+        f.Clock.AdvanceWallTime(TimeSpan.FromSeconds(10));
+        Assert.Empty(Incoming(f).Advance(f.Pilot.PilotId, f.Pilot.ShipId, SpacePosition.Zero, f.Clock.Now));
+        Assert.Equal(before.Remaining, f.Health.Read(f.Pilot.PilotId, f.Clock.Now).Remaining);
+        await live.FlushAsync();
+        using WorldDbContext saved = new(f.Db.Path);
+        var missile = Assert.Single(saved.Set<WorldMissile>());
+        Assert.Equal(MissileFlightStatus.Expired, missile.Status);
+        Assert.Equal(f.Clock.Now, missile.EndedAt);
+    }
 
     [Fact]
     public void CachedMissilePresenceTracksCommittedLaunchAndCompletion()

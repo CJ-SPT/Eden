@@ -159,6 +159,9 @@ public enum DogmaEffect
     AncillaryShieldBoosting = 4936,
     AncillaryArmorRepair = 5275,
     MissileLaunching = 9,
+
+    // Build 3662168: NPC hull missile capability; attributes 506/507 alone can be inert placeholders.
+    MissileLaunchingForEntity = 569,
     LaserFired = 10,
     UseMissiles = 101,
     AutoTargetingMissile = 104,
