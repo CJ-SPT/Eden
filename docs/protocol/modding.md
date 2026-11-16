@@ -1,5 +1,23 @@
 # Modding protocol and activation
 
+## Native asynchronous exception capture — November 15, 2026
+
+After installing composition 7, the user still reported a blank system information window. Neither the
+header nor the celestial-data wrapper wrote a traceback, so those narrower entry points did not establish
+the failure location. Composition 8 also captures the native `logmodule._LogException` boundary, including
+the explicit exception tuple supplied by asynchronous task handlers. Capture remains best effort, bounded
+and local, omits frame locals, and then invokes the original logger with every original argument.
+
+Automated validation: tool/solution restore, zero-warning solution build, 55 focused .NET cases, 46 headless
+native assertions, both Python policy suites (8 catalog and 9 formatting cases), and formatting verification
+passed in 74.24 seconds. Native checks verify explicit exception-tuple capture and unchanged dispatch to the
+original logger. The focused .NET filter is the express-map filter below. The full .NET suite was not run.
+
+Live acceptance: Not performed; agent client testing is disabled. The blank-window cause remains under investigation.
+
+Optional maintainer checks: reopen the affected system information window after updating the launcher package;
+the native-exception entry in `%LOCALAPPDATA%/Eden/ClientErrors/character-selection-PID.log` records the failure.
+
 ## Express map lines and system information — November 15, 2026
 
 The user reported missing express-route map lines and a blank system Show Info window. Both native map

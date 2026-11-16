@@ -156,6 +156,24 @@ except ValueError:
           'stage=info-header character=30000142' in record and 'infoContentBase.py' in record)
 else:
     raise AssertionError('Info header swallowed the native exception')
+class NativeLoggerSentinel(object):
+    def __getattr__(self,name):raise ValueError('native logger reached unchanged')
+    def __call__(self,*args,**kwargs):raise ValueError('native logger reached unchanged')
+native_logger=function(find(MODULES['logmodule/__init__.pyj'],'_LogException'),
+                       {'eveprefs':NativeLoggerSentinel(),'sentry_client':NativeLoggerSentinel()})
+try:
+    raise RuntimeError('native asynchronous info failure')
+except RuntimeError:
+    exception_info=sys.exc_info()
+try:
+    native_logger(exception_info,'headless info task','general',False,False,False,False,None,False)
+except ValueError as error:
+    check('Native exception logger preserves original dispatch',str(error)=='native logger reached unchanged')
+else:
+    raise AssertionError('Native exception logger did not call its original implementation')
+record=open(diagnostic,'rb').read()
+check('Native logger captures explicit asynchronous exception tuple',
+      'stage=native-exception character=headless info task' in record and 'RuntimeError: native asynchronous info failure' in record)
 geography=MODULES['eve/common/script/sys/eveCfg.pyj']
 cfg=Obj(_mapJumpCache=[Obj(stargateID=50000001)],
     _mapSystemCache={30000142:Obj(neighbours=[],regionID=10000002),30000144:Obj(neighbours=[])},
