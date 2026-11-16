@@ -61,12 +61,21 @@ internal sealed class ModuleActivationHandler(
         bool offensive =
             CombatWireDefinitions.Handles(effectName)
             || effectName == MissileHandler.EffectName
-            || InterdictionHandler.Effect(effectName) is not null
+            || InterdictionHandler.Effect(effectName)
+                is DogmaEffect.WarpDisruptSphere
+                    or DogmaEffect.FocusedWarpDisruption
+                    or DogmaEffect.FocusedWarpScrambling
             || effectName == SmartbombHandler.EffectName
             || TackleWire.Effect(effectName) is DogmaEffect.StasisWebifier or DogmaEffect.WarpDisruptor or DogmaEffect.WarpScrambler
             || PlayerEwarWire.Effect(effectName) is not null
             || CapacitorWire.Effect(effectName) is DogmaEffect.EnergyNeutralizer or DogmaEffect.EnergyNosferatu;
-        if (method == "Activate" && !SpatialModuleHandler.Handles(effectName) && spatial?.BlocksModule(context, offensive) == true)
+        // Nullification is explicitly permitted through an active cloak by the pinned effect.
+        if (
+            method == "Activate"
+            && effectName != InterdictionHandler.NullifierEffectName
+            && !SpatialModuleHandler.Handles(effectName)
+            && spatial?.BlocksModule(context, offensive) == true
+        )
         {
             return new PilotCallResult.Failure("The cloak prevents activating this module.");
         }

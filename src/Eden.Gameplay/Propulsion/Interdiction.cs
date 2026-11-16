@@ -55,6 +55,31 @@ public sealed record InterdictionGenerator(double Duration, double Capacitor, do
     }
 }
 
+public sealed record InterdictionNullifier(double Duration, double Capacitor, double Reactivation)
+{
+    public static InterdictionNullifier Define(IReadOnlyDictionary<DogmaAttributeId, double> attributes)
+    {
+        // Build 3662168 shares durationHighisGood (3115) with signature suppressors.
+        InterdictionNullifier result = new(
+            attributes.GetValueOrDefault(DogmaAttributeId.SignatureSuppressionDuration),
+            attributes.GetValueOrDefault(DogmaAttributeId.CapacitorNeed),
+            attributes.GetValueOrDefault(DogmaAttributeId.ModuleReactivationDelay)
+        );
+        if (
+            !double.IsFinite(result.Duration)
+            || result.Duration <= 0
+            || !double.IsFinite(result.Capacitor)
+            || result.Capacitor < 0
+            || !double.IsFinite(result.Reactivation)
+            || result.Reactivation < 0
+        )
+        {
+            throw new InvalidDataException("Invalid interdiction nullifier profile.");
+        }
+        return result;
+    }
+}
+
 public interface IPilotInterdiction
 {
     bool IsLauncher(long pilotId, long moduleId);
@@ -67,6 +92,7 @@ public interface IPilotInterdiction
         IReadOnlySet<long> locked,
         long now
     );
+    InterdictionActivation ActivateNullifier(long pilotId, long shipId, long moduleId, long now);
     void Stop(long pilotId, long shipId, long moduleId, long now);
     bool Active(long shipId, long moduleId, long now);
     InterdictionActivation Launch(long pilotId, long shipId, long moduleId, long now);

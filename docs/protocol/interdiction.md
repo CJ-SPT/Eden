@@ -46,6 +46,7 @@ identifies AGPL-3.0-only licensing; Eden's implementation is independently autho
 | `interdictionProbeRuntime.js` | `9e7b90ec2285d51b4a91a491b3d30b86e8c6b4969ac2742d2273b91c48b64b84` |
 | `interdictionVolumes.js` | `5aabd7a0f983a5713f18f33cd2f57b9219fc099b39abac0ca1e7baff6c57732b` |
 | `warpDisruptFieldGeneratorRuntime.js` | `1cf570256208432cf9ea2baed9edfa9bd3497da32016e04794fa1c0dbe077de5` |
+| `mobileWarpDisruptorRuntime.js` | `9266f4bf44474ab54d36b270c4881cf100ee26fa9417b9d8a2376e6f705820b5` |
 
 ### Milestones and boundaries
 
@@ -136,3 +137,60 @@ Final affected filter:
 **Live acceptance:** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks:** Inspect the moving field's earned radius; verify scripted beams and recipient EWAR indicators.
+
+## Interdiction nullifiers — November 16, 2026
+
+Milestone 3 admits all four published high-slot Interdiction Nullifiers from the pinned catalog. Existing hull fitting
+restrictions and admission still apply; this does not enable strategic cruisers or other deferred hulls. One nullifier
+can be fitted per ship. Online modules apply the catalog targeting-range, scan-resolution and drone-bandwidth penalties.
+Earned hull modifiers operate on the same graph: the Ares role reduces the penalties and reactivation delay and doubles
+the immunity duration. Fitting previews and resident calculations share these consumers.
+
+| Nullifier | Base immunity | Reactivation after immunity | Capacitor |
+| --- | --- | --- | --- |
+| I (58919) | 10 s | 100 s | 50 GJ |
+| Compact (58966) | 12 s | 130 s | 50 GJ |
+| Enduring (58971) | 12 s | 130 s | 35 GJ |
+| II (58972) | 15 s | 150 s | 50 GJ |
+
+A paid activation commits capacitor, the exact active deadline and the reactivation deadline atomically in resident state.
+The pinned effect 8117 (`interdictionNullifierBonus`) uses attribute 3115 (`durationHighisGood`) and is warp-safe.
+It can activate through an existing cloak without breaking that cloak. Native notifications expose the active effect,
+capacitor and next activation time. Nullifiers run one paid cycle without automatic repeat; manual deactivation ends
+at the paid deadline. Offlining, source loss and disconnection remove immunity while preserving the cooldown and payment.
+Checkpoint projection and reopened checkpoints preserve those costs and deadlines.
+
+Immunity bypasses probe and unscripted HIC departure/catch/drag checks. Focused HIC scripts and ordinary targeted tackle
+retain their effects. A nullifier that expires while a ship aligns inside a bubble stops that unfinished warp; an already
+in-flight warp retains its selected destination. Fitted Higgs Anchor rigs and burst jammers suppress immunity, including
+offline imported burst jammers; their fitted catalog effect also forces the reported ship attribute to zero. Burst-jammer
+activation remains a separate feature. Innate shuttle immunity still works without a module.
+
+The wiki and local evejs references above informed immunity eligibility and bubble-only behavior. The pinned catalog
+controls profiles and role bonuses. Warmed bubble checks inspect resident membership and exact paid deadlines without
+SQL or rebuilding a fit; source mutations remain serialized through the existing world owner.
+
+**Automated validation:** Tool/solution restore, solution build, **484 affected .NET tests**, both Python policy suites
+(8 catalog and 9 formatting cases), twelve pinned-client probe/HIC setup cases and formatting verification passed in
+**257.96 seconds**. The content-coverage inventory was regenerated from the pinned catalog. Development exact filters
+through `tools/Test-Feature.ps1` covered the four paid profiles, native cloaked activation/alignment expiry, incompatible
+fits and checkpoint reopen.
+The complete nullifier class passed 16 cases before final integration checks. Development exposed repeated fitting
+calculations in observer immunity reads; the final lookup uses resident membership/deadlines and asserts zero SQL
+commands, connections and fitting calculations. Test setup corrections positioned the cloaked ship away from scenery,
+supplied the resident spatial service, and accounted for capacitor recharge after the saved cooldown. A missing namespace
+import in the fitted-jammer attribute change caused a development build failure and was corrected before validation.
+The first affected validation sequence was interrupted after the native translocation menu's in-space case reached Abyssal
+monitoring with no resident world. Its complete-session fixture now starts a resident owner; the failing method is
+included in the final affected filter. The interrupted run produced no completed TRX and is not counted as a pass.
+No full .NET suite was requested or run.
+
+Final affected filter:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Propulsion.|FullyQualifiedName~Eden.Protocol.Tests.Flight.|FullyQualifiedName~Eden.Protocol.Tests.Persistence.PassiveFittingTests.|FullyQualifiedName~Eden.Protocol.Tests.Persistence.FittingConstraintTests.|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ModuleFittingTests.|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ShipRigTests.|FullyQualifiedName~Eden.Protocol.Tests.Persistence.RigRulesTests.|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ShipContentCoverageTests.|FullyQualifiedName=Eden.Protocol.Tests.Persistence.TechTwoHullTests.EveryPublishedTechTwoSubcapitalHasAnExplicitOperationalOrDeferredOwner
+```
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Inspect nullifier cycle/cooldown indicators while cloaked; verify the native alignment stop at expiry.

@@ -26,7 +26,7 @@ def export(path, output):
                 continue
             cohort.append(type_id)
         records, types, effects, attributes = {}, [], set(), set()
-        pending = set(cohort) | {22456, 12013, 11182, 672, 11446, 3455}
+        pending = set(cohort) | {22456, 12013, 11182, 11202, 672, 11446, 3455, 34266, 580}
         while pending:
             type_id = min(pending)
             pending.remove(type_id)

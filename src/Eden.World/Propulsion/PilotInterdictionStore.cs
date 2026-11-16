@@ -159,10 +159,12 @@ internal sealed partial class PilotInterdictionStore(WorldDatabase database) : I
             ?.Economy.Inspect(world =>
             {
                 var fields = Fields(world, systemId, now);
+                if (fields.Length == 0)
+                {
+                    return new InterdictionWarp(false, destination);
+                }
                 using CatalogDbContext catalog = new(database.CatalogPath);
-                var ship = world.Ships.Find(shipId);
-                bool immune =
-                    ship is not null && catalog.FittingAttributes(ship.TypeId).GetValueOrDefault(DogmaAttributeId.WarpBubbleImmune) > 0;
+                bool immune = Immune(world, catalog, shipId, now);
                 return InterdictionRules.Resolve(
                     origin,
                     destination,

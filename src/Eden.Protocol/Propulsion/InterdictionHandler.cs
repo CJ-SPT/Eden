@@ -19,6 +19,8 @@ internal sealed class InterdictionHandler(
     IPilotFitting fitting
 ) : IModuleEffectSource
 {
+    internal const string NullifierEffectName = "interdictionNullifierBonus";
+
     private sealed record Cycle(
         DogmaActiveEffect Effect,
         InterdictionActivation Activation,
@@ -41,7 +43,7 @@ internal sealed class InterdictionHandler(
             pilot.ShipId,
             cycle.TargetId,
             cycle.Effect,
-            cycle.ExpiresAt - (long)(cycle.Duration * TimeSpan.TicksPerMillisecond),
+            cycle.ExpiresAt - (long)Math.Ceiling(cycle.Duration * TimeSpan.TicksPerMillisecond),
             cycle.Duration,
             0
         );
@@ -72,6 +74,7 @@ internal sealed class InterdictionHandler(
                 cycle.Effect.ShipId != context.Pilot.ShipId
                 || !context.Flight.CanUseSelfModules
                 || cycle.Contact is not null
+                    && cycle.Effect.Effect != DogmaEffect.InterdictionNullifier
                     && (
                         !context.Flight.CanTarget
                         || cycle.Target is not null
@@ -106,6 +109,7 @@ internal sealed class InterdictionHandler(
     internal static DogmaEffect? Effect(string name) =>
         name switch
         {
+            NullifierEffectName => DogmaEffect.InterdictionNullifier,
             "warpDisruptSphere" => DogmaEffect.WarpDisruptSphere,
             "shipModuleFocusedWarpDisruptionScript" => DogmaEffect.FocusedWarpDisruption,
             "shipModuleFocusedWarpScramblingScript" => DogmaEffect.FocusedWarpScrambling,
@@ -133,6 +137,31 @@ internal sealed class InterdictionHandler(
         if (method != "Activate" || args is not [long module, _, var id, long repeats])
         {
             return PilotCallResult.Unsupported;
+        }
+        if (effect == DogmaEffect.InterdictionNullifier)
+        {
+            if (
+                !context.Flight.CanUseSelfModules
+                || id is not null && !Equals(id, context.Pilot.ShipId)
+                || repeats is < 0 or > int.MaxValue
+            )
+            {
+                return new PilotCallResult.Failure("Activate the interdiction nullifier on your own ship in space.");
+            }
+            if (_cycles.ContainsKey(module))
+            {
+                return PilotCallResult.None;
+            }
+            try
+            {
+                context.Flight.Checkpoint();
+                StartNullifier(context, module);
+                return PilotCallResult.None;
+            }
+            catch (Exception error) when (error is InvalidDataException or OverflowException)
+            {
+                return new PilotCallResult.Failure(error.Message);
+            }
         }
         if (
             !context.Flight.CanTarget
@@ -216,12 +245,52 @@ internal sealed class InterdictionHandler(
         context.Flight.RefreshInterdiction();
     }
 
+    private void StartNullifier(PilotCallContext context, long module)
+    {
+        var activation = interdiction.ActivateNullifier(context.Pilot.PilotId, context.Pilot.ShipId, module, Now);
+        var active = Effect(context.Pilot, activation);
+        WeaponContact contact = new(
+            module,
+            activation.TypeId,
+            0,
+            null,
+            active.StartTime,
+            activation.Duration,
+            "effects.Invulnerability",
+            Offensive: false
+        );
+        _cycles[module] = new(active, activation, contact);
+        context.Notifications.Add(new ShipEffectChanged(active, Now, true, true));
+        context.Flight.SetWeaponEffect(contact, true);
+        context.Notifications.Add(
+            new ModuleAttributesChanged([
+                new(
+                    context.Pilot.PilotId,
+                    new DogmaItemKey.Item(context.Pilot.ShipId),
+                    DogmaAttributeId.CapacitorCharge,
+                    Now,
+                    activation.Capacitor
+                ),
+                new(context.Pilot.PilotId, new DogmaItemKey.Item(module), DogmaAttributeId.NextActivationTime, Now, activation.ReadyAt),
+            ])
+        );
+        NotifyAttributes(context);
+    }
+
     private void NotifyAttributes(PilotCallContext context)
     {
         var attributes = fitting.ShipAttributes(context.Pilot.PilotId);
         context.Notifications.Add(
             new ModuleAttributesChanged(
-                new[] { DogmaAttributeId.SignatureRadius, DogmaAttributeId.DisallowAssistance }
+                new[]
+                {
+                    DogmaAttributeId.SignatureRadius,
+                    DogmaAttributeId.DisallowAssistance,
+                    DogmaAttributeId.WarpBubbleImmune,
+                    DogmaAttributeId.MaxTargetRange,
+                    DogmaAttributeId.ScanResolution,
+                    DogmaAttributeId.DroneBandwidth,
+                }
                     .Select(attribute => new ModuleAttributeChange(
                         context.Pilot.PilotId,
                         new DogmaItemKey.Item(context.Pilot.ShipId),

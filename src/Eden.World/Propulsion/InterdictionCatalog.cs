@@ -10,6 +10,9 @@ namespace Eden.World.Propulsion;
 internal static class InterdictionCatalog
 {
     // Build 3662168 launcher overload dogma effect.
+    private const DogmaEffect OnlineScanResolution = (DogmaEffect)2645;
+    private const DogmaEffect OnlineTargetRange = (DogmaEffect)2646;
+    private const DogmaEffect OnlineDroneBandwidth = (DogmaEffect)8123;
     private const DogmaEffect OverloadRate = (DogmaEffect)3001;
     private const DogmaEffect FieldDurationOverload = (DogmaEffect)3002;
     private const DogmaEffect FieldScriptCapacitor = (DogmaEffect)3615;
@@ -30,6 +33,63 @@ internal static class InterdictionCatalog
             && attributes.GetValueOrDefault(DogmaAttributeId.WeaponCycleTime) > 0
             && attributes.GetValueOrDefault(DogmaAttributeId.ChargeGroup1) == InterdictionRules.ProbeGroup;
     }
+
+    private static readonly CatalogDefinition<bool> s_nullifiers = new("interdiction-nullifier", LoadNullifier);
+
+    internal static bool Nullifier(CatalogDbContext catalog, int type) => catalog.Definition(s_nullifiers, type);
+
+    private static bool LoadNullifier(CatalogDbContext catalog, int type)
+    {
+        if (
+            catalog.FittingType(type)?.GroupId != InterdictionRules.NullifierGroup
+            || catalog.Read(CatalogData.Client.Types, (long)type)?.Published != 1
+            || FittingCatalog.DefaultEffect(catalog, type) != DogmaEffect.InterdictionNullifier
+        )
+        {
+            return false;
+        }
+        var effects = PassiveCatalog.Effects(catalog, type);
+        var active = effects.SingleOrDefault(effect => effect.EffectID == (int)DogmaEffect.InterdictionNullifier);
+        return FittingCatalog
+                .Effects(catalog, type)
+                .SetEquals([
+                    DogmaEffect.HighPower,
+                    DogmaEffect.Online,
+                    OnlineScanResolution,
+                    OnlineTargetRange,
+                    DogmaEffect.InterdictionNullifier,
+                    OnlineDroneBandwidth,
+                ])
+            && active?.DurationAttributeID == (int)DogmaAttributeId.SignatureSuppressionDuration
+            && active.DischargeAttributeID == (int)DogmaAttributeId.CapacitorNeed
+            && active.IsWarpSafe == 1
+            && active.ModifierInfo
+                is [
+                    {
+                        Domain: "shipID",
+                        Func: "ItemModifier",
+                        Operation: (int)DogmaOperation.PreAssignment,
+                        ModifiedAttributeID: (int)DogmaAttributeId.WarpBubbleImmune,
+                        ModifyingAttributeID: (int)DogmaAttributeId.WarpBubbleImmuneBonus
+                    },
+                ]
+            && catalog.FittingAttributes(type).GetValueOrDefault(DogmaAttributeId.WarpBubbleImmuneBonus) == 1
+            && effects
+                .Where(effect => effect.EffectCategory == (int)PassiveEffectPhase.Online)
+                .All(effect =>
+                    effect.ModifierInfo is { Length: > 0 }
+                    && effect.ModifierInfo.Value.All(modifier => PassiveCatalog.Parse(modifier, effect.EffectCategory!.Value) is not null)
+                );
+    }
+
+    internal static IReadOnlyList<PassiveModifier> NullifierOnlineModifiers(CatalogDbContext catalog, int type) =>
+        PassiveCatalog
+            .Effects(catalog, type)
+            .Where(effect => effect.EffectCategory == (int)PassiveEffectPhase.Online)
+            .SelectMany(effect =>
+                effect.ModifierInfo!.Value.Select(modifier => PassiveCatalog.Parse(modifier, effect.EffectCategory!.Value)!)
+            )
+            .ToArray();
 
     internal static bool Generator(CatalogDbContext catalog, int type) =>
         catalog.FittingType(type)?.GroupId == InterdictionRules.GeneratorGroup

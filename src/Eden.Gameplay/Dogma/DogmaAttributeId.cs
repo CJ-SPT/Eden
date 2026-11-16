@@ -4,6 +4,8 @@ namespace Eden.Gameplay.Dogma;
 public enum DogmaAttributeId
 {
     WarpBubbleImmune = 1538,
+    WarpBubbleImmuneModifier = 1539,
+    WarpBubbleImmuneBonus = 3120,
     FieldSignatureRadiusBonus = 554,
     CloakVelocityMultiplier = 306,
     CloakingTargetingDelay = 560,

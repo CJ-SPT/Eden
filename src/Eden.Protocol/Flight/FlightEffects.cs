@@ -191,7 +191,7 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
                 effect.Target,
                 effect.ChargeTypeId,
                 effect.Graphic,
-                true,
+                effect.Offensive,
                 active,
                 active,
                 effect.Duration,

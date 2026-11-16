@@ -16,6 +16,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Repair;
+using Eden.Gameplay.Ships;
 using Eden.Gameplay.Targeting;
 using Eden.Gameplay.Thermal;
 using Eden.Infrastructure.Diagnostics;
@@ -414,6 +415,38 @@ internal sealed partial record FittingCalculation(
                         true
                     )
                 );
+            }
+            if (module.GroupId == (int)HullBonusEquipmentGroup.BurstJammer)
+            {
+                // Pinned fitted effect 6660 suppresses bubble immunity even while the jammer is offline.
+                modifiers.Add(
+                    new(
+                        ship.Id,
+                        DogmaAttributeId.WarpBubbleImmune,
+                        DogmaOperation.PostAssignment,
+                        new DogmaValue.Attribute(module.Item.Id, DogmaAttributeId.WarpBubbleImmuneModifier),
+                        true
+                    )
+                );
+            }
+            if (module.Item.Online && InterdictionCatalog.Nullifier(catalog, module.Item.TypeId))
+            {
+                foreach (var modifier in InterdictionCatalog.NullifierOnlineModifiers(catalog, module.Item.TypeId))
+                {
+                    Add(module.Item.Id, modifier, false);
+                }
+                if (activeModules.ContainsKey(module.Item.Id))
+                {
+                    modifiers.Add(
+                        new(
+                            ship.Id,
+                            DogmaAttributeId.WarpBubbleImmune,
+                            DogmaOperation.PreAssignment,
+                            new DogmaValue.Attribute(module.Item.Id, DogmaAttributeId.WarpBubbleImmuneBonus),
+                            true
+                        )
+                    );
+                }
             }
             if (InventoryDefinitions.IsRigSlot(module.Item.FlagId))
             {

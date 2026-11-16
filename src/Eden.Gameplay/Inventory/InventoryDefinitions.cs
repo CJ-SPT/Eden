@@ -182,6 +182,7 @@ public enum DogmaEffect
     WarpDisruptor = 39,
     WarpScrambler = 5934,
     WarpCoreStabilizer = 8121,
+    InterdictionNullifier = 8117,
     WarpDisruptSphere = 3380,
     FocusedWarpDisruption = 6849,
     FocusedWarpScrambling = 6848,

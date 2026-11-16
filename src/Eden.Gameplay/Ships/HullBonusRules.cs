@@ -382,6 +382,10 @@ public static class HullBonusRules
                     or (int)HullBonusEquipmentGroup.MutadaptiveRemoteArmorRepairer
             )
         )
+        || capability == HullCapability.Interdiction
+            && equipmentGroup
+                is (int)HullBonusEquipmentGroup.WarpDisruptionFieldGenerator
+                    or (int)HullBonusEquipmentGroup.InterdictionNullifier
         || equipmentGroup != (int)HullBonusEquipmentGroup.BurstJammer
             && capability
                 is HullCapability.Overheating

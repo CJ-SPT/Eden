@@ -1,6 +1,6 @@
 # Eden documentation
 
-[Interdiction bubbles](protocol/interdiction.md) records launched probes, warp interception and resident checkpoint persistence.
+[Interdiction](protocol/interdiction.md) records launched bubbles, focused HIC scripts, nullifiers and resident checkpoint persistence.
 
 [Complete NPC hub supply](protocol/industry.md#complete-npc-hub-supply-november-16-2026) supplies the full
 eligible NPC sell assortment at regional hubs, including trade goods, skillbooks, formulas and quantum cores.

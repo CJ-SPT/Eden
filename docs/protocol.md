@@ -1,6 +1,6 @@
 # Protocol findings and milestone records
 
-[Interdiction bubbles](protocol/interdiction.md) records launched probes, warp interception and resident checkpoint persistence.
+[Interdiction](protocol/interdiction.md) records launched bubbles, focused HIC scripts, nullifiers and resident checkpoint persistence.
 
 [Warp capacitor payment](protocol/navigation.md#warp-capacitor-payment-november-16-2026)
 charges ordinary warps, applies Warp Drive Operation, and limits travel to available capacitor.
