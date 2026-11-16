@@ -8,6 +8,109 @@ namespace Eden.Protocol.Tests.Flight;
 
 public sealed class MissileBallparkTests
 {
+    private sealed class Missiles : IPilotMissiles
+    {
+        internal IReadOnlyList<MissileContact> Current { get; set; } = [];
+
+        public MissileLaunch Launch(
+            long pilotId,
+            long moduleId,
+            long? targetId,
+            IReadOnlySet<long> lockedTargets,
+            MissileFiringState motion,
+            long now
+        ) => throw new NotSupportedException();
+
+        public void Advance(int systemId, long now) { }
+
+        public IReadOnlyList<MissileContact> List(int systemId) => Current;
+
+        public bool Impacted(long projectileId) => false;
+
+        public IReadOnlyList<MissileImpact> TakeImpacts(long pilotId) => [];
+
+        public void Cancel(long pilotId, long shipId) { }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void MissileIndicatorsTrackEachProjectileAcrossSnapshotsOrphaningAndRemoval(bool snapshot)
+    {
+        using TestWorld db = new(liveWorld: true);
+        var pilot = db.Store.FindPilot(1000001)! with { Position = SpacePosition.Zero };
+        var first = Contact() with { TargetId = pilot.ShipId, SourceShipId = Contact().TargetId };
+        var second = first with { Id = first.Id + 1 };
+        Missiles missiles = new() { Current = [first, second] };
+        List<DestinyCommand> updates = [];
+        FlightScene scene = new(
+            new(),
+            new TestClock(),
+            [],
+            new(updates.Add),
+            updates.Add,
+            u => updates.Add(u.Command),
+            null,
+            null,
+            null,
+            missiles,
+            null
+        );
+        FlightSceneContext context = new(pilot, true, true, 1);
+        if (snapshot)
+        {
+            scene.Snapshot(context, [], new(PilotContact.From(pilot), SpacePosition.Zero, null, 0, null));
+        }
+        else
+        {
+            scene.RefreshMissiles(context);
+        }
+        Assert.Equal(
+            new[]
+            {
+                new DestinyCommand.AttackIndicator(first.SourceShipId, first.Id, pilot.ShipId, true),
+                new DestinyCommand.AttackIndicator(second.SourceShipId, second.Id, pilot.ShipId, true),
+            },
+            updates.OfType<DestinyCommand.AttackIndicator>()
+        );
+        updates.Clear();
+        scene.RefreshMissiles(context);
+        Assert.Empty(updates);
+        missiles.Current = [second];
+        scene.RefreshMissiles(context);
+        Assert.Equal(new DestinyCommand.AttackIndicator(first.SourceShipId, first.Id, pilot.ShipId, false), updates[0]);
+        Assert.Equal(new DestinyCommand.RemoveBall(first.Id, false), updates[1]);
+        updates.Clear();
+        missiles.Current = [second with { Flight = second.Flight with { Orphaned = true } }];
+        scene.RefreshMissiles(context);
+        Assert.Equal(new DestinyCommand.AttackIndicator(second.SourceShipId, second.Id, pilot.ShipId, false), updates[0]);
+        updates.Clear();
+        scene.RefreshMissiles(context);
+        Assert.Empty(updates);
+        scene.ForgetMissiles();
+        Assert.Empty(updates);
+        scene.RefreshMissiles(context);
+        Assert.Empty(updates.OfType<DestinyCommand.AttackIndicator>());
+        missiles.Current = [first, second];
+        scene.RefreshMissiles(context);
+        updates.Clear();
+        scene.ForgetMissiles();
+        Assert.Equal(new[] { first.Id, second.Id }, updates.Cast<DestinyCommand.AttackIndicator>().Select(e => e.ModuleId));
+        Assert.All(updates.Cast<DestinyCommand.AttackIndicator>(), e => Assert.False(e.Active));
+        Assert.Empty(scene.VisibleMissiles);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AttackIndicatorUsesNativeOffensiveEventsWithoutInventingAWeaponGraphic(bool active)
+    {
+        var command = new DestinyCommand.AttackIndicator(10, 11, 12, active);
+        var wire = Assert.IsType<object?[]>(WireAssertions.Materialize(command));
+        Assert.Equal("OnSpecialFX", BlueMarshal.Text(wire[0]));
+        Assert.Equal(new object?[] { 10L, 11L, null, 12L, null, string.Empty, true, active, active }, Assert.IsType<object?[]>(wire[1]));
+    }
+
     private static MissileContact Contact() =>
         new(
             6000000000001,

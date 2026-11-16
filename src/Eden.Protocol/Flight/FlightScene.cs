@@ -80,7 +80,14 @@ internal sealed class FlightScene(
 
     internal void ReplaceObjects(IReadOnlyList<StaticSpaceObject> destination) => Objects = destination;
 
-    internal void ForgetMissiles() => _missiles = [];
+    internal void ForgetMissiles()
+    {
+        foreach (var missile in _missiles.Where(m => !m.Flight.Orphaned))
+        {
+            update(new DestinyCommand.AttackIndicator(missile.SourceShipId, missile.Id, missile.TargetId, false));
+        }
+        _missiles = [];
+    }
 
     internal void LeaveSpace()
     {
@@ -93,7 +100,7 @@ internal sealed class FlightScene(
         _gateDepartures.Clear();
         _observingSince = null;
         _visibleAsteroids = [];
-        _missiles = [];
+        ForgetMissiles();
         Npcs.Clear();
         _wrecks = [];
     }
@@ -166,12 +173,17 @@ internal sealed class FlightScene(
         var current = ReadMissiles(context);
         foreach (var departed in _missiles.ExceptBy(current.Select(m => m.Id), m => m.Id))
         {
+            update(new DestinyCommand.AttackIndicator(departed.SourceShipId, departed.Id, departed.TargetId, false));
             update(new DestinyCommand.RemoveBall(departed.Id, missiles?.Impacted(departed.Id) == true));
         }
         var added = current.ExceptBy(_missiles.Select(m => m.Id), m => m.Id).ToArray();
         if (added.Length > 0)
         {
             update(new DestinyCommand.AddBalls(Ballpark.AddMissiles(added, space.Stamp(clock))));
+            foreach (var missile in added.Where(m => !m.Flight.Orphaned))
+            {
+                update(new DestinyCommand.AttackIndicator(missile.SourceShipId, missile.Id, missile.TargetId, true));
+            }
         }
         foreach (var missile in current)
         {
@@ -185,6 +197,7 @@ internal sealed class FlightScene(
             }
             if (previous is not null && missile.Flight.Orphaned && !previous.Flight.Orphaned)
             {
+                update(new DestinyCommand.AttackIndicator(missile.SourceShipId, missile.Id, missile.TargetId, false));
                 var point = missile.Flight.Goto;
                 update(new DestinyCommand.GotoPoint(missile.Id, point.X, point.Y, point.Z));
             }
@@ -500,6 +513,10 @@ internal sealed class FlightScene(
         );
         Drones.ReplayActivities();
         Npcs.Replay();
+        foreach (var missile in _missiles.Where(m => !m.Flight.Orphaned))
+        {
+            update(new DestinyCommand.AttackIndicator(missile.SourceShipId, missile.Id, missile.TargetId, true));
+        }
         effects.Replay(own, null);
         foreach (var peer in peers)
         {

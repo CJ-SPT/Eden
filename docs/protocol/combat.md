@@ -4,6 +4,53 @@
 
 Targeting, health, weapons, NPC populations and behavior, losses, wrecks and repairs.
 
+## Aggression box indicators — November 15, 2026
+
+The maintainer reported intermittent aggression boxes while mission NPCs were firing. Two outbound paths omitted the offensive
+event used by the native client: integrated NPC guns with catalog turret type zero, and physical missile flights. Incoming damage
+and target-lock events alone do not establish the red indicator. EVE University's
+[mission guide](https://wiki.eveuniversity.org/New_Players_Guide_to_L4_Mission_Fleets#During_combat) distinguishes yellow targeting
+from red offensive activity.
+
+Integrated guns now publish a named, nonvisual `OnSpecialFX` start/stop while retaining their existing shot/contact lifetime.
+Physical missiles publish the same indicator after their ball addition, replay it in snapshots, and stop it before removal,
+when orphaned or when the session forgets its missile scene. Each missile uses its projectile identity as the indicator module,
+so one impact cannot clear another missile's attack. Existing turret visuals and target-lock notifications retain their owners.
+The change reads existing resident contacts and adds no gameplay persistence or database queries.
+
+Evidence: isolated inspection of build **3662168** `tactical.pyj` `TacticalSvc.OnSpecialFX` (line 414) and `fxSequencer.pyj`
+`FxSequencer.OnSpecialFX` (line 441). Tactical tracks offensive events aimed at the current ship independently of graphics;
+its stop signature compares module, graphic, start time and duration. An empty graphic returns from the sequencer without a
+render activation. The pinned original `code.ccp` SHA-256 is
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`. The headless check exercises only isolated handlers with
+stub services; no module body, UI or game session starts. Carbon's
+[Destiny source at 27ee40b](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Thunkers.cpp)
+was consulted for the unchanged ball delivery boundary. The local evejs reference also identifies the missing offensive event
+for missile boxes in `server/src/space/destiny/presentation/specialFxPayloads.js`, SHA-256
+`ee7b9b8f6a6efeafea142985239cd04692cfd07f9aafe3aa4bd5ff86e5a8500b`. No reference implementation was copied.
+
+**Automated validation:** Tool and solution restores passed. The final solution build passed with zero warnings/errors in
+**9.88 seconds**. The affected selection passed **231/231 cases, zero skips, in 1 minute 40 seconds**. It OR-joined
+`FullyQualifiedName~.<class>.` for `NpcCombatTests`, `NpcSceneUpdateTests`, `NpcSceneReadTests`, `NpcMissileTests`,
+`PilotMissileTests`, `MissileCombatTests`, `MissileBallparkTests`, `TargetLockSessionTests`, `TargetingTests`, `FlightSessionTests`,
+`FlightBoundaryTests`, `InsuranceLossTests`, plus `FullyQualifiedName~.Hosting.`. Both Python policy suites passed
+(**8 catalog checks in 1.836 seconds**, **9 formatting-policy checks in 0.035 seconds**), and formatting/140-character verification
+passed across **2,327 files**. The pinned-handler check passed offensive/ignored starts, overlapping attacks, exact stop signatures,
+duplicate replay and nonvisual FX handling. Full .NET regression was not requested or run.
+
+The exact initial `Test-Feature.ps1` filter joined the methods
+`NpcSceneUpdateTests.IntegratedWeaponIndicatorsFollowShotsRetargetingReplayExpiryAndDeparture`,
+`MissileBallparkTests.MissileIndicatorsTrackEachProjectileAcrossSnapshotsOrphaningAndRemoval` and
+`MissileBallparkTests.AttackIndicatorUsesNativeOffensiveEventsWithoutInventingAWeaponGraphic` under
+`Eden.Protocol.Tests.Combat` / `Eden.Protocol.Tests.Flight`; all five cases passed in **19.11 seconds**, with an **18.58-second** build.
+The repeatable pinned-handler command is
+`python tests/Eden.Protocol.Tests/Combat/attack_indicator_client_test.py E:/EdenDev/3662168`.
+
+**Live acceptance:** Not performed; agent client testing is disabled. Native rendering and gameplay feel remain unverified.
+
+**Optional maintainer checks:** After deploying and restarting the server, compare yellow/red boxes during a mission with
+integrated guns and missile NPCs, including recalling drones and warping away/back.
+
 ## Missile impact timing and damage application
 
 Missiles begin at the launch timestamp. Paid flight snapshots carry the target motion at launch and at the last resolved boundary.

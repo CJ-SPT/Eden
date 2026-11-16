@@ -7,6 +7,54 @@ namespace Eden.Protocol.Tests.Combat;
 public sealed class NpcSceneUpdateTests
 {
     [Fact]
+    public void IntegratedWeaponIndicatorsFollowShotsRetargetingReplayExpiryAndDeparture()
+    {
+        using NpcCombatTests.Fixture f = new(liveWorld: true, useTestClock: true);
+        var npc = f.Npc with { Weapon = null };
+        Encounters encounters = new([npc]);
+        List<DestinyCommand> updates = [];
+        FlightNpcScene scene = new(new(), f.Clock, encounters, new(updates.Add), updates.Add, _ => { });
+        FlightSceneContext context = new(f.Pilot, true, true, 1);
+        scene.Capture(context);
+        Assert.Empty(updates);
+        NpcWeaponContact shot = new(f.Pilot.ShipId, 0, f.Clock.Now, 1000);
+        scene.NotifyNpcWeapon(npc.Id, shot);
+        Assert.Equal(new DestinyCommand.AttackIndicator(npc.Id, npc.Id, shot.TargetId, true), Assert.Single(updates));
+        updates.Clear();
+        scene.NotifyNpcWeapon(npc.Id, shot with { StartedAt = shot.StartedAt + 1 });
+        Assert.Equal(new[] { false, true }, updates.Cast<DestinyCommand.AttackIndicator>().Select(e => e.Active));
+        updates.Clear();
+        var droneShot = shot with { TargetId = f.Pilot.ShipId + 1, StartedAt = shot.StartedAt + 2 };
+        scene.NotifyNpcWeapon(npc.Id, droneShot);
+        Assert.Equal(
+            new DestinyCommand[]
+            {
+                new DestinyCommand.AttackIndicator(npc.Id, npc.Id, shot.TargetId, false),
+                new DestinyCommand.AttackIndicator(npc.Id, npc.Id, droneShot.TargetId, true),
+            },
+            updates
+        );
+        updates.Clear();
+        scene.Replay();
+        Assert.Equal(new DestinyCommand.AttackIndicator(npc.Id, npc.Id, droneShot.TargetId, true), Assert.Single(updates));
+        updates.Clear();
+        encounters.Current = [npc];
+        scene.RefreshNpcs(context);
+        Assert.Equal(new DestinyCommand.AttackIndicator(npc.Id, npc.Id, droneShot.TargetId, false), Assert.Single(updates));
+        updates.Clear();
+        scene.NotifyNpcWeapon(npc.Id, shot);
+        updates.Clear();
+        scene.StopNpcWeapons(shot.TargetId);
+        Assert.Equal(new DestinyCommand.AttackIndicator(npc.Id, npc.Id, shot.TargetId, false), Assert.Single(updates));
+        scene.NotifyNpcWeapon(npc.Id, shot);
+        updates.Clear();
+        encounters.Current = [];
+        scene.RefreshNpcs(context);
+        Assert.IsType<DestinyCommand.AttackIndicator>(updates[0]);
+        Assert.Equal(new DestinyCommand.RemoveBall(npc.Id, false), updates[1]);
+    }
+
+    [Fact]
     public void ValueFilteringRetainsBoundaryContactsOrderingAndOffGridWarpTracking()
     {
         using NpcCombatTests.Fixture f = new(useTestClock: true);
