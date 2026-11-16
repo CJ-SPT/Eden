@@ -29,7 +29,8 @@ internal sealed record MissionProfile(
     internal int WaveRoom(int wave) => Definition.Waves[wave].RoomId == 0 ? Rooms[0].Id : Definition.Waves[wave].RoomId;
 
     internal MissionKind Kind =>
-        Definition.Mining ? MissionKind.Mining
+        Definition.Trade ? MissionKind.Trade
+        : Definition.Mining ? MissionKind.Mining
         : DungeonId.HasValue ? MissionKind.Combat
         : MissionKind.Courier;
 
@@ -138,6 +139,18 @@ internal static class MissionCatalog
         if (mission is null)
         {
             return null;
+        }
+        if (definition.Trade && (mission.KillMission is not null || definition.Mining || !definition.Waves.IsEmpty))
+        {
+            throw new InvalidDataException("Trade missions require a cargo objective without a dungeon.");
+        }
+        if (definition.ItemReward is { } itemReward)
+        {
+            _ = MissionItemRewardRules.Quote(itemReward.Types, itemReward.Quantity, 0);
+            foreach (int type in itemReward.Types)
+            {
+                _ = catalog.RequireItem(type);
+            }
         }
         int nameId = checked((int)(mission.NameID ?? 0));
         int briefingId = checked((int)(mission.Messages?.GetValueOrDefault("messages.mission.briefing") ?? 0));

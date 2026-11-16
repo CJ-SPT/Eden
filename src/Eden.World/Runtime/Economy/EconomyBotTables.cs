@@ -37,7 +37,9 @@ internal sealed partial class ResidentEconomy
                         row.Y,
                         row.Z,
                         row.BonusIskCents,
-                        row.BonusWindowTicks
+                        row.BonusWindowTicks,
+                        row.ItemRewardTypeId,
+                        row.ItemRewardQuantity
                     ),
                 state => new Eden.Data.World.Agents.SavedMission
                 {
@@ -65,11 +67,13 @@ internal sealed partial class ResidentEconomy
                     Z = state.Z,
                     BonusIskCents = state.BonusIskCents,
                     BonusWindowTicks = state.BonusWindowTicks,
+                    ItemRewardTypeId = state.ItemRewardTypeId,
+                    ItemRewardQuantity = state.ItemRewardQuantity,
                 },
                 ProjectSavedMission,
                 "Id,AcceptedAt,AgentId,ClosedAt,CorporationFraction,DestinationStation,ExpiresAt,FactionFraction,"
                     + "IskCents,Level,LoyaltyPoints,MissionId,ObjectiveComplete,OfferedAt,PilotId,State,Storyline,SystemId,"
-                    + "Wave,X,Y,Z,BonusIskCents,BonusWindowTicks",
+                    + "Wave,X,Y,Z,BonusIskCents,BonusWindowTicks,ItemRewardTypeId,ItemRewardQuantity",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -95,7 +99,9 @@ internal sealed partial class ResidentEconomy
                         reader.GetDouble(21),
                         reader.GetDouble(22),
                         reader.GetInt64(23),
-                        reader.GetInt64(24)
+                        reader.GetInt64(24),
+                        reader.GetInt32(25),
+                        reader.GetInt32(26)
                     ),
                 state => new(state.Id),
                 indexes:

@@ -28,7 +28,9 @@ internal sealed record EconomySavedMission(
     double Y,
     double Z,
     long BonusIskCents,
-    long BonusWindowTicks
+    long BonusWindowTicks,
+    int ItemRewardTypeId,
+    int ItemRewardQuantity
 );
 
 internal sealed partial class ResidentEconomy
@@ -61,7 +63,7 @@ internal sealed partial class ResidentEconomy
                     INSERT INTO WorldMission(
                         Id,AcceptedAt,AgentId,ClosedAt,CorporationFraction,DestinationStation,ExpiresAt,FactionFraction,
                         IskCents,Level,LoyaltyPoints,MissionId,ObjectiveComplete,OfferedAt,PilotId,State,Storyline,SystemId,
-                        Wave,X,Y,Z,BonusIskCents,BonusWindowTicks
+                        Wave,X,Y,Z,BonusIskCents,BonusWindowTicks,ItemRewardTypeId,ItemRewardQuantity
                     )
                     SELECT
                         json_extract(value,'$.Id'),json_extract(value,'$.AcceptedAt'),json_extract(value,'$.AgentId'),
@@ -73,7 +75,8 @@ internal sealed partial class ResidentEconomy
                         json_extract(value,'$.OfferedAt'),json_extract(value,'$.PilotId'),json_extract(value,'$.State'),
                         json_extract(value,'$.Storyline'),json_extract(value,'$.SystemId'),json_extract(value,'$.Wave'),
                         json_extract(value,'$.X'),json_extract(value,'$.Y'),json_extract(value,'$.Z'),
-                        json_extract(value,'$.BonusIskCents'),json_extract(value,'$.BonusWindowTicks')
+                        json_extract(value,'$.BonusIskCents'),json_extract(value,'$.BonusWindowTicks'),
+                        json_extract(value,'$.ItemRewardTypeId'),json_extract(value,'$.ItemRewardQuantity')
                     FROM json_each({values}) WHERE 1
                     ON CONFLICT(Id) DO UPDATE SET
                         AcceptedAt=excluded.AcceptedAt,AgentId=excluded.AgentId,ClosedAt=excluded.ClosedAt,
@@ -83,7 +86,8 @@ internal sealed partial class ResidentEconomy
                         ObjectiveComplete=excluded.ObjectiveComplete,OfferedAt=excluded.OfferedAt,PilotId=excluded.PilotId,
                         State=excluded.State,Storyline=excluded.Storyline,SystemId=excluded.SystemId,Wave=excluded.Wave,
                         X=excluded.X,Y=excluded.Y,Z=excluded.Z,
-                        BonusIskCents=excluded.BonusIskCents,BonusWindowTicks=excluded.BonusWindowTicks
+                        BonusIskCents=excluded.BonusIskCents,BonusWindowTicks=excluded.BonusWindowTicks,
+                        ItemRewardTypeId=excluded.ItemRewardTypeId,ItemRewardQuantity=excluded.ItemRewardQuantity
                     """
                 );
             }

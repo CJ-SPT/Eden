@@ -11,6 +11,8 @@ from collections import Counter
 
 # Build-3662168 destructible Habitat; the similarly named scenery is not an objective.
 HABITAT_TYPE = 19715
+# Build-3662168 item group for the five basic attribute implant families.
+ATTRIBUTE_ENHANCER_GROUP = 745
 # Explicit Eden placement hint when a report supplies no NPC-group distances.
 UNREPORTED_GROUP_RANGE = 25000
 
@@ -20,6 +22,7 @@ KNOWN_BLOCKERS = {
     934: 'Requires a verified reinforcement trigger',
     2252: 'Report and pinned dungeon level disagree',
     2253: 'Requires a verified reinforcement trigger',
+    15552: 'Requires level-five storyline reward policy',
 }
 
 # Reviewed standalone mining pockets. The other mining dungeons contain
@@ -47,6 +50,35 @@ COURIER_CHAINS = [
 def source(db, dataset, key):
     row = db.execute('SELECT Data FROM SourceRecord WHERE Dataset=? AND Key=?', (dataset, str(key))).fetchone()
     return json.loads(row[0]) if row else None
+
+
+def trade_definitions(db):
+    # University revision 229167 supplies the ore amounts, levels and five-attribute
+    # implant grades. The catalog omits rewardTypeID for this random reward family.
+    attributes = ['Ocular Filter', 'Memory Augmentation', 'Neural Boost', 'Cybernetic Subprocessor', 'Social Adaptation Chip']
+    definitions = []
+    for mid, level, ore, quantity in [(15553, 1, 1230, 1000), (15554, 2, 1228, 1500),
+                                      (15555, 3, 1227, 10000), (15556, 4, 20, 8000)]:
+        mission = source(db, 'client/missions', mid)
+        expected_cargo = dict(objectiveSingleton=0, objectiveTypeID=ore, objectiveQuantity=quantity)
+        if (not mission or mission['contentTemplate'] != 'agent.missionTemplatizedContent_GenericStorylineTradeMission'
+                or mission.get('courierMission') != expected_cargo or mission.get('expirationTime') != 10080
+                or mission.get('missionRewards') != dict(reward=dict(rewardQuantity=1))
+                or any(mission.get(k) for k in ['nodeGraphID', 'clientObjectives', 'contentTags', 'initialAgentGiftTypeID'])):
+            raise ValueError(f'Unreviewed trade objective or reward family for mission {mid}')
+        names = [('Limited ' + name + (' - Beta' if level == 2 else '')) if level <= 2
+                 else name + (' - Basic' if level == 3 else ' - Standard') for name in attributes]
+        reward_types = []
+        for name in names:
+            rows = db.execute('SELECT Id,GroupId FROM ItemType WHERE Name=?', (name,)).fetchall()
+            if len(rows) != 1 or rows[0][1] != ATTRIBUTE_ENHANCER_GROUP:
+                raise ValueError(f'Implant reward must resolve to one pinned attribute enhancer: {name}')
+            reward_types.append(rows[0][0])
+        definitions.append(dict(missionId=mid, level=level, difficulty=500, storyline=True, trade=True, offerOrder=1,
+                                source='https://wiki.eveuniversity.org/Materials_For_War_Preparation',
+                                sourceRevision='oldid=229167; build-3662168 cargo and implant types', waves=[],
+                                itemReward=dict(types=reward_types, quantity=1)))
+    return definitions
 
 
 def delivery_rejection(mission, name, volume, reviewed_chain=False):
@@ -383,6 +415,7 @@ def extend(db, missions, group):
               593785, structure_type=17381)
 
     missions.extend(courier_chain_definitions(db))
+    missions.extend(trade_definitions(db))
     admitted = {m['missionId'] for m in missions}
     encounters = {tuple(sorted(source(db, 'client/missions', m['missionId'])['killMission'].items())): m
                   for m in missions if m['waves']}
@@ -428,6 +461,8 @@ def extend(db, missions, group):
                           else 'Requires complete mission-chain bindings or additional part mechanics' if chain
                           else 'Requires authored scripts or initial gifts' if special
                           else 'Requires verified NPC roster and objective scripts')
+        elif template.endswith('TradeMission'):
+            reason = 'Requires verified trade content or another agent lifecycle'
         else:
             reason = 'Requires another mission or agent lifecycle'
         audit.append(dict(missionId=mid, name=name, template=template, status='blocked' if reason else 'admitted',

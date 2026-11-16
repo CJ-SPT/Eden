@@ -9,7 +9,7 @@ import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / 'tools'))
-from mission_content import delivery_rejection, courier_chain_definitions
+from mission_content import delivery_rejection, courier_chain_definitions, trade_definitions
 
 
 class MissionAdmissionTests(unittest.TestCase):
@@ -83,6 +83,37 @@ class MissionAdmissionTests(unittest.TestCase):
                 self.assertFalse(mission['storyline'])
         for mid in [1280, 1285, 1382, 1383, 2091, 13516, 13517, 13519]:
             self.assertNotIn(mid, missions)
+
+    def test_trade_admission_binds_four_storylines_and_five_implants_per_grade(self):
+        manifest = json.loads((ROOT / 'src/Eden.World/Agents/missions-3662168.json').read_text(encoding='utf-8'))
+        trades = [m for m in manifest['missions'] if m.get('trade')]
+        self.assertEqual([15553, 15554, 15555, 15556], [m['missionId'] for m in trades])
+        for level, mission in enumerate(trades, 1):
+            self.assertEqual(level, mission['level'])
+            self.assertTrue(mission['storyline'])
+            self.assertEqual([], mission['waves'])
+            self.assertEqual(1, mission['itemReward']['quantity'])
+            self.assertEqual(5, len(set(mission['itemReward']['types'])))
+        self.assertNotIn(15552, [m['missionId'] for m in manifest['missions']])
+
+    def test_trade_export_rejects_changed_cargo_rewards_deadlines_and_scripts(self):
+        fixture = json.loads((ROOT / 'tests/Eden.Protocol.Tests/Fixtures/MissionCatalog.json').read_text(encoding='utf-8'))
+        with sqlite3.connect(':memory:') as db:
+            db.execute('CREATE TABLE SourceRecord (Dataset TEXT, Key TEXT, Data TEXT, PRIMARY KEY(Dataset,Key))')
+            db.execute('CREATE TABLE ItemType (Id INTEGER, GroupId INTEGER, Name TEXT)')
+            db.executemany('INSERT INTO SourceRecord VALUES (?,?,?)',
+                           [(r['dataset'], str(r['key']), json.dumps(r['data'])) for r in fixture['records']])
+            db.executemany('INSERT INTO ItemType VALUES (?,?,?)', [(t['id'], t['groupId'], t['name']) for t in fixture['types']])
+            self.assertEqual(4, len(trade_definitions(db)))
+            original = db.execute("SELECT Data FROM SourceRecord WHERE Dataset='client/missions' AND Key='15553'").fetchone()[0]
+            for field, value in [('courierMission.objectiveQuantity', 1), ('expirationTime', 0),
+                                 ('missionRewards.reward.rewardTypeID', 29), ('nodeGraphID', 1)]:
+                with self.subTest(field=field):
+                    db.execute("UPDATE SourceRecord SET Data=json_set(Data,?,?) WHERE Dataset='client/missions' AND Key='15553'",
+                               ('$.' + field, value))
+                    with self.assertRaises(ValueError):
+                        trade_definitions(db)
+                    db.execute("UPDATE SourceRecord SET Data=? WHERE Dataset='client/missions' AND Key='15553'", (original,))
     def test_singleton_delivery_requires_exactly_one_item(self):
         cargo = self.mission['courierMission']
         cargo.update(objectiveSingleton=1, objectiveQuantity=1)

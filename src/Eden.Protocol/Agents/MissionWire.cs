@@ -108,7 +108,8 @@ internal sealed record MissionKeywords(MissionOffer Offer) : BlueModel
             ["objectiveDestinationSystemID"] = Offer.SystemId,
             ["rewardQuantity"] = Offer.Rewards.IskCents / (double)MarketDefinitions.CentsPerIsk,
             ["player"] = Offer.PilotId,
-            ["objectiveLocationID"] = Offer.Cargo?.DestinationStation ?? Offer.SystemId,
+            ["objectiveLocationID"] =
+                Offer.Kind == MissionKind.Trade ? Offer.Agent.StationId : Offer.Cargo?.DestinationStation ?? Offer.SystemId,
             ["objectiveDestinationID"] =
                 Offer.Cargo?.DestinationStation ?? (Offer.Retrieval is null ? Offer.SystemId : Offer.Agent.StationId),
             ["objectivePickupLocationID"] = Offer.Cargo?.PickupStation ?? Offer.Agent.StationId,
@@ -141,7 +142,19 @@ internal sealed record MissionLocation(MissionOffer Offer, bool Pickup = false) 
 
     public override object ToBlue()
     {
-        bool dungeon = Offer.Kind != MissionKind.Courier;
+        if (Offer.Kind == MissionKind.Trade)
+        {
+            return new Dictionary<string, object?>
+            {
+                ["typeID"] = Offer.Retrieval!.StationTypeId,
+                ["locationID"] = Offer.Agent.StationId,
+                ["solarsystemID"] = Offer.Agent.SystemId,
+                ["agentID"] = Offer.Agent.Id,
+                ["locationType"] = "objective.destination",
+                ["locationNumber"] = 0,
+            };
+        }
+        bool dungeon = Offer.DungeonId.HasValue;
         var values = new Dictionary<string, object?>
         {
             ["typeID"] =
@@ -176,6 +189,11 @@ internal sealed record MissionObjectives(MissionOffer Offer, long Now) : BlueMod
     {
         List<object?> objectives = [];
         List<object?> dungeons = [];
+        List<object?> rewards = [new object?[] { CreditsType, Offer.Rewards.IskCents / (double)MarketDefinitions.CentsPerIsk, null }];
+        if (Offer.ItemReward is { } itemReward)
+        {
+            rewards.Add(new object?[] { itemReward.TypeId, itemReward.Quantity, null });
+        }
         bool combatComplete = Offer.Retrieval is null ? Offer.ObjectiveComplete : Offer.CombatComplete;
         if (Offer.Cargo is { } cargo)
         {
@@ -200,7 +218,7 @@ internal sealed record MissionObjectives(MissionOffer Offer, long Now) : BlueMod
                 }
             );
         }
-        else
+        else if (Offer.DungeonId.HasValue)
         {
             var dungeon = new Dictionary<string, object?>
             {
@@ -270,10 +288,7 @@ internal sealed record MissionObjectives(MissionOffer Offer, long Now) : BlueMod
             ["agentGift"] = Offer.Cargo is { } gift
                 ? new List<object?> { new object?[] { gift.TypeId, gift.Quantity, null } }
                 : new List<object?>(),
-            ["normalRewards"] = new List<object?>
-            {
-                new object?[] { CreditsType, Offer.Rewards.IskCents / (double)MarketDefinitions.CentsPerIsk, null },
-            },
+            ["normalRewards"] = rewards,
             ["loyaltyPoints"] = Offer.Rewards.LoyaltyPoints,
             // Build 3662168 agentDialogueUtil consumes ticks, type, quantity, extra, and original minutes.
             ["bonusRewards"] = Offer.Bonus is { } bonus
@@ -347,14 +362,16 @@ internal sealed record MissionJournal(IReadOnlyList<MissionOffer> Offers, IReadO
                         {
                             (int)o.State,
                             o.Storyline,
-                            o.Storyline ? "UI/Agents/MissionTypes/StorylineCourier"
+                            o.Kind == MissionKind.Trade
+                                ? (o.Storyline ? "UI/Agents/MissionTypes/StorylineTrade" : "UI/Agents/MissionTypes/Trade")
+                            : o.Storyline ? "UI/Agents/MissionTypes/StorylineCourier"
                             : o.Kind == MissionKind.Combat ? "UI/Agents/MissionTypes/Encounter"
                             : o.Kind == MissionKind.Mining ? "UI/Agents/MissionTypes/Mining"
                             : "UI/Agents/MissionTypes/Courier",
                             o.NameId,
                             o.Agent.Id,
                             o.ExpiresAt,
-                            o.Kind != MissionKind.Courier
+                            o.DungeonId.HasValue
                                 ? new List<object?> { new MissionBookmark(o) }
                                 : new List<object?>(),
                             false,

@@ -41,6 +41,7 @@ internal sealed partial class PilotMissionStore
         }
         var profiles = ProfilesForAgent(catalog, agent, level, storyline)
             .Where(p => p.Definition.Chain is null || world is EconomyTransaction)
+            .Where(p => p.Kind != MissionKind.Trade && p.Definition.ItemReward is null || world is EconomyTransaction)
             .OrderBy(p => p.Definition.OfferOrder)
             .ThenBy(p => p.Definition.Gates.IsEmpty ? 0 : 1)
             .ThenBy(p => p.Definition.MissionId)
@@ -108,6 +109,12 @@ internal sealed partial class PilotMissionStore
             CorporationFraction = reward.CorporationFraction,
             FactionFraction = reward.FactionFraction,
         };
+        if (profile.Definition.ItemReward is { } itemReward)
+        {
+            var quoted = MissionItemRewardRules.Quote(itemReward.Types, itemReward.Quantity, Random.Shared.Next(itemReward.Types.Length));
+            row.ItemRewardTypeId = quoted.TypeId;
+            row.ItemRewardQuantity = quoted.Quantity;
+        }
         world.Add(row);
         return row;
     }

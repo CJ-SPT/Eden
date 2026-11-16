@@ -2,7 +2,7 @@
 
 [Documentation index](README.md) / [Implementation and validation record](protocol/agents.md#supported-mission-content-expansion--november-9-2026)
 
-The build-3662168 pool contains **383 definitions: 74 combat encounters, 194 ordinary deliveries, 92 delivery storylines and 23 mining missions**. The [complete catalog audit](data/mission-support-3662168.csv) lists all **2,892** source records, including the **2,509** that remain unavailable. A blocked encounter may need verified content rather than a new engine capability.
+The build-3662168 pool contains **387 definitions: 74 combat encounters, 194 ordinary deliveries, 92 delivery storylines, four trade storylines and 23 mining missions**. The [complete catalog audit](data/mission-support-3662168.csv) lists all **2,892** source records, including the **2,505** that remain unavailable. A blocked encounter may need verified content rather than a new engine capability.
 
 New offers include a timed ISK bonus: an additional **50% of the quoted base reward** for turn-in within **six hours of acceptance**.
 The base reward remains available after that window. Existing saved offers keep their original rewards.
@@ -67,6 +67,37 @@ The Hidden Stash permits the warehouse blitz: guards remain optional, the wareho
 Duo of Death requires both named combatants, with optional sentries/spider drones. Only the last objective carrier releases **one Special Delivery**, type **11068**, through ordinary personally owned wreck inventory. The Guristas level-three report's nonexistent `Pithatis Usurper` alternative is excluded; the catalog resolves its reported Death Dealer and Revolter alternatives. The required Seek and Destroy groups follow the reports' blitz descriptions; unspecified reinforcement scripts are not fabricated.
 
 Each encounter selects one deterministic alternative from each reported group. Variable counts use the report's upper bound. Reported distances guide selection among the pinned room's native NPC anchors; missing distances retain explicit Eden hints (typically 20–25 km). Fixed batteries use their own catalog positions, and ship groups use deterministic spacing around the selected anchors. See [mission layout corrections](protocol/agents.md#mission-layout-corrections--november-9-2026) for placement policy and save compatibility. Catalog twins are admitted only when their full `killMission` payload matches a reviewed encounter and they do not declare chains or extra scripts. This is a content reconstruction, not recovery of CCP's hidden mission selection or NPC-group tables.
+
+## Trade missions and item rewards
+
+Materials For War Preparation joins the ordinary sixteen-completion storyline pool at levels one through four.
+Its level comes from the completed missions, while the storyline agent itself remains level one.
+
+| Level | Catalog mission | Required ore | Normal item reward |
+| --- | --- | --- | --- |
+| 1 | 15553 | 1,000 Veldspar | One random +1 Limited attribute implant |
+| 2 | 15554 | 1,500 Scordite | One random +2 Limited Beta attribute implant |
+| 3 | 15555 | 10,000 Omber | One random +3 Basic attribute implant |
+| 4 | 15556 | 8,000 Kernite | One random +4 Standard attribute implant |
+
+Mine or buy the exact regular ore. Acceptance issues no ore. Deliver personally owned packaged stacks from the
+active ship's Cargo Hold or the agent station's personal hangar and dock at that station to turn in. Other owners,
+stations, specialized holds, nested containers, singleton lookalikes and different ore types do not qualify.
+Eligible split stacks combine, only the required quantity is consumed, and excess ore remains.
+
+The offer quotes one of the five attribute implants uniformly and saves its type and quantity immediately. Reads,
+acceptance and restarts retain that exact quote. Turn-in atomically consumes ore, pays the mission and adds the
+implant to the issuing pilot's personal hangar at the agent station. Duplicate turn-in cannot grant it twice.
+The implant is a normal reward and remains payable after the six-hour ISK bonus expires, until mission expiry.
+Decline, quit and expiry grant nothing. Native objectives use fetch, with no acceptance gift or dungeon bookmark.
+
+The report supplies the ore and implant grades; existing Eden ISK, direct standing and bonus policy also applies,
+with no storyline LP. Item rewards are not split with fleet members. Derived standings remain outside current
+mission support. Level-five storylines, special-agent trade lifecycles, blueprint-copy rewards and timed item rewards
+remain unavailable. See the [trade engine and reward checkpoint record](protocol/agents.md#resident-trade-objectives-and-item-rewards--november-15-2026).
+
+Trade templates account for 460 catalog definitions. This milestone supplies shared player-sourced fetch objectives
+and saved normal item rewards; four definitions are admitted, while the other 456 retain their additional blockers.
 
 ## Mission chains
 
@@ -161,4 +192,4 @@ python tools/Export-MissionFixture.py --catalog src/Eden.Server/data/catalog.sql
 python tests/Eden.Protocol.Tests/Persistence/mission_content_test.py
 ```
 
-The first command emits the runtime manifest and exhaustive CSV audit. The second captures **796 types and 4,786 source records** for automated tests, including all authored NPC alternatives, objective cargo, geometry, faction/corporation references and ordinary/commander loot dependencies. SDE mission records retain only the English name fallback; native English messages are captured separately. No game launch or runtime network access is involved. Chain execution tests use the resident world.
+The first command emits the runtime manifest and exhaustive CSV audit. The second captures **818 types and 4,860 source records** for automated tests, including all authored NPC alternatives, objective cargo, reward alternatives, geometry, faction/corporation references and ordinary/commander loot dependencies. SDE mission records retain only the English name fallback; native English messages are captured separately. No game launch or runtime network access is involved. Chain and trade execution tests use the resident world.

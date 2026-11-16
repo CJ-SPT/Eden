@@ -2,6 +2,50 @@
   "build": 3662168,
   "types": [
     {
+      "id": 20,
+      "name": "Kernite",
+      "groupId": 457,
+      "groupName": "Kernite",
+      "categoryId": 25,
+      "mass": 1e+35,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 182,
+          "value": 3386.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 790,
+          "value": 60378.0
+        },
+        {
+          "id": 1980,
+          "value": 0.5
+        },
+        {
+          "id": 1981,
+          "value": 600.0
+        },
+        {
+          "id": 2115,
+          "value": 0.0
+        },
+        {
+          "id": 2699,
+          "value": 1.0
+        },
+        {
+          "id": 2711,
+          "value": 20.0
+        }
+      ]
+    },
+    {
       "id": 23,
       "name": "Cargo Container",
       "groupId": 12,
@@ -2821,6 +2865,50 @@
         {
           "id": 1692,
           "value": 0.0
+        }
+      ]
+    },
+    {
+      "id": 1227,
+      "name": "Omber",
+      "groupId": 469,
+      "groupName": "Omber",
+      "categoryId": 25,
+      "mass": 1e+35,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 182,
+          "value": 3386.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 790,
+          "value": 60378.0
+        },
+        {
+          "id": 1980,
+          "value": 0.5
+        },
+        {
+          "id": 1981,
+          "value": 600.0
+        },
+        {
+          "id": 2115,
+          "value": 0.0
+        },
+        {
+          "id": 2699,
+          "value": 1.0
+        },
+        {
+          "id": 2711,
+          "value": 1227.0
         }
       ]
     },
@@ -6800,6 +6888,198 @@
       ]
     },
     {
+      "id": 9899,
+      "name": "Ocular Filter - Basic",
+      "groupId": 745,
+      "groupName": "Cyber Learning",
+      "categoryId": 20,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 175,
+          "value": 0.0
+        },
+        {
+          "id": 176,
+          "value": 0.0
+        },
+        {
+          "id": 177,
+          "value": 0.0
+        },
+        {
+          "id": 178,
+          "value": 3.0
+        },
+        {
+          "id": 179,
+          "value": 0.0
+        },
+        {
+          "id": 182,
+          "value": 3411.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 331,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 9941,
+      "name": "Memory Augmentation - Basic",
+      "groupId": 745,
+      "groupName": "Cyber Learning",
+      "categoryId": 20,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 175,
+          "value": 0.0
+        },
+        {
+          "id": 176,
+          "value": 0.0
+        },
+        {
+          "id": 177,
+          "value": 3.0
+        },
+        {
+          "id": 178,
+          "value": 0.0
+        },
+        {
+          "id": 179,
+          "value": 0.0
+        },
+        {
+          "id": 182,
+          "value": 3411.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 331,
+          "value": 2.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 9942,
+      "name": "Neural Boost - Basic",
+      "groupId": 745,
+      "groupName": "Cyber Learning",
+      "categoryId": 20,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 175,
+          "value": 0.0
+        },
+        {
+          "id": 176,
+          "value": 0.0
+        },
+        {
+          "id": 177,
+          "value": 0.0
+        },
+        {
+          "id": 178,
+          "value": 0.0
+        },
+        {
+          "id": 179,
+          "value": 3.0
+        },
+        {
+          "id": 182,
+          "value": 3411.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 331,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 9943,
+      "name": "Cybernetic Subprocessor - Basic",
+      "groupId": 745,
+      "groupName": "Cyber Learning",
+      "categoryId": 20,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 175,
+          "value": 0.0
+        },
+        {
+          "id": 176,
+          "value": 3.0
+        },
+        {
+          "id": 177,
+          "value": 0.0
+        },
+        {
+          "id": 178,
+          "value": 0.0
+        },
+        {
+          "id": 179,
+          "value": 0.0
+        },
+        {
+          "id": 182,
+          "value": 3411.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 331,
+          "value": 4.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        }
+      ]
+    },
+    {
       "id": 9944,
       "name": "Magnetic Field Stabilizer I",
       "groupId": 302,
@@ -6844,6 +7124,54 @@
         {
           "id": 633,
           "value": 0.0
+        }
+      ]
+    },
+    {
+      "id": 9956,
+      "name": "Social Adaptation Chip - Basic",
+      "groupId": 745,
+      "groupName": "Cyber Learning",
+      "categoryId": 20,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 175,
+          "value": 3.0
+        },
+        {
+          "id": 176,
+          "value": 0.0
+        },
+        {
+          "id": 177,
+          "value": 0.0
+        },
+        {
+          "id": 178,
+          "value": 0.0
+        },
+        {
+          "id": 179,
+          "value": 0.0
+        },
+        {
+          "id": 182,
+          "value": 3411.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 331,
+          "value": 5.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
         }
       ]
     },
@@ -7149,6 +7477,246 @@
         {
           "id": 9,
           "value": 100000000.0
+        }
+      ]
+    },
+    {
+      "id": 10208,
+      "name": "Memory Augmentation - Standard",
+      "groupId": 745,
+      "groupName": "Cyber Learning",
+      "categoryId": 20,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 175,
+          "value": 0.0
+        },
+        {
+          "id": 176,
+          "value": 0.0
+        },
+        {
+          "id": 177,
+          "value": 4.0
+        },
+        {
+          "id": 178,
+          "value": 0.0
+        },
+        {
+          "id": 179,
+          "value": 0.0
+        },
+        {
+          "id": 182,
+          "value": 3411.0
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        },
+        {
+          "id": 331,
+          "value": 2.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 10212,
+      "name": "Neural Boost - Standard",
+      "groupId": 745,
+      "groupName": "Cyber Learning",
+      "categoryId": 20,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 175,
+          "value": 0.0
+        },
+        {
+          "id": 176,
+          "value": 0.0
+        },
+        {
+          "id": 177,
+          "value": 0.0
+        },
+        {
+          "id": 178,
+          "value": 0.0
+        },
+        {
+          "id": 179,
+          "value": 4.0
+        },
+        {
+          "id": 182,
+          "value": 3411.0
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        },
+        {
+          "id": 331,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 10216,
+      "name": "Ocular Filter - Standard",
+      "groupId": 745,
+      "groupName": "Cyber Learning",
+      "categoryId": 20,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 175,
+          "value": 0.0
+        },
+        {
+          "id": 176,
+          "value": 0.0
+        },
+        {
+          "id": 177,
+          "value": 0.0
+        },
+        {
+          "id": 178,
+          "value": 4.0
+        },
+        {
+          "id": 179,
+          "value": 0.0
+        },
+        {
+          "id": 182,
+          "value": 3411.0
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        },
+        {
+          "id": 331,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 10221,
+      "name": "Cybernetic Subprocessor - Standard",
+      "groupId": 745,
+      "groupName": "Cyber Learning",
+      "categoryId": 20,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 175,
+          "value": 0.0
+        },
+        {
+          "id": 176,
+          "value": 4.0
+        },
+        {
+          "id": 177,
+          "value": 0.0
+        },
+        {
+          "id": 178,
+          "value": 0.0
+        },
+        {
+          "id": 179,
+          "value": 0.0
+        },
+        {
+          "id": 182,
+          "value": 3411.0
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        },
+        {
+          "id": 331,
+          "value": 4.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 10225,
+      "name": "Social Adaptation Chip - Standard",
+      "groupId": 745,
+      "groupName": "Cyber Learning",
+      "categoryId": 20,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 175,
+          "value": 4.0
+        },
+        {
+          "id": 176,
+          "value": 0.0
+        },
+        {
+          "id": 177,
+          "value": 0.0
+        },
+        {
+          "id": 178,
+          "value": 0.0
+        },
+        {
+          "id": 179,
+          "value": 0.0
+        },
+        {
+          "id": 182,
+          "value": 3411.0
+        },
+        {
+          "id": 277,
+          "value": 4.0
+        },
+        {
+          "id": 331,
+          "value": 5.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
         }
       ]
     },
@@ -8727,6 +9295,246 @@
       ]
     },
     {
+      "id": 13283,
+      "name": "Limited Ocular Filter",
+      "groupId": 745,
+      "groupName": "Cyber Learning",
+      "categoryId": 20,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 175,
+          "value": 0.0
+        },
+        {
+          "id": 176,
+          "value": 0.0
+        },
+        {
+          "id": 177,
+          "value": 0.0
+        },
+        {
+          "id": 178,
+          "value": 1.0
+        },
+        {
+          "id": 179,
+          "value": 0.0
+        },
+        {
+          "id": 182,
+          "value": 3411.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 331,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 13284,
+      "name": "Limited Memory Augmentation",
+      "groupId": 745,
+      "groupName": "Cyber Learning",
+      "categoryId": 20,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 175,
+          "value": 0.0
+        },
+        {
+          "id": 176,
+          "value": 0.0
+        },
+        {
+          "id": 177,
+          "value": 1.0
+        },
+        {
+          "id": 178,
+          "value": 0.0
+        },
+        {
+          "id": 179,
+          "value": 0.0
+        },
+        {
+          "id": 182,
+          "value": 3411.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 331,
+          "value": 2.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 13285,
+      "name": "Limited Neural Boost",
+      "groupId": 745,
+      "groupName": "Cyber Learning",
+      "categoryId": 20,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 175,
+          "value": 0.0
+        },
+        {
+          "id": 176,
+          "value": 0.0
+        },
+        {
+          "id": 177,
+          "value": 0.0
+        },
+        {
+          "id": 178,
+          "value": 0.0
+        },
+        {
+          "id": 179,
+          "value": 1.0
+        },
+        {
+          "id": 182,
+          "value": 3411.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 331,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 13286,
+      "name": "Limited Social Adaptation Chip",
+      "groupId": 745,
+      "groupName": "Cyber Learning",
+      "categoryId": 20,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 175,
+          "value": 1.0
+        },
+        {
+          "id": 176,
+          "value": 0.0
+        },
+        {
+          "id": 177,
+          "value": 0.0
+        },
+        {
+          "id": 178,
+          "value": 0.0
+        },
+        {
+          "id": 179,
+          "value": 0.0
+        },
+        {
+          "id": 182,
+          "value": 3411.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 331,
+          "value": 5.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 13287,
+      "name": "Limited Cybernetic Subprocessor",
+      "groupId": 745,
+      "groupName": "Cyber Learning",
+      "categoryId": 20,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 175,
+          "value": 0.0
+        },
+        {
+          "id": 176,
+          "value": 1.0
+        },
+        {
+          "id": 177,
+          "value": 0.0
+        },
+        {
+          "id": 178,
+          "value": 0.0
+        },
+        {
+          "id": 179,
+          "value": 0.0
+        },
+        {
+          "id": 182,
+          "value": 3411.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 331,
+          "value": 4.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        }
+      ]
+    },
+    {
       "id": 13835,
       "name": "Abandoned Drill - Ruined",
       "groupId": 226,
@@ -9079,6 +9887,246 @@
         {
           "id": 1692,
           "value": 4.0
+        }
+      ]
+    },
+    {
+      "id": 14295,
+      "name": "Limited Ocular Filter - Beta",
+      "groupId": 745,
+      "groupName": "Cyber Learning",
+      "categoryId": 20,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 175,
+          "value": 0.0
+        },
+        {
+          "id": 176,
+          "value": 0.0
+        },
+        {
+          "id": 177,
+          "value": 0.0
+        },
+        {
+          "id": 178,
+          "value": 2.0
+        },
+        {
+          "id": 179,
+          "value": 0.0
+        },
+        {
+          "id": 182,
+          "value": 3411.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 331,
+          "value": 1.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 14296,
+      "name": "Limited Neural Boost - Beta",
+      "groupId": 745,
+      "groupName": "Cyber Learning",
+      "categoryId": 20,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 175,
+          "value": 0.0
+        },
+        {
+          "id": 176,
+          "value": 0.0
+        },
+        {
+          "id": 177,
+          "value": 0.0
+        },
+        {
+          "id": 178,
+          "value": 0.0
+        },
+        {
+          "id": 179,
+          "value": 2.0
+        },
+        {
+          "id": 182,
+          "value": 3411.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 331,
+          "value": 3.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 14297,
+      "name": "Limited Memory Augmentation - Beta",
+      "groupId": 745,
+      "groupName": "Cyber Learning",
+      "categoryId": 20,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 175,
+          "value": 0.0
+        },
+        {
+          "id": 176,
+          "value": 0.0
+        },
+        {
+          "id": 177,
+          "value": 2.0
+        },
+        {
+          "id": 178,
+          "value": 0.0
+        },
+        {
+          "id": 179,
+          "value": 0.0
+        },
+        {
+          "id": 182,
+          "value": 3411.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 331,
+          "value": 2.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 14298,
+      "name": "Limited Cybernetic Subprocessor - Beta",
+      "groupId": 745,
+      "groupName": "Cyber Learning",
+      "categoryId": 20,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 175,
+          "value": 0.0
+        },
+        {
+          "id": 176,
+          "value": 2.0
+        },
+        {
+          "id": 177,
+          "value": 0.0
+        },
+        {
+          "id": 178,
+          "value": 0.0
+        },
+        {
+          "id": 179,
+          "value": 0.0
+        },
+        {
+          "id": 182,
+          "value": 3411.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 331,
+          "value": 4.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "id": 14299,
+      "name": "Limited Social Adaptation Chip - Beta",
+      "groupId": 745,
+      "groupName": "Cyber Learning",
+      "categoryId": 20,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 175,
+          "value": 2.0
+        },
+        {
+          "id": 176,
+          "value": 0.0
+        },
+        {
+          "id": 177,
+          "value": 0.0
+        },
+        {
+          "id": 178,
+          "value": 0.0
+        },
+        {
+          "id": 179,
+          "value": 0.0
+        },
+        {
+          "id": 182,
+          "value": 3411.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 331,
+          "value": 5.0
+        },
+        {
+          "id": 422,
+          "value": 1.0
         }
       ]
     },
@@ -84992,6 +86040,101 @@
     },
     {
       "dataset": "client/dogmaattributes",
+      "key": 175,
+      "data": {
+        "stackable": 1,
+        "iconID": 1378,
+        "displayNameID": 233023,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "unitID": 120,
+        "name": "charismaBonus",
+        "attributeID": 175,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "description": "+/- bonus to the charisma of a character."
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 176,
+      "data": {
+        "stackable": 1,
+        "iconID": 1380,
+        "displayNameID": 233263,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "unitID": 120,
+        "name": "intelligenceBonus",
+        "attributeID": 176,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "description": "+/- bonus to the intelligence of a character."
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 177,
+      "data": {
+        "stackable": 1,
+        "iconID": 1381,
+        "displayNameID": 233343,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "unitID": 120,
+        "name": "memoryBonus",
+        "attributeID": 177,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "description": "+/- bonus to the memory of a character."
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 178,
+      "data": {
+        "stackable": 1,
+        "iconID": 1382,
+        "displayNameID": 233403,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "unitID": 120,
+        "name": "perceptionBonus",
+        "attributeID": 178,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "description": "+/- bonus to the perception of a character."
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 179,
+      "data": {
+        "stackable": 1,
+        "iconID": 1379,
+        "displayNameID": 232981,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "unitID": 120,
+        "name": "willpowerBonus",
+        "attributeID": 179,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "description": "+/- bonus to the willpower of a character."
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
       "key": 180,
       "data": {
         "stackable": 1,
@@ -85812,6 +86955,25 @@
         "displayWhenZero": 0,
         "categoryID": 5,
         "description": "Autogenerated skill attribute, capNeedBonus"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 331,
+      "data": {
+        "stackable": 1,
+        "iconID": 2224,
+        "displayNameID": 233622,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "unitID": 136,
+        "name": "implantness",
+        "attributeID": 331,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "description": "Whether an item is an implant or not"
       }
     },
     {
@@ -132976,6 +134138,46 @@
     },
     {
       "dataset": "client/localization_fsd_en-us",
+      "key": 58355,
+      "data": {
+        "language": "en-us",
+        "text": "Materials For War Preparation",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 58356,
+      "data": {
+        "language": "en-us",
+        "text": "Materials For War Preparation",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 58357,
+      "data": {
+        "language": "en-us",
+        "text": "Materials For War Preparation",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 58358,
+      "data": {
+        "language": "en-us",
+        "text": "Materials For War Preparation",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
       "key": 58601,
       "data": {
         "language": "en-us",
@@ -155956,6 +157158,214 @@
     },
     {
       "dataset": "client/localization_fsd_en-us",
+      "key": 144548,
+      "data": {
+        "language": "en-us",
+        "text": "We are escalating our production so we can increase our military strength in light of recent political upheavals in the world. Increased production requires more minerals. I want you to get {[item]objectiveTypeID.quantityName, quantity=objectiveQuantity} to one of our main production facilities. Your help will undoubtedly get a positive response from other corporate members.",
+        "metadata": null,
+        "tokens": {
+          "{[item]objectiveTypeID.quantityName, quantity=objectiveQuantity}": {
+            "conditionalValues": [],
+            "variableType": 2,
+            "propertyName": "quantityName",
+            "args": 0,
+            "kwargs": {
+              "quantity": "objectiveQuantity"
+            },
+            "variableName": "objectiveTypeID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 144549,
+      "data": {
+        "language": "en-us",
+        "text": "Great! Your achievements for us have not gone unnoticed.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 144550,
+      "data": {
+        "language": "en-us",
+        "text": "We are escalating our production so we can increase our military strength in light of recent political upheavals in the world. Increased production requires more minerals. I want you to get {[item]objectiveTypeID.quantityName, quantity=objectiveQuantity} to one of our main production facilities. Your help will undoubtedly get a positive response from other corporate members.",
+        "metadata": null,
+        "tokens": {
+          "{[item]objectiveTypeID.quantityName, quantity=objectiveQuantity}": {
+            "conditionalValues": [],
+            "variableType": 2,
+            "propertyName": "quantityName",
+            "args": 0,
+            "kwargs": {
+              "quantity": "objectiveQuantity"
+            },
+            "variableName": "objectiveTypeID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 144551,
+      "data": {
+        "language": "en-us",
+        "text": "We are escalating our production so we can increase our military strength in light of recent political upheavals in the world. Increased production requires more minerals. I want you to get {[item]objectiveTypeID.quantityName, quantity=objectiveQuantity} to one of our main production facilities. Your help will undoubtedly get a positive response from other corporate members.",
+        "metadata": null,
+        "tokens": {
+          "{[item]objectiveTypeID.quantityName, quantity=objectiveQuantity}": {
+            "conditionalValues": [],
+            "variableType": 2,
+            "propertyName": "quantityName",
+            "args": 0,
+            "kwargs": {
+              "quantity": "objectiveQuantity"
+            },
+            "variableName": "objectiveTypeID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 144552,
+      "data": {
+        "language": "en-us",
+        "text": "Great! Your achievements for us have not gone unnoticed.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 144553,
+      "data": {
+        "language": "en-us",
+        "text": "We are escalating our production so we can increase our military strength in light of recent political upheavals in the world. Increased production requires more minerals. I want you to get {[item]objectiveTypeID.quantityName, quantity=objectiveQuantity} to one of our main production facilities. Your help will undoubtedly get a positive response from other corporate members.",
+        "metadata": null,
+        "tokens": {
+          "{[item]objectiveTypeID.quantityName, quantity=objectiveQuantity}": {
+            "conditionalValues": [],
+            "variableType": 2,
+            "propertyName": "quantityName",
+            "args": 0,
+            "kwargs": {
+              "quantity": "objectiveQuantity"
+            },
+            "variableName": "objectiveTypeID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 144554,
+      "data": {
+        "language": "en-us",
+        "text": "We are escalating our production so we can increase our military strength in light of recent political upheavals in the world. Increased production requires more minerals. I want you to get {[item]objectiveTypeID.quantityName, quantity=objectiveQuantity} to one of our main production facilities. Your help will undoubtedly get a positive response from other corporate members.",
+        "metadata": null,
+        "tokens": {
+          "{[item]objectiveTypeID.quantityName, quantity=objectiveQuantity}": {
+            "conditionalValues": [],
+            "variableType": 2,
+            "propertyName": "quantityName",
+            "args": 0,
+            "kwargs": {
+              "quantity": "objectiveQuantity"
+            },
+            "variableName": "objectiveTypeID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 144555,
+      "data": {
+        "language": "en-us",
+        "text": "Great! Your achievements for us have not gone unnoticed.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 144556,
+      "data": {
+        "language": "en-us",
+        "text": "We are escalating our production so we can increase our military strength in light of recent political upheavals in the world. Increased production requires more minerals. I want you to get {[item]objectiveTypeID.quantityName, quantity=objectiveQuantity} to one of our main production facilities. Your help will undoubtedly get a positive response from other corporate members.",
+        "metadata": null,
+        "tokens": {
+          "{[item]objectiveTypeID.quantityName, quantity=objectiveQuantity}": {
+            "conditionalValues": [],
+            "variableType": 2,
+            "propertyName": "quantityName",
+            "args": 0,
+            "kwargs": {
+              "quantity": "objectiveQuantity"
+            },
+            "variableName": "objectiveTypeID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 144557,
+      "data": {
+        "language": "en-us",
+        "text": "We are escalating our production so we can increase our military strength in light of recent political upheavals in the world. Increased production requires more minerals. I want you to get {[item]objectiveTypeID.quantityName, quantity=objectiveQuantity} to one of our main production facilities. Your help will undoubtedly get a positive response from other corporate members.",
+        "metadata": null,
+        "tokens": {
+          "{[item]objectiveTypeID.quantityName, quantity=objectiveQuantity}": {
+            "conditionalValues": [],
+            "variableType": 2,
+            "propertyName": "quantityName",
+            "args": 0,
+            "kwargs": {
+              "quantity": "objectiveQuantity"
+            },
+            "variableName": "objectiveTypeID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 144558,
+      "data": {
+        "language": "en-us",
+        "text": "Great! Your achievements for us have not gone unnoticed.",
+        "metadata": null,
+        "tokens": null
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
+      "key": 144559,
+      "data": {
+        "language": "en-us",
+        "text": "We are escalating our production so we can increase our military strength in light of recent political upheavals in the world. Increased production requires more minerals. I want you to get {[item]objectiveTypeID.quantityName, quantity=objectiveQuantity} to one of our main production facilities. Your help will undoubtedly get a positive response from other corporate members",
+        "metadata": null,
+        "tokens": {
+          "{[item]objectiveTypeID.quantityName, quantity=objectiveQuantity}": {
+            "conditionalValues": [],
+            "variableType": 2,
+            "propertyName": "quantityName",
+            "args": 0,
+            "kwargs": {
+              "quantity": "objectiveQuantity"
+            },
+            "variableName": "objectiveTypeID"
+          }
+        }
+      }
+    },
+    {
+      "dataset": "client/localization_fsd_en-us",
       "key": 144570,
       "data": {
         "language": "en-us",
@@ -165704,6 +167114,114 @@
     },
     {
       "dataset": "client/missions",
+      "key": 15553,
+      "data": {
+        "contentTemplate": "agent.missionTemplatizedContent_GenericStorylineTradeMission",
+        "hasStandingRewards": 1,
+        "fixedLpRewardAlpha": 0,
+        "nameID": 58355,
+        "messages": {
+          "messages.mission.completed.agentsays": 144549,
+          "messages.mission.briefing": 144548,
+          "messages.mission.offered.agentsays": 144550
+        },
+        "fixedLpRewardOmega": 0,
+        "expirationTime": 10080,
+        "missionRewards": {
+          "reward": {
+            "rewardQuantity": 1
+          }
+        },
+        "courierMission": {
+          "objectiveSingleton": 0,
+          "objectiveTypeID": 1230,
+          "objectiveQuantity": 1000
+        }
+      }
+    },
+    {
+      "dataset": "client/missions",
+      "key": 15554,
+      "data": {
+        "contentTemplate": "agent.missionTemplatizedContent_GenericStorylineTradeMission",
+        "hasStandingRewards": 1,
+        "fixedLpRewardAlpha": 0,
+        "nameID": 58356,
+        "messages": {
+          "messages.mission.completed.agentsays": 144552,
+          "messages.mission.briefing": 144551,
+          "messages.mission.offered.agentsays": 144553
+        },
+        "fixedLpRewardOmega": 0,
+        "expirationTime": 10080,
+        "missionRewards": {
+          "reward": {
+            "rewardQuantity": 1
+          }
+        },
+        "courierMission": {
+          "objectiveSingleton": 0,
+          "objectiveTypeID": 1228,
+          "objectiveQuantity": 1500
+        }
+      }
+    },
+    {
+      "dataset": "client/missions",
+      "key": 15555,
+      "data": {
+        "contentTemplate": "agent.missionTemplatizedContent_GenericStorylineTradeMission",
+        "hasStandingRewards": 1,
+        "fixedLpRewardAlpha": 0,
+        "nameID": 58357,
+        "messages": {
+          "messages.mission.completed.agentsays": 144555,
+          "messages.mission.briefing": 144554,
+          "messages.mission.offered.agentsays": 144556
+        },
+        "fixedLpRewardOmega": 0,
+        "expirationTime": 10080,
+        "missionRewards": {
+          "reward": {
+            "rewardQuantity": 1
+          }
+        },
+        "courierMission": {
+          "objectiveSingleton": 0,
+          "objectiveTypeID": 1227,
+          "objectiveQuantity": 10000
+        }
+      }
+    },
+    {
+      "dataset": "client/missions",
+      "key": 15556,
+      "data": {
+        "contentTemplate": "agent.missionTemplatizedContent_GenericStorylineTradeMission",
+        "hasStandingRewards": 1,
+        "fixedLpRewardAlpha": 0,
+        "nameID": 58358,
+        "messages": {
+          "messages.mission.completed.agentsays": 144558,
+          "messages.mission.briefing": 144557,
+          "messages.mission.offered.agentsays": 144559
+        },
+        "fixedLpRewardOmega": 0,
+        "expirationTime": 10080,
+        "missionRewards": {
+          "reward": {
+            "rewardQuantity": 1
+          }
+        },
+        "courierMission": {
+          "objectiveSingleton": 0,
+          "objectiveTypeID": 20,
+          "objectiveQuantity": 8000
+        }
+      }
+    },
+    {
+      "dataset": "client/missions",
       "key": 15666,
       "data": {
         "contentTemplate": "agent.missionTemplatizedContent_BasicCourierMission",
@@ -172671,6 +174189,47 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 20,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 182,
+            "value": 3386.0
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 790,
+            "value": 60378.0
+          },
+          {
+            "attributeID": 1980,
+            "value": 0.5
+          },
+          {
+            "attributeID": 1981,
+            "value": 600.0
+          },
+          {
+            "attributeID": 2115,
+            "value": 0.0
+          },
+          {
+            "attributeID": 2699,
+            "value": 1.0
+          },
+          {
+            "attributeID": 2711,
+            "value": 20.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 23,
       "data": {
         "dogmaAttributes": [
@@ -175645,6 +177204,47 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 1227,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 182,
+            "value": 3386.0
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 790,
+            "value": 60378.0
+          },
+          {
+            "attributeID": 1980,
+            "value": 0.5
+          },
+          {
+            "attributeID": 1981,
+            "value": 600.0
+          },
+          {
+            "attributeID": 2115,
+            "value": 0.0
+          },
+          {
+            "attributeID": 2699,
+            "value": 1.0
+          },
+          {
+            "attributeID": 2711,
+            "value": 1227.0
+          }
+        ],
+        "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 1228,
       "data": {
         "dogmaAttributes": [
@@ -177712,6 +179312,270 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 9899,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 175,
+            "value": 0.0
+          },
+          {
+            "attributeID": 176,
+            "value": 0.0
+          },
+          {
+            "attributeID": 177,
+            "value": 0.0
+          },
+          {
+            "attributeID": 178,
+            "value": 3.0
+          },
+          {
+            "attributeID": 179,
+            "value": 0.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3411.0
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 331,
+            "value": 1.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 302,
+            "isDefault": 0
+          },
+          {
+            "effectID": 304,
+            "isDefault": 0
+          },
+          {
+            "effectID": 306,
+            "isDefault": 0
+          },
+          {
+            "effectID": 308,
+            "isDefault": 0
+          },
+          {
+            "effectID": 310,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 9941,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 175,
+            "value": 0.0
+          },
+          {
+            "attributeID": 176,
+            "value": 0.0
+          },
+          {
+            "attributeID": 177,
+            "value": 3.0
+          },
+          {
+            "attributeID": 178,
+            "value": 0.0
+          },
+          {
+            "attributeID": 179,
+            "value": 0.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3411.0
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 331,
+            "value": 2.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 302,
+            "isDefault": 0
+          },
+          {
+            "effectID": 304,
+            "isDefault": 0
+          },
+          {
+            "effectID": 306,
+            "isDefault": 0
+          },
+          {
+            "effectID": 308,
+            "isDefault": 0
+          },
+          {
+            "effectID": 310,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 9942,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 175,
+            "value": 0.0
+          },
+          {
+            "attributeID": 176,
+            "value": 0.0
+          },
+          {
+            "attributeID": 177,
+            "value": 0.0
+          },
+          {
+            "attributeID": 178,
+            "value": 0.0
+          },
+          {
+            "attributeID": 179,
+            "value": 3.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3411.0
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 331,
+            "value": 3.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 302,
+            "isDefault": 0
+          },
+          {
+            "effectID": 304,
+            "isDefault": 0
+          },
+          {
+            "effectID": 306,
+            "isDefault": 0
+          },
+          {
+            "effectID": 308,
+            "isDefault": 0
+          },
+          {
+            "effectID": 310,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 9943,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 175,
+            "value": 0.0
+          },
+          {
+            "attributeID": 176,
+            "value": 3.0
+          },
+          {
+            "attributeID": 177,
+            "value": 0.0
+          },
+          {
+            "attributeID": 178,
+            "value": 0.0
+          },
+          {
+            "attributeID": 179,
+            "value": 0.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3411.0
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 331,
+            "value": 4.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 302,
+            "isDefault": 0
+          },
+          {
+            "effectID": 304,
+            "isDefault": 0
+          },
+          {
+            "effectID": 306,
+            "isDefault": 0
+          },
+          {
+            "effectID": 308,
+            "isDefault": 0
+          },
+          {
+            "effectID": 310,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 9944,
       "data": {
         "dogmaAttributes": [
@@ -177767,6 +179631,72 @@
           },
           {
             "effectID": 96,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 9956,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 175,
+            "value": 3.0
+          },
+          {
+            "attributeID": 176,
+            "value": 0.0
+          },
+          {
+            "attributeID": 177,
+            "value": 0.0
+          },
+          {
+            "attributeID": 178,
+            "value": 0.0
+          },
+          {
+            "attributeID": 179,
+            "value": 0.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3411.0
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 331,
+            "value": 5.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 302,
+            "isDefault": 0
+          },
+          {
+            "effectID": 304,
+            "isDefault": 0
+          },
+          {
+            "effectID": 306,
+            "isDefault": 0
+          },
+          {
+            "effectID": 308,
+            "isDefault": 0
+          },
+          {
+            "effectID": 310,
             "isDefault": 0
           }
         ]
@@ -177956,6 +179886,336 @@
           }
         ],
         "dogmaEffects": []
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 10208,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 175,
+            "value": 0.0
+          },
+          {
+            "attributeID": 176,
+            "value": 0.0
+          },
+          {
+            "attributeID": 177,
+            "value": 4.0
+          },
+          {
+            "attributeID": 178,
+            "value": 0.0
+          },
+          {
+            "attributeID": 179,
+            "value": 0.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3411.0
+          },
+          {
+            "attributeID": 277,
+            "value": 4.0
+          },
+          {
+            "attributeID": 331,
+            "value": 2.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 302,
+            "isDefault": 0
+          },
+          {
+            "effectID": 304,
+            "isDefault": 0
+          },
+          {
+            "effectID": 306,
+            "isDefault": 0
+          },
+          {
+            "effectID": 308,
+            "isDefault": 0
+          },
+          {
+            "effectID": 310,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 10212,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 175,
+            "value": 0.0
+          },
+          {
+            "attributeID": 176,
+            "value": 0.0
+          },
+          {
+            "attributeID": 177,
+            "value": 0.0
+          },
+          {
+            "attributeID": 178,
+            "value": 0.0
+          },
+          {
+            "attributeID": 179,
+            "value": 4.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3411.0
+          },
+          {
+            "attributeID": 277,
+            "value": 4.0
+          },
+          {
+            "attributeID": 331,
+            "value": 3.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 302,
+            "isDefault": 0
+          },
+          {
+            "effectID": 304,
+            "isDefault": 0
+          },
+          {
+            "effectID": 306,
+            "isDefault": 0
+          },
+          {
+            "effectID": 308,
+            "isDefault": 0
+          },
+          {
+            "effectID": 310,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 10216,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 175,
+            "value": 0.0
+          },
+          {
+            "attributeID": 176,
+            "value": 0.0
+          },
+          {
+            "attributeID": 177,
+            "value": 0.0
+          },
+          {
+            "attributeID": 178,
+            "value": 4.0
+          },
+          {
+            "attributeID": 179,
+            "value": 0.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3411.0
+          },
+          {
+            "attributeID": 277,
+            "value": 4.0
+          },
+          {
+            "attributeID": 331,
+            "value": 1.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 302,
+            "isDefault": 0
+          },
+          {
+            "effectID": 304,
+            "isDefault": 0
+          },
+          {
+            "effectID": 306,
+            "isDefault": 0
+          },
+          {
+            "effectID": 308,
+            "isDefault": 0
+          },
+          {
+            "effectID": 310,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 10221,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 175,
+            "value": 0.0
+          },
+          {
+            "attributeID": 176,
+            "value": 4.0
+          },
+          {
+            "attributeID": 177,
+            "value": 0.0
+          },
+          {
+            "attributeID": 178,
+            "value": 0.0
+          },
+          {
+            "attributeID": 179,
+            "value": 0.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3411.0
+          },
+          {
+            "attributeID": 277,
+            "value": 4.0
+          },
+          {
+            "attributeID": 331,
+            "value": 4.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 302,
+            "isDefault": 0
+          },
+          {
+            "effectID": 304,
+            "isDefault": 0
+          },
+          {
+            "effectID": 306,
+            "isDefault": 0
+          },
+          {
+            "effectID": 308,
+            "isDefault": 0
+          },
+          {
+            "effectID": 310,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 10225,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 175,
+            "value": 4.0
+          },
+          {
+            "attributeID": 176,
+            "value": 0.0
+          },
+          {
+            "attributeID": 177,
+            "value": 0.0
+          },
+          {
+            "attributeID": 178,
+            "value": 0.0
+          },
+          {
+            "attributeID": 179,
+            "value": 0.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3411.0
+          },
+          {
+            "attributeID": 277,
+            "value": 4.0
+          },
+          {
+            "attributeID": 331,
+            "value": 5.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 302,
+            "isDefault": 0
+          },
+          {
+            "effectID": 304,
+            "isDefault": 0
+          },
+          {
+            "effectID": 306,
+            "isDefault": 0
+          },
+          {
+            "effectID": 308,
+            "isDefault": 0
+          },
+          {
+            "effectID": 310,
+            "isDefault": 0
+          }
+        ]
       }
     },
     {
@@ -179360,6 +181620,336 @@
     },
     {
       "dataset": "client/typedogma",
+      "key": 13283,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 175,
+            "value": 0.0
+          },
+          {
+            "attributeID": 176,
+            "value": 0.0
+          },
+          {
+            "attributeID": 177,
+            "value": 0.0
+          },
+          {
+            "attributeID": 178,
+            "value": 1.0
+          },
+          {
+            "attributeID": 179,
+            "value": 0.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3411.0
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 331,
+            "value": 1.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 302,
+            "isDefault": 0
+          },
+          {
+            "effectID": 304,
+            "isDefault": 0
+          },
+          {
+            "effectID": 306,
+            "isDefault": 0
+          },
+          {
+            "effectID": 308,
+            "isDefault": 0
+          },
+          {
+            "effectID": 310,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 13284,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 175,
+            "value": 0.0
+          },
+          {
+            "attributeID": 176,
+            "value": 0.0
+          },
+          {
+            "attributeID": 177,
+            "value": 1.0
+          },
+          {
+            "attributeID": 178,
+            "value": 0.0
+          },
+          {
+            "attributeID": 179,
+            "value": 0.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3411.0
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 331,
+            "value": 2.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 302,
+            "isDefault": 0
+          },
+          {
+            "effectID": 304,
+            "isDefault": 0
+          },
+          {
+            "effectID": 306,
+            "isDefault": 0
+          },
+          {
+            "effectID": 308,
+            "isDefault": 0
+          },
+          {
+            "effectID": 310,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 13285,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 175,
+            "value": 0.0
+          },
+          {
+            "attributeID": 176,
+            "value": 0.0
+          },
+          {
+            "attributeID": 177,
+            "value": 0.0
+          },
+          {
+            "attributeID": 178,
+            "value": 0.0
+          },
+          {
+            "attributeID": 179,
+            "value": 1.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3411.0
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 331,
+            "value": 3.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 302,
+            "isDefault": 0
+          },
+          {
+            "effectID": 304,
+            "isDefault": 0
+          },
+          {
+            "effectID": 306,
+            "isDefault": 0
+          },
+          {
+            "effectID": 308,
+            "isDefault": 0
+          },
+          {
+            "effectID": 310,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 13286,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 175,
+            "value": 1.0
+          },
+          {
+            "attributeID": 176,
+            "value": 0.0
+          },
+          {
+            "attributeID": 177,
+            "value": 0.0
+          },
+          {
+            "attributeID": 178,
+            "value": 0.0
+          },
+          {
+            "attributeID": 179,
+            "value": 0.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3411.0
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 331,
+            "value": 5.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 302,
+            "isDefault": 0
+          },
+          {
+            "effectID": 304,
+            "isDefault": 0
+          },
+          {
+            "effectID": 306,
+            "isDefault": 0
+          },
+          {
+            "effectID": 308,
+            "isDefault": 0
+          },
+          {
+            "effectID": 310,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 13287,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 175,
+            "value": 0.0
+          },
+          {
+            "attributeID": 176,
+            "value": 1.0
+          },
+          {
+            "attributeID": 177,
+            "value": 0.0
+          },
+          {
+            "attributeID": 178,
+            "value": 0.0
+          },
+          {
+            "attributeID": 179,
+            "value": 0.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3411.0
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 331,
+            "value": 4.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 302,
+            "isDefault": 0
+          },
+          {
+            "effectID": 304,
+            "isDefault": 0
+          },
+          {
+            "effectID": 306,
+            "isDefault": 0
+          },
+          {
+            "effectID": 308,
+            "isDefault": 0
+          },
+          {
+            "effectID": 310,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
       "key": 13835,
       "data": {
         "dogmaAttributes": [
@@ -179773,6 +182363,336 @@
           },
           {
             "effectID": 3200,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 14295,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 175,
+            "value": 0.0
+          },
+          {
+            "attributeID": 176,
+            "value": 0.0
+          },
+          {
+            "attributeID": 177,
+            "value": 0.0
+          },
+          {
+            "attributeID": 178,
+            "value": 2.0
+          },
+          {
+            "attributeID": 179,
+            "value": 0.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3411.0
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 331,
+            "value": 1.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 302,
+            "isDefault": 0
+          },
+          {
+            "effectID": 304,
+            "isDefault": 0
+          },
+          {
+            "effectID": 306,
+            "isDefault": 0
+          },
+          {
+            "effectID": 308,
+            "isDefault": 0
+          },
+          {
+            "effectID": 310,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 14296,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 175,
+            "value": 0.0
+          },
+          {
+            "attributeID": 176,
+            "value": 0.0
+          },
+          {
+            "attributeID": 177,
+            "value": 0.0
+          },
+          {
+            "attributeID": 178,
+            "value": 0.0
+          },
+          {
+            "attributeID": 179,
+            "value": 2.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3411.0
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 331,
+            "value": 3.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 302,
+            "isDefault": 0
+          },
+          {
+            "effectID": 304,
+            "isDefault": 0
+          },
+          {
+            "effectID": 306,
+            "isDefault": 0
+          },
+          {
+            "effectID": 308,
+            "isDefault": 0
+          },
+          {
+            "effectID": 310,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 14297,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 175,
+            "value": 0.0
+          },
+          {
+            "attributeID": 176,
+            "value": 0.0
+          },
+          {
+            "attributeID": 177,
+            "value": 2.0
+          },
+          {
+            "attributeID": 178,
+            "value": 0.0
+          },
+          {
+            "attributeID": 179,
+            "value": 0.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3411.0
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 331,
+            "value": 2.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 302,
+            "isDefault": 0
+          },
+          {
+            "effectID": 304,
+            "isDefault": 0
+          },
+          {
+            "effectID": 306,
+            "isDefault": 0
+          },
+          {
+            "effectID": 308,
+            "isDefault": 0
+          },
+          {
+            "effectID": 310,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 14298,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 175,
+            "value": 0.0
+          },
+          {
+            "attributeID": 176,
+            "value": 2.0
+          },
+          {
+            "attributeID": 177,
+            "value": 0.0
+          },
+          {
+            "attributeID": 178,
+            "value": 0.0
+          },
+          {
+            "attributeID": 179,
+            "value": 0.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3411.0
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 331,
+            "value": 4.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 302,
+            "isDefault": 0
+          },
+          {
+            "effectID": 304,
+            "isDefault": 0
+          },
+          {
+            "effectID": 306,
+            "isDefault": 0
+          },
+          {
+            "effectID": 308,
+            "isDefault": 0
+          },
+          {
+            "effectID": 310,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 14299,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 175,
+            "value": 2.0
+          },
+          {
+            "attributeID": 176,
+            "value": 0.0
+          },
+          {
+            "attributeID": 177,
+            "value": 0.0
+          },
+          {
+            "attributeID": 178,
+            "value": 0.0
+          },
+          {
+            "attributeID": 179,
+            "value": 0.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3411.0
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 331,
+            "value": 5.0
+          },
+          {
+            "attributeID": 422,
+            "value": 1.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 302,
+            "isDefault": 0
+          },
+          {
+            "effectID": 304,
+            "isDefault": 0
+          },
+          {
+            "effectID": 306,
+            "isDefault": 0
+          },
+          {
+            "effectID": 308,
+            "isDefault": 0
+          },
+          {
+            "effectID": 310,
             "isDefault": 0
           }
         ]
@@ -254429,6 +257349,25 @@
     },
     {
       "dataset": "client/types",
+      "key": 20,
+      "data": {
+        "descriptionID": 1030785,
+        "typeID": 20,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 1030784,
+        "iconID": 1270,
+        "published": 1,
+        "marketGroupID": 523,
+        "volume": 1.2,
+        "mass": 1e+35,
+        "basePrice": 74916.0,
+        "portionSize": 100,
+        "groupID": 457
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 23,
       "data": {
         "descriptionID": 79830,
@@ -255127,6 +258066,25 @@
         "portionSize": 1,
         "techLevel": 1,
         "groupID": 43
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 1227,
+      "data": {
+        "descriptionID": 1031139,
+        "typeID": 1227,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 1031138,
+        "iconID": 1271,
+        "published": 1,
+        "marketGroupID": 526,
+        "volume": 0.6,
+        "mass": 1e+35,
+        "basePrice": 40894.0,
+        "portionSize": 100,
+        "groupID": 469
       }
     },
     {
@@ -258929,6 +261887,90 @@
     },
     {
       "dataset": "client/types",
+      "key": 9899,
+      "data": {
+        "descriptionID": 87792,
+        "typeID": 9899,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 77308,
+        "volume": 1.0,
+        "iconID": 2053,
+        "published": 1,
+        "marketGroupID": 618,
+        "metaGroupID": 1,
+        "mass": 0.0,
+        "basePrice": 200000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 745
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 9941,
+      "data": {
+        "descriptionID": 91064,
+        "typeID": 9941,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 100857,
+        "volume": 1.0,
+        "iconID": 2061,
+        "published": 1,
+        "marketGroupID": 619,
+        "metaGroupID": 1,
+        "mass": 0.0,
+        "basePrice": 200000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 745
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 9942,
+      "data": {
+        "descriptionID": 87793,
+        "typeID": 9942,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 77309,
+        "volume": 1.0,
+        "iconID": 2054,
+        "published": 1,
+        "marketGroupID": 620,
+        "metaGroupID": 1,
+        "mass": 0.0,
+        "basePrice": 200000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 745
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 9943,
+      "data": {
+        "descriptionID": 87794,
+        "typeID": 9943,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 77310,
+        "volume": 1.0,
+        "iconID": 2062,
+        "published": 1,
+        "marketGroupID": 621,
+        "metaGroupID": 1,
+        "mass": 0.0,
+        "basePrice": 200000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 745
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 9944,
       "data": {
         "descriptionID": 87795,
@@ -258948,6 +261990,27 @@
         "portionSize": 1,
         "techLevel": 1,
         "groupID": 302
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 9956,
+      "data": {
+        "descriptionID": 87799,
+        "typeID": 9956,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 77316,
+        "volume": 1.0,
+        "iconID": 2060,
+        "published": 1,
+        "marketGroupID": 622,
+        "metaGroupID": 1,
+        "mass": 0.0,
+        "basePrice": 200000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 745
       }
     },
     {
@@ -259323,6 +262386,116 @@
         "basePrice": 0.0,
         "portionSize": 1,
         "groupID": 226
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 10208,
+      "data": {
+        "descriptionID": 91067,
+        "typeID": 10208,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 100860,
+        "volume": 1.0,
+        "iconID": 2061,
+        "published": 1,
+        "marketGroupID": 619,
+        "metaGroupID": 1,
+        "mass": 0.0,
+        "variationParentTypeID": 9941,
+        "basePrice": 400000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 745
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 10212,
+      "data": {
+        "descriptionID": 87806,
+        "typeID": 10212,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 77325,
+        "volume": 1.0,
+        "iconID": 2054,
+        "published": 1,
+        "marketGroupID": 620,
+        "metaGroupID": 1,
+        "mass": 0.0,
+        "variationParentTypeID": 9942,
+        "basePrice": 400000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 745
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 10216,
+      "data": {
+        "descriptionID": 87810,
+        "typeID": 10216,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 77329,
+        "volume": 1.0,
+        "iconID": 2053,
+        "published": 1,
+        "marketGroupID": 618,
+        "metaGroupID": 1,
+        "mass": 0.0,
+        "variationParentTypeID": 9899,
+        "basePrice": 400000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 745
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 10221,
+      "data": {
+        "descriptionID": 87814,
+        "typeID": 10221,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 77333,
+        "volume": 1.0,
+        "iconID": 2062,
+        "published": 1,
+        "marketGroupID": 621,
+        "metaGroupID": 1,
+        "mass": 0.0,
+        "variationParentTypeID": 9943,
+        "basePrice": 400000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 745
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 10225,
+      "data": {
+        "descriptionID": 87818,
+        "typeID": 10225,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 77337,
+        "volume": 1.0,
+        "iconID": 2060,
+        "published": 1,
+        "marketGroupID": 622,
+        "metaGroupID": 1,
+        "mass": 0.0,
+        "variationParentTypeID": 9956,
+        "basePrice": 400000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 745
       }
     },
     {
@@ -260081,6 +263254,116 @@
     },
     {
       "dataset": "client/types",
+      "key": 13283,
+      "data": {
+        "descriptionID": 88214,
+        "typeID": 13283,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 96609,
+        "volume": 1.0,
+        "iconID": 2053,
+        "published": 1,
+        "marketGroupID": 618,
+        "metaGroupID": 1,
+        "mass": 0.0,
+        "variationParentTypeID": 9899,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 745
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 13284,
+      "data": {
+        "descriptionID": 90981,
+        "typeID": 13284,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 100774,
+        "volume": 1.0,
+        "iconID": 2061,
+        "published": 1,
+        "marketGroupID": 619,
+        "metaGroupID": 1,
+        "mass": 0.0,
+        "variationParentTypeID": 9941,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 745
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 13285,
+      "data": {
+        "descriptionID": 88215,
+        "typeID": 13285,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 96610,
+        "volume": 1.0,
+        "iconID": 2054,
+        "published": 1,
+        "marketGroupID": 620,
+        "metaGroupID": 1,
+        "mass": 0.0,
+        "variationParentTypeID": 9942,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 745
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 13286,
+      "data": {
+        "descriptionID": 88216,
+        "typeID": 13286,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 96611,
+        "volume": 1.0,
+        "iconID": 2060,
+        "published": 1,
+        "marketGroupID": 622,
+        "metaGroupID": 1,
+        "mass": 0.0,
+        "variationParentTypeID": 9956,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 745
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 13287,
+      "data": {
+        "descriptionID": 88217,
+        "typeID": 13287,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 96612,
+        "volume": 1.0,
+        "iconID": 2062,
+        "published": 1,
+        "marketGroupID": 621,
+        "metaGroupID": 1,
+        "mass": 0.0,
+        "variationParentTypeID": 9943,
+        "basePrice": 10000.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 745
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 13835,
       "data": {
         "descriptionID": 83808,
@@ -260230,6 +263513,116 @@
         "portionSize": 1,
         "techLevel": 1,
         "groupID": 62
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 14295,
+      "data": {
+        "descriptionID": 88355,
+        "typeID": 14295,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 96751,
+        "volume": 1.0,
+        "iconID": 2053,
+        "published": 1,
+        "marketGroupID": 618,
+        "metaGroupID": 1,
+        "mass": 0.0,
+        "variationParentTypeID": 9899,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 745
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 14296,
+      "data": {
+        "descriptionID": 88356,
+        "typeID": 14296,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 96752,
+        "volume": 1.0,
+        "iconID": 2054,
+        "published": 1,
+        "marketGroupID": 620,
+        "metaGroupID": 1,
+        "mass": 0.0,
+        "variationParentTypeID": 9942,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 745
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 14297,
+      "data": {
+        "descriptionID": 91062,
+        "typeID": 14297,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 100855,
+        "volume": 1.0,
+        "iconID": 2061,
+        "published": 1,
+        "marketGroupID": 619,
+        "metaGroupID": 1,
+        "mass": 0.0,
+        "variationParentTypeID": 9941,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 745
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 14298,
+      "data": {
+        "descriptionID": 88357,
+        "typeID": 14298,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 96753,
+        "volume": 1.0,
+        "iconID": 2062,
+        "published": 1,
+        "marketGroupID": 621,
+        "metaGroupID": 1,
+        "mass": 0.0,
+        "variationParentTypeID": 9943,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 745
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 14299,
+      "data": {
+        "descriptionID": 88358,
+        "typeID": 14299,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 96754,
+        "volume": 1.0,
+        "iconID": 2060,
+        "published": 1,
+        "marketGroupID": 622,
+        "metaGroupID": 1,
+        "mass": 0.0,
+        "variationParentTypeID": 9956,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "techLevel": 1,
+        "groupID": 745
       }
     },
     {
@@ -273026,6 +276419,42 @@
       "data": {
         "name": {
           "en": "Evacuation"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
+      "key": 15553,
+      "data": {
+        "name": {
+          "en": "Materials For War Preparation"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
+      "key": 15554,
+      "data": {
+        "name": {
+          "en": "Materials For War Preparation"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
+      "key": 15555,
+      "data": {
+        "name": {
+          "en": "Materials For War Preparation"
+        }
+      }
+    },
+    {
+      "dataset": "sde/missions",
+      "key": 15556,
+      "data": {
+        "name": {
+          "en": "Materials For War Preparation"
         }
       }
     },

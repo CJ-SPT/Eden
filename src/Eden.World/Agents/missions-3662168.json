@@ -4700,6 +4700,90 @@
       }
     },
     {
+      "missionId": 15553,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Materials_For_War_Preparation",
+      "sourceRevision": "oldid=229167; build-3662168 cargo and implant types",
+      "waves": [],
+      "itemReward": {
+        "types": [
+          13283,
+          13284,
+          13285,
+          13287,
+          13286
+        ],
+        "quantity": 1
+      }
+    },
+    {
+      "missionId": 15554,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Materials_For_War_Preparation",
+      "sourceRevision": "oldid=229167; build-3662168 cargo and implant types",
+      "waves": [],
+      "itemReward": {
+        "types": [
+          14295,
+          14297,
+          14296,
+          14298,
+          14299
+        ],
+        "quantity": 1
+      }
+    },
+    {
+      "missionId": 15555,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Materials_For_War_Preparation",
+      "sourceRevision": "oldid=229167; build-3662168 cargo and implant types",
+      "waves": [],
+      "itemReward": {
+        "types": [
+          9899,
+          9941,
+          9942,
+          9943,
+          9956
+        ],
+        "quantity": 1
+      }
+    },
+    {
+      "missionId": 15556,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Materials_For_War_Preparation",
+      "sourceRevision": "oldid=229167; build-3662168 cargo and implant types",
+      "waves": [],
+      "itemReward": {
+        "types": [
+          10216,
+          10208,
+          10212,
+          10221,
+          10225
+        ],
+        "quantity": 1
+      }
+    },
+    {
       "missionId": 937,
       "level": 1,
       "difficulty": 500,

@@ -47,7 +47,7 @@ public static class MissionTrackingRules
             throw new InvalidDataException("Track accepted missions only.");
         }
         bool inDungeon =
-            offer.Kind != MissionKind.Courier
+            offer.Kind is MissionKind.Combat or MissionKind.Mining
             && systemId == offer.SystemId
             && position is { } point
             && entry.Rooms.Any(room => room.DistanceTo(point) <= MissionRules.ArrivalRange);
@@ -69,6 +69,23 @@ public static class MissionTrackingRules
             return new(current, [missing, present, complete], false);
         }
         var travel = new MissionTrackerObjective(MissionObjectiveKind.Travel, offer.Agent.Id, offer.SystemId);
+        if (offer.Kind == MissionKind.Trade && offer.Retrieval is { } trade)
+        {
+            var fetchTrade = new MissionTrackerObjective(
+                MissionObjectiveKind.Fetch,
+                offer.Agent.Id,
+                TypeId: trade.TypeId,
+                Quantity: trade.Quantity
+            );
+            var returnTrade = fetchTrade with { Kind = MissionObjectiveKind.TransportPresent, LocationId = offer.Agent.StationId!.Value };
+            return new(
+                !offer.ObjectiveComplete ? fetchTrade
+                    : stationId == offer.Agent.StationId && position is null ? complete
+                    : returnTrade,
+                [fetchTrade, returnTrade, complete],
+                false
+            );
+        }
         if (offer.Kind == MissionKind.Mining && offer.Retrieval is { } ore)
         {
             var mine = new MissionTrackerObjective(MissionObjectiveKind.Mine, offer.Agent.Id, TypeId: ore.TypeId, Quantity: ore.Quantity);

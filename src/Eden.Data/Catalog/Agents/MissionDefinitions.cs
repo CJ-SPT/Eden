@@ -17,6 +17,8 @@ public sealed record MissionSpawnGroup(
 
 public sealed record MissionWave(ImmutableArray<MissionSpawnGroup> Groups, int RoomId = 0);
 
+public sealed record MissionItemRewardDefinition(ImmutableArray<int> Types, int Quantity);
+
 public sealed record MissionRoomDefinition(int RoomId, long EntryObjectId);
 
 public sealed record MissionContainerDefinition(long ObjectId, int TypeId, int Quantity, bool RequiresClear = false);
@@ -55,6 +57,8 @@ public sealed record MissionDefinition(
     public int OfferOrder { get; init; }
     public bool Mining { get; init; }
     public MissionChainPart? Chain { get; init; }
+    public bool Trade { get; init; }
+    public MissionItemRewardDefinition? ItemReward { get; init; }
 }
 
 public sealed record MissionContent(int Build, ImmutableArray<MissionDefinition> Missions);

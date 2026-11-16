@@ -25,6 +25,8 @@ public sealed class SavedMission
     public long IskCents { get; set; }
     public long BonusIskCents { get; set; }
     public long BonusWindowTicks { get; set; }
+    public int ItemRewardTypeId { get; set; }
+    public int ItemRewardQuantity { get; set; }
     public long LoyaltyPoints { get; set; }
     public double CorporationFraction { get; set; }
     public double FactionFraction { get; set; }
