@@ -9,6 +9,9 @@ public enum DroneActivity
 {
     Idle = 0,
     Fighting = 1,
+    Mining = 2,
+    Operating = 9,
+    Salvaging = 18,
     Approaching = 3,
     Returning = 4,
     ReturningToBay = 5,
@@ -21,10 +24,20 @@ public enum DroneOrder
     ReturnToBay,
     Reconnect,
     Abandon,
+    Mine,
+    MineRepeatedly,
+    Salvage,
 }
 
 public enum DroneSkill
 {
+    MiningDroneOperation = 3438,
+    MiningDroneSpecialization = 22541,
+    IceHarvestingDroneOperation = 43702,
+    IceHarvestingDroneSpecialization = 43703,
+    RepairDroneOperation = 3439,
+    SalvageDroneOperation = 3440,
+    SalvageDroneSpecialization = 57164,
     Drones = 3436,
     DroneAvionics = 3437,
     DroneInterfacing = 3442,
@@ -49,6 +62,7 @@ public enum CombatDroneKind
     Medium,
     Heavy,
     Sentry,
+    Utility,
 }
 
 public sealed record DroneProfile(
@@ -68,7 +82,8 @@ public sealed record DroneProfile(
     double CycleMilliseconds,
     DamageVector Damage,
     HullDefense Defense,
-    CombatDroneKind Kind = CombatDroneKind.Unspecified
+    CombatDroneKind Kind = CombatDroneKind.Unspecified,
+    UtilityDroneProfile? Utility = null
 );
 
 public sealed record DroneContact(
@@ -90,6 +105,8 @@ public sealed record DroneContact(
     DroneDelegation? Delegation = null
 )
 {
+    public DroneWorkEffect? WorkEffect { get; init; }
+
     public Eden.Gameplay.Exploration.AbyssalDroneEnvironment? Abyssal { get; init; }
 }
 

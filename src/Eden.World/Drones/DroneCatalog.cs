@@ -38,6 +38,10 @@ internal static partial class DroneCatalog
         var attributes = fittedAttributes ?? catalog.FittingAttributes(typeId);
         double bandwidth = attributes.GetValueOrDefault(DogmaAttributeId.DroneBandwidthUsed);
         var required = InventoryDefinitions.RequiredSkills.Select(pair => (int)attributes.GetValueOrDefault(pair.Skill)).ToHashSet();
+        if (UtilityDroneRules.Group(type.GroupId))
+        {
+            return ReadUtility(catalog, typeId, fittedAttributes);
+        }
         if (
             type.GroupId != DroneRules.CombatDroneGroup
             || source?.Published != 1

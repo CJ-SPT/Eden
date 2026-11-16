@@ -5,7 +5,7 @@ import pathlib
 import sqlite3
 
 
-def export(catalog_path, output, hulls_only=False, equipment_only=False):
+def export(catalog_path, output, hulls_only=False, equipment_only=False, utility_only=False):
     with sqlite3.connect(catalog_path.resolve().as_uri() + '?mode=ro', uri=True) as catalog:
         def record(dataset, key):
             row = catalog.execute('SELECT Data FROM SourceRecord WHERE Dataset=? AND Key=?',
@@ -16,7 +16,12 @@ def export(catalog_path, output, hulls_only=False, equipment_only=False):
             raise ValueError('Expected the pinned build-3662168 catalog')
         pending = {16229, 33151, 2476, 3436, 3437, 3442, 12305, 12484, 12485, 12486, 12487,
                    23566, 23606, 23618, 24241, 33699, 3441, 23594}
-        if hulls_only:
+        if utility_only:
+            pending.update({3438, 22541, 43702, 43703})
+            for type_id, in catalog.execute('SELECT Id FROM ItemType WHERE GroupId IN (101,544,639,640,641,1159,5239)'):
+                if record('client/types', type_id).get('published') == 1:
+                    pending.add(type_id)
+        elif hulls_only:
             policy = pathlib.Path(__file__).resolve().parents[1] / 'src/Eden.Gameplay/Content/content-support-3662168.json'
             pending = set(json.loads(policy.read_text(encoding='utf-8'))['droneHullTypes'])
         elif equipment_only:
@@ -24,7 +29,7 @@ def export(catalog_path, output, hulls_only=False, equipment_only=False):
             for type_id, in catalog.execute('SELECT Id FROM ItemType WHERE GroupId IN (644,645,646,647,778,1292)'):
                 if record('client/types', type_id).get('published') == 1:
                     pending.add(type_id)
-        for type_id, in catalog.execute('SELECT Id FROM ItemType WHERE GroupId=100') if not (hulls_only or equipment_only) else []:
+        for type_id, in catalog.execute('SELECT Id FROM ItemType WHERE GroupId=100') if not (hulls_only or equipment_only or utility_only) else []:
             attrs = dict(catalog.execute('SELECT AttributeId,Value FROM TypeAttribute WHERE ItemTypeId=?', (type_id,)))
             source = record('client/types', type_id)
             if source.get('published') == 1 and source.get('metaGroupID') != 15 and attrs.get(1272, 0) > 0:
@@ -67,8 +72,9 @@ if __name__ == '__main__':
     selection = parser.add_mutually_exclusive_group()
     selection.add_argument('--hulls-only', action='store_true', help='Export admitted combat-drone hulls and their prerequisites')
     selection.add_argument('--equipment-only', action='store_true', help='Export drone equipment, rigs, scripts and prerequisites')
+    selection.add_argument('--utility-only', action='store_true', help='Export utility and mining drones and prerequisites')
     parser.add_argument('--output', type=pathlib.Path)
     args = parser.parse_args()
-    name = 'DroneHullCatalog.json' if args.hulls_only else 'DroneEquipmentCatalog.json' if args.equipment_only else 'CombatDroneCatalog.json'
+    name = 'UtilityDroneCatalog.json' if args.utility_only else 'DroneHullCatalog.json' if args.hulls_only else 'DroneEquipmentCatalog.json' if args.equipment_only else 'CombatDroneCatalog.json'
     output = args.output or pathlib.Path('tests/Eden.Protocol.Tests/Fixtures/' + name)
-    export(args.catalog, output, args.hulls_only, args.equipment_only)
+    export(args.catalog, output, args.hulls_only, args.equipment_only, args.utility_only)

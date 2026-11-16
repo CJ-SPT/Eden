@@ -102,6 +102,15 @@ public enum FittingSkill
 
 public enum DogmaEffect
 {
+    DroneMining = 17,
+    DroneSalvaging = 5163,
+    DroneArmorRepair = 6687,
+    DroneShieldRepair = 6688,
+    DroneHullRepair = 6689,
+    DroneWeb = 6690,
+    DroneTargetPainting = 6692,
+    DroneSensorDampening = 6693,
+    DroneTrackingDisruption = 6694,
     Cloaking = 607,
     PrototypeCloaking = 5945,
     CovertCloaking = 980,

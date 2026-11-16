@@ -54,6 +54,10 @@ internal sealed partial class PilotDroneStore
                 throw new InvalidDataException("Only uncontrolled drones in your current system can be scooped.");
             }
             var profile = DroneCatalog.Profile(catalog, item.TypeId);
+            if (profile.Utility is not null)
+            {
+                RequireResident();
+            }
             if (position.DistanceTo(new(drone.X, drone.Y, drone.Z)) - shipRadius - profile.Radius > DroneRules.RecallRange)
             {
                 throw new InvalidDataException("Approach within 2,500 m of the drone to scoop it.");

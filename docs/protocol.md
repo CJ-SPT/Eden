@@ -462,6 +462,9 @@ records global station/system search, atomic plan saving, full-belt approach and
 [Modulated ore mining and crystals, November 9, 2026](protocol/industry.md#modulated-ore-mining-and-crystals-november-9-2026)
 records loaded-crystal modifiers, target compatibility, persistent wear and native shattering updates.
 
+[Utility and mining drones, November 15, 2026](protocol/drones.md#utility-and-mining-drones-november-15-2026) records
+resident utility effects, ore/ice harvesting, gathering configuration, cargo checkpoints and native drone commands.
+
 | Topic | Coverage |
 | --- | --- |
 | [World configuration](protocol/world-configuration.md) | Saved-world gathering, reward and industry tuning; native modifiers, restart activation and administration. |

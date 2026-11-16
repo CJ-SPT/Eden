@@ -17,7 +17,22 @@ internal static partial class AssistancePersistence
     {
         var timers = world.Set<SavedCrimewatch>().Find(target.Id)?.Timers() ?? CrimewatchTimers.Empty;
         int system = CrimewatchPersistence.System(catalog, source.ActiveShip);
-        var flag = AssistanceRules.Decide(
+        var flag = Check(world, catalog, source, target, now);
+        var state = CrimewatchPersistence.State(world, source.Id);
+        state.SystemId = system;
+        state.Apply(AssistanceRules.Apply(state.Timers(), timers, flag, now, end));
+        ConcordPersistence.Schedule(world, catalog, source, now);
+        if (world.Set<SavedLogoff>().Find(source.Id) is { } logoff)
+        {
+            logoff.ExpiresAt = Math.Max(logoff.ExpiresAt, Math.Max(state.PvpUntil, state.NpcUntil));
+        }
+    }
+
+    internal static AssistanceDecision Check(WorldAction world, CatalogDbContext catalog, Pilot source, Pilot target, long now)
+    {
+        var timers = world.Set<SavedCrimewatch>().Find(target.Id)?.Timers() ?? CrimewatchTimers.Empty;
+        int system = CrimewatchPersistence.System(catalog, source.ActiveShip);
+        return AssistanceRules.Decide(
             new(
                 CrimewatchPersistence.Security(catalog, system),
                 source.SafetyLevel,
@@ -28,13 +43,5 @@ internal static partial class AssistancePersistence
                 timers.Pvp.Running(now)
             )
         );
-        var state = CrimewatchPersistence.State(world, source.Id);
-        state.SystemId = system;
-        state.Apply(AssistanceRules.Apply(state.Timers(), timers, flag, now, end));
-        ConcordPersistence.Schedule(world, catalog, source, now);
-        if (world.Set<SavedLogoff>().Find(source.Id) is { } logoff)
-        {
-            logoff.ExpiresAt = Math.Max(logoff.ExpiresAt, Math.Max(state.PvpUntil, state.NpcUntil));
-        }
     }
 }

@@ -1,4 +1,5 @@
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Ships;
 
 namespace Eden.Gameplay.Drones;
 
@@ -17,6 +18,18 @@ public static class DroneEquipmentRules
                     or DogmaAttributeId.MaxRange
                     or DogmaAttributeId.AccuracyFalloff
                     or DogmaAttributeId.TrackingSpeed,
+            (int)DroneSkill.MiningDroneOperation => attribute is DogmaAttributeId.MiningAmount or DogmaAttributeId.MaxVelocity,
+            (int)DroneSkill.IceHarvestingDroneOperation => attribute is DogmaAttributeId.Duration or DogmaAttributeId.MaxVelocity,
+            (int)DroneSkill.RepairDroneOperation => attribute
+                is DogmaAttributeId.ShieldBonus
+                    or DogmaAttributeId.ArmorRepairAmount
+                    or DogmaAttributeId.HullRepairAmount,
+            (int)DroneSkill.SalvageDroneOperation => attribute is DogmaAttributeId.AccessDifficultyBonus or DogmaAttributeId.MaxVelocity,
+            (int)DroneSkill.DroneNavigation => attribute == DogmaAttributeId.SpeedFactor,
+            (int)HullBonusSkill.PropulsionJamming => attribute
+                is DogmaAttributeId.ShieldCapacity
+                    or DogmaAttributeId.ArmorHitPoints
+                    or DogmaAttributeId.StructureHitPoints,
             FighterOperationSkill => attribute
                 is DogmaAttributeId.MaxVelocity
                     or DogmaAttributeId.ShieldCapacity

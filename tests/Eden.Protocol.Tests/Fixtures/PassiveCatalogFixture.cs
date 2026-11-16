@@ -93,6 +93,8 @@ internal static class PassiveCatalogFixture
 
     internal static void LoadProbes(string path) => Load(path, "ProbeCatalog.json", null);
 
+    internal static void LoadUtilityDrones(string path) => Load(path, "UtilityDroneCatalog.json", null);
+
     internal static void LoadMining(string path) => Load(path, "MiningCatalog.json", null);
 
     internal static void LoadCompression(string path) => Load(path, "CompressionCatalog.json", null);

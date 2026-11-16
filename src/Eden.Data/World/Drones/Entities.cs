@@ -6,6 +6,7 @@ namespace Eden.Data.World.Drones;
 internal sealed class WorldDrone
 {
     public long ItemId { get; set; }
+    public string? WorkJson { get; set; }
     public long PilotId { get; set; }
     public long ControllerShipId { get; set; }
     public int CorporationId { get; set; }

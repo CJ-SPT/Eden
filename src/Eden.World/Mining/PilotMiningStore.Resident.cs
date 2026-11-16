@@ -302,7 +302,8 @@ internal sealed partial class PilotMiningStore
         MiningCollection collection,
         long now,
         int cycles,
-        ValidatedMining? validated = null
+        ValidatedMining? validated = null,
+        bool droneCargo = false
     )
     {
         var (pilot, asteroid, laser, attributes) = validated ?? Validate(world, catalog, pilotId, moduleId, asteroidId, now);
@@ -311,7 +312,7 @@ internal sealed partial class PilotMiningStore
             throw new InvalidDataException("Crystal cycles must settle individually.");
         }
         laser = laser with { Volume = laser.Volume * cycles };
-        if (world.Set<ModuleCooldown>().Find(moduleId) is not { Kind: ModuleCooldownKind.Cycle })
+        if (!droneCargo && world.Set<ModuleCooldown>().Find(moduleId) is not { Kind: ModuleCooldownKind.Cycle })
         {
             throw new InvalidDataException("There is no paid mining cycle to collect.");
         }
@@ -322,7 +323,9 @@ internal sealed partial class PilotMiningStore
         {
             throw new InvalidDataException("Invalid ore volume.");
         }
-        double available = Available(world, catalog, pilotId, pilot.ActiveShipId, capacity, hold);
+        double available = droneCargo
+            ? Math.Ceiling(laser.Volume / oreVolume) * oreVolume
+            : Available(world, catalog, pilotId, pilot.ActiveShipId, capacity, hold);
         var collected = MiningRules.Collect(asteroid.Quantity, available, oreVolume, laser, collection);
         Magazine? crystalState = null;
         if (PilotAmmunitionStore.Contents(world, moduleId) is { } crystal)
@@ -342,7 +345,7 @@ internal sealed partial class PilotMiningStore
         int extracted = collected.Extracted;
         int bonus = collected.CriticalBonus;
         InventoryChange? change = null;
-        if (extracted + bonus > 0)
+        if (!droneCargo && extracted + bonus > 0)
         {
             change = InventoryPersistence.MergeOutput(
                 world,

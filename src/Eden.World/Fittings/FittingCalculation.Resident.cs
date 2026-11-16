@@ -117,6 +117,7 @@ internal sealed partial record FittingCalculation
                 {
                     [DogmaAttributeId.MissileDamageMultiplier] = 1,
                     [DogmaAttributeId.DroneControlDistance] = DroneRules.BaseControlRange,
+                    [DogmaAttributeId.MiningDroneAmountPercent] = DroneRules.BaseMiningAmountPercent,
                     [DogmaAttributeId.MaxActiveDrones] = 0,
                 }
             ),

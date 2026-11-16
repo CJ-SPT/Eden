@@ -56,6 +56,10 @@ internal sealed partial class PilotDroneStore
         {
             throw new InvalidDataException("Assign drones controlled by your current ship on this grid.");
         }
+        if (selected.Any(d => DroneCatalog.Profile(catalog, world.Set<OwnedItem>().Find(d!.ItemId)!.TypeId).Damage.Total <= 0))
+        {
+            throw new InvalidDataException("Assist and guard require drones with combat weapons.");
+        }
         var controlled = world
             .Set<WorldDrone>()
             .Where(d => d.PilotId == pilotId && d.ControllerShipId == pilot.ActiveShipId && d.SystemId != null)

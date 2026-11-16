@@ -14,6 +14,10 @@ internal sealed class FlightDroneScene(SharedSpace space, TimeProvider clock, IP
 
     internal void ReplayActivities()
     {
+        foreach (var drone in Contacts.Where(d => d.WorkEffect is not null))
+        {
+            update(DroneWorkWire.Effect(drone, drone.WorkEffect!, true));
+        }
         foreach (var drone in Contacts.Where(d => d.Delegation is not null))
         {
             update(new DestinyCommand.DroneActivityChanged(drone.Id, drone.Delegation));
@@ -106,6 +110,17 @@ internal sealed class FlightDroneScene(SharedSpace space, TimeProvider clock, IP
             if (old is not null && old.Health != drone.Health)
             {
                 update(new DestinyCommand.OnDamageStateChange(drone.Id, drone.Health.DamageState()));
+            }
+            if (old?.WorkEffect != drone.WorkEffect)
+            {
+                if (old?.WorkEffect is { } previousWork)
+                {
+                    update(DroneWorkWire.Effect(old, previousWork, false));
+                }
+                if (drone.WorkEffect is { } currentWork)
+                {
+                    update(DroneWorkWire.Effect(drone, currentWork, true));
+                }
             }
             if (drone.ShotAt != 0 && old?.ShotAt != drone.ShotAt)
             {
