@@ -14,7 +14,8 @@ public sealed record NpcSupplyType(int TypeId, InventoryCategory Category, bool 
 public static class NpcSupplyRules
 {
     // Corporation/type eligibility comes from the pinned catalog. Prices come
-    // from an explicitly captured market snapshot; quantity is Eden policy.
+    // from a captured market snapshot, falling back to catalog base prices for
+    // missing sell quotes; quantity is Eden policy.
     public const int Stock = 1000;
     public const int MaximumStock = 1_000_000;
 
@@ -26,18 +27,11 @@ public static class NpcSupplyRules
         }
     }
 
-    // These catalog-backed originals and skill are required to start the refinery and deep-core chains.
-    public static bool UsesIndustrialCatalogPrice(int typeId) =>
-        typeId
-            is 11395 // Deep Core Mining
-                or 12109 // Deep Core Mining Laser I Blueprint
-                or 36977 // Athanor Blueprint
-                or 36978 // Tatara Blueprint
-                or 37032 // Standup Reprocessing Facility I Blueprint
-                or 37034 // Standup Moon Drill I Blueprint
-                or 45540 // Standup Composite Reactor I Blueprint
-                or 45541 // Standup Hybrid Reactor I Blueprint
-                or 45542; // Standup Biochemical Reactor I Blueprint
+    // Build 3662168 tags blueprint 37346 as Tech II although its manufactured
+    // rig is Tech I. Manufacturing outputs determine the tier when available.
+    public static bool CanSupplyBlueprint(int blueprintTechLevel, IReadOnlyList<int> productTechLevels) =>
+        productTechLevels.Count > 0 && productTechLevels.All(level => level == 1)
+        || blueprintTechLevel <= 1 && productTechLevels.All(level => level <= 1);
 
     public static long? Price(NpcSupplyType type)
     {

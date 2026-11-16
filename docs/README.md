@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Complete NPC hub supply](protocol/industry.md#complete-npc-hub-supply-november-16-2026) supplies the full
+eligible NPC sell assortment at regional hubs, including trade goods, skillbooks, formulas and quantum cores.
+
 [Custom gameplay options](world-configuration.md#custom-gameplay-options) control empire LP datacores, reference history,
 regional hub and beginner supplies, civilian starting equipment and player bots through saved administration settings.
 

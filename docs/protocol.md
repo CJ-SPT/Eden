@@ -1086,6 +1086,9 @@ Current encounter lifecycle and automated evidence are recorded under [observed 
 
 Progressive supply, demand, trade settlement and validation are recorded under [progressive regional markets](protocol/industry.md#progressive-regional-markets--november-8-2026).
 
+[Complete NPC hub supply](protocol/industry.md#complete-npc-hub-supply-november-16-2026) covers all eligible
+catalog NPC sell assortments, including trade goods, skillbooks and quantum cores.
+
 [Modding packages and activation](protocol/modding.md) records the portable mod foundation and validation.
 
 [Persistent traveler routines](protocol/capsuleers.md#persistent-traveler-routines--november-9-2026) add personal travel habits and saved threat memory.

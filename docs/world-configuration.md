@@ -91,7 +91,7 @@ Use **Save for restart** to stage edits and restart the server to activate them.
 | --- | --- | --- |
 | World & economy → Economy → Empire LP-store datacores | `settings.economy.empireLpDatacores` | Ordinary empire stores offer their original assortment. Militia stores retain their own datacores. |
 | World & economy → Economy → Simulated market history | `settings.economy.simulatedMarketHistory` | History contains actual local trades only. Sparse history can leave native tickers and charts empty. |
-| World & economy → Economy → Regional hub supply | `settings.economy.regionalHubSupply` | Hubs use their corporation's institutional assortment. Added global blueprint and command-center sell offers retire on market preparation. |
+| World & economy → Economy → Regional hub supply | `settings.economy.regionalHubSupply` | Hubs use their corporation's institutional assortment. Added global NPC sell offers retire on market preparation. |
 | World & economy → Economy → Beginner market supply | `settings.economy.beginnerMarketSupply` | Starting stations and hubs require ordinary production unlocks for generated product sell offers. Original corporation offers still apply. |
 | Progression → Grant civilian starting equipment to new pilots | `settings.progression.grantStartingEquipment` | Newly created pilots receive their starting hull and configured skills/wallet grants without the additional civilian miner and weapon. |
 | World & economy → Player bots → Enable player bots | `settings.capsuleers.enabled` | All simulated capsuleers pause and disappear from space, Local, station guests and scans after restart. |
@@ -101,7 +101,8 @@ Re-enabling resumes eligible saved bots with their possessions and progress. Min
 controls continue to limit the enabled population. See [autonomous population](#autonomous-population).
 
 Beginner supply operates within progressive regional markets. Regional hub supply controls added institutional
-blueprints and command centers independently. Already purchased items, existing pilots' equipment, actual trade
+NPC sell assortments independently, including skillbooks, commodities, command centers, quantum cores and blueprints.
+Missing snapshot sell quotes use positive catalog base prices. Already purchased items, existing pilots' equipment, actual trade
 history, wallets and personal orders retain their saved state. The controls participate in revision comparisons,
 history and export/import. See the [implementation record](protocol/world-configuration.md#custom-gameplay-switches-november-15-2026).
 

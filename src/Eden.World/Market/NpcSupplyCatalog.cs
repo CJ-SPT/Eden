@@ -67,8 +67,8 @@ internal sealed partial class PilotMarketStore
         var definitions = catalog.Definitions;
         var corporation = catalog.Read(CatalogData.Client.Npccorporations, (long)supplier.CorporationId);
         var trades = corporation?.CorporationTrades ?? [];
-        // Hubs share catalog NPC blueprint and command-center sell assortments so
-        // industry can start without first visiting an unseeded supplier station.
+        // Hubs share the full catalog NPC sell assortment. Restricting this to
+        // blueprints strands NPC-only inputs, skills and other seeded goods.
         int[] suppliedTypes = supplier.Hub && supplier.RegionalHubSupply ? HubInstitutionalSupplies(catalog) : [];
         var offered = trades
             .Where(t => t.Value != 0)
@@ -129,12 +129,17 @@ internal sealed partial class PilotMarketStore
             // inconsistent corporation offer is present in an imported catalog.
             if (
                 type.CategoryId == (int)InventoryCategory.Blueprint
-                && (
-                    (attributes.GetValueOrDefault(typeId)?.GetValueOrDefault(DogmaAttributeId.TechLevel) ?? 0) > 1
-                    || manufacturing?.Products?.Any(p =>
-                        p.TypeID is > 0 and <= int.MaxValue
-                        && (attributes.GetValueOrDefault((int)p.TypeID.Value)?.GetValueOrDefault(DogmaAttributeId.TechLevel) ?? 0) > 1
-                    ) == true
+                && !NpcSupplyRules.CanSupplyBlueprint(
+                    (int)(attributes.GetValueOrDefault(typeId)?.GetValueOrDefault(DogmaAttributeId.TechLevel) ?? 0),
+                    manufacturing
+                        ?.Products?.Where(product => product.TypeID is > 0 and <= int.MaxValue)
+                        .Select(product =>
+                            (int)(
+                                attributes.GetValueOrDefault((int)product.TypeID!.Value)?.GetValueOrDefault(DogmaAttributeId.TechLevel) ?? 0
+                            )
+                        )
+                        .ToArray()
+                        ?? []
                 )
             )
             {
@@ -146,11 +151,10 @@ internal sealed partial class PilotMarketStore
                     ? bid ? quote.BuyCents
                         : quote.SellCents
                 : null;
-            // Preserve catalog supplier eligibility when the snapshot lacks a sell quote for a manufacturing original.
-            bool isOriginal = manufacturing?.Products is { Length: > 0 };
+            // A captured player-market snapshot is incomplete. A missing quote must
+            // not remove a catalog NPC sell offer; use its catalog base price.
             bool useCatalogPrice =
-                definitions.PublishedSkills.TryGetValue(typeId, out var editedSkill) && editedSkill.PriceChanged
-                || !bid && price is null && (isOriginal || NpcSupplyRules.UsesIndustrialCatalogPrice(typeId));
+                definitions.PublishedSkills.TryGetValue(typeId, out var editedSkill) && editedSkill.PriceChanged || !bid && price is null;
             price = NpcSupplyRules.Price(
                 new(
                     typeId,
@@ -183,13 +187,6 @@ internal sealed partial class PilotMarketStore
                             .Where(trade => trade.Value > 0)
                             .Select(trade => int.Parse(trade.Key, CultureInfo.InvariantCulture))
                             .Distinct()
-                            .Where(type =>
-                                reader.FittingType(type) is { } item
-                                && (
-                                    item.CategoryId == (int)InventoryCategory.Blueprint
-                                    || item.GroupId == (int)HoldCargoGroup.CommandCenters
-                                )
-                            )
                             .ToArray();
                     })
             )

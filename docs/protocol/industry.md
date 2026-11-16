@@ -1695,6 +1695,75 @@ New coverage exercises selected-pilot gating, docked and in-space empty collecti
 
 **Optional maintainer checks:** Open the PLEX price-history view; open multibuy and purchase an available station item. Native rendering and input remain unverified.
 
+## Complete NPC hub supply (November 16, 2026)
+
+Regional hub supply now imports every eligible positive `corporationTrades` offer from the pinned build-3662168
+NPC corporation catalog. The previous blueprint/command-center restriction omitted trade goods, many skillbooks,
+quantum cores, and other NPC-seeded assortments from regions whose hub corporation did not supply them directly.
+Positive fractional trade weights count as sell offers. Negative weights remain corporation-specific buy offers;
+hub aggregation never turns them into sell offers. Ordinary stations keep their original corporation assortments.
+The existing Regional hub supply switch controls this global assortment independently of beginner supply.
+
+Missing player-market snapshot sell quotes now fall back to a positive catalog `basePrice` for every eligible NPC
+sell offer. Previously only manufacturing originals and a small industrial allowlist received that fallback.
+Existing snapshot sell prices and explicitly edited skillbook prices retain precedence. No player-production unlock
+is needed to buy institutional supply. This does not add NPC supply for items without an NPC sell offer.
+Existing publication, market membership, advanced-output blueprint and player-supplied industrial-input safeguards remain.
+Manufacturing output tiers take precedence over a blueprint's own tech tag when every output is known Tech I.
+This admits NPC-sold blueprint **37346**, Standup XL-Set Laboratory Optimization I Blueprint, whose own tech tag is
+inconsistently Tech II while its product **37183** is Tech I. Unknown product tiers retain the blueprint-tier safeguard.
+
+The complete portable [catalog fixture](../../tests/Eden.Protocol.Tests/Fixtures/NpcSupplyCatalog.json) records
+2,394 distinct positive NPC sell types: all 2,308 published market offers and 86 unpublished/nonmarket entries.
+It includes all offered type definitions, manufacturing output tech levels,
+NPC trade weights, and an explicit excluded-type audit. Regenerate it from a read-only installed catalog with:
+
+```powershell
+python tools/Export-NpcSupplyCatalog.py --catalog path/to/catalog.sqlite
+```
+
+Of the published market types with positive NPC trade weights, 306 lack a snapshot sell quote: 287 blueprints,
+17 skillbooks, Soil, and the Keepstar quantum core. Some blueprints and Deep Core Mining already used catalog-price
+exceptions; the generalized fallback closes the remaining gaps. Electronic Parts already has a snapshot price;
+its availability outside the original supplier regions is addressed by the full hub assortment.
+
+Gameplay reference: [EVE University industry](https://wiki.eveuniversity.org/Industry) describes NPC commodities as
+manufacturing/research inputs and distinguishes them from player-built goods. The installed `evejs` reference
+`server/src/services/market/marketState.js` was also inspected; its synthetic ship seeding is not authoritative for
+the pinned catalog NPC assortment. That local checkout has no Git revision metadata. No transport, Blue, or Destiny
+behavior changed. Native market row shapes and notifications retain their existing adapters.
+
+The fix reuses resident institutional order preparation, settlement, and checkpoints. Existing order identities,
+purchases, inventories, balances, player orders, and transaction history are preserved. On an updated host, market
+preparation adds missing offers lazily; deployment and restart of the remote host are separate from this change.
+
+**Automated validation:** Development began with exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Market.NpcAssortmentTests.EveryPublishedNpcSellTypeIsAvailableWithoutProductionUnlocks`.
+The expanded all-2,308-offer regression passed (build 20.88 seconds; test command 10.39 seconds). The initial affected
+NPC supply, blueprint and planetary market filter passed 40 cases in 31.83 seconds. After rebasing onto main
+`d44a154a`, tool/solution restores and the solution build passed with zero warnings/errors (build 11.72 seconds).
+The final filter was:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Market|FullyQualifiedName~Eden.Protocol.Tests.Administration.WorldSettingsPageTests
+```
+
+That affected check ran 300 cases in 101.68 seconds: 298 passed, including all 15 new assortment/tier cases.
+Two existing SQLite-trigger rollback fixtures failed and were reproduced with exact method filters on unchanged
+main `d44a154a`: `NpcRestingOrderTests.MaintenanceUsesPricePriorityAndRejectsDuplicateConsumptionAfterRollback`
+failed during checkpoint disposal with SQLite `settlement failure` (12.83-second baseline command), and
+`RegionalMarketTests.FailedPaymentRollsBackStockGoodsAndHistoryAndRetrySettlesOnce` failed during fixture cleanup
+with a locked `world.sqlite.owner` (9.83-second baseline command). Those pre-existing failures remain unresolved;
+the broader run is not reported as fully passing. Both Python policy suites passed (8 catalog checks in 0.982 seconds;
+9 formatting checks in 0.017 seconds). Formatting verification passed for 2,361 files, including the 140-column
+policy. UTF-8, final newlines, trailing whitespace, local documentation targets and `git diff --check` passed.
+No full .NET regression suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** After updating/restarting the host with Regional hub supply enabled, inspect native
+market categories and buy an NPC trade good at a regional hub. Native rendering and input remain unverified.
+
 ## Progressive regional markets — November 8, 2026
 
 Historical implementation: the production-driven policy recorded below supersedes the time-based unlocks and material-derived quotes in this section. Existing section anchors and validation evidence are retained.

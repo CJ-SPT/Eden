@@ -12,6 +12,20 @@ namespace Eden.Protocol.Tests.Market;
 
 public sealed class NpcSupplyTests
 {
+    [Theory]
+    [InlineData(2, 1, true)]
+    [InlineData(1, 2, false)]
+    [InlineData(2, 2, false)]
+    [InlineData(2, 0, false)]
+    [InlineData(1, 0, true)]
+    [InlineData(1, null, true)]
+    [InlineData(2, null, false)]
+    public void NpcBlueprintTierUsesManufacturingOutputBeforeBlueprintTag(int blueprintTech, int? productTech, bool expected)
+    {
+        Assert.Equal(expected, NpcSupplyRules.CanSupplyBlueprint(blueprintTech, productTech is int level ? [level] : []));
+        Assert.False(NpcSupplyRules.CanSupplyBlueprint(1, [1, 2]));
+    }
+
     [Fact]
     public void StartupUsesCatalogNpcOffersAndStarterSupplyWithoutInventedBlueprintsOrAdvancedGoods()
     {

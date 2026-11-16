@@ -69,7 +69,8 @@ public sealed class BlueprintMarketTests
             Assert.Equal(1000035, order.OwnerId);
         }
         Assert.Contains(orders, o => o.TypeId == MinerBlueprint && o.Bid && o.StationId == station);
-        Assert.DoesNotContain(orders, o => o.TypeId is 786 or 1130 or 1131 or 43 or 999999);
+        Assert.Contains(orders, o => o.TypeId == 43 && !o.Bid && o.StationId == station);
+        Assert.DoesNotContain(orders, o => o.TypeId is 786 or 1130 or 1131 or 999999);
         Assert.Equal(orders, market.Orders(Pilot));
         using WorldDbContext world = new(fixture.Path);
         Assert.Empty(world.Set<SavedMarketUnlock>());
