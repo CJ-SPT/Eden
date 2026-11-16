@@ -51,5 +51,11 @@ public sealed class StructureRulesTests
         Assert.Equal(1, StructureRules.Duration(1, 100));
         Assert.Throws<InvalidDataException>(() => StructureRules.Duration(StructureRules.AnchoringDuration, 0));
         Assert.Throws<InvalidDataException>(() => StructureRules.Duration(StructureRules.AnchoringDuration, 101));
+        const long now = 10 * TimeSpan.TicksPerDay;
+        Assert.True(StructureRules.CorporationIsOldEnough(now, now, new(MinimumCorporationAgeDays: 0)));
+        Assert.False(StructureRules.CorporationIsOldEnough(now, now, new()));
+        Assert.True(StructureRules.CorporationIsOldEnough(now - 7 * TimeSpan.TicksPerDay, now, new()));
+        Assert.False(StructureRules.CorporationIsOldEnough(now - 7 * TimeSpan.TicksPerDay + 1, now, new()));
+        Assert.False(StructureRules.CorporationIsOldEnough(0, now, new(MinimumCorporationAgeDays: int.MaxValue)));
     }
 }

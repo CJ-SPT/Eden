@@ -41,6 +41,7 @@ internal static class ConfigurationDisplay
         ["structures.anchoringSpeed"] = "Structure anchoring speed",
         ["structures.onliningSpeed"] = "Structure core onlining speed",
         ["structures.unanchoringSpeed"] = "Structure decommissioning speed",
+        ["structures.minimumCorporationAgeDays"] = "Minimum corporation age for anchoring (days)",
         ["economy.chargeServiceCosts"] = "Service costs",
         ["economy.defaultManufacturingIndex"] = "Default manufacturing index",
         ["developmentSupply.testingMarket"] = "Testing market",

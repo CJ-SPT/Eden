@@ -17,7 +17,7 @@ A draft saves as **pending restart**. Saving, restoring and importing use the sa
 | Progression | NPC kill-SP and mining-SP multipliers; starting skills and initial wallet grants for future pilots. Native training formulas remain unchanged. |
 | Industry | Manufacturing, research, copying and invention speed; reprocessing efficiency. |
 | Planetary industry | Maximum planets per pilot, extraction yield, factory output, command-center CPU and powergrid multipliers. |
-| Structures | Anchoring, core onlining and decommissioning speeds for new timers; saved deadlines retain their original terms. |
+| Structures | Minimum corporation age for anchoring; anchoring, core onlining and decommissioning speeds for new timers. |
 | Simulated pilots | Enable or pause simulated pilots/miners, station traffic density (0–10×), and visitors per watched gate (0–16). |
 | Simulation | Checkpoint interval, market maintenance interval and resource check interval. |
 | Travel | Warp speed and align speed multipliers; autopilot gate landing distance, from 0 to 100,000 metres. |
@@ -27,6 +27,12 @@ Changes affect future operations. Balances, installed jobs and paid costs, quote
 ## World tuning
 
 The Settings page groups controls into **Gathering**, **Rewards**, **Progression**, **Structures**, **Industry**, **Planetary industry**, **Travel**, **World & economy** and **Advanced**.
+
+**Structures → Minimum corporation age for anchoring (days)** sets `settings.structures.minimumCorporationAgeDays`.
+Set it to **0** to remove the age wait, or keep the default **7** days. Values must be nonnegative whole days;
+historical documents that omit the field keep seven days. Use **Save for restart** and restart the server to activate it.
+This controls new Upwell deployment attempts. A player corporation and structure-management authority are still required.
+Anchoring, onlining and decommissioning settings continue to preserve existing saved deadlines.
 Switching categories retains the draft. Activity reward/yield multipliers show their unit, range, explanation and an illustrative example.
 **Reset to 1×** resets that control; **Reset draft to original** restores the world's original revision into the draft.
 **Discard unsaved changes** returns to the last loaded or saved draft, including any already pending revision.

@@ -67,6 +67,10 @@ public static class WorldTuningRules
         ValidateRate(settings.Structures.AnchoringSpeed);
         ValidateRate(settings.Structures.OnliningSpeed);
         ValidateRate(settings.Structures.UnanchoringSpeed);
+        if (settings.Structures.MinimumCorporationAgeDays < 0)
+        {
+            throw new InvalidDataException("Minimum corporation age for anchoring must be zero or more days.");
+        }
     }
 
     public static IEnumerable<KeyValuePair<DogmaAttributeId, double>> TravelMultipliers(NavigationPolicy policy)

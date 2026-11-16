@@ -1,3 +1,4 @@
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Ships;
 
 namespace Eden.Gameplay.Structures;
@@ -28,6 +29,10 @@ public static class StructureRules
     public const long FuelInterval = TimeSpan.TicksPerHour;
     public const long AbandonmentDuration = 7 * TimeSpan.TicksPerDay;
     public const double FuelBayCapacity = 30_000;
+
+    public static bool CorporationIsOldEnough(long createdAt, long now, StructurePolicy policy) =>
+        policy.MinimumCorporationAgeDays == 0
+        || (decimal)now - createdAt >= (decimal)policy.MinimumCorporationAgeDays * TimeSpan.TicksPerDay;
 
     public static bool ServiceImplemented(StructureService service) =>
         service

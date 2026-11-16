@@ -115,6 +115,7 @@ public sealed class WorldTuningTests
         Assert.Equal(new ResourcePolicy(false), legacy.Settings.Resources);
         Assert.Equal(new RewardPolicy(), legacy.Settings.Rewards);
         Assert.Equal(new IndustryPolicy(), legacy.Settings.Industry);
+        Assert.Equal(new StructurePolicy(), legacy.Settings.Structures);
         Assert.Equal(1, legacy.Settings.Progression.KillSkillPointMultiplier);
         Assert.Equal(1, legacy.Settings.Progression.MiningSkillPointMultiplier);
         Assert.Equal(0.25m, legacy.Settings.Progression.KillSkillPointPercent);
@@ -171,6 +172,7 @@ public sealed class WorldTuningTests
                 MiningIskPerSkillPoint: 125
             ),
             Industry = new(10, 11, 12, 13, 14),
+            Structures = new(MinimumCorporationAgeDays: 0),
         };
         var pending = store.Save(original.Generation, original.Active.Draft with { Settings = settings }, "tuning-test");
         Assert.Equal(1, database.Settings.Resources.OreYieldMultiplier);
@@ -184,6 +186,9 @@ public sealed class WorldTuningTests
         Assert.Equal(settings, ConfigurationValidation.Decode(exported).Settings);
         Assert.Equal(originalDocument, store.Export(original.Active.Id));
         var invalid = JsonNode.Parse(exported)!;
+        invalid["settings"]!["structures"]!["minimumCorporationAgeDays"] = -1;
+        Assert.Throws<InvalidDataException>(() => store.Import(active.Generation, invalid.ToJsonString(), "invalid"));
+        invalid["settings"]!["structures"]!["minimumCorporationAgeDays"] = 0;
         invalid["settings"]!["resources"]!["oreYieldMultiplier"] = 0;
         Assert.Throws<InvalidDataException>(() => store.Import(active.Generation, invalid.ToJsonString(), "invalid"));
         invalid["settings"]!["resources"]!["oreYieldMultiplier"] = 2;

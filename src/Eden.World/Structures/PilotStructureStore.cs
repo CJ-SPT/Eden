@@ -316,9 +316,14 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
                     world.Set<SavedCorporation>().Find(pilot.CorporationId)
                     ?? throw new InvalidDataException("Only a player corporation may deploy Upwell structures.");
                 var authority = CorporationRoleStore.Effective(world, pilotId, corporation).Roles;
-                if (!authority.Has(CorporationRole.StationManager) || corporation.CreatedAt > now - 7 * TimeSpan.TicksPerDay)
+                if (!authority.Has(CorporationRole.StationManager))
                 {
-                    throw new InvalidDataException("A seven-day-old player corporation and structure management authority are required.");
+                    throw new InvalidDataException("Structure management authority is required.");
+                }
+                if (!StructureRules.CorporationIsOldEnough(corporation.CreatedAt, now, world.Settings.Structures))
+                {
+                    int days = world.Settings.Structures.MinimumCorporationAgeDays;
+                    throw new InvalidDataException($"Minimum corporation age for anchoring is {days} days.");
                 }
                 var ship = pilot.ActiveShip;
                 var position = ship.Position ?? throw new InvalidDataException("Deploy from a ship in space.");

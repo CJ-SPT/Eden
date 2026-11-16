@@ -390,6 +390,8 @@ exceptional ores and the complete raw moon-material supply set while preserving 
 warp and the deployment reinforcement-default tuple, including the native no-weekday sentinel.
 [Native anchor configuration container](protocol/structures.md#native-anchor-configuration-container--november-16-2026)
 accepts the empty KeyVal sent when confirming a refinery deployment.
+[Minimum corporation age for anchoring](protocol/world-configuration.md#minimum-corporation-age-for-anchoring-november-16-2026)
+adds a saved-world setting with zero disabling the wait and seven days retained as the default.
 
 - [T2 subcapital hull admission, November 9, 2026](protocol/fitting.md#t2-subcapital-hull-admission-november-9-2026)
 

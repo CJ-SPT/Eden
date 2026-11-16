@@ -158,6 +158,10 @@ public sealed class SettingsForm
     [Range(typeof(decimal), "0.1", "100")]
     public decimal StructureUnanchoringSpeed { get; set; } = 1;
 
+    [Range(0, int.MaxValue)]
+    [Display(Name = "Minimum corporation age for anchoring (days)")]
+    public int StructureMinimumCorporationAgeDays { get; set; } = 7;
+
     [Range(typeof(decimal), "0.1", "100")]
     [Display(Name = "Extraction yield")]
     public decimal PlanetaryExtractionYieldMultiplier { get; set; } = 1;
@@ -223,6 +227,7 @@ public sealed class SettingsForm
             StructureAnchoringSpeed = settings.Structures.AnchoringSpeed,
             StructureOnliningSpeed = settings.Structures.OnliningSpeed,
             StructureUnanchoringSpeed = settings.Structures.UnanchoringSpeed,
+            StructureMinimumCorporationAgeDays = settings.Structures.MinimumCorporationAgeDays,
             EmpireLpDatacores = settings.Economy.EmpireLpDatacores,
             SimulatedMarketHistory = settings.Economy.SimulatedMarketHistory,
             RegionalHubSupply = settings.Economy.RegionalHubSupply,
@@ -293,7 +298,12 @@ public sealed class SettingsForm
                 PlanetaryFactorySpeedMultiplier,
                 PlanetaryCustomsTaxPercent
             ),
-            Structures = new(StructureAnchoringSpeed, StructureOnliningSpeed, StructureUnanchoringSpeed),
+            Structures = new(
+                StructureAnchoringSpeed,
+                StructureOnliningSpeed,
+                StructureUnanchoringSpeed,
+                StructureMinimumCorporationAgeDays
+            ),
             NpcPopulation = new(Pirates, Guards, Convoys, Mining, MajorThreatAnomalies),
             Progression = new(
                 StartingSkills,

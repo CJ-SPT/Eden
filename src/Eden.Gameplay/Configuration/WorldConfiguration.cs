@@ -62,7 +62,12 @@ public sealed record PlanetaryPolicy(
     decimal CustomsTaxPercent = 17
 );
 
-public sealed record StructurePolicy(decimal AnchoringSpeed = 1, decimal OnliningSpeed = 1, decimal UnanchoringSpeed = 1);
+public sealed record StructurePolicy(
+    decimal AnchoringSpeed = 1,
+    decimal OnliningSpeed = 1,
+    decimal UnanchoringSpeed = 1,
+    int MinimumCorporationAgeDays = 7
+);
 
 public sealed record NpcPopulationPolicy(
     bool Pirates = true,

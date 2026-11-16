@@ -2,6 +2,42 @@
 
 [Documentation](../README.md) / [Protocol index](../protocol.md) / [Administrator guide](../world-configuration.md)
 
+## Minimum corporation age for anchoring, November 16, 2026
+
+`settings.structures.minimumCorporationAgeDays` now controls the Upwell anchoring age gate. The default is **7** days,
+including historical documents that omit the property; **0** removes the wait. Negative values are rejected by both
+the typed policy validator and the administrator form. The setting appears under **Structures**, in revision
+comparisons and in export/import, and activates on restart with the other saved-world policies.
+
+Deployment reads the active resident world's settings and checks age through a typed Gameplay rule. The zero setting
+disables only the age check; player-corporation membership and structure-management authority remain enforced.
+Saved ticks preserve the exact seven-day boundary. Decimal tick arithmetic avoids overflow for large
+configured day counts. Error messages now distinguish missing authority from insufficient corporation age.
+
+The default matches the [EVE University Upwell corporation requirement](https://wiki.eveuniversity.org/Upwell_structure#Deploying_an_Upwell_Structure).
+The override is an Eden policy. Local EVE.js **261108.1** `sovPlayerDeployment.js` was consulted for the existing
+corporation deployment authority boundary; no client RPC or Destiny simulation changes are needed.
+
+**Automated validation:** The exact-method filter joined
+`WorldSettingsPageTests.FormRoundTripsAllRatesAndReportsErrorsForHiddenActivityFields` and
+`WorldTuningTests.RestartExportImportRestoreAndInvalidDraftsPreserveWorldIsolationAndHistory` using
+`FullyQualifiedName~` and `|`; both cases passed in 5.41 seconds. The final filter joined `StructureTests`,
+`StructureRulesTests`, `StructureDeploymentDefaultsTests`, `WorldSettingsPageTests`, `WorldConfigurationTests` and these
+four `WorldTuningTests` methods: `ImportAndCommandsShareBoundsForEveryRate`,
+`InvalidPendingRateRetainsActivePoliciesAndItsHistoricalDocument`,
+`LegacyDocumentsDefaultToOneAndEveryRateRejectsInvalidValues` and
+`RestartExportImportRestoreAndInvalidDraftsPreserveWorldIsolationAndHistory`, with the same filter operators.
+All **137 existing cases passed in 37.11 seconds**. Existing rule, form and configuration checks were extended for zero,
+negative values, the seven-day boundary, large day counts, omitted defaults and configuration persistence; no test cases
+or classes were added. Tool and solution restore, solution build (zero warnings/errors, 4.20 seconds), both Python policy
+suites (8 catalog and 9 formatting cases), formatting and whitespace checks passed. The full .NET suite was not run.
+An integration build on the updated main branch also passed with zero warnings/errors in 8.40 seconds.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** After deploying the update, set the value to 0, save for restart, restart and retry
+anchoring with the new corporation.
+
 ## Custom gameplay switches, November 15, 2026
 
 Saved configuration now owns five independent switches for ordinary empire LP-store datacores, simulated reference

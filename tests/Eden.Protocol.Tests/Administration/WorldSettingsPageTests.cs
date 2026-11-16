@@ -269,7 +269,7 @@ public sealed class WorldSettingsPageTests
                 MiningIskPerSkillPoint: 125.5m
             ),
             Industry = new(10, 11, 12, 13, 14),
-            Structures = new(2, 3, 4),
+            Structures = new(2, 3, 4, MinimumCorporationAgeDays: 0),
         };
         var form = SettingsForm.From(settings);
         var result = form.Build();
@@ -289,6 +289,7 @@ public sealed class WorldSettingsPageTests
         form.StructureAnchoringSpeed = 0;
         form.StructureOnliningSpeed = 101;
         form.StructureUnanchoringSpeed = -1;
+        form.StructureMinimumCorporationAgeDays = -1;
         List<ValidationResult> errors = [];
         Assert.False(Validator.TryValidateObject(form, new(form), errors, true));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.OreYieldMultiplier)));
@@ -301,6 +302,7 @@ public sealed class WorldSettingsPageTests
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.StructureAnchoringSpeed)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.StructureOnliningSpeed)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.StructureUnanchoringSpeed)));
+        Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.StructureMinimumCorporationAgeDays)));
         form.OreYieldMultiplier = 0.1m;
         form.IceHoldMultiplier = .1m;
         form.BountyMultiplier = 0;
@@ -311,6 +313,7 @@ public sealed class WorldSettingsPageTests
         form.StructureAnchoringSpeed = .1m;
         form.StructureOnliningSpeed = 100;
         form.StructureUnanchoringSpeed = 1;
+        form.StructureMinimumCorporationAgeDays = 0;
         Assert.True(Validator.TryValidateObject(form, new(form), [], true));
         Assert.Equal("2.5×", ConfigurationDisplay.Settings(new(), settings, null).Single(r => r.Label == "Mining skill points").Active);
         Assert.Contains(
