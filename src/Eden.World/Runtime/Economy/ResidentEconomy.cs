@@ -376,7 +376,7 @@ internal sealed partial class ResidentEconomy
         }
         if (changes.Count != 0 || sequences.Count != 0)
         {
-            _owner.ObjectsChanged();
+            _owner.EconomicObjectsChanged();
             foreach (long pilot in pilots)
             {
                 TrackPilot(pilot);

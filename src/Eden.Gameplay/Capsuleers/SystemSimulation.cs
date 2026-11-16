@@ -17,6 +17,7 @@ public sealed class SystemSimulationRegistry
     private readonly Dictionary<int, SystemSimulationState> _systems = [];
     private readonly HashSet<int> _observed = [];
     private long _settledTicks;
+    private IReadOnlyList<SystemSimulationState>? _observedView;
     public int Count => _systems.Count;
 
     public void Register(int systemId)
@@ -27,12 +28,13 @@ public sealed class SystemSimulationRegistry
 
     public IReadOnlyList<SystemSimulationState> Read() => _systems.Keys.Order().Select(Get).ToArray();
 
-    public IReadOnlyList<SystemSimulationState> Observed() => _observed.Order().Select(Get).ToArray();
+    public IReadOnlyList<SystemSimulationState> Observed() => _observedView ??= _observed.Order().Select(Get).ToArray();
 
     public void SettleAll(long throughTicks)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(throughTicks, _settledTicks);
         _settledTicks = throughTicks;
+        _observedView = null;
         foreach (int system in _observed.ToArray())
         {
             Settle(system, Math.Max(Get(system).SettledTicks, throughTicks));
@@ -64,6 +66,7 @@ public sealed class SystemSimulationRegistry
             };
             _systems[system] = next;
             _observed.Add(system);
+            _observedView = null;
             changed.Add(next);
         }
         return changed;
@@ -73,7 +76,7 @@ public sealed class SystemSimulationRegistry
     {
         var state = Get(systemId);
         ArgumentOutOfRangeException.ThrowIfLessThan(throughTicks, state.SettledTicks);
-        _systems[systemId] = state with
+        var next = state with
         {
             Mode = state.Mode switch
             {
@@ -83,6 +86,12 @@ public sealed class SystemSimulationRegistry
             },
             SettledTicks = throughTicks,
         };
+        if (_systems.GetValueOrDefault(systemId) == next)
+        {
+            return;
+        }
+        _systems[systemId] = next;
+        _observedView = null;
         if (_systems[systemId].Mode == SystemSimulationMode.Background)
         {
             _observed.Remove(systemId);

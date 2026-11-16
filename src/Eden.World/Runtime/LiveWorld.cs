@@ -299,8 +299,13 @@ internal sealed partial class LiveWorld : IDisposable
         }
         var committed = changes.ToArray();
         var recipients = affectedSystems is null ? _systems.Snapshot() : _systems.Existing(affectedSystems);
+        if (affectedSystems is null || changes.Any(change => change.Table is "schema" or "WorldConfigurationState" or "WorldAccount"))
+        {
+            Interlocked.Increment(ref _shared.PresentationRevision);
+        }
         foreach (var entry in recipients)
         {
+            Interlocked.Increment(ref entry.State.PresentationRevision);
             if (entry.Ownership.IsEntered)
             {
                 using var context = UseSystem(entry.Id);
@@ -350,7 +355,18 @@ internal sealed partial class LiveWorld : IDisposable
     internal MinerCheckpoint? MinerCheckpoint => MinerCheckpoints.Values.FirstOrDefault();
     internal HaulerCheckpoint? HaulerCheckpoint => HaulerCheckpoints.Values.FirstOrDefault();
 
-    internal void ObjectsChanged() => Interlocked.Increment(ref _generation);
+    internal void ObjectsChanged()
+    {
+        Interlocked.Increment(ref _generation);
+        Interlocked.Increment(ref Current.PresentationRevision);
+    }
+
+    // Economic commits publish their known participant versions in ObserveCommitted.
+    // Their shared coordinator context must not invalidate unrelated presentations.
+    internal void EconomicObjectsChanged() => Interlocked.Increment(ref _generation);
+
+    internal LivePresentationVersion PresentationVersion(int system) =>
+        new(Volatile.Read(ref _shared.PresentationRevision), Volatile.Read(ref _systems.Get(system).State.PresentationRevision));
 
     internal static void CatalogChanged(string path)
     {
@@ -368,6 +384,7 @@ internal sealed partial class LiveWorld : IDisposable
             world.Combat?.Clear();
             world.Reads?.Clear();
             world.Heat.InvalidateProfiles();
+            Interlocked.Increment(ref world._shared.PresentationRevision);
         }
     }
 

@@ -46,6 +46,7 @@ internal sealed partial class CapsuleerScheduler(
     private IReadOnlyList<WatchedTrafficGate> _reconciledGates = [];
     internal long Reconciliations { get; private set; }
     internal long PopulationRowsLoaded { get; private set; }
+    internal long PresentationReads { get; private set; }
     private static readonly TimeSpan DiagnosticInterval = TimeSpan.FromMilliseconds(250);
     private long? _diagnosticTimestamp;
     private CapsuleerQueueStatus _queueStatus = new(0, null);
@@ -675,74 +676,6 @@ internal sealed partial class CapsuleerScheduler(
 
     public IReadOnlyCollection<int> PresentationSystems =>
         _systems.Observed().Select(s => s.SystemId).Concat(presence.Read().ActiveSystems).Distinct().ToArray();
-
-    public CapsuleerBatch Capture()
-    {
-        using (synchronization.Enter("CapsuleerScheduler"))
-        {
-            Load();
-            Reconcile(presence.Read());
-            var activity = presence.Read();
-            // Capture never executes scheduled actions. Due systems remain activating
-            // until bounded maintenance turns have settled their saved deadlines.
-            SettleReadySystems(activity);
-            var active = _systems.Observed().Where(s => s.Mode == SystemSimulationMode.Active).Select(s => s.SystemId).ToHashSet();
-            foreach (
-                var location in active
-                    .SelectMany(system => _systemAgents.GetValueOrDefault(system) ?? [])
-                    .Distinct()
-                    .Where(pilot => !_suspended.Contains(pilot) && active.Contains(_locations[pilot]))
-                    .Select(pilot => new KeyValuePair<long, int>(pilot, _locations[pilot]))
-            )
-            {
-                using var systemContext = Live?.UseSystem(location.Value);
-                using var systemOwnership = synchronization.Enter("traffic observation", location.Value);
-                if (_miners.TryGetValue(location.Key, out var miner))
-                {
-                    var observation = miner.Read()!;
-                    _pendingMiners[observation.Pilot.PilotId] = observation;
-                }
-                if (_haulers.TryGetValue(location.Key, out var hauler))
-                {
-                    var observation = hauler.Read()!;
-                    _pendingHaulers[observation.Pilot.PilotId] = observation;
-                }
-            }
-            CapsuleerBatch batch = new(
-                new(0, Current.Count, null, false),
-                _pendingMiners.Values.ToArray(),
-                _pendingHaulers.Values.ToArray()
-            )
-            {
-                Revision = _presentationRevision,
-                Systems = _systems.Observed(),
-            };
-            _pendingMiners.Clear();
-            _pendingHaulers.Clear();
-            // Health reads retain exact recharge and expiry. Reuse only equal visible snapshots.
-            if (
-                _lastPresentation is { } previous
-                && previous.Miners.SequenceEqual(batch.Miners)
-                && previous.Haulers.SequenceEqual(batch.Haulers)
-                && previous
-                    .Systems.Select(s => (s.SystemId, s.Mode, s.Generation))
-                    .SequenceEqual(batch.Systems.Select(s => (s.SystemId, s.Mode, s.Generation)))
-            )
-            {
-                if (previous.Systems.SequenceEqual(batch.Systems))
-                {
-                    return previous;
-                }
-                batch = batch with { Revision = previous.Revision };
-            }
-            else
-            {
-                batch = batch with { Revision = checked(++_presentationRevision) };
-            }
-            _lastPresentation = batch;
-            return batch;
-        }
-    }
 
     public IReadOnlyList<CapsuleerJob> Jobs()
     {

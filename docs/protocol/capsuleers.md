@@ -2,6 +2,99 @@
 
 [Protocol index](../protocol.md)
 
+## Shared bot presentation - November 16, 2026
+
+Each active system retains immutable miner and hauler observations against resident shared/local versions, its activation
+generation, the catalog generation and an exact validity interval. Repeated captures reuse those observations and the
+combined batch contents before walking the pilots. Membership/activation changes and pending committed transition
+observations retain the existing batch revision and presentation-retry rules. Demotion evicts the system's observation
+cache. The system registry shares unchanged immutable observed-state arrays; previous snapshots remain unchanged.
+
+Runtime movement and combat invalidate their owning system. Economic commits use their actual participant systems rather
+than the transaction coordinator's shared context. Unknown scope, account/settings changes and catalog invalidation remain
+conservative shared invalidations. Rollback does not publish invalidations or speculative health. The readiness check also
+retains each system's earliest canonical job deadline against its resident/membership versions, avoiding repeated full
+pilot scans while preserving activation barriers. Capture never executes scheduled actions.
+
+The system owner is entered before checking its cache, so timed effects expire at their ordinary authoritative boundary.
+Damaged shields restrict observation reuse to the exact sampled clock instant; full shields can reuse a view until its next
+paid repair or invalidation. Repair deadlines retain their saved precision. No clock rounding, delayed same-tick damage or
+shared personal output is introduced. If a health read publishes a change during capture, the starting version is retained
+so the next capture cannot hide that change beneath a newer cache key.
+
+Gameplay context was checked against [EVE University shield recharge](https://wiki.eveuniversity.org/Shield_tanking).
+Native packet forms and navigation are unchanged for build 3662168. The existing
+[Carbon Destiny revision 114e89fa584f0e1a81eb0a679aabf41af8870072](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Ballpark.cpp)
+remains the simulation reference. The local reference engine's `space/runtime/scene/destinyHistory.js` was inspected for
+shared scene history versus observer-specific output; no source was copied.
+
+### Matched presentation measurements
+
+The same deterministic resident fixtures, population settings, observer count and 200 advancing one-millisecond frames
+were measured before and after the cache. Every frame includes complete bot maintenance/presentation followed by each
+observer's capture. Jobs stay unchanged. Empty, two-pilot and 11-pilot populations assert zero SQL commands, connections
+and fitting calculations; warmed observation reads stay at zero after optimization. Allocation budgets detect recurrence
+of the population-dependent work. Full protocol session-frame and checkpoint measurements are recorded with final validation.
+
+Baselines use `d45c5a0c` capture behavior with the same test and read-count instrumentation. Managed allocation is cumulative
+across the measured frames, in decimal MB.
+
+| Unchanged presentation workload | Observation reads before / after | Allocated MB before / after | Processing ms before / after |
+| --- | --- | --- | --- |
+| Empty bot population, one observer | 0 / 0 | 5.25 / 4.70 | 29.59 / 27.15 |
+| Two pilots, one observer | 800 / 0 | 8.32 / 4.70 | 53.08 / 23.68 |
+| 11 pilots, four observers, 10× traffic | 11,000 / 0 | 48.33 / 6.20 | 149.57 / 40.11 |
+
+The last workload reduces managed allocation by approximately 87%. Its checkpoint capture/projection/write measured
+2.03 / 53.69 / 18.24 ms before and 0.96 / 30.87 / 18.05 ms after, outside the frame measurement.
+
+The existing matched replay separately includes real protocol session ticks and native encoding over 200 50-ms frames.
+Both its polling and deadline arms retain identical jobs, pilot positions/role progress, cargo, encoded byte counts and
+maintenance turn counts before/after this milestone. Deadline-arm samples are:
+
+| Complete session workload | Allocated MB before / after | Processing ms before / after |
+| --- | --- | --- |
+| Empty bot population, one observer | 3.32 / 3.32 | 26.40 / 29.73 |
+| Populated, one observer | 5.02 / 5.12 | 34.09 / 32.86 |
+| Populated, two observers | 7.72 / 7.70 | 52.50 / 58.16 |
+
+All arms issue zero SQL commands, connections and fitting calculations in this run. The two-observer deadline replay's
+checkpoint capture/projection/write measured 0.72 / 1.47 / 17.15 ms before and 0.83 / 2.38 / 17.59 ms after. Small-scene
+complete-frame measurements are mixed; the substantial reduction is in repeated observation work. Treat timing and
+checkpoint samples as fixture diagnostics. Live latency, global population capacity and save-speed improvement remain
+unverified.
+
+**Automated validation:** The baseline exact presentation filter passed 3/3 in 40.68 seconds including its build. The first
+optimized exact run passed 3/3 in 28.86 seconds. An initial broader run passed 44/45: the local movement test detected shared
+economic-coordinator invalidation of both systems. An exact diagnostic reproduced that mismatch; participant-scoped
+publication corrected it and the exact regression passed 1/1 in 19.30 seconds including its build. The subsequent affected
+presentation, handoff, failure, resident economy/fitting, checkpoint and command-burst filter passed 90/90 in 79.86 seconds.
+Formatting initially reported two long test-report literals; they were split and width verification passed. Final checks and
+matched measurements follow below. No full .NET suite is authorized or claimed.
+
+The added commit-during-capture exact regression passed 1/1 in 22.17 seconds including its build. Final tool/solution
+restores, the solution build with zero warnings/errors, 191/191 affected .NET cases, matched replay equivalence, both
+Python policy suites (8 and 9 cases), formatting verification and added documentation links passed in 194.67 seconds.
+The final focused test command took 137.83 seconds. New resident-world coverage includes rollback, committed same-tick
+damage, precise recharge, timed-effect expiry, paid repair completion, local-versus-remote invalidation, catalog invalidation
+and publication during capture. The final filter was:
+
+```text
+(FullyQualifiedName~CapsuleerPresentationTests|FullyQualifiedName~CapsuleerTrafficPerformanceTests|FullyQualifiedName~CapsuleerHandoffTests|FullyQualifiedName~OccupiedCapsuleerSimulationTests|FullyQualifiedName~CapsuleerFailureTests|FullyQualifiedName~CapsuleerMaintenanceTests|FullyQualifiedName~CapsuleerDeadlineTests|FullyQualifiedName~CapsuleerDeadlinePerformanceTests|FullyQualifiedName~CapsuleerTrafficNavigationTests|FullyQualifiedName~CapsuleerInboundGateAcceptanceTests|FullyQualifiedName~CapsuleerSchedulingTests|FullyQualifiedName~CapsuleerDefenseFrameTests|FullyQualifiedName~CapsuleerDefensePerformanceTests|FullyQualifiedName~ResidentBotEconomyTests|FullyQualifiedName~LiveWorldTests|FullyQualifiedName~ResidentEconomyTests|FullyQualifiedName~ResidentFitTests|FullyQualifiedName~ShieldBoostTests|FullyQualifiedName~ArmorRepairTests|FullyQualifiedName~CommandBurstTests)&FullyQualifiedName!~ReceivingOnlyObserversSeeRealInboundTransfersAndRepeatedArrivalAtTheWatchedGate
+```
+
+The first final-validation sequence was stopped when both variants of
+`CapsuleerInboundGateAcceptanceTests.ReceivingOnlyObserversSeeRealInboundTransfersAndRepeatedArrivalAtTheWatchedGate`
+failed. The exact method was then run in an isolated unchanged `d45c5a0c96649cbe5a39161f78de45c9d8a1a443` checkout:
+both failures reproduced in 41.82 seconds including its build. The restart variant has no second visitor row at line 399;
+the fresh variant has no arrivals at line 318. These receiving-only expectations predate the occupied-system rule requiring
+both ends of a visitor lane to be occupied. The temporary baseline checkout was removed after verification. Final validation
+excludes only that method's two variants and retains the limitation; it does not describe them as passing acceptance.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None for server observation reuse. Native rendering remains unverified.
+
 ## Bot failure isolation - November 16, 2026
 
 Unexpected role failures now defer only the failing pilot. Retry eligibility uses the active simulation clock with

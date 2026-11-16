@@ -9,15 +9,43 @@ internal sealed partial class CapsuleerScheduler
     {
         foreach (var state in _systems.Observed())
         {
-            if (
-                !(_systemAgents.GetValueOrDefault(state.SystemId) ?? []).Any(p =>
-                    _running.Contains(p) && ScheduledJob(p).DueTicks <= activity.ElapsedTicks
-                )
-            )
+            long due = ReadyDeadline(state.SystemId);
+            if (due > activity.ElapsedTicks)
             {
                 _systems.Settle(state.SystemId, Math.Max(state.SettledTicks, activity.ElapsedTicks));
             }
         }
+    }
+
+    private sealed record SystemReadiness(Eden.World.Runtime.LivePresentationVersion Version, long Membership, long DueTicks);
+
+    private readonly Dictionary<int, SystemReadiness> _readiness = [];
+
+    private long ReadyDeadline(int system)
+    {
+        var version = Live?.PresentationVersion(system);
+        if (
+            version is { } current
+            && _readiness.TryGetValue(system, out var previous)
+            && previous.Version == current
+            && previous.Membership == Reconciliations
+        )
+        {
+            return previous.DueTicks;
+        }
+        long due = long.MaxValue;
+        foreach (long pilot in _systemAgents.GetValueOrDefault(system) ?? [])
+        {
+            if (_running.Contains(pilot))
+            {
+                due = Math.Min(due, ScheduledJob(pilot).DueTicks);
+            }
+        }
+        if (version is { } captured)
+        {
+            _readiness[system] = new(captured, Reconciliations, due);
+        }
+        return due;
     }
 
     private void UpdateDetailRetention(HumanActivitySnapshot activity, IReadOnlyList<SystemSimulationState> transitions)

@@ -27,6 +27,8 @@ dotnet run --no-build --project src/Eden.Server
 while healthy bots continue, preserving authoritative jobs and committed economic progress.
 [Population preparation retries](docs/protocol/capsuleers.md#population-preparation-retries---november-16-2026) recover
 failed system and gate-visitor batches automatically while other occupied systems continue preparing.
+[Shared bot presentation](docs/protocol/capsuleers.md#shared-bot-presentation---november-16-2026) reuses unchanged system
+observations across players while preserving immediate damage, exact recharge and effect deadlines.
 
 | Area | What you can do |
 | --- | --- |

@@ -6,6 +6,7 @@ namespace Eden.World.Runtime;
 
 internal sealed class LiveSystemState
 {
+    internal long PresentationRevision;
     internal System.Collections.Concurrent.ConcurrentQueue<IReadOnlyCollection<CombatRowChange>> PendingChanges { get; } = new();
     internal LiveCombatRuntime? Combat { get; }
     internal LiveReadModels? Reads { get; }

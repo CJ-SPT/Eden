@@ -502,6 +502,8 @@ resident utility effects, ore/ice harvesting, gathering configuration, cargo che
 eligibility, continued healthy-job execution and committed-action replay protection.
 [Population preparation retries](protocol/capsuleers.md#population-preparation-retries---november-16-2026) cover system
 and visitor recovery, bounded retry waits and continued progress in other occupied systems.
+[Shared bot presentation](protocol/capsuleers.md#shared-bot-presentation---november-16-2026) covers per-system observation
+reuse, exact health deadlines, scoped invalidation and matched frame/checkpoint measurements.
 
 | Topic | Coverage |
 | --- | --- |

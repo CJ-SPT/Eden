@@ -358,6 +358,26 @@ internal sealed partial class LiveCombatRuntime(
         return Execute(() => HealthOwned(pilotId, now), nameof(Health));
     }
 
+    // Called under the system owner after its ordinary health read. A damaged shield
+    // changes at exact clock precision; a paid repair invalidates at its saved deadline.
+    internal long HealthValidUntil(long pilotId, long now)
+    {
+        if (!_ships.TryGetValue(pilotId, out var ship) || _staleShips.Contains(pilotId))
+        {
+            return now;
+        }
+        long until = long.MaxValue;
+        if (ship.Health.Remaining.Shield < ship.Health.Defense.Shield)
+        {
+            until = now == long.MaxValue ? now : now + 1;
+        }
+        foreach (var repair in ship.Repairs)
+        {
+            until = Math.Min(until, repair.CompletesAt);
+        }
+        return until;
+    }
+
     private ShipHealth? HealthOwned(long pilotId, long now)
     {
         using var ownership = owner.Enter();

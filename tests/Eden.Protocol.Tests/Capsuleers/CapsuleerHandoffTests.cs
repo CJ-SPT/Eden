@@ -136,8 +136,14 @@ public sealed class CapsuleerHandoffTests(ITestOutputHelper output)
         Assert.Equal(SystemSimulationMode.Background, registry.Get(Source).Mode);
         Assert.Equal(SystemSimulationMode.Activating, Assert.Single(registry.Begin([Source])).Mode);
         Assert.Empty(registry.Begin([Source]));
+        var activating = registry.Observed();
+        Assert.Same(activating, registry.Observed());
         registry.Settle(Source, 10);
         Assert.Equal(new(Source, SystemSimulationMode.Active, 1, 10), registry.Get(Source));
+        Assert.Equal(SystemSimulationMode.Activating, Assert.Single(activating).Mode);
+        var active = registry.Observed();
+        registry.Settle(Source, 10);
+        Assert.Same(active, registry.Observed());
         Assert.Equal(SystemSimulationMode.Deactivating, Assert.Single(registry.Begin([])).Mode);
         registry.Settle(Source, 20);
         Assert.Equal(new(Source, SystemSimulationMode.Background, 2, 20), registry.Get(Source));
