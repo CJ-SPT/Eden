@@ -126,6 +126,10 @@ public enum WalletEntryType
     BountyPrizeCorporationTax = 92,
     CorporationRegistration = 39,
 
+    // Build 3662168 appConst.refAllianceRegistrationFee and refAllianceMaintainanceFee.
+    AllianceRegistration = 48,
+    AllianceMaintenance = 50,
+
     // Build 3662168 appConst.refCorporationAdvertisementFee.
     CorporationAdvertisementFee = 86,
 

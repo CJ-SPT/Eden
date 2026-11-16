@@ -18,12 +18,17 @@ public sealed record Alliance(
 
 public sealed record AllianceMember(int CorporationId, int AllianceId, long JoinedAt, int? ChosenExecutorId);
 
+public sealed record AllianceCreation(Alliance Alliance, long BalanceCents);
+
 public interface IAlliances
 {
     Alliance? Read(int allianceId);
     int? Affiliation(int corporationId);
     IReadOnlyList<Alliance> List();
     IReadOnlyList<AllianceMember> Members(int allianceId);
+    AllianceCreation Create(long actorId, AllianceDetails details);
+    void Update(long actorId, string description, string url);
+    IReadOnlyList<string> SuggestTickers(string name);
 }
 
 public static class AllianceRules
@@ -40,6 +45,19 @@ public static class AllianceRules
     public const int MaximumTickerLength = 5;
     public const int MaximumDescriptionLength = 5000;
     public const int MaximumUrlLength = 2048;
+
+    public static long FormationBalance(bool isCeo, bool affiliated, int empireControlLevel, long balanceCents)
+    {
+        if (!isCeo || affiliated || empireControlLevel < RequiredEmpireControlLevel)
+        {
+            throw new InvalidDataException("An unaffiliated player corporation's CEO with Empire Control V must form the alliance.");
+        }
+        if (balanceCents < CreationFeeCents)
+        {
+            throw new InvalidDataException("Alliance formation requires one billion ISK in your personal wallet.");
+        }
+        return balanceCents - CreationFeeCents;
+    }
 
     public static AllianceDetails Validate(AllianceDetails details)
     {

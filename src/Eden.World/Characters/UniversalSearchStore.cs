@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Eden.Data.World.Corporations;
 using Eden.Gameplay.Agents;
+using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Characters;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
@@ -11,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Characters;
 
 [Injectable]
-internal sealed class UniversalSearchStore(WorldDatabase database) : IUniversalSearch
+internal sealed class UniversalSearchStore(WorldDatabase database, IAlliances alliances) : IUniversalSearch
 {
     private static readonly CatalogDefinition<ImmutableDictionary<SearchCategory, SearchNameIndex>> s_index = new(
         "search/universe",
@@ -60,6 +61,15 @@ internal sealed class UniversalSearchStore(WorldDatabase database) : IUniversalS
                             .Where(entry => query.Matches(new(entry.Name)))
                 );
             }
+            if (category == SearchCategory.Alliance && resident is not null)
+            {
+                entries = entries.Concat(
+                    alliances
+                        .List()
+                        .Select(alliance => new SearchEntry(category, alliance.Id, alliance.Details.Name))
+                        .Where(entry => query.Matches(new(entry.Name)))
+                );
+            }
             groups.Add(
                 new(
                     category,
@@ -87,6 +97,15 @@ internal sealed class UniversalSearchStore(WorldDatabase database) : IUniversalS
         return new[] { SearchCategory.Corporation, SearchCategory.Faction }
             .SelectMany(category => ids.Distinct().Select(id => index.GetValueOrDefault(category)?.Find(id)))
             .OfType<SearchEntry>()
+            .Concat(
+                LiveWorld.Find(database.Path) is null
+                    ? []
+                    : ids.Distinct()
+                        .Where(id => id is >= AllianceRules.FirstAllianceId and <= int.MaxValue)
+                        .Select(id => alliances.Read((int)id))
+                        .OfType<Alliance>()
+                        .Select(alliance => new SearchEntry(SearchCategory.Alliance, alliance.Id, alliance.Details.Name))
+            )
             .OrderBy(entry => entry.Id)
             .ToArray();
     }

@@ -51,3 +51,35 @@ The full .NET suite was not requested or run.
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** None; this milestone exposes no new client actions.
+
+## Formation and public identity — November 16, 2026
+
+`corpRegistry.CreateAlliance` validates a player-corporation CEO, no current alliance, trained Empire Control V and
+one billion ISK in the actor's personal wallet. The wallet debit, alliance identity, founding membership/executor and
+`refAllianceRegistrationFee` service journal record commit together. Duplicate names/tickers are case-insensitive;
+closed alliance identities remain reserved. Description and URL edits require executor-corporation director authority.
+
+Public reads include directory rankings, alliance details, public member rows, alliance search, owner-cache priming,
+short-name priming and corporation public affiliation. Private member reads use a native indexed rowset. The router
+only binds the caller's current alliance with pilot lifetime, including validation before an embedded initial call.
+Session affiliation propagation and historical membership records are implemented in the following milestone.
+
+Pinned bytecode confirms `GetRankedAlliances` returns a list; the client puts it into its own ranked KeyVal cache.
+`carbon/common/script/sys/crowset.pyj` defines `CIndexedRowset(header, columnName)` as a dict subclass. The explicit
+outbound adapter uses Carbon REDUCE's dictionary iterator to populate it, retaining a native descriptor when empty.
+No additional incoming Python class construction is allowed. Both public and indexed member shapes share the same columns.
+Pinned `appConst.pyj` supplies registration reference **48**, maintenance reference **50**, maintenance bill type **5**,
+and application states **1/2/3/4** for new/accepted/effective/rejected. No sovereignty columns are added to gameplay state.
+The evejs `allianceFormationEligibility.js` reference snapshot SHA-256 is
+`cf5f1552b202f8e971a32ca8368b52ef9b2eb70a6f1f1c0525522f60fcfe1a26`.
+
+**Automated validation.** Exact creation/reopen filter passed (1 test; build 8.64 s, tests 6.11 s).
+Stable checks passed in **48.65 s**: tool/solution restore, zero-warning solution build, **94 focused tests** selected by
+`FullyQualifiedName~Eden.Protocol.Tests.Alliances|FullyQualifiedName~Eden.Protocol.Tests.Serialization.BlueMarshalTests|FullyQualifiedName~CorporationPublicInfoTests|FullyQualifiedName~CorporationShowInfoTests|FullyQualifiedName~UniversalSearchTests|FullyQualifiedName~CorporationOwnerNamesTests`,
+both Python policy suites (**8 + 9**) and formatting/width verification (**2,386 files**). Coverage includes concurrent
+formation with one debit, duplicate/authority/funds/skill rejection, native request/reply models, public owner/search data,
+registration journaling and checkpoint/reopen. Full .NET regression was not requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Open alliance creation, public Show Info and the member list; check native labels and layout.

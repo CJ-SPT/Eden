@@ -18,7 +18,7 @@ internal sealed partial class AllianceStore(WorldDatabase database, TimeProvider
     public Alliance? Read(int allianceId) => Resident.Economy.Inspect(world => Snapshot(world, allianceId));
 
     public int? Affiliation(int corporationId) =>
-        Resident.Economy.Inspect(world => world.Set<SavedAllianceMember>().Find(corporationId)?.AllianceId);
+        LiveWorld.Find(database.Path)?.Economy.Inspect(world => world.Set<SavedAllianceMember>().Find(corporationId)?.AllianceId);
 
     public IReadOnlyList<Alliance> List() =>
         Resident.Economy.Inspect(world =>

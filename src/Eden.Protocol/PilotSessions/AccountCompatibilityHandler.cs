@@ -1,7 +1,9 @@
+using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Information;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.Alliances;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Serialization;
@@ -16,7 +18,8 @@ internal sealed class AccountCompatibilityHandler(
     INpcCorporationDirectory corporations,
     IPlayerCorporationDirectory players,
     IUniversalSearch search,
-    IPublicLocations locations
+    IPublicLocations locations,
+    IAlliances alliances
 ) : IPilotCallHandler
 {
     public PilotCallResult Call(
@@ -40,6 +43,7 @@ internal sealed class AccountCompatibilityHandler(
             // Dynamic names remain restricted to this account's roster until pilot selection.
             ("config", "GetMultiLocationsEx") when !context.Selected => LocationRows(context, arguments, keywords),
             ("config", "GetMultiCorpTickerNamesEx") => CorporationRows(context, arguments),
+            ("config", "GetMultiAllianceShortNamesEx") => AllianceRows(arguments),
             ("config", "GetBlackListedPlanets" or "GetOldStationData") => BlueEmpty.List,
             ("air_npe", "is_air_npe_enabled") => false,
             ("subscriptionMgr", "GetCloneGrade") => (int)context.Account.CloneGrade,
@@ -50,6 +54,20 @@ internal sealed class AccountCompatibilityHandler(
             ("multiLoginBlocker", "Login") => true,
             _ => PilotCallResult.Unsupported,
         };
+    }
+
+    private AllianceTickerTable AllianceRows(object? arguments)
+    {
+        var ids = BlueRead.Tuple(arguments, 1)[0] as List<object?> ?? throw new InvalidDataException("Expected alliance IDs.");
+        return new(
+            ids.OfType<long>()
+                .Where(id => id is > 0 and <= int.MaxValue)
+                .Distinct()
+                .Select(id => alliances.Read((int)id))
+                .OfType<Alliance>()
+                .Select(alliance => new AllianceTickerRow(alliance.Id, alliance.Details.Ticker))
+                .ToArray()
+        );
     }
 
     private PilotCallResult LocationRows(PilotCallContext context, object? arguments, Dictionary<string, object?>? keywords)
@@ -158,7 +176,12 @@ internal sealed class AccountCompatibilityHandler(
                     owner.Name,
                     0,
                     IsNpc: true,
-                    TypeId: owner.Category == SearchCategory.Faction ? factionType : CorporationRules.CorporationType
+                    TypeId: owner.Category switch
+                    {
+                        SearchCategory.Faction => factionType,
+                        SearchCategory.Alliance => AllianceRules.AllianceTypeId,
+                        _ => CorporationRules.CorporationType,
+                    }
                 ))
         );
         return new(rows);

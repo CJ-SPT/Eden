@@ -621,6 +621,24 @@ internal static class BlueMarshal
                 writer.Write((byte)45);
                 writer.Write((byte)45);
                 break;
+            case BlueIndexedRowset indexedRows:
+                writer.Write((byte)34);
+                Write(
+                    writer,
+                    new object?[]
+                    {
+                        new BlueGlobal("carbon.common.script.sys.crowset.CIndexedRowset"),
+                        new object?[] { indexedRows.Header, indexedRows.ColumnName },
+                    }
+                );
+                writer.Write((byte)45);
+                foreach (var (key, row) in indexedRows.Rows)
+                {
+                    Write(writer, key);
+                    Write(writer, row);
+                }
+                writer.Write((byte)45);
+                break;
             case BlueDictionary dictionary:
                 writer.Write((byte)22);
                 Size(writer, dictionary.Entries.Count);
