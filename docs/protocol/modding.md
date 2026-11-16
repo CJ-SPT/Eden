@@ -27,6 +27,10 @@ verification passed in 51.66 seconds. The full .NET suite was not requested or r
 FullyQualifiedName~TravelRouteModTests|FullyQualifiedName~ModFoundationTests|FullyQualifiedName~ModRuntimeTests|FullyQualifiedName~ModLauncherApiTests|FullyQualifiedName~AutoMiningPackageTests|FullyQualifiedName~SkillPackageRetentionTests|FullyQualifiedName~GameplayDependenciesTests
 ```
 
+A separate headless run applied the installed Regional Express overlay to the real native map pickle:
+all 138 directed gate entries resolve to 69 new visual links, every edited system's neighbours agree with the
+overlay, warmed reads share identity and the original cache remains unchanged.
+
 Live acceptance: Not performed; agent client testing is disabled. The user confirmed the info window stays blank.
 
 Optional maintainer checks: refresh the launcher package, reopen system Show Info, and verify express map lines.
