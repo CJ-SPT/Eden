@@ -10,6 +10,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Propulsion;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
@@ -214,6 +215,17 @@ internal sealed class SmartbombStore(
         }
         bool intercepted = DamageMissiles(world, catalog, candidates.Missiles, system, now, module, Near);
         world.SaveChanges();
+        foreach (
+            var probe in world.Filter<Eden.Data.World.Propulsion.SavedInterdictionField>(row =>
+                row.SystemId == system && row.Kind == InterdictionKind.Probe && row.ExpiresAt > now && row.HitPoints > 0
+            )
+        )
+        {
+            if (Near(new(probe.X, probe.Y, probe.Z), catalog.RequireItem(probe.TypeId).Radius ?? 0))
+            {
+                probe.HitPoints = Math.Max(0, probe.HitPoints - module.Damage.Total);
+            }
+        }
         transaction.Commit();
         transaction.Dispose();
         if (heat is not null)

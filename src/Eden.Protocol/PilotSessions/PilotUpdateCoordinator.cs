@@ -92,7 +92,8 @@ internal sealed class PilotUpdateCoordinator(
     SpatialModuleHandler? spatial = null,
     SmartbombHandler? smartbombs = null,
     Eden.Protocol.Fleets.CommandBurstHandler? commandBursts = null,
-    AutoMiningHandler? autoMining = null
+    AutoMiningHandler? autoMining = null,
+    InterdictionHandler? interdiction = null
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -209,6 +210,7 @@ internal sealed class PilotUpdateCoordinator(
         combat.Cancel(context);
         smartbombs?.Cancel(context);
         commandBursts?.Cancel(context);
+        interdiction?.Cancel(context);
         missiles.Cancel(context);
         shields.Cancel(context);
         repairs.Cancel(context);
@@ -263,6 +265,7 @@ internal sealed class PilotUpdateCoordinator(
         using (SessionPerformance.Phase("update.tackle"))
         {
             tackle.Advance(context);
+            interdiction?.Advance(context);
         }
         autoMining?.CheckFlight(context);
         mining.Advance(context);

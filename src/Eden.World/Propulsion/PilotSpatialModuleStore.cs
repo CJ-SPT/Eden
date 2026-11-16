@@ -86,7 +86,12 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
 
     private static bool Scrambled(WorldAction world, long ship, long now) =>
         world
-            .Filter<WorldTackle>(t => t.TargetId == ship && t.TargetKind == TackleTargetKind.Ship && t.MwdBlock > 0 && t.ExpiresAt > now)
+            .Filter<WorldTackle>(t =>
+                t.TargetId == ship
+                && t.TargetKind == TackleTargetKind.Ship
+                && t.ExpiresAt > now
+                && (t.MwdBlock > 0 || t.Effect == DogmaEffect.FocusedWarpDisruption || t.Effect == DogmaEffect.FocusedWarpScrambling)
+            )
             .Any();
 
     public SpatialActivation Activate(

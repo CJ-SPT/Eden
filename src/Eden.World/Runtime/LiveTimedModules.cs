@@ -18,6 +18,12 @@ internal sealed class LiveTimedModules(LiveWorld owner, int? system = null)
             bursts
                 .Select(id => world.Set<WorldCommandBurst>().Find(id)?.ShipId)
                 .Concat(modules.Select(id => world.Set<ActiveFittedModule>().Find(id)?.ShipId))
+                .Concat(
+                    modules
+                        .Select(id => world.Set<Eden.Data.World.Propulsion.WorldTackle>().Find(id))
+                        .Where(row => row?.TargetKind == Eden.Gameplay.Propulsion.TackleTargetKind.Ship)
+                        .Select(row => (long?)row!.TargetId)
+                )
                 .OfType<long>()
                 .Distinct()
                 .ToArray()
@@ -35,6 +41,18 @@ internal sealed class LiveTimedModules(LiveWorld owner, int? system = null)
             if (action.Set<ActiveFittedModule>().Find(id) is { ExpiresAt: > 0 } module && module.ExpiresAt <= now)
             {
                 action.Remove(module);
+                if (
+                    action.Set<Eden.Data.World.Propulsion.WorldTackle>().Find(id) is { } tackle
+                    && Eden.Gameplay.Propulsion.InterdictionRules.Focused(tackle.Effect)
+                )
+                {
+                    action.Remove(tackle);
+                }
+                action.RemoveRange(
+                    action.Filter<Eden.Data.World.Propulsion.SavedInterdictionField>(field =>
+                        field.ModuleId == id && field.Kind == Eden.Gameplay.Propulsion.InterdictionKind.HeavyField
+                    )
+                );
             }
         }
         action.Commit();

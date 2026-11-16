@@ -213,7 +213,46 @@ internal sealed partial class LiveCombatRuntime
         }
         Trim();
         var npcs = SystemNpcs(system, now);
+        HashSet<long> interdicted = [];
+        if (ships.Any(ship => ship.Navigation.Warp is null && ship.Navigation.WarpDestination is not null))
+        {
+            var fields = new PilotInterdictionStore(database);
+            ships = ships
+                .Select(ship =>
+                {
+                    if (ship.Navigation.Warp is not null || ship.Navigation.WarpDestination is not { } destination)
+                    {
+                        return ship;
+                    }
+                    var outcome = fields.Resolve(ship.Id, system, ship.Position, destination, now);
+                    var navigation = ship.Navigation.Copy();
+                    if (outcome.Blocked)
+                    {
+                        navigation.CancelAlignment();
+                        navigation.Stop();
+                        interdicted.Add(ship.Id);
+                    }
+                    return ship with { Navigation = navigation };
+                })
+                .ToArray();
+        }
         var result = LiveSystemMotionRules.Advance(stamp, now, ships, objects, npcs, Aggression(), Effective(npcs));
+        if (interdicted.Count > 0)
+        {
+            result = result with
+            {
+                Ships = result
+                    .Ships.Select(ship =>
+                        interdicted.Contains(ship.Ship.Id)
+                            ? ship with
+                            {
+                                Changes = ship.Changes.Append(new NavigationChange.Stopped()).ToArray(),
+                            }
+                            : ship
+                    )
+                    .ToArray(),
+            };
+        }
         // Load saved position identity before publishing the staged simulation.
         var missing = ships.Where(s => !_positions.ContainsKey(s.Id)).Select(s => s.Id).ToArray();
         if (missing.Length != 0)

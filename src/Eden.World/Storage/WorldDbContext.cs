@@ -478,6 +478,10 @@ public sealed partial class WorldDbContext(string path) : DbContext
         model.Entity<PendingLocalRepair>().HasOne<OwnedItem>().WithMany().HasForeignKey(r => r.ModuleId);
         model.Entity<PendingLocalRepair>().HasOne<Ship>().WithMany().HasForeignKey(r => r.ShipId);
         model.Entity<PendingLocalRepair>().HasIndex(r => new { r.ShipId, r.CompletesAt });
+        var interdiction = model.Entity<Eden.Data.World.Propulsion.SavedInterdictionField>().ToTable("SavedInterdictionField");
+        interdiction.HasKey(row => row.Id);
+        interdiction.HasIndex(row => row.SystemId);
+        interdiction.HasIndex(row => row.ModuleId);
         var commandBursts = model.Entity<Eden.Data.World.Fleets.WorldCommandBurst>().ToTable("WorldCommandBurst");
         commandBursts.HasKey(b => b.Id);
         commandBursts.HasOne<Ship>().WithMany().HasForeignKey(b => b.ShipId).OnDelete(DeleteBehavior.Cascade);

@@ -53,7 +53,10 @@ public static class ModuleFittingRules
     )
     {
         bool supported =
-            groupId == CommandBurstRules.Group && effects.Any(CommandBurstRules.IsBurst)
+            groupId == InterdictionRules.NullifierGroup && effects.Contains(DogmaEffect.InterdictionNullifier)
+            || groupId == InterdictionRules.GeneratorGroup && effects.Contains(DogmaEffect.WarpDisruptSphere)
+            || groupId == InterdictionRules.LauncherGroup && effects.Contains(DogmaEffect.UseMissiles)
+            || groupId == CommandBurstRules.Group && effects.Any(CommandBurstRules.IsBurst)
             || groupId == SmartbombRules.Group && effects.Contains(DogmaEffect.Smartbomb)
             || groupId == SpatialModuleRules.CloakGroup && effects.Any(SpatialModuleRules.IsCloak)
             || groupId == SpatialModuleRules.MicroJumpGroup && effects.Contains(DogmaEffect.MicroJumpDrive)

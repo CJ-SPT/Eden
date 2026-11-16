@@ -761,6 +761,7 @@ public sealed partial class TranslocationTests
             );
             input.Enqueue(BlueMarshal.Decode(BlueMarshal.Encode(PilotServicesTests.Request("beyonce", "GetCynoJammerState", []))));
         }
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
         List<BlueInstance> output = [];
         using var scope = f.Db.Services.CreateScope();
         await Assert.ThrowsAsync<EndOfStreamException>(() =>

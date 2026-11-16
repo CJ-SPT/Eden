@@ -102,6 +102,14 @@ internal sealed partial class PilotAmmunitionStore
                     && InventoryDefinitions.IsHighSlot(module.FlagId)
                 )
                 && !(CommandBurstCatalog.Module(catalog, module.TypeId, group) && InventoryDefinitions.IsHighSlot(module.FlagId))
+                && !(
+                    Eden.World.Propulsion.InterdictionCatalog.Module(catalog, module.TypeId)
+                    && InventoryDefinitions.IsHighSlot(module.FlagId)
+                )
+                && !(
+                    Eden.World.Propulsion.InterdictionCatalog.Generator(catalog, module.TypeId)
+                    && InventoryDefinitions.IsHighSlot(module.FlagId)
+                )
                 && !(ProbeCatalog.Launcher(catalog, module.TypeId, group) && InventoryDefinitions.IsHighSlot(module.FlagId))
                 && !(PlayerEwarCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsMediumSlot(module.FlagId))
                 && !(SupportModuleCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsMediumSlot(module.FlagId))
@@ -233,6 +241,9 @@ internal sealed partial class PilotAmmunitionStore
             bool compatible =
                 chargeType.GroupId is MiningCrystalRules.Group or MiningCrystalRules.MercoxitGroup
                     ? MiningCrystalRules.Compatible(attributes, chargeType.GroupId)
+                : chargeType.GroupId == Eden.Gameplay.Propulsion.InterdictionRules.ProbeGroup
+                    ? moduleGroup == Eden.Gameplay.Propulsion.InterdictionRules.LauncherGroup
+                        && attributes.GetValueOrDefault(DogmaAttributeId.ChargeGroup1) == chargeType.GroupId
                 : CommandBurstRules.IsCharge(chargeType.GroupId) ? CommandBurstRules.Compatible(moduleGroup, chargeType.GroupId, attributes)
                 : chargeType.GroupId is ProbeScanRules.ProbeGroup or (int)HoldCargoGroup.SurveyProbe
                     ? attributes.GetValueOrDefault(DogmaAttributeId.ChargeGroup1) == chargeType.GroupId

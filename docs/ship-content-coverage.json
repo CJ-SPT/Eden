@@ -6,12 +6,12 @@
     {
       "category": "Ship",
       "state": "Complete",
-      "count": 211
+      "count": 226
     },
     {
       "category": "Ship",
       "state": "Partial",
-      "count": 154
+      "count": 139
     },
     {
       "category": "Ship",
@@ -26,7 +26,7 @@
     {
       "category": "Module",
       "state": "Complete",
-      "count": 3625
+      "count": 3638
     },
     {
       "category": "Module",
@@ -36,7 +36,7 @@
     {
       "category": "Module",
       "state": "Planned",
-      "count": 171
+      "count": 158
     },
     {
       "category": "Module",
@@ -61,12 +61,12 @@
     {
       "category": "Charge",
       "state": "Complete",
-      "count": 938
+      "count": 942
     },
     {
       "category": "Charge",
       "state": "Planned",
-      "count": 21
+      "count": 17
     },
     {
       "category": "Charge",
@@ -21456,8 +21456,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -21469,9 +21469,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "The fitted module\u0027s overload program validates. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -38230,7 +38244,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Interdiction"
@@ -38532,7 +38546,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Interdiction"
@@ -38948,7 +38962,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Interdiction"
@@ -39108,7 +39122,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Interdiction"
@@ -42691,7 +42705,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         899,
         912,
@@ -42734,7 +42748,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Interdiction"
@@ -43002,7 +43016,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         602,
         968,
@@ -43044,7 +43058,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Interdiction"
@@ -43126,7 +43140,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         516,
         3468,
@@ -43175,7 +43189,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Interdiction"
@@ -43260,7 +43274,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         3468,
         3705,
@@ -43302,7 +43316,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Interdiction"
@@ -120267,7 +120281,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         5695,
         5723,
@@ -120313,7 +120327,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Interdiction"
@@ -120330,7 +120344,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         2201,
         5317,
@@ -120376,7 +120390,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Interdiction"
@@ -120393,7 +120407,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         5310,
         5723,
@@ -120446,7 +120460,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Interdiction"
@@ -120463,7 +120477,7 @@
       "techLevel": 2,
       "metaGroup": 2,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         5411,
         5723,
@@ -120509,7 +120523,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Interdiction"
@@ -121719,8 +121733,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         127,
         598
@@ -121728,7 +121742,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -121744,8 +121758,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": null,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -121755,9 +121769,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "The fitted module\u0027s overload program validates. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -141534,8 +141562,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -141547,9 +141575,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "The fitted module\u0027s overload program validates. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -143018,8 +143060,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": null,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         3601,
@@ -143031,7 +143073,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -166719,7 +166761,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Interdiction"
@@ -168463,8 +168505,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         127,
         598
@@ -168472,7 +168514,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -169591,7 +169633,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         5647,
         7117,
@@ -169628,7 +169670,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Interdiction"
@@ -170291,7 +170333,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Interdiction"
@@ -170308,7 +170350,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         3468,
         3483,
@@ -170365,7 +170407,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Interdiction"
@@ -175624,8 +175666,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -175637,9 +175679,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "The fitted module\u0027s overload program validates. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -175653,8 +175709,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -175666,9 +175722,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "The fitted module\u0027s overload program validates. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -175682,8 +175752,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -175695,9 +175765,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "The fitted module\u0027s overload program validates. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -175711,8 +175795,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -175724,9 +175808,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "The fitted module\u0027s overload program validates. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -175740,8 +175838,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 4,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -175753,9 +175851,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "The fitted module\u0027s overload program validates. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -192281,8 +192393,8 @@
       "category": "Charge",
       "techLevel": 1,
       "metaGroup": null,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         804,
         3601,
@@ -192294,7 +192406,7 @@
       "checks": [
         {
           "operation": "ChargeLoading",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "AmmunitionCatalog.Supported; shared with real loading.",
           "role": null
@@ -207974,8 +208086,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -207987,9 +208099,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -208055,8 +208174,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -208068,9 +208187,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -208084,8 +208210,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 1,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -208097,9 +208223,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -208113,8 +208246,8 @@
       "category": "Module",
       "techLevel": 2,
       "metaGroup": 2,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -208126,9 +208259,16 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
           "role": null
         }
       ],
@@ -209266,7 +209406,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         899,
         912,
@@ -209321,7 +209461,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Interdiction"
@@ -216992,8 +217132,8 @@
       "category": "Module",
       "techLevel": 1,
       "metaGroup": 5,
-      "admitted": false,
-      "state": "Planned",
+      "admitted": true,
+      "state": "Complete",
       "effects": [
         12,
         16,
@@ -217005,9 +217145,23 @@
       "checks": [
         {
           "operation": "Fitting",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "FittingCatalog.Definition; invokes the owning family validator.",
+          "role": null
+        },
+        {
+          "operation": "Operation",
+          "implemented": true,
+          "milestone": "AreaWeaponsAndInterdiction",
+          "evidence": "FittingCatalog.Definition admits an implemented active family or fully parsed passive profile.",
+          "role": null
+        },
+        {
+          "operation": "Overheating",
+          "implemented": true,
+          "milestone": "Overheating",
+          "evidence": "The fitted module\u0027s overload program validates. Native controls, paid cycles, resident heat damage and burnout are implemented.",
           "role": null
         }
       ],
@@ -220747,7 +220901,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         5647,
         7117,
@@ -220784,7 +220938,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Interdiction"
@@ -220801,7 +220955,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         5647,
         7117,
@@ -220838,7 +220992,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Interdiction"
@@ -220855,7 +221009,7 @@
       "techLevel": 1,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         5647,
         7117,
@@ -220892,7 +221046,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Interdiction"
@@ -223424,7 +223578,7 @@
       "techLevel": 2,
       "metaGroup": 4,
       "admitted": true,
-      "state": "Partial",
+      "state": "Complete",
       "effects": [
         1910,
         2181,
@@ -223489,7 +223643,7 @@
         },
         {
           "operation": "Role",
-          "implemented": false,
+          "implemented": true,
           "milestone": "AreaWeaponsAndInterdiction",
           "evidence": "HullCatalog.Capabilities / HullBonusRules.DeferredRoles / DroneRules.SupportsHull / catalog bay attributes",
           "role": "Interdiction"

@@ -130,6 +130,10 @@ public static class WorldInitialization
         world.Set<Eden.Data.World.Fleets.WorldCommandBurst>().ExecuteDelete();
         PilotSpatialModuleStore.Reconcile(world, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc());
         world.Set<WorldTackle>().ExecuteDelete();
+        world
+            .Set<Eden.Data.World.Propulsion.SavedInterdictionField>()
+            .Where(row => row.Kind == Eden.Gameplay.Propulsion.InterdictionKind.HeavyField)
+            .ExecuteDelete();
         Eden.World.Exploration.HackingSchema.Reconcile(world);
         world.Set<WorldPlayerEwar>().ExecuteDelete();
         world.Set<WorldRemoteRepair>().ExecuteDelete();

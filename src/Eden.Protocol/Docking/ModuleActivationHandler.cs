@@ -41,7 +41,8 @@ internal sealed class ModuleActivationHandler(
     Eden.Protocol.Exploration.HackingHandler? hacking = null,
     SpatialModuleHandler? spatial = null,
     SmartbombHandler? smartbombs = null,
-    CommandBurstHandler? commandBursts = null
+    CommandBurstHandler? commandBursts = null,
+    InterdictionHandler? interdiction = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -60,13 +61,27 @@ internal sealed class ModuleActivationHandler(
         bool offensive =
             CombatWireDefinitions.Handles(effectName)
             || effectName == MissileHandler.EffectName
+            || InterdictionHandler.Effect(effectName)
+                is DogmaEffect.WarpDisruptSphere
+                    or DogmaEffect.FocusedWarpDisruption
+                    or DogmaEffect.FocusedWarpScrambling
             || effectName == SmartbombHandler.EffectName
             || TackleWire.Effect(effectName) is DogmaEffect.StasisWebifier or DogmaEffect.WarpDisruptor or DogmaEffect.WarpScrambler
             || PlayerEwarWire.Effect(effectName) is not null
             || CapacitorWire.Effect(effectName) is DogmaEffect.EnergyNeutralizer or DogmaEffect.EnergyNosferatu;
-        if (method == "Activate" && !SpatialModuleHandler.Handles(effectName) && spatial?.BlocksModule(context, offensive) == true)
+        // Nullification is explicitly permitted through an active cloak by the pinned effect.
+        if (
+            method == "Activate"
+            && effectName != InterdictionHandler.NullifierEffectName
+            && !SpatialModuleHandler.Handles(effectName)
+            && spatial?.BlocksModule(context, offensive) == true
+        )
         {
             return new PilotCallResult.Failure("The cloak prevents activating this module.");
+        }
+        if (effectName == MissileHandler.EffectName && interdiction?.CallLauncher(context, method, args) is { } interdictionResult)
+        {
+            return interdictionResult;
         }
         if (effectName == MissileHandler.EffectName && probes?.CallModule(context, method, args) is { } probeResult)
         {
@@ -96,6 +111,8 @@ internal sealed class ModuleActivationHandler(
             ),
             var name when CombatWireDefinitions.Handles(name) => combat.Call(context, service, method, args, keywords),
             var name when CommandBurstHandler.Effect(name) is { } burst => commandBursts?.Call(context, method, burst, args)
+                ?? PilotCallResult.Unsupported,
+            var name when InterdictionHandler.Effect(name) is { } field => interdiction?.Call(context, method, field, args)
                 ?? PilotCallResult.Unsupported,
             SmartbombHandler.EffectName => smartbombs?.Call(context, method, args) ?? PilotCallResult.Unsupported,
             MissileHandler.EffectName => missiles?.Call(context, service, method, args) ?? PilotCallResult.Unsupported,

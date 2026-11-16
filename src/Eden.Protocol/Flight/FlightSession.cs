@@ -45,7 +45,8 @@ internal sealed partial class FlightSession(
     IPilotCommandBursts? commandBursts = null,
     IDedComplexTravel? dedComplexes = null,
     ICooperativeFleets? fleets = null,
-    IPilotWarpDrive? warpDrive = null
+    IPilotWarpDrive? warpDrive = null,
+    IPilotInterdiction? interdiction = null
 ) : IDisposable
 {
     internal const int ArrivalDurationTicks = FlightTravel.ArrivalDurationTicks;
@@ -401,6 +402,7 @@ internal sealed partial class FlightSession(
         using (space.UseSystem(Pilot.SystemId))
         {
             RefreshTackle();
+            RefreshInterdiction();
             int now = Stamp;
             if (Pilot.Position is not null && world is ISystemMotionStore motionStore)
             {
@@ -473,6 +475,33 @@ internal sealed partial class FlightSession(
         ApplyFlightProperties();
         bool blocked = ModuleEffects.WarpBlocked || _accelerationGateWarp && ModuleEffects.IncomingTackle.Any(t => t.Module.Strength > 0);
         if (blocked && _navigation.WarpDestination is not null)
+        {
+            _navigation.CancelAlignment();
+            _navigation.Stop();
+            WarpEffect(Pilot.ShipId, false);
+            Update(new DestinyCommand.Stop(Pilot.ShipId));
+        }
+    }
+
+    internal void RefreshInterdiction()
+    {
+        if (interdiction is null || !InBallpark || Pilot.Position is null)
+        {
+            return;
+        }
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        Scene.RefreshInterdiction(
+            SceneContext,
+            interdiction
+                .Contacts(Pilot.SystemId, now)
+                .Where(contact => Pilot.Position.DistanceTo(contact.Position) <= NpcEncounterDefinitions.VisibilityRange)
+                .ToArray()
+        );
+        if (
+            _navigation.Warp is null
+            && _navigation.WarpDestination is { } destination
+            && interdiction.Resolve(Pilot.ShipId, Pilot.SystemId, Pilot.Position, destination, now).Blocked
+        )
         {
             _navigation.CancelAlignment();
             _navigation.Stop();
@@ -1142,6 +1171,14 @@ internal sealed partial class FlightSession(
         {
             return new PilotCallResult.Failure("Warp disruption is stronger than your ship's warp core strength.");
         }
+        if (
+            interdiction is not null
+            && Pilot.Position is { } origin
+            && interdiction.Resolve(Pilot.ShipId, Pilot.SystemId, origin, origin, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()).Blocked
+        )
+        {
+            return new PilotCallResult.Failure("Your ship is inside a warp disruption bubble.");
+        }
         var body = Scene.Objects.FirstOrDefault(item => item.Id == target);
         if (body is null && coordinates is null)
         {
@@ -1184,6 +1221,21 @@ internal sealed partial class FlightSession(
         )
         {
             return PilotCallResult.Unsupported;
+        }
+        if (interdiction is not null)
+        {
+            var outcome = interdiction.Resolve(
+                Pilot.ShipId,
+                Pilot.SystemId,
+                Pilot.Position!,
+                navigation.WarpDestination!,
+                clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()
+            );
+            if (outcome.Blocked)
+            {
+                return new PilotCallResult.Failure("Your ship is inside a warp disruption bubble.");
+            }
+            navigation.RedirectWarp(outcome.Destination);
         }
         if (accelerationGate)
         {

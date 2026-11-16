@@ -231,7 +231,12 @@ internal static class ShipContentAudit
         foreach (var role in HullBonusRules.DeferredRoles(type.Id, hullClass))
         {
             roles[role] =
-                admitted && (role == HullCapability.BreacherPods || role == HullCapability.CommandBursts && roles.GetValueOrDefault(role));
+                admitted
+                && (
+                    role == HullCapability.BreacherPods
+                    || role == HullCapability.Interdiction && hullClass is HullClass.Interdictor or HullClass.HeavyInterdictionCruiser
+                    || role == HullCapability.CommandBursts && roles.GetValueOrDefault(role)
+                );
         }
         var attributes = catalog.FittingAttributes(type.Id);
         if (attributes.GetValueOrDefault(DogmaAttributeId.DroneCapacity) > 0)
