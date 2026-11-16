@@ -46,9 +46,9 @@ class SkillClientTests(unittest.TestCase):
                               {'stargateID': 58000002, 'fromSystemID': 30004759, 'toSystemID': 30000142, 'jumpType': 2}],
                     'systems': {'30000142': {'neighbours': [{'solarSystemID': 30004759, 'stargateID': 58000001, 'jumpType': 2}]}},
                     'content': {'30000142': {'58000001': {'destination': 58000002, 'typeID': 3873,
-                                                       'position': {'x': 1.0, 'y': 2.0, 'z': 3.0}}}},
+                                                       'position': {'x': -4066658424320, 'y': 2, 'z': 3}}}},
                     'locations': {'58000001': {'systemID': 30000142, 'typeID': 3873, 'name': 'Stargate (1DQ1-A)',
-                                              'position': {'x': 1.0, 'y': 2.0, 'z': 3.0}}},
+                                              'position': {'x': -4066658424320, 'y': 2, 'z': 3}}},
                 },
             }
             document = work / 'overlay.json'
@@ -67,6 +67,7 @@ class SkillClientTests(unittest.TestCase):
                         if name in builder.WRAPPERS or name in (builder.GEOGRAPHY_MODULE, 'evetypes/__init__.pyj',
                                                                'eve/client/script/ui/services/skillsvc.pyj',
                                                                'eve/client/script/ui/shared/maps/mapSvc.pyj',
+                                                               'eve/client/script/ui/shared/maps/map2D.pyj',
                                                                'eve/client/script/ui/shared/info/infosvc.pyj',
                                                                'loginCharacterselection/charselData.pyj'):
                             path = work / name.replace('/', '_')
@@ -312,7 +313,29 @@ indexed=IndexedContent(native_content)
 overlaid=eden_skill_overlay.travel_content(indexed)
 check('Native root NPC station index keeps identity',overlaid.npcStations is indexed.npcStations)
 check('Native root stargate index includes the new gate',overlaid.stargates[58000001].solarSystemID==30000142 and len(overlaid.stargates)==len(indexed.stargates)+1)
-check('Gate vectors preserve native sequence and named access',tuple(overlaid.stargates[58000001].position)==(1,2,3) and overlaid.stargates[58000001].position[0]==1 and overlaid.stargates[58000001].position.z==3)
+point=overlaid.stargates[58000001].position
+check('Gate vectors preserve native sequence and named access',tuple(point)==(-4066658424320,2,3) and point[0]==-4066658424320 and point.z==3)
+import imp
+geo2=imp.load_dynamic('_geo2',GEO2)
+try:
+    geo2.Vec3Length((-4066658424320L,0.0,3L))
+except Exception as error:
+    check('Native geo2 reproduces the captured long-coordinate failure',str(error)=='geo2: sequence must contain numeric values only')
+else:
+    raise AssertionError('Native geo2 unexpectedly accepted Python 2 long coordinates')
+check('Added gate vector is accepted by native geo2',geo2.Vec3Length((point.x,0.0,point.z))>0)
+check('Added location coordinates remain native floats',all(isinstance(getattr(local[0],axis),float) for axis in ('x','y','z')))
+class GeometryComplete(Exception):pass
+class GeometryCheckpoint(object):
+    def __setattr__(self,name,value):raise GeometryComplete()
+draw=function(find(MODULES['eve/client/script/ui/shared/maps/map2D.pyj'],'DrawSolarsystem'),{'geo2':geo2,'const':constants})
+try:
+    draw(Obj(sr=GeometryCheckpoint(),fillSize=256),None,[30000142],None,
+         [Obj(groupID=10,x=point.x,y=point.y,z=point.z,itemID=58000001)],256)
+except GeometryComplete:
+    check('Exact failing native mini-map call passes geometry before UI construction',True)
+else:
+    raise AssertionError('Native mini-map did not reach the geometry checkpoint')
 class StationRows(object):
     def __init__(self,rowclass,key,data):self.data=dict((row.stationID,row) for row in data[1])
     def Get(self,identity):return self.data[identity]
@@ -343,6 +366,7 @@ open(RESULT,'wb').write(repr(checks))
                       'SYSTEMS': resources['res:/staticdata/systems.static'],
                       'SYSTEM_SCHEMA': resources['res:/staticdata/systems.schema'],
                       'STARMAP': resources['res:/staticdata/starmapcache.pickle'],
+                      'GEO2': str(root / 'tq/bin64/_geo2.dll'),
                       'MODULES': modules, 'RESULT': str(work / 'result.txt')}
             import re
             worker = re.sub(r'\b(' + '|'.join(values) + r')\b', lambda m: repr(values[m.group()]), worker)
