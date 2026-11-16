@@ -623,7 +623,11 @@ internal sealed class FlightScene(
             ObserveGateArrival(ship);
             ObserveGateDeparture(ship);
             effects.Replay(ship, previous);
-            if (ship.DirtTime != previous.DirtTime || ship.Pilot.CorpId != previous.Pilot.CorpId)
+            if (
+                ship.DirtTime != previous.DirtTime
+                || ship.Pilot.CorpId != previous.Pilot.CorpId
+                || ship.Pilot.AllianceId != previous.Pilot.AllianceId
+            )
             {
                 update(new DestinyCommand.OnSlimItemChange(ship.Pilot.ShipId, new ShipSlimItem(ship)));
             }

@@ -39,6 +39,7 @@ internal sealed record FleetMemberReply(FleetMember Member) : BlueModel
                 ["charID"] = Member.Pilot.Id,
                 ["characterID"] = Member.Pilot.Id,
                 ["corpID"] = Member.Pilot.CorporationId,
+                ["allianceID"] = Member.Pilot.AllianceId,
                 ["wingID"] = Member.Placement.WingId,
                 ["squadID"] = Member.Placement.SquadId,
                 ["role"] = (int)Member.Placement.Role,

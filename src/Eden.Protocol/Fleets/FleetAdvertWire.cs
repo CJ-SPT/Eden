@@ -49,7 +49,7 @@ internal sealed record FleetApplicantReply(FleetPilot Pilot, double? Security = 
             {
                 ["charID"] = Pilot.Id,
                 ["corpID"] = Pilot.CorporationId,
-                ["allianceID"] = null,
+                ["allianceID"] = Pilot.AllianceId,
                 ["warFactionID"] = null,
                 ["securityStatus"] = Security,
                 ["shipTypeID"] = Pilot.ShipTypeId,

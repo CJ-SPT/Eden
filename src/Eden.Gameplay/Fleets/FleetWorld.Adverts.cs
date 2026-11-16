@@ -25,10 +25,13 @@ public sealed partial class FleetWorld
             || settings.Name.Length > FleetRules.MaximumAdvertNameLength
             || settings.Description.Length > FleetRules.MaximumAdvertDescriptionLength
             || settings.JoinLimit is < 1 or > FleetRules.MaximumMembers
-            || (settings.Scope & ~(FleetInviteScope.Corporation | FleetInviteScope.Public | FleetInviteScope.PublicOpen)) != 0
+            || (
+                settings.Scope
+                & ~(FleetInviteScope.Corporation | FleetInviteScope.Alliance | FleetInviteScope.Public | FleetInviteScope.PublicOpen)
+            ) != 0
         )
         {
-            throw new InvalidDataException("Choose a fleet name, description and corporation or public access settings.");
+            throw new InvalidDataException("Choose a fleet name, description and corporation, alliance, or public access settings.");
         }
         static FleetAdvertAccess Copy(FleetAdvertAccess access)
         {
@@ -101,13 +104,20 @@ public sealed partial class FleetWorld
             && (access.MinimumSecurity is null || security >= access.MinimumSecurity)
             && !access.Disallowed.Contains(pilot.Id)
             && !access.Disallowed.Contains(pilot.CorporationId)
+            && !(pilot.AllianceId is int excludedAlliance && access.Disallowed.Contains(excludedAlliance))
             // The boss supplies the entity sets resolved from the selected standings threshold.
-            && (access.MinimumStanding is null || access.Allowed.Contains(pilot.Id) || access.Allowed.Contains(pilot.CorporationId));
+            && (
+                access.MinimumStanding is null
+                || access.Allowed.Contains(pilot.Id)
+                || access.Allowed.Contains(pilot.CorporationId)
+                || pilot.AllianceId is int allowedAlliance && access.Allowed.Contains(allowedAlliance)
+            );
         return fleet.Members.ContainsKey(pilot.Id)
             || (
-                ad.Scope.HasFlag(FleetInviteScope.Corporation)
-                && pilot.CorporationId == leader.CorporationId
-                && Access(ad.MemberGroups, pilot, security)
+                (
+                    ad.Scope.HasFlag(FleetInviteScope.Corporation) && pilot.CorporationId == leader.CorporationId
+                    || ad.Scope.HasFlag(FleetInviteScope.Alliance) && pilot.AllianceId.HasValue && pilot.AllianceId == leader.AllianceId
+                ) && Access(ad.MemberGroups, pilot, security)
             )
             || ((ad.Scope & (FleetInviteScope.Public | FleetInviteScope.PublicOpen)) != 0 && Access(ad.Public, pilot, security));
     }

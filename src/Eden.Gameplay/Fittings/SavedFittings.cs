@@ -28,6 +28,7 @@ public static class SavedFittingRules
     // Build 3662168 appConst and fittingSvc.VerifyFitting.
     public const int MaximumFittings = 500;
     public const int MaximumCorporationFittings = 600;
+    public const int MaximumAllianceFittings = 600;
     public const int MaximumNameLength = 50;
     public const int MaximumDescriptionLength = 500;
 

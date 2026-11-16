@@ -41,6 +41,7 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
                     ? null
                     : snapshot with
                     {
+                        AllianceId = world is EconomyTransaction ? world.Set<SavedAllianceMember>().Find(corporationId)?.AllianceId : null,
                         Shares = world.Set<SavedCorporationShareIssue>().Find(corporationId)?.Shares ?? CorporationRules.InitialShares,
                     };
             }

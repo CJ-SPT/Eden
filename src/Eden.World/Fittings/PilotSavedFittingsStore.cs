@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Eden.Data.Catalog;
+using Eden.Data.World.Alliances;
 using Eden.Data.World.Corporations;
 using Eden.Data.World.Fittings;
 using Eden.Gameplay.Corporations;
@@ -150,7 +151,10 @@ internal sealed class PilotSavedFittingsStore(WorldDatabase database, TimeProvid
 
     private static void CheckCapacity(WorldAction world, long pilotId, long ownerId, int added)
     {
-        int limit = ownerId == pilotId ? SavedFittingRules.MaximumFittings : SavedFittingRules.MaximumCorporationFittings;
+        int limit =
+            ownerId == pilotId ? SavedFittingRules.MaximumFittings
+            : world.Pilots.Find(pilotId)?.CorporationId == ownerId ? SavedFittingRules.MaximumCorporationFittings
+            : SavedFittingRules.MaximumAllianceFittings;
         if (world.Filter<SavedFittingRecord>(f => f.OwnerId == ownerId).Count() + added > limit)
         {
             throw new InvalidDataException($"This owner may save at most {limit} fittings.");
@@ -171,7 +175,22 @@ internal sealed class PilotSavedFittingsStore(WorldDatabase database, TimeProvid
         }
         if (pilot.CorporationId != ownerId)
         {
-            throw new InvalidDataException("Read corporation fittings for your current corporation only.");
+            if (
+                world is not EconomyTransaction
+                || world.Set<SavedAllianceMember>().Find(pilot.CorporationId)?.AllianceId != ownerId
+                || world.Set<SavedAlliance>().Find(checked((int)ownerId)) is not { ClosedAt: null } alliance
+            )
+            {
+                throw new InvalidDataException("Read fittings for your current corporation or alliance only.");
+            }
+            if (!mutation)
+            {
+                return;
+            }
+            if (alliance.ExecutorCorporationId != pilot.CorporationId)
+            {
+                throw new InvalidDataException("Alliance fittings require executor corporation authority.");
+            }
         }
         if (mutation)
         {

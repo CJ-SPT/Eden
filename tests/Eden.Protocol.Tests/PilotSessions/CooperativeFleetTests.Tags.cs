@@ -16,7 +16,8 @@ public sealed partial class CooperativeFleetTests
     [InlineData(true)]
     public void NativeFleetTagsReachLateJoinersAndClearWhenTargetsDisappearOrMembershipEnds(bool resident)
     {
-        using TestWorld world = new(liveWorld: resident);
+        TestClock clock = new();
+        using TestWorld world = new(clock: clock, liveWorld: resident);
         var source = world.Store.FindPilot(1000001)!;
         var target = world.Store.FindPilot(1000002)!;
         world.Store.SetPosition(source.ShipId, SpacePosition.Zero, source.SystemId);

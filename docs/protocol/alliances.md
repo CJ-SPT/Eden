@@ -218,3 +218,68 @@ native event notifications and shared ID allocation, plus SQL/connection/fitting
 
 **Optional maintainer checks.** Inspect alliance contact/bulletin panels; verify alliance chat/MOTD presentation;
 compose alliance mail and open an alliance calendar event.
+
+## Shared tools and affiliation consumers — November 16, 2026
+
+Schema **178** registers alliance inventory-owner identities for fitting/contact foreign keys and upgrades existing
+alliances when opening a checkpoint. This identity does not grant a wallet, hangar, corporation assets, structure
+ownership or administration. Allocation skips existing owner identifiers. Personal contact targets now reference
+inventory-owner identities; migration preserves existing character contacts and their deletion cleanup.
+
+`allianceFittingMgr` implements native reads, single/bulk saves and deletes, overwrites and renames. All current alliance
+members can read; the executor corporation's CEO, Directors and Fitting Managers can edit. Capacity is **600** per
+alliance, confirmed by pinned `appConst.maxAllianceFittings`. Membership and executor changes are checked at each command,
+including stale selected sessions. Shared fitting monitoring retains revision-based polling and checkpoint persistence.
+
+Fleet adverts accept the pinned Alliance invite-scope bit. Visibility, explicit allow/block entities and advert-invitation
+acceptance use committed current affiliations, including both the boss and applicant. The fleet adapter refreshes changed
+public identities from immutable resident directory snapshots without acquiring the world owner while holding its fleet
+lock. Unchanged directory snapshots avoid refresh work. Existing fleets remain transient and militia scope is unsupported.
+
+Access-list precedence is character, corporation, alliance, Everyone. Corporation/alliance identities can grant Member
+or Excluded access; only characters can administer a list. Shared bookmark access and existing structure access entries
+resolve membership when used, immediately losing an alliance grant on departure. More specific entries retain precedence; archived alliance entries can still be removed after dissolution.
+Structure ownership and management remain corporation-role checks. No sovereignty behavior is introduced.
+
+Personal standings/labels and corporation contact books accept known local alliance identities. Personal corporation
+contacts also use saved owner identities. Watchlists, blocking and add/edit notification messages are character-only.
+Recruitment rows include current alliance identity, and the standalone-corporation search filter excludes actual members.
+Character selection, character corporation show-info, corporation DBRows, station/structure guest replies and events,
+fleet applicants/members, ship slim items and Destiny mass-sector identity now carry affiliation. In-space affiliation
+changes publish slim-item changes. Guest reads and fleet access checks do not rely on a departed session's stale alliance value.
+Combat-party JSON captures affiliation when damage/loss records are produced; subsequent departure or dissolution does
+not rewrite reports. Old records without this field retain unknown affiliation. The pinned kill-blob parser uses `a` for
+an additional attacker's alliance and the native report fields for victim/final-blow alliance.
+
+References: [UniWiki Access Lists](https://wiki.eveuniversity.org/Access_Lists),
+[structure permissions](https://wiki.eveuniversity.org/Structure_permissions), and
+[CCP Access Lists](https://support.eveonline.com/hc/en-us/articles/208289645-Access-Lists).
+Static inspection additionally covered pinned `environment/fittingSvc.pyj`, `common/lib/appConst.pyj`, and
+`common/script/util/eveCommonUtils.pyj`. Local evejs reference snapshots:
+`services/fitting/allianceFittingMgrService.js` SHA-256
+`7702df902c287efb6b9db4d706f0612857aa02cc885347f7ee82d5679f2c3a91`;
+`_secondary/fitting/fittingStore.js` SHA-256
+`be4e3ebd0b4cb389c74576e91542d636b1c59d3203192149d0e79247bd4602c9`.
+Behavior was independently implemented; no reference source was copied.
+
+**Automated validation.** Stable checks passed in **134.75 s**: tool/solution restore, zero-warning build,
+**300 focused tests**, both Python policy suites (**8 + 9**) and formatting/width verification (**2,419 files**).
+The final filter was
+`FullyQualifiedName~Eden.Protocol.Tests.Alliances|FullyQualifiedName~SavedFittingsTests|FullyQualifiedName~FleetRulesTests|FullyQualifiedName~CooperativeFleetTests|FullyQualifiedName~SharedBookmarksTests|FullyQualifiedName~SharedBookmarkServiceTests|FullyQualifiedName~ContactsServiceTests|FullyQualifiedName~PilotContactsTests|FullyQualifiedName~CorporationContactsTests|FullyQualifiedName~CorporationRecruitmentTests|FullyQualifiedName~StructureTests|FullyQualifiedName~CharacterInteractionHistoryTests|FullyQualifiedName~InteractionHistoryPersistenceTests|FullyQualifiedName~CharacterSheetServiceTests|FullyQualifiedName~CorporationSelectionTests|FullyQualifiedName~StationGuestTests|FullyQualifiedName~HomeStationServiceTests|FullyQualifiedName~DetachedCheckpointTests`.
+Coverage includes executor transfer, fitting bulk atomicity/reopen, immediate bookmark/structure revocation, ACL precedence
+and archived entries, stale fleet sessions/invitations, SQL/connection/fitting-free warm adverts, recruitment filtering,
+personal/corporation alliance contacts, version-177 owner migration and event-time combat affiliation after reopen.
+
+Development validation found a historical version-40 fixture that retained contact-cleanup triggers while reconstructing
+its old table; the owner migration now drops and recreates them around replacement. Existing fleet-warp fixtures required
+resident worlds, the catalog capacitor profile and coordinator boundaries; the offline warp failure also reproduced on
+unchanged main `85878d9a`. The isolated saved-fitting session test passed on that main revision, so its earlier offline
+Abyssal exception was timing-sensitive. Its session fixture now uses a resident world. A subsequent dependency run passed
+299/300 and exposed a real-time fleet-tag fixture failure; both variants passed after moving it to `TestClock`, followed
+by the successful stable run above. No production warp or Abyssal behavior was changed. The full .NET suite was not
+requested and was not run. Documentation links, UTF-8 and Git whitespace checks passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Inspect alliance fittings and Fleet Finder; check ACL/structure access after corporation
+departure; inspect alliance identity in station guests, space and saved combat reports.

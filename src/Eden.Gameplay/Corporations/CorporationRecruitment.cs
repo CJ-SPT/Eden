@@ -20,7 +20,8 @@ public sealed record CorporationRecruitmentAd(
     long CreatedAt,
     long ExpiresAt,
     CorporationRecruitmentDraft Details,
-    int MemberCount
+    int MemberCount,
+    int? AllianceId = null
 );
 
 public sealed record CorporationRecruitmentSearch(

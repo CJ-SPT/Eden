@@ -1,4 +1,5 @@
 using Eden.Data.World.AccessGroups;
+using Eden.Data.World.Alliances;
 using Eden.Data.World.Bookmarks;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Corporations;
@@ -34,7 +35,7 @@ internal sealed class AccessGroupStore(WorldDatabase database, TimeProvider cloc
                 foreach (var group in world.Set<SavedAccessGroup>().OrderBy(g => g.Id))
                 {
                     var rows = members[group.Id].ToArray();
-                    var role = AccessGroupRules.Resolve(rows, pilotId, corporation);
+                    var role = AccessGroupRules.Resolve(rows, pilotId, corporation, Alliance(world, corporation));
                     if (AccessGroupRules.CanManage(role))
                     {
                         result.Add(
@@ -241,10 +242,13 @@ internal sealed class AccessGroupStore(WorldDatabase database, TimeProvider cloc
                     character
                     || member.OwnerId == 0
                     || corporations.Contains(member.OwnerId)
+                    || world is EconomyTransaction
+                        && member.OwnerId is > 0 and <= int.MaxValue
+                        && world.Set<SavedAlliance>().Find((int)member.OwnerId) is not null
                     || member.OwnerId <= int.MaxValue && database.Catalog.NpcCorporations.ContainsKey((int)member.OwnerId);
                 if (!known)
                 {
-                    throw new InvalidDataException("Choose known characters or corporations, or Everyone.");
+                    throw new InvalidDataException("Choose known characters, corporations, alliances, or Everyone.");
                 }
                 var row = current.GetValueOrDefault(member.OwnerId);
                 AccessGroupRules.CheckChange(actor, pilotId, member, row?.Role ?? AccessGroupRole.None, character, remove);
@@ -298,8 +302,14 @@ internal sealed class AccessGroupStore(WorldDatabase database, TimeProvider cloc
         });
     }
 
-    internal static AccessGroupRole Role(WorldAction world, long pilotId, long groupId) =>
-        AccessGroupRules.Resolve(MemberRows(world, groupId), pilotId, PilotCorporation(world, pilotId));
+    internal static AccessGroupRole Role(WorldAction world, long pilotId, long groupId)
+    {
+        long corporation = PilotCorporation(world, pilotId);
+        return AccessGroupRules.Resolve(MemberRows(world, groupId), pilotId, corporation, Alliance(world, corporation));
+    }
+
+    internal static int? Alliance(WorldAction world, long corporationId) =>
+        world is EconomyTransaction ? world.Set<SavedAllianceMember>().Find(checked((int)corporationId))?.AllianceId : null;
 
     internal static long PilotCorporation(WorldAction world, long pilotId) =>
         world.Filter<Pilot>(p => p.Id == pilotId).Select(p => (long?)p.CorporationId).SingleOrDefault()

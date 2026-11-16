@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Eden.Data.Catalog;
+using Eden.Data.World.Alliances;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
@@ -30,7 +31,8 @@ internal sealed partial class PilotInteractionHistoryStore
             shipType,
             weaponType,
             readSecurity ? world.Set<SavedSecurityStatus>().Find(pilot.Id)?.Value ?? 0 : null,
-            0
+            0,
+            world.Set<SavedAllianceMember>().Find(pilot.CorporationId)?.AllianceId
         );
     }
 

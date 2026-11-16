@@ -1,3 +1,4 @@
+using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Characters;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
@@ -6,7 +7,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Docking;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class StationGuestHandler(SharedStationGuests guests, IPilotActivity? activity = null)
+internal sealed class StationGuestHandler(SharedStationGuests guests, IPilotActivity? activity = null, IAlliances? alliances = null)
     : ISelectedPilotCallHandler,
         IDisposable
 {
@@ -73,7 +74,16 @@ internal sealed class StationGuestHandler(SharedStationGuests guests, IPilotActi
         Track(pilot?.PilotId);
         guests.Update(this, pilot);
         _stationId = pilot is { Position: null } ? pilot.DockedLocationId : null;
-        return pilot is null ? [] : guests.List(pilot).Select(guest => new StationGuest(guest.PilotId, guest.CorpId)).ToArray();
+        return pilot is null
+            ? []
+            : guests
+                .List(pilot)
+                .Select(guest => new StationGuest(
+                    guest.PilotId,
+                    guest.CorpId,
+                    alliances is null ? guest.AllianceId : alliances.PilotAffiliation(guest.PilotId)
+                ))
+                .ToArray();
     }
 
     public void Dispose()

@@ -1,6 +1,7 @@
 using Eden.Data.World.Alliances;
 using Eden.Data.World.Corporations;
 using Eden.Data.World.Economy;
+using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Alliances;
@@ -56,8 +57,13 @@ internal sealed partial class AllianceStore
         {
             throw new InvalidDataException("That owner name or ticker is already taken.");
         }
-        int id = checked((int)world.Next("WorldAlliance", AllianceRules.FirstAllianceId - 1));
+        int id;
+        do
+        {
+            id = checked((int)world.Next("WorldAlliance", AllianceRules.FirstAllianceId - 1));
+        } while (world.Set<InventoryOwner>().Find((long)id) is not null);
         long now = Now;
+        world.Add(new InventoryOwner { Id = id });
         world.Add(
             new SavedAlliance
             {

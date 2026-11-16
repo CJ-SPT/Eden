@@ -1,3 +1,4 @@
+using Eden.Data.World.Alliances;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Corporations;
 using Eden.Data.World.Inventory;
@@ -142,6 +143,14 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
         if (entries.FirstOrDefault(a => a.MemberId == pilot.CorporationId) is { } corporation)
         {
             return corporation.Allowed;
+        }
+        if (
+            world is EconomyTransaction
+            && world.Set<SavedAllianceMember>().Find(pilot.CorporationId) is { } membership
+            && entries.FirstOrDefault(a => a.MemberId == membership.AllianceId) is { } alliance
+        )
+        {
+            return alliance.Allowed;
         }
         return pilot.CorporationId == structure.CorporationId || structure.PublicAccess;
     }
@@ -506,7 +515,7 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
             {
                 if (members.Any(m => m.MemberId <= 0) || members.DistinctBy(m => m.MemberId).Count() != members.Count)
                 {
-                    throw new InvalidDataException("Choose distinct positive pilot or corporation access identities.");
+                    throw new InvalidDataException("Choose distinct positive pilot, corporation, or alliance access identities.");
                 }
                 structure.PublicAccess = publicAccess;
                 var existing = world.Filter<SavedStructureAccess>(a => a.StructureId == structureId).ToDictionary(a => a.MemberId);

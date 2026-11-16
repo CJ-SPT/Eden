@@ -25,7 +25,7 @@ public sealed partial class SavedFittingsTests
     [Fact]
     public async Task NativeSessionRepliesBeforeNotifyingTheFittingCacheAndRequiresSelection()
     {
-        using TestWorld db = new();
+        using TestWorld db = new(liveWorld: true);
         Queue<object?> input = new(
             new[]
             {

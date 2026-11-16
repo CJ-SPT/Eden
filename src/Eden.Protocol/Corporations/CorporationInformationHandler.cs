@@ -92,12 +92,6 @@ internal sealed class CorporationInformationHandler(
     }
 }
 
-internal sealed record CorporationFoundedReply(long CreatedAt) : BlueModel
-{
-    public override object ToBlue() =>
-        new BlueInstance("utillib.KeyVal", new Dictionary<string, object?> { ["allianceID"] = null, ["startDate"] = CreatedAt });
-}
-
 internal sealed record CorporationMarketActivityReply(IReadOnlyList<CorporationMarketActivity> Activity) : BlueModel
 {
     public override object ToBlue() =>

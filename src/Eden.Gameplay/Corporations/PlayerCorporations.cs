@@ -31,7 +31,8 @@ public sealed record PlayerCorporation(
     int MemberLimit,
     int MemberCount,
     long? ClosedAt = null,
-    long Shares = CorporationRules.InitialShares
+    long Shares = CorporationRules.InitialShares,
+    int? AllianceId = null
 );
 
 public sealed record CorporationMember(

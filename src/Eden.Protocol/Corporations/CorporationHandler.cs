@@ -283,7 +283,7 @@ internal sealed record PlayerCorporationReply(PlayerCorporation Corporation) : B
                     new BlueUnicode(details.Description),
                     details.LoyaltyPointTaxRate,
                     details.ApplicationsEnabled,
-                    null,
+                    Corporation.AllianceId,
                     logo.Shape1,
                     logo.Shape2,
                     logo.Shape3,

@@ -28,6 +28,7 @@ internal static class AllianceSchema
                 Description TEXT NOT NULL, Url TEXT NOT NULL, CreatorId INTEGER NOT NULL,
                 CreatorCorporationId INTEGER NOT NULL, ExecutorCorporationId INTEGER,
                 CreatedAt INTEGER NOT NULL, ClosedAt INTEGER);
+            INSERT OR IGNORE INTO WorldInventoryOwner(Id) SELECT Id FROM WorldAlliance;
             CREATE UNIQUE INDEX IF NOT EXISTS IX_WorldAlliance_Name ON WorldAlliance(Name);
             CREATE UNIQUE INDEX IF NOT EXISTS IX_WorldAlliance_Ticker ON WorldAlliance(Ticker);
             CREATE TABLE IF NOT EXISTS WorldAllianceMember(

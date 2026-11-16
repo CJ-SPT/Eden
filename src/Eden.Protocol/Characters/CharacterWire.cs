@@ -161,10 +161,13 @@ internal sealed record CharacterEmploymentRow(int CorporationId, long StartedAt)
         );
 }
 
-internal sealed record CharacterCorporationInfo(int CorporationId, string Title = "", IReadOnlyList<CorporationTitle>? Titles = null)
-    : BlueModel
+internal sealed record CharacterCorporationInfo(
+    int CorporationId,
+    string Title = "",
+    IReadOnlyList<CorporationTitle>? Titles = null,
+    int? AllianceId = null
+) : BlueModel
 {
-    // Standalone corporations have no alliance or militia membership.
     private const int CorporationTitleCount = 16;
 
     public override object ToBlue()
@@ -172,7 +175,7 @@ internal sealed record CharacterCorporationInfo(int CorporationId, string Title 
         Dictionary<string, object?> fields = new()
         {
             ["corpID"] = CorporationId,
-            ["allianceID"] = null,
+            ["allianceID"] = AllianceId,
             ["militiaFactionID"] = null,
             ["title"] = new BlueUnicode(Title),
         };
@@ -254,7 +257,7 @@ internal sealed record CharacterSelectionCard(
                 ["solarSystemID"] = Pilot.SystemId,
                 ["shipTypeID"] = Pilot.ShipTypeId,
                 ["corporationID"] = Pilot.CorpId,
-                ["allianceID"] = null,
+                ["allianceID"] = Pilot.Identity.AllianceId,
                 ["factionID"] = null,
                 ["balance"] = (double)BalanceCents / MarketDefinitions.CentsPerIsk,
                 ["balanceChange"] = 0,

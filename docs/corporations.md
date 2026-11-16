@@ -2,7 +2,7 @@
 
 [Documentation index](README.md) / [Corporation protocol records](protocol/corporations.md)
 
-The requested scope is standalone player corporations. Alliances and corporation wars are separate work.
+Player corporations support membership, administration, assets and governance. [Alliances](protocol/alliances.md) now add resident corporation associations and shared services. Corporation wars and sovereignty remain outside the implemented alliance scope.
 
 Each milestone includes typed rules, authenticated native calls, persistence, focused automated checks and a verified push before the next milestone starts. Native client acceptance is disabled for agents.
 
@@ -33,8 +33,8 @@ Each milestone includes typed rules, authenticated native calls, persistence, fo
 See [corporation protocol findings](protocol/corporations.md) for native call shapes and milestone validation evidence, and [inventory ownership](inventory-ownership.md) for the storage boundary. This table records implemented scope, not live client acceptance.
 
 The maintainer confirmed that the corporation window loads after the November 14 title-row correction. Completion work
-now covers the remaining standalone tabs and actions, including recruitment, member queries and governance. Alliances
-and corporation wars remain explicitly outside this request.
+covers the remaining standalone tabs and actions, including recruitment, member queries and governance. Alliance
+services are recorded separately in the [alliance implementation notes](protocol/alliances.md); corporation wars remain pending.
 
 Implementation resumed after the member-expulsion vote milestone. Remaining standalone work includes full historical
 auditing/decorations, outstanding home settings, recent combat records, automatic downtime removal sweeps

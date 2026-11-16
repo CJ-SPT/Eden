@@ -374,7 +374,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
             .OnDelete(DeleteBehavior.Restrict);
         model.Entity<SavedContact>().ToTable("WorldContact").HasKey(c => new { c.PilotId, c.ContactId });
         model.Entity<SavedContact>().HasOne<Pilot>().WithMany().HasForeignKey(c => c.PilotId);
-        model.Entity<SavedContact>().HasOne<Pilot>().WithMany().HasForeignKey(c => c.ContactId);
+        model.Entity<SavedContact>().HasOne<InventoryOwner>().WithMany().HasForeignKey(c => c.ContactId);
         model.Entity<SavedBlockedContact>().ToTable("WorldBlockedContact").HasKey(c => new { c.PilotId, c.ContactId });
         model.Entity<SavedBlockedContact>().HasOne<Pilot>().WithMany().HasForeignKey(c => c.PilotId);
         model.Entity<SavedBlockedContact>().HasOne<Pilot>().WithMany().HasForeignKey(c => c.ContactId);

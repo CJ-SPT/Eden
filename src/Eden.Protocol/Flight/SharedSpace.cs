@@ -78,7 +78,8 @@ internal sealed record PilotContact(
     SpacePosition? Position,
     double X,
     double Y,
-    double Z
+    double Z,
+    int? AllianceId = null
 )
 {
     internal static PilotContact From(DockedPilot pilot) =>
@@ -98,7 +99,8 @@ internal sealed record PilotContact(
             pilot.Position,
             pilot.X,
             pilot.Y,
-            pilot.Z
+            pilot.Z,
+            pilot.Identity.AllianceId
         );
 }
 

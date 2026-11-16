@@ -10,7 +10,8 @@ public sealed record CombatParty(
     int? ShipTypeId,
     int? WeaponTypeId,
     double? SecurityStatus,
-    double Damage
+    double Damage,
+    int? AllianceId = null
 );
 
 public sealed record CombatLostItem(
