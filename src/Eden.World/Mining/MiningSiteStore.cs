@@ -81,10 +81,12 @@ internal sealed partial class MiningSiteStore(WorldDatabase database) : IMiningS
         }
         using WorldActionScope transaction = new(database, new(systems: [systemId]));
         var world = transaction.World;
-        var site = world
+        long? siteId = world
             .Filter<SavedMiningSite>(s => s.SystemId == systemId && s.Family == family)
-            .OrderByDescending(s => s.Id)
+            .Select(s => (long?)s.Id)
+            .OrderByDescending(id => id)
             .FirstOrDefault();
+        var site = siteId is long selected ? world.Set<SavedMiningSite>().Find(selected) : null;
         if (site is not null && site.ExpiresAt <= now && site.ReplaceAt is null)
         {
             Retire(world, site, site.ExpiresAt);

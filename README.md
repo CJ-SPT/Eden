@@ -74,6 +74,9 @@ supports native agent browsing, locator filtering, mission previews and existing
 [Population validation during travel](docs/protocol/performance.md#population-validation-during-travel-november-15-2026)
 batches resident NPC slot checks and avoids copying unchanged guards during population participant discovery.
 
+[Site history queries](docs/protocol/performance.md#site-history-discovery-and-identity-maxima-november-15-2026)
+select current site identities before copying rows and avoid materializing history for simple resident ID maxima.
+
 ## Build and run
 
 Use the Windows commands in [Start here](#start-here) to prepare data and run a local server. For code milestones, run

@@ -71,10 +71,12 @@ internal sealed partial class PirateExplorationStore(
                 {
                     continue;
                 }
-                var row = world
+                long? siteId = world
                     .Filter<SavedExplorationSite>(s => s.SystemId == systemId && s.Kind == (int)kind)
-                    .OrderByDescending(s => s.Id)
+                    .Select(s => (long?)s.Id)
+                    .OrderByDescending(id => id)
                     .FirstOrDefault();
+                var row = siteId is long selected ? world.Set<SavedExplorationSite>().Find(selected) : null;
                 if (row is not null && row.ExpiresAt <= now && row.ReplaceAt is null)
                 {
                     Retire(world, row, row.ExpiresAt);

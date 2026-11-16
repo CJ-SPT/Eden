@@ -26,6 +26,23 @@ internal sealed class EconomyQueryProvider<T>(EconomySet<T> source) : IQueryProv
         {
             if (
                 node.Method.DeclaringType == typeof(Queryable)
+                && node.Method.Name == nameof(Queryable.Max)
+                && node.Type == typeof(long?)
+                && node.Arguments.Count == 2
+                && node.Arguments[1] is UnaryExpression { Operand: Expression<Func<T, long?>> identity }
+                && identity.Body is UnaryExpression { NodeType: ExpressionType.Convert, Operand: var member }
+                && IsIdentity(member, identity.Parameters[0])
+                && Predicate(node.Arguments[0], out var identityFilter)
+                && IdentityMinimum(identityFilter, out long minimum)
+                && source.TryMaximumIdentity(minimum, out long? maximum)
+            )
+            {
+                return maximum is long value
+                    ? Expression.Convert(Expression.Constant(value), typeof(long?))
+                    : Expression.Constant(null, typeof(long?));
+            }
+            if (
+                node.Method.DeclaringType == typeof(Queryable)
                 && node.Arguments.Count >= 2
                 && node.Arguments[1] is UnaryExpression { Operand: LambdaExpression }
                 && node.Method.Name
@@ -111,6 +128,35 @@ internal sealed class EconomyQueryProvider<T>(EconomySet<T> source) : IQueryProv
             ReferenceEquals(node.Value, source)
                 ? Expression.Constant(source.SelectRows(null), typeof(IEnumerable<T>))
                 : base.VisitConstant(node);
+
+        private static bool IsIdentity(Expression expression, ParameterExpression row) =>
+            expression is MemberExpression { Member.Name: "Id", Type: var type, Expression: var owner }
+            && type == typeof(long)
+            && owner == row;
+
+        private static bool IdentityMinimum(Expression<Func<T, bool>>? predicate, out long minimum)
+        {
+            minimum = long.MinValue;
+            if (predicate is null || predicate.Body is ConstantExpression { Value: true })
+            {
+                return true;
+            }
+            if (
+                predicate.Body
+                    is BinaryExpression
+                    {
+                        NodeType: ExpressionType.GreaterThanOrEqual,
+                        Left: var member,
+                        Right: ConstantExpression { Value: long bound },
+                    }
+                && IsIdentity(member, predicate.Parameters[0])
+            )
+            {
+                minimum = bound;
+                return true;
+            }
+            return false;
+        }
 
         private bool Predicate(Expression expression, out Expression<Func<T, bool>>? predicate)
         {

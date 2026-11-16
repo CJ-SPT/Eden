@@ -70,10 +70,12 @@ internal sealed partial class CombatAnomalyStore
         }
         using WorldActionScope transaction = new(database, new(systems: [system]));
         var world = transaction.World;
-        var site = world
+        long? siteId = world
             .Filter<WorldCombatAnomaly>(s => s.SystemId == system && s.Slot == DedComplexRules.SiteSlot)
-            .OrderByDescending(s => s.Id)
+            .Select(s => (long?)s.Id)
+            .OrderByDescending(id => id)
             .FirstOrDefault();
+        var site = siteId is long selected ? world.Set<WorldCombatAnomaly>().Find(selected) : null;
         var definition = site is null ? null : definitions.FirstOrDefault(d => d.Binding.DungeonId == site.DungeonId);
         if (site is null || site.ReplaceAt <= now || definition is null || !eligible.Contains(definition))
         {

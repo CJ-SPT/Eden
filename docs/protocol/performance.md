@@ -6,6 +6,108 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Site history discovery and identity maxima, November 15, 2026
+
+Read-only container logs from 7:12–7:50 p.m. ET identify running revision
+`33539bafdbbff77a663a6480a7dd9c24f6128f10`. This predates the previous population-validation
+milestone. The maintainer confirmed that optimization was not deployed; this log does not measure its
+effect. It contains a 2,111.97 ms tick, observer waits of 546.62–549.59 ms attributed to `Signatures`,
+and a `CmdStargateJump` call spending 1,621.33 of 1,672.84 ms waiting for ownership. These observations
+motivate inspecting discovery costs alongside other travel work; they do not attribute all stalls to
+site history. The collected log is retained locally at ignored `artifacts/signature-optimization/remote.log`.
+
+Combat discovery previously materialized every matching historical generation before grouping by
+slot. DED, hacking and mining readers similarly copied all candidates before choosing the newest row.
+They now select scalar identities first, then materialize each selected current row. The highest row
+still determines whether a slot is live, waiting for replacement or expired. An older active row cannot
+take the place of a newer completed row through this query change.
+
+The resident query provider also recognizes nullable `long` ID maxima over the complete set or a
+constant inclusive lower ID bound. Those queries enumerate the existing primary keys without cloning
+rows or building candidate arrays. Private additions, removals and edited identities remain visible.
+Other predicates, computed selectors, non-ID primary columns, and types requiring linked ownership or
+inventory overlays retain the existing query path. There is no new result cache, sequence allocation
+policy or SQL implementation. The maximum still scans resident keys; this is not a constant-time index.
+
+The gameplay references are [EVE University probe scanning](https://wiki.eveuniversity.org/Probe_scanning)
+and [exploration](https://wiki.eveuniversity.org/Exploration). The older local EveJS reference is
+`261108.1`, has no Git metadata, and identifies its license as AGPL-3.0-only. Arrival preparation and
+attachment were checked in `server/src/space/runtime/spaceRuntime/sessions.js`, SHA-256
+`1E1659817958BD8AACF99ED7ABC9F2DDFEA2EE150E7548E6313B5E29C2A701BB`.
+No implementation was copied. Build-3662168 site identifiers, placement, replacement deadlines,
+scanner replies and the resident checkpoint boundary retain their existing behavior.
+
+### Automated validation
+
+The baseline is main `817975f6`, which already contains the earlier population optimization. The
+exact-method identity regression reproduced 4,096 materializations where zero were expected with the
+unchanged query provider. It passes with the new path. Coverage includes empty and negative maxima,
+lower bounds, filtered and computed-selector queries, staged additions and deletions, rejected identity
+edits, rollback, linked pilot ownership visibility and reopened checkpoints.
+
+The exact development filters use these fully qualified methods:
+
+```text
+Eden.Protocol.Tests.Exploration.SiteHistoryPerformanceTests.DiscoverySelectsCurrentSitesAndFreshIdsWithLocalAndRemoteHistory
+Eden.Protocol.Tests.Persistence.ResidentIdentityMaximumTests.IdentityMaximumRetainsBoundsPrivateChangesRollbackAndReopenedStateWithoutCloningHistory
+Eden.Protocol.Tests.Persistence.ResidentIdentityMaximumTests.EmptyNegativeAndFilteredIdentityQueriesKeepTheirNullableSemantics
+Eden.Protocol.Tests.Persistence.ResidentIdentityMaximumTests.PilotIdentityMaximumKeepsPrivateActiveShipOwnershipVisibility
+Eden.Protocol.Tests.Combat.ServerPerformanceReplayTests.TwoMovingSessionFramesRefreshSitesWithArchivedHistoryWithoutSql
+```
+
+Each uses `FullyQualifiedName=`. The discovery test exercises zero and 4,096 local historical rows,
+plus a higher remote identity, against warmed catalogs. It checks fresh allocation above the remote
+maximum, current-system results and reopened checkpoint identities. Measured populated samples:
+
+| Discovery | Before allocation | After allocation | Before elapsed | After elapsed |
+| --- | ---: | ---: | ---: | ---: |
+| Combat | 8,934,520 bytes | 4,963,224 bytes | 8.45 ms | 5.77 ms |
+| Hacking | 15,248,328 bytes | 8,449,784 bytes | 16.44 ms | 10.49 ms |
+| Gas | 8,573,896 bytes | 5,090,576 bytes | 16.76 ms | 9.51 ms |
+
+All report zero SQL commands, connection opens and fitting calculations. The regression asserts a
+generous allocation budget relative to the zero-history sample; it does not assert elapsed time.
+Checkpoint times are separate: combat 81.04/72.89 ms before/after, hacking 48.66/45.98 ms and gas
+36.71/37.12 ms. History creation and checkpoint projection are outside the discovery measurement.
+
+After three warm-up frames, two moving sessions refresh an expired discovery view in the same system.
+With 4,096 archived combat rows, their complete measured frame pair used 39.49 ms and 10,661,072 bytes
+before, and 20.72 ms and 6,688,672 bytes after. The zero-history control used 4.39 ms/885,600 bytes before
+and 8.97 ms/903,832 bytes after. These are individual native Windows samples with immediate encoded
+output sinks, not stable latency estimates or deployed-server measurements. The populated checkpoints
+took 70.41/76.24 ms before/after, and empty controls 58.18/63.91 ms. Frames report zero SQL, connections
+and fitting calculations and retain both pilots' movement. The baseline used unchanged query and
+discovery implementations; unused helper declarations remained present so the added tests could compile.
+
+The six-case development selection passed in 17.43 seconds. An initial formatting application found a
+144-character diagnostic line; its string was split before final validation.
+
+All 388 affected cases passed in 165.92 seconds. The filter combines `FullyQualifiedName~` clauses for
+the complete `Eden.Protocol.Tests.Exploration` namespace and these classes/methods:
+
+```text
+GasMiningTests, IceMiningTests, ResidentIdentityMaximumTests, ResidentQueryIndexTests,
+ResidentQuerySessionTests, ResidentEconomyTests, EconomicProjectionTests, PersonalMarketTests,
+ResidentMarketHistoryTests, TwoMovingSessionFramesRefreshSitesWithArchivedHistoryWithoutSql,
+SystemRuntimeIsolationTests, CheckpointOwnershipTests
+```
+
+Tool and solution restores passed. The incremental solution build passed in 1.01 seconds with zero
+warnings or errors. Both Python policy suites passed all eight catalog and nine formatting cases in
+1.30 seconds combined. .NET style, CSharpier and line-width verification passed in 45.91 seconds.
+Git whitespace and the new documentation links passed. The full .NET suite was not run.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. The server was read for logs and was not deployed or
+restarted. This work provides additional local optimizations; the previous milestone's deployed effect
+also remains unverified.
+
+### Optional maintainer checks
+
+After deployment, compare system-entry/scanner latency with several pilots travelling through previously
+visited systems.
+
 ## Population validation during travel, November 15, 2026
 
 Read-only Docker logs from running revision `c1a76d420a236cdf9eb7de7a02960aeb1d424681` cover

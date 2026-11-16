@@ -23,6 +23,8 @@ internal sealed partial class CombatAnomalyStore(
     IWormholeTravel? wormholes = null
 ) : ICombatAnomalies, IDedComplexTravel, IDedEscalations
 {
+    private sealed record SiteSlotIdentity(long Id, int Slot);
+
     private sealed record View(
         long Version,
         long Catalog,
@@ -193,16 +195,20 @@ internal sealed partial class CombatAnomalyStore(
             }
             using WorldActionScope transaction = new(database, new(systems: [systemId]));
             var world = transaction.World;
-            var latest = world
+            // Group scalar identities before materializing the current rows. Archived
+            // generations must not enter this action just to choose each slot's head.
+            var latestIds = world
                 .Filter<WorldCombatAnomaly>(s =>
                     s.SystemId == systemId
                     && s.IsSignature == signature
                     && s.Slot != DedComplexRules.SiteSlot
                     && s.Slot != DedComplexRules.EscalationSlot
                 )
+                .Select(s => new SiteSlotIdentity(s.Id, s.Slot))
                 .AsEnumerable()
                 .GroupBy(s => s.Slot)
-                .ToDictionary(group => group.Key, group => group.MaxBy(s => s.Id)!);
+                .ToDictionary(group => group.Key, group => group.MaxBy(s => s.Id)!.Id);
+            var latest = latestIds.ToDictionary(pair => pair.Key, pair => world.Set<WorldCombatAnomaly>().Find(pair.Value)!);
             int slots = Math.Min(signature ? ProbeScanRules.SignaturesPerSystem : AnomalyEncounterRules.SitesPerSystem, eligible.Length);
             long? nextId = null;
             bool changed = false;
