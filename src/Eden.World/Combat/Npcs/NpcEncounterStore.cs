@@ -131,19 +131,22 @@ internal sealed class NpcEncounterStore(
         return due;
     }
 
-    private static TransactionParticipants PopulationParticipants(WorldAction world, int system)
+    internal static TransactionParticipants PopulationParticipants(WorldAction world, int system)
     {
         var npcs = world
-            .Set<WorldNpc>()
-            .Where(n => n.SystemId == system && n.DestroyedAt == null && n.RetiredAt == null)
-            .ToArray()
-            .Where(n =>
-                NpcPopulationRules.IsMining(n.Role)
-                || n.Role == NpcRole.Convoy
-                || n.TypeId == NpcEncounterDefinitions.GuristasRookieType
-                || n.Role == NpcRole.Pirate && NpcSpecialTypes.Excluded.Contains(n.TypeId)
+            .Filter<WorldNpc>(n =>
+                n.SystemId == system
+                && n.DestroyedAt == null
+                && n.RetiredAt == null
+                && (
+                    NpcPopulationRules.IsMining(n.Role)
+                    || n.Role == NpcRole.Convoy
+                    || n.TypeId == NpcEncounterDefinitions.GuristasRookieType
+                    || n.Role == NpcRole.Pirate && NpcSpecialTypes.Excluded.Contains(n.TypeId)
+                )
             )
-            .Select(n => new SimulationResource(SharedSimulationResource.Npc, n.Id));
+            .Select(n => new SimulationResource(SharedSimulationResource.Npc, n.Id))
+            .ToArray();
         return new(systems: [system], resources: npcs);
     }
 
