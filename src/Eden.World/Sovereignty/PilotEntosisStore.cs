@@ -39,6 +39,8 @@ internal sealed partial class PilotEntosisStore(
 {
     // Paid reservations survive checkpoints; scoring leases deliberately do not.
     private readonly HashSet<long> _scoringLeases = [];
+    private long _viewRevision;
+    public long ViewRevision => Volatile.Read(ref _viewRevision);
     public bool Available => LiveWorld.Find(database.Path) is not null;
     private LiveWorld Live => LiveWorld.Find(database.Path) ?? throw new InvalidDataException("Entosis requires the resident world.");
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
@@ -180,7 +182,7 @@ internal sealed partial class PilotEntosisStore(
             return null;
         }
         var claim = world.Set<SavedSovereigntyClaim>().Find(system);
-        return new(
+        return new SovereigntyHub(
             system,
             hub.HubId,
             structure.TypeId,
@@ -196,7 +198,10 @@ internal sealed partial class PilotEntosisStore(
                 hub.Blocked
             ),
             hub.CaptureDuration
-        );
+        )
+        {
+            Conflict = world.Set<SavedSovereigntyConflict>().Find(system) is { } conflict ? Conflict(conflict) : null,
+        };
     }
 
     public IReadOnlyList<EntosisCycle> Cycles(long pilotId) =>

@@ -11,8 +11,23 @@ internal sealed record HubDeploymentProfile(long CaptureDuration, double StarDis
 
 internal sealed record EntosisProfile(double Duration, double Capacitor, double Range, double SpeedLimit, int FuelType, int FuelQuantity);
 
+internal sealed record TerritorialCaptureProfile(long Duration, double Regeneration);
+
 internal static class EntosisCatalog
 {
+    private static readonly CatalogDefinition<int[]> s_constellationSystems = new(
+        "sovereignty-constellation-systems",
+        (catalog, id) =>
+            catalog
+                .Definitions.Systems.Values.Where(row => row.ConstellationId == id)
+                .OrderBy(row => row.Id)
+                .Select(row => row.Id)
+                .ToArray()
+    );
+
+    internal static IReadOnlyList<int> ConstellationSystems(CatalogDbContext catalog, int id) =>
+        catalog.Definition(s_constellationSystems, id);
+
     internal const DogmaAttributeId DurationMultiplier = (DogmaAttributeId)2021;
     internal const DogmaAttributeId CapitalSize = (DogmaAttributeId)1785;
     internal const DogmaAttributeId SpeedLimitAttribute = (DogmaAttributeId)2033;
@@ -39,6 +54,22 @@ internal static class EntosisCatalog
             throw new InvalidDataException("Invalid sovereignty hub deployment profile.");
         }
         return result;
+    }
+
+    internal static TerritorialCaptureProfile Defense(CatalogDbContext catalog, bool node)
+    {
+        var values = catalog.Require(
+            CatalogData.Client.Spacecomponentsbytype,
+            (long)(node ? SovereigntyWarfareRules.CommandNodeTypeId : EntosisRules.HubTypeId)
+        )[node ? "entosisCommandNode" : "entosisSovereigntyHub"];
+        double Read(string name) =>
+            values[name] switch
+            {
+                ClientSpacecomponentsbytypeValueValueChoiceLong value => value.Value,
+                ClientSpacecomponentsbytypeValueValueChoiceDouble value => value.Value,
+                _ => throw new InvalidDataException("Missing territorial capture profile."),
+            };
+        return new(checked((long)(Read("captureTimeSeconds") * TimeSpan.TicksPerSecond)), Read("defensiveRegenRate"));
     }
 
     internal static bool Supported(CatalogDbContext catalog, int typeId) =>

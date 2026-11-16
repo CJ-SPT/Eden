@@ -59,7 +59,7 @@ internal sealed class EntosisHandler(IPilotEntosis entosis, Eden.Gameplay.Struct
                 || context.Flight.PreparingWarp
             )
             {
-                return new PilotCallResult.Failure("Activate Entosis on a locked neutral sovereignty hub outside warp.");
+                return new PilotCallResult.Failure("Activate Entosis on a locked target outside warp.");
             }
             context.Flight.Checkpoint();
             Publish(context, entosis.Activate(context.Pilot.PilotId, context.Pilot.ShipId, item, hub, repeats, Now));

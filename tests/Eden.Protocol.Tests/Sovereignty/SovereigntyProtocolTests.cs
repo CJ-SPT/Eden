@@ -144,7 +144,7 @@ public sealed class SovereigntyProtocolTests
         Assert.Equal((long)fixture.AllianceId, fields["allianceID"]);
         var score = BlueRead.Tuple(fields["entosis_score"], 4);
         Assert.Equal(1d, BlueRead.Tuple(score[2], 4)[0]);
-        Assert.Equal(1L, score[3]);
+        Assert.Equal((long)fixture.AllianceId, score[3]);
         context.Flight.RefreshStructures(contacts);
         context.Flight.RefreshStructures(contacts.ToArray());
         Assert.NotNull(context.Flight.FindTarget(hub));

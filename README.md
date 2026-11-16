@@ -23,8 +23,9 @@ dotnet run --no-build --project src/Eden.Server
 
 ## Current status
 
-[Sovereignty](docs/protocol/sovereignty.md) supports neutral hub deployment and paid Entosis capture with resident claims,
-checkpoint recovery and native sovereignty/map reads. Owned-hub warfare and upgrades remain planned.
+[Sovereignty](docs/protocol/sovereignty.md) supports neutral hub deployment, paid Entosis capture, vulnerability windows, reinforcement and
+constellation command-node campaigns. Resident claims, checkpoint recovery and native sovereignty/map reads are implemented;
+activity-driven defense, capitals and upgrades remain planned.
 
 [Player-bot failure isolation](docs/protocol/capsuleers.md#bot-failure-isolation---november-16-2026) backs off broken pilots
 while healthy bots continue, preserving authoritative jobs and committed economic progress.

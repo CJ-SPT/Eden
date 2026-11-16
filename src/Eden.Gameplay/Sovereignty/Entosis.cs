@@ -12,7 +12,10 @@ public sealed record SovereigntyHub(
     SovereigntyClaim? Claim,
     CaptureProgress Capture,
     long CaptureDuration
-);
+)
+{
+    public SovereigntyConflict? Conflict { get; init; }
+}
 
 public sealed record CaptureProgress(
     int? ControllingAllianceId,
@@ -46,14 +49,20 @@ public sealed record EntosisActivation(EntosisCycle Cycle, double Capacitor, IRe
 public interface IPilotEntosis
 {
     bool Available { get; }
+    long ViewRevision { get; }
     bool IsHubItem(long pilotId, long itemId);
     StructureResult Deploy(long pilotId, long itemId);
     SovereigntyHub? Hub(int systemId);
     IReadOnlyList<SovereigntyClaim> Claims();
+    AlliancePrimeTime PrimeTime(long pilotId);
+    void SetPrimeHour(long pilotId, int hour);
+    IReadOnlyList<SovereigntyHub> AllianceHubs(long pilotId);
+    IReadOnlyList<StaticSpaceObject> CommandNodes(int systemId);
     EntosisActivation Activate(long pilotId, long shipId, long moduleId, long hubId, long repeats, long now);
     EntosisActivation? Renew(long pilotId, long moduleId, long now);
     IReadOnlyList<EntosisCycle> Cycles(long pilotId);
     void Advance(int systemId, long now);
+    void AdvanceAll();
     void Stop(long pilotId, long moduleId, long now);
     void Disconnect(long pilotId, long now);
     double? SpeedLimit(long shipId, long now);

@@ -658,9 +658,11 @@ internal sealed partial class PilotStructureStore(
             entosis.Advance(systemId, Now);
         }
         var reads = Eden.World.Runtime.LiveReadModels.Find(database.Path);
-        return (
+        var contacts = (
             reads?.Structures(systemId, database.Catalog.Identity.Generation, Now, () => LoadContacts(systemId)) ?? LoadContacts(systemId)
         ).Contacts;
+        var nodes = entosis?.Available == true ? entosis.CommandNodes(systemId) : [];
+        return nodes.Count == 0 ? contacts : contacts.Concat(nodes).ToArray();
     }
 
     private Eden.World.Runtime.StructureContactView LoadContacts(int systemId) =>

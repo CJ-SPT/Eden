@@ -860,6 +860,9 @@ internal sealed partial class ResidentEconomy
         RegisterSovereigntyClaim();
         RegisterSovereigntyHub();
         RegisterEntosisCycle();
+        RegisterSovereigntyPrime();
+        RegisterSovereigntyConflict();
+        RegisterSovereigntyNode();
         RegisterPilotActivity();
         RegisterCommandBursts();
         RegisterInterdiction();

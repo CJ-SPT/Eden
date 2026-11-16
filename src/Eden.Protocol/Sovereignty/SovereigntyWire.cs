@@ -27,8 +27,24 @@ internal sealed record SovereigntyStructureReply(SovereigntyHub Hub) : BlueModel
                 ["corporationID"] = Hub.CorporationId,
                 ["allianceID"] = Hub.Claim?.AllianceId,
                 ["solarSystemID"] = Hub.SystemId,
-                ["campaignState"] = null,
-                ["vulnerabilityState"] = null,
+                ["campaignState"] = Hub.Conflict is { CampaignAt: long at } conflict
+                    ? new object?[]
+                    {
+                        SovereigntyWarfareRules.HubDefenseEvent,
+                        conflict.DefenderAllianceId,
+                        at,
+                        new BlueMap<int, double>(
+                            new Dictionary<int, double>
+                            {
+                                [conflict.DefenderAllianceId] = conflict.DefenderPoints / 100d,
+                                [SovereigntyWarfareRules.Attackers] = 1 - conflict.DefenderPoints / 100d,
+                            }
+                        ),
+                    }
+                    : null,
+                ["vulnerabilityState"] = Hub.Conflict is { Phase: SovereigntyPhase.Secure } secure
+                    ? new object?[] { secure.Window.StartsAt, secure.Window.EndsAt }
+                    : null,
                 ["defenseMultiplier"] = 1d,
                 ["isCapital"] = false,
             }

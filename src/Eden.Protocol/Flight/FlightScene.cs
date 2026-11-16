@@ -134,6 +134,7 @@ internal sealed class FlightScene(
                     && (
                         MiningDefinitions.IsResource(o.CategoryId, o.GroupId)
                         || o.GroupId == Eden.Gameplay.Sovereignty.SovereigntyRules.HubGroupId
+                        || o.GroupId == Eden.Gameplay.Sovereignty.SovereigntyWarfareRules.CommandNodeGroupId
                         || Eden.Gameplay.Exploration.HackingRules.IsContainer(o.Id)
                     )
                 )

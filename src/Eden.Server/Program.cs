@@ -292,6 +292,9 @@ internal static class Program
             var abyssalMaintenance = services.GetRequiredService<AbyssalMaintenance>();
             lifetime.OnStop(nameof(AbyssalMaintenance), abyssalMaintenance.Dispose);
             abyssalMaintenance.Start();
+            var sovereigntyMaintenance = services.GetRequiredService<SovereigntyMaintenance>();
+            lifetime.OnStop(nameof(SovereigntyMaintenance), sovereigntyMaintenance.Dispose);
+            sovereigntyMaintenance.Start();
             var corporationMaintenance = services.GetRequiredService<CorporationMaintenance>();
             lifetime.OnStop(nameof(CorporationMaintenance), corporationMaintenance.Dispose);
             corporationMaintenance.Start();

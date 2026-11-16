@@ -15,10 +15,14 @@ internal sealed partial class PilotEntosisStore
 {
     public void Advance(int systemId, long now)
     {
+        if (!database.Catalog.Systems.TryGetValue(systemId, out var definition))
+        {
+            return;
+        }
         if (
             !Live.Economy.Inspect(world =>
                 world.Set<SavedSovereigntyHub>().Find(systemId) is not null
-                && world.Filter<SavedEntosisCycle>(row => row.SystemId == systemId).Any()
+                || world.Filter<SavedSovereigntyConflict>(row => row.ConstellationId == definition.ConstellationId).Any()
             )
         )
         {
@@ -32,6 +36,7 @@ internal sealed partial class PilotEntosisStore
 
     private void Advance(WorldAction world, CatalogDbContext catalog, int system, long now)
     {
+        AdvanceWarfare(world, catalog, system, now);
         var hub = world.Set<SavedSovereigntyHub>().Find(system);
         if (hub is null || now < hub.UpdatedAt)
         {
@@ -50,7 +55,10 @@ internal sealed partial class PilotEntosisStore
         }
         foreach (var cycle in cycles)
         {
-            if (cycle.Contributing && (!_scoringLeases.Contains(cycle.ModuleId) || !Valid(world, catalog, cycle, structure)))
+            if (
+                cycle.Contributing
+                && (!_scoringLeases.Contains(cycle.ModuleId) || !Valid(world, catalog, cycle, Target(world, system, structure.Id)!))
+            )
             {
                 cycle.Contributing = false;
                 cycle.Stopping = true;
@@ -89,6 +97,8 @@ internal sealed partial class PilotEntosisStore
                     ClaimedAt = capturedAt,
                 }
             );
+            EnsureConflict(world, catalog, world.Set<SavedSovereigntyClaim>().Find(system)!, capturedAt);
+            world.AfterCommit(() => Interlocked.Increment(ref _viewRevision));
             structure.CorporationId = winner.CorporationId;
             structure.StateStartedAt = capturedAt;
             // Owned-hub campaigns are introduced by the territorial-conflict milestone.
@@ -117,7 +127,7 @@ internal sealed partial class PilotEntosisStore
         }
     }
 
-    private bool Valid(WorldAction world, CatalogDbContext catalog, SavedEntosisCycle cycle, SavedStructure structure)
+    private bool Valid(WorldAction world, CatalogDbContext catalog, SavedEntosisCycle cycle, EntosisTarget target)
     {
         var pilot = world.Pilots.Find(cycle.PilotId);
         var item = world.Set<OwnedItem>().Find(cycle.ModuleId);
@@ -131,19 +141,17 @@ internal sealed partial class PilotEntosisStore
             || item.LocationId != cycle.ShipId
             || item.OwnerId != cycle.PilotId
             || !locks.Contains(cycle.ShipId, cycle.HubId)
-            || world.Set<SavedAllianceMember>().Find(cycle.CorporationId)?.AllianceId != cycle.AllianceId
-            || world.Set<SavedAlliance>().Find(cycle.AllianceId) is not { ClosedAt: null }
+            || (world.Set<SavedAllianceMember>().Find(cycle.CorporationId)?.AllianceId ?? 0) != cycle.AllianceId
+            || cycle.AllianceId > 0 && world.Set<SavedAlliance>().Find(cycle.AllianceId) is not { ClosedAt: null }
             || world.Set<ShipLoss>().Find(cycle.ShipId) is not null
         )
         {
             return false;
         }
         double edge =
-            new Eden.Gameplay.Flight.SpacePosition(position.X, position.Y, position.Z).DistanceTo(
-                new(structure.X, structure.Y, structure.Z)
-            )
+            new Eden.Gameplay.Flight.SpacePosition(position.X, position.Y, position.Z).DistanceTo(target.Position)
             - (catalog.FittingType(pilot.ActiveShip.TypeId)?.Radius ?? 0)
-            - (catalog.FittingType(structure.TypeId)?.Radius ?? 0);
+            - (catalog.FittingType(target.TypeId)?.Radius ?? 0);
         return double.IsFinite(edge) && edge <= cycle.Range;
     }
 

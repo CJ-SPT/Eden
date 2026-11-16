@@ -11,7 +11,7 @@ territory. Current gameplay references are [UniWiki sovereignty](https://wiki.ev
 | --- | --- |
 | 1. Foundation | Typed claims and system eligibility, strategic-age and ADM rules, resident indexed reads, migration and coherent checkpoint/reopen coverage. Implemented below. |
 | 2. Deployment and initial capture | Inventory-backed deployment around the star; corporation/alliance authority; one neutral hub per eligible system; Entosis warm-up, paid cycles, range and ship restrictions; contested progress; atomic completed claims and native sovereignty/map views. Implemented below. |
-| 3. Territorial conflict | Vulnerability windows and delayed changes, reinforcement deadlines, constellation command-node campaigns, defense/regeneration and deterministic ownership-loss settlement; restart-safe progress and native notifications. |
+| 3. Territorial conflict | Vulnerability windows and delayed changes, reinforcement deadlines, constellation command-node campaigns, defense/regeneration and deterministic ownership-loss settlement; restart-safe progress and native notifications. Implemented below. |
 | 4. Activity and capitals | NPC-kill and mined-volume contributions, activity decay, strategic age in published views, capital selection/delays and single-system behavior; ADM connected to capture timers. |
 | 5. Resources and upgrades | Catalog-backed upgrades, stellar power, Skyhook resources, workforce routing, reagents/fuel, priorities, offline/low-power transitions and site-generation effects. |
 | 6. Infrastructure and cleanup | Ansiblex, beacons and jammers gated by active upgrades; access and map consumers; destruction, self-destruct, alliance departure/dissolution and Skyhook ownership transitions. |
@@ -246,3 +246,148 @@ The final focused dependency filter was:
 
 **Optional maintainer checks.** Deploy and lock a neutral hub using native menus; observe Entosis warm-up/contested
 progress and the beam; inspect the claimed system in the sovereignty panel and map. Rendering and input remain unverified.
+
+
+## Sovereignty conflict and command nodes — November 16, 2026
+
+Schema **181** adds resident alliance prime-time schedules, per-hub conflict state and command nodes. Existing version-180
+claims, neutral hubs, inventory and paid cycles are retained. Initial capture still grants a corporation/alliance claim;
+attacking an owned hub never transfers that claim directly. The claim and original claim time remain throughout
+reinforcement and the node contest. Attacker victory destroys the physical hub and atomically removes its claim,
+capture state, conflict and remaining campaign nodes. A replacement requires another packaged hub and neutral capture.
+Defender victory retains the original claim and secures the hub until the following day's vulnerability window.
+
+### Windows, paid attacks and durable deadlines
+
+Alliances initially use **18:00 UTC**, an Eden default which executor-corporation directors/CEOs can change through
+native `allianceRegistry.SetPrimeHour(hour)`. `GetPrimeTimeInfo` publishes `currentPrimeHour`, `newPrimeHour` and
+`newPrimeHourValidAfter`. A requested change waits **48 hours**, with the old and new windows available during a
+24-hour transition. Replacing a pending request restarts its delay; another request during the overlap is rejected.
+Current conflict progress is settled before a schedule mutation. Existing reinforcement deadlines never reroll.
+
+The pinned `entosis.entosisConst.CHANGE_PRIMETIME_DELAY` is **48 × HOUR**, also imported by the alliance sovereignty UI;
+this takes precedence over the current UniWiki's 96-hour description. The historical
+[CCP Aegis Sovereignty patch notes](https://www.eveonline.com/news/view/patch-notes-for-aegis-sovereignty) also specify 48 hours.
+Daily windows are centered on prime time, including windows crossing UTC midnight. This milestone uses the existing
+**base ADM of 1** and an **18-hour** window. Activity/capital collection and ADM-driven live timers remain milestone 4;
+the pure window rule already accepts a validated multiplier from 1 to 6.
+
+An owned hub accepts a paid Entosis warm-up only while vulnerable or already partly disrupted. Warm-up alone cannot
+create overtime after a window closes. Partial disruption keeps the hub vulnerable until it is defended or reinforced.
+All pilots outside the owning alliance, including unallied pilots, share the attacker side; links from separate attacker
+alliances do not cancel one another. One side's additional links never accelerate capture. An active defender and an
+active attacker pause progress together. Defender-only links restore control; otherwise the catalog regeneration rate
+restores an unattended hub. Range, locks, membership, skills, hull eligibility, fuel, capacitor, travel reservations and
+capital-assistance restrictions use the same resident admission and revalidation path as neutral capture.
+
+The pinned hub component supplies **595 seconds** and regeneration **0.20000000298023224**. Full attacker disruption
+saves a deterministic, once-selected timestamp within the vulnerability window two days later. At that timestamp the
+hub enters its node campaign. Saved phase/deadlines prevent duplicate callbacks, restart rerolls and unpaid catch-up.
+`SovereigntyMaintenance` advances unattended ownership deadlines through the resident owner; no gameplay SQL path was added.
+
+### Constellation campaigns and settlement
+
+A campaign begins at **60 defender points**. Initially **five** nodes are placed across the source constellation,
+independent of sovereignty in the destination systems. A captured node changes the campaign by **seven points** and
+is immediately replaced while the event continues. Thus six uncontested defender captures or nine uncontested attacker
+captures win an otherwise unchanged event. Every node carries its own immutable source-system/hub/campaign identity;
+simultaneous campaigns keep separate scores. Captures, starts and extra spawns advance across the constellation in
+chronological order, with stable source-system/node identity ordering for equal timestamps. Shared capacity cannot be
+reused at an earlier timestamp by advancing one campaign ahead of another.
+
+The pinned unpublished server object **34832**, group **1316**, has a **235-second** capture component and regeneration
+**0.03999999910593033**. New nodes start neutral, with signed progress toward the defender or attacker; unattended
+nodes move toward the defender. Paid link expiries and warm-ups split progress at exact boundaries. Node identities,
+positions, progress, campaign scores and upcoming spawn times persist through checkpoints. Reopening invalidates
+process-local attacking leases and locks, retaining earned progress and paid travel deadlines. Passive defense and
+scheduled events can advance across elapsed downtime; a disconnected attacker cannot win from an offline lease.
+Detached checkpoint tests verify the node/conflict generation while later resident progress continues.
+
+Eden uses reproducible placement, a fixed **30-minute** extra-spawn interval and saved deterministic selection seeds.
+These are explicit server policies, rather than claims about CCP's random distribution. Positions are separated within
+each system and remain stable across restart. Caps are **five nodes per system**, **twenty per constellation** and
+**ten per campaign**; the campaign cap follows the
+[Galatea patch notes](https://www.eveonline.com/news/view/patch-notes-for-galatea), while constellation/system caps follow
+[CCP's Command Nodes Event](https://support.eveonline.com/hc/en-us/articles/203728981-Command-Nodes-Event).
+The latter historical help page still describes five-point captures. Seven-point scoring follows the current
+[UniWiki sovereignty reference](https://wiki.eveuniversity.org/Sovereignty#Command_node_control); the pinned client consumes
+server-provided scores, and its catalog does not define the score delta. This choice is recorded as Eden gameplay policy.
+
+### Native views and source evidence
+
+The existing `sovMgr` structure rows now carry native `vulnerabilityState` pairs and four-part `campaignState` tuples.
+`allianceRegistry.GetAllianceSovereigntyStructuresInfo` returns the three native collections (empty historical TCU rows,
+hub rows and per-source/per-team scores), including campaign and vulnerability occupancy fields. Command nodes appear
+as named, global, targetable space contacts, with `campaign_sourceInfo = (sourceSystemID, 2, hubID, defenderAllianceID)`
+and the native four-part `entosis_score`. Owned-hub slim scores use the defender alliance instead of the neutral-owner
+marker; reinforcement hides the active capture timer. The nominal attacked window remains published during overtime. Native Entosis activation publishes the same beam and paid cycle
+notifications for nodes as for hubs.
+
+`OnSolarSystemSovStructuresUpdated` and `ProcessSovStatusChanged` publish local changes and changes to the selected
+pilot's alliance holdings, including when that pilot is outside the source system. A committed revision changes only
+for relevant public state (phase, window, campaign score, claim identity or entering/leaving disruption); ordinary
+progress ticks do not rebuild or resend the alliance panel. Unchanged polling emits no duplicate notifications.
+
+Static inspection used the prepared build-3662168 archive and hash recorded above, including `entosis/entosisConst.pyj`,
+`entosis/spacecomponents/client/entosisCommandNode.pyj`, `entosis/ui/entosisController.pyj`, `sovSvc.pyj`, alliance
+`all_cso.pyj` and `all_ui_sovereignty.pyj`, plus the pinned hub/node space components and constellation geography.
+One unrelated prepared UI module (`sovHubEntry.pyj`) could not be decoded by xdis; no conclusion depends on it.
+The existing explicit Blue adapters and Carbon revision cited in milestone 2 remain the serialization boundary; no Blue
+codec tags, transport behavior or Destiny simulation engine changed. No client was launched.
+
+The local AGPL reference was consulted for behavioral comparison only; no implementation was copied. Relevant source
+snapshot SHA-256 values:
+
+| Reference | SHA-256 |
+| --- | --- |
+| `server/src/services/sovereignty/sovCampaignState.js` | `c04e2a5af2699b1a10454ea5b57306d60538830e9a5914740ad0b01ed500a634` |
+| `server/src/services/corporation/allianceRegistryRuntime.js` | `073f759c9ea8d219d6d72f89829a6c30737aba63dd1be31b1cf87d5b6ee7a5e1` |
+| `server/src/services/sovereignty/sovPayloads.js` | `998c373de30eed294d6e1e8f31581d0af563c2930fc82184ff91cf049dd34c4b` |
+
+The reproducible fixture now includes node type 34832 and all six source-constellation systems. Live activity indices,
+capital selection/bonuses, upgrades/resources, infrastructure and alliance departure/dissolution cleanup remain the
+following milestones. The native module's personal bar, bracket graphics, input and travel feel remain unverified.
+
+**Automated validation.** Final root checks passed in **129.68 s**: tool/solution restore, solution build with zero
+warnings/errors, **298 focused tests** (including **108 sovereignty cases**, **23 new** in this milestone), both Python
+policy suites (**8 + 9 tests**) and formatting/width verification (**2,470 files**). No cases were excluded. Coverage
+includes prime authority/midnight/delay boundaries, paid warm-up and overtime, coalition pause, exact reinforcement,
+nine attacker-node captures, passive defense, simultaneous-campaign isolation and caps, native rows/notifications/effects,
+version-180 migration, detached checkpoint generations, attacker-victory/replacement reopen and restart scoring leases.
+Warmed node/contact/prime reads assert zero SQL commands/connections and fitting calculations. A clean re-export matches
+all **43 fixture types** and **190 inert source records**. UTF-8, final newlines, local documentation links and Git
+whitespace checks passed. Validation uses simulated sessions and deterministic clocks; the full .NET suite was not
+requested or run.
+
+Development started with exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Sovereignty.SovereigntyWarfareRulesTests.OwnedHubAttackersShareOneSideAndDefendersPauseWithoutStacking`,
+which passed **1 test** (build **8.17 s**, tests **2.72 s**). The exact paid attacker-campaign filter
+`FullyQualifiedName=Eden.Protocol.Tests.Sovereignty.SovereigntyCampaignTests.PaidAttackReinforcesAndNineAttackerNodesDestroyWithoutTransferringClaim`
+passed **1 test** (build **4.71 s**, tests **6.50 s**) before the final reopen assertions were added. A **107-case** feature
+run passed before the final callback/empty-system integration corrections.
+
+The first dependency run passed **269/297** (test-run timestamps span **68.77 s**) and stopped before the Python/format
+checks. Twenty-seven cascading failures exposed an eager node-profile lookup in empty systems; one assertion exposed a
+nominal window being moved forward by a delayed overtime callback. Empty systems now return before reading node catalog
+profiles, and overtime retains its original window. The exact correction filter covering the overtime method, native
+alliance creation and attacker-win/replacement reopen passed **3 tests** (build **8.83 s**, tests **8.60 s**).
+A subsequent **297-case** dependency run passed, then stopped at the catalog policy: the constellation definition still
+used a direct catalog table read. It now uses the shared provider's cached geography without a policy exception.
+
+The final exact late-callback/observer filter
+`FullyQualifiedName=Eden.Protocol.Tests.Sovereignty.SovereigntyCampaignTests.UnattendedCampaignDefendsAndKeepsOriginalClaimUntilNextDaysWindow|FullyQualifiedName=Eden.Protocol.Tests.Sovereignty.SovereigntyWarfareBoundaryTests.NativeNodeSlimCarriesCampaignSourceAndWarmReadsUseNoSqlOrFits`
+passed **3 tests** (build **11.26 s**, tests **9.77 s**), including 4-hour and 72-hour callbacks. The latter checks the
+immediate resident window before a second read can refresh it. Earlier development checks also caught an unsupported raw
+numeric dictionary in the native campaign reply (replaced by `BlueMap`) and a capacity-fixture assumption (corrected to
+assert an actually spawned node's source). Both regressions passed before final root validation.
+
+The focused dependency filter was:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Sovereignty|FullyQualifiedName~Eden.Protocol.Tests.Maps|FullyQualifiedName~Eden.Protocol.Tests.Structures.StructureTests|FullyQualifiedName~TargetingTests|FullyQualifiedName~BlueMarshalTests|FullyQualifiedName~DetachedCheckpointTests|FullyQualifiedName~IncrementalCheckpointTests|FullyQualifiedName~Eden.Protocol.Tests.Market.ResidentEconomyTests|FullyQualifiedName~InventoryPersistenceTests|FullyQualifiedName~AllianceCreationTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Change alliance prime time in the native sovereignty UI; observe an owned hub's
+reinforcement and campaign panel; warp to and capture a command node, checking its source name, bracket and beam.

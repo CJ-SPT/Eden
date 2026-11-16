@@ -18,7 +18,7 @@ def export(path, output):
             ).fetchone()
             return json.loads(row[0]) if row else None
 
-        pending = {32458, 16275, 601, 643, 19720, 20183, 11176, 3363, 3732}
+        pending = {34832, 32458, 16275, 601, 643, 19720, 20183, 11176, 3363, 3732}
         pending.update(row[0] for row in catalog.execute("SELECT Id FROM ItemType WHERE GroupId=1313"))
         records, types = {}, {}
         system_id = 30003995
@@ -66,14 +66,22 @@ def export(path, output):
                     records["client/dogmaeffects", key] = value
         constellation = record("sde/mapConstellations", constellation_id)
         region = record("sde/mapRegions", region_id)
+        constellation_systems = []
+        for sid, name in catalog.execute(
+            "SELECT Id,Name FROM SolarSystem WHERE ConstellationId=? ORDER BY Id", (constellation_id,)
+        ):
+            value = record("sde/mapSolarSystems", sid)
+            if value:
+                records["sde/mapSolarSystems", sid] = value
+            constellation_systems.append({"id": sid, "name": name, "constellationId": constellation_id,
+                "constellationName": constellation["name"]["en"], "regionId": region_id,
+                "regionName": region["name"]["en"]})
         data = {
             "build": 3662168,
             "types": [types[key] for key in sorted(types)],
             "records": [{"dataset": dataset, "key": key, "data": value}
                         for (dataset, key), value in sorted(records.items())],
-            "systems": [{"id": system_id, "name": system["name"]["en"], "constellationId": constellation_id,
-                         "constellationName": constellation["name"]["en"], "regionId": region_id,
-                         "regionName": region["name"]["en"]}],
+            "systems": constellation_systems,
             "celestials": [dict(zip(
                 ["id", "solarSystemId", "typeId", "groupId", "radius", "orbitId", "x", "y", "z"], star
             ))],

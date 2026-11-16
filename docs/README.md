@@ -1,6 +1,6 @@
 # Eden documentation
 
-[Sovereignty](protocol/sovereignty.md) records neutral hub deployment, paid Entosis capture, resident claims and the remaining plan.
+[Sovereignty](protocol/sovereignty.md) records deployment, Entosis capture, vulnerability windows, reinforcement and command-node campaigns.
 
 [Alliances](protocol/alliances.md) records resident alliance implementation, pinned client contracts and milestone validation.
 

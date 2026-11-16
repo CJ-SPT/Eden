@@ -13,6 +13,41 @@ namespace Eden.Protocol.Tests.Sovereignty;
 public sealed class SovereigntyMigrationTests
 {
     [Fact]
+    public async Task Version180UpgradePreservesNeutralHubFuelAndPaidReservation()
+    {
+        using SovereigntyCaptureFixture fixture = new();
+        long module = fixture.Fit();
+        long fuel = fixture.Grant(SovereigntyCaptureFixture.Strontium, 2);
+        long hub = fixture.Deploy();
+        fixture.Lock(hub);
+        long ship = fixture.Ship();
+        var cycle = fixture.Entosis.Activate(SovereigntyCaptureFixture.PilotId, ship, module, hub, 10, fixture.Clock.Now).Cycle;
+        await fixture.Live.FlushAsync();
+        fixture.World.Services.Dispose();
+        using (WorldDbContext old = new(fixture.World.Path))
+        {
+            old.Database.ExecuteSqlRaw(
+                """
+                DROP TABLE WorldSovereigntyConflict;
+                DROP TABLE WorldSovereigntyPrime;
+                DROP TABLE WorldSovereigntyNode;
+                PRAGMA user_version=180;
+                """
+            );
+        }
+        WorldInitialization.Initialize(new(fixture.World.Path));
+        using var services = ServerServices.Build(new(fixture.World.Path), fixture.Clock, liveWorld: true);
+        var entosis = services.GetRequiredService<IPilotEntosis>();
+        Assert.Equal(hub, entosis.Hub(SovereigntyCaptureFixture.SystemId)!.HubId);
+        Assert.Equal(EntosisRules.NeutralCorporationId, entosis.Hub(SovereigntyCaptureFixture.SystemId)!.CorporationId);
+        Assert.True(entosis.TravelLocked(ship, fixture.Clock.Now));
+        Assert.Equal(cycle.EndsAt, Assert.Single(entosis.Cycles(SovereigntyCaptureFixture.PilotId)).EndsAt);
+        var live = services.GetRequiredService<Eden.World.Runtime.LiveWorld>();
+        Assert.Equal(1, live.Economy.Inspect(world => world.Set<OwnedItem>().Find(fuel)!.Quantity));
+        Assert.Null(services.GetRequiredService<ISovereignty>().Read(SovereigntyCaptureFixture.SystemId));
+    }
+
+    [Fact]
     public async Task LegacyGenericHubsBecomeRecoverableWithoutGrantingClaimsOrDuplicatingInventory()
     {
         using SovereigntyCaptureFixture fixture = new(hull: 20183);

@@ -3485,6 +3485,17 @@
       ]
     },
     {
+      "id": 34832,
+      "name": "Structure Command Node",
+      "groupId": 1316,
+      "groupName": "Entosis Command Node",
+      "categoryId": 2,
+      "mass": 1.0,
+      "radius": 243.0,
+      "capacity": 0.0,
+      "attributes": []
+    },
+    {
       "id": 40307,
       "name": "Noir. Modified Entosis Link",
       "groupId": 1313,
@@ -6760,6 +6771,16 @@
           "deployAtRange": 1250.0,
           "flagAsSuspectWhenDeployed": 0,
           "launchForOwnCorp": 0
+        }
+      }
+    },
+    {
+      "dataset": "client/spacecomponentsbytype",
+      "key": 34832,
+      "data": {
+        "entosisCommandNode": {
+          "captureTimeSeconds": 235,
+          "defensiveRegenRate": 0.03999999910593033
         }
       }
     },
@@ -12138,6 +12159,24 @@
     },
     {
       "dataset": "client/types",
+      "key": 34832,
+      "data": {
+        "descriptionID": 306497,
+        "typeID": 34832,
+        "graphicID": 3826,
+        "capacity": 0.0,
+        "typeNameID": 306494,
+        "published": 0,
+        "radius": 243.0,
+        "volume": 1.0,
+        "mass": 1.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 1316
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 40307,
       "data": {
         "descriptionID": 513520,
@@ -12338,6 +12377,249 @@
     },
     {
       "dataset": "sde/mapSolarSystems",
+      "key": 30003990,
+      "data": {
+        "border": true,
+        "constellationID": 20000583,
+        "corridor": true,
+        "luminosity": 0.0749,
+        "name": {
+          "de": "YW-SYT",
+          "en": "YW-SYT",
+          "es": "YW-SYT",
+          "fr": "YW-SYT",
+          "ja": "YW-SYT",
+          "ko": "YW-SYT",
+          "ru": "YW-SYT",
+          "zh": "YW-SYT"
+        },
+        "planetIDs": [
+          40252540,
+          40252541,
+          40252543,
+          40252545,
+          40252547,
+          40252550,
+          40252554,
+          40252562,
+          40252567,
+          40252594,
+          40252599,
+          40252604
+        ],
+        "position": {
+          "x": -3.349859237693583e+17,
+          "y": 4.965754269275305e+16,
+          "z": -2.4446194236870512e+17
+        },
+        "position2D": {
+          "x": -3.389867808474233e+17,
+          "y": -3.430957115243617e+17
+        },
+        "radius": 2442730143744.0,
+        "regionID": 10000050,
+        "securityClass": "G",
+        "securityStatus": -0.24559,
+        "starID": 40252539,
+        "stargateIDs": [
+          50009579,
+          50009580
+        ]
+      }
+    },
+    {
+      "dataset": "sde/mapSolarSystems",
+      "key": 30003991,
+      "data": {
+        "constellationID": 20000583,
+        "hub": true,
+        "luminosity": 0.1064,
+        "name": {
+          "de": "Z-UZZN",
+          "en": "Z-UZZN",
+          "es": "Z-UZZN",
+          "fr": "Z-UZZN",
+          "ja": "Z-UZZN",
+          "ko": "Z-UZZN",
+          "ru": "Z-UZZN",
+          "zh": "Z-UZZN"
+        },
+        "planetIDs": [
+          40252609,
+          40252610,
+          40252612,
+          40252614,
+          40252624,
+          40252649,
+          40252663
+        ],
+        "position": {
+          "x": -3.431661581043919e+17,
+          "y": 5.387721645651835e+16,
+          "z": -2.5853617353875094e+17
+        },
+        "position2D": {
+          "x": -3.389867808474233e+17,
+          "y": -3.492591075397695e+17
+        },
+        "radius": 1161742647296.0,
+        "regionID": 10000050,
+        "securityClass": "G3",
+        "securityStatus": -0.473902,
+        "starID": 40252608,
+        "stargateIDs": [
+          50009679,
+          50009680,
+          50009681,
+          50009682
+        ]
+      }
+    },
+    {
+      "dataset": "sde/mapSolarSystems",
+      "key": 30003992,
+      "data": {
+        "constellationID": 20000583,
+        "hub": true,
+        "luminosity": 0.0385,
+        "name": {
+          "de": "DS-LO3",
+          "en": "DS-LO3",
+          "es": "DS-LO3",
+          "fr": "DS-LO3",
+          "ja": "DS-LO3",
+          "ko": "DS-LO3",
+          "ru": "DS-LO3",
+          "zh": "DS-LO3"
+        },
+        "planetIDs": [
+          40252668,
+          40252671,
+          40252673,
+          40252675,
+          40252677,
+          40252679,
+          40252696,
+          40252718,
+          40252740
+        ],
+        "position": {
+          "x": -3.370109349943838e+17,
+          "y": 5.898823826362273e+16,
+          "z": -2.66084721137714e+17
+        },
+        "position2D": {
+          "x": -3.328233848320156e+17,
+          "y": -3.533680382167079e+17
+        },
+        "radius": 2921164963840.0,
+        "regionID": 10000050,
+        "securityClass": "G5",
+        "securityStatus": -0.674033,
+        "starID": 40252667,
+        "stargateIDs": [
+          50009836,
+          50009837,
+          50009838
+        ]
+      }
+    },
+    {
+      "dataset": "sde/mapSolarSystems",
+      "key": 30003993,
+      "data": {
+        "constellationID": 20000583,
+        "fringe": true,
+        "luminosity": 0.01018,
+        "name": {
+          "de": "BX2-ZX",
+          "en": "BX2-ZX",
+          "es": "BX2-ZX",
+          "fr": "BX2-ZX",
+          "ja": "BX2-ZX",
+          "ko": "BX2-ZX",
+          "ru": "BX2-ZX",
+          "zh": "BX2-ZX"
+        },
+        "planetIDs": [
+          40252751,
+          40252752,
+          40252754,
+          40252755,
+          40252757,
+          40252759,
+          40252763,
+          40252766,
+          40252787,
+          40252800,
+          40252824
+        ],
+        "position": {
+          "x": -3.476003247181187e+17,
+          "y": 5.139133214561906e+16,
+          "z": -2.6414969864036995e+17
+        },
+        "position2D": {
+          "x": -3.389867808474233e+17,
+          "y": -3.5542250355517715e+17
+        },
+        "radius": 2233340526592.0,
+        "regionID": 10000050,
+        "securityClass": "G3",
+        "securityStatus": -0.479698,
+        "starID": 40252750,
+        "stargateIDs": [
+          50009969
+        ]
+      }
+    },
+    {
+      "dataset": "sde/mapSolarSystems",
+      "key": 30003994,
+      "data": {
+        "constellationID": 20000583,
+        "fringe": true,
+        "luminosity": 0.02029,
+        "name": {
+          "de": "RF-CN3",
+          "en": "RF-CN3",
+          "es": "RF-CN3",
+          "fr": "RF-CN3",
+          "ja": "RF-CN3",
+          "ko": "RF-CN3",
+          "ru": "RF-CN3",
+          "zh": "RF-CN3"
+        },
+        "planetIDs": [
+          40252876,
+          40252878,
+          40252880,
+          40252882,
+          40252884,
+          40252901,
+          40252911
+        ],
+        "position": {
+          "x": -3.3929740791247334e+17,
+          "y": 7.343888337021122e+16,
+          "z": -2.7835193862893827e+17
+        },
+        "position2D": {
+          "x": -3.328233848320156e+17,
+          "y": -3.595314342321156e+17
+        },
+        "radius": 1589556543488.0,
+        "regionID": 10000050,
+        "securityClass": "G7",
+        "securityStatus": -0.910792,
+        "starID": 40252875,
+        "stargateIDs": [
+          50009981
+        ]
+      }
+    },
+    {
+      "dataset": "sde/mapSolarSystems",
       "key": 30003995,
       "data": {
         "border": true,
@@ -12385,6 +12667,46 @@
     }
   ],
   "systems": [
+    {
+      "id": 30003990,
+      "name": "YW-SYT",
+      "constellationId": 20000583,
+      "constellationName": "F-RA63",
+      "regionId": 10000050,
+      "regionName": "Querious"
+    },
+    {
+      "id": 30003991,
+      "name": "Z-UZZN",
+      "constellationId": 20000583,
+      "constellationName": "F-RA63",
+      "regionId": 10000050,
+      "regionName": "Querious"
+    },
+    {
+      "id": 30003992,
+      "name": "DS-LO3",
+      "constellationId": 20000583,
+      "constellationName": "F-RA63",
+      "regionId": 10000050,
+      "regionName": "Querious"
+    },
+    {
+      "id": 30003993,
+      "name": "BX2-ZX",
+      "constellationId": 20000583,
+      "constellationName": "F-RA63",
+      "regionId": 10000050,
+      "regionName": "Querious"
+    },
+    {
+      "id": 30003994,
+      "name": "RF-CN3",
+      "constellationId": 20000583,
+      "constellationName": "F-RA63",
+      "regionId": 10000050,
+      "regionName": "Querious"
+    },
     {
       "id": 30003995,
       "name": "C-7SBM",

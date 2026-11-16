@@ -28,6 +28,7 @@ internal static class SovereigntySchema
         model.Entity<SavedEntosisCycle>().HasIndex(row => row.ShipId);
         model.Entity<SavedEntosisCycle>().HasIndex(row => row.PilotId);
         model.Entity<SavedEntosisCycle>().HasIndex(row => row.SystemId);
+        model.Entity<SavedEntosisCycle>().HasIndex(row => row.HubId);
     }
 
     internal static void Upgrade(WorldDbContext world) =>
@@ -60,6 +61,7 @@ internal static class SovereigntySchema
             CREATE INDEX IF NOT EXISTS IX_WorldEntosisCycle_ShipId ON WorldEntosisCycle(ShipId);
             CREATE INDEX IF NOT EXISTS IX_WorldEntosisCycle_PilotId ON WorldEntosisCycle(PilotId);
             CREATE INDEX IF NOT EXISTS IX_WorldEntosisCycle_SystemId ON WorldEntosisCycle(SystemId);
+            CREATE INDEX IF NOT EXISTS IX_WorldEntosisCycle_HubId ON WorldEntosisCycle(HubId);
             """
         );
         if (version < 180)

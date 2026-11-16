@@ -50,7 +50,11 @@ internal sealed partial class PilotEntosisStore
             action.Commit();
             return null;
         }
-        bool repeat = !cycle.Stopping && cycle.Repeats > 0 && action.Set<SavedSovereigntyClaim>().Find(cycle.SystemId) is null;
+        bool repeat =
+            !cycle.Stopping
+            && cycle.Repeats > 0
+            && Target(action, cycle.SystemId, cycle.HubId) is { } target
+            && Admits(action, target, now);
         action.Remove(cycle);
         action.AfterCommit(() => _scoringLeases.Remove(moduleId));
         EntosisActivation? result = null;
@@ -100,23 +104,28 @@ internal sealed partial class PilotEntosisStore
             throw new InvalidDataException("Interceptors cannot activate an Entosis Link.");
         }
         int system = position.SystemId ?? throw new InvalidDataException("The ship has no current solar system.");
-        var hub = world.Set<SavedSovereigntyHub>().Find(system);
-        if (
-            hub?.HubId != hubId
-            || world.Set<SavedSovereigntyClaim>().Find(system) is not null
-            || world.Set<SavedStructure>().Find(hubId) is not { State: not StructureState.Destroyed } structure
-        )
+        Advance(world, catalog, system, now);
+        var target = Target(world, system, hubId);
+        if (target is null || !Admits(world, target, now))
         {
-            throw new InvalidDataException("Choose a neutral sovereignty hub in your current system.");
+            throw new InvalidDataException("Choose an available Entosis target in your current system's vulnerability window.");
+        }
+        if (world.Set<SavedSovereigntyConflict>().Find(system) is { Phase: SovereigntyPhase.Secure, Value: 1 } secure)
+        {
+            // A newly admitted warm-up uses today's window, even after days without observers.
+            secure.UpdatedAt = now;
         }
         var member = world.Set<SavedAllianceMember>().Find(pilot.CorporationId);
-        if (member is null || world.Set<SavedAlliance>().Find(member.AllianceId) is not { ClosedAt: null })
+        if (
+            member is not null && world.Set<SavedAlliance>().Find(member.AllianceId) is not { ClosedAt: null }
+            || member is null && target.TypeId == EntosisRules.HubTypeId && world.Set<SavedSovereigntyClaim>().Find(system) is null
+        )
         {
             throw new InvalidDataException("Only a pilot in an active alliance can claim a sovereignty hub.");
         }
         if (!locks.Contains(shipId, hubId))
         {
-            throw new InvalidDataException("Lock the sovereignty hub before activating Entosis.");
+            throw new InvalidDataException("Lock the target before activating Entosis.");
         }
         if (
             world.Filter<SavedEntosisCycle>(row => row.ShipId == shipId && row.EndsAt > now).Any()
@@ -143,7 +152,7 @@ internal sealed partial class PilotEntosisStore
             HubId = hubId,
             SystemId = system,
             CorporationId = pilot.CorporationId,
-            AllianceId = member.AllianceId,
+            AllianceId = member?.AllianceId ?? 0,
             StartedAt = now,
             EndsAt = checked(now + (long)Math.Ceiling(profile.Duration * TimeSpan.TicksPerMillisecond)),
             Range = profile.Range,
@@ -153,15 +162,9 @@ internal sealed partial class PilotEntosisStore
             Contributing = true,
         };
         cycle.WarmupUntil = warm ? now : cycle.EndsAt;
-        if (!Valid(world, catalog, cycle, structure))
+        if (!Valid(world, catalog, cycle, target))
         {
-            throw new InvalidDataException("The sovereignty hub is outside Entosis range.");
-        }
-        // Settle old coalitions before admitting the new paid contribution.
-        Advance(world, catalog, system, now);
-        if (world.Set<SavedSovereigntyClaim>().Find(system) is not null)
-        {
-            throw new InvalidDataException("The sovereignty hub has already been claimed.");
+            throw new InvalidDataException("The target is outside Entosis range.");
         }
         if (world.Set<SavedEntosisCycle>().Find(moduleId) is { } expired)
         {

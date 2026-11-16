@@ -96,7 +96,13 @@ internal sealed partial class ResidentEconomy
                         reader.GetBoolean(17)
                     ),
                 state => new(state.ModuleId),
-                indexes: [new("PilotId", row => row.PilotId), new("ShipId", row => row.ShipId), new("SystemId", row => row.SystemId)],
+                indexes:
+                [
+                    new("PilotId", row => row.PilotId),
+                    new("ShipId", row => row.ShipId),
+                    new("SystemId", row => row.SystemId),
+                    new("HubId", row => row.HubId),
+                ],
                 primaryColumn: "ModuleId"
             )
         );

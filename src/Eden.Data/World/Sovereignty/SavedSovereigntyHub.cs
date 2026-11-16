@@ -19,6 +19,8 @@ public sealed class SavedEntosisCycle
     public int TypeId { get; set; }
     public long PilotId { get; set; }
     public long ShipId { get; set; }
+
+    // The paid target may be a hub or a campaign command node.
     public long HubId { get; set; }
     public int SystemId { get; set; }
     public int CorporationId { get; set; }
