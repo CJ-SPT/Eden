@@ -60,16 +60,42 @@ public static class MoonMiningRules
         return id;
     }
 
-    private static readonly int[][] s_ores =
+    // Build 3662168 client/types: moon ore IDs are not contiguous after Pollucite.
+    // In particular, 45505 and 45507-45509 are SKINs rather than asteroids.
+    private enum MoonOre
+    {
+        Zeolites = 45490,
+        Sylvite = 45491,
+        Bitumens = 45492,
+        Coesite = 45493,
+        Cobaltite = 45494,
+        Euxenite = 45495,
+        Titanite = 45496,
+        Scheelite = 45497,
+        Otavite = 45498,
+        Sperrylite = 45499,
+        Vanadinite = 45500,
+        Chromite = 45501,
+        Carnotite = 45502,
+        Zircon = 45503,
+        Pollucite = 45504,
+        Cinnabar = 45506,
+        Xenotime = 45510,
+        Monazite = 45511,
+        Loparite = 45512,
+        Ytterbite = 45513,
+    }
+
+    private static readonly MoonOre[][] s_ores =
     [
-        [45490, 45491, 45492, 45493],
-        [45494, 45495, 45496, 45497],
-        [45498, 45499, 45500, 45501],
-        [45502, 45503, 45504, 45505],
-        [45506, 45507, 45508, 45509],
+        [MoonOre.Zeolites, MoonOre.Sylvite, MoonOre.Bitumens, MoonOre.Coesite],
+        [MoonOre.Cobaltite, MoonOre.Euxenite, MoonOre.Titanite, MoonOre.Scheelite],
+        [MoonOre.Otavite, MoonOre.Sperrylite, MoonOre.Vanadinite, MoonOre.Chromite],
+        [MoonOre.Carnotite, MoonOre.Zircon, MoonOre.Pollucite, MoonOre.Cinnabar],
+        [MoonOre.Xenotime, MoonOre.Monazite, MoonOre.Loparite, MoonOre.Ytterbite],
     ];
 
-    public static IEnumerable<int> OreTypes => s_ores.SelectMany(tier => tier);
+    public static IEnumerable<int> OreTypes => s_ores.SelectMany(tier => tier).Select(ore => (int)ore);
 
     public static int? FindPoint(SpacePosition position, IReadOnlyList<MoonMiningPoint> points) =>
         points
@@ -89,8 +115,8 @@ public static class MoonMiningRules
         }
         uint seed = unchecked((uint)moonId * 2654435761u);
         int tier = security >= StructureRules.HighSecurityBoundary ? 0 : (int)((seed >> 16) % s_ores.Length);
-        int primary = s_ores[tier][(int)((seed >> 24) % s_ores[tier].Length)];
-        int secondary = s_ores[0][(int)((seed >> 12) % s_ores[0].Length)];
+        int primary = (int)s_ores[tier][(int)((seed >> 24) % s_ores[tier].Length)];
+        int secondary = (int)s_ores[0][(int)((seed >> 12) % s_ores[0].Length)];
         return primary == secondary ? [new(primary, 100)] : [new(primary, 70), new(secondary, 30)];
     }
 }

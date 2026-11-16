@@ -39,6 +39,47 @@ in 16.43 seconds. The solution built without warnings or errors. Both Python pol
 **Optional maintainer checks:** Inspect the beacon and placement preview at a catalog moon, align a survey launcher and inspect
 the delayed result, and check the scheduling and ledger views on a copied save.
 
+### Correct moon ore identities — November 16, 2026
+
+The composition table now uses the build-3662168 asteroid identities rather than assuming consecutive type IDs.
+The rare tier is Carnotite **45502**, Zircon **45503**, Pollucite **45504** and Cinnabar **45506**. The exceptional tier is
+Xenotime **45510**, Monazite **45511**, Loparite **45512** and Ytterbite **45513**. The previous table selected SKINs
+**45505** and **45507–45509**, placed Cinnabar in the exceptional tier and omitted all four exceptional ores.
+Named ore values document the gaps, and the shared AutoMining ore list receives the corrected identities as well.
+
+All 20 base moon ores are reachable in both lowsec and nullsec, supplying all 20 raw moon materials through the existing
+reprocessing recipes, including Dysprosium, Neodymium, Promethium and Thulium. This closes the ore-identity gap in the
+moon-material supply path; it does not claim end-to-end acceptance of every T2 recipe. Highsec remains restricted to
+ubiquitous ore. The deterministic seed, tier selection, ore order and 70/30 split are unchanged. Equal tier selection in
+lowsec and nullsec and the fixed shares remain Eden policy, not a reproduction of Tranquility's moon distribution.
+
+New extractions use the corrected composition after the updated server starts. Existing extractions retain their saved
+composition, and existing asteroid fields are not rewritten. Cancel and restart an unfinished pull to use the corrected
+table. In particular, Efa V – Moon 2 now supplies 70% Xenotime and 30% Zeolites instead of the old Cinnabar result.
+
+References: [CCP Moon Mining](https://support.eveonline.com/hc/en-us/articles/115005404229-Moon-Mining) and
+[EVE University moon ores](https://wiki.eveuniversity.org/Moon_mining#Moon-specific_Ore). IDs and yields were checked against
+the local build-3662168 `client/types` and `client/typematerials`; the automated checks reuse the pinned compression
+catalog fixture without creating a database. The local EVE.js **261108.1** `moonCompositionPackGenerator.js` tier table
+was checked as a reference (SHA-256 **66AB96A8C96FA7ADAC96EFF39ECE82845A509072C203E8524BEEB08F4B55C36E**).
+
+**Automated validation:** The exact-method filter
+`FullyQualifiedName~MoonMiningRulesTests.CompositionSuppliesEveryPinnedMoonOreAndRawReactionMaterial` reproduced the
+incorrect identities in all three security cases before the fix and passed afterward. The final affected filter joined
+`MoonMiningRulesTests`, `MoonExtractionTests`, `StructureTests`, `StructureRulesTests`, `StructureFuelRulesTests`,
+`ReprocessingTests`, `ReactionJobTests` and
+`MiningTests.AutoMiningOrePickerListsSpawnableGradesAndTargetsTheSavedType` with `FullyQualifiedName~` and `|`.
+All **117 cases passed in 38.74 seconds**, including resident extraction/checkpoint coverage and the existing reaction
+and T2 manufacturing lifecycle. The nine new pure cases check pinned catalog identities, reprocessing yields for all
+20 raw moon materials, fixed seed/share examples, highsec restriction and rejected inputs. A read-only audit of the
+local pinned catalog also found all 20 corrected ores across Efa's 71 eligible moons.
+Tool and solution restore, the solution build (zero warnings/errors, 6.23 seconds), both Python policy suites
+(8 catalog and 9 formatting cases), formatting verification and whitespace checks passed. The full .NET suite was not run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Inspect a corrected rare or exceptional moon's survey/planner composition in the native client.
+
 ## Structure compression and gas decompression — November 11, 2026
 
 Milestone 7 implements all three pinned `structureCompressionMgr` calls: `CompressItemInStructure(itemID)`,
