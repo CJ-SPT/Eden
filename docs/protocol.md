@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Corporation Edit Member identity](protocol/corporations.md#edit-member-private-identity-reply-november-16-2026)
+adds the missing native `charMgr.GetPrivateInfo` reply used to construct the member editor.
+
 [PI customs capacity and tax](protocol/planetary.md#customs-storage-and-tax-configuration--november-16-2026)
 scale private office storage and configure the import/export rate with matching native quotes.
 

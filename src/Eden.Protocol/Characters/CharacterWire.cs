@@ -83,6 +83,28 @@ internal sealed record PublicCharacterInfo(PublicCharacterProfile Pilot) : BlueM
         );
 }
 
+internal sealed record PrivateCharacterInfo(PublicCharacterProfile Profile) : BlueModel
+{
+    // Build 3662168 Edit Member reads this native Row's identity attributes.
+    public override object ToBlue() =>
+        new BlueNewObject(
+            BlueNewObject.RowClass,
+            new object?[]
+            {
+                new BlueList<string>(["characterID", "gender", "createDateTime", "raceID", "bloodlineID", "ancestryID"]),
+                new List<object?>
+                {
+                    Profile.CharacterId,
+                    Profile.GenderId,
+                    Profile.CreatedAt,
+                    Profile.RaceId,
+                    Profile.BloodlineId,
+                    Profile.AncestryId,
+                },
+            }
+        );
+}
+
 internal sealed record PublicCharacterInfo3(PublicCharacterProfile Profile) : BlueModel
 {
     // Build 3662168 CharacterInfoWindow indexes row zero before reading these fields.

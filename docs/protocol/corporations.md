@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Edit member private identity reply, November 16, 2026](#edit-member-private-identity-reply-november-16-2026)
 - [Ordinary member auto-removal, November 15, 2026](#ordinary-member-auto-removal-november-15-2026)
 - [Blueprint lock and unlock votes, November 15, 2026](#blueprint-lock-and-unlock-votes-november-15-2026)
 - [CEO elections, November 15, 2026](#ceo-elections-november-15-2026)
@@ -47,6 +48,38 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Corporation window voting-capability startup correction](#corporation-window-voting-capability-startup-correction)
 - [Player corporation applications and membership](#player-corporation-applications-and-membership)
 - [Player corporations: creation foundation](#player-corporations-creation-foundation)
+
+## Edit member private identity reply, November 16, 2026
+
+The user's screenshot reports **Unsupported local call charMgr.GetPrivateInfo**. Static inspection of
+prepared client build **3662168** identifies the caller as `corp_dlg_edit_member.pyj` `LoadChar`, which
+requests `GetPrivateInfo(characterID)` before constructing the corporation Edit Member window.
+`OnTabGeneral` reads `characterID`, `gender`, `raceID` and `createDateTime` from the returned object;
+security status is fetched separately through the existing crimewatch service.
+
+`CharacterSheetHandler` now handles that selected-pilot call and returns a named native Row containing
+the saved identity fields plus bloodline and ancestry. It accepts one positive character ID, rejects extra
+arguments/keywords, and restricts targets to the selected pilot or their current saved corporation.
+The existing typed resident profile/corporation readers supply the reply. No wallet balance, account data,
+new persistence path or state mutation is involved. The Row uses the existing explicit NEWOBJ adapter.
+
+The inspected module is `eve/client/script/ui/shared/neocom/corporation/corp_dlg_edit_member.pyj` in
+`E:/EdenDev/3662168/tq/code.ccp`; its decompressed SHA-256 is
+**7a61ce1c6a7464beecdcb35267c2cbb117de9df1996c1df63f3292450b07a78a**, identical to the prepared client's
+stock archive copy. References: [EVE University member management](https://wiki.eveuniversity.org/Managing_corporation_members),
+[Carbon Blue Marshal.cpp revision fcbf0c2](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp),
+and local evejs **261108.1** `server/src/services/character/charMgrService.js` (SHA-256
+**82731fcebb67a53a6723f95464a7ffa838bc98c57344fa6c64b0e3a7a90858f1**). No evejs source was copied.
+
+**Automated validation:** Tool/solution restore and solution build passed with zero warnings/errors;
+the build took **9.61 seconds**. Catalog policy (**8 cases**), formatting policy (**9 cases**),
+formatting/line-width verification and diff checks passed in **36.87 seconds**. No regression tests were
+added or run, at the user's request. Native window behavior remains unverified after the fix.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** After restarting the updated server, open Corporation → Edit Member
+and verify its General tab loads.
 
 ## Ordinary member auto-removal, November 15, 2026
 

@@ -26,6 +26,23 @@ internal sealed class CharacterSheetHandler(
     )
     {
         var pilot = context.Pilot;
+        if (service == "charMgr" && method == "GetPrivateInfo")
+        {
+            if (keywords is { Count: > 0 } || args is not [long character] || character <= 0)
+            {
+                return new PilotCallResult.Failure("Invalid member character request.");
+            }
+            var profile = sheet.ReadPublicProfile(character);
+            if (profile is null)
+            {
+                return new PilotCallResult.Failure("Unknown character.");
+            }
+            if (character != pilot.PilotId && profile.CorporationId != corporations.Identity(pilot.PilotId).Id)
+            {
+                return new PilotCallResult.Failure("That pilot is not a member of your corporation.");
+            }
+            return new PrivateCharacterInfo(profile);
+        }
         if (service == "charMgr" && method is "GetCharacterDescription" or "SetCharacterDescription")
         {
             try
