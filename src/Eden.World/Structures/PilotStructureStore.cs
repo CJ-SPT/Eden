@@ -399,7 +399,10 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
                     throw new InvalidDataException("The deployment position is too close to another structure.");
                 }
                 string name = StructureRules.Name(deployment.Name);
-                if (deployment.ReinforceWeekday is < 0 or > 6 || deployment.ReinforceHour is < 0 or > 23)
+                if (
+                    deployment.ReinforceWeekday != StructureRules.NoReinforcementWeekday && deployment.ReinforceWeekday is < 0 or > 6
+                    || deployment.ReinforceHour is < 0 or > 23
+                )
                 {
                     throw new InvalidDataException("Choose a valid reinforcement day and UTC hour.");
                 }

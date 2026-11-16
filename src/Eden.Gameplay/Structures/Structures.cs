@@ -138,7 +138,7 @@ public sealed record StructureSnapshot(
     int? MoonId = null,
     long StateStartedAt = 0,
     int ReinforceWeekday = 0,
-    int ReinforceHour = 18
+    int ReinforceHour = StructureRules.DefaultReinforceHour
 );
 
 public sealed record StructureDeployment(
@@ -149,7 +149,7 @@ public sealed record StructureDeployment(
     string Description = "",
     int? MoonId = null,
     int ReinforceWeekday = 0,
-    int ReinforceHour = 18
+    int ReinforceHour = StructureRules.DefaultReinforceHour
 );
 
 public sealed record StructureResult(StructureSnapshot Structure, IReadOnlyList<Inventory.InventoryChange> Changes);

@@ -129,6 +129,7 @@ internal sealed class SystemObjects(
                 )
                 {
                     Solid = false,
+                    MoonMiningPoint = point,
                 }
             );
         }

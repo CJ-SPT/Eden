@@ -80,6 +80,55 @@ Tool and solution restore, the solution build (zero warnings/errors, 6.23 second
 
 **Optional maintainer checks:** Inspect a corrected rare or exceptional moon's survey/planner composition in the native client.
 
+### Native refinery setup calls — November 16, 2026
+
+User screenshots reported `Unsupported local call beyonce.MachoBindObject (CmdWarpToStuff)` when choosing a moon's
+mining point, followed by `corpRegistry.MachoBindObject (GetStructureReinforceDefault)` during structure setup.
+The native warp subject is **`moonMiningPoint`**, with a **moon ID**, rather than the synthetic beacon item ID.
+The wire adapter now parses a named command. Static mining beacons carry their typed `MoonMiningPoint` association;
+the handler resolves only an eligible beacon in the pilot's current system and then uses ordinary item warp.
+Missing, foreign-system, beaconless and non-moon targets fail without changing navigation. The existing range,
+fleet, capacitor and interdiction paths remain in force; the caller supplies no destination coordinates.
+
+`corpRegistry.GetStructureReinforceDefault` now returns the native tuple **`(255, 18)`**, meaning no preferred weekday
+and Eden's existing default **18:00 UTC** hour. It rejects unexpected arguments and does not change corporation state.
+The build-3662168 deployment picker sends weekday **255** back to `structureDeployment.Anchor`. Deployment now accepts
+and checkpoints that sentinel alongside the existing weekday values **0–6**, while rejecting other days and invalid
+hours. Corporation-wide customization of the default hour is outside this repair.
+
+Inert inspection of the installed build-3662168 archive confirmed
+`movementFunctions._WarpToMoonMiningPoint`, `ballparkCommon.parkhelpers.warpSubjects.WarpSubjects.MOON_MINING_POINT`,
+`deploymentCont.BuildUI`, `ReinforcementTimeCont.GetReinforcementTime` and
+`structures.const.NO_REINFORCEMENT_WEEKDAY`. Archive SHA-256:
+**2DBC29987D01515F4F40C319F89F0276F05AC3D175D79776A03F1F8E2BAB5C6A**.
+The local EVE.js **261108.1** reference was checked for moon-ID resolution and the reinforcement tuple:
+`beyonceService.js` SHA-256 **5C13B78749BD02C31D7844D631FC88B818B299DEFF4AC49058A860EEB3F9027D**;
+`corpRegistryRuntime.js` SHA-256 **41D691387FF45DCE3CF4680DA40291557B868F0B3F589234D0EB244B77C4E35C**.
+These dispatch fixes do not change Destiny simulation.
+[EVE University refinery placement](https://wiki.eveuniversity.org/Upwell_structure#Moon_mining).
+
+**Automated validation:** Exact-method filters
+`FullyQualifiedName~MoonMiningWarpTests.NativeFirstBoundWarpUsesTheMoonsMiningBeacon` and
+`FullyQualifiedName~StructureDeploymentDefaultsTests.NativeFirstBoundReinforcementDefaultsRoundTripIntoResidentDeploymentAndCheckpoint`
+reproduced the two reported unsupported-call results before their respective fixes. Seven new resident cases cover
+first-bound string/byte subjects, warp distances and arrival inside placement range, missing/foreign/beaconless targets,
+unchanged state after rejection, native reinforcement tuple shape, checkpointed weekday 255 and retained hulls on
+invalid timing. The first combined run passed 205 cases and failed one new fixture setup assertion: an existing catalog
+record edit was not tracked. After explicitly persisting that edit, its exact rejection test passed in 6.50 seconds.
+
+The final affected filter joined `MoonMiningWarpTests`, `StructureDeploymentDefaultsTests`, `MoonExtractionTests`,
+`MoonMiningRulesTests`, `StructureTests`, `StructureRulesTests`, `StructureFuelRulesTests`, `FlightSessionTests`,
+`AutoNavigationTests`, `WarpCapacitorTests`, `CooperativeFleetTests` and `PilotServicesTests` with
+`FullyQualifiedName~` and `|`. All **206 cases passed in 61.35 seconds**. Tool and solution restore, the solution build
+(zero warnings/errors; final build 0.81 seconds), both Python policy suites (8 catalog and 9 formatting cases), formatting
+verification and whitespace checks passed. The full .NET suite was not run.
+
+**Live acceptance:** Not performed; agent client testing is disabled. The screenshots above are user observations of
+the failures, not acceptance of the corrected behavior.
+
+**Optional maintainer checks:** Warp to a moon's mining point through its native menu, then open the refinery deployment
+screen and verify that its reinforcement hour loads and the chosen configuration can be anchored.
+
 ## Structure compression and gas decompression — November 11, 2026
 
 Milestone 7 implements all three pinned `structureCompressionMgr` calls: `CompressItemInStructure(itemID)`,

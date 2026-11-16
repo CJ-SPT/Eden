@@ -3,6 +3,7 @@ using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Planetary;
+using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Fleets;
 using Eden.Protocol.PilotSessions;
@@ -65,6 +66,25 @@ internal sealed class FlightCallHandler(
                 ? (tuning?.Settings.Navigation ?? new NavigationPolicy()).AutopilotGateLandingMeters
                 : NavigationDefinitions.AutopilotLandingMeters;
             command = new FlightCommand.WarpTo(target.Id, range);
+        }
+        if (command is FlightCommand.WarpToMoonMiningPoint moonWarp)
+        {
+            if (!double.IsFinite(moonWarp.Range) || moonWarp.Range is < 0 or > NavigationState.MaximumWarpRange)
+            {
+                return new PilotCallResult.Failure("Choose a valid moon mining point warp distance.");
+            }
+            var beacon = systems
+                .Load(context.Pilot.SystemId)
+                .FirstOrDefault(body =>
+                    body.TypeId == MoonMiningRules.BeaconType
+                    && body.GroupId == MoonMiningRules.BeaconGroup
+                    && body.MoonMiningPoint?.MoonId == moonWarp.MoonId
+                );
+            if (beacon is null)
+            {
+                return new PilotCallResult.Failure("This moon mining point is unavailable in this solar system.");
+            }
+            command = new FlightCommand.WarpTo(beacon.Id, moonWarp.Range);
         }
         if (command is FlightCommand.AlignToBookmark align)
         {

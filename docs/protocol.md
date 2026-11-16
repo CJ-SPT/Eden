@@ -383,6 +383,8 @@ adds native resource conversion and gas losses with fuel/access checks.
 native docking/storage, supported services, configuration speeds and explicit remaining mechanics.
 [Correct moon ore identities](protocol/structures.md#correct-moon-ore-identities--november-16-2026) restores the four
 exceptional ores and the complete raw moon-material supply set while preserving the existing placement policy.
+[Native refinery setup calls](protocol/structures.md#native-refinery-setup-calls--november-16-2026) handles moon mining-point
+warp and the deployment reinforcement-default tuple, including the native no-weekday sentinel.
 
 - [T2 subcapital hull admission, November 9, 2026](protocol/fitting.md#t2-subcapital-hull-admission-november-9-2026)
 

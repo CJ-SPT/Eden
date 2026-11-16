@@ -22,6 +22,12 @@ internal sealed class StructureHandler(
         Dictionary<string, object?>? keywords = null
     )
     {
+        if (service == "corpRegistry" && method == "GetStructureReinforceDefault")
+        {
+            return args.Length == 0 && keywords is not { Count: > 0 }
+                ? new StructureReinforceDefaultReply()
+                : new PilotCallResult.Failure("Structure reinforcement defaults do not accept arguments.");
+        }
         if (service == "structureHangarViewMgr" && method == "GetMyHangarViewState")
         {
             return
@@ -210,7 +216,7 @@ internal sealed class StructureHandler(
             ReinforceWeekday: day is null ? 0
                 : day is long d ? checked((int)d)
                 : throw new InvalidDataException("Invalid reinforcement day."),
-            ReinforceHour: hour is null ? 18
+            ReinforceHour: hour is null ? StructureRules.DefaultReinforceHour
                 : hour is long h ? checked((int)h)
                 : throw new InvalidDataException("Invalid reinforcement hour.")
         );

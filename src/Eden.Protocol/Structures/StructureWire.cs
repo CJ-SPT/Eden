@@ -3,6 +3,12 @@ using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Structures;
 
+internal sealed record StructureReinforceDefaultReply : BlueModel
+{
+    // The deployment UI unpacks a tuple (weekday, UTC hour); 255 means no preferred weekday.
+    public override object ToBlue() => new object?[] { StructureRules.NoReinforcementWeekday, StructureRules.DefaultReinforceHour };
+}
+
 internal sealed record StructureMapReply(long VersionTime) : BlueModel
 {
     // Build 3662168 iterates this result to append dynamic structures to the local map rows.

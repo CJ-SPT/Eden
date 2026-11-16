@@ -62,6 +62,13 @@ internal static class FlightRequestWire
             ("CmdWarpToStuff", [string or byte[], long escalation])
                 when BlueMarshal.Text(arguments[0]) == "epinstance" && (keywords?.GetValueOrDefault("minRange") ?? 0L) is double or long =>
                 new FlightCommand.WarpToEscalation(escalation, Convert.ToDouble(keywords?.GetValueOrDefault("minRange") ?? 0L)),
+            // Build 3662168 sends the moon ID, not the separate beacon item ID.
+            ("CmdWarpToStuff", [string or byte[], long moon])
+                when BlueMarshal.Text(arguments[0]) == "moonMiningPoint"
+                    && (keywords?.GetValueOrDefault("minRange") ?? 0L) is double or long => new FlightCommand.WarpToMoonMiningPoint(
+                moon,
+                Convert.ToDouble(keywords?.GetValueOrDefault("minRange") ?? 0L)
+            ),
             ("CmdWarpToStuff", [string or byte[], long target])
                 when BlueMarshal.Text(arguments[0]) is "item" or "launch"
                     && (keywords?.GetValueOrDefault("minRange") ?? 0L) is double or long => new FlightCommand.WarpTo(

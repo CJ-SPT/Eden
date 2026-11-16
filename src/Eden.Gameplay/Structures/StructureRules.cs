@@ -13,6 +13,10 @@ public static class StructureRules
     public const int CoreRoomFlag = 180;
     public const int MaximumNameLength = 100;
     public const int MaximumDescriptionLength = 1000;
+
+    // Build 3662168 structures.const.NO_REINFORCEMENT_WEEKDAY: the native hour-only picker sends this sentinel.
+    public const int NoReinforcementWeekday = 255;
+    public const int DefaultReinforceHour = 18;
     public const double PlacementRange = 800_000;
     public const double Separation = 1_000_000;
     public const double HighSecurityBoundary = 0.45;

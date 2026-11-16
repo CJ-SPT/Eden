@@ -12,6 +12,8 @@ public abstract record FlightCommand
 
     public sealed record WarpTo(long TargetId, double Range) : FlightCommand;
 
+    public sealed record WarpToMoonMiningPoint(long MoonId, double Range) : FlightCommand;
+
     public sealed record WarpToBookmark(long BookmarkId, double Range) : FlightCommand;
 
     public sealed record WarpToFleetMember(long PilotId, double Range) : FlightCommand;
