@@ -857,6 +857,7 @@ internal sealed partial class ResidentEconomy
         RegisterCorporationBlueprintLocks();
         RegisterCorporationRemovals();
         RegisterAlliances();
+        RegisterSovereigntyClaim();
         RegisterPilotActivity();
         RegisterCommandBursts();
         RegisterInterdiction();

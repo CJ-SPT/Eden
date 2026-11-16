@@ -627,6 +627,7 @@ reuse, exact health deadlines, scoped invalidation and matched frame/checkpoint 
 
 - [Pilot services subscription and checkout, November 8, 2026](protocol/characters.md#pilot-services-subscription-and-checkout-november-8-2026)
 
+- [Sovereignty plan and resident foundation, November 16, 2026](protocol/sovereignty.md)
 - [Sovereignty information tab, November 8, 2026](protocol/navigation.md#sovereignty-information-tab-november-8-2026)
 
 - [Null-security system information, November 8, 2026](protocol/navigation.md#null-security-system-information-november-8-2026)

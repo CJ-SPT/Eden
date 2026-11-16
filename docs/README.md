@@ -1,5 +1,7 @@
 # Eden documentation
 
+[Sovereignty](protocol/sovereignty.md) records the implementation plan, resident claim foundation, eligibility and defense rules.
+
 [Alliances](protocol/alliances.md) records resident alliance implementation, pinned client contracts and milestone validation.
 
 [Interdiction](protocol/interdiction.md) records launched bubbles, focused HIC scripts, nullifiers and resident checkpoint persistence.
