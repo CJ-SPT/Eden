@@ -1,5 +1,30 @@
 # Modding protocol and activation
 
+## Preserve native catalog indices — November 15, 2026
+
+The captured user traceback identified `EveConfig instance has no attribute 'stations'` in
+`CharacterSelectionDataForCharacter.GetCurrentStationAndStationLocation`, at its station-orbit lookup.
+Inert execution of native `EveConfig.LoadNPCStations` reproduced the earlier failure: its input requires the
+root catalog's named `npcStations` index, which the Regional Express dictionary copy had discarded.
+Per-system row checks alone did not cover this native loader interface.
+
+Client composition version 6 retains the original catalog behind each map overlay and forwards its native
+attributes and indices. The aggregate stargate index also includes added gates with their containing system IDs.
+Added vectors support both named XYZ fields and the sequence access used by native geometry consumers.
+The regression reads real pinned solar-system FSD records, builds their named-index surface, executes the exact
+native NPC station loader, verifies the Kihtaled station/orbit from the user's trace, and executes the previously
+failing native character-selector station-detail method. It checks that existing station index identity survives
+and that express gates appear in both per-system and aggregate views.
+
+Automated validation: tool/solution restore, zero-warning solution build, 38 affected .NET cases (no failures/skips),
+28 headless native adapter assertions, both Python policy suites (8 catalog and 9 formatting cases), and formatting
+verification passed in 55.67 seconds. The affected .NET filter is the diagnostic-capture filter below. Native
+checks execute the reported Kihtaled station-detail failure path. The full .NET suite was not requested or run.
+
+Live acceptance: Not performed; agent client testing is disabled. The failure trace was produced by the user.
+
+Optional maintainer checks: update the launcher package and confirm a docked character's selector fully loads.
+
 ## Character selector exception capture — November 15, 2026
 
 The user reported a partially filled character selector after the pre-selection location RPC correction.

@@ -14,7 +14,7 @@ namespace Eden.Server.Modding;
 internal sealed class ModPublisher(WorldDatabase database, ModStore store)
 {
     // Changes to the native wrappers or client mod loader must rebuild existing selections.
-    internal const string ClientCompositionVersion = "5";
+    internal const string ClientCompositionVersion = "6";
     private readonly SemaphoreSlim _gate = new(1);
 
     public async Task<ModSetPackage> Build(string clientRoot, CancellationToken cancellation = default, Func<Task>? authorize = null)

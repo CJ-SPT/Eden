@@ -64,7 +64,8 @@ class SkillClientTests(unittest.TestCase):
                         raw = zlib.decompress(archive.read(name))
                         libraries.writestr(name[:-1] + 'c', raw)
                         if name in builder.WRAPPERS or name in (builder.GEOGRAPHY_MODULE, 'evetypes/__init__.pyj',
-                                                               'eve/client/script/ui/services/skillsvc.pyj'):
+                                                               'eve/client/script/ui/services/skillsvc.pyj',
+                                                               'loginCharacterselection/charselData.pyj'):
                             path = work / name.replace('/', '_')
                             path.write_bytes(raw)
                             modules[name] = str(path)
@@ -176,13 +177,56 @@ columns,locations=function(find(geography,'GetLocationsLocal'),env)(cfg,[5800000
 check('Exact native location reply contains express gate name',locations[0].locationID==58000001 and locations[0].locationName=='Stargate (1DQ1-A)')
 local=function(find(geography,'GetLocationsLocalBySystem'),env)(cfg,30000142,True,False)
 check('Exact native system map reply contains express gate',local[0].itemID==58000001 and local[0].locationID==30000142 and local[0].connector)
+from fsd.schemas import binaryLoader
+native_content=binaryLoader.LoadFromString(open(CONTENT,'rb').read())
+class IndexedContent(object):
+    def __init__(self,original):
+        self.original=original
+        self.npcStations={}
+        self.stargates={}
+        def visit(system,record):
+            for field in ('npcStations','stargates','planets','moons'):
+                try:values=getattr(record,field)
+                except (AttributeError,KeyError):continue
+                for identity,row in values.iteritems():
+                    if field in ('planets','moons'):
+                        visit(system,row)
+                    else:
+                        getattr(self,field)[identity]=eden_skill_overlay.Row(
+                            {'solarSystemID':system,'stationName':'Station %s'%identity},row)
+        for system,record in original.iteritems():visit(system,record)
+    def __getitem__(self,identity):return self.original[identity]
+    def iteritems(self):return self.original.iteritems()
+indexed=IndexedContent(native_content)
+overlaid=eden_skill_overlay.travel_content(indexed)
+check('Native root NPC station index keeps identity',overlaid.npcStations is indexed.npcStations)
+check('Native root stargate index includes the new gate',overlaid.stargates[58000001].solarSystemID==30000142 and len(overlaid.stargates)==len(indexed.stargates)+1)
+check('Gate vectors preserve native sequence and named access',tuple(overlaid.stargates[58000001].position)==(1,2,3) and overlaid.stargates[58000001].position[0]==1 and overlaid.stargates[58000001].position.z==3)
+class StationRows(object):
+    def __init__(self,rowclass,key,data):self.data=dict((row.stationID,row) for row in data[1])
+    def Get(self,identity):return self.data[identity]
+station_cfg=Obj(mapSolarSystemContentCache=overlaid)
+station_env={'sysCfg':Obj(Recordset=StationRows,Row=Obj),'NPCStation':lambda **values:Obj(**values),
+             'NPCStationProps':[],'DOOMHEIM_STATION':Obj(stationID=-1)}
+function(find(geography,'LoadNPCStations'),station_env)(station_cfg)
+check('Exact native station loader retains every station',len(station_cfg.stations.data)==len(indexed.npcStations)+1)
+check('Exact native station loader restores Kihtaled orbit lookup',station_cfg.stations.Get(60013933).orbitID==40244213)
+location_names={30003860:'Kihtaled',40244213:'Kihtaled VIII - Moon 7',60013933:'Kihtaled VIII - Moon 7 - Royal Khanid Navy Assembly Plant'}
+station_cfg.evelocations=Obj(Get=lambda identity:Obj(name=location_names[identity]))
+details=Obj(stationID=60013933,solarSystemID=30003860,cfg=station_cfg,stripTags=lambda value,**kwargs:value,
+            localization=Obj(GetByLabel=lambda label:'Moon',HIGHLIGHT_IMPORTANT_MARKER='*'))
+station_info=function(find(MODULES['loginCharacterselection/charselData.pyj'],'GetCurrentStationAndStationLocation'),
+                      {'IsStation':lambda identity:True})(details)
+check('Exact failing character selector call now resolves station details','Royal Khanid Navy Assembly Plant' in station_info['stationName'] and station_info['shortOrbitName']=='VIII - 7')
 eden_skill_overlay.DATA.pop('travel')
 check('Disabled mod preserves native cache identity',map_jumps(cfg) is cfg._mapJumpCache)
 open(RESULT,'wb').write(repr(checks))
 '''
             values = {'LIBRARY': str(library), 'BINARIES': str(root / 'tq/bin64'),
                       'TYPES': resources['res:/staticdata/types.fsdbinary'], 'GROUPS': resources['res:/staticdata/groups.fsdbinary'],
-                      'DOGMA': resources['res:/staticdata/typedogma.fsdbinary'], 'MODULES': modules, 'RESULT': str(work / 'result.txt')}
+                      'DOGMA': resources['res:/staticdata/typedogma.fsdbinary'],
+                      'CONTENT': resources['res:/staticdata/solarsystemcontent.static'],
+                      'MODULES': modules, 'RESULT': str(work / 'result.txt')}
             import re
             worker = re.sub(r'\b(' + '|'.join(values) + r')\b', lambda m: repr(values[m.group()]), worker)
             with os.add_dll_directory(str(root / 'tq/bin64')):
