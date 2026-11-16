@@ -75,7 +75,7 @@ internal interface IEconomyRows<TState>
     void Clear();
 }
 
-internal sealed class EconomyTable<TRow, TState>(
+internal sealed partial class EconomyTable<TRow, TState>(
     string name,
     Func<TRow, EconomyKey> key,
     Func<TRow, TState> capture,
@@ -370,6 +370,12 @@ internal abstract class EconomySet<T> : IQueryable<T>, IEconomySet
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     internal abstract IEnumerable<T> SelectRows(Expression<Func<T, bool>>? predicate);
+
+    internal virtual bool TryMaximumIdentity(long minimum, out long? maximum)
+    {
+        maximum = null;
+        return false;
+    }
 
     internal virtual IEnumerable<TResult> Project<TResult>(Expression<Func<T, TResult>> selector, Expression<Func<T, bool>>? predicate) =>
         SelectRows(predicate).Select(selector.Compile(preferInterpretation: true));
