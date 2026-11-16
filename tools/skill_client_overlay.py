@@ -169,6 +169,32 @@ def travel_jumps(original):
     return _travel_cached('jumps', original, lambda: list(original) + [_convert(row, True) for row in edits])
 
 
+def travel_starmap(original):
+    edits = _travel().get('jumps')
+    if not edits:
+        return original
+
+    def build():
+        result = dict(original)
+        systems = result['solarSystems'] = dict(original['solarSystems'])
+        for key, values in _travel().get('systems', {}).iteritems():
+            identity = int(key)
+            row = systems[identity] = dict(systems[identity])
+            row['neighbours'] = [item['solarSystemID'] for item in values['neighbours']]
+        jumps = result['jumps'] = list(original['jumps'])
+        # Routing has two directed edges; both map renderers draw one line per pair.
+        pairs = set(tuple(sorted((row['fromSystemID'], row['toSystemID']))) for row in jumps)
+        for row in edits:
+            source, destination = row['fromSystemID'], row['toSystemID']
+            pair = tuple(sorted((source, destination)))
+            if pair not in pairs:
+                pairs.add(pair)
+                jumps.append({'fromSystemID': source, 'toSystemID': destination, 'jumpType': row['jumpType'],
+                              'fromCenter': systems[source]['center'], 'toCenter': systems[destination]['center']})
+        return result
+    return _travel_cached('starmap', original, build)
+
+
 def travel_systems(original):
     edits = _travel().get('systems')
     if not edits:
@@ -209,10 +235,11 @@ def travel_content(original):
 
 def _travel_location_values(identity, row):
     point = row['position']
+    # Match mapObjects.db stargates: no orbital parent/index and connector=False.
     return {'locationID': identity, 'itemID': identity, 'locationName': row['name'], 'itemName': row['name'],
             'solarSystemID': row['systemID'], 'locationNameID': None, 'nameID': None,
-            'typeID': row['typeID'], 'groupID': 10, 'orbitID': 0, 'connector': True,
-            'x': point['x'], 'y': point['y'], 'z': point['z'], 'celestialIndex': 0, 'orbitIndex': 0}
+            'typeID': row['typeID'], 'groupID': 10, 'orbitID': None, 'connector': False,
+            'x': point['x'], 'y': point['y'], 'z': point['z'], 'celestialIndex': None, 'orbitIndex': None}
 
 
 def travel_locations(original, keys):

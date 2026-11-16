@@ -42,7 +42,8 @@ class SkillClientTests(unittest.TestCase):
                 'messages': {'1000000000': 'Eden café skill', '1000000001': 'A custom description'},
                 'alpha': {'1': {'1500000000': 3}, '2': {'1500000000': 0}},
                 'travel': {
-                    'jumps': [{'stargateID': 58000001, 'fromSystemID': 30000142, 'toSystemID': 30004759}],
+                    'jumps': [{'stargateID': 58000001, 'fromSystemID': 30000142, 'toSystemID': 30004759, 'jumpType': 2},
+                              {'stargateID': 58000002, 'fromSystemID': 30004759, 'toSystemID': 30000142, 'jumpType': 2}],
                     'systems': {'30000142': {'neighbours': [{'solarSystemID': 30004759, 'stargateID': 58000001, 'jumpType': 2}]}},
                     'content': {'30000142': {'58000001': {'destination': 58000002, 'typeID': 3873,
                                                        'position': {'x': 1.0, 'y': 2.0, 'z': 3.0}}}},
@@ -65,6 +66,8 @@ class SkillClientTests(unittest.TestCase):
                         libraries.writestr(name[:-1] + 'c', raw)
                         if name in builder.WRAPPERS or name in (builder.GEOGRAPHY_MODULE, 'evetypes/__init__.pyj',
                                                                'eve/client/script/ui/services/skillsvc.pyj',
+                                                               'eve/client/script/ui/shared/maps/mapSvc.pyj',
+                                                               'eve/client/script/ui/shared/info/infosvc.pyj',
                                                                'loginCharacterselection/charselData.pyj'):
                             path = work / name.replace('/', '_')
                             path.write_bytes(raw)
@@ -77,12 +80,13 @@ sys.path[:]=[LIBRARY,BINARIES]
 import eden_skill_overlay,typesLoader,groupsLoader,typeDogmaLoader
 def find(path,name):
     f=open(path,'rb');f.read(8);root=marshal.load(f);f.close()
-    def walk(c):
-        yield c
+    def walk(c,parent=''):
+        path=parent+c.co_name
+        yield path,c
         for v in c.co_consts:
             if hasattr(v,'co_code'):
-                for nested in walk(v):yield nested
-    return next(c for c in walk(root) if c.co_name==name)
+                for nested in walk(v,path+'.'):yield nested
+    return next(c for path,c in walk(root) if c.co_name==name or path==name)
 def function(code,env):
     env.setdefault('__builtins__',__builtins__)
     return (lambda:None).__class__(code,env)
@@ -142,8 +146,16 @@ else:
 diagnostic=os.path.join(os.environ['LOCALAPPDATA'],'Eden','ClientErrors','character-selection-%s.log'%os.getpid())
 record=open(diagnostic,'rb').read()
 check('Character slot writes a durable native traceback','stage=character-selection character=90000001' in record and 'characterSlots.py' in record and 'headless character-slot failure' in record)
-if previous_appdata is None:os.environ.pop('LOCALAPPDATA')
-else:os.environ['LOCALAPPDATA']=previous_appdata
+header_loader=function(find(MODULES['eve/client/script/ui/shared/info/infoContentBase.pyj'],
+                           '<module>.InfoWindowMonolith.update_description_caption_and_sub_caption'),{})
+try:
+    header_loader(Obj(item_id=30000142,get_description_caption_and_sub_caption=fail_portrait))
+except ValueError:
+    record=open(diagnostic,'rb').read()
+    check('Blank info header preserves native exception and captures traceback',
+          'stage=info-header character=30000142' in record and 'infoContentBase.py' in record)
+else:
+    raise AssertionError('Info header swallowed the native exception')
 geography=MODULES['eve/common/script/sys/eveCfg.pyj']
 cfg=Obj(_mapJumpCache=[Obj(stargateID=50000001)],
     _mapSystemCache={30000142:Obj(neighbours=[],regionID=10000002),30000144:Obj(neighbours=[])},
@@ -152,7 +164,7 @@ cfg=Obj(_mapJumpCache=[Obj(stargateID=50000001)],
 env={}
 map_jumps=function(find(geography,'mapJumpCache'),env)
 jumps=map_jumps(cfg)
-check('Patched native jump cache includes the express edge',jumps[-1].fromSystemID==30000142 and jumps[-1].toSystemID==30004759)
+check('Patched native jump cache includes the express edge',jumps[-2].fromSystemID==30000142 and jumps[-2].toSystemID==30004759)
 check('Warmed jump cache is shared and original stays intact',map_jumps(cfg) is jumps and len(cfg._mapJumpCache)==1)
 systems=function(find(geography,'mapSystemCache'),env)(cfg)
 check('Native neighbour fields and original region survive',systems[30000142].neighbours[0].stargateID==58000001 and systems[30000142].regionID==10000002)
@@ -176,7 +188,88 @@ cfg.GetLocationRowDescriptor=function(find(geography,'GetLocationRowDescriptor')
 columns,locations=function(find(geography,'GetLocationsLocal'),env)(cfg,[58000001])
 check('Exact native location reply contains express gate name',locations[0].locationID==58000001 and locations[0].locationName=='Stargate (1DQ1-A)')
 local=function(find(geography,'GetLocationsLocalBySystem'),env)(cfg,30000142,True,False)
-check('Exact native system map reply contains express gate',local[0].itemID==58000001 and local[0].locationID==30000142 and local[0].connector)
+check('Exact native system map reply contains express gate',local[0].itemID==58000001 and local[0].locationID==30000142)
+check('Added gates match native celestial hierarchy fields',local[0].orbitID is None and local[0].celestialIndex is None and
+      local[0].orbitIndex is None and not local[0].connector)
+from fsd.schemas import binaryLoader
+import yaml
+native_systems=binaryLoader.LoadFromString(open(SYSTEMS,'rb').read(),yaml.safe_load(open(SYSTEM_SCHEMA,'rb')))
+info_cfg=Obj(mapSystemCache=eden_skill_overlay.travel_systems(native_systems),
+             mapConstellationCache=eden_skill_overlay.MapRows(dict((row.constellationID,Obj(regionID=row.regionID))
+                                                                  for identity,row in native_systems.iteritems())),
+             evelocations=Obj(Get=lambda identity:Obj(name='Location %s'%identity)))
+ids=Obj(IsSolarSystem=lambda identity:30000000<=identity<40000000,
+        IsStation=lambda identity:60000000<=identity<70000000,IsCelestial=lambda identity:40000000<=identity<60000000,
+        IsConstellation=lambda identity:20000000<=identity<30000000,IsRegion=lambda identity:10000000<=identity<20000000)
+constants=Obj(typeSolarSystem=5,groupSolarSystem=5,groupSun=6,groupPlanet=7,groupMoon=8,groupStargate=10,
+              groupAsteroidBelt=9,groupStation=15,groupConstellation=4,groupRegion=3,categoryStructure=65,locationUniverse=9)
+ids.IsKnownSpaceSystem=ids.IsSolarSystem
+ids.IsKnownSpaceConstellation=ids.IsConstellation
+ids.IsKnownSpaceRegion=ids.IsRegion
+map_env={'cfg':info_cfg,'idCheckers':ids,'const':constants,'utillib':Obj(KeyVal=Obj),
+         'IsKnownSpaceSystem':ids.IsSolarSystem,'IsKnownSpaceConstellation':ids.IsConstellation,
+         'IsKnownSpaceRegion':ids.IsRegion,'IsValidDestination':lambda identity:True}
+map_service=Obj(GetSolarsystemItems=lambda *args:local)
+for name in ('GetItem','GetNeighbors','GetParentLocationID','GetParent'):
+    method=function(find(MODULES['eve/client/script/ui/shared/maps/mapSvc.pyj'],name),map_env)
+    if name=='GetItem':method.func_defaults=(False,None)
+    setattr(map_service,name,method.__get__(map_service))
+check('Exact native info neighbour lookup includes express destination',map_service.GetNeighbors(30000142)==[30004759])
+check('Exact native system item retains its original geometry',map_service.GetItem(30000142).x==native_systems[30000142].center.x)
+info_env={'cfg':info_cfg,'idCheckers':ids,'const':constants,
+          'evetypes':Obj(GetGroupID=lambda identity:5 if identity==5 else 10,GetCategoryID=lambda identity:2),
+          'SortListOfTuples':lambda rows:[value for key,value in sorted(rows)]}
+wnd=Obj(data={'structures':{'items':[]},'orbital':{'items':[]}})
+info_env.update(TAB_STRUCTURES='structures',TAB_ORBITALBODIES='orbital')
+info=Obj(map=map_service)
+function(find(MODULES['eve/client/script/ui/shared/info/infosvc.pyj'],'GetOrbitalBodies'),info_env)(info,wnd,30000142,30000142,5)
+check('Exact native orbital info call accepts added gate records',wnd.data['structures']['items']==[])
+from collections import defaultdict
+info_env.update(IsKnownSpaceSystem=ids.IsSolarSystem,IsKnownSpaceConstellation=ids.IsConstellation,IsKnownSpaceRegion=ids.IsRegion,
+                GetByLabel=lambda label,**kwargs:label,GetFromClass=lambda cls,data=None,**kwargs:data,
+                LabelLocationTextTop=Obj,Bookmark=Obj,is_directional_scanner_suppressed=lambda identity:False,
+                GetItemTraderComponent=lambda *args:None)
+info_env['sm']=Obj(GetService=lambda name:Obj(IsSystemConquarable=lambda identity:False,
+                                            IsWarzoneSolarSystem=lambda identity:False,ShortestGeneralPath=lambda identity:[]))
+info_env['evetypes'].GetName=lambda identity:'Type %s'%identity
+for tab in ('TAB_ATTRIBUTES','TAB_STATIONS','TAB_NEIGHBORS','TAB_ROUTE','DATA_BUTTONS'):
+    info_env[tab]=tab
+info.GetOrbitalBodies=function(find(MODULES['eve/client/script/ui/shared/info/infosvc.pyj'],'GetOrbitalBodies'),info_env).__get__(info)
+info.GetStationTab=lambda *args:None
+info.Bookmark=lambda *args:None
+info.GetColorCodedSecurityStringForSystem=lambda identity,name:name
+wnd=Obj(data=defaultdict(lambda:{'items':[]}),dynamicTabs=[])
+wnd.data['DATA_BUTTONS']=[]
+function(find(MODULES['eve/client/script/ui/shared/info/infosvc.pyj'],'UpdateDataCelestial'),info_env)(info,wnd,5,30000142,None)
+check('Exact native system info builds the express neighbour tab',wnd.data['TAB_NEIGHBORS']['items'][0]['itemID']==30004759)
+try:
+    function(find(MODULES['eve/client/script/ui/shared/info/infosvc.pyj'],'UpdateDataCelestial'),info_env)(
+        Obj(map=Obj(GetParentLocationID=fail_portrait)),wnd,5,30000142,None)
+except ValueError:
+    record=open(diagnostic,'rb').read()
+    check('Blank info body preserves native exception and captures traceback',
+          'stage=celestial-info character=30000142' in record and 'infosvc.py' in record)
+else:
+    raise AssertionError('Info body swallowed the native exception')
+import cPickle
+native_starmap=cPickle.loads(open(STARMAP,'rb').read())
+for module in ('eve/client/script/ui/shared/mapView/mapViewData.pyj','eve/client/script/ui/shared/maps/starMapSvc.pyj'):
+    getter=function(find(MODULES[module],'GetStarMapCache'),{})
+    service=Obj(starMapCache=native_starmap,mapJumps=None)
+    service.GetStarMapCache=getter.__get__(service)
+    view=service.GetStarMapCache()
+    check(module+' includes one line per reciprocal route',len(view['jumps'])==len(native_starmap['jumps'])+1)
+    check(module+' keeps original cache immutable and reuses overlay',getter(service) is view and
+          native_starmap['solarSystems'][30000142]['neighbours']!=view['solarSystems'][30000142]['neighbours'])
+    check(module+' preserves original system metadata',
+          view['solarSystems'][30000142]['center'] is native_starmap['solarSystems'][30000142]['center'])
+    if 'mapViewData' in module:
+        service.PrimeJumpData=lambda source,destination,kind:Obj(fromSolarSystemID=source,toSolarSystemID=destination,jumpType=kind)
+        rendered=list(function(find(MODULES[module],'IterateJumps'),{})(service))
+        check('Exact native map line iterator includes the express route',
+              rendered[-1].fromSolarSystemID==30000142 and rendered[-1].toSolarSystemID==30004759 and rendered[-1].jumpType==2)
+        check('Warmed native map line iterator does not duplicate lines',
+              list(function(find(MODULES[module],'IterateJumps'),{})(service))==rendered)
 from fsd.schemas import binaryLoader
 native_content=binaryLoader.LoadFromString(open(CONTENT,'rb').read())
 class IndexedContent(object):
@@ -220,12 +313,18 @@ station_info=function(find(MODULES['loginCharacterselection/charselData.pyj'],'G
 check('Exact failing character selector call now resolves station details','Royal Khanid Navy Assembly Plant' in station_info['stationName'] and station_info['shortOrbitName']=='VIII - 7')
 eden_skill_overlay.DATA.pop('travel')
 check('Disabled mod preserves native cache identity',map_jumps(cfg) is cfg._mapJumpCache)
+check('Disabled mod preserves native starmap identity',eden_skill_overlay.travel_starmap(native_starmap) is native_starmap)
+if previous_appdata is None:os.environ.pop('LOCALAPPDATA')
+else:os.environ['LOCALAPPDATA']=previous_appdata
 open(RESULT,'wb').write(repr(checks))
 '''
             values = {'LIBRARY': str(library), 'BINARIES': str(root / 'tq/bin64'),
                       'TYPES': resources['res:/staticdata/types.fsdbinary'], 'GROUPS': resources['res:/staticdata/groups.fsdbinary'],
                       'DOGMA': resources['res:/staticdata/typedogma.fsdbinary'],
                       'CONTENT': resources['res:/staticdata/solarsystemcontent.static'],
+                      'SYSTEMS': resources['res:/staticdata/systems.static'],
+                      'SYSTEM_SCHEMA': resources['res:/staticdata/systems.schema'],
+                      'STARMAP': resources['res:/staticdata/starmapcache.pickle'],
                       'MODULES': modules, 'RESULT': str(work / 'result.txt')}
             import re
             worker = re.sub(r'\b(' + '|'.join(values) + r')\b', lambda m: repr(values[m.group()]), worker)

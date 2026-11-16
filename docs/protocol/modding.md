@@ -1,5 +1,37 @@
 # Modding protocol and activation
 
+## Express map lines and system information — November 15, 2026
+
+The user reported missing express-route map lines and a blank system Show Info window. Both native map
+renderers read `res:/staticdata/starMapCache.pickle` through their own `GetStarMapCache`; updating only
+`cfg.mapJumpCache` did not update their visual edges. Client composition version 7 overlays both readers,
+preserves native system metadata, updates system neighbours and emits one visual edge per reciprocal route.
+The source cache remains unchanged and warmed callers reuse the composed view.
+
+Added location rows now match ordinary build-3662168 `mapObjects.db` stargates: `connector=False`, with
+null orbital parent and celestial/orbit indices. Headless checks execute native system-item, neighbour,
+orbital-body and system-info construction calls, including the new neighbour tab. These checks have not
+reproduced the user's complete blank-window failure. Header and celestial-info exceptions now also write
+the bounded local trace described below, while preserving and rethrowing the original exception. Qualified
+code-object matching patches only the monolithic header method, preserving the base class's same-named method.
+
+Native evidence is from the unchanged build-3662168 archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`, its map pickle and local static map database.
+This change introduces no wire format, gameplay calculation or saved-world persistence changes.
+
+Automated validation: tool/solution restore, zero-warning solution build, 55 focused .NET cases (zero failures/skips),
+44 headless native client assertions, both Python policy suites (8 catalog and 9 formatting cases), and formatting
+verification passed in 51.66 seconds. The full .NET suite was not requested or run. Focused .NET filter:
+
+```text
+FullyQualifiedName~TravelRouteModTests|FullyQualifiedName~ModFoundationTests|FullyQualifiedName~ModRuntimeTests|FullyQualifiedName~ModLauncherApiTests|FullyQualifiedName~AutoMiningPackageTests|FullyQualifiedName~SkillPackageRetentionTests|FullyQualifiedName~GameplayDependenciesTests
+```
+
+Live acceptance: Not performed; agent client testing is disabled. The user confirmed the info window stays blank.
+
+Optional maintainer checks: refresh the launcher package, reopen system Show Info, and verify express map lines.
+If the window remains blank, inspect the new `info-header` / `celestial-info` trace in the local client error log.
+
 ## Preserve native catalog indices — November 15, 2026
 
 The captured user traceback identified `EveConfig instance has no attribute 'stations'` in

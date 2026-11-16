@@ -17,6 +17,43 @@ import zlib
 PINNED_SHA256 = '37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368'
 PYTHON_SHA256 = '1266e119d5db70281831f06049faa2694e658a68d504e0cc5680ec5726ba3aa2'
 WRAPPERS = {
+    'eve/client/script/ui/shared/info/infoContentBase.pyj': (
+        '<module>.InfoWindowMonolith.update_description_caption_and_sub_caption', '''
+def update_description_caption_and_sub_caption(self):
+    def _eden_original(self):
+        pass
+    try:
+        return _eden_original(self)
+    except Exception:
+        import eden_skill_overlay
+        eden_skill_overlay.record_client_error('info-header', self.item_id)
+        raise
+'''),
+    'eve/client/script/ui/shared/info/infosvc.pyj': ('UpdateDataCelestial', '''
+def UpdateDataCelestial(self, wnd, typeID, itemID, parentID):
+    def _eden_original(self, wnd, typeID, itemID, parentID):
+        pass
+    try:
+        return _eden_original(self, wnd, typeID, itemID, parentID)
+    except Exception:
+        import eden_skill_overlay
+        eden_skill_overlay.record_client_error('celestial-info', itemID)
+        raise
+'''),
+    'eve/client/script/ui/shared/mapView/mapViewData.pyj': ('GetStarMapCache', '''
+def GetStarMapCache(self):
+    import eden_skill_overlay
+    def _eden_original(self):
+        pass
+    return eden_skill_overlay.travel_starmap(_eden_original(self))
+'''),
+    'eve/client/script/ui/shared/maps/starMapSvc.pyj': ('GetStarMapCache', '''
+def GetStarMapCache(self):
+    import eden_skill_overlay
+    def _eden_original(self):
+        pass
+    return eden_skill_overlay.travel_starmap(_eden_original(self))
+'''),
     'eve/client/script/ui/login/charSelection/characterSlots.pyj': ('LoadSlot', '''
 def LoadSlot(self, charID, characterDetails):
     def _eden_original(self, charID, characterDetails):
@@ -217,22 +254,23 @@ def replace(code, constants):
     return type(code)(code.co_argcount,code.co_nlocals,code.co_stacksize,code.co_flags,
         code.co_code,tuple(constants),code.co_names,code.co_varnames,code.co_filename,
         code.co_name,code.co_firstlineno,code.co_lnotab,code.co_freevars,code.co_cellvars)
-def patch(code, name, wrapper):
-    if code.co_name == name:
+def patch(code, name, wrapper, parent=''):
+    path = parent + code.co_name
+    if code.co_name == name or path == name:
         return replace(wrapper, [code if getattr(v,'co_name',None)=='_eden_original' else v
             for v in wrapper.co_consts]), 1
     count = 0
     constants = []
     for v in code.co_consts:
         if hasattr(v,'co_code'):
-            v, found = patch(v, name, wrapper)
+            v, found = patch(v, name, wrapper, path + '.')
             count += found
         constants.append(v)
     return replace(code,constants), count
 for path, name, source in JOBS:
     f=open(path,'rb');header=f.read(8);code=marshal.load(f);f.close()
     wrapper=next(c for c in compile(source,'eden-skill-adapter','exec').co_consts
-        if getattr(c,'co_name',None)==name)
+        if getattr(c,'co_name',None)==name.rsplit('.',1)[-1])
     code,count=patch(code,name,wrapper)
     assert count==1,(name,count)
     open(path,'wb').write(header+marshal.dumps(code,0))
