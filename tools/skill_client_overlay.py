@@ -6,6 +6,32 @@ DATA = json.loads(DATA_JSON)
 _cache = {}
 
 
+def record_client_error(stage, identity):
+    # Preserve the original exception; diagnostics must never change the client flow.
+    try:
+        import datetime
+        import os
+        import tempfile
+        import traceback
+        directory = os.path.join(os.environ.get('LOCALAPPDATA') or tempfile.gettempdir(), 'Eden', 'ClientErrors')
+        if not os.path.isdir(directory):
+            try:
+                os.makedirs(directory)
+            except OSError:
+                if not os.path.isdir(directory):
+                    return
+        path = os.path.join(directory, 'character-selection-%s.log' % os.getpid())
+        maximum_bytes = 2 * 1024 * 1024
+        if os.path.exists(path) and os.path.getsize(path) >= maximum_bytes:
+            return
+        text = '%s UTC stage=%s character=%s\n%s\n' % (
+            datetime.datetime.utcnow().isoformat(), stage, identity, traceback.format_exc())
+        with open(path, 'ab') as output:
+            output.write(text.encode('utf-8', 'replace'))
+    except Exception:
+        pass
+
+
 class Row(object):
     def __init__(self, values, original=None):
         self._values = values
@@ -22,11 +48,26 @@ class Row(object):
         return getattr(self, name)
 
 
+class Vector(Row):
+    def __len__(self):
+        return 3
+
+    def __iter__(self):
+        return iter((self.x, self.y, self.z))
+
+    def __getitem__(self, index):
+        if isinstance(index, (int, long, slice)):
+            return (self.x, self.y, self.z)[index]
+        return Row.__getitem__(self, index)
+
+
 def _convert(value, objects=False):
     if isinstance(value, list):
         return [_convert(item, objects) for item in value]
     if isinstance(value, dict):
         if objects:
+            if set(value) == set(('x', 'y', 'z')):
+                return Vector(value)
             return Row(dict((key, _convert(item, True)) for key, item in value.iteritems()))
         return dict((int(key), _convert(item)) for key, item in value.iteritems())
     return value
@@ -110,6 +151,13 @@ def _travel_cached(name, original, build):
 
 
 class MapRows(dict):
+    def __init__(self, original):
+        dict.__init__(self, original.iteritems())
+        self._original = original
+
+    def __getattr__(self, name):
+        return getattr(self._original, name)
+
     def Get(self, identity):
         return self[identity]
 
@@ -127,7 +175,7 @@ def travel_systems(original):
         return original
 
     def build():
-        result = MapRows(original.iteritems())
+        result = MapRows(original)
         for key, values in edits.iteritems():
             identity = int(key)
             result[identity] = Row({'neighbours': _convert(values['neighbours'], True)}, original[identity])
@@ -141,11 +189,19 @@ def travel_content(original):
         return original
 
     def build():
-        result = MapRows(original.iteritems())
+        result = MapRows(original)
+        aggregate = getattr(original, 'stargates', None)
+        if aggregate is not None:
+            result.stargates = MapRows(aggregate)
         for key, values in edits.iteritems():
             identity = int(key)
-            gates = MapRows(original[identity].stargates.iteritems())
-            gates.update((int(gate), _convert(value, True)) for gate, value in values.iteritems())
+            gates = MapRows(original[identity].stargates)
+            for gate, value in values.iteritems():
+                converted = _convert(value, True)
+                converted._values['solarSystemID'] = identity
+                gates[int(gate)] = converted
+                if aggregate is not None:
+                    result.stargates[int(gate)] = converted
             result[identity] = Row({'stargates': gates}, original[identity])
         return result
     return _travel_cached('content', original, build)
