@@ -103,6 +103,11 @@ internal sealed partial class PilotAmmunitionStore
                 )
                 && !(CommandBurstCatalog.Module(catalog, module.TypeId, group) && InventoryDefinitions.IsHighSlot(module.FlagId))
                 && !(
+                    AreaWeaponCatalog.Module(catalog, module.TypeId, group)
+                    && InventoryDefinitions.IsHighSlot(module.FlagId)
+                    && group is AreaWeaponRules.BombLauncherGroup or AreaWeaponRules.DefenderLauncherGroup
+                )
+                && !(
                     Eden.World.Propulsion.InterdictionCatalog.Module(catalog, module.TypeId)
                     && InventoryDefinitions.IsHighSlot(module.FlagId)
                 )
@@ -261,6 +266,8 @@ internal sealed partial class PilotAmmunitionStore
                 : script ? SupportModuleDefinitions.CompatibleScript(moduleGroup, chargeType.GroupId, attributes, chargeAttributes)
                 : chargeType.GroupId == CapacitorBoosterDefinitions.ChargeGroup
                     ? attributes.GetValueOrDefault(DogmaAttributeId.ChargeGroup1) == chargeType.GroupId
+                : AreaWeaponRules.IsBomb(chargeType.GroupId) || chargeType.GroupId == AreaWeaponRules.DefenderChargeGroup
+                    ? AreaWeaponRules.Compatible(moduleGroup, chargeType.GroupId, attributes)
                 : MissileDefinitions.ChargeGroups.Contains(chargeType.GroupId)
                     ? MissileDefinitions.CompatibleCharge(attributes, chargeType.GroupId, chargeAttributes)
                 : AmmunitionDefinitions.CompatibleTurretCharge(attributes, chargeType.GroupId, chargeAttributes);

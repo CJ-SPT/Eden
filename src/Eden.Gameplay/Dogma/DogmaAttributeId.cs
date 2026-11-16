@@ -3,6 +3,19 @@ namespace Eden.Gameplay.Dogma;
 // Attribute IDs from the build 3662168 catalog.
 public enum DogmaAttributeId
 {
+    EcmBurstRange = 142,
+    ConsumptionType = 713,
+    ConsumptionQuantity = 714,
+    ProjectorWarningDuration = 2262,
+    ProjectorRadius = 2279,
+    ProjectorEffectDuration = 2280,
+    ProjectorSignatureResolution = 2281,
+    DisruptorProjectorDuration = 2397,
+    EcmProjectorDuration = 2398,
+    DampenerProjectorDuration = 2399,
+    PainterProjectorDuration = 2400,
+    MinimumActivationVelocity = 2608,
+    BombExplosionRange = 107,
     WarpBubbleImmune = 1538,
     WarpBubbleImmuneModifier = 1539,
     WarpBubbleImmuneBonus = 3120,

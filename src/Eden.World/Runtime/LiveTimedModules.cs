@@ -10,7 +10,8 @@ internal sealed class LiveTimedModules(LiveWorld owner, int? system = null)
         var economy = owner.Economy;
         var bursts = economy.DueCommandBursts(system, now);
         var modules = economy.DueModules(system, now);
-        if (bursts.Length == 0 && modules.Length == 0)
+        var areaContacts = economy.DueAreaContacts(system, now);
+        if (bursts.Length == 0 && modules.Length == 0 && areaContacts.Length == 0)
         {
             return;
         }
@@ -24,11 +25,24 @@ internal sealed class LiveTimedModules(LiveWorld owner, int? system = null)
                         .Where(row => row?.TargetKind == Eden.Gameplay.Propulsion.TackleTargetKind.Ship)
                         .Select(row => (long?)row!.TargetId)
                 )
+                .Concat(
+                    areaContacts
+                        .Select(contact => world.Set<Eden.Data.World.Combat.WorldPlayerEwar>().Find(contact.Module, contact.Target))
+                        .Where(row => row?.TargetKind == Eden.Gameplay.Propulsion.TackleTargetKind.Ship)
+                        .Select(row => (long?)row!.TargetId)
+                )
                 .OfType<long>()
                 .Distinct()
                 .ToArray()
         );
         using var action = economy.Begin(new(ships: ships));
+        foreach (var contact in areaContacts)
+        {
+            if (action.Set<Eden.Data.World.Combat.WorldPlayerEwar>().Find(contact.Module, contact.Target) is { } row)
+            {
+                action.Remove(row);
+            }
+        }
         foreach (long id in bursts)
         {
             if (action.Set<WorldCommandBurst>().Find(id) is { } burst && burst.ExpiresAt <= now)

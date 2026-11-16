@@ -1,5 +1,7 @@
 # Protocol findings and milestone records
 
+[Area weapons and EWAR](protocol/area-weapons.md) records burst jammers, projectors, bombs, defenders and heavy grapplers.
+
 [Structure discovery and docked login](protocol/structures.md#structure-discovery-docked-login-and-access-reads--november-16-2026)
 fixes long structure location IDs, native directory/map reads and docking UI permission queries, and records timer/control gaps.
 

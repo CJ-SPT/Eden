@@ -4,11 +4,30 @@ using Eden.Infrastructure.Registration;
 namespace Eden.Protocol.Targeting;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class SharedTargetLocks : IPilotTargetLocks
+internal sealed class SharedTargetLocks : IPilotTargetLocks, IPilotLockBreaks
 {
     private readonly Lock _gate = new();
     private readonly HashSet<(long Ship, long Target)> _locks = [];
     private readonly HashSet<(long Ship, long Target)> _silent = [];
+    private readonly Dictionary<long, long> _breaks = [];
+
+    public void BreakOutgoing(long ship)
+    {
+        lock (_gate)
+        {
+            _locks.RemoveWhere(edge => edge.Ship == ship);
+            _silent.RemoveWhere(edge => edge.Ship == ship);
+            _breaks[ship] = checked(_breaks.GetValueOrDefault(ship) + 1);
+        }
+    }
+
+    public long BreakRevision(long ship)
+    {
+        lock (_gate)
+        {
+            return _breaks.GetValueOrDefault(ship);
+        }
+    }
 
     public void Add(long ship, long target, bool silent = false)
     {

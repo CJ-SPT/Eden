@@ -136,6 +136,7 @@ public static class WorldInitialization
             .ExecuteDelete();
         Eden.World.Exploration.HackingSchema.Reconcile(world);
         world.Set<WorldPlayerEwar>().ExecuteDelete();
+        world.Set<SavedAreaWeapon>().ExecuteDelete();
         world.Set<WorldRemoteRepair>().ExecuteDelete();
         world.Set<WorldRemoteAssistance>().ExecuteDelete();
         // NPC target ownership is connection activity, not offline combat.

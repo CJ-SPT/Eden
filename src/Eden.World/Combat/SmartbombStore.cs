@@ -214,6 +214,7 @@ internal sealed class SmartbombStore(
             );
         }
         bool intercepted = DamageMissiles(world, catalog, candidates.Missiles, system, now, module, Near);
+        intercepted |= AreaWeaponStore.DamageProjectiles(world, system, module.Damage, now, Near);
         world.SaveChanges();
         foreach (
             var probe in world.Filter<Eden.Data.World.Propulsion.SavedInterdictionField>(row =>

@@ -130,7 +130,11 @@ internal static class HullCatalog
             .ToArray();
 
     private static bool Operational(ClientDogmaeffectsModifierInfoItem source) =>
-        HullBonusRules.Operational(Capability(source), source.Func == "LocationGroupModifier" ? (int?)source.GroupID : null);
+        HullBonusRules.Operational(
+            Capability(source),
+            source.Func == "LocationGroupModifier" ? (int?)source.GroupID : null,
+            source.Func == "LocationRequiredSkillModifier" ? (int?)source.SkillTypeID : null
+        );
 
     private static HullCapability Capability(ClientDogmaeffectsModifierInfoItem source)
     {

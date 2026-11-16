@@ -231,8 +231,11 @@ public static class PlayerEwarRules
     }
 
     public static bool CanTarget(IEnumerable<ElectronicWarfareContact> incoming, long target) =>
-        !incoming.Any(c => c.Module.Effect == DogmaEffect.PlayerEcm && c.Applied is not null)
-        || incoming.Any(c => c.Module.Effect == DogmaEffect.PlayerEcm && c.Applied is not null && c.SourceShipId == target);
+        !incoming.Any(c => c.Module.Effect == DogmaEffect.ProjectorEcm && c.Applied is not null)
+        && (
+            !incoming.Any(c => c.Module.Kind == NpcEwarKind.Jamming && c.Applied is not null)
+            || incoming.Any(c => c.Module.Kind == NpcEwarKind.Jamming && c.Applied is not null && c.SourceShipId == target)
+        );
 
     public static IEnumerable<DogmaModifier> Modifiers(
         long ship,
@@ -269,6 +272,14 @@ public static class PlayerEwarRules
                 contact.StartedAt,
                 contact.ExpiresAt
             );
+            if (contact.Module.Effect == DogmaEffect.ProjectorDisruptor)
+            {
+                var guidance = adapter with { Ability = adapter.Ability with { Kind = NpcEwarKind.GuidanceDisruption } };
+                foreach (var modifier in NpcEwarRules.Modifiers(ship, turrets, [guidance], missiles))
+                {
+                    yield return modifier;
+                }
+            }
             foreach (var modifier in NpcEwarRules.Modifiers(ship, turrets, [adapter], missiles))
             {
                 yield return modifier;
@@ -301,7 +312,12 @@ public static class PlayerEwarRules
         var modifiers = Modifiers(Npc, [Npc], [], incoming).ToList();
         // NPC launchers use hull multipliers rather than fitted charge nodes.
         // Apply guidance disruption to those multipliers, leaving movement alone.
-        foreach (var contact in incoming.Where(c => c.Module.Kind == NpcEwarKind.GuidanceDisruption && c.Applied is not null))
+        foreach (
+            var contact in incoming.Where(c =>
+                (c.Module.Kind == NpcEwarKind.GuidanceDisruption || c.Module.Effect == DogmaEffect.ProjectorDisruptor)
+                && c.Applied is not null
+            )
+        )
         {
             var power = contact.Applied!;
             AddMissile(DogmaAttributeId.EntityMissileVelocityMultiplier, power.MissileSpeedPercent);
@@ -317,6 +333,7 @@ public static class PlayerEwarRules
         foreach (
             var attribute in new[]
             {
+                DogmaAttributeId.StasisWebifierResistance,
                 DogmaAttributeId.SensorDampenerResistance,
                 DogmaAttributeId.WeaponDisruptionResistance,
                 DogmaAttributeId.TargetPainterResistance,

@@ -15,6 +15,9 @@ public interface IPilotCombatPresence
     PilotCombatPresence? Find(int systemId, long shipId);
 
     PilotCombatPresence? FindOnline(int systemId, long shipId) => Find(systemId, shipId);
+
+    PilotCombatPresence? FindArea(int systemId, long shipId) => Find(systemId, shipId);
+    bool IsAreaProtected(int systemId, long shipId) => false;
 }
 
 public sealed record PilotDamage(

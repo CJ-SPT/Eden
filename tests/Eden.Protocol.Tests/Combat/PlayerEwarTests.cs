@@ -144,7 +144,10 @@ public sealed partial class PlayerEwarTests
             Assert.True(PlayerEwarCatalog.Supported(catalog, type.Id, type.GroupId), $"Unsupported {type.Id}: {type.Name}");
             Assert.NotNull(FittingCatalog.Definition(catalog, type.Id));
         }
-        Assert.All(catalog.Set<ItemType>().Where(t => t.GroupId == 80), t => Assert.Null(FittingCatalog.Definition(catalog, t.Id)));
+        Assert.All(
+            catalog.Set<ItemType>().Where(t => t.GroupId == AreaWeaponRules.BurstJammerGroup),
+            t => Assert.NotNull(FittingCatalog.Definition(catalog, t.Id))
+        );
         var scripts = catalog.Set<ItemType>().AsEnumerable().Where(t => t.GroupId is 909 or 911 or 1569).ToArray();
         Assert.Equal(6, scripts.Length);
         Assert.All(scripts, t => Assert.True(ScriptCatalog.Supported(catalog, t.Id, t.GroupId)));

@@ -47,7 +47,7 @@ public sealed partial class ElectronicSupportHeatTests
             beforeSource = before.Set<ShipEnergy>().Find(f.Ship)!.Charge;
             beforeTarget = before.Set<ShipEnergy>().Find(f.Target)!.Charge;
             beforeHeat = before.Set<SavedShipHeat>().Find(f.Ship)?.StateJson;
-            beforeEffect = before.Set<WorldPlayerEwar>().Find(f.Module)?.ContactJson;
+            beforeEffect = before.Set<WorldPlayerEwar>().Find(f.Module, f.Target)?.ContactJson;
             beforeMarker = before.Set<ActiveFittedModule>().Any(row => row.ModuleId == f.Module);
             Assert.Equal(stop, beforeMarker);
             before.Database.ExecuteSqlRaw(
@@ -72,7 +72,7 @@ public sealed partial class ElectronicSupportHeatTests
             Assert.Equal(beforeSource, failed.Set<ShipEnergy>().Find(f.Ship)!.Charge, 8);
             Assert.Equal(beforeTarget, failed.Set<ShipEnergy>().Find(f.Target)!.Charge, 8);
             Assert.Equal(beforeHeat, failed.Set<SavedShipHeat>().Find(f.Ship)?.StateJson);
-            Assert.Equal(beforeEffect, failed.Set<WorldPlayerEwar>().Find(f.Module)?.ContactJson);
+            Assert.Equal(beforeEffect, failed.Set<WorldPlayerEwar>().Find(f.Module, f.Target)?.ContactJson);
             Assert.Equal(beforeMarker, failed.Set<ActiveFittedModule>().Any(row => row.ModuleId == f.Module));
             failed.Database.ExecuteSqlRaw("DROP TRIGGER IF EXISTS RejectResidentCapHeat; DROP TRIGGER IF EXISTS RejectResidentCapStop;");
         }

@@ -29,6 +29,7 @@ internal sealed partial class ResidentEconomy
                     DELETE FROM WorldPlayerEwar
                     WHERE EXISTS (SELECT 1 FROM json_each({deleted}) WHERE
                         WorldPlayerEwar.ModuleId=json_extract(value,'$.Id')
+                        AND WorldPlayerEwar.TargetId=json_extract(value,'$.Part')
                     )
                     """
                 );
@@ -47,7 +48,7 @@ internal sealed partial class ResidentEconomy
                         json_extract(value,'$.PilotId'),json_extract(value,'$.SourceShipId'),
                         json_extract(value,'$.SystemId'),json_extract(value,'$.TargetId'),json_extract(value,'$.TargetKind')
                     FROM json_each({values}) WHERE 1
-                    ON CONFLICT(ModuleId) DO UPDATE SET
+                    ON CONFLICT(ModuleId,TargetId) DO UPDATE SET
                         ContactJson=excluded.ContactJson,PilotId=excluded.PilotId,SourceShipId=excluded.SourceShipId,
                         SystemId=excluded.SystemId,TargetId=excluded.TargetId,TargetKind=excluded.TargetKind
                     """

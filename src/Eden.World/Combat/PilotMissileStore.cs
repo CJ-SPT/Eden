@@ -36,7 +36,8 @@ internal sealed partial class PilotMissileStore(
     IPilotCombatPresence presence,
     SqliteWorld lookup,
     IPilotDamageEvents damageEvents,
-    PilotLossSettlement losses
+    PilotLossSettlement losses,
+    IPilotAreaWeapons? areaWeapons = null
 ) : IPilotMissiles
 {
     private const int HistorySeconds = 120;
@@ -359,6 +360,7 @@ internal sealed partial class PilotMissileStore(
 
     public void Advance(int systemId, long now)
     {
+        areaWeapons?.Advance(systemId, now);
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("read.pilotMissileWork");
         if (LiveReadModels.Find(database.Path) is { } resident && !resident.HasPilotMissiles(systemId))
         {
@@ -515,9 +517,13 @@ internal sealed partial class PilotMissileStore(
     public IReadOnlyList<MissileContact> List(int systemId)
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("read.missileContacts");
-        return LiveReadModels.Find(database.Path) is { } resident
+        var ordinary = LiveReadModels.Find(database.Path) is { } resident
             ? resident.MissileContacts(systemId, () => ReadContacts(systemId))
             : ReadContacts(systemId);
+        var area = LiveWorld.Find(database.Path) is null
+            ? []
+            : areaWeapons?.Projectiles(systemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) ?? [];
+        return area.Count == 0 ? ordinary : ordinary.Concat(area).ToArray();
     }
 
     private IReadOnlyList<MissileContact> ReadContacts(int systemId)
@@ -537,6 +543,10 @@ internal sealed partial class PilotMissileStore(
 
     public bool Impacted(long projectileId)
     {
+        if (areaWeapons?.Impacted(projectileId) == true)
+        {
+            return true;
+        }
         if (LiveReadModels.Find(database.Path) is { } resident)
         {
             return resident.Impacted(projectileId);

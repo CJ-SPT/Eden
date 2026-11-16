@@ -214,7 +214,7 @@ public sealed partial class PlayerEwarTests
         });
         using (var rejected = live.Economy.Begin(new(pilots: [pilot], ships: [target])))
         {
-            rejected.Remove(rejected.Set<WorldPlayerEwar>().Find(module)!);
+            rejected.Remove(rejected.Set<WorldPlayerEwar>().Find(module, target)!);
             Assert.False(reads.HasPlayerEwar());
             Assert.Empty(reads.PlayerEwarIncoming(target));
         }

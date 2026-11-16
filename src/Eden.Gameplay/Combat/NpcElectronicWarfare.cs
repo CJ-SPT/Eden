@@ -428,7 +428,7 @@ public static class NpcEwarRules
     }
 
     public static bool CanTarget(IReadOnlyList<NpcEwarContact> incoming, long target) =>
-        !incoming.Any(e => e.Ability.Effect == DogmaEffect.ConcordTargetJam)
+        !incoming.Any(e => e.Ability.Effect is DogmaEffect.ConcordTargetJam or DogmaEffect.ProjectorEcm)
         && (
             !incoming.Any(e => e.Ability.Kind == NpcEwarKind.Jamming)
             || incoming.Any(e => e.Ability.Kind == NpcEwarKind.Jamming && e.SourceId == target)

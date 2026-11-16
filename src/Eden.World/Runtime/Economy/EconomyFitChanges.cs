@@ -30,6 +30,7 @@ internal sealed partial class EconomyTransaction
     internal IEnumerable<CombatRowChange> FitChanges(object? before, object? after)
     {
         HashSet<long> pilots = [];
+        HashSet<long> drones = [];
         long? environmentRun = null;
         if (before is OwnedItem oldItem || after is OwnedItem)
         {
@@ -115,7 +116,10 @@ internal sealed partial class EconomyTransaction
             Row(before);
             Row(after);
         }
-        var changes = pilots.Where(store.IsPilot).Select(pilot => new CombatRowChange("WorldFitRevision", pilot, Resident: true));
+        var changes = pilots
+            .Where(store.IsPilot)
+            .Select(pilot => new CombatRowChange("WorldFitRevision", pilot, Resident: true))
+            .Concat(drones.Select(drone => new CombatRowChange("WorldDroneElectronicWarfare", drone, Resident: true)));
         if (environmentRun is long environment)
         {
             changes = changes.Append(new("AbyssalEnvironment", environment, Resident: true));
@@ -193,6 +197,10 @@ internal sealed partial class EconomyTransaction
                     Ship(effect.TargetShipId);
                     break;
                 case Eden.Data.World.Combat.WorldPlayerEwar effect:
+                    if (effect.TargetKind == Eden.Gameplay.Propulsion.TackleTargetKind.Drone)
+                    {
+                        drones.Add(effect.TargetId);
+                    }
                     Ship(effect.TargetId);
                     break;
             }

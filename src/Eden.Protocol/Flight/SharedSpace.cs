@@ -590,6 +590,23 @@ internal sealed class SharedSpace(
         return RunMotion(systemId, () => FindOwned(systemId, shipId), nameof(Find));
     }
 
+    public bool IsAreaProtected(int systemId, long shipId) =>
+        RunMotion(
+            systemId,
+            () => _ships.TryGetValue(shipId, out var ship) && (ship.Warp is not null || ship.DepartureGate is not null || ship.Arriving),
+            nameof(IsAreaProtected)
+        );
+
+    public PilotCombatPresence? FindArea(int systemId, long shipId) =>
+        RunMotion(
+            systemId,
+            () =>
+                _ships.TryGetValue(shipId, out var ship) && ship.Pilot.SystemId == systemId && ship.Pilot.Position is { } position
+                    ? new PilotCombatPresence(shipId, position, ship.Velocity)
+                    : null,
+            nameof(FindArea)
+        );
+
     private PilotCombatPresence? FindOwned(int systemId, long shipId)
     {
         using (EnterMotion(systemId: systemId))

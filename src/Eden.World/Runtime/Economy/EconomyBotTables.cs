@@ -1662,7 +1662,7 @@ internal sealed partial class ResidentEconomy
         Register(
             new EconomyTable<Eden.Data.World.Combat.WorldPlayerEwar, EconomyWorldPlayerEwar>(
                 "WorldPlayerEwar",
-                row => new(row.ModuleId),
+                row => new(row.ModuleId, row.TargetId),
                 row => new(row.ModuleId, row.ContactJson, row.PilotId, row.SourceShipId, row.SystemId, row.TargetId, row.TargetKind),
                 state => new Eden.Data.World.Combat.WorldPlayerEwar
                 {
@@ -1686,7 +1686,7 @@ internal sealed partial class ResidentEconomy
                         reader.GetInt64(6),
                         (Eden.Gameplay.Propulsion.TackleTargetKind)reader.GetInt32(7)
                     ),
-                state => new(state.ModuleId),
+                state => new(state.ModuleId, state.TargetId),
                 changed: PlayerEwarChanged,
                 indexes:
                 [
@@ -1697,7 +1697,7 @@ internal sealed partial class ResidentEconomy
                     new("TargetId", row => row.TargetId),
                     new("TargetKind", row => row.TargetKind),
                 ],
-                primaryColumn: "ModuleId"
+                primaryColumn: null
             )
         );
         Register(

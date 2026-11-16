@@ -418,6 +418,13 @@ internal sealed partial record FittingCalculation
                     );
                 }
             }
+            if (module.Item.Online && AreaWeaponRules.IsModule(module.GroupId))
+            {
+                foreach (var modifier in AreaWeaponCatalog.Modifiers(catalog, module.Item.TypeId))
+                {
+                    Add(module.Item.Id, modifier, false);
+                }
+            }
             if (InventoryDefinitions.IsRigSlot(module.Item.FlagId))
             {
                 if (!RigCatalog.Supported(catalog, module.Item.TypeId, module.GroupId))
@@ -520,6 +527,7 @@ internal sealed partial record FittingCalculation
             .Skills.Concat(MissileDefinitions.Skills)
             .Concat([Eden.Gameplay.Flight.WarpCapacitorRules.WarpDriveOperationSkill])
             .Concat(AdvancedWeaponRules.Skills)
+            .Concat([AreaWeaponRules.BombDeploymentSkill, AreaWeaponRules.DefenderSkill, AreaWeaponRules.ProjectorSkill])
             .Concat(modules.Any(m => m.GroupId == CommandBurstRules.Group) ? CommandBurstCatalog.Skills : [])
             .Concat(Eden.Gameplay.Exploration.ProbeScanRules.Skills)
             .Concat([(int)MiningSkill.GasHarvesting, (int)MiningSkill.IceHarvesting])

@@ -2455,7 +2455,7 @@
         {
           "effectId": 2812,
           "capability": "ElectronicWarfare",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 4372,
@@ -2479,7 +2479,6 @@
         }
       ],
       "deferred": [
-        "ElectronicWarfare",
         "MicroJumpDrives",
         "FrigateEscapeRecovery"
       ]
@@ -10763,12 +10762,10 @@
         {
           "effectId": 8120,
           "capability": "Interdiction",
-          "operational": false
+          "operational": true
         }
       ],
-      "deferred": [
-        "Interdiction"
-      ]
+      "deferred": []
     },
     {
       "typeId": 35779,
@@ -10841,12 +10838,11 @@
         {
           "effectId": 8120,
           "capability": "Interdiction",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
-        "Entosis",
-        "Interdiction"
+        "Entosis"
       ]
     },
     {
@@ -10880,7 +10876,7 @@
         {
           "effectId": 3468,
           "capability": "Interdiction",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 3483,
@@ -12080,7 +12076,7 @@
         {
           "effectId": 3468,
           "capability": "Interdiction",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5008,
@@ -12130,7 +12126,7 @@
         {
           "effectId": 8362,
           "capability": "Interdiction",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
@@ -14499,12 +14495,10 @@
         {
           "effectId": 8120,
           "capability": "Interdiction",
-          "operational": false
+          "operational": true
         }
       ],
-      "deferred": [
-        "Interdiction"
-      ]
+      "deferred": []
     },
     {
       "typeId": 92283,
@@ -14545,12 +14539,10 @@
         {
           "effectId": 8120,
           "capability": "Interdiction",
-          "operational": false
+          "operational": true
         }
       ],
-      "deferred": [
-        "Interdiction"
-      ]
+      "deferred": []
     },
     {
       "typeId": 92284,
@@ -14591,12 +14583,10 @@
         {
           "effectId": 8120,
           "capability": "Interdiction",
-          "operational": false
+          "operational": true
         }
       ],
-      "deferred": [
-        "Interdiction"
-      ]
+      "deferred": []
     },
     {
       "typeId": 95741,

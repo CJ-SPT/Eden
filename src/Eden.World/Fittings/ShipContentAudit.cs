@@ -233,7 +233,7 @@ internal static class ShipContentAudit
             roles[role] =
                 admitted
                 && (
-                    role == HullCapability.BreacherPods
+                    role is HullCapability.BreacherPods or HullCapability.Bombs
                     || role == HullCapability.Interdiction && hullClass is HullClass.Interdictor or HullClass.HeavyInterdictionCruiser
                     || role == HullCapability.CommandBursts && roles.GetValueOrDefault(role)
                 );
@@ -305,6 +305,18 @@ internal static class ShipContentAudit
                     ShipContentMilestone.Mining,
                     "Mercoxit extraction and crystals work. Pollution cloud hazards remain unavailable.",
                     HullCapability.DeepCoreMining
+                )
+            );
+        }
+        if (type.GroupId == AreaWeaponRules.ProjectorGroup)
+        {
+            checks.Add(
+                new(
+                    ContentOperation.ConsumerCoverage,
+                    false,
+                    ShipContentMilestone.Supercapitals,
+                    "Paid projector programs and native point targeting are implemented; "
+                        + "eligible supercarrier hull admission remains unavailable."
                 )
             );
         }

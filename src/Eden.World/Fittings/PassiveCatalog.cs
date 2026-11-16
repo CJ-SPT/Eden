@@ -146,6 +146,18 @@ internal static class PassiveCatalog
                     !rig
                     && !MissileDefinitions.SupportsOwnerSkill(ownerSkill)
                     && !(
+                        ownerSkill == Eden.Gameplay.Combat.AreaWeaponRules.DefenderSkill
+                        && modifier.ModifiedAttributeID == (int)DogmaAttributeId.MaxVelocity
+                    )
+                    && !(
+                        ownerSkill == Eden.Gameplay.Combat.AreaWeaponRules.BombDeploymentSkill
+                        && modifier.ModifiedAttributeID
+                            is (int)DogmaAttributeId.EmDamage
+                                or (int)DogmaAttributeId.ExplosiveDamage
+                                or (int)DogmaAttributeId.KineticDamage
+                                or (int)DogmaAttributeId.ThermalDamage
+                    )
+                    && !(
                         ownerSkill
                             is Eden.Gameplay.Exploration.ProbeScanRules.AstrometricsSkill
                                 or Eden.Gameplay.Exploration.ProbeScanRules.ScienceSkill

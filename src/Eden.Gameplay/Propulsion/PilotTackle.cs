@@ -7,6 +7,7 @@ public enum TackleTargetKind
 {
     Ship,
     Npc,
+    Drone,
 }
 
 public sealed record TackleTarget(long Id, TackleTargetKind Kind);
@@ -21,7 +22,8 @@ public sealed record TackleModule(
     double Strength,
     double WebPercent,
     double MwdBlock,
-    double ReactivationMilliseconds
+    double ReactivationMilliseconds,
+    double Falloff = 0
 );
 
 public sealed record TackleEffect(
@@ -55,7 +57,18 @@ public interface IPilotTackle
 
 public static class TackleDefinitions
 {
+    public static TackleModule AtDistance(TackleModule module, double distance)
+    {
+        if (!double.IsFinite(distance) || distance < 0)
+        {
+            throw new InvalidDataException("Invalid tackle distance.");
+        }
+        double factor = module.Falloff > 0 ? Math.Pow(.5, Math.Pow(Math.Max(0, distance - module.Range) / module.Falloff, 2)) : 1;
+        return module with { WebPercent = module.WebPercent * factor };
+    }
+
     public const int WebifierGroup = 65;
+    public const int GrapplerGroup = 1672;
     public const int WarpDisruptionGroup = 52;
     public const int WarpCoreStabilizerGroup = 315;
     public const int PropulsionJammingSkill = 3435;
@@ -82,7 +95,8 @@ public static class TackleDefinitions
             web ? 0 : attributes.GetValueOrDefault(DogmaAttributeId.WarpScrambleStrength),
             web ? attributes.GetValueOrDefault(DogmaAttributeId.SpeedFactor) : 0,
             effect == DogmaEffect.WarpScrambler ? attributes.GetValueOrDefault(DogmaAttributeId.ActivationBlockStrength) : 0,
-            core ? attributes.GetValueOrDefault(DogmaAttributeId.ModuleReactivationDelay) : 0
+            core ? attributes.GetValueOrDefault(DogmaAttributeId.ModuleReactivationDelay) : 0,
+            web ? attributes.GetValueOrDefault(DogmaAttributeId.FalloffEffectiveness) : 0
         );
         if (
             !double.IsFinite(module.DurationMilliseconds)
@@ -91,6 +105,8 @@ public static class TackleDefinitions
             || module.CapacitorNeed < 0
             || !double.IsFinite(module.Range)
             || (!core && module.Range <= 0)
+            || !double.IsFinite(module.Falloff)
+            || module.Falloff < 0
             || !double.IsFinite(module.Strength)
             || (core ? module.Strength >= 0 : module.Strength < 0)
             || !double.IsFinite(module.WebPercent)

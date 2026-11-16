@@ -37,6 +37,10 @@ internal static class FittingCatalog
         {
             return null;
         }
+        if (AreaWeaponRules.IsModule(type.GroupId) && !AreaWeaponCatalog.Module(catalog, typeId, type.GroupId))
+        {
+            return null;
+        }
         if (type.GroupId == CommandBurstRules.Group && !CommandBurstCatalog.Module(catalog, typeId, type.GroupId))
         {
             return null;
@@ -103,6 +107,7 @@ internal static class FittingCatalog
         if (
             type.GroupId
                 is TackleDefinitions.WebifierGroup
+                    or TackleDefinitions.GrapplerGroup
                     or TackleDefinitions.WarpDisruptionGroup
                     or TackleDefinitions.WarpCoreStabilizerGroup
             && !TackleCatalog.Supported(catalog, typeId, type.GroupId)

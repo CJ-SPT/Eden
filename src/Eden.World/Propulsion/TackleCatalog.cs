@@ -34,14 +34,23 @@ internal static class TackleCatalog
     {
         if (
             group
-            is not (TackleDefinitions.WebifierGroup or TackleDefinitions.WarpDisruptionGroup or TackleDefinitions.WarpCoreStabilizerGroup)
+            is not (
+                TackleDefinitions.WebifierGroup
+                or TackleDefinitions.GrapplerGroup
+                or TackleDefinitions.WarpDisruptionGroup
+                or TackleDefinitions.WarpCoreStabilizerGroup
+            )
         )
         {
             return false;
         }
         var type = catalog.Read(CatalogData.Client.Types, (long)typeId);
         var attributes = PilotFittingStore.ReadAttributes(catalog, typeId);
-        if (type?.Published != 1 || type.MetaGroupID == AbyssalMetaGroup || InventoryDefinitions.RequiresSpecificShip(attributes))
+        if (
+            type?.Published != 1
+            || type.MetaGroupID == AbyssalMetaGroup
+            || group != TackleDefinitions.GrapplerGroup && InventoryDefinitions.RequiresSpecificShip(attributes)
+        )
         {
             return false;
         }
@@ -49,7 +58,7 @@ internal static class TackleCatalog
         if (
             active is null
             || (
-                group == TackleDefinitions.WebifierGroup ? active != DogmaEffect.StasisWebifier
+                group is TackleDefinitions.WebifierGroup or TackleDefinitions.GrapplerGroup ? active != DogmaEffect.StasisWebifier
                 : group == TackleDefinitions.WarpCoreStabilizerGroup ? active != DogmaEffect.WarpCoreStabilizer
                 : active is not (DogmaEffect.WarpDisruptor or DogmaEffect.WarpScrambler)
             )
@@ -105,7 +114,11 @@ internal static class TackleCatalog
         {
             return (activeDefinition.ModifierInfo ?? []).Length == 0
                 && activeDefinition.FalloffAttributeID == (int)DogmaAttributeId.FalloffEffectiveness
-                && attributes.GetValueOrDefault(DogmaAttributeId.FalloffEffectiveness) == 0
+                && (
+                    group == TackleDefinitions.GrapplerGroup
+                        ? attributes.GetValueOrDefault(DogmaAttributeId.FalloffEffectiveness) > 0
+                        : attributes.GetValueOrDefault(DogmaAttributeId.FalloffEffectiveness) == 0
+                )
                 && attributes.GetValueOrDefault(DogmaAttributeId.RemoteResistanceId) == (int)DogmaAttributeId.StasisWebifierResistance;
         }
         var modifiers = activeDefinition.ModifierInfo ?? [];

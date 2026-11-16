@@ -649,7 +649,14 @@ internal sealed partial class LiveCombatRuntime(
         ObserveDronePlayers(changes);
         if (
             changes.Any(c =>
-                c.Table is "WorldDrone" or "WorldDroneSettings" or "WorldFitRevision" or "WorldPilot" or "WorldShip" or "WorldItem"
+                c.Table
+                    is "WorldDrone"
+                        or "WorldDroneElectronicWarfare"
+                        or "WorldDroneSettings"
+                        or "WorldFitRevision"
+                        or "WorldPilot"
+                        or "WorldShip"
+                        or "WorldItem"
             )
         )
         {

@@ -42,7 +42,8 @@ internal sealed class ModuleActivationHandler(
     SpatialModuleHandler? spatial = null,
     SmartbombHandler? smartbombs = null,
     CommandBurstHandler? commandBursts = null,
-    InterdictionHandler? interdiction = null
+    InterdictionHandler? interdiction = null,
+    AreaWeaponHandler? areaWeapons = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -65,6 +66,7 @@ internal sealed class ModuleActivationHandler(
                 is DogmaEffect.WarpDisruptSphere
                     or DogmaEffect.FocusedWarpDisruption
                     or DogmaEffect.FocusedWarpScrambling
+            || effectName == AreaWeaponHandler.BurstEffect
             || effectName == SmartbombHandler.EffectName
             || TackleWire.Effect(effectName) is DogmaEffect.StasisWebifier or DogmaEffect.WarpDisruptor or DogmaEffect.WarpScrambler
             || PlayerEwarWire.Effect(effectName) is not null
@@ -82,6 +84,10 @@ internal sealed class ModuleActivationHandler(
         if (effectName == MissileHandler.EffectName && interdiction?.CallLauncher(context, method, args) is { } interdictionResult)
         {
             return interdictionResult;
+        }
+        if (effectName == MissileHandler.EffectName && areaWeapons?.CallLauncher(context, method, args) is { } areaResult)
+        {
+            return areaResult;
         }
         if (effectName == MissileHandler.EffectName && probes?.CallModule(context, method, args) is { } probeResult)
         {
@@ -113,6 +119,8 @@ internal sealed class ModuleActivationHandler(
             var name when CommandBurstHandler.Effect(name) is { } burst => commandBursts?.Call(context, method, burst, args)
                 ?? PilotCallResult.Unsupported,
             var name when InterdictionHandler.Effect(name) is { } field => interdiction?.Call(context, method, field, args)
+                ?? PilotCallResult.Unsupported,
+            AreaWeaponHandler.BurstEffect => areaWeapons?.CallModule(context, method, args, DogmaEffect.BurstJammer)
                 ?? PilotCallResult.Unsupported,
             SmartbombHandler.EffectName => smartbombs?.Call(context, method, args) ?? PilotCallResult.Unsupported,
             MissileHandler.EffectName => missiles?.Call(context, service, method, args) ?? PilotCallResult.Unsupported,

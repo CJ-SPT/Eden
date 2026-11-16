@@ -43,6 +43,7 @@ internal sealed partial class ResidentEconomy
         _npcEwarSources.Clear();
         _tackleTargets.Clear();
         _playerEwarTargets.Clear();
+        _areaContactEnds.Clear();
         _effectRevision = 0;
         _tackleRows = 0;
         _playerEwarRows = 0;
@@ -292,8 +293,39 @@ internal sealed partial class ResidentEconomy
         }
     }
 
+    private readonly SortedSet<(long End, long Module, long Target, int System)> _areaContactEnds = [];
+
+    internal (long Module, long Target)[] DueAreaContacts(int? system, long now) =>
+        _areaContactEnds
+            .TakeWhile(row => row.End <= now)
+            .Where(row => system is null || row.System == system)
+            .Select(row => (row.Module, row.Target))
+            .ToArray();
+
     private void PlayerEwarChanged(EconomyWorldPlayerEwar? before, EconomyWorldPlayerEwar? after)
     {
+        void Deadline(EconomyWorldPlayerEwar? row, bool add)
+        {
+            if (row is null)
+            {
+                return;
+            }
+            var contact = System.Text.Json.JsonSerializer.Deserialize<Eden.Gameplay.Combat.ElectronicWarfareContact>(row.ContactJson)!;
+            if (Eden.Gameplay.Combat.AreaWeaponRules.IsProjector(contact.Module.Effect))
+            {
+                var key = (contact.ExpiresAt, row.ModuleId, row.TargetId, row.SystemId);
+                if (add)
+                {
+                    _areaContactEnds.Add(key);
+                }
+                else
+                {
+                    _areaContactEnds.Remove(key);
+                }
+            }
+        }
+        Deadline(before, false);
+        Deadline(after, true);
         if (before == after)
         {
             return;

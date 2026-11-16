@@ -82,6 +82,8 @@ internal sealed partial class PilotTackleStore(WorldDatabase database, TimeProvi
         {
             throw new InvalidDataException("Use an online fitted tackle module on your active ship in space.");
         }
+        world.RequireUncloaked(pilot.ActiveShipId);
+        PilotFittingStore.CheckHull(catalog, item.TypeId, pilot.ActiveShip.TypeId);
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
         NaniteRepairPersistence.RequireAvailable(world, catalog, item.Id, now);
         var cooldown = world.Set<ModuleCooldown>().Find(moduleId);
@@ -163,12 +165,16 @@ internal sealed partial class PilotTackleStore(WorldDatabase database, TimeProvi
                 new SpacePosition(position.X, position.Y, position.Z).DistanceTo(targetPosition) - sourceRadius - targetRadius
             );
             if (
-                distance > module.Range
+                distance > module.Range && module.Falloff == 0
                 || distance > TackleDefinitions.MaximumDistance
                 || distance > ship.GetValueOrDefault(DogmaAttributeId.MaxTargetRange)
             )
             {
                 throw new InvalidDataException("The target is outside tackle range.");
+            }
+            if (module.Falloff > 0)
+            {
+                module = TackleDefinitions.AtDistance(module, distance);
             }
         }
         double capacitor = ShipResources.SpendCapacitor(world, pilot.ActiveShipId, ship, module.CapacitorNeed, now);

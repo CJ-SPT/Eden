@@ -52,7 +52,8 @@ public sealed class TechTwoHullTests
             .Order();
         Assert.Equal(Hulls().Select(h => (int)h[0]), published);
         Assert.True(AssaultDamageControlCatalog.ConsumersAdmitted(catalog));
-        foreach (int module in new[] { 580, 20280, 33400 })
+        Assert.NotNull(FittingCatalog.Definition(catalog, 580));
+        foreach (int module in new[] { 20280, 33400 })
         {
             Assert.Null(FittingCatalog.Definition(catalog, module));
         }

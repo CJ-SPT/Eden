@@ -91,6 +91,7 @@
     <EmbeddedResource Include="Fixtures/NpcSupplyCatalog.json" />
     <EmbeddedResource Include="Fixtures/CapacitorModuleCatalog.json" />
     <EmbeddedResource Include="Fixtures/SmartbombCatalog.json" />
+    <EmbeddedResource Include="Fixtures/AreaWeaponCatalog.json" />
     <EmbeddedResource Include="Fixtures/AdvancedWeaponCatalog.json" />
     <EmbeddedResource Include="Fixtures/StarterProductionCatalog.json" />
     <EmbeddedResource Include="Fixtures/StarterMarketCatalog.json" />

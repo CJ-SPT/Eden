@@ -369,7 +369,7 @@ public static class HullBonusRules
             _ => HullCapability.Unclassified,
         };
 
-    public static bool Operational(HullCapability capability, int? equipmentGroup = null) =>
+    public static bool Operational(HullCapability capability, int? equipmentGroup = null, int? requiredSkill = null) =>
         (
             capability == HullCapability.RemoteRepair
             && (
@@ -383,38 +383,42 @@ public static class HullBonusRules
             )
         )
         || capability == HullCapability.Interdiction
-            && equipmentGroup
-                is (int)HullBonusEquipmentGroup.WarpDisruptionFieldGenerator
-                    or (int)HullBonusEquipmentGroup.InterdictionNullifier
-        || equipmentGroup != (int)HullBonusEquipmentGroup.BurstJammer
-            && capability
-                is HullCapability.Overheating
-                    or HullCapability.CommandBursts
-                    or HullCapability.Cloaking
-                    or HullCapability.MicroJumpDrives
-                    or HullCapability.HullAttributes
-                    or HullCapability.Turrets
-                    or HullCapability.Missiles
-                    or HullCapability.Disintegrators
-                    or HullCapability.VortonProjectors
-                    or HullCapability.OreMining
-                    or HullCapability.GasMining
-                    or HullCapability.IceMining
-                    or HullCapability.LocalArmorRepair
-                    or HullCapability.LocalShieldBoost
-                    or HullCapability.Propulsion
-                    or HullCapability.Tackle
-                    or HullCapability.ElectronicWarfare
-                    or HullCapability.EnergyWarfare
-                    or HullCapability.ArmorPlates
-                    or HullCapability.ShieldExtenders
-                    or HullCapability.ReinforcedBulkheads
-                    or HullCapability.CombatDrones
-                    or HullCapability.MiningDrones
-                    or HullCapability.UtilityDrones
-                    or HullCapability.RemoteElectronicAssistance
-                    or HullCapability.TractorBeams
-                    or HullCapability.Salvaging
-                    or HullCapability.Probes
-                    or HullCapability.Hacking;
+            && (
+                equipmentGroup
+                    is (int)HullBonusEquipmentGroup.WarpDisruptionFieldGenerator
+                        or (int)HullBonusEquipmentGroup.InterdictionNullifier
+                        or (int)HullBonusEquipmentGroup.StasisGrappler
+                || requiredSkill == (int)HullBonusSkill.DefenderMissiles
+            )
+        || capability
+            is HullCapability.Bombs
+                or HullCapability.Overheating
+                or HullCapability.CommandBursts
+                or HullCapability.Cloaking
+                or HullCapability.MicroJumpDrives
+                or HullCapability.HullAttributes
+                or HullCapability.Turrets
+                or HullCapability.Missiles
+                or HullCapability.Disintegrators
+                or HullCapability.VortonProjectors
+                or HullCapability.OreMining
+                or HullCapability.GasMining
+                or HullCapability.IceMining
+                or HullCapability.LocalArmorRepair
+                or HullCapability.LocalShieldBoost
+                or HullCapability.Propulsion
+                or HullCapability.Tackle
+                or HullCapability.ElectronicWarfare
+                or HullCapability.EnergyWarfare
+                or HullCapability.ArmorPlates
+                or HullCapability.ShieldExtenders
+                or HullCapability.ReinforcedBulkheads
+                or HullCapability.CombatDrones
+                or HullCapability.MiningDrones
+                or HullCapability.UtilityDrones
+                or HullCapability.RemoteElectronicAssistance
+                or HullCapability.TractorBeams
+                or HullCapability.Salvaging
+                or HullCapability.Probes
+                or HullCapability.Hacking;
 }

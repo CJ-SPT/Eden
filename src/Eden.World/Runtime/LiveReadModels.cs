@@ -133,6 +133,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
     private readonly ResidentSnapshot<int, IReadOnlyList<DroneContact>> _drones = new(
         "resident.drones",
         "WorldDrone",
+        "WorldDroneElectronicWarfare",
         "WorldItem",
         "WorldFitRevision",
         "WorldPilot",

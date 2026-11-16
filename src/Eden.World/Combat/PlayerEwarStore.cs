@@ -264,6 +264,14 @@ internal sealed partial class PlayerEwarStore(WorldDatabase database, INpcEwarRo
         using CatalogDbContext catalog = new(database.CatalogPath);
         foreach (var row in world.Set<WorldPlayerEwar>().ToArray())
         {
+            if (AreaWeaponRules.IsProjector(row.Contact().Module.Effect))
+            {
+                if (row.Contact().ExpiresAt <= now)
+                {
+                    world.Remove(row);
+                }
+                continue;
+            }
             var source = world.Pilots.SingleOrDefault(p => p.Id == row.PilotId);
             var item = world.Set<OwnedItem>().Find(row.ModuleId);
             // Paid rows belong to the source controller, including at repeat
@@ -333,6 +341,10 @@ internal sealed partial class PlayerEwarStore(WorldDatabase database, INpcEwarRo
         long now = Now;
         foreach (var row in rows)
         {
+            if (!incoming && AreaWeaponRules.IsProjector(row.Contact().Module.Effect))
+            {
+                continue;
+            }
             Remove(world, row, now);
         }
         world.SaveChanges();

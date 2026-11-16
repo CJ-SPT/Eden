@@ -53,7 +53,8 @@ public static class ModuleFittingRules
     )
     {
         bool supported =
-            groupId == InterdictionRules.NullifierGroup && effects.Contains(DogmaEffect.InterdictionNullifier)
+            AreaWeaponRules.IsModule(groupId)
+            || groupId == InterdictionRules.NullifierGroup && effects.Contains(DogmaEffect.InterdictionNullifier)
             || groupId == InterdictionRules.GeneratorGroup && effects.Contains(DogmaEffect.WarpDisruptSphere)
             || groupId == InterdictionRules.LauncherGroup && effects.Contains(DogmaEffect.UseMissiles)
             || groupId == CommandBurstRules.Group && effects.Any(CommandBurstRules.IsBurst)
@@ -86,9 +87,10 @@ public static class ModuleFittingRules
                 && effects.Any(e => PlayerEwarRules.Matches(groupId, e))
             || groupId
                 is TackleDefinitions.WebifierGroup
+                    or TackleDefinitions.GrapplerGroup
                     or TackleDefinitions.WarpDisruptionGroup
                     or TackleDefinitions.WarpCoreStabilizerGroup
-                && !InventoryDefinitions.RequiresSpecificShip(attributes)
+                && (groupId == TackleDefinitions.GrapplerGroup || !InventoryDefinitions.RequiresSpecificShip(attributes))
                 && effects.Any(e => TackleDefinitions.Targeted(e) || e == DogmaEffect.WarpCoreStabilizer)
             || SupportModuleDefinitions.Effect(groupId) is { } support
                 && effects.Contains(support)

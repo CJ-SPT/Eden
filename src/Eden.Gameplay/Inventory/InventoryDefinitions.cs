@@ -102,6 +102,16 @@ public enum FittingSkill
 
 public enum DogmaEffect
 {
+    BurstJammer = 6714,
+    BombLaunching = 2971,
+    DefenderLaunching = 103,
+    ProjectorEcm = 6513,
+    ProjectorWeb = 6476,
+    ProjectorNeutralizer = 6477,
+    ProjectorBubble = 6482,
+    ProjectorDampener = 6481,
+    ProjectorPainter = 6478,
+    ProjectorDisruptor = 6479,
     DroneMining = 17,
     DroneSalvaging = 5163,
     DroneArmorRepair = 6687,

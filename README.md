@@ -47,6 +47,9 @@ Mission support includes [short-deadline deliveries](docs/missions.md#short-dead
 New mission offers include a [timed ISK bonus](docs/protocol/agents.md#timed-mission-bonuses--november-14-2026),
 with saved deadlines and fleet reward sharing.
 
+[Area weapons and EWAR](docs/protocol/area-weapons.md) add burst jammers, bombs, defenders and heavy grapplers,
+plus paid projector programs that retain their supercarrier hull dependency.
+
 The [feature notes](docs/feature-notes.md) detail supported content and limits. The [protocol records](docs/protocol.md)
 document automated coverage and any live client observations.
 

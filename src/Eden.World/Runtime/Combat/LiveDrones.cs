@@ -6,6 +6,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
 using Eden.World.Catalog;
+using Eden.World.Combat;
 using Eden.World.Drones;
 using Eden.World.Fittings;
 using Eden.World.Skills;
@@ -229,6 +230,17 @@ internal sealed partial class LiveCombatRuntime
                         Activity = DroneActivity.Fighting,
                         TargetId = candidates[inputs.Settings.FocusFire ? 0 : (int)(contact.Id % candidates.Length)],
                     };
+                    drone = drone with { Contact = contact };
+                }
+            }
+            if (contact.Activity == DroneActivity.Fighting && owner.Economy.PlayerEwarTargetVersion(contact.Id) != 0)
+            {
+                var electronicWarfare =
+                    owner.Reads?.PlayerEwarIncoming(contact.Id)
+                    ?? owner.Economy.Inspect(world => PlayerEwarStore.Active(world, contact.Id));
+                if (!PlayerEwarRules.CanTarget(electronicWarfare, contact.TargetId))
+                {
+                    contact = contact with { Activity = DroneActivity.Idle, TargetId = 0 };
                     drone = drone with { Contact = contact };
                 }
             }
@@ -544,6 +556,21 @@ internal sealed partial class LiveCombatRuntime
         HashSet<long> updated = [];
         foreach (var change in changes)
         {
+            if (change.Table == "WorldDroneElectronicWarfare")
+            {
+                if (_liveDrones.TryGetValue(change.Id, out var electronicTarget))
+                {
+                    var profile = owner.Economy.Inspect(world =>
+                    {
+                        using CatalogDbContext catalog = new(database.CatalogPath);
+                        var saved = world.Set<WorldDrone>().Find(change.Id);
+                        return saved is null ? electronicTarget.Contact.Profile : PilotDroneStore.Contact(world, catalog, saved).Profile;
+                    });
+                    _liveDrones[change.Id] = electronicTarget with { Contact = electronicTarget.Contact with { Profile = profile } };
+                }
+                continue;
+            }
+
             var committed = change.Resident && change.Table == "WorldDrone" ? owner.Economy.Peek<WorldDrone>(change.Id) : null;
             var existing = _liveDrones.GetValueOrDefault(change.Id);
             bool sameMembership =

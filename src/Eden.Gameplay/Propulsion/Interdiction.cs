@@ -9,6 +9,7 @@ public enum InterdictionKind
 {
     Probe,
     HeavyField,
+    Projector,
 }
 
 public sealed record InterdictionSphere(long Id, SpacePosition Center, double Radius);

@@ -447,6 +447,7 @@ internal sealed partial class PilotDroneStore(
             world.Set<OwnedItem>().Find(drone.ItemId)!.TypeId,
             drone.ControllerShipId
         );
+        profile = AreaWeaponRules.ApplyDroneEffects(profile, PlayerEwarStore.Active(world, drone.ItemId));
         return new(
             drone.ItemId,
             drone.PilotId,
@@ -737,6 +738,14 @@ internal sealed partial class PilotDroneStore(
                     drone.Activity = DroneActivity.Fighting;
                     drone.TargetId = candidates[settings.FocusFire ? 0 : (int)(drone.ItemId % candidates.Length)];
                 }
+            }
+            if (
+                drone.Activity == DroneActivity.Fighting
+                && !PlayerEwarRules.CanTarget(PlayerEwarStore.Active(world, drone.ItemId), drone.TargetId)
+            )
+            {
+                drone.Activity = DroneActivity.Idle;
+                drone.TargetId = 0;
             }
             var npc = drone.Activity == DroneActivity.Fighting ? world.Set<WorldNpc>().Find(drone.TargetId) : null;
             if (

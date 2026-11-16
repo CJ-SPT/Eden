@@ -28,8 +28,10 @@ internal sealed class TargetingHandler(
     private readonly HashSet<long> _miningExcludedTargets = [];
     private long[] _targeters = [];
     private long _shipId;
+    private long _breakRevision;
 
-    public bool IsLocked(long id) => _locked.Contains(id);
+    public bool IsLocked(long id) =>
+        _locked.Contains(id) && shared.Contains(_shipId, id) && shared.BreakRevision(_shipId) == _breakRevision;
 
     public void Advance(PilotCallContext context)
     {
@@ -57,7 +59,17 @@ internal sealed class TargetingHandler(
             _miningExcludedTargets.Clear();
             _targeters = [];
         }
+        bool changedShip = _shipId != context.Pilot.ShipId;
         _shipId = context.Pilot.ShipId;
+        long revision = shared.BreakRevision(_shipId);
+        if (!changedShip && revision != _breakRevision)
+        {
+            foreach (long target in _pending.Keys.Concat(_locked).ToArray())
+            {
+                Remove(context, target);
+            }
+        }
+        _breakRevision = revision;
         if (!context.Flight.CanAcquireTargets)
         {
             foreach (long target in _pending.Keys.Concat(_locked).ToArray())
@@ -267,7 +279,7 @@ internal sealed class TargetingHandler(
         (npcEwar?.Incoming(ship) ?? [])
             .Concat(
                 (electronicWarfare?.Incoming(ship) ?? [])
-                    .Where(e => e.Module.Effect == DogmaEffect.PlayerEcm && e.Applied is not null)
+                    .Where(e => e.Module.Kind == NpcEwarKind.Jamming && e.Applied is not null)
                     .Select(e => new NpcEwarContact(
                         e.SourceShipId,
                         e.Module.TypeId,

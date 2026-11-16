@@ -93,7 +93,8 @@ internal sealed class PilotUpdateCoordinator(
     SmartbombHandler? smartbombs = null,
     Eden.Protocol.Fleets.CommandBurstHandler? commandBursts = null,
     AutoMiningHandler? autoMining = null,
-    InterdictionHandler? interdiction = null
+    InterdictionHandler? interdiction = null,
+    AreaWeaponHandler? areaWeapons = null
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -209,6 +210,7 @@ internal sealed class PilotUpdateCoordinator(
         mining.Cancel(context);
         combat.Cancel(context);
         smartbombs?.Cancel(context);
+        areaWeapons?.Cancel(context);
         commandBursts?.Cancel(context);
         interdiction?.Cancel(context);
         missiles.Cancel(context);
@@ -245,6 +247,7 @@ internal sealed class PilotUpdateCoordinator(
         naniteRepairs.Advance(context);
         crimewatch.Advance(context);
         npcEwar.Advance(context);
+        areaWeapons?.Advance(context);
         electronicWarfare.Advance(context);
         redemption.Advance(context);
         using (SessionPerformance.Phase("update.targeting"))

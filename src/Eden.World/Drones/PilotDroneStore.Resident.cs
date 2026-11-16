@@ -42,6 +42,7 @@ internal sealed partial class PilotDroneStore
             world.Set<OwnedItem>().Find(drone.ItemId)!.TypeId,
             drone.ControllerShipId
         );
+        profile = AreaWeaponRules.ApplyDroneEffects(profile, PlayerEwarStore.Active(world, drone.ItemId));
         DroneContact contact = new(
             drone.ItemId,
             drone.PilotId,

@@ -300,6 +300,7 @@ internal sealed partial class ResidentEconomy
         ClearTimedModules();
         ClearCommandBursts();
         ClearCombatIndexes();
+        _areaWeaponSystems.Clear();
         _marketHeads.Clear();
         _mailHeads.Clear();
         _listHeads.Clear();

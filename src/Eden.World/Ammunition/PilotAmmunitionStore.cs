@@ -156,6 +156,11 @@ internal sealed partial class PilotAmmunitionStore(WorldDatabase database) : IPi
                     && InventoryDefinitions.IsHighSlot(module.FlagId)
                 )
                 && !(CommandBurstCatalog.Module(catalog, module.TypeId, group) && InventoryDefinitions.IsHighSlot(module.FlagId))
+                && !(
+                    AreaWeaponCatalog.Module(catalog, module.TypeId, group)
+                    && InventoryDefinitions.IsHighSlot(module.FlagId)
+                    && group is AreaWeaponRules.BombLauncherGroup or AreaWeaponRules.DefenderLauncherGroup
+                )
                 && !(ProbeCatalog.Launcher(catalog, module.TypeId, group) && InventoryDefinitions.IsHighSlot(module.FlagId))
                 && !(PlayerEwarCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsMediumSlot(module.FlagId))
                 && !(SupportModuleCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsMediumSlot(module.FlagId))
@@ -324,6 +329,8 @@ internal sealed partial class PilotAmmunitionStore(WorldDatabase database) : IPi
                 : script ? SupportModuleDefinitions.CompatibleScript(moduleGroup, chargeType.GroupId, attributes, chargeAttributes)
                 : chargeType.GroupId == CapacitorBoosterDefinitions.ChargeGroup
                     ? attributes.GetValueOrDefault(DogmaAttributeId.ChargeGroup1) == chargeType.GroupId
+                : AreaWeaponRules.IsBomb(chargeType.GroupId) || chargeType.GroupId == AreaWeaponRules.DefenderChargeGroup
+                    ? AreaWeaponRules.Compatible(moduleGroup, chargeType.GroupId, attributes)
                 : MissileDefinitions.ChargeGroups.Contains(chargeType.GroupId)
                     ? MissileDefinitions.CompatibleCharge(attributes, chargeType.GroupId, chargeAttributes)
                 : AmmunitionDefinitions.CompatibleTurretCharge(attributes, chargeType.GroupId, chargeAttributes);

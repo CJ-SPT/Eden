@@ -148,11 +148,11 @@ internal sealed class PlayerEwarHandler(
         {
             context.NotificationsBeforeFlight.Add(new PlayerEwarChanged(contact, true));
         }
-        foreach (var contact in _received.Where(e => e.Module.Effect == DogmaEffect.PlayerEcm && !incoming.Contains(e)))
+        foreach (var contact in _received.Where(e => e.Module.Kind == NpcEwarKind.Jamming && !incoming.Contains(e)))
         {
             context.NotificationsBeforeFlight.Add(new PlayerJamChanged(contact, false));
         }
-        foreach (var contact in incoming.Where(e => e.Module.Effect == DogmaEffect.PlayerEcm && !_received.Contains(e)))
+        foreach (var contact in incoming.Where(e => e.Module.Kind == NpcEwarKind.Jamming && !_received.Contains(e)))
         {
             context.NotificationsBeforeFlight.Add(new PlayerJamChanged(contact, true));
         }

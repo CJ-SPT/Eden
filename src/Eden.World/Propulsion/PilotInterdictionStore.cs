@@ -200,7 +200,7 @@ internal sealed partial class PilotInterdictionStore(WorldDatabase database) : I
 
     private static InterdictionSphere? Sphere(WorldAction world, SavedInterdictionField row)
     {
-        if (row.Kind == InterdictionKind.Probe)
+        if (row.Kind is InterdictionKind.Probe or InterdictionKind.Projector)
         {
             return new(row.Id, new(row.X, row.Y, row.Z), row.Radius);
         }
