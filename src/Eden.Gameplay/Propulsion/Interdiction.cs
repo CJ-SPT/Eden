@@ -24,12 +24,51 @@ public sealed record InterdictionActivation(
     long ReadyAt,
     double Capacitor,
     MagazineChange? Magazine = null,
-    long? TargetId = null
+    long? TargetId = null,
+    double Range = 0
 );
+
+public sealed record InterdictionGenerator(double Duration, double Capacitor, double Range, double Strength)
+{
+    public static InterdictionGenerator Define(IReadOnlyDictionary<DogmaAttributeId, double> attributes)
+    {
+        InterdictionGenerator result = new(
+            attributes.GetValueOrDefault(DogmaAttributeId.Duration),
+            attributes.GetValueOrDefault(DogmaAttributeId.CapacitorNeed),
+            attributes.GetValueOrDefault(DogmaAttributeId.WarpScrambleRange),
+            attributes.GetValueOrDefault(DogmaAttributeId.WarpScrambleStrength)
+        );
+        if (
+            !double.IsFinite(result.Duration)
+            || result.Duration <= 0
+            || !double.IsFinite(result.Capacitor)
+            || result.Capacitor < 0
+            || !double.IsFinite(result.Range)
+            || result.Range <= 0
+            || !double.IsFinite(result.Strength)
+            || result.Strength <= 0
+        )
+        {
+            throw new InvalidDataException("Invalid heavy interdiction generator profile.");
+        }
+        return result;
+    }
+}
 
 public interface IPilotInterdiction
 {
     bool IsLauncher(long pilotId, long moduleId);
+    InterdictionActivation ActivateGenerator(
+        long pilotId,
+        long shipId,
+        long moduleId,
+        DogmaEffect effect,
+        TackleTarget? target,
+        IReadOnlySet<long> locked,
+        long now
+    );
+    void Stop(long pilotId, long shipId, long moduleId, long now);
+    bool Active(long shipId, long moduleId, long now);
     InterdictionActivation Launch(long pilotId, long shipId, long moduleId, long now);
     InterdictionWarp Resolve(long shipId, int systemId, SpacePosition origin, SpacePosition destination, long now);
     IReadOnlyList<StaticSpaceObject> Contacts(int systemId, long now);
@@ -42,6 +81,11 @@ public static class InterdictionRules
     public const int GeneratorGroup = 899;
     public const int ScriptGroup = 908;
     public const int NullifierGroup = 4117;
+    public const int FocusedDisruptionScript = 29003;
+    public const int FocusedScramblingScript = 45010;
+
+    public static bool Focused(DogmaEffect effect) => effect is DogmaEffect.FocusedWarpDisruption or DogmaEffect.FocusedWarpScrambling;
+
     public const int HazardSystem = 30100000;
     public const long FirstProbeId = 8_900_000_000_000;
 

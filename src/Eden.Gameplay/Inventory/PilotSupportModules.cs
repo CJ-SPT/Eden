@@ -44,6 +44,7 @@ public static class SupportModuleDefinitions
             OmnidirectionalTrackingLinkGroup => TrackingScriptGroup,
             SensorBoosterGroup => SensorScriptGroup,
             GuidanceComputerGroup => GuidanceScriptGroup,
+            Eden.Gameplay.Propulsion.InterdictionRules.GeneratorGroup => Eden.Gameplay.Propulsion.InterdictionRules.ScriptGroup,
             RemoteAssistanceRules.TrackingGroup => TrackingScriptGroup,
             RemoteAssistanceRules.SensorGroup => SensorScriptGroup,
             PlayerEwarRules.SensorDampenerGroup => PlayerEwarRules.DampeningScriptGroup,
@@ -52,7 +53,8 @@ public static class SupportModuleDefinitions
 
     public static bool IsScript(int group) =>
         group
-            is TrackingScriptGroup
+            is Eden.Gameplay.Propulsion.InterdictionRules.ScriptGroup
+                or TrackingScriptGroup
                 or SensorScriptGroup
                 or GuidanceScriptGroup
                 or PlayerEwarRules.TrackingDisruptionScriptGroup

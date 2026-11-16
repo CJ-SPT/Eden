@@ -287,7 +287,10 @@ internal sealed partial class PilotTackleStore(WorldDatabase database, TimeProvi
                         : item is { Online: true }
                             && item.OwnerId == row.PilotId
                             && item.LocationId == row.SourceShipId
-                            && InventoryDefinitions.IsMediumSlot(item.FlagId)
+                            && (
+                                InventoryDefinitions.IsMediumSlot(item.FlagId)
+                                || InterdictionRules.Focused(row.Effect) && InventoryDefinitions.IsHighSlot(item.FlagId)
+                            )
                 )
                 && !world.Set<ShipLoss>().Any(l => l.ShipId == row.SourceShipId);
             if (valid && row.TargetKind == TackleTargetKind.Npc)

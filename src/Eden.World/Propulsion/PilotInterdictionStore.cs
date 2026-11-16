@@ -78,7 +78,13 @@ internal sealed partial class PilotInterdictionStore(WorldDatabase database) : I
             throw new InvalidDataException("Load a warp disrupt probe before launching.");
         }
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, charge.TypeId);
-        var calculation = FittingCalculation.Read(world, catalog, pilot);
+        bool overloaded = PilotOverloadStore.Selected(world, database.Path, pilotId, moduleId);
+        var calculation = FittingCalculation.Read(
+            world,
+            catalog,
+            pilot,
+            overloadedModules: overloaded ? new HashSet<long> { moduleId } : null
+        );
         var ship = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: calculation);
         if (PilotHealthStore.Read(world, shipId, ShipHealth.DefenseFrom(ship), now).Remaining.Destroyed)
         {
@@ -138,7 +144,12 @@ internal sealed partial class PilotInterdictionStore(WorldDatabase database) : I
         timers.SystemId = system;
         var state = timers.Timers();
         timers.Apply(state with { Weapons = CrimewatchRules.Extend(state.Weapons, now, CrimewatchRules.WeaponsDuration) });
+        var heat = overloaded ? ShipHeatPersistence.BeginPaidCycle(world, catalog, calculation, moduleId, now, ready) : null;
         transaction.Commit();
+        if (heat is not null)
+        {
+            WorldConnections.PublishHeat(world, pilotId, shipId, heat);
+        }
         return new(moduleId, item.TypeId, DogmaEffect.UseMissiles, duration, ready, ready, capacitor, new(before, after));
     }
 
@@ -155,7 +166,7 @@ internal sealed partial class PilotInterdictionStore(WorldDatabase database) : I
                 return InterdictionRules.Resolve(
                     origin,
                     destination,
-                    fields.Select(row => new InterdictionSphere(row.Id, new(row.X, row.Y, row.Z), row.Radius)).ToArray(),
+                    fields.Select(row => Sphere(world, row)).OfType<InterdictionSphere>().ToArray(),
                     immune
                 );
             })
@@ -184,6 +195,27 @@ internal sealed partial class PilotInterdictionStore(WorldDatabase database) : I
                     .ToArray()
             )
         ?? [];
+
+    private static InterdictionSphere? Sphere(WorldAction world, SavedInterdictionField row)
+    {
+        if (row.Kind == InterdictionKind.Probe)
+        {
+            return new(row.Id, new(row.X, row.Y, row.Z), row.Radius);
+        }
+        var source = world.Pilots.Find(row.PilotId);
+        var item = world.Set<OwnedItem>().Find(row.ModuleId);
+        var active = world.Set<ActiveFittedModule>().Find(row.ModuleId);
+        return
+            source?.ActiveShipId == row.SourceShipId
+            && source.ActiveShip.Position is { } position
+            && position.SystemId == row.SystemId
+            && item is { Online: true }
+            && item.LocationId == row.SourceShipId
+            && active?.ExpiresAt == row.ExpiresAt
+            && world.Set<ShipLoss>().Find(row.SourceShipId) is null
+            ? new(row.Id, new(position.X, position.Y, position.Z), row.Radius)
+            : null;
+    }
 
     private static SavedInterdictionField[] Fields(WorldAction world, int system, long now) =>
         world.Filter<SavedInterdictionField>(row => row.SystemId == system && row.ExpiresAt > now && row.HitPoints > 0).ToArray();

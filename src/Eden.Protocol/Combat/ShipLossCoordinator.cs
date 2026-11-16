@@ -26,7 +26,8 @@ internal sealed class ShipLossCoordinator(
     RemoteRepairHandler? remoteRepairs = null,
     ISystemObjects? systems = null,
     SmartbombHandler? smartbombs = null,
-    Eden.Protocol.Fleets.CommandBurstHandler? commandBursts = null
+    Eden.Protocol.Fleets.CommandBurstHandler? commandBursts = null,
+    InterdictionHandler? interdiction = null
 )
 {
     internal void Replace(PilotCallContext context, DockedPilot capsule)
@@ -36,6 +37,7 @@ internal sealed class ShipLossCoordinator(
         weapons.Cancel(context);
         smartbombs?.Cancel(context);
         commandBursts?.Cancel(context);
+        interdiction?.Cancel(context);
         missiles?.Cancel(context);
         shields.Cancel(context);
         repairs.Cancel(context);

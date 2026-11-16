@@ -41,6 +41,10 @@ internal static class FittingCatalog
         {
             return null;
         }
+        if (type.GroupId == InterdictionRules.GeneratorGroup && !InterdictionCatalog.Generator(catalog, typeId))
+        {
+            return null;
+        }
         if (type.GroupId == InterdictionRules.LauncherGroup && !InterdictionCatalog.Module(catalog, typeId))
         {
             return null;

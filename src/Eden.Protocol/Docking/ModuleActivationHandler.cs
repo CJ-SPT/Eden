@@ -61,6 +61,7 @@ internal sealed class ModuleActivationHandler(
         bool offensive =
             CombatWireDefinitions.Handles(effectName)
             || effectName == MissileHandler.EffectName
+            || InterdictionHandler.Effect(effectName) is not null
             || effectName == SmartbombHandler.EffectName
             || TackleWire.Effect(effectName) is DogmaEffect.StasisWebifier or DogmaEffect.WarpDisruptor or DogmaEffect.WarpScrambler
             || PlayerEwarWire.Effect(effectName) is not null
@@ -101,6 +102,8 @@ internal sealed class ModuleActivationHandler(
             ),
             var name when CombatWireDefinitions.Handles(name) => combat.Call(context, service, method, args, keywords),
             var name when CommandBurstHandler.Effect(name) is { } burst => commandBursts?.Call(context, method, burst, args)
+                ?? PilotCallResult.Unsupported,
+            var name when InterdictionHandler.Effect(name) is { } field => interdiction?.Call(context, method, field, args)
                 ?? PilotCallResult.Unsupported,
             SmartbombHandler.EffectName => smartbombs?.Call(context, method, args) ?? PilotCallResult.Unsupported,
             MissileHandler.EffectName => missiles?.Call(context, service, method, args) ?? PilotCallResult.Unsupported,

@@ -63,6 +63,10 @@ internal static class ScriptCatalog
 
     internal static bool Supported(CatalogDbContext catalog, int typeId, int group)
     {
+        if (group == Eden.Gameplay.Propulsion.InterdictionRules.ScriptGroup)
+        {
+            return Eden.World.Propulsion.InterdictionCatalog.Script(catalog, typeId, group);
+        }
         var expected = Effects(group);
         if (expected.Count == 0)
         {
@@ -100,6 +104,7 @@ internal static class ScriptCatalog
     private static ImmutableArray<ScriptModifier> LoadModifiers(CatalogDbContext catalog, int typeId) =>
         PassiveCatalog
             .Effects(catalog, typeId)
+            .Where(e => e.EffectCategory == (int)PassiveEffectPhase.Fitted)
             .SelectMany(e => e.ModifierInfo ?? [])
             .Select(m => new ScriptModifier(
                 (DogmaAttributeId)checked((int)m.ModifiedAttributeID!.Value),

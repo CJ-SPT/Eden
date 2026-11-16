@@ -86,7 +86,8 @@ public sealed class StructureServiceTests
     [Fact]
     public async Task NativeLocalServicePacketsReturnBooleansInsteadOfInvalidPacketDestination()
     {
-        using TestWorld db = new();
+        // This exercises the full session ticker, which requires the resident gameplay owner.
+        using TestWorld db = new(liveWorld: true);
         Queue<object?> input = new(
             new[]
             {

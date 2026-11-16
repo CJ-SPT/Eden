@@ -196,7 +196,8 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
                 active,
                 effect.Duration,
                 effect.StartedAt,
-                effect.ArcTargets is { } targets ? new() { ["targets"] = new BlueList<long>(targets) }
+                effect.FieldRange is double radius ? new() { ["range"] = radius }
+                    : effect.ArcTargets is { } targets ? new() { ["targets"] = new BlueList<long>(targets) }
                     : effect.Spool is { } spool
                         ? new() { ["mulitplierBonusPerCycle"] = spool.PerCycle, ["multiplierBonusMax"] = spool.Maximum }
                     : null

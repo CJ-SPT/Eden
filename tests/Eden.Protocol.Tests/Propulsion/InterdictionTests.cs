@@ -25,7 +25,7 @@ public sealed class InterdictionTests
     internal const int Launcher = 22782;
     internal const int Probe = 22778;
     internal const int Surgical = 34260;
-    internal const int Eris = 22456;
+    internal const int Sabre = 22456;
 
     [Fact]
     public void BubbleGeometryBlocksDepartureCatchesDragsAndIgnoresUnrelatedFields()
@@ -188,7 +188,7 @@ public sealed class InterdictionTests
         Assert.Empty(fixture.Db.Services.GetRequiredService<IPilotInterdiction>().Contacts(system, fixture.Clock.Now));
     }
 
-    internal static Fixture Prepare(double security = 0, int hull = Eris)
+    internal static Fixture Prepare(double security = 0, int hull = Sabre)
     {
         Fixture fixture = new();
         PassiveCatalogFixture.LoadInterdiction(fixture.CatalogPath);

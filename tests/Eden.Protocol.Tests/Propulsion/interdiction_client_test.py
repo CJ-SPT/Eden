@@ -14,7 +14,8 @@ if not archive.exists():
 assert hashlib.sha256(archive.read_bytes()).hexdigest() == '37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368'
 with zipfile.ZipFile(archive) as source:
     blob = zlib.decompress(source.read('eve/client/script/environment/spaceObject/MobileWarpDisruptor.pyj'))
-worker = 'BLOB = %r\n' % (blob,)
+    hic = zlib.decompress(source.read('eve/client/script/environment/effects/WarpDisruptFieldGenerating.pyj'))
+worker = 'BLOB = %r\nHIC = %r\n' % (blob, hic)
 worker += r'''
 import marshal
 
@@ -54,6 +55,32 @@ for radius in [10000.0, 20000.0]:
             assert ('radius', radius) in calls
             assert (('field', {'animated': False}) in calls) == (has_model and not free)
 print('8 pinned probe forcefield cases passed; no renderer or client started')
+class ShipEffect(object):
+    def __init__(self, *args):
+        pass
+
+hic_code = next(c for c in walk(marshal.loads(HIC[8:])) if c.co_name == '__init__')
+initialize = (lambda: None).__class__(hic_code, globals())
+for radius in [None, 16000.0, 20000.0, 26000.0]:
+    trigger = Stub()
+    trigger.moduleTypeID = 28654
+    trigger.graphicInfo = None
+    if radius is not None:
+        trigger.graphicInfo = Stub()
+        trigger.graphicInfo.range = radius
+    definition = Stub()
+    definition.warpScrambleRange = 16000.0
+    manager = Stub()
+    manager.GetType = lambda type_id: definition
+    service = Stub()
+    service.GetStateManager = lambda: manager
+    sm = Stub()
+    sm.GetService = lambda name: service
+    state = Stub()
+    initialize(state, trigger)
+    assert state.realRadius == (radius if radius is not None else 16000.0)
+    assert state.radius == 20000.0
+print('4 pinned HIC range override/fallback cases passed; no renderer or client started')
 '''
 with os.add_dll_directory(str(root / 'tq/bin64')):
     runtime = ctypes.CDLL(str(root / 'tq/bin64/python27.dll'))

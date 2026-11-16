@@ -106,6 +106,10 @@ internal sealed partial class PilotAmmunitionStore
                     Eden.World.Propulsion.InterdictionCatalog.Module(catalog, module.TypeId)
                     && InventoryDefinitions.IsHighSlot(module.FlagId)
                 )
+                && !(
+                    Eden.World.Propulsion.InterdictionCatalog.Generator(catalog, module.TypeId)
+                    && InventoryDefinitions.IsHighSlot(module.FlagId)
+                )
                 && !(ProbeCatalog.Launcher(catalog, module.TypeId, group) && InventoryDefinitions.IsHighSlot(module.FlagId))
                 && !(PlayerEwarCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsMediumSlot(module.FlagId))
                 && !(SupportModuleCatalog.Supported(catalog, module.TypeId, group) && InventoryDefinitions.IsMediumSlot(module.FlagId))

@@ -181,7 +181,8 @@ internal sealed partial record FittingCalculation
             var parent = modules.Single(m => m.Item.Id == charge.Item.LocationId);
             if (
                 !(
-                    SupportModuleCatalog.Supported(catalog, parent.Item.TypeId, parent.GroupId)
+                    InterdictionCatalog.Generator(catalog, parent.Item.TypeId)
+                    || SupportModuleCatalog.Supported(catalog, parent.Item.TypeId, parent.GroupId)
                     || PlayerEwarCatalog.Supported(catalog, parent.Item.TypeId, parent.GroupId)
                     || RemoteAssistanceCatalog.Supported(catalog, parent.Item.TypeId, parent.GroupId)
                 )
@@ -358,6 +359,31 @@ internal sealed partial record FittingCalculation
                         Add(module.Item.Id, modifier, false);
                     }
                 }
+            }
+            if (
+                module.Item.Online
+                && activeModules.ContainsKey(module.Item.Id)
+                && InterdictionCatalog.Generator(catalog, module.Item.TypeId)
+            )
+            {
+                modifiers.Add(
+                    new(
+                        ship.Id,
+                        DogmaAttributeId.DisallowAssistance,
+                        DogmaOperation.Add,
+                        new DogmaValue.Attribute(module.Item.Id, DogmaAttributeId.DisallowAssistance),
+                        true
+                    )
+                );
+                modifiers.Add(
+                    new(
+                        ship.Id,
+                        DogmaAttributeId.SignatureRadius,
+                        DogmaOperation.PostPercent,
+                        new DogmaValue.Attribute(module.Item.Id, DogmaAttributeId.FieldSignatureRadiusBonus),
+                        true
+                    )
+                );
             }
             if (InventoryDefinitions.IsRigSlot(module.Item.FlagId))
             {

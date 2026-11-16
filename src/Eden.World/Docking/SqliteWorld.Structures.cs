@@ -33,6 +33,17 @@ public sealed partial class SqliteWorld
         {
             throw new InvalidDataException("Docking access, structure state or ship size prevents docking here.");
         }
+        if (
+            world
+                .Filter<Eden.Data.World.Propulsion.WorldTackle>(row =>
+                    row.TargetId == shipId && row.TargetKind == Eden.Gameplay.Propulsion.TackleTargetKind.Ship && row.ExpiresAt > now
+                )
+                .AsEnumerable()
+                .Any(row => Eden.Gameplay.Propulsion.InterdictionRules.Focused(row.Effect))
+        )
+        {
+            throw new InvalidDataException("Focused warp disruption prevents docking at a player structure.");
+        }
         CrimewatchPersistence.CheckTravel(world, catalog, pilot, CrimewatchTravel.Dock, now);
         if (
             new SpacePosition(position.X, position.Y, position.Z).DistanceTo(new(structure.X, structure.Y, structure.Z))

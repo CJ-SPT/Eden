@@ -5,14 +5,28 @@ using Eden.Gameplay.Propulsion;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Docking;
+using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Targeting;
 
 namespace Eden.Protocol.Propulsion;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class InterdictionHandler(IPilotInterdiction interdiction, TimeProvider clock) : IModuleEffectSource
+internal sealed class InterdictionHandler(
+    IPilotInterdiction interdiction,
+    TimeProvider clock,
+    TargetingHandler targeting,
+    IPilotFitting fitting
+) : IModuleEffectSource
 {
-    private sealed record Cycle(DogmaActiveEffect Effect, InterdictionActivation Activation);
+    private sealed record Cycle(
+        DogmaActiveEffect Effect,
+        InterdictionActivation Activation,
+        WeaponContact? Contact = null,
+        TackleTarget? Target = null,
+        long Repeats = 0,
+        bool Stopping = false
+    );
 
     private readonly Dictionary<long, Cycle> _cycles = [];
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
@@ -25,7 +39,7 @@ internal sealed class InterdictionHandler(IPilotInterdiction interdiction, TimeP
             cycle.ModuleId,
             pilot.PilotId,
             pilot.ShipId,
-            null,
+            cycle.TargetId,
             cycle.Effect,
             cycle.ExpiresAt - (long)(cycle.Duration * TimeSpan.TicksPerMillisecond),
             cycle.Duration,
@@ -36,6 +50,12 @@ internal sealed class InterdictionHandler(IPilotInterdiction interdiction, TimeP
     {
         if (_cycles.Remove(module, out var cycle))
         {
+            if (cycle.Contact is not null)
+            {
+                interdiction.Stop(cycle.Effect.PilotId, cycle.Effect.ShipId, module, Now);
+                context.Flight.SetWeaponEffect(cycle.Contact, false);
+                NotifyAttributes(context);
+            }
             context.Notifications.Add(new ShipEffectChanged(cycle.Effect, Now, false, false, Now));
         }
     }
@@ -48,12 +68,170 @@ internal sealed class InterdictionHandler(IPilotInterdiction interdiction, TimeP
         }
         foreach (var (module, cycle) in _cycles.ToArray())
         {
-            if (Now >= cycle.Activation.ExpiresAt || cycle.Effect.ShipId != context.Pilot.ShipId || !context.Flight.CanUseSelfModules)
+            if (
+                cycle.Effect.ShipId != context.Pilot.ShipId
+                || !context.Flight.CanUseSelfModules
+                || cycle.Contact is not null
+                    && (
+                        !context.Flight.CanTarget
+                        || cycle.Target is not null
+                            && (!targeting.IsLocked(cycle.Target.Id) || context.Flight.FindTarget(cycle.Target.Id) is null)
+                    )
+            )
+            {
+                CancelModule(context, module);
+                continue;
+            }
+            if (Now >= cycle.Activation.ExpiresAt)
+            {
+                if (cycle.Contact is not null && !cycle.Stopping && cycle.Repeats > 0)
+                {
+                    try
+                    {
+                        StartGenerator(context, module, cycle.Effect.Effect, cycle.Target, cycle.Repeats - 1, cycle);
+                        continue;
+                    }
+                    catch (Exception error) when (error is InvalidDataException or OverflowException) { }
+                }
+                CancelModule(context, module);
+            }
+            else if (cycle.Contact is not null && !interdiction.Active(cycle.Effect.ShipId, module, Now))
             {
                 CancelModule(context, module);
             }
         }
         context.Flight.RefreshInterdiction();
+    }
+
+    internal static DogmaEffect? Effect(string name) =>
+        name switch
+        {
+            "warpDisruptSphere" => DogmaEffect.WarpDisruptSphere,
+            "shipModuleFocusedWarpDisruptionScript" => DogmaEffect.FocusedWarpDisruption,
+            "shipModuleFocusedWarpScramblingScript" => DogmaEffect.FocusedWarpScrambling,
+            _ => null,
+        };
+
+    internal void Cancel(PilotCallContext context)
+    {
+        foreach (long module in _cycles.Keys.ToArray())
+        {
+            CancelModule(context, module);
+        }
+    }
+
+    internal PilotCallResult Call(PilotCallContext context, string method, DogmaEffect effect, object?[] args)
+    {
+        if (method == "Deactivate" && args is [long stopping, _])
+        {
+            if (_cycles.TryGetValue(stopping, out var cycle))
+            {
+                _cycles[stopping] = cycle with { Stopping = true };
+            }
+            return PilotCallResult.None;
+        }
+        if (method != "Activate" || args is not [long module, _, var id, long repeats])
+        {
+            return PilotCallResult.Unsupported;
+        }
+        if (
+            !context.Flight.CanTarget
+            || repeats is < 0 or > int.MaxValue
+            || (InterdictionRules.Focused(effect) ? id is not long : id is not null)
+        )
+        {
+            return new PilotCallResult.Failure("Use an unscripted field without a target or a focused script with a locked target.");
+        }
+        if (_cycles.ContainsKey(module))
+        {
+            return PilotCallResult.None;
+        }
+        try
+        {
+            context.Flight.Checkpoint();
+            TackleTarget? target = id is long targetId
+                ? new(targetId, context.Flight.VisibleNpcs.Any(npc => npc.Id == targetId) ? TackleTargetKind.Npc : TackleTargetKind.Ship)
+                : null;
+            StartGenerator(context, module, effect, target, repeats);
+            return PilotCallResult.None;
+        }
+        catch (Exception error) when (error is InvalidDataException or OverflowException)
+        {
+            return new PilotCallResult.Failure(error.Message);
+        }
+    }
+
+    private void StartGenerator(
+        PilotCallContext context,
+        long module,
+        DogmaEffect effect,
+        TackleTarget? target,
+        long repeats,
+        Cycle? previous = null
+    )
+    {
+        var activation = interdiction.ActivateGenerator(
+            context.Pilot.PilotId,
+            context.Pilot.ShipId,
+            module,
+            effect,
+            target,
+            target is not null && targeting.IsLocked(target.Id) ? new HashSet<long> { target.Id } : [],
+            Now
+        );
+        var active = Effect(context.Pilot, activation) with { Repeats = repeats };
+        string graphic = effect == DogmaEffect.WarpDisruptSphere ? "effects.WarpDisruptFieldGenerating" : TackleWire.Graphic(effect);
+        WeaponContact contact = new(
+            module,
+            activation.TypeId,
+            0,
+            target?.Id,
+            active.StartTime,
+            activation.Duration,
+            graphic,
+            FieldRange: effect == DogmaEffect.WarpDisruptSphere ? activation.Range : null
+        );
+        _cycles[module] = new(active, activation, contact, target, repeats);
+        if (previous?.Contact is { } old)
+        {
+            context.Flight.RepeatWeaponEffect(old, contact);
+        }
+        else
+        {
+            context.Notifications.Add(new ShipEffectChanged(active, Now, true, true));
+            context.Flight.SetWeaponEffect(contact, true);
+        }
+        context.Notifications.Add(
+            new ModuleAttributesChanged([
+                new(
+                    context.Pilot.PilotId,
+                    new DogmaItemKey.Item(context.Pilot.ShipId),
+                    DogmaAttributeId.CapacitorCharge,
+                    Now,
+                    activation.Capacitor
+                ),
+            ])
+        );
+        NotifyAttributes(context);
+        context.Flight.RefreshInterdiction();
+    }
+
+    private void NotifyAttributes(PilotCallContext context)
+    {
+        var attributes = fitting.ShipAttributes(context.Pilot.PilotId);
+        context.Notifications.Add(
+            new ModuleAttributesChanged(
+                new[] { DogmaAttributeId.SignatureRadius, DogmaAttributeId.DisallowAssistance }
+                    .Select(attribute => new ModuleAttributeChange(
+                        context.Pilot.PilotId,
+                        new DogmaItemKey.Item(context.Pilot.ShipId),
+                        attribute,
+                        Now,
+                        attributes.GetValueOrDefault(attribute)
+                    ))
+                    .ToArray()
+            )
+        );
     }
 
     internal PilotCallResult? CallLauncher(PilotCallContext context, string method, object?[] args)

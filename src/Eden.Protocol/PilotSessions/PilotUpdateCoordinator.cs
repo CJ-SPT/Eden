@@ -210,6 +210,7 @@ internal sealed class PilotUpdateCoordinator(
         combat.Cancel(context);
         smartbombs?.Cancel(context);
         commandBursts?.Cancel(context);
+        interdiction?.Cancel(context);
         missiles.Cancel(context);
         shields.Cancel(context);
         repairs.Cancel(context);

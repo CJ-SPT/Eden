@@ -10,8 +10,8 @@ internal static class TackleWire
         effect switch
         {
             DogmaEffect.StasisWebifier => "webify",
-            DogmaEffect.WarpDisruptor => "warpScrambler",
-            DogmaEffect.WarpScrambler => "warpScramblerMWD",
+            DogmaEffect.WarpDisruptor or DogmaEffect.FocusedWarpDisruption => "warpScrambler",
+            DogmaEffect.WarpScrambler or DogmaEffect.FocusedWarpScrambling => "warpScramblerMWD",
             _ => throw new InvalidDataException("Unsupported incoming tackle effect."),
         };
 
@@ -29,8 +29,8 @@ internal static class TackleWire
         effect switch
         {
             DogmaEffect.StasisWebifier => "effects.ModifyTargetSpeed",
-            DogmaEffect.WarpDisruptor => "effects.WarpDisrupt",
-            DogmaEffect.WarpScrambler => "effects.WarpScramble",
+            DogmaEffect.WarpDisruptor or DogmaEffect.FocusedWarpDisruption => "effects.WarpDisrupt",
+            DogmaEffect.WarpScrambler or DogmaEffect.FocusedWarpScrambling => "effects.WarpScramble",
             DogmaEffect.WarpCoreStabilizer => "effects.Invulnerability",
             _ => throw new InvalidDataException("Unsupported tackle graphic."),
         };

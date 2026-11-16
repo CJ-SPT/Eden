@@ -35,7 +35,8 @@ internal sealed record WeaponContact(
     double Duration,
     string Graphic = "effects.Laser",
     IReadOnlyList<long>? ArcTargets = null,
-    DisintegratorSpool? Spool = null
+    DisintegratorSpool? Spool = null,
+    double? FieldRange = null
 );
 
 internal sealed record LocalRepairContact(
