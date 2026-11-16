@@ -149,6 +149,47 @@ verification and whitespace checks passed. No new regression tests were added, a
 
 **Optional maintainer checks:** Retry confirming the Athanor deployment after the updated server starts.
 
+### Anchored structure scene publication — November 16, 2026
+
+The user reported that confirming Anchor consumed the hull without showing a structure. Read-only remote verification
+on revision `ab8c3e6e` confirmed a saved Athanor in state **Anchoring (2)** with a running saved deadline. No inventory
+or world data was edited during diagnosis.
+
+The native space-object `Structure._OnSlimItemUpdated` reads **`timer`** and **`upkeepState`**. Eden's slim item supplied
+`stateTimer` but omitted those two fields, leaving the construction animation without its timing input. Slim items now
+include the native `(start, end, None)` timer and a typed full/low power state derived from online service modules.
+The existing `stateTimer` field remains available. Successful deployment calls also refresh the caller's structure
+contacts immediately after commit, publishing `AddBalls` in the call's update flush. Other observers retain the normal
+session contact refresh. Existing deployments use the corrected data on subsequent snapshots without resetting timers.
+
+Shared contact views now depend on service state changes and fuel deadlines as well as structure state. Warm unchanged
+reads remain shared, and newly online/offline service changes update the native power-state field coherently.
+
+Inert inspection used the original signed build-3662168 archive, SHA-256
+**37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368**:
+`eve/client/script/environment/spaceObject/structure.pyj` and `structures/const.pyj`.
+The local EVE.js **261108.1** `structureLifecycleFanout.js` reference records matching state/power fanout dependencies
+(SHA-256 **773279022600E6C3A9158154A05D8E04072A1CC59F8E2239E84B0B9CD77D5B48**).
+Carbon Destiny `Thunkers.cpp` from the local **27ee40b** mirror was consulted; rigid-ball transport is unchanged.
+[EVE University anchoring lifecycle](https://wiki.eveuniversity.org/Anchoring_structures).
+
+**Automated validation:** The existing exact-method filter
+`FullyQualifiedName~StructureTests.NativeDeploymentValidatesProfileAndPersistsRequestedMetadata` passed in 8.67 seconds.
+Its resident native-call flow now verifies immediate `AddBalls` publication and the serialized timer/power fields.
+Existing fuel checks also assert full-to-low power contacts. The final filter joined `StructureTests`, `StructureRulesTests`,
+`StructureFuelRulesTests`, `StructureDeploymentDefaultsTests`, `MoonExtractionTests`, `FlightSessionTests`,
+`StaticSceneFrameTests`, `BallparkTests` and `PilotServicesTests` using `FullyQualifiedName~` and `|`.
+All **165 existing cases passed in 41.13 seconds**, including warm contact SQL/connection counts, structure checkpoints,
+native calls and scene snapshots. Tool and solution restore, solution build (zero warnings/errors, 5.50 seconds), both
+Python policy suites (8 catalog and 9 formatting cases), formatting and whitespace checks passed. No test cases or classes
+were added, and the full .NET suite was not run.
+
+**Live acceptance:** Not performed; agent client testing is disabled. The user's report and saved-state verification
+establish the failure context, not acceptance of the corrected rendering.
+
+**Optional maintainer checks:** After updating the server, reconnect and check the existing Athanor's construction model
+and timer; confirm a future deployment appears immediately after Anchor.
+
 ## Structure compression and gas decompression — November 11, 2026
 
 Milestone 7 implements all three pinned `structureCompressionMgr` calls: `CompressItemInStructure(itemID)`,

@@ -392,6 +392,8 @@ warp and the deployment reinforcement-default tuple, including the native no-wee
 accepts the empty KeyVal sent when confirming a refinery deployment.
 [Minimum corporation age for anchoring](protocol/world-configuration.md#minimum-corporation-age-for-anchoring-november-16-2026)
 adds a saved-world setting with zero disabling the wait and seven days retained as the default.
+[Anchored structure scene publication](protocol/structures.md#anchored-structure-scene-publication--november-16-2026)
+adds the native construction timer/power fields and publishes a committed deployment immediately to its caller.
 
 - [T2 subcapital hull admission, November 9, 2026](protocol/fitting.md#t2-subcapital-hull-admission-november-9-2026)
 

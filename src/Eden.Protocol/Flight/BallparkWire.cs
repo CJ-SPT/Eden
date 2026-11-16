@@ -95,6 +95,9 @@ internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
             fields["corpID"] = Body.OwnerId;
             fields["structureState"] = (int)structure.State;
             fields["state"] = (int)structure.State;
+            // The native construction animation reads timer and upkeepState from the slim item.
+            fields["timer"] = structure.StateEndsAt is long timerEnd ? new object?[] { structure.StateStartedAt, timerEnd, null } : null;
+            fields["upkeepState"] = (int)structure.UpkeepState;
             fields["stateTimer"] = structure.StateEndsAt is long end ? new object?[] { structure.StateStartedAt, end, null } : null;
             fields["unanchoring"] = structure.UnanchorAt;
             fields["hasCore"] = structure.HasCore;

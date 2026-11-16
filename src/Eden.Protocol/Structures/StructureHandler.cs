@@ -11,7 +11,8 @@ namespace Eden.Protocol.Structures;
 internal sealed class StructureHandler(
     IPilotStructures structures,
     Eden.Gameplay.Corporations.IPlayerCorporations corporations,
-    TimeProvider clock
+    TimeProvider clock,
+    IStructureContacts contacts
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -115,6 +116,10 @@ internal sealed class StructureHandler(
                     _ => throw new InvalidDataException("Invalid structure deployment request."),
                 };
                 Notify(context, result);
+                if (context.Pilot.Position is not null)
+                {
+                    context.Flight.RefreshStructures(contacts.Contacts(context.Pilot.SystemId));
+                }
                 return PilotCallResult.None;
             }
             if (service == "structureSettings")

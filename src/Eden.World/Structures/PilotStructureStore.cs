@@ -660,12 +660,16 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
 
     private Eden.World.Runtime.StructureContactView LoadContacts(int systemId) =>
         Execute(
-            (world, catalog, _) =>
+            (world, catalog, now) =>
             {
                 var structures = world
                     .Filter<SavedStructure>(s => s.SystemId == systemId && s.State != StructureState.Destroyed)
                     .OrderBy(s => s.Id)
                     .ToArray();
+                var modules = structures.ToDictionary(
+                    s => s.Id,
+                    s => world.Filter<SavedStructureService>(module => module.StructureId == s.Id).ToArray()
+                );
                 var contacts = structures
                     .Select(s => new StaticSpaceObject(
                         s.Id,
@@ -678,12 +682,20 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
                     )
                     {
                         Name = s.Name,
-                        Structure = new(s.State, s.StateStartedAt, s.StateEndsAt, s.UnanchorAt, s.HasCore),
+                        Structure = new(
+                            s.State,
+                            s.StateStartedAt,
+                            s.StateEndsAt,
+                            s.UnanchorAt,
+                            s.HasCore,
+                            modules[s.Id].Any(module => module.Online) ? StructureUpkeepState.FullPower : StructureUpkeepState.LowPower
+                        ),
                     })
                     .ToArray();
                 long deadline = structures
                     .SelectMany(s => new[] { s.StateEndsAt, s.UnanchorAt })
-                    .Where(d => d.HasValue && d.Value > Now)
+                    .Concat(modules.Values.SelectMany(values => values).Where(module => module.Online).Select(module => module.NextFuelAt))
+                    .Where(d => d.HasValue && d.Value > now)
                     .Select(d => d!.Value)
                     .DefaultIfEmpty(long.MaxValue)
                     .Min();
@@ -694,7 +706,7 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
                 return new Eden.World.Runtime.StructureContactView(
                     Array.AsReadOnly(contacts),
                     deadline,
-                    structures.Any(s => s.UnanchorAt <= Now)
+                    structures.Any(s => s.UnanchorAt <= now)
                 );
             },
             systemId

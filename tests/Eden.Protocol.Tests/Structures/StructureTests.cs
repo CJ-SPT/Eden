@@ -248,6 +248,8 @@ public sealed class StructureTests
         f.Structures.DepositFuel(f.PilotId, structure.Id, f.Item(4051, 5000), 5000);
         var online = f.Structures.SetServiceOnline(f.PilotId, structure.Id, module, true).Structure;
         Assert.Contains(StructureService.BasicManufacturing, online.Services);
+        var contacts = f.Db.Services.GetRequiredService<IStructureContacts>();
+        Assert.Equal(StructureUpkeepState.FullPower, Assert.Single(contacts.Contacts(Fixture.SystemId)).Structure!.UpkeepState);
         long next = Assert.Single(online.Modules).NextFuelAt!.Value;
         Assert.Equal(f.Clock.Now + TimeSpan.TicksPerHour, next);
         int afterOnline = f.Structures.Inventory(f.PilotId, structure.Id).Single(i => i.FlagId == StructureRules.FuelBayFlag).Quantity;
@@ -267,6 +269,7 @@ public sealed class StructureTests
         Assert.False(Assert.Single(exhausted.Modules).Online);
         Assert.DoesNotContain(StructureService.BasicManufacturing, exhausted.Services);
         Assert.Null(Assert.Single(exhausted.Modules).NextFuelAt);
+        Assert.Equal(StructureUpkeepState.LowPower, Assert.Single(contacts.Contacts(Fixture.SystemId)).Structure!.UpkeepState);
     }
 
     [Fact]
@@ -495,12 +498,14 @@ public sealed class StructureTests
     [Fact]
     public void NativeDeploymentValidatesProfileAndPersistsRequestedMetadata()
     {
-        using Fixture f = new();
+        using Fixture f = new(liveWorld: true);
         var pilot = f.Db.Store.FindPilot(1000001)!;
         using var scope = f.Db.Services.CreateScope();
         var factory = scope.ServiceProvider.GetRequiredService<FlightSessionFactory>();
         using PilotCallContext context = new(1000001, pilot.Account, [pilot], factory.Create, 44, SignedSettings.Empty);
         context.Select(pilot);
+        context.Flight.Snapshot();
+        context.Flight.Updates.Clear();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
         long item = f.Item(35832);
         object?[] request = [item, 0d, 0d, 1.5d, (long)f.CorporationId + 1, "New home", "Description", 4L, 12L, null];
@@ -516,6 +521,12 @@ public sealed class StructureTests
         Assert.Equal(1.5, deployed.Yaw);
         Assert.Equal(4, deployed.ReinforceWeekday);
         Assert.Equal(12, deployed.ReinforceHour);
+        var addition = Assert.Single(context.Flight.Updates, update => update.Command is DestinyCommand.AddBalls);
+        var slim = Assert.Single(Assert.IsType<DestinyCommand.AddBalls>(addition.Command).Addition.Slims.OfType<StaticSlimItem>());
+        Assert.Equal(deployed.Id, slim.Body.Id);
+        var fields = BlueRead.Fields(Assert.IsType<BlueInstance>(BlueMarshal.Decode(BlueMarshal.Encode(slim))).State);
+        Assert.Equal(new object?[] { deployed.StateStartedAt, deployed.StateEndsAt, null }, Assert.IsType<object?[]>(fields["timer"]));
+        Assert.Equal((long)StructureUpkeepState.LowPower, fields["upkeepState"]);
     }
 
     [Theory]

@@ -19,6 +19,12 @@ public enum StructureState
     Destroyed = 119,
 }
 
+public enum StructureUpkeepState
+{
+    FullPower = 1,
+    LowPower = 2,
+}
+
 public enum StructureService
 {
     Docking = 1,
@@ -116,7 +122,14 @@ public sealed record StructureAccess(long MemberId, bool Allowed);
 
 public sealed record StructureLocation(long Id, string Name, int SystemId, SpacePosition Position);
 
-public sealed record StructureContact(StructureState State, long StateStartedAt, long? StateEndsAt, long? UnanchorAt, bool HasCore);
+public sealed record StructureContact(
+    StructureState State,
+    long StateStartedAt,
+    long? StateEndsAt,
+    long? UnanchorAt,
+    bool HasCore,
+    StructureUpkeepState UpkeepState = StructureUpkeepState.LowPower
+);
 
 public sealed record StructureSnapshot(
     long Id,
