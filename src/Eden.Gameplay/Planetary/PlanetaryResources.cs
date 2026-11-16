@@ -115,6 +115,9 @@ public static class PlanetaryResources
         return values;
     }
 
+    // The constant spherical-harmonic term is the surface mean; the linear terms integrate to zero.
+    public static double MeanDensity(int planetId, int typeId) => Coefficients(planetId, typeId, 1)[0] * ConstantHarmonic;
+
     public static double Density(int planetId, int typeId, double latitude, double longitude)
     {
         var values = Coefficients(planetId, typeId, 2);

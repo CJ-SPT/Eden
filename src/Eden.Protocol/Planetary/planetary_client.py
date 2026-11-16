@@ -1,4 +1,4 @@
-"""Build 3662168: align colony counts, fitting and factory batches with signed world policy."""
+"""Build 3662168: align colony counts, fitting, factory batches and extraction previews with world policy."""
 
 
 def install_planetary_tuning():
@@ -45,6 +45,25 @@ def install_planetary_tuning():
     from eve.common.lib import appConst
 
     maximum = int(eden_planetary_maximum)
+    original_program = getattr(ClientColony.CreateProgram, '_eden_original', ClientColony.CreateProgram)
+    original_program = getattr(original_program, 'im_func', original_program)
+
+    def create_program(self, harmonic, ecuPinID, resourceTypeID, points=None, headRadius=None):
+        result = original_program(self, harmonic, ecuPinID, resourceTypeID, points, headRadius)
+        pin = self.GetPin(ecuPinID)
+        heads = list(pin.heads if points is None else points)
+        if not heads or resourceTypeID is None:
+            return result
+        radius = pin.GetExtractorHeadRadius() if headRadius is None else headRadius
+        # SurveyWindow otherwise uses BaseColony's retail-only estimate. Reuse the
+        # same authoritative quote as InstallProgram, including temporary ECU IDs,
+        # edited heads and the active extraction multiplier. Preserve native overlap hints.
+        quantity, cycle, count = self.planet.remoteHandler.GetProgramResultInfo(ecuPinID, resourceTypeID, heads, radius)
+        return quantity, cycle, count, result[3]
+
+    create_program._eden_original = original_program
+    tuned_policy = maximum != 0 or any(float(value) != 1.0 for value in eden_planetary_policy)
+    ClientColony.CreateProgram = create_program if tuned_policy else original_program
 
     class SkillView:
         def __init__(self, service):

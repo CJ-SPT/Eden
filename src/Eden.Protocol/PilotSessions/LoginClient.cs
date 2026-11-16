@@ -13,7 +13,8 @@ internal static class LoginClient
     {
         string Number(decimal value) => value.ToString(CultureInfo.InvariantCulture);
         return $"eden_planetary_policy = ('{Number(policy.CpuMultiplier)}', "
-            + $"'{Number(policy.PowergridMultiplier)}', '{Number(policy.FactoryOutputMultiplier)}')\n"
+            + $"'{Number(policy.PowergridMultiplier)}', '{Number(policy.FactoryOutputMultiplier)}', "
+            + $"'{Number(policy.ExtractionYieldMultiplier)}')\n"
             + $"eden_planetary_maximum = {policy.MaximumPlanets.ToString(CultureInfo.InvariantCulture)}\n";
     }
 

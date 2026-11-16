@@ -24,6 +24,8 @@ public sealed class PlanetaryClientTests
                 new(FactoryOutputMultiplier: .1m, MaximumPlanets: 1),
                 new(),
                 new(MaximumPlanets: 12),
+                new(CpuMultiplier: 100, PowergridMultiplier: 100, FactoryOutputMultiplier: 100, MaximumPlanets: 100),
+                new(ExtractionYieldMultiplier: 100),
             ];
             foreach (var policy in policies)
             {

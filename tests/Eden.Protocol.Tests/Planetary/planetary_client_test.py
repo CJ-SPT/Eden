@@ -58,6 +58,21 @@ builtins.sm = sm
 
 
 class ClientColony:
+    def __init__(self):
+        self.pin = SimpleNamespace(heads=[(0, 1.0, 1.0)], GetExtractorHeadRadius=lambda: .01)
+        self.quote_calls = []
+        self.planet = SimpleNamespace(remoteHandler=SimpleNamespace(GetProgramResultInfo=self.quote))
+
+    def quote(self, *args):
+        self.quote_calls.append(args)
+        return 600000, 9000000000, 12
+
+    def GetPin(self, pin_id):
+        return self.pin
+
+    def CreateProgram(self, harmonic, ecuPinID, resourceTypeID, points=None, headRadius=None):
+        return 37, 9000000000, 12, {0: .75}
+
     def PostValidateCreatePin(self, typeID, ownerID=None):
         service = sm.GetService('skills')
         if typeID == 1:
@@ -106,6 +121,8 @@ for expression, cpu_scale, power_scale, products, maximum in [
         (expressions[1], 1, 1, {1: 2, 2: 1, 3: 1, 4: 1}, 1),
         (expressions[2], 1, 1, {1: 20, 2: 5, 3: 3, 4: 1}, 0),
         (expressions[3], 1, 1, {1: 20, 2: 5, 3: 3, 4: 1}, 12),
+        (expressions[4], 100, 100, {1: 2000, 2: 500, 3: 300, 4: 100}, 100),
+        (expressions[5], 1, 1, {1: 20, 2: 5, 3: 3, 4: 1}, 0),
         (expressions[2], 1, 1, {1: 20, 2: 5, 3: 3, 4: 1}, 0)]:
     for _ in range(2):
         assert eval(expression, {'sm': sm}) == {}
@@ -124,6 +141,18 @@ for expression, cpu_scale, power_scale, products, maximum in [
         wallet.wealth = 100
         assert skills.GetEffectiveLevel(2495) == 2
         assert original_validate.__globals__['sm'] is sm
+        expected = (37, 9000000000, 12, {0: .75}) if expression == expressions[2] else (600000, 9000000000, 12, {0: .75})
+        assert colony.CreateProgram('harmonic', (1, 0), 2267) == expected
+        if expression == expressions[2]:
+            assert colony.quote_calls == []
+        else:
+            assert colony.quote_calls == [((1, 0), 2267, [(0, 1.0, 1.0)], .01)]
+            moved = [(0, 1.1, 1.2)]
+            assert colony.CreateProgram('harmonic', 42, 2267, moved, .02) == expected
+            assert colony.quote_calls[-1] == (42, 2267, moved, .02)
+            previous_calls = len(colony.quote_calls)
+            assert colony.CreateProgram('harmonic', 42, 2267, [], .02) == (37, 9000000000, 12, {0: .75})
+            assert len(colony.quote_calls) == previous_calls
         if maximum == 0:
             assert ClientColony.PostValidateCreatePin is original_validate
         for level in range(6):

@@ -2,6 +2,95 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Resource scan intensity and extraction previews — November 16, 2026
+
+User screenshots showed effectively empty resource bars, a missing selected-resource heat map, and an extraction
+preview totaling **37 units** with **100×** extraction settings. A further screenshot showed ordinary level-V
+capacity of **25,415 CPU / 19,000 MW** with 100× fitting settings. These are reports of the preceding behavior,
+not live acceptance of this correction.
+
+`GetPlanetResourceInfo` previously returned the integer **1** for every available resource. The pinned
+`ResourceController.CreateLayout` divides quality by `appConst.MAX_DISPLAY_QUALITY`, which is
+`1.21 * 255 * 0.5 = 154.275`; every bar consequently represented about **0.65%** abundance. Replies now derive
+quality from the existing deterministic field's surface mean, in the native half-byte-intensity scale. Its
+constant spherical-harmonic term supplies this mean; the directional terms integrate to zero.
+
+`GetResourceData` now converts normalized authoritative coefficients to **255×** float32 intensities at the wire
+boundary. Native `GetResourceAndRender` first scales the harmonic by `1 / 1.21`, then `ChartResourceLayer` derives
+texture alpha from the maximum sample divided by **255**. Sending normalized coefficients into that path made
+the heat map nearly transparent. Resource geography and authoritative extraction rules retain their existing
+meanings. This correction adds no saved-world data or SQL path.
+
+The signed adapter now makes `ClientColony.CreateProgram` reuse the existing `GetProgramResultInfo` quote for
+tuned worlds, matching the authoritative path already used by native installation. Edited heads, resource type,
+head radius and temporary ECU IDs reach that quote unchanged. Quantity, cycle time and cycle count come from
+the server; native overlap hints remain. Empty-head previews retain native behavior. Extraction-only tuning now
+also activates the adapter, and reconnecting to ordinary policy restores the original method. Untuned first
+logins remain lazy. Each preview calculation with heads adds one quote RPC; interactive latency is unverified.
+Existing programs retain their saved yield; installing a new program uses the active extraction multiplier.
+
+The [adapter import correction](#planetary-adapter-import-correction--november-16-2026) at `476621e7` separately
+fixes initialization of native CPU/power and factory output. With the supplied **100×** policy, expected level-V
+capacity is **2,541,500 CPU / 1,900,000 MW**; ordinary P1/P2/P3/P4 factory batches produce **2,000 / 500 / 300 / 100**
+units. Factory ingredients/cycles, storage capacity and existing route quantities retain their ordinary meanings.
+
+### Reference evidence
+
+Consulted [UniWiki Planetary Industry](https://wiki.eveuniversity.org/Planetary_Industry) on November 16, 2026 for
+abundance bars, scan selection and contrast controls. Eden's resource geography remains simulation policy.
+The local EveJs `planetMgrService.js` and `planetRuntimeStore.js` were checked for resource qualities and float32
+buffer serialization; their SHA-256 identities remain those in the historical reference table below. No reference
+implementation was copied.
+
+Inert inspection used the unchanged build-3662168 archive at SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`:
+
+| Module | Decompressed SHA-256 |
+| --- | --- |
+| `eve/common/lib/appConst.pyj` | `91fcb869cb6c9ef98ff32d807b947ccb6348b154f1a127239f273806cd3ae60e` |
+| `eve/client/script/ui/shared/planet/resourceController.pyj` | `726b3ca0e60f6719c150ae09e0fa6eab97dfa0d48000bbaaf7894bdff5254702` |
+| `eve/client/script/ui/shared/planet/planetUISvc.pyj` | `d3c2e8a2a6029391727dcfa5ebfecf93e4cf177620e7c0846737fad925e81171` |
+| `eve/common/script/planet/entities/commandPin.pyj` | `c4fc616d4bbc4e45949aa429856b4603ddd2c1b36c879d7bc517de7ec0817ccb` |
+
+The actual native command-pin output functions and `ChartResourceLayer` were also executed under the pinned
+Python 2.7 runtime with inert service/buffer stubs. No native module body, renderer, network connection or game
+session was started. These checks establish configured fitting values and the bitmap-intensity correction,
+not live rendering. Native `SurveyWindow.GetProgramParameters` and `BaseColony.CreateProgram` were inspected as
+bytecode to verify the preview boundary and preserved four-value return shape.
+
+### Automated validation
+
+The initial exact filter through `tools/Test-Feature.ps1 -Filter` was
+`FullyQualifiedName=Eden.Protocol.Tests.Planetary.PlanetaryProtocolTests.ResourceAbundanceUsesNativeQualityScaleAndMatchesTheSurveyedField`.
+It reproduced the **0.65%** abundance failure for all eight planet types. Additional exact-method checks cover
+the float32 intensity boundary, signed-adapter previews and equality between temporary quotes, saved ECU quotes
+and newly installed 100× programs.
+
+- Tool/solution restore and final solution build passed with zero warnings/errors (**1.68 seconds** combined).
+- Final affected tests below passed **79 checks**, none failed/skipped (**34.00 seconds** wall time).
+- Both Python policy suites passed: **8 catalog/setup + 9 formatting-policy checks**, **1.35 seconds** combined.
+- Inert pinned Python 2.7 command-pin/bitmap checks passed, including repeated tuning and default restoration.
+- Formatting verification passed (**30.87 seconds**), along with `git diff --check` and local documentation links.
+- The full .NET suite was not run.
+
+Final affected filter, joined with `|`:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Planetary
+FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.PilotLoginTests
+FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.ConcordOverviewTests.SignedLoginExpressionIncludesPortraitsAndConcordColorWithAnEmptyChallengeResult
+```
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+- Update/restart the server and reconnect; reopen planet mode and inspect abundance bars and the selected heat map.
+- Confirm the level-V 100× command-center capacities above and a newly selected factory's scaled output route.
+- Compare the preview and installed yield for a new extraction program; observe response time while moving a head.
+
 ## Planetary adapter import correction — November 16, 2026
 
 The next client report still showed six empty colony slots. Read-only verification found the running server at

@@ -6,6 +6,11 @@ namespace Eden.Protocol.Planetary;
 
 internal static class PlanetaryWire
 {
+    // Build 3662168 ChartResourceLayer divides sampled intensity by 255; appConst
+    // defines planetResourceMaxValue = 1.21 and MAX_DISPLAY_QUALITY = 1.21 * 255 * 0.5.
+    internal const float ResourceByteScale = byte.MaxValue;
+    internal const double ResourceQualityScale = ResourceByteScale * 0.5;
+
     internal static BlueInstance KeyVal(Dictionary<string, object?> fields) => new("utillib.KeyVal", fields);
 
     internal static BlueInstance Pin(PlanetaryPin pin, long owner, bool publicOnly = false)
@@ -160,7 +165,10 @@ internal sealed record PlanetaryResourceReply(PlanetaryResourceField Field) : Bl
         var bytes = new byte[Field.Coefficients.Count * sizeof(float)];
         for (int i = 0; i < Field.Coefficients.Count; i++)
         {
-            BinaryPrimitives.WriteSingleLittleEndian(bytes.AsSpan(i * sizeof(float)), Field.Coefficients[i]);
+            BinaryPrimitives.WriteSingleLittleEndian(
+                bytes.AsSpan(i * sizeof(float)),
+                Field.Coefficients[i] * PlanetaryWire.ResourceByteScale
+            );
         }
         return PlanetaryWire.KeyVal(
             new()
@@ -181,7 +189,13 @@ internal sealed record PlanetaryResourceInfoReply(PlanetaryPlanet Planet) : Blue
             new object?[]
             {
                 new Dictionary<string, object?> { ["versionCheck"] = "run" },
-                BlueMarshal.Encode(new BlueMap<int, int>(PlanetaryResources.Types(Planet.TypeId).ToDictionary(t => t, _ => 1))),
+                BlueMarshal.Encode(
+                    new BlueMap<int, double>(
+                        PlanetaryResources
+                            .Types(Planet.TypeId)
+                            .ToDictionary(t => t, t => PlanetaryResources.MeanDensity(Planet.Id, t) * PlanetaryWire.ResourceQualityScale)
+                    )
+                ),
                 new object?[] { 1L, 0L },
             }
         );

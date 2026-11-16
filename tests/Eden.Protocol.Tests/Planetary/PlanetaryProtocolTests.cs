@@ -1,4 +1,7 @@
 using System.Buffers.Binary;
+using System.Globalization;
+using Eden.Gameplay.Configuration;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Planetary;
 using Eden.Protocol.Docking;
@@ -6,6 +9,8 @@ using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Planetary;
 using Eden.Protocol.Serialization;
+using Eden.World.Configuration;
+using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Fixture = Eden.Protocol.Tests.Persistence.PassiveFittingTests.Fixture;
 
@@ -13,6 +18,133 @@ namespace Eden.Protocol.Tests.Planetary;
 
 public sealed class PlanetaryProtocolTests
 {
+    [Theory]
+    [InlineData(PlanetaryResources.Temperate)]
+    [InlineData(PlanetaryResources.Ice)]
+    [InlineData(PlanetaryResources.Gas)]
+    [InlineData(PlanetaryResources.Oceanic)]
+    [InlineData(PlanetaryResources.Lava)]
+    [InlineData(PlanetaryResources.Barren)]
+    [InlineData(PlanetaryResources.Storm)]
+    [InlineData(PlanetaryResources.Plasma)]
+    public void ResourceAbundanceUsesNativeQualityScaleAndMatchesTheSurveyedField(int planetType)
+    {
+        // Build 3662168 appConst.MAX_DISPLAY_QUALITY = 1.21 * 255 * 0.5.
+        const double NativeMaximumDisplayQuality = 154.275;
+        var planet = new PlanetaryPlanet(PlanetaryIndustryTests.PlanetId, 1, planetType, 1, 6000000, SpacePosition.Zero, true);
+        var encoded = BlueMarshal.Encode(new PlanetaryResourceInfoReply(planet));
+        var cached = Assert.IsType<BlueInstance>(BlueMarshal.Decode(encoded));
+        Assert.Equal("carbon.common.script.net.objectCaching.CachedMethodCallResult", cached.Name);
+        var state = BlueRead.Tuple(cached.State, 3);
+        var resources = Assert.IsType<Dictionary<long, object?>>(BlueMarshal.Decode(BlueRead.Bytes(state[1])));
+        Assert.Equal(PlanetaryResources.Types(planetType).Order(), resources.Keys.Select(id => checked((int)id)).Order());
+        foreach (int type in PlanetaryResources.Types(planetType))
+        {
+            double quality = Convert.ToDouble(resources[type], CultureInfo.InvariantCulture);
+            double fraction = quality / NativeMaximumDisplayQuality;
+            Assert.InRange(fraction, 0.3, 0.6);
+            Assert.IsType<double>(resources[type]);
+            double mean = (PlanetaryResources.Density(planet.Id, type, 0, 0) + PlanetaryResources.Density(planet.Id, type, Math.PI, 0)) / 2;
+            Assert.Equal(mean / 1.21, fraction, 6);
+        }
+        Assert.True(resources.Values.Select(value => Assert.IsType<double>(value)).Distinct().Count() > 1);
+        Assert.Equal(encoded, BlueMarshal.Encode(new PlanetaryResourceInfoReply(planet)));
+    }
+
+    [Theory]
+    [InlineData(PlanetaryResources.Temperate)]
+    [InlineData(PlanetaryResources.Ice)]
+    [InlineData(PlanetaryResources.Gas)]
+    [InlineData(PlanetaryResources.Oceanic)]
+    [InlineData(PlanetaryResources.Lava)]
+    [InlineData(PlanetaryResources.Barren)]
+    [InlineData(PlanetaryResources.Storm)]
+    [InlineData(PlanetaryResources.Plasma)]
+    public void ResourceMapBufferProducesVisibleNativeIntensityWithoutChangingAuthoritativeDensity(int planetType)
+    {
+        // The native renderer scales SH by 1 / 1.21, then derives alpha from max(sample) / 255.
+        const double NativeMaximumResourceValue = 1.21;
+        const double ConstantHarmonic = 0.28209479177387814;
+        foreach (int type in PlanetaryResources.Types(planetType))
+        {
+            var field = new PlanetaryResourceField(30, 4, PlanetaryResources.Coefficients(PlanetaryIndustryTests.PlanetId, type, 30));
+            float[] original = field.Coefficients.ToArray();
+            var reply = Assert.IsType<BlueInstance>(BlueMarshal.Decode(BlueMarshal.Encode(new PlanetaryResourceReply(field))));
+            var values = BlueRead.Fields(reply.State);
+            byte[] buffer = BlueRead.Bytes(values["data"]);
+            Assert.Equal(30L, values["numBands"]);
+            Assert.Equal(4L, values["proximity"]);
+            Assert.Equal(30 * 30 * sizeof(float), buffer.Length);
+            for (int i = 0; i < original.Length; i++)
+            {
+                Assert.Equal(original[i] * byte.MaxValue, BinaryPrimitives.ReadSingleLittleEndian(buffer.AsSpan(i * sizeof(float))));
+            }
+            double mean = BinaryPrimitives.ReadSingleLittleEndian(buffer) * ConstantHarmonic / byte.MaxValue;
+            double oppositePointMean =
+                (
+                    PlanetaryResources.Density(PlanetaryIndustryTests.PlanetId, type, 0, 0)
+                    + PlanetaryResources.Density(PlanetaryIndustryTests.PlanetId, type, Math.PI, 0)
+                ) / 2;
+            Assert.Equal(oppositePointMean, mean, 6);
+            Assert.InRange(mean / NativeMaximumResourceValue, 0.3, 0.6);
+            Assert.Equal(original, field.Coefficients);
+        }
+    }
+
+    [Fact]
+    public void SurveyPreviewQuotesMatch100xInstalledExtractionBeforeAndAfterSubmit()
+    {
+        using var f = PlanetaryIndustryTests.Prepare();
+        WorldDatabase database = new(f.Db.Path);
+        WorldConfigurationStore configuration = new(database, f.Clock);
+        var current = configuration.Read();
+        configuration.Save(
+            current.Generation,
+            current.Active.Draft with
+            {
+                Settings = current.Active.Draft.Settings with { PlanetaryIndustry = new(ExtractionYieldMultiplier: 100) },
+            },
+            "preview test"
+        );
+        WorldConfigurationStore.Activate(database);
+        using var context = Context(f);
+        var industry = PlanetaryIndustryTests.Industry(f);
+        var handler = new PlanetaryIndustryHandler(industry);
+        string service = $"@planet:{PlanetaryIndustryTests.PlanetId}";
+        var heads = new List<object?> { new object?[] { 0L, 1d, 1.002d } };
+        PlanetaryProgramQuote Quote(object pin)
+        {
+            var result = Assert.IsType<PilotCallResult.Success>(
+                handler.Call(
+                    context,
+                    service,
+                    "GetProgramResultInfo",
+                    [pin, (long)PlanetaryResources.AqueousLiquids, heads, PlanetaryRules.MinimumHeadRadius]
+                )
+            );
+            return Assert.IsType<PlanetaryQuoteReply>(result.Reply).Quote;
+        }
+        var before = Quote(new object?[] { 1L, 0L });
+        Assert.Null(industry.Read(f.PilotId, PlanetaryIndustryTests.PlanetId).Colony);
+        var colony = PlanetaryIndustryTests.Deploy(f);
+        var extractor = Assert.Single(colony.Pins, p => p.TypeId == PlanetaryIndustryTests.Extractor);
+        var after = Quote(extractor.Id);
+        Assert.Equal(before, after);
+        Assert.Equal(after.BaseQuantity, extractor.Program!.BaseQuantity);
+        Assert.Equal(after.CycleTicks, extractor.Program.CycleTicks);
+        Assert.Equal(after.CycleTicks * after.Cycles, extractor.Program.ExpiresAt - extractor.Program.InstalledAt);
+        var ordinary = PlanetaryRules.Quote(
+            industry.Read(f.PilotId, PlanetaryIndustryTests.PlanetId).Planet,
+            PlanetaryIndustryTests.Catalog(f),
+            extractor,
+            PlanetaryResources.AqueousLiquids,
+            extractor.Heads!,
+            PlanetaryRules.MinimumHeadRadius,
+            colony.Pins
+        );
+        Assert.Equal(ordinary.BaseQuantity * 100, after.BaseQuantity);
+    }
+
     [Fact]
     public void CustomsContactSuppliesTheRequiredNativeModelLevelAndOrbitalCategory()
     {
@@ -158,7 +290,7 @@ public sealed class PlanetaryProtocolTests
         var bytes = Assert.IsType<byte[]>(fields["data"]);
         Assert.Equal(30 * 30 * sizeof(float), bytes.Length);
         Assert.Equal(
-            PlanetaryResources.Coefficients(PlanetaryIndustryTests.PlanetId, PlanetaryResources.AqueousLiquids, 30)[0],
+            PlanetaryResources.Coefficients(PlanetaryIndustryTests.PlanetId, PlanetaryResources.AqueousLiquids, 30)[0] * byte.MaxValue,
             BinaryPrimitives.ReadSingleLittleEndian(bytes)
         );
         Assert.Equal(4, fields["proximity"]);

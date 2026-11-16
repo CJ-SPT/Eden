@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[PI scan intensity and extraction previews](protocol/planetary.md#resource-scan-intensity-and-extraction-previews--november-16-2026)
+correct resource abundance bars and heat maps, and quote tuned extraction previews through the authoritative server operation.
+
 [Warp capacitor payment](protocol/navigation.md#warp-capacitor-payment-november-16-2026)
 charges ordinary warps, applies Warp Drive Operation, and limits travel to available capacitor.
 
