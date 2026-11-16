@@ -23,6 +23,9 @@ dotnet run --no-build --project src/Eden.Server
 
 ## Current status
 
+[Player-bot failure isolation](docs/protocol/capsuleers.md#bot-failure-isolation---november-16-2026) backs off broken pilots
+while healthy bots continue, preserving authoritative jobs and committed economic progress.
+
 | Area | What you can do |
 | --- | --- |
 | Flight and fitting | Fly, dock, use gates and autopilot, save bookmarks, and fit supported ships and modules, including all published Tech II subcapital hulls. Specialist module support varies by hull. [Feature notes](docs/feature-notes.md#fitting-weapons-and-modules) |

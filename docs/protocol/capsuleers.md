@@ -2,6 +2,44 @@
 
 [Protocol index](../protocol.md)
 
+## Bot failure isolation - November 16, 2026
+
+Unexpected role failures now defer only the failing pilot. Retry eligibility uses the active simulation clock with
+1, 2, 4, 8, 16 and then 30 second delays. The queue still orders eligible work by deadline and pilot identity, retains
+one entry per pilot and honors its action/time limits. Healthy pilots can execute while another pilot is backing off.
+Population diagnostics retain the pilot, action, exception type and reason; maintenance keeps its existing error log.
+
+Retry eligibility is runtime scheduling metadata. It never replaces a saved action deadline, revision, paid cycle or
+economic transaction. Queue rebuilds preserve backoff for unchanged jobs; a successful action, newer revision or withdrawn
+pilot clears it. Restart resets backoff and retains the checkpointed authoritative job. A failure after settlement restores
+the committed job before deferring it, so observation failure cannot replay a payment, undock or inventory change.
+Role workers reload authoritative checkpoints on retry. Preparation capture and unexpected optional-planning failures also
+defer their owning pilot; a stale optional plan cannot penalize a newer committed job. Expected gameplay rejections retain
+their existing typed waiting behavior.
+
+This is Eden host scheduling policy. The [EVE University NPC mining reference](https://wiki.eveuniversity.org/NPC_Mining_Operations)
+was checked for gameplay context. Navigation and wire formats are unchanged; the existing
+[Carbon Destiny revision 114e89fa584f0e1a81eb0a679aabf41af8870072](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Ballpark.cpp)
+and build-3662168 evidence below still apply. The local reference engine's ambient materialization and Destiny tick driver
+were also inspected; no reference implementation was copied.
+
+**Automated validation:** The initial exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerFailureTests.PostCommitObservationFailureDoesNotReplayTheActionAndHealthyPilotStillRuns`
+passed 1/1 in 27.01 seconds including its build. The first combined failure, scheduling, runtime, deadline and preparation
+filter passed 45/45 in 32.32 seconds including its build. New regressions cover repeated capped backoff, healthy-job progress,
+canonical deadline retention, queue rebuilds, stale failures, successful recovery, overflow, withdrawal, failures before
+settlement, failures after settlement and reopened checkpoints. Final tool/solution restores, the solution build with zero
+warnings/errors, 92/92 affected .NET cases, both Python policy suites (8 and 9 cases), and formatting verification passed
+in 102.41 seconds. No full .NET suite was run. The final filter was:
+
+```text
+FullyQualifiedName~CapsuleerFailureTests|FullyQualifiedName~CapsuleerSchedulingTests|FullyQualifiedName~CapsuleerRuntimeTests|FullyQualifiedName~CapsuleerDeadlineTests|FullyQualifiedName~CapsuleerDeadlinePerformanceTests|FullyQualifiedName~TrafficPreparationTests|FullyQualifiedName~CapsuleerTrafficPerformanceTests|FullyQualifiedName~OccupiedCapsuleerSimulationTests|FullyQualifiedName~CapsuleerMaintenanceTests|FullyQualifiedName~CapsuleerHandoffTests|FullyQualifiedName~CapsuleerLockOrderTests|FullyQualifiedName~ResidentBotEconomyTests
+```
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None. This milestone changes server retry scheduling only.
+
 ## Occupied-system simulation - November 12, 2026
 
 Each solar system runs its capsuleer jobs while at least one connected player has selected a character there.

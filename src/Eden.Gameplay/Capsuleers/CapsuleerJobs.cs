@@ -35,15 +35,22 @@ public sealed class CapsuleerJobQueue
     public const int ActionsPerTurn = 64;
     public static readonly TimeSpan WakeInterval = TimeSpan.FromMilliseconds(50);
     public static readonly TimeSpan ExecutionBudget = TimeSpan.FromMilliseconds(10);
-    private readonly SortedSet<CapsuleerJob> _queue = new(
-        Comparer<CapsuleerJob>.Create(
-            (left, right) => (left.DueTicks, left.PilotId, left.Sequence).CompareTo((right.DueTicks, right.PilotId, right.Sequence))
+
+    private sealed record ScheduledJob(CapsuleerJob Job, CapsuleerRetry? Retry = null)
+    {
+        internal long DueTicks => Math.Max(Job.DueTicks, Retry?.DueTicks ?? 0);
+    }
+
+    private readonly SortedSet<ScheduledJob> _queue = new(
+        Comparer<ScheduledJob>.Create(
+            (left, right) =>
+                (left.DueTicks, left.Job.PilotId, left.Job.Sequence).CompareTo((right.DueTicks, right.Job.PilotId, right.Job.Sequence))
         )
     );
-    private readonly Dictionary<long, CapsuleerJob> _jobs = [];
+    private Dictionary<long, ScheduledJob> _jobs = [];
 
     public long? NextDueTicks => _queue.Min?.DueTicks;
-    public CapsuleerJob? NextJob => _queue.Min;
+    public CapsuleerJob? NextJob => _queue.Min?.Job;
 
     public void Restore(IEnumerable<CapsuleerJob> jobs)
     {
@@ -56,19 +63,23 @@ public sealed class CapsuleerJobQueue
         {
             Validate(job);
         }
-        _jobs.Clear();
+        // Rebuilding after a different pilot fails must retain existing retry eligibility.
+        var entries = restored.ToDictionary(
+            job => job.PilotId,
+            job => _jobs.TryGetValue(job.PilotId, out var current) && current.Job == job ? current : new ScheduledJob(job)
+        );
+        _jobs = entries;
         _queue.Clear();
-        foreach (var job in restored)
+        foreach (var entry in entries.Values)
         {
-            _jobs.Add(job.PilotId, job);
-            Enqueue(job);
+            Enqueue(entry);
         }
     }
 
     public bool Publish(CapsuleerJob job)
     {
         Validate(job);
-        if (_jobs.TryGetValue(job.PilotId, out var current) && job.Revision <= current.Revision)
+        if (_jobs.TryGetValue(job.PilotId, out var current) && job.Revision <= current.Job.Revision)
         {
             return false;
         }
@@ -76,8 +87,22 @@ public sealed class CapsuleerJobQueue
         {
             _queue.Remove(current);
         }
-        _jobs[job.PilotId] = job;
-        Enqueue(job);
+        var scheduled = new ScheduledJob(job);
+        _jobs[job.PilotId] = scheduled;
+        Enqueue(scheduled);
+        return true;
+    }
+
+    public bool Defer(CapsuleerJob job, long nowTicks)
+    {
+        if (!_jobs.TryGetValue(job.PilotId, out var current) || current.Job != job)
+        {
+            return false;
+        }
+        var deferred = current with { Retry = CapsuleerRetry.Next(current.Retry, nowTicks) };
+        _queue.Remove(current);
+        _jobs[job.PilotId] = deferred;
+        Enqueue(deferred);
         return true;
     }
 
@@ -114,13 +139,14 @@ public sealed class CapsuleerJobQueue
         var candidates =
             pilots is null || useCanonicalQueue
                 ? _queue
-                : new SortedSet<CapsuleerJob>(pilots.Where(_jobs.ContainsKey).Select(p => _jobs[p]), _queue.Comparer);
-        while (candidates.Min is { } job && job.DueTicks <= throughTicks && completed < maximumActions)
+                : new SortedSet<ScheduledJob>(pilots.Where(_jobs.ContainsKey).Select(p => _jobs[p]), _queue.Comparer);
+        while (candidates.Min is { } scheduled && scheduled.DueTicks <= throughTicks && completed < maximumActions)
         {
             if (completed > 0 && clock.GetElapsedTime(started) >= ExecutionBudget)
             {
                 break;
             }
+            var job = scheduled.Job;
             var next = execute(job);
             Validate(next);
             if (
@@ -132,22 +158,23 @@ public sealed class CapsuleerJobQueue
             {
                 throw new InvalidOperationException("A completed action must advance its own job and deadline once.");
             }
-            _queue.Remove(job);
-            candidates.Remove(job);
-            _jobs[job.PilotId] = next;
+            _queue.Remove(scheduled);
+            candidates.Remove(scheduled);
+            var replacement = new ScheduledJob(next);
+            _jobs[job.PilotId] = replacement;
             if (useCanonicalQueue && pilots is not null && !pilots.Contains(next.PilotId))
             {
                 _jobs.Remove(next.PilotId);
             }
             else
             {
-                Enqueue(next);
+                Enqueue(replacement);
             }
             // A witnessed transfer can withdraw its pilot from this turn when
             // the destination is empty. Its next canonical job stays dormant.
             if (pilots is null || pilots.Contains(next.PilotId))
             {
-                candidates.Add(next);
+                candidates.Add(replacement);
             }
             completed++;
         }
@@ -161,7 +188,7 @@ public sealed class CapsuleerJobQueue
             _queue.Min is { } first && first.DueTicks <= throughTicks ? first.DueTicks : null
         );
 
-    private void Enqueue(CapsuleerJob job) => _queue.Add(job);
+    private void Enqueue(ScheduledJob job) => _queue.Add(job);
 
     private static void Validate(CapsuleerJob job)
     {

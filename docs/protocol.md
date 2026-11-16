@@ -498,6 +498,9 @@ records loaded-crystal modifiers, target compatibility, persistent wear and nati
 [Utility and mining drones, November 15, 2026](protocol/drones.md#utility-and-mining-drones-november-15-2026) records
 resident utility effects, ore/ice harvesting, gathering configuration, cargo checkpoints and native drone commands.
 
+[Bot failure isolation](protocol/capsuleers.md#bot-failure-isolation---november-16-2026) covers bounded per-pilot retry
+eligibility, continued healthy-job execution and committed-action replay protection.
+
 | Topic | Coverage |
 | --- | --- |
 | [World configuration](protocol/world-configuration.md) | Saved-world gathering, reward and industry tuning; native modifiers, restart activation and administration. |

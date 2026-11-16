@@ -343,6 +343,7 @@ internal sealed partial class CapsuleerScheduler(
             long throughTicks = activity.ElapsedTicks;
             Dictionary<long, MinerObservation> mining = [];
             Dictionary<long, HaulerObservation> hauling = [];
+            CapsuleerJob? executing = null;
             try
             {
                 Load();
@@ -356,6 +357,7 @@ internal sealed partial class CapsuleerScheduler(
                     throughTicks,
                     job =>
                     {
+                        executing = job;
                         long pilot = job.PilotId;
                         int system = _locations[pilot];
                         if (!activity.ActiveSystems.Contains(system))
@@ -436,6 +438,7 @@ internal sealed partial class CapsuleerScheduler(
                     useCanonicalQueue: true,
                     maximumActions: maximumActions
                 );
+                executing = null;
                 Reconcile(activity);
                 if (turn.OldestDueTicks is null)
                 {
@@ -445,17 +448,42 @@ internal sealed partial class CapsuleerScheduler(
             }
             catch (Exception error)
             {
-                _failures++;
-                _lastFailure = error.Message;
-                // A committed action can precede a failed observation or another role.
-                // Rebuild from canonical revisions so retry cannot replay that action.
-                _queue.Restore(_running.Select(ScheduledJob));
+                RecordFailure(executing, activity.ElapsedTicks, error);
                 throw;
             }
             finally
             {
                 PublishDiagnostics(activity, started);
             }
+        }
+    }
+
+    private void RecordFailure(CapsuleerJob? job, long elapsed, Exception error)
+    {
+        _failures++;
+        _lastFailure = job is null ? error.Message : $"Pilot {job.PilotId}, {job.Action}: {error.GetType().Name}: {error.Message}";
+        // Observation can fail after settlement. Restore canonical revisions before
+        // delaying this pilot so committed inventory, payments and travel cannot replay.
+        _queue.Restore(_running.Select(ScheduledJob));
+        if (job is not null && _running.Contains(job.PilotId))
+        {
+            _queue.Defer(ScheduledJob(job.PilotId), elapsed);
+            Blocking(job.PilotId, _lastFailure);
+            if (_miners.ContainsKey(job.PilotId))
+            {
+                _miners[job.PilotId] = miners.Create(job.PilotId);
+            }
+            else if (_haulers.ContainsKey(job.PilotId))
+            {
+                _haulers[job.PilotId] = haulers.Create(job.PilotId);
+            }
+            Live?.AssignCapsuleer(
+                job.PilotId,
+                null,
+                _locations[job.PilotId],
+                _miners.GetValueOrDefault(job.PilotId),
+                _haulers.GetValueOrDefault(job.PilotId)
+            );
         }
     }
 

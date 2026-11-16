@@ -38,14 +38,22 @@ internal sealed partial class CapsuleerScheduler
         if (
             job is null
             || _resuming.ContainsKey(job.PilotId)
-            || job.DueTicks > activity.ElapsedTicks
+            || _queue.NextDueTicks > activity.ElapsedTicks
             || job.Action
                 is not (CapsuleerAction.Trade or CapsuleerAction.GateTransfer or CapsuleerAction.Arrival or CapsuleerAction.Prepare)
         )
         {
             return null;
         }
-        return WorldActionScope.Inspect(database, world => CapturePreparation(world, job, activity.ActiveSystems));
+        try
+        {
+            return WorldActionScope.Inspect(database, world => CapturePreparation(world, job, activity.ActiveSystems));
+        }
+        catch (Exception error)
+        {
+            RecordFailure(job, activity.ElapsedTicks, error);
+            throw;
+        }
     }
 
     private PreparationInput CapturePreparation(WorldAction world, CapsuleerJob job, IReadOnlyList<int> occupied)
@@ -179,6 +187,17 @@ internal sealed partial class CapsuleerScheduler
                 belts.Clear();
                 geometry.Clear();
                 journey = null;
+            }
+            catch (Exception error)
+            {
+                using var failureOwner = synchronization.Enter("traffic preparation failure");
+                // Another maintenance caller may have committed this job while its
+                // optional plan was being built. Never penalize the replacement job.
+                if (Current.GetValueOrDefault(input.Job.PilotId) == input.Job)
+                {
+                    RecordFailure(input.Job, presence.Read().ElapsedTicks, error);
+                }
+                throw;
             }
         }
         using var owner = synchronization.Enter("traffic maintenance");
