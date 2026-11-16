@@ -38,7 +38,8 @@ internal sealed partial class LiveReadModels
     private readonly ResidentSnapshot<int, PlayerCorporation?> _corporations = new(
         "resident.corporation",
         "WorldCorporation",
-        "WorldPilot"
+        "WorldPilot",
+        "WorldAllianceMember"
     );
 
     internal PlayerCorporation? Corporation(int corporationId, Func<PlayerCorporation?> load) => Read(_corporations, corporationId, load);
@@ -52,7 +53,8 @@ internal sealed partial class LiveReadModels
         "WorldCorporationEmployment",
         "WorldCorporationMemberAccess",
         "WorldCorporationTitle",
-        "WorldCorporationWalletSelection"
+        "WorldCorporationWalletSelection",
+        "WorldAllianceMember"
     );
 
     internal CorporationIdentity CorporationIdentity(long pilotId, Func<CorporationIdentity> load) =>

@@ -1,3 +1,4 @@
+using Eden.Data.World.Alliances;
 using Eden.Data.World.Corporations;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Corporations;
@@ -210,9 +211,13 @@ internal sealed class CorporationContactsStore(WorldDatabase database) : ICorpor
         var known = world.Pilots.Where(p => contacts.Contains(p.Id)).Select(p => p.Id).ToHashSet();
         known.UnionWith(world.Set<SavedCorporation>().Where(c => contacts.Contains((long)c.Id)).Select(c => (long)c.Id));
         known.UnionWith(database.Catalog.NpcCorporations.Keys.Where(id => contacts.Contains((long)id)).Select(id => (long)id));
+        if (world is EconomyTransaction)
+        {
+            known.UnionWith(world.Set<SavedAlliance>().Where(a => contacts.Contains((long)a.Id)).Select(a => (long)a.Id));
+        }
         if (contacts.Any(id => id == corporationId || !known.Contains(id)))
         {
-            throw new InvalidDataException("Choose other known pilots or corporations as contacts.");
+            throw new InvalidDataException("Choose other known pilots, corporations, or alliances as contacts.");
         }
     }
 

@@ -19,7 +19,7 @@ internal sealed record MailHeaderReply(MailHeader Header) : BlueModel
                 ["sentDate"] = Header.SentAt,
                 ["toCharacterIDs"] = string.Join(',', Header.Recipients.Select(id => id.ToString(CultureInfo.InvariantCulture))),
                 ["toListID"] = Header.ListId?.ToString(CultureInfo.InvariantCulture),
-                ["toCorpOrAllianceID"] = null,
+                ["toCorpOrAllianceID"] = Header.OrganizationId,
                 ["title"] = new BlueUnicode(Header.Subject),
             }
         );

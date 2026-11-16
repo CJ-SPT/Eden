@@ -64,6 +64,7 @@ internal sealed class PilotInboxStore(WorldDatabase database, InboxChangeSignal 
             InboxGroup.Contacts => rows.Where(n =>
                 n.Type == InboxNotificationType.ContactAdded || n.Type == InboxNotificationType.ContactEdited
             ),
+            InboxGroup.Bills => rows.Where(n => n.Type == InboxNotificationType.AllianceMaintenanceBill),
             // Other notification families have no server producers yet.
             _ => rows.Where(n => false),
         };

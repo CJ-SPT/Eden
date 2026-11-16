@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using Eden.Data.Catalog;
+using Eden.Data.World.Alliances;
 using Eden.Data.World.Corporations;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
@@ -40,6 +41,7 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
                     ? null
                     : snapshot with
                     {
+                        AllianceId = world is EconomyTransaction ? world.Set<SavedAllianceMember>().Find(corporationId)?.AllianceId : null,
                         Shares = world.Set<SavedCorporationShareIssue>().Find(corporationId)?.Shares ?? CorporationRules.InitialShares,
                     };
             }
@@ -88,7 +90,8 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
                     currentRoles,
                     joined,
                     access,
-                    CorporationWalletStore.SelectedKey(world, pilotId, corporation)
+                    CorporationWalletStore.SelectedKey(world, pilotId, corporation),
+                    world is EconomyTransaction ? world.Set<SavedAllianceMember>().Find(pilot.CorporationId)?.AllianceId : null
                 );
             }
         );

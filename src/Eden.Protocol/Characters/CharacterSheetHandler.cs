@@ -1,4 +1,5 @@
 using Eden.Gameplay.Agents;
+using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Corporations;
 using Eden.Infrastructure.Registration;
@@ -12,7 +13,8 @@ internal sealed class CharacterSheetHandler(
     IPilotCharacterSheet sheet,
     INpcDirectory npcs,
     IPlayerCorporations corporations,
-    ICorporationRoles corporationRoles
+    ICorporationRoles corporationRoles,
+    IAlliances alliances
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -98,7 +100,7 @@ internal sealed class CharacterSheetHandler(
             {
                 "GetPublicInfo3" => new PublicCharacterInfo3(profile),
                 "GetInfoWindowDataForChar" => sheet.ReadPublicProfile(id) is null
-                    ? new CharacterCorporationInfo(profile.CorporationId)
+                    ? new CharacterCorporationInfo(profile.CorporationId, AllianceId: alliances.Affiliation(profile.CorporationId))
                     : PublicCorporationInfo(id, profile.CorporationId),
                 "GetMedalsReceived" => new PublicCharacterMedals(),
                 "GetEmployementRecordAndCharacterTransfers" => new PublicCharacterEmployment(
@@ -116,6 +118,11 @@ internal sealed class CharacterSheetHandler(
     {
         var member = corporations.Members(pilotId).Single(m => m.PilotId == pilotId);
         long mask = member.Access?.TitleMask ?? 0;
-        return new(corporationId, member.Access?.Title ?? "", corporationRoles.Titles(pilotId).Where(t => (mask & t.Id) != 0).ToArray());
+        return new(
+            corporationId,
+            member.Access?.Title ?? "",
+            corporationRoles.Titles(pilotId).Where(t => (mask & t.Id) != 0).ToArray(),
+            alliances.Affiliation(corporationId)
+        );
     }
 }

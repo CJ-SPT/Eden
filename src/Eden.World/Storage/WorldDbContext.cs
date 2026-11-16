@@ -134,6 +134,10 @@ public sealed partial class WorldDbContext(string path) : DbContext
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        Eden.World.Alliances.AllianceSchema.Configure(model);
+        Eden.World.Alliances.AllianceMembershipSchema.Configure(model);
+        Eden.World.Alliances.AllianceBillingSchema.Configure(model);
+        Eden.World.Alliances.AllianceSocialSchema.Configure(model);
         Eden.World.Planetary.PlanetarySchema.Configure(model);
         JetcanSchema.Configure(model);
         Eden.World.Structures.StructureSchema.Configure(model);
@@ -370,7 +374,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
             .OnDelete(DeleteBehavior.Restrict);
         model.Entity<SavedContact>().ToTable("WorldContact").HasKey(c => new { c.PilotId, c.ContactId });
         model.Entity<SavedContact>().HasOne<Pilot>().WithMany().HasForeignKey(c => c.PilotId);
-        model.Entity<SavedContact>().HasOne<Pilot>().WithMany().HasForeignKey(c => c.ContactId);
+        model.Entity<SavedContact>().HasOne<InventoryOwner>().WithMany().HasForeignKey(c => c.ContactId);
         model.Entity<SavedBlockedContact>().ToTable("WorldBlockedContact").HasKey(c => new { c.PilotId, c.ContactId });
         model.Entity<SavedBlockedContact>().HasOne<Pilot>().WithMany().HasForeignKey(c => c.PilotId);
         model.Entity<SavedBlockedContact>().HasOne<Pilot>().WithMany().HasForeignKey(c => c.ContactId);

@@ -18,7 +18,8 @@ internal sealed record EconomySavedInboxNotification(
     bool Deleted,
     long Created,
     double ContactLevel,
-    string Message
+    string Message,
+    int? AllianceId
 );
 
 internal sealed record EconomySavedMail(
@@ -28,7 +29,8 @@ internal sealed record EconomySavedMail(
     long? ListId,
     string Subject,
     string Body,
-    string RecipientsJson
+    string RecipientsJson,
+    long? OrganizationId
 );
 
 internal sealed record EconomySavedMailChange(
@@ -147,7 +149,8 @@ internal sealed partial class ResidentEconomy
                         row.Deleted,
                         row.Created,
                         row.ContactLevel,
-                        row.Message
+                        row.Message,
+                        row.AllianceId
                     ),
                 state => new SavedInboxNotification
                 {
@@ -160,9 +163,10 @@ internal sealed partial class ResidentEconomy
                     Created = state.Created,
                     ContactLevel = state.ContactLevel,
                     Message = state.Message,
+                    AllianceId = state.AllianceId,
                 },
                 ProjectSavedInboxNotification,
-                "Id,Type,SenderId,ReceiverId,Processed,Deleted,Created,ContactLevel," + "Message",
+                "Id,Type,SenderId,ReceiverId,Processed,Deleted,Created,ContactLevel,Message,AllianceId",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -173,7 +177,8 @@ internal sealed partial class ResidentEconomy
                         reader.GetBoolean(6),
                         reader.GetInt64(7),
                         reader.GetDouble(8),
-                        reader.GetString(9)
+                        reader.GetString(9),
+                        reader.IsDBNull(10) ? null : reader.GetInt32(10)
                     ),
                 state => new(state.Id),
                 indexes: [new("ReceiverId", row => row.ReceiverId)],
@@ -185,7 +190,7 @@ internal sealed partial class ResidentEconomy
             new EconomyTable<SavedMail, EconomySavedMail>(
                 "WorldMail",
                 row => new(row.Id),
-                row => new(row.Id, row.SenderId, row.SentAt, row.ListId, row.Subject, row.Body, row.RecipientsJson),
+                row => new(row.Id, row.SenderId, row.SentAt, row.ListId, row.Subject, row.Body, row.RecipientsJson, row.OrganizationId),
                 state => new SavedMail
                 {
                     Id = state.Id,
@@ -195,9 +200,10 @@ internal sealed partial class ResidentEconomy
                     Subject = state.Subject,
                     Body = state.Body,
                     RecipientsJson = state.RecipientsJson,
+                    OrganizationId = state.OrganizationId,
                 },
                 ProjectSavedMail,
-                "Id,SenderId,SentAt,ListId,Subject,Body,RecipientsJson",
+                "Id,SenderId,SentAt,ListId,Subject,Body,RecipientsJson,OrganizationId",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -206,7 +212,8 @@ internal sealed partial class ResidentEconomy
                         reader.IsDBNull(4) ? null : reader.GetInt64(4),
                         reader.GetString(5),
                         reader.GetString(6),
-                        reader.GetString(7)
+                        reader.GetString(7),
+                        reader.IsDBNull(8) ? null : reader.GetInt64(8)
                     ),
                 state => new(state.Id),
                 indexes: [new("SenderId", row => row.SenderId), new("ListId", row => row.ListId)],
@@ -449,17 +456,18 @@ internal sealed partial class ResidentEconomy
                 $"""
                 INSERT INTO WorldInboxNotification(
                         Id,"Type",SenderId,ReceiverId,Processed,Deleted,Created,
-                        ContactLevel,Message
+                        ContactLevel,Message,AllianceId
                 )
                 SELECT
                         json_extract(value,'$.Id'),json_extract(value,'$.Type'),json_extract(value,'$.SenderId'),
                         json_extract(value,'$.ReceiverId'),json_extract(value,'$.Processed'),json_extract(value,'$.Deleted'),
-                        json_extract(value,'$.Created'),json_extract(value,'$.ContactLevel'),json_extract(value,'$.Message')
+                        json_extract(value,'$.Created'),json_extract(value,'$.ContactLevel'),json_extract(value,'$.Message'),
+                        json_extract(value,'$.AllianceId')
                 FROM json_each({values}) WHERE 1
                 ON CONFLICT(Id) DO UPDATE SET
                         "Type"=excluded."Type",SenderId=excluded.SenderId,ReceiverId=excluded.ReceiverId,
                         Processed=excluded.Processed,Deleted=excluded.Deleted,Created=excluded.Created,
-                        ContactLevel=excluded.ContactLevel,Message=excluded.Message
+                        ContactLevel=excluded.ContactLevel,Message=excluded.Message,AllianceId=excluded.AllianceId
                 """
             );
         }
@@ -484,16 +492,17 @@ internal sealed partial class ResidentEconomy
             world.Database.ExecuteSql(
                 $"""
                 INSERT INTO WorldMail(
-                        Id,SenderId,SentAt,ListId,Subject,Body,RecipientsJson
+                        Id,SenderId,SentAt,ListId,Subject,Body,RecipientsJson,OrganizationId
                 )
                 SELECT
                         json_extract(value,'$.Id'),json_extract(value,'$.SenderId'),json_extract(value,'$.SentAt'),
                         json_extract(value,'$.ListId'),json_extract(value,'$.Subject'),json_extract(value,'$.Body'),
-                        json_extract(value,'$.RecipientsJson')
+                        json_extract(value,'$.RecipientsJson'),json_extract(value,'$.OrganizationId')
                 FROM json_each({values}) WHERE 1
                 ON CONFLICT(Id) DO UPDATE SET
                         SenderId=excluded.SenderId,SentAt=excluded.SentAt,ListId=excluded.ListId,
-                        Subject=excluded.Subject,Body=excluded.Body,RecipientsJson=excluded.RecipientsJson
+                        Subject=excluded.Subject,Body=excluded.Body,RecipientsJson=excluded.RecipientsJson,
+                        OrganizationId=excluded.OrganizationId
                 """
             );
         }

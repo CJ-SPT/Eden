@@ -1,3 +1,4 @@
+using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Insurance;
@@ -120,7 +121,8 @@ internal sealed class PilotCallContext(
 [Injectable(InjectionType.Scoped)]
 internal sealed class PilotCallRouter(
     IEnumerable<IPilotCallHandler> accountHandlers,
-    IEnumerable<ISelectedPilotCallHandler> selectedHandlers
+    IEnumerable<ISelectedPilotCallHandler> selectedHandlers,
+    IAlliances? alliances = null
 )
 {
     public string ResolveService(PilotCallContext context, object?[] route, object? objectId)
@@ -180,6 +182,7 @@ internal sealed class PilotCallRouter(
                 or "invbroker"
                 or "dogmaIM"
                 or "corpRegistry"
+                or "allianceRegistry"
                 or "crimewatch"
                 or "warRegistry"
                 or "ship"
@@ -247,6 +250,19 @@ internal sealed class PilotCallRouter(
             )
             {
                 return new PilotCallResult.Failure("Bind your current corporation registry.");
+            }
+            if (
+                service == "allianceRegistry"
+                && method is "MachoResolveObject" or "MachoBindObject"
+                && (
+                    keywords is { Count: > 0 }
+                    || args.Length != (method == "MachoResolveObject" ? 1 : 2)
+                    || args[0] is not long allianceId
+                    || alliances?.Affiliation(context.Pilot.CorpId) != allianceId
+                )
+            )
+            {
+                return new PilotCallResult.Failure("Bind your current alliance registry.");
             }
             if (
                 service == "officeManager"
@@ -351,7 +367,13 @@ internal sealed class PilotCallRouter(
                 var reference = context.Reference(
                     boundService,
                     // The corporation moniker is cached against corpid across docking and travel.
-                    service is "charMgr" or "agentMgr" or "planetMgr" or "planetOrbitalRegistryBroker" or "corpRegistry"
+                    service
+                        is "charMgr"
+                            or "agentMgr"
+                            or "planetMgr"
+                            or "planetOrbitalRegistryBroker"
+                            or "corpRegistry"
+                            or "allianceRegistry"
                         ? PilotBindingLifetime.Pilot
                         : PilotBindingLifetime.Location
                 );

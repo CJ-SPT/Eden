@@ -1,5 +1,7 @@
 # Eden documentation
 
+[Alliances](protocol/alliances.md) records resident alliance implementation, pinned client contracts and milestone validation.
+
 [Interdiction](protocol/interdiction.md) records launched bubbles, focused HIC scripts, nullifiers and resident checkpoint persistence.
 
 [Complete NPC hub supply](protocol/industry.md#complete-npc-hub-supply-november-16-2026) supplies the full

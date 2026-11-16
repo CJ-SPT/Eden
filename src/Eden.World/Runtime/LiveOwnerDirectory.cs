@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Text.Json;
+using Eden.Data.World.Alliances;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Corporations;
 using Eden.Gameplay.Characters;
@@ -29,7 +30,8 @@ internal sealed record OwnerDirectorySnapshot(
     ImmutableDictionary<long, LocalPilotIdentity> Pilots,
     ImmutableDictionary<int, LocalCorporationIdentity> Corporations,
     Lazy<SearchNameIndex> CharacterSearch,
-    Lazy<SearchNameIndex> CorporationSearch
+    Lazy<SearchNameIndex> CorporationSearch,
+    ImmutableDictionary<int, int> AllianceMemberships
 );
 
 // Published identities contain committed public fields only. Readers never acquire persistence or system ownership.
@@ -49,7 +51,11 @@ internal sealed class LiveOwnerDirectory(WorldDbContext world)
             .AsNoTracking()
             .Select(corporation => new LocalCorporationIdentity(corporation.Id, corporation.Name, corporation.DetailsJson))
             .ToImmutableDictionary(corporation => corporation.Id);
-        return new(pilots, corporations, Characters(pilots), CorporationNames(corporations));
+        var alliances = world
+            .Set<SavedAllianceMember>()
+            .AsNoTracking()
+            .ToImmutableDictionary(row => row.CorporationId, row => row.AllianceId);
+        return new(pilots, corporations, Characters(pilots), CorporationNames(corporations), alliances);
     }
 
     private static Lazy<SearchNameIndex> Characters(ImmutableDictionary<long, LocalPilotIdentity> pilots) =>
@@ -79,13 +85,19 @@ internal sealed class LiveOwnerDirectory(WorldDbContext world)
             .Select(change => change.Id)
             .Distinct()
             .ToArray();
-        if (pilotIds.Length + corporationIds.Length == 0)
+        long[] allianceCorporations = changes
+            .Where(change => change.Table == "WorldAllianceMember")
+            .Select(change => change.Id)
+            .Distinct()
+            .ToArray();
+        if (pilotIds.Length + corporationIds.Length + allianceCorporations.Length == 0)
         {
             return;
         }
         var previous = Snapshot;
         var pilots = previous.Pilots;
         var corporations = previous.Corporations;
+        var alliances = previous.AllianceMemberships;
         var pilotRows =
             pilotIds.Length == 0 ? []
             : economy.IsLoaded ? pilotIds.Select(economy.Peek<Pilot>).OfType<Pilot>().ToArray()
@@ -124,7 +136,15 @@ internal sealed class LiveOwnerDirectory(WorldDbContext world)
             corporationNamesChanged |= before?.SearchName != after?.SearchName;
             corporations = after is null ? corporations.Remove(key) : corporations.SetItem(key, after);
         }
-        if (pilots != previous.Pilots || corporations != previous.Corporations)
+        foreach (long corporationId in allianceCorporations)
+        {
+            int key = checked((int)corporationId);
+            var row = economy.IsLoaded
+                ? economy.Peek<SavedAllianceMember>(corporationId)
+                : world.Set<SavedAllianceMember>().AsNoTracking().SingleOrDefault(member => member.CorporationId == key);
+            alliances = row is null ? alliances.Remove(key) : alliances.SetItem(key, row.AllianceId);
+        }
+        if (pilots != previous.Pilots || corporations != previous.Corporations || alliances != previous.AllianceMemberships)
         {
             Volatile.Write(
                 ref _snapshot,
@@ -132,7 +152,8 @@ internal sealed class LiveOwnerDirectory(WorldDbContext world)
                     pilots,
                     corporations,
                     characterNamesChanged ? Characters(pilots) : previous.CharacterSearch,
-                    corporationNamesChanged ? CorporationNames(corporations) : previous.CorporationSearch
+                    corporationNamesChanged ? CorporationNames(corporations) : previous.CorporationSearch,
+                    alliances
                 )
             );
         }

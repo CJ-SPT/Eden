@@ -31,19 +31,20 @@ internal sealed record StationItemBits(DockedPilot Pilot) : BlueModel
         new object?[] { Pilot.StationOwnerId, Pilot.DockedLocationId, Pilot.OperationId, Pilot.StationTypeId };
 }
 
-internal sealed record StationGuest(long CharacterId, int CorporationId) : BlueModel
+internal sealed record StationGuest(long CharacterId, int CorporationId, int? AllianceId = null) : BlueModel
 {
-    public override object ToBlue() => new object?[] { CharacterId, CorporationId, null, null };
+    public override object ToBlue() => new object?[] { CharacterId, CorporationId, AllianceId, null };
 }
 
 internal sealed record StructureGuestsReply(IReadOnlyList<StationGuest> Guests) : BlueModel
 {
-    public override object ToBlue() => Guests.ToDictionary(g => g.CharacterId, g => (object?)new object?[] { g.CorporationId, null, null });
+    public override object ToBlue() =>
+        Guests.ToDictionary(g => g.CharacterId, g => (object?)new object?[] { g.CorporationId, g.AllianceId, null });
 }
 
 internal sealed record StructureGuestArrived(StationGuest Guest) : PilotNotification("OnCharacterEnteredStructure")
 {
-    public override object?[] Arguments => [Guest.CharacterId, Guest.CorporationId, null, null];
+    public override object?[] Arguments => [Guest.CharacterId, Guest.CorporationId, Guest.AllianceId, null];
 }
 
 internal sealed record StructureGuestDeparted(StationGuest Guest) : PilotNotification("OnCharacterLeftStructure")

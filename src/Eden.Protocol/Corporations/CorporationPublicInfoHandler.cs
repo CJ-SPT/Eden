@@ -1,3 +1,4 @@
+using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Corporations;
 using Eden.Infrastructure.Registration;
@@ -7,7 +8,8 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Corporations;
 
 [Injectable]
-internal sealed class CorporationPublicInfoHandler(INpcCorporationDirectory npcs, IPlayerCorporations players) : ISelectedPilotCallHandler
+internal sealed class CorporationPublicInfoHandler(INpcCorporationDirectory npcs, IPlayerCorporations players, IAlliances alliances)
+    : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -28,7 +30,7 @@ internal sealed class CorporationPublicInfoHandler(INpcCorporationDirectory npcs
                 throw new InvalidDataException("Choose a valid corporation.");
             }
             return players.Read((int)id) is { } player
-                ? new CorporationPublicInfoReply(player)
+                ? new CorporationPublicInfoReply(player) { AllianceId = alliances.Affiliation(player.Id) }
                 : new CorporationPublicInfoReply(npcs.Read((int)id));
         }
         catch (InvalidDataException error)
@@ -56,6 +58,8 @@ internal sealed record CorporationPublicInfoReply(
     bool Deleted = false
 ) : BlueModel
 {
+    internal int? AllianceId { get; init; }
+
     internal CorporationPublicInfoReply(PlayerCorporation corporation)
         : this(
             corporation.Id,
@@ -114,7 +118,7 @@ internal sealed record CorporationPublicInfoReply(
                 ["loyaltyPointTaxRate"] = LoyaltyPointTaxRate,
                 ["shares"] = Shares,
                 ["memberCount"] = MemberCount,
-                ["allianceID"] = null,
+                ["allianceID"] = AllianceId,
                 ["deleted"] = Deleted,
                 ["allowWar"] = false,
             }

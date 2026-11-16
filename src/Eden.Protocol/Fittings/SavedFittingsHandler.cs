@@ -1,3 +1,4 @@
+using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Fittings;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
@@ -6,7 +7,8 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Fittings;
 
 [Injectable]
-internal sealed class SavedFittingsHandler(IPilotSavedFittings fittings, SavedFittingMonitor monitor) : ISelectedPilotCallHandler
+internal sealed class SavedFittingsHandler(IPilotSavedFittings fittings, SavedFittingMonitor monitor, IAlliances alliances)
+    : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -17,7 +19,7 @@ internal sealed class SavedFittingsHandler(IPilotSavedFittings fittings, SavedFi
     )
     {
         if (
-            service is not ("charFittingMgr" or "corpFittingMgr")
+            service is not ("charFittingMgr" or "corpFittingMgr" or "allianceFittingMgr")
             || method
                 is not (
                     "GetFittings"
@@ -35,11 +37,16 @@ internal sealed class SavedFittingsHandler(IPilotSavedFittings fittings, SavedFi
         try
         {
             long pilotId = context.Pilot.PilotId;
-            long owner = service == "charFittingMgr" ? pilotId : context.Pilot.CorpId;
+            long owner = service switch
+            {
+                "charFittingMgr" => pilotId,
+                "corpFittingMgr" => context.Pilot.CorpId,
+                _ => alliances.PilotAffiliation(pilotId) ?? throw new InvalidDataException("Your corporation is not in an alliance."),
+            };
             int ownerIndex = method == "UpdateNameAndDescription" ? 1 : 0;
             if (args.ElementAtOrDefault(ownerIndex) is not long requestedOwner || requestedOwner != owner)
             {
-                throw new InvalidDataException("Choose the selected pilot or their current corporation as fitting owner.");
+                throw new InvalidDataException("Choose the selected pilot, their current corporation, or their alliance as fitting owner.");
             }
             monitor.Advance(context);
             if (

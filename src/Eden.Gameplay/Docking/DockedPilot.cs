@@ -37,7 +37,8 @@ public sealed record PilotIdentity(
     long CorporationRoles = 0,
     CorporationMemberAccess? CorporationAccess = null,
     int CorporationAccountKey = CorporationWalletRules.MasterKey,
-    FleetIdentity? Fleet = null
+    FleetIdentity? Fleet = null,
+    int? AllianceId = null
 );
 
 public sealed record PilotShip(

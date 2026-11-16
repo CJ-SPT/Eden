@@ -23,6 +23,7 @@ internal static class PilotSessionWire
             ["fleetbooster"] = null,
             ["charid"] = pilot.PilotId,
             ["corpid"] = pilot.CorpId,
+            ["allianceid"] = pilot.Identity.AllianceId,
             ["corprole"] = rights.Has(CorporationRole.Director) ? rights.Roles : pilot.Identity.CorporationRoles,
             ["rolesAtAll"] = rights.Roles,
             ["rolesAtHQ"] = rights.RolesAtHQ,

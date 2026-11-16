@@ -138,7 +138,8 @@ public sealed partial class CooperativeFleetTests
     public void NativePointFleetWarpAndPrivateBookmarkWarpUseOrdinaryFlightAndRespectOptOut(bool bookmark)
     {
         TestClock clock = new();
-        using TestWorld world = new(clock: clock);
+        using TestWorld world = new(clock: clock, liveWorld: true);
+        PassiveCatalogFixture.LoadCapacitorModules(new WorldDatabase(world.Path).CatalogPath);
         using FleetClient leader = new(world, 1000001);
         using FleetClient member = new(world, 1000002);
         Join(leader, member);
@@ -195,7 +196,8 @@ public sealed partial class CooperativeFleetTests
     public void PendingWarpDoesNotOverrideNewerPersonalNavigationOrSurviveMembershipRevocation()
     {
         TestClock clock = new();
-        using TestWorld world = new(clock: clock);
+        using TestWorld world = new(clock: clock, liveWorld: true);
+        PassiveCatalogFixture.LoadCapacitorModules(new WorldDatabase(world.Path).CatalogPath);
         using FleetClient leader = new(world, 1000001);
         using FleetClient member = new(world, 1000002);
         long id = Join(leader, member);
@@ -335,7 +337,8 @@ public sealed partial class CooperativeFleetTests
     public void WarpToMemberAndFleetLocationsRequireCurrentMembershipAndSameSystemPresence()
     {
         TestClock clock = new();
-        using TestWorld world = new(clock: clock);
+        using TestWorld world = new(clock: clock, liveWorld: true);
+        PassiveCatalogFixture.LoadCapacitorModules(new WorldDatabase(world.Path).CatalogPath);
         var leaderPilot = world.Store.FindPilot(1000001)!;
         var memberPilot = world.Store.FindPilot(1000002)!;
         world.Store.SetPosition(leaderPilot.ShipId, SpacePosition.Zero);
@@ -566,6 +569,7 @@ public sealed partial class CooperativeFleetTests
         private readonly CorporationTestClient _client;
         private readonly CooperativeFleetHandler _handler;
         private readonly ChatHandler _chat;
+        private readonly LiveWorld? _live;
         public PilotCallContext Context => _client.Context;
         public long PilotId => Context.Pilot.PilotId;
         public BlueObjectReference? Reference { get; private set; }
@@ -573,6 +577,7 @@ public sealed partial class CooperativeFleetTests
 
         public FleetClient(TestWorld world, long account)
         {
+            _live = LiveWorld.Find(world.Path);
             _client = new(world, account);
             _handler = _client.Services.GetRequiredService<CooperativeFleetHandler>();
             _chat = _client.Services.GetRequiredService<ChatHandler>();
@@ -581,6 +586,7 @@ public sealed partial class CooperativeFleetTests
 
         public void Advance()
         {
+            using var owner = _live?.EnterShared("fleet test frame");
             _handler.Advance(Context);
             _chat.Advance(Context);
         }
@@ -613,6 +619,7 @@ public sealed partial class CooperativeFleetTests
 
         public PilotCallResult CallService(string service, string method, object?[] args, Dictionary<string, object?>? keywords = null)
         {
+            using var owner = _live?.EnterShared("fleet test call");
             var result = _client.CallService(service, method, args, keywords);
             Advance();
             return result;

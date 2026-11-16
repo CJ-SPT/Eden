@@ -296,7 +296,7 @@ internal static partial class Ballpark
         writer.Write((byte)(ship.Cloaked ? 1 : 0)); // Pinned Destiny mass-sector cloak mode.
         writer.Write(-1L); // Force-field harmonic
         writer.Write(pilot.CorpId);
-        writer.Write(-1);
+        writer.Write(pilot.AllianceId ?? -1);
         writer.Write(pilot.Flight.MaxSpeed);
         writer.Write(velocity.X);
         writer.Write(velocity.Y);

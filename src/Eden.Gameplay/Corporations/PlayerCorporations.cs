@@ -31,7 +31,8 @@ public sealed record PlayerCorporation(
     int MemberLimit,
     int MemberCount,
     long? ClosedAt = null,
-    long Shares = CorporationRules.InitialShares
+    long Shares = CorporationRules.InitialShares,
+    int? AllianceId = null
 );
 
 public sealed record CorporationMember(
@@ -57,7 +58,8 @@ public sealed record CorporationIdentity(
     long Roles,
     long JoinedAt,
     CorporationMemberAccess? Access = null,
-    int AccountKey = CorporationWalletRules.MasterKey
+    int AccountKey = CorporationWalletRules.MasterKey,
+    int? AllianceId = null
 );
 
 public interface IPlayerCorporations

@@ -74,10 +74,15 @@ public static class AccessGroupRules
     public static bool GrantsAccess(AccessGroupRole role) =>
         role is AccessGroupRole.Member or AccessGroupRole.Manager or AccessGroupRole.Admin;
 
-    public static AccessGroupRole Resolve(IReadOnlyList<AccessGroupMember> members, long pilotId, long corporationId)
+    public static AccessGroupRole Resolve(
+        IReadOnlyList<AccessGroupMember> members,
+        long pilotId,
+        long corporationId,
+        int? allianceId = null
+    )
     {
-        // Character exceptions take precedence over corporation membership and Everyone.
-        foreach (long subject in new[] { pilotId, corporationId, 0 })
+        // More specific identities override broader membership, including exclusions.
+        foreach (long subject in new[] { pilotId, corporationId, allianceId ?? 0, 0 }.Distinct())
         {
             if (members.FirstOrDefault(m => m.OwnerId == subject) is { } member)
             {

@@ -1,3 +1,4 @@
+using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Fittings;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
@@ -5,7 +6,7 @@ using Eden.Protocol.PilotSessions;
 namespace Eden.Protocol.Fittings;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class SavedFittingMonitor(IPilotSavedFittings fittings)
+internal sealed class SavedFittingMonitor(IPilotSavedFittings fittings, IAlliances alliances)
 {
     private sealed record Snapshot(long Revision, IReadOnlyDictionary<long, SavedFitting> Fittings);
 
@@ -46,7 +47,11 @@ internal sealed class SavedFittingMonitor(IPilotSavedFittings fittings)
         Select(context);
         foreach (long ownerId in _owners.Keys.ToArray())
         {
-            if (ownerId != context.Pilot.PilotId && ownerId != context.Pilot.CorpId)
+            if (
+                ownerId != context.Pilot.PilotId
+                && ownerId != context.Pilot.CorpId
+                && ownerId != alliances.PilotAffiliation(context.Pilot.PilotId)
+            )
             {
                 _owners.Remove(ownerId);
                 continue;

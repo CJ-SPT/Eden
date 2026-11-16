@@ -1,5 +1,7 @@
 # Protocol findings and milestone records
 
+[Alliances](protocol/alliances.md) records corporation associations, resident checkpoints and implementation milestones.
+
 [PI scan intensity and extraction previews](protocol/planetary.md#resource-scan-intensity-and-extraction-previews--november-16-2026)
 correct resource abundance bars and heat maps, and quote tuned extraction previews through the authoritative server operation.
 

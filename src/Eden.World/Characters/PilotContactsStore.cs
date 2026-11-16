@@ -1,4 +1,6 @@
+using Eden.Data.World.Alliances;
 using Eden.Data.World.Characters;
+using Eden.Data.World.Corporations;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Characters;
 using Eden.Infrastructure.Registration;
@@ -154,6 +156,10 @@ internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory n
             world =>
             {
                 CheckTargets(world, pilotId, [contactId]);
+                if (!world.PilotExists(contactId) && (inWatchlist || notification is not null))
+                {
+                    throw new InvalidDataException("Only character contacts support watchlists and notifications.");
+                }
                 var contact = world.Set<SavedContact>().Find(pilotId, contactId);
                 if (add && contact is not null || !add && contact is null)
                 {
@@ -212,13 +218,13 @@ internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory n
             world =>
             {
                 ContactRules.CheckContacts(pilotId, contacts);
-                var known = contacts.Where(world.PilotExists).ToHashSet();
+                var known = contacts.Where(id => KnownTarget(world, id)).ToHashSet();
                 known.UnionWith(
                     world.Filter<SavedAgentContact>(c => c.PilotId == pilotId && contacts.Contains(c.AgentId)).Select(c => c.AgentId)
                 );
                 if (contacts.Any(id => !known.Contains(id) && npcs.Agent(id) is null))
                 {
-                    throw new InvalidDataException("Choose known pilots or agents to remove.");
+                    throw new InvalidDataException("Choose known owners or agents to remove.");
                 }
                 world.RemoveRange(world.Filter<SavedContact>(c => c.PilotId == pilotId && contacts.Contains(c.ContactId)).ToArray());
                 world.RemoveRange(world.Filter<SavedAgentContact>(c => c.PilotId == pilotId && contacts.Contains(c.AgentId)).ToArray());
@@ -231,6 +237,10 @@ internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory n
             world =>
             {
                 CheckTargets(world, pilotId, contacts);
+                if (contacts.Any(id => !world.PilotExists(id)))
+                {
+                    throw new InvalidDataException("Only character contacts can be blocked.");
+                }
                 foreach (long id in contacts.Distinct())
                 {
                     var current = world.Set<SavedBlockedContact>().Find(pilotId, id);
@@ -389,11 +399,17 @@ internal sealed class PilotContactsStore(WorldDatabase database, INpcDirectory n
     private static void CheckTargets(WorldAction world, long pilotId, IReadOnlyList<long> contacts)
     {
         ContactRules.CheckContacts(pilotId, contacts);
-        if (contacts.Any(id => !world.PilotExists(id)))
+        if (contacts.Any(id => !KnownTarget(world, id)))
         {
-            throw new InvalidDataException("Choose known Eden pilots as contacts.");
+            throw new InvalidDataException("Choose known Eden pilots, corporations, or alliances as contacts.");
         }
     }
+
+    private static bool KnownTarget(WorldAction world, long id) =>
+        world.PilotExists(id)
+        || world is EconomyTransaction
+            && id is > 0 and <= int.MaxValue
+            && (world.Set<SavedCorporation>().Find((int)id) is not null || world.Set<SavedAlliance>().Find((int)id) is not null);
 
     private static void CheckPilot(WorldAction world, long pilotId)
     {

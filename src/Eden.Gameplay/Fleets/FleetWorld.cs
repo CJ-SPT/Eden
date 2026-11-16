@@ -89,6 +89,37 @@ public sealed partial class FleetWorld(long seed)
         }
     }
 
+    public void RefreshAffiliations(Func<long, FleetAffiliation?> resolve)
+    {
+        foreach (var pilot in _online.Values.ToArray())
+        {
+            if (
+                resolve(pilot.Id) is not { } current
+                || pilot.CorporationId == current.CorporationId && pilot.AllianceId == current.AllianceId
+            )
+            {
+                continue;
+            }
+            var updated = pilot with { CorporationId = current.CorporationId, AllianceId = current.AllianceId };
+            _online[pilot.Id] = updated;
+            foreach (var fleet in _fleets.Values)
+            {
+                if (fleet.JoinRequests.ContainsKey(pilot.Id))
+                {
+                    fleet.JoinRequests[pilot.Id] = updated;
+                }
+            }
+            if (Identity(pilot.Id) is { } identity)
+            {
+                var fleet = _fleets[identity.FleetId];
+                var before = fleet.Members[pilot.Id];
+                var after = before with { Pilot = updated };
+                fleet.Members[pilot.Id] = after;
+                Publish(fleet, new FleetEvent.Changed(before, after, false));
+            }
+        }
+    }
+
     public FleetMembership? JoinMembership(long actor) => _joinMemberships.GetValueOrDefault(actor);
 
     public IReadOnlyList<FleetPilot> Fleetmates(long actor) =>

@@ -106,7 +106,7 @@ public sealed class PilotServicesTests
     [Fact]
     public async Task QuietLoggingKeepsSelectionAndMalformedCallWarningsWithoutRoutineTraffic()
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         using var scope = world.Services.CreateScope();
         using StringWriter output = new();
         using StringWriter errors = new();
@@ -148,7 +148,7 @@ public sealed class PilotServicesTests
     [Fact]
     public async Task NativeStationGuestRequestReturnsBothDockedPilotsAndResolvesTheOtherName()
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         using var peerScope = world.Services.CreateScope();
         var peerServices = peerScope.ServiceProvider;
         var pilot = world.Store.FindPilot(1000001)!;
@@ -186,7 +186,7 @@ public sealed class PilotServicesTests
     [InlineData(true)]
     public async Task CharacterLogoffClearsSessionFieldsBeforeReplyAndAllowsAnotherOwnedPilotOnTheSameConnection(bool inSpace)
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         TestCatalog.AddSchool(new WorldDatabase(world.Path).CatalogPath, 18, 1, 1, 30001392, 60015159, 601);
         long other = world
             .Services.GetRequiredService<ICharacterCreation>()
@@ -254,7 +254,7 @@ public sealed class PilotServicesTests
     [InlineData(true)]
     public async Task SessionExitRemovesStationPresenceBeforeTheConnectionScopeIsDisposed(bool writeFailure)
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         using var scope = world.Services.CreateScope();
         var services = scope.ServiceProvider;
         var pilot = world.Store.FindPilot(1000001)!;
@@ -285,7 +285,7 @@ public sealed class PilotServicesTests
     [InlineData(true)]
     public async Task RequestedDisconnectLoggingReturnsNoneBeforeAndAfterSelectionAndToleratesRetries(bool selected)
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         var before = world.Store.FindPilot(1000001);
         List<BlueInstance> requests = [];
         if (selected)
@@ -337,7 +337,7 @@ public sealed class PilotServicesTests
     [Fact]
     public async Task RejectedCallFlushesBothNotificationQueuesInOrder()
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         using var scope = world.Services.CreateScope();
         var pilot = world.Store.FindPilot(1000001)!;
         using PilotCallContext context = new(
@@ -383,7 +383,7 @@ public sealed class PilotServicesTests
     [Fact]
     public async Task OversizedCallReturnsAnErrorAndKeepsTheEncryptedSessionUsable()
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         using var scope = world.Services.CreateScope();
         var pilot = world.Store.FindPilot(1000001)!;
         using PilotCallContext context = new(
@@ -448,7 +448,7 @@ public sealed class PilotServicesTests
     [Fact]
     public async Task FailedBoundMarketCheckShowsTextAndKeepsTheSessionUsable()
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         var packets = await ExchangeAsync(
             world,
             42,
@@ -480,7 +480,7 @@ public sealed class PilotServicesTests
     [InlineData(true, true)]
     public async Task GameplayRejectionShowsTextAndKeepsTheModuleAndSessionIntact(bool bound, bool native)
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         const long ship = 1000000000001L;
         long module;
         using (WorldDbContext saved = new(world.Path))
@@ -519,7 +519,7 @@ public sealed class PilotServicesTests
     [Fact]
     public async Task UnavailableWarpDestinationShowsTextAndLeavesTheShipInPlace()
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         var position = new SpacePosition(1_000_000, 0, 0);
         var pilot = world.Store.FindPilot(1000001)!;
         world.Store.SetPosition(pilot.ShipId, position);
@@ -539,7 +539,7 @@ public sealed class PilotServicesTests
     [Fact]
     public async Task MarketAndContractRejectionsCanStillUseInformationDialogs()
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         var packets = await ExchangeAsync(
             world,
             42,
@@ -561,7 +561,7 @@ public sealed class PilotServicesTests
     [Fact]
     public async Task RecoveryAnnouncesTheNewHullBeforeTheHangarProcessesItsShipChange()
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         Persistence.PilotFleetTests.AddVenture(world);
         using (CatalogDbContext catalog = new(new WorldDatabase(world.Path).CatalogPath, writable: true))
         {
@@ -610,7 +610,7 @@ public sealed class PilotServicesTests
     [Fact]
     public async Task CargoCapacityErrorWrapsAUserErrorForTheClientsQuantityRetry()
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         long itemId;
         using (WorldDbContext saved = new(world.Path))
         {
@@ -778,7 +778,7 @@ public sealed class PilotServicesTests
     public async Task BiomassPreparationCancellationAndFinalDeletionUseNativeRepliesAcrossSessions()
     {
         TestClock clock = new();
-        using TestWorld world = new(clock: clock);
+        using TestWorld world = new(clock: clock, liveWorld: true);
         var packets = await ExchangeAsync(
             world,
             42,
@@ -821,7 +821,7 @@ public sealed class PilotServicesTests
     [Fact]
     public async Task CreatorCanSelectItsNewCharacterByKeywordAndReadBackTheAvatar()
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         TestCatalog.AddSchool(new WorldDatabase(world.Path).CatalogPath, 22, 8, 7, 30005305, 60015161, 606);
         BlueInstance appearance = new(
             "utillib.KeyVal",
@@ -851,7 +851,7 @@ public sealed class PilotServicesTests
     [Fact]
     public async Task HomeCloneTransferSendsInventoryAndStationSessionChangeBeforeItsSuccessfulReply()
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         Persistence.HomeStationTestData.Prepare(world);
         long previousShip = Persistence.HomeStationTestData.MakeActiveCapsule(world);
         var packets = await ExchangeAsync(
@@ -983,7 +983,7 @@ public sealed class PilotServicesTests
 
     private static async Task<List<BlueInstance>> ExchangeAsync(long sessionId, params BlueInstance[] requests)
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         return await ExchangeAsync(world, sessionId, requests);
     }
 

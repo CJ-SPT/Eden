@@ -279,6 +279,7 @@ internal sealed partial class FlightSession(
                 CorporationRoles = identity.Roles,
                 CorporationAccess = identity.Access,
                 CorporationAccountKey = identity.AccountKey,
+                AllianceId = identity.AllianceId,
             },
         };
         if (InBallpark && !_destroying)

@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Channels;
+using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Chat;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Fleets;
@@ -16,7 +17,9 @@ internal sealed class ChatRuntime(
     LauncherOptions options,
     TimeProvider clock,
     ICooperativeFleets fleets,
-    ICorporationCommunications? communications = null
+    ICorporationCommunications? communications = null,
+    IAlliances? alliances = null,
+    IAllianceSocial? allianceSocial = null
 ) : IPilotChat, IXmppChat
 {
     private const int QueueCapacity = 256;
@@ -129,13 +132,20 @@ internal sealed class ChatRuntime(
         lock (_motdGate)
         {
             string motd = "";
-            if (room.Kind == ChatRoomKind.Corporation)
+            if (room.Kind is ChatRoomKind.Corporation or ChatRoomKind.Alliance)
             {
                 lock (_gate)
                 {
+                    RefreshAlliance(connection, room);
                     _ = _world.RoomInfo(connection, room);
                 }
-                if (room.Id >= CorporationRules.FirstCorporationId)
+                if (room.Kind == ChatRoomKind.Alliance)
+                {
+                    motd = (allianceSocial ?? throw new InvalidDataException("Alliance communications are unavailable.")).ReadMotd(
+                        checked((int)room.Id)
+                    );
+                }
+                else if (room.Id >= CorporationRules.FirstCorporationId)
                 {
                     motd = (communications ?? throw new InvalidDataException("Corporation communications are unavailable.")).ReadMotd(
                         checked((int)room.Id)
@@ -149,7 +159,7 @@ internal sealed class ChatRuntime(
                     Dispatch(_world.UpdateFleet(connection, fleets.Identity(pilot.Id)?.FleetId));
                 }
                 Dispatch(_world.Join(connection, room, requestId, clock.GetElapsedTime(0, clock.GetTimestamp()).Ticks));
-                if (room.Kind == ChatRoomKind.Corporation)
+                if (room.Kind is ChatRoomKind.Corporation or ChatRoomKind.Alliance)
                 {
                     Dispatch([new(connection, new ChatEvent.Subject(room, motd))]);
                 }
@@ -169,6 +179,7 @@ internal sealed class ChatRuntime(
     {
         lock (_gate)
         {
+            RefreshAlliance(connection, room);
             if (room.Kind == ChatRoomKind.Fleet && _world.ConnectedPilot(connection) is { } pilot)
             {
                 Dispatch(_world.UpdateFleet(connection, fleets.Identity(pilot.Id)?.FleetId));
@@ -189,6 +200,10 @@ internal sealed class ChatRuntime(
     {
         lock (_gate)
         {
+            if (alliances is not null && _world.Pilot(session) is { } pilot)
+            {
+                Dispatch(_world.Update(session, pilot with { AllianceId = alliances.PilotAffiliation(pilot.Id) }));
+            }
             return _world.SystemChannels(session);
         }
     }
@@ -217,16 +232,35 @@ internal sealed class ChatRuntime(
             lock (_gate)
             {
                 pilot = _world.Pilot(session) ?? throw new InvalidDataException("Select a pilot before editing chat.");
-                if (room.Kind != ChatRoomKind.Corporation || room.Id != pilot.CorporationId)
+                if (room.Kind == ChatRoomKind.Alliance)
                 {
-                    throw new InvalidDataException("Choose your corporation's channel.");
+                    pilot = pilot with { AllianceId = alliances?.PilotAffiliation(pilot.Id) };
+                    Dispatch(_world.Update(session, pilot));
+                }
+                if (
+                    !(room.Kind == ChatRoomKind.Corporation && room.Id == pilot.CorporationId)
+                    && !(room.Kind == ChatRoomKind.Alliance && room.Id == pilot.AllianceId)
+                )
+                {
+                    throw new InvalidDataException("Choose your current corporation or alliance channel.");
                 }
             }
-            (communications ?? throw new InvalidDataException("Corporation communications are unavailable.")).SetMotd(
-                pilot.Id,
-                pilot.CorporationId,
-                text
-            );
+            if (room.Kind == ChatRoomKind.Alliance)
+            {
+                (allianceSocial ?? throw new InvalidDataException("Alliance communications are unavailable.")).SetMotd(
+                    pilot.Id,
+                    checked((int)room.Id),
+                    text
+                );
+            }
+            else
+            {
+                (communications ?? throw new InvalidDataException("Corporation communications are unavailable.")).SetMotd(
+                    pilot.Id,
+                    pilot.CorporationId,
+                    text
+                );
+            }
             lock (_gate)
             {
                 Dispatch(_world.Subject(room, text));
@@ -246,11 +280,15 @@ internal sealed class ChatRuntime(
     {
         lock (_gate)
         {
+            RefreshAlliance(connection, room);
             if (room.Kind == ChatRoomKind.Fleet && _world.ConnectedPilot(connection) is { } pilot)
             {
                 Dispatch(_world.UpdateFleet(connection, fleets.Identity(pilot.Id)?.FleetId));
             }
-            return _world.Members(connection, room);
+            var members = _world.Members(connection, room);
+            return room.Kind == ChatRoomKind.Alliance
+                ? members.Where(pilot => alliances?.PilotAffiliation(pilot.Id) == room.Id).ToArray()
+                : members;
         }
     }
 
@@ -258,6 +296,7 @@ internal sealed class ChatRuntime(
     {
         lock (_gate)
         {
+            RefreshAlliance(connection, room);
             if (room.Kind == ChatRoomKind.Fleet && _world.ConnectedPilot(connection) is { } pilot)
             {
                 Dispatch(_world.UpdateFleet(connection, fleets.Identity(pilot.Id)?.FleetId));
@@ -287,6 +326,24 @@ internal sealed class ChatRuntime(
         Queue<ChatDelivery> pending = new(deliveries);
         while (pending.TryDequeue(out var delivery))
         {
+            ChatRoom? protectedRoom = delivery.Event switch
+            {
+                ChatEvent.Message { Room.Kind: ChatRoomKind.Alliance } allianceMessage => allianceMessage.Room,
+                ChatEvent.Subject { Room.Kind: ChatRoomKind.Alliance } subject => subject.Room,
+                _ => null,
+            };
+            if (
+                protectedRoom is not null
+                && _world.ConnectedPilot(delivery.Recipient) is { } member
+                && alliances?.PilotAffiliation(member.Id) != protectedRoom.Id
+            )
+            {
+                foreach (var revoked in _world.UpdateAlliance(delivery.Recipient, alliances?.PilotAffiliation(member.Id)))
+                {
+                    pending.Enqueue(revoked);
+                }
+                continue;
+            }
             if (
                 delivery.Event is ChatEvent.Message { Room.Kind: ChatRoomKind.Fleet } message
                 && _world.ConnectedPilot(delivery.Recipient) is { } recipient
@@ -319,6 +376,15 @@ internal sealed class ChatRuntime(
                     pending.Enqueue(departed);
                 }
             }
+        }
+    }
+
+    // The published owner directory is immutable: these checks never enter the world owner while holding the chat gate.
+    private void RefreshAlliance(Guid connection, ChatRoom room)
+    {
+        if (room.Kind == ChatRoomKind.Alliance && _world.ConnectedPilot(connection) is { } pilot)
+        {
+            Dispatch(_world.UpdateAlliance(connection, alliances?.PilotAffiliation(pilot.Id)));
         }
     }
 

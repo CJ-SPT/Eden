@@ -51,7 +51,7 @@ public sealed class XmppSession(IXmppChat chat, TimeProvider? clock = null)
                     }
                     await WriteAsync(XmppWire.Xml(XmppWire.Event(delivery, domain, jid!)));
                     if (
-                        delivery.Event is not ChatEvent.Presence { Room.Kind: ChatRoomKind.Corporation }
+                        delivery.Event is not ChatEvent.Presence { Room.Kind: ChatRoomKind.Corporation or ChatRoomKind.Alliance }
                         && delivery is { CorrelationId: not null, Event: ChatEvent.Presence { Available: true } presence }
                     )
                     {

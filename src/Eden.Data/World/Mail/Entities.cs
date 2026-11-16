@@ -17,8 +17,10 @@ public sealed class SavedInboxNotification
     public long Created { get; set; }
     public double ContactLevel { get; set; }
     public string Message { get; set; } = "";
+    public int? AllianceId { get; set; }
 
-    public InboxNotification Snapshot() => new(Id, Type, SenderId, ReceiverId, Processed, Deleted, Created, new(ContactLevel, Message));
+    public InboxNotification Snapshot() =>
+        new(Id, Type, SenderId, ReceiverId, Processed, Deleted, Created, new(ContactLevel, Message), AllianceId);
 }
 
 public sealed class SavedMail
@@ -29,12 +31,17 @@ public sealed class SavedMail
     public long SenderId { get; set; }
     public long SentAt { get; set; }
     public long? ListId { get; set; }
+    public long? OrganizationId { get; set; }
     public string Subject { get; set; } = "";
     public string Body { get; set; } = "";
     public string RecipientsJson { get; set; } = "[]";
 
     public MailHeader Header() =>
-        new(Id, SenderId, SentAt, JsonSerializer.Deserialize<long[]>(RecipientsJson)!, Subject) { ListId = ListId };
+        new(Id, SenderId, SentAt, JsonSerializer.Deserialize<long[]>(RecipientsJson)!, Subject)
+        {
+            ListId = ListId,
+            OrganizationId = OrganizationId,
+        };
 }
 
 public sealed class SavedMailChange

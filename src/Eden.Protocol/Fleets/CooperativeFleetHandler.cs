@@ -39,6 +39,7 @@ internal sealed partial class CooperativeFleetHandler(ICooperativeFleets fleets,
             _presence is not { } last
             || last.Id != pilot.PilotId
             || last.CorporationId != pilot.CorpId
+            || last.AllianceId != pilot.Identity.AllianceId
             || last.ShipId != pilot.ShipId
             || last.ShipTypeId != pilot.ShipTypeId
             || last.SystemId != pilot.SystemId
@@ -53,7 +54,8 @@ internal sealed partial class CooperativeFleetHandler(ICooperativeFleets fleets,
                 pilot.ShipTypeId,
                 pilot.SystemId,
                 pilot.Position,
-                IsInTransit(context)
+                IsInTransit(context),
+                pilot.Identity.AllianceId
             );
             fleets.Update(_session, _presence);
         }

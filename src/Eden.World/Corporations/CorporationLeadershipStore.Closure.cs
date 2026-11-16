@@ -20,6 +20,13 @@ internal sealed partial class CorporationLeadershipStore
             throw new InvalidDataException("Dock and transfer CEO to an eligible successor before leaving this corporation.");
         }
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        if (
+            world is EconomyTransaction
+            && world.Set<Eden.Data.World.Alliances.SavedAllianceMember>().Find(corporation.Id) is { } allianceMember
+        )
+        {
+            Eden.World.Alliances.AllianceStore.Depart(world, allianceMember, now);
+        }
         using CatalogDbContext catalog = new(database.CatalogPath);
         var members = world.Pilots.Where(pilot => pilot.CorporationId == corporation.Id).OrderBy(pilot => pilot.Id).ToArray();
         // Retain the corporation and its asset locations as history. No former member inherits its money or property.

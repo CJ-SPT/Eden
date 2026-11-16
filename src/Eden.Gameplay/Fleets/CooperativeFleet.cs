@@ -50,8 +50,11 @@ public sealed record FleetPilot(
     int ShipTypeId,
     int SystemId,
     SpacePosition? Position,
-    bool InTransit = false
+    bool InTransit = false,
+    int? AllianceId = null
 );
+
+public sealed record FleetAffiliation(int CorporationId, int? AllianceId);
 
 public sealed record FleetPlacement(long WingId, long SquadId, FleetRole Role);
 

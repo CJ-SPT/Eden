@@ -3,20 +3,47 @@ using Eden.Gameplay.Characters;
 using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Infrastructure.Registration;
+using Eden.World.Runtime;
+using Eden.World.Storage;
 
 namespace Eden.World.Fleets;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class CooperativeFleetStore(TimeProvider clock, IPilotSecurityStatus security) : ICooperativeFleets
+internal sealed class CooperativeFleetStore(TimeProvider clock, IPilotSecurityStatus security, WorldDatabase? database = null)
+    : ICooperativeFleets
 {
     private readonly object _gate = new();
     private readonly FleetWorld _world = new(BitConverter.ToInt64(RandomNumberGenerator.GetBytes(sizeof(long))) & (long.MaxValue / 2));
+    private OwnerDirectorySnapshot? _directory;
+
+    private void RefreshAffiliations()
+    {
+        var current = database is null ? null : LiveWorld.Find(database.Path)?.OwnerDirectory.Snapshot;
+        if (current is null || ReferenceEquals(current, _directory))
+        {
+            return;
+        }
+        if (_directory is null || current.Pilots != _directory.Pilots || current.AllianceMemberships != _directory.AllianceMemberships)
+        {
+            _world.RefreshAffiliations(id =>
+                current.Pilots.TryGetValue(id, out var pilot)
+                    ? new(
+                        pilot.CorporationId,
+                        current.AllianceMemberships.GetValueOrDefault(pilot.CorporationId) is > 0 and var alliance ? alliance : null
+                    )
+                    : null
+            );
+        }
+        _directory = current;
+    }
+
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
     private T Read<T>(Func<T> action)
     {
         lock (_gate)
         {
+            RefreshAffiliations();
             return action();
         }
     }
@@ -25,6 +52,7 @@ internal sealed class CooperativeFleetStore(TimeProvider clock, IPilotSecuritySt
     {
         lock (_gate)
         {
+            RefreshAffiliations();
             action();
         }
     }
@@ -43,7 +71,20 @@ internal sealed class CooperativeFleetStore(TimeProvider clock, IPilotSecuritySt
 
     public void RejectApplication(long actor, long fleet, long target) => Write(() => _world.RejectApplication(actor, fleet, target));
 
-    public void Update(Guid session, FleetPilot? pilot) => Write(() => _world.Update(session, pilot));
+    public void Update(Guid session, FleetPilot? pilot) =>
+        Write(() =>
+        {
+            var directory = database is null ? null : LiveWorld.Find(database.Path)?.OwnerDirectory.Snapshot;
+            if (pilot is not null && directory?.Pilots.TryGetValue(pilot.Id, out var current) == true)
+            {
+                pilot = pilot with
+                {
+                    CorporationId = current.CorporationId,
+                    AllianceId = directory.AllianceMemberships.GetValueOrDefault(current.CorporationId) is > 0 and var id ? id : null,
+                };
+            }
+            _world.Update(session, pilot);
+        });
 
     public FleetIdentity? Identity(long actor) => Read(() => _world.Identity(actor));
 

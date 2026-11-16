@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Eden.Data.World.Alliances;
 using Eden.Data.World.Corporations;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Market;
@@ -94,7 +95,8 @@ internal sealed class CorporationRecruitmentStore(WorldDatabase database, TimePr
                 .Set<SavedCorporationRecruitmentAd>()
                 .Where(ad => ad.CorporationId == corporationId && (includeExpired || ad.ExpiresAt > now))
                 .OrderBy(ad => ad.Id)
-                .Select(ad => ad.Snapshot(count))
+                .AsEnumerable()
+                .Select(ad => ad.Snapshot(count) with { AllianceId = world.Set<SavedAllianceMember>().Find(corporationId)?.AllianceId })
                 .ToArray();
         });
 
@@ -109,7 +111,14 @@ internal sealed class CorporationRecruitmentStore(WorldDatabase database, TimePr
             List<CorporationRecruitmentMatch> matches = [];
             foreach (var row in world.Set<SavedCorporationRecruitmentAd>().Where(ad => ad.ExpiresAt > now))
             {
-                var ad = row.Snapshot(counts.GetValueOrDefault(row.CorporationId));
+                var ad = row.Snapshot(counts.GetValueOrDefault(row.CorporationId)) with
+                {
+                    AllianceId = world.Set<SavedAllianceMember>().Find(row.CorporationId)?.AllianceId,
+                };
+                if (query.ExcludeAlliances && ad.AllianceId.HasValue)
+                {
+                    continue;
+                }
                 if (
                     corporations.TryGetValue(row.CorporationId, out var details)
                     && CorporationRecruitmentRules.Match(query, ad, details) is int grade

@@ -303,6 +303,8 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
                 }
         );
         _resourceDeadline.Observe(changes);
+        _allianceBillingDeadline.Observe(changes);
+        _allianceSocial.Observe(changes, (alliance, change) => alliance == change.Id);
         _moduleConditions.ObserveValues(
             changes,
             (key, conditions, change) =>
@@ -371,6 +373,8 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         _spatialNavigation.Clear();
         _spatialMembership.Clear();
         _resourceDeadline.Clear();
+        _allianceBillingDeadline.Clear();
+        _allianceSocial.Clear();
         _moduleConditions.Clear();
         _missionSites.Clear();
         _missionTracking.Clear();

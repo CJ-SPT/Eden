@@ -208,7 +208,7 @@ internal sealed record CorporationRecruitmentRow(CorporationRecruitmentAd Ad) : 
                 {
                     Ad.Id,
                     Ad.CorporationId,
-                    null,
+                    Ad.AllianceId,
                     null,
                     Ad.CreatedAt,
                     Ad.ExpiresAt,
