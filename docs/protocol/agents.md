@@ -94,6 +94,20 @@ mission definitions, 796 item types and 4,786 fixture source values remain uncha
 admissions change audit status. Documentation links, UTF-8/final newline and `git diff --check` passed.
 No full .NET regression run was requested or performed.
 
+Integration with main **64fddc16** preserves the later resident NPC population validation and declared-weapon fixes.
+Only the protocol index needed manual conflict resolution; all three milestone links remain. Repeated required
+ordered checks passed in **220.00 seconds**, including a zero-warning/error solution build, **168/168** focused
+.NET cases (2 minutes 44 seconds), the same 8/9/18 Python cases and formatting verification across 2,300 files.
+The integration filter ORed `FullyQualifiedName~Eden.Protocol.Tests.Agents.<selector>` for `MissionTradeTests`,
+`MissionItemRewardRuleTests`, `MissionNpcWeaponTests`, `MissionEncounterTests`, `MissionLayoutTests`,
+`MissionContentTests.EveryNewCombatVariant` and `MissionChainTests`; it also ORed
+`FullyQualifiedName~Eden.Protocol.Tests.Persistence.<selector>` for `WorldMigrationTests`, `WorldInitializationTests`,
+`IncrementalCheckpointTests` and `NpcPopulationValidationTests`, plus
+`FullyQualifiedName~Eden.Protocol.Tests.Combat.NpcPopulationFrameTests`.
+Both TRX reports are retained under the main checkout's `artifacts/feature-tests/results/mission-trade/` and
+`artifacts/feature-tests/results/mission-trade-integration/` directories. The existing delivery matrix was already
+covered by the 772-case run; integration checks target the changed boundaries rather than repeat that matrix.
+
 **Live acceptance:** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks:** Inspect a trade fetch objective and quoted implant in the native mission UI;

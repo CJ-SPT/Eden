@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Population validation during travel](protocol/performance.md#population-validation-during-travel-november-15-2026)
+records arrival-related stalls, batched NPC slot validation and complete moving-session benchmark results.
+
 [Startup reconciliation and catalog warm-up](protocol/startup.md#startup-reconciliation-and-catalog-warm-up-november-15-2026)
 covers batched belt geometry, atomic downtime renewal, shared catalog reads and per-phase startup diagnostics.
 

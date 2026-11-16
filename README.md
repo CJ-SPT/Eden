@@ -71,6 +71,9 @@ ordinary expulsions in space and settles them when the member docks, with persis
 [Agency Agents & Missions](docs/protocol/agency.md#agents-and-missions-browsing-and-actions--november-15-2026)
 supports native agent browsing, locator filtering, mission previews and existing mission conversations/actions.
 
+[Population validation during travel](docs/protocol/performance.md#population-validation-during-travel-november-15-2026)
+batches resident NPC slot checks and avoids copying unchanged guards during population participant discovery.
+
 ## Build and run
 
 Use the Windows commands in [Start here](#start-here) to prepare data and run a local server. For code milestones, run

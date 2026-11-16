@@ -95,7 +95,7 @@ internal sealed class NpcSpawnCatalog(WorldDatabase database)
             try
             {
                 var group = groups[type.GroupId];
-                var attributes = PilotFittingStore.ReadAttributes(catalog, type.Id);
+                var attributes = NpcProfileCatalog.ReadAttributes(catalog, type.Id);
                 var definition = catalog.Read(CatalogData.Client.Types, (long)type.Id);
                 var faction = catalog.Read(CatalogData.Client.Factions, (long)(((int)group.Faction)));
                 int corporation = checked((int)(faction?.CorporationID ?? 0));

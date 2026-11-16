@@ -4,6 +4,75 @@
 
 Targeting, health, weapons, NPC populations and behavior, losses, wrecks and repairs.
 
+## NPC weapon capability correction — November 15, 2026
+
+The user reported that unidentified mission NPCs seemed to inflict excessive damage. The catalog audit found **19 of 198**
+distinct mission hulls with a missile type and a **1 ms** launch duration but no `missileLaunchingForEntity` effect (**569**).
+Those hulls occur in **16 admitted level 2–4 missions**. Affected NPCs include Pithum Ascriber, Pithum Silencer, Gistum Defeater,
+Gistum Predator, Centus Tyrant, Centus Dark Lord, Centus Overlord and Corpus Pope. Attribute-only weapon admission incorrectly
+gave them extra missiles every eligible session frame. This establishes a concrete defect consistent with the report;
+it does not identify which NPC the user encountered.
+
+The direct-weapon audit found the same attribute-only defect on Spider Drone I (16210), which retains 6.25 raw EM damage
+per turret cycle but declares only webifying/support effects. It now remains a support NPC. This matches
+[CCP's Trinity correction](https://www.eveonline.com/news/view/eve-trinity-changes-and-fixes-1), which states that Spider Drone I
+only webifies while Spider Drone II also deals damage, and the pinned catalog's absence of attack effect 10.
+
+NPC combat profiles now suppress the inert missile type unless effect 569 is declared. Resident combat, population and guard
+profiles use that same catalog boundary, preventing phantom missile range from affecting detection, pursuit or bot estimates.
+Direct turret cycles also require the declared turret attack effect (10); an optional turret graphic is still unnecessary.
+Launch authorization independently requires the effect, and incoming flights from a hull without it expire without applying
+damage, including projectiles saved before the correction. Declared missile launchers retain their catalog damage, application,
+flight and cycle values. Declared turret damage and cycles retain their catalog values. No saved schema or Blue/Destiny format changed.
+The existing resident owner and checkpoint transaction remain authoritative.
+
+The [EVE University damage guide](https://wiki.eveuniversity.org/NPC_damage_types) distinguishes faction damage profiles, and
+[missile mechanics](https://wiki.eveuniversity.org/Missile_damage) describes size/speed application. Eligibility comes from the
+build-3662168 catalog's declared effects, not a guessed minimum cycle or faction-wide damage cap. Inert inspection of the installed
+`eve/client/script/environment/spaceObject/entityShip.pyj`, `DetermineLauncherTypeFromMissileID`, found the explicit
+`effectMissileLaunchingForEntity` check before resolving a launcher. The inspected installed `code.ccp` SHA-256 is
+`2dbc29987d01515f4f40c319f89f0276f05ac3d175d79776a03f1f8e2bab5c6a`; it differs from the original pinned archive hash retained in
+historical records. No client code was executed. The local evejs snapshot also requires the effect in
+`server/src/space/npc/npcEquipment.js`, `getNpcEntityMissileWeaponSource` (SHA-256
+`b14a2917f109c1dc0edf3c221f902d2028fe4d5d9f566dc60402c2d8308f16db`; no Git metadata). No reference implementation code was copied.
+
+**Automated validation.** The exact initial feature filter
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionNpcWeaponTests.EveryMissionHullRequiresItsDeclaredMissileEffectBeforeEnablingMissiles`
+failed with all 19 incorrect hulls before correction and passed afterward. The exact
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionNpcWeaponTests.SupportOnlySpiderDroneCannotFireAPlaceholderTurret`
+filter independently reproduced the support drone's unintended turret before correction. Focused development then passed 25 cases covering
+the catalog audit, actual mission turrets and missile-only ships, duplicate/early fire, checkpointed cooldowns, invalid saved
+projectile expiry, ordinary launch/impact, loss handling and existing SQL-free resident missile checks. The synthetic missile
+fixtures now explicitly declare attack effects 10/569 rather than depending on the production bug.
+
+The first broader run was interrupted after the two `resident: False` cases of
+`NpcCombatTests.SessionSendsTheFatalMessageAndCapsuleBallBeforeChangingShipId` failed with
+`Abyssal runs require the resident world`; it is not a passing validation run. Running that exact method on unchanged
+main **82753a2c** reproduced the same failure (**3 passed, 1 failed**, 20.52 seconds including test startup).
+The changed branch's two `resident: True` cases passed separately in 16.81 seconds. The final combined selection excludes only
+the obsolete offline cases using
+`(FullyQualifiedName!~SessionSendsTheFatalMessageAndCapsuleBallBeforeChangingShipId|DisplayName~resident: True)`.
+No offline gameplay fallback was added, and those old test cases remain unchanged.
+
+The subsequent combined run was stopped without claiming a result when the support-drone audit required the direct-weapon
+correction. A development build briefly overlapped that test host and reported MSB3026 output-file retries; after stopping the
+host, focused validation completed. Final checks use serial builds and tests.
+
+Tool/solution restore passed, and the final solution build completed in **1.20 seconds** with zero warnings/errors.
+The final selection passed **315/315 cases** in **231.25 seconds** wall time. It ORed
+`FullyQualifiedName~Eden.Protocol.Tests.Combat.<class>` for `NpcCombatTests`, `NpcMissileTests`, `NpcEncounterTests`,
+`NpcPopulationTests`, `NpcCatalogSharingTests`, `NpcGuardTests`, `NpcPursuitTests`, `NpcOrbitTests`, `NpcEwarTests`,
+`NpcAggressionTests`, `NpcCapacitorTests`, `NpcRepairTests` and `PlayerEwarNpcTests`, plus
+`FullyQualifiedName~Eden.Protocol.Tests.Agents.<selector>` for `MissionNpcWeaponTests`, `MissionEncounterTests`,
+`MissionLayoutTests` and `MissionContentTests.EveryNewCombatVariant`, then ANDed the exclusion clause above.
+The two obsolete offline session cases are the only excluded cases from those selectors. The full .NET suite was not requested
+or run. Both Python policy suites passed (**8** catalog-setup cases in 0.987 seconds and **9** formatting-policy cases in
+0.018 seconds). `tools/Format.ps1 -Check` passed, including **2,295** CSharpier files and line-width verification.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Revisit an affected mission after updating the server and compare incoming turret/missile messages.
+
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
 ## Multiplied bounty SP — November 15, 2026
