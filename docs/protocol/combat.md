@@ -18,8 +18,9 @@ when orphaned or when the session forgets its missile scene. Each missile uses i
 so one impact cannot clear another missile's attack. Existing turret visuals and target-lock notifications retain their owners.
 The change reads existing resident contacts and adds no gameplay persistence or database queries.
 
-Evidence: isolated inspection of build **3662168** `tactical.pyj` `TacticalSvc.OnSpecialFX` (line 414) and `fxSequencer.pyj`
-`FxSequencer.OnSpecialFX` (line 441). Tactical tracks offensive events aimed at the current ship independently of graphics;
+Evidence: isolated inspection of build **3662168** `tactical.pyj` `TacticalSvc.OnSpecialFX` (line 414), `fxSequencer.pyj`
+`FxSequencer.OnSpecialFX` (line 441), and `michelle.pyj` `OnSpecialFX` (line 2087). The ballpark forwards the event unchanged.
+Tactical tracks offensive events aimed at the current ship independently of graphics;
 its stop signature compares module, graphic, start time and duration. An empty graphic returns from the sequencer without a
 render activation. The pinned original `code.ccp` SHA-256 is
 `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`. The headless check exercises only isolated handlers with
@@ -29,7 +30,7 @@ was consulted for the unchanged ball delivery boundary. The local evejs referenc
 for missile boxes in `server/src/space/destiny/presentation/specialFxPayloads.js`, SHA-256
 `ee7b9b8f6a6efeafea142985239cd04692cfd07f9aafe3aa4bd5ff86e5a8500b`. No reference implementation was copied.
 
-**Automated validation:** Tool and solution restores passed. The final solution build passed with zero warnings/errors in
+**Automated validation:** Tool and solution restores passed. The initial stable solution build passed with zero warnings/errors in
 **9.88 seconds**. The affected selection passed **231/231 cases, zero skips, in 1 minute 40 seconds**. It OR-joined
 `FullyQualifiedName~.<class>.` for `NpcCombatTests`, `NpcSceneUpdateTests`, `NpcSceneReadTests`, `NpcMissileTests`,
 `PilotMissileTests`, `MissileCombatTests`, `MissileBallparkTests`, `TargetLockSessionTests`, `TargetingTests`, `FlightSessionTests`,
@@ -37,6 +38,14 @@ for missile boxes in `server/src/space/destiny/presentation/specialFxPayloads.js
 (**8 catalog checks in 1.836 seconds**, **9 formatting-policy checks in 0.035 seconds**), and formatting/140-character verification
 passed across **2,327 files**. The pinned-handler check passed offensive/ignored starts, overlapping attacks, exact stop signatures,
 duplicate replay and nonvisual FX handling. Full .NET regression was not requested or run.
+
+After integrating utility-drone main revision `4e442eb2`, solution restore and build passed with zero warnings/errors in
+**1 minute 12.99 seconds**. The final expanded selection passed **663/663 cases, zero skips, in 8 minutes 10 seconds**.
+It used the preceding filter plus `CombatDroneTests`, `DroneEquipmentTests`, `MiningDroneLifecycleTests`, `UtilityDroneTests`,
+`UtilityDroneIntegrationTests` and `UtilityDroneSafetyTests`, each using the same fully qualified class pattern.
+Both Python policy suites passed again (**8 catalog checks in 1.519 seconds**, **9 formatting checks in 0.022 seconds**),
+and formatting/140-character verification passed across **2,337 files**. The extended pinned-handler check also passed actual
+ballpark dispatch through both Tactical and FxSequencer. Documentation anchors, source fingerprints and diff whitespace passed.
 
 The exact initial `Test-Feature.ps1` filter joined the methods
 `NpcSceneUpdateTests.IntegratedWeaponIndicatorsFollowShotsRetargetingReplayExpiryAndDeparture`,

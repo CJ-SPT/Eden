@@ -15,7 +15,8 @@ assert hashlib.sha256(archive.read_bytes()).hexdigest() == '37fb2af4fa0ec5c8fa32
 with zipfile.ZipFile(archive) as source:
     tactical = zlib.decompress(source.read('eve/client/script/parklife/tactical.pyj'))
     sequencer = zlib.decompress(source.read('eve/client/script/parklife/fxSequencer.pyj'))
-worker = 'TACTICAL = %r\nSEQUENCER = %r\n' % (tactical, sequencer)
+    michelle = zlib.decompress(source.read('eve/client/script/remote/michelle.pyj'))
+worker = 'TACTICAL = %r\nSEQUENCER = %r\nMICHELLE = %r\n' % (tactical, sequencer, michelle)
 worker += r'''
 import marshal
 def find(code, name):
@@ -84,6 +85,14 @@ GetScaleTime = lambda *args: 1.0
 fx_native = function(find(marshal.loads(SEQUENCER[8:]), 'OnSpecialFX'), globals(), 'OnSpecialFX', defaults)
 fx_native(fx, 10, 11, None, 12, None, '', True, True, True)
 assert logs[-1] == ('FxSequencer::OnSpecialFx: No guid in trigger',)
+collections = Stub()
+collections.Iterable = (list, tuple)
+dispatch = function(find(marshal.loads(MICHELLE[8:]), 'OnSpecialFX'), globals(), 'OnSpecialFX', defaults)
+sm.ScatterEvent = lambda name, *args: (native(tracker, *args), fx_native(fx, *args))
+dispatch(Stub(), 10, 11, None, 12, None, '', True, True, True)
+assert flags[10] == 1
+dispatch(Stub(), 10, 11, None, 12, None, '', True, False, False)
+assert flags[10] == 0
 print('Native attack indicator start/overlap/stop/retarget/replay and nonvisual FX assertions passed')
 '''
 with os.add_dll_directory(str(root / 'tq/bin64')):
