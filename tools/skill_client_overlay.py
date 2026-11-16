@@ -50,6 +50,10 @@ class Row(object):
 
 
 class Vector(Row):
+    def __init__(self, values):
+        # geo2 accepts floats/int32, but rejects Python 2 longs from integral JSON coordinates.
+        Row.__init__(self, dict((axis, float(values[axis])) for axis in ('x', 'y', 'z')))
+
     def __len__(self):
         return 3
 
@@ -240,7 +244,8 @@ def _travel_location_values(identity, row):
     return {'locationID': identity, 'itemID': identity, 'locationName': row['name'], 'itemName': row['name'],
             'solarSystemID': row['systemID'], 'locationNameID': None, 'nameID': None,
             'typeID': row['typeID'], 'groupID': 10, 'orbitID': None, 'connector': False,
-            'x': point['x'], 'y': point['y'], 'z': point['z'], 'celestialIndex': None, 'orbitIndex': None}
+            'x': float(point['x']), 'y': float(point['y']), 'z': float(point['z']),
+            'celestialIndex': None, 'orbitIndex': None}
 
 
 def travel_locations(original, keys):

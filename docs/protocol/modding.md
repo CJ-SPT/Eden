@@ -1,5 +1,32 @@
 # Modding protocol and activation
 
+## Blank system information: integral gate coordinates — November 15, 2026
+
+The user's composition-8 trace identifies `InfoWindow._ReconstructInfoWindow` →
+`InfoWindowMonolith.reconstruct_info_window` → `update_window_icon` → `Map2D.Draw` →
+`Map2D.DrawSolarsystem` line 811. Its `geo2.Vec3Length((item.x, 0.0, item.z))` raises
+`geo2: sequence must contain numeric values only` before the normal information-data construction runs.
+
+The installed overlay serializes large integral coordinates such as `-4066658424320` without a decimal point.
+Python 2 JSON decoding produces `long`, and the pinned `_geo2.dll` rejects that type. A direct headless call
+reproduces the exact error with long coordinates and succeeds with their float equivalents. Composition 9
+normalizes every overlaid XYZ vector and location-row coordinate to float, matching native FSD coordinates.
+It retains the full coordinate values at the client's native double boundary, including fractional input.
+
+The regression uses integral JSON input, reproduces the long rejection with the real geometry DLL, then
+executes the exact native `Map2D.DrawSolarsystem` through the failing geometry calculation. It stops at a
+test-only checkpoint before UI construction. A separate run verifies both vector and location forms of all
+138 installed gates against the native DLL and preserves all 69 visual route pairs.
+
+Automated validation: tool/solution restore, zero-warning solution build, 55 focused .NET cases (zero failures/skips),
+50 headless native assertions, both Python policy suites (8 catalog and 9 formatting cases), and formatting
+verification passed in 98.42 seconds. The separate full-overlay geometry run passed for all 138 gates and
+69 map links. The focused .NET filter is the express-map filter below. The full .NET suite was not run.
+
+Live acceptance: Not performed; agent client testing is disabled. The failure trace came from the user's retry.
+
+Optional maintainer checks: after the launcher refreshes the package, reopen system Show Info and the map.
+
 ## Native asynchronous exception capture — November 15, 2026
 
 After installing composition 7, the user still reported a blank system information window. Neither the
