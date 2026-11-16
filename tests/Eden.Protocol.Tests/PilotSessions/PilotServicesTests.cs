@@ -23,6 +23,87 @@ namespace Eden.Protocol.Tests.PilotSessions;
 public sealed class PilotServicesTests
 {
     [Fact]
+    public async Task LoginLocationPrimingRejectsMalformedRequestsAndAcceptsEmptyLists()
+    {
+        using TestWorld world = new(liveWorld: true, simulationObjects: false);
+        var packets = await ExchangeAsync(
+            world,
+            42,
+            Request("config", "GetMultiLocationsEx", []),
+            Request("config", "GetMultiLocationsEx", [new object?[] { 58000001L }]),
+            Request("config", "GetMultiLocationsEx", [new List<object?> { "58000001" }]),
+            Request("config", "GetMultiLocationsEx", [new List<object?> { 0L }]),
+            Request("config", "GetMultiLocationsEx", [new List<object?> { -1L }]),
+            Request("config", "GetMultiLocationsEx", [new List<object?>()], keywords: new() { ["extra"] = true }),
+            Request("config", "GetMultiLocationsEx", [new List<object?>()])
+        );
+        Assert.Equal(7, packets.Count);
+        foreach (var error in packets[..^1])
+        {
+            AssertUserError(error, "CustomInfo", new() { ["info"] = "Supply a list of positive location IDs." });
+        }
+        var reply = BlueRead.Tuple(Result(packets[^1]), 2);
+        Assert.Empty(Assert.IsType<List<object?>>(reply[1]));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task NativeLocationPrimingResolvesExpressGatesBeforeAndAfterSelection(bool selected)
+    {
+        using TestWorld world = new(liveWorld: true, simulationObjects: false);
+        var own = world.Store.FindPilot(1000001)!;
+        var foreign = world.Store.FindPilot(1000002)!;
+        const long expressGate = 58000001;
+        using (CatalogDbContext catalog = new(new WorldDatabase(world.Path).CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT INTO Celestial(Id,SolarSystemId,TypeId,GroupId,X,Y,Z) VALUES
+                    (58000001,30000142,16,10,1e11,2e11,3e11),(58000002,30000144,16,10,4e11,5e11,6e11);
+                INSERT INTO Stargate(Id,SolarSystemId,DestinationId) VALUES
+                    (58000001,30000142,58000002),(58000002,30000144,58000001);
+                """
+            );
+        }
+        List<BlueInstance> calls = [];
+        if (selected)
+        {
+            calls.Add(Request("charUnboundMgr", "SelectCharacterID", [own.PilotId]));
+        }
+        calls.Add(
+            Request(
+                "config",
+                "GetMultiLocationsEx",
+                [new List<object?> { expressGate, own.ShipId, foreign.ShipId, 60003760L, 30000142L, 10000002L, long.MaxValue, expressGate }]
+            )
+        );
+        var packets = await ExchangeAsync(world, 42, calls.ToArray());
+        Assert.DoesNotContain(packets, packet => packet.Name.EndsWith(".ErrorResponse", StringComparison.Ordinal));
+        var reply = BlueRead.Tuple(Result(packets.Last(packet => packet.Name.EndsWith(".CallRsp", StringComparison.Ordinal))), 2);
+        Assert.Equal(
+            new[] { "locationID", "locationName", "solarSystemID", "x", "y", "z", "locationNameID" },
+            Assert.IsType<object?[]>(reply[0]).Select(BlueMarshal.Text)
+        );
+        var rows = Assert.IsType<List<object?>>(reply[1]).Select(row => BlueRead.Tuple(row, 7)).ToArray();
+        Assert.Equal(5, rows.Length);
+        var gate = Assert.Single(rows, row => Equals(row[0], expressGate));
+        Assert.Equal("Stargate (Perimeter)", BlueMarshal.Text(gate[1]));
+        Assert.Equal(30000142L, gate[2]);
+        Assert.Equal(new object?[] { 1e11, 2e11, 3e11 }, gate[3..6]);
+        var ship = Assert.Single(rows, row => Equals(row[0], own.ShipId));
+        Assert.Equal(own.ShipName, BlueMarshal.Text(ship[1]));
+        Assert.Contains(rows, row => Equals(row[0], 60003760L) && BlueMarshal.Text(row[1]).Contains("Jita", StringComparison.Ordinal));
+        Assert.Contains(rows, row => Equals(row[0], 30000142L) && BlueMarshal.Text(row[1]) == "Jita");
+        Assert.Contains(rows, row => Equals(row[0], 10000002L) && BlueMarshal.Text(row[1]) == "The Forge");
+        Assert.DoesNotContain(rows, row => Equals(row[0], foreign.ShipId) || Equals(row[0], long.MaxValue));
+        if (!selected)
+        {
+            Assert.DoesNotContain(packets, packet => packet.Name.EndsWith(".SessionChangeNotification", StringComparison.Ordinal));
+        }
+    }
+
+    [Fact]
     public async Task QuietLoggingKeepsSelectionAndMalformedCallWarningsWithoutRoutineTraffic()
     {
         using TestWorld world = new();

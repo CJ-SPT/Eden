@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Location priming before character selection (November 15, 2026)](#location-priming-before-character-selection-november-15-2026)
 - [Startup reconciliation and catalog warm-up (November 15, 2026)](#startup-reconciliation-and-catalog-warm-up-november-15-2026)
 - [Launcher CA certificate downloads](#launcher-ca-certificate-downloads)
 - [Orderly host shutdown](#orderly-host-shutdown)
@@ -27,6 +28,47 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Two pilots in Jita, November 2, 2026](#two-pilots-in-jita-november-2-2026)
 - [Character logoff to selection, November 4, 2026](#character-logoff-to-selection-november-4-2026)
 - [Client-requested exit logging, November 4, 2026](#client-requested-exit-logging-november-4-2026)
+
+## Location priming before character selection (November 15, 2026)
+
+The first login after Regional Express activation reported `Unsupported local call config.GetMultiLocationsEx`.
+The method previously belonged only to the selected-pilot phase, so an authenticated client priming names while
+loading the character selector received an Invalid Packet Destination error.
+
+Inert inspection of pinned build 3662168's `carbon/common/script/sys/cfg.pyj`, `Recordset._Prime`, confirms its
+local-name fetch runs first and its remaining IDs are sent as one Python list to the remote multi-fetch method.
+The existing seven-column location reply is preserved: `locationID`, `locationName`, `solarSystemID`, XYZ and
+`locationNameID`. No Blue encoding or transport behavior changes; the existing Carbon Blue reference applies.
+
+The account-phase handler now accepts that request before selection and resolves the account roster's own ship
+names plus public catalog systems, constellations, regions, stations and stargates. Stargate names use the real
+destination and catalog position, including the active mod catalog. Unknown IDs and other accounts' ships are
+omitted. Malformed requests return a named validation error; empty requests return the normal empty table.
+The selected-pilot handler remains authoritative after selection and adds public catalog names without widening
+its existing inventory, container, structure, wreck, trade and scanner visibility rules. Reads use the resident
+roster and shared catalog provider, with no saved-world SQL fallback or client package change.
+
+### Automated validation
+
+Initial exact filter:
+`FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.PilotServicesTests.NativeLocationPrimingResolvesExpressGatesBeforeAndAfterSelection`.
+Both cases passed in 6.43 seconds including runner startup (8.61-second development build). They exercise actual
+simulated protocol sessions before/after selection, projected gate names and positions, the exact reply header,
+duplicate IDs, unknown IDs and rejection of another account's ship. A separate simulated-session case covers
+malformed calls and empty lists. The full .NET suite was not requested or run.
+
+Final tool/solution restore, zero-warning solution build, **187 affected .NET cases with no failures/skips**,
+both Python policy suites (8 catalog and 9 formatting cases) and formatting verification passed in **134.09 seconds**.
+The .NET runner reported 1 minute 34 seconds (97.58 seconds including setup). Final filter:
+
+```text
+FullyQualifiedName~PilotServicesTests|FullyQualifiedName~PersonalAssetServiceTests|FullyQualifiedName~DirectionalScanningTests|FullyQualifiedName~ShipStorageTests|FullyQualifiedName~PilotFleetTests|FullyQualifiedName~PlayerTradeTests|FullyQualifiedName~CargoContainerTests|FullyQualifiedName~StructureTests|FullyQualifiedName~TravelRouteModTests|FullyQualifiedName~GameplayDependenciesTests
+```
+
+Live acceptance: Not performed; agent client testing is disabled. The reported popup is a user observation;
+successful native login after this correction remains unverified until the user reconnects.
+
+Optional maintainer checks: reconnect through the launcher and confirm the character selector and selected pilot load.
 
 ## Startup reconciliation and catalog warm-up (November 15, 2026)
 

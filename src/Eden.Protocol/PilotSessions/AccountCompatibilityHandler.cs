@@ -1,5 +1,6 @@
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Corporations;
+using Eden.Gameplay.Information;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
@@ -14,7 +15,8 @@ internal sealed class AccountCompatibilityHandler(
     ICharacterDirectory directory,
     INpcCorporationDirectory corporations,
     IPlayerCorporationDirectory players,
-    IUniversalSearch search
+    IUniversalSearch search,
+    IPublicLocations locations
 ) : IPilotCallHandler
 {
     public PilotCallResult Call(
@@ -34,6 +36,9 @@ internal sealed class AccountCompatibilityHandler(
             ("eventLog", "LogPlayerRequestedDisconnect") when arguments is object?[] { Length: 0 } && keywords is null or { Count: 0 } =>
                 PilotCallResult.None,
             ("config", "GetMultiOwnersEx") => OwnerRows(arguments),
+            // Native location priming also runs while the character selector is loading.
+            // Dynamic names remain restricted to this account's roster until pilot selection.
+            ("config", "GetMultiLocationsEx") when !context.Selected => LocationRows(context, arguments, keywords),
             ("config", "GetMultiCorpTickerNamesEx") => CorporationRows(context, arguments),
             ("config", "GetBlackListedPlanets" or "GetOldStationData") => BlueEmpty.List,
             ("air_npe", "is_air_npe_enabled") => false,
@@ -45,6 +50,47 @@ internal sealed class AccountCompatibilityHandler(
             ("multiLoginBlocker", "Login") => true,
             _ => PilotCallResult.Unsupported,
         };
+    }
+
+    private PilotCallResult LocationRows(PilotCallContext context, object? arguments, Dictionary<string, object?>? keywords)
+    {
+        if (
+            arguments is not object?[] { Length: 1 } args
+            || args[0] is not List<object?> ids
+            || ids.Any(id => id is not long value || value <= 0)
+            || keywords is { Count: > 0 }
+        )
+        {
+            return new PilotCallResult.Failure("Supply a list of positive location IDs.");
+        }
+        var requested = ids.Cast<long>().Distinct().ToHashSet();
+        var known = context
+            .Roster.Where(pilot => requested.Contains(pilot.ShipId))
+            .Select(pilot => new LocationRow(
+                pilot.ShipId,
+                pilot.ShipName,
+                pilot.SystemId,
+                pilot.Position?.X ?? pilot.X,
+                pilot.Position?.Y ?? pilot.Y,
+                pilot.Position?.Z ?? pilot.Z
+            ));
+        return new LocationTable(
+            known
+                .Concat(
+                    locations
+                        .Read(requested.ToArray())
+                        .Select(location => new LocationRow(
+                            location.Id,
+                            location.Name,
+                            location.SystemId,
+                            location.Position.X,
+                            location.Position.Y,
+                            location.Position.Z
+                        ))
+                )
+                .DistinctBy(location => location.Id)
+                .ToArray()
+        );
     }
 
     private IEnumerable<PilotContact> KnownPilots(PilotCallContext context) =>

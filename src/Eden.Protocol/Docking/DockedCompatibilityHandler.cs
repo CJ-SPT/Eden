@@ -15,7 +15,8 @@ internal sealed class DockedCompatibilityHandler(
     DirectionalScanHandler scanner,
     Eden.Gameplay.Structures.IPilotStructures structures,
     PlayerTradeHandler trades,
-    ICargoContainers containers
+    ICargoContainers containers,
+    Eden.Gameplay.Information.IPublicLocations publicLocations
 ) : ISelectedPilotCallHandler
 {
     private static CompatibilityRowset Rows(string[] header, params IBlueWritable[] lines) => new(header, lines);
@@ -144,6 +145,19 @@ internal sealed class DockedCompatibilityHandler(
     {
         var locations = known.DistinctBy(location => location.Id).ToList();
         var missing = ids.OfType<long>().Except(locations.Select(location => location.Id)).ToHashSet();
+        locations.AddRange(
+            publicLocations
+                .Read(missing.ToArray())
+                .Select(location => new LocationRow(
+                    location.Id,
+                    location.Name,
+                    location.SystemId,
+                    location.Position.X,
+                    location.Position.Y,
+                    location.Position.Z
+                ))
+        );
+        missing.ExceptWith(locations.Select(location => location.Id));
         // Personal Assets primes names before rendering. The cached row only needs the item's name.
         locations.AddRange(
             assets.StationItemNames(pilotId, missing).Select(asset => new LocationRow(asset.ItemId, asset.Name, null, 0, 0, 0))

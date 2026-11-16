@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Login location priming](protocol/startup.md#location-priming-before-character-selection-november-15-2026)
+covers the pre-selection location-name request exposed after Regional Express activation.
+
 [Automatic signature resolution](world-configuration.md#exploration) makes cosmic signatures fully scanned
 for every pilot through an optional World & economy setting.
 

@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Login location priming](protocol/startup.md#location-priming-before-character-selection-november-15-2026)
+resolves public gate and account-roster ship names before character selection.
+
 [Automatic signature resolution](protocol/information.md#automatic-signature-resolution--november-15-2026)
 adds an optional World & economy setting for fully resolved signatures without probes.
 
