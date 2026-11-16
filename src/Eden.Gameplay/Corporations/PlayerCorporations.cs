@@ -57,7 +57,8 @@ public sealed record CorporationIdentity(
     long Roles,
     long JoinedAt,
     CorporationMemberAccess? Access = null,
-    int AccountKey = CorporationWalletRules.MasterKey
+    int AccountKey = CorporationWalletRules.MasterKey,
+    int? AllianceId = null
 );
 
 public interface IPlayerCorporations

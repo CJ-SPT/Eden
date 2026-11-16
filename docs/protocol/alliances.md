@@ -83,3 +83,48 @@ registration journaling and checkpoint/reopen. Full .NET regression was not requ
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** Open alliance creation, public Show Info and the member list; check native labels and layout.
+
+## Membership, governance and session affiliation — November 16, 2026
+
+Schema 175 adds typed resident applications, membership history and committed change records. Corporation directors can
+apply or withdraw, executor-corporation directors can accept/reject, and accepted applications become effective after
+24 hours. New applications replace another outstanding application; rejected history can be reapplied to. Repeated
+acceptance preserves the original deadline. Due callbacks revalidate the corporation and alliance and cannot replay
+an effective admission. Membership history retains the saved effective time even when restart catch-up runs late.
+
+One member-corporation CEO declares one executor-support choice. At least half of corporations must support a candidate.
+Eden resolves equal support by retaining an eligible incumbent; an unresolved tie or no qualifying candidate suspends
+executor authority until support resolves. New members initially support the current executor. Departure clears votes
+for the departing corporation. Self-departure requires corporation director authority; other expulsions require current
+executor authority. With wars excluded, departures are immediate. Corporation closure removes alliance membership in
+the same resident transaction. Final alliance dissolution is handled by the billing milestone's downtime boundary.
+
+Native member, alliance and application cache notifications are derived from committed before/after records. Private
+application contents are restricted to the applicant corporation's directors and current executor directors. These cache
+deltas do not generate a player-facing application notification. An unchanged global change head skips event reads.
+Pilot identity derives alliance affiliation from corporation membership. Session deltas include `allianceid`, membership
+changes invalidate the resident corporation-identity cache, and connected clients release old alliance bindings.
+The pinned ticker-suggestion UI also requires rows exposing `shortName`; its reply now supplies that native rowset.
+
+The evejs `allianceGovernanceState.js` reference snapshot SHA-256 is
+`c0bec07063c32b06e63c759b4335c5786744946f26e09c2bb710259840ebed09`.
+
+**Automated validation.** The exact admission/reopen filter passed (1 test; build 8.25 s, tests 6.13 s) after the new
+saved history/application rows were connected to explicit resident ID allocation. An intermediate focused run passed
+41 tests covering membership, corporation membership/selection and closure. The first broader run passed 103 and failed
+5 offline session cases when their tick reached resident-only Abyssal state; subsequent policy/format checks did not run.
+Isolated unchanged-main comparisons passed (4 selection cases and 2 session cases), so that failure is timing-sensitive,
+not a verified deterministic baseline failure. The affected session fixtures now use the resident runtime, including reopen.
+The native creation session test verifies that alliance session changes precede the RPC reply. Final review also made
+the feed cursor acknowledge records committed between its head read and coherent event read, preventing duplicate replay.
+
+Final stable checks passed in **50.51 s**: tool/solution restore, zero-warning build, **109 focused tests** selected by
+`FullyQualifiedName~Eden.Protocol.Tests.Alliances|FullyQualifiedName~CorporationMembershipTests|FullyQualifiedName~CorporationClosureTests|FullyQualifiedName~CorporationSelectionTests|FullyQualifiedName~CorporationPublicInfoTests|FullyQualifiedName~CorporationRoleTests|FullyQualifiedName~PilotServicesTests|FullyQualifiedName~DetachedCheckpointTests`,
+both Python policy suites (**8 + 9**) and formatting/width verification (**2,398 files**). Coverage includes exact admission
+deadlines and restart, withdrawn/replaced applications, executor handover/ties, rejected old-executor edits, expulsion,
+corporation closure, session propagation/binding invalidation, repeated polling, and zero-SQL/connection/fitting idle reads.
+No full .NET suite was run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Observe admission and departure refreshing the native alliance/member panels without relogging.

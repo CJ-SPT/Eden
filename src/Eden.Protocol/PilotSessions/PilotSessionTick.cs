@@ -141,6 +141,7 @@ internal sealed class PilotSessionTick(
                 beforeAttack.LocationId != context.Pilot.LocationId
                 || beforeAttack.ShipId != context.Pilot.ShipId
                 || beforeAttack.CorpId != context.Pilot.CorpId
+                || beforeAttack.Identity.AllianceId != context.Pilot.Identity.AllianceId
                 || beforeAttack.Identity.Fleet != context.Pilot.Identity.Fleet
                 || beforeAttack.Identity.CorporationRoles != context.Pilot.Identity.CorporationRoles
                 || beforeAttack.Identity.CorporationAccess != context.Pilot.Identity.CorporationAccess

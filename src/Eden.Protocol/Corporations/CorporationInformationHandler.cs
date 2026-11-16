@@ -1,7 +1,9 @@
+using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.Alliances;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -12,7 +14,8 @@ namespace Eden.Protocol.Corporations;
 internal sealed class CorporationInformationHandler(
     INpcCorporationDirectory npcs,
     IPlayerCorporations players,
-    ICorporationMarketInformation markets
+    ICorporationMarketInformation markets,
+    IAllianceMembership alliances
 ) : ISelectedPilotCallHandler
 {
     private const int MaximumWarOwners = 1000;
@@ -71,9 +74,7 @@ internal sealed class CorporationInformationHandler(
             {
                 "GetCorpInfo" => new CorporationMarketActivityReply(markets.Read((int)id)),
                 // The last history row is the founding event, not an alliance membership.
-                "GetEmploymentRecord" => new BlueList<CorporationFoundedReply>(
-                    player is null ? [] : [new CorporationFoundedReply(player.CreatedAt)]
-                ),
+                "GetEmploymentRecord" => new AllianceHistoryReply(player is null ? [] : History(player)),
                 "GetCorporationWarFactionID" => PilotCallResult.None,
                 _ => BlueEmpty.List,
             };
@@ -82,6 +83,12 @@ internal sealed class CorporationInformationHandler(
         {
             return new PilotCallResult.Failure(error.Message);
         }
+    }
+
+    private IReadOnlyList<AllianceHistory> History(PlayerCorporation corporation)
+    {
+        var history = alliances.History(corporation.Id);
+        return history.Count == 0 ? [new(null, corporation.CreatedAt)] : history;
     }
 }
 

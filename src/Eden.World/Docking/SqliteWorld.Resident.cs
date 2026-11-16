@@ -231,7 +231,8 @@ public sealed partial class SqliteWorld
                     corporationAccess.BaseId
                 ),
                 CorporationAccess: corporationAccess,
-                CorporationAccountKey: CorporationWalletStore.SelectedKey(world, pilot.Id, corporation)
+                CorporationAccountKey: CorporationWalletStore.SelectedKey(world, pilot.Id, corporation),
+                AllianceId: world.Set<Eden.Data.World.Alliances.SavedAllianceMember>().Find(pilot.CorporationId)?.AllianceId
             ),
             new(
                 ship.Id,

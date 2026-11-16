@@ -1,6 +1,8 @@
+using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.Alliances;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
@@ -15,7 +17,8 @@ internal sealed partial class CorporationHandler(
     ICorporationAdministration administration,
     ICorporationRoles roles,
     ICorporationShares shares,
-    ICorporationStorage storage
+    ICorporationStorage storage,
+    IAllianceMembership allianceMembership
 ) : ISelectedPilotCallHandler
 {
     public void Advance(PilotCallContext context)
@@ -25,12 +28,14 @@ internal sealed partial class CorporationHandler(
             return;
         }
         DrainChanges(context);
+        DrainAllianceChanges(context);
         var identity = corporations.Identity(context.Pilot.PilotId);
         if (
             context.Pilot.CorpId == identity.Id
             && context.Pilot.Identity.CorporationRoles == identity.Roles
             && context.Pilot.Identity.CorporationAccess == identity.Access
             && context.Pilot.Identity.CorporationAccountKey == identity.AccountKey
+            && context.Pilot.Identity.AllianceId == identity.AllianceId
         )
         {
             return;
@@ -38,6 +43,10 @@ internal sealed partial class CorporationHandler(
         if (context.Pilot.CorpId != identity.Id)
         {
             context.ReleaseCorporationReferences();
+        }
+        if (context.Pilot.Identity.AllianceId != identity.AllianceId)
+        {
+            context.ReleaseReference("allianceRegistry");
         }
         context.Flight.UpdateCorporation(identity);
         context.Roster = context.Roster.Select(p => p.PilotId == context.Pilot.PilotId ? context.Pilot : p).ToArray();

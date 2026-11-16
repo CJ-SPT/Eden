@@ -81,6 +81,15 @@ internal sealed partial class AllianceStore
                 ChosenExecutorId = corporation.Id,
             }
         );
+        world.Add(
+            new SavedAllianceHistory
+            {
+                Id = world.Next("WorldAllianceHistory"),
+                CorporationId = corporation.Id,
+                AllianceId = id,
+                StartedAt = now,
+            }
+        );
         wallet!.Cents = balance;
         world.Add(
             new SavedServicePayment
@@ -95,6 +104,7 @@ internal sealed partial class AllianceStore
             }
         );
         var result = Snapshot(world, id)!;
+        Record(world, new(0, id, corporation.Id, After: result, MemberAfter: new(corporation.Id, id, now, corporation.Id)));
         world.Commit();
         database.NotifyAccessGroupsChanged();
         return new(result, balance);
@@ -104,9 +114,15 @@ internal sealed partial class AllianceStore
     {
         using var world = Resident.Economy.Begin(TransactionParticipants.None);
         var alliance = Executor(world, actorId);
+        var before = Snapshot(world, alliance.Id)!;
         var details = AllianceRules.Validate(new(alliance.Name, alliance.Ticker, description, url));
+        if (alliance.Description == details.Description && alliance.Url == details.Url)
+        {
+            return;
+        }
         alliance.Description = details.Description;
         alliance.Url = details.Url;
+        Record(world, new(0, alliance.Id, 0, Before: before, After: Snapshot(world, alliance.Id)));
         world.Commit();
     }
 

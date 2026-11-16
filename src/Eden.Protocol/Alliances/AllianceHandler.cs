@@ -37,7 +37,7 @@ internal sealed partial class AllianceHandler(IAlliances alliances) : ISelectedP
                     );
                     return created.Alliance.Id;
                 case ("GetSuggestedAllianceShortNames", [var name]) when service == "corpRegistry":
-                    return new BlueList<string>(alliances.SuggestTickers(Text(name)));
+                    return new AllianceTickerSuggestions(alliances.SuggestTickers(Text(name)));
                 case ("GetAlliance" or "GetAlliancePublicInfo", [long id]) when id is > 0 and <= int.MaxValue:
                     return new AllianceReply(Require((int)id));
                 case ("GetAlliance", []):

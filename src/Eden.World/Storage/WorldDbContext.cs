@@ -135,6 +135,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
     protected override void OnModelCreating(ModelBuilder model)
     {
         Eden.World.Alliances.AllianceSchema.Configure(model);
+        Eden.World.Alliances.AllianceMembershipSchema.Configure(model);
         Eden.World.Planetary.PlanetarySchema.Configure(model);
         JetcanSchema.Configure(model);
         Eden.World.Structures.StructureSchema.Configure(model);

@@ -6,5 +6,8 @@ internal sealed partial class ResidentEconomy
     {
         RegisterAlliance();
         RegisterAllianceMember();
+        RegisterAllianceApplication();
+        RegisterAllianceHistory();
+        RegisterAllianceChange();
     }
 }

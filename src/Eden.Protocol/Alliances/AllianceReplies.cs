@@ -1,7 +1,19 @@
 using Eden.Gameplay.Alliances;
+using Eden.Protocol.Docking;
 using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Alliances;
+
+internal sealed record AllianceTickerSuggestions(IReadOnlyList<string> Tickers) : BlueModel
+{
+    public override object ToBlue() =>
+        new CompatibilityRowset(["shortName"], Tickers.Select(ticker => new SuggestedAllianceTicker(ticker)).ToArray()).ToBlue();
+}
+
+internal sealed record SuggestedAllianceTicker(string Ticker) : BlueModel
+{
+    public override object ToBlue() => new object?[] { Ticker };
+}
 
 internal sealed record AllianceTickerRow(int Id, string Ticker) : BlueModel
 {

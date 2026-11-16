@@ -1,3 +1,4 @@
+using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Corporations;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Registration;
@@ -5,8 +6,12 @@ using Eden.Infrastructure.Registration;
 namespace Eden.Server.Maintenance;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class CorporationMaintenance(ICorporationVoting voting, ICorporationMemberRemovals removals, TimeProvider clock)
-    : IDisposable
+internal sealed class CorporationMaintenance(
+    ICorporationVoting voting,
+    ICorporationMemberRemovals removals,
+    TimeProvider clock,
+    IAllianceMembership alliances
+) : IDisposable
 {
     private Task _loop = Task.CompletedTask;
     private PeriodicTimer? _timer;
@@ -17,6 +22,7 @@ internal sealed class CorporationMaintenance(ICorporationVoting voting, ICorpora
         {
             voting.Advance();
             removals.Advance();
+            alliances.Advance();
             _timer = new PeriodicTimer(TimeSpan.FromSeconds(1), clock);
             _loop = Run(_timer);
         }
@@ -30,6 +36,7 @@ internal sealed class CorporationMaintenance(ICorporationVoting voting, ICorpora
             {
                 voting.Advance();
                 removals.Advance();
+                alliances.Advance();
             }
             catch (Exception error)
             {

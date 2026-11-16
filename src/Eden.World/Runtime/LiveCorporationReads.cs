@@ -52,7 +52,8 @@ internal sealed partial class LiveReadModels
         "WorldCorporationEmployment",
         "WorldCorporationMemberAccess",
         "WorldCorporationTitle",
-        "WorldCorporationWalletSelection"
+        "WorldCorporationWalletSelection",
+        "WorldAllianceMember"
     );
 
     internal CorporationIdentity CorporationIdentity(long pilotId, Func<CorporationIdentity> load) =>

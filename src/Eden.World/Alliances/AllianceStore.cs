@@ -8,7 +8,7 @@ using Eden.World.Storage;
 namespace Eden.World.Alliances;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed partial class AllianceStore(WorldDatabase database, TimeProvider clock) : IAlliances
+internal sealed partial class AllianceStore(WorldDatabase database, TimeProvider clock) : IAlliances, IAllianceMembership
 {
     private LiveWorld Resident =>
         LiveWorld.Find(database.Path) ?? throw new InvalidDataException("Alliances require an active resident world.");
