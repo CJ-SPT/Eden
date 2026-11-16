@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Aggression box indicators](protocol/combat.md#aggression-box-indicators--november-15-2026)
+restore offensive indicators for integrated NPC guns and physical missile attackers, with explicit lifecycle cleanup.
+
 [Custom gameplay switches](protocol/world-configuration.md#custom-gameplay-switches-november-15-2026) cover saved defaults, administration controls and restart behavior.
 
 [Login location priming](protocol/startup.md#location-priming-before-character-selection-november-15-2026)

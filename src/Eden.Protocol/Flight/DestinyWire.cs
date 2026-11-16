@@ -215,6 +215,13 @@ internal abstract record DestinyCommand(string Name) : BlueModel
             [Id, ModuleId, TypeId, TargetId, ChargeTypeId, Graphic, Offensive, Start, Active, Duration, 0, StartedAt, 0, GraphicInfo];
     }
 
+    internal sealed record AttackIndicator(long Id, long ModuleId, long TargetId, bool Active) : DestinyCommand("OnSpecialFX")
+    {
+        // Build 3662168 TacticalSvc tracks offensive OnSpecialFX independently of
+        // graphics. An empty guid makes FxSequencer skip rendering a nonexistent module.
+        protected override object?[] Arguments => [Id, ModuleId, null, TargetId, null, string.Empty, true, Active, Active];
+    }
+
     internal sealed record JumpOut(long Id, long GateId, int SystemId, int Duration) : DestinyCommand("OnSpecialFX")
     {
         protected override object?[] Arguments =>

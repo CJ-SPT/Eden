@@ -244,6 +244,7 @@ internal sealed class FlightNpcScene(
     {
         if (weapon.TurretTypeId <= 0)
         {
+            update(new DestinyCommand.AttackIndicator(npcId, npcId, weapon.TargetId, active));
             return;
         }
         update(
