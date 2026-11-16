@@ -28,7 +28,11 @@ public sealed class MissionCatalogLookupTests
         );
         Assert.InRange(loads, 1, 150);
         Assert.Equal(
-            MissionCatalog.Read(catalog).Where(profile => profile.Definition.Level == 4 && profile.Definition.Storyline),
+            MissionCatalog
+                .Read(catalog)
+                .Where(profile =>
+                    profile.Definition.Level == 4 && profile.Definition.Storyline && profile.Definition.FixedAgentIds.IsEmpty
+                ),
             selected
         );
         for (int level = 1; level <= MissionRules.MaximumAgentLevel; level++)
@@ -37,10 +41,28 @@ public sealed class MissionCatalogLookupTests
             {
                 var expected = MissionCatalog
                     .Read(catalog)
-                    .Where(profile => profile.Definition.Level == level && profile.Definition.Storyline == storyline);
+                    .Where(profile =>
+                        profile.Definition.Level == level
+                        && profile.Definition.Storyline == storyline
+                        && profile.Definition.FixedAgentIds.IsEmpty
+                    );
                 Assert.Equal(expected, MissionCatalog.ForLevel(catalog, level, storyline));
             }
         }
+    }
+
+    [Fact]
+    public void FixedAgentLookupLoadsItsNativeAssignmentWithoutAddingItToAnyRotatingPool()
+    {
+        using MissionFixture fixture = new();
+        using CatalogDbContext catalog = new(new WorldDatabase(fixture.Db.Path).CatalogPath);
+        var before = catalog.Definitions.Statistics;
+        var profile = Assert.Single(MissionCatalog.ForFixedAgent(catalog, 3018480));
+        Assert.Equal(1752, profile.Definition.MissionId);
+        Assert.InRange(catalog.Definitions.Statistics.Loads - before.Loads, 1, 30);
+        Assert.Same(profile, Assert.Single(MissionCatalog.ForFixedAgent(catalog, 3018481)));
+        Assert.Empty(MissionCatalog.ForFixedAgent(catalog, 3018344));
+        Assert.DoesNotContain(MissionCatalog.ForLevel(catalog, 1, true), p => p.Definition.MissionId == 1752);
     }
 
     [Fact]

@@ -13,7 +13,7 @@ internal sealed record AgentServiceDetailsReply(AgentServiceInformation Informat
             new Dictionary<string, object?>
             {
                 ["agentID"] = Information.Agent.Id,
-                ["stationID"] = Information.Agent.StationId,
+                ["stationID"] = Information.Agent.Space is null ? Information.Agent.StationId : null,
                 ["level"] = Information.Agent.Level,
                 ["services"] = new BlueList<BlueModel>(
                     Information.Agent is { Type: AgentType.Research, StationId: not null } ? [new AgentResearchServiceReply(Information)]
@@ -72,7 +72,7 @@ internal sealed record AgentStaticInfoReply(CatalogAgent Agent) : BlueModel
             new Dictionary<string, object?>
             {
                 ["agentID"] = Agent.Id,
-                ["stationID"] = Agent.StationId,
+                ["stationID"] = Agent.Space is null ? Agent.StationId : null,
                 ["corporationID"] = Agent.CorporationId,
                 ["solarsystemID"] = Agent.SystemId,
                 ["solarSystemID"] = Agent.SystemId,

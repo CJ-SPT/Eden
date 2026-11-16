@@ -25,13 +25,13 @@ internal sealed partial class PilotMissionStore
         }
     }
 
-    private static InventoryChange? GrantItemReward(WorldAction world, CatalogDbContext catalog, SavedMission row, int station)
+    private static InventoryChange? GrantItemReward(WorldAction world, CatalogDbContext catalog, SavedMission row, int? station)
     {
         if (row.ItemRewardTypeId == 0 && row.ItemRewardQuantity == 0)
         {
             return null;
         }
-        if (world is not EconomyTransaction || row.ItemRewardTypeId <= 0 || row.ItemRewardQuantity <= 0)
+        if (world is not EconomyTransaction || row.ItemRewardTypeId <= 0 || row.ItemRewardQuantity <= 0 || station is null)
         {
             throw new InvalidDataException("Invalid resident mission item reward quote.");
         }
@@ -39,7 +39,7 @@ internal sealed partial class PilotMissionStore
             world,
             catalog,
             row.PilotId,
-            station,
+            station.Value,
             (int)InventoryFlag.Hangar,
             row.ItemRewardTypeId,
             row.ItemRewardQuantity

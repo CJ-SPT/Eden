@@ -6,6 +6,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
+using Eden.World.Agents;
 using Eden.World.Storage;
 using Eden.World.Structures;
 
@@ -131,6 +132,7 @@ internal sealed class SystemObjects(
                 }
             );
         }
+        objects.AddRange(AgentSpaceCatalog.Objects(catalog, systemId));
         return objects.ToImmutableArray();
 
         void AddSystemObject(int id, long? typeId, ClientConstellationsCenter? point)

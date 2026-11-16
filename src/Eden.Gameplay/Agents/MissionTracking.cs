@@ -77,10 +77,17 @@ public static class MissionTrackingRules
                 TypeId: trade.TypeId,
                 Quantity: trade.Quantity
             );
-            var returnTrade = fetchTrade with { Kind = MissionObjectiveKind.TransportPresent, LocationId = offer.Agent.StationId!.Value };
+            var returnTrade = fetchTrade with
+            {
+                Kind = MissionObjectiveKind.TransportPresent,
+                LocationId = offer.Agent.MissionLocationId!.Value,
+            };
+            bool atAgent = offer.Agent.Space is { } space
+                ? FixedAgentRules.InRange(space, systemId, position)
+                : stationId == offer.Agent.StationId && position is null;
             return new(
                 !offer.ObjectiveComplete ? fetchTrade
-                    : stationId == offer.Agent.StationId && position is null ? complete
+                    : atAgent ? complete
                     : returnTrade,
                 [fetchTrade, returnTrade, complete],
                 false

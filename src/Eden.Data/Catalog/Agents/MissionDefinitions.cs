@@ -59,6 +59,7 @@ public sealed record MissionDefinition(
     public MissionChainPart? Chain { get; init; }
     public bool Trade { get; init; }
     public MissionItemRewardDefinition? ItemReward { get; init; }
+    public ImmutableArray<long> FixedAgentIds { get; init; } = [];
 }
 
 public sealed record MissionContent(int Build, ImmutableArray<MissionDefinition> Missions);

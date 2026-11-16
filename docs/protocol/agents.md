@@ -2,6 +2,108 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Data Center family and one-time space agents — November 15, 2026
+
+This milestone implements a complete native family through shared capabilities: **50** Keeping Crime In Check
+definitions, **57** agent assignments and all **50** required criminal-tag types. The supported pool becomes
+**437 admitted / 2,455 blocked**. These add to the existing 387 definitions; no prior admission is removed.
+
+The [University Data Centers guide, revision 224297](https://wiki.eveuniversity.org/index.php?title=Data_centers&oldid=224297)
+describes one-time tag exchanges, standing requirements, pirate-tag acquisition and public beacons. Exact agent IDs,
+levels, assignments, hulls, systems, tag IDs/quantities and local geometry come from build-3662168
+`npccharacters.agent.storyLineMissions`, `agentsinspace`, `missions`, `dungeons` and item types. The compiler admits
+the entire 50-definition family together, validates all 57 single-mission Event-agent bindings and all five
+ten-grade tag families, and rejects changed scripts, rewards, deadlines, types or ambiguous geometry. Five Copper
+definitions require three tags; the other 45 require twenty. Multiple Copper agents share definitions without
+sharing a pilot's one-time eligibility. Remaining trade templates retain 405 content/lifecycle blockers plus the
+level-five reward-policy blocker.
+
+`FixedAgentIds` is an explicit catalog binding. Fixed offers are excluded from ordinary and sixteen-completion
+storyline pools. The Event-agent service selects only its assigned profile and revalidates the native assignment
+at mutation boundaries. Request/accept/complete use the resident owner. Saved mission rows themselves establish
+the durable one-time lifecycle: completion, decline, quit, offered expiry and accepted expiry all prevent another
+offer from that agent, including after checkpoint/reopen. Concurrent requests share one saved offer and concurrent
+turn-ins settle once. Foreign-agent profiles and fleet reward sharing are rejected. There is no new world table,
+schema migration or SQL gameplay fallback.
+
+Agent information advertises the service and its current availability. Effective standing gates are 0/1/3/5 for
+levels one through four under existing skill and clone-grade rules. Offers retain existing Eden ISK/direct-standing
+and six-hour bonus policies, with zero LP and no ordinary storyline-counter increment. These are explicit Eden
+reward amounts; the native tag records do not supply the hidden payout tables. Derived standing changes and
+failure-standing penalties remain unimplemented, as distinct from the permanent one-time closure now enforced.
+Other COSMOS, career, epic-arc and specialized agent lifecycles remain blocked.
+
+The directory now uses the supported agent's actual in-space system and no station location. `AgentSpaceLocation`
+carries its native hull and room offset. Cached system geometry publishes named agent contacts and deduplicated
+public Data Center beacons; agent slim items carry `charID` and `corpID`. Location/header/fetch replies reference
+the agent contact rather than its unrelated catalog home station, and the tracker recognizes return to the ship.
+Requests, acceptance and turn-in require the same system and at most 2,500 m from the agent hull surface. Exact
+local room coordinates are retained relative to each native beacon. The client omits the server's public dungeon
+placement; Eden uses the stable origin `(PlacementOffset * dungeonId, PlacementOffset, 0)` shared by all visitors.
+No mission dungeon or private bookmark is fabricated for these tag exchanges.
+
+Acceptance supplies no tags. Only personally owned, packaged stacks in the active ship's Cargo Hold qualify.
+Remote station hangars, foreign cargo and other ships cannot satisfy an in-space turn-in. Exact quantities are
+consumed atomically with rewards and closure, while excess remains. Existing station trade behavior is preserved.
+
+The acquisition path is implemented, rather than requiring administratively spawned objective items. Resident
+ordinary pirate wreck settlement adds a deterministic, explicit Eden tag roll: 25% chance of one matching-faction
+tag, with two grades per hull class (Copper/Bronze frigates through Platinum/Diamond battleships). All fifty types
+resolve directly from native mission objectives and catalog names. Commander and unrelated-faction paths retain
+their existing behavior; rogue drones supply no criminal tags. Catalog lookup is shared and cached, and tag
+creation participates in the existing fatal-combat/wreck transaction and checkpoint. CCP's private drop weights
+are not claimed or copied, and no offline SQL implementation is added.
+
+Compared the local evejs `server/src/services/agent/agentAuthority.js` in-space directory normalization (SHA-256
+`b8de1a11f2c33906e80801e3bb660ea8f5181c2aa3bec293ff6c0cab06d961e3`; snapshot has no Git metadata), which also
+distinguishes an agent's actual space system from its source home station. Eden uses independently implemented
+typed catalog records, static contacts and resident lifecycle rules. Consulted unchanged
+[Carbon Blue Marshal.cpp at af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp)
+for existing instance/dictionary serialization; no codec, transport or Destiny format changed. Native rendering
+and interaction remain unverified until maintainer testing.
+
+The generated fixture contains 945 types and 5,619 source records, plus the native Data Center system geography.
+The optional typed geography fixture fields leave other feature fixtures unchanged. Tests exercise the real
+resident service, protocol boundaries, pirate destruction, wreck looting and reopened checkpoints.
+
+**Automated validation:** Required ordered checks passed in **629.04 seconds**: tool and solution restore,
+solution build with zero warnings/errors, **1,017/1,017** affected .NET cases (9 minutes 56 seconds), eight catalog
+policy cases, nine formatting policy cases, nineteen mission-content cases and formatting verification across
+2,309 files, including the 140-character policy. The exact final .NET filter was:
+
+```text
+(FullyQualifiedName~Eden.Protocol.Tests.Agents|FullyQualifiedName~Eden.Protocol.Tests.Loot|FullyQualifiedName~Eden.Protocol.Tests.Combat.RegionalNpcTests|FullyQualifiedName~Eden.Protocol.Tests.Flight.TypedFlightTests|FullyQualifiedName~Eden.Protocol.Tests.Flight.StaticSceneFrameTests|FullyQualifiedName~Eden.Protocol.Tests.Flight.DungeonObjectGeometryTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.AgentDirectory|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.AgentDirectoryServiceTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.IncrementalCheckpointTests)&FullyQualifiedName!~FailedAgentRemovalRollsBackEarlierPlayerContactDeletionInTheSameBatch
+```
+
+The initial exact feature filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.DataCenterMissionTests.EveryDataCenterMissionUsesItsNativeAssignmentAndPaysOnceAcrossCheckpoint&DisplayName~1752`.
+The final matrix covers every definition and all 57 assignments, terminal states and reopen, range/system/cargo
+rejections, native headers/objectives/slims, standing boundaries, stale or forged assignments, concurrent requests
+and turn-ins, separate Copper agents, all fifty obtainable tag types and real pirate destruction/wreck looting
+across all five factions. The fixture now includes native system geography needed for in-space protocol sessions.
+
+An earlier broad selection was interrupted after the old pool expectation included fixed-agent profiles in rotating
+storyline pools. Its corrected expected set preserves the cold-load checks and explicitly excludes fixed bindings;
+the affected lookup, standing and assignment checks subsequently passed **22/22**. Another broad selection was
+interrupted on `AgentDirectoryTests.FailedAgentRemovalRollsBackEarlierPlayerContactDeletionInTheSameBatch`.
+The exact method also fails on unchanged main **25cb01f2**: it expects `SqliteException`, while EF returns
+`DbUpdateException` wrapping the same forced SQLite failure (zero passed, one failed; build 8.98 seconds, test
+invocation 5.57 seconds). Its baseline TRX is
+`artifacts/feature-tests/results/bb201d86a97b48499fc776d134a4303e/tests.trx` in the main checkout.
+Only that unrelated pre-existing offline test is excluded from the final filter. No result totals are claimed for
+the interrupted selections, and no SQLite gameplay implementation or fallback test was added.
+
+Runtime manifest, audit and fixture re-export identically after newline normalization. All prior 387 mission
+definitions, 818 type values and 4,860 source-record values remain unchanged; additions are 50 definitions,
+127 types, 759 source records and 12 systems. All 2,892 audit IDs remain, with exactly fifty new admissions.
+Documentation links, encoding/newlines and `git diff --check` passed. The final TRX is
+`artifacts/feature-tests/results/data-center-family/data-center-family.trx`. No full .NET suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Warp to a Data Center beacon and inspect the named agent's header and fetch objective;
+loot matching pirate tags and turn them in once, then reopen the conversation.
+
 ## Resident trade objectives and item rewards — November 15, 2026
 
 Trade missions are a 460-definition gap: 443 `StorylineTradeMission`, five `GenericStorylineTradeMission`, and four

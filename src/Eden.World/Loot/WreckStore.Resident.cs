@@ -244,7 +244,7 @@ internal sealed partial class WreckStore
         {
             return NpcCommanderLootRules.Roll(group.Faction, NpcSpawnRules.Seed(npc.SystemId, npc.Id));
         }
-        return group is null
+        var drops = group is null
             ? []
             : NpcLootRules.Roll(
                 group.Faction,
@@ -253,6 +253,14 @@ internal sealed partial class WreckStore
                 RandomNumberGenerator.GetInt32(NpcLootRules.RollOutcomes),
                 RandomNumberGenerator.GetInt32(NpcLootRules.ModuleChoices)
             );
+        if (
+            group is not null
+            && NpcTagLootCatalog.Roll(catalog, group.Faction, group.Hull, NpcSpawnRules.Seed(npc.SystemId, npc.Id)) is { } tag
+        )
+        {
+            return [.. drops, tag];
+        }
+        return drops;
     }
 
     internal static WorldWreck CreatePlayer(

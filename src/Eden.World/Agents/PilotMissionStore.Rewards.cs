@@ -31,6 +31,16 @@ internal sealed partial class PilotMissionStore
         MissionProfile? continuation = null
     )
     {
+        bool fixedAgent = agent.Type == AgentType.Event && MissionCatalog.ForFixedAgent(catalog, agent.Id).Any();
+        if (fixedAgent)
+        {
+            FixedAgentRules.RequireAvailable(
+                world is EconomyTransaction,
+                true,
+                world.Filter<SavedMission>(m => m.PilotId == pilot.Id && m.AgentId == agent.Id && m.ClosedAt != null).Any()
+            );
+            storyline = true;
+        }
         if (!storyline && agent.Type != AgentType.Basic)
         {
             throw new InvalidDataException("This special agent does not offer ordinary missions.");
@@ -67,11 +77,13 @@ internal sealed partial class PilotMissionStore
             storyline
         );
         reward = WorldTuningRules.Mission(reward, world.Settings.Rewards);
-        var station = catalog.FindStation(agent.StationId!.Value) ?? throw new InvalidDataException("The agent's station is unavailable.");
+        var station = agent.Space is null
+            ? catalog.FindStation(agent.StationId!.Value) ?? throw new InvalidDataException("The agent's station is unavailable.")
+            : null;
         var destination = station;
         if (profile.Kind == MissionKind.Courier)
         {
-            var neighbors = catalog.GatesInSystem(station.SolarSystemId).Select(g => g.DestinationSystemId).ToHashSet();
+            var neighbors = catalog.GatesInSystem(station!.SolarSystemId).Select(g => g.DestinationSystemId).ToHashSet();
             var destinations = catalog
                 .Stations()
                 .Where(s => s.Id != station.Id && neighbors.Contains(s.SolarSystemId))
@@ -97,11 +109,11 @@ internal sealed partial class PilotMissionStore
             State = MissionState.Offered,
             OfferedAt = now,
             ExpiresAt = checked(now + profile.Lifetime.Ticks),
-            DestinationStation = destination.Id,
-            SystemId = destination.SolarSystemId,
-            X = station.X + offset,
-            Y = station.Y + MissionRules.PlacementOffset,
-            Z = station.Z - offset,
+            DestinationStation = destination?.Id ?? 0,
+            SystemId = agent.Space?.SystemId ?? destination!.SolarSystemId,
+            X = agent.Space?.Position.X ?? station!.X + offset,
+            Y = agent.Space?.Position.Y ?? station!.Y + MissionRules.PlacementOffset,
+            Z = agent.Space?.Position.Z ?? station!.Z - offset,
             IskCents = reward.IskCents,
             BonusIskCents = MissionBonusRules.Quote(reward.IskCents),
             BonusWindowTicks = MissionBonusRules.Window.Ticks,
@@ -121,6 +133,10 @@ internal sealed partial class PilotMissionStore
 
     private static IEnumerable<MissionProfile> ProfilesForAgent(CatalogDbContext catalog, CatalogAgent agent, int level, bool storyline)
     {
+        if (agent.Type == AgentType.Event)
+        {
+            return MissionCatalog.ForFixedAgent(catalog, agent.Id).Where(p => p.Definition.Level == level && p.AvailableTo(agent));
+        }
         var kind = MissionRules.KindForDivision(agent.DivisionId);
         return MissionCatalog
             .ForLevel(catalog, level, storyline)
@@ -344,6 +360,10 @@ internal sealed partial class PilotMissionStore
 
     private static bool Expire(WorldDbContext world, SavedMission mission, long now)
     {
+        if (mission.ClosedAt is null && now >= mission.ExpiresAt && MissionCatalog.IsFixed(mission.MissionId))
+        {
+            throw new InvalidDataException("One-time mission expiry requires the resident world.");
+        }
         if (mission.ClosedAt is null && now >= mission.ExpiresAt)
         {
             Close(world, mission, MissionState.Failed, now);

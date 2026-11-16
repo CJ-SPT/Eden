@@ -126,6 +126,10 @@ internal sealed partial class MissionHandler(
             }
             if (method == "GetAgentLocationWrap" && args.Length == 0)
             {
+                if (agent.Space is not null)
+                {
+                    return new SpaceAgentLocation(agent);
+                }
                 // Build 3662168 AgentDialogueWindow.GetAgentHeader reads this before
                 // rendering the briefing, independently of whether an offer exists.
                 var station = stations.Read().Stations.FirstOrDefault(s => s.Id == agent.StationId);

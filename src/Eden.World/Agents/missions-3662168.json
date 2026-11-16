@@ -4784,6 +4784,713 @@
       }
     },
     {
+      "missionId": 1752,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018480,
+        3018481,
+        3018482
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 1754,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018485,
+        3018486,
+        3018487
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 1755,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018488
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 1756,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018491,
+        3018492,
+        3018493
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 1890,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018489,
+        3018490
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2864,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018871
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2865,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018889
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2866,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018898
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2867,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018880
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2868,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018907
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2869,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018870
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2870,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018897
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2871,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018906
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2872,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018888
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2873,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018879
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2874,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018872
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2875,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018890
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2876,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018899
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2877,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018908
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2878,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018881
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2879,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018873
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2880,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018891
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2881,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018900
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2882,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018909
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2883,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018882
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2884,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018874
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2885,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018892
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2886,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018901
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2887,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018910
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2888,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018883
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2889,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018875
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2890,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018893
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2891,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018902
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2892,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018911
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2893,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018884
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2894,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018876
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2895,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018894
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2896,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018903
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2897,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018912
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2898,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018885
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2899,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018877
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2900,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018895
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2901,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018904
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2902,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018913
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2903,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018886
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2904,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018878
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2905,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018896
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2906,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018905
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2907,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018914
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
+      "missionId": 2908,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": true,
+      "trade": true,
+      "fixedAgentIds": [
+        3018887
+      ],
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Data_centers",
+      "sourceRevision": "University oldid=224297; build-3662168 assignments, tags and geometry; Eden reward policy",
+      "waves": []
+    },
+    {
       "missionId": 937,
       "level": 1,
       "difficulty": 500,

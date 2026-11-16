@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Data Center family and one-time space agents](protocol/agents.md#data-center-family-and-one-time-space-agents--november-15-2026)
+adds all 50 tag-turn-in definitions, 57 native assignments, public agent contacts and obtainable criminal tags.
+
 [Resident trade objectives and item rewards](protocol/agents.md#resident-trade-objectives-and-item-rewards--november-15-2026)
 adds player-sourced ore turn-in, durable implant quotes and four Materials For War Preparation storylines.
 

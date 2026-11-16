@@ -85,6 +85,11 @@ internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
     public override object ToBlue()
     {
         var fields = Fields(Body.Id, Body.TypeId, Body.OwnerId, Body.GroupId, Body.CategoryId);
+        if (Body.AgentId is long agentId)
+        {
+            fields["charID"] = agentId;
+            fields["corpID"] = Body.OwnerId;
+        }
         if (Body.Structure is { } structure)
         {
             fields["corpID"] = Body.OwnerId;

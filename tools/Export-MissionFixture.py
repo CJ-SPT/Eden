@@ -12,6 +12,7 @@ def export(catalog, output):
     db = sqlite3.connect(catalog.resolve().as_uri() + '?mode=ro', uri=True)
     records = {}
     factions = set()
+    systems = set()
     corporations = set()
     pending = {i for m in content['missions'] for w in m['waves'] for g in w['groups'] for i in g['types']}
     pending.update(i for m in content['missions'] for i in m.get('itemReward', {}).get('types', []))
@@ -31,6 +32,17 @@ def export(catalog, output):
         return value
 
     read('client/typelist', 459)  # Native ship-list expansion used by gate restriction tests.
+    for aid in sorted({aid for m in content['missions'] for aid in m.get('fixedAgentIds', [])}):
+        npc = read('client/npccharacters', aid)
+        read('client/localization_fsd_en-us', npc['nameID'])
+        corporations.add(npc['corporationID'])
+        location = read('client/agentsinspace', aid)
+        systems.add(location['solarSystemID'])
+        dungeon = read('client/dungeons', location['dungeonID'])
+        pending.add(location['typeID'])
+        pending.update(o['typeID'] for r in dungeon['rooms'].values() for o in r['objects'].values())
+        if dungeon.get('dungeonNameID'):
+            read('client/localization_fsd_en-us', dungeon['dungeonNameID'])
     for definition in content['missions']:
         mission = read('client/missions', definition['missionId'])
         if mission.get('factionID'):
@@ -93,7 +105,11 @@ def export(catalog, output):
         read('client/npccorporations', corporation)
         read('sde/npcCorporations', corporation)
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(dict(build=3662168, types=[types[k] for k in sorted(types)], records=[
+    geography = [dict(zip(('id', 'name', 'constellationId', 'constellationName', 'regionId', 'regionName'),
+                         db.execute('SELECT s.Id,s.Name,c.Id,c.Name,r.Id,r.Name FROM SolarSystem s '
+                                    'JOIN Constellation c ON c.Id=s.ConstellationId JOIN Region r ON r.Id=c.RegionId '
+                                    'WHERE s.Id=?', (system,)).fetchone())) for system in sorted(systems)]
+    output.write_text(json.dumps(dict(build=3662168, systems=geography, types=[types[k] for k in sorted(types)], records=[
         dict(dataset=d, key=k, data=v) for (d, k), v in sorted(records.items())]), indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
     print(f'Exported {len(types)} types and {len(records)} source records')
 
