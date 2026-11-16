@@ -17,7 +17,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 172;
+    internal const int CurrentVersion = 173;
 
     public static void Open(
         WorldDbContext world,
@@ -187,6 +187,7 @@ internal static class WorldMigration
         }
         JetcanStore.Expire(world, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         Eden.World.Fleets.CommandBurstSchema.Upgrade(world);
+        Eden.World.Propulsion.InterdictionSchema.Upgrade(world);
         LauncherSchema.Upgrade(world);
         Eden.World.Characters.PersonalSettingsSchema.Upgrade(world);
         if (version < 155)

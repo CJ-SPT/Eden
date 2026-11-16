@@ -12,7 +12,8 @@ namespace Eden.World.Ammunition;
 internal static class AmmunitionCatalog
 {
     internal static bool Supported(CatalogDbContext catalog, int typeId, int group) =>
-        Eden.World.Exploration.ProbeCatalog.Probe(catalog, typeId, group)
+        Eden.World.Propulsion.InterdictionCatalog.Probe(catalog, typeId, group)
+        || Eden.World.Exploration.ProbeCatalog.Probe(catalog, typeId, group)
         || CommandBurstCatalog.Charge(catalog, typeId, group)
         || TurretChargeCatalog.Supported(catalog, typeId, group)
         || MissileChargeCatalog.Supported(catalog, typeId, group)

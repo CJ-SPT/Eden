@@ -41,7 +41,8 @@ internal sealed class ModuleActivationHandler(
     Eden.Protocol.Exploration.HackingHandler? hacking = null,
     SpatialModuleHandler? spatial = null,
     SmartbombHandler? smartbombs = null,
-    CommandBurstHandler? commandBursts = null
+    CommandBurstHandler? commandBursts = null,
+    InterdictionHandler? interdiction = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -67,6 +68,10 @@ internal sealed class ModuleActivationHandler(
         if (method == "Activate" && !SpatialModuleHandler.Handles(effectName) && spatial?.BlocksModule(context, offensive) == true)
         {
             return new PilotCallResult.Failure("The cloak prevents activating this module.");
+        }
+        if (effectName == MissileHandler.EffectName && interdiction?.CallLauncher(context, method, args) is { } interdictionResult)
+        {
+            return interdictionResult;
         }
         if (effectName == MissileHandler.EffectName && probes?.CallModule(context, method, args) is { } probeResult)
         {

@@ -3,6 +3,7 @@ namespace Eden.Gameplay.Dogma;
 // Attribute IDs from the build 3662168 catalog.
 public enum DogmaAttributeId
 {
+    WarpBubbleImmune = 1538,
     CloakVelocityMultiplier = 306,
     CloakingTargetingDelay = 560,
     CloakingTargetingDelayBonus = 619,

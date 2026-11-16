@@ -71,6 +71,15 @@ public sealed class NavigationState
 
     public void CancelAlignment() => WarpDestination = null;
 
+    public void RedirectWarp(SpacePosition destination)
+    {
+        if (WarpDestination is null || Warp is not null)
+        {
+            throw new InvalidOperationException("Only an aligning warp can be redirected.");
+        }
+        WarpDestination = destination;
+    }
+
     public void LimitWarpDistance(SpacePosition origin, double distance)
     {
         if (WarpDestination is not { } destination)

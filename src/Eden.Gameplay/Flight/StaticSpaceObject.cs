@@ -20,6 +20,7 @@ public sealed record StaticSpaceObject(
     public Eden.Gameplay.Exploration.AbyssalContact? Abyssal { get; init; }
     public SpacePosition? AccelerationGateDirection { get; init; }
     public int? HackingState { get; init; }
+    public double? InterdictionRadius { get; init; }
     public bool Solid { get; init; } = true;
     public bool IsGlobal { get; init; } = true;
     public string? Name { get; init; }

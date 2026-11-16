@@ -110,6 +110,8 @@ internal static class PassiveCatalogFixture
     internal static void LoadCapacitorModules(string path, IReadOnlySet<int>? types = null) =>
         Load(path, "CapacitorModuleCatalog.json", types);
 
+    internal static void LoadInterdiction(string path) => Load(path, "InterdictionCatalog.json", null);
+
     internal static void LoadCommandBursts(string path) => Load(path, "CommandBurstCatalog.json", null);
 
     internal static void LoadSmartbombs(string path, IReadOnlySet<int>? types = null) => Load(path, "SmartbombCatalog.json", types);
