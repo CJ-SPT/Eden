@@ -406,6 +406,8 @@ public static class HullBonusRules
                     or HullCapability.ShieldExtenders
                     or HullCapability.ReinforcedBulkheads
                     or HullCapability.CombatDrones
+                    or HullCapability.MiningDrones
+                    or HullCapability.UtilityDrones
                     or HullCapability.RemoteElectronicAssistance
                     or HullCapability.TractorBeams
                     or HullCapability.Salvaging

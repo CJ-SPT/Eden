@@ -80,7 +80,12 @@ public sealed class CombatDroneTests
                     """
                 );
             }
-            foreach (var skill in Enum.GetValues<DroneSkill>())
+            DroneSkill[] knownSkills;
+            using (CatalogDbContext catalog = new(Base.CatalogPath))
+            {
+                knownSkills = Enum.GetValues<DroneSkill>().Where(skill => catalog.FittingType((int)skill) is not null).ToArray();
+            }
+            foreach (var skill in knownSkills)
             {
                 Base.Train((int)skill, 5);
             }

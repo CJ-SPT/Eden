@@ -136,6 +136,7 @@ internal sealed partial class LiveCombatRuntime
                 SpeedLimit = saved.SpeedLimit,
                 Orbiting = saved.Orbiting,
                 Delegation = DroneDelegationPersistence.Read(saved),
+                WorkEffect = PilotDroneStore.WorkEffect(saved, current.Contact.Profile),
             },
             UpdatedAt = saved.UpdatedAt,
             ReadyAt = saved.ReadyAt,

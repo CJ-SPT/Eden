@@ -34,7 +34,8 @@ internal sealed record EconomyWorldDrone(
     double VelocityZ,
     double X,
     double Y,
-    double Z
+    double Z,
+    string? WorkJson
 );
 
 internal sealed partial class ResidentEconomy
@@ -66,7 +67,7 @@ internal sealed partial class ResidentEconomy
                         ItemId,Activity,ArmorDamage,CommandedAt,ControllerShipId,CorporationId,DelegateFleetId,
                         DelegateMembership,DelegatePilotId,DelegateShipId,DelegationMode,Orbiting,OwnerMembership,PilotId,
                         ReactionRevision,ReadyAt,Shield,ShotAt,ShotTargetId,SpeedLimit,StructureDamage,SystemId,TargetId,
-                        UpdatedAt,VelocityX,VelocityY,VelocityZ,X,Y,Z
+                        UpdatedAt,VelocityX,VelocityY,VelocityZ,X,Y,Z,WorkJson
                     )
                     SELECT
                         json_extract(value,'$.ItemId'),json_extract(value,'$.Activity'),json_extract(value,'$.ArmorDamage'),
@@ -82,7 +83,7 @@ internal sealed partial class ResidentEconomy
                         json_extract(value,'$.TargetId'),json_extract(value,'$.UpdatedAt'),
                         json_extract(value,'$.VelocityX'),json_extract(value,'$.VelocityY'),
                         json_extract(value,'$.VelocityZ'),json_extract(value,'$.X'),json_extract(value,'$.Y'),
-                        json_extract(value,'$.Z')
+                        json_extract(value,'$.Z'),json_extract(value,'$.WorkJson')
                     FROM json_each({values}) WHERE 1
                     ON CONFLICT(ItemId) DO UPDATE SET
                         Activity=excluded.Activity,ArmorDamage=excluded.ArmorDamage,CommandedAt=excluded.CommandedAt,
@@ -94,7 +95,7 @@ internal sealed partial class ResidentEconomy
                         ReactionRevision=excluded.ReactionRevision,ReadyAt=excluded.ReadyAt,Shield=excluded.Shield,
                         ShotAt=excluded.ShotAt,ShotTargetId=excluded.ShotTargetId,SpeedLimit=excluded.SpeedLimit,
                         StructureDamage=excluded.StructureDamage,SystemId=excluded.SystemId,TargetId=excluded.TargetId,
-                        UpdatedAt=excluded.UpdatedAt,VelocityX=excluded.VelocityX,VelocityY=excluded.VelocityY,
+                        WorkJson=excluded.WorkJson,UpdatedAt=excluded.UpdatedAt,VelocityX=excluded.VelocityX,VelocityY=excluded.VelocityY,
                         VelocityZ=excluded.VelocityZ,X=excluded.X,Y=excluded.Y,Z=excluded.Z
                     """
                 );

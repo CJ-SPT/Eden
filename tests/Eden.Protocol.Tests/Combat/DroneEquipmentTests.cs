@@ -247,11 +247,11 @@ public sealed class DroneEquipmentTests
         );
         Assert.Equal(
             8,
-            rigs.Count(entry => entry.Checks.Any(check => check.Milestone == ShipContentMilestone.Mining && !check.Implemented))
+            rigs.Count(entry => entry.Checks.Any(check => check.Milestone == ShipContentMilestone.Mining && check.Implemented))
         );
         Assert.Equal(
             16,
-            rigs.Count(entry => entry.Checks.Any(check => check.Milestone == ShipContentMilestone.UtilityDrones && !check.Implemented))
+            rigs.Count(entry => entry.Checks.Any(check => check.Milestone == ShipContentMilestone.UtilityDrones && check.Implemented))
         );
         Assert.All(report.Entries.Where(entry => entry.MetaGroup == 15), entry => Assert.False(entry.Admitted));
     }

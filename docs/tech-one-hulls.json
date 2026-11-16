@@ -215,7 +215,7 @@
         {
           "effectId": 4166,
           "capability": "Probes",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5051,
@@ -225,13 +225,10 @@
         {
           "effectId": 5460,
           "capability": "Hacking",
-          "operational": false
+          "operational": true
         }
       ],
-      "deferred": [
-        "Probes",
-        "Hacking"
-      ]
+      "deferred": []
     },
     {
       "typeId": 587,
@@ -1053,7 +1050,7 @@
         {
           "effectId": 4165,
           "capability": "Probes",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5045,
@@ -1063,13 +1060,10 @@
         {
           "effectId": 5460,
           "capability": "Hacking",
-          "operational": false
+          "operational": true
         }
       ],
-      "deferred": [
-        "Probes",
-        "Hacking"
-      ]
+      "deferred": []
     },
     {
       "typeId": 606,
@@ -1131,7 +1125,7 @@
         {
           "effectId": 5030,
           "capability": "MiningDrones",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5035,
@@ -1139,9 +1133,7 @@
           "operational": true
         }
       ],
-      "deferred": [
-        "MiningDrones"
-      ]
+      "deferred": []
     },
     {
       "typeId": 607,
@@ -1178,7 +1170,7 @@
         {
           "effectId": 4167,
           "capability": "Probes",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5048,
@@ -1188,13 +1180,10 @@
         {
           "effectId": 5460,
           "capability": "Hacking",
-          "operational": false
+          "operational": true
         }
       ],
-      "deferred": [
-        "Probes",
-        "Hacking"
-      ]
+      "deferred": []
     },
     {
       "typeId": 608,
@@ -1783,12 +1772,10 @@
         {
           "effectId": 2250,
           "capability": "MiningDrones",
-          "operational": false
+          "operational": true
         }
       ],
-      "deferred": [
-        "MiningDrones"
-      ]
+      "deferred": []
     },
     {
       "typeId": 627,
@@ -1880,7 +1867,7 @@
         {
           "effectId": 2249,
           "capability": "MiningDrones",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6395,
@@ -1888,9 +1875,7 @@
           "operational": true
         }
       ],
-      "deferred": [
-        "MiningDrones"
-      ]
+      "deferred": []
     },
     {
       "typeId": 629,
@@ -2027,12 +2012,12 @@
         {
           "effectId": 3172,
           "capability": "UtilityDrones",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 3173,
           "capability": "UtilityDrones",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5122,
@@ -2052,12 +2037,10 @@
         {
           "effectId": 6374,
           "capability": "UtilityDrones",
-          "operational": false
+          "operational": true
         }
       ],
-      "deferred": [
-        "UtilityDrones"
-      ]
+      "deferred": []
     },
     {
       "typeId": 632,
@@ -2209,12 +2192,12 @@
         {
           "effectId": 3172,
           "capability": "UtilityDrones",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 3173,
           "capability": "UtilityDrones",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5125,
@@ -2229,12 +2212,10 @@
         {
           "effectId": 6374,
           "capability": "UtilityDrones",
-          "operational": false
+          "operational": true
         }
       ],
-      "deferred": [
-        "UtilityDrones"
-      ]
+      "deferred": []
     },
     {
       "typeId": 635,
@@ -3809,7 +3790,7 @@
         {
           "effectId": 5030,
           "capability": "MiningDrones",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5035,
@@ -3864,7 +3845,7 @@
         {
           "effectId": 5229,
           "capability": "Probes",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6783,
@@ -3873,8 +3854,6 @@
         }
       ],
       "deferred": [
-        "MiningDrones",
-        "Probes",
         "MicroJumpDrives"
       ]
     },
@@ -5188,7 +5167,7 @@
         {
           "effectId": 8224,
           "capability": "IceMining",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 8227,
@@ -5198,12 +5177,12 @@
         {
           "effectId": 8228,
           "capability": "IceMining",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 8229,
           "capability": "GasMining",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 8230,
@@ -5213,12 +5192,12 @@
         {
           "effectId": 8231,
           "capability": "IceMining",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 8300,
           "capability": "GasMining",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 8303,
@@ -5228,7 +5207,7 @@
         {
           "effectId": 8304,
           "capability": "IceMining",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 8305,
@@ -5237,8 +5216,6 @@
         }
       ],
       "deferred": [
-        "IceMining",
-        "GasMining",
         "MiningCrystals",
         "DeepCoreMining"
       ]
@@ -5295,7 +5272,7 @@
         {
           "effectId": 8224,
           "capability": "IceMining",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 8227,
@@ -5305,22 +5282,20 @@
         {
           "effectId": 8228,
           "capability": "IceMining",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 8229,
           "capability": "GasMining",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 8300,
           "capability": "GasMining",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
-        "IceMining",
-        "GasMining",
         "MiningCrystals",
         "DeepCoreMining"
       ]
@@ -5387,17 +5362,15 @@
         {
           "effectId": 8228,
           "capability": "IceMining",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 8229,
           "capability": "GasMining",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
-        "IceMining",
-        "GasMining",
         "MiningCrystals",
         "DeepCoreMining"
       ]
@@ -7444,7 +7417,7 @@
     },
     {
       "typeId": 21097,
-      "name": "Goru's Shuttle",
+      "name": "Goru\u0027s Shuttle",
       "class": "Shuttle",
       "acquisition": "market",
       "fitting": {
@@ -8314,12 +8287,12 @@
         {
           "effectId": 8294,
           "capability": "MiningDrones",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 8295,
           "capability": "MiningDrones",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 8311,
@@ -8328,7 +8301,6 @@
         }
       ],
       "deferred": [
-        "MiningDrones",
         "IndustrialCores",
         "FleetAccess",
         "FleetRefitting"
@@ -8374,18 +8346,15 @@
         {
           "effectId": 5119,
           "capability": "Probes",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5460,
           "capability": "Hacking",
-          "operational": false
+          "operational": true
         }
       ],
-      "deferred": [
-        "Probes",
-        "Hacking"
-      ]
+      "deferred": []
     },
     {
       "typeId": 29266,
@@ -9428,17 +9397,16 @@
         {
           "effectId": 8313,
           "capability": "GasMining",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 8315,
           "capability": "GasMining",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
-        "CynosuralFields",
-        "GasMining"
+        "CynosuralFields"
       ]
     },
     {
@@ -9555,7 +9523,7 @@
         {
           "effectId": 5030,
           "capability": "MiningDrones",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5035,
@@ -9578,9 +9546,7 @@
           "operational": true
         }
       ],
-      "deferred": [
-        "MiningDrones"
-      ]
+      "deferred": []
     },
     {
       "typeId": 33083,
@@ -9956,7 +9922,7 @@
         {
           "effectId": 2252,
           "capability": "Cloaking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 4512,
@@ -9966,7 +9932,7 @@
         {
           "effectId": 5259,
           "capability": "Cloaking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7117,
@@ -9979,9 +9945,7 @@
           "operational": true
         }
       ],
-      "deferred": [
-        "Cloaking"
-      ]
+      "deferred": []
     },
     {
       "typeId": 33397,
@@ -10030,17 +9994,17 @@
         {
           "effectId": 2252,
           "capability": "Cloaking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 2253,
           "capability": "Cloaking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 4168,
           "capability": "Probes",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 4515,
@@ -10050,12 +10014,12 @@
         {
           "effectId": 5260,
           "capability": "Cloaking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5460,
           "capability": "Hacking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5485,
@@ -10073,11 +10037,7 @@
           "operational": true
         }
       ],
-      "deferred": [
-        "Probes",
-        "Cloaking",
-        "Hacking"
-      ]
+      "deferred": []
     },
     {
       "typeId": 33468,
@@ -10135,7 +10095,7 @@
         {
           "effectId": 2252,
           "capability": "Cloaking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5087,
@@ -10145,24 +10105,20 @@
         {
           "effectId": 5229,
           "capability": "Probes",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5460,
           "capability": "Hacking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5647,
           "capability": "Cloaking",
-          "operational": false
+          "operational": true
         }
       ],
-      "deferred": [
-        "Probes",
-        "Cloaking",
-        "Hacking"
-      ]
+      "deferred": []
     },
     {
       "typeId": 33470,
@@ -10210,7 +10166,7 @@
         {
           "effectId": 2252,
           "capability": "Cloaking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 3483,
@@ -10225,12 +10181,12 @@
         {
           "effectId": 5229,
           "capability": "Probes",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5460,
           "capability": "Hacking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5721,
@@ -10238,11 +10194,7 @@
           "operational": true
         }
       ],
-      "deferred": [
-        "Probes",
-        "Cloaking",
-        "Hacking"
-      ]
+      "deferred": []
     },
     {
       "typeId": 33472,
@@ -10307,7 +10259,7 @@
         {
           "effectId": 5460,
           "capability": "Hacking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5725,
@@ -10322,7 +10274,7 @@
         {
           "effectId": 5737,
           "capability": "Probes",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5738,
@@ -10346,8 +10298,6 @@
         }
       ],
       "deferred": [
-        "Probes",
-        "Hacking",
         "MicroJumpDrives",
         "FleetRefitting",
         "FrigateEscapeRecovery"
@@ -10433,7 +10383,7 @@
         {
           "effectId": 2252,
           "capability": "Cloaking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 3483,
@@ -10448,12 +10398,12 @@
         {
           "effectId": 5229,
           "capability": "Probes",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5460,
           "capability": "Hacking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5721,
@@ -10461,11 +10411,7 @@
           "operational": true
         }
       ],
-      "deferred": [
-        "Probes",
-        "Cloaking",
-        "Hacking"
-      ]
+      "deferred": []
     },
     {
       "typeId": 33816,
@@ -10807,7 +10753,7 @@
         {
           "effectId": 5647,
           "capability": "Cloaking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7117,
@@ -10821,7 +10767,6 @@
         }
       ],
       "deferred": [
-        "Cloaking",
         "Interdiction"
       ]
     },
@@ -11132,7 +11077,7 @@
         {
           "effectId": 8100,
           "capability": "UtilityDrones",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 8101,
@@ -11145,9 +11090,7 @@
           "operational": true
         }
       ],
-      "deferred": [
-        "UtilityDrones"
-      ]
+      "deferred": []
     },
     {
       "typeId": 37456,
@@ -11312,12 +11255,12 @@
         {
           "effectId": 8294,
           "capability": "MiningDrones",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 8295,
           "capability": "MiningDrones",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 8311,
@@ -11326,7 +11269,6 @@
         }
       ],
       "deferred": [
-        "MiningDrones",
         "FleetAccess"
       ]
     },
@@ -11390,7 +11332,7 @@
         {
           "effectId": 5229,
           "capability": "Probes",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6083,
@@ -11398,9 +11340,7 @@
           "operational": true
         }
       ],
-      "deferred": [
-        "Probes"
-      ]
+      "deferred": []
     },
     {
       "typeId": 47269,
@@ -11437,7 +11377,7 @@
         {
           "effectId": 7088,
           "capability": "Disintegrators",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7092,
@@ -11481,8 +11421,7 @@
         }
       ],
       "deferred": [
-        "Smartbombs",
-        "Disintegrators"
+        "Smartbombs"
       ]
     },
     {
@@ -11520,7 +11459,7 @@
         {
           "effectId": 7085,
           "capability": "Disintegrators",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7092,
@@ -11545,12 +11484,11 @@
         {
           "effectId": 8074,
           "capability": "Disintegrators",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
-        "Smartbombs",
-        "Disintegrators"
+        "Smartbombs"
       ]
     },
     {
@@ -11594,12 +11532,12 @@
         {
           "effectId": 7079,
           "capability": "Disintegrators",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7080,
           "capability": "Disintegrators",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7092,
@@ -11639,7 +11577,6 @@
       ],
       "deferred": [
         "Smartbombs",
-        "Disintegrators",
         "MicroJumpDrives",
         "FrigateEscapeRecovery"
       ]
@@ -11690,7 +11627,7 @@
         {
           "effectId": 5030,
           "capability": "MiningDrones",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5035,
@@ -11700,7 +11637,7 @@
         {
           "effectId": 5229,
           "capability": "Probes",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7055,
@@ -11714,8 +11651,6 @@
         }
       ],
       "deferred": [
-        "MiningDrones",
-        "Probes",
         "MicroJumpDrives",
         "FrigateEscapeRecovery"
       ]
@@ -11769,22 +11704,21 @@
         {
           "effectId": 7154,
           "capability": "Disintegrators",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7156,
           "capability": "Disintegrators",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7157,
           "capability": "Disintegrators",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
-        "Smartbombs",
-        "Disintegrators"
+        "Smartbombs"
       ]
     },
     {
@@ -11847,7 +11781,7 @@
         {
           "effectId": 7155,
           "capability": "Disintegrators",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7158,
@@ -11872,12 +11806,11 @@
         {
           "effectId": 7162,
           "capability": "Disintegrators",
-          "operational": false
+          "operational": true
         }
       ],
       "deferred": [
         "Smartbombs",
-        "Disintegrators",
         "MicroJumpDrives"
       ]
     },
@@ -11982,12 +11915,10 @@
         {
           "effectId": 8048,
           "capability": "VortonProjectors",
-          "operational": false
+          "operational": true
         }
       ],
-      "deferred": [
-        "VortonProjectors"
-      ]
+      "deferred": []
     },
     {
       "typeId": 54732,
@@ -12023,12 +11954,10 @@
         {
           "effectId": 8053,
           "capability": "VortonProjectors",
-          "operational": false
+          "operational": true
         }
       ],
-      "deferred": [
-        "VortonProjectors"
-      ]
+      "deferred": []
     },
     {
       "typeId": 54733,
@@ -12071,12 +12000,12 @@
         {
           "effectId": 8054,
           "capability": "VortonProjectors",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 8056,
           "capability": "VortonProjectors",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 8377,
@@ -12095,7 +12024,6 @@
         }
       ],
       "deferred": [
-        "VortonProjectors",
         "MicroJumpDrives",
         "FrigateEscapeRecovery"
       ]
@@ -12527,7 +12455,7 @@
         {
           "effectId": 11060,
           "capability": "UtilityDrones",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 11061,
@@ -12541,7 +12469,6 @@
         }
       ],
       "deferred": [
-        "UtilityDrones",
         "MicroJumpDrives"
       ]
     },
@@ -12651,12 +12578,12 @@
         {
           "effectId": 4166,
           "capability": "Probes",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5460,
           "capability": "Hacking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 11068,
@@ -12666,13 +12593,10 @@
         {
           "effectId": 11069,
           "capability": "Probes",
-          "operational": false
+          "operational": true
         }
       ],
-      "deferred": [
-        "Probes",
-        "Hacking"
-      ]
+      "deferred": []
     },
     {
       "typeId": 72904,
@@ -12703,17 +12627,17 @@
         {
           "effectId": 4165,
           "capability": "Probes",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5460,
           "capability": "Hacking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 11069,
           "capability": "Probes",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 11070,
@@ -12721,10 +12645,7 @@
           "operational": true
         }
       ],
-      "deferred": [
-        "Probes",
-        "Hacking"
-      ]
+      "deferred": []
     },
     {
       "typeId": 72907,
@@ -12760,23 +12681,20 @@
         {
           "effectId": 5119,
           "capability": "Probes",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5460,
           "capability": "Hacking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 11069,
           "capability": "Probes",
-          "operational": false
+          "operational": true
         }
       ],
-      "deferred": [
-        "Probes",
-        "Hacking"
-      ]
+      "deferred": []
     },
     {
       "typeId": 72913,
@@ -12813,7 +12731,7 @@
         {
           "effectId": 4167,
           "capability": "Probes",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5087,
@@ -12828,12 +12746,12 @@
         {
           "effectId": 5460,
           "capability": "Hacking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 11069,
           "capability": "Probes",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 11072,
@@ -12841,10 +12759,7 @@
           "operational": true
         }
       ],
-      "deferred": [
-        "Probes",
-        "Hacking"
-      ]
+      "deferred": []
     },
     {
       "typeId": 73789,
@@ -13123,7 +13038,7 @@
         {
           "effectId": 2252,
           "capability": "Cloaking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 3487,
@@ -13133,7 +13048,7 @@
         {
           "effectId": 5460,
           "capability": "Hacking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6083,
@@ -13148,34 +13063,30 @@
         {
           "effectId": 11528,
           "capability": "Cloaking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 11529,
           "capability": "Probes",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 11530,
           "capability": "Probes",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 11531,
           "capability": "Probes",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 11532,
           "capability": "Hacking",
-          "operational": false
+          "operational": true
         }
       ],
-      "deferred": [
-        "Probes",
-        "Cloaking",
-        "Hacking"
-      ]
+      "deferred": []
     },
     {
       "typeId": 78333,
@@ -13650,7 +13561,7 @@
         {
           "effectId": 12063,
           "capability": "Cloaking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 12069,
@@ -13664,7 +13575,6 @@
         }
       ],
       "deferred": [
-        "Cloaking",
         "CapitalFlexShieldHardening"
       ]
     },
@@ -13704,12 +13614,12 @@
         {
           "effectId": 2252,
           "capability": "Cloaking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5647,
           "capability": "Cloaking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 6174,
@@ -13748,7 +13658,6 @@
         }
       ],
       "deferred": [
-        "Cloaking",
         "BreacherPods",
         "MicroJumpDrives"
       ]
@@ -13789,12 +13698,12 @@
         {
           "effectId": 2252,
           "capability": "Cloaking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5647,
           "capability": "Cloaking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 12188,
@@ -13818,7 +13727,6 @@
         }
       ],
       "deferred": [
-        "Cloaking",
         "BreacherPods"
       ]
     },
@@ -13873,12 +13781,12 @@
         {
           "effectId": 12331,
           "capability": "GasMining",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 12557,
           "capability": "GasMining",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 12596,
@@ -13886,9 +13794,7 @@
           "operational": true
         }
       ],
-      "deferred": [
-        "GasMining"
-      ]
+      "deferred": []
     },
     {
       "typeId": 89607,
@@ -13950,17 +13856,17 @@
         {
           "effectId": 2252,
           "capability": "Cloaking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5229,
           "capability": "Probes",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5460,
           "capability": "Hacking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 5721,
@@ -13990,12 +13896,12 @@
         {
           "effectId": 12537,
           "capability": "Hacking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 12538,
           "capability": "GasMining",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 12539,
@@ -14010,7 +13916,7 @@
         {
           "effectId": 12541,
           "capability": "GasMining",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 12543,
@@ -14019,10 +13925,6 @@
         }
       ],
       "deferred": [
-        "Probes",
-        "Cloaking",
-        "GasMining",
-        "Hacking",
         "MicroJumpDrives",
         "FleetAccess",
         "FleetRefitting"
@@ -14079,12 +13981,12 @@
         {
           "effectId": 12331,
           "capability": "GasMining",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 12557,
           "capability": "GasMining",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 12559,
@@ -14094,7 +13996,7 @@
         {
           "effectId": 12560,
           "capability": "UtilityDrones",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 12596,
@@ -14107,10 +14009,7 @@
           "operational": true
         }
       ],
-      "deferred": [
-        "UtilityDrones",
-        "GasMining"
-      ]
+      "deferred": []
     },
     {
       "typeId": 89648,
@@ -14168,17 +14067,17 @@
         {
           "effectId": 8313,
           "capability": "GasMining",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 8315,
           "capability": "GasMining",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 12560,
           "capability": "UtilityDrones",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 12563,
@@ -14192,9 +14091,7 @@
         }
       ],
       "deferred": [
-        "UtilityDrones",
-        "CynosuralFields",
-        "GasMining"
+        "CynosuralFields"
       ]
     },
     {
@@ -14290,27 +14187,25 @@
         {
           "effectId": 12771,
           "capability": "IceMining",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 12772,
           "capability": "IceMining",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 12773,
           "capability": "IceMining",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 12774,
           "capability": "IceMining",
-          "operational": false
+          "operational": true
         }
       ],
-      "deferred": [
-        "IceMining"
-      ]
+      "deferred": []
     },
     {
       "typeId": 91775,
@@ -14442,7 +14337,7 @@
         {
           "effectId": 12810,
           "capability": "UtilityDrones",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 12843,
@@ -14455,9 +14350,7 @@
           "operational": true
         }
       ],
-      "deferred": [
-        "UtilityDrones"
-      ]
+      "deferred": []
     },
     {
       "typeId": 91857,
@@ -14596,7 +14489,7 @@
         {
           "effectId": 5647,
           "capability": "Cloaking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7117,
@@ -14610,7 +14503,6 @@
         }
       ],
       "deferred": [
-        "Cloaking",
         "Interdiction"
       ]
     },
@@ -14643,7 +14535,7 @@
         {
           "effectId": 5647,
           "capability": "Cloaking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7117,
@@ -14657,7 +14549,6 @@
         }
       ],
       "deferred": [
-        "Cloaking",
         "Interdiction"
       ]
     },
@@ -14690,7 +14581,7 @@
         {
           "effectId": 5647,
           "capability": "Cloaking",
-          "operational": false
+          "operational": true
         },
         {
           "effectId": 7117,
@@ -14704,7 +14595,6 @@
         }
       ],
       "deferred": [
-        "Cloaking",
         "Interdiction"
       ]
     },

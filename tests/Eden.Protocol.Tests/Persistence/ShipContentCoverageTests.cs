@@ -71,7 +71,7 @@ public sealed class ShipContentCoverageTests
         foreach (int hull in BuildContentPolicy.Current.DroneHullTypes)
         {
             var entry = Assert.Single(report.Entries, entry => entry.TypeId == hull);
-            Assert.True(entry.Admitted);
+            Assert.True(entry.Admitted, $"Hull {hull} {entry.Name} was not admitted.");
             Assert.Contains(entry.Checks, check => check.Role == HullCapability.CombatDrones && check.Implemented);
             Assert.DoesNotContain(HullCapability.CombatDrones, Assert.Single(oldReport.Hulls, entry => entry.TypeId == hull).Deferred);
         }

@@ -17,7 +17,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 169;
+    internal const int CurrentVersion = 170;
 
     public static void Open(
         WorldDbContext world,
@@ -175,6 +175,15 @@ internal static class WorldMigration
         CorporationRemovalSchema.Upgrade(world);
         Eden.World.Characters.PilotActivitySchema.Upgrade(world);
         Eden.World.Bookmarks.SharedBookmarkSchema.Upgrade(world, catalog);
+        if (
+            !world
+                .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldDrone')")
+                .AsEnumerable()
+                .Contains("WorkJson")
+        )
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldDrone ADD COLUMN WorkJson TEXT");
+        }
         JetcanStore.Expire(world, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         Eden.World.Fleets.CommandBurstSchema.Upgrade(world);
         LauncherSchema.Upgrade(world);

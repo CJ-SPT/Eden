@@ -38,12 +38,26 @@ internal static partial class DroneCatalog
         {
             var ship =
                 shipId == pilot.ActiveShipId ? pilot.ActiveShip : world.Ships.SingleOrDefault(s => s.Id == shipId && s.OwnerId == pilotId);
-            fitted = ship is null
-                ? attributes.ToDictionary()
-                : FittingCalculation.Read(world, catalog, pilot, ship, typeId).Graph.Attributes(FittingCalculation.OwnerTargetId);
+            if (ship is null)
+            {
+                fitted = attributes.ToDictionary();
+            }
+            else
+            {
+                var calculation = FittingCalculation.Read(world, catalog, pilot, ship, typeId);
+                fitted = calculation.Graph.Attributes(FittingCalculation.OwnerTargetId);
+                if (catalog.RequireItem(typeId).GroupId == UtilityDroneRules.MiningGroup)
+                {
+                    fitted[DogmaAttributeId.MiningAmount] *=
+                        calculation.Graph.Read(pilotId, DogmaAttributeId.MiningDroneAmountPercent) / DroneRules.BaseMiningAmountPercent;
+                }
+            }
             world.StageFit(key, revision, fitted);
         }
-        return DroneRules.ApplySkills(Profile(catalog, typeId, fitted), Skills(world, catalog, pilotId), required);
+        return UtilityDroneRules.ApplyGathering(
+            DroneRules.ApplySkills(Profile(catalog, typeId, fitted), Skills(world, catalog, pilotId), required),
+            world.Settings.Resources
+        );
     }
 
     internal static IReadOnlyDictionary<DroneSkill, int> Skills(WorldAction world, CatalogDbContext catalog, long pilotId) =>

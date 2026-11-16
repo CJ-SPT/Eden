@@ -268,14 +268,27 @@ internal sealed partial class PilotTackleStore(WorldDatabase database, TimeProvi
             // A connection owns each remote cycle. Its controller atomically
             // renews the paid row or stops it. Another connection must not
             // expire that row before the owner has made its repeat decision.
+            bool droneEffect = item is not null && catalog.FittingType(item.TypeId)?.CategoryId == (int)InventoryCategory.Drone;
             bool valid =
                 source.ActiveShipId == row.SourceShipId
                 && source.ActiveShip.Position is not null
                 && System(catalog, source.ActiveShip) == row.SystemId
-                && item is { Online: true }
-                && item.OwnerId == row.PilotId
-                && item.LocationId == row.SourceShipId
-                && InventoryDefinitions.IsMediumSlot(item.FlagId)
+                && (
+                    droneEffect
+                        ? Eden.World.Drones.PilotDroneStore.ActiveEffect(
+                            world,
+                            row.ModuleId,
+                            row.SourceShipId,
+                            row.TargetId,
+                            row.SystemId,
+                            row.ExpiresAt,
+                            now
+                        )
+                        : item is { Online: true }
+                            && item.OwnerId == row.PilotId
+                            && item.LocationId == row.SourceShipId
+                            && InventoryDefinitions.IsMediumSlot(item.FlagId)
+                )
                 && !world.Set<ShipLoss>().Any(l => l.ShipId == row.SourceShipId);
             if (valid && row.TargetKind == TackleTargetKind.Npc)
             {

@@ -11,6 +11,7 @@ public static class DroneRules
     public const double LightBandwidth = 5;
     public const double MediumBandwidth = 10;
     public const double BaseControlRange = 20_000;
+    public const double BaseMiningAmountPercent = 100;
 
     // EVE University, Drones: deployed drones lose their controller beyond 500 km.
     public const double ShutdownDistance = 500_000;
@@ -40,7 +41,14 @@ public static class DroneRules
                 or DroneSkill.LightDroneOperation
                 or DroneSkill.MediumDroneOperation
                 or DroneSkill.HeavyDroneOperation
-                or DroneSkill.SentryDroneInterfacing;
+                or DroneSkill.SentryDroneInterfacing
+                or DroneSkill.MiningDroneOperation
+                or DroneSkill.MiningDroneSpecialization
+                or DroneSkill.IceHarvestingDroneOperation
+                or DroneSkill.IceHarvestingDroneSpecialization
+                or DroneSkill.RepairDroneOperation
+                or DroneSkill.SalvageDroneOperation
+                or DroneSkill.SalvageDroneSpecialization;
 
     public static CombatDroneKind Kind(double bandwidth, IReadOnlySet<int> requiredSkills)
     {
@@ -144,6 +152,10 @@ public static class DroneRules
         IReadOnlySet<int> requiredSkills
     )
     {
+        if (profile.Utility is not null)
+        {
+            profile = UtilityDroneRules.ApplySkills(profile, skills, requiredSkills);
+        }
         var kind = profile.Kind == CombatDroneKind.Unspecified ? Kind(profile.Bandwidth, requiredSkills) : profile.Kind;
         var operationSkill = kind switch
         {
@@ -151,9 +163,10 @@ public static class DroneRules
             CombatDroneKind.Medium => DroneSkill.MediumDroneOperation,
             CombatDroneKind.Heavy => DroneSkill.HeavyDroneOperation,
             CombatDroneKind.Sentry => DroneSkill.SentryDroneInterfacing,
+            CombatDroneKind.Utility => DroneSkill.Drones,
             _ => throw new InvalidDataException("Unsupported combat drone operation kind."),
         };
-        int operation = skills.GetValueOrDefault(operationSkill);
+        int operation = kind == CombatDroneKind.Utility ? 0 : skills.GetValueOrDefault(operationSkill);
         double damage =
             (1 + operation * OperationDamagePerLevel)
             * (1 + skills.GetValueOrDefault(DroneSkill.DroneInterfacing) * InterfacingDamagePerLevel);

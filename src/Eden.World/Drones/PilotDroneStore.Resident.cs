@@ -68,6 +68,7 @@ internal sealed partial class PilotDroneStore
             drone.Orbiting,
             DroneDelegationPersistence.Read(drone)
         );
+        contact = contact with { WorkEffect = WorkEffect(drone, profile) };
         if (
             drone.SystemId is int system
             && Eden.Gameplay.Exploration.AbyssalRules.IsSystem(system)

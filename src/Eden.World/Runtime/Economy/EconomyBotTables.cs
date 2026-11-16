@@ -1913,11 +1913,13 @@ internal sealed partial class ResidentEconomy
                         row.VelocityZ,
                         row.X,
                         row.Y,
-                        row.Z
+                        row.Z,
+                        row.WorkJson
                     ),
                 state => new Eden.Data.World.Drones.WorldDrone
                 {
                     ItemId = state.ItemId,
+                    WorkJson = state.WorkJson,
                     Activity = state.Activity,
                     ArmorDamage = state.ArmorDamage,
                     CommandedAt = state.CommandedAt,
@@ -1952,7 +1954,7 @@ internal sealed partial class ResidentEconomy
                 "ItemId,Activity,ArmorDamage,CommandedAt,ControllerShipId,CorporationId,DelegateFleetId,"
                     + "DelegateMembership,DelegatePilotId,DelegateShipId,DelegationMode,Orbiting,OwnerMembership,PilotId,"
                     + "ReactionRevision,ReadyAt,Shield,ShotAt,ShotTargetId,SpeedLimit,StructureDamage,SystemId,TargetId,"
-                    + "UpdatedAt,VelocityX,VelocityY,VelocityZ,X,Y,Z",
+                    + "UpdatedAt,VelocityX,VelocityY,VelocityZ,X,Y,Z,WorkJson",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -1984,7 +1986,8 @@ internal sealed partial class ResidentEconomy
                         reader.GetDouble(27),
                         reader.GetDouble(28),
                         reader.GetDouble(29),
-                        reader.GetDouble(30)
+                        reader.GetDouble(30),
+                        reader.IsDBNull(31) ? null : reader.GetString(31)
                     ),
                 state => new(state.ItemId),
                 indexes:

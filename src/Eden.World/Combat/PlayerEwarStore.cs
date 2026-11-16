@@ -268,14 +268,27 @@ internal sealed partial class PlayerEwarStore(WorldDatabase database, INpcEwarRo
             var item = world.Set<OwnedItem>().Find(row.ModuleId);
             // Paid rows belong to the source controller, including at repeat
             // boundaries. A victim advancing first cannot expire a continuous effect.
+            bool droneEffect = item is not null && catalog.FittingType(item.TypeId)?.CategoryId == (int)InventoryCategory.Drone;
             bool valid =
                 source?.ActiveShip.Position is not null
                 && source.ActiveShipId == row.SourceShipId
                 && CrimewatchPersistence.System(catalog, source.ActiveShip) == row.SystemId
-                && item is { Online: true, Singleton: true }
-                && item.OwnerId == row.PilotId
-                && item.LocationId == row.SourceShipId
-                && InventoryDefinitions.IsMediumSlot(item.FlagId)
+                && (
+                    droneEffect
+                        ? Eden.World.Drones.PilotDroneStore.ActiveEffect(
+                            world,
+                            row.ModuleId,
+                            row.SourceShipId,
+                            row.TargetId,
+                            row.SystemId,
+                            row.Contact().ExpiresAt,
+                            now
+                        )
+                        : item is { Online: true, Singleton: true }
+                            && item.OwnerId == row.PilotId
+                            && item.LocationId == row.SourceShipId
+                            && InventoryDefinitions.IsMediumSlot(item.FlagId)
+                )
                 && !world.Set<ShipLoss>().Any(l => l.ShipId == row.SourceShipId)
                 && ReadTarget(world, catalog, new(row.TargetId, row.TargetKind), row.SystemId, now) is not null;
             if (!valid)
