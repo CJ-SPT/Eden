@@ -69,7 +69,13 @@ def main():
         expect(page.get_by_text("Revision 2 saved · pending restart.", exact=True)).to_be_visible()
         expect(page.get_by_role("button", name="Save for restart", exact=True)).to_be_disabled()
         click("World & economy")
+        for label in ("Empire LP-store datacores", "Simulated market history", "Regional hub supply",
+                      "Beginner market supply", "Enable player bots"):
+            page.get_by_label(label, exact=True).uncheck()
         page.get_by_label("Simulated miners", exact=True).uncheck()
+        click("Progression")
+        page.get_by_label("Grant civilian starting equipment to new pilots", exact=True).uncheck()
+        click("World & economy")
         edit("Station traffic density (×)", "0.5")
         click("Rewards")
         edit("NPC bounty ISK (×)", "3")
@@ -94,6 +100,12 @@ def main():
         click("Reload saved values")
         expect(page.get_by_label("Ore mining yield (×)", exact=True)).to_have_value("2")
         expect(page.get_by_text("Saved · pending restart", exact=True)).to_be_visible()
+        click("World & economy")
+        for label in ("Empire LP-store datacores", "Simulated market history", "Regional hub supply",
+                      "Beginner market supply", "Enable player bots"):
+            expect(page.get_by_label(label, exact=True)).not_to_be_checked()
+        click("Progression")
+        expect(page.get_by_label("Grant civilian starting equipment to new pilots", exact=True)).not_to_be_checked()
         assert not errors, errors
         browser.close()
 

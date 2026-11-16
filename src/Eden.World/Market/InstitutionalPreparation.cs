@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Eden.World.Market;
 
-internal sealed record InstitutionalPreparation(int StationId, long Catalog, int Stock);
+internal sealed record InstitutionalPreparation(int StationId, long Catalog, int Stock, bool RegionalHubSupply = true);
 
 // Preparation belongs to the exact EF transaction, including read-only transactions
 // for which SQLite need not invoke its native write-commit hook.

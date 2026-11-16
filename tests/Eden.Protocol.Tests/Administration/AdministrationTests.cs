@@ -18,6 +18,66 @@ namespace Eden.Protocol.Tests.Administration;
 public sealed partial class AdministrationTests
 {
     [Fact]
+    public async Task CustomPolicyControlsRenderAndSaveExportAndCompareDisabledValues()
+    {
+        await using var fixture = await Fixture.Start();
+        await fixture.SignIn();
+        string html = WebUtility.HtmlDecode(await fixture.Client.GetStringAsync("/"));
+        foreach (
+            string label in new[]
+            {
+                "Empire LP-store datacores",
+                "Simulated market history",
+                "Regional hub supply",
+                "Beginner market supply",
+                "Grant civilian starting equipment to new pilots",
+                "Enable player bots",
+            }
+        )
+        {
+            Assert.Contains(label, html);
+        }
+        var state = (await fixture.Client.GetFromJsonAsync<ConfigurationState>("/api/admin/configuration"))!;
+        var settings = state.Active.Draft.Settings with
+        {
+            Economy = state.Active.Draft.Settings.Economy with
+            {
+                EmpireLpDatacores = false,
+                SimulatedMarketHistory = false,
+                RegionalHubSupply = false,
+                BeginnerMarketSupply = false,
+            },
+            Progression = state.Active.Draft.Settings.Progression with { GrantStartingEquipment = false },
+            Capsuleers = state.Active.Draft.Settings.Capsuleers with { Enabled = false },
+        };
+        using var saved = await fixture.Client.PostAsJsonAsync(
+            "/api/admin/revisions",
+            new AdminSaveRequest(state.Generation, state.Active.Draft with { Settings = settings })
+        );
+        Assert.Equal(HttpStatusCode.OK, saved.StatusCode);
+        var pending = (await saved.Content.ReadFromJsonAsync<ConfigurationState>())!;
+        Assert.Equal(settings, pending.Pending!.Draft.Settings);
+        Assert.True(pending.Active.Draft.Settings.Economy.EmpireLpDatacores);
+        var exported = await fixture.Client.GetFromJsonAsync<WorldConfigurationDraft>($"/api/admin/export/{pending.Pending.Id}");
+        Assert.Equal(settings, exported!.Settings);
+        var changes = await fixture.Client.GetFromJsonAsync<RevisionDifference[]>("/api/admin/compare?left=1&right=2");
+        foreach (
+            string label in new[]
+            {
+                "Empire LP-store datacores",
+                "Simulated market history",
+                "Regional hub supply",
+                "Beginner market supply",
+                "Starting equipment for new pilots",
+                "Player bots",
+            }
+        )
+        {
+            Assert.Contains(changes!, change => change.Field == label && change.Before == "On" && change.After == "Off");
+        }
+    }
+
+    [Fact]
     public async Task WorldSettingsPageRendersAllActivityTabsAndTheSharedRestartSaveBar()
     {
         await using var fixture = await Fixture.Start();
@@ -48,7 +108,7 @@ public sealed partial class AdministrationTests
         await using var fixture = await Fixture.Start();
         await fixture.SignIn();
         string html = WebUtility.HtmlDecode(await fixture.Client.GetStringAsync("/"));
-        Assert.Contains("Enable simulated pilots", html);
+        Assert.Contains("Enable player bots", html);
         Assert.Contains("Simulated miners", html);
         Assert.Contains("Station traffic density (×)", html);
         Assert.Contains("Visitors per watched gate", html);

@@ -2,6 +2,59 @@
 
 [Documentation](../README.md) / [Protocol index](../protocol.md) / [Administrator guide](../world-configuration.md)
 
+## Custom gameplay switches, November 15, 2026
+
+Saved configuration now owns five independent switches for ordinary empire LP-store datacores, simulated reference
+market history, added regional-hub blueprint/command-center supply, beginner market supply and civilian starting
+equipment. All default to true, including omitted properties in historical revision documents. The existing
+`capsuleers.enabled` master switch is exposed as **Enable player bots** and covers the complete simulated population.
+The [administrator guide](../world-configuration.md#custom-gameplay-options) lists JSON paths and UI locations.
+
+The administrator form, original/active/pending comparison and authenticated save/export/import paths carry every
+switch. Saving stages a pending revision. Startup activates it before reconciliation. The hub-supply flag participates
+in the shared catalog offer-cache key and institutional preparation identity, so cached extra offers retire under a
+disabled policy. Disabled beginner supply retires generated unclaimed products on preparation. Original NPC suppliers,
+production-unlocked products and purchased assets retain their ordinary eligibility. Disabled LP extensions reject
+purchases while militia offers remain available. History keeps actual local executions, with generated rows omitted.
+Starting equipment applies during character creation. Bot pause/resume uses existing saved suspension and ownership.
+
+Gameplay references reviewed during the audit include [EVE University invention](https://wiki.eveuniversity.org/Datacores),
+[blueprints](https://wiki.eveuniversity.org/Blueprint_Original) and [skillbooks](https://wiki.eveuniversity.org/Skillbooks).
+The options select existing Eden policies against the pinned build-3662168 catalog and service contracts.
+
+**Automated validation.** Tool/solution restore and the solution build passed with zero warnings/errors
+(9.84-second build). The final affected .NET run passed **350 tests**, with no skips, in 92 seconds.
+It includes automated Firefox and Chromium editing, tab changes, save/reload and retained checkbox values, plus
+resident rejection, restart, checkpoint/reopen and bot suspension coverage. Both Python policy suites passed
+(8 catalog checks and 9 formatting checks). Formatting and line-width verification passed. The final test/policy/format
+segment took 122.99 seconds. The preceding restore/build and broader affected run took 143.88 seconds, stopping
+before policy/format checks when three existing cases failed. That run passed 450 cases and skipped eight optional
+package tests. No full .NET suite or interactive gameplay session was run.
+
+Each excluded case reproduced independently on unchanged baseline `1c50db66444adc74ba7c485ea240dbf158185073`:
+
+- `Market.NpcRestingOrderTests.MaintenanceUsesPricePriorityAndRejectsDuplicateConsumptionAfterRollback` leaves its
+  injected settlement-rejection trigger active when resident checkpoint disposal occurs.
+- `Market.RegionalMarketTests.FailedPaymentRollsBackStockGoodsAndHistoryAndRetrySettlesOnce` fails cleanup with
+  `world.sqlite.owner` still held.
+- `Capsuleers.CapsuleerPopulationSettingsTests.RestartSuspendsAndReusesSavedPilotsWithoutChangingTheirPossessionsOrReplayingJobs`
+  fails its final immediate resumed-hauler visibility assertion. Its preceding asset, suspension, disabled scheduling,
+  restart and deadline checks pass. Other population-policy cases pass in the final run. Immediate resumed visibility
+  remains outside the passing validation result.
+
+The first exact development filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Administration.WorldSettingsPageTests.CustomPolicyControlsRoundTripAndReportEveryDisabledOption`.
+It passed one case. A separate exact authenticated-page save/export/compare regression passed one case, and the
+focused resident development run passed eight cases. The final affected filter ran with `EDEN_TEST_ADMIN_BROWSER=1`:
+
+```text
+(FullyQualifiedName~Eden.Protocol.Tests.Market|FullyQualifiedName~Eden.Protocol.Tests.Administration.AdministrationTests|FullyQualifiedName~WorldSettingsPageTests|FullyQualifiedName~WorldConfigurationTests|FullyQualifiedName~CharacterCreationTests|FullyQualifiedName~WorldInitializationTests|FullyQualifiedName~CapsuleerPopulationSettingsTests|FullyQualifiedName~GameplayDependenciesTests)&FullyQualifiedName!~MaintenanceUsesPricePriorityAndRejectsDuplicateConsumptionAfterRollback&FullyQualifiedName!~FailedPaymentRollsBackStockGoodsAndHistoryAndRetrySettlesOnce&FullyQualifiedName!~RestartSuspendsAndReusesSavedPilotsWithoutChangingTheirPossessionsOrReplayingJobs
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None.
+
 ## Published administration framework assets, November 15, 2026
 
 The remote administration page rendered its header links and settings categories, but category changes and form

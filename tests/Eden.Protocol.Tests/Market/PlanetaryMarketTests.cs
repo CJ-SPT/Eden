@@ -75,8 +75,10 @@ public sealed class PlanetaryMarketTests
         Assert.Empty(action.Set<SavedMarketUnlock>());
     }
 
-    [Fact]
-    public void OriginalNpcSupplierStillStocksCommandCentersOutsideTheHub()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void OriginalNpcSupplierStillStocksCommandCentersOutsideTheHub(bool hubSupply)
     {
         using TestWorld fixture = CreateWorld();
         WorldDatabase database = new(fixture.Path);
@@ -84,9 +86,24 @@ public sealed class PlanetaryMarketTests
         {
             catalog.Database.ExecuteSqlRaw("UPDATE Station SET OwnerId=1000010 WHERE Id=60015157");
         }
+        var config = new Eden.World.Configuration.WorldConfigurationStore(database, TimeProvider.System);
+        var state = config.Read();
+        config.Save(
+            state.Generation,
+            state.Active.Draft with
+            {
+                Settings = state.Active.Draft.Settings with
+                {
+                    Economy = state.Active.Draft.Settings.Economy with { RegionalHubSupply = hubSupply },
+                    DevelopmentSupply = state.Active.Draft.Settings.DevelopmentSupply with { TestingMarket = false },
+                },
+            },
+            "admin"
+        );
+        WorldInitialization.Initialize(database);
         using var host = ServerServices.Build(database, liveWorld: true);
         var orders = host.GetRequiredService<IPilotMarket>().Orders(Pilot, BarrenCommandCenter);
-        Assert.Single(orders, o => o.StationId == Hub && !o.Bid);
+        Assert.Equal(hubSupply ? 1 : 0, orders.Count(o => o.StationId == Hub && !o.Bid));
         Assert.Single(orders, o => o.StationId == OrdinaryStation && !o.Bid);
     }
 

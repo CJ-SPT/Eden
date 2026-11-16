@@ -26,6 +26,41 @@ public sealed class StarterMarketTests
     private const int RepairSystems = 3393;
     private const long StartingCents = 1_000_000L * MarketDefinitions.CentsPerIsk;
 
+    [Fact]
+    public void DisablingBeginnerSupplyRetiresExistingOrdersAndRejectsPurchasesAfterRestart()
+    {
+        using Fixture f = new();
+        long price;
+        using (var host = Eden.Server.ServerServices.Build(f.Database, f.Clock, liveWorld: true))
+        {
+            var market = host.GetRequiredService<IPilotMarket>();
+            price = Assert
+                .Single(market.Orders(Pilot, (int)StarterMarketType.Venture), order => order.StationId == SchoolStation && !order.Bid)
+                .PriceCents;
+        }
+        var config = new Eden.World.Configuration.WorldConfigurationStore(f.Database, f.Clock);
+        var state = config.Read();
+        config.Save(
+            state.Generation,
+            state.Active.Draft with
+            {
+                Settings = state.Active.Draft.Settings with
+                {
+                    Economy = state.Active.Draft.Settings.Economy with { BeginnerMarketSupply = false },
+                    DevelopmentSupply = state.Active.Draft.Settings.DevelopmentSupply with { TestingMarket = false },
+                },
+            },
+            "admin"
+        );
+        WorldInitialization.Initialize(f.Database, f.Clock);
+        using var disabled = Eden.Server.ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        var shop = disabled.GetRequiredService<IPilotMarket>();
+        Assert.DoesNotContain(shop.Orders(Pilot, (int)StarterMarketType.Venture), order => !order.Bid);
+        Assert.Throws<InvalidDataException>(() => shop.Buy(Pilot, SchoolStation, [new((int)StarterMarketType.Venture, price, 1)]));
+        Assert.Equal(StartingCents, shop.Balance(Pilot));
+        Assert.Empty(shop.Transactions(Pilot));
+    }
+
     [Theory]
     [InlineData(InventoryCategory.Module, true, true, 1, false, true)]
     [InlineData(InventoryCategory.Skill, true, true, 1, false, true)]

@@ -419,7 +419,7 @@ internal sealed partial class PilotMarketStore
             })
             .ToArray();
         int[] knownTypes = typeIds.Where(catalog.Definitions.Items.ContainsKey).ToArray();
-        return MarketHistoryCatalog.Merge(local, knownTypes, start, end);
+        return MarketHistoryCatalog.Merge(local, knownTypes, start, end, world.Settings.Economy.SimulatedMarketHistory);
     }
 
     private int ResidentAdvanceDemand(Eden.World.Runtime.LiveWorld live, int limit = PersonalMarketRules.MaintenanceBatch)

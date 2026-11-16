@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Custom gameplay options](world-configuration.md#custom-gameplay-options) control empire LP datacores, reference history,
+regional hub and beginner supplies, civilian starting equipment and player bots through saved administration settings.
+
 [Login location priming](protocol/startup.md#location-priming-before-character-selection-november-15-2026)
 covers the pre-selection location-name request exposed after Regional Express activation.
 

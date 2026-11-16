@@ -17,6 +17,47 @@ namespace Eden.Protocol.Tests.Administration;
 public sealed class WorldSettingsPageTests
 {
     [Fact]
+    public void CustomPolicyControlsRoundTripAndReportEveryDisabledOption()
+    {
+        var form = SettingsForm.From(new());
+        Assert.True(form.EmpireLpDatacores);
+        Assert.True(form.SimulatedMarketHistory);
+        Assert.True(form.RegionalHubSupply);
+        Assert.True(form.BeginnerMarketSupply);
+        Assert.True(form.StartingEquipment);
+        Assert.True(form.SimulatedPilots);
+        form.EmpireLpDatacores = false;
+        form.SimulatedMarketHistory = false;
+        form.RegionalHubSupply = false;
+        form.BeginnerMarketSupply = false;
+        form.StartingEquipment = false;
+        form.SimulatedPilots = false;
+        var settings = form.Build();
+        Assert.Equal(settings, SettingsForm.From(settings).Build());
+        var changes = ConfigurationDisplay.Compare(new(), new() { Settings = settings });
+        foreach (
+            string label in new[]
+            {
+                "Empire LP-store datacores",
+                "Simulated market history",
+                "Regional hub supply",
+                "Beginner market supply",
+                "Starting equipment for new pilots",
+                "Player bots",
+            }
+        )
+        {
+            Assert.Contains(changes, change => change.Field == label && change.Before == "On" && change.After == "Off");
+        }
+        SettingsWorkspace workspace = new();
+        workspace.Load(new() { Settings = settings });
+        workspace.Form.BeginnerMarketSupply = true;
+        Assert.True(workspace.Unsaved);
+        workspace.Discard();
+        Assert.False(workspace.Form.BeginnerMarketSupply);
+    }
+
+    [Fact]
     public void AutomaticSignatureControlRoundTripsAndAppearsInRevisionChanges()
     {
         Assert.False(SettingsForm.From(new()).AlwaysResolvedSignatures);
@@ -102,7 +143,7 @@ public sealed class WorldSettingsPageTests
         form.GateVisitors = 16;
         Assert.True(Validator.TryValidateObject(form, new(form), [], true));
         var changes = ConfigurationDisplay.Compare(new(), new() { Settings = form.Build() });
-        Assert.Contains(changes, c => c.Field == "Simulated pilots" && c.After == "Off");
+        Assert.Contains(changes, c => c.Field == "Player bots" && c.After == "Off");
         Assert.Contains(changes, c => c.Field == "Station traffic density" && c.After == "10×");
         Assert.Contains(changes, c => c.Field == "Visitors per watched gate" && c.After == "16");
     }

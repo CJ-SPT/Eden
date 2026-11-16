@@ -10,7 +10,11 @@ namespace Eden.Gameplay.Configuration;
 public sealed record EconomicPolicy(
     bool ChargeServiceCosts = false,
     decimal DefaultManufacturingIndex = 0.01m,
-    bool? ProgressiveMarkets = null
+    bool? ProgressiveMarkets = null,
+    bool EmpireLpDatacores = true,
+    bool SimulatedMarketHistory = true,
+    bool RegionalHubSupply = true,
+    bool BeginnerMarketSupply = true
 );
 
 public sealed record DevelopmentSupplyPolicy(
@@ -69,7 +73,8 @@ public sealed record ProgressionPolicy(
     decimal KillSkillPointMultiplier = 1,
     decimal MiningSkillPointMultiplier = 1,
     decimal KillSkillPointPercent = NpcSkillPointRewards.DefaultPercent,
-    decimal MiningIskPerSkillPoint = ActivitySkillPointRewards.IskPerSkillPoint
+    decimal MiningIskPerSkillPoint = ActivitySkillPointRewards.IskPerSkillPoint,
+    bool GrantStartingEquipment = true
 );
 
 public sealed record CapsuleerPopulationPolicy(

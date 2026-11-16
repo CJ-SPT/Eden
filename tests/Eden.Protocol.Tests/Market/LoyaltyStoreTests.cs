@@ -130,8 +130,10 @@ public sealed class LoyaltyStoreTests
     private static object? Reply(PilotCallResult result) =>
         BlueMarshal.Decode(BlueMarshal.Encode(Assert.IsType<PilotCallResult.Success>(result).Reply));
 
-    [Fact]
-    public void RegularEmpireStoreSellsMilitiaDatacoresForMatchingLpAndIsk()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void RegularEmpireStoreSellsMilitiaDatacoresForMatchingLpAndIsk(bool enabled)
     {
         const int Militia = 1000180;
         const int QuantumPhysicsOffer = 15761;
@@ -139,7 +141,7 @@ public sealed class LoyaltyStoreTests
         const int LaserPhysicsOffer = 15754;
         const int GravitonPhysicsOffer = 15751;
         const int OtherFaction = 1000130;
-        using var db = Create(resident: true);
+        using var db = Create();
         using (CatalogDbContext catalog = new(new WorldDatabase(db.Path).CatalogPath, writable: true))
         {
             catalog.Database.ExecuteSqlRaw(
@@ -160,7 +162,23 @@ public sealed class LoyaltyStoreTests
             );
         }
 
-        var store = Store(db);
+        WorldDatabase database = new(db.Path);
+        var config = new Eden.World.Configuration.WorldConfigurationStore(database, TimeProvider.System);
+        var state = config.Read();
+        config.Save(
+            state.Generation,
+            state.Active.Draft with
+            {
+                Settings = state.Active.Draft.Settings with
+                {
+                    Economy = state.Active.Draft.Settings.Economy with { EmpireLpDatacores = enabled },
+                },
+            },
+            "admin"
+        );
+        WorldInitialization.Initialize(database);
+        using var host = Eden.Server.ServerServices.Build(database, liveWorld: true);
+        var store = host.GetRequiredService<IPilotLoyaltyStore>();
         var militiaOffer = Assert.Single(store.Offers(Pilot, Militia), offer => offer.Id == QuantumPhysicsOffer);
         Assert.Equal(
             (QuantumPhysics, 5, 250L, 25_000_000L),
@@ -168,6 +186,16 @@ public sealed class LoyaltyStoreTests
         );
         Assert.DoesNotContain(store.Offers(Pilot, OtherFaction), offer => offer.Id == QuantumPhysicsOffer);
 
+        if (!enabled)
+        {
+            Assert.DoesNotContain(store.Offers(Pilot, Navy), offer => offer.Id == QuantumPhysicsOffer);
+            Assert.Throws<InvalidDataException>(() => store.Purchase(Pilot, Navy, QuantumPhysicsOffer, 1));
+            using WorldDbContext unchanged = new(db.Path);
+            Assert.Equal(100_000, unchanged.Set<SavedLoyaltyBalance>().Find(Pilot, Navy)!.Points);
+            Assert.Equal(Budget, unchanged.Set<PilotWallet>().Find(Pilot)!.Cents);
+            Assert.Empty(unchanged.Set<OwnedItem>().Where(item => item.TypeId == QuantumPhysics));
+            return;
+        }
         using (CorporationTestClient client = new(db, 1000001))
         {
             var rows = Assert.IsType<List<object?>>(Reply(client.CallService("LPStoreMgr", "GetAvailableOffersFromCorp", [(long)Navy])));
@@ -189,6 +217,7 @@ public sealed class LoyaltyStoreTests
             Assert.Single(client.Context.Notifications, notification => notification.Name == "OnItemChange");
         }
 
+        host.Dispose();
         db.Services.Dispose();
         WorldInitialization.Open(db.Path);
         using WorldDbContext saved = new(db.Path);

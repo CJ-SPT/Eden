@@ -15,7 +15,12 @@ internal sealed partial class PilotMarketStore
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("market.institutional");
         int stock = world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId)!.InstitutionalStock;
         NpcSupplyRules.ValidateStock(stock);
-        var preparation = new InstitutionalPreparation(station.Id, catalog.Definitions.Identity.Generation, stock);
+        var preparation = new InstitutionalPreparation(
+            station.Id,
+            catalog.Definitions.Identity.Generation,
+            stock,
+            world.Settings.Economy.RegionalHubSupply
+        );
         var market = world.Set<NpcMarketOrder>();
         var orders = market.Where(o => o.StationId == station.Id);
         if (world.Prepared(preparation))

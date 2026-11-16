@@ -79,6 +79,29 @@ saved world; they do not modify shared catalog definitions or autonomous NPC gat
 Training speed, combat difficulty, travel, ship-loss rules, loot and salvage tuning are outside this version. No client package
 update is required. Native visual presentation remains unverified; see the [implementation record](protocol/world-configuration.md).
 
+## Custom gameplay options
+
+All switches below default to **on**, including older configuration documents that omit them.
+Use **Save for restart** to stage edits and restart the server to activate them.
+
+| Admin control | Exported setting | Effect when disabled |
+| --- | --- | --- |
+| World & economy → Economy → Empire LP-store datacores | `settings.economy.empireLpDatacores` | Ordinary empire stores offer their original assortment. Militia stores retain their own datacores. |
+| World & economy → Economy → Simulated market history | `settings.economy.simulatedMarketHistory` | History contains actual local trades only. Sparse history can leave native tickers and charts empty. |
+| World & economy → Economy → Regional hub supply | `settings.economy.regionalHubSupply` | Hubs use their corporation's institutional assortment. Added global blueprint and command-center sell offers retire on market preparation. |
+| World & economy → Economy → Beginner market supply | `settings.economy.beginnerMarketSupply` | Starting stations and hubs require ordinary production unlocks for generated product sell offers. Original corporation offers still apply. |
+| Progression → Grant civilian starting equipment to new pilots | `settings.progression.grantStartingEquipment` | Newly created pilots receive their starting hull and configured skills/wallet grants without the additional civilian miner and weapon. |
+| World & economy → Player bots → Enable player bots | `settings.capsuleers.enabled` | All simulated capsuleers pause and disappear from space, Local, station guests and scans after restart. |
+
+The player-bot control uses the existing capsuleer master switch and covers travelers, miners, haulers and ratters.
+Re-enabling resumes eligible saved bots with their possessions and progress. Miner, traffic-density and gate-visitor
+controls continue to limit the enabled population. See [autonomous population](#autonomous-population).
+
+Beginner supply operates within progressive regional markets. Regional hub supply controls added institutional
+blueprints and command centers independently. Already purchased items, existing pilots' equipment, actual trade
+history, wallets and personal orders retain their saved state. The controls participate in revision comparisons,
+history and export/import. See the [implementation record](protocol/world-configuration.md#custom-gameplay-switches-november-15-2026).
+
 ## Exploration
 
 Open **Settings → World & economy → Exploration** and enable **Always resolve cosmic signatures**,
@@ -377,9 +400,9 @@ Catalog facts stay in generated models/shared definitions. Native service IDs, e
 
 ## Autonomous population
 
-In **World & economy → Simulated pilots**, configure the saved world's population:
+In **World & economy → Player bots**, configure the saved world's population:
 
-- **Enable simulated pilots** controls the entire population. Off despawns and pauses all simulated pilots after restart.
+- **Enable player bots** controls the entire population. Off despawns and pauses all simulated pilots after restart.
 - **Simulated miners** allows up to one miner per eligible system, prepared globally on restart.
 - **Station traffic density** accepts **0–10×**, default **1×**. It scales the normal geography-based station roster,
   up to 60 travelers per community. Fractional densities use a saved-seed draw to distribute smaller rosters consistently.

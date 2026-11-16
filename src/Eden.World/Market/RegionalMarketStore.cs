@@ -50,7 +50,7 @@ internal sealed partial class RegionalMarketStore(CapsuleerActivitySource? activ
             .OfType<RegionalProduct>()
             .Where(p => RegionalMarketRules.Stocks(p.TypeId, p.Category, profile.Role))
             .ToDictionary(p => p.TypeId);
-        if (profile.StarterSupply)
+        if (profile.StarterSupply && world.Settings.Economy.BeginnerMarketSupply)
         {
             foreach (var starter in profiles.StarterProducts.Values.Where(p => types == null || types.Contains(p.TypeId)))
             {

@@ -68,20 +68,23 @@ internal sealed class CharacterCreation(WorldDatabase database, TimeProvider clo
             {
                 StartingSkills.Grant(action, catalog, pilotId, character.RaceId);
             }
-            var equipment = BuildContentPolicy.Current.StartingEquipment;
-            foreach (int typeId in new[] { equipment.MinerType, equipment.WeaponType })
+            if (action.Settings.Progression.GrantStartingEquipment)
             {
-                action.Add(
-                    new OwnedItem
-                    {
-                        Id = action.NextItemId(),
-                        OwnerId = pilotId,
-                        TypeId = typeId,
-                        LocationId = origin.Station,
-                        FlagId = (int)InventoryFlag.Hangar,
-                        Quantity = 1,
-                    }
-                );
+                var equipment = BuildContentPolicy.Current.StartingEquipment;
+                foreach (int typeId in new[] { equipment.MinerType, equipment.WeaponType })
+                {
+                    action.Add(
+                        new OwnedItem
+                        {
+                            Id = action.NextItemId(),
+                            OwnerId = pilotId,
+                            TypeId = typeId,
+                            LocationId = origin.Station,
+                            FlagId = (int)InventoryFlag.Hangar,
+                            Quantity = 1,
+                        }
+                    );
+                }
             }
             TestingWalletFunding.Grant(action, pilotId, created);
             action.Add(new SavedHomeStation { PilotId = pilotId, StationId = origin.Station });
@@ -176,7 +179,10 @@ internal sealed class CharacterCreation(WorldDatabase database, TimeProvider clo
         {
             StartingSkills.Grant(world, catalog, pilotId, character.RaceId);
         }
-        PilotInventoryStore.GrantStarterEquipment(world, pilotId, station);
+        if (database.Settings.Progression.GrantStartingEquipment)
+        {
+            PilotInventoryStore.GrantStarterEquipment(world, pilotId, station);
+        }
         TestingWalletFunding.Grant(world, pilotId, created);
         world.Add(new SavedHomeStation { PilotId = pilotId, StationId = station });
         world.SaveChanges();

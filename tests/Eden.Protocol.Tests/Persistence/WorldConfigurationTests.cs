@@ -19,6 +19,94 @@ namespace Eden.Protocol.Tests.Persistence;
 
 public sealed class WorldConfigurationTests
 {
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void StartingEquipmentPolicyAppliesOnlyToNewPilotsInResidentWorld(bool enabled)
+    {
+        using TestWorld fixture = new();
+        WorldDatabase database = new(fixture.Path);
+        TestCatalog.AddSchool(database.CatalogPath, 18, 1, 1, 30001392, 60015159, 601);
+        var config = new WorldConfigurationStore(database, TimeProvider.System);
+        var state = config.Read();
+        config.Save(
+            state.Generation,
+            state.Active.Draft with
+            {
+                Settings = state.Active.Draft.Settings with
+                {
+                    Progression = state.Active.Draft.Settings.Progression with { GrantStartingEquipment = enabled },
+                },
+            },
+            "admin"
+        );
+        WorldInitialization.Initialize(database);
+        long pilot;
+        using (var host = Eden.Server.ServerServices.Build(database, liveWorld: true))
+        {
+            pilot = host.GetRequiredService<ICharacterCreation>().Create(1000001, new("Equipment Pilot", 1, 1, 1, 64, [1], [2], 18));
+            using WorldDbContext world = new(database.Path);
+            var equipment = world.Set<Eden.Data.World.Inventory.OwnedItem>().Where(item => item.OwnerId == pilot).ToArray();
+            Assert.Equal(enabled ? 2 : 0, equipment.Length);
+            if (enabled)
+            {
+                var kit = Eden.Gameplay.Content.BuildContentPolicy.Current.StartingEquipment;
+                Assert.Contains(equipment, item => item.TypeId == kit.MinerType && item.Quantity == 1);
+                Assert.Contains(equipment, item => item.TypeId == kit.WeaponType && item.Quantity == 1);
+            }
+            Assert.NotEmpty(world.Set<Eden.Data.World.Inventory.OwnedItem>().Where(item => item.OwnerId != pilot));
+        }
+        WorldInitialization.Initialize(database);
+        using WorldDbContext reopened = new(database.Path);
+        Assert.Equal(enabled ? 2 : 0, reopened.Set<Eden.Data.World.Inventory.OwnedItem>().Count(item => item.OwnerId == pilot));
+    }
+
+    [Fact]
+    public void CustomPoliciesPreserveLegacyDefaultsAndRoundTripDisabledValuesAcrossRestart()
+    {
+        using TestWorld fixture = new();
+        WorldDatabase database = new(fixture.Path);
+        WorldConfigurationStore store = new(database, TimeProvider.System);
+        var state = store.Read();
+        var document = System.Text.Json.Nodes.JsonNode.Parse(store.Export(state.Active.Id))!;
+        var settings = document["settings"]!;
+        foreach (string field in new[] { "empireLpDatacores", "simulatedMarketHistory", "regionalHubSupply", "beginnerMarketSupply" })
+        {
+            settings["economy"]!.AsObject().Remove(field);
+        }
+        settings["progression"]!.AsObject().Remove("grantStartingEquipment");
+        var imported = store.Import(state.Generation, document.ToJsonString(), "legacy");
+        var legacy = imported.Pending!.Draft.Settings;
+        Assert.True(legacy.Economy.EmpireLpDatacores);
+        Assert.True(legacy.Economy.SimulatedMarketHistory);
+        Assert.True(legacy.Economy.RegionalHubSupply);
+        Assert.True(legacy.Economy.BeginnerMarketSupply);
+        Assert.True(legacy.Progression.GrantStartingEquipment);
+        var disabled = legacy with
+        {
+            Economy = legacy.Economy with
+            {
+                EmpireLpDatacores = false,
+                SimulatedMarketHistory = false,
+                RegionalHubSupply = false,
+                BeginnerMarketSupply = false,
+            },
+            Progression = legacy.Progression with { GrantStartingEquipment = false },
+            Capsuleers = legacy.Capsuleers with { Enabled = false },
+        };
+        var saved = store.Save(imported.Generation, imported.Pending.Draft with { Settings = disabled }, "admin");
+        Assert.True(database.Settings.Economy.EmpireLpDatacores);
+        Assert.True(database.Settings.Progression.GrantStartingEquipment);
+        Assert.True(database.Settings.Capsuleers.Enabled);
+        var exported = store.Export(saved.Pending!.Id);
+        var roundTrip = store.Import(saved.Generation, exported, "round trip");
+        Assert.Equal(disabled, roundTrip.Pending!.Draft.Settings);
+        WorldInitialization.Initialize(database);
+        Assert.Equal(disabled, database.Settings);
+        WorldInitialization.Initialize(database);
+        Assert.Equal(disabled, new WorldConfigurationStore(new(fixture.Path), TimeProvider.System).Read().Active.Draft.Settings);
+    }
+
     [Fact]
     public void AutopilotDistanceDefaultsForLegacyDocumentsAndActivatesOnlyAfterRestart()
     {

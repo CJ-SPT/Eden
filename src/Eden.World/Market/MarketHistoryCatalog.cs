@@ -24,13 +24,14 @@ internal static class MarketHistoryCatalog
         IReadOnlyList<MarketHistoryDay> local,
         IReadOnlyList<int> typeIds,
         long from,
-        long now
+        long now,
+        bool simulated = true
     )
     {
         var localDays = local.Select(d => (d.TypeId, d.Date)).ToHashSet();
         return typeIds
             .Distinct()
-            .SelectMany(Days)
+            .SelectMany(type => simulated ? Days(type) : [])
             .Where(d => d.Date >= from && d.Date <= now && !localDays.Contains((d.TypeId, d.Date)))
             .Concat(local)
             .OrderBy(d => d.TypeId)

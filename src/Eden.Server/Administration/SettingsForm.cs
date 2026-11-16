@@ -11,6 +11,10 @@ public sealed class SettingsForm
 {
     public bool ServiceCosts { get; set; }
     public bool ProgressiveMarkets { get; set; }
+    public bool EmpireLpDatacores { get; set; }
+    public bool SimulatedMarketHistory { get; set; }
+    public bool RegionalHubSupply { get; set; }
+    public bool BeginnerMarketSupply { get; set; }
 
     [Range(typeof(decimal), "0", "1")]
     public decimal ManufacturingIndex { get; set; }
@@ -35,6 +39,7 @@ public sealed class SettingsForm
     public bool MajorThreatAnomalies { get; set; }
     public bool AlwaysResolvedSignatures { get; set; }
     public bool StartingSkills { get; set; }
+    public bool StartingEquipment { get; set; }
     public bool GlobalProvisioning { get; set; }
     public bool SimulatedPilots { get; set; }
     public bool SimulatedMiners { get; set; }
@@ -198,6 +203,10 @@ public sealed class SettingsForm
             StructureAnchoringSpeed = settings.Structures.AnchoringSpeed,
             StructureOnliningSpeed = settings.Structures.OnliningSpeed,
             StructureUnanchoringSpeed = settings.Structures.UnanchoringSpeed,
+            EmpireLpDatacores = settings.Economy.EmpireLpDatacores,
+            SimulatedMarketHistory = settings.Economy.SimulatedMarketHistory,
+            RegionalHubSupply = settings.Economy.RegionalHubSupply,
+            BeginnerMarketSupply = settings.Economy.BeginnerMarketSupply,
             ServiceCosts = settings.Economy.ChargeServiceCosts,
             ProgressiveMarkets = settings.Economy.ProgressiveMarkets ?? !settings.DevelopmentSupply.TestingMarket,
             ManufacturingIndex = settings.Economy.DefaultManufacturingIndex,
@@ -216,6 +225,7 @@ public sealed class SettingsForm
             MajorThreatAnomalies = settings.NpcPopulation.MajorThreatAnomalies,
             AlwaysResolvedSignatures = settings.Exploration.AlwaysResolvedSignatures,
             StartingSkills = settings.Progression.GrantStartingSkills,
+            StartingEquipment = settings.Progression.GrantStartingEquipment,
             GlobalProvisioning = settings.Capsuleers.GlobalProvisioning,
             SimulatedPilots = settings.Capsuleers.Enabled,
             SimulatedMiners = settings.Capsuleers.Miners,
@@ -232,7 +242,15 @@ public sealed class SettingsForm
     internal WorldSettings Build() =>
         new()
         {
-            Economy = new(ServiceCosts, ManufacturingIndex, ProgressiveMarkets),
+            Economy = new(
+                ServiceCosts,
+                ManufacturingIndex,
+                ProgressiveMarkets,
+                EmpireLpDatacores,
+                SimulatedMarketHistory,
+                RegionalHubSupply,
+                BeginnerMarketSupply
+            ),
             DevelopmentSupply = new(
                 TestingMarket,
                 TestingGrants,
@@ -258,7 +276,8 @@ public sealed class SettingsForm
                 KillSkillPointMultiplier,
                 MiningSkillPointMultiplier,
                 KillSkillPointPercent,
-                MiningIskPerSkillPoint
+                MiningIskPerSkillPoint,
+                StartingEquipment
             ),
             Capsuleers = new(GlobalProvisioning, SimulatedPilots, SimulatedMiners, TrafficMultiplier, GateVisitors),
             Simulation = new(CheckpointSeconds, MarketPollMilliseconds, ResourceCheckSeconds),

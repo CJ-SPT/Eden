@@ -19,7 +19,7 @@ internal sealed partial class PilotMarketStore
 
     private sealed record InstitutionalType(int TypeId, bool Bid);
 
-    private readonly record struct InstitutionalSupplier(int CorporationId, bool Hub);
+    private readonly record struct InstitutionalSupplier(int CorporationId, bool Hub, bool RegionalHubSupply);
 
     private static readonly ConditionalWeakTable<CatalogProvider, Lazy<int[]>> HubSupplies = new();
 
@@ -55,7 +55,7 @@ internal sealed partial class PilotMarketStore
     private IReadOnlyList<InstitutionalOffer> InstitutionalOffers(CatalogDbContext catalog, CatalogStationDefinition station)
     {
         bool hub = RegionalMarketCatalog.Read(catalog).Hubs.GetValueOrDefault(station.RegionId)?.Station.Id == station.Id;
-        InstitutionalSupplier supplier = new(station.OwnerId, hub);
+        InstitutionalSupplier supplier = new(station.OwnerId, hub, database.Settings.Economy.RegionalHubSupply);
         return InstitutionalCatalogs
             .GetValue(catalog.Definitions, _ => new())
             .GetOrAdd(supplier, key => new(() => LoadInstitutionalOffers(catalog, key)))
@@ -69,7 +69,7 @@ internal sealed partial class PilotMarketStore
         var trades = corporation?.CorporationTrades ?? [];
         // Hubs share catalog NPC blueprint and command-center sell assortments so
         // industry can start without first visiting an unseeded supplier station.
-        int[] suppliedTypes = supplier.Hub ? HubInstitutionalSupplies(catalog) : [];
+        int[] suppliedTypes = supplier.Hub && supplier.RegionalHubSupply ? HubInstitutionalSupplies(catalog) : [];
         var offered = trades
             .Where(t => t.Value != 0)
             .Select(t => new InstitutionalType(int.Parse(t.Key, CultureInfo.InvariantCulture), t.Value < 0))
@@ -198,7 +198,12 @@ internal sealed partial class PilotMarketStore
     {
         int stock = world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId)!.InstitutionalStock;
         NpcSupplyRules.ValidateStock(stock);
-        var preparation = new InstitutionalPreparation(station.Id, catalog.Definitions.Identity.Generation, stock);
+        var preparation = new InstitutionalPreparation(
+            station.Id,
+            catalog.Definitions.Identity.Generation,
+            stock,
+            database.Settings.Economy.RegionalHubSupply
+        );
         var live = LiveWorld.Find(world.WorldPath);
         if (
             live?.InstitutionalSupply.GetValueOrDefault(station.Id) == preparation

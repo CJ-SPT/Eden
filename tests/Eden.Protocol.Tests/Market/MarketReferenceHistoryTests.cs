@@ -130,5 +130,24 @@ public sealed class MarketReferenceHistoryTests
         Assert.Single(saved.Set<MarketExecution>());
         long earlier = reference.Date - 1;
         Assert.Empty(MarketHistoryCatalog.Merge([], [34], 0, earlier));
+        saved.Dispose();
+        var config = new Eden.World.Configuration.WorldConfigurationStore(f.Db.Services.GetRequiredService<WorldDatabase>(), f.Clock);
+        var state = config.Read();
+        config.Save(
+            state.Generation,
+            state.Active.Draft with
+            {
+                Settings = state.Active.Draft.Settings with
+                {
+                    Economy = state.Active.Draft.Settings.Economy with { SimulatedMarketHistory = false },
+                },
+            },
+            "admin"
+        );
+        WorldInitialization.Initialize(new(f.Db.Path), f.Clock);
+        using var host = Eden.Server.ServerServices.Build(new(f.Db.Path), f.Clock, liveWorld: true);
+        var actual = host.GetRequiredService<IPilotMarket>().History(f.Pilot.PilotId, [34]);
+        Assert.Equal(local, Assert.Single(actual));
+        Assert.All(actual, day => Assert.Equal(MarketHistorySource.LocalExecution, day.Source));
     }
 }

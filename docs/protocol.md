@@ -1,5 +1,7 @@
 # Protocol findings and milestone records
 
+[Custom gameplay switches](protocol/world-configuration.md#custom-gameplay-switches-november-15-2026) cover saved defaults, administration controls and restart behavior.
+
 [Login location priming](protocol/startup.md#location-priming-before-character-selection-november-15-2026)
 resolves public gate and account-roster ship names before character selection.
 

@@ -511,7 +511,7 @@ internal sealed partial class PilotMarketStore(
             })
             .ToArray();
         int[] knownTypes = typeIds.Where(catalog.Definitions.Items.ContainsKey).ToArray();
-        return MarketHistoryCatalog.Merge(local, knownTypes, start, end);
+        return MarketHistoryCatalog.Merge(local, knownTypes, start, end, database.Settings.Economy.SimulatedMarketHistory);
     }
 
     private static PilotWallet Wallet(WorldDbContext world, long pilotId) =>

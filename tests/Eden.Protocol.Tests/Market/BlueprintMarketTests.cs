@@ -20,6 +20,39 @@ public sealed class BlueprintMarketTests
     private const int MinerBlueprint = 785;
     private const int VentureBlueprint = 32881;
 
+    [Fact]
+    public void DisablingHubSupplyRetiresExtraOffersAndKeepsCorporationOffersAfterRestart()
+    {
+        using TestWorld fixture = CreateWorld(Hub);
+        WorldDatabase database = new(fixture.Path);
+        using (var host = Eden.Server.ServerServices.Build(database, liveWorld: true))
+        {
+            Assert.Contains(host.GetRequiredService<IPilotMarket>().Orders(Pilot), order => !order.Bid && order.TypeId == VentureBlueprint);
+        }
+        var config = new Eden.World.Configuration.WorldConfigurationStore(database, TimeProvider.System);
+        var state = config.Read();
+        config.Save(
+            state.Generation,
+            state.Active.Draft with
+            {
+                Settings = state.Active.Draft.Settings with
+                {
+                    Economy = state.Active.Draft.Settings.Economy with { RegionalHubSupply = false },
+                    DevelopmentSupply = state.Active.Draft.Settings.DevelopmentSupply with { TestingMarket = false },
+                },
+            },
+            "admin"
+        );
+        WorldInitialization.Initialize(database);
+        using var disabled = Eden.Server.ServerServices.Build(database, liveWorld: true);
+        var shop = disabled.GetRequiredService<IPilotMarket>();
+        var orders = shop.Orders(Pilot);
+        Assert.DoesNotContain(orders, order => !order.Bid && order.TypeId is MinerBlueprint or VentureBlueprint);
+        Assert.Contains(orders, order => order.Bid && order.TypeId == MinerBlueprint);
+        Assert.Throws<InvalidDataException>(() => shop.Buy(Pilot, Hub, [new(VentureBlueprint, long.MaxValue, 1)]));
+        Assert.Empty(shop.Transactions(Pilot));
+    }
+
     [Theory]
     [InlineData(Hub)]
     [InlineData(SecondHub)]

@@ -73,7 +73,7 @@ internal sealed class PilotLoyaltyStore(WorldDatabase database, TimeProvider clo
         );
     }
 
-    private static IReadOnlyList<LoyaltyOffer> Offers(CatalogDbContext catalog, int corporationId)
+    private IReadOnlyList<LoyaltyOffer> Offers(CatalogDbContext catalog, int corporationId)
     {
         if (!catalog.Definitions.NpcCorporations.ContainsKey(corporationId))
         {
@@ -93,13 +93,17 @@ internal sealed class PilotLoyaltyStore(WorldDatabase database, TimeProvider clo
             .ToArray();
     }
 
-    private static IEnumerable<LoyaltyOfferDefinition> StoreDefinitions(CatalogDbContext catalog, int corporationId)
+    private IEnumerable<LoyaltyOfferDefinition> StoreDefinitions(CatalogDbContext catalog, int corporationId)
     {
         if (!Snapshot.Stores.TryGetValue(corporationId, out var offerIds))
         {
             return [];
         }
         var offers = offerIds.Select(id => Definitions[id]);
+        if (!database.Settings.Economy.EmpireLpDatacores)
+        {
+            return offers;
+        }
         int militia = catalog.Read(CatalogData.Client.Npccorporations, corporationId)?.FactionID switch
         {
             (int)NpcEmpireFaction.Amarr => ImperialCrusade,
