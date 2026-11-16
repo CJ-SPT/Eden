@@ -6,6 +6,32 @@ DATA = json.loads(DATA_JSON)
 _cache = {}
 
 
+def record_client_error(stage, identity):
+    # Preserve the original exception; diagnostics must never change the client flow.
+    try:
+        import datetime
+        import os
+        import tempfile
+        import traceback
+        directory = os.path.join(os.environ.get('LOCALAPPDATA') or tempfile.gettempdir(), 'Eden', 'ClientErrors')
+        if not os.path.isdir(directory):
+            try:
+                os.makedirs(directory)
+            except OSError:
+                if not os.path.isdir(directory):
+                    return
+        path = os.path.join(directory, 'character-selection-%s.log' % os.getpid())
+        maximum_bytes = 2 * 1024 * 1024
+        if os.path.exists(path) and os.path.getsize(path) >= maximum_bytes:
+            return
+        text = '%s UTC stage=%s character=%s\n%s\n' % (
+            datetime.datetime.utcnow().isoformat(), stage, identity, traceback.format_exc())
+        with open(path, 'ab') as output:
+            output.write(text.encode('utf-8', 'replace'))
+    except Exception:
+        pass
+
+
 class Row(object):
     def __init__(self, values, original=None):
         self._values = values

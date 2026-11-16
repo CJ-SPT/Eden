@@ -126,6 +126,23 @@ discover=function(find(MODULES['eve/client/script/ui/services/skillsvc.pyj'],'Ge
 service=Obj(allskills=None,GetSkillRank=lambda tid:3.0 if tid==1500000000 else 1.0)
 skills=discover(service)
 check('Exact native discovery includes the packaged custom skill',len(skills)==513 and skills[1500000000]==(1500000000,0,0,3.0,None))
+import os
+previous_appdata=os.environ.get('LOCALAPPDATA')
+os.environ['LOCALAPPDATA']=os.path.dirname(RESULT)
+def fail_portrait(*args,**kwargs):raise ValueError('headless character-slot failure')
+slot_loader=function(find(MODULES['eve/client/script/ui/login/charSelection/characterSlots.pyj'],'LoadSlot'),
+    {'sm':Obj(GetService=lambda service:Obj(GetPortrait=fail_portrait))})
+try:
+    slot_loader(Obj(portraitSprite=Obj()),90000001,Obj())
+except ValueError as error:
+    check('Character slot preserves the original exception',str(error)=='headless character-slot failure')
+else:
+    raise AssertionError('Character slot swallowed the native exception')
+diagnostic=os.path.join(os.environ['LOCALAPPDATA'],'Eden','ClientErrors','character-selection-%s.log'%os.getpid())
+record=open(diagnostic,'rb').read()
+check('Character slot writes a durable native traceback','stage=character-selection character=90000001' in record and 'characterSlots.py' in record and 'headless character-slot failure' in record)
+if previous_appdata is None:os.environ.pop('LOCALAPPDATA')
+else:os.environ['LOCALAPPDATA']=previous_appdata
 geography=MODULES['eve/common/script/sys/eveCfg.pyj']
 cfg=Obj(_mapJumpCache=[Obj(stargateID=50000001)],
     _mapSystemCache={30000142:Obj(neighbours=[],regionID=10000002),30000144:Obj(neighbours=[])},

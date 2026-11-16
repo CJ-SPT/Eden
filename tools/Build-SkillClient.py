@@ -17,6 +17,17 @@ import zlib
 PINNED_SHA256 = '37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368'
 PYTHON_SHA256 = '1266e119d5db70281831f06049faa2694e658a68d504e0cc5680ec5726ba3aa2'
 WRAPPERS = {
+    'eve/client/script/ui/login/charSelection/characterSlots.pyj': ('LoadSlot', '''
+def LoadSlot(self, charID, characterDetails):
+    def _eden_original(self, charID, characterDetails):
+        pass
+    try:
+        return _eden_original(self, charID, characterDetails)
+    except Exception:
+        import eden_skill_overlay
+        eden_skill_overlay.record_client_error('character-selection', charID)
+        raise
+'''),
     'fsdBuiltData/common/base.pyj': ('GetData', '''
 def GetData(cls):
     import eden_skill_overlay

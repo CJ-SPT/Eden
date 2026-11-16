@@ -1,5 +1,34 @@
 # Modding protocol and activation
 
+## Character selector exception capture — November 15, 2026
+
+The user reported a partially filled character selector after the pre-selection location RPC correction.
+Server logs showed authentication but no character selection. Public gate/system overlays were also exercised
+against the real pinned FSD loaders, and the local Kihtaled station/orbit records were present. These checks did
+not establish the failing native UI call; no further root cause is assumed from the screenshot alone.
+
+Client composition version 5 wraps the uniquely matched build-3662168 `SmallCharacterSlot.LoadSlot` method.
+Its original body runs unchanged. On failure, the client saves the Python traceback under
+`%LOCALAPPDATA%/Eden/ClientErrors/character-selection-PID.log` and rethrows the original exception.
+Each process owns its log; writing is best-effort and stops after 2 MiB. Captures contain the stage, character ID,
+UTC time and stack trace, without serializing game objects or session tokens. This is diagnostic support, not
+acceptance of a character-selector fix.
+
+Automated validation: the pinned interpreter test verifies the original exception survives and a durable native
+stack trace is written; 22 adapter assertions pass without starting the game.
+Tool/solution restore, zero-warning solution build, 38 affected .NET cases (no failures/skips), both Python
+policy suites (8 catalog and 9 formatting cases), the native adapter check and formatting verification passed
+in 63.84 seconds. The full .NET suite was not requested or run. Filter:
+
+```text
+FullyQualifiedName~ModFoundationTests|FullyQualifiedName~ModRuntimeTests|FullyQualifiedName~ModLauncherApiTests|FullyQualifiedName~AutoMiningPackageTests|FullyQualifiedName~SkillPackageRetentionTests|FullyQualifiedName~GameplayDependenciesTests
+```
+
+Live acceptance: Not performed; agent client testing is disabled.
+
+Optional maintainer checks: refresh the launcher package and reproduce the incomplete selector once so its
+traceback can identify the precise failing call.
+
 ## Regional Express — November 15, 2026
 
 Optional package `eden.regional-express` 1.0.0 exports 69 reciprocal route pairs across 64 ordinary known-space
