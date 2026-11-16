@@ -2,6 +2,72 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Planet-limit directory and build-button correction — November 16, 2026
+
+A client screenshot after the configurable-limit change showed the native Planetary Industry directory retaining
+six **Unestablished Colony** entries. Inert inspection of the pinned build **3662168** identified two additional
+client checks that the original Submit-only adapter did not cover:
+
+- `ColoniesPanel.ConstructEmptyEntries` uses the module constant `MAX_NUM_COLONIES = 6` for placeholder rows and
+  `skills.GetMyLevel(typeInterplanetaryConsolidation)` for their unlocked count.
+- `PlanetEditModeContainer.GetBuildEntryDisabledHint` separately uses effective Interplanetary Consolidation to
+  disable command-center construction before Submit, even when the server and Submit validator allow more colonies.
+
+The signed adapter now supplies the active count to all three native functions through private function namespaces.
+The directory's placeholder bound and unlocked count follow the explicit setting, including **100 total colonies**.
+The build button uses the same count while preserving location, required-building-skill and command-center cargo
+checks. Existing owned-colony rows remain unchanged. Repeated logins unwrap earlier adapters; reconnecting to a
+skill-based world restores the original functions and six-slot directory behavior.
+
+The reference source is the verified stock archive at SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`.
+Decompressed module SHA-256 values:
+
+| Module under `eve/client/script/ui/shared/planet/` | SHA-256 |
+| --- | --- |
+| `planetEditModeContainer.pyj` | `1649d89d432233d9be2f6bdc56c1040eb93bd813c2ae3833628e17f194c6f102` |
+| `planetsWindow/coloniesPanel.pyj` | `307ada918ede2326c3da56bf32ef7b0e599675544c2d61837ea44fb9deb5f89f` |
+
+The [UniWiki Planetary Industry reference](https://wiki.eveuniversity.org/Planetary_Industry) was consulted again;
+its ordinary skill-based limit remains the default. EveJs's count validation remains reference evidence as described
+below; this correction changes Eden's pinned native UI adapter, with no copied reference implementation.
+
+### Automated validation
+
+No regression tests were added, at the user's request. The existing signed-adapter test's import scaffolding was
+updated for the additional native UI classes; its test cases and assertions remain unchanged. Native directory and
+build-button behavior was investigated through inert bytecode inspection, without executing game modules.
+
+Validation on the correction:
+
+- Initial exact existing filter through `tools/Test-Feature.ps1 -Filter`:
+  `FullyQualifiedName=Eden.Protocol.Tests.Planetary.PlanetaryClientTests.SignedAdapterScalesFittingAndProductsWithoutCompoundingAndRestoresDefaults`;
+  **1 passed**, **4.50 seconds** test-command wall time, **74.44 seconds** initial build.
+- Tool/solution restore and final solution build passed with zero warnings/errors (**7.06 seconds** combined).
+- Existing affected checks below: **5 passed**, none skipped (**9.35 seconds** wall time).
+- Python policy suites: **8 catalog/setup + 9 formatting-policy checks passed**, **2.47 seconds** combined.
+- Formatting verification passed (**36.49 seconds**); `git diff --check` passed.
+- The full .NET suite was not run.
+
+Affected filter, joined with `|`:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Planetary.PlanetaryClientTests
+FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.PilotLoginTests
+FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.ConcordOverviewTests.SignedLoginExpressionIncludesPortraitsAndConcordColorWithAnEmptyChallengeResult
+FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.CorporationClientDiagnosticsTests
+```
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. The supplied screenshot is user evidence of the previous behavior,
+not verification of the correction. Native rendering, input and placement beyond six colonies remain unverified.
+
+### Optional maintainer checks
+
+- With the setting at 100, restart/reconnect, reopen the directory and verify more than six available colony slots
+  and command-center deployment beyond the sixth colony.
+
 ## Configurable planet limit — November 16, 2026
 
 **Settings → Planetary industry → Maximum planets (0 = skill-based)** saves
@@ -31,8 +97,9 @@ Inert inspection of build **3662168** confirmed that
 `eve/client/script/environment/planet/clientColony.pyj` / `ClientColony.PostValidateCreatePin` checks `GetMyPlanets`
 and effective Interplanetary Consolidation before Submit. Its decompressed bytecode SHA-256 is
 `80198cc84f980a7ee1b866f99515650cc5f793677e3d66a5cd8b21b83e9b7758`.
-The existing signed adapter gives only that native function a private skills-service view with the configured
-count. It preserves native wallet and required-building-skill validation, leaves shared skill data untouched,
+The initial signed adapter gave only that native function a private skills-service view with the configured
+count; the directory/build-button correction above extends this coverage. It preserves native wallet and
+required-building-skill validation, leaves shared skill data untouched,
 unwraps previous tuning on reconnect, and restores the original function for default worlds. Default first logins
 still leave planetary modules unloaded. No separate client package or transport/Blue change is required.
 

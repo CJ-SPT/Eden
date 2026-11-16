@@ -158,6 +158,8 @@ Open **Settings → Planetary industry** to set **Maximum planets (0 = skill-bas
 the pilot's Interplanetary Consolidation level (one to six planets). Set **1–100** to replace the skill-based count
 with that total per pilot. For example, **12** allows each pilot up to twelve colonies regardless of that skill's level.
 Save for restart, restart the server and reconnect to apply the change.
+The colony directory's total slots follow the configured count, and command-center construction uses that
+same limit. **100 means 100 total colonies per pilot.** Each colony still requires deploying its matching command center.
 
 Lowering the limit or restoring **0** preserves all existing colonies and their production, editing and abandonment.
 A pilot at or above the new limit cannot deploy another colony until enough colonies are abandoned.

@@ -14,7 +14,11 @@ names = ['eve', 'eve.common', 'eve.common.script', 'eve.common.script.planet',
          'eve.common.script.planet.entities', 'eve.common.script.planet.entities.processPin',
          'eve.common.lib', 'eve.common.lib.appConst', 'eve.client', 'eve.client.script',
          'eve.client.script.environment', 'eve.client.script.environment.planet',
-         'eve.client.script.environment.planet.clientColony', 'planetCommon']
+         'eve.client.script.environment.planet.clientColony', 'eve.client.script.ui',
+         'eve.client.script.ui.shared', 'eve.client.script.ui.shared.planet',
+         'eve.client.script.ui.shared.planet.planetEditModeContainer',
+         'eve.client.script.ui.shared.planet.planetsWindow',
+         'eve.client.script.ui.shared.planet.planetsWindow.coloniesPanel', 'planetCommon']
 for name in names:
     module = ModuleType(name)
     module.__path__ = []
@@ -71,6 +75,21 @@ class ClientColony:
 
 original_validate = ClientColony.PostValidateCreatePin
 sys.modules['eve.client.script.environment.planet.clientColony'].ClientColony = ClientColony
+
+
+# Import scaffolding for the additional native UI classes used by the adapter.
+class PlanetEditModeContainer:
+    def GetBuildEntryDisabledHint(self, typeID, groupID):
+        pass
+
+
+class ColoniesPanel:
+    def ConstructEmptyEntries(self, planetsData):
+        pass
+
+
+sys.modules['eve.client.script.ui.shared.planet.planetEditModeContainer'].PlanetEditModeContainer = PlanetEditModeContainer
+sys.modules['eve.client.script.ui.shared.planet.planetsWindow.coloniesPanel'].ColoniesPanel = ColoniesPanel
 
 
 def rejects(call, message):

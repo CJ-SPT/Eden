@@ -1,4 +1,4 @@
-"""Build 3662168: align colony fitting and factory batches with signed world policy."""
+"""Build 3662168: align colony counts, fitting and factory batches with signed world policy."""
 
 
 def install_planetary_tuning():
@@ -39,14 +39,10 @@ def install_planetary_tuning():
     planetCommon._eden_planetary = True
 
     from eve.client.script.environment.planet.clientColony import ClientColony
+    from eve.client.script.ui.shared.planet.planetEditModeContainer import PlanetEditModeContainer
+    from eve.client.script.ui.shared.planet.planetsWindow.coloniesPanel import ColoniesPanel
     from types import FunctionType
     from eve.common.lib import appConst
-
-    original_validate = getattr(ClientColony.PostValidateCreatePin, '_eden_original', ClientColony.PostValidateCreatePin)
-    original_validate = getattr(original_validate, 'im_func', original_validate)
-    if eden_planetary_maximum == 0:
-        ClientColony.PostValidateCreatePin = original_validate
-        return
 
     maximum = int(eden_planetary_maximum)
 
@@ -61,6 +57,11 @@ def install_planetary_tuning():
                 return None
             return self.service.GetEffectiveLevel(type_id)
 
+        def GetMyLevel(self, type_id):
+            if type_id == appConst.typeInterplanetaryConsolidation:
+                return maximum - 1
+            return self.service.GetMyLevel(type_id)
+
         def __getattr__(self, name):
             return getattr(self.service, name)
 
@@ -72,17 +73,28 @@ def install_planetary_tuning():
         def __getattr__(self, name):
             return getattr(sm, name)
 
-    # Scope the effective colony-count skill to this one native validation.
-    # Its wallet and required-building-skill checks still execute unchanged;
-    # no character skill data or shared service instance is modified.
-    code = getattr(original_validate, 'func_code', None) or original_validate.__code__
-    namespace = dict(getattr(original_validate, 'func_globals', None) or original_validate.__globals__)
-    namespace['sm'] = ServiceView()
-    defaults = getattr(original_validate, 'func_defaults', None) or getattr(original_validate, '__defaults__', None)
-    closure = getattr(original_validate, 'func_closure', None) or getattr(original_validate, '__closure__', None)
-    validate = FunctionType(code, namespace, original_validate.__name__, defaults, closure)
-    validate._eden_original = original_validate
-    ClientColony.PostValidateCreatePin = validate
+    def tune_method(owner, name, overrides):
+        original = getattr(getattr(owner, name), '_eden_original', getattr(owner, name))
+        original = getattr(original, 'im_func', original)
+        if maximum == 0:
+            setattr(owner, name, original)
+            return
+        code = getattr(original, 'func_code', None) or original.__code__
+        namespace = dict(getattr(original, 'func_globals', None) or original.__globals__)
+        namespace.update(overrides)
+        defaults = getattr(original, 'func_defaults', None) or getattr(original, '__defaults__', None)
+        closure = getattr(original, 'func_closure', None) or getattr(original, '__closure__', None)
+        tuned = FunctionType(code, namespace, original.__name__, defaults, closure)
+        tuned._eden_original = original
+        setattr(owner, name, tuned)
+
+    # Native Submit validation, the build-button gate and the colony directory
+    # each read the count separately. Give only these functions a private view;
+    # shared skills, cargo/location checks and owned-colony rows stay unchanged.
+    service_view = ServiceView()
+    tune_method(ClientColony, 'PostValidateCreatePin', {'sm': service_view})
+    tune_method(PlanetEditModeContainer, 'GetBuildEntryDisabledHint', {'sm': service_view})
+    tune_method(ColoniesPanel, 'ConstructEmptyEntries', {'sm': service_view, 'MAX_NUM_COLONIES': maximum})
 
 
 install_planetary_tuning()
