@@ -20,8 +20,10 @@ using Eden.Protocol.Tests.Persistence;
 using Eden.Protocol.Tests.PilotSessions;
 using Eden.Server.Chat;
 using Eden.Server.Launcher;
+using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Inventory;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -457,12 +459,22 @@ public sealed partial class TranslocationTests
     public async Task SpaceTransferStartsNativeCameraHandoffBeforeSessionChangeAndFinishesWithFreshStateAndArrival()
     {
         using Fixture f = new(inSpace: true);
+        using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
+        {
+            // Build 3662168 Ibis warp profile, now required by the shared warp path.
+            catalog.Database.ExecuteSqlRaw("INSERT INTO DogmaAttribute(Id,Name) VALUES (153,'warpCapacitorNeed')");
+            catalog.Database.ExecuteSqlRaw("INSERT INTO TypeAttribute VALUES (601,153,8.66e-7)");
+        }
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
         f.Select();
         f.Context.Flight.Snapshot();
         f.Context.Flight.Updates.Clear();
         int source = f.Context.Pilot.SystemId;
         var gate = f.Db.Objects.Single(body => body.DestinationGateId.HasValue);
-        Assert.Equal(PilotCallResult.None, f.Context.Flight.Execute(new FlightCommand.WarpTo(gate.Id, 0)));
+        using (live.UseSystem(source))
+        {
+            Assert.Equal(PilotCallResult.None, live.Run(() => f.Context.Flight.Execute(new FlightCommand.WarpTo(gate.Id, 0))));
+        }
         Assert.Equal(PilotCallResult.None, f.Call($"/tr me {OtherSystem}"));
         Assert.True(f.Context.Flight.Translocating);
         Assert.False(f.Context.Flight.Moving);

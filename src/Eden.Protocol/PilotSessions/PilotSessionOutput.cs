@@ -88,6 +88,14 @@ internal sealed class PilotSessionOutput(
             await SendNotificationAsync(notification);
         }
         context.NotificationsBeforeFlight.Clear();
+        if (context.ActiveFlight is { } activeFlight)
+        {
+            foreach (var notification in activeFlight.NotificationsBeforeFlight)
+            {
+                await SendNotificationAsync(notification);
+            }
+            activeFlight.NotificationsBeforeFlight.Clear();
+        }
         if (context.ActiveFlight is { Updates.Count: > 0 } flight)
         {
             if (Environment.GetEnvironmentVariable("EDEN_TRACE_MOTION") == "1")

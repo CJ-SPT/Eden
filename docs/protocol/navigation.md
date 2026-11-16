@@ -997,3 +997,63 @@ Not performed. Agent client testing is disabled.
 ### Optional maintainer checks
 
 None.
+
+## Warp capacitor payment (November 16, 2026)
+
+Ordinary warp initiation now debits the resident ship capacitor before publishing alignment and the warp effect.
+The shared path covers item, coordinate, bookmark, fleet and autopilot destinations after their existing validation
+and deadspace redirection. Cost is effective hull mass in kilograms multiplied by effective `warpCapacitorNeed`
+(attribute 153) and actual landing distance in AU (149,597,870,700 meters). Warp Drive Operation (3455) now enters
+the existing fitting dogma graph: pinned effects 234 and 494 apply its attribute-319 reduction once. Other fitted
+and hull modifiers continue through the same graph. Acceleration gates retain their gate-powered travel path.
+
+The resident operation settles recharge, pays once, and commits `ShipEnergy` through the existing economic owner
+and checkpoint projection. It has no offline SQL implementation. Insufficient charge shortens the warp to the
+payable distance; if that distance is below 150 km, initiation fails without spending charge or publishing a warp.
+The normal landing-clearance rules still validate the requested course before payment. Rejected destinations do
+not pay; native retries of an active order acknowledge it without paying again. Stopping alignment retains the
+already paid cost. A named `OnModuleAttributeChanges` notification for capacitor charge is delivered before the
+corresponding Destiny updates, including warps initiated by automatic travel.
+
+References: [EVE University capacitor travel](https://wiki.eveuniversity.org/Capacitor#Travel) and
+[alignment](https://wiki.eveuniversity.org/Advanced_piloting_techniques#Warping_and_alignment), reconciled with
+build-3662168 catalog attributes 4/153/319 and skill 3455. The pinned Ibis profile is 1,163,000 kg and
+8.66e-7 GJ/AU/kg. Consulted [Carbon Destiny Ballpark.cpp at
+114e89fa584f0e1a81eb0a679aabf41af8870072](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Ballpark.cpp),
+`Ballpark::WarpTo`: it accepts a validated coordinate course; capacitor payment belongs to Eden's gameplay/service
+layer. No Destiny wire shape or engine trajectory algorithm changed. Also checked the older local evejs
+`space/destiny/commands/warpCommands.js` snapshot (SHA-256
+`3D0A7C9976B0A4E691D3789E11159D879A72A53921501246A2E1777A0E1465E4`), which supplies no capacitor debit;
+no source was copied.
+
+**Automated validation:** focused regressions cover mass/distance/effective-need calculations, skill levels 0/3/5,
+resident payment, duplicate orders, cancelled alignment, invalid/nearby destinations, empty capacitor, paid partial
+warp coordinates and arrival, notification delivery ordering and draining, and reopened checkpoint balances.
+The partial-warp arrival check allows the existing subwarp motion after leaving warp and separately checks the
+exact published warp destination. Tool and solution restores passed. The final solution build passed with zero
+warnings/errors (1.04 s); 15 final focused cases passed (9 s), catalog policy passed 8 tests (1.27 s), and formatting
+policy passed 9 tests (0.02 s). Formatting was applied and verification passed. Final focused filter:
+
+```text
+FullyQualifiedName~WarpCapacitorTests|
+FullyQualifiedName~TranslocationTests.SpaceTransferStartsNativeCameraHandoffBeforeSessionChangeAndFinishesWithFreshStateAndArrival|
+FullyQualifiedName~CapsuleerHandoffTests.FailedInitialSceneConstructionReleasesItsSelectionAndNativeBotScenes
+```
+
+The broader affected selection used `FullyQualifiedName~Eden.Protocol.Tests.Flight|FullyQualifiedName~PassiveFittingTests|
+FullyQualifiedName~CapacitorWarfareTests|FullyQualifiedName~TargetLockSessionTests|FullyQualifiedName~CapsuleerHandoffTests`
+(as one filter). It finished with 391 passes and 7 failures in 4 m 22 s. One translocation fixture that starts a warp
+was then updated to supply a resident world and the pinned capacitor profile; its exact method and the final
+focused selection above passed. No production code changed after the broader run.
+
+The other six failures were five `AdmittedEnergyHullBonusesConsumeTheirEarnedModifiersOnce` cases (hulls
+47269/47270/47271/49710/49711), whose operational probe helper lacks precursor weapon skills, and the
+`NativeMenuPacketUsesAuthenticatedRolesAndAnnouncesDestinationBeforeTheReply` developer/in-space case, whose
+offline fixture reaches resident-only Abyssal handling. Clean baseline `5f1f5f74` reproduced representative hulls
+47269/49711 (missing probes 47870/3348) and the same native-menu exception; those unrelated helpers were not changed.
+The full .NET suite was not requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Observe the native capacitor gauge during a long warp and a capacitor-limited
+partial warp.
