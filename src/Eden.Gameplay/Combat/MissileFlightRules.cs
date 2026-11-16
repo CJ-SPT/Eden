@@ -61,8 +61,16 @@ public static class MissileFlightRules
         return new(drive, source.Position, velocity, velocity.Unit * LaunchGotoDistance);
     }
 
-    public static MissileFlight Tick(MissileFlight flight, MissileTarget? target)
+    public static MissileFlight Tick(MissileFlight flight, MissileTarget? target) => Tick(flight, target, [], out _);
+
+    public static MissileFlight Tick(
+        MissileFlight flight,
+        MissileTarget? target,
+        IReadOnlyList<MissileMotionChange> changes,
+        out MissileTarget? lastTarget
+    )
     {
+        lastTarget = target;
         if (flight.Status != MissileFlightStatus.Flying)
         {
             return flight;
@@ -96,7 +104,30 @@ public static class MissileFlightRules
             terminalVelocity *= Math.Min(1, Math.Pow(distance / (flight.Drive.MaxVelocity * TickSeconds), 4));
         }
         Trajectory trajectory = new(flight, terminalVelocity);
-        double? impact = orphaned ? null : Contact(trajectory, target!, duration);
+        double? impact = null;
+        double start = 0;
+        if (!orphaned)
+        {
+            foreach (var change in changes)
+            {
+                if (!double.IsFinite(change.Offset) || change.Offset < start || change.Offset > duration + 0.5 / TimeSpan.TicksPerSecond)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(changes));
+                }
+                Validate(change.Target);
+                double until = Math.Min(duration, change.Offset);
+                impact = Contact(trajectory, lastTarget!, start, until);
+                if (impact.HasValue)
+                {
+                    break;
+                }
+                start = until;
+                lastTarget = change.Target;
+            }
+            impact ??= Contact(trajectory, lastTarget!, start, duration);
+            double travel = (impact ?? duration) - start;
+            lastTarget = lastTarget! with { Position = lastTarget.Position + lastTarget.Velocity * travel };
+        }
         double elapsed = impact ?? duration;
         var motion = trajectory.At(elapsed);
         Validate(motion.Position);
@@ -183,11 +214,11 @@ public static class MissileFlightRules
         }
     }
 
-    private static double? Contact(Trajectory trajectory, MissileTarget target, double duration)
+    private static double? Contact(Trajectory trajectory, MissileTarget target, double from, double until)
     {
         double radius = (double)trajectory.Flight.Drive.Radius + target.Radius;
-        SpacePosition Relative(double time) => trajectory.At(time).Position - (target.Position + target.Velocity * time);
-        return Search(0, duration, Relative(0), Relative(duration), 0);
+        SpacePosition Relative(double time) => trajectory.At(time).Position - (target.Position + target.Velocity * (time - from));
+        return Search(from, until, Relative(from), Relative(until), 0);
 
         double? Search(double start, double end, SpacePosition first, SpacePosition last, int depth)
         {

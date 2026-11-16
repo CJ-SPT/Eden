@@ -102,7 +102,7 @@ internal sealed partial class PilotHealthStore(WorldDatabase database) : IPilotH
     internal static DamageResult Apply(WorldDbContext world, long shipId, HullDefense defense, DamageVector damage, long now)
     {
         var current = Read(world, shipId, defense, now);
-        var result = CombatDamage.Apply(current.Remaining, defense, damage);
+        var result = CombatDamage.Apply(current.Remaining, defense, damage, shipId, now);
         var saved = world.Set<ShipHealthState>().Find(shipId) ?? world.Set<ShipHealthState>().Add(new() { ShipId = shipId }).Entity;
         saved.ShieldCharge = result.Remaining.Shield;
         saved.ArmorDamage = defense.Armor - result.Remaining.Armor;

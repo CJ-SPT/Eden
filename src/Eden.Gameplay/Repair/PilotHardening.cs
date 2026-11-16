@@ -19,7 +19,7 @@ public static class HardenerDefinitions
     public const int ArmorGroup = 328;
     public const int EmShieldTechOne = 2293;
     public const int EmArmorTechOne = 11301;
-    public const int TacticalShieldManipulationSkill = 3420;
+    public const int TacticalShieldManipulationSkill = (int)Eden.Gameplay.Combat.DefenseSkill.TacticalShieldManipulation;
 
     public static DogmaEffect? Effect(int group) =>
         group switch

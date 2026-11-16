@@ -9,6 +9,7 @@ using Eden.Gameplay.Inventory;
 using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
+using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Runtime.Economy;
 
@@ -59,7 +60,7 @@ internal static class DroneNpcCombat
             return null;
         }
         var contact = drone.Contact;
-        var targetAttributes = catalog.FittingAttributes(contact.Profile.TypeId);
+        var targetAttributes = PilotFittingStore.ReadAttributes(catalog, contact.Profile.TypeId);
         var damage = new DamageVector(
             attributes.GetValueOrDefault(DogmaAttributeId.EmDamage),
             attributes.GetValueOrDefault(DogmaAttributeId.ExplosiveDamage),
@@ -74,7 +75,9 @@ internal static class DroneNpcCombat
             targetAttributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius)
                 * Eden.Gameplay.Exploration.AbyssalDroneEnvironment.SignatureMultiplier(contact),
             weaponProfile,
-            roll
+            roll,
+            catalog.FittingType(npc.TypeId)?.Radius ?? 0,
+            now
         );
         var result = retaliation.Result;
         drone.Saved.Shield = result.Remaining.Shield;

@@ -1,12 +1,18 @@
 using Eden.Data.Catalog;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
+using Eden.Data.World.Drones;
+using Eden.Data.World.Exploration;
+using Eden.Data.World.Inventory;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Exploration;
+using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Protocol.Tests.Exploration;
 using Eden.World.Ammunition;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
@@ -93,10 +99,20 @@ public sealed class AdvancedWeaponTests
     }
 
     [Fact]
-    public void VortonHitsOnlySecondaryTargetsNearPrimaryAndConsumesOneCondenser()
+    public void VortonUsesDefaultSignatureForNearbyArcsAndConsumesOneCondenser()
     {
         using var fixture = Prepare(54731);
         long module = MissileCombatTests.Load(fixture, Projector, Condenser, 5);
+        // The pinned dogma default also applies to secondary targets without a type override.
+        using (CatalogDbContext catalog = new(fixture.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw("DELETE FROM TypeAttribute WHERE ItemTypeId=30380 AND AttributeId=552");
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT OR REPLACE INTO SourceRecord VALUES ('client/dogmaattributes','552','{{"defaultValue":100}}')
+                """
+            );
+        }
         var npc = MissileCombatTests.Space(fixture);
         long near = npc.Id + 1000;
         long far = npc.Id + 1001;
@@ -136,6 +152,82 @@ public sealed class AdvancedWeaponTests
         Assert.Equal(near, arc.Health.ShipId);
         Assert.True(arc.Applied > 0);
         Assert.Equal(4, Assert.Single(volley.Magazines).Quantity);
+    }
+
+    [Fact]
+    public void VortonArcAppliesBioluminescenceToDroneSignature()
+    {
+        const int skybreaker = 54731;
+        const int droneType = 2488;
+        using var f = Prepare(skybreaker);
+        long module = MissileCombatTests.Load(f, Projector, Condenser, 5);
+        AbyssalTests.Prepare(f);
+        PassiveCatalogFixture.LoadCombatDrones(f.CatalogPath);
+        long ship = f.ShipId;
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Ships.Find(ship)!.TypeId = skybreaker;
+            world.SaveChanges();
+        }
+        long pilot = f.PilotId;
+        long drone = f.Grant(droneType);
+        long filament = f.Grant(AbyssalRules.TranquilDarkFilament, 3, cargo: true);
+        var fleets = f.Db.Services.GetRequiredService<ICooperativeFleets>();
+        var owner = f.Db.Store.FindPilot(1000001)!;
+        fleets.Update(Guid.NewGuid(), new(pilot, owner.CorpId, ship, skybreaker, owner.SystemId, owner.Position));
+        fleets.Create(pilot);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        var abyss = f.Db.Services.GetRequiredService<IAbyssalDeadspace>();
+        var trace = abyss.Deploy(pilot, ship, filament, AbyssalMode.Frigates).Run;
+        var run = abyss.Activate(pilot, ship, AbyssalRules.Trace(trace.Id)).Run;
+        var cloud = AbyssalEnvironmentRules.Layout(0, 1)[0].Position;
+        long primary;
+        using (var world = live.Economy.Begin(new(pilots: [pilot], systems: [run.SystemId])))
+        {
+            world.Set<SavedAbyssalRun>().Find(run.Id)!.Seed = 1;
+            var npc = world.Filter<WorldNpc>(n => n.EncounterId == run.Id && n.Role == NpcRole.Pirate).First();
+            primary = npc.Id;
+            npc.X = cloud.X;
+            npc.Y = cloud.Y;
+            npc.Z = cloud.Z;
+            var item = world.Set<OwnedItem>().Find(drone)!;
+            item.Singleton = true;
+            item.LocationId = run.SystemId;
+            item.FlagId = (int)InventoryFlag.AutoFit;
+            world.Add(
+                new WorldDrone
+                {
+                    ItemId = drone,
+                    PilotId = pilot,
+                    ControllerShipId = ship,
+                    SystemId = run.SystemId,
+                    X = cloud.X,
+                    Y = cloud.Y,
+                    Z = cloud.Z,
+                    UpdatedAt = f.Clock.Now,
+                }
+            );
+            world.Commit();
+        }
+        f.Db.Store.SetPosition(ship, cloud + new SpacePosition(500, 0, 0), run.SystemId);
+        var volley = f
+            .Db.Services.GetRequiredService<IPilotCombat>()
+            .FireAdvanced(
+                pilot,
+                module,
+                primary,
+                null,
+                SpacePosition.Zero,
+                f.Clock.Now,
+                .99,
+                new(WeaponActivation.Vorton, Drones: [drone])
+            );
+        var arc = Assert.Single(volley.SecondaryHits);
+        using CatalogDbContext catalog = new(f.CatalogPath);
+        double radius = catalog.FittingAttributes(droneType)[DogmaAttributeId.SignatureRadius];
+        var warhead = arc.Weapon.Vorton!.Warhead;
+        Assert.True(MissileRules.Application(warhead, radius, 0) < arc.Quality);
+        Assert.Equal(MissileRules.Application(warhead, 4 * radius, 0), arc.Quality, 8);
     }
 
     [Fact]

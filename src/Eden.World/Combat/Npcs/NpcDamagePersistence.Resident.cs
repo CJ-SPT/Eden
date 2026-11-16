@@ -69,7 +69,13 @@ internal static partial class NpcDamagePersistence
         {
             return new(new(npc.Id, defense, health), 0, false, null);
         }
-        var result = CombatDamage.Apply(health, bypassResistances ? CombatDamage.WithoutResistances(defense) : defense, damage);
+        var result = CombatDamage.Apply(
+            health,
+            bypassResistances ? CombatDamage.WithoutResistances(defense) : defense,
+            damage,
+            npc.Id,
+            now
+        );
         var attacker = PilotInteractionHistoryStore.Player(world, pilot, attackingShip, weaponType, result.Remaining.Destroyed);
         if (sourceType is > 0)
         {

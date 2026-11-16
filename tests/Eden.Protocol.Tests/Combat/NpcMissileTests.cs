@@ -337,7 +337,7 @@ public sealed partial class NpcMissileTests
             [DogmaAttributeId.EntityMissileFlightTimeMultiplier] = 2,
             [DogmaAttributeId.EntityMissileExplosionRadiusMultiplier] = 0.5,
             [DogmaAttributeId.EntityMissileExplosionVelocityMultiplier] = 3,
-            [DogmaAttributeId.EntityMissileReductionMultiplier] = 2,
+            [DogmaAttributeId.EntityMissileAoeFalloffMultiplier] = 2,
         };
         var drive = NpcMissileRules.Drive(new(1000, 1, 2000, 0.1f, 10000), modifiers);
         var warhead = NpcMissileRules.Warhead(charge, modifiers);
@@ -346,7 +346,7 @@ public sealed partial class NpcMissileTests
         Assert.Equal(20, warhead.Damage.Kinetic);
         Assert.Equal(20, warhead.ExplosionRadius);
         Assert.Equal(300, warhead.ExplosionVelocity);
-        Assert.Equal(1, warhead.ReductionExponent);
+        Assert.Equal(0.5, warhead.ReductionExponent);
         Assert.Equal(40, charge[DogmaAttributeId.ExplosionRadius]);
         modifiers[DogmaAttributeId.EntityMissileVelocityMultiplier] = double.NaN;
         Assert.Throws<InvalidDataException>(() => NpcMissileRules.Drive(drive, modifiers));
@@ -441,9 +441,9 @@ public sealed partial class NpcMissileTests
                 TargetId = original.TargetId,
                 TargetRadius = original.TargetRadius,
                 CorporationId = original.CorporationId,
-                LaunchedAt = original.LaunchedAt,
-                UpdatedAt = original.UpdatedAt,
-                ExpiresAt = original.ExpiresAt,
+                LaunchedAt = original.LaunchedAt + TimeSpan.TicksPerMillisecond,
+                UpdatedAt = original.UpdatedAt + TimeSpan.TicksPerMillisecond,
+                ExpiresAt = original.ExpiresAt + TimeSpan.TicksPerMillisecond,
                 Snapshot = original.Snapshot,
             };
             fast.Save(

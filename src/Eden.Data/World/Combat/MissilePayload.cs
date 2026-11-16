@@ -8,7 +8,8 @@ internal sealed record MissilePayload(
     MissileFlight Flight,
     MissileWarhead Warhead,
     BreacherPayload? Breacher = null,
-    double EnvironmentDamage = 0
+    double EnvironmentDamage = 0,
+    MissileTarget? Target = null
 );
 
 [JsonSerializable(typeof(MissilePayload))]

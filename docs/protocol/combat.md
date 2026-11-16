@@ -4,6 +4,42 @@
 
 Targeting, health, weapons, NPC populations and behavior, losses, wrecks and repairs.
 
+## Missile impact timing and damage application
+
+Missiles begin at the launch timestamp. Paid flight snapshots carry the target motion at launch and at the last resolved boundary.
+Resident Destiny frames retain intervening turns while the target has incoming missiles. The collision solver uses each frame's velocity
+during its own interval and supplies the contact speed to the warhead. When a frame is missing, the flight continues with the last
+known motion until a new sample covers the interval. Older snapshots start from the first available observation.
+Overlapping due flights settle in contact-time order, with projectile identity breaking ties.
+
+A stationary pilot's unaimed launch uses the rear of the ship's retained heading. NPC warheads keep the charge's damage reduction
+exponent. Build 3662168 attribute 860 is `missileEntityAoeFalloffMultiplier`. The evejs comparison used
+`server/src/space/combat/missiles/missileSolver.js` (SHA-256 `7c93f96dd80e175ff8e8627b37aac6231b628db23385b3be115ccfb7e2cd0c03`).
+[Carbon launch orientation](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Thunkers.cpp)
+and [EVE University missile mechanics](https://wiki.eveuniversity.org/Missile_damage) describe the launch and application references.
+
+Drone guns and NPC retaliation measure range between hull surfaces. Vorton arcs use the catalog signature default and the drone's
+Bioluminescence modifier when applicable. Breacher Pods use the NPC's effective shield and armor capacities for both the percentage
+cap and the resulting health, including Gamma and Firestorm weather. [Abyssal Deadspace](https://wiki.eveuniversity.org/Abyssal_Deadspace)
+
+Hull attribute 484 supplies shield uniformity. Tactical Shield Manipulation adds five percentage points per level. For a hull with
+0.75 base uniformity, armor becomes eligible for penetration below 25% shields at level 0 and below 5% at level IV. Level V prevents it
+on that hull. Hulls with different catalog values retain their own thresholds, including shuttles with 0.50 base uniformity.
+The references establish the thresholds. Eden models the probability and the raw fraction diverted to armor as the difference between
+the threshold and the current shield fraction. The target, hit timestamp, shield charge and incoming damage give a repeatable draw
+for speculative combat and settlement. Each layer applies its own resistances. [Tactical Shield Manipulation](https://wiki.eveuniversity.org/Skills:Shields#Tactical_Shield_Manipulation)
+
+Automated validation passed 516 affected tests in 223 seconds. The filter joined
+`FullyQualifiedName~.<class>.` with OR for the following classes.
+
+- `NpcMissileTests`, `PilotMissileTests`, `MissileCombatTests`, `MissileFlightTests`, `MissileRulesTests`, `WeaponBankTests`
+- `AdvancedWeaponTests`, `SmartbombTests`, `CombatDamageTests`, `AbyssalEnvironmentTests`, `NpcCombatTests`, `PilotHealthTests`
+- `DroneDamageRangeTests`, `LiveDroneRulesTests`, `CombatDroneTests`, `PilotDroneTests`, `ResidentDroneTests`, `DroneCombatTriggerTests`, `ExpandedCombatDroneTests`
+
+The same NPC missile dealt 10 raw damage to a target stationary at contact and 1.3 to a target moving at 1,000 m/s.
+Polling a second late gave the same damage and contact timestamp in both cases, including after the moving target stopped.
+Live acceptance was not performed. Agent client testing is disabled.
+
 ## NPC weapon capability correction — November 15, 2026
 
 The user reported that unidentified mission NPCs seemed to inflict excessive damage. The catalog audit found **19 of 198**

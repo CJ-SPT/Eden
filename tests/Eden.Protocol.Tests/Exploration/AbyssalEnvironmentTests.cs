@@ -117,6 +117,60 @@ public sealed class AbyssalEnvironmentTests
     }
 
     [Theory]
+    [InlineData(AbyssalWeather.Gamma)]
+    [InlineData(AbyssalWeather.Firestorm)]
+    public void BreacherTickUsesPocketHitPoints(AbyssalWeather weather)
+    {
+        using Fixture f = new();
+        AbyssalTests.Prepare(f);
+        long filament = f.Grant(AbyssalRules.TranquilDarkFilament, cargo: true);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        var run = f.Db.Services.GetRequiredService<IAbyssalDeadspace>().Deploy(f.PilotId, f.ShipId, filament, AbyssalMode.Cruiser).Run;
+        double shield;
+        double expected;
+        long now = f.Clock.Now;
+        long ship = f.ShipId;
+        long pilot = f.PilotId;
+        using (var transaction = live.Economy.Begin(new(pilots: [f.PilotId], systems: [run.SystemId])))
+        using (CatalogDbContext catalog = new(f.CatalogPath))
+        {
+            transaction.Set<SavedAbyssalRun>().Find(run.Id)!.Weather = (int)weather;
+            var npc = transaction.Filter<WorldNpc>(n => n.EncounterId == run.Id && n.Role == NpcRole.Pirate).First();
+            var raw = ShipHealth.DefenseFrom(catalog.FittingAttributes(npc.TypeId));
+            shield = raw.Shield * (weather == AbyssalWeather.Gamma ? 1.5 : 1);
+            double armor = raw.Armor * (weather == AbyssalWeather.Firestorm ? 1.5 : 1);
+            expected = (shield + armor + raw.Structure) / 100;
+            npc.ShieldCharge = shield;
+            var pod = new WorldMissile
+            {
+                SourceShipId = ship,
+                SourceTypeId = 621,
+                PilotId = pilot,
+                TargetId = npc.Id,
+                SystemId = run.SystemId,
+                LauncherTypeId = 85084,
+                ChargeTypeId = 85088,
+                Status = MissileFlightStatus.Attached,
+                LaunchedAt = now,
+                UpdatedAt = now,
+                ExpiresAt = now + TimeSpan.TicksPerMinute,
+                Snapshot = "",
+            };
+            var origin = SpacePosition.Zero;
+            pod.Save(
+                new(new(new(1, 1, 1000, 1, 1000), origin, origin, origin), new(DamageVector.None, 1, 1, 1), new(60000, 100000, 1, now))
+            );
+            transaction.Add(pod);
+            transaction.Commit();
+        }
+        var missiles = f.Db.Services.GetRequiredService<IPilotMissiles>();
+        missiles.Advance(run.SystemId, now + BreacherRules.Tick);
+        var impact = Assert.Single(missiles.TakeImpacts(f.PilotId));
+        Assert.Equal(expected, impact.Applied, 6);
+        Assert.Equal(shield - expected, impact.Health.Remaining.Shield, 6);
+    }
+
+    [Theory]
     [InlineData(47847, 1997, 11, true)]
     [InlineData(48262, 1997, 11, false)]
     [InlineData(621, 26, 6, false)]

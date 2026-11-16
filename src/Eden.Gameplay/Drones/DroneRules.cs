@@ -79,10 +79,21 @@ public static class DroneRules
         double signature,
         DroneNpcWeapon weapon,
         double roll
+    ) => Retaliation(drone, source, velocity, signature, weapon, roll, 0, 0);
+
+    public static DroneRetaliation Retaliation(
+        DroneContact drone,
+        SpacePosition source,
+        SpacePosition velocity,
+        double signature,
+        DroneNpcWeapon weapon,
+        double roll,
+        double sourceRadius,
+        long now
     )
     {
         double chance = CombatDamage.HitChance(
-            drone.Position.DistanceTo(source),
+            Math.Max(0, drone.Position.DistanceTo(source) - drone.Profile.Radius - sourceRadius),
             CombatDamage.AngularVelocity(drone.Position - source, drone.Velocity - velocity),
             signature,
             weapon.Optimal,
@@ -91,7 +102,7 @@ public static class DroneRules
             weapon.SignatureReference
         );
         double quality = CombatDamage.ShotQuality(chance, roll / NpcRetaliationChance);
-        return new(CombatDamage.Apply(drone.Health.Remaining, drone.Profile.Defense, weapon.Damage.Scale(quality)), quality);
+        return new(CombatDamage.Apply(drone.Health.Remaining, drone.Profile.Defense, weapon.Damage.Scale(quality), drone.Id, now), quality);
     }
 
     public static double ControlRange(IReadOnlyDictionary<DroneSkill, int> skills) =>
@@ -211,11 +222,21 @@ public static class DroneRules
         );
     }
 
-    public static DamageVector Shot(DroneContact drone, SpacePosition target, SpacePosition velocity, double signature, double roll)
+    public static DamageVector Shot(DroneContact drone, SpacePosition target, SpacePosition velocity, double signature, double roll) =>
+        Shot(drone, target, velocity, signature, roll, 0);
+
+    public static DamageVector Shot(
+        DroneContact drone,
+        SpacePosition target,
+        SpacePosition velocity,
+        double signature,
+        double roll,
+        double targetRadius
+    )
     {
         var profile = drone.Profile;
         double chance = CombatDamage.HitChance(
-            Math.Max(0, drone.Position.DistanceTo(target) - profile.Radius),
+            Math.Max(0, drone.Position.DistanceTo(target) - profile.Radius - targetRadius),
             CombatDamage.AngularVelocity(target - drone.Position, velocity - drone.Velocity),
             signature,
             profile.Optimal,

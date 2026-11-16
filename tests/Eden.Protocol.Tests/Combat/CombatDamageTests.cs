@@ -1,4 +1,6 @@
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Inventory;
 
 namespace Eden.Protocol.Tests.Combat;
 
@@ -32,6 +34,38 @@ public sealed class CombatDamageTests
         var damaged = new HullDamage(5, 10, 15);
         Assert.Equal(new HullDamage(0.5, 0.5, 0.5), damaged.Fractions(defense));
         Assert.Throws<ArgumentOutOfRangeException>(() => CombatDamage.Apply(damaged, defense, new(-1, 0, 0, 0)));
+    }
+
+    [Theory]
+    [InlineData(0, 25)]
+    [InlineData(4, 5)]
+    [InlineData(5, 0)]
+    public void ShieldPenetrationUsesFittedThresholdAndConservesDamage(int skill, int threshold)
+    {
+        var attributes = FittingRules.Apply(
+            new Dictionary<DogmaAttributeId, double> { [DogmaAttributeId.ShieldUniformity] = .75 },
+            new Dictionary<int, int> { [(int)DefenseSkill.TacticalShieldManipulation] = skill },
+            []
+        );
+        HullDefense defense = new(100, 100, 100, 0, s_full, new(.5, 1, 1, 1), s_full)
+        {
+            ShieldUniformity = ShipHealth.DefenseFrom(attributes).ShieldUniformity,
+        };
+        Assert.Equal(threshold, 100 * (1 - defense.ShieldUniformity), 8);
+        bool penetrated = false;
+        for (long time = 0; time < 512; time++)
+        {
+            HullDamage low = new(2, 100, 100);
+            DamageVector hit = new(1, 0, 0, 0);
+            var result = CombatDamage.Apply(low, defense, hit, 42, time);
+            double leaked = (100 - result.Remaining.Armor) * 2;
+            Assert.Equal(1, 2 - result.Remaining.Shield + leaked, 10);
+            Assert.Equal(result, CombatDamage.Apply(low, defense, hit, 42, time));
+            penetrated |= leaked > 0;
+            var above = CombatDamage.Apply(low with { Shield = Math.Max(1, threshold) }, defense, hit, 42, time);
+            Assert.Equal(100, above.Remaining.Armor);
+        }
+        Assert.Equal(skill < 5, penetrated);
     }
 
     [Fact]

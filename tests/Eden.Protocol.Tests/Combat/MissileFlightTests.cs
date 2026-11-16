@@ -92,6 +92,19 @@ public sealed class MissileFlightTests
         Assert.InRange(flight.Position.X, 1484.999, 1485.001);
     }
 
+    [Theory]
+    [InlineData(200, .2, 0)]
+    [InlineData(800, .9, 500)]
+    public void TurnsWithinAFlightStepUseTheSpeedAtFirstContact(double distance, double expectedTime, double expectedSpeed)
+    {
+        MissileTarget before = new(new(distance, 0, 0), SpacePosition.Zero, 0);
+        var after = before with { Velocity = new(500, 0, 0) };
+        var flight = MissileFlightRules.Tick(Cruising(1000), before, [new(.7, after)], out var contact);
+        Assert.Equal(MissileFlightStatus.Impact, flight.Status);
+        Assert.Equal(expectedTime, flight.ElapsedSeconds, 6);
+        Assert.Equal(expectedSpeed, contact!.Velocity.Length);
+    }
+
     [Fact]
     public void FastMissileCannotTunnelThroughTargetBetweenTickEndpoints()
     {

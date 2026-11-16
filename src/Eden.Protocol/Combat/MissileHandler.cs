@@ -115,7 +115,7 @@ internal sealed class MissileHandler(
             module,
             target,
             locked,
-            new(context.Flight.Velocity, context.Flight.Pilot.Flight.MaxSpeed, new(0, 0, -1), context.Flight.CurrentStamp),
+            new(context.Flight.Velocity, context.Flight.Pilot.Flight.MaxSpeed, context.Flight.Heading * -1, context.Flight.CurrentStamp),
             now
         );
         var result = launches[0];

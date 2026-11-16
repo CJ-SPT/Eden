@@ -303,10 +303,7 @@ internal sealed partial class PilotMissileStore(
             target,
             charge.GetValueOrDefault(DogmaAttributeId.AimedMissileLaunch) != 0
         );
-        MissilePayload payload = new(flight, warhead, pod);
-        // Pilot contacts describe the launch instant. Rounding their birth down
-        // would backdate moving targets and make interception depend on clock phase.
-        long launchBoundary = victim is null && !breacher ? now - now % TimeSpan.TicksPerSecond : now;
+        MissilePayload payload = new(flight, warhead, pod, Target: target);
         var projectile = world
             .Set<WorldMissile>()
             .Add(
@@ -325,9 +322,9 @@ internal sealed partial class PilotMissileStore(
                     TargetRadius = target.Radius,
                     CorporationId = pilot.CorporationId,
                     LaunchStamp = motion.Stamp,
-                    LaunchedAt = launchBoundary,
-                    UpdatedAt = launchBoundary,
-                    ExpiresAt = checked(launchBoundary + (long)Math.Ceiling(drive.LifetimeMilliseconds * TimeSpan.TicksPerMillisecond)),
+                    LaunchedAt = now,
+                    UpdatedAt = now,
+                    ExpiresAt = checked(now + (long)Math.Ceiling(drive.LifetimeMilliseconds * TimeSpan.TicksPerMillisecond)),
                     Snapshot = JsonSerializer.Serialize(payload, MissileJson.Default.MissilePayload),
                 }
             )
@@ -402,124 +399,102 @@ internal sealed partial class PilotMissileStore(
             expired.Status = MissileFlightStatus.Expired;
             expired.EndedAt = now;
         }
-        while (true)
+        MissilePayload AdvanceFlight(WorldMissile row)
         {
-            var due = rows.Where(m =>
-                    m.Status == MissileFlightStatus.Flying
-                    && now - m.UpdatedAt >= Math.Min(TimeSpan.TicksPerSecond, m.ExpiresAt - m.UpdatedAt)
-                )
-                .OrderBy(m => m.UpdatedAt)
-                .ThenBy(m => m.Id)
-                .ToArray();
-            if (due.Length == 0)
+            var payload = row.Payload();
+            var npc = row.TargetKind == MissileTargetKind.Npc ? world.Set<WorldNpc>().Find(row.TargetId) : null;
+            MissileTarget? target = null;
+            long observedAt = now;
+            if (npc is { DestroyedAt: null, RetiredAt: null } && npc.SystemId == systemId && npc.Navigation != NpcNavigationState.Warping)
             {
-                break;
+                observedAt = npc.MotionAt == 0 ? now : npc.MotionAt;
+                target = new(NpcMotion.Position(npc), NpcMotion.Velocity(npc), row.TargetRadius);
             }
-            long boundary = due[0].UpdatedAt;
-            List<PendingStep> steps = [];
-            foreach (var row in due.Where(m => m.UpdatedAt == boundary))
+            if (
+                row.TargetKind == MissileTargetKind.Pilot
+                && FindVictim(world, catalog, systemId, row.TargetId, now) is { } victim
+                && FindContact(world, victim, systemId, now) is { } contact
+            )
             {
-                var payload = row.Payload();
-                var npc = row.TargetKind == MissileTargetKind.Npc ? world.Set<WorldNpc>().Find(row.TargetId) : null;
-                MissileTarget? target = null;
-                if (
-                    npc is { DestroyedAt: null, RetiredAt: null }
-                    && npc.SystemId == systemId
-                    && npc.Navigation != NpcNavigationState.Warping
-                )
-                {
-                    double offset = npc.MotionAt == 0 ? 0 : (row.UpdatedAt - npc.MotionAt) / (double)TimeSpan.TicksPerSecond;
-                    target = new(NpcMotion.Position(npc) + NpcMotion.Velocity(npc) * offset, NpcMotion.Velocity(npc), row.TargetRadius);
-                }
-                if (
-                    row.TargetKind == MissileTargetKind.Pilot
-                    && FindVictim(world, catalog, systemId, row.TargetId, now) is { } victim
-                    && FindContact(world, victim, systemId, now) is { } contact
-                )
-                {
-                    // The contact is current. Reconstruct this step's start for the existing flight integrator.
-                    double offset = Math.Min(0, (row.UpdatedAt - now) / (double)TimeSpan.TicksPerSecond);
-                    target = new(contact.Position + contact.Velocity * offset, contact.Velocity, row.TargetRadius);
-                }
-                var next = MissileFlightRules.Tick(payload.Flight, target);
-                long time = checked(row.LaunchedAt + (long)Math.Round(next.ElapsedSeconds * TimeSpan.TicksPerSecond));
-                steps.Add(new(row, payload with { Flight = next }, npc, time));
+                target = new(contact.Position, contact.Velocity, row.TargetRadius);
             }
-            foreach (var step in steps.OrderBy(s => s.Time).ThenBy(s => s.Row.Id))
+            return MissileMotionHistory.Step(world, row, payload, target, observedAt);
+        }
+
+        foreach (var (row, payload, time) in MissileMotionHistory.DueSteps(rows, now, AdvanceFlight))
+        {
+            if (world.Pilots.Find(row.PilotId)!.ActiveShipId != row.SourceShipId)
             {
-                var (row, payload, npc, time) = step;
-                if (world.Pilots.Find(row.PilotId)!.ActiveShipId != row.SourceShipId)
+                row.Status = MissileFlightStatus.Expired;
+                row.EndedAt = time;
+                continue;
+            }
+            row.Save(payload);
+            row.UpdatedAt = time;
+            row.Status = payload.Flight.Status;
+            if (row.Status != MissileFlightStatus.Flying)
+            {
+                row.EndedAt = time;
+            }
+            if (row.Status == MissileFlightStatus.Impact && payload.Breacher is not null)
+            {
+                // Settle owed ticks before replacing an application at this impact boundary.
+                destroyed |= AdvanceBreacher(world, catalog, rows, systemId, time, pilotImpacts);
+                AttachBreacher(row, payload, time, rows);
+                continue;
+            }
+            if (row.Status == MissileFlightStatus.Impact && row.TargetKind == MissileTargetKind.Pilot)
+            {
+                var victim = FindVictim(world, catalog, systemId, row.TargetId, now);
+                if (victim is not null && FindContact(world, victim, systemId, now) is not null)
                 {
-                    row.Status = MissileFlightStatus.Expired;
-                    row.EndedAt = time;
-                    continue;
+                    pilotImpacts.Add(ApplyPilotImpact(world, catalog, row, payload, victim, time));
                 }
-                row.Save(payload);
-                row.UpdatedAt = time;
-                row.Status = payload.Flight.Status;
-                if (row.Status != MissileFlightStatus.Flying)
-                {
-                    row.EndedAt = time;
-                }
-                if (row.Status == MissileFlightStatus.Impact && payload.Breacher is not null)
-                {
-                    // Settle owed ticks before replacing an application at this impact boundary.
-                    destroyed |= AdvanceBreacher(world, catalog, rows, systemId, time, pilotImpacts);
-                    AttachBreacher(row, payload, time, rows);
-                    continue;
-                }
-                if (row.Status == MissileFlightStatus.Impact && row.TargetKind == MissileTargetKind.Pilot)
-                {
-                    var victim = FindVictim(world, catalog, systemId, row.TargetId, now);
-                    if (victim is not null && FindContact(world, victim, systemId, now) is { } contact)
-                    {
-                        pilotImpacts.Add(ApplyPilotImpact(world, catalog, row, payload, victim, contact, time));
-                    }
-                }
-                if (
-                    row.Status == MissileFlightStatus.Impact
-                    && npc is { DestroyedAt: null, RetiredAt: null }
-                    && npc.Navigation != NpcNavigationState.Warping
-                )
-                {
-                    var attributes = PlayerEwarStore.NpcAttributes(world, npc.Id, PilotFittingStore.ReadAttributes(catalog, npc.TypeId));
-                    double application = MissileRules.Application(
-                        payload.Warhead,
-                        attributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius),
-                        NpcMotion.Velocity(npc).Length
-                    );
-                    var damage = payload.Warhead.Damage.Scale(application);
-                    var pilot = world.Pilots.Find(row.PilotId)!;
-                    var result = NpcDamagePersistence.Apply(
-                        world,
-                        catalog,
-                        npc,
-                        pilot,
-                        row.SourceShipId,
-                        attributes,
-                        damage,
-                        time,
-                        row.LauncherTypeId,
-                        row.SourceTypeId,
-                        paidProjectile: true
-                    );
-                    destroyed |= result.Destroyed;
-                    world.SaveChanges();
-                    MissileImpact outcome = new(
-                        row.Id,
-                        row.PilotId,
-                        row.SourceShipId,
-                        row.TargetId,
-                        row.LauncherTypeId,
-                        row.ChargeTypeId,
-                        result.Health,
-                        damage,
-                        result.Applied,
-                        result.Destroyed,
-                        result.Reward is null ? null : NpcDamagePersistence.Read(result.Reward)
-                    );
-                    row.Outcome = JsonSerializer.Serialize(outcome, MissileJson.Default.MissileImpact);
-                }
+            }
+            if (
+                row.Status == MissileFlightStatus.Impact
+                && row.TargetKind == MissileTargetKind.Npc
+                && world.Set<WorldNpc>().Find(row.TargetId) is { DestroyedAt: null, RetiredAt: null } npc
+                && npc.Navigation != NpcNavigationState.Warping
+            )
+            {
+                var attributes = PlayerEwarStore.NpcAttributes(world, npc.Id, PilotFittingStore.ReadAttributes(catalog, npc.TypeId));
+                double application = MissileRules.Application(
+                    payload.Warhead,
+                    attributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius),
+                    payload.Target!.Velocity.Length
+                );
+                var damage = payload.Warhead.Damage.Scale(application);
+                var pilot = world.Pilots.Find(row.PilotId)!;
+                var result = NpcDamagePersistence.Apply(
+                    world,
+                    catalog,
+                    npc,
+                    pilot,
+                    row.SourceShipId,
+                    attributes,
+                    damage,
+                    time,
+                    row.LauncherTypeId,
+                    row.SourceTypeId,
+                    paidProjectile: true
+                );
+                destroyed |= result.Destroyed;
+                world.SaveChanges();
+                MissileImpact outcome = new(
+                    row.Id,
+                    row.PilotId,
+                    row.SourceShipId,
+                    row.TargetId,
+                    row.LauncherTypeId,
+                    row.ChargeTypeId,
+                    result.Health,
+                    damage,
+                    result.Applied,
+                    result.Destroyed,
+                    result.Reward is null ? null : NpcDamagePersistence.Read(result.Reward)
+                );
+                row.Outcome = JsonSerializer.Serialize(outcome, MissileJson.Default.MissileImpact);
             }
         }
         destroyed |= AdvanceBreacher(world, catalog, rows, systemId, now, pilotImpacts);
@@ -536,8 +511,6 @@ internal sealed partial class PilotMissileStore(
             security.Publish();
         }
     }
-
-    private sealed record PendingStep(WorldMissile Row, MissilePayload Payload, WorldNpc? Npc, long Time);
 
     public IReadOnlyList<MissileContact> List(int systemId)
     {

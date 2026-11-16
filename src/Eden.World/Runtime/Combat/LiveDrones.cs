@@ -291,7 +291,7 @@ internal sealed partial class LiveCombatRuntime
             }
             if (playerShip is not null)
             {
-                var applied = CombatDamage.Apply(playerShip.Health.At(now), playerShip.Health.Defense, damage);
+                var applied = CombatDamage.Apply(playerShip.Health.At(now), playerShip.Health.Defense, damage, playerShip.ShipId, now);
                 if (applied.Remaining.Destroyed)
                 {
                     return Settle();
@@ -454,7 +454,7 @@ internal sealed partial class LiveCombatRuntime
         }
         var signature =
             DroneSignature(contact.Profile.TypeId) * Eden.Gameplay.Exploration.AbyssalDroneEnvironment.SignatureMultiplier(contact);
-        var retaliation = DroneRules.Retaliation(contact, npc.Position, npc.Velocity, signature, weapon, roll);
+        var retaliation = DroneRules.Retaliation(contact, npc.Position, npc.Velocity, signature, weapon, roll, npc.Radius, now);
         if (retaliation.Result.Remaining.Destroyed)
         {
             return false;
@@ -502,7 +502,7 @@ internal sealed partial class LiveCombatRuntime
             signature = Loading(() =>
             {
                 using CatalogDbContext catalog = new(database.CatalogPath);
-                return catalog.FittingAttributes(type).GetValueOrDefault(DogmaAttributeId.SignatureRadius);
+                return PilotFittingStore.ReadAttributes(catalog, type).GetValueOrDefault(DogmaAttributeId.SignatureRadius);
             });
             _droneSignatures[type] = signature;
         }

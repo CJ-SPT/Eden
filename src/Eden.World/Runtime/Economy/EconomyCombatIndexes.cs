@@ -15,6 +15,7 @@ internal sealed partial class ResidentEconomy
     private readonly ConcurrentDictionary<long, int> _npcMissilePilots = new();
     private readonly ConcurrentDictionary<long, int> _missileReportPilots = new();
     private readonly ConcurrentDictionary<long, byte> _missileImpacts = new();
+    private readonly ConcurrentDictionary<long, MissileMotionHistory> _missileMotion = [];
     private readonly SortedSet<(long EndedAt, long Id)> _npcMissileEnds = [];
     private readonly SortedSet<(long EndedAt, long Id)> _reportedMissileEnds = [];
     private long _oldestNpcMissileEnd = long.MaxValue;
@@ -34,6 +35,7 @@ internal sealed partial class ResidentEconomy
         _npcMissilePilots.Clear();
         _missileReportPilots.Clear();
         _missileImpacts.Clear();
+        _missileMotion.Clear();
         _npcMissileEnds.Clear();
         _reportedMissileEnds.Clear();
         Volatile.Write(ref _oldestNpcMissileEnd, long.MaxValue);
@@ -117,6 +119,8 @@ internal sealed partial class ResidentEconomy
         }
     }
 
+    internal MissileMotionHistory? MissileHistory(long id) => _missileMotion.GetValueOrDefault(id);
+
     private void MissileChanged(EconomyWorldMissile? before, EconomyWorldMissile? after)
     {
         if (
@@ -124,6 +128,7 @@ internal sealed partial class ResidentEconomy
             && after is not null
             && before.SourceKind == after.SourceKind
             && before.SystemId == after.SystemId
+            && before.TargetId == after.TargetId
             && before.PilotId == after.PilotId
             && before.Status == after.Status
             && (before.Outcome is not null && !before.Reported) == (after.Outcome is not null && !after.Reported)
@@ -131,6 +136,23 @@ internal sealed partial class ResidentEconomy
         )
         {
             return;
+        }
+        if (
+            before?.Status == MissileFlightStatus.Flying
+            && (after?.Status != MissileFlightStatus.Flying || before.TargetId != after.TargetId)
+        )
+        {
+            if (_missileMotion[before.TargetId].RemoveFlight())
+            {
+                _missileMotion.TryRemove(before.TargetId, out _);
+            }
+        }
+        if (
+            after?.Status == MissileFlightStatus.Flying
+            && (before?.Status != MissileFlightStatus.Flying || after.TargetId != before.TargetId)
+        )
+        {
+            _missileMotion.GetOrAdd(after.TargetId, static _ => new()).AddFlight(after);
         }
         void Update(EconomyWorldMissile row, bool add)
         {

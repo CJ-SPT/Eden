@@ -110,7 +110,7 @@ public static class LiveDroneRules
         {
             return new(next, false);
         }
-        var damage = DroneRules.Shot(contact, target, enemy.Velocity, enemy.SignatureRadius, roll);
+        var damage = DroneRules.Shot(contact, target, enemy.Velocity, enemy.SignatureRadius, roll, radius);
         return new(
             next with
             {
@@ -124,7 +124,7 @@ public static class LiveDroneRules
 
     public static LiveDroneImpact Hit(LiveCombatNpc npc, LiveCombatShip ship, DroneContact drone, DamageVector damage, long now)
     {
-        var result = CombatDamage.Apply(npc.Health.At(now), npc.Health.Defense, damage);
+        var result = CombatDamage.Apply(npc.Health.At(now), npc.Health.Defense, damage, npc.Id, now);
         var contributions = InteractionHistoryRules.AddDamage(
             npc.Contributions,
             new(ship.ShipId, ship.PilotId, ship.CorporationId, null, ship.TypeId, drone.Profile.TypeId, null, 0),

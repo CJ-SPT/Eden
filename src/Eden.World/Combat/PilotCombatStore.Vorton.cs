@@ -5,6 +5,7 @@ using Eden.Data.World.Drones;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
+using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.World.Catalog;
@@ -119,9 +120,11 @@ internal sealed partial class PilotCombatStore
             else
             {
                 int type = arc.Npc?.TypeId ?? arc.Contact!.Profile.TypeId;
-                attributes = arc.Npc is null
-                    ? catalog.FittingAttributes(type)
-                    : PlayerEwarStore.NpcAttributes(world, arc.Id, catalog.FittingAttributes(type));
+                attributes = PilotFittingStore.ReadAttributes(catalog, type);
+                if (arc.Npc is not null)
+                {
+                    attributes = PlayerEwarStore.NpcAttributes(world, arc.Id, attributes);
+                }
             }
             var legalityTarget =
                 pilot
@@ -144,6 +147,10 @@ internal sealed partial class PilotCombatStore
                 CrimewatchPersistence.Player(world, catalog, source.Id, legalityTarget.Id, system, aggression, now, end);
             }
             double signature = attributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius);
+            if (arc.Contact is { } droneContact)
+            {
+                signature *= AbyssalDroneEnvironment.SignatureMultiplier(droneContact);
+            }
             double application = MissileRules.Application(profile.Warhead, signature, arc.Velocity.Length);
             var damage = paid.Select(p =>
                     p.Weapon.Damage.Scale(MissileRules.Application(p.Weapon.Vorton!.Warhead, signature, arc.Velocity.Length))
@@ -209,7 +216,7 @@ internal sealed partial class PilotCombatStore
             }
             else
             {
-                var result = SmartbombStore.DamageDrone(world, arc.Drone!, arc.Contact!, damage);
+                var result = SmartbombStore.DamageDrone(world, arc.Drone!, arc.Contact!, damage, now);
                 hits.Add(
                     new(
                         appliedWeapon,

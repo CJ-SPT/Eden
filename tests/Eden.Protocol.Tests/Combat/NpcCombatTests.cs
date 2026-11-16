@@ -748,9 +748,9 @@ public sealed class NpcCombatTests
     [InlineData(true, false)]
     [InlineData(false, true)]
     [InlineData(true, true)]
-    public async Task SessionSendsTheFatalMessageAndCapsuleBallBeforeChangingShipId(bool rejectedCall, bool resident)
+    public async Task SessionSendsTheFatalMessageAndCapsuleBallBeforeChangingShipId(bool rejectedCall, bool simulationObjects)
     {
-        using Fixture f = new(resident, useTestClock: true);
+        using Fixture f = new(liveWorld: true, simulationObjects: simulationObjects, useTestClock: true);
         using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
         {
             catalog.Database.ExecuteSqlRaw(

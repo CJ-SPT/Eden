@@ -257,11 +257,13 @@ internal sealed partial class LiveCombatRuntime
         foreach (var npc in result.Npcs)
         {
             PublishNpc(npc);
+            owner.Economy.MissileHistory(npc.Id)?.Observe(now, npc.Position, npc.Velocity);
         }
         foreach (var player in result.Ships)
         {
             long id = player.Ship.Id;
             PublishPilotPosition(id, system, player.Ship.Position);
+            owner.Economy.MissileHistory(id)?.Observe(now, player.Ship.Position, player.Ship.Navigation.Velocity);
         }
         database.MotionStamps[system] = stamp;
         foreach (var collision in result.Collisions.Where(c => c.Bumped))

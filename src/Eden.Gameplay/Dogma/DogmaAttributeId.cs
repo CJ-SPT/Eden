@@ -318,6 +318,7 @@ public enum DogmaAttributeId
     ManufactureTimePerLevel = 1982,
     EntityFlyRange = 416,
     ShieldCapacity = 263,
+    ShieldUniformity = 484,
     ShieldCharge = 264,
     ArmorHitPoints = 265,
     ArmorHitPointsBonus = 1159,
@@ -396,7 +397,10 @@ public enum DogmaAttributeId
     EntityMissileFlightTimeMultiplier = 646,
     EntityMissileExplosionRadiusMultiplier = 858,
     EntityMissileExplosionVelocityMultiplier = 859,
-    EntityMissileReductionMultiplier = 860,
+    EntityMissileAoeFalloffMultiplier = 860,
+
+    [Obsolete("Use EntityMissileAoeFalloffMultiplier. Attribute 860 modifies area falloff.")]
+    EntityMissileReductionMultiplier = EntityMissileAoeFalloffMultiplier,
     EntityArmorRepairDuration = 630,
     EntityArmorRepairAmount = 631,
     EntityShieldBoostDuration = 636,

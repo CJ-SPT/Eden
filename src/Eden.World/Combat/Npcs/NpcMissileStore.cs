@@ -66,6 +66,7 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
         }
         var source = catalog.FittingType(npc.TypeId)!;
         var hull = catalog.FittingType(pilot.ActiveShip.TypeId)!;
+        MissileTarget launchTarget = new(target, velocity, (float)(hull.Radius ?? 0));
         var flight = MissileFlightRules.Launch(
             drive,
             new(
@@ -74,10 +75,9 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
                 (float)attributes.GetValueOrDefault(DogmaAttributeId.MaxVelocity),
                 new(0, 0, -1)
             ),
-            new(target, velocity, (float)(hull.Radius ?? 0)),
+            launchTarget,
             charge.GetValueOrDefault(DogmaAttributeId.AimedMissileLaunch) != 0
         );
-        long boundary = now - now % TimeSpan.TicksPerSecond;
         CrimewatchPersistence.Npc(world, pilot.Id, npc.SystemId, checked(now + (long)Math.Ceiling(cycle * TimeSpan.TicksPerMillisecond)));
         world.Add(
             new WorldMissile
@@ -97,10 +97,13 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
                 TargetRadius = (float)(hull.Radius ?? 0),
                 CorporationId = npc.CorporationId,
                 LaunchStamp = stamp,
-                LaunchedAt = boundary,
-                UpdatedAt = boundary,
-                ExpiresAt = checked(boundary + (long)Math.Ceiling(drive.LifetimeMilliseconds * TimeSpan.TicksPerMillisecond)),
-                Snapshot = JsonSerializer.Serialize(new MissilePayload(flight, warhead), MissileJson.Default.MissilePayload),
+                LaunchedAt = now,
+                UpdatedAt = now,
+                ExpiresAt = checked(now + (long)Math.Ceiling(drive.LifetimeMilliseconds * TimeSpan.TicksPerMillisecond)),
+                Snapshot = JsonSerializer.Serialize(
+                    new MissilePayload(flight, warhead, Target: launchTarget),
+                    MissileJson.Default.MissilePayload
+                ),
             }
         );
         aggression.MissileReadyAt = checked(now + (long)Math.Ceiling(cycle * TimeSpan.TicksPerMillisecond));
@@ -157,92 +160,61 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
                 row.EndedAt = now;
             }
         }
-        while (true)
+        MissilePayload AdvanceFlight(WorldMissile row)
         {
-            var due = rows.Where(m =>
-                    m.Status == MissileFlightStatus.Flying
-                    && now - m.UpdatedAt >= Math.Min(TimeSpan.TicksPerSecond, m.ExpiresAt - m.UpdatedAt)
-                )
-                .OrderBy(m => m.UpdatedAt)
-                .ThenBy(m => m.Id)
-                .ToArray();
-            if (due.Length == 0)
+            var position = pilot.ActiveShip.Position!;
+            MissileTarget target = new(new(position.X, position.Y, position.Z), velocity, row.TargetRadius);
+            return MissileMotionHistory.Step(world, row, row.Payload(), target, now);
+        }
+
+        foreach (var (row, payload, time) in MissileMotionHistory.DueSteps(rows, now, AdvanceFlight))
+        {
+            if (pilot.ActiveShipId != shipId)
             {
-                break;
+                row.Status = MissileFlightStatus.Expired;
+                row.EndedAt = time;
+                continue;
             }
-            long boundary = due[0].UpdatedAt;
-            List<PendingStep> steps = [];
-            foreach (var row in due.Where(m => m.UpdatedAt == boundary))
+            row.Save(payload);
+            row.UpdatedAt = time;
+            row.Status = payload.Flight.Status;
+            if (row.Status != MissileFlightStatus.Flying)
             {
+                row.EndedAt = time;
+            }
+            if (row.Status == MissileFlightStatus.Impact)
+            {
+                var npc = world.Set<WorldNpc>().Find(row.SourceShipId)!;
                 var position = pilot.ActiveShip.Position!;
-                double offset = (row.UpdatedAt - now) / (double)TimeSpan.TicksPerSecond;
-                var target = new MissileTarget(
-                    new SpacePosition(position.X, position.Y, position.Z) + velocity * offset,
-                    velocity,
-                    row.TargetRadius
+                var attributes = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
+                var defense = ShipHealth.DefenseFrom(attributes);
+                double application = MissileRules.Application(
+                    payload.Warhead,
+                    attributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius),
+                    payload.Target!.Velocity.Length
                 );
-                var payload = row.Payload();
-                var next = MissileFlightRules.Tick(payload.Flight, target);
-                long time = checked(row.LaunchedAt + (long)Math.Round(next.ElapsedSeconds * TimeSpan.TicksPerSecond));
-                steps.Add(new(row, payload with { Flight = next }, time));
-            }
-            // Contact time owns damage order, even when a newer, faster missile
-            // reaches the target ahead of an older flight in the same tick.
-            foreach (var step in steps.OrderBy(s => s.Time).ThenBy(s => s.Row.Id))
-            {
-                var (row, payload, time) = step;
-                if (pilot.ActiveShipId != shipId)
-                {
-                    row.Status = MissileFlightStatus.Expired;
-                    row.EndedAt = time;
-                    continue;
-                }
-                row.Save(payload);
-                row.UpdatedAt = time;
-                row.Status = payload.Flight.Status;
-                if (row.Status != MissileFlightStatus.Flying)
-                {
-                    row.EndedAt = time;
-                }
-                if (row.Status == MissileFlightStatus.Impact)
-                {
-                    var npc = world.Set<WorldNpc>().Find(row.SourceShipId)!;
-                    var position = pilot.ActiveShip.Position!;
-                    var attributes = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
-                    var defense = ShipHealth.DefenseFrom(attributes);
-                    double application = MissileRules.Application(
-                        payload.Warhead,
-                        attributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius),
-                        velocity.Length
-                    );
-                    var damage = payload.Warhead.Damage.Scale(application);
-                    var result = PilotHealthStore.Apply(world, shipId, defense, damage, row.UpdatedAt);
-                    PilotInteractionHistoryStore.Damage(
-                        world,
-                        shipId,
-                        PilotInteractionHistoryStore.Npc(npc, row.ChargeTypeId),
-                        result.Applied
-                    );
-                    var insurance = result.Remaining.Destroyed
-                        ? ShipLossPersistence.Apply(world, catalog, pilot, npc.Id, shipId, row.SystemId, position, row.UpdatedAt, lootRoll)
-                        : null;
-                    shots.Add(
-                        new(
-                            npc.Id,
-                            row.SourceTypeId,
-                            new(shipId, row.ChargeTypeId, row.UpdatedAt, 0),
-                            damage,
-                            result.Applied,
-                            1,
-                            new(shipId, defense, result.Remaining),
-                            null,
-                            insurance,
-                            IsMissile: true
-                        )
-                    );
-                    row.Reported = true;
-                    world.SaveChanges();
-                }
+                var damage = payload.Warhead.Damage.Scale(application);
+                var result = PilotHealthStore.Apply(world, shipId, defense, damage, row.UpdatedAt);
+                PilotInteractionHistoryStore.Damage(world, shipId, PilotInteractionHistoryStore.Npc(npc, row.ChargeTypeId), result.Applied);
+                var insurance = result.Remaining.Destroyed
+                    ? ShipLossPersistence.Apply(world, catalog, pilot, npc.Id, shipId, row.SystemId, position, row.UpdatedAt, lootRoll)
+                    : null;
+                shots.Add(
+                    new(
+                        npc.Id,
+                        row.SourceTypeId,
+                        new(shipId, row.ChargeTypeId, row.UpdatedAt, 0),
+                        damage,
+                        result.Applied,
+                        1,
+                        new(shipId, defense, result.Remaining),
+                        null,
+                        insurance,
+                        IsMissile: true
+                    )
+                );
+                row.Reported = true;
+                world.SaveChanges();
             }
         }
         world.SaveChanges();
@@ -271,6 +243,4 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
     }
 
     private sealed record FlightEndpoint(long Npc, int System);
-
-    private sealed record PendingStep(WorldMissile Row, MissilePayload Payload, long Time);
 }

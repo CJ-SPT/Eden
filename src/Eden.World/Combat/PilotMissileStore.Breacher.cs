@@ -122,7 +122,7 @@ internal sealed partial class PilotMissileStore
                 }
                 var attributes = victim is not null
                     ? PilotFittingStore.ShipAttributes(world, catalog, victim)
-                    : catalog.FittingAttributes(npc!.TypeId);
+                    : PlayerEwarStore.NpcAttributes(world, npc!.Id, PilotFittingStore.ReadAttributes(catalog, npc.TypeId));
                 var defense = ShipHealth.DefenseFrom(attributes);
                 double resistance = Math.Clamp(attributes.GetValueOrDefault(DogmaAttributeId.BreacherResistance, 1), 0, 1);
                 if (
@@ -151,17 +151,7 @@ internal sealed partial class PilotMissileStore
                 }
                 if (victim is not null)
                 {
-                    var hit = ApplyPilotImpact(
-                        world,
-                        catalog,
-                        row,
-                        best.Payload,
-                        victim,
-                        new(row.TargetId, SpacePosition.Zero, SpacePosition.Zero),
-                        at,
-                        damage,
-                        bypassResistances: true
-                    );
+                    var hit = ApplyPilotImpact(world, catalog, row, best.Payload, victim, at, damage, bypassResistances: true);
                     pilotImpacts.Add(hit);
                     if (hit.Health.Remaining.Destroyed)
                     {
