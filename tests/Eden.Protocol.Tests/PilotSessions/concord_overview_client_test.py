@@ -25,9 +25,14 @@ with zipfile.ZipFile(archive) as source:
     native = zlib.decompress(source.read('spacecomponents/client/components/entitystandings.pyj'))
     active_item = zlib.decompress(source.read('eve/client/script/ui/inflight/activeitem.pyj'))
     selected_item = zlib.decompress(source.read('eve/client/script/ui/inflight/selectedItemWnd.pyj'))
+    user_license = zlib.decompress(source.read('user_licenses/client/user_license.pyj'))
+    license_service = zlib.decompress(source.read('user_licenses/client/user_license_svc.pyj'))
+    clone_service = zlib.decompress(source.read('omega/client/clone_grade_svc.pyj'))
 
 worker = 'NATIVE = %r\nEXPRESSION = %r\nACTIVE_ITEM = %r\nSELECTED_ITEM = %r\n' % (
     native, expression, active_item, selected_item)
+worker += 'USER_LICENSE = %r\nLICENSE_SERVICE = %r\nCLONE_SERVICE = %r\n' % (
+    user_license, license_service, clone_service)
 worker += r'''
 import marshal, sys
 names = ['eve', 'eve.client', 'eve.client.script', 'eve.client.script.ui',
@@ -50,6 +55,9 @@ names += ['eve.client.script.ui.shared.neocom', 'eve.client.script.ui.shared.neo
           'eve.client.script.ui.shared.neocom.corporation.corporationWindow',
           'eve.client.script.ui.services.corporation',
           'eve.client.script.ui.services.corporation.base_corporation']
+names += ['user_licenses', 'user_licenses.client', 'user_licenses.client.messenger',
+          'user_licenses.client.messenger.request_messenger', 'user_licenses.client.user_license',
+          'user_licenses.client.user_license_type']
 for name in names:
     module = type(sys)(name)
     module.__path__ = []
@@ -58,6 +66,10 @@ for name in names:
     if parent:
         setattr(sys.modules[parent], child, module)
 photo = sys.modules['eve.client.script.ui.services.evePhotosvc']
+sys.modules['user_licenses.client.messenger.request_messenger'].PublicUserLicenseRequestMessenger = type(
+    'PublicUserLicenseRequestMessenger', (object,), {'get_user_license_request': lambda *args: None})
+sys.modules['user_licenses.client.user_license'].UserLicense = type('UserLicense', (object,), {})
+sys.modules['user_licenses.client.user_license_type'].UserLicenseType = type('UserLicenseType', (object,), {'OMEGA': 'omega'})
 photo.EvePhoto = type('EvePhoto', (object,), {'GetPortrait': lambda *args: None})
 sys.modules['eve.client.script.ui.shared.neocom.corporation.corporationWindow'].CorporationWindow = type(
     'CorporationWindow', (object,), {name: lambda *args: None for name in (
@@ -112,6 +124,10 @@ def native_method(blob, name, module):
     code = next(c for c in walk(marshal.loads(blob[8:])) if c.co_name == name)
     return type(lambda: None)(code, module.__dict__)
 
+license_model = sys.modules['user_licenses.client.user_license']
+license_model.UserLicense.__init__ = native_method(USER_LICENSE, '__init__', license_model)
+license_model.UserLicense.expiry_date = property(native_method(USER_LICENSE, 'expiry_date', license_model))
+
 class State(object):
     attacking = False
     threatAttackingMe = 99
@@ -164,6 +180,33 @@ for attacking in [False, True]:
 assert eval(expression, {}) == {}
 assert entity._get_icon_color_and_hint_from_entity_standing_response is installed
 assert bounty.get_entity_bounty is bounty_lookup
+saved_grade = [0]
+license_calls = []
+def clone_grade_request():
+    license_calls.append(saved_grade[0])
+    return saved_grade[0]
+def remote_service(name):
+    assert name == 'subscriptionMgr'
+    return type('Subscription', (), {'GetCloneGrade': staticmethod(clone_grade_request)})()
+__builtin__.sm.RemoteSvc = remote_service
+messenger = sys.modules['user_licenses.client.messenger.request_messenger'].PublicUserLicenseRequestMessenger()
+license_reader = type('LicenseReader', (), {
+    'get_user_license': lambda self, kind: messenger.get_user_license_request(kind),
+    'has_license': native_method(LICENSE_SERVICE, 'has_license', license_model)})()
+clone_namespace = type(sys)('inert_clone_grade')
+clone_namespace.mock_omega_state_setting = type('Setting', (), {'is_enabled': staticmethod(lambda: False)})()
+clone_namespace.get_user_license_svc = lambda: license_reader
+clone_namespace.UserLicenseType = sys.modules['user_licenses.client.user_license_type'].UserLicenseType
+is_omega = native_method(CLONE_SERVICE, 'is_omega_without_grace_period', clone_namespace)
+for grade in [0, 1, 0, 1]:
+    saved_grade[0] = grade
+    assert is_omega(None) == (grade == 1)
+    license = messenger.get_user_license_request('omega')
+    assert (license is not None) == (grade == 1)
+    if license is not None:
+        assert license.expiry_date is None
+assert len(license_calls) == 8
+print('Saved Omega license assertions passed in the pinned Python 2 runtime')
 assert 'eve.client.script.ui.shared.info.infoContentBase' not in sys.modules
 from npcs.client.components.entity_bounty import get_entity_bounty as late_import
 assert late_import is bounty_lookup

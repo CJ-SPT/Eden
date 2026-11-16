@@ -3,6 +3,9 @@
 [PI scan intensity and extraction previews](protocol/planetary.md#resource-scan-intensity-and-extraction-previews--november-16-2026)
 correct resource abundance bars and heat maps, and quote tuned extraction previews through the authoritative server operation.
 
+[Saved Omega license and colony repair](protocol/planetary.md#saved-omega-license-and-generated-colony-repair--november-16-2026)
+connects native export gating to authenticated saved clone grade and records the generated layout correction.
+
 [Interdiction](protocol/interdiction.md) records launched bubbles, focused HIC scripts, nullifiers and resident checkpoint persistence.
 
 [Warp capacitor payment](protocol/navigation.md#warp-capacitor-payment-november-16-2026)

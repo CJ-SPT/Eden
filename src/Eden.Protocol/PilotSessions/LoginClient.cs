@@ -22,6 +22,7 @@ internal static class LoginClient
         ClientExpression.CreateWithPrelude(
             "eden-login",
             PlanetaryPrelude(policy),
+            "Eden.Protocol.Skills.clone_license_client.py",
             "Eden.Protocol.Characters.portrait_client.py",
             "Eden.Protocol.Flight.concord_overview_client.py",
             "Eden.Protocol.Flight.npc_bounty_client.py",

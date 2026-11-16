@@ -2,6 +2,76 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Saved Omega license and generated colony repair — November 16, 2026
+
+Mythic's generated Athanor supply colonies exposed two separate failures. The native planet view divided by zero
+in `planetUILinks.LinkBase.__init__` when an extractor head occupied exactly the same coordinates as its control
+unit. The operator repair moved only the 15 ECU anchor latitudes by 0.003 radians, through the resident world owner
+and checkpoint. Resource-head positions, yields, installed programs, deadlines, routes, links, goods and wallet
+balances were preserved. The repaired checkpoint was reopened and validated before installation, with a fresh
+backup and an audit proving that only this pilot's five colony rows changed. This corrects the generated layout;
+it does not establish native rendering acceptance or alter ordinary player placement rules.
+
+The yellow **All Exporting Disabled / Upgrade** prompt had another cause. The saved account was already Omega,
+but build 3662168 now checks `PublicUserLicenseRequestMessenger.get_user_license_request` through its public
+license API, which Eden's gateway does not implement. Client diagnostics recorded HTTP 501 on that request.
+The host-signed login adapter now handles only `UserLicenseType.OMEGA` by reading the existing authenticated
+`subscriptionMgr.GetCloneGrade` operation. Saved grade 1 becomes a native permanent `UserLicense` with no expiry;
+Alpha and unknown grades return no license. Other license types retain their original handlers. Installation is
+idempotent and performs no RPC. No account entitlement, public gateway authorization, database schema or gameplay
+permission changes were added. The public envelope's client-supplied identity is not treated as a credential.
+
+The red **One or more facility requires attention** indicator is separate again. Native
+`ColonyData.IsSomeProductUnrouted` compares routed quantities with the pin's complete output. All 15 generated
+ECUs were active and produced base batches of 727,700–900,800 raw units at 100×, while deliberately routing only
+1,500 units per 15-minute cycle to feed one basic processor. The unused output therefore triggers the native
+warning on every colony. These routes are sufficient for the planned chain; the compatibility adapter does not
+suppress that warning. Cross-planet P1 hauling and storage capacity still constrain production.
+
+### Reference evidence
+
+[UniWiki Planetary Industry](https://wiki.eveuniversity.org/Planetary_Industry) and
+[colony setup](https://wiki.eveuniversity.org/Setting_up_a_planetary_colony) were checked for Omega restrictions,
+routing and factory inputs. The local EveJs license lifecycle also keeps entitlement authority in saved account
+state, with a different expiry policy; it was consulted without copying implementation. Its snapshot has no Git
+metadata; `newEdenStore/licenseLifecycle.js` SHA-256 is
+`533160b8868f35b91811afec1a46a945c4463382fc49c95947ec3ba44c4c5c8e`.
+No Carbon-owned codec, transport or Destiny behavior changed.
+
+Inert inspection used the original build-3662168 archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`. Relevant decompressed module hashes:
+
+| Module | SHA-256 |
+| --- | --- |
+| `eve/client/script/ui/shared/planet/planetUILinks.pyj` | `867a5a83333df3e4ea900073f9d9f5910c4231f9afa1337ac899a597c224f6bf` |
+| `user_licenses/client/messenger/request_messenger.pyj` | `df08b00c4937d1e242b20febf374aa71866d2cb69d8a127e2a70408caf9737f7` |
+| `user_licenses/client/user_license_svc.pyj` | `aa5d43068a34e74ebe21ad1d660b0c49777f5c7d9631f2856ccce0160b1935ec` |
+| `omega/client/clone_grade_svc.pyj` | `e82fa0f2a7205cadeff3a6498c12887e8759ae2aa2e03c699e1fa44a6c249c2b` |
+
+### Automated validation
+
+The initial exact filter through `tools/Test-Feature.ps1 -Filter` was
+`FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.CloneLicenseClientTests.NativeOmegaLicenseUsesAuthenticatedCloneGradeWithoutGrantingOtherLicenses`.
+The isolated adapter checks permanent Omega, Alpha/unknown rejection, repeated installation and unchanged non-Omega
+delegation. The pinned Python 2 fixture also executes the actual native license constructor, `has_license` and
+`is_omega_without_grace_period` with inert services, exercising Alpha/Omega transitions without a game session.
+Affected planetary, saved clone-grade, pilot-login, license-adapter and overview tests passed **86 checks**, no
+failures/skips, in **33.75 seconds**; the strengthened native fixture then passed separately in **2.68 seconds**.
+Tool/solution restore and solution build passed with zero warnings/errors. Both Python policy suites passed
+**8 + 9** checks. The full .NET suite was not requested or run.
+Final solution build, formatting verification, `git diff --check` and local documentation links passed.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. The repaired save restarted successfully and the launcher API
+returned HTTP 200. Native rendering and the removal of the Upgrade prompt require maintainer acceptance.
+
+### Optional maintainer checks
+
+After deploying the adapter, fully reconnect Mythic and open a repaired colony to check the planet surface and
+Omega export controls. Inspect an ECU's product routes to distinguish unused extraction output from a stopped
+program. Haul the source planets' P1 products to the Kihtaled II factory as described in the operator receipt.
+
 ## Resource scan intensity and extraction previews — November 16, 2026
 
 User screenshots showed effectively empty resource bars, a missing selected-resource heat map, and an extraction
