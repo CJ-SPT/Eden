@@ -550,7 +550,7 @@ public sealed partial class RemoteAssistanceTests
     [Theory]
     [InlineData(11978)]
     [InlineData(11989)]
-    public void FutureLogisticsHullSelectorsHaveKnownConsumersWithoutEnablingTheirHullCohort(int type)
+    public void AdmittedLogisticsHullSelectorsHaveKnownConsumers(int type)
     {
         using Fixture f = Prepare();
         using CatalogDbContext catalog = new(f.CatalogPath);
@@ -569,7 +569,7 @@ public sealed partial class RemoteAssistanceTests
             Assert.Equal(ModifierSelector.Group, parsed.Selector);
             Assert.Equal(RemoteAssistanceRules.TrackingGroup, parsed.SelectionId);
         }
-        Assert.False(HullCatalog.CanAssemble(catalog, catalog.FittingType(type)!, (int)InventoryCategory.Ship));
+        Assert.True(HullCatalog.CanAssemble(catalog, catalog.FittingType(type)!, (int)InventoryCategory.Ship));
     }
 
     [Theory]

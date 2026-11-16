@@ -69,7 +69,7 @@ public sealed class MissileFittingTests
     }
 
     [Fact]
-    public void CompleteCohortFits139UnrestrictedLaunchersAndAccepts201ChargesAcrossAllSizesAndTiers()
+    public void CompleteCohortFits144LaunchersAndAccepts201ChargesAcrossAllSizesAndTiers()
     {
         using Fixture f = new();
         PassiveCatalogFixture.LoadMissileTiers(f.CatalogPath);
@@ -79,9 +79,10 @@ public sealed class MissileFittingTests
         var supported = launchers.Where(t => MissileLauncherCatalog.Supported(catalog, t.Id, t.GroupId)).ToArray();
         var charges = catalog.Set<ItemType>().Where(t => MissileDefinitions.ChargeGroups.Contains(t.GroupId)).ToArray();
         Assert.Equal(145, launchers.Length);
-        Assert.Equal(139, supported.Length);
+        Assert.Equal(144, supported.Length);
         Assert.Equal(201, charges.Length);
         var attributes = supported.ToDictionary(t => t.Id, t => PilotFittingStore.ReadAttributes(catalog, t.Id));
+        Assert.Equal(5, supported.Count(t => CombatDefinitions.IsDreadnoughtWeapon(attributes[t.Id])));
         Assert.All(charges, t => Assert.True(MissileChargeCatalog.Supported(catalog, t.Id, t.GroupId), t.Name));
         Assert.All(
             supported,

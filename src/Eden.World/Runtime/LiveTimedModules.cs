@@ -5,6 +5,8 @@ namespace Eden.World.Runtime;
 
 internal sealed class LiveTimedModules(LiveWorld owner, int? system = null)
 {
+    internal bool HasDue(long now) => owner.Economy.NextModuleExpiry(system) <= now || owner.Economy.NextCommandBurstExpiry(system) <= now;
+
     internal void Expire(long now)
     {
         var economy = owner.Economy;

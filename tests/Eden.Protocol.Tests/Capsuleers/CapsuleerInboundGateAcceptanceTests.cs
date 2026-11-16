@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using Eden.Data.World.Capsuleers;
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Chat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
@@ -35,7 +36,7 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task ReceivingOnlyObserversSeeRealInboundTransfersAndRepeatedArrivalAtTheWatchedGate(bool restartPending)
+    public async Task OccupiedGateObserversSeeRealInboundTransfersAndRepeatedArrivalAtTheWatchedGate(bool restartPending)
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false);
         int retainedWait = restartPending ? await RestartPendingInbound(f.Database, f.Clock) : 0;
@@ -44,7 +45,7 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
     }
 
     [Fact]
-    public async Task CopiedVattuolenSaveProducesInboundUoyonenArrivalsWithNoHumanAcrossTheGate()
+    public async Task CopiedVattuolenSaveProducesInboundUoyonenArrivalsWithBothSystemsOccupied()
     {
         string? source = Environment.GetEnvironmentVariable("EDEN_GATEWATCH_SOURCE");
         if (string.IsNullOrWhiteSpace(source))
@@ -120,6 +121,8 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
         first.Snapshot();
         using var second = factory.Create(secondPilot);
         second.Snapshot();
+        using var sourceObserver = SourceObserver(host, database, gate, humans);
+        sourceObserver.Snapshot();
         host.PrepareActivatedPopulations();
         var firstSession = Guid.NewGuid();
         var secondSession = Guid.NewGuid();
@@ -154,8 +157,8 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
         start = Stopwatch.GetTimestamp();
         for (int seconds = 0; seconds <= RepeatObservationSeconds; seconds++)
         {
-            Assert.Equal(new[] { receivingSystem }, presence.Read().ActiveSystems);
-            Assert.Equal(2, presence.Read().SelectedSessions);
+            Assert.Equal(new[] { receivingSystem, sourceSystem }.Order(), presence.Read().ActiveSystems.Order());
+            Assert.Equal(3, presence.Read().SelectedSessions);
             if (populationRevision != live.CapsuleerRevision)
             {
                 using WorldDbContext world = new(database.Path);
@@ -332,11 +335,11 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
         for (int cycle = 0; cycle < 2; cycle++)
         {
             second.Dispose();
-            Assert.Equal(1, presence.Read().SelectedSessions);
+            Assert.Equal(2, presence.Read().SelectedSessions);
             Assert.Equal(watched, Assert.Single(gateWatch.Read(presence.Read()), g => g.ArrivalGateId == gateId));
             using var rejoined = factory.Create(secondPilot);
             rejoined.Snapshot();
-            Assert.Equal(2, presence.Read().SelectedSessions);
+            Assert.Equal(3, presence.Read().SelectedSessions);
             Assert.Equal(watched, Assert.Single(gateWatch.Read(presence.Read()), g => g.ArrivalGateId == gateId));
             Assert.Equal(existingJobs, scheduler.Jobs());
         }
@@ -350,6 +353,30 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
         using WorldDbContext world = new(database.Path);
         long account = world.Pilots.Where(p => p.Id == id).Select(p => p.AccountId).Single();
         return ships.FindPilot(account, id)!;
+    }
+
+    private static FlightSession SourceObserver(ServiceProvider host, WorldDatabase database, StaticSpaceObject gate, long[] humans)
+    {
+        const string name = "Gate Source Observer";
+        long? id;
+        long account;
+        using (WorldDbContext world = new(database.Path))
+        {
+            account = world.Pilots.Find(humans[0])!.AccountId;
+            id = world
+                .Pilots.Where(pilot => pilot.AccountId > 0 && !humans.Contains(pilot.Id))
+                .OrderBy(pilot => pilot.Id)
+                .Select(pilot => (long?)pilot.Id)
+                .FirstOrDefault();
+        }
+        id ??= host.GetRequiredService<ICharacterCreation>()
+            .Create(account, new(name, 1, 1, 0, CharacterRules.UnspecifiedAncestry, [], [], 17));
+        var ships = host.GetRequiredService<SqliteWorld>();
+        var pilot = FindHuman(ships, database, id.Value);
+        int system = gate.DestinationSystemId!.Value;
+        var sourceGate = host.GetRequiredService<ISystemObjects>().Load(system).Single(item => item.Id == gate.DestinationGateId);
+        ships.SetPosition(pilot.ShipId, sourceGate.Position + new SpacePosition(sourceGate.Radius + ObserverClearance, 0, 0), system);
+        return host.GetRequiredService<FlightSessionFactory>().Create(FindHuman(ships, database, id.Value));
     }
 
     private static (long[] Humans, StaticSpaceObject Gate) PositionObservers(
@@ -391,6 +418,8 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
             first.Snapshot();
             using var second = factory.Create(FindHuman(ships, database, humans[1]));
             second.Snapshot();
+            using var sourceObserver = SourceObserver(host, database, gate, humans);
+            sourceObserver.Snapshot();
             host.PrepareActivatedPopulations();
             clock.Seconds += 10;
             host.GetRequiredService<CapsuleerMaintenance>().Tick();

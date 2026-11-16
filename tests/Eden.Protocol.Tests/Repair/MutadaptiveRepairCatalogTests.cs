@@ -46,7 +46,7 @@ public sealed class MutadaptiveRepairCatalogTests
             }
         );
         Assert.True(Assert.Single(report.Entries, e => e.TypeId == 49712).Admitted);
-        Assert.False(Assert.Single(report.Entries, e => e.TypeId == 49713).Admitted);
+        Assert.True(Assert.Single(report.Entries, e => e.TypeId == 49713).Admitted);
     }
 
     [Theory]

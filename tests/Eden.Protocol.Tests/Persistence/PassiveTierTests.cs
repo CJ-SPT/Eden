@@ -32,10 +32,16 @@ public sealed class PassiveTierTests
         using CatalogDbContext catalog = new(f.CatalogPath);
         var types = catalog.Set<ItemType>().Where(type => PassiveModules.Groups.Contains(type.GroupId)).ToArray();
         var supported = types.Where(type => PassiveCatalog.Supported(catalog, type.Id, type.GroupId)).ToArray();
-        Assert.Equal(862, supported.Length);
+        Assert.Equal(863, supported.Length);
+        Assert.Contains(supported, type => type.Id == BreacherRules.CounterType);
         Assert.Equal(31, supported.Select(type => type.GroupId).Distinct().Count());
         Assert.All(supported, type => Assert.NotNull(FittingCatalog.Definition(catalog, type.Id)));
-        var activeControls = types.Where(type => AssaultDamageControlCatalog.Supported(catalog, type.Id, type.GroupId)).ToArray();
+        var activeControls = types
+            .Where(type =>
+                AssaultDamageControlCatalog.Supported(catalog, type.Id, type.GroupId)
+                && FittingCatalog.DefaultEffect(catalog, type.Id) == DogmaEffect.AssaultDamageControl
+            )
+            .ToArray();
         Assert.Equal(6, activeControls.Length);
         Assert.Empty(activeControls.Intersect(supported));
         Assert.All(activeControls, type => Assert.NotNull(FittingCatalog.Definition(catalog, type.Id)));

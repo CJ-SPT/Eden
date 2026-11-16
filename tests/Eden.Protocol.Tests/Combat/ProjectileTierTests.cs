@@ -73,7 +73,7 @@ public sealed class ProjectileTierTests
     }
 
     [Fact]
-    public void All160UnrestrictedGunsAnd144ChargesHaveCompleteProfilesAndMatchingAmmunition()
+    public void All167GunsAnd144ChargesHaveCompleteProfilesAndMatchingAmmunition()
     {
         using Fixture f = new();
         PassiveCatalogFixture.LoadProjectileTiers(f.CatalogPath);
@@ -89,7 +89,8 @@ public sealed class ProjectileTierTests
             )
             .ToArray();
         Assert.Equal(167, guns.Length);
-        Assert.Equal(160, supported.Length);
+        Assert.Equal(167, supported.Length);
+        Assert.Equal(7, supported.Count(t => CombatDefinitions.IsDreadnoughtWeapon(PilotFittingStore.ReadAttributes(catalog, t.Id))));
         Assert.Equal(144, charges.Length);
         Assert.All(charges, t => Assert.True(TurretChargeCatalog.Supported(catalog, t.Id, t.GroupId)));
         var payloads = charges.ToDictionary(t => t.Id, t => PilotFittingStore.ReadAttributes(catalog, t.Id));

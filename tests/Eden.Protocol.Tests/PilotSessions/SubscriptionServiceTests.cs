@@ -3,6 +3,7 @@ using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Server;
 using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -218,7 +219,8 @@ public sealed class SubscriptionServiceTests
             }.Select(packet => BlueMarshal.Decode(BlueMarshal.Encode(packet)))
         );
         List<BlueInstance> output = [];
-        using var scope = world.Services.CreateScope();
+        using var host = ServerServices.Build(new(world.Path), liveWorld: true, simulationObjects: false);
+        using var scope = host.CreateScope();
         var session = scope.ServiceProvider.GetRequiredService<IPilotSession>();
         await Assert.ThrowsAsync<EndOfStreamException>(() =>
             session.RunAsync(

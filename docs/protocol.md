@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Cross-system timed-effect expiry](protocol/performance.md#cross-system-timed-effect-expiry-november-15-2026)
+coordinates due resident bonuses before publishing a cached fitting during an unrelated transaction.
+
 [Custom gameplay switches](protocol/world-configuration.md#custom-gameplay-switches-november-15-2026) cover saved defaults, administration controls and restart behavior.
 
 [Login location priming](protocol/startup.md#location-priming-before-character-selection-november-15-2026)

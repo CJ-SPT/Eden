@@ -44,7 +44,12 @@ public sealed partial class SignatureSuppressionOperationTests
     }
 
     [Fact]
-    public async Task AnUnrelatedResidentTransactionCannotPublishAnExpiredDefenseToAnotherSystem()
+    public Task AnUnrelatedResidentTransactionCannotPublishAnExpiredDefenseToAnotherSystem() => CrossSystemRead(expired: true);
+
+    [Fact]
+    public Task AnUnexpiredDefenseReadDoesNotWaitForAnUnrelatedResidentTransaction() => CrossSystemRead(expired: false);
+
+    private static async Task CrossSystemRead(bool expired)
     {
         using var fixture = Prepare();
         long module = fixture.Fit(Basic);
@@ -67,12 +72,23 @@ public sealed partial class SignatureSuppressionOperationTests
         using (var context = live.UseSystem(unrelated))
         using (var action = live.Economy.Begin(new(systems: [unrelated])))
         {
-            fixture.Clock.AdvanceWallTime(TimeSpan.FromTicks(paid.Schedule.ExpiresAt - fixture.Clock.Now));
+            if (expired)
+            {
+                fixture.Clock.AdvanceWallTime(TimeSpan.FromTicks(paid.Schedule.ExpiresAt - fixture.Clock.Now));
+            }
             reading = Task.Run(() =>
             {
                 using var destination = live.UseSystem(system);
                 attempted.Set();
-                return fixture.Fitting.ShipAttributes(pilot)[DogmaAttributeId.SignatureRadius];
+                using var metrics = SessionPerformance.Begin("cross-system defense read", _ => { }, force: true)!;
+                double signature = fixture.Fitting.ShipAttributes(pilot)[DogmaAttributeId.SignatureRadius];
+                Assert.Equal(0, metrics.Commands);
+                Assert.Equal(0, metrics.Connections);
+                if (!expired)
+                {
+                    Assert.Equal(0, metrics.FittingCalculations);
+                }
+                return signature;
             });
             Assert.True(attempted.Wait(TimeSpan.FromSeconds(5)));
             reachedBoundary = SpinWait.SpinUntil(() => reading.IsCompleted || live.WaitingOwners > 0, TimeSpan.FromSeconds(5));
@@ -80,9 +96,9 @@ public sealed partial class SignatureSuppressionOperationTests
         }
         double observed = await reading.WaitAsync(TimeSpan.FromSeconds(5));
         Assert.True(reachedBoundary);
-        Assert.True(waited);
-        Assert.Equal(original, observed, 8);
-        Assert.Equal(long.MaxValue, live.Economy.NextModuleExpiry(system));
+        Assert.Equal(expired, waited);
+        Assert.Equal(expired ? original : paid.ShipAttributes[DogmaAttributeId.SignatureRadius], observed, 8);
+        Assert.Equal(expired ? long.MaxValue : paid.Schedule.ExpiresAt, live.Economy.NextModuleExpiry(system));
     }
 
     [Fact]

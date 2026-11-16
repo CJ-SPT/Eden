@@ -159,3 +159,84 @@ Agents perform **automated testing only**: no game launch, Computer Use, interac
 ## Documentation changes
 
 Check local links and section anchors, verify relocated records and historical acceptance evidence were retained, and check UTF-8 encoding, final newlines, trailing whitespace and `git diff --check`. Documentation-only work does not require gameplay tests or live client acceptance.
+
+## Full regression November 15, 2026
+
+**Automated validation.** The requested regression began at `4beb9ba8` in the isolated `codex/full-suite-fixes` worktree.
+The initial `dotnet test --no-build --artifacts-path artifacts/feature-tests` attempt was interrupted by
+an execution-host reset after more than 1 hour 44 minutes. No final TRX report or totals were produced;
+that attempt is incomplete. Its reported failures guided exact-method corrections through `tools/Test-Feature.ps1`.
+The recovery run retains a discovery manifest and a persistent console log with each completed case.
+
+The complete recovery finished on November 16 in **7,493.73 seconds (2 hours 4 minutes 54 seconds)**:
+**9,721 total, 9,715 passed, 6 failed, 0 skipped**. It includes the runtime expiry correction and the
+earlier fixture corrections. Both cross-system expiry regressions passed in that complete run.
+The six failures identified three remaining fixture methods, corrected after that run's assembly was built:
+
+- The redemption subprocess accepts the existing `Open` and `economic transaction` slow-owner warning names
+  while retaining its exit, output, persistence and unexpected-diagnostic assertions.
+- Corporation selection uses a resident host for all four custom-logo/reopen combinations.
+- The Talos retains native `leadershipCpuBonus` metadata with a zero effective percentage, but cannot fit the
+  command-burst probe. The shared helper explicitly requires a zero `PostPercent` modifier before omitting an
+  incompatible probe. Nonzero bonuses continue to require a fitting-compatible consumer and numerical assertions.
+  The pinned build-3662168 fixture defines the restriction; the [EVE University command-burst restrictions](https://wiki.eveuniversity.org/Command_Bursts)
+  provide the gameplay reference.
+
+All six failed cases passed after correction: feature build 1.54 seconds, test process 14.65 seconds
+(11 seconds reported by the runner). The exact filter joins the following clauses with `|`:
+
+```text
+FullyQualifiedName=Eden.Protocol.Tests.Persistence.RedemptionTests.AdministrativeGrantCommandPersistsExactlyOnceAndExitsWithoutStartingTheServer
+FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.CorporationSelectionTests.LoginPrimesCompleteSavedLogoRowsBeforeSelectionAndAfterLogoff
+(FullyQualifiedName=Eden.Protocol.Tests.Persistence.CombatHullTests.EverySupportedBonusUsesItsCatalogSelectorAndEarnedAmount&DisplayName~4308)
+```
+
+The affected classes and every shared bonus-helper caller then passed **289/289 cases**: feature build
+1.55 seconds, test process 464.56 seconds (7 minutes 41 seconds reported by the runner). This includes valid
+nonzero command-module bonuses and all operational hull probes. The broader filter joins these clauses with `|`:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Persistence.RedemptionTests
+FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.CorporationSelectionTests
+FullyQualifiedName=Eden.Protocol.Tests.Persistence.CombatHullTests.EverySupportedBonusUsesItsCatalogSelectorAndEarnedAmount
+FullyQualifiedName=Eden.Protocol.Tests.Persistence.SmallHullBonusTests.EveryOperationalBonusChangesItsCatalogTargetByItsEarnedSkillAndRoleAmount
+FullyQualifiedName=Eden.Protocol.Tests.Persistence.UtilityHullTests.EverySupportedBonusUsesItsCatalogSelectorAndEarnedAmount
+FullyQualifiedName=Eden.Protocol.Tests.Combat.RemoteRepairTests.LogisticsFrigatesAndArmorCruiserApplyTheirEarnedAndRoleBonuses
+FullyQualifiedName=Eden.Protocol.Tests.Combat.CapacitorWarfareTests.AdmittedEnergyHullBonusesConsumeTheirEarnedModifiersOnce
+```
+
+After the final behavioral changes, tool restore (0.19 seconds), solution restore (0.81 seconds) and solution
+build (6.19 seconds, zero warnings/errors) passed. Both Python policy suites passed again: catalog setup (8 cases,
+1.79 seconds including interpreter startup) and formatting policy (9 cases, 0.18 seconds).
+The first formatting verification flagged only the redemption assertion's layout. The pinned formatter applied
+that whitespace change in 40.23 seconds; final `tools/Format.ps1 -Check` passed in 44.68 seconds, checking 2,327 files
+and the 140-column limit. Documentation links/anchors, UTF-8, final newlines, trailing whitespace and
+`git diff --check` passed. Only formatter layout cleanup followed the passing focused test assemblies.
+
+The complete run is retained as its original failed result; post-run corrections use focused verification.
+The ignored `artifacts/feature-tests` directory retains the complete discovery/console/TRX evidence under
+`results/full-recovery`, exact filter logs in `post-full-exact-methods.log` and `post-full-affected-classes.log`,
+and the earlier development filter in `corrected-methods.filter.txt`.
+
+The investigation covers native packet fixtures that require the resident world, occupied-system traffic
+setup, current hull and weapon admission, complete hull-bonus probes, resident resupply and isolated shopping
+stock, checkpoint rollback images, exception wrapping and batched checkpoint ownership measurements.
+The [timed-effect coordination correction](protocol/performance.md#cross-system-timed-effect-expiry-november-15-2026)
+addresses the expired fitting publication found by the concurrent resident read test.
+
+The recovery command is `dotnet test --no-build --artifacts-path artifacts/feature-tests`, with normal
+console verbosity and a TRX logger. Inputs are the unchanged staged build-3662168 client
+(`EDEN_TEST_CLIENT_ROOT`), installed headless Chromium/Firefox (`EDEN_TEST_ADMIN_BROWSER=1`), and the
+read-only pinned catalog (`EDEN_TEST_TRAVEL_CATALOG`). The optional `EDEN_SCALE_SOURCE`, `EDEN_FRAME_SOURCE`,
+`EDEN_SELECTION_SOURCE`, `EDEN_PERFORMANCE_SOURCE` and `EDEN_GATEWATCH_SOURCE` frozen-save replays, along with
+other optional saved-world and catalog-profiling inputs, are unset. Their setup-only results do not establish
+saved-world performance or arrival acceptance.
+
+The standalone Python suites passed 58 tests: catalog setup (8), formatting policy (9), anomaly layout (3),
+client-route audit (11), mission content (19), mod client (5), native skill adapter (1), native fleet adapter (1)
+and Docker publishing (1). The first eight suites took 54.23 seconds together; Docker publishing took
+324.13 seconds. The native skill test additionally reported 50 adapter assertions without starting a game session.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None.

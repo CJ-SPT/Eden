@@ -428,29 +428,26 @@ public sealed class RegionalMarketTests
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var market = host.GetRequiredService<IPilotMarket>();
         var pilot = host.GetRequiredService<SqliteWorld>().FindPilot(1000001)!;
-        var quote = market.Orders(pilot.PilotId, Ammunition).Single(o => o.StationId == pilot.StationId && !o.Bid);
-        Fund(f.Database, pilot.PilotId, quote.PriceCents * 100);
+        const int quantity = 10;
+        var quote = market.Orders(pilot.PilotId, Ammunition).Single(o => o.StationId == HubStation && !o.Bid);
+        var hull = market.Orders(pilot.PilotId, Merlin).Single(o => o.StationId == HubStation && !o.Bid);
+        Fund(f.Database, pilot.PilotId, quote.PriceCents * quantity + hull.PriceCents - 1);
         long balance = market.Balance(pilot.PilotId);
-        using (WorldDbContext world = new(f.Database.Path))
-        {
-            world.Database.ExecuteSqlRaw(
-                """
-                CREATE TRIGGER RejectRegionalPayment BEFORE UPDATE ON WorldWallet
-                WHEN NEW.Cents < OLD.Cents BEGIN SELECT RAISE(ABORT,'payment failure'); END
-                """
-            );
-        }
-        Assert.Throws<DbUpdateException>(() => market.Buy(pilot.PilotId, pilot.StationId, [new(Ammunition, quote.PriceCents, 10)]));
+        var failure = Assert.Throws<InvalidDataException>(() =>
+            market.Buy(pilot.PilotId, HubStation, [new(Ammunition, quote.PriceCents, quantity), new(Merlin, hull.PriceCents, 1)])
+        );
+        Assert.Contains("enough ISK", failure.Message);
         Assert.Equal(balance, market.Balance(pilot.PilotId));
         Assert.Empty(market.Transactions(pilot.PilotId));
         using (WorldDbContext world = new(f.Database.Path))
         {
-            Assert.Empty(world.Set<OwnedItem>().Where(i => i.OwnerId == pilot.PilotId && i.TypeId == Ammunition));
+            Assert.Empty(world.Set<OwnedItem>().Where(i => i.OwnerId == pilot.PilotId && (i.TypeId == Ammunition || i.TypeId == Merlin)));
             Assert.Equal(quote.Remaining, world.Set<NpcMarketOrder>().Single(o => o.Id == quote.Id).Remaining);
-            world.Database.ExecuteSqlRaw("DROP TRIGGER RejectRegionalPayment");
+            Assert.Equal(hull.Remaining, world.Set<NpcMarketOrder>().Single(o => o.Id == hull.Id).Remaining);
         }
-        market.Buy(pilot.PilotId, pilot.StationId, [new(Ammunition, quote.PriceCents, 10)]);
+        market.Buy(pilot.PilotId, HubStation, [new(Ammunition, quote.PriceCents, quantity)]);
         Assert.Single(market.Transactions(pilot.PilotId));
+        Assert.Equal(balance - quote.PriceCents * quantity, market.Balance(pilot.PilotId));
     }
 
     [Fact]

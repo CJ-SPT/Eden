@@ -76,7 +76,7 @@ public sealed class EnergyTierTests
     }
 
     [Fact]
-    public void All204FunctionalUnrestrictedGunsAnd200CrystalsHaveCompleteMatchingProfiles()
+    public void All212FunctionalGunsAnd200CrystalsHaveCompleteMatchingProfiles()
     {
         using Fixture f = new();
         PassiveCatalogFixture.LoadEnergyTiers(f.CatalogPath);
@@ -95,7 +95,8 @@ public sealed class EnergyTierTests
             )
             .ToArray();
         Assert.Equal(216, guns.Length);
-        Assert.Equal(204, supported.Length);
+        Assert.Equal(212, supported.Length);
+        Assert.Equal(8, supported.Count(t => CombatDefinitions.IsDreadnoughtWeapon(PilotFittingStore.ReadAttributes(catalog, t.Id))));
         Assert.Equal(200, charges.Length);
         Assert.All(charges, t => Assert.True(TurretChargeCatalog.Supported(catalog, t.Id, t.GroupId), t.Name));
         var payloads = charges.ToDictionary(t => t.Id, t => PilotFittingStore.ReadAttributes(catalog, t.Id));

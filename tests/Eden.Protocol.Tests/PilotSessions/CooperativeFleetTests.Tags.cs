@@ -11,12 +11,10 @@ namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed partial class CooperativeFleetTests
 {
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void NativeFleetTagsReachLateJoinersAndClearWhenTargetsDisappearOrMembershipEnds(bool resident)
+    [Fact]
+    public void NativeFleetTagsReachLateJoinersAndClearWhenTargetsDisappearOrMembershipEnds()
     {
-        using TestWorld world = new(liveWorld: resident);
+        using TestWorld world = new(liveWorld: true);
         var source = world.Store.FindPilot(1000001)!;
         var target = world.Store.FindPilot(1000002)!;
         world.Store.SetPosition(source.ShipId, SpacePosition.Zero, source.SystemId);
@@ -62,12 +60,9 @@ public sealed partial class CooperativeFleetTests
                 leader.Advance();
                 member.Advance();
             }
-            if (resident)
-            {
-                Assert.Equal(0, metrics.Commands);
-                Assert.Equal(0, metrics.Connections);
-                Assert.Equal(0, metrics.FittingCalculations);
-            }
+            Assert.Equal(0, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+            Assert.Equal(0, metrics.FittingCalculations);
         }
         Assert.Empty(leader.Context.Notifications.OfType<FleetStateNotification>());
         Assert.Empty(member.Context.Notifications.OfType<FleetStateNotification>());

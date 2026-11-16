@@ -388,7 +388,8 @@ public sealed class AgentDirectoryTests
                 "CREATE TRIGGER RejectAgentDelete BEFORE DELETE ON WorldAgentContact BEGIN SELECT RAISE(ABORT, 'forced failure'); END"
             );
         }
-        Assert.Throws<SqliteException>(() => contacts.Delete(90000001, [90000002, AgentTestData.AgentId]));
+        var failure = Assert.Throws<DbUpdateException>(() => contacts.Delete(90000001, [90000002, AgentTestData.AgentId]));
+        Assert.IsType<SqliteException>(failure.InnerException);
         Assert.Equal(before.Addresses, contacts.Read(90000001).Addresses);
     }
 

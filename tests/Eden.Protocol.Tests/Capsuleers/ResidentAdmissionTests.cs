@@ -287,11 +287,16 @@ public sealed class ResidentAdmissionTests
             if (disconnect)
             {
                 crimewatch.Disconnect(Human, humanShip);
+                Assert.Equal(humanShip, live.Economy.Inspect(world => world.Set<SavedLogoff>().Find(Human)?.ShipId));
+                using WorldDbContext raw = new(fixture.Database.Path) { IsResidentProjection = true };
+                Assert.Null(raw.Pilots.Find(founder));
+                Assert.Null(raw.Set<SavedLogoff>().Find(Human));
             }
-            else
+            // Explicit compatibility reads project resident changes; disconnect itself stays resident.
+            using (WorldDbContext world = new(fixture.Database.Path))
             {
-                using WorldDbContext world = new(fixture.Database.Path);
                 Assert.Equal(founder, world.Set<SavedCapsuleerAdmission>().Single().PilotId);
+                Assert.Equal(disconnect ? humanShip : (long?)null, world.Set<SavedLogoff>().Find(Human)?.ShipId);
             }
             using (WorldDbContext projected = new(fixture.Database.Path) { IsResidentProjection = true })
             {

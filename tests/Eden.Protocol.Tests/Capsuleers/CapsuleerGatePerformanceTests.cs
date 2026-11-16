@@ -69,10 +69,9 @@ public sealed class CapsuleerGatePerformanceTests(ITestOutputHelper output)
     {
         using CapsuleerHaulerTests.Fixture fixture = new();
         var founder = fixture.Founder();
-        using var host = ServerServices.Build(fixture.Database, fixture.Clock);
-        using WorldDbContext world = new(fixture.Database.Path);
+        using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        using var world = host.GetRequiredService<LiveWorld>().Economy.Begin(new(pilots: [founder.PilotId]));
         using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
-        using var transaction = world.Database.BeginTransaction();
         TrafficFitting.Apply(
             world,
             catalog,
@@ -90,13 +89,13 @@ public sealed class CapsuleerGatePerformanceTests(ITestOutputHelper output)
             fixture.Clock.Now
         );
         int station = world.Ships.Find(founder.FounderShipId)!.StationId;
-        long first = Eden.World.Inventory.InventoryPersistence.NextId(world);
+        long first = world.NextItemId();
         for (int index = 0; index <= unusedStacks; index++)
         {
             world.Add(
                 new Eden.Data.World.Inventory.OwnedItem
                 {
-                    Id = first + index,
+                    Id = index == 0 ? first : world.NextItemId(),
                     OwnerId = founder.PilotId,
                     LocationId = station,
                     TypeId = 215,
@@ -112,30 +111,33 @@ public sealed class CapsuleerGatePerformanceTests(ITestOutputHelper output)
             .Set<Eden.Data.World.Inventory.OwnedItem>()
             .Where(item => item.OwnerId == founder.PilotId && item.TypeId == 215)
             .Sum(item => (long)item.Quantity);
+        world.Commit();
+        world.Dispose();
+        using var resupply = host.GetRequiredService<LiveWorld>().Economy.Begin(new(pilots: [founder.PilotId]));
         using (var metrics = SessionPerformance.Begin("filled hangar resupply", output.WriteLine, force: true)!)
         {
             var supplied = host.GetRequiredService<CapsuleerResupply>()
-                .Dock(fixture.Database, world, catalog, founder.PilotId, null, fixture.Clock.Now);
+                .Dock(fixture.Database, resupply, catalog, founder.PilotId, null, fixture.Clock.Now);
             Assert.True(supplied.Checked);
             Assert.Empty(supplied.Requirements);
             Assert.Equal(0, supplied.SpentCents);
-            Assert.Equal(60, metrics.Commands);
+            Assert.Equal(0, metrics.Commands);
             Assert.Equal(0, metrics.Connections);
-            Assert.Equal(1, metrics.FittingCalculations);
+            // Requirements rebuild their graph before and after the inventory transfer, independent of unused stacks.
+            Assert.Equal(2, metrics.FittingCalculations);
         }
-        Assert.Equal(wallet, world.Set<Eden.Data.World.Market.PilotWallet>().Find(founder.PilotId)!.Cents);
+        Assert.Equal(wallet, resupply.Set<Eden.Data.World.Market.PilotWallet>().Find(founder.PilotId)!.Cents);
         Assert.Equal(
             rounds,
-            world
+            resupply
                 .Set<Eden.Data.World.Inventory.OwnedItem>()
                 .Where(item => item.OwnerId == founder.PilotId && item.TypeId == 215)
                 .Sum(item => (long)item.Quantity)
         );
         Assert.All(
-            world.Set<Eden.Data.World.Inventory.OwnedItem>().Where(item => item.Id > first && item.Id <= first + unusedStacks),
+            resupply.Set<Eden.Data.World.Inventory.OwnedItem>().Where(item => item.Id > first && item.Id <= first + unusedStacks),
             item => Assert.Equal(1, item.Quantity)
         );
-        transaction.Rollback();
     }
 
     [Theory]

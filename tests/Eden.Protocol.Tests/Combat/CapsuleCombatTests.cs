@@ -290,6 +290,11 @@ public sealed class CapsuleCombatTests
         const string remove = "DROP TRIGGER reject_capsule_transfer";
         if (LiveWorld.Find(f.Db.Path) is { } live)
         {
+            // Establish the SQL image that the detached projection must preserve on rollback.
+            using (WorldDbContext baseline = new(f.Db.Path))
+            {
+                Assert.Equal(queue.EndTime, Assert.Single(baseline.Set<QueuedLevel>()).EndTime);
+            }
             Assert.True(Fire(f).Destroyed);
             using var snapshot = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
             using WorldDbContext world = new(snapshot.Database);

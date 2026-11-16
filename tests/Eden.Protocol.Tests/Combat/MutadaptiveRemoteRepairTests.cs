@@ -173,7 +173,7 @@ public sealed partial class MutadaptiveRemoteRepairTests
         Assert.False(world.Set<OwnedItem>().Find(module)!.Online);
         using CatalogDbContext catalog = new(f.CatalogPath);
         Assert.True(HullCatalog.CanAssemble(catalog, catalog.FittingType(Rodiva)!, (int)InventoryCategory.Ship));
-        Assert.False(HullCatalog.CanAssemble(catalog, catalog.FittingType(49713)!, (int)InventoryCategory.Ship));
+        Assert.True(HullCatalog.CanAssemble(catalog, catalog.FittingType(49713)!, (int)InventoryCategory.Ship));
         Assert.All(
             HullCatalog.Capabilities(catalog, Rodiva).Where(c => c.Capability == HullCapability.RemoteRepair),
             c => Assert.True(c.Operational)

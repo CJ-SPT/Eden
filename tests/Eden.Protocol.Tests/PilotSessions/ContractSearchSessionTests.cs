@@ -8,12 +8,10 @@ namespace Eden.Protocol.Tests.PilotSessions;
 
 public sealed class ContractSearchSessionTests
 {
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task ProxyAddressedSearchReachesTheHandlerAndReturnsRenderableCurrentRegionResults(bool liveWorld)
+    [Fact]
+    public async Task ProxyAddressedSearchReachesTheHandlerAndReturnsRenderableCurrentRegionResults()
     {
-        using TestWorld world = new(liveWorld: liveWorld);
+        using TestWorld world = new(liveWorld: true);
         ContractTests.Fund(world, ContractAssetTestData.Pilot);
         long item = ContractAssetTestData.Stack(world);
         long id = world

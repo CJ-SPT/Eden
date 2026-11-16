@@ -104,11 +104,11 @@ public sealed class RedemptionTests
                 }
             }
             Assert.Equal(0, process.ExitCode);
-            // Opening a live world can legitimately report a slow-owner warning
+            // Startup and the resident grant transaction can report slow-owner warnings
             // under test load. Still reject every error or unexpected diagnostic.
             foreach (string line in (await error).Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
             {
-                Assert.Matches(@"^\d{2}:\d{2}:\d{2} \[WARN\] Slow world owner Open: \d+\.\d{2} ms held\.$", line);
+                Assert.Matches(@"^\d{2}:\d{2}:\d{2} \[WARN\] Slow world owner (?:Open|economic transaction): \d+\.\d{2} ms held\.$", line);
             }
             Assert.Contains("issued to account 1000001", await output);
             Assert.DoesNotContain("listening", await output);

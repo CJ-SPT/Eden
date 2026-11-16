@@ -121,6 +121,8 @@ public sealed class CapsuleerPopulationSettingsTests(Xunit.Abstractions.ITestOut
         }
         using var resumed = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
         using var presence = resumed.GetRequiredService<IHumanPresence>().Select(90000001, Source);
+        // Captures leave due systems activating until maintenance settles their saved jobs.
+        resumed.GetRequiredService<CapsuleerMaintenance>().Tick();
         var visible = resumed.GetRequiredService<ICapsuleerHandoff>().Capture();
         Assert.NotEmpty(visible.Haulers);
         Assert.All(visible.Haulers, h => Assert.Contains(h.Pilot.PilotId, original.Pilots));

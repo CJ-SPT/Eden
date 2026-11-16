@@ -96,6 +96,37 @@ public sealed class SmallHullBonusTests
             PassiveCatalogFixture.LoadMutadaptiveRemoteRepairs(f.CatalogPath);
         }
         if (
+            modifiers.Any(m =>
+                m.Selector == ModifierSelector.RequiredSkill
+                && m.SelectionId
+                    is (int)HullBonusSkill.SmallPrecursorWeapon
+                        or (int)HullBonusSkill.MediumPrecursorWeapon
+                        or (int)HullBonusSkill.LargePrecursorWeapon
+                        or (int)HullBonusSkill.SmallVortonProjector
+                        or (int)HullBonusSkill.MediumVortonProjector
+                        or (int)HullBonusSkill.LargeVortonProjector
+            )
+        )
+        {
+            PassiveCatalogFixture.LoadAdvancedWeapons(f.CatalogPath);
+        }
+        if (
+            modifiers.Any(m =>
+                m.Selector == ModifierSelector.RequiredSkill
+                && m.SelectionId
+                    is (int)HullBonusSkill.Leadership
+                        or (int)HullBonusSkill.ShieldCommand
+                        or (int)HullBonusSkill.SkirmishCommand
+                        or (int)HullBonusSkill.InformationCommand
+                        or (int)HullBonusSkill.InformationCommandSpecialist
+                        or (int)HullBonusSkill.ExpeditionCommand
+                        or (int)HullBonusSkill.MiningForeman
+            )
+        )
+        {
+            PassiveCatalogFixture.LoadCommandBursts(f.CatalogPath);
+        }
+        if (
             modifiers.Any(modifier =>
                 modifier.Selector == ModifierSelector.OwnerRequiredSkill && DroneRules.SupportsOwnerSkill(modifier.SelectionId!.Value)
             )
@@ -159,6 +190,27 @@ public sealed class SmallHullBonusTests
                 : ship;
             if (probe.ModuleType != 0)
             {
+                using (CatalogDbContext catalog = new(f.CatalogPath))
+                {
+                    var attributes = PilotFittingStore.ReadAttributes(catalog, probe.ModuleType);
+                    int group = catalog.Set<ItemType>().Find(type)!.GroupId;
+                    if (!InventoryDefinitions.CanFitShip(attributes, type, group))
+                    {
+                        // Native hulls can retain inactive legacy modifiers for equipment they cannot fit.
+                        // Require a zero percent effect so a real bonus still fails an incompatible probe.
+                        var inactive = modifiers.Where(modifier => Matches(f, modifier, probe)).ToArray();
+                        Assert.NotEmpty(inactive);
+                        Assert.All(
+                            inactive,
+                            modifier =>
+                            {
+                                Assert.Equal(DogmaOperation.PostPercent, modifier.Operation);
+                                Assert.Equal(0, sources.GetValueOrDefault(modifier.SourceAttribute));
+                            }
+                        );
+                        continue;
+                    }
+                }
                 long fitted = f.Fit(probe.ModuleType, online: false);
                 module = Assert.Single(f.Inventory.List(f.PilotId, ship), item => item.Id == fitted);
                 target = fitted;
@@ -339,6 +391,18 @@ public sealed class SmallHullBonusTests
                 HullBonusSkill.LargeHybridTurret => new(572),
                 HullBonusSkill.LargeProjectileTurret => new(494),
                 HullBonusSkill.LargeEnergyTurret => new(460),
+                HullBonusSkill.SmallPrecursorWeapon => new(47272),
+                HullBonusSkill.MediumPrecursorWeapon => new(47273),
+                HullBonusSkill.LargePrecursorWeapon => new(47274),
+                HullBonusSkill.SmallVortonProjector => new(54739),
+                HullBonusSkill.MediumVortonProjector => new(54745),
+                HullBonusSkill.LargeVortonProjector => new(54750),
+                HullBonusSkill.Leadership or HullBonusSkill.InformationCommand => new(42526),
+                HullBonusSkill.InformationCommandSpecialist => new(42527),
+                HullBonusSkill.ShieldCommand => new(42529),
+                HullBonusSkill.SkirmishCommand => new(42530),
+                HullBonusSkill.ExpeditionCommand => new(89608),
+                HullBonusSkill.MiningForeman => new(42528),
                 HullBonusSkill.MissileLauncherOperation => new(499),
                 HullBonusSkill.Mining => new(stripMiner ? 17482 : 482),
                 HullBonusSkill.GasCloudHarvesting => new(stripMiner ? 60313 : 25266),

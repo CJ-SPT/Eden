@@ -131,8 +131,12 @@ public sealed class CatalogFittingReadTests
         using TestWorld db = new();
         string path = new WorldDatabase(db.Path).CatalogPath;
         var scopes = db.Services.GetRequiredService<IPilotOperationScope>();
-        CatalogProvider.Open(path).Attributes(601);
-        using var metrics = SessionPerformance.Begin("operation", _ => { }, force: true)!;
+        using (CatalogDbContext warm = new(path))
+        {
+            Assert.NotEmpty(warm.FittingAttributes(601));
+        }
+        List<string> commands = [];
+        using var metrics = SessionPerformance.Begin("operation", _ => { }, force: true, command: commands.Add)!;
         using (scopes.Begin())
         {
             using (CatalogDbContext first = new(path))
@@ -148,7 +152,7 @@ public sealed class CatalogFittingReadTests
             }
             using CatalogDbContext last = new(path);
             Assert.NotNull(last.Set<ItemType>().Find(601));
-            Assert.Equal(2, metrics.Commands);
+            Assert.True(metrics.Commands == 2, string.Join(Environment.NewLine, commands));
             Assert.Equal(1, metrics.Connections);
         }
         using (scopes.Begin())

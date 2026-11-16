@@ -86,7 +86,7 @@ public sealed class StructureServiceTests
     [Fact]
     public async Task NativeLocalServicePacketsReturnBooleansInsteadOfInvalidPacketDestination()
     {
-        using TestWorld db = new();
+        using TestWorld db = new(liveWorld: true, simulationObjects: false);
         Queue<object?> input = new(
             new[]
             {

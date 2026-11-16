@@ -12,6 +12,7 @@ using Eden.World.Docking;
 using Eden.World.Market;
 using Eden.World.Runtime;
 using Eden.World.Storage;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -170,7 +171,7 @@ public sealed class NpcRestingOrderTests
     }
 
     [Fact]
-    public void MaintenanceUsesPricePriorityAndRejectsDuplicateConsumptionAfterRollback()
+    public async Task MaintenanceUsesPricePriorityAndCheckpointRetryDoesNotConsumeDemandTwice()
     {
         using Fixture f = new();
         f.Stock(0);
@@ -181,27 +182,42 @@ public sealed class NpcRestingOrderTests
         f.Stock(4);
         using var presence = f.Host.GetRequiredService<IHumanPresence>().Select(f.Pilot.PilotId, f.Pilot.SystemId);
         long before = f.Market.Balance(f.Pilot.PilotId);
-        using (WorldDbContext world = new(f.Data.Database.Path))
+        var live = f.Host.GetRequiredService<LiveWorld>();
+        await live.FlushAsync();
+        Assert.Equal(1, f.Demand.AdvanceDemand(1));
+        var trade = Assert.Single(f.Market.Transactions(f.Pilot.PilotId));
+        Assert.Equal(before + trade.PriceCents * trade.Quantity - trade.TaxCents, f.Market.Balance(f.Pilot.PilotId));
+        using (var settled = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot()))
         {
-            world.Database.ExecuteSqlRaw(
+            using WorldDbContext projected = new(settled.Database);
+            projected.Database.ExecuteSqlRaw(
                 "CREATE TRIGGER RejectDemand BEFORE INSERT ON WorldMarketTrade BEGIN SELECT RAISE(ABORT,'settlement failure'); END"
             );
+            Assert.Throws<SqliteException>(() => settled.Project());
+            using SqliteConnection disk = new($"Data Source={f.Data.Database.Path};Mode=ReadOnly;Pooling=False");
+            disk.Open();
+            using WorldDbContext saved = new(disk);
+            Assert.Equal(before, saved.Set<PilotWallet>().Find(f.Pilot.PilotId)!.Cents);
+            Assert.Equal(8, saved.Set<SavedPersonalOrder>().Sum(order => order.Remaining));
+            Assert.Empty(saved.Set<MarketExecution>());
+            Assert.Equal(0, f.Demand.AdvanceDemand());
+            Assert.Equal(trade, Assert.Single(f.Market.Transactions(f.Pilot.PilotId)));
+            projected.Database.ExecuteSqlRaw("DROP TRIGGER RejectDemand");
+            settled.Project();
+            Assert.Single(projected.Set<MarketExecution>());
         }
-        Assert.Throws<DbUpdateException>(() => f.Demand.AdvanceDemand());
-        Assert.Equal(before, f.Market.Balance(f.Pilot.PilotId));
-        Assert.Equal(4, f.Bid.Remaining);
-        Assert.Equal(2, f.Personal.PersonalOrders(f.Pilot.PilotId).Count);
-        Assert.Empty(f.Market.Transactions(f.Pilot.PilotId));
-        using (WorldDbContext world = new(f.Data.Database.Path))
-        {
-            world.Database.ExecuteSqlRaw("DROP TRIGGER RejectDemand");
-        }
-        Assert.Equal(1, f.Demand.AdvanceDemand(1));
+        await live.FlushAsync();
         Assert.Equal(cheaper, Assert.Single(f.Personal.PersonalOrders(f.Pilot.PilotId, history: true)).Id);
         Assert.Equal(10, Assert.Single(f.Personal.PersonalOrders(f.Pilot.PilotId)).PriceCents);
         Assert.Equal(0, f.Bid.Remaining);
         Assert.Equal(0, f.Demand.AdvanceDemand());
         Assert.Single(f.Market.Transactions(f.Pilot.PilotId));
+        long settledBalance = f.Market.Balance(f.Pilot.PilotId);
+        presence.Dispose();
+        await f.Reopen();
+        Assert.Equal(settledBalance, f.Market.Balance(f.Pilot.PilotId));
+        Assert.Single(f.Market.Transactions(f.Pilot.PilotId));
+        Assert.Equal(10, Assert.Single(f.Personal.PersonalOrders(f.Pilot.PilotId)).PriceCents);
     }
 
     [Fact]

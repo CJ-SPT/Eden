@@ -105,7 +105,7 @@ public sealed class SovereigntyTests
     [Fact]
     public async Task NativeSovereigntyPanelPacketsReturnUnclaimedSystemInformationWithoutDestinationErrors()
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true, simulationObjects: false);
         var calls = PanelCalls(NullSecuritySystemId);
         Queue<object?> input = new(
             new[] { PilotServicesTests.Request("charUnboundMgr", "SelectCharacterID", [90000001L]) }

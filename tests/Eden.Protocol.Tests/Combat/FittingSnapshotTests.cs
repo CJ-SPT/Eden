@@ -6,10 +6,12 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
 using Eden.Infrastructure.Diagnostics;
+using Eden.Server;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Combat;
 
@@ -22,23 +24,24 @@ public sealed class FittingSnapshotTests
     public void ModuleAndBrainReadsShareTheCommittedGraphAndReturnIndependentAttributes()
     {
         using PilotCombatTests.Fixture f = new();
-        using ResidentFitCache cache = new(new(f.Db.Path));
         var module = f.Inventory.List(PilotId, ShipId).Single(i => i.Id == f.Module);
+        using var host = ServerServices.Build(new(f.Db.Path), f.Clock, liveWorld: true, simulationObjects: false);
+        var fitting = host.GetRequiredService<IPilotFitting>();
         IReadOnlyDictionary<DogmaAttributeId, double> first;
         using (var cold = SessionPerformance.Begin("cold", _ => { }, force: true)!)
         {
-            first = f.Fitting.ModuleAttributes(PilotId, module);
+            first = fitting.ModuleAttributes(PilotId, module);
             Assert.Equal(1, cold.FittingCalculations);
         }
         using var warm = SessionPerformance.Begin("warm", _ => { }, force: true)!;
-        var second = f.Fitting.ModuleAttributes(PilotId, module);
+        var second = fitting.ModuleAttributes(PilotId, module);
         Assert.Equal(first.OrderBy(p => p.Key), second.OrderBy(p => p.Key));
         ((Dictionary<DogmaAttributeId, double>)second).Clear();
-        Assert.Equal(first.OrderBy(p => p.Key), f.Fitting.ModuleAttributes(PilotId, module).OrderBy(p => p.Key));
-        _ = f.Fitting.SkillBonuses(PilotId);
+        Assert.Equal(first.OrderBy(p => p.Key), fitting.ModuleAttributes(PilotId, module).OrderBy(p => p.Key));
+        _ = fitting.SkillBonuses(PilotId);
         Assert.Equal(0, warm.FittingCalculations);
-        Assert.InRange(warm.Commands, 1, 9);
-        Assert.Equal(3, warm.Connections);
+        Assert.Equal(0, warm.Commands);
+        Assert.Equal(0, warm.Connections);
     }
 
     [Fact]

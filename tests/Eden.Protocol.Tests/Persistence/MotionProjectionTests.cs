@@ -56,7 +56,14 @@ public sealed class MotionProjectionTests(ITestOutputHelper output)
         using (WorldDbContext warm = new(fixture.Database.Path))
         using (warm.Database.BeginTransaction()) { }
         Move(1);
-        using (var metrics = SessionPerformance.Begin("moving traffic transaction boundary", output.WriteLine, force: true)!)
+        using (
+            var metrics = SessionPerformance.Begin(
+                "moving traffic transaction boundary",
+                output.WriteLine,
+                force: true,
+                command: count == 1 ? output.WriteLine : null
+            )!
+        )
         {
             long started = Stopwatch.GetTimestamp();
             using WorldDbContext world = new(fixture.Database.Path);
@@ -64,7 +71,9 @@ public sealed class MotionProjectionTests(ITestOutputHelper output)
             output.WriteLine($"Positions={count}, elapsed={Stopwatch.GetElapsedTime(started).TotalMilliseconds:F2} ms.");
             Assert.Equal(count, world.Set<FlightPosition>().Count(p => p.ShipId >= firstShip && p.Y == 1));
             transaction.Commit();
-            Assert.InRange(metrics.Commands, 2, (count + 127) / 128 + 1);
+            const int positionBatchSize = 128;
+            // The read and post-commit row/sequence re-import add three commands independent of population.
+            Assert.Equal((count + positionBatchSize - 1) / positionBatchSize + 3, metrics.Commands);
             Assert.Equal(2, metrics.Connections);
             Assert.Equal(0, metrics.FittingCalculations);
         }

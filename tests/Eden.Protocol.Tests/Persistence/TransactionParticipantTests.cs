@@ -8,10 +8,11 @@ using Eden.World.Mining;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
+using Xunit.Abstractions;
 
 namespace Eden.Protocol.Tests.Persistence;
 
-public sealed class TransactionParticipantTests
+public sealed class TransactionParticipantTests(ITestOutputHelper output)
 {
     [Theory]
     [InlineData(1, 1)]
@@ -58,7 +59,12 @@ public sealed class TransactionParticipantTests
             {
                 live.Combat.PublishPilotPosition(remoteStart + index, remote, new(classified ? 2 : 1, index, 0));
             }
-            using var metrics = SessionPerformance.Begin("matched projection workload", _ => { }, force: true)!;
+            using var metrics = SessionPerformance.Begin(
+                "matched projection workload",
+                _ => { },
+                force: true,
+                command: classified ? output.WriteLine : null
+            )!;
             using (WorldDbContext world = new(db.Path) { Participants = classified ? new(ships: [first]) : null })
             using (var transaction = world.Database.BeginTransaction())
             {
@@ -80,7 +86,8 @@ public sealed class TransactionParticipantTests
         }
         int fallbackCommands = Measure(false);
         int participantCommands = Measure(true);
-        Assert.Equal(2, participantCommands);
+        // One read, one position batch, and the fixed row/sequence re-import after SQL commit.
+        Assert.Equal(4, participantCommands);
         Assert.True(fallbackCommands > participantCommands);
         Assert.Equal(population, live.Combat!.CaptureCheckpoint().Positions.Count);
     }

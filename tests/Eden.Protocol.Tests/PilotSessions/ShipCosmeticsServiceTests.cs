@@ -100,7 +100,7 @@ public sealed class ShipCosmeticsServiceTests
     [Fact]
     public async Task NativePersonalizationSkinPacketsReturnEmptyLicenseListsWithoutDestinationErrors()
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true, simulationObjects: false);
         var pilot = world.Store.FindPilot(1000001)!;
         var reads = Reads(pilot.PilotId, pilot.ShipTypeId);
         Queue<object?> input = new(

@@ -5347,3 +5347,34 @@ Cold roster construction, traffic actions and the long tick remain separate obse
 ### Optional maintainer checks
 
 After deployment, compare agent-action holds and checkpoint-time docked RPC latency with several sessions online.
+
+## Cross-system timed-effect expiry November 15, 2026
+
+The requested full regression on `4beb9ba8` exposed a concurrency error in resident deadline advancement.
+A transaction in an unrelated system made `AdvanceEffects` skip the reader's due module expiry. A warmed
+fitting could therefore return the expired signature-suppression bonus while the transaction remained open.
+
+When another thread owns an economic or SQL transaction, a read with due module or command-burst effects now
+releases its system lease and enters the existing coordinator before revalidating the read. The resident
+expiry and cache invalidation complete before publication. An unexpired warm read still finishes while the
+unrelated resident action is open. Both cases assert zero SQL commands and connection opens; the unexpired case
+also asserts zero fitting calculations. Nested reads by the transaction owner retain their existing rules.
+Saved deadlines, module cooldowns, checkpoint representation and native wire formats are unchanged.
+
+The existing `AnUnrelatedResidentTransactionCannotPublishAnExpiredDefenseToAnotherSystem` test reproduced
+the missing coordination. Its companion `AnUnexpiredDefenseReadDoesNotWaitForAnUnrelatedResidentTransaction`
+guards the independent warm path with the same fixture and deterministic clock.
+
+The [EVE University signature-radius reference](https://wiki.eveuniversity.org/Signature_radius#Signature_Radius_Suppressor)
+describes the temporary active reduction. Numeric behavior remains in Eden's pinned build-3662168 catalog.
+The local open-source reference's `server/src/space/runtime/moduleCycleSchedule.js` was also inspected;
+it resolves a saved next-cycle timestamp before deriving a boundary from start and duration. That local
+reference has no Git metadata; its SHA-256 is
+`04DF82DAD77D58E2311BCF2BBD2572AF931EFABF4F01163C7AD372ED0E73795E`.
+It is not an authority for Eden's coordination model, and no reference implementation was copied.
+
+Automated validation is recorded with the [full regression investigation](../testing.md#full-regression-november-15-2026).
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None; the corrected server ordering is exercised by automated concurrent reads.

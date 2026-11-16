@@ -202,15 +202,14 @@ public sealed class PilotSpaceActivitiesTests
     {
         using CapsuleerHaulerTests.Fixture f = new();
         long buyer = FitTraveler(f);
-        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: false);
-        using WorldDbContext world = new(f.Database.Path);
-        using var transaction = world.Database.BeginTransaction();
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        using var world = host.GetRequiredService<LiveWorld>().Economy.Begin();
         using CatalogDbContext catalog = new(f.Database.CatalogPath);
         long seller = world.Set<SavedCapsuleerAgent>().Single(a => a.Career == CapsuleerCareer.Mining).PilotId;
         world.Ships.Find(world.Pilots.Find(seller)!.ActiveShipId)!.StationId = 60003760;
         var item = new OwnedItem
         {
-            Id = InventoryPersistence.NextId(world),
+            Id = world.NextItemId(),
             OwnerId = seller,
             LocationId = 60003760,
             TypeId = 215,
@@ -220,7 +219,14 @@ public sealed class PilotSpaceActivitiesTests
         world.Add(item);
         world.SaveChanges();
         long price = CapsuleerResupply.Limit(215) + (overpriced ? 1 : 0);
-        host.GetRequiredService<PilotMarketStore>().ExecuteSell(world, catalog, seller, [new(item.Id, 60003760, 215, price, 1000)], 30);
+        var market = host.GetRequiredService<PilotMarketStore>();
+        market.ExecuteSell(world, catalog, seller, [new(item.Id, 60003760, 215, price, 1000)], 30);
+        // Isolate the player's quoted stock from the fixture's seeded NPC ammunition supply.
+        _ = market.SupplyOrders(world, catalog, 60003760, [215]);
+        foreach (var order in world.Filter<NpcMarketOrder>(order => order.TypeId == 215))
+        {
+            order.Remaining = 0;
+        }
         ResupplyProgress progress = new(Station, 2500000, 0) { Requirements = [new(215, 250, false, .025)] };
         var route = host.GetRequiredService<CapsuleerResupply>()
             .Shop(

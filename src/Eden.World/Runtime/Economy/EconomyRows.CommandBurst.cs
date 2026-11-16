@@ -63,6 +63,12 @@ internal sealed partial class ResidentEconomy
         _commandBurstDeadlines.Clear();
     }
 
+    internal long NextCommandBurstExpiry(int? system)
+    {
+        var deadlines = system is int id ? _commandBurstDeadlines.GetValueOrDefault(id) : _allCommandBurstDeadlines;
+        return deadlines is { Count: > 0 } ? deadlines.Min.Expiry : long.MaxValue;
+    }
+
     internal long[] DueCommandBursts(int? system, long now)
     {
         if (system is int id)

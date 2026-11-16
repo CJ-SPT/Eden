@@ -720,7 +720,7 @@ public sealed partial class TranslocationTests
     [InlineData(true, true)]
     public async Task NativeMenuPacketUsesAuthenticatedRolesAndAnnouncesDestinationBeforeTheReply(bool developer, bool stationTarget)
     {
-        using Fixture f = new();
+        using Fixture f = new(liveWorld: true);
         PrepareNullsecDestination(f.Db);
         int targetId = stationTarget ? HomeStationTestData.School : NullsecSystem;
         int systemId = stationTarget ? HomeStationTestData.System : NullsecSystem;
@@ -827,9 +827,9 @@ public sealed partial class TranslocationTests
         private readonly IServiceScope _scope;
         public PilotCallRouter Router => _scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
 
-        public Fixture(PilotRole roles = PilotRole.Developer, bool inSpace = false)
+        public Fixture(PilotRole roles = PilotRole.Developer, bool inSpace = false, bool liveWorld = false)
         {
-            Db = new(clock: Clock);
+            Db = new(clock: Clock, liveWorld: liveWorld);
             HomeStationTestData.Prepare(Db);
             _scope = Db.Services.CreateScope();
             var pilot = Db.Store.FindPilot(1000001)!;

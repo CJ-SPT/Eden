@@ -20,7 +20,7 @@ public sealed class CorporationSelectionTests
     [InlineData(true, true)]
     public async Task LoginPrimesCompleteSavedLogoRowsBeforeSelectionAndAfterLogoff(bool customLogo, bool reopen)
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         PlayerCorporationTests.Prepare(world);
         using (CatalogDbContext catalog = new(new WorldDatabase(world.Path).CatalogPath, writable: true))
         {
@@ -41,7 +41,7 @@ public sealed class CorporationSelectionTests
             {
                 world.Services.Dispose();
                 WorldInitialization.Initialize(new(world.Path));
-                restarted = ServerServices.Build(new(world.Path));
+                restarted = ServerServices.Build(new(world.Path), liveWorld: true);
             }
             var services = restarted ?? world.Services;
             foreach (long account in new long[] { 1000001, 1000002 })

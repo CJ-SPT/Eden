@@ -540,8 +540,18 @@ internal sealed partial class LiveWorld
     {
         // Nested publication can enter the system while a resident action still owns it.
         // Advance deadlines at the outer boundary so they never use a completed or speculative action.
-        if (!Economy.IsLoaded || HasOpenSqlTransaction || HasUnpublishedSqlChanges || Economy.HasActiveAction || state.Expiring)
+        if (!Economy.IsLoaded || state.Expiring)
         {
+            return;
+        }
+        if (HasOpenSqlTransaction || HasUnpublishedSqlChanges || Economy.HasActiveAction)
+        {
+            // A foreign transaction must not let this system publish an expired cached bonus.
+            // Unwind its system lease before waiting for the economic owner, then revalidate the read.
+            if (!HasPersistenceOwnership && state.TimedModules.HasDue(_clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()))
+            {
+                throw new PersistenceRequiredException(CurrentSystem is int system ? new(systems: [system]) : null);
+            }
             return;
         }
         state.Expiring = true;

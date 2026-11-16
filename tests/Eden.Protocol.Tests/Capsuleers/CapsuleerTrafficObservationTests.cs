@@ -13,7 +13,7 @@ public sealed class CapsuleerTrafficObservationTests(ITestOutputHelper output)
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void OneHourResidentialAndQuietObservationsRetainLocalVisitsAndQuietSpace(bool quiet)
+    public void OneHourResidentialAndQuietObservationsPauseTravelersOutsideOccupiedSystems(bool quiet)
     {
         using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: !quiet);
         new CapsuleerProvisioner(fixture.Database, fixture.Clock).EnsureSystem(quiet ? 30000144 : 30000141);
@@ -31,6 +31,7 @@ public sealed class CapsuleerTrafficObservationTests(ITestOutputHelper output)
             .Select(agent => agent.PilotId)
             .ToArray();
         Dictionary<long, int> locations = [];
+        Dictionary<long, HaulerProgress> dormant = [];
         HashSet<long> docked = [];
         int homeVisits = 0;
         int crossings = 0;
@@ -40,6 +41,14 @@ public sealed class CapsuleerTrafficObservationTests(ITestOutputHelper output)
             {
                 var observation = scheduler.Hauler(pilot)!;
                 Assert.Null(observation.Work.WaitingReason);
+                if (dormant.TryGetValue(pilot, out var paused))
+                {
+                    Assert.Equal(paused, observation.Work);
+                }
+                else if (observation.Pilot.SystemId != homeSystem)
+                {
+                    dormant.Add(pilot, observation.Work);
+                }
                 if (locations.TryGetValue(pilot, out int system) && system != observation.Pilot.SystemId)
                 {
                     crossings++;
@@ -80,7 +89,13 @@ public sealed class CapsuleerTrafficObservationTests(ITestOutputHelper output)
         else
         {
             Assert.NotEmpty(pilots);
-            Assert.True(homeVisits >= 2);
+            Assert.True(homeVisits >= 1);
+            Assert.True(crossings >= 1);
+            Assert.Equal(pilots.Length, dormant.Count);
+            Assert.DoesNotContain(
+                host.GetRequiredService<ICapsuleerHandoff>().Capture().Haulers,
+                observation => pilots.Contains(observation.Pilot.PilotId)
+            );
         }
     }
 }

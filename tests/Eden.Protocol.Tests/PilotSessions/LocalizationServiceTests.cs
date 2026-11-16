@@ -94,7 +94,7 @@ public sealed class LocalizationServiceTests
     [Fact]
     public async Task NativeSessionReturnsNoneForSettingsAndSelectionUpdatesWithoutInvalidDestinationErrors()
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true, simulationObjects: false);
         using var scope = world.Services.CreateScope();
         var session = scope.ServiceProvider.GetRequiredService<IPilotSession>();
         Queue<object?> requests = new([
