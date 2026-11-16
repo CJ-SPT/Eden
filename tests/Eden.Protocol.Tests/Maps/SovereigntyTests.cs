@@ -32,7 +32,7 @@ public sealed class SovereigntyTests
     [InlineData(true, NullSecuritySystemId)]
     public void SovereigntyReadsPreserveNativeShapesSelectionAndSavedState(bool inSpace, long systemId)
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         using var scope = world.Services.CreateScope();
         var savedPilot = world.Store.FindPilot(1000001)!;
         var pilot = inSpace

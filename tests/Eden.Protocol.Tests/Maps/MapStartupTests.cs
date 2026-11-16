@@ -26,7 +26,7 @@ public sealed class MapStartupTests
     [InlineData(true)]
     public void MapStartupPreservesNativeContainerShapesAndSelectionGating(bool inSpace)
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         using var scope = world.Services.CreateScope();
         var savedPilot = world.Store.FindPilot(1000001)!;
         var home = world.Services.GetRequiredService<IPilotHomeStation>().Read(savedPilot.PilotId);

@@ -1,12 +1,14 @@
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Sovereignty;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Sovereignty;
 
 namespace Eden.Protocol.Maps;
 
 [Injectable]
-internal sealed class SovereigntyHandler : ISelectedPilotCallHandler
+internal sealed class SovereigntyHandler(IPilotEntosis entosis) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -42,11 +44,15 @@ internal sealed class SovereigntyHandler : ISelectedPilotCallHandler
             return new PilotCallResult.Failure("Choose a valid solar system for sovereignty information.");
         }
 
-        // Eden has no deployed sovereignty hubs or alliance claims. Build 3662168
-        // PanelSov iterates the structure list and uses None for an absent hub/claim.
+        int requested = local ? context.Pilot.SystemId : checked((int)(long)args[0]!);
+        var hub = entosis.Hub(requested);
         return method switch
         {
-            "GetSovStructuresInfoForSolarSystem" or "GetSovStructuresInfoForLocalSolarSystem" => BlueEmpty.List,
+            "GetSovStructuresInfoForSolarSystem" or "GetSovStructuresInfoForLocalSolarSystem" => new SovereigntyStructuresReply(hub),
+            "GetInfrastructureHubInfo" or "GetSystemSovereigntyInfo" when hub?.Claim is { } claim => new SovereigntyClaimReply(
+                claim,
+                method == "GetInfrastructureHubInfo"
+            ),
             "GetDevelopmentIndicesForSystem" => new BlueMap<DogmaAttributeId, SovereigntyDevelopmentIndexReply>(
                 new Dictionary<DogmaAttributeId, SovereigntyDevelopmentIndexReply>
                 {

@@ -131,6 +131,10 @@ internal sealed class CapacitorWarfareStore(WorldDatabase database, ICapacitorEv
             CheckAlive(player, targetAttributes);
         }
         bool transfer = module.Kind == CapacitorModuleKind.Transfer;
+        if (transfer)
+        {
+            Eden.World.Sovereignty.EntosisPersistence.RequireAssistance(world, targetId, now);
+        }
         if (transfer && target.Pilot is null)
         {
             throw new InvalidDataException("Remote capacitor assistance currently requires another pilot's ship.");

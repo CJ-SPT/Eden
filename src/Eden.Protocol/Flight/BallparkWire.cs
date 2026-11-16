@@ -82,6 +82,9 @@ internal sealed record MissileSlimItem(MissileContact Missile) : SlimItem
 
 internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
 {
+    // Build 3662168 entosisController.NEUTRAL uses inventorycommon.const.ownerSystem.
+    private const int NeutralEntosisDefender = 1;
+
     public override object ToBlue()
     {
         var fields = Fields(Body.Id, Body.TypeId, Body.OwnerId, Body.GroupId, Body.CategoryId);
@@ -98,6 +101,28 @@ internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
             fields["stateTimer"] = structure.StateEndsAt is long end ? new object?[] { structure.StateStartedAt, end, null } : null;
             fields["unanchoring"] = structure.UnanchorAt;
             fields["hasCore"] = structure.HasCore;
+        }
+        if (Body.Sovereignty is { } hub)
+        {
+            fields["allianceID"] = hub.Claim?.AllianceId;
+            fields["claimTime"] = hub.Claim?.ClaimedAt;
+            fields["entosis_score"] = new object?[]
+            {
+                hub.Capture.ControllingAllianceId,
+                hub.Capture.ScoringAllianceId,
+                new object?[]
+                {
+                    (double)hub.Capture.ProgressTicks / hub.CaptureDuration,
+                    hub.Capture.UpdatedAt,
+                    (double)hub.Capture.Rate,
+                    hub.Capture.Blocked,
+                },
+                NeutralEntosisDefender,
+            };
+        }
+        else if (Body.GroupId == Eden.Gameplay.Sovereignty.SovereigntyRules.HubGroupId)
+        {
+            fields["entosis_score"] = null;
         }
         if (Body.Wormhole is { } wormhole)
         {

@@ -197,6 +197,13 @@ internal static class FittingCatalog
         {
             return null;
         }
+        if (
+            type.GroupId == Eden.Gameplay.Sovereignty.EntosisRules.ModuleGroup
+            && !Eden.World.Sovereignty.EntosisCatalog.Supported(catalog, typeId)
+        )
+        {
+            return null;
+        }
         var attributes = catalog.FittingAttributes(typeId);
         return ModuleFittingRules.Define(
             typeId,

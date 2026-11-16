@@ -93,7 +93,9 @@ internal sealed class PilotUpdateCoordinator(
     SmartbombHandler? smartbombs = null,
     Eden.Protocol.Fleets.CommandBurstHandler? commandBursts = null,
     AutoMiningHandler? autoMining = null,
-    InterdictionHandler? interdiction = null
+    InterdictionHandler? interdiction = null,
+    Eden.Protocol.Sovereignty.EntosisHandler? entosis = null,
+    Eden.Protocol.Sovereignty.SovereigntyMonitor? sovereignty = null
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -211,6 +213,7 @@ internal sealed class PilotUpdateCoordinator(
         smartbombs?.Cancel(context);
         commandBursts?.Cancel(context);
         interdiction?.Cancel(context);
+        entosis?.Cancel(context);
         missiles.Cancel(context);
         shields.Cancel(context);
         repairs.Cancel(context);
@@ -266,6 +269,7 @@ internal sealed class PilotUpdateCoordinator(
         {
             tackle.Advance(context);
             interdiction?.Advance(context);
+            entosis?.Advance(context);
         }
         autoMining?.CheckFlight(context);
         mining.Advance(context);
@@ -290,6 +294,7 @@ internal sealed class PilotUpdateCoordinator(
         overload.Advance(context);
         burnout.Advance(context);
         industry.Advance(context);
+        sovereignty?.Advance(context);
         using (SessionPerformance.Phase("update.npcCombat"))
         {
             npcCombat.Advance(context);

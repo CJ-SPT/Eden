@@ -42,6 +42,16 @@ internal sealed class LiveTimedModules(LiveWorld owner, int? system = null)
             {
                 action.Remove(module);
                 if (
+                    action.Set<Eden.Data.World.Sovereignty.SavedEntosisCycle>().Find(id) is { Stopping: true } entosis
+                    && (
+                        !entosis.Contributing
+                        || action.Set<Eden.Data.World.Sovereignty.SavedSovereigntyClaim>().Find(entosis.SystemId) is not null
+                    )
+                )
+                {
+                    action.Remove(entosis);
+                }
+                if (
                     action.Set<Eden.Data.World.Propulsion.WorldTackle>().Find(id) is { } tackle
                     && Eden.Gameplay.Propulsion.InterdictionRules.Focused(tackle.Effect)
                 )

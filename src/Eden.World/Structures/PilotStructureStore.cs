@@ -17,10 +17,11 @@ using Eden.World.Storage;
 namespace Eden.World.Structures;
 
 [Injectable]
-internal sealed partial class PilotStructureStore(WorldDatabase database, TimeProvider clock)
-    : IPilotStructures,
-        IStructureContacts,
-        IMoonExtractions
+internal sealed partial class PilotStructureStore(
+    WorldDatabase database,
+    TimeProvider clock,
+    Eden.Gameplay.Sovereignty.IPilotEntosis? entosis = null
+) : IPilotStructures, IStructureContacts, IMoonExtractions
 {
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
@@ -115,6 +116,10 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
 
     private static Pilot Manage(WorldAction world, SavedStructure structure, long pilotId)
     {
+        if (structure.TypeId == Eden.Gameplay.Sovereignty.EntosisRules.HubTypeId && structure.State != StructureState.Unanchored)
+        {
+            throw new InvalidDataException("Sovereignty hubs use their own management and territorial-conflict lifecycle.");
+        }
         var pilot = Pilot(world, pilotId);
         var corporation = world.Set<SavedCorporation>().Find(structure.CorporationId);
         if (
@@ -335,6 +340,10 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
                     throw new InvalidDataException("The packaged structure must be in your active ship's cargo.");
                 }
                 var profile = StructureCatalog.Require(catalog, item.TypeId);
+                if (profile.Family == StructureFamily.SovereigntyHub)
+                {
+                    throw new InvalidDataException("Use the sovereignty hub's Deploy menu to launch a neutral hub around the star.");
+                }
                 int system = position.SystemId ?? catalog.RequireStation(ship.StationId).SolarSystemId;
                 double security = catalog.Definitions.SystemSecurity.GetValueOrDefault(system);
                 if (
@@ -644,6 +653,10 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
 
     public IReadOnlyList<StaticSpaceObject> Contacts(int systemId)
     {
+        if (entosis?.Available == true)
+        {
+            entosis.Advance(systemId, Now);
+        }
         var reads = Eden.World.Runtime.LiveReadModels.Find(database.Path);
         return (
             reads?.Structures(systemId, database.Catalog.Identity.Generation, Now, () => LoadContacts(systemId)) ?? LoadContacts(systemId)
@@ -671,6 +684,12 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
                     {
                         Name = s.Name,
                         Structure = new(s.State, s.StateStartedAt, s.StateEndsAt, s.UnanchorAt, s.HasCore),
+                        Sovereignty =
+                            s.TypeId == Eden.Gameplay.Sovereignty.EntosisRules.HubTypeId
+                            && Eden.World.Sovereignty.PilotEntosisStore.Snapshot(world, systemId) is { } hub
+                            && hub.HubId == s.Id
+                                ? hub
+                                : null,
                     })
                     .ToArray();
                 long deadline = structures

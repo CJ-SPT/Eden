@@ -17,6 +17,7 @@ public sealed partial class SqliteWorld
     private DockedPilot DockStructure(WorldAction world, CatalogDbContext catalog, long pilotId, long shipId, long structureId)
     {
         long now = _clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        Eden.World.Sovereignty.EntosisPersistence.RequireTravel(world, shipId, now);
         var structure = PilotStructureStore.Require(world, structureId);
         PilotStructureStore.Advance(world, catalog, now, structure.SystemId);
         var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();

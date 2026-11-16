@@ -858,6 +858,8 @@ internal sealed partial class ResidentEconomy
         RegisterCorporationRemovals();
         RegisterAlliances();
         RegisterSovereigntyClaim();
+        RegisterSovereigntyHub();
+        RegisterEntosisCycle();
         RegisterPilotActivity();
         RegisterCommandBursts();
         RegisterInterdiction();

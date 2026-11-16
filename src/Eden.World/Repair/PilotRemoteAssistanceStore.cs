@@ -124,6 +124,7 @@ internal sealed partial class PilotRemoteAssistanceStore(WorldDatabase database,
         {
             throw new InvalidDataException("The remote assistance target must be another pilot's live ship in the same system.");
         }
+        Eden.World.Sovereignty.EntosisPersistence.RequireAssistance(world, targetId, now);
         var recipient = PilotFittingStore.ShipAttributes(world, catalog, target);
         CheckAlive(target, recipient);
         if (

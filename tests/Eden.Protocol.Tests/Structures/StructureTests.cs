@@ -46,7 +46,6 @@ public sealed class StructureTests
             35840,
             81826,
             81080,
-            32458,
         }.Select(id => new object[] { id });
 
     internal sealed class Fixture : IDisposable

@@ -28,6 +28,7 @@ public sealed record StaticSpaceObject(
     public long? AgentId { get; init; }
     public SpaceContainerState? Container { get; init; }
     public Structures.StructureContact? Structure { get; init; }
+    public Sovereignty.SovereigntyHub? Sovereignty { get; init; }
 }
 
 public interface ISystemObjects

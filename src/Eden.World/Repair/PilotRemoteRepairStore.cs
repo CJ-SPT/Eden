@@ -296,6 +296,7 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
 
     private static RepairTarget Target(WorldAction world, CatalogDbContext catalog, Pilot source, long targetId, long now)
     {
+        Eden.World.Sovereignty.EntosisPersistence.RequireAssistance(world, targetId, now);
         var pilot = world.Filter<Pilot>(p => p.ActiveShipId == targetId).SingleOrDefault();
         if (
             pilot?.ActiveShip.Position is null

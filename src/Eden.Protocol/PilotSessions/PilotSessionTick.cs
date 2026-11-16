@@ -21,7 +21,8 @@ internal sealed class PilotSessionTick(
     Eden.Gameplay.Structures.IStructureContacts? structures = null,
     Eden.Protocol.Mining.AutoMiningHandler? autoMining = null,
     Eden.Protocol.Exploration.AbyssalHandler? abyss = null,
-    Eden.Protocol.Exploration.WormholeEnvironmentHandler? environments = null
+    Eden.Protocol.Exploration.WormholeEnvironmentHandler? environments = null,
+    Eden.Gameplay.Sovereignty.IPilotEntosis? entosis = null
 )
 {
     public async Task AdvanceAsync(
@@ -98,6 +99,10 @@ internal sealed class PilotSessionTick(
         using var destinationContext = context.Flight.UseSystem();
         void PrepareUpdates()
         {
+            if (entosis?.Available == true)
+            {
+                entosis.Advance(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+            }
             anomalies?.Advance(context);
             abyss?.Advance(context);
             environments?.Advance(context);

@@ -112,6 +112,7 @@ public static class ModuleFittingRules
                             || MiningDefinitions.IsDeepCore(attributes)
                         ),
                 ShieldBoostDefinitions.Group => effects.Contains(DogmaEffect.ShieldBoosting),
+                Sovereignty.EntosisRules.ModuleGroup => effects.Contains(Sovereignty.EntosisRules.Effect),
                 CapacitorBoosterDefinitions.Group => CapacitorBoosterDefinitions.IsSupported(groupId, attributes)
                     && effects.Contains(DogmaEffect.CapacitorBoosting),
                 HullRepairDefinitions.Group => LocalRepairDefinitions.IsSupported(attributes)

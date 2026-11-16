@@ -23,8 +23,8 @@ dotnet run --no-build --project src/Eden.Server
 
 ## Current status
 
-[Sovereignty foundation](docs/protocol/sovereignty.md) adds resident claim storage, system eligibility and defense rules.
-Hub deployment and Entosis claiming remain planned; the foundation enables no new player actions.
+[Sovereignty](docs/protocol/sovereignty.md) supports neutral hub deployment and paid Entosis capture with resident claims,
+checkpoint recovery and native sovereignty/map reads. Owned-hub warfare and upgrades remain planned.
 
 [Player-bot failure isolation](docs/protocol/capsuleers.md#bot-failure-isolation---november-16-2026) backs off broken pilots
 while healthy bots continue, preserving authoritative jobs and committed economic progress.
