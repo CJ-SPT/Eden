@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Data Center family and one-time space agents](protocol/agents.md#data-center-family-and-one-time-space-agents--november-15-2026)
+adds all 50 tag-turn-in definitions, 57 native assignments, public agent contacts and obtainable criminal tags.
+
 [Site history discovery and identity maxima](protocol/performance.md#site-history-discovery-and-identity-maxima-november-15-2026)
 reduce historical row copies during combat, exploration and mining site discovery.
 

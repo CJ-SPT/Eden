@@ -42,7 +42,8 @@ internal sealed record MissionProfile(
 
     internal bool AvailableTo(CatalogAgent agent) =>
         (SupplierFaction == 0 || SupplierFaction == agent.FactionId)
-        && (SupplierCorporation == 0 || SupplierCorporation == agent.CorporationId);
+        && (SupplierCorporation == 0 || SupplierCorporation == agent.CorporationId)
+        && (Definition.FixedAgentIds.IsEmpty || Definition.FixedAgentIds.Contains(agent.Id));
 
     internal bool AttacksFaction(int? faction) =>
         faction.HasValue
@@ -99,13 +100,30 @@ internal static class MissionCatalog
 
     internal static ImmutableArray<MissionProfile> Read(CatalogDbContext catalog) => catalog.Definition(s_profiles, 0);
 
+    internal static IEnumerable<long> FixedAgentIds => s_content.Value.Missions.SelectMany(m => m.FixedAgentIds).Distinct();
+    internal static IEnumerable<long> FixedMissionIds =>
+        s_content.Value.Missions.Where(m => !m.FixedAgentIds.IsEmpty).Select(m => (long)m.MissionId);
+
+    internal static IEnumerable<MissionProfile> ForFixedAgent(CatalogDbContext catalog, long agentId)
+    {
+        var native = catalog.Read(CatalogData.Client.Npccharacters, agentId)?.Agent?.StoryLineMissions ?? [];
+        return s_content
+            .Value.Missions.Where(m => m.FixedAgentIds.Contains(agentId) && native.Length == 1 && native[0] == m.MissionId)
+            .Select(m => catalog.Definition(s_profile, m.MissionId))
+            .OfType<MissionProfile>();
+    }
+
     internal static IEnumerable<MissionProfile> ForLevel(CatalogDbContext catalog, int level, bool storyline) =>
         s_content
-            .Value.Missions.Where(definition => definition.Level == level && definition.Storyline == storyline)
+            .Value.Missions.Where(definition =>
+                definition.Level == level && definition.Storyline == storyline && definition.FixedAgentIds.IsEmpty
+            )
             .Select(definition => catalog.Definition(s_profile, definition.MissionId))
             .OfType<MissionProfile>();
 
     internal static bool IsMining(int missionId) => s_content.Value.Missions.Any(m => m.MissionId == missionId && m.Mining);
+
+    internal static bool IsFixed(int missionId) => s_content.Value.Missions.Any(m => m.MissionId == missionId && !m.FixedAgentIds.IsEmpty);
 
     internal static IEnumerable<int> MiningObjectiveTypes(CatalogDbContext catalog) =>
         catalog

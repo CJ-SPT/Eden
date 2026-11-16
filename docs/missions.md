@@ -2,7 +2,7 @@
 
 [Documentation index](README.md) / [Implementation and validation record](protocol/agents.md#supported-mission-content-expansion--november-9-2026)
 
-The build-3662168 pool contains **387 definitions: 74 combat encounters, 194 ordinary deliveries, 92 delivery storylines, four trade storylines and 23 mining missions**. The [complete catalog audit](data/mission-support-3662168.csv) lists all **2,892** source records, including the **2,505** that remain unavailable. A blocked encounter may need verified content rather than a new engine capability.
+The build-3662168 pool contains **437 definitions: 74 combat encounters, 194 ordinary deliveries, 92 delivery storylines, four trade storylines, 50 one-time Data Center missions and 23 mining missions**. The [complete catalog audit](data/mission-support-3662168.csv) lists all **2,892** source records, including the **2,455** that remain unavailable. A blocked encounter may need verified content rather than a new engine capability.
 
 New offers include a timed ISK bonus: an additional **50% of the quoted base reward** for turn-in within **six hours of acceptance**.
 The base reward remains available after that window. Existing saved offers keep their original rewards.
@@ -93,11 +93,44 @@ Decline, quit and expiry grant nothing. Native objectives use fetch, with no acc
 
 The report supplies the ore and implant grades; existing Eden ISK, direct standing and bonus policy also applies,
 with no storyline LP. Item rewards are not split with fleet members. Derived standings remain outside current
-mission support. Level-five storylines, special-agent trade lifecycles, blueprint-copy rewards and timed item rewards
+mission support. Level-five storylines, other special-agent trade lifecycles, blueprint-copy rewards and timed item rewards
 remain unavailable. See the [trade engine and reward checkpoint record](protocol/agents.md#resident-trade-objectives-and-item-rewards--november-15-2026).
 
 Trade templates account for 460 catalog definitions. This milestone supplies shared player-sourced fetch objectives
-and saved normal item rewards; four definitions are admitted, while the other 456 retain their additional blockers.
+and saved normal item rewards. Four generic storylines and the 50 Data Center definitions below are admitted;
+the remaining 406 retain their additional blockers.
+
+## Data Center agents
+
+All **50** native Keeping Crime In Check tag-turn-in definitions are available through their **57** assigned agents.
+These are one-time offers tied to those agents, rather than missions in the ordinary sixteen-completion storyline pool.
+Find the public Data Center beacon in the agent's actual solar system, then approach the named agent ship.
+Its catalog home station does not provide this mission service.
+
+| Pirate tag family | Grades | Required quantity |
+| --- | --- | --- |
+| Angel, Blood, Guristas, Sansha and Serpentis | Copper | 3 tags |
+| Each of the same five families | Bronze, Silver, Brass, Palladium, Gold, Electrum, Crystal, Platinum and Diamond | 20 tags |
+
+The agent's level sets effective standing thresholds of **0 / 1 / 3 / 5** for levels one through four, under existing
+standing-skill and clone-grade rules. Request, accept and turn in within **2,500 m of the agent hull surface**.
+Bring personally owned packaged tags in the active ship's Cargo Hold. Remote hangars, other ships and foreign cargo
+do not qualify. Acceptance issues no free tags. Only the required quantity is consumed, and excess remains.
+
+Completion, decline, quitting and offer/accepted expiry permanently end that pilot's assignment with that agent.
+Reopening the conversation or restarting the server cannot reset it. Agents sharing a Copper mission definition
+still have separate one-time assignments. Existing Eden base ISK, six-hour bonus and direct corporation/faction
+standing gains apply, with zero LP and personal rewards. Derived standing changes and failure-standing penalties
+remain unimplemented; reward amounts are Eden policy rather than recovered CCP payout tables.
+
+Ordinary pirates now supply all 50 required tag types through lootable wrecks. Eden uses a stable **25%** chance of
+one matching-faction tag: frigates supply Copper/Bronze, destroyers Silver/Brass, cruisers Palladium/Gold,
+battlecruisers Electrum/Crystal and battleships Platinum/Diamond. These are explicit Eden drop rules; hidden CCP
+drop tables are not reproduced. Rogue drones and unrelated factions do not supply pirate tags.
+
+Native agent hulls and offsets from each Data Center beacon are preserved. Each public dungeon has one stable Eden
+system placement shared by all visitors. Other COSMOS, career, research and epic-arc assignments retain their own
+blockers. See the [complete-family implementation and validation record](protocol/agents.md#data-center-family-and-one-time-space-agents--november-15-2026).
 
 ## Mission chains
 
@@ -192,4 +225,4 @@ python tools/Export-MissionFixture.py --catalog src/Eden.Server/data/catalog.sql
 python tests/Eden.Protocol.Tests/Persistence/mission_content_test.py
 ```
 
-The first command emits the runtime manifest and exhaustive CSV audit. The second captures **818 types and 4,860 source records** for automated tests, including all authored NPC alternatives, objective cargo, reward alternatives, geometry, faction/corporation references and ordinary/commander loot dependencies. SDE mission records retain only the English name fallback; native English messages are captured separately. No game launch or runtime network access is involved. Chain and trade execution tests use the resident world.
+The first command emits the runtime manifest and exhaustive CSV audit. The second captures **945 types and 5,619 source records**, plus Data Center system geography, for automated tests, including all authored NPC alternatives, objective cargo, reward alternatives, geometry, faction/corporation references and ordinary/commander loot dependencies. SDE mission records retain only the English name fallback; native English messages are captured separately. No game launch or runtime network access is involved. Chain, trade and Data Center execution tests use the resident world.

@@ -42,6 +42,17 @@ internal sealed record AgentLocation(StationDirectoryEntry Station) : BlueModel
         };
 }
 
+internal sealed record SpaceAgentLocation(CatalogAgent Agent) : BlueModel
+{
+    public override object ToBlue() =>
+        new Dictionary<string, object?>
+        {
+            ["typeID"] = Agent.Space!.TypeId,
+            ["locationID"] = Agent.Id,
+            ["solarsystemID"] = Agent.Space.SystemId,
+        };
+}
+
 internal sealed record MissionConversation(MissionOffer? Offer, string Event, string Greeting) : BlueModel
 {
     private static object?[] Action(MissionOffer offer, MissionAction action) =>
@@ -109,14 +120,14 @@ internal sealed record MissionKeywords(MissionOffer Offer) : BlueModel
             ["rewardQuantity"] = Offer.Rewards.IskCents / (double)MarketDefinitions.CentsPerIsk,
             ["player"] = Offer.PilotId,
             ["objectiveLocationID"] =
-                Offer.Kind == MissionKind.Trade ? Offer.Agent.StationId : Offer.Cargo?.DestinationStation ?? Offer.SystemId,
+                Offer.Kind == MissionKind.Trade ? Offer.Agent.MissionLocationId : Offer.Cargo?.DestinationStation ?? Offer.SystemId,
             ["objectiveDestinationID"] =
-                Offer.Cargo?.DestinationStation ?? (Offer.Retrieval is null ? Offer.SystemId : Offer.Agent.StationId),
-            ["objectivePickupLocationID"] = Offer.Cargo?.PickupStation ?? Offer.Agent.StationId,
+                Offer.Cargo?.DestinationStation ?? (Offer.Retrieval is null ? Offer.SystemId : Offer.Agent.MissionLocationId),
+            ["objectivePickupLocationID"] = Offer.Cargo?.PickupStation ?? Offer.Agent.MissionLocationId,
             ["objectiveTypeID"] = Offer.Cargo?.TypeId ?? Offer.Retrieval?.TypeId,
             ["objectiveQuantity"] = Offer.Cargo?.Quantity ?? Offer.Retrieval?.Quantity ?? 0,
             ["agentID"] = Offer.Agent.Id,
-            ["agentLocationID"] = Offer.Agent.StationId,
+            ["agentLocationID"] = Offer.Agent.MissionLocationId,
         };
 }
 
@@ -147,7 +158,7 @@ internal sealed record MissionLocation(MissionOffer Offer, bool Pickup = false) 
             return new Dictionary<string, object?>
             {
                 ["typeID"] = Offer.Retrieval!.StationTypeId,
-                ["locationID"] = Offer.Agent.StationId,
+                ["locationID"] = Offer.Agent.MissionLocationId,
                 ["solarsystemID"] = Offer.Agent.SystemId,
                 ["agentID"] = Offer.Agent.Id,
                 ["locationType"] = "objective.destination",
@@ -258,7 +269,7 @@ internal sealed record MissionObjectives(MissionOffer Offer, long Now) : BlueMod
                         new Dictionary<string, object?>
                         {
                             ["typeID"] = retrieval.StationTypeId,
-                            ["locationID"] = Offer.Agent.StationId,
+                            ["locationID"] = Offer.Agent.MissionLocationId,
                             ["solarsystemID"] = Offer.Agent.SystemId,
                             ["agentID"] = Offer.Agent.Id,
                             ["locationType"] = "objective.destination",

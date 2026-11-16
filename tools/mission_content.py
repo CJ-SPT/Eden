@@ -8,6 +8,7 @@ import copy
 import json
 import re
 from collections import Counter
+from mission_fixed_agents import data_center_definitions
 
 # Build-3662168 destructible Habitat; the similarly named scenery is not an objective.
 HABITAT_TYPE = 19715
@@ -416,6 +417,7 @@ def extend(db, missions, group):
 
     missions.extend(courier_chain_definitions(db))
     missions.extend(trade_definitions(db))
+    missions.extend(data_center_definitions(db))
     admitted = {m['missionId'] for m in missions}
     encounters = {tuple(sorted(source(db, 'client/missions', m['missionId'])['killMission'].items())): m
                   for m in missions if m['waves']}

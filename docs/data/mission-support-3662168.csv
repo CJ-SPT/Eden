@@ -488,11 +488,11 @@ missionId,name,template,status,reason
 1721,Decorum - We Like to Know (1 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1722,Decorum - Spy vs. Spy (2 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1723,Decorum - Hacker's Haven (3 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1752,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1752,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
 1753,Epidemic - Aiding the Needy (1 of 2),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-1754,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-1755,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-1756,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1754,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+1755,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+1756,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
 1757,Epidemic - Out of Hand (2 of 2),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1758,Extremely Unfortunate Incident (3 of 3),StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
 1759,Unfolding a Mistery (2 of 3),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
@@ -613,7 +613,7 @@ missionId,name,template,status,reason
 1887,"The Audesder War Effort, Freeing The Kameiras (7 of 8)",StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1888,"The Audesder War Effort, The Dreadnought Manufacturing Facility (8 of 8)",StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1889,Proving Your Mettle,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-1890,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+1890,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
 1891,The Missing Reporters - Minmatar Smugglers (1 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 1892,The Missing Reporters - Political Foes (2 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 1893,The Missing Reporters - Miners Beware (3 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
@@ -1364,51 +1364,51 @@ missionId,name,template,status,reason
 2860,Little Sister (1 of 2),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2861,Little Sister (2 of 2),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2862,The Search Party (1 of 2),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-2864,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2865,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2866,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2867,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2868,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2869,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2870,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2871,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2872,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2873,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2874,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2875,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2876,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2877,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2878,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2879,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2880,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2881,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2882,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2883,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2884,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2885,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2886,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2887,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2888,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2889,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2890,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2891,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2892,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2893,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2894,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2895,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2896,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2897,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2898,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2899,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2900,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2901,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2902,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2903,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2904,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2905,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2906,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2907,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
-2908,Keeping Crime In Check,StorylineTradeMission,blocked,Requires verified trade content or another agent lifecycle
+2864,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2865,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2866,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2867,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2868,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2869,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2870,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2871,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2872,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2873,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2874,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2875,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2876,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2877,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2878,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2879,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2880,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2881,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2882,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2883,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2884,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2885,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2886,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2887,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2888,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2889,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2890,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2891,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2892,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2893,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2894,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2895,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2896,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2897,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2898,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2899,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2900,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2901,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2902,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2903,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2904,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2905,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2906,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2907,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
+2908,Keeping Crime In Check,StorylineTradeMission,admitted,Catalog cargo or reviewed encounter
 2909,Next of Kin (2 of 2),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2912,Move The Goods,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 2913,Move The Goods,BasicCourierMission,admitted,Catalog cargo or reviewed encounter

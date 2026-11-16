@@ -29,7 +29,21 @@ internal static class PassiveCatalogFixture
 
     private sealed record Record(string Dataset, int Key, JsonElement Data);
 
-    private sealed record Fixture(int Build, IReadOnlyList<TypeDefinition> Types, IReadOnlyList<Record> Records);
+    private sealed record SystemDefinition(
+        int Id,
+        string Name,
+        int ConstellationId,
+        string ConstellationName,
+        int RegionId,
+        string RegionName
+    );
+
+    private sealed record Fixture(
+        int Build,
+        IReadOnlyList<TypeDefinition> Types,
+        IReadOnlyList<Record> Records,
+        IReadOnlyList<SystemDefinition>? Systems = null
+    );
 
     private static readonly ConcurrentDictionary<string, Lazy<Fixture>> Fixtures = new(StringComparer.Ordinal);
 
@@ -242,6 +256,14 @@ internal static class PassiveCatalogFixture
                 catalog.Database.ExecuteSql($"INSERT OR IGNORE INTO DogmaAttribute VALUES ({attribute.Id},{attribute.Id.ToString()})");
                 catalog.Database.ExecuteSql($"INSERT OR REPLACE INTO TypeAttribute VALUES ({type.Id},{attribute.Id},{attribute.Value})");
             }
+        }
+        foreach (var system in data.Systems ?? [])
+        {
+            catalog.Database.ExecuteSql($"INSERT OR IGNORE INTO Region VALUES ({system.RegionId},{system.RegionName})");
+            catalog.Database.ExecuteSql(
+                $"INSERT OR IGNORE INTO Constellation VALUES ({system.ConstellationId},{system.ConstellationName},{system.RegionId})"
+            );
+            catalog.Database.ExecuteSql($"INSERT OR IGNORE INTO SolarSystem VALUES ({system.Id},{system.Name},{system.ConstellationId})");
         }
         foreach (var record in data.Records)
         {

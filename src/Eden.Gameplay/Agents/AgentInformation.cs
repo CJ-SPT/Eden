@@ -13,10 +13,11 @@ public static class AgentInformationRules
         AgentAccess access,
         bool hasContent,
         bool hasActiveMission,
-        bool hasActiveStoryline
+        bool hasActiveStoryline,
+        bool hasFixedService = false
     )
     {
-        if (agent.StationId is null)
+        if (agent.StationId is null && agent.Space is null)
         {
             return new(agent, false, false, "This agent has no supported station mission service.");
         }
@@ -28,7 +29,7 @@ public static class AgentInformationRules
         {
             return new(agent, false, false, access.Reason);
         }
-        if (agent.Type != AgentType.Basic)
+        if (agent.Type != AgentType.Basic && !(agent.Type == AgentType.Event && hasFixedService))
         {
             return new(agent, false, false, "This special agent's mission service is not implemented.");
         }
@@ -36,7 +37,7 @@ public static class AgentInformationRules
         {
             return new(agent, true, false, access.Reason);
         }
-        if (MissionRules.KindForDivision(agent.DivisionId) is null)
+        if (!hasFixedService && MissionRules.KindForDivision(agent.DivisionId) is null)
         {
             return new(agent, false, false, "This agent's mission division is not implemented.");
         }

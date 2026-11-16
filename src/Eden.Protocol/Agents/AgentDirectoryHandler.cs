@@ -118,7 +118,7 @@ internal sealed record AgentDirectoryRow(CatalogAgent Agent) : BlueModel
         new object?[]
         {
             Agent.Id,
-            Agent.StationId,
+            Agent.Space is null ? Agent.StationId : null,
             Agent.CorporationId,
             Agent.SystemId,
             (int)Agent.Type,

@@ -6,13 +6,43 @@ import pathlib
 import sqlite3
 import sys
 import unittest
+from contextlib import closing
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / 'tools'))
 from mission_content import delivery_rejection, courier_chain_definitions, trade_definitions
+from mission_fixed_agents import data_center_definitions
 
 
 class MissionAdmissionTests(unittest.TestCase):
+    def test_complete_data_center_family_binds_all_native_agents_and_rejects_catalog_drift(self):
+        fixture = json.loads((ROOT / 'tests/Eden.Protocol.Tests/Fixtures/MissionCatalog.json').read_text(encoding='utf-8'))
+        with closing(sqlite3.connect(':memory:')) as db:
+            db.execute('CREATE TABLE SourceRecord (Dataset TEXT, Key TEXT, Data TEXT, PRIMARY KEY(Dataset,Key))')
+            db.execute('CREATE TABLE ItemType (Id INTEGER, GroupId INTEGER, Name TEXT)')
+            db.executemany('INSERT INTO SourceRecord VALUES (?,?,?)',
+                           [(r['dataset'], str(r['key']), json.dumps(r['data'])) for r in fixture['records']])
+            db.executemany('INSERT INTO ItemType VALUES (?,?,?)', [(t['id'], t['groupId'], t['name']) for t in fixture['types']])
+            definitions = data_center_definitions(db)
+            self.assertEqual(50, len(definitions))
+            self.assertEqual(57, sum(len(m['fixedAgentIds']) for m in definitions))
+            manifest = json.loads((ROOT / 'src/Eden.World/Agents/missions-3662168.json').read_text(encoding='utf-8'))
+            self.assertEqual(definitions, [m for m in manifest['missions'] if m.get('fixedAgentIds')])
+            cases = [('client/missions', '1752', '$.courierMission.objectiveTypeID', 34),
+                     ('client/missions', '1752', '$.expirationTime', 0),
+                     ('client/missions', '1752', '$.nodeGraphID', 1),
+                     ('client/missions', '1752', '$.missionRewards.reward.rewardTypeID', 29),
+                     ('client/npccharacters', '3018480', '$.agent.agentType', 2),
+                     ('client/agentsinspace', '3018480', '$.typeID', 34)]
+            for dataset, key, path, value in cases:
+                with self.subTest(dataset=dataset, key=key, path=path):
+                    original = db.execute('SELECT Data FROM SourceRecord WHERE Dataset=? AND Key=?', (dataset, key)).fetchone()[0]
+                    db.execute('UPDATE SourceRecord SET Data=json_set(Data,?,?) WHERE Dataset=? AND Key=?',
+                               (path, value, dataset, key))
+                    with self.assertRaises(ValueError):
+                        data_center_definitions(db)
+                    db.execute('UPDATE SourceRecord SET Data=? WHERE Dataset=? AND Key=?', (original, dataset, key))
+
     def setUp(self):
         self.mission = dict(contentTemplate='agent.missionTemplatizedContent_BasicCourierMission',
                             courierMission=dict(objectiveSingleton=0, objectiveTypeID=16044, objectiveQuantity=10))
@@ -51,7 +81,7 @@ class MissionAdmissionTests(unittest.TestCase):
 
     def test_complete_courier_chain_bindings_fail_closed_on_catalog_drift(self):
         fixture = json.loads((ROOT / 'tests/Eden.Protocol.Tests/Fixtures/MissionCatalog.json').read_text(encoding='utf-8'))
-        with sqlite3.connect(':memory:') as db:
+        with closing(sqlite3.connect(':memory:')) as db:
             db.execute('CREATE TABLE SourceRecord (Dataset TEXT, Key TEXT, Data TEXT, PRIMARY KEY(Dataset,Key))')
             db.executemany('INSERT INTO SourceRecord VALUES (?,?,?)',
                            [(r['dataset'], str(r['key']), json.dumps(r['data'])) for r in fixture['records']])
@@ -86,7 +116,7 @@ class MissionAdmissionTests(unittest.TestCase):
 
     def test_trade_admission_binds_four_storylines_and_five_implants_per_grade(self):
         manifest = json.loads((ROOT / 'src/Eden.World/Agents/missions-3662168.json').read_text(encoding='utf-8'))
-        trades = [m for m in manifest['missions'] if m.get('trade')]
+        trades = [m for m in manifest['missions'] if m.get('trade') and not m.get('fixedAgentIds')]
         self.assertEqual([15553, 15554, 15555, 15556], [m['missionId'] for m in trades])
         for level, mission in enumerate(trades, 1):
             self.assertEqual(level, mission['level'])
@@ -98,7 +128,7 @@ class MissionAdmissionTests(unittest.TestCase):
 
     def test_trade_export_rejects_changed_cargo_rewards_deadlines_and_scripts(self):
         fixture = json.loads((ROOT / 'tests/Eden.Protocol.Tests/Fixtures/MissionCatalog.json').read_text(encoding='utf-8'))
-        with sqlite3.connect(':memory:') as db:
+        with closing(sqlite3.connect(':memory:')) as db:
             db.execute('CREATE TABLE SourceRecord (Dataset TEXT, Key TEXT, Data TEXT, PRIMARY KEY(Dataset,Key))')
             db.execute('CREATE TABLE ItemType (Id INTEGER, GroupId INTEGER, Name TEXT)')
             db.executemany('INSERT INTO SourceRecord VALUES (?,?,?)',

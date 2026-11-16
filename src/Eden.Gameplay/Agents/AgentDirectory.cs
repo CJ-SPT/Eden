@@ -1,4 +1,5 @@
 using Eden.Gameplay.Characters;
+using Eden.Gameplay.Flight;
 
 namespace Eden.Gameplay.Agents;
 
@@ -41,7 +42,13 @@ public sealed record CatalogAgent(
     int Level,
     bool Locator,
     int? BloodlineId
-);
+)
+{
+    public AgentSpaceLocation? Space { get; init; }
+    public int? MissionLocationId => Space is null ? StationId : checked((int)Id);
+}
+
+public sealed record AgentSpaceLocation(int SystemId, int TypeId, SpacePosition Position, float Radius);
 
 public sealed record NpcCharacter(
     CharacterIdentity Identity,

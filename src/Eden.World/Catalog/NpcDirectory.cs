@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.Globalization;
 using Eden.Gameplay.Agents;
 using Eden.Infrastructure.Registration;
+using Eden.World.Agents;
 using Eden.World.Storage;
 
 namespace Eden.World.Catalog;
@@ -100,7 +101,12 @@ internal sealed class NpcDirectory(WorldDatabase database) : INpcDirectory
             }
             int? station =
                 data.StationID is > 0 and <= int.MaxValue && stations.ContainsKey((int)data.StationID) ? (int)data.StationID : null;
-            int? system = station is int location ? stations[location] : space.GetValueOrDefault(id);
+            var serviceLocation = AgentSpaceCatalog.Location(catalog, id);
+            if (serviceLocation is not null)
+            {
+                station = null;
+            }
+            int? system = serviceLocation?.SystemId ?? (station is int location ? stations[location] : space.GetValueOrDefault(id));
             agents.Add(
                 new(
                     id,
@@ -114,6 +120,9 @@ internal sealed class NpcDirectory(WorldDatabase database) : INpcDirectory
                     agent.AgentLocateCharacter == 1,
                     checked((int?)data.BloodlineID)
                 )
+                {
+                    Space = serviceLocation,
+                }
             );
         }
         return new(agents.ToImmutableArray(), agents.ToFrozenDictionary(agent => agent.Id), characters.ToFrozenDictionary());

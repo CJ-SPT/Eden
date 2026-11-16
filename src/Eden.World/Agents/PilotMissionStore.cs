@@ -110,8 +110,18 @@ internal sealed partial class PilotMissionStore(
                     )
                     .SingleOrDefault();
                 bool content =
-                    agent.Type == AgentType.Basic && access.Allowed && ProfilesForAgent(catalog, agent, agent.Level, false).Any();
-                var information = AgentInformationRules.Describe(agent, access, content, active is not null, active?.Storyline == true);
+                    agent.Type is AgentType.Basic or AgentType.Event
+                    && access.Allowed
+                    && ProfilesForAgent(catalog, agent, agent.Level, false).Any();
+                bool fixedService = agent.Type == AgentType.Event && MissionCatalog.ForFixedAgent(catalog, agent.Id).Any();
+                var information = AgentInformationRules.Describe(
+                    agent,
+                    access,
+                    content,
+                    active is not null,
+                    active?.Storyline == true,
+                    fixedService
+                );
                 if (agent.Type != AgentType.Research)
                 {
                     return information;
@@ -139,9 +149,24 @@ internal sealed partial class PilotMissionStore(
 
     private static AgentAccess Access(WorldAction world, CatalogDbContext catalog, Pilot pilot, CatalogAgent agent)
     {
-        if (agent.Type is not (AgentType.Basic or AgentType.Research) || agent.Level is < 1 or > MissionRules.MaximumAgentLevel)
+        bool fixedAgent = agent.Type == AgentType.Event && MissionCatalog.ForFixedAgent(catalog, agent.Id).Any();
+        if (
+            (agent.Type is not (AgentType.Basic or AgentType.Research) && !fixedAgent)
+            || agent.Level is < 1 or > MissionRules.MaximumAgentLevel
+        )
         {
             return new(false, "This special agent's mission service is not implemented.", 0, 0, 0, 0);
+        }
+        if (
+            fixedAgent
+            && (
+                world is not EconomyTransaction
+                || agent.Space is null
+                || world.Filter<SavedMission>(m => m.PilotId == pilot.Id && m.AgentId == agent.Id && m.ClosedAt != null).Any()
+            )
+        )
+        {
+            return new(false, "This one-time agent assignment is unavailable or has already ended.", 0, 0, 0, 0);
         }
         // Pinned standingUtil.GetStandingBonusSkillTypeID and appConst.factionsPirates.
         var factionKind = (AgentStandingFaction?)agent.FactionId;
@@ -173,6 +198,16 @@ internal sealed partial class PilotMissionStore(
                 pirate,
                 bonuses
             );
+        if (fixedAgent)
+        {
+            return FixedAgentRules.Access(
+                agent.Level,
+                Effective(agent.Id),
+                Effective(agent.CorporationId),
+                agent.FactionId is int fixedFaction ? Effective(fixedFaction) : 0,
+                pilot.Account.CloneGrade == AccountCloneGrade.Omega
+            );
+        }
         return agent.Type == AgentType.Research
             ? ResearchRules.Access(
                 agent.Level,
@@ -417,6 +452,10 @@ internal sealed partial class PilotMissionStore(
     {
         long pilotId = pilot.Id;
         long agentId = agent.Id;
+        if (world is not EconomyTransaction && MissionCatalog.FixedAgentIds.Contains(agentId))
+        {
+            throw new InvalidDataException("One-time agent actions require the resident world.");
+        }
         var row = world.Set<SavedMission>().SingleOrDefault(m => m.PilotId == pilotId && m.AgentId == agentId && m.ClosedAt == null);
         if (row is not null && Expire(world, row, now))
         {
@@ -438,7 +477,7 @@ internal sealed partial class PilotMissionStore(
                 if (row is null)
                 {
                     RequireAgentAccess(world, catalog, pilot, agent);
-                    RequireStation(pilot, agent.StationId);
+                    RequireAgentLocation(pilot, agent);
                     row = Offer(world, catalog, pilot, agent, agent.Level, false, now);
                     eventName = "offered";
                 }
@@ -449,13 +488,14 @@ internal sealed partial class PilotMissionStore(
                 {
                     RequireAgentAccess(world, catalog, pilot, agent);
                 }
-                RequireStation(pilot, agent.StationId);
+                RequireAgentLocation(pilot, agent);
                 var profile = MissionCatalog.Find(catalog, row.MissionId);
                 if (!profile.AvailableTo(agent) || profile.AttacksFaction(agent.FactionId))
                 {
                     throw new InvalidDataException("This mission is unavailable to this agent's corporation or faction.");
                 }
                 RequireChainAcceptance(world, catalog, agent, row, profile);
+                RequireFixedAssignment(world, catalog, row, profile);
                 RequireResidentReward(world, row, profile);
                 row.State = MissionState.Accepted;
                 row.AcceptedAt = now;
@@ -476,8 +516,16 @@ internal sealed partial class PilotMissionStore(
                 RequireState(row, MissionState.Accepted);
                 var mission = MissionCatalog.Find(catalog, row!.MissionId);
                 RequireChainAcceptance(world, catalog, agent, row, mission);
+                RequireFixedAssignment(world, catalog, row, mission);
                 RequireResidentReward(world, row, mission);
-                RequireStation(pilot, mission.Kind == MissionKind.Courier ? row.DestinationStation : agent.StationId);
+                if (mission.Kind == MissionKind.Courier)
+                {
+                    RequireStation(pilot, row.DestinationStation);
+                }
+                else
+                {
+                    RequireAgentLocation(pilot, agent);
+                }
                 if (mission.Kind is MissionKind.Combat or MissionKind.Mining && !row.ObjectiveComplete)
                 {
                     throw new InvalidDataException(
@@ -491,7 +539,7 @@ internal sealed partial class PilotMissionStore(
                     ConsumeCargo(world, catalog, pilot, row, mission, changes);
                 }
                 payment = Pay(world, pilot, agent, row, now, standings, sharers);
-                if (GrantItemReward(world, catalog, row, agent.StationId!.Value) is { } rewardChange)
+                if (GrantItemReward(world, catalog, row, agent.StationId) is { } rewardChange)
                 {
                     changes.Add(rewardChange);
                 }
@@ -564,6 +612,20 @@ internal sealed partial class PilotMissionStore(
         }
     }
 
+    private static void RequireAgentLocation(Pilot pilot, CatalogAgent agent)
+    {
+        if (agent.Space is not { } space)
+        {
+            RequireStation(pilot, agent.StationId);
+            return;
+        }
+        var position = pilot.ActiveShip.Position;
+        if (position is null || !FixedAgentRules.InRange(space, position.SystemId ?? 0, new(position.X, position.Y, position.Z)))
+        {
+            throw new InvalidDataException("Approach this agent in its solar system to exchange mission cargo.");
+        }
+    }
+
     private MissionOffer Snapshot(WorldDbContext world, CatalogDbContext catalog, Pilot pilot, SavedMission row) =>
         Snapshot(new SqlWorldAction(world), catalog, pilot, row);
 
@@ -626,7 +688,7 @@ internal sealed partial class PilotMissionStore(
                         profile.CargoQuantity,
                         profile.CargoVolume,
                         hasCargo || row.State == MissionState.Completed,
-                        catalog.RequireStation(agent.StationId!.Value).TypeId
+                        agent.Space?.TypeId ?? catalog.RequireStation(agent.StationId!.Value).TypeId
                     )
                     : null,
         };

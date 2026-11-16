@@ -58,7 +58,7 @@ public sealed partial class MissionContentTests
         Assert.Equal(74, profiles.Count(p => p.Kind == MissionKind.Combat));
         Assert.Equal(286, profiles.Count(p => p.Kind == MissionKind.Courier));
         Assert.Equal(23, profiles.Count(p => p.Kind == MissionKind.Mining));
-        Assert.Equal(4, profiles.Count(p => p.Kind == MissionKind.Trade));
+        Assert.Equal(54, profiles.Count(p => p.Kind == MissionKind.Trade));
         foreach (var profile in profiles)
         {
             Assert.NotEqual("Mission", profile.Name);

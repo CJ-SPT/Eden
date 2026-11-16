@@ -45,6 +45,10 @@ internal sealed partial class PilotMissionStore
                 return false;
             }
             var offer = Snapshot(world, catalog, pilot, row);
+            if (offer.Agent.Space is not null)
+            {
+                return false;
+            }
             int? station = offer.Cargo?.DestinationStation ?? offer.Agent.StationId;
             return offer.ObjectiveComplete && pilot.ActiveShip.Position is null && pilot.ActiveShip.DockedLocationId == station;
         });
@@ -67,6 +71,10 @@ internal sealed partial class PilotMissionStore
         long now = Now;
         training.Advance(transaction, pilotId, now);
         var pilot = ResidentPilot(transaction, pilotId);
+        if (share && Agent(agentId).Space is not null)
+        {
+            throw new InvalidDataException("This one-time agent's rewards are personal.");
+        }
         long[] recipients = share ? fleets.Fleetmates(pilotId).Select(p => p.Id).Where(transaction.PilotExists).ToArray() : [];
         if (recipients.Length > MaximumOtherMissionRecipients)
         {
