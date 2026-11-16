@@ -47,6 +47,9 @@ opening, renaming, both passwords, configuration and resident checkpoint persist
 [Abyssal Deadspace](protocol/abyssal.md) records resident runs, pinned client contracts,
 checkpoint recovery, milestone scope and automated validation.
 
+[Wormholes](protocol/wormholes.md) records resident connection populations, mass/lifetime collapse,
+replacement identities, K162 visibility and checkpoint recovery.
+
 [Notepad and shared settings](protocol/social.md#notepad-and-shared-settings--november-14-2026) covers private notes,
 saved folders and shareable overview, inventory-filter and fleet-broadcast links.
 

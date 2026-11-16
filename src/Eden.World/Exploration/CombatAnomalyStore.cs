@@ -333,8 +333,13 @@ internal sealed partial class CombatAnomalyStore(
             {
                 ArriveDed(ded, _dedViews[systemId].Profile!, position, now);
             }
+            var signatures = Signatures(systemId, now);
+            foreach (var hole in signatures.Where(s => s.Wormhole && position.DistanceTo(s.Position) <= CombatAnomalyRules.ArrivalRange))
+            {
+                wormholes?.Activate(systemId, hole.Id);
+            }
             var nearby = List(systemId, now)
-                .Concat(Signatures(systemId, now))
+                .Concat(signatures)
                 .Where(s =>
                     s.Exploration is null
                     && s.Mining is null

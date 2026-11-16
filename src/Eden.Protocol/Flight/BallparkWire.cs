@@ -101,9 +101,9 @@ internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
         }
         if (Body.Wormhole is { } wormhole)
         {
-            fields["wormholeAge"] = 0;
-            fields["wormholeSize"] = 1d;
-            fields["maxShipJumpMass"] = (long)wormhole.MaximumShipMass;
+            fields["wormholeAge"] = wormhole.Age;
+            fields["wormholeSize"] = wormhole.Size;
+            fields["maxShipJumpMass"] = Eden.Gameplay.Exploration.WormholeRules.MassClass(wormhole.MaximumShipMass);
             fields["nebulaType"] = null;
             fields["isDestTriglavian"] = 0;
             fields["otherSolarSystemClass"] = wormhole.DestinationClass;

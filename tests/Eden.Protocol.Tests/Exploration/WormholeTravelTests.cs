@@ -34,11 +34,12 @@ public sealed class WormholeTravelTests
         using Fixture f = new();
         AddRoute(f);
         long ship = f.ShipId;
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
         var travel = f.Db.Services.GetRequiredService<IWormholeTravel>();
         var source = Assert.Single(Assert.Single(travel.Signatures(Known)).Objects);
-        var exit = Assert.Single(Assert.Single(travel.Signatures(Remote)).Objects);
+        Assert.Empty(travel.Signatures(Remote));
         f.Db.Store.SetPosition(ship, source.Position, Known);
-        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        var exit = travel.Prepare(f.PilotId, ship, source.Id).Exit;
         using ResidentFitCache fits = new(new(f.Db.Path));
         live.Economy.Warm();
         _ = f.Db.Store.FindPilot(1000001);
@@ -78,7 +79,7 @@ public sealed class WormholeTravelTests
     }
 
     [Fact]
-    public void ProbedWormholeSupportsRoundTripHarvestAndPersistentPolarization()
+    public async Task ProbedWormholeSupportsRoundTripHarvestAndPersistentPolarization()
     {
         using Fixture f = new();
         PassiveCatalogFixture.LoadMining(f.CatalogPath);
@@ -91,12 +92,15 @@ public sealed class WormholeTravelTests
         f.Db.Services.GetRequiredService<IPilotAmmunition>().Load(f.PilotId, f.ShipId, [launcher], [probeStack], f.StationId, f.Clock.Now);
         f.Clock.Milliseconds += 10000;
         var pilot = f.Db.Store.FindPilot(1000001)!;
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
         var travel = f.Db.Services.GetRequiredService<IWormholeTravel>();
         var sites = f.Db.Services.GetRequiredService<ICombatAnomalies>();
         var entrance = Assert.Single(sites.Signatures(Known, f.Clock.Now), s => s.Wormhole);
         var source = Assert.Single(entrance.Objects);
         Assert.Equal((Portal, Remote), (source.TypeId, source.Wormhole!.DestinationSystem));
-        var exit = Assert.Single(Assert.Single(travel.Signatures(Remote)).Objects);
+        Assert.Empty(travel.Signatures(Remote));
+        f.Db.Store.SetPosition(f.ShipId, source.Position, Known);
+        var exit = travel.Prepare(f.PilotId, f.ShipId, source.Id).Exit;
         var result = ProbeScanningWire.Result(new(entrance, 1, source.Position, 0));
         var fields = Assert.IsType<Dictionary<string, object?>>(result.State);
         Assert.Equal(WormholeRules.StrengthAttribute, fields["strengthAttributeID"]);
@@ -161,7 +165,12 @@ public sealed class WormholeTravelTests
         f.Db.Store.SetPosition(f.ShipId, exit.Position, Remote);
         Assert.Equal(Known, travel.Transfer(f.PilotId, f.ShipId, exit.Id, source.Id).SystemId);
         f.Db.Store.SetPosition(f.ShipId, source.Position, Known);
-        WorldInitialization.Open(f.Db.Path);
+        await live.FlushAsync();
+        using (var disk = WorldConnections.FileConnection(f.Db.Path))
+        using (WorldDbContext reopened = new(disk))
+        {
+            Assert.Equal(f.Clock.Now, reopened.Set<SavedWormholeJump>().Find(f.PilotId, exit.Id)!.JumpedAt);
+        }
         Assert.Equal(WormholeRules.PolarizationSeconds, travel.Polarization(f.PilotId, Known, source.Id)!.Seconds);
         Assert.Throws<InvalidDataException>(() => travel.Prepare(f.PilotId, f.ShipId, source.Id));
         f.Clock.Seconds += WormholeRules.PolarizationSeconds;
@@ -170,7 +179,7 @@ public sealed class WormholeTravelTests
         Assert.Equal(pilot.ShipId, f.Db.Store.FindPilot(1000001)!.ShipId);
     }
 
-    private static void AddRoute(Fixture f)
+    internal static void AddRoute(Fixture f)
     {
         using CatalogDbContext catalog = new(f.CatalogPath, writable: true);
         catalog.Database.ExecuteSql(
@@ -180,8 +189,10 @@ public sealed class WormholeTravelTests
                 (40000001,{Known},52673,8,2000,0,0,0),(40000002,{Remote},52673,8,2000,0,0,0);
             INSERT INTO ItemGroup VALUES (988,'Wormhole',2);
             INSERT INTO ItemType(Id,Name,GroupId,Radius) VALUES ({Portal},'Wormhole R943',988,3000),(30831,'Wormhole K162',988,3000);
-            INSERT INTO DogmaAttribute VALUES (1385,'wormholeMaxJumpMass');
-            INSERT INTO TypeAttribute VALUES ({Portal},1385,375000000);
+            INSERT INTO DogmaAttribute VALUES (1381,'wormholeTargetSystemClass'),(1382,'wormholeMaxStableTime'),
+                (1383,'wormholeMaxStableMass'),(1384,'wormholeMassRegeneration'),(1385,'wormholeMaxJumpMass');
+            INSERT INTO TypeAttribute VALUES ({Portal},1381,2),({Portal},1382,960),({Portal},1383,750000000),
+                ({Portal},1384,0),({Portal},1385,375000000);
             """
         );
         foreach (var (system, wormholeClass) in new[] { (Known, 8), (Remote, SystemClass) })

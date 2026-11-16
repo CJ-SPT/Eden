@@ -478,7 +478,7 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
         );
 
     private static bool Available(WorldAction world, CatalogDbContext catalog, long siteId, int systemId, long now) =>
-        WormholeRules.IsEndpoint(siteId) && WormholeTravelStore.Exists(catalog, systemId, siteId)
+        WormholeRules.IsEndpoint(siteId) && WormholeTravelStore.Exists(world, systemId, siteId, now)
         || world.Set<WorldCombatAnomaly>().Find(siteId) is { IsSignature: true, CompletedAt: null } combat && combat.SystemId == systemId
         || world.Set<SavedExplorationSite>().Find(siteId) is { ReplaceAt: null } exploration
             && exploration.SystemId == systemId

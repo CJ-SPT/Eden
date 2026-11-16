@@ -480,6 +480,8 @@ formatting and audit reproduction passed.
 
 ## Fullerite reservoirs and wormhole access
 
+The permanent-connection behavior below is historical; [resident wormholes](wormholes.md) supersede it.
+
 Three stable, two-way signatures connect Tama to J125227 (C2), Aunenen to J114342 (C3), and Old Man Star to J152820 (C5).
 Players resolve the entrances with probes, warp to them, and use the native wormhole jump call. Eden checks the fitted ship mass,
 range, travel permissions and five-minute per-direction polarization. The saved polarization and ship movement commit together.
