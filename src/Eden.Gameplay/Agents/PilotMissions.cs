@@ -126,7 +126,10 @@ public sealed record MissionUpdate(
     long? BalanceCents = null,
     long PointsBefore = 0,
     long PointsAfter = 0
-);
+)
+{
+    public MissionOffer? Continuation { get; init; }
+}
 
 public sealed record MissionSite(
     long Id,

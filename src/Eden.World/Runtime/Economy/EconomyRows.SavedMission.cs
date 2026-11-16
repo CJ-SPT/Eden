@@ -35,7 +35,9 @@ internal sealed partial class ResidentEconomy
 {
     private static void ProjectSavedMission(WorldDbContext world, IReadOnlyList<EconomyChange<EconomySavedMission>> changes)
     {
-        foreach (var batch in changes.Chunk(ProjectionBatchSize))
+        // Release each pilot/agent's unique active slot before projecting new offers.
+        // A checkpoint may coalesce several completed, cancelled and restarted chain parts.
+        foreach (var batch in changes.OrderBy(change => change.Value is { ClosedAt: null } ? 1 : 0).Chunk(ProjectionBatchSize))
         {
             var removed = batch.Where(c => c.Value is null).Select(c => c.Key).ToArray();
             if (removed.Length != 0)

@@ -2485,6 +2485,360 @@
       ]
     },
     {
+      "missionId": 888,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Guristas_Spies_(Level_2)",
+      "sourceRevision": "oldid=192010",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16987
+              ],
+              "count": 5,
+              "range": 30000,
+              "required": false
+            },
+            {
+              "types": [
+                23986
+              ],
+              "count": 1,
+              "range": 30000,
+              "required": false
+            },
+            {
+              "types": [
+                16986,
+                16989
+              ],
+              "count": 2,
+              "range": 57000
+            },
+            {
+              "types": [
+                23985,
+                23984
+              ],
+              "count": 2,
+              "range": 57000
+            }
+          ],
+          "roomId": 2712
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2713,
+          "entryObjectId": 53026
+        },
+        {
+          "roomId": 2712,
+          "entryObjectId": 53018
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 53025,
+          "destinationRoomId": 2712
+        }
+      ]
+    },
+    {
+      "missionId": 898,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Serpentis_Spies_(Level_3)",
+      "sourceRevision": "oldid=223606",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                23995,
+                23994
+              ],
+              "count": 3,
+              "range": 30000,
+              "required": false
+            },
+            {
+              "types": [
+                24063,
+                24064
+              ],
+              "count": 1,
+              "range": 30000,
+              "required": false
+            },
+            {
+              "types": [
+                17159
+              ],
+              "count": 2,
+              "range": 62000,
+              "required": false
+            },
+            {
+              "types": [
+                17118,
+                17279
+              ],
+              "count": 5,
+              "range": 71000
+            },
+            {
+              "types": [
+                2379
+              ],
+              "count": 3,
+              "range": 71000
+            }
+          ],
+          "roomId": 2746
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2747,
+          "entryObjectId": 53202
+        },
+        {
+          "roomId": 2746,
+          "entryObjectId": 53182
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 53201,
+          "destinationRoomId": 2746
+        }
+      ]
+    },
+    {
+      "missionId": 902,
+      "level": 2,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Sansha_Spies_(Level_2)",
+      "sourceRevision": "oldid=192040",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17157
+              ],
+              "count": 2,
+              "range": 60000,
+              "required": false
+            },
+            {
+              "types": [
+                17078
+              ],
+              "count": 7,
+              "range": 60000,
+              "required": false
+            },
+            {
+              "types": [
+                23989
+              ],
+              "count": 2,
+              "range": 60000
+            }
+          ],
+          "roomId": 2728
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2729,
+          "entryObjectId": 53107
+        },
+        {
+          "roomId": 2728,
+          "entryObjectId": 53098
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 53106,
+          "destinationRoomId": 2728
+        }
+      ]
+    },
+    {
+      "missionId": 901,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Sansha_Spies_(Level_3)",
+      "sourceRevision": "oldid=192041",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17157
+              ],
+              "count": 1,
+              "range": 55000,
+              "required": false
+            },
+            {
+              "types": [
+                17072,
+                17063
+              ],
+              "count": 3,
+              "range": 55000,
+              "required": false
+            },
+            {
+              "types": [
+                23989,
+                23990,
+                23991
+              ],
+              "count": 5,
+              "range": 70000,
+              "required": false
+            },
+            {
+              "types": [
+                24019
+              ],
+              "count": 2,
+              "range": 80000
+            }
+          ],
+          "roomId": 2595
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2596,
+          "entryObjectId": 51827
+        },
+        {
+          "roomId": 2595,
+          "entryObjectId": 51807
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 51826,
+          "destinationRoomId": 2595
+        }
+      ]
+    },
+    {
+      "missionId": 900,
+      "level": 4,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/The_Sansha_Spies_(Level_4)",
+      "sourceRevision": "oldid=193406",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17157
+              ],
+              "count": 1,
+              "range": 42000,
+              "required": false
+            },
+            {
+              "types": [
+                17156
+              ],
+              "count": 4,
+              "range": 42000,
+              "required": false
+            },
+            {
+              "types": [
+                23990,
+                23991
+              ],
+              "count": 4,
+              "range": 75000,
+              "required": false
+            },
+            {
+              "types": [
+                24076,
+                24075
+              ],
+              "count": 4,
+              "range": 75000,
+              "required": false
+            },
+            {
+              "types": [
+                17082,
+                17071
+              ],
+              "count": 2,
+              "range": 75000,
+              "required": false
+            },
+            {
+              "types": [
+                24021,
+                24020
+              ],
+              "count": 3,
+              "range": 80000
+            },
+            {
+              "types": [
+                24158,
+                24157
+              ],
+              "count": 1,
+              "range": 80000
+            }
+          ],
+          "roomId": 3531
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 3532,
+          "entryObjectId": 70405
+        },
+        {
+          "roomId": 3531,
+          "entryObjectId": 70402
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 70404,
+          "destinationRoomId": 3531
+        }
+      ]
+    },
+    {
       "missionId": 2248,
       "level": 1,
       "difficulty": 500,
@@ -3028,6 +3382,283 @@
       ]
     },
     {
+      "missionId": 924,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Seek_and_Destroy_(Guristas_Pirates)_(Level_3)",
+      "sourceRevision": "oldid=218636",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17006,
+                17001
+              ],
+              "count": 4,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                16995,
+                16991
+              ],
+              "count": 2,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                17001,
+                17006
+              ],
+              "count": 4,
+              "range": 110000,
+              "required": true
+            },
+            {
+              "types": [
+                24015
+              ],
+              "count": 1,
+              "range": 110000,
+              "required": true
+            }
+          ],
+          "roomId": 17113
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 17114,
+          "entryObjectId": 758894
+        },
+        {
+          "roomId": 17113,
+          "entryObjectId": 758889
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 758893,
+          "destinationRoomId": 17113
+        }
+      ]
+    },
+    {
+      "missionId": 927,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Seek_and_Destroy_(Angel_Cartel)_(Level_3)",
+      "sourceRevision": "oldid=201875",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16561,
+                16562
+              ],
+              "count": 1,
+              "range": 25000,
+              "required": true
+            },
+            {
+              "types": [
+                23974,
+                23975
+              ],
+              "count": 2,
+              "range": 25000,
+              "required": true
+            },
+            {
+              "types": [
+                16896,
+                16891
+              ],
+              "count": 1,
+              "range": 25000,
+              "required": true
+            },
+            {
+              "types": [
+                16874,
+                16885
+              ],
+              "count": 4,
+              "range": 55000,
+              "required": true
+            },
+            {
+              "types": [
+                24004
+              ],
+              "count": 1,
+              "range": 55000,
+              "required": true
+            }
+          ],
+          "roomId": 17124
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 17125,
+          "entryObjectId": 758931
+        },
+        {
+          "roomId": 17124,
+          "entryObjectId": 758924
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 758930,
+          "destinationRoomId": 17124
+        }
+      ]
+    },
+    {
+      "missionId": 930,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Seek_and_Destroy_(Blood_Raiders)_(Level_3)",
+      "sourceRevision": "oldid=211495",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16564
+              ],
+              "count": 1,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                23981,
+                23980
+              ],
+              "count": 4,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                24100
+              ],
+              "count": 1,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                16953,
+                16940
+              ],
+              "count": 3,
+              "range": 50000,
+              "required": true
+            },
+            {
+              "types": [
+                24011
+              ],
+              "count": 1,
+              "range": 50000,
+              "required": true
+            }
+          ],
+          "roomId": 17143
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 17144,
+          "entryObjectId": 759006
+        },
+        {
+          "roomId": 17143,
+          "entryObjectId": 758998
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 759005,
+          "destinationRoomId": 17143
+        }
+      ]
+    },
+    {
+      "missionId": 936,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Seek_and_Destroy_(Serpentis)_(Level_3)",
+      "sourceRevision": "oldid=193399",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16569
+              ],
+              "count": 2,
+              "range": 25000,
+              "required": true
+            },
+            {
+              "types": [
+                17042
+              ],
+              "count": 4,
+              "range": 25000,
+              "required": true
+            },
+            {
+              "types": [
+                24024
+              ],
+              "count": 1,
+              "range": 25000,
+              "required": true
+            }
+          ],
+          "roomId": 17139
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 17140,
+          "entryObjectId": 758989
+        },
+        {
+          "roomId": 17139,
+          "entryObjectId": 758984
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 758988,
+          "destinationRoomId": 17139
+        }
+      ]
+    },
+    {
       "missionId": 1180,
       "level": 1,
       "difficulty": 500,
@@ -3471,6 +4102,604 @@
       ]
     },
     {
+      "missionId": 1188,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Retribution_(Angel_Cartel)",
+      "sourceRevision": "oldid=201368",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16882,
+                16887
+              ],
+              "count": 2,
+              "range": 30000,
+              "required": false
+            },
+            {
+              "types": [
+                16889,
+                16898
+              ],
+              "count": 2,
+              "range": 30000,
+              "required": false
+            },
+            {
+              "types": [
+                24112,
+                24111
+              ],
+              "count": 3,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                16877,
+                16886
+              ],
+              "count": 6,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                16875,
+                16884
+              ],
+              "count": 3,
+              "range": 50000,
+              "required": false
+            },
+            {
+              "types": [
+                16561,
+                16562
+              ],
+              "count": 3,
+              "range": 75000,
+              "required": false
+            },
+            {
+              "types": [
+                23999,
+                24004
+              ],
+              "count": 1,
+              "range": 75000,
+              "required": false
+            }
+          ],
+          "roomId": 3200
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 3199,
+          "entryObjectId": 60785
+        },
+        {
+          "roomId": 3200,
+          "entryObjectId": 60787
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 60784,
+          "destinationRoomId": 3200
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 60799,
+          "required": true,
+          "completesMission": true
+        }
+      ]
+    },
+    {
+      "missionId": 1187,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Retribution_(Guristas_Pirates)",
+      "sourceRevision": "oldid=218717",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                16980,
+                17000
+              ],
+              "count": 4,
+              "range": 30000,
+              "required": false
+            },
+            {
+              "types": [
+                16982,
+                17004
+              ],
+              "count": 5,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                16991,
+                16995
+              ],
+              "count": 3,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                16565,
+                16566
+              ],
+              "count": 3,
+              "range": 75000,
+              "required": false
+            },
+            {
+              "types": [
+                24014
+              ],
+              "count": 1,
+              "range": 75000,
+              "required": false
+            }
+          ],
+          "roomId": 3196
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 3195,
+          "entryObjectId": 60739
+        },
+        {
+          "roomId": 3196,
+          "entryObjectId": 60741
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 60738,
+          "destinationRoomId": 3196
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 60753,
+          "required": true,
+          "completesMission": true
+        }
+      ]
+    },
+    {
+      "missionId": 1190,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Retribution_(Serpentis)",
+      "sourceRevision": "oldid=207699",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17278,
+                17113
+              ],
+              "count": 2,
+              "range": 33000,
+              "required": false
+            },
+            {
+              "types": [
+                17044,
+                17033
+              ],
+              "count": 2,
+              "range": 33000,
+              "required": false
+            },
+            {
+              "types": [
+                16569
+              ],
+              "count": 2,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                17112,
+                17114
+              ],
+              "count": 2,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                17120,
+                17116
+              ],
+              "count": 8,
+              "range": 51000,
+              "required": false
+            },
+            {
+              "types": [
+                17122,
+                17119
+              ],
+              "count": 3,
+              "range": 77000,
+              "required": false
+            },
+            {
+              "types": [
+                16569
+              ],
+              "count": 1,
+              "range": 77000,
+              "required": false
+            },
+            {
+              "types": [
+                24024,
+                24003
+              ],
+              "count": 1,
+              "range": 77000,
+              "required": false
+            }
+          ],
+          "roomId": 2966
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2965,
+          "entryObjectId": 56322
+        },
+        {
+          "roomId": 2966,
+          "entryObjectId": 56324
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 56321,
+          "destinationRoomId": 2966
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 56336,
+          "required": true,
+          "completesMission": true
+        }
+      ]
+    },
+    {
+      "missionId": 1186,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Retribution_(Sansha's_Nation)",
+      "sourceRevision": "oldid=191886",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17072,
+                17063
+              ],
+              "count": 2,
+              "range": 35000,
+              "required": false
+            },
+            {
+              "types": [
+                17062,
+                17083
+              ],
+              "count": 2,
+              "range": 35000,
+              "required": false
+            },
+            {
+              "types": [
+                17059,
+                17067
+              ],
+              "count": 1,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                16568,
+                16567
+              ],
+              "count": 2,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                17083,
+                17062
+              ],
+              "count": 1,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                17059,
+                17067
+              ],
+              "count": 1,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                17070,
+                17080
+              ],
+              "count": 2,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                17059,
+                17067
+              ],
+              "count": 4,
+              "range": 75000,
+              "required": false
+            },
+            {
+              "types": [
+                24075,
+                24076
+              ],
+              "count": 2,
+              "range": 75000,
+              "required": false
+            }
+          ],
+          "roomId": 14123
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 14122,
+          "entryObjectId": 593784
+        },
+        {
+          "roomId": 14123,
+          "entryObjectId": 593785
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 593783,
+          "destinationRoomId": 14123
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 593786,
+          "required": true,
+          "completesMission": true
+        }
+      ]
+    },
+    {
+      "missionId": 4838,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Save_the_Trees",
+      "sourceRevision": "oldid=215978; build-3662168 numbered chain and cargo",
+      "waves": [],
+      "chain": {
+        "rootMissionId": 4838,
+        "previousMissionId": 0,
+        "nextMissionId": 4839
+      }
+    },
+    {
+      "missionId": 4839,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Save_the_Trees",
+      "sourceRevision": "oldid=215978; build-3662168 numbered chain and cargo",
+      "waves": [],
+      "chain": {
+        "rootMissionId": 4838,
+        "previousMissionId": 4838,
+        "nextMissionId": 4840
+      }
+    },
+    {
+      "missionId": 4840,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Save_the_Trees",
+      "sourceRevision": "oldid=215978; build-3662168 numbered chain and cargo",
+      "waves": [],
+      "chain": {
+        "rootMissionId": 4838,
+        "previousMissionId": 4839,
+        "nextMissionId": 0
+      }
+    },
+    {
+      "missionId": 4841,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Missions",
+      "sourceRevision": "oldid=230834; build-3662168 numbered chain and cargo",
+      "waves": [],
+      "chain": {
+        "rootMissionId": 4841,
+        "previousMissionId": 0,
+        "nextMissionId": 4842
+      }
+    },
+    {
+      "missionId": 4842,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Missions",
+      "sourceRevision": "oldid=230834; build-3662168 numbered chain and cargo",
+      "waves": [],
+      "chain": {
+        "rootMissionId": 4841,
+        "previousMissionId": 4841,
+        "nextMissionId": 4843
+      }
+    },
+    {
+      "missionId": 4843,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Missions",
+      "sourceRevision": "oldid=230834; build-3662168 numbered chain and cargo",
+      "waves": [],
+      "chain": {
+        "rootMissionId": 4841,
+        "previousMissionId": 4842,
+        "nextMissionId": 0
+      }
+    },
+    {
+      "missionId": 4844,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Hunting_a_Heretic",
+      "sourceRevision": "oldid=192145; build-3662168 numbered chain and cargo",
+      "waves": [],
+      "chain": {
+        "rootMissionId": 4844,
+        "previousMissionId": 0,
+        "nextMissionId": 4845
+      }
+    },
+    {
+      "missionId": 4845,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Hunting_a_Heretic",
+      "sourceRevision": "oldid=192145; build-3662168 numbered chain and cargo",
+      "waves": [],
+      "chain": {
+        "rootMissionId": 4844,
+        "previousMissionId": 4844,
+        "nextMissionId": 4846
+      }
+    },
+    {
+      "missionId": 4846,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/Hunting_a_Heretic",
+      "sourceRevision": "oldid=192145; build-3662168 numbered chain and cargo",
+      "waves": [],
+      "chain": {
+        "rootMissionId": 4844,
+        "previousMissionId": 4845,
+        "nextMissionId": 0
+      }
+    },
+    {
+      "missionId": 4847,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/For_the_Troops",
+      "sourceRevision": "oldid=231115; build-3662168 numbered chain and cargo",
+      "waves": [],
+      "chain": {
+        "rootMissionId": 4847,
+        "previousMissionId": 0,
+        "nextMissionId": 4849
+      }
+    },
+    {
+      "missionId": 4849,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/For_the_Troops",
+      "sourceRevision": "oldid=231115; build-3662168 numbered chain and cargo",
+      "waves": [],
+      "chain": {
+        "rootMissionId": 4847,
+        "previousMissionId": 4847,
+        "nextMissionId": 4853
+      }
+    },
+    {
+      "missionId": 4853,
+      "level": 1,
+      "difficulty": 500,
+      "storyline": false,
+      "offerOrder": 1,
+      "source": "https://wiki.eveuniversity.org/For_the_Troops",
+      "sourceRevision": "oldid=231115; build-3662168 numbered chain and cargo",
+      "waves": [],
+      "chain": {
+        "rootMissionId": 4847,
+        "previousMissionId": 4849,
+        "nextMissionId": 0
+      }
+    },
+    {
       "missionId": 937,
       "level": 1,
       "difficulty": 500,
@@ -3576,6 +4805,237 @@
         {
           "fromObjectId": 758958,
           "destinationRoomId": 17131
+        }
+      ]
+    },
+    {
+      "missionId": 1189,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Retribution_(Sansha's_Nation)",
+      "sourceRevision": "oldid=191886",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17072,
+                17063
+              ],
+              "count": 2,
+              "range": 35000,
+              "required": false
+            },
+            {
+              "types": [
+                17062,
+                17083
+              ],
+              "count": 2,
+              "range": 35000,
+              "required": false
+            },
+            {
+              "types": [
+                17059,
+                17067
+              ],
+              "count": 1,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                16568,
+                16567
+              ],
+              "count": 2,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                17083,
+                17062
+              ],
+              "count": 1,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                17059,
+                17067
+              ],
+              "count": 1,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                17070,
+                17080
+              ],
+              "count": 2,
+              "range": 45000,
+              "required": false
+            },
+            {
+              "types": [
+                17059,
+                17067
+              ],
+              "count": 4,
+              "range": 75000,
+              "required": false
+            },
+            {
+              "types": [
+                24075,
+                24076
+              ],
+              "count": 2,
+              "range": 75000,
+              "required": false
+            }
+          ],
+          "roomId": 14123
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 14122,
+          "entryObjectId": 593784
+        },
+        {
+          "roomId": 14123,
+          "entryObjectId": 593785
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 593783,
+          "destinationRoomId": 14123
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 593786,
+          "required": true,
+          "completesMission": true
+        }
+      ]
+    },
+    {
+      "missionId": 1191,
+      "level": 3,
+      "difficulty": 500,
+      "storyline": false,
+      "source": "https://wiki.eveuniversity.org/Retribution_(Serpentis)",
+      "sourceRevision": "oldid=207699",
+      "offerOrder": 1,
+      "deadspace": true,
+      "waves": [
+        {
+          "groups": [
+            {
+              "types": [
+                17278,
+                17113
+              ],
+              "count": 2,
+              "range": 33000,
+              "required": false
+            },
+            {
+              "types": [
+                17044,
+                17033
+              ],
+              "count": 2,
+              "range": 33000,
+              "required": false
+            },
+            {
+              "types": [
+                16569
+              ],
+              "count": 2,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                17112,
+                17114
+              ],
+              "count": 2,
+              "range": 40000,
+              "required": false
+            },
+            {
+              "types": [
+                17120,
+                17116
+              ],
+              "count": 8,
+              "range": 51000,
+              "required": false
+            },
+            {
+              "types": [
+                17122,
+                17119
+              ],
+              "count": 3,
+              "range": 77000,
+              "required": false
+            },
+            {
+              "types": [
+                16569
+              ],
+              "count": 1,
+              "range": 77000,
+              "required": false
+            },
+            {
+              "types": [
+                24024,
+                24003
+              ],
+              "count": 1,
+              "range": 77000,
+              "required": false
+            }
+          ],
+          "roomId": 2966
+        }
+      ],
+      "rooms": [
+        {
+          "roomId": 2965,
+          "entryObjectId": 56322
+        },
+        {
+          "roomId": 2966,
+          "entryObjectId": 56324
+        }
+      ],
+      "gates": [
+        {
+          "fromObjectId": 56321,
+          "destinationRoomId": 2966
+        }
+      ],
+      "structures": [
+        {
+          "objectId": 56336,
+          "required": true,
+          "completesMission": true
         }
       ]
     },

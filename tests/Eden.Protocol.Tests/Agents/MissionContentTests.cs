@@ -36,7 +36,10 @@ public sealed partial class MissionContentTests
     private static TheoryData<int, int> Cases(bool combat)
     {
         TheoryData<int, int> cases = new();
-        foreach (var mission in Content().Missions.Where(m => combat ? m.OfferOrder > 0 && !m.Waves.IsEmpty : m.Waves.IsEmpty && !m.Mining))
+        foreach (
+            var mission in Content()
+                .Missions.Where(m => combat ? m.OfferOrder > 0 && !m.Waves.IsEmpty : m.Waves.IsEmpty && !m.Mining && m.Chain is null)
+        )
         {
             cases.Add(mission.MissionId, mission.Level);
         }
@@ -50,8 +53,8 @@ public sealed partial class MissionContentTests
         using CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath);
         var profiles = MissionCatalog.Read(catalog);
         Assert.Equal(Content().Missions.Length, profiles.Length);
-        Assert.Equal(59, profiles.Count(p => p.Kind == MissionKind.Combat));
-        Assert.Equal(274, profiles.Count(p => p.Kind == MissionKind.Courier));
+        Assert.Equal(74, profiles.Count(p => p.Kind == MissionKind.Combat));
+        Assert.Equal(286, profiles.Count(p => p.Kind == MissionKind.Courier));
         Assert.Equal(23, profiles.Count(p => p.Kind == MissionKind.Mining));
         foreach (var profile in profiles)
         {

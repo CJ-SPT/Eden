@@ -2,6 +2,40 @@
 
 [Protocol index](../protocol.md) / [Documentation index](../README.md)
 
+## Mission branch integration — November 15, 2026
+
+Merged the verified combat-content and resident-chain work (`c7a49531`, `a8c66532`, `26036127`, `353bcc70`) with
+main's later mission fixes at `495af24e`. The merged agent pool retains level-specific catalog loading, supplier and
+enemy-faction checks, root-only chain selection and complete-chain eligibility. Main's collision-cleared NPC spawns,
+expired storyline release and eligible-storyline filtering remain in place. All historical records below are preserved.
+
+A new resident regression crosses the changed ownership boundary: an ordinary chain stage reaches the sixteenth
+completion with no eligible storyline content. Its cargo consumption and payout commit, the next chain stage is
+offered once, and the earned storyline counter remains pending. This prevents a missing storyline pool from rolling
+back the chain handoff. No additional definitions or save-schema changes are introduced by the merge.
+
+**Automated validation:** Seven initial integration cases passed (25.11 s build, 18.00 s tests), and the new exact
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionChainTests.StorylineThresholdWithoutEligibleContentCannotRollbackAChainHandoff`
+regression passed (8.42 s build, 7.87 s tests). Final ordered merged validation passed in **424.65 seconds**:
+tool restore, solution restore/build (4.79 s build, zero warnings/errors), **447 affected mission tests** (6 m 14 s
+test duration), both Python policy suites (8 catalog and 9 formatting cases), all 16 mission-admission checks,
+formatting verification across 2,290 files and the 140-column check. The final .NET filter was:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Agents&FullyQualifiedName!~EveryAdmittedDeliveryCanBeOfferedTransportedReopenedAndPaidExactlyOnce
+```
+
+The unchanged 274-case delivery matrix passed in the branch milestone and was not repeated for merge resolution.
+The final run includes all admitted combat variants, spawn-clearance/hull variants, storyline and catalog lookup
+regressions, resident chain transitions and protocol behavior. Manifest and fixture reproduction was byte-identical;
+the audit CSV matched after normalizing Git checkout line endings. Documentation links, UTF-8, whitespace, conflict
+marker and diff checks passed. Final TRX: `artifacts/feature-tests/results/mission-merge/mission-merge.trx`.
+No full .NET suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Inspect a chain continuation and a new combat pocket in the native client.
+
 ## Mission spawn clearance and storyline settlement — November 15, 2026
 
 The user reported mission NPCs appearing inside a structure and being ejected at high speed; the mission name was unknown.
@@ -48,6 +82,321 @@ unverified.
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** Observe a newly spawned Angel Cartel Spies group near its structure and confirm natural motion.
+
+## Resident mission-chain progression — November 15, 2026
+
+This milestone targets a shared capability behind **278** blocked ordinary mission definitions. Typed linear-chain
+rules validate complete topology, positive identities, consistent level/lifecycle, predecessor links, reachability and
+cycle rejection. Explicit root/previous/next metadata applies to any supported mission kind. Chain members after the
+root are excluded from normal offer rotation, and the entire chain must have available catalog content and eligible
+supplier/enemy factions before its root can be offered. Title similarity never selects a continuation at runtime.
+
+The existing resident action closes the completed stage, consumes cargo, pays ISK/bonus/LP/standing, advances the
+ordinary storyline counter and creates the next offer in one commit. Any failure rolls all of these back, including
+continuation identity allocation. Accepting a later stage requires the immediate preceding saved row for that pilot
+and agent to be its completed predecessor. The ordinary mission rows themselves persist chain progress; no second
+progress store, schema migration or gameplay SQL fallback is added. Chain mutation requires the resident owner.
+
+The completion reply retains the finished mission and its completion flag. After the committed settlement the
+protocol queues `OnAgentMissionChange("completed", agent)` followed by `("offered", agent)`. The next offer is already
+in the journal and current-agent reads; the existing Request/View action opens it with its own acceptance token.
+No Blue, transport, Destiny or new client wire format is introduced. Reward sharing still advances only the issuing
+pilot's chain. No client was launched or acceptance observed.
+
+Cancellation tests exposed a checkpoint projection ordering defect: dirty mission rows could insert a replacement
+active offer before closing the prior row, violating the existing unique active pilot/agent index. Saved-mission
+projection now orders closed/deleted rows before active rows across all projection batches. The owner captures the
+same immutable generation as before; relational projection and file writing remain outside the world owner.
+
+Four complete level-one Distribution sequences exercise the engine and add **12** ordinary courier definitions:
+
+| Chain | Ordered mission IDs | Evidence |
+| --- | --- | --- |
+| Save the Trees | 4838, 4839, 4840 | [University revision 215978](https://wiki.eveuniversity.org/index.php?title=Save_the_Trees&oldid=215978) |
+| Hauling Fur | 4841, 4842, 4843 | Pinned numbered native records, cargo, faction and continuation-message markers |
+| Hunting a Heretic | 4844, 4845, 4846 | [University revision 192145](https://wiki.eveuniversity.org/index.php?title=Hunting_a_Heretic&oldid=192145) |
+| For the Troops | 4847, 4849, 4853 | [University revision 231115](https://wiki.eveuniversity.org/index.php?title=For_the_Troops&oldid=231115) |
+
+The [general University chain contract, revision 230834](https://wiki.eveuniversity.org/index.php?title=Missions&oldid=230834)
+describes automatic continuation and possible mixed mission types/shared timers. The three dedicated reports supply
+ordered level-one courier objectives; Hauling Fur's sequence is reconstructed independently from its unique complete
+native numbered family and next-mission messages. The compiler checks every bound mission's exact cargo type,
+quantity, singleton state, supplier faction, stage number, lifecycle and nonterminal continuation marker. Missing or
+changed fields fail export. No hidden server chain IDs are claimed to have been recovered.
+
+Compared the local evejs reference (no Git metadata):
+
+| Source | SHA-256 |
+| --- | --- |
+| `server/src/config/securityMissionChains.js` | `836a2aa75f6e9778cd015110ff0d03038f0127fba5f5c16a2da8e234ff1aa630` |
+| `server/src/config/securityMissionChains.json` | `550919b0091f901cee4b1ce5dc08430a34b1fbc0aea6e1426b0284a1700b4d3e` |
+| `server/src/services/agent/missionAuthority.js` | `969438da844056806b3bd989388881f0522d8a5f4fc69bee51227b12233ae5b1` |
+| `server/src/services/agent/agentMissionRuntime.js` | `f9039040331e109b166e9e73d916e11b58c16f13b652d40ba1fa0c4838daf7fa` |
+
+The reference separates chain-continuation selection from the ordinary pool and stages continuation with reward
+settlement. Its baseline explicitly marks title/wiki pairings and closest-ID tie breaks provisional. Eden uses
+explicit complete sequences with topology validation and independently binds native build-3662168 records;
+none of that implementation or generated chain data was copied.
+
+Existing Eden policy applies per stage: ordinary supplier restrictions, cargo volume level bands (all added stages
+are level one), station routes and issuing-station pickup, rewards and six-hour bonus. Each ordinary stage counts
+once toward the sixteen-mission storyline threshold. Each stage receives a fresh seven-day offer timer, and acceptance
+starts its completion timer. These are explicit reconstruction policies. Decline, quit or expiry ends the current
+run without offering another part; normal root rotation resumes. Shared timers, alternate branches, fixed-agent
+career/COSMOS lifecycles and unsourced combat parts remain blocked rather than being inferred.
+
+The pool is **383 admitted / 2,509 blocked**: 74 combat, **194 ordinary courier** (182 standalone plus 12 chain stages),
+92 delivery storylines and 23 mining definitions. The remaining **266** ordinary chain records are now labeled
+`Requires complete mission-chain bindings or additional part mechanics`, distinguishing content/part dependencies
+from the implemented linear sequence owner. The separate 1,505 special-lifecycle and 580 roster/script buckets are
+not bypassed. The fixture adds 9 types and 200 source records, preserving all previous values.
+
+**Automated validation:** The exact initial development filter
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionChainTests.EveryCourierChainOffersOnlyItsRootAndAdvancesOnceAcrossCheckpoint`
+passed all four complete sequences (9.21 s build, 17.60 s test invocation), after correcting two test-fixture compile
+errors. The first combined chain/rule run passed 25 cases and failed four cancellation cases, exposing the unique
+active-slot checkpoint ordering defect above. The corrected exact cancellation and continuation-allocation filters
+passed all five cases (16.38 s build, 18.45 s tests). Those cases explicitly flush and reopen checkpoints.
+
+Final ordered root validation passed in **341.70 seconds**: tool restore, solution restore/build (13.84 s build,
+zero warnings/errors), **440 affected .NET tests** (4 m 53 s test duration), both Python policy suites (8 catalog and
+9 formatting cases), all **16 mission-admission checks**, formatting verification across 2,246 files and the
+140-column check. The final .NET run includes all 274 existing delivery variants and 30 new chain/rule cases.
+Filter:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionChain|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionPersistenceTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionProtocolTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionRulesTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionBonusTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionDeadlineTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionSingletonTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionContentTests.EveryAdmittedDeliveryCanBeOfferedTransportedReopenedAndPaidExactlyOnce|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionContentTests.ExpandedContentLoadsEveryDefinitionAndCorrectsNuisanceFactionRosters|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionContentTests.SupplierRestrictionsFilterOffersAndRejectInvalidSavedAcceptanceWithoutCargo|FullyQualifiedName~Eden.Protocol.Tests.Persistence.IncrementalCheckpointTests
+```
+
+Coverage includes complete root-only sequences, saved continuation identities/quotes/deadlines after restart,
+immediate predecessor and supplier rejection, incomplete content exclusion, concurrent exactly-once turn-in,
+base/bonus payout overflow, continuation identity exhaustion after settlement begins, rollback of cargo/rewards/
+closure/storyline progress, native completion/offer notification order and stale tokens. Decline, quit and exact
+offer/acceptance expiry return to the root pool and survive checkpoints. Pure rules reject missing, disconnected,
+duplicate, cyclic, wrong-level and wrong-lifecycle chains and unfinished/incorrect predecessors.
+Manifest/audit/fixture reproduction was byte-identical; existing definitions and serialized fixture records remain
+unchanged. Documentation links, UTF-8, whitespace and `git diff --check` passed. Final TRX:
+`artifacts/feature-tests/results/mission-chains/mission-chains.trx`.
+No full .NET suite was requested or run. Native rendering, input and gameplay feel remain unverified.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Complete one full chain and inspect the automatic next offer in the native journal;
+decline a later stage and verify that the agent returns to ordinary offers.
+
+## Verified spy objectives — November 15, 2026
+
+Combat-content milestone three adds five definitions, bringing the pool to **371 admitted / 2,521 blocked**:
+**74 combat**, 182 ordinary deliveries, 92 delivery storylines and 23 mining definitions. The broad missing-roster/script
+bucket falls from 585 to **580**. Existing resident mission, combat, reward and checkpoint operations own all progress.
+No gameplay SQL fallback, schema or Blue/Destiny format changes were introduced.
+
+| Encounter | Mission / dungeon | Combat entry | Required targets | Optional guards |
+| --- | --- | --- | --- | --- |
+| Guristas Spies level 2 | 888 / 214 | 53018 | Group 2: two frigates and two destroyers | 6 |
+| Serpentis Spies level 3 | 898 / 223 | 53182 | Group 3: five frigates and three cruiser spies | 6 |
+| Sansha Spies level 2 | 902 / 218 | 53098 | Two Centior Cannibal spies | 9 |
+| Sansha Spies level 3 | 901 / 219 | 51807 | Two Centatis Specter spies | 9 |
+| Sansha Spies level 4 | 900 / 220 | 70402 | Group 3: three Centatis Devil/Wraith spies and one Centus Dark Lord/Overlord | 15 |
+
+Each pocket retains the catalog's empty entrance, acceleration gate and native room geometry. Required groups follow
+the explicit University blitzes, including the level-four Sansha battleship; killing spies alone cannot finish that
+variant. No cargo or structure destruction is required. Report counts use the existing upper-bound policy and NPC
+alternatives resolve independently against build 3662168. The Serpentis report's `Infanty` typo resolves to
+`Corelior Infantry`; its `Serpentis Spy` is actual pinned cruiser type **2379**.
+
+Reviewed University revisions:
+[Guristas level 2, 192010](https://wiki.eveuniversity.org/index.php?title=The_Guristas_Spies_(Level_2)&oldid=192010),
+[Serpentis level 3, 223606](https://wiki.eveuniversity.org/index.php?title=The_Serpentis_Spies_(Level_3)&oldid=223606),
+[Sansha level 2, 192040](https://wiki.eveuniversity.org/index.php?title=The_Sansha_Spies_(Level_2)&oldid=192040),
+[Sansha level 3, 192041](https://wiki.eveuniversity.org/index.php?title=The_Sansha_Spies_(Level_3)&oldid=192041), and
+[Sansha level 4, 193406](https://wiki.eveuniversity.org/index.php?title=The_Sansha_Spies_(Level_4)&oldid=193406).
+The Sansha reports give spy display aliases rather than item types. Independent EVE-Survival reports identify
+the underlying hulls explicitly: [level 2, July 3, 2017 10:25 UTC](https://eve-survival.org/?wakka=SanshaSpies2)
+names **23989 Centior Cannibal**; [level 3, July 14, 2012 09:22 UTC](https://eve-survival.org/?wakka=SanshaSpies3)
+names **24019 Centatis Specter**; [level 4, December 26, 2013 13:06 UTC](https://eve-survival.org/?wakka=SanshaSpies4)
+names **24021 Centatis Devil / 24020 Centatis Wraith**. The pinned dungeon's two type-17157 sentries resolve the
+level-two `Sansha Sentry I` alias to `Tower Sentry Sansha I`.
+
+The local evejs content packs (no Git metadata) were compared for levels two, three and four:
+
+| Pack | SHA-256 |
+| --- | --- |
+| `evejs-security-missions-level-2-1.1.9.json` | `04765eddeb4a5825e32d98347babccee1463b5cd5b73a56c6e7af874c4d05df5` |
+| `evejs-security-missions-level-3-1.1.9.json` | `f59bcb999336ddd52045af6ab9e82701431fdefaaf2508871aa8f51d0cb42fd1` |
+| `evejs-security-missions-level-4-1.1.9.json` | `351fe341993c14c2dc039ce9e4f7549175ad07e9950d8d423425dd16dda56376` |
+
+These use dungeon build 3579973 and target build 3396210. Guristas level two and Serpentis level three choose the
+same University reports, but retain provisional kill-all objectives. Sansha levels two/three choose the independently
+reviewed Survival aliases, again with provisional kill-all completion. Level four uses selected encounters, but its
+parsed alternatives lose `Centatis Wraith` and `Centus Mutant Lord`; Eden binds both directly from the reports.
+No evejs code or generated template was copied.
+
+The University level-four Sansha group-3 distance is 80 km, versus Survival's 90–95 km; Eden uses the University
+distance with its existing native-anchor selection policy. Level-three Sansha group 1 uses Survival's reported
+55 km, absent from University. Fixed sentries use native positions. Custom spy labels, report-specific group aggro,
+optional scenery loot and report reward/standing magnitudes are outside this content reconstruction. Existing Eden
+rules apply, and Sansha spies display their actual catalog hull names. Other spies, including timed Serpentis 895,
+remain blocked pending verified content. The fixture adds 23 types and 91 source records, preserving all prior values.
+
+**Automated validation:** The exact development filter
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionContentTests.SpyBlitzRequiresEveryReportedTargetAndPreservesOptionalGuardsAcrossCheckpoint`
+passed **10 cases** (34.17 s build, 25.58 s test invocation). Both blitz and guard-clear cases check empty entrance
+isolation, native objective tracking, early turn-in rejection, every required kill, rolled-back final kills, incomplete
+checkpoint/reopen with stable NPC identities, optional survivors and exactly-once turn-in. The existing Seek theory
+shares the same assertions and all six of its cases passed in the broader run.
+
+The first ordered root sequence passed tool/solution restore and build, then stopped after **215 passed / 1 failed**
+in the **216-case** affected run (3 m 58 s test duration). The failure was the layout test's stale expected combat
+count of 69, before its geometry assertions. After correcting it to 74, the exact
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionLayoutTests.EveryExistingMissionRetainsNativeSceneryAndRoomLocalSpawnAnchors`
+filter passed (11.99 s build, 12.04 s test invocation), including clearance and scenery checks for all new pockets.
+Broader filter:
+
+```text
+(FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionContentTests&FullyQualifiedName!~EveryAdmittedDeliveryCanBeOfferedTransportedReopenedAndPaidExactlyOnce)|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionLayoutTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionGateTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionGateAccessTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionTrackerTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionStructureTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionEncounterTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionRulesTests
+```
+
+The unchanged 274-case delivery theory was not repeated. Final ordered root validation passed in **60.83 seconds**:
+tool restore, solution restore/build (zero warnings/errors), two focused .NET cases, both Python policy suites
+(8 catalog and 9 formatting cases), all 13 mission-admission checks, formatting verification across 2,242 files and
+the 140-column check. The final .NET filter combines these exact methods with `|`:
+
+```text
+FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionLayoutTests.EveryExistingMissionRetainsNativeSceneryAndRoomLocalSpawnAnchors|FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionContentTests.ExpandedContentLoadsEveryDefinitionAndCorrectsNuisanceFactionRosters
+```
+
+Manifest/audit/fixture reproduction was byte-identical. Semantic and serialized comparison found no changes to
+previous definitions, types or fixture records; the fixture diff consists entirely of additions. Documentation
+links, UTF-8, whitespace and `git diff --check` passed. Broader TRX:
+`artifacts/feature-tests/results/spy-content/spy-content.trx`; final TRX:
+`artifacts/feature-tests/results/spy-content-final/spy-content-final.trx`.
+No full .NET suite was requested or run. Native rendering, input and gameplay feel remain unverified.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Inspect native spy hull names and objective progress; complete a level-four Sansha
+group-3 blitz with the other groups alive.
+
+## Level-three combat content and Sansha outposts — November 15, 2026
+
+Combat-content milestone two admits six more definitions after the first milestone was verified on the remote branch.
+The pool now contains **366 admitted / 2,526 blocked**: **69 combat**, 182 ordinary deliveries, 92 delivery storylines
+and 23 mining definitions. The broad missing-roster/script bucket falls from 591 to **585**, ten fewer than the
+original 595. These are content additions under the existing resident world/checkpoint owner; no gameplay SQL
+fallback, schema, reward rules or wire-format changes were introduced.
+
+| Encounter | Mission IDs | Dungeon / combat entry | Required objective | Optional guards |
+| --- | --- | --- | --- | --- |
+| Seek and Destroy, Guristas level 3 | 924 | 184 / 758889 | Four frigates and one battlecruiser in group 2 | 6 |
+| Seek and Destroy, Angel level 3 | 927 | 193 / 758924 | All 9 initial enemies | 0 |
+| Seek and Destroy, Blood level 3 | 930 | 208 / 758998 | Three frigates and one battlecruiser in group 2 | 6 |
+| Seek and Destroy, Serpentis level 3 | 936 | 202 / 758984 | All 7 initial enemies | 0 |
+| Retribution, Sansha level 3 | 1186, 1189 | 286 / 593785 | Outpost object 593786, type 17381 | 17 |
+
+Each pocket retains its catalog entrance and acceleration gate. The exporter resolves all reported NPC alternatives
+to exact pinned types. Report revisions reviewed directly and compared with evejs:
+[Guristas Seek 218636](https://wiki.eveuniversity.org/index.php?title=Seek_and_Destroy_(Guristas_Pirates)_(Level_3)&oldid=218636),
+[Angel Seek 201875](https://wiki.eveuniversity.org/index.php?title=Seek_and_Destroy_(Angel_Cartel)_(Level_3)&oldid=201875),
+[Blood Seek 211495](https://wiki.eveuniversity.org/index.php?title=Seek_and_Destroy_(Blood_Raiders)_(Level_3)&oldid=211495),
+[Serpentis Seek 193399](https://wiki.eveuniversity.org/index.php?title=Seek_and_Destroy_(Serpentis)_(Level_3)&oldid=193399), and
+[Sansha Retribution 191886](https://wiki.eveuniversity.org/index.php?title=Retribution_(Sansha%27s_Nation)&oldid=191886).
+Blood's generic objective header says all enemies, but its explicit blitz identifies group 2; Eden follows that
+specific completion description. Serpentis gives no group distance, so its 25 km placement hint is explicit Eden
+policy. Its optional Chief Guard after completion has no published timing/count and is not fabricated.
+
+The evejs level-three pack is the same hash and cross-build snapshot recorded in milestone one. Its selected
+reports and initial quantities match, but Blood and Sansha Retribution retain provisional kill-all completion.
+Eden uses the explicit group-2/outpost blitzes instead. **Correction to milestone one's initial inference:** a wider
+pinned catalog search resolves the report's `Sansha Berserker/Demon` aliases to **16568 `Sansha's Berserker`** and
+**16567 `Sansha's Demon`**, both elite frigates in group 624. The earlier exact-name lookup missed the possessive
+spelling. The new bindings use those types rather than evejs's `Centii Butcher` substitute. No reference implementation
+or generated template was copied. Report-specific aggro choreography and optional scenery loot remain excluded.
+
+Seek IDs 933/939 still remain blocked: their catalog dungeon 199 differs from reviewed level-one dungeon 197,
+while the level-three Sansha report cannot establish that catalog variant's roster/level binding. Empire Retribution
+and the previously identified timed/unknown reinforcement variants also remain blocked.
+The fixture adds 26 types and 102 source records over milestone one, with existing values unchanged.
+
+**Automated validation:** The exact development filter is
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionContentTests.LevelThreeSeekRequiresItsReportedTargetsAndResumesIncompleteCombatAcrossCheckpoint`.
+All **6 cases passed** (22.63 s feature build, 16.99 s test invocation). They check entrance isolation, required
+versus optional kills, failed turn-in, rolled-back final kills, unfinished checkpoints, stable NPC identities,
+completion with optional survivors and exactly-once turn-in. Sansha adds four cases to the outpost theory from
+milestone one; the existing all-content combat theory also covers all six added definitions.
+Final tool restore, solution restore and build passed (6.87 s build, no warnings/errors). This combined filter
+passed **201 tests** in **3 m 24 s**:
+
+```text
+(FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionContentTests&FullyQualifiedName!~EveryAdmittedDeliveryCanBeOfferedTransportedReopenedAndPaidExactlyOnce)|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionLayoutTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionGateTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionGateAccessTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionTrackerTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionStructureTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionEncounterTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionRulesTests
+```
+
+The unchanged 274-case delivery theory passed in milestone one and was not repeated for these combat additions.
+Both Python policy suites passed (8 catalog and 9 formatting tests), as did all 12 mission-admission tests
+(1.32 s combined). Formatting verification and the 140-column check passed. Re-exported manifest, audit and fixture
+bytes matched exactly; semantic comparison found no modified prior definitions or fixture values. No full .NET
+suite was requested or run. Native rendering, input and gameplay feel remain unverified.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Check one group-2 blitz and the Sansha outpost/elite names in the native client.
+
+## Retribution outpost missions — November 15, 2026
+
+Combat-content milestone one admits four formerly roster/script-blocked definitions. All require destruction of
+the outpost, with no mission cargo. Clearing guards alone cannot complete them; the outpost can complete them while
+guards remain alive. The pinned catalog supplies the empty entrance, one acceleration gate, combat pocket, objective
+object identity and localized name. Existing resident combat, tracking, rollback, reward and checkpoint owners apply.
+No gameplay SQL path or client/Blue/Destiny changes were added.
+
+| Variant | Mission IDs | Dungeon | Outpost object / type | Guards |
+| --- | --- | --- | --- | --- |
+| Angel | 1188 | 289 | 60799 / 16859 | 20 |
+| Guristas | 1187 | 288 | 60753 / 17382 | 16 |
+| Serpentis | 1190, 1191 | 290 | 56336 / 16855 | 21 |
+
+Reviewed University reports: [Angel, oldid 201368](https://wiki.eveuniversity.org/index.php?title=Retribution_(Angel_Cartel)&oldid=201368),
+[Guristas, oldid 218717](https://wiki.eveuniversity.org/index.php?title=Retribution_(Guristas_Pirates)&oldid=218717), and
+[Serpentis, oldid 207699](https://wiki.eveuniversity.org/index.php?title=Retribution_(Serpentis)&oldid=207699).
+Report alternatives resolve independently against build 3662168. The report's `Watchmen` resolves to pinned
+`Coreli Watchman`; no similarly named NPC or estimated type substitutes for missing data. Distances use each
+reported group's upper bound as an anchor-selection hint under the existing placement policy.
+
+Compared local evejs `evejs-security-missions-level-3-1.1.9.json`, SHA-256
+`f59bcb999336ddd52045af6ab9e82701431fdefaaf2508871aa8f51d0cb42fd1` (no Git metadata).
+It selects the same report revisions, with dungeon build 3579973 and target build 3396210. Angel and Serpentis
+already name the same objective objects; Guristas still has provisional `destroy_all_encounters`, which conflicts
+with the University's explicit outpost blitz. Eden independently binds that blitz to its own catalog's object 60753.
+No evejs implementation or generated template was copied.
+
+The same comparison found false Angel-report associations for empire-faction Retribution IDs 1192, 1194 and 1196.
+Those remain blocked. Sansha IDs 1186/1189 remain blocked because report aliases `Sansha Berserker/Demon` have no
+unambiguous pinned type binding; evejs substitutes a non-elite `Centii Butcher` and retains provisional completion.
+Optional armory loot and report-specific aggro choreography remain outside the reconstruction, as in earlier content.
+
+The regenerated pool contains **360 admitted / 2,532 blocked**, with **63 combat**, 182 ordinary deliveries,
+92 delivery storylines and 23 mining definitions. The broad missing-roster/script bucket falls from **595 to 591**.
+The offline fixture adds 22 types and 84 source records, retaining previous values.
+
+**Automated validation:** The exact development filter is
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.MissionContentTests.RetributionRequiresItsOutpostAndPreservesBlitzOrGuardClearAcrossCheckpoint`.
+The first run exposed an incorrect test assumption that structure identities are allocated only on pocket arrival;
+sites allocate them earlier. The corrected assertion checks that entrance arrival spawns no guards.
+All **8 cases passed** (5.29 s feature build, 17.06 s test invocation). Final tool restore, solution restore and build
+passed (0.91 s build, no warnings/errors). The combined filter below passed **416 tests** in **7 m 47 s**:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionContentTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionLayoutTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionGateTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionTrackerTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionStructureTests
+```
+
+Both Python policy suites passed (8 catalog and 9 formatting tests), as did all 11 mission-admission tests
+(2.85 s combined). Formatting verification and the 140-column check passed. Re-exported manifest, audit and fixture
+hashes exactly matched the committed files; semantic comparison found no changed prior definitions or fixture values.
+No full .NET suite was requested or run. Native rendering, input and gameplay feel remain unverified.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Verify native outpost names/tracker presentation and one outpost blitz in the client.
 
 ## Acceleration gate facing — November 15, 2026
 

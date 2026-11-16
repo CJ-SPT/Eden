@@ -11,6 +11,8 @@ from collections import Counter
 
 # Build-3662168 destructible Habitat; the similarly named scenery is not an objective.
 HABITAT_TYPE = 19715
+# Explicit Eden placement hint when a report supplies no NPC-group distances.
+UNREPORTED_GROUP_RANGE = 25000
 
 KNOWN_BLOCKERS = {
     895: 'Requires timed reinforcements',
@@ -27,18 +29,33 @@ MINING_MISSIONS = {
     4859, 4862, 4863, 4864, 4865, 4866, 4884, 13822,
 }
 
+# Complete, unambiguous native sequences. The first three reports independently
+# describe each part; Hauling Fur's numbered records and next-mission messages
+# identify its sequence, under the University's general mission-chain contract.
+COURIER_CHAINS = [
+    ('Save the Trees', 'Save_the_Trees', 215978, 500002,
+     [(4838, 45, True), (4839, 28972, True), (4840, 28973, False)]),
+    ('Hauling Fur', 'Missions', 230834, 500004,
+     [(4841, 11068, True), (4842, 2653, False), (4843, 28975, True)]),
+    ('Hunting a Heretic', 'Hunting_a_Heretic', 192145, 500003,
+     [(4844, 28827, True), (4845, 28996, False), (4846, 28886, True)]),
+    ('For the Troops', 'For_the_Troops', 231115, 500001,
+     [(4847, 2610, False), (4849, 28995, False), (4853, 22208, False)]),
+]
+
 
 def source(db, dataset, key):
     row = db.execute('SELECT Data FROM SourceRecord WHERE Dataset=? AND Key=?', (dataset, str(key))).fetchone()
     return json.loads(row[0]) if row else None
 
 
-def delivery_rejection(mission, name, volume):
+def delivery_rejection(mission, name, volume, reviewed_chain=False):
     template = mission['contentTemplate'].rsplit('_', 1)[-1]
     if template not in ('BasicCourierMission', 'GenericStorylineCourierMission'):
         return 'Requires another mission or agent lifecycle'
-    if re.search(r'\b\d+\s+of\s+\d+\b', name, re.IGNORECASE) or any('nextmission' in k for k in mission.get('messages', {})):
-        return 'Requires mission-chain progression'
+    if not reviewed_chain and (re.search(r'\b\d+\s+of\s+\d+\b', name, re.IGNORECASE)
+                               or any('nextmission' in k for k in mission.get('messages', {}))):
+        return 'Requires complete mission-chain bindings or additional part mechanics'
     if any(mission.get(k) for k in ('nodeGraphID', 'clientObjectives', 'contentTags', 'initialAgentGiftTypeID')):
         return 'Requires authored scripts, objectives or initial gifts'
     cargo = mission.get('courierMission', {})
@@ -56,6 +73,32 @@ def delivery_rejection(mission, name, volume):
         if isinstance(reward, dict) and reward.get('rewardTypeID', 29) != 29:
             return 'Requires fixed item rewards'
     return None
+
+
+def courier_chain_definitions(db):
+    definitions = []
+    for family, report, revision, faction, parts in COURIER_CHAINS:
+        for index, (mid, cargo_type, singleton) in enumerate(parts):
+            mission = source(db, 'client/missions', mid)
+            sde = source(db, 'sde/missions', mid) or {}
+            name = sde.get('name', {}).get('en', '')
+            cargo = (mission or {}).get('courierMission', {})
+            item = source(db, 'client/types', cargo_type) or {}
+            volume = item.get('volume', 0) * cargo.get('objectiveQuantity', 0)
+            next_message = any('nextmission' in k for k in (mission or {}).get('messages', {}))
+            if (not mission or not name.startswith(family) or f'({index + 1} of {len(parts)})' not in name
+                    or mission['contentTemplate'] != 'agent.missionTemplatizedContent_BasicCourierMission'
+                    or mission.get('factionID') != faction or mission.get('corporationID')
+                    or cargo != dict(objectiveTypeID=cargo_type, objectiveQuantity=1, objectiveSingleton=int(singleton))
+                    or next_message != (index < len(parts) - 1)
+                    or not 0 < volume <= 320 or delivery_rejection(mission, name, volume, reviewed_chain=True)):
+                raise ValueError(f'Unreviewed courier chain part {mid}: {family}')
+            definitions.append(dict(missionId=mid, level=1, difficulty=500, storyline=False, offerOrder=1,
+                                    source='https://wiki.eveuniversity.org/' + report,
+                                    sourceRevision=f'oldid={revision}; build-3662168 numbered chain and cargo', waves=[],
+                                    chain=dict(rootMissionId=parts[0][0], previousMissionId=parts[index - 1][0] if index else 0,
+                                               nextMissionId=parts[index + 1][0] if index < len(parts) - 1 else 0)))
+    return definitions
 
 
 def mining_definition(db, mission_id, mission):
@@ -78,7 +121,7 @@ def mining_definition(db, mission_id, mission):
 
 def extend(db, missions, group):
     def encounter(mid, faction, title, revision, groups, entry=None, warehouse=False, delivery=False, deadspace=True,
-                  habitat=False):
+                  habitat=False, structure_type=None):
         mission = source(db, 'client/missions', mid)
         dungeon = source(db, 'client/dungeons', mission['killMission']['dungeonID'])
         if dungeon['factionID'] != faction:
@@ -120,11 +163,12 @@ def extend(db, missions, group):
                 raise ValueError('One explicit objective carrier group is required')
             carriers[0].update(lootTypeId=mission['killMission']['objectiveTypeID'],
                                lootQuantity=mission['killMission']['objectiveQuantity'])
-        if habitat:
-            # Build 3662168 uses the overseer structure type, not decorative habitation scenery.
-            targets = [o for r in rooms.values() for o in r['objects'].values() if o['typeID'] == HABITAT_TYPE]
+        objective_type = HABITAT_TYPE if habitat else structure_type
+        if objective_type is not None:
+            # Bind the reviewed destructible type, not similarly named decorative scenery.
+            targets = [o for r in rooms.values() for o in r['objects'].values() if o['typeID'] == objective_type]
             if len(targets) != 1 or mission['killMission'].get('objectiveTypeID'):
-                raise ValueError(f'Unreviewed habitat objective for mission {mid}')
+                raise ValueError(f'Unreviewed structure objective for mission {mid}')
             definition['structures'] = [dict(objectId=targets[0]['objectID'], required=True, completesMission=True)]
         missions.append(definition)
 
@@ -180,6 +224,37 @@ def extend(db, missions, group):
               [group('Coreli Initiate', 2, 4000), group('Coreli Agent/Coreli Spy', 2, 40000)], 53120)
     encounter(894, 500020, 'The_Serpentis_Spies_(Level_2)', 192058,
               [group('Coreli Agent/Coreli Initiate/Coreli Safeguard', 5, 20000), group('Coreli Spy', 3, 70000)], 53179)
+    encounter(888, 500010, 'The_Guristas_Spies_(Level_2)', 192010,
+              [group('Pithi Despoiler', 5, 30000, required=False),
+               group('Pithior Guerilla', 1, 30000, required=False),
+               group('Pithi Demolisher/Pithi Destructor', 2, 57000),
+               group('Pithior Renegade/Pithior Anarchist', 2, 57000)], 53018)
+    # The report's "Infanty" is a typo for the pinned Corelior Infantry type.
+    encounter(898, 500020, 'The_Serpentis_Spies_(Level_3)', 223606,
+              [group('Corelior Infantry/Corelior Soldier', 3, 30000, required=False),
+               group('Corelum Chief Infantry/Corelum Chief Sentinel', 1, 30000, required=False),
+               group('Tower Sentry Serpentis I', 2, 62000, required=False),
+               group('Coreli Agent/Coreli Spy', 5, 71000), group('Serpentis Spy', 3, 71000)], 53182)
+    # University reports give the spy display names. The corresponding EVE-Survival
+    # SanshaSpies2/3/4 reports explicitly identify their underlying catalog hulls:
+    # Centior Cannibal; Centatis Specter; and Centatis Devil/Wraith, respectively.
+    # Native dungeon sentry types also resolve the level-two "Sansha Sentry I" alias.
+    encounter(902, 500019, 'The_Sansha_Spies_(Level_2)', 192040,
+              [group('Tower Sentry Sansha I', 2, 60000, required=False),
+               group('Centii Servant', 7, 60000, required=False), group('Centior Cannibal', 2, 60000)], 53098)
+    encounter(901, 500019, 'The_Sansha_Spies_(Level_3)', 192041,
+              [group('Tower Sentry Sansha I', 1, 55000, required=False),
+               group('Centii Plague/Centii Enslaver', 3, 55000, required=False),
+               group('Centior Cannibal/Centior Devourer/Centior Abomination', 5, 70000, required=False),
+               group('Centatis Specter', 2, 80000)], 51807)
+    encounter(900, 500019, 'The_Sansha_Spies_(Level_4)', 193406,
+              [group('Tower Sentry Sansha I', 1, 42000, required=False),
+               group('Tower Sentry Sansha II', 4, 42000, required=False),
+               group('Centior Devourer/Centior Abomination', 4, 75000, required=False),
+               group('Centum Hellhound/Centum Fiend', 4, 75000, required=False),
+               group('Centus Savage Lord/Centus Mutant Lord', 2, 75000, required=False),
+               group('Centatis Devil/Centatis Wraith', 3, 80000),
+               group('Centus Dark Lord/Centus Overlord', 1, 80000)], 70402)
     encounter(2248, 500019, "Eliminate_the_Pirate_Campers_(Sansha's_Nation)", 203023,
               [group('Centii Servant/Centii Minion', 6, 10000)], deadspace=False)
     encounter(2249, 500020, 'Eliminate_the_Pirate_Campers_(Serpentis)', 203018,
@@ -210,6 +285,24 @@ def extend(db, missions, group):
         (935, 500020, 'Serpentis', 2, 191920, 758969,
          [('Coreli Guard/Coreli Safeguard', 4, 25000, False),
           ('Coreli Guard/Coreli Safeguard/Coreli Protector/Coreli Defender', 4, 75000, True)]),
+        (924, 500010, 'Guristas_Pirates', 3, 218636, 758889,
+         [('Pithi Wrecker/Pithi Plunderer', 4, 50000, False),
+          ('Pithum Mortifier/Pithum Inferno', 2, 50000, False),
+          ('Pithi Plunderer/Pithi Wrecker', 4, 110000, True), ('Pithatis Assaulter', 1, 110000, True)]),
+        (927, 500011, 'Angel_Cartel', 3, 201875, 758924,
+         [('Angel Viper/Angel Webifier', 1, 25000, True), ('Gistior Defacer/Gistior Haunter', 2, 25000, True),
+          ('Gistum Liquidator/Gistum Marauder', 1, 25000, True),
+          ('Gistii Ambusher/Gistii Raider', 4, 55000, True), ('Gistatis Primus', 1, 55000, True)]),
+        (930, 500012, 'Blood_Raiders', 3, 211495, 758998,
+         [('Blood Disciple', 1, 40000, False), ('Corpior Devoter/Corpior Templar', 4, 40000, False),
+          ('Corpum Dark Priest', 1, 40000, False), ('Corpii Engraver/Corpii Reaver', 3, 50000, True),
+          ('Corpatis Fanatic', 1, 50000, True)]),
+        # The report's optional post-completion Chief Guard has no timing/count contract.
+        # Admit its verified initial objective, without inventing that later spawn.
+        (936, 500020, 'Serpentis', 3, 193399, 758984,
+         [('Guardian Veteran', 2, UNREPORTED_GROUP_RANGE, True),
+          ('Corelum Chief Safeguard', 4, UNREPORTED_GROUP_RANGE, True),
+          ('Corelatis Squad Leader', 1, UNREPORTED_GROUP_RANGE, True)]),
     ]
     for mid, faction, variant, level, revision, entry, roster in seek:
         encounter(mid, faction, f'Seek_and_Destroy_({variant})_(Level_{level})', revision,
@@ -246,6 +339,50 @@ def extend(db, missions, group):
                group('DED Soldier 2nd Class', 4, 55000, required=False),
                group('DED Officer 1st Class', 1, 55000, required=False)], 57908, habitat=True)
 
+    # Retribution completes on the outpost alone. The evejs Guristas kill-all
+    # objective is provisional; the University's explicit blitz takes precedence.
+    # Outpost type IDs below are build-3662168 mission objects (group 319).
+    encounter(1188, 500011, 'Retribution_(Angel_Cartel)', 201368,
+              [group('Gistii Nomad/Gistii Ruffian', 2, 30000, required=False),
+               group('Gistum Breaker/Gistum Defeater', 2, 30000, required=False),
+               group('Gistum Centurion/Gistum Phalanx', 3, 45000, required=False),
+               group('Gistii Hijacker/Gistii Rogue', 6, 50000, required=False),
+               group('Gistum Depredator/Gistum Predator', 3, 50000, required=False),
+               group('Angel Viper/Angel Webifier', 3, 75000, required=False),
+               group('Gistatis Legionnaire/Gistatis Primus', 1, 75000, required=False)],
+              60787, structure_type=16859)
+    encounter(1187, 500010, 'Retribution_(Guristas_Pirates)', 218717,
+              [group('Pithum Killer/Pithum Murderer', 4, 30000, required=False),
+               group('Pithum Ascriber/Pithum Silencer', 5, 40000, required=False),
+               group('Pithum Inferno/Pithum Mortifier', 3, 40000, required=False),
+               group('Guristas Kyoukan/Guristas Webifier', 3, 75000, required=False),
+               group('Pithatis Enforcer', 1, 75000, required=False)],
+              60741, structure_type=17382)
+    encounter(1190, 500020, 'Retribution_(Serpentis)', 207699,
+              [group('Coreli Guard/Coreli Safeguard', 2, 33000, required=False),
+               group('Corelum Chief Defender/Corelum Chief Protector', 2, 33000, required=False),
+               group('Guardian Veteran', 2, 40000, required=False),
+               group('Corelum Chief Scout/Corelum Chief Spy', 2, 40000, required=False),
+               group('Coreli Patroller/Coreli Watchman', 8, 51000, required=False),
+               group('Coreli Protector/Coreli Defender', 3, 77000, required=False),
+               group('Guardian Veteran', 1, 77000, required=False),
+               group('Corelatis Squad Leader/Corelatis Wing Leader', 1, 77000, required=False)],
+              56324, structure_type=16855)
+    # The report omits the possessive apostrophe. Bind the actual elite types,
+    # not evejs's provisional Centii Butcher substitute for the same aliases.
+    encounter(1186, 500019, "Retribution_(Sansha's_Nation)", 191886,
+              [group('Centii Plague/Centii Enslaver', 2, 35000, required=False),
+               group('Centum Slaughterer/Centum Execrator', 2, 35000, required=False),
+               group('Centii Butcher/Centii Manslayer', 1, 45000, required=False),
+               group("Sansha's Berserker/Sansha's Demon", 2, 45000, required=False),
+               group('Centum Execrator/Centum Slaughterer', 1, 45000, required=False),
+               group('Centii Butcher/Centii Manslayer', 1, 45000, required=False),
+               group('Centum Torturer/Centum Mutilator', 2, 45000, required=False),
+               group('Centii Butcher/Centii Manslayer', 4, 75000, required=False),
+               group('Centum Fiend/Centum Hellhound', 2, 75000, required=False)],
+              593785, structure_type=17381)
+
+    missions.extend(courier_chain_definitions(db))
     admitted = {m['missionId'] for m in missions}
     encounters = {tuple(sorted(source(db, 'client/missions', m['missionId'])['killMission'].items())): m
                   for m in missions if m['waves']}
@@ -288,7 +425,7 @@ def extend(db, missions, group):
                 reason = None
             else:
                 reason = ('Requires level-five encounter policy' if dungeon.get('difficulty') == 5
-                          else 'Requires mission-chain progression' if chain
+                          else 'Requires complete mission-chain bindings or additional part mechanics' if chain
                           else 'Requires authored scripts or initial gifts' if special
                           else 'Requires verified NPC roster and objective scripts')
         else:

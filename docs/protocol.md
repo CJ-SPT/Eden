@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Mission branch integration](protocol/agents.md#mission-branch-integration--november-15-2026) preserves main's
+spawn/storyline fixes alongside verified encounters and resident chains, with a combined storyline/chain regression.
+
 [Mission spawn clearance and storyline settlement](protocol/agents.md#mission-spawn-clearance-and-storyline-settlement--november-15-2026)
 correct embedded mobile NPC spawns, unavailable storyline pools blocking payouts and expired storyline agent occupancy.
 
@@ -43,6 +46,18 @@ and missing facility-cache batch calls.
 
 [Corporation blueprint lock/unlock votes](protocol/corporations.md#blueprint-lock-and-unlock-votes-november-15-2026)
 records immediate lockdowns, permanent lock results, CEO sanctions, native lock caches and resident inventory enforcement.
+
+[Resident mission-chain progression](protocol/agents.md#resident-mission-chain-progression--november-15-2026)
+adds ordered same-agent continuation, atomic settlement and checkpoint-safe active-slot replacement, with four complete courier chains.
+
+[Verified spy objectives](protocol/agents.md#verified-spy-objectives--november-15-2026) adds five definitions,
+report-backed Sansha hull aliases and required-group blitzes with resident checkpoint coverage.
+
+[Level-three combat content and Sansha outposts](protocol/agents.md#level-three-combat-content-and-sansha-outposts--november-15-2026)
+adds six more verified definitions, explicit elite type bindings and saved incomplete combat progress.
+
+[Retribution outpost missions](protocol/agents.md#retribution-outpost-missions--november-15-2026)
+adds four level-three definitions with verified outpost blitz objectives and resident checkpoint coverage.
 
 [Corporation CEO elections](protocol/corporations.md#ceo-elections-november-15-2026)
 records eligibility, suspended authority, automatic succession and checkpointed activation deadlines.

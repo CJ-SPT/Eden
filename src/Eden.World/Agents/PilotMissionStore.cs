@@ -431,6 +431,7 @@ internal sealed partial class PilotMissionStore(
         List<MissionStandingChange> standings = [];
         string eventName = "";
         MissionPayment? payment = null;
+        SavedMission? continuation = null;
         switch (action)
         {
             case MissionAction.Request:
@@ -454,6 +455,7 @@ internal sealed partial class PilotMissionStore(
                 {
                     throw new InvalidDataException("This mission is unavailable to this agent's corporation or faction.");
                 }
+                RequireChainAcceptance(world, catalog, agent, row, profile);
                 row.State = MissionState.Accepted;
                 row.AcceptedAt = now;
                 row.ExpiresAt = checked(now + profile.Lifetime.Ticks);
@@ -472,6 +474,7 @@ internal sealed partial class PilotMissionStore(
             case MissionAction.Complete:
                 RequireState(row, MissionState.Accepted);
                 var mission = MissionCatalog.Find(catalog, row!.MissionId);
+                RequireChainAcceptance(world, catalog, agent, row, mission);
                 RequireStation(pilot, mission.Kind == MissionKind.Courier ? row.DestinationStation : agent.StationId);
                 if (mission.Kind != MissionKind.Courier && !row.ObjectiveComplete)
                 {
@@ -491,6 +494,7 @@ internal sealed partial class PilotMissionStore(
                 {
                     Progress(world, catalog, pilot, agent, row.Level, now);
                 }
+                continuation = ContinueChain(world, catalog, pilot, agent, row, mission, now);
                 eventName = "completed";
                 break;
             case MissionAction.Decline:
@@ -520,7 +524,10 @@ internal sealed partial class PilotMissionStore(
         world.SaveChanges();
         // Generated inventory IDs and mission IDs must be visible in the reply.
         var snapshot = row is null ? null : Snapshot(world, catalog, pilot, row);
-        return new(snapshot, eventName, changes, standings, payment?.BalanceCents, payment?.PointsBefore ?? 0, payment?.PointsAfter ?? 0);
+        return new(snapshot, eventName, changes, standings, payment?.BalanceCents, payment?.PointsBefore ?? 0, payment?.PointsAfter ?? 0)
+        {
+            Continuation = continuation is null ? null : Snapshot(world, catalog, pilot, continuation),
+        };
     }
 
     private static void RequireState(SavedMission? mission, MissionState state)

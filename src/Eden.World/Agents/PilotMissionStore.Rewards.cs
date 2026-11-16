@@ -27,7 +27,8 @@ internal sealed partial class PilotMissionStore
         CatalogAgent agent,
         int level,
         bool storyline,
-        long now
+        long now,
+        MissionProfile? continuation = null
     )
     {
         if (!storyline && agent.Type != AgentType.Basic)
@@ -39,16 +40,17 @@ internal sealed partial class PilotMissionStore
             throw new InvalidDataException("This agent's mission division is not implemented.");
         }
         var profiles = ProfilesForAgent(catalog, agent, level, storyline)
+            .Where(p => p.Definition.Chain is null || world is EconomyTransaction)
             .OrderBy(p => p.Definition.OfferOrder)
             .ThenBy(p => p.Definition.Gates.IsEmpty ? 0 : 1)
             .ThenBy(p => p.Definition.MissionId)
             .ToArray();
-        if (profiles.Length == 0)
+        if (continuation is null && profiles.Length == 0)
         {
             throw new InvalidDataException("No supported mission content is available for this agent and level yet.");
         }
         int sequence = world.Set<SavedMission>().Count(m => m.PilotId == pilot.Id && m.AgentId == agent.Id);
-        var profile = profiles[sequence % profiles.Length];
+        var profile = continuation ?? profiles[sequence % profiles.Length];
         var skill = profile.Kind switch
         {
             MissionKind.Combat => MissionSocialSkill.SecurityConnections,
@@ -116,7 +118,11 @@ internal sealed partial class PilotMissionStore
         return MissionCatalog
             .ForLevel(catalog, level, storyline)
             .Where(profile =>
-                (storyline || profile.Kind == kind) && !profile.AttacksFaction(agent.FactionId) && profile.AvailableTo(agent)
+                (storyline || profile.Kind == kind)
+                && !profile.AttacksFaction(agent.FactionId)
+                && profile.AvailableTo(agent)
+                && (profile.Definition.Chain is null || profile.Definition.Chain.PreviousMissionId == 0)
+                && MissionCatalog.ChainAvailable(catalog, profile, agent)
             );
     }
 

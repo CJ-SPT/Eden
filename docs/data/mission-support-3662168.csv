@@ -1,6 +1,6 @@
 missionId,name,template,status,reason
 875,The Guristas Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
-888,The Guristas Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+888,The Guristas Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 890,The Angel Cartel Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 891,The Guristas Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 892,The Angel Cartel Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
@@ -9,11 +9,11 @@ missionId,name,template,status,reason
 895,The Serpentis Spies,BasicKillMission,blocked,Requires timed reinforcements
 896,The Angel Cartel Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 897,The Angel Cartel Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
-898,The Serpentis Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+898,The Serpentis Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 899,The Serpentis Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-900,The Sansha Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-901,The Sansha Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-902,The Sansha Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+900,The Sansha Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+901,The Sansha Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+902,The Sansha Spies,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 903,The Sansha Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 909,The Seven's Brothel,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 910,The Seven's Prison Facility,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -30,19 +30,19 @@ missionId,name,template,status,reason
 921,The Disgruntled Employee,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 922,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 923,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
-924,Seek and Destroy,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+924,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 925,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 926,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
-927,Seek and Destroy,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+927,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 928,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 929,Seek and Destroy,BasicKillMission,blocked,Requires a verified reinforcement trigger
-930,Seek and Destroy,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+930,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 931,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 932,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 933,Seek and Destroy,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 934,Seek and Destroy,BasicKillMission,blocked,Requires a verified reinforcement trigger
 935,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
-936,Seek and Destroy,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+936,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 937,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 938,Seek and Destroy,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 939,Seek and Destroy,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -90,12 +90,12 @@ missionId,name,template,status,reason
 1183,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1184,Avenge a Fallen Comrade,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1185,Desperate Measures,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1186,Retribution,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1187,Retribution,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1188,Retribution,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1189,Retribution,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1190,Retribution,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-1191,Retribution,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
+1186,Retribution,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+1187,Retribution,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+1188,Retribution,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+1189,Retribution,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+1190,Retribution,BasicKillMission,admitted,Catalog cargo or reviewed encounter
+1191,Retribution,BasicKillMission,admitted,Catalog cargo or reviewed encounter
 1192,Retribution,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1194,Retribution,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1196,Retribution,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -156,30 +156,30 @@ missionId,name,template,status,reason
 1277,Counter-Attack,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1278,Counter-Attack,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1279,Counter-Attack,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
-1280,Gallente Transaction - Data Piracy (1 of 2),GenericStorylineCourierMission,blocked,Requires mission-chain progression
+1280,Gallente Transaction - Data Piracy (1 of 2),GenericStorylineCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 1281,Gallente Transaction - Blackmail (2 of 2),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1282,Trespassers (1 of 2),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1283,Revenge Attack (2 of 2),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1284,Certain Death,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
-1285,Kidnappers Strike - The Interrogation (2 of 10),GenericStorylineCourierMission,blocked,Requires mission-chain progression
+1285,Kidnappers Strike - The Interrogation (2 of 10),GenericStorylineCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 1286,Kidnappers Strike - The Kidnapping (3 of 10),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1287,Whispers in the Dark - First Contact (1 of 4),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1288,Whispers in the Dark - Lay And Pray (2 of 4),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1289,Whispers in the Dark - The Outpost (4 of 4),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
-1290,Whispers in the Dark - The Spy Drones (3 of 4),GenericStorylineCourierMission,blocked,Requires mission-chain progression
-1296,Kidnappers Strike - Possible Leads (4 of 10),GenericStorylineCourierMission,blocked,Requires mission-chain progression
+1290,Whispers in the Dark - The Spy Drones (3 of 4),GenericStorylineCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+1296,Kidnappers Strike - Possible Leads (4 of 10),GenericStorylineCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 1297,Kidnappers Strike - Incriminating Evidence (5 of 10),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
-1298,Kidnappers Strike - The Flu Outbreak (6 of 10),GenericStorylineCourierMission,blocked,Requires mission-chain progression
+1298,Kidnappers Strike - The Flu Outbreak (6 of 10),GenericStorylineCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 1299,Kidnappers Strike - The Secret Meeting  (7 of 10),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1300,Kidnappers Strike - Defend the Civilian Convoy (8 of 10),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1301,Kidnappers Strike - Retrieve the Prisoners (9 of 10),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1302,Kidnappers Strike - The Final Battle (10 of 10),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1304,Kidnappers Strike - Ambush in the Dark (1 of 10),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
-1305,Kidnappers Strike - The Interrogation (2 of 10),GenericStorylineCourierMission,blocked,Requires mission-chain progression
+1305,Kidnappers Strike - The Interrogation (2 of 10),GenericStorylineCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 1306,Kidnappers Strike - The Kidnapping (3 of 10),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
-1307,Kidnappers Strike - Possible Leads (4 of 10),GenericStorylineCourierMission,blocked,Requires mission-chain progression
+1307,Kidnappers Strike - Possible Leads (4 of 10),GenericStorylineCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 1308,Kidnappers Strike - Incriminating Evidence (5 of 10),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
-1309,Kidnappers Strike - The Flu Outbreak (6 of 10),GenericStorylineCourierMission,blocked,Requires mission-chain progression
+1309,Kidnappers Strike - The Flu Outbreak (6 of 10),GenericStorylineCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 1310,Kidnappers Strike - The Secret Meeting  (7 of 10),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1311,Shipyard Theft,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1312,Kidnappers Strike - Defend the Civilian Convoy (8 of 10),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
@@ -198,9 +198,9 @@ missionId,name,template,status,reason
 1326,Guristas Strike - The Final Battle (10 of 10),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1327,Guristas Strike - The Kidnapping (3 of 10),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1328,Guristas Strike - The Secret Meeting (7 of 10),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
-1329,Guristas Strike - Possible Leads (4 of 10),GenericStorylineCourierMission,blocked,Requires mission-chain progression
-1330,Guristas Strike - The Flu Outbreak (6 of 10),GenericStorylineCourierMission,blocked,Requires mission-chain progression
-1331,Guristas Strike - The Interrogation (2 of 10),GenericStorylineCourierMission,blocked,Requires mission-chain progression
+1329,Guristas Strike - Possible Leads (4 of 10),GenericStorylineCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+1330,Guristas Strike - The Flu Outbreak (6 of 10),GenericStorylineCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+1331,Guristas Strike - The Interrogation (2 of 10),GenericStorylineCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 1332,Amarrian Excavators,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1333,Kidnappers Strike - Ambush in the Dark (1 of 10),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1334,Kidnappers Strike - Defend the Civilian Convoy (8 of 10),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
@@ -209,37 +209,37 @@ missionId,name,template,status,reason
 1337,Kidnappers Strike - The Final Battle (10 of 10),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1338,Kidnappers Strike - The Kidnapping (3 of 10),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1339,Kidnappers Strike - The Secret Meeting  (7 of 10),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
-1369,Kidnappers Strike - Possible Leads (4 of 10),GenericStorylineCourierMission,blocked,Requires mission-chain progression
-1370,Kidnappers Strike - The Flu Outbreak (6 of 10),GenericStorylineCourierMission,blocked,Requires mission-chain progression
-1371,Kidnappers Strike - The Interrogation (2 of 10),GenericStorylineCourierMission,blocked,Requires mission-chain progression
+1369,Kidnappers Strike - Possible Leads (4 of 10),GenericStorylineCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+1370,Kidnappers Strike - The Flu Outbreak (6 of 10),GenericStorylineCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+1371,Kidnappers Strike - The Interrogation (2 of 10),GenericStorylineCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 1372,The Gallente Archaeologist - The Unsuspecting Traveler (1 of 9),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1373,Serpentis Ship Builders,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
-1374,The Gallente Archaeologist - The Identification (2 of 9),GenericStorylineCourierMission,blocked,Requires mission-chain progression
+1374,The Gallente Archaeologist - The Identification (2 of 9),GenericStorylineCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 1375,The Gallente Archaeologist - The Bounty Hunter (3 of 9),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
-1376,The Gallente Archaeologist - The Results (4 of 9),GenericStorylineCourierMission,blocked,Requires mission-chain progression
+1376,The Gallente Archaeologist - The Results (4 of 9),GenericStorylineCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 1377,The Gallente Archaeologist - Sudden Strike (5 of 9),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1378,The Gallente Archaeologist - Repercussions (6 of 9),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
-1379,The Gallente Archaeologist - The New Demands (7 of 9),GenericStorylineCourierMission,blocked,Requires mission-chain progression
+1379,The Gallente Archaeologist - The New Demands (7 of 9),GenericStorylineCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 1380,The Gallente Archaeologist - Final Attempt (8 of 9),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
-1381,The Gallente Archaeologist - The Conclusion (9 of 9),GenericStorylineCourierMission,blocked,Requires mission-chain progression
-1382,Tidings of Conflict (1 of 2),BasicCourierMission,blocked,Requires mission-chain progression
-1383,Tidings of Conflict (2 of 2),BasicCourierMission,blocked,Requires mission-chain progression
-1384,War Situation (1 of 2),BasicKillMission,blocked,Requires mission-chain progression
+1381,The Gallente Archaeologist - The Conclusion (9 of 9),GenericStorylineCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+1382,Tidings of Conflict (1 of 2),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+1383,Tidings of Conflict (2 of 2),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+1384,War Situation (1 of 2),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 1385,The Numon Claim - First Attack (1 of 5),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1386,The Numon Claim - Imperial Intervention (3 of 5),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
-1387,The Numon Claim - Ruffled Feathers (2 of 5),GenericStorylineCourierMission,blocked,Requires mission-chain progression
-1388,War Situation (2 of 2),BasicKillMission,blocked,Requires mission-chain progression
+1387,The Numon Claim - Ruffled Feathers (2 of 5),GenericStorylineCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+1388,War Situation (2 of 2),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 1389,The Numon Claim - Split The Fleet (4 of 5),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1390,The Numon Claim - Last Stand (5 of 5),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1391,The Sukuuvestaa Incident - Nab The Consumer Electronics! (1 of 6),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1392,The Sukuuvestaa Incident - The Neophyte (2 of 6),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
-1393,The Sukuuvestaa Incident - Transportation (3 of 6),GenericStorylineCourierMission,blocked,Requires mission-chain progression
+1393,The Sukuuvestaa Incident - Transportation (3 of 6),GenericStorylineCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 1394,The Sukuuvestaa Incident - In Defense (4 of 6),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1395,The Sukuuvestaa Incident - The Caldari Agent (5 of 6),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1397,The Sukuuvestaa Incident - The Constellation Scanner (6 of 6),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1398,Ritualist Raids,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 1400,Nomads - Unwanted Settlers (1 of 5),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
-1401,Nomads - Request From The Republic (2 of 5),GenericStorylineCourierMission,blocked,Requires mission-chain progression
+1401,Nomads - Request From The Republic (2 of 5),GenericStorylineCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 1402,Nomads - Secret Military Supplies (3 of 5),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1403,Nomads - Vicious attack (4 of 5),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 1404,Nomads - The Minmatar Squadrons (5 of 5),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
@@ -615,11 +615,11 @@ missionId,name,template,status,reason
 1889,Proving Your Mettle,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
 1890,Keeping Crime In Check,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
 1891,The Missing Reporters - Minmatar Smugglers (1 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-1892,The Missing Reporters - Political Foes (2 of 3),BasicKillMission,blocked,Requires mission-chain progression
-1893,The Missing Reporters - Miners Beware (3 of 3),BasicKillMission,blocked,Requires mission-chain progression
-1894,The Missing Reporters - Slavers Beware (3 of 3),BasicKillMission,blocked,Requires mission-chain progression
-1895,The Missing Reporters - Caldari Smugglers (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
-1896,The Missing Reporters - Bad Timing (2 of 3),BasicKillMission,blocked,Requires mission-chain progression
+1892,The Missing Reporters - Political Foes (2 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+1893,The Missing Reporters - Miners Beware (3 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+1894,The Missing Reporters - Slavers Beware (3 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+1895,The Missing Reporters - Caldari Smugglers (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+1896,The Missing Reporters - Bad Timing (2 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 1897,Supplies For The Resistance,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
 1898,More Supplies For The Resistance,StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 1900,Civilian Pullout - More Civilians to Evacuate,StorylineCourierMission,blocked,Requires another mission or agent lifecycle
@@ -781,12 +781,12 @@ missionId,name,template,status,reason
 2087,Cargo Transportation,StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2088,Equipping The Troops,StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2089,Ready For Relocation,StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-2090,Technological Secrets (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
-2091,Technological Secrets (2 of 3),BasicCourierMission,blocked,Requires mission-chain progression
-2092,Technological Secrets (3 of 3),BasicKillMission,blocked,Requires mission-chain progression
-2093,Illegal Activity (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
-2094,Illegal Activity (2 of 3),BasicKillMission,blocked,Requires mission-chain progression
-2095,Illegal Activity (3 of 3),BasicKillMission,blocked,Requires mission-chain progression
+2090,Technological Secrets (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2091,Technological Secrets (2 of 3),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2092,Technological Secrets (3 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2093,Illegal Activity (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2094,Illegal Activity (2 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2095,Illegal Activity (3 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2096,Secrets Of The Mire Keep (1 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
 2097,Blood Hunt - Symptoms (1 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
 2098,Blood Hunt - Morbid Burden (2 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
@@ -801,12 +801,12 @@ missionId,name,template,status,reason
 2107,Secrets Of The Mire Keep (2 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2108,Secrets Of The Mire Keep (3 of 4),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2109,Secrets Of The Mire Keep (4 of 4),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2110,Technological Secrets (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
-2112,Technological Secrets (3 of 3),BasicKillMission,blocked,Requires mission-chain progression
-2113,Technological Secrets (2 of 3),BasicCourierMission,blocked,Requires mission-chain progression
-2114,Illegal Activity (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
-2115,Illegal Activity (2 of 3),BasicKillMission,blocked,Requires mission-chain progression
-2116,Illegal Activity (3 of 3),BasicKillMission,blocked,Requires mission-chain progression
+2110,Technological Secrets (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2112,Technological Secrets (3 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2113,Technological Secrets (2 of 3),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2114,Illegal Activity (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2115,Illegal Activity (2 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2116,Illegal Activity (3 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2117,Federation Attack! (1 of 3),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2118,King of the Hill (1 of 13),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2119,King of the Hill (2 of 13),StorylineKillMission,blocked,Requires another mission or agent lifecycle
@@ -838,53 +838,53 @@ missionId,name,template,status,reason
 2151,Path to Enlightenment - Destruction (2 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
 2152,Path to Enlightenment - Discovery (3 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
 2153,Arachnan's Maneuver (3 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-2154,Enemies Abound (1 of 5),BasicKillMission,blocked,Requires mission-chain progression
-2156,Enemies Abound (2 of 5),BasicCourierMission,blocked,Requires mission-chain progression
-2157,Enemies Abound (3 of 5),BasicKillMission,blocked,Requires mission-chain progression
+2154,Enemies Abound (1 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2156,Enemies Abound (2 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2157,Enemies Abound (3 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2158,No Sincerer Love (1 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2159,No Sincerer Love (2 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2160,No Sincerer Love (3 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2161,No Sincerer Love (4 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2162,No Sincerer Love (5 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
-2165,Enemies Abound (4 of 5),BasicKillMission,blocked,Requires mission-chain progression
-2166,Enemies Abound (5 of 5),BasicKillMission,blocked,Requires mission-chain progression
+2165,Enemies Abound (4 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2166,Enemies Abound (5 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2167,Arming Araz (1 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2168,Arming Araz (2 of 5),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2169,Human Cattle (1 of 5),BasicKillMission,blocked,Requires mission-chain progression
-2170,Human Cattle (2 of 5),BasicCourierMission,blocked,Requires mission-chain progression
-2171,Human Cattle (3 of 5),BasicKillMission,blocked,Requires mission-chain progression
-2172,Human Cattle (4 of 5),BasicKillMission,blocked,Requires mission-chain progression
-2173,Human Cattle (5 of 5),BasicKillMission,blocked,Requires mission-chain progression
-2174,Portal To War (1 of 5),BasicKillMission,blocked,Requires mission-chain progression
+2169,Human Cattle (1 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2170,Human Cattle (2 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2171,Human Cattle (3 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2172,Human Cattle (4 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2173,Human Cattle (5 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2174,Portal To War (1 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2175,Arming Araz (4 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2176,Arming Araz (3 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 2177,Arming Araz (5 of 5),StorylineKillMission,blocked,Requires another mission or agent lifecycle
-2178,Portal To War (2 of 5),BasicKillMission,blocked,Requires mission-chain progression
-2179,Portal To War (3 of 5),BasicCourierMission,blocked,Requires mission-chain progression
-2180,Portal To War (4 of 5),BasicKillMission,blocked,Requires mission-chain progression
+2178,Portal To War (2 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2179,Portal To War (3 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2180,Portal To War (4 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2181,Trial of Skill (1 of 1),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2182,Portal To War (5 of 5),BasicKillMission,blocked,Requires mission-chain progression
-2183,In the Midst of Deadspace (1 of 5),BasicKillMission,blocked,Requires mission-chain progression
-2184,In the Midst of Deadspace (2 of 5),BasicCourierMission,blocked,Requires mission-chain progression
-2185,In the Midst of Deadspace (3 of 5),BasicKillMission,blocked,Requires mission-chain progression
-2186,In the Midst of Deadspace (4 of 5),BasicKillMission,blocked,Requires mission-chain progression
+2182,Portal To War (5 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2183,In the Midst of Deadspace (1 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2184,In the Midst of Deadspace (2 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2185,In the Midst of Deadspace (3 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2186,In the Midst of Deadspace (4 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2187,Unearthing the Ancients (1 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
 2188,Unearthing the Ancients (2 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
 2189,Unearthing the Ancients (2 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
 2190,Unearthing the Ancients (3 of 3),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-2191,In the Midst of Deadspace (5 of 5),BasicKillMission,blocked,Requires mission-chain progression
+2191,In the Midst of Deadspace (5 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2193,Covering Your Tracks,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 2194,Covering Your Tracks,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
-2201,The Uprising - The Disappearance (1 of 4),BasicKillMission,blocked,Requires mission-chain progression
-2202,The Uprising - Strike Them Where It Hurts (2 of 4),BasicKillMission,blocked,Requires mission-chain progression
-2203,The Uprising - The Assault (3 of 4),BasicKillMission,blocked,Requires mission-chain progression
-2204,The Uprising - Last Stand (4 of 4),BasicKillMission,blocked,Requires mission-chain progression
-2205,The Uprising - Last Stand (4 of 4),BasicKillMission,blocked,Requires mission-chain progression
-2206,The Uprising - Strike Them Where It Hurts (2 of 4),BasicKillMission,blocked,Requires mission-chain progression
-2207,The Uprising - The Assault (3 of 4),BasicKillMission,blocked,Requires mission-chain progression
-2208,The Uprising - The Disappearance (1 of 4),BasicKillMission,blocked,Requires mission-chain progression
-2209,The Uprising - The Disappearance (1 of 4),BasicKillMission,blocked,Requires mission-chain progression
-2210,The Uprising - The Disappearance (1 of 4),BasicKillMission,blocked,Requires mission-chain progression
+2201,The Uprising - The Disappearance (1 of 4),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2202,The Uprising - Strike Them Where It Hurts (2 of 4),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2203,The Uprising - The Assault (3 of 4),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2204,The Uprising - Last Stand (4 of 4),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2205,The Uprising - Last Stand (4 of 4),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2206,The Uprising - Strike Them Where It Hurts (2 of 4),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2207,The Uprising - The Assault (3 of 4),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2208,The Uprising - The Disappearance (1 of 4),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2209,The Uprising - The Disappearance (1 of 4),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2210,The Uprising - The Disappearance (1 of 4),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2211,The Disgruntled Employee,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2216,Success Comes At A Price,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2217,What Comes Around Goes Around,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -929,14 +929,14 @@ missionId,name,template,status,reason
 2259,Foil The Military Preparations,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2260,Foil The Military Preparations,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2261,Foil The Military Preparations,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2262,The Rogue Slave Trader (1 of 2),BasicKillMission,blocked,Requires mission-chain progression
-2263,The Rogue Slave Trader (1 of 2),BasicKillMission,blocked,Requires mission-chain progression
-2264,Downing The Slavers (2 of 2),BasicKillMission,blocked,Requires mission-chain progression
-2265,Downing The Slavers (2 of 2),BasicKillMission,blocked,Requires mission-chain progression
-2266,The Rogue Slave Trader (1 of 2),BasicKillMission,blocked,Requires mission-chain progression
-2267,The Rogue Slave Trader (1 of 2),BasicKillMission,blocked,Requires mission-chain progression
-2268,Downing The Slavers (2 of 2),BasicKillMission,blocked,Requires mission-chain progression
-2270,Downing The Slavers (2 of 2),BasicKillMission,blocked,Requires mission-chain progression
+2262,The Rogue Slave Trader (1 of 2),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2263,The Rogue Slave Trader (1 of 2),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2264,Downing The Slavers (2 of 2),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2265,Downing The Slavers (2 of 2),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2266,The Rogue Slave Trader (1 of 2),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2267,The Rogue Slave Trader (1 of 2),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2268,Downing The Slavers (2 of 2),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+2270,Downing The Slavers (2 of 2),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2272,The Graduation Certificate,StorylineCourierMission,blocked,Requires another mission or agent lifecycle
 2273,License To Fly (prequel),StorylineTradeMission,blocked,Requires another mission or agent lifecycle
 2274,The Celestial Imperative (1 of 5),StorylineCourierMission,blocked,Requires another mission or agent lifecycle
@@ -1467,7 +1467,7 @@ missionId,name,template,status,reason
 2972,Cargo Delivery,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2973,Cargo Delivery,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 2974,Cargo Delivery,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-2984,Recon (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
+2984,Recon (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 2987,Angel Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
 2988,Angel Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
 2989,Angel Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
@@ -1518,27 +1518,27 @@ missionId,name,template,status,reason
 3034,Sansha Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
 3035,Sansha Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
 3036,Sansha Taghunter,StorylineTradeMission,blocked,Requires another mission or agent lifecycle
-3037,Recon (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
-3038,Recon (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
-3039,Recon (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
-3040,Recon (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
-3041,Recon (2 of 3),BasicKillMission,blocked,Requires mission-chain progression
-3042,Recon (3 of 3),BasicKillMission,blocked,Requires mission-chain progression
-3043,Recon (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
-3044,Recon (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
-3045,Recon (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
-3046,Recon (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
-3047,Recon (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
-3048,Recon (2 of 3),BasicKillMission,blocked,Requires mission-chain progression
-3049,Recon (3 of 3),BasicKillMission,blocked,Requires mission-chain progression
-3052,Recon (2 of 3),BasicKillMission,blocked,Requires mission-chain progression
-3053,Recon (2 of 3),BasicKillMission,blocked,Requires mission-chain progression
-3054,Recon (3 of 3),BasicKillMission,blocked,Requires mission-chain progression
-3055,Recon (3 of 3),BasicKillMission,blocked,Requires mission-chain progression
-3056,Recon (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
-3057,Recon (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
-3058,Recon (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
-3059,Recon (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
+3037,Recon (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+3038,Recon (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+3039,Recon (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+3040,Recon (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+3041,Recon (2 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+3042,Recon (3 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+3043,Recon (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+3044,Recon (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+3045,Recon (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+3046,Recon (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+3047,Recon (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+3048,Recon (2 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+3049,Recon (3 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+3052,Recon (2 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+3053,Recon (2 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+3054,Recon (3 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+3055,Recon (3 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+3056,Recon (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+3057,Recon (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+3058,Recon (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+3059,Recon (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 3060,Attack of the Drones,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 3061,Break Their Will,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 3062,Break Their Will,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -1769,65 +1769,65 @@ missionId,name,template,status,reason
 4661,Soft Drink Wars,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 4662,Soft Drink Wars,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 4663,Soft Drink Wars,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-4664,Flame of Peace - Chosen (4 of 4),BasicKillMission,blocked,Requires mission-chain progression
-4665,Flame of Peace - Cannibalism (3 of 4),BasicKillMission,blocked,Requires mission-chain progression
-4666,Flame of Peace - Scriptures (2 of 4),BasicCourierMission,blocked,Requires mission-chain progression
-4667,Flame of Peace - Heresy (1 of 4),BasicKillMission,blocked,Requires mission-chain progression
+4664,Flame of Peace - Chosen (4 of 4),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4665,Flame of Peace - Cannibalism (3 of 4),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4666,Flame of Peace - Scriptures (2 of 4),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4667,Flame of Peace - Heresy (1 of 4),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 4701,An Ancient Roster,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 4702,Get the Relic,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-4703,In the Shadow of War (1 of 5),BasicKillMission,blocked,Requires mission-chain progression
-4704,In the Shadow of War (2 of 5),BasicKillMission,blocked,Requires mission-chain progression
-4705,In the Shadow of War (3 of 5),BasicCourierMission,blocked,Requires mission-chain progression
-4706,In the Shadow of War (4 of 5),BasicKillMission,blocked,Requires mission-chain progression
-4707,In the Shadow of War (5 of 5),BasicKillMission,blocked,Requires mission-chain progression
+4703,In the Shadow of War (1 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4704,In the Shadow of War (2 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4705,In the Shadow of War (3 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4706,In the Shadow of War (4 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4707,In the Shadow of War (5 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 4708,Corporate Records,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 4709,Lost Records,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-4710,New Frontiers - Raw Materials (1 of 7),BasicKillMission,blocked,Requires mission-chain progression
-4711,New Frontiers - Mad Scientist (2 of 7),BasicKillMission,blocked,Requires mission-chain progression
+4710,New Frontiers - Raw Materials (1 of 7),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4711,New Frontiers - Mad Scientist (2 of 7),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 4713,Letters from Dalamaid,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 4714,For the Birds,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 4715,For the Honor of Rouvenor,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 4716,For Justice,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-4717,New Frontiers - Toward a Solution (3 of 7),BasicCourierMission,blocked,Requires mission-chain progression
-4718,New Frontiers - The Unveiling (4 of 7),BasicKillMission,blocked,Requires mission-chain progression
-4719,New Frontiers - An Unexpected Twist (5 of 7),BasicKillMission,blocked,Requires mission-chain progression
-4720,New Frontiers - Nanite Express (6 of 7),BasicCourierMission,blocked,Requires mission-chain progression
-4721,New Frontiers - Ascendance (7 of 7),BasicKillMission,blocked,Requires mission-chain progression
-4722,Undue Attention - Poking Around (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
-4723,Undue Attention - Helping the Helpful (2 of 3),BasicKillMission,blocked,Requires mission-chain progression
-4724,Undue Attention - Closing the Gate (3 of 3),BasicKillMission,blocked,Requires mission-chain progression
-4725,Undue Attention - What Spacelane Patrol Knows (2 of 3),BasicCourierMission,blocked,Requires mission-chain progression
-4726,Undue Attention - A Crazy Plan (3 of 3),BasicKillMission,blocked,Requires mission-chain progression
+4717,New Frontiers - Toward a Solution (3 of 7),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4718,New Frontiers - The Unveiling (4 of 7),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4719,New Frontiers - An Unexpected Twist (5 of 7),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4720,New Frontiers - Nanite Express (6 of 7),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4721,New Frontiers - Ascendance (7 of 7),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4722,Undue Attention - Poking Around (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4723,Undue Attention - Helping the Helpful (2 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4724,Undue Attention - Closing the Gate (3 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4725,Undue Attention - What Spacelane Patrol Knows (2 of 3),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4726,Undue Attention - A Crazy Plan (3 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 4727,Drone Detritus,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 4728,Drone Detritus,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 4729,Drone Detritus,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 4730,Drone Detritus,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-4731,Delivering the Goods (1 of 5),BasicCourierMission,blocked,Requires mission-chain progression
+4731,Delivering the Goods (1 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 4732,The Heir's Favorite Slave,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
-4733,Vitoc Vector - The Pickup (1 of 4),BasicCourierMission,blocked,Requires mission-chain progression
-4734,Vitoc Vector - Earning Their Trust (2 of 4),BasicKillMission,blocked,Requires mission-chain progression
-4735,Vitoc Vector - Mounting a Defense (3 of 4),BasicKillMission,blocked,Requires mission-chain progression
-4736,Vitoc Vector - A Terrible Thing (4 of 4),BasicKillMission,blocked,Requires mission-chain progression
-4739,Delivering the Goods (2 of 5),BasicKillMission,blocked,Requires mission-chain progression
+4733,Vitoc Vector - The Pickup (1 of 4),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4734,Vitoc Vector - Earning Their Trust (2 of 4),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4735,Vitoc Vector - Mounting a Defense (3 of 4),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4736,Vitoc Vector - A Terrible Thing (4 of 4),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4739,Delivering the Goods (2 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 4740,Delivering the Goods (3 of 5),BasicTradeMission,blocked,Requires another mission or agent lifecycle
-4741,Delivering the Goods (4 of 5),BasicKillMission,blocked,Requires mission-chain progression
-4742,Delivering the Goods (5 of 5),BasicKillMission,blocked,Requires mission-chain progression
-4743,New Slaves - Indoctrination (1 of 5),BasicCourierMission,blocked,Requires mission-chain progression
-4744,New Slaves - Insurgency (2 of 5),BasicKillMission,blocked,Requires mission-chain progression
-4745,New Slaves - A New Rebellion (3 of 5),BasicCourierMission,blocked,Requires mission-chain progression
-4746,New Slaves - Double Trouble (4 of 5),BasicKillMission,blocked,Requires mission-chain progression
-4747,New Slaves - To Catch a Spy (5 of 5),BasicKillMission,blocked,Requires mission-chain progression
+4741,Delivering the Goods (4 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4742,Delivering the Goods (5 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4743,New Slaves - Indoctrination (1 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4744,New Slaves - Insurgency (2 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4745,New Slaves - A New Rebellion (3 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4746,New Slaves - Double Trouble (4 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4747,New Slaves - To Catch a Spy (5 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 4748,Violent Expulsion,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 4749,Violent Expulsion,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 4750,Violent Expulsion,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 4751,Violent Expulsion,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 4752,Carrying AIMEDs,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-4753,Pot and Kettle - Wounded Hunter (1 of 5),BasicKillMission,blocked,Requires mission-chain progression
-4754,Pot and Kettle - Minesweeper (2 of 5),BasicKillMission,blocked,Requires mission-chain progression
-4755,Pot and Kettle - Delivery (3 of 5),BasicCourierMission,blocked,Requires mission-chain progression
-4785,Pot and Kettle - Seek and Destroy (4 of 5),BasicKillMission,blocked,Requires mission-chain progression
-4786,Pot and Kettle - To Battle (5 of 5),BasicKillMission,blocked,Requires mission-chain progression
-4789,Pot and Kettle - Making Amends (5 of 5),BasicCourierMission,blocked,Requires mission-chain progression
+4753,Pot and Kettle - Wounded Hunter (1 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4754,Pot and Kettle - Minesweeper (2 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4755,Pot and Kettle - Delivery (3 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4785,Pot and Kettle - Seek and Destroy (4 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4786,Pot and Kettle - To Battle (5 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4789,Pot and Kettle - Making Amends (5 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 4800,Claimjumpers,BasicMiningMission,admitted,Catalog mining deposits
 4801,Starting Simple,BasicMiningMission,admitted,Catalog mining deposits
 4802,Bountiful Banidine,BasicMiningMission,admitted,Catalog mining deposits
@@ -1848,16 +1848,16 @@ missionId,name,template,status,reason
 4817,Escaped Spy,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 4818,Escaped Terrorist,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 4819,Escaped Killer,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-4820,Regional Stability - Moving the Consul (1 of 4),BasicCourierMission,blocked,Requires mission-chain progression
-4821,Regional Stability - Censorship (2 of 4),BasicKillMission,blocked,Requires mission-chain progression
-4822,Regional Stability - Key Master (3 of 4),BasicCourierMission,blocked,Requires mission-chain progression
-4823,Regional Stability - Restoring Peace (4 of 4),BasicKillMission,blocked,Requires mission-chain progression
-4824,Regional Stability - Playing Hero (4 of 4),BasicKillMission,blocked,Requires mission-chain progression
-4825,Greater Good - Misplacing Supplies (1 of 5),BasicCourierMission,blocked,Requires mission-chain progression
-4826,Greater Good – Distasteful Matters (2 of 5),BasicKillMission,blocked,Requires mission-chain progression
-4827,Greater Good – Poisoning the Well (3 of 5),BasicCourierMission,blocked,Requires mission-chain progression
-4828,Greater Good - Drastic Measures (4 of 5),BasicKillMission,blocked,Requires mission-chain progression
-4829,Greater Good - Strong Stomach (5 of 5),BasicKillMission,blocked,Requires mission-chain progression
+4820,Regional Stability - Moving the Consul (1 of 4),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4821,Regional Stability - Censorship (2 of 4),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4822,Regional Stability - Key Master (3 of 4),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4823,Regional Stability - Restoring Peace (4 of 4),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4824,Regional Stability - Playing Hero (4 of 4),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4825,Greater Good - Misplacing Supplies (1 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4826,Greater Good – Distasteful Matters (2 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4827,Greater Good – Poisoning the Well (3 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4828,Greater Good - Drastic Measures (4 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4829,Greater Good - Strong Stomach (5 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 4830,Hungry for Entertainment,BasicTradeMission,blocked,Requires another mission or agent lifecycle
 4831,Hungry for Entertainment,BasicTradeMission,blocked,Requires another mission or agent lifecycle
 4832,Slave Shipment,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
@@ -1866,22 +1866,22 @@ missionId,name,template,status,reason
 4835,Warriors and Their Weapons,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 4836,"You, Trit",BasicTradeMission,blocked,Requires another mission or agent lifecycle
 4837,Salve for Sis,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
-4838,Save the Trees - Seeding a Future (1 of 3),BasicCourierMission,blocked,Requires mission-chain progression
-4839,Save the Trees – Forest's Revenge (2 of 3),BasicCourierMission,blocked,Requires mission-chain progression
-4840,Save the Trees – Save the People (3 of 3),BasicCourierMission,blocked,Requires mission-chain progression
-4841,Hauling Fur (1 of 3),BasicCourierMission,blocked,Requires mission-chain progression
-4842,Hauling Fur (2 of 3),BasicCourierMission,blocked,Requires mission-chain progression
-4843,Hauling Fur (3 of 3),BasicCourierMission,blocked,Requires mission-chain progression
-4844,Hunting a Heretic  - Tracking a Crackpot (1 of 3),BasicCourierMission,blocked,Requires mission-chain progression
-4845,Hunting a Heretic - Book Burning (2 of 3),BasicCourierMission,blocked,Requires mission-chain progression
-4846,Hunting a Heretic - Crackpot Captured! (3 of 3),BasicCourierMission,blocked,Requires mission-chain progression
-4847,For the Troops - Food for Fun (1 of 3),BasicCourierMission,blocked,Requires mission-chain progression
+4838,Save the Trees - Seeding a Future (1 of 3),BasicCourierMission,admitted,Catalog cargo or reviewed encounter
+4839,Save the Trees – Forest's Revenge (2 of 3),BasicCourierMission,admitted,Catalog cargo or reviewed encounter
+4840,Save the Trees – Save the People (3 of 3),BasicCourierMission,admitted,Catalog cargo or reviewed encounter
+4841,Hauling Fur (1 of 3),BasicCourierMission,admitted,Catalog cargo or reviewed encounter
+4842,Hauling Fur (2 of 3),BasicCourierMission,admitted,Catalog cargo or reviewed encounter
+4843,Hauling Fur (3 of 3),BasicCourierMission,admitted,Catalog cargo or reviewed encounter
+4844,Hunting a Heretic  - Tracking a Crackpot (1 of 3),BasicCourierMission,admitted,Catalog cargo or reviewed encounter
+4845,Hunting a Heretic - Book Burning (2 of 3),BasicCourierMission,admitted,Catalog cargo or reviewed encounter
+4846,Hunting a Heretic - Crackpot Captured! (3 of 3),BasicCourierMission,admitted,Catalog cargo or reviewed encounter
+4847,For the Troops - Food for Fun (1 of 3),BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 4848,Persistent Pests,BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
-4849,For the Troops - Error of Comedy (2 of 3),BasicCourierMission,blocked,Requires mission-chain progression
+4849,For the Troops - Error of Comedy (2 of 3),BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 4850,Drone Distribution,BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
 4851,Coming 'Round the Mountain,BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
 4852,A Better World,BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
-4853,For the Troops - Final Negotiations (3 of 3),BasicCourierMission,blocked,Requires mission-chain progression
+4853,For the Troops - Final Negotiations (3 of 3),BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 4854,Beware They Live,BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
 4855,Pile of Pithix,BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
 4856,Ours Now,BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
@@ -1896,8 +1896,8 @@ missionId,name,template,status,reason
 4865,Arisite Envy,BasicMiningMission,admitted,Catalog mining deposits
 4866,Not Gneiss at All,BasicMiningMission,admitted,Catalog mining deposits
 4868,Like Drones to a Cloud,BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
-4869,Greater Good – Less Distasteful Matters (2 of 5),BasicCourierMission,blocked,Requires mission-chain progression
-4870,Greater Good - Not Even Remotely Drastic Measures (4 of 5),BasicCourierMission,blocked,Requires mission-chain progression
+4869,Greater Good – Less Distasteful Matters (2 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+4870,Greater Good - Not Even Remotely Drastic Measures (4 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 4884,Gas Injections,BasicMiningMission,admitted,Catalog mining deposits
 4885,Lights Out,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 4886,Foreign Investment,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -1916,10 +1916,10 @@ missionId,name,template,status,reason
 4910,Mass Drivers,BasicKillMission,blocked,Requires level-five encounter policy
 4911,Mass Drivers,BasicKillMission,blocked,Requires level-five encounter policy
 4912,Mass Drivers,BasicKillMission,blocked,Requires level-five encounter policy
-13443,Rogue Tech (1 of 2),BasicKillMission,blocked,Requires mission-chain progression
-13448,Rogue Tech (2 of 2),BasicKillMission,blocked,Requires mission-chain progression
-13449,Mordu's Folly (1 of 2),BasicKillMission,blocked,Requires mission-chain progression
-13450,Mordu's Folly (2 of 2),BasicKillMission,blocked,Requires mission-chain progression
+13443,Rogue Tech (1 of 2),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13448,Rogue Tech (2 of 2),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13449,Mordu's Folly (1 of 2),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13450,Mordu's Folly (2 of 2),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 13452,"Id and Egonics, Inc.",GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 13453,My Sweet Privateer,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13454,Forces Amassing,BasicKillMission,blocked,Requires level-five encounter policy
@@ -1932,82 +1932,82 @@ missionId,name,template,status,reason
 13461,The Drug Bust,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13462,Bad Bunnies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13463,Pirate Radio,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
-13464,Athran Exigency (1 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13465,Athran Exigency (2 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13466,Athran Exigency (3 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13468,A New Venture – Healthy Competition (3 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13470,Athran Exigency (4 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13471,Athran Exigency (5 of 5),BasicKillMission,blocked,Requires mission-chain progression
+13464,Athran Exigency (1 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13465,Athran Exigency (2 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13466,Athran Exigency (3 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13468,A New Venture – Healthy Competition (3 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13470,Athran Exigency (4 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13471,Athran Exigency (5 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 13472,Augumene Allergen (1 of 5),BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
-13473,A New Venture  – Education is Key (1 of 5),BasicCourierMission,blocked,Requires mission-chain progression
-13474,Augumene Allergen (2 of 5),BasicCourierMission,blocked,Requires mission-chain progression
-13475,A New Venture  – Right People (2 of 5),BasicCourierMission,blocked,Requires mission-chain progression
-13476,Augumene Allergen (3 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13477,Augumene Allergen (4 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13478,Augumene Allergen (5 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13479,A New Venture – Rough Market (4 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13480,Suntendi Recall (1 of 5),BasicCourierMission,blocked,Requires mission-chain progression
-13481,A New Venture – Final Negotiations (5 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13482,Suntendi Recall (2 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13483,Suntendi Recall (3 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13484,Suntendi Recall (4 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13485,Suntendi Recall (5 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13486,Mysterious Sightings (1 of 4),BasicKillMission,blocked,Requires mission-chain progression
-13487,Mysterious Sightings (2 of 4),BasicCourierMission,blocked,Requires mission-chain progression
-13488,Mysterious Sightings (3 of 4),BasicKillMission,blocked,Requires mission-chain progression
-13489,Mysterious Sightings (4 of 4),BasicKillMission,blocked,Requires mission-chain progression
-13490,Interstellar Railroad (1 of 4),BasicKillMission,blocked,Requires mission-chain progression
-13491,Interstellar Railroad (2 of 4),BasicCourierMission,blocked,Requires mission-chain progression
-13492,Interstellar Railroad (3 of 4),BasicKillMission,blocked,Requires mission-chain progression
-13493,Interstellar Railroad (4 of 4),BasicKillMission,blocked,Requires mission-chain progression
-13496,Fair Play - To the Rescue (1 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13497,Fair Play - Turnabout (5 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13499,Fair Play - Slight Advantage (4 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13501,Fair Play - Now Bite (3 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13502,Fair Play - More Bark (2 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13505,"They, Robots (1 of 5)",BasicCourierMission,blocked,Requires mission-chain progression
-13506,"They, Robots (2 of 5)",BasicKillMission,blocked,Requires mission-chain progression
-13507,"They, Robots (3 of 5)",BasicKillMission,blocked,Requires mission-chain progression
+13473,A New Venture  – Education is Key (1 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13474,Augumene Allergen (2 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13475,A New Venture  – Right People (2 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13476,Augumene Allergen (3 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13477,Augumene Allergen (4 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13478,Augumene Allergen (5 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13479,A New Venture – Rough Market (4 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13480,Suntendi Recall (1 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13481,A New Venture – Final Negotiations (5 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13482,Suntendi Recall (2 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13483,Suntendi Recall (3 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13484,Suntendi Recall (4 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13485,Suntendi Recall (5 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13486,Mysterious Sightings (1 of 4),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13487,Mysterious Sightings (2 of 4),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13488,Mysterious Sightings (3 of 4),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13489,Mysterious Sightings (4 of 4),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13490,Interstellar Railroad (1 of 4),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13491,Interstellar Railroad (2 of 4),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13492,Interstellar Railroad (3 of 4),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13493,Interstellar Railroad (4 of 4),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13496,Fair Play - To the Rescue (1 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13497,Fair Play - Turnabout (5 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13499,Fair Play - Slight Advantage (4 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13501,Fair Play - Now Bite (3 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13502,Fair Play - More Bark (2 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13505,"They, Robots (1 of 5)",BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13506,"They, Robots (2 of 5)",BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13507,"They, Robots (3 of 5)",BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 13509,"They, Robots (4 of 5)",BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
-13510,"They, Robots (5 of 5)",BasicKillMission,blocked,Requires mission-chain progression
-13511,Patriotic Measures (1 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13512,Patriotic Measures (2 of 5),BasicCourierMission,blocked,Requires mission-chain progression
-13513,Patriotic Measures (3 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13514,Patriotic Measures (4 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13515,Patriotic Measures (5 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13516,The Heiress (1 of 5),BasicCourierMission,blocked,Requires mission-chain progression
-13517,The Heiress (2 of 5),BasicCourierMission,blocked,Requires mission-chain progression
+13510,"They, Robots (5 of 5)",BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13511,Patriotic Measures (1 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13512,Patriotic Measures (2 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13513,Patriotic Measures (3 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13514,Patriotic Measures (4 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13515,Patriotic Measures (5 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13516,The Heiress (1 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13517,The Heiress (2 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 13518,The Heiress (3 of 5),BasicMiningMission,blocked,"Requires verified mining scripts, chain progression or a distinct pocket"
-13519,The Heiress (4 of 5),BasicCourierMission,blocked,Requires mission-chain progression
-13520,The Heiress (5 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13521,Lost That Bet (1 of 5),BasicCourierMission,blocked,Requires mission-chain progression
-13522,Lost That Bet (2 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13523,What's in a Name  - Change of Address (1 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13524,What's in a Name  - Smile When You Call Me That (2 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13525,What's in a Name  - Poke (3 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13526,What's in a Name  - Thorny (4 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13527,What's in a Name  - Smelling Sweet (5 of 5),BasicCourierMission,blocked,Requires mission-chain progression
-13528,Air Show!  - Sign-up Begins (1 of 5),BasicCourierMission,blocked,Requires mission-chain progression
-13529,Air Show!  - Kick the Fires...? (2 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13530,Air Show!  - Crash & Burn (3 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13531,Air Show! - Target Rich Environment (4 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13532,Air Show! - Requesting a Flyby (5 of 5),BasicKillMission,blocked,Requires mission-chain progression
+13519,The Heiress (4 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13520,The Heiress (5 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13521,Lost That Bet (1 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13522,Lost That Bet (2 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13523,What's in a Name  - Change of Address (1 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13524,What's in a Name  - Smile When You Call Me That (2 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13525,What's in a Name  - Poke (3 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13526,What's in a Name  - Thorny (4 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13527,What's in a Name  - Smelling Sweet (5 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13528,Air Show!  - Sign-up Begins (1 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13529,Air Show!  - Kick the Fires...? (2 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13530,Air Show!  - Crash & Burn (3 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13531,Air Show! - Target Rich Environment (4 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13532,Air Show! - Requesting a Flyby (5 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 13533,No Honor,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13534,Lasers Softly Beaming,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-13537,Lost That Bet (3 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13538,Lost That Bet (4 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13539,Lost That Bet (5 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13540,The Major - Spy (1 of 5),BasicCourierMission,blocked,Requires mission-chain progression
-13541,The Major - Heist (2 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13542,The Major - Trash (3 of 5),BasicCourierMission,blocked,Requires mission-chain progression
-13543,The Major - Conspiracy (4 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13544,The Major - Dad? (5 of 5),BasicCourierMission,blocked,Requires mission-chain progression
+13537,Lost That Bet (3 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13538,Lost That Bet (4 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13539,Lost That Bet (5 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13540,The Major - Spy (1 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13541,The Major - Heist (2 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13542,The Major - Trash (3 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13543,The Major - Conspiracy (4 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13544,The Major - Dad? (5 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 13545,A Wolf by the Ears,BasicKillMission,blocked,Requires level-five encounter policy
-13546,Rancorous Researcher (5 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13547,Rancorous Researcher (4 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13548,Rancorous Researcher (3 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13549,Rancorous Researcher (2 of 5),BasicKillMission,blocked,Requires mission-chain progression
-13550,Rancorous Researcher (1 of 5),BasicCourierMission,blocked,Requires mission-chain progression
+13546,Rancorous Researcher (5 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13547,Rancorous Researcher (4 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13548,Rancorous Researcher (3 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13549,Rancorous Researcher (2 of 5),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13550,Rancorous Researcher (1 of 5),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 13551,Save the Miners,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13552,An Advantageous Catastrophe,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13553,Trimming the Fat,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -2035,8 +2035,8 @@ missionId,name,template,status,reason
 13575,Covert Assistance,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13576,Proven Loyalty,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13577,Starbase Smashing,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-13578,Customs Interdiction (1 of 2),BasicKillMission,blocked,Requires mission-chain progression
-13579,Customs Interdiction (2 of 2),BasicKillMission,blocked,Requires mission-chain progression
+13578,Customs Interdiction (1 of 2),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13579,Customs Interdiction (2 of 2),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 13580,Knife in the Throat,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13581,Decapitation,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13582,The Fox Hunt,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -2193,29 +2193,29 @@ missionId,name,template,status,reason
 13745,Smash the Supplier,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13746,Crooked Cop,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13747,Feeding Frenzy,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-13748,The Voting Trail (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
-13749,The Voting Trail (2 of 3),BasicCourierMission,blocked,Requires mission-chain progression
-13750,The Voting Trail (3 of 3),BasicKillMission,blocked,Requires mission-chain progression
+13748,The Voting Trail (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13749,The Voting Trail (2 of 3),BasicCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13750,The Voting Trail (3 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 13751,Elopement,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13752,Dark Alliance,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
-13753,Minmatar Plot (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
+13753,Minmatar Plot (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 13754,Down with the Legion,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13755,Closing the Gate,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-13756,Minmatar Plot (2 of 3),BasicKillMission,blocked,Requires mission-chain progression
-13757,Minmatar Plot (3 of 3),BasicKillMission,blocked,Requires mission-chain progression
+13756,Minmatar Plot (2 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13757,Minmatar Plot (3 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 13758,Artifact Recovery,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13759,Racetrack Ruckus,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
-13760,Small Misunderstanding (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
-13761,Small Misunderstanding (2 of 3),BasicKillMission,blocked,Requires mission-chain progression
-13762,Small Misunderstanding (3 of 3),BasicKillMission,blocked,Requires mission-chain progression
-13763,Driving a Wedge - Get the Gallente (1 of 2),BasicKillMission,blocked,Requires mission-chain progression
-13764,Driving a Wedge - Ambassadorial Ambush (1 of 2),BasicKillMission,blocked,Requires mission-chain progression
-13765,Driving a Wedge - Delegation Destruction (2 of 2),BasicKillMission,blocked,Requires mission-chain progression
-13766,Driving a Wedge - Consulate Conflagration (2 of 2),BasicKillMission,blocked,Requires mission-chain progression
-13767,Driving a Wedge - Ambassadorial Ambush (1 of 2),BasicKillMission,blocked,Requires mission-chain progression
-13768,Driving a Wedge - Get the Gallente (1 of 2),BasicKillMission,blocked,Requires mission-chain progression
-13769,Driving a Wedge - Delegation Destruction (2 of 2),BasicKillMission,blocked,Requires mission-chain progression
-13770,Driving a Wedge - Consulate Conflagration (2 of 2),BasicKillMission,blocked,Requires mission-chain progression
+13760,Small Misunderstanding (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13761,Small Misunderstanding (2 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13762,Small Misunderstanding (3 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13763,Driving a Wedge - Get the Gallente (1 of 2),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13764,Driving a Wedge - Ambassadorial Ambush (1 of 2),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13765,Driving a Wedge - Delegation Destruction (2 of 2),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13766,Driving a Wedge - Consulate Conflagration (2 of 2),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13767,Driving a Wedge - Ambassadorial Ambush (1 of 2),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13768,Driving a Wedge - Get the Gallente (1 of 2),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13769,Driving a Wedge - Delegation Destruction (2 of 2),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13770,Driving a Wedge - Consulate Conflagration (2 of 2),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 13771,Medical Delivery,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 13772,Probing Question,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13773,Wee Bug Problem,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
@@ -2227,9 +2227,9 @@ missionId,name,template,status,reason
 13779,Vigilance,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13780,Encounter at Station 464,BasicKillMission,blocked,Requires authored scripts or initial gifts
 13781,Terrorism!,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-13782,Delving Into the Past (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
-13783,Delving Into the Past (2 of 3),BasicKillMission,blocked,Requires mission-chain progression
-13784,Delving Into the Past (3 of 3),BasicKillMission,blocked,Requires mission-chain progression
+13782,Delving Into the Past (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13783,Delving Into the Past (2 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13784,Delving Into the Past (3 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 13786,"Location, Location (1 of 5)",BasicKillMission,blocked,Requires level-five encounter policy
 13788,"Location, Location (1 of 5)",BasicKillMission,blocked,Requires level-five encounter policy
 13789,The Hard Way (2 of 5),BasicKillMission,blocked,Requires level-five encounter policy
@@ -2252,7 +2252,7 @@ missionId,name,template,status,reason
 13806,A Dirty Job (5 of 5),BasicKillMission,blocked,Requires level-five encounter policy
 13809,No Excuse,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13810,Another Slave Rescue (1 of 3),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
-13811,Another Slave Rescue (2 of 3),GenericStorylineCourierMission,blocked,Requires mission-chain progression
+13811,Another Slave Rescue (2 of 3),GenericStorylineCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 13812,Another Slave Rescue (3 of 3),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 13813,Friendly Spies,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13814,Forbidden Cloning,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
@@ -2260,14 +2260,14 @@ missionId,name,template,status,reason
 13816,Scout It Out,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 13817,Ambushed Ally,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 13818,Fetching Friends,GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
-13819,Labors of War (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
-13820,Labors of War (2 of 3),BasicKillMission,blocked,Requires mission-chain progression
-13821,Labors of War (3 of 3),BasicKillMission,blocked,Requires mission-chain progression
+13819,Labors of War (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13820,Labors of War (2 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13821,Labors of War (3 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 13822,Stay Frosty,BasicMiningMission,admitted,Catalog mining deposits
 13823,Aiding the Dark Amarr,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-13824,Are You Receiving? (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
-13825,Are You Receiving? (2 of 3),BasicKillMission,blocked,Requires mission-chain progression
-13826,Are You Receiving? (3 of 3),BasicKillMission,blocked,Requires mission-chain progression
+13824,Are You Receiving? (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13825,Are You Receiving? (2 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+13826,Are You Receiving? (3 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 13846,Balancing the Books (3 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 13847,Balancing the Books (3 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
 13848,Balancing the Books (3 of 10),StorylineKillMission,blocked,Requires another mission or agent lifecycle
@@ -2586,17 +2586,17 @@ missionId,name,template,status,reason
 15143,Intelligence Mining,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
 15144,Fear of Angels,EpicArcKillMission,blocked,Requires another mission or agent lifecycle
 15168,Onslaught,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-15169,"After The Seven (1 of 5) ""Replacement""",BasicKillMission,blocked,Requires mission-chain progression
+15169,"After The Seven (1 of 5) ""Replacement""",BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 15170,Onslaught,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-15171,"After The Seven (2 of 5) ""Company""",BasicKillMission,blocked,Requires mission-chain progression
-15172,"After The Seven (3 of 5) ""Idiot""",BasicKillMission,blocked,Requires mission-chain progression
-15173,"After The Seven (4 of 5) ""Ruse""",BasicKillMission,blocked,Requires mission-chain progression
-15174,"After The Seven (5 of 5) ""Decision""",BasicKillMission,blocked,Requires mission-chain progression
+15171,"After The Seven (2 of 5) ""Company""",BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+15172,"After The Seven (3 of 5) ""Idiot""",BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+15173,"After The Seven (4 of 5) ""Ruse""",BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+15174,"After The Seven (5 of 5) ""Decision""",BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 15175,Dead Drift,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 15177,Mission of Mercy,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
-15189,The Anomaly (1 of 3),BasicKillMission,blocked,Requires mission-chain progression
-15190,The Anomaly (2 of 3),BasicKillMission,blocked,Requires mission-chain progression
-15191,The Anomaly (3 of 3),BasicKillMission,blocked,Requires mission-chain progression
+15189,The Anomaly (1 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+15190,The Anomaly (2 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
+15191,The Anomaly (3 of 3),BasicKillMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 15192,Pick Your Poison,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 15195,The Good Word,BasicKillMission,blocked,Requires verified NPC roster and objective scripts
 15202,The Search Party (2 of 2),StorylineKillMission,blocked,Requires another mission or agent lifecycle
@@ -2780,7 +2780,7 @@ missionId,name,template,status,reason
 15671,Floatin' in the Stream,BasicCourierMission,admitted,Catalog cargo or reviewed encounter
 15673,Whispers in the Dark - First Contact (1 of 4),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 15674,Whispers in the Dark - Lay And Pray (2 of 4),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
-15675,Whispers in the Dark - The Spy Drones (3 of 4),GenericStorylineCourierMission,blocked,Requires mission-chain progression
+15675,Whispers in the Dark - The Spy Drones (3 of 4),GenericStorylineCourierMission,blocked,Requires complete mission-chain bindings or additional part mechanics
 15676,Whispers in the Dark - The Outpost (4 of 4),GenericStorylineKillMission,blocked,Requires another mission or agent lifecycle
 16087,Anomic Agent,BasicKillMission,blocked,Requires level-five encounter policy
 16089,Anomic Agent,BasicKillMission,blocked,Requires level-five encounter policy
