@@ -51,6 +51,8 @@ internal static partial class NpcHostility
         {
             return;
         }
+        // Hostility includes weapons and EWAR; conditional Sleeper reinforcements share this boundary.
+        Eden.World.Exploration.CombatAnomalyStore.SleeperAggressed(world, catalog, attacked, now);
         var members =
             attacked.Role == NpcRole.Pirate || attacked.EncounterId == 0
                 ? [attacked]

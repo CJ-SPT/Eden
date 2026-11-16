@@ -36,6 +36,12 @@ RELIC = [
     ["Forgotten Core Data Field", "Forgotten Core Information Pen"],
     ["Forgotten Core Assembly Hall", "Forgotten Core Circuitry Disassembler"],
 ]
+GAS = [
+    ("Barren Perimeter Reservoir", 1), ("Minor Perimeter Reservoir", 1),
+    ("Ordinary Perimeter Reservoir", 1), ("Sizeable Perimeter Reservoir", 1),
+    ("Token Perimeter Reservoir", 1), ("Bountiful Frontier Reservoir", 3),
+    ("Vast Frontier Reservoir", 3), ("Instrumental Core Reservoir", 5), ("Vital Core Reservoir", 5),
+]
 
 
 def text(raw):
@@ -45,6 +51,7 @@ def text(raw):
 def main(args):
     jobs = [(name, level + 1, kind) for kind, classes in enumerate([ANOMALIES, DATA, RELIC])
             for level, names in enumerate(classes) for name in names]
+    jobs.extend((name, level, 3) for name, level in GAS)
     args.cache.mkdir(parents=True, exist_ok=True)
 
     def fetch(job):
@@ -78,13 +85,16 @@ def main(args):
                     table = next(t for t in tables if "Sleeper Ship Name" in text(t) and "Wave" in text(t))
                     waves = []
                     unknown = []
+                    next_trigger = 0
                     for row in re.findall(r"<tr\b[^>]*>(.*?)</tr>", table, re.S | re.I):
                         cells = re.findall(r"<t[dh]\b[^>]*>(.*?)</t[dh]>", row, re.S | re.I)
                         line = text(row)
                         if re.search(r"capital|escalation|drifter", line, re.I):
                             break
                         if re.match(r"Wave \d", line):
-                            waves.append(dict(heading=line, groups=[]))
+                            trigger = 3 if "cans have been hacked or failed" in line else next_trigger
+                            waves.append(dict(heading=line, groups=[], trigger=trigger))
+                            next_trigger = 0
                             continue
                         if not waves:
                             continue
@@ -97,12 +107,19 @@ def main(args):
                         optional = "Possible additional spawn" in npc or "May not always appear" in npc
                         npc = re.sub(r"\s*\((?:Possible additional spawn|May not always appear|Trigger to finish site)\)", "", npc)
                         npc = npc.replace(" Trigger to complete site", "").strip()
-                        matches = [tid for type_name, tid in types.items() if npc == type_name]
+                        if "Next wave is triggered by hacking" in npc:
+                            next_trigger = 1
+                        elif "Next wave is triggered by failing a hack" in npc:
+                            next_trigger = 2
+                        condition = 2 if "on aggression" in npc else 1 if "Talocan relic can" in npc else 0
+                        matches = [tid for type_name, tid in types.items()
+                                   if npc == type_name or npc.startswith(type_name + " (") or npc == type_name + " on aggression"]
                         if not matches:
                             unknown.append(npc)
                             continue
                         waves[-1]["groups"].append(dict(minimum=int(minimum), maximum=int(maximum or minimum),
-                            types=matches, trigger="TRIGGER for next wave" in row, optional=optional, sentry="Sentry Tower" in npc))
+                            types=matches, trigger="TRIGGER for next wave" in row, optional=optional,
+                            sentry="Sentry Tower" in npc, spawnCondition=condition))
                     if unknown or not waves or any(not wave["groups"] for wave in waves):
                         raise ValueError("Unknown NPCs or empty waves: " + repr(unknown))
                     if name not in dungeons:

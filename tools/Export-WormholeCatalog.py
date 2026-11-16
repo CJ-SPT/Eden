@@ -2,6 +2,7 @@
 import argparse
 import importlib.util
 import json
+import re
 from pathlib import Path
 import sqlite3
 
@@ -14,6 +15,8 @@ def main(args):
     # Published blue loot and the established Ancient Salvage materials, build 3662168.
     materials = [30744, 30745, 30746, 30747, 30018, 30019, 30021, 30022, 30024, 30248,
                  30251, 30252, 30254, 30258, 30259, 30268, 30269, 30270, 30271]
+    source = Path('src/Eden.Gameplay/Exploration/SleeperExplorationLoot.cs').read_text(encoding='utf-8')
+    materials.extend(int(value) for value in re.findall(r'^    \w+ = (\d+)', source, re.M))
     module.export(args.catalog, args.output, args.encounters, materials)
     data = json.loads(args.output.read_text(encoding="utf-8"))
     types = {t['id']: t for t in data['types']}

@@ -267,6 +267,10 @@ internal sealed class FlightCallHandler(
         {
             wormholes?.Activate(context.Pilot.SystemId, endpoint);
         }
+        if (result is not PilotCallResult.Failure && command is FlightCommand.WarpToPoint siteWarp)
+        {
+            anomalies.Activate(context.Pilot.SystemId, siteWarp.Position, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+        }
         return result;
     }
 }

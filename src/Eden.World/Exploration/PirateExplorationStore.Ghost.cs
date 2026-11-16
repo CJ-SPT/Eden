@@ -80,8 +80,19 @@ internal sealed partial class PirateExplorationStore
         return blastDue ? BlastParticipants(world, system) : new(systems: [system]);
     }
 
-    private TransactionParticipants HackingParticipants(WorldAction world, long pilot)
+    private TransactionParticipants HackingParticipants(WorldAction world, long pilot, long? target = null)
     {
+        if (
+            world is EconomyTransaction
+            && (target ?? world.Set<SavedHackingAttempt>().Find(pilot)?.ContainerId) is long id
+            && world.Set<SavedHackingContainer>().Find(id) is { } guardedContainer
+            && world.Set<SavedExplorationSite>().Find(guardedContainer.SiteId) is { } guardedSite
+            && guardedSite.Kind != (int)ExplorationKind.Ghost
+            && WormholeRules.IsWormholeSystem(guardedSite.SystemId)
+        )
+        {
+            return new(systems: [guardedSite.SystemId], pilots: [pilot]);
+        }
         if (
             world.Set<SavedHackingAttempt>().Find(pilot) is { } attempt
             && world.Set<SavedHackingContainer>().Find(attempt.ContainerId) is { } container
@@ -240,6 +251,7 @@ internal sealed partial class PirateExplorationStore
         }
         else
         {
+            CombatAnomalyStore.HackSignal(world, catalog, site.Id, SleeperWaveTrigger.HackFailed, now);
             container.Destroyed = container.Failures >= HackingRules.MaximumFailures;
         }
     }

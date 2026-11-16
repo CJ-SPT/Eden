@@ -112,8 +112,8 @@ its detail URL. Index names are reconciled with native catalog identities becaus
 incorrect. No reference implementation code was copied.
 
 `Import-WormholeReports.py`, `Import-SleeperLoot.py` and `Export-WormholeCatalog.py` reproduce the reports,
-loot and bounded native test catalog. The report importer also retains guarded data/relic research and rejects
-conditional reports it cannot represent; these records are not admitted as combat anomalies. Capital/Drifter
+loot and bounded native test catalog. At this milestone, the importer retained guarded data/relic research and rejected
+conditional reports it could not represent. The guarded-signature follow-up below supersedes that restriction. Capital/Drifter
 escalations and special wormhole classes are outside this combat population.
 
 Consulted local evejs `wormholeEnvironmentRuntime.js` (SHA-256
@@ -160,3 +160,100 @@ No full .NET regression suite was requested or run.
 
 **Optional maintainer checks:** Inspect a Sleeper site and native system-effect icons, and redeem blue loot at an
 authorized NPC buyer.
+
+## Guarded signatures and saved site deadlines — November 16, 2026
+
+World version **172** adds resident Sleeper progress for the 24 standard data/relic signatures and nine fullerite
+reservoirs, bringing the bound encounter set to **57 definitions**. Some native data/relic dungeons are absent from
+the SDE dungeon directory; explicit report bindings load their `client/dungeons` geometry directly. Class-matching
+data and relic signatures use the existing scanner, targeting, analyzer minigame, inventory and checkpoint systems.
+Population remains an Eden policy: four combat anomalies, one guarded data site, one guarded relic site and one
+class-eligible fullerite reservoir per observed system. Guarded signature replacements rotate through their class's
+native definitions, so synchronized replacement cannot permanently select the same half of the catalog.
+
+`SavedSleeperSite` links a combat encounter to its exploration/resource parent and saves activation, expiry, hack
+starts, failed/resolved hacks and the last aggression-triggered wave. Conditional reinforcements retain their actual
+trigger family: hacking any can, failing a hack, resolving a stable one-to-three-can threshold, or attacking the current
+wave. Weapons and EWAR share the resident hostility boundary. Earlier-wave aggression cannot release a later
+wave's conditional member. Trigger counts, reserved NPC identities and the committed scene change together.
+Repeated calls, late observations and checkpoint/restart cannot replay a completed trigger.
+
+Talocan presence uses a stable **5% Eden roll**, matching its conditional guard rather than rolling each independently.
+Talocan caches require a relic analyzer even inside data sites and yield ancient hull sections. Standard Sleeper data
+containers provide published subsystem datacores; relic containers provide native ancient subsystem relics. Hack
+board tiers follow the class, capped by the existing board generator. Reward selection, grades and quantities are
+explicit Eden policies using saved container seeds; retail loot distributions are not asserted. Paid capacitor,
+cooldowns, locking, range, analyzer choice, container ownership and cargo-capacity rules remain in force.
+
+The native gas entry guards specify a **900–1,500 second** delay. The first accepted point warp or arrival saves
+one deterministic deadline in that range. Repeated arrival checks preserve it. Due defenders advance under the
+resident owner; clearing them leaves the finite fullerite deposits available, and revisiting cannot respawn them.
+The current pinned Ordinary Perimeter Reservoir uses frigates, matching the March 2026 reference update, rather
+than the historical immediate sentry towers. Resource exhaustion or expiry retires outstanding defenders before a
+replacement becomes available. Dormant gas sites do not acquire a defender deadline merely from being scanned.
+
+Combat sites expire three days after their first accepted warp/arrival. Guarded exploration and fullerite parents
+retain three-day generation lifetimes. These are continuous Eden deadlines, rather than Tranquility downtime
+counting. Expiry retires members and replaces the completed site after ten minutes. Already-started version-171
+combat sites retain their saved wave and acquire a fresh three-day deadline on first resident observation because
+their earlier activation time was not stored.
+
+Startup marks abandoned guarded hacking attempts for resident recovery without settling gameplay in SQL. On
+resident observation, failure accounting, module release and any triggered reinforcement commit together. Paid
+cooldowns remain spent. Repeated initialization and subsequent observations cannot count the failure twice.
+SQL is limited to catalog/setup, startup recovery markers and checkpoint projection; new runtime progression and
+rewards require `ResidentEconomy`. Unchanged arrival and observer checks retain shared views.
+
+References include [wormhole sites](https://wiki.eveuniversity.org/Wormhole_sites),
+[Tech 3 production](https://wiki.eveuniversity.org/Tech_3_Production),
+[Digital Nexus](https://wiki.eveuniversity.org/Unsecured_Frontier_Digital_Nexus),
+[Trinary Hub](https://wiki.eveuniversity.org/Unsecured_Frontier_Trinary_Hub),
+[Information Pen](https://wiki.eveuniversity.org/Forgotten_Core_Information_Pen),
+[Ordinary Perimeter Reservoir](https://wiki.eveuniversity.org/Ordinary_Perimeter_Reservoir) and
+[Bountiful Frontier Reservoir](https://wiki.eveuniversity.org/Bountiful_Frontier_Reservoir).
+Each embedded report retains its URL and article revision. The pinned native archive and reference-source hashes
+are recorded above; packet and codec formats are unchanged. No new live observations were made.
+
+This scope covers ordinary C1–C6 combat, guarded exploration and fullerite encounters. Special wormhole classes,
+capital/Drifter escalations and wormhole ore-deposit encounter population remain separate content work. Per-system
+retail static assignments, passive K162 reveal probabilities and retail salvage/research drop probabilities are not claimed.
+
+### Validation
+
+**Automated validation:** Development started with exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Exploration.SleeperGuardedSiteTests.AllGuardedReportsBindNativeContainersAndConditionalReinforcements`.
+The binding check covers all 57 native definitions, container analyzer choices, conditional gates, published research
+inputs and blue-loot coverage. Nine reservoir cases exercise exact deadlines, checkpoint/restart, finite deposits and
+all waves; six class cases exercise guarded data/relic hacking and nonduplicating research rewards. Further tests
+cover all conditional trigger families, optional Talocan guards/relic access, exact expiry, version-171 migration and
+actual startup recovery. Warm repeated arrival/observation and warmed recovery assert zero SQL commands,
+connections and fitting recalculations, with checkpoint projection outside the measured observation scope.
+
+The combined Sleeper/environment filter passed **35 cases in 39.28 seconds** (feature build **11.99 seconds**)
+before adding the explicit migration/startup cases. The exact version-171 case subsequently passed in **10.27 seconds**;
+the startup-recovery case passed in **16.10 seconds** with immutable NPC profiles warmed before measurement.
+Development checks exposed a deadline read after transaction commit and a per-tick arrival invalidation; both were
+corrected. Test setup corrections kept ship lookup outside speculative transactions and respected paid analyzer
+cooldowns. An intermediate trigger run was interrupted while correcting that setup.
+
+Final affected validation passed **415 cases in 208.73 seconds**, zero failures/skips (feature build **1.74 seconds**).
+Tool and solution restore passed; the solution build passed with zero warnings/errors in **9.08 seconds**. This run
+covers the final code, including migration from the actual version-171 table shape and deferred resident recovery
+of an abandoned hack through repeated host initialization. Report and catalog exports reproduced byte for byte:
+57 admitted reports, zero blocked reports, 378 native types, 876 supporting records and 36 environment programs.
+The broader system-effect/combat milestone's 792-case result and its three verified baseline exclusions remain
+recorded above. The final 415-case filter required no exclusions. No full .NET regression suite was requested or run.
+Both Python policy suites passed (8 catalog cases in **1.255 seconds**, 9 formatting cases in **0.019 seconds**).
+Formatting verification checked **2,357 files** and passed line-width rules; the combined policy/format step took
+**37.81 seconds**. Documentation links, UTF-8/final-newline checks and diff checks passed.
+
+Final filter:
+
+```text
+FullyQualifiedName~Wormhole|FullyQualifiedName~Sleeper|FullyQualifiedName~CombatAnomaly|FullyQualifiedName~AnomalySpawnRule|FullyQualifiedName~AnomalyWarpIn|FullyQualifiedName~Hacking|FullyQualifiedName~ProbeScanning|FullyQualifiedName~IdleAnomalyFrame|FullyQualifiedName~GasMining|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~NpcEwar|FullyQualifiedName~TypedFlightTests|FullyQualifiedName~FlightSessionTests|FullyQualifiedName~WorldInitializationTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~GhostSite|FullyQualifiedName~DedComplex|FullyQualifiedName~DedEscalation
+```
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Scan and hack a guarded signature, inspect Talocan analyzer selection, and verify
+delayed gas defenders in the native client.

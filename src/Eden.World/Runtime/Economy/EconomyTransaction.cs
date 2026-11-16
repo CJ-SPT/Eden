@@ -245,6 +245,7 @@ internal sealed partial class EconomyTransaction(
     {
         ValidateBotRows();
         ValidateCorporationBlueprintLocks();
+        ValidateSleeperSites();
         foreach (var job in Retained<IndustryJob>())
         {
             if (

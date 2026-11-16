@@ -3,9 +3,15 @@ using Eden.Gameplay.Combat;
 
 namespace Eden.Gameplay.Exploration;
 
-public sealed record AnomalyNpcGroup(int Minimum, int Maximum, ImmutableArray<int> Types, bool Trigger, bool Optional, bool Sentry);
+public sealed record AnomalyNpcGroup(int Minimum, int Maximum, ImmutableArray<int> Types, bool Trigger, bool Optional, bool Sentry)
+{
+    public SleeperSpawnCondition SpawnCondition { get; init; }
+}
 
-public sealed record AnomalyEncounterWave(string Heading, ImmutableArray<AnomalyNpcGroup> Groups, int DelaySeconds = 0);
+public sealed record AnomalyEncounterWave(string Heading, ImmutableArray<AnomalyNpcGroup> Groups, int DelaySeconds = 0)
+{
+    public SleeperWaveTrigger Trigger { get; init; }
+}
 
 public sealed record AnomalyEncounterReport(
     string Name,
@@ -73,12 +79,27 @@ public static class AnomalyEncounterRules
         return !high;
     }
 
-    public static IReadOnlyList<AnomalySpawnMember> Members(long siteId, int waveIndex, AnomalyEncounterWave wave)
+    public static IReadOnlyList<AnomalySpawnMember> Members(long siteId, int waveIndex, AnomalyEncounterWave wave) =>
+        Members(siteId, waveIndex, wave, null);
+
+    public static IReadOnlyList<AnomalySpawnMember> Members(
+        long siteId,
+        int waveIndex,
+        AnomalyEncounterWave wave,
+        SleeperSpawnContext? sleeper
+    )
     {
         List<AnomalySpawnMember> members = [];
         for (int groupIndex = 0; groupIndex < wave.Groups.Length; groupIndex++)
         {
             var group = wave.Groups[groupIndex];
+            if (
+                group.SpawnCondition == SleeperSpawnCondition.Talocan && sleeper?.Talocan != true
+                || group.SpawnCondition == SleeperSpawnCondition.Aggression && sleeper?.Aggression != true
+            )
+            {
+                continue;
+            }
             if (
                 group.Minimum < 0
                 || group.Maximum < Math.Max(group.Optional ? 1 : 0, group.Minimum)

@@ -184,7 +184,7 @@ internal sealed partial class CombatAnomalyStore(
             var eligible = _definitions
                 .Where(d =>
                     wormhole
-                        ? !signature && d.WormholeClass == wormholeClass
+                        ? !signature && d.WormholeClass == wormholeClass && d.WormholeKind == WormholeSiteKind.Combat
                         : d.WormholeClass == 0
                             && (d.Faction == faction || d.Faction == NpcPirateFaction.RogueDrones)
                             && (!d.RequiresMajorThreat || majorThreat)
@@ -215,6 +215,7 @@ internal sealed partial class CombatAnomalyStore(
                     && s.IsSignature == signature
                     && s.Slot != DedComplexRules.SiteSlot
                     && s.Slot != DedComplexRules.EscalationSlot
+                    && s.Slot != SleeperRules.GuardedSiteSlot
                 )
                 .Select(s => new SiteSlotIdentity(s.Id, s.Slot))
                 .AsEnumerable()
@@ -259,6 +260,18 @@ internal sealed partial class CombatAnomalyStore(
             }
             foreach (var site in latest.Values.Where(s => s.CompletedAt is null))
             {
+                if (wormhole)
+                {
+                    var state = SleeperState(world, site);
+                    long? previousDeadline = state.ExpiresAt;
+                    // Version 171 did not save activation times for Sleeper combat sites.
+                    if (site.Wave >= 0 && state.ActivatedAt is null)
+                    {
+                        ActivateSleeper(world, catalog, site, now);
+                    }
+                    AdvanceSleeper(world, catalog, site, now);
+                    changed |= previousDeadline != state.ExpiresAt || site.CompletedAt.HasValue;
+                }
                 while (site.NextWaveAt is long due && due <= now)
                 {
                     site.NextWaveAt = null;
@@ -271,6 +284,13 @@ internal sealed partial class CombatAnomalyStore(
             {
                 Invalidate(world, -1);
             }
+            long sleeperDeadline = wormhole
+                ? latest
+                    .Values.Where(s => s.CompletedAt is null)
+                    .Select(s => world.Set<SavedSleeperSite>().Find(s.Id)?.ExpiresAt ?? long.MaxValue)
+                    .DefaultIfEmpty(long.MaxValue)
+                    .Min()
+                : long.MaxValue;
             transaction.Commit();
             long deadline = latest
                 .Values.Where(s => s.ReplaceAt.HasValue)
@@ -285,6 +305,7 @@ internal sealed partial class CombatAnomalyStore(
                 deadline,
                 latest.Values.Where(s => s.NextWaveAt.HasValue).Select(s => s.NextWaveAt!.Value).DefaultIfEmpty(long.MaxValue).Min()
             );
+            deadline = Math.Min(deadline, sleeperDeadline);
             var sites = latest
                 .Values.Where(s => s.CompletedAt is null)
                 .OrderBy(s => s.Id)
@@ -353,10 +374,7 @@ internal sealed partial class CombatAnomalyStore(
             var nearby = List(systemId, now)
                 .Concat(signatures)
                 .Where(s =>
-                    s.Exploration is null
-                    && s.Mining is null
-                    && !s.Ded
-                    && !s.Wormhole
+                    ((s.Exploration is null && s.Mining is null && !s.Ded && !s.Wormhole) || s.FactionId == SleeperRules.FactionId)
                     && !s.Started
                     && position.DistanceTo(s.Position) <= CombatAnomalyRules.ArrivalRange
                 )
@@ -370,7 +388,16 @@ internal sealed partial class CombatAnomalyStore(
             var world = transaction.World;
             foreach (var contact in nearby)
             {
-                var site = world.Set<WorldCombatAnomaly>().Find(contact.Id)!;
+                var site = world.Set<WorldCombatAnomaly>().Find(contact.Id) ?? Guarded(world, contact.Id);
+                if (site is null)
+                {
+                    continue;
+                }
+                if (contact.FactionId == SleeperRules.FactionId)
+                {
+                    ArriveSleeper(world, catalog, site, now);
+                    continue;
+                }
                 if (site.Wave < 0 && site.CompletedAt is null)
                 {
                     NextWave(world, catalog, site, now);

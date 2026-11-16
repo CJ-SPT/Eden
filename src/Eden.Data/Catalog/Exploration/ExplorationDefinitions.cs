@@ -3,7 +3,11 @@ using Eden.Gameplay.Flight;
 
 namespace Eden.Data.Catalog.Exploration;
 
-public sealed record ExplorationContainerDefinition(int TypeId, int Difficulty, SpacePosition Position);
+public sealed record ExplorationContainerDefinition(int TypeId, int Difficulty, SpacePosition Position)
+{
+    public ExplorationKind? AnalyzerKind { get; init; }
+    public bool Optional { get; init; }
+}
 
 public sealed record ExplorationDefinition(
     int DungeonId,
@@ -18,6 +22,7 @@ public sealed record ExplorationDefinition(
 {
     public int RoomId { get; init; }
     public IReadOnlyList<StaticSpaceObject> Scenery { get; init; } = [];
+    public int WormholeClass { get; init; }
 }
 
 public sealed record ExplorationDefinitions(int Build, IReadOnlyList<ExplorationDefinition> Sites);

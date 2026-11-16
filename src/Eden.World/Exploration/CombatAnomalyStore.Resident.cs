@@ -116,8 +116,18 @@ internal sealed partial class CombatAnomalyStore
         var waves = definition.WavesFor(site.DefinitionVersion);
         while (site.Wave + 1 < waves.Length)
         {
+            if (!AllowsSleeperWave(world, site, waves[site.Wave + 1]))
+            {
+                return;
+            }
             site.Wave++;
-            var members = AnomalyEncounterRules.Members(site.Id, site.Wave, waves[site.Wave]);
+            var state = definition.WormholeClass > 0 ? SleeperState(world, site) : null;
+            var members = AnomalyEncounterRules.Members(
+                site.Id,
+                site.Wave,
+                waves[site.Wave],
+                state is null ? null : new(SleeperRules.HasTalocan(state.ParentSiteId ?? site.Id), state.AggressedWave == site.Wave)
+            );
             if (members.Count > 0)
             {
                 Spawn(world, catalog, site, members, now);
@@ -145,9 +155,14 @@ internal sealed partial class CombatAnomalyStore
         CatalogDbContext catalog,
         WorldCombatAnomaly site,
         IReadOnlyList<AnomalySpawnMember> members,
-        long now
+        long now,
+        int firstSlot = 0
     )
     {
+        if (firstSlot < 0 || firstSlot + members.Count > AnomalyEncounterRules.MembersPerWave)
+        {
+            throw new InvalidDataException("Anomaly members exceed their reserved wave identities.");
+        }
         var definition = CombatAnomalyCatalog.Find(catalog, site.DungeonId)!;
         var origin = new SpacePosition(site.X, site.Y, site.Z) + definition.Spawner;
         var placements =
@@ -171,6 +186,7 @@ internal sealed partial class CombatAnomalyStore
                 CombatAnomalyRules.FirstNpcId
                 + (site.Id - CombatAnomalyRules.FirstSiteId) * AnomalyEncounterRules.NpcsPerSite
                 + site.Wave * AnomalyEncounterRules.MembersPerWave
+                + firstSlot
                 + slot
             );
             world.Add(
@@ -182,7 +198,7 @@ internal sealed partial class CombatAnomalyStore
                     Role = NpcRole.Pirate,
                     AnchorKind = NpcAnchorKind.Anomaly,
                     EncounterId = site.Id,
-                    SpawnSlot = slot,
+                    SpawnSlot = firstSlot + slot,
                     AcquisitionRange = site.DefinitionVersion == 0 ? definition.AcquisitionRange : placements[slot].AcquisitionRange,
                     CorporationId = definition.CorporationId,
                     FactionId = (int)definition.Faction,

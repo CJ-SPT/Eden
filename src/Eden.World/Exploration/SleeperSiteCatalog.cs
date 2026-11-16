@@ -17,6 +17,60 @@ internal static class SleeperSiteCatalog
 
     internal static ImmutableArray<CombatAnomalyDefinition> Read(CatalogDbContext catalog) => catalog.Definition(s_definitions, 0);
 
+    private static readonly CatalogDefinition<ImmutableArray<ExplorationDefinition>> s_exploration = new(
+        "sleeper-exploration",
+        LoadExploration
+    );
+
+    internal static ImmutableArray<ExplorationDefinition> Exploration(CatalogDbContext catalog) => catalog.Definition(s_exploration, 0);
+
+    private static ImmutableArray<ExplorationDefinition> LoadExploration(CatalogDbContext catalog, int unused) =>
+        Read(catalog)
+            .Where(d => d.WormholeKind is WormholeSiteKind.Data or WormholeSiteKind.Relic)
+            .Select(definition =>
+            {
+                var dungeon = catalog.Require(CatalogData.Client.Dungeons, (long)definition.DungeonId);
+                var room = dungeon.Rooms!.Single().Value;
+                var entry = room.Objects!.Values.Single(o => o.ObjectID == dungeon.EntryObjectID);
+                var origin = new SpacePosition(entry.Position!.X!.Value, entry.Position.Y!.Value, entry.Position.Z!.Value);
+                var kind = definition.WormholeKind == WormholeSiteKind.Data ? ExplorationKind.Data : ExplorationKind.Relic;
+                var containers = room
+                    .Objects.Values.Where(o => o.TypeID.HasValue && o.Position is not null)
+                    .Select(o => (Object: o, Type: catalog.FittingType(o.TypeID!.Value)))
+                    .Where(o => o.Type?.GroupId is HackingRules.ContainerGroup or SleeperRules.RelicContainerGroup)
+                    .OrderBy(o => o.Object.ObjectID)
+                    .Select(o => new ExplorationContainerDefinition(
+                        o.Type!.Id,
+                        Math.Clamp(definition.WormholeClass, 1, 5),
+                        new SpacePosition(o.Object.Position!.X!.Value, o.Object.Position.Y!.Value, o.Object.Position.Z!.Value) - origin
+                    )
+                    {
+                        AnalyzerKind = SleeperRules.IsTalocan(o.Type.Id) ? ExplorationKind.Relic : kind,
+                        Optional = SleeperRules.IsTalocan(o.Type.Id),
+                    })
+                    .ToArray();
+                if (containers.Length is < 1 or >= HackingRules.ContainersPerSite)
+                {
+                    throw new InvalidDataException($"Sleeper site {definition.DungeonId} has no supported hacking containers.");
+                }
+                return new ExplorationDefinition(
+                    definition.DungeonId,
+                    definition.NameId,
+                    definition.Name,
+                    SleeperRules.FactionId,
+                    kind,
+                    definition.WormholeClass,
+                    definition.Difficulty,
+                    containers
+                )
+                {
+                    WormholeClass = definition.WormholeClass,
+                    Scenery = definition.Objects,
+                    RoomId = checked((int)entry.RoomID!.Value),
+                };
+            })
+            .ToImmutableArray();
+
     private static ImmutableArray<AnomalyEncounterReport> LoadReports()
     {
         using var stream = typeof(SleeperEncounterDefinitions).Assembly.GetManifestResourceStream("Eden.Data.SleeperEncounters.json")!;
@@ -31,12 +85,15 @@ internal static class SleeperSiteCatalog
     private static ImmutableArray<CombatAnomalyDefinition> Load(CatalogDbContext catalog, int unused)
     {
         List<CombatAnomalyDefinition> definitions = [];
-        foreach (var report in s_reports.Value.Where(r => r.WormholeKind == WormholeSiteKind.Combat))
+        foreach (var report in s_reports.Value)
         {
             foreach (var (id, variant) in report.DungeonVariants!)
             {
                 var dungeon = catalog.Read(CatalogData.Client.Dungeons, (long)id);
-                if (dungeon?.EntryTypeID != CombatAnomalyRules.AnomalyTypeId || dungeon.Rooms is not { Count: 1 })
+                if (
+                    dungeon?.EntryTypeID is not (CombatAnomalyRules.AnomalyTypeId or ProbeScanRules.SignatureType)
+                    || dungeon.Rooms is not { Count: 1 }
+                )
                 {
                     continue;
                 }
@@ -108,6 +165,25 @@ internal static class SleeperSiteCatalog
                     {
                         SpawnAnchors = anchors,
                         WormholeClass = report.WormholeClass,
+                        WormholeKind = report.WormholeKind,
+                        ArrivalDelayMinimum =
+                            report.WormholeKind == WormholeSiteKind.Gas
+                                ? checked(
+                                    (int)(
+                                        entry.GuardCommand?.EntityMinRespawnDelay
+                                        ?? throw new InvalidDataException("Missing native gas defender minimum delay.")
+                                    )
+                                )
+                                : 0,
+                        ArrivalDelayMaximum =
+                            report.WormholeKind == WormholeSiteKind.Gas
+                                ? checked(
+                                    (int)(
+                                        entry.GuardCommand?.EntityMaxRespawnDelay
+                                        ?? throw new InvalidDataException("Missing native gas defender maximum delay.")
+                                    )
+                                )
+                                : 0,
                     }
                 );
             }

@@ -93,7 +93,7 @@ internal sealed partial class PirateExplorationStore
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
         {
-            using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+            using WorldActionScope transaction = new(database, select: world => HackingParticipants(world, pilotId, targetId));
             var world = transaction.World;
             using CatalogDbContext catalog = new(database.CatalogPath);
             var pilot = Pilot(world, pilotId);
@@ -132,7 +132,8 @@ internal sealed partial class PirateExplorationStore
                 throw new InvalidDataException("Invalid fitted analyzer profile.");
             }
             var access = Access(world, catalog, pilot, targetId, module.Range, now);
-            var kind = (ExplorationKind)access.Site.Kind;
+            var definition = Definition(catalog, access.Site).Containers[access.Container.Index];
+            var kind = definition.AnalyzerKind ?? (ExplorationKind)access.Site.Kind;
             int skill = kind != ExplorationKind.Relic ? HackingRules.HackingSkill : HackingRules.ArchaeologySkill;
             if (!InventoryDefinitions.RequiredSkills.Any(p => catalog.FittingAttributes(item.TypeId).GetValueOrDefault(p.Skill) == skill))
             {
@@ -156,7 +157,6 @@ internal sealed partial class PirateExplorationStore
             {
                 throw new InvalidDataException("A destroyed ship cannot operate an analyzer.");
             }
-            var definition = Definition(catalog, access.Site).Containers[access.Container.Index];
             var board = HackingRules.Create(
                 access.Container.LootSeed ^ access.Container.Failures,
                 Math.Clamp(definition.Difficulty, 0, 5),
@@ -190,6 +190,7 @@ internal sealed partial class PirateExplorationStore
             cooldown ??= world.Add(new ModuleCooldown { ModuleId = moduleId }).Entity;
             cooldown.ReadyAt = ready;
             cooldown.Kind = ModuleCooldownKind.Cycle;
+            CombatAnomalyStore.HackSignal(world, catalog, access.Site.Id, SleeperWaveTrigger.HackStarted, now);
             Invalidate(world, access.Site.SystemId);
             transaction.Commit();
             return contact;
@@ -237,6 +238,7 @@ internal sealed partial class PirateExplorationStore
                     GrantLoot(world, catalog, access.Container, Definition(catalog, access.Site), pilotId);
                     access.Container.Hacked = true;
                     access.Container.OwnerId = pilotId;
+                    CombatAnomalyStore.HackSignal(world, catalog, access.Site.Id, SleeperWaveTrigger.HackResolved, now);
                 }
                 else
                 {

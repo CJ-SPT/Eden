@@ -11,6 +11,10 @@ Counts, schema versions, example pilots, fixture populations and native observat
 
 The [hacking and archaeology milestone](protocol/information.md#hacking-and-archaeology-november-9-2026) adds native analyzer minigames and persistent pirate data/relic exploration with earned loot. Earlier probe and equipment limitations below are historical where superseded.
 
+[Resident wormholes](protocol/wormholes.md) add C1–C6 connection lifecycles, native system effects, 24 Sleeper combat
+anomalies, 24 guarded data/relic signatures and nine defended fullerite reservoirs. The topic records population and
+reward policies, checkpoint recovery, automated validation and remaining special-content limits.
+
 ## Contents
 
 - [Accounts, profiles and skills](#accounts-profiles-and-skills)

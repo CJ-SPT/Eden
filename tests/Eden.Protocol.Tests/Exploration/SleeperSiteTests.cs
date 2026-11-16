@@ -96,7 +96,7 @@ public sealed class SleeperSiteTests
         using Fixture f = new();
         PassiveCatalogFixture.LoadWormholes(f.CatalogPath);
         using CatalogDbContext catalog = new(f.CatalogPath);
-        var definitions = SleeperSiteCatalog.Read(catalog);
+        var definitions = SleeperSiteCatalog.Read(catalog).Where(d => d.WormholeKind == WormholeSiteKind.Combat).ToArray();
         Assert.Equal(24, definitions.Length);
         for (int level = 1; level <= 6; level++)
         {

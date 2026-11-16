@@ -486,7 +486,8 @@ Three stable, two-way signatures connect Tama to J125227 (C2), Aunenen to J11434
 Players resolve the entrances with probes, warp to them, and use the native wormhole jump call. Eden checks the fitted ship mass,
 range, travel permissions and five-minute per-direction polarization. The saved polarization and ship movement commit together.
 The three connections use pinned wormhole types and jump mass limits. Stable connections provide repeatable access to the gas
-supply. Rolling connections, total-mass collapse and Sleeper waves in the reservoirs remain pending.
+supply. At this historical milestone, rolling connections, total-mass collapse and Sleeper reservoir waves remained
+pending. [Resident wormholes](wormholes.md) now implement those behaviors and supersede the permanent-link policy.
 
 The nine pinned reservoir templates supply all nine Fullerite gases through finite deposits. The template rotates after expiry
 or depletion and follows the documented C1–C6 restrictions for perimeter, frontier and core sites. The audit follows the

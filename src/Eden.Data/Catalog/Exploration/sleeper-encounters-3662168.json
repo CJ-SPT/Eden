@@ -19,7 +19,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": true
+                "sentry": true,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -29,7 +30,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -39,9 +41,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -54,7 +58,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -64,9 +69,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -79,7 +86,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -89,9 +97,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -120,7 +130,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": true
+                "sentry": true,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -130,7 +141,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -140,9 +152,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -155,7 +169,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -165,7 +180,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -175,9 +191,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -190,7 +208,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -200,7 +219,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -210,9 +230,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -241,7 +263,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": true
+                "sentry": true,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -251,7 +274,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -261,9 +285,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -276,7 +302,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -286,9 +313,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -301,7 +330,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -311,9 +341,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -342,7 +374,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -352,7 +385,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -362,9 +396,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2 (70-90 km away)",
@@ -377,7 +413,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -387,9 +424,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3 (50 km away)",
@@ -402,9 +441,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -433,7 +474,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": true
+                "sentry": true,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -443,7 +485,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -453,9 +496,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -468,7 +513,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -478,9 +524,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -493,7 +541,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -503,9 +552,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -534,7 +585,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -544,9 +596,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -559,7 +613,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -569,9 +624,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -584,7 +641,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -594,9 +652,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -625,7 +685,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -635,9 +696,11 @@
                 ],
                 "trigger": false,
                 "optional": true,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -650,7 +713,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 5,
@@ -660,9 +724,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -675,9 +741,11 @@
                 ],
                 "trigger": false,
                 "optional": true,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -706,7 +774,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": true
+                "sentry": true,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -716,7 +785,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -726,9 +796,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -741,7 +813,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -751,9 +824,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -766,9 +841,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -797,7 +874,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -807,9 +885,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -822,7 +902,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -832,9 +913,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -847,7 +930,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -857,7 +941,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -867,7 +952,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -877,9 +963,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -908,7 +996,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": true
+                "sentry": true,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -918,9 +1007,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -933,9 +1024,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -948,7 +1041,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -958,9 +1052,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -989,7 +1085,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -999,7 +1096,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -1009,9 +1107,11 @@
                 ],
                 "trigger": false,
                 "optional": true,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -1024,7 +1124,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -1034,7 +1135,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -1044,7 +1146,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -1054,9 +1157,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -1069,7 +1174,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -1079,7 +1185,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -1089,9 +1196,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -1120,7 +1229,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": true
+                "sentry": true,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -1130,7 +1240,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -1140,9 +1251,11 @@
                 ],
                 "trigger": false,
                 "optional": true,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -1155,7 +1268,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -1165,9 +1279,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -1180,7 +1296,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -1190,9 +1307,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -1221,7 +1340,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -1231,9 +1351,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -1246,7 +1368,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -1256,9 +1379,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -1271,7 +1396,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -1281,7 +1407,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -1291,9 +1418,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -1322,7 +1451,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": true
+                "sentry": true,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -1332,7 +1462,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -1342,9 +1473,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -1357,7 +1490,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 6,
@@ -1367,7 +1501,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -1377,9 +1512,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -1392,7 +1529,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -1402,7 +1540,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -1412,9 +1551,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -1443,7 +1584,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": true
+                "sentry": true,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -1453,7 +1595,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -1463,9 +1606,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -1478,7 +1623,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -1488,7 +1634,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -1498,9 +1645,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -1513,7 +1662,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -1523,7 +1673,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -1533,9 +1684,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -1564,7 +1717,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -1574,7 +1728,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -1584,9 +1739,11 @@
                 ],
                 "trigger": false,
                 "optional": true,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -1599,7 +1756,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -1609,9 +1767,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -1624,7 +1784,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -1634,7 +1795,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -1644,7 +1806,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -1654,9 +1817,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -1685,7 +1850,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": true
+                "sentry": true,
+                "spawnCondition": 0
               },
               {
                 "minimum": 5,
@@ -1695,7 +1861,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 5,
@@ -1705,9 +1872,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -1720,7 +1889,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -1730,9 +1900,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -1745,7 +1917,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -1755,7 +1928,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -1765,9 +1939,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 4",
@@ -1780,7 +1956,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -1790,7 +1967,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -1800,9 +1978,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -1831,7 +2011,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": true
+                "sentry": true,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -1841,9 +2022,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -1856,7 +2039,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -1866,9 +2050,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -1881,7 +2067,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 7,
@@ -1891,9 +2078,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 4",
@@ -1906,7 +2095,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -1916,7 +2106,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -1926,9 +2117,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -1957,7 +2150,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -1967,7 +2161,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -1977,9 +2172,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -1992,7 +2189,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -2002,9 +2200,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -2017,7 +2217,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -2027,7 +2228,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -2037,9 +2239,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -2068,7 +2272,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": true
+                "sentry": true,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -2078,7 +2283,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -2088,7 +2294,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -2098,9 +2305,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -2113,7 +2322,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -2123,9 +2333,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -2138,7 +2350,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -2148,7 +2361,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -2158,9 +2372,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -2189,7 +2405,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -2199,7 +2416,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -2209,9 +2427,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -2224,7 +2444,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -2234,7 +2455,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -2244,9 +2466,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -2259,7 +2483,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -2269,7 +2494,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -2279,9 +2505,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 4",
@@ -2294,7 +2522,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -2304,9 +2533,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -2335,7 +2566,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": true
+                "sentry": true,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -2345,7 +2577,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -2355,7 +2588,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -2365,7 +2599,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -2375,7 +2610,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -2385,7 +2621,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -2395,9 +2632,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -2410,7 +2649,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -2420,7 +2660,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -2430,9 +2671,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -2445,7 +2688,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 5,
@@ -2455,7 +2699,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 5,
@@ -2465,9 +2710,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 4",
@@ -2480,7 +2727,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -2490,9 +2738,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -2521,7 +2771,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 5,
@@ -2531,7 +2782,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -2541,9 +2793,11 @@
                 ],
                 "trigger": false,
                 "optional": true,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -2556,7 +2810,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -2566,9 +2821,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -2581,7 +2838,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -2591,7 +2849,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 5,
@@ -2601,9 +2860,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -2632,7 +2893,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": true
+                "sentry": true,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -2642,7 +2904,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -2652,7 +2915,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -2662,7 +2926,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 6,
@@ -2672,9 +2937,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -2687,7 +2954,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -2697,7 +2965,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -2707,9 +2976,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -2722,7 +2993,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -2732,7 +3004,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -2742,7 +3015,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -2752,7 +3026,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -2762,9 +3037,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -2793,9 +3070,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -2808,7 +3087,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -2818,9 +3098,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -2833,7 +3115,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -2843,9 +3126,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -2874,7 +3159,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -2884,7 +3170,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -2894,9 +3181,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -2909,7 +3198,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -2919,9 +3209,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -2934,7 +3226,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -2944,7 +3237,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -2954,9 +3248,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -2985,7 +3281,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -2995,7 +3292,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -3005,9 +3303,11 @@
                 ],
                 "trigger": false,
                 "optional": true,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -3020,7 +3320,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -3030,9 +3331,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -3045,7 +3348,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -3055,7 +3359,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -3065,9 +3370,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -3096,7 +3403,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -3106,7 +3414,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -3116,9 +3425,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -3131,7 +3442,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -3141,7 +3453,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -3151,9 +3464,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -3166,7 +3481,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -3176,7 +3492,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -3186,9 +3503,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 4",
@@ -3201,7 +3520,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -3211,7 +3531,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 5,
@@ -3221,9 +3542,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -3252,7 +3575,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -3262,9 +3586,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -3277,7 +3603,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -3287,9 +3614,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -3302,7 +3631,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -3312,7 +3642,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -3322,9 +3653,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 4",
@@ -3337,7 +3670,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -3347,7 +3681,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -3357,9 +3692,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -3368,6 +3705,550 @@
         "3735": 0
       },
       "wormholeClass": 3,
+      "wormholeKind": 1
+    },
+    {
+      "name": "Unsecured Frontier Receiver",
+      "source": "https://wiki.eveuniversity.org/Unsecured_Frontier_Receiver",
+      "revision": 199962,
+      "locations": "C3",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30212
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30205
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30203
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30205
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30204
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30213
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30192
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 2
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 4",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30212
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30194
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3746": 0
+      },
+      "wormholeClass": 3,
+      "wormholeKind": 1
+    },
+    {
+      "name": "Unsecured Frontier Digital Nexus",
+      "source": "https://wiki.eveuniversity.org/Unsecured_Frontier_Digital_Nexus",
+      "revision": 221321,
+      "locations": "C4",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30212
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30203
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30195
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 1
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30214
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30203
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30192
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 1
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30195
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3748": 0
+      },
+      "wormholeClass": 4,
+      "wormholeKind": 1
+    },
+    {
+      "name": "Unsecured Frontier Trinary Hub",
+      "source": "https://wiki.eveuniversity.org/Unsecured_Frontier_Trinary_Hub",
+      "revision": 199964,
+      "locations": "C4",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30212
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30194
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30192
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 1
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30203
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30194
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 2
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30192
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30194
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3744": 0
+      },
+      "wormholeClass": 4,
+      "wormholeKind": 1
+    },
+    {
+      "name": "Unsecured Frontier Enclave Relay",
+      "source": "https://wiki.eveuniversity.org/Unsecured_Frontier_Enclave_Relay",
+      "revision": 199961,
+      "locations": "C5",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30197
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 1
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30216
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30208
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 3,
+                "types": [
+                  30197
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30216
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30217
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30206
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30208
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30197
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 4",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30217
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30208
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30198
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3729": 0
+      },
+      "wormholeClass": 5,
       "wormholeKind": 1
     },
     {
@@ -3388,7 +4269,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 5,
@@ -3398,9 +4280,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -3413,7 +4297,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -3423,7 +4308,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -3433,7 +4319,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -3443,7 +4330,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -3453,9 +4341,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -3468,7 +4358,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -3478,7 +4369,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -3488,9 +4380,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 4",
@@ -3503,7 +4397,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -3513,7 +4408,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -3523,7 +4419,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -3533,9 +4430,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -3544,6 +4443,548 @@
         "3732": 0
       },
       "wormholeClass": 5,
+      "wormholeKind": 1
+    },
+    {
+      "name": "Unsecured Core Backup Array",
+      "source": "https://wiki.eveuniversity.org/Unsecured_Core_Backup_Array",
+      "revision": 226726,
+      "locations": "C6",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30461
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": true,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30462
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": true,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 10,
+                "maximum": 10,
+                "types": [
+                  30215
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30198
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30199
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 1
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30207
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30198
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30208
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30198
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 4",
+            "groups": [
+              {
+                "minimum": 10,
+                "maximum": 10,
+                "types": [
+                  30215
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 8,
+                "maximum": 8,
+                "types": [
+                  30206
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30199
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3747": 0
+      },
+      "wormholeClass": 6,
+      "wormholeKind": 1
+    },
+    {
+      "name": "Unsecured Core Emergence",
+      "source": "https://wiki.eveuniversity.org/Unsecured_Core_Emergence",
+      "revision": 199958,
+      "locations": "C6",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30461
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": true,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30462
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": true,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 9,
+                "maximum": 9,
+                "types": [
+                  30215
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 9,
+                "maximum": 9,
+                "types": [
+                  30216
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 9,
+                "maximum": 9,
+                "types": [
+                  30217
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30199
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30199
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 1
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30217
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 7,
+                "maximum": 7,
+                "types": [
+                  30206
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 7,
+                "maximum": 7,
+                "types": [
+                  30207
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 7,
+                "maximum": 7,
+                "types": [
+                  30208
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30215
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30198
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30199
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 4",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30215
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30216
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30206
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30207
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30208
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30198
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3741": 0
+      },
+      "wormholeClass": 6,
       "wormholeKind": 1
     },
     {
@@ -3564,7 +5005,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -3574,7 +5016,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -3584,9 +5027,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -3599,7 +5044,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -3609,9 +5055,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -3624,7 +5072,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -3634,7 +5083,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -3644,9 +5094,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -3675,9 +5127,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -3690,7 +5144,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -3700,9 +5155,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -3715,7 +5172,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -3725,9 +5183,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -3756,7 +5216,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -3766,9 +5227,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -3781,7 +5244,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -3791,9 +5255,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -3806,7 +5272,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -3816,7 +5283,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -3826,9 +5294,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -3857,7 +5327,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -3867,7 +5338,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -3877,9 +5349,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -3892,7 +5366,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -3902,9 +5377,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -3917,7 +5394,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -3927,7 +5405,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -3937,9 +5416,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 4",
@@ -3952,7 +5433,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -3962,7 +5444,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -3972,7 +5455,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -3982,9 +5466,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -4013,7 +5499,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -4023,9 +5510,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -4038,7 +5527,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -4048,7 +5538,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -4058,9 +5549,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -4073,7 +5566,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -4083,9 +5577,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 4",
@@ -4098,7 +5594,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -4108,9 +5605,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -4139,7 +5638,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -4149,9 +5649,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -4164,7 +5666,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -4174,9 +5677,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -4189,7 +5694,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -4199,7 +5705,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -4209,9 +5716,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 4",
@@ -4224,7 +5733,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -4234,7 +5744,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -4244,9 +5755,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -4255,6 +5768,250 @@
         "3725": 0
       },
       "wormholeClass": 3,
+      "wormholeKind": 2
+    },
+    {
+      "name": "Forgotten Frontier Conversion Module",
+      "source": "https://wiki.eveuniversity.org/Forgotten_Frontier_Conversion_Module",
+      "revision": 199913,
+      "locations": "C4",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30461
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": true,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30212
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30203
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30193
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30195
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 1
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30212
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30203
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30192
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 2
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30195
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3736": 0
+      },
+      "wormholeClass": 4,
+      "wormholeKind": 2
+    },
+    {
+      "name": "Forgotten Frontier Evacuation Center",
+      "source": "https://wiki.eveuniversity.org/Forgotten_Frontier_Evacuation_Center",
+      "revision": 199914,
+      "locations": "C4",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30212
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30194
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30192
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 1
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30203
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30194
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30192
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30194
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3731": 0
+      },
+      "wormholeClass": 4,
       "wormholeKind": 2
     },
     {
@@ -4275,7 +6032,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 5,
@@ -4285,9 +6043,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -4300,7 +6060,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -4310,7 +6071,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -4320,7 +6082,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -4330,7 +6093,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -4340,9 +6104,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -4355,7 +6121,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -4365,7 +6132,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -4375,9 +6143,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 4",
@@ -4390,7 +6160,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -4400,7 +6171,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -4410,7 +6182,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -4420,9 +6193,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -4431,6 +6206,416 @@
         "3722": 0
       },
       "wormholeClass": 5,
+      "wormholeKind": 2
+    },
+    {
+      "name": "Forgotten Core Information Pen",
+      "source": "https://wiki.eveuniversity.org/Forgotten_Core_Information_Pen",
+      "revision": 199912,
+      "locations": "C5",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30197
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 1
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30216
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30208
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3 (Triggered randomly after 1-3 cans have been hacked or failed.)",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30216
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30217
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30206
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30208
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 3
+          },
+          {
+            "heading": "Wave 4",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30217
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30207
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3728": 0
+      },
+      "wormholeClass": 5,
+      "wormholeKind": 2
+    },
+    {
+      "name": "Forgotten Core Assembly Hall",
+      "source": "https://wiki.eveuniversity.org/Forgotten_Core_Assembly_Hall",
+      "revision": 199908,
+      "locations": "C6",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30462
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": true,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 5,
+                "maximum": 5,
+                "types": [
+                  30215
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30198
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30199
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 1
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30207
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30198
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 3",
+            "groups": [
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30208
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30198
+                ],
+                "trigger": true,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 4",
+            "groups": [
+              {
+                "minimum": 10,
+                "maximum": 10,
+                "types": [
+                  30215
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30206
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 6,
+                "maximum": 6,
+                "types": [
+                  30199
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3727": 0
+      },
+      "wormholeClass": 6,
       "wormholeKind": 2
     },
     {
@@ -4451,7 +6636,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": true
+                "sentry": true,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -4461,7 +6647,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": true
+                "sentry": true,
+                "spawnCondition": 0
               },
               {
                 "minimum": 9,
@@ -4471,7 +6658,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 9,
@@ -4481,7 +6669,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 9,
@@ -4491,7 +6680,8 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -4501,9 +6691,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 2",
@@ -4516,7 +6708,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 7,
@@ -4526,7 +6719,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 7,
@@ -4536,7 +6730,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 7,
@@ -4546,9 +6741,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 3",
@@ -4561,7 +6758,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -4571,7 +6769,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -4581,7 +6780,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -4591,7 +6791,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 1,
@@ -4601,9 +6802,11 @@
                 ],
                 "trigger": true,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           },
           {
             "heading": "Wave 4",
@@ -4616,7 +6819,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -4626,7 +6830,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -4636,7 +6841,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -4646,7 +6852,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 4,
@@ -4656,7 +6863,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -4666,7 +6874,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -4676,7 +6885,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 2,
@@ -4686,7 +6896,8 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               },
               {
                 "minimum": 3,
@@ -4696,9 +6907,11 @@
                 ],
                 "trigger": false,
                 "optional": false,
-                "sentry": false
+                "sentry": false,
+                "spawnCondition": 0
               }
-            ]
+            ],
+            "trigger": 0
           }
         ]
       ],
@@ -4708,48 +6921,409 @@
       },
       "wormholeClass": 6,
       "wormholeKind": 2
+    },
+    {
+      "name": "Barren Perimeter Reservoir",
+      "source": "https://wiki.eveuniversity.org/Barren_Perimeter_Reservoir",
+      "revision": 229856,
+      "locations": "C1",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30209
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30210
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3555": 0
+      },
+      "wormholeClass": 1,
+      "wormholeKind": 3
+    },
+    {
+      "name": "Minor Perimeter Reservoir",
+      "source": "https://wiki.eveuniversity.org/Minor_Perimeter_Reservoir",
+      "revision": 231121,
+      "locations": "C1",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30200
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3557": 0
+      },
+      "wormholeClass": 1,
+      "wormholeKind": 3
+    },
+    {
+      "name": "Ordinary Perimeter Reservoir",
+      "source": "https://wiki.eveuniversity.org/Ordinary_Perimeter_Reservoir",
+      "revision": 231569,
+      "locations": "C1",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30209
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30210
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3558": 0
+      },
+      "wormholeClass": 1,
+      "wormholeKind": 3
+    },
+    {
+      "name": "Sizeable Perimeter Reservoir",
+      "source": "https://wiki.eveuniversity.org/Sizeable_Perimeter_Reservoir",
+      "revision": 229858,
+      "locations": "C1",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30209
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30210
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3559": 0
+      },
+      "wormholeClass": 1,
+      "wormholeKind": 3
+    },
+    {
+      "name": "Token Perimeter Reservoir",
+      "source": "https://wiki.eveuniversity.org/Token_Perimeter_Reservoir",
+      "revision": 229859,
+      "locations": "C1",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30211
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 1,
+                "maximum": 1,
+                "types": [
+                  30201
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3556": 0
+      },
+      "wormholeClass": 1,
+      "wormholeKind": 3
+    },
+    {
+      "name": "Bountiful Frontier Reservoir",
+      "source": "https://wiki.eveuniversity.org/Bountiful_Frontier_Reservoir",
+      "revision": 229860,
+      "locations": "C3",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30212
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30203
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          },
+          {
+            "heading": "Wave 2",
+            "groups": [
+              {
+                "minimum": 3,
+                "maximum": 3,
+                "types": [
+                  30212
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 2,
+                "maximum": 2,
+                "types": [
+                  30203
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3560": 0
+      },
+      "wormholeClass": 3,
+      "wormholeKind": 3
+    },
+    {
+      "name": "Vast Frontier Reservoir",
+      "source": "https://wiki.eveuniversity.org/Vast_Frontier_Reservoir",
+      "revision": 229861,
+      "locations": "C3",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30203
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30204
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3561": 0
+      },
+      "wormholeClass": 3,
+      "wormholeKind": 3
+    },
+    {
+      "name": "Instrumental Core Reservoir",
+      "source": "https://wiki.eveuniversity.org/Instrumental_Core_Reservoir",
+      "revision": 229862,
+      "locations": "C5",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30196
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3562": 0
+      },
+      "wormholeClass": 5,
+      "wormholeKind": 3
+    },
+    {
+      "name": "Vital Core Reservoir",
+      "source": "https://wiki.eveuniversity.org/Vital_Core_Reservoir",
+      "revision": 229863,
+      "locations": "C5",
+      "variants": [
+        [
+          {
+            "heading": "Wave 1",
+            "groups": [
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30216
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              },
+              {
+                "minimum": 4,
+                "maximum": 4,
+                "types": [
+                  30197
+                ],
+                "trigger": false,
+                "optional": false,
+                "sentry": false,
+                "spawnCondition": 0
+              }
+            ],
+            "trigger": 0
+          }
+        ]
+      ],
+      "reconstructed": false,
+      "dungeonVariants": {
+        "3563": 0
+      },
+      "wormholeClass": 5,
+      "wormholeKind": 3
     }
   ],
-  "blocked": [
-    {
-      "name": "Unsecured Frontier Receiver",
-      "error": "Unknown NPCs or empty waves: ['Sleepless Defender on aggression']"
-    },
-    {
-      "name": "Unsecured Frontier Digital Nexus",
-      "error": "Unknown NPCs or empty waves: ['Awakened Defender (Next wave is triggered by hacking any one of the cans.)', 'Sleepless Safeguard (Will spawn if a Talocan relic can spawns.)']"
-    },
-    {
-      "name": "Unsecured Frontier Trinary Hub",
-      "error": "Unknown NPCs or empty waves: ['Sleepless Preserver (Next wave is triggered by failing a hack on one of the cans.)', 'Sleepless Defender (Will spawn if a Talocan relic can spawns.)']"
-    },
-    {
-      "name": "Unsecured Frontier Enclave Relay",
-      "error": "Unknown NPCs or empty waves: ['Sleepless Sentinel (Will spawn if a Talocan relic can spawns.)']"
-    },
-    {
-      "name": "Unsecured Core Backup Array",
-      "error": "Unknown NPCs or empty waves: ['Sleepless Guardian (Will spawn if a Talocan relic can spawns.)']"
-    },
-    {
-      "name": "Unsecured Core Emergence",
-      "error": "Unknown NPCs or empty waves: ['Sleepless Guardian (Will spawn if a Talocan relic can spawns.)']"
-    },
-    {
-      "name": "Forgotten Frontier Conversion Module",
-      "error": "Unknown NPCs or empty waves: ['Sleepless Upholder (Next wave is triggered by failing a hack on one of the cans.)', 'Sleepless Safeguard (Will spawn if a Talocan relic can spawns.)']"
-    },
-    {
-      "name": "Forgotten Frontier Evacuation Center",
-      "error": "Unknown NPCs or empty waves: ['Sleepless Defender (Will spawn if a Talocan relic can spawns.)']"
-    },
-    {
-      "name": "Forgotten Core Information Pen",
-      "error": "Unknown NPCs or empty waves: ['Sleepless Sentinel (Will spawn if a Talocan relic can spawns.)']"
-    },
-    {
-      "name": "Forgotten Core Assembly Hall",
-      "error": "Unknown NPCs or empty waves: ['Sleepless Guardian (Will spawn if a Talocan relic can spawn.)']"
-    }
-  ]
+  "blocked": []
 }

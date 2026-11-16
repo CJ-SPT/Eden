@@ -847,6 +847,7 @@ internal sealed partial class ResidentEconomy
         RegisterMissionRewardTables();
         RegisterWormholeJumps();
         RegisterWormholeConnections();
+        RegisterSleeperSites();
         RegisterMutatedItem();
         RegisterCargoContainer();
         RegisterAbyssalRun();

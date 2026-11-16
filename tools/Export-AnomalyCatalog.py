@@ -32,6 +32,15 @@ def export(catalog_path, output, encounters, extra_types=()):
             records['sde/dungeons', int(key)] = definition
             records['client/dungeons', int(key)] = dungeon
             pending.update(o['typeID'] for r in dungeon.get('rooms', {}).values() for o in r.get('objects', {}).values())
+        # Native client geometry also includes sites omitted from the SDE dungeon directory.
+        for key in sorted(bindings):
+            if ('client/dungeons', key) in records:
+                continue
+            dungeon = record('client/dungeons', key)
+            if not dungeon or dungeon.get('entryTypeID') not in (28356, 19728):
+                raise ValueError('Missing native bound dungeon ' + str(key))
+            records['client/dungeons', key] = dungeon
+            pending.update(o['typeID'] for room in dungeon.get('rooms', {}).values() for o in room.get('objects', {}).values())
         types, attributes = {}, set()
         while pending:
             key = pending.pop()

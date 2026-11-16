@@ -17,7 +17,7 @@ internal sealed record EconomyHackingContainer(
     int LootSeed
 );
 
-internal sealed record EconomyHackingAttempt(long PilotId, long ContainerId, string ContactJson);
+internal sealed record EconomyHackingAttempt(long PilotId, long ContainerId, string ContactJson, bool RecoveryPending);
 
 internal sealed partial class ResidentEconomy
 {
@@ -63,18 +63,19 @@ internal sealed partial class ResidentEconomy
             new EconomyTable<SavedHackingAttempt, EconomyHackingAttempt>(
                 "WorldHackingAttempt",
                 row => new(row.PilotId),
-                row => new(row.PilotId, row.ContainerId, row.ContactJson),
+                row => new(row.PilotId, row.ContainerId, row.ContactJson, row.RecoveryPending),
                 state => new SavedHackingAttempt
                 {
                     PilotId = state.PilotId,
                     ContainerId = state.ContainerId,
                     ContactJson = state.ContactJson,
+                    RecoveryPending = state.RecoveryPending,
                 },
                 ProjectHackingAttempt,
-                "PilotId,ContainerId,ContactJson",
-                reader => new(reader.GetInt64(1), reader.GetInt64(2), reader.GetString(3)),
+                "PilotId,ContainerId,ContactJson,RecoveryPending",
+                reader => new(reader.GetInt64(1), reader.GetInt64(2), reader.GetString(3), reader.GetBoolean(4)),
                 state => new(state.PilotId),
-                indexes: [new("ContainerId", row => row.ContainerId)],
+                indexes: [new("ContainerId", row => row.ContainerId), new("RecoveryPending", row => row.RecoveryPending)],
                 primaryColumn: "PilotId"
             )
         );
@@ -121,8 +122,9 @@ internal sealed partial class ResidentEconomy
             string values = JsonSerializer.Serialize(batch);
             world.Database.ExecuteSql(
                 $"""
-                INSERT INTO WorldHackingAttempt(PilotId,ContainerId,ContactJson)
-                SELECT json_extract(value,'$.PilotId'),json_extract(value,'$.ContainerId'),json_extract(value,'$.ContactJson')
+                INSERT INTO WorldHackingAttempt(PilotId,ContainerId,ContactJson,RecoveryPending)
+                SELECT json_extract(value,'$.PilotId'),json_extract(value,'$.ContainerId'),json_extract(value,'$.ContactJson'),
+                    json_extract(value,'$.RecoveryPending')
                 FROM json_each({values}) WHERE 1
                 """
             );
