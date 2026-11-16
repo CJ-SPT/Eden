@@ -99,6 +99,24 @@ definitions, 818 type values and 4,860 source-record values remain unchanged; ad
 Documentation links, encoding/newlines and `git diff --check` passed. The final TRX is
 `artifacts/feature-tests/results/data-center-family/data-center-family.trx`. No full .NET suite was requested or run.
 
+Integration with main **25cb01f2** preserves its site-discovery and identity-query optimizations without source
+conflicts. Only the protocol index needed manual resolution; both milestone links remain. Required ordered
+integration checks passed in **100.67 seconds**: tool/solution restore, zero-warning/error solution build,
+**145/145** .NET cases (1 minute 7 seconds), the same 8/9/19 Python cases and formatting verification across
+2,313 files. The filter ORed `FullyQualifiedName~Eden.Protocol.Tests.Agents.<selector>` for `DataCenterMissionTests`,
+`FixedAgentRuleTests`, `MissionCatalogLookupTests`, `MissionChainTests` and `MissionTradeTests`, plus
+`FullyQualifiedName~Eden.Protocol.Tests.Persistence.<selector>` for `IncrementalCheckpointTests`,
+`ResidentIdentityMaximumTests` and `AgentDirectoryPerformanceTests`,
+`FullyQualifiedName~Eden.Protocol.Tests.Exploration.SiteHistoryPerformanceTests`, and
+`FullyQualifiedName~Eden.Protocol.Tests.Combat.SiteHistoryFrameTests`.
+An additional RPC regression completes the exchange through native `DoAction`, verifies inventory, wallet,
+standing and mission notifications, and rejects replay without emitting duplicate notifications. Its exact
+initial filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Agents.DataCenterMissionTests.NativeSpaceAgentActionsPublishCargoWalletAndStandingNotificationsOnlyAfterOneSettlement`
+(one case passed, build 23.84 seconds and test invocation 7.31 seconds).
+Both final TRX reports are retained in the main checkout under
+`artifacts/feature-tests/results/data-center-family/` and `artifacts/feature-tests/results/data-center-integration/`.
+
 **Live acceptance:** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks:** Warp to a Data Center beacon and inspect the named agent's header and fetch objective;

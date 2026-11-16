@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Site history discovery and identity maxima](protocol/performance.md#site-history-discovery-and-identity-maxima-november-15-2026)
+cover lower-allocation discovery queries, staged ID visibility and complete two-session frame measurements.
+
 [Population validation during travel](protocol/performance.md#population-validation-during-travel-november-15-2026)
 records arrival-related stalls, batched NPC slot validation and complete moving-session benchmark results.
 

@@ -104,6 +104,31 @@ public sealed partial class DataCenterMissionTests
     }
 
     [Fact]
+    public void NativeSpaceAgentActionsPublishCargoWalletAndStandingNotificationsOnlyAfterOneSettlement()
+    {
+        using MissionFixture f = new(live: true);
+        var agent = Directory(f).Agent(FirstAgent)!;
+        Prepare(f, agent);
+        string service = $"@agent:{agent.Id}";
+        Assert.IsType<PilotCallResult.Success>(f.Call(service, "DoAction", [(long)MissionAction.Request]));
+        var offer = f.Missions.Current(MissionFixture.PilotId, agent.Id)!;
+        long Token(MissionAction action) => checked(offer.Id * MissionRules.ActionStride + (int)action);
+        Assert.IsType<PilotCallResult.Success>(f.Call(service, "DoAction", [Token(MissionAction.Accept)]));
+        AddTags(f, offer, offer.Retrieval!.Quantity);
+        f.Context.Notifications.Clear();
+        Assert.IsType<PilotCallResult.Success>(f.Call(service, "DoAction", [Token(MissionAction.Complete)]));
+        Assert.Equal(MissionState.Completed, f.Missions.Current(MissionFixture.PilotId, agent.Id)!.State);
+        foreach (string name in new[] { "OnItemChange", "OnAccountChange", "OnStandingSet", "OnAgentMissionChange" })
+        {
+            Assert.Contains(f.Context.Notifications, notification => notification.Name == name);
+        }
+        int count = f.Context.Notifications.Count;
+        Assert.IsType<PilotCallResult.Failure>(f.Call(service, "DoAction", [Token(MissionAction.Complete)]));
+        Assert.IsType<PilotCallResult.Failure>(f.Call(service, "DoAction", [(long)MissionAction.Request]));
+        Assert.Equal(count, f.Context.Notifications.Count);
+    }
+
+    [Fact]
     public void AllFiftyDefinitionsAndFiftySevenNativeAgentsHaveDistinctUsableContactsAndNoOrdinaryOffers()
     {
         using MissionFixture f = new(live: true);
