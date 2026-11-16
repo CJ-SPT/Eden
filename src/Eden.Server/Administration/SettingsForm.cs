@@ -182,6 +182,10 @@ public sealed class SettingsForm
     [Display(Name = "Command center powergrid")]
     public decimal PlanetaryPowergridMultiplier { get; set; } = 1;
 
+    [Range(typeof(decimal), "0", "100")]
+    [Display(Name = "Customs tax (%)")]
+    public decimal PlanetaryCustomsTaxPercent { get; set; } = 17;
+
     [Range(0, Eden.Gameplay.Planetary.PlanetaryRules.MaximumConfiguredPlanets)]
     [Display(Name = "Maximum planets (0 = skill-based)")]
     public int PlanetaryMaximumPlanets { get; set; }
@@ -215,6 +219,7 @@ public sealed class SettingsForm
             PlanetaryCpuMultiplier = settings.PlanetaryIndustry.CpuMultiplier,
             PlanetaryPowergridMultiplier = settings.PlanetaryIndustry.PowergridMultiplier,
             PlanetaryMaximumPlanets = settings.PlanetaryIndustry.MaximumPlanets,
+            PlanetaryCustomsTaxPercent = settings.PlanetaryIndustry.CustomsTaxPercent,
             StructureAnchoringSpeed = settings.Structures.AnchoringSpeed,
             StructureOnliningSpeed = settings.Structures.OnliningSpeed,
             StructureUnanchoringSpeed = settings.Structures.UnanchoringSpeed,
@@ -285,7 +290,8 @@ public sealed class SettingsForm
                 PlanetaryPowergridMultiplier,
                 PlanetaryMaximumPlanets,
                 PlanetaryStorageCapacityMultiplier,
-                PlanetaryFactorySpeedMultiplier
+                PlanetaryFactorySpeedMultiplier,
+                PlanetaryCustomsTaxPercent
             ),
             Structures = new(StructureAnchoringSpeed, StructureOnliningSpeed, StructureUnanchoringSpeed),
             NpcPopulation = new(Pirates, Guards, Convoys, Mining, MajorThreatAnomalies),

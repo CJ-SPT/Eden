@@ -151,8 +151,13 @@ else
                     Description="Shortens factory cycles after restart, including running cycles. Extractor timing stays the same."
                     ExampleAmount="1800" ExampleUnit="seconds per cycle" Reward="false" Speed="true" Efficiency="false" />
                 <MultiplierControl Label="Planetary storage capacity" @bind-Value="Form.PlanetaryStorageCapacityMultiplier"
-                    Description="Scales launchpads, storage facilities and command centers. Customs offices and factory buffers stay unchanged."
+                    Description="Scales launchpads, storage facilities, command centers and customs offices. Factory buffers retain one batch."
                     ExampleAmount="10000" ExampleUnit="m³ per launchpad" Reward="false" Speed="false" Efficiency="false" />
+                <label>Customs tax (%)
+                    <InputNumber @bind-Value="Form.PlanetaryCustomsTaxPercent" min="0" max="100" step="0.1" />
+                </label>
+                <p class="muted">0–100%; default 17%. Exports pay this rate on taxable commodity value;
+                    imports pay half. Command-center launches keep their separate 15% fee. Save for restart to apply.</p>
                 <MultiplierControl Label="Command center CPU" @bind-Value="Form.PlanetaryCpuMultiplier"
                     Description="Scales CPU supplied at every command center upgrade level."
                     ExampleAmount="1675" ExampleUnit="tf" Reward="false" Speed="false" Efficiency="false" />

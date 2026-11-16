@@ -15,7 +15,8 @@ names = ['eve', 'eve.common', 'eve.common.script', 'eve.common.script.planet',
          'eve.common.script.planet.entities', 'eve.common.script.planet.entities.processPin',
          'eve.common.script.planet.entities.storagePin',
          'eve.common.lib', 'eve.common.lib.appConst', 'eve.client', 'eve.client.script',
-         'eve.client.script.environment', 'eve.client.script.environment.planet',
+         'eve.client.script.environment', 'eve.client.script.environment.invCache', 'utillib',
+         'eve.client.script.environment.planet',
          'eve.client.script.environment.planet.clientColony', 'eve.client.script.ui',
          'eve.client.script.ui.shared', 'eve.client.script.ui.shared.planet',
          'eve.client.script.ui.shared.planet.planetEditModeContainer',
@@ -51,6 +52,21 @@ class StoragePin:
 
 sys.modules['eve.common.script.planet.entities.storagePin'].StoragePin = StoragePin
 original_capacity = StoragePin.GetCapacity
+
+
+class InventoryContainer:
+    def __init__(self, type_id):
+        self.typeID = type_id
+        self.native_capacity = SimpleNamespace(capacity=35000 if type_id == 2233 else 100, used=25)
+
+    def GetCapacity(self, flag=None):
+        self.last_flag = flag
+        return self.native_capacity
+
+
+sys.modules['eve.client.script.environment.invCache'].invCacheContainer = InventoryContainer
+sys.modules['utillib'].KeyVal = SimpleNamespace
+original_inventory_capacity = InventoryContainer.GetCapacity
 
 
 class ProcessPin:
@@ -215,6 +231,16 @@ for expression, cpu_scale, power_scale, products, maximum, storage_scale, speed 
             assert common.GetPowerOutput(level) == power[level] * power_scale
         for nominal in [500, 12000, 10000]:
             assert StoragePin(nominal).GetCapacity() == nominal * storage_scale
+        office = InventoryContainer(2233)
+        for unused in range(2):
+            assert office.GetCapacity(4).capacity == 35000 * storage_scale
+            assert office.GetCapacity(4).used == 25
+            assert office.native_capacity.capacity == 35000
+        ordinary = InventoryContainer(123)
+        assert ordinary.GetCapacity(5) is ordinary.native_capacity
+        assert ordinary.last_flag == 5
+        if storage_scale == 1:
+            assert InventoryContainer.GetCapacity is original_inventory_capacity
         if storage_scale == 1:
             assert StoragePin.GetCapacity is original_capacity
         pin = ProcessPin()

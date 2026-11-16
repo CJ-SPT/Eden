@@ -2,6 +2,7 @@ using Eden.Data.World.Characters;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Planetary;
 using Eden.Data.World.Propulsion;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Loot;
@@ -18,7 +19,6 @@ namespace Eden.World.Planetary;
 internal static class PlanetaryOrbitStore
 {
     internal const int InterbusCorporation = 1000148;
-    private const double OfficeCapacity = 35000;
     private const double OrbitAltitude = 1_000_000;
 
     internal static void EnsureOffice(WorldAction world, PlanetaryPlanet planet)
@@ -176,8 +176,9 @@ internal static class PlanetaryOrbitStore
         long containerId,
         bool toOrbit,
         InventoryMoveRequest request,
-        long now
-    ) => Move(new SqlWorldAction(world), catalog, pilotId, containerId, toOrbit, request, now);
+        long now,
+        PlanetaryPolicy? policy = null
+    ) => Move(new SqlWorldAction(world), catalog, pilotId, containerId, toOrbit, request, now, policy);
 
     internal static IReadOnlyList<InventoryChange> Move(
         WorldAction world,
@@ -186,7 +187,8 @@ internal static class PlanetaryOrbitStore
         long containerId,
         bool toOrbit,
         InventoryMoveRequest request,
-        long now
+        long now,
+        PlanetaryPolicy? policy = null
     )
     {
         var (pilot, _, _, _) = Access(world, catalog, pilotId, containerId, now);
@@ -249,11 +251,17 @@ internal static class PlanetaryOrbitStore
                 InventoryPersistence.MergeOutput(world, catalog, pilotId, containerId, (int)InventoryFlag.Hangar, item.TypeId, quantity)
             );
         }
-        CheckOfficeCapacity(world, catalog, pilotId, containerId);
+        CheckOfficeCapacity(world, catalog, pilotId, containerId, policy);
         return changes;
     }
 
-    internal static void CheckOfficeCapacity(WorldAction world, CatalogDbContext catalog, long pilotId, long containerId)
+    internal static void CheckOfficeCapacity(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long containerId,
+        PlanetaryPolicy? policy = null
+    )
     {
         double used = world
             .Filter<OwnedItem>(i => i.OwnerId == pilotId && i.LocationId == containerId)
@@ -262,9 +270,10 @@ internal static class PlanetaryOrbitStore
             .DistinctBy(i => i.Id)
             .Where(i => i.OwnerId == pilotId && i.LocationId == containerId && world.Entry(i).State != EntityState.Deleted)
             .Sum(i => PilotInventoryStore.Volume(catalog, i.TypeId) * i.Quantity);
-        if (used > OfficeCapacity + InventoryDefinitions.ResourceTolerance)
+        double capacity = PlanetaryRules.CustomsOfficeCapacity(policy);
+        if (used > capacity + InventoryDefinitions.ResourceTolerance)
         {
-            throw new CargoCapacityException(OfficeCapacity, used);
+            throw new CargoCapacityException(capacity, used);
         }
     }
 

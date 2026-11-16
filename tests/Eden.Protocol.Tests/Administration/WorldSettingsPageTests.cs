@@ -17,6 +17,30 @@ namespace Eden.Protocol.Tests.Administration;
 public sealed class WorldSettingsPageTests
 {
     [Fact]
+    public void CustomsTaxControlAcceptsZeroAndFractionalPercentagesAndReportsRevisionChanges()
+    {
+        var form = SettingsForm.From(new());
+        Assert.Equal(17, form.PlanetaryCustomsTaxPercent);
+        foreach (decimal value in new[] { 0m, 2.5m, 17m, 100m })
+        {
+            form.PlanetaryCustomsTaxPercent = value;
+            Assert.True(Validator.TryValidateObject(form, new(form), [], true));
+            Assert.Equal(value, SettingsForm.From(form.Build()).PlanetaryCustomsTaxPercent);
+        }
+        Assert.Contains(
+            ConfigurationDisplay.Compare(new(), new() { Settings = form.Build() }),
+            change => change.Field == "Customs tax (%)" && change.Before == "17" && change.After == "100"
+        );
+        foreach (decimal value in new[] { -.1m, 100.1m })
+        {
+            form.PlanetaryCustomsTaxPercent = value;
+            List<ValidationResult> errors = [];
+            Assert.False(Validator.TryValidateObject(form, new(form), errors, true));
+            Assert.Contains(errors, error => error.MemberNames.Contains(nameof(form.PlanetaryCustomsTaxPercent)));
+        }
+    }
+
+    [Fact]
     public void PlanetaryStorageAndSpeedControlsValidateRoundTripAndReportRevisionChanges()
     {
         var form = SettingsForm.From(new());

@@ -172,7 +172,8 @@ remains protected when existing command centers require it.
 | Extraction yield | Scales the base yield of newly installed extractor programs and their survey quotes. Existing programs keep their saved yield and expiry. |
 | Factory output | Scales the product units per completed schematic cycle. Ingredients and input buffers stay unchanged; Factory speed controls duration separately. Applies to outstanding cycles and offline catch-up processed after restart. |
 | Factory speed | Divides processor cycle duration by this value, with a one-second minimum. 10× turns a 30-minute basic cycle into 3 minutes and a 60-minute advanced/high-tech cycle into 6 minutes. Extractor timing stays unchanged. |
-| Planetary storage capacity | Scales launchpad, storage-facility and command-center capacity. 10× gives each launchpad 100,000 m³; 100× gives 1,000,000 m³. Customs offices remain 35,000 m³ and processor input buffers retain one batch. |
+| Planetary storage capacity | Scales launchpad, storage-facility, command-center and per-pilot customs-office capacity. 100× gives each launchpad 1,000,000 m³ and each customs office 3,500,000 m³. Processor input buffers retain one batch. |
+| Customs tax (%) | 0–100%, default 17%. Customs exports pay this percentage of taxable commodity value; imports pay half. 0 disables both customs fees. Command-center launches retain their separate 15% fee. Applies after restart. |
 | Command center CPU | Scales available CPU at all six command-center levels. Buildings, extractor heads and links still consume their normal CPU. |
 | Command center powergrid | Scales available powergrid at all six levels. Buildings, heads and links still consume their normal power. |
 
@@ -192,7 +193,7 @@ extraction program deadlines and transfer cooldowns stay unchanged. Faster facto
 an extractor route feeding only one ordinary basic-factory batch per half-hour will need a larger quantity to sustain
 faster P1 production.
 
-Lowering storage capacity preserves existing goods, including overfilled buildings. Export or transfer them out
+Lowering storage capacity preserves existing goods, including overfilled buildings and customs offices. Export or transfer them out
 before adding more. New imports and production deliveries use the reduced limit.
 
 The signed login adapter synchronizes native planet-limit validation, storage capacities, CPU/power previews,

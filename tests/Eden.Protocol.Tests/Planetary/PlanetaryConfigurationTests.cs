@@ -414,9 +414,9 @@ public sealed class PlanetaryConfigurationTests
         using var f = Prepare();
         WorldConfigurationStore configuration = new(new(f.Db.Path), f.Clock);
         var draft = configuration.Read().Active.Draft;
-        var settings = draft.Settings with { PlanetaryIndustry = new(.1m, 100, 2, 3, 8, 10, 2) };
+        var settings = draft.Settings with { PlanetaryIndustry = new(.1m, 100, 2, 3, 8, 10, 2, 2.5m) };
         Assert.Equal(settings.PlanetaryIndustry, SettingsForm.From(settings).Build().PlanetaryIndustry);
-        Assert.Equal(7, ConfigurationDisplay.Compare(draft, draft with { Settings = settings }).Count);
+        Assert.Equal(8, ConfigurationDisplay.Compare(draft, draft with { Settings = settings }).Count);
         configuration.Validate(draft with { Settings = settings });
         PlanetaryPolicy[] invalid =
         [
@@ -428,6 +428,8 @@ public sealed class PlanetaryConfigurationTests
             new(StorageCapacityMultiplier: 101),
             new(FactorySpeedMultiplier: -.1m),
             new(FactorySpeedMultiplier: 101),
+            new(CustomsTaxPercent: -.1m),
+            new(CustomsTaxPercent: 100.1m),
             new(MaximumPlanets: -1),
             new(MaximumPlanets: PlanetaryRules.MaximumConfiguredPlanets + 1),
         ];
@@ -444,8 +446,10 @@ public sealed class PlanetaryConfigurationTests
         legacy["settings"]!["planetaryIndustry"]!.AsObject().Remove("maximumPlanets");
         legacy["settings"]!["planetaryIndustry"]!.AsObject().Remove("storageCapacityMultiplier");
         legacy["settings"]!["planetaryIndustry"]!.AsObject().Remove("factorySpeedMultiplier");
+        legacy["settings"]!["planetaryIndustry"]!.AsObject().Remove("customsTaxPercent");
         var imported = configuration.Import(configuration.Read().Generation, legacy.ToJsonString(), "legacy");
-        Assert.Equal(0, imported.Pending!.Draft.Settings.PlanetaryIndustry.MaximumPlanets);
+        Assert.Equal(17, imported.Pending!.Draft.Settings.PlanetaryIndustry.CustomsTaxPercent);
+        Assert.Equal(0, imported.Pending.Draft.Settings.PlanetaryIndustry.MaximumPlanets);
         Assert.Equal(1, imported.Pending.Draft.Settings.PlanetaryIndustry.StorageCapacityMultiplier);
         Assert.Equal(1, imported.Pending.Draft.Settings.PlanetaryIndustry.FactorySpeedMultiplier);
     }

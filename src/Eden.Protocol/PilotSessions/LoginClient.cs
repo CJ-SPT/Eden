@@ -16,7 +16,8 @@ internal static class LoginClient
             + $"'{Number(policy.PowergridMultiplier)}', '{Number(policy.FactoryOutputMultiplier)}', "
             + $"'{Number(policy.ExtractionYieldMultiplier)}', '{Number(policy.StorageCapacityMultiplier)}', "
             + $"'{Number(policy.FactorySpeedMultiplier)}')\n"
-            + $"eden_planetary_maximum = {policy.MaximumPlanets.ToString(CultureInfo.InvariantCulture)}\n";
+            + $"eden_planetary_maximum = {policy.MaximumPlanets.ToString(CultureInfo.InvariantCulture)}\n"
+            + $"eden_planetary_customs_type = {Eden.Gameplay.Planetary.PlanetaryRules.CustomsOfficeType}\n";
     }
 
     private static byte[] Create(PlanetaryPolicy policy) =>

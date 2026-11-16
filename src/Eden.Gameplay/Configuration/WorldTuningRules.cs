@@ -63,6 +63,7 @@ public static class WorldTuningRules
         ValidateRate(settings.PlanetaryIndustry.StorageCapacityMultiplier);
         ValidateRate(settings.PlanetaryIndustry.FactorySpeedMultiplier);
         PlanetaryRules.ValidateMaximumPlanets(settings.PlanetaryIndustry.MaximumPlanets);
+        PlanetaryRules.CustomsTaxRate(settings.PlanetaryIndustry);
         ValidateRate(settings.Structures.AnchoringSpeed);
         ValidateRate(settings.Structures.OnliningSpeed);
         ValidateRate(settings.Structures.UnanchoringSpeed);

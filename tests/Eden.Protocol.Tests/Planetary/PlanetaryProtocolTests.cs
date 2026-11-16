@@ -26,6 +26,49 @@ namespace Eden.Protocol.Tests.Planetary;
 public sealed class PlanetaryProtocolTests
 {
     [Fact]
+    public void CustomsCapacityAndTaxRepliesExposeActiveConfiguration()
+    {
+        using var f = PlanetaryIndustryTests.Prepare();
+        WorldDatabase database = new(f.Db.Path);
+        WorldConfigurationStore configuration = new(database, f.Clock);
+        var current = configuration.Read();
+        configuration.Save(
+            current.Generation,
+            current.Active.Draft with
+            {
+                Settings = current.Active.Draft.Settings with
+                {
+                    PlanetaryIndustry = new(StorageCapacityMultiplier: 100, CustomsTaxPercent: 2.5m),
+                },
+            },
+            "customs wire test"
+        );
+        WorldConfigurationStore.Activate(database);
+        using LiveWorld live = new(database, f.Clock, combatObjects: false, simulationObjects: false);
+        PlanetaryIndustryTests.Deploy(f);
+        var industry = PlanetaryIndustryTests.Industry(f);
+        long office = PlanetaryRules.OfficeId(PlanetaryIndustryTests.PlanetId);
+        var contact = Assert.Single(industry.OrbitContacts(f.Db.Store.FindPilot(1000001)!.SystemId, f.Clock.Now));
+        f.Db.Store.SetPosition(f.ShipId, contact.Position);
+        long cargo = f.Grant(PlanetaryIndustryTests.Water, 100000, cargo: true);
+        industry.MoveOrbitCargo(f.PilotId, office, true, new([cargo], f.ShipId, (int)InventoryFlag.Hangar, null));
+        using var context = Context(f);
+        context.Flight.Snapshot();
+        var loot = new LootHandler(
+            f.Db.Services.GetRequiredService<Eden.Gameplay.Loot.IWrecks>(),
+            f.Db.Services.GetRequiredService<Eden.Gameplay.Loot.ICargoJettison>(),
+            f.Clock
+        );
+        var capacity = Assert.IsType<JetcanCapacityReply>(
+            Assert.IsType<PilotCallResult.Success>(loot.Call(context, WreckWireDefinitions.BindingPrefix + office, "GetCapacity", [])).Reply
+        );
+        Assert.Equal(3500000, capacity.Capacity);
+        Assert.Equal(PlanetaryIndustryTests.Catalog(f).Volumes[PlanetaryIndustryTests.Water] * 100000, capacity.Used);
+        var tax = new PlanetaryInventoryHandler(industry).Call(context, "planetOrbitalRegistryBroker", "GetTaxRate", [office]);
+        Assert.Equal(.025, Assert.IsType<PilotCallResult.Success>(tax).Reply.ToBlue());
+    }
+
+    [Fact]
     public void CargoAdapterRejectsMalformedMapsAndRetainsEntryAndIntegerBounds()
     {
         object?[] malformed =

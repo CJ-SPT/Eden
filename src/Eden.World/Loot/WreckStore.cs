@@ -370,7 +370,13 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
                 database,
                 world => Eden.World.Planetary.PlanetaryOrbitStore.Read(world, catalog, pilotId, wreckId, now)
             );
-            return new(orbit.Container, orbit.Items);
+            return new(
+                orbit.Container,
+                orbit.Items,
+                Eden.Gameplay.Planetary.PlanetaryRules.IsOffice(wreckId)
+                    ? Eden.Gameplay.Planetary.PlanetaryRules.CustomsOfficeCapacity(database.Settings.PlanetaryIndustry)
+                    : null
+            );
         }
         if (LiveWorld.Find(database.Path) is { } resident)
         {

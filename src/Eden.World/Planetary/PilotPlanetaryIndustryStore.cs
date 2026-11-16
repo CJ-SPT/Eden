@@ -181,7 +181,7 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
                 }
                 // Interbus tariffs are unaffected by Customs Code Expertise. Player customs
                 // ownership and its separate empire tax component are not enabled here.
-                return PlanetaryRules.InterbusTaxRate;
+                return PlanetaryRules.CustomsTaxRate(database.Settings.PlanetaryIndustry);
             }
         );
     }
@@ -519,7 +519,11 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
     }
 
     public IReadOnlyList<InventoryChange> MoveOrbitCargo(long pilotId, long containerId, bool toOrbit, InventoryMoveRequest request) =>
-        Write(pilotId, (world, catalog, now) => PlanetaryOrbitStore.Move(world, catalog, pilotId, containerId, toOrbit, request, now));
+        Write(
+            pilotId,
+            (world, catalog, now) =>
+                PlanetaryOrbitStore.Move(world, catalog, pilotId, containerId, toOrbit, request, now, database.Settings.PlanetaryIndustry)
+        );
 
     public PlanetaryChange ImportExport(
         long pilotId,
@@ -586,7 +590,7 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
                 {
                     colony = PlanetarySimulation.Deposit(colony, definitions, pinId, imported, database.Settings.PlanetaryIndustry);
                 }
-                double rate = PlanetaryRules.InterbusTaxRate;
+                double rate = PlanetaryRules.CustomsTaxRate(database.Settings.PlanetaryIndustry);
                 long importTax = PlanetaryRules.TaxCents(definitions, imported, rate, import: true);
                 long exportTax = PlanetaryRules.TaxCents(definitions, exports, rate);
                 EconomicStore.Pay(
@@ -621,7 +625,15 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
                         )
                     );
                 }
-                PlanetaryOrbitStore.CheckOfficeCapacity(world, catalog, pilotId, officeId);
+                // Capacity reductions preserve saved cargo. Net withdrawals remain legal
+                // even when the office is still over its new limit after this transfer.
+                double addedVolume =
+                    exports.Sum(i => definitions.Volumes[i.TypeId] * i.Quantity)
+                    - imported.Sum(i => definitions.Volumes[i.TypeId] * i.Quantity);
+                if (addedVolume > InventoryDefinitions.ResourceTolerance)
+                {
+                    PlanetaryOrbitStore.CheckOfficeCapacity(world, catalog, pilotId, officeId, database.Settings.PlanetaryIndustry);
+                }
                 colony = PlanetarySimulation.Advance(colony, definitions, now, database.Settings.PlanetaryIndustry);
                 Save(saved, colony);
                 return new PlanetaryChange(colony, changes, balance);

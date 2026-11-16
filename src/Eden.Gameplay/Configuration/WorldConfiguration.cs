@@ -58,7 +58,8 @@ public sealed record PlanetaryPolicy(
     decimal PowergridMultiplier = 1,
     int MaximumPlanets = 0,
     decimal StorageCapacityMultiplier = 1,
-    decimal FactorySpeedMultiplier = 1
+    decimal FactorySpeedMultiplier = 1,
+    decimal CustomsTaxPercent = 17
 );
 
 public sealed record StructurePolicy(decimal AnchoringSpeed = 1, decimal OnliningSpeed = 1, decimal UnanchoringSpeed = 1);

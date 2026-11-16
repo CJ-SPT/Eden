@@ -2,6 +2,49 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Customs storage and tax configuration — November 16, 2026
+
+The existing `StorageCapacityMultiplier` now covers each pilot's private customs-office hold as well as
+planetary storage. The base office capacity remains 35,000 m³; 100× supplies 3,500,000 m³. Authoritative ship
+deposits and launchpad exports share the same admission rule. Rejected transfers roll back goods and taxes;
+lowering capacity preserves overfilled holds and permits withdrawals. The orbital inventory's `GetCapacity`
+reply exposes the scaled value and that pilot's used volume.
+
+`PlanetaryPolicy.CustomsTaxPercent` defaults to 17 and accepts 0–100, including fractional percentages.
+Administration exposes it under Planetary industry, with normal pending/restart activation, revision comparison
+and JSON import/export. Both `GetTaxRate` and settlement use the active policy; imports cost half the export
+rate. Command-center launch fees remain 15%. Missing legacy fields retain 17%.
+
+Gameplay reference: [UniWiki colony management](https://wiki.eveuniversity.org/Colony_management) describes the
+ordinary 35,000 m³ customs hold and import/export logistics. The larger hold and configurable Interbus rate are
+Eden world settings. The pinned build 3662168 `invCacheContainer.GetCapacity` computes office capacity locally
+and `PlanetaryImportExportUI.GetCustomsCapacityTotal` reads that result. The signed adapter wraps only customs
+office type 2233, retains native used volume, returns a fresh capacity record, and restores the original method
+at 1×. It never changes shared catalog values or non-customs inventory capacities. This is required in addition
+to server admission and `GetCapacity` replies.
+
+Automated coverage exercises 0.1×, 1× and 100× admission, overflow rejection without goods/wallet changes,
+checkpoint reopening, withdrawals after lowering capacity, pending activation, zero/fractional/default/maximum
+tax settlement, form and legacy import behavior, and repeated signed-adapter installation/default restoration.
+Native rendering and in-game transfers remain maintainer acceptance.
+
+Automated validation: pinned tool/solution restore passed; solution build passed with zero warnings/errors
+(11.94 s). Filter `FullyQualifiedName~Eden.Protocol.Tests.Planetary` combined with
+`FullyQualifiedName~Eden.Protocol.Tests.Administration.WorldSettingsPageTests` and
+`FullyQualifiedName~Eden.Protocol.Tests.Administration.WorldConfigurationTests` passed 121 tests (54.14 s).
+The subsequently added exact method filter
+`FullyQualifiedName~WorldSettingsPageTests.CustomsTaxControlAcceptsZeroAndFractionalPercentagesAndReportsRevisionChanges`
+passed one test (3.28 s). Both Python policy suites passed (8 + 9 cases), and the pinned interpreter's inert
+inventory/customs/factory function checks passed. Formatting verification passed. The full .NET suite was not run.
+Live acceptance: Not performed; agent client testing is disabled. Optional maintainer check: update/reconnect,
+confirm the office capacity at the active storage multiplier, and choose a customs percentage under PI settings
+for restart activation. No live configuration value was changed and no server restart was performed for this milestone.
+
+| Pinned module | Decompressed SHA-256 |
+| --- | --- |
+| `eve/client/script/environment/invCache.pyj` | `0a8e0dc64921c75f095a0b61eea9319eee24fa61b2024256b3247a3bc147cda8` |
+| `eve/client/script/ui/shared/planet/importExportUI.pyj` | `cdad9058b4f4bbf873ce26e9a9383115d6360fa11bf6d7b5172159d11cb9eb26` |
+
 ## Storage capacity and factory speed — November 16, 2026
 
 Planetary industry settings now include independent **Storage capacity** and **Factory speed** multipliers,
@@ -10,7 +53,7 @@ Administration form round-trips, comparisons, imports and restart activation use
 path. No database migration, catalog rewrite or alternative persistence path was added.
 
 Capacity scales command centers, storage facilities and launchpads at production delivery, customs import and
-expedited-transfer admission. Factory ingredient buffers retain one batch, and customs offices retain 35,000 m³.
+expedited-transfer admission. Factory ingredient buffers retain one batch; customs offices now scale as recorded above.
 Reducing capacity preserves existing goods; additional delivery is refused while the building is over capacity.
 At 10×, a launchpad holds **100,000 m³**. At 100× it holds **1,000,000 m³**.
 

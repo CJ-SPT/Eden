@@ -13,6 +13,8 @@ def install_planetary_tuning():
     from eve.common.script.planet.entities.processPin import ProcessPin
     from eve.common.script.planet.entities.storagePin import StoragePin
     from eve.common.lib import appConst
+    from eve.client.script.environment.invCache import invCacheContainer
+    import utillib
 
     cpu, power = (float(value) for value in eden_planetary_policy[:2])
     output = Decimal(eden_planetary_policy[2])
@@ -23,6 +25,17 @@ def install_planetary_tuning():
     original_schematic = getattr(ProcessPin.SetSchematic, '_eden_original', ProcessPin.SetSchematic)
     original_capacity = getattr(StoragePin.GetCapacity, '_eden_original', StoragePin.GetCapacity)
     original_capacity = getattr(original_capacity, 'im_func', original_capacity)
+
+    original_inventory_capacity = getattr(invCacheContainer.GetCapacity, '_eden_original', invCacheContainer.GetCapacity)
+    original_inventory_capacity = getattr(original_inventory_capacity, 'im_func', original_inventory_capacity)
+
+    def inventory_capacity(self, flag=None):
+        result = original_inventory_capacity(self, flag)
+        if self.typeID != eden_planetary_customs_type:
+            return result
+        # Build 3662168 derives office capacity locally. Return a fresh record so
+        # cached native capacity rows and used cargo never receive the multiplier twice.
+        return utillib.KeyVal(capacity=result.capacity * storage, used=result.used)
 
     def cpu_output(level):
         return original_cpu(level) * cpu
@@ -49,6 +62,8 @@ def install_planetary_tuning():
     planetCommon.GetPowerOutput = power_output
     ProcessPin.SetSchematic = set_schematic
     StoragePin.GetCapacity = original_capacity if storage == 1 else capacity
+    inventory_capacity._eden_original = original_inventory_capacity
+    invCacheContainer.GetCapacity = original_inventory_capacity if storage == 1 else inventory_capacity
     planetCommon._eden_planetary = True
 
     from eve.client.script.ui.shared.planet.pinContainers.ProcessorContainer import ProcessorContainer

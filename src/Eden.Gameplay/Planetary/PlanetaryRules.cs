@@ -11,7 +11,7 @@ public static class PlanetaryRules
     public const int RemoteSensingSkill = 13279;
     public const int PlanetologySkill = 2406;
     public const int AdvancedPlanetologySkill = 2403;
-    public const double InterbusTaxRate = 0.17;
+    public const double CustomsOfficeBaseCapacity = 35000;
     public const int CustomsExpertiseSkill = 33467;
     public const int MaximumHeads = 10;
     public const int MaximumLinkLevel = 10;
@@ -490,6 +490,22 @@ public static class PlanetaryRules
         return type.Capacity * (IsStorage(type.Kind) ? (double)multiplier : 1);
     }
 
+    public static double CustomsOfficeCapacity(PlanetaryPolicy? policy = null)
+    {
+        decimal multiplier = policy?.StorageCapacityMultiplier ?? 1;
+        WorldTuningRules.ValidateRate(multiplier);
+        return CustomsOfficeBaseCapacity * (double)multiplier;
+    }
+
+    public static double CustomsTaxRate(PlanetaryPolicy policy)
+    {
+        if (policy.CustomsTaxPercent is < 0 or > 100)
+        {
+            throw new InvalidDataException("Customs tax must be between 0 and 100 percent.");
+        }
+        return (double)(policy.CustomsTaxPercent / 100);
+    }
+
     public static long FactoryCycleTicks(PlanetarySchematic schematic, PlanetaryPolicy? policy = null)
     {
         decimal speed = policy?.FactorySpeedMultiplier ?? 1;
@@ -601,7 +617,7 @@ public static class PlanetaryRules
     public static long TaxCents(PlanetaryCatalog catalog, IReadOnlyList<PlanetaryCommodity> commodities, double rate, bool import = false)
     {
         // Pinned commodity-tier taxable values, ISK/unit. Command launches use 15%,
-        // Interbus customs exports 17%; imports cost half exports.
+        // customs exports use world policy (17% by default); imports cost half exports.
         int[] values = [5, 400, 7200, 60000, 1200000];
         decimal total = 0;
         foreach (var commodity in commodities)

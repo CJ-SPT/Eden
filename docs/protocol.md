@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[PI customs capacity and tax](protocol/planetary.md#customs-storage-and-tax-configuration--november-16-2026)
+scale private office storage and configure the import/export rate with matching native quotes.
+
 [PI capacity and factory speed](protocol/planetary.md#storage-capacity-and-factory-speed--november-16-2026)
 configure planetary storage and processing duration with matching native previews and bandwidth reservations.
 
