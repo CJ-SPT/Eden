@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[NPC weapon capability correction](protocol/combat.md#npc-weapon-capability-correction--november-15-2026)
+removes unintended missile fire from 19 mission NPC hulls and the support-only Spider Drone I's phantom turret.
+
 [Population validation during travel](protocol/performance.md#population-validation-during-travel-november-15-2026)
 reduces NPC commit allocations and participant discovery work under the shared world owner.
 

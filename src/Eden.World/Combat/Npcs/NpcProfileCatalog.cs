@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Eden.Data.Catalog;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
@@ -29,7 +30,7 @@ public sealed class NpcProfileCatalog(bool cache = true)
     private static NpcHullProfile Load(CatalogDbContext catalog, int typeId)
     {
         var type = catalog.RequireItem(typeId);
-        var source = PilotFittingStore.ReadAttributes(catalog, typeId);
+        var source = ReadAttributes(catalog, typeId);
         var attributes = (NpcMiningRules.Types.Contains(typeId) ? NpcMiningRules.CombatAttributes(source) : source).ToImmutableDictionary();
         return new(
             type,
@@ -47,6 +48,28 @@ public sealed class NpcProfileCatalog(bool cache = true)
         {
             StandingThresholds = ReadStandingThresholds(catalog, typeId),
         };
+    }
+
+    internal static IReadOnlyDictionary<DogmaAttributeId, double> ReadAttributes(CatalogDbContext catalog, int typeId)
+    {
+        var attributes = PilotFittingStore.ReadAttributes(catalog, typeId);
+        var effects = FittingCatalog.Effects(catalog, typeId);
+        bool missile = effects.Contains(DogmaEffect.MissileLaunchingForEntity);
+        bool turret = effects.Contains(DogmaEffect.LaserFired);
+        if (
+            attributes.GetValueOrDefault(DogmaAttributeId.EntityMissileType) > 0 && !missile
+            || attributes.GetValueOrDefault(DogmaAttributeId.WeaponCycleTime) > 0 && !turret
+        )
+        {
+            // Some turret-only hulls retain a missile type and a one-millisecond
+            // launch duration; support-only drones can retain turret attributes.
+            // A weapon's declared effect must enable its attributes.
+            return attributes
+                .Where(pair => pair.Key != DogmaAttributeId.EntityMissileType || missile)
+                .Where(pair => pair.Key != DogmaAttributeId.WeaponCycleTime || turret)
+                .ToImmutableDictionary();
+        }
+        return attributes;
     }
 
     internal static NpcStandingThresholds? ReadStandingThresholds(CatalogDbContext catalog, int typeId)

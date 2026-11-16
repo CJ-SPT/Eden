@@ -7,6 +7,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
@@ -43,6 +44,7 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
             || NpcPopulationRules.IsCivilian(npc.Role)
             || npc.Navigation == NpcNavigationState.Warping
             || chargeId == 0
+            || !FittingCatalog.Effects(catalog, npc.TypeId).Contains(DogmaEffect.MissileLaunchingForEntity)
             || now < aggression.MissileReadyAt
         )
         {
@@ -145,6 +147,7 @@ internal sealed class NpcMissileStore(WorldDatabase database, SqliteWorld lookup
                 || npc.SystemId != row.SystemId
                 || npc.DestroyedAt.HasValue
                 || npc.RetiredAt.HasValue
+                || !FittingCatalog.Effects(catalog, npc.TypeId).Contains(DogmaEffect.MissileLaunchingForEntity)
                 || aggression?.TargetShipId != shipId
                 || now > row.ExpiresAt + TimeSpan.TicksPerSecond
                 || catalog.FittingType(pilot.ActiveShip.TypeId)!.GroupId == FleetDefinitions.CapsuleGroup

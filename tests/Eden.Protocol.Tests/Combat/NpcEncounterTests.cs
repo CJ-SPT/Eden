@@ -34,6 +34,7 @@ public sealed class NpcEncounterTests
             INSERT OR REPLACE INTO SourceRecord VALUES ('client/types','30380','{{"wreckTypeID":26557}}'),
                 ('client/types','26557','{{"published":1,"marketGroupID":1,"volume":27500}}'),
                     ('client/types','34','{{"published":1,"marketGroupID":1,"volume":0.01}}');
+            INSERT OR REPLACE INTO SourceRecord VALUES ('client/typedogma','30380','{{"dogmaEffects":[{{"effectID":10}}]}}');
             INSERT INTO ItemCategory(Id,Name) VALUES (11,'Entity');
             INSERT INTO ItemGroup(Id,Name,CategoryId) VALUES (286,'Minor Threat',11),(9,'Asteroid Belt',2);
             INSERT INTO ItemType(Id,Name,GroupId,Mass,Radius) VALUES (30380,'Guristas Rookie',286,1500100,50),(15,'Belt',9,0,1);

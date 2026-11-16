@@ -118,7 +118,7 @@ internal sealed partial class NpcCombatStore(
         foreach (var npc in npcs)
         {
             var profile = hullProfiles?.Read(catalog, npc.TypeId);
-            var attributes = profile?.Attributes ?? PilotFittingStore.ReadAttributes(catalog, npc.TypeId);
+            var attributes = profile?.Attributes ?? NpcProfileCatalog.ReadAttributes(catalog, npc.TypeId);
             double missileRange = MissileRange(catalog, npc, attributes);
             var type = profile?.Type ?? catalog.RequireItem(npc.TypeId);
             if (
@@ -277,8 +277,8 @@ internal sealed partial class NpcCombatStore(
             : PilotTackleStore.NpcAttributes(
                 world,
                 npc.Id,
-                profile?.Attributes ?? PilotFittingStore.ReadAttributes(catalog, npc.TypeId),
-                MissileRange(catalog, npc, profile?.Attributes ?? PilotFittingStore.ReadAttributes(catalog, npc.TypeId))
+                profile?.Attributes ?? NpcProfileCatalog.ReadAttributes(catalog, npc.TypeId),
+                MissileRange(catalog, npc, profile?.Attributes ?? NpcProfileCatalog.ReadAttributes(catalog, npc.TypeId))
             );
         var position = pilot.ActiveShip.Position;
         int system = position?.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
