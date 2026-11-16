@@ -4,6 +4,7 @@ Eden Modding SDK authors offline skill, C# server-plugin and Python client-exten
 packages declare exact dependencies and explicit overrides. Hosts compose a selected set into one matching catalog
 and client archive; the launcher verifies and installs that required set before play. Activation requires restart.
 The SDK solution is directly at `F:/Git Repos/Eden Modding Tools/Eden.Modding.Tools.slnx`.
+Eden also supplies an optional [Regional Express](#regional-express) travel-route package.
 
 ## Host commands
 
@@ -42,6 +43,53 @@ is available, abandoned `.build-<guid>` and `.mod-build-<guid>` directories can 
 Only recognized generated directories are eligible. Cleanup skips filesystem links and defers on damaged or
 missing saved references; cleanup errors are logged and do not fail an otherwise successful publish or startup.
 Full data backups are separate and still require their own retention policy.
+
+## Regional Express
+
+Regional Express (`eden.regional-express`, version 1.0.0) adds **69 permanent two-way connections / 138 gates**
+across **64 ordinary empire and nullsec regions** in the pinned catalog. Jita, Amarr, Dodixie, Rens and Hek form
+a complete express backbone. Every remaining region has one interchange connected to its geographically nearest
+backbone hub. Regional interchanges are at most three express jumps apart; reaching the interchange still uses
+the local gate network. This deliberately changes hauling distances and access to nullsec.
+
+Each region's interchange prefers highsec where available, then the most NPC stations, then the most existing
+gates, with stable system-ID ordering. Examples are KFIE-Z in Delve, BKG-Q2 in Branch, 9UY4-H in Providence and
+ND-X7X in Oasa. Original connections remain available. Wormhole space, Jove regions, Pochven, Zarzakh, Exordium,
+Abyssal space and other special regions receive no express gates.
+
+Gate models follow the **source region's prevailing ordinary gate architecture**, independently at each end.
+Same-architecture links use its Region gate; links to another architecture use its Border gate. CONCORD has
+only a Region variant. For example, a Caldari–Amarr connection has a Caldari Border gate in the Caldari region
+and an Amarr Border gate in the Amarr region. Nullsec retains its existing regional architecture. Special,
+damaged, disrupted, Jovian, Pochven and smuggler models never determine the new gates' style.
+
+Gates use existing catalog assets, stable IDs and separate positions clear of existing objects. Both the
+server catalog and required client archive receive matching connections, gate types, positions, names, system
+neighbours and native pathfinder data. No mod menu or command is needed: use them as ordinary stargates.
+Range checks, arrival placement, crimewatch and resident checkpoint persistence retain the existing travel rules.
+There is no additional mod toll or cooldown. Native safer-route preferences and avoidance settings still apply.
+
+Export for the target world's original catalog, install, enable and build the selected set:
+
+```powershell
+dotnet run --project src/Eden.Server -- --mod-export-regional-express C:\Mods\RegionalExpress.edenmod
+dotnet run --project src/Eden.Server -- --mod-install C:\Mods\RegionalExpress.edenmod
+dotnet run --project src/Eden.Server -- --mod-enable PACKAGE_SHA256
+dotnet run --project src/Eden.Server -- --mod-build E:\EdenDev\3662168
+```
+
+Use the hash printed by install and append the same `--world PATH` to all commands for a nondefault world.
+Restart Eden, then connect through Eden Launcher to install the matching client archive. Update the host before
+installing: travel packages declare mod API **1.1.0**, which older hosts reject. Existing API-1.0.0 packages remain
+supported. Disable this package's hash, rebuild the selected set and restart to remove its gates. Ships remain
+in their saved systems and positions. Exporting alone does not install, enable or restart anything.
+
+Package authors may include `travel-routes.json`, an array of named `ModTravelRoute` records with two typed
+endpoints (gate ID, system ID, existing stargate type ID and XYZ position). IDs must be unique in the reserved
+58,000,000–58,999,999 range. Composition rejects duplicate connections, occupied IDs, invalid types, unknown
+systems, nonfinite positions and overlaps, rolling back the entire catalog edit. No existing routes are replaced.
+The original catalog is preserved; installing and disabling routes uses the normal verified mod-set publication.
+See the [protocol and validation record](protocol/modding.md#regional-express--november-15-2026).
 
 ## AutoMining
 

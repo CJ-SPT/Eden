@@ -14,7 +14,7 @@ namespace Eden.Server.Modding;
 internal sealed class ModPublisher(WorldDatabase database, ModStore store)
 {
     // Changes to the native wrappers or client mod loader must rebuild existing selections.
-    internal const string ClientCompositionVersion = "3";
+    internal const string ClientCompositionVersion = "4";
     private readonly SemaphoreSlim _gate = new(1);
 
     public async Task<ModSetPackage> Build(string clientRoot, CancellationToken cancellation = default, Func<Task>? authorize = null)
@@ -36,6 +36,7 @@ internal sealed class ModPublisher(WorldDatabase database, ModStore store)
                 Path.Combine(temporary, "catalog.sqlite"),
                 snapshot
             );
+            overlay = TravelRouteProjection.Apply(Path.Combine(temporary, "catalog.sqlite"), overlay, packages);
             string identity =
                 ClientCompositionVersion + snapshot.CatalogFingerprint + overlay + string.Join("", packages.Select(p => p.Hash));
             string id = ModPackages.Hash(Encoding.UTF8.GetBytes(identity));

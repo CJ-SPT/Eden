@@ -9,6 +9,7 @@ public static class ModFormat
     public const int Version = 1;
     public const int ClientBuild = 3662168;
     public const string ApiVersion = "1.0.0";
+    public const string TravelApiVersion = "1.1.0";
     public const int MaximumCommandBytes = 64 * 1024;
     public static JsonSerializerOptions Json { get; } =
         new(JsonSerializerDefaults.Web) { UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow, WriteIndented = true };

@@ -3,6 +3,9 @@
 [Automatic signature resolution](protocol/information.md#automatic-signature-resolution--november-15-2026)
 adds an optional World & economy setting for fully resolved signatures without probes.
 
+[Regional Express](protocol/modding.md#regional-express--november-15-2026) adds optional reciprocal regional
+shortcuts with matching server/client geography and regional gate models.
+
 [Client package retention](protocol/modding.md#client-package-retention--november-15-2026)
 bounds generated catalog history and removes abandoned builds under shared publisher ownership.
 

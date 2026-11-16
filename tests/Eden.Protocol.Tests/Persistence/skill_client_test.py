@@ -3,6 +3,7 @@
 Set EDEN_TEST_CLIENT_ROOT to an unchanged prepared build-3662168 client.
 Only data loaders and inert functions run; the game is never started.
 """
+import ast
 import ctypes
 import hashlib
 import importlib.util
@@ -40,6 +41,14 @@ class SkillClientTests(unittest.TestCase):
                 },
                 'messages': {'1000000000': 'Eden café skill', '1000000001': 'A custom description'},
                 'alpha': {'1': {'1500000000': 3}, '2': {'1500000000': 0}},
+                'travel': {
+                    'jumps': [{'stargateID': 58000001, 'fromSystemID': 30000142, 'toSystemID': 30004759}],
+                    'systems': {'30000142': {'neighbours': [{'solarSystemID': 30004759, 'stargateID': 58000001, 'jumpType': 2}]}},
+                    'content': {'30000142': {'58000001': {'destination': 58000002, 'typeID': 3873,
+                                                       'position': {'x': 1.0, 'y': 2.0, 'z': 3.0}}}},
+                    'locations': {'58000001': {'systemID': 30000142, 'typeID': 3873, 'name': 'Stargate (1DQ1-A)',
+                                              'position': {'x': 1.0, 'y': 2.0, 'z': 3.0}}},
+                },
             }
             document = work / 'overlay.json'
             document.write_text(json.dumps(overlay), encoding='utf-8')
@@ -54,7 +63,8 @@ class SkillClientTests(unittest.TestCase):
                     if name.endswith('.pyj'):
                         raw = zlib.decompress(archive.read(name))
                         libraries.writestr(name[:-1] + 'c', raw)
-                        if name in builder.WRAPPERS or name in ('evetypes/__init__.pyj', 'eve/client/script/ui/services/skillsvc.pyj'):
+                        if name in builder.WRAPPERS or name in (builder.GEOGRAPHY_MODULE, 'evetypes/__init__.pyj',
+                                                               'eve/client/script/ui/services/skillsvc.pyj'):
                             path = work / name.replace('/', '_')
                             path.write_bytes(raw)
                             modules[name] = str(path)
@@ -116,6 +126,41 @@ discover=function(find(MODULES['eve/client/script/ui/services/skillsvc.pyj'],'Ge
 service=Obj(allskills=None,GetSkillRank=lambda tid:3.0 if tid==1500000000 else 1.0)
 skills=discover(service)
 check('Exact native discovery includes the packaged custom skill',len(skills)==513 and skills[1500000000]==(1500000000,0,0,3.0,None))
+geography=MODULES['eve/common/script/sys/eveCfg.pyj']
+cfg=Obj(_mapJumpCache=[Obj(stargateID=50000001)],
+    _mapSystemCache={30000142:Obj(neighbours=[],regionID=10000002),30000144:Obj(neighbours=[])},
+    _mapSolarSystemContentCache={30000142:Obj(stargates={50000001:Obj(destination=50000002)},planets={1:'original'})},
+    _map_stargate_id_mapping=None)
+env={}
+map_jumps=function(find(geography,'mapJumpCache'),env)
+jumps=map_jumps(cfg)
+check('Patched native jump cache includes the express edge',jumps[-1].fromSystemID==30000142 and jumps[-1].toSystemID==30004759)
+check('Warmed jump cache is shared and original stays intact',map_jumps(cfg) is jumps and len(cfg._mapJumpCache)==1)
+systems=function(find(geography,'mapSystemCache'),env)(cfg)
+check('Native neighbour fields and original region survive',systems[30000142].neighbours[0].stargateID==58000001 and systems[30000142].regionID==10000002)
+check('Unchanged systems retain identity',systems[30000144] is cfg._mapSystemCache[30000144])
+cfg.mapSolarSystemContentCache=function(find(geography,'mapSolarSystemContentCache'),env)(cfg)
+content=cfg.mapSolarSystemContentCache[30000142]
+check('Gate art position destination and planets survive',content.stargates[58000001].typeID==3873 and content.stargates[58000001].position.z==3 and content.planets[1]=='original')
+mapping=function(find(geography,'mapStargateIdMappingCache'),env)(cfg)
+check('Exact native gate-ID mapping resolves both directions',mapping[58000001]==58000002 and mapping[58000002]==58000001)
+class Rows(list):
+    def __init__(self,header,rows):
+        list.__init__(self,rows)
+        self.columns=[name for name,kind in header]
+    def InsertNew(self,values):
+        self.append(Obj(**dict(zip(self.columns,values))))
+class Constants(object):
+    def __getattr__(self,name):return 0
+env.update(boot=Obj(role='client'),blue=Obj(DBRowDescriptor=lambda columns:columns),const=Constants(),CRowset=Rows)
+cfg.mapObjectsDb=Obj(execute=lambda sql:[])
+cfg.GetLocationRowDescriptor=function(find(geography,'GetLocationRowDescriptor'),env).__get__(cfg)
+columns,locations=function(find(geography,'GetLocationsLocal'),env)(cfg,[58000001])
+check('Exact native location reply contains express gate name',locations[0].locationID==58000001 and locations[0].locationName=='Stargate (1DQ1-A)')
+local=function(find(geography,'GetLocationsLocalBySystem'),env)(cfg,30000142,True,False)
+check('Exact native system map reply contains express gate',local[0].itemID==58000001 and local[0].locationID==30000142 and local[0].connector)
+eden_skill_overlay.DATA.pop('travel')
+check('Disabled mod preserves native cache identity',map_jumps(cfg) is cfg._mapJumpCache)
 open(RESULT,'wb').write(repr(checks))
 '''
             values = {'LIBRARY': str(library), 'BINARIES': str(root / 'tq/bin64'),
@@ -127,7 +172,8 @@ open(RESULT,'wb').write(repr(checks))
                 runtime = ctypes.CDLL(str(root / 'tq/bin64/python27.dll'))
                 self.assertEqual(0, runtime.PyRun_SimpleString(worker.encode('ascii')))
             self.assertIn('Exact native discovery includes the packaged custom skill', (work / 'result.txt').read_text())
-            print('11 native adapter assertions passed; no game session started')
+            count = len(ast.literal_eval((work / 'result.txt').read_text()))
+            print('%d native adapter assertions passed; no game session started' % count)
 
 
 if __name__ == '__main__':

@@ -1,5 +1,71 @@
 # Modding protocol and activation
 
+## Regional Express — November 15, 2026
+
+Optional package `eden.regional-express` 1.0.0 exports 69 reciprocal route pairs across 64 ordinary known-space
+regions in build 3662168. One regional interchange joins the nearest of five fully connected empire hubs.
+The [modding guide](../modding.md#regional-express) records installation, selection policy and exclusions.
+
+`travel-routes.json` uses API 1.1.0; hosts retain API-1.0.0 compatibility. Old hosts reject the new API instead of
+silently ignoring its geography. Catalog composition adds reciprocal Stargate/Celestial records and updates
+`client/systems`, `client/jumps` and `client/solarsystemcontent` in the immutable package catalog. A failed edit
+rolls back as a unit. The original catalog and live world are not edited during publication. Runtime travel uses
+the existing resident operation and checkpoints; this adds no saved-world SQL or alternate travel implementation.
+
+Gate types use the source region's most common ordinary gate family, with Region variants for the same family
+and Border variants between families. Build-3662168 ItemType group 10 supplies exact type IDs and radii; each end
+is independent. This excludes damaged and special gates from family selection. The full-catalog check verifies
+the chosen family exists in each endpoint system and checks all 138 projected types and positions.
+
+Pinned archive `37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368` was inspected inertly.
+EveConfig's `mapJumpCache`, `mapSystemCache`, `mapSolarSystemContentCache`, `GetLocationsLocal` and
+`GetLocationsLocalBySystem` each receive a uniquely matched code-object wrapper at composition. Original bodies
+are preserved. Shared overlays retain unchanged row identity, native attribute access and integer keys; original
+gate-ID mapping derives both reciprocal IDs from the overlaid system content. Name and map replies preserve
+their original CRowset column ordering. The loader does not depend on opening Eden Mods.
+
+No Blue encoding, Destiny simulation or transport rules change. Existing Carbon Blue revision
+`af0d65b29f951260ea09140ca11adf5d40566997` and Destiny revision
+`27ee40b38a563d29054b32f64c3ebc87fabaec1f` references remain applicable. Gameplay reference:
+[EVE University stargates](https://wiki.eveuniversity.org/Stargates), particularly region/border architecture and
+ordinary gate use. This network and its hub policy are Eden additions, not official EVE routes.
+
+Shortest-path comparisons against the original pinned catalog (all security levels): Jita–Amarr 11 → 1 jumps,
+Jita–Dodixie 12 → 1, Jita–Rens 15 → 1, Jita–Hek 9 → 1, and Jita–1DQ1-A 42 → 12. These are catalog graph
+measurements, not native-client timing or safer-route acceptance.
+
+### Automated validation
+
+The initial exact development filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Administration.TravelRouteModTests.ComposedGateTravelUsesResidentStateAndSurvivesCheckpointReopen`.
+Development corrected position serialization and the package metadata required by the checkpoint fixture.
+Focused coverage includes native gate contacts, rejected range/destination calls with unchanged state, reciprocal
+resident transfers, checkpoint reopening, invalid composition rollback, package activation/removal and model families.
+The complete real-catalog test composes all 138 gates, checks deterministic IDs and models, excluded regions and
+the three-jump interchange bound. Headless Python checks execute actual patched build-3662168 functions and
+verify route caches, reciprocal gate mapping, names and map-row shape without starting the client.
+
+Final tool restore, solution restore/build (zero warnings/errors), **106 focused .NET cases, zero skips/failures**,
+both Python policy suites (8 catalog, 9 formatting cases), 20 headless native-adapter assertions, five client-mod
+adapter cases and formatting verification passed in **163.80 seconds combined**. The .NET runner reported
+1 minute 48 seconds (111.52 seconds including runner startup). The full .NET suite was not requested or run.
+`EDEN_TEST_CLIENT_ROOT=E:/EdenDev/3662168` and `EDEN_TEST_TRAVEL_CATALOG` pointing to the original pinned
+`catalog.sqlite` enabled the archive and complete-catalog checks. An earlier policy failure was corrected by
+moving region-style reads into the shared catalog provider and declaring the isolated travel catalog writer
+alongside the existing skill catalog writer in the catalog policy.
+
+Final focused filter:
+
+```text
+FullyQualifiedName~TravelRouteModTests|FullyQualifiedName~RegionalExpressCatalogTests|FullyQualifiedName~ModFoundationTests|FullyQualifiedName~ModRuntimeTests|FullyQualifiedName~ModLauncherApiTests|FullyQualifiedName~AutoMiningPackageTests|FullyQualifiedName~SkillBonusBuilderTests|FullyQualifiedName~SkillPackageRetentionTests|FullyQualifiedName~FlightSessionTests|FullyQualifiedName~GateTravelRulesTests|FullyQualifiedName~GateActivityProtocolTests|FullyQualifiedName~GameplayDependenciesTests
+```
+
+Live acceptance: Not performed; agent client testing is disabled. Native gate rendering, map drawing and
+interactive autopilot remain unverified.
+
+Optional maintainer checks: after activation, inspect gate art at both ends of an empire–nullsec link; plot and
+fly a route through that link using native autopilot.
+
 ## Client package retention — November 15, 2026
 
 Generated packages each contain a complete projected catalog. Retaining every generation and directories left

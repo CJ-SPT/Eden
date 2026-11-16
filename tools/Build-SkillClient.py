@@ -56,6 +56,45 @@ def ReloadScrollEntry(self, headerNode):
 
 
 NEOCOM_MODULE = 'eve/client/script/ui/shared/neocom/neocom/neocomSvc.pyj'
+GEOGRAPHY_MODULE = 'eve/common/script/sys/eveCfg.pyj'
+GEOGRAPHY_WRAPPERS = {
+    'mapJumpCache': '''
+def mapJumpCache(self):
+    import eden_skill_overlay
+    def _eden_original(self):
+        pass
+    return eden_skill_overlay.travel_jumps(_eden_original(self))
+''',
+    'mapSystemCache': '''
+def mapSystemCache(self):
+    import eden_skill_overlay
+    def _eden_original(self):
+        pass
+    return eden_skill_overlay.travel_systems(_eden_original(self))
+''',
+    'mapSolarSystemContentCache': '''
+def mapSolarSystemContentCache(self):
+    import eden_skill_overlay
+    def _eden_original(self):
+        pass
+    return eden_skill_overlay.travel_content(_eden_original(self))
+''',
+    'GetLocationsLocal': '''
+def GetLocationsLocal(self, keys):
+    import eden_skill_overlay
+    def _eden_original(self, keys):
+        pass
+    return eden_skill_overlay.travel_locations(_eden_original(self, keys), keys)
+''',
+    'GetLocationsLocalBySystem': '''
+def GetLocationsLocalBySystem(self, solarSystemID, requireLocalizedTexts=True, doYields=False):
+    import eden_skill_overlay
+    def _eden_original(self, solarSystemID, requireLocalizedTexts=True, doYields=False):
+        pass
+    return eden_skill_overlay.travel_system_locations(
+        _eden_original(self, solarSystemID, requireLocalizedTexts, doYields), solarSystemID)
+''',
+}
 MOD_MENU_WRAPPER = """
 def GetMenu(self):
     def _eden_original(self):
@@ -152,6 +191,9 @@ def build(root, overlay, output, mods=None):
                 path = patched[name]
                 path.write_bytes(zlib.decompress(original.read(name)))
                 jobs.append((path.name, function, wrapper))
+            path = patched[GEOGRAPHY_MODULE] = work / 'native-geography'
+            path.write_bytes(zlib.decompress(original.read(GEOGRAPHY_MODULE)))
+            jobs.extend((path.name, name, wrapper) for name, wrapper in GEOGRAPHY_WRAPPERS.items())
             if extra_sources:
                 path = patched[NEOCOM_MODULE] = work / 'native-neocom'
                 path.write_bytes(zlib.decompress(original.read(NEOCOM_MODULE)))

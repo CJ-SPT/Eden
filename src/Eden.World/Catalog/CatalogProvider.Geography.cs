@@ -1,6 +1,7 @@
 using System.Collections.Frozen;
 using System.Collections.Immutable;
 using Eden.Data.Catalog;
+using Eden.Gameplay.Flight;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Catalog;
@@ -8,6 +9,7 @@ namespace Eden.World.Catalog;
 public sealed partial class CatalogProvider
 {
     private const long CelestialEstimatedBytes = 192;
+    private const int StargateGroup = 10;
     private readonly Lazy<FrozenDictionary<int, string>> _regions;
     private readonly Lazy<FrozenDictionary<int, CatalogConstellationDefinition>> _constellations;
     private readonly Lazy<FrozenDictionary<int, CatalogGateDefinition>> _gates;
@@ -27,6 +29,30 @@ public sealed partial class CatalogProvider
     public ImmutableArray<CatalogStationDefinition> StationsInSystem(int systemId) => _systemStations.Value.GetValueOrDefault(systemId, []);
 
     public ImmutableArray<CatalogGateDefinition> GatesInSystem(int systemId) => _systemGates.Value.GetValueOrDefault(systemId, []);
+
+    internal IReadOnlyDictionary<int, RegionalGateStyle> RegionalGateStyles()
+    {
+        RequireCurrent();
+        using CatalogDbContext catalog = new(Identity.Path);
+        Interlocked.Increment(ref _loads);
+        return catalog
+            .Set<Celestial>()
+            .Where(body => body.GroupId == StargateGroup)
+            .Select(body => new { body.SolarSystemId, body.TypeId })
+            .AsEnumerable()
+            .Where(body => RegionalGateRules.Style(body.TypeId) is not null)
+            .GroupBy(body => Systems[body.SolarSystemId].RegionId)
+            .ToDictionary(
+                region => region.Key,
+                region =>
+                    region
+                        .GroupBy(body => RegionalGateRules.Style(body.TypeId)!.Value)
+                        .OrderByDescending(group => group.Count())
+                        .ThenBy(group => group.Key)
+                        .First()
+                        .Key
+            );
+    }
 
     internal IReadOnlyDictionary<int, CatalogCelestialDefinition> FindCelestials(IEnumerable<int> ids)
     {

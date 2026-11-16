@@ -40,6 +40,11 @@ internal static class ModCommands
             AutoMiningPackage.Write(database, output);
             return true;
         }
+        if (Value("--mod-export-regional-express") is { } travelOutput)
+        {
+            RegionalExpressPackage.Write(database, travelOutput);
+            return true;
+        }
         if (Value("--mod-install") is { } archive)
         {
             Console.WriteLine(store.Install(archive));

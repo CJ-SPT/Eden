@@ -3,6 +3,8 @@
 [Automatic signature resolution](world-configuration.md#exploration) makes cosmic signatures fully scanned
 for every pilot through an optional World & economy setting.
 
+[Regional Express](modding.md#regional-express) adds optional express stargates across empire and nullsec regions.
+
 [Client package retention](modding.md#client-package-retention) preserves active, pending and rollback generations
 while automatically pruning obsolete catalogs and abandoned builds.
 

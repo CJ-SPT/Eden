@@ -96,3 +96,85 @@ def alpha_storage(original):
     if _alpha_storage is None:
         _alpha_storage = AlphaStorage(original)
     return _alpha_storage
+
+
+def _travel():
+    return DATA.get('travel', {})
+
+
+def _travel_cached(name, original, build):
+    key = ('travel-' + name, id(original))
+    if key not in _cache:
+        _cache[key] = build()
+    return _cache[key]
+
+
+class MapRows(dict):
+    def Get(self, identity):
+        return self[identity]
+
+
+def travel_jumps(original):
+    edits = _travel().get('jumps')
+    if not edits:
+        return original
+    return _travel_cached('jumps', original, lambda: list(original) + [_convert(row, True) for row in edits])
+
+
+def travel_systems(original):
+    edits = _travel().get('systems')
+    if not edits:
+        return original
+
+    def build():
+        result = MapRows(original.iteritems())
+        for key, values in edits.iteritems():
+            identity = int(key)
+            result[identity] = Row({'neighbours': _convert(values['neighbours'], True)}, original[identity])
+        return result
+    return _travel_cached('systems', original, build)
+
+
+def travel_content(original):
+    edits = _travel().get('content')
+    if not edits:
+        return original
+
+    def build():
+        result = MapRows(original.iteritems())
+        for key, values in edits.iteritems():
+            identity = int(key)
+            gates = MapRows(original[identity].stargates.iteritems())
+            gates.update((int(gate), _convert(value, True)) for gate, value in values.iteritems())
+            result[identity] = Row({'stargates': gates}, original[identity])
+        return result
+    return _travel_cached('content', original, build)
+
+
+def _travel_location_values(identity, row):
+    point = row['position']
+    return {'locationID': identity, 'itemID': identity, 'locationName': row['name'], 'itemName': row['name'],
+            'solarSystemID': row['systemID'], 'locationNameID': None, 'nameID': None,
+            'typeID': row['typeID'], 'groupID': 10, 'orbitID': 0, 'connector': True,
+            'x': point['x'], 'y': point['y'], 'z': point['z'], 'celestialIndex': 0, 'orbitIndex': 0}
+
+
+def travel_locations(original, keys):
+    columns, rows = original
+    edits = _travel().get('locations', {})
+    for identity in keys:
+        row = edits.get(str(identity))
+        if row is not None:
+            values = _travel_location_values(identity, row)
+            # The location descriptor's solarSystemID field is the containing system.
+            rows.InsertNew([values[column] for column in columns])
+    return original
+
+
+def travel_system_locations(original, system):
+    for identity, row in _travel().get('locations', {}).iteritems():
+        if row['systemID'] == system:
+            values = _travel_location_values(int(identity), row)
+            values['locationID'] = system
+            original.InsertNew([values[column] for column in original.columns])
+    return original

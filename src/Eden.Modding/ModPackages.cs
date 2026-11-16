@@ -49,7 +49,7 @@ public static partial class ModPackages
         Identity(manifest.Id);
         if (
             manifest.FormatVersion != ModFormat.Version
-            || manifest.ApiVersion != ModFormat.ApiVersion
+            || manifest.ApiVersion is not (ModFormat.ApiVersion or ModFormat.TravelApiVersion)
             || manifest.ClientBuild != ModFormat.ClientBuild
             || !Version.TryParse(manifest.Version, out var version)
             || version.Build < 0
@@ -63,6 +63,10 @@ public static partial class ModPackages
         )
         {
             throw new InvalidDataException("The mod manifest has incompatible or invalid metadata.");
+        }
+        if (manifest.Files.Any(file => file?.Path == ModTravelRoutes.PackagePath) && manifest.ApiVersion != ModFormat.TravelApiVersion)
+        {
+            throw new InvalidDataException("Travel route packages require mod API 1.1.0.");
         }
         HashSet<string> dependencies = new(StringComparer.Ordinal);
         foreach (var dependency in manifest.Dependencies)
@@ -179,6 +183,7 @@ public static partial class ModPackages
             .OrderBy(pair => pair.Key, StringComparer.Ordinal)
             .Select(pair => new ModFile(pair.Key, Hash(pair.Value), pair.Value.LongLength))
             .ToArray();
+        Validate(manifest with { Files = files });
         using var output = new FileStream(path, FileMode.CreateNew);
         using ZipArchive archive = new(output, ZipArchiveMode.Create);
         void Add(string name, byte[] bytes)

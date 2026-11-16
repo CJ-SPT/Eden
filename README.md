@@ -62,6 +62,8 @@ If you’re keeping an existing world, stop the old server and copy its data bef
 
 [AutoMining](docs/modding.md#automining) adds opt-in harvesting, player fleet following, multi-system ore routes and station hauling through Eden Mods.
 
+[Regional Express](docs/modding.md#regional-express) adds optional regional shortcuts with region-appropriate gates.
+
 [Client package retention](docs/modding.md#client-package-retention) automatically removes obsolete generated catalogs
 and abandoned builds while retaining active, pending and rollback packages.
 
