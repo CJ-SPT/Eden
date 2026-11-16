@@ -6,6 +6,107 @@ Diagnostics, replay benchmarks, resident caches, combat objects and checkpoints.
 
 These records preserve milestone evidence and historical observations. Dates, schema versions, test results and live acceptance apply to the recorded change; they do not establish acceptance of later changes.
 
+## Population validation during travel, November 15, 2026
+
+Read-only Docker logs from running revision `c1a76d420a236cdf9eb7de7a02960aeb1d424681` cover
+5:50–7:00 p.m. ET. Traffic arrival for pilot `90001347` held the shared owner for 728.72 ms.
+Another arrival spent 259.94 of 261.91 ms in `resident.npcPopulation`, with zero SQL, connections or
+fitting calculations. Other sessions recorded 1.5–1.9 second frames near traffic work. Initial signature
+loading also delayed an observer for 1,914.23 ms. These observations identify several sources of stalls;
+they do not prove that every slow frame is caused by travel or by NPC validation. The captured log is
+retained under ignored `artifacts/travel-optimization/remote.log` in the main checkout.
+
+Resident NPC validation previously issued a slot-uniqueness query for every materialized NPC. Each query
+merged all private NPC rows into its candidates, even when only one encounter matched. This made a
+population commit quadratic in its private population and generated substantial temporary allocation
+while retaining shared ownership. Validation now selects occupied slots for the touched encounters in
+one scalar query, then checks uniqueness once. It includes unchanged published occupants and staged
+mutations. Destroyed, retired, deleted and legacy pirate rows retain the saved partial index semantics.
+
+Population participant discovery also applies its complete eligibility predicate before projecting IDs.
+It no longer copies every live guard just to discard guards that need no population mutation. Mining
+members, convoys, the fixture rookie type and excluded special pirates retain their existing selection
+rules. Both changes use the existing resident authority and checkpoint projection.
+
+Gameplay references are [EVE University stargates](https://wiki.eveuniversity.org/Stargates) and
+[belt rats](https://wiki.eveuniversity.org/Belt_rat). The local older EveJS reference identifies itself
+as `261108.1`, has no Git metadata, and uses AGPL-3.0-only. The arrival preparation and attachment review
+covered `server/src/space/runtime/spaceRuntime/sessions.js`, SHA-256
+`1E1659817958BD8AACF99ED7ABC9F2DDFEA2EE150E7548E6313B5E29C2A701BB`.
+No reference code was copied. The build-3662168 travel replies, gate geometry and population rules were
+not changed. This is an Eden resident validation and query optimization.
+
+### Automated validation
+
+The exact-method development filter
+`FullyQualifiedName=Eden.Protocol.Tests.Persistence.NpcPopulationValidationTests.PopulationCommitAllocationGrowsLinearlyWithTheLoadedPopulation`
+reproduced the allocation regression before the change. On identical warmed resident fixtures:
+
+| Loaded NPCs | Before allocated | After allocated | Before elapsed | After elapsed |
+| --- | ---: | ---: | ---: | ---: |
+| 1 | 163,144 bytes | 150,432 bytes | 0.49 ms | 0.39 ms |
+| 512 | 106,170,376 bytes | 1,500,440 bytes | 197.92 ms | 3.51 ms |
+
+Each sample includes the resident read and commit and reports zero SQL commands, connection opens and
+fitting calculations. The regression uses a generous linear allocation bound; elapsed time is reported,
+not asserted. These are native Windows samples, not remote Linux server measurements.
+
+The exact-method filter
+`FullyQualifiedName=Eden.Protocol.Tests.Combat.ServerPerformanceReplayTests.PopulationMaintenanceAndTwoMovingSessionFramesStaySqlFree`
+compares three warm-up turns and five measured turns. Each turn reads and commits a regional population,
+then advances two complete moving player sessions in another system. Both players end with advanced
+positions. The test also covers an empty population. Median measurements:
+
+| NPCs | Before whole turn | After whole turn | Before population work | After population work | Before two frames | After two frames |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0 | 2.88 ms | 1.74 ms | 0.47 ms | 0.36 ms | 1.86 ms | 1.29 ms |
+| 512 | 187.45 ms | 5.70 ms | 184.51 ms | 2.62 ms | 1.88 ms | 1.63 ms |
+
+The populated turn allocated 106,638,984 bytes before and 2,028,576 after. Checkpoints are measured
+separately: 50.81 ms before and 57.31 ms after for the populated fixture, and 55.75/60.28 ms for the
+empty fixture. This sequential workload measures time spent doing shared population work alongside
+complete sessions; it does not reproduce the deployed server's scheduling, socket delays or travel routes.
+Both versions report zero SQL, connection opens and fitting calculations during the measured turns.
+The baseline source was `495af24e`; exposing the participant query to the regression was the only
+behavior-neutral baseline adaptation. An initial baseline build failed because that helper was private;
+the corrected baseline completed both cases. No failed build was counted as a benchmark result.
+
+The development selection passed all 11 population-validation and gate-contention cases in 7.11 seconds.
+It checks unchanged published and new duplicates, mutation rollback, all five slot-release paths,
+reopened checkpoints and a gate round trip. The gate rejection, transfer and readback complete while
+an unrelated system is deliberately paused, with zero SQL, connections and fitting calculations. That
+gate-isolation case also passed on the baseline; it is compatibility coverage, not a newly fixed lock bug.
+
+After integrating main `33539baf`, all 244 affected cases passed in 94.36 seconds. The filter combines
+`FullyQualifiedName~` clauses for:
+
+```text
+NpcPopulationValidationTests, TravelContentionTests, SystemRuntimeIsolationTests,
+ResidentEconomyTests, EconomicProjectionTests, ResidentBotEconomyTests, NpcPopulationTests,
+NpcGuardTests, NpcConvoyTests, NpcMiningTests, NpcMiningSessionTests, LiveSimulationTests,
+ResidentNpcMissileTests, ResidentNpcEffectTests, CapsuleerTrafficPerformanceTests,
+FlightSessionTests, CombatAnomalyTests, PopulationMaintenanceAndTwoMovingSessionFramesStaySqlFree
+```
+
+Tool and solution restores passed. The solution build passed in 9.19 seconds with zero warnings or
+errors. The Python catalog and formatting policy suites passed all eight and nine cases respectively
+in 1.51 seconds combined. .NET style, CSharpier and line-width verification passed in 36.11 seconds;
+Git whitespace and the new documentation links also passed. The full .NET suite was not run.
+Under the concurrent affected-test workload,
+the populated benchmark measured a 10.22 ms median turn; the controlled comparison above uses the
+separately run exact-method baseline and optimized samples.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. The remote server was read for logs and resource
+information and was not deployed or restarted. Signature initialization, checkpoint projection and
+other long-running handlers remain separate observed costs. In-game travel responsiveness is unverified.
+
+### Optional maintainer checks
+
+After deployment, compare arrival/population lock holds and other sessions' frame latency while several
+pilots travel between systems.
+
 ## Multi-buy price-history queries, November 15, 2026
 
 The remote server logged 13 slow `marketProxy.GetOldPriceHistory` and

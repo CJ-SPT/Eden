@@ -3806,24 +3806,8 @@ internal sealed partial class EconomyTransaction
             {
                 throw new InvalidDataException("Invalid resident WorldNpc values.");
             }
-            if (
-                row.Role != 0
-                && row.DestroyedAt == null
-                && row.RetiredAt == null
-                && Set<Eden.Data.World.Combat.Npcs.WorldNpc>()
-                    .Any(other =>
-                        other.Role != 0
-                        && other.DestroyedAt == null
-                        && other.RetiredAt == null
-                        && other.EncounterId == row.EncounterId
-                        && other.SpawnSlot == row.SpawnSlot
-                        && (other.Id != row.Id)
-                    )
-            )
-            {
-                throw new InvalidDataException("Duplicate resident WorldNpc unique value.");
-            }
         }
+        ValidateNpcSpawnSlots();
         foreach (var row in Retained<Eden.Data.World.Combat.Npcs.WorldNpcEncounter>())
         {
             if (!double.IsFinite(row.HomeX) || !double.IsFinite(row.HomeY) || !double.IsFinite(row.HomeZ))

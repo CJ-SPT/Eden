@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Population validation during travel](protocol/performance.md#population-validation-during-travel-november-15-2026)
+reduces NPC commit allocations and participant discovery work under the shared world owner.
+
 [Mission branch integration](protocol/agents.md#mission-branch-integration--november-15-2026) preserves main's
 spawn/storyline fixes alongside verified encounters and resident chains, with a combined storyline/chain regression.
 
