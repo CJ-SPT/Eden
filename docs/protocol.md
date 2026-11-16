@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Reprocessing rounding and clone-grade limits](protocol/industry.md#reprocessing-rounding-and-clone-grade-limits-november-16-2026)
+fix lost whole mineral units and Alpha pilots receiving bonuses from inactive trained skills.
+
 [PI customs capacity and tax](protocol/planetary.md#customs-storage-and-tax-configuration--november-16-2026)
 scale private office storage and configure the import/export rate with matching native quotes.
 

@@ -7,6 +7,58 @@ Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP
 [Planetary industry](planetary.md) now covers surface colonies, extraction, all 68 processing schematics,
 command launches and NPC customs import/export. Earlier milestone scope statements below remain historical.
 
+## Reprocessing rounding and clone-grade limits, November 16, 2026
+
+Comparison with local evejs release **261108.1** identified two reprocessing defects. Its
+`server/src/services/reprocessing/reprocessingRuntime.js` uses effective skill levels and normalizes
+floating-point products before converting yields to whole units. The local reference has no Git metadata;
+the inspected file's SHA-256 is **5dc0522d36b9ba0499fb6ed2142e6a5d18ab7c90a1301af5f48581a653d0e4fa**.
+Evejs targets older client 3396210 and declares AGPL-3.0-only. Eden's fixes are independently authored;
+no reference implementation was copied.
+
+- Binary multiplication could floor a mathematically exact **115** units to **114**, or **253** to **252**.
+  Gameplay now multiplies the decimal representations of catalog efficiency and skill factors, including
+  the saved world multiplier, before flooring. Genuine fractions still round down; no epsilon is added.
+- Saved skills above an Alpha account's limits incorrectly increased both quoted and committed yields.
+  The world operation now caps each trained level using the pilot's race-specific `client/clonegrades`
+  catalog record. Missing skills contribute no Alpha bonus. Omega uses the trained level, and switching
+  account grades immediately changes subsequent quotes and commits without deleting skill points.
+
+The pinned build-3662168 catalog grants Alpha Reprocessing **III**, with no Reprocessing Efficiency or
+Simple Ore Processing allowance, for all four races. Source `res:/staticdata/clonegrades.static` has
+SHA-256 **069779f3e12ebb79328bddbcad200cc455472256048c83d57bdeb0cf534640c4**, recorded in
+`tools/catalog/build-3662168.json`. Gameplay references:
+[EVE University reprocessing](https://wiki.eveuniversity.org/Reprocessing) and
+[clone states](https://wiki.eveuniversity.org/Clone_states), with supporting
+[CCP Alpha/Omega facts](https://support.eveonline.com/hc/en-us/articles/213811425-Alpha-Clones-and-Omega-Clone-lapsing-Quick-Facts).
+The existing native quote, completion and
+inventory notification formats remain in use; this change introduces no serialization or transport work.
+Alchemy retains its existing fixed recipe conversion. Resident transactions and checkpoint projection
+remain the authority for inventory and account state.
+
+**Automated validation:** Development started with exact filters
+`FullyQualifiedName=Eden.Protocol.Tests.Reprocessing.ReprocessingRulesTests.WholeUnitYieldsDoNotLoseMaterialToBinaryRounding`
+and
+`FullyQualifiedName=Eden.Protocol.Tests.Reprocessing.ReprocessingTests.ResidentReprocessingUsesCurrentCloneGradeAndPreservesTrainedPoints`.
+They reproduced the rounding and Alpha-yield failures before their respective fixes. Pure tests cover
+whole-unit boundaries, nearby fractional results, and **864** combinations of skill levels and world rates.
+Resident tests cover Alpha/Omega grade changes, quote/commit agreement, leftovers, retained trained points
+and reopened checkpoint contents. Final focused filter:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Reprocessing|FullyQualifiedName~MoonMiningRulesTests|FullyQualifiedName~MoonExtractionTests|FullyQualifiedName~WorldTuningTests.Reprocessing|FullyQualifiedName~StructureTests.RefineryReprocessing|FullyQualifiedName~EconomicLifecycleTests.Reprocessing|FullyQualifiedName~EconomicLifecycleTests.ThreePaidProductionAndTradeCycles
+```
+
+**43 cases passed, none skipped**, in **15.08 seconds** test-command wall time. Tool/solution restore,
+solution build (zero warnings/errors), catalog policy (**8 cases**), formatting policy (**9 cases**),
+formatting/line-width verification and diff checks passed. The required sequence took **63.68 seconds**;
+the validation transcript is at `artifacts/evejs-audit-validation.log`. The changed documentation link and
+catalog reference checks also passed. The full .NET suite was not requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None required for these calculation and account-limit corrections.
+
 ## Container industry workflows, November 15, 2026
 
 Personal assembled containers in the current station or structure Item Hangar now appear in

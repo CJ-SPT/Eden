@@ -1,4 +1,5 @@
 using Eden.Data.Catalog;
+using Eden.Data.World.Characters;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Characters;
@@ -11,8 +12,10 @@ using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Persistence;
+using Eden.Server;
 using Eden.World.Catalog;
 using Eden.World.Inventory;
+using Eden.World.Runtime;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -39,6 +42,7 @@ public sealed class ReprocessingTests
     }
 
     private const long OreId = InventoryDefinitions.FirstOwnedItemId + 100;
+    private const long AccountId = 1000001;
     private const int ScorditeType = 1228;
     private const int TritaniumType = 34;
     private const int PyeriteType = 35;
@@ -47,7 +51,7 @@ public sealed class ReprocessingTests
     private sealed class Fixture : IDisposable
     {
         public TestWorld Db { get; } = new();
-        public DockedPilot Pilot => Db.Store.FindPilot(1000001)!;
+        public DockedPilot Pilot => Db.Store.FindPilot(AccountId)!;
         public IPilotReprocessing Store => Db.Services.GetRequiredService<IPilotReprocessing>();
         public IPilotInventory Inventory => Db.Services.GetRequiredService<IPilotInventory>();
 
@@ -71,6 +75,8 @@ public sealed class ReprocessingTests
                 INSERT INTO DogmaAttribute VALUES (379,'refiningYieldMutator'),(790,'reprocessingSkillType');
                 INSERT INTO TypeAttribute VALUES (3385,379,3),(3389,379,2),(60377,379,2),(1228,790,60377),
                     (3385,275,1),(3389,275,3),(60377,275,3);
+                UPDATE SourceRecord SET Data='{{"skills":[{{"typeID":3327,"level":4}},{{"typeID":3385,"level":3}}]}}'
+                    WHERE Dataset='client/clonegrades';
                 """
             );
             using WorldDbContext world = new(Db.Path);
@@ -118,6 +124,7 @@ public sealed class ReprocessingTests
         Assert.Equal(new RecoveredMaterial[] { new(TritaniumType, 225, 225), new(PyeriteType, 165, 165) }, quote.Recoverables);
         using (WorldDbContext world = new(f.Db.Path))
         {
+            world.Set<Account>().Find(AccountId)!.CloneGrade = AccountCloneGrade.Omega;
             foreach (
                 var (skill, rank, level) in new[]
                 {
@@ -142,6 +149,73 @@ public sealed class ReprocessingTests
         Assert.Equal(0.5 * 1.09 * 1.04 * 1.08, quote.Efficiency, 12);
         Assert.Equal(new[] { 275, 202 }, quote.Recoverables.Select(r => r.Quantity));
         Assert.Equal(333, f.Inventory.List(f.Pilot.PilotId, f.Pilot.StationId).Single(i => i.Id == OreId).Quantity);
+    }
+
+    [Theory]
+    [InlineData(AccountCloneGrade.Alpha, 327, 239)]
+    [InlineData(AccountCloneGrade.Omega, 417, 306)]
+    public void ResidentReprocessingUsesCurrentCloneGradeAndPreservesTrainedPoints(AccountCloneGrade grade, int tritanium, int pyerite)
+    {
+        using Fixture f = new(433);
+        using var host = ServerServices.Build(new(f.Db.Path), liveWorld: true);
+        var pilot = f.Pilot;
+        var live = host.GetRequiredService<LiveWorld>();
+        using (var action = live.Economy.Begin())
+        {
+            action.Set<Account>().Find(AccountId)!.CloneGrade = grade;
+            foreach (
+                var (skill, rank) in new[]
+                {
+                    ((int)ReprocessingSkill.Reprocessing, 1),
+                    ((int)ReprocessingSkill.ReprocessingEfficiency, 3),
+                    (SimpleOreSkill, 3),
+                }
+            )
+            {
+                action.Add(
+                    new PilotSkill
+                    {
+                        PilotId = pilot.PilotId,
+                        TypeId = skill,
+                        Points = TrainedSkill.PointsForLevel(rank, 5),
+                    }
+                );
+            }
+            action.Commit();
+        }
+
+        var quote = Assert.Single(f.Quote().Items);
+        Assert.Equal(tritanium, quote.Recoverables.Single(m => m.TypeId == TritaniumType).Quantity);
+        Assert.Equal(pyerite, quote.Recoverables.Single(m => m.TypeId == PyeriteType).Quantity);
+        using (var action = live.Economy.Begin())
+        {
+            action.Set<Account>().Find(AccountId)!.CloneGrade =
+                grade == AccountCloneGrade.Alpha ? AccountCloneGrade.Omega : AccountCloneGrade.Alpha;
+            action.Commit();
+        }
+        var changed = Assert.Single(f.Quote().Items);
+        Assert.Equal(grade == AccountCloneGrade.Alpha ? 417 : 327, changed.Recoverables.Single(m => m.TypeId == TritaniumType).Quantity);
+        using (var action = live.Economy.Begin())
+        {
+            action.Set<Account>().Find(AccountId)!.CloneGrade = grade;
+            action.Commit();
+        }
+        var result = f.Run();
+        Assert.Equal(tritanium, result.Output[TritaniumType]);
+        Assert.Equal(pyerite, result.Output[PyeriteType]);
+        Assert.Equal(33, f.Inventory.List(pilot.PilotId, pilot.StationId).Single(i => i.Id == OreId).Quantity);
+
+        using var checkpoint = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
+        checkpoint.Project();
+        using WorldDbContext saved = new(checkpoint.Database);
+        Assert.Equal(grade, saved.Set<Account>().Find(AccountId)!.CloneGrade);
+        Assert.Equal(33, saved.Set<OwnedItem>().Find(OreId)!.Quantity);
+        Assert.Equal(tritanium, saved.Set<OwnedItem>().Single(i => i.OwnerId == pilot.PilotId && i.TypeId == TritaniumType).Quantity);
+        Assert.Equal(pyerite, saved.Set<OwnedItem>().Single(i => i.OwnerId == pilot.PilotId && i.TypeId == PyeriteType).Quantity);
+        Assert.Equal(
+            TrainedSkill.PointsForLevel(1, 5),
+            saved.Set<PilotSkill>().Find(pilot.PilotId, (int)ReprocessingSkill.Reprocessing)!.Points
+        );
     }
 
     [Fact]

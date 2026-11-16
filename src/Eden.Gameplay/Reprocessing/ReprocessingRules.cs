@@ -26,8 +26,11 @@ public static class ReprocessingRules
         }
         int portions = input.Quantity / input.PortionSize;
         int left = input.Quantity % input.PortionSize;
-        double efficiency = Math.Clamp(
-            input.SkillMultipliers.Aggregate(input.StationEfficiency, (value, bonus) => value * bonus) * (double)input.EfficiencyMultiplier,
+        // Catalog percentages are decimal values. Keep their products decimal
+        // until flooring, so an exact 115 units cannot become 114.99999999999999.
+        decimal efficiency = Math.Clamp(
+            input.SkillMultipliers.Aggregate((decimal)input.StationEfficiency, (value, bonus) => value * (decimal)bonus)
+                * input.EfficiencyMultiplier,
             0,
             1
         );
@@ -41,10 +44,10 @@ public static class ReprocessingRules
                     throw new InvalidDataException("The catalog contains an invalid reprocessing output.");
                 }
                 long total = checked(material.Quantity * portions);
-                int quantity = checked((int)Math.Floor(total * efficiency));
+                int quantity = checked((int)decimal.Floor(total * efficiency));
                 recovered.Add(new(material.TypeId, quantity, total - quantity));
             }
         }
-        return new(input.ItemId, input.TypeId, input.Quantity - left, left, portions, efficiency, recovered);
+        return new(input.ItemId, input.TypeId, input.Quantity - left, left, portions, (double)efficiency, recovered);
     }
 }

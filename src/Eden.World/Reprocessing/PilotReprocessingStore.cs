@@ -3,6 +3,7 @@ using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Characters;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Economy;
 using Eden.Gameplay.Inventory;
@@ -119,9 +120,15 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
     private static double Attribute(CatalogDbContext catalog, int typeId, DogmaAttributeId attribute, double fallback = 0) =>
         catalog.Definitions.Attributes(typeId).GetValueOrDefault(attribute, fallback);
 
-    private static double SkillMultiplier(WorldAction world, CatalogDbContext catalog, long pilotId, int skill)
+    private static double SkillMultiplier(WorldAction world, CatalogDbContext catalog, Pilot pilot, int skill)
     {
-        int level = PilotSkillReader.Level(world, catalog, pilotId, skill);
+        int level = PilotSkillReader.Level(world, catalog, pilot.Id, skill);
+        if (level > 0 && pilot.Account.CloneGrade == AccountCloneGrade.Alpha)
+        {
+            var limits = catalog.Require(CatalogData.Client.Clonegrades, pilot.RaceId.ToString(CultureInfo.InvariantCulture)).Skills!.Value;
+            long maximum = limits.Where(limit => limit.TypeID == skill).Select(limit => limit.Level ?? 0).SingleOrDefault();
+            level = Math.Min(level, checked((int)maximum));
+        }
         return 1 + level * Attribute(catalog, skill, DogmaAttributeId.RefiningYieldMutator) / 100;
     }
 
@@ -164,9 +171,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
                 item.Quantity,
                 checked((int)definition.PortionSize.Value),
                 alchemy ? 1 : stationEfficiency,
-                alchemy
-                    ? []
-                    : skills.Where(skill => skill != 0).Select(skill => SkillMultiplier(world, catalog, pilot.Id, skill)).ToArray(),
+                alchemy ? [] : skills.Where(skill => skill != 0).Select(skill => SkillMultiplier(world, catalog, pilot, skill)).ToArray(),
                 materials
                     .Materials.Value.Select(m => new ReprocessingMaterial(checked((int)(m.MaterialTypeID ?? 0)), m.Quantity ?? 0))
                     .ToArray(),
