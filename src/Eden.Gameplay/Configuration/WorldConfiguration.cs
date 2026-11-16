@@ -55,7 +55,8 @@ public sealed record PlanetaryPolicy(
     decimal ExtractionYieldMultiplier = 1,
     decimal FactoryOutputMultiplier = 1,
     decimal CpuMultiplier = 1,
-    decimal PowergridMultiplier = 1
+    decimal PowergridMultiplier = 1,
+    int MaximumPlanets = 0
 );
 
 public sealed record StructurePolicy(decimal AnchoringSpeed = 1, decimal OnliningSpeed = 1, decimal UnanchoringSpeed = 1);

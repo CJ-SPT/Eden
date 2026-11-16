@@ -16,7 +16,7 @@ A draft saves as **pending restart**. Saving, restoring and importing use the sa
 | Exploration | Always resolve cosmic signatures for every pilot, without scanner probes. Off by default. |
 | Progression | NPC kill-SP and mining-SP multipliers; starting skills and initial wallet grants for future pilots. Native training formulas remain unchanged. |
 | Industry | Manufacturing, research, copying and invention speed; reprocessing efficiency. |
-| Planetary industry | Extraction yield, factory output, command-center CPU and powergrid multipliers. |
+| Planetary industry | Maximum planets per pilot, extraction yield, factory output, command-center CPU and powergrid multipliers. |
 | Structures | Anchoring, core onlining and decommissioning speeds for new timers; saved deadlines retain their original terms. |
 | Simulated pilots | Enable or pause simulated pilots/miners, station traffic density (0–10×), and visitors per watched gate (0–16). |
 | Simulation | Checkpoint interval, market maintenance interval and resource check interval. |
@@ -153,7 +153,17 @@ See the [protocol record](protocol/navigation.md#travel-configuration-november-1
 
 ## Planetary industry
 
-Open **Settings → Planetary industry** to tune four independent **0.1–100×** multipliers, all defaulting to **1×**:
+Open **Settings → Planetary industry** to set **Maximum planets (0 = skill-based)** and four independent
+**0.1–100×** multipliers, all defaulting to **1×**. The planet limit defaults to **0**, preserving one planet plus
+the pilot's Interplanetary Consolidation level (one to six planets). Set **1–100** to replace the skill-based count
+with that total per pilot. For example, **12** allows each pilot up to twelve colonies regardless of that skill's level.
+Save for restart, restart the server and reconnect to apply the change.
+
+Lowering the limit or restoring **0** preserves all existing colonies and their production, editing and abandonment.
+A pilot at or above the new limit cannot deploy another colony until enough colonies are abandoned.
+Omega status, planet eligibility, command-center cargo, construction costs and building/upgrade skills still apply.
+With an explicit limit, Interplanetary Consolidation no longer restricts skill extraction; Command Center Upgrades
+remains protected when existing command centers require it.
 
 | Control | Effect after Save for restart and restarting the server |
 | --- | --- |
@@ -169,7 +179,7 @@ remove or recreate routes that exceed both the original and newly configured fac
 Lowering CPU or powergrid preserves existing buildings; remove enough buildings/links or upgrade the command center
 so the complete colony fits before submitting an edit.
 
-The signed login adapter synchronizes native CPU/power previews and factory products. Reconnect after server restart;
+The signed login adapter synchronizes native planet-limit validation, CPU/power previews and factory products. Reconnect after server restart;
 no separately rebuilt client package is required. Native rendering and interactive gameplay remain unverified.
 Extraction quotes and saved program parameters already carry the configured yield through the ordinary protocol.
 Policies and colony progress use the existing world configuration and resident checkpoint paths.
@@ -181,12 +191,15 @@ Configuration exports store these values under `settings.planetaryIndustry`:
   "extractionYieldMultiplier": 1,
   "factoryOutputMultiplier": 1,
   "cpuMultiplier": 1,
-  "powergridMultiplier": 1
+  "powergridMultiplier": 1,
+  "maximumPlanets": 0
 }
 ```
 
-Historical configuration documents that omit this group retain 1× behavior. Drafts, original/active/pending comparisons,
-imports, validation and restore use the same settings. See the [implementation record](protocol/planetary.md#world-configuration--november-14-2026).
+Historical configuration documents that omit this group retain 1× behavior; an omitted `maximumPlanets` retains
+the skill-based limit. Drafts, original/active/pending comparisons, imports, validation and restore use the same settings.
+See the [multiplier implementation record](protocol/planetary.md#world-configuration--november-14-2026) and
+[configurable planet limit](protocol/planetary.md#configurable-planet-limit--november-16-2026).
 
 ## Progressive regional markets
 

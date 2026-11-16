@@ -87,7 +87,7 @@ internal sealed class PilotSkillExtractionStore(WorldDatabase database, PilotTra
         return new(revision, new(state.Queue, ids));
     }
 
-    private static IReadOnlyList<SkillExtractionFloor> Restrictions(WorldAction world, CatalogDbContext catalog, long pilotId)
+    private IReadOnlyList<SkillExtractionFloor> Restrictions(WorldAction world, CatalogDbContext catalog, long pilotId)
     {
         List<SkillExtractionFloor> floors = [];
         var colonies = world
@@ -100,7 +100,7 @@ internal sealed class PilotSkillExtractionStore(WorldDatabase database, PilotTra
             floors.Add(
                 new(
                     Eden.Gameplay.Planetary.PlanetaryRules.InterplanetaryConsolidationSkill,
-                    Math.Max(0, colonies.Length - 1),
+                    Eden.Gameplay.Planetary.PlanetaryRules.RequiredConsolidationLevel(database.Settings.PlanetaryIndustry, colonies.Length),
                     "That skill level is required by an existing planetary colony."
                 )
             );

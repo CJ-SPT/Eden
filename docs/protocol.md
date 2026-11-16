@@ -330,6 +330,8 @@ records how saved camera and pose fields are adapted for the native scene render
 [Planetary industry](protocol/planetary.md) records colony construction, extraction and all 68 schematics,
 transactional orbital cargo, saved deadlines, native reply contracts and source-backed limitations.
 [Planetary world configuration](protocol/planetary.md#world-configuration--november-14-2026) covers output, CPU and powergrid tuning.
+[Configurable planet limits](protocol/planetary.md#configurable-planet-limit--november-16-2026) cover colony-count overrides,
+native validation, grandfathered colonies and skill extraction.
 [Command-center market supply](protocol/planetary.md#command-center-market-supply--november-14-2026)
 records regional hub availability for all eight published command centers and resident purchase persistence.
 

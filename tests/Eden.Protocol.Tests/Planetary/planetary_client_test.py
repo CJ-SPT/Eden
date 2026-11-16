@@ -1,8 +1,9 @@
 """Headless signed-adapter checks; no client rendering or game session."""
 import marshal
+import builtins
 from pathlib import Path
 import sys
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 
 expressions = [marshal.loads(Path(path).read_bytes()) for path in sys.argv[1:]]
 # A default login must not eagerly load the planetary client.
@@ -11,7 +12,9 @@ assert 'planetCommon' not in sys.modules
 
 names = ['eve', 'eve.common', 'eve.common.script', 'eve.common.script.planet',
          'eve.common.script.planet.entities', 'eve.common.script.planet.entities.processPin',
-         'planetCommon']
+         'eve.common.lib', 'eve.common.lib.appConst', 'eve.client', 'eve.client.script',
+         'eve.client.script.environment', 'eve.client.script.environment.planet',
+         'eve.client.script.environment.planet.clientColony', 'planetCommon']
 for name in names:
     module = ModuleType(name)
     module.__path__ = []
@@ -36,12 +39,73 @@ class ProcessPin:
 
 
 sys.modules['eve.common.script.planet.entities.processPin'].ProcessPin = ProcessPin
-for expression, cpu_scale, power_scale, products in [
-        (expressions[0], 2, 3, {1: 50, 2: 12, 3: 7, 4: 2}),
-        (expressions[1], 1, 1, {1: 2, 2: 1, 3: 1, 4: 1}),
-        (expressions[2], 1, 1, {1: 20, 2: 5, 3: 3, 4: 1})]:
+appConst = sys.modules['eve.common.lib.appConst']
+appConst.typeInterplanetaryConsolidation = 2495
+appConst.typeOmnipotent = 19430
+levels = {2495: 2, 19430: None, 2505: 3}
+skills = SimpleNamespace(GetEffectiveLevel=lambda type_id: levels.get(type_id),
+                         GetRequiredSkills=lambda type_id: {2505: 1})
+planets = []
+wallet = SimpleNamespace(wealth=100)
+services = {'skills': skills, 'planetSvc': SimpleNamespace(GetMyPlanets=lambda: planets), 'wallet': wallet}
+sm = SimpleNamespace(GetService=lambda name: services[name])
+builtins.sm = sm
+
+
+class ClientColony:
+    def PostValidateCreatePin(self, typeID, ownerID=None):
+        service = sm.GetService('skills')
+        if typeID == 1:
+            rows = sm.GetService('planetSvc').GetMyPlanets()
+            if rows and service.GetEffectiveLevel(appConst.typeOmnipotent) is None:
+                level = service.GetEffectiveLevel(appConst.typeInterplanetaryConsolidation)
+                if level is None or level < len(rows):
+                    raise ValueError('colony limit')
+        elif sm.GetService('wallet').wealth < 1:
+            raise ValueError('wallet')
+        for type_id, level in service.GetRequiredSkills(typeID).items():
+            if service.GetEffectiveLevel(type_id) < level:
+                raise ValueError('required skill')
+        return ownerID
+
+
+original_validate = ClientColony.PostValidateCreatePin
+sys.modules['eve.client.script.environment.planet.clientColony'].ClientColony = ClientColony
+
+
+def rejects(call, message):
+    try:
+        call()
+        raise AssertionError('expected rejection: ' + message)
+    except ValueError as error:
+        assert str(error) == message
+
+
+for expression, cpu_scale, power_scale, products, maximum in [
+        (expressions[0], 2, 3, {1: 50, 2: 12, 3: 7, 4: 2}, 8),
+        (expressions[1], 1, 1, {1: 2, 2: 1, 3: 1, 4: 1}, 1),
+        (expressions[2], 1, 1, {1: 20, 2: 5, 3: 3, 4: 1}, 0),
+        (expressions[3], 1, 1, {1: 20, 2: 5, 3: 3, 4: 1}, 12),
+        (expressions[2], 1, 1, {1: 20, 2: 5, 3: 3, 4: 1}, 0)]:
     for _ in range(2):
-        assert eval(expression, {}) == {}
+        assert eval(expression, {'sm': sm}) == {}
+        limit = maximum or 3
+        planets[:] = range(limit - 1)
+        colony = ClientColony()
+        assert colony.PostValidateCreatePin(1, 42) == 42
+        planets[:] = range(limit)
+        rejects(lambda: colony.PostValidateCreatePin(1), 'colony limit')
+        planets[:] = []
+        levels[2505] = 0
+        rejects(lambda: colony.PostValidateCreatePin(1), 'required skill')
+        levels[2505] = 3
+        wallet.wealth = 0
+        rejects(lambda: colony.PostValidateCreatePin(2), 'wallet')
+        wallet.wealth = 100
+        assert skills.GetEffectiveLevel(2495) == 2
+        assert original_validate.__globals__['sm'] is sm
+        if maximum == 0:
+            assert ClientColony.PostValidateCreatePin is original_validate
         for level in range(6):
             assert common.GetCPUOutput(level) == cpu[level] * cpu_scale
             assert common.GetPowerOutput(level) == power[level] * power_scale

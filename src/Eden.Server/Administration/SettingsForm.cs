@@ -174,6 +174,10 @@ public sealed class SettingsForm
     [Display(Name = "Command center powergrid")]
     public decimal PlanetaryPowergridMultiplier { get; set; } = 1;
 
+    [Range(0, Eden.Gameplay.Planetary.PlanetaryRules.MaximumConfiguredPlanets)]
+    [Display(Name = "Maximum planets (0 = skill-based)")]
+    public int PlanetaryMaximumPlanets { get; set; }
+
     internal static SettingsForm From(WorldSettings settings) =>
         new()
         {
@@ -200,6 +204,7 @@ public sealed class SettingsForm
             PlanetaryFactoryOutputMultiplier = settings.PlanetaryIndustry.FactoryOutputMultiplier,
             PlanetaryCpuMultiplier = settings.PlanetaryIndustry.CpuMultiplier,
             PlanetaryPowergridMultiplier = settings.PlanetaryIndustry.PowergridMultiplier,
+            PlanetaryMaximumPlanets = settings.PlanetaryIndustry.MaximumPlanets,
             StructureAnchoringSpeed = settings.Structures.AnchoringSpeed,
             StructureOnliningSpeed = settings.Structures.OnliningSpeed,
             StructureUnanchoringSpeed = settings.Structures.UnanchoringSpeed,
@@ -267,7 +272,8 @@ public sealed class SettingsForm
                 PlanetaryExtractionYieldMultiplier,
                 PlanetaryFactoryOutputMultiplier,
                 PlanetaryCpuMultiplier,
-                PlanetaryPowergridMultiplier
+                PlanetaryPowergridMultiplier,
+                PlanetaryMaximumPlanets
             ),
             Structures = new(StructureAnchoringSpeed, StructureOnliningSpeed, StructureUnanchoringSpeed),
             NpcPopulation = new(Pirates, Guards, Convoys, Mining, MajorThreatAnomalies),

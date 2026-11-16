@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Planetary;
 
@@ -6,6 +7,20 @@ namespace Eden.Protocol.Tests.Planetary;
 
 public sealed class PlanetaryRulesTests
 {
+    [Theory]
+    [InlineData(0, 0, 1)]
+    [InlineData(0, 5, 6)]
+    [InlineData(1, 5, 1)]
+    [InlineData(8, 0, 8)]
+    [InlineData(100, 5, 100)]
+    public void MaximumPlanetsOverridesOnlyTheColonyCountSkill(int maximum, int skill, int expected)
+    {
+        PlanetaryPolicy policy = new(MaximumPlanets: maximum);
+        Assert.Equal(expected, PlanetaryRules.PlanetLimit(policy, skill));
+        Assert.Equal(maximum == 0 ? Math.Min(expected - 1, 5) : 0, PlanetaryRules.RequiredConsolidationLevel(policy, expected));
+        Assert.Equal(5, PlanetaryRules.RequiredConsolidationLevel(new(), 100));
+    }
+
     [Fact]
     public void SurveyResolutionAndRemoteRangeComeFromSavedSkills()
     {

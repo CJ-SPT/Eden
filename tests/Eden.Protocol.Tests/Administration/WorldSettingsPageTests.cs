@@ -17,6 +17,30 @@ namespace Eden.Protocol.Tests.Administration;
 public sealed class WorldSettingsPageTests
 {
     [Fact]
+    public void MaximumPlanetControlValidatesAndAppearsInRevisionChanges()
+    {
+        var form = SettingsForm.From(new());
+        Assert.Equal(0, form.PlanetaryMaximumPlanets);
+        foreach (int maximum in new[] { 1, 8, 100 })
+        {
+            form.PlanetaryMaximumPlanets = maximum;
+            Assert.True(Validator.TryValidateObject(form, new(form), [], true));
+            Assert.Equal(maximum, SettingsForm.From(form.Build()).PlanetaryMaximumPlanets);
+        }
+        Assert.Contains(
+            ConfigurationDisplay.Compare(new(), new() { Settings = form.Build() }),
+            change => change.Field == "Maximum planets (0 = skill-based)" && change.Before == "0" && change.After == "100"
+        );
+        foreach (int maximum in new[] { -1, 101 })
+        {
+            form.PlanetaryMaximumPlanets = maximum;
+            List<ValidationResult> errors = [];
+            Assert.False(Validator.TryValidateObject(form, new(form), errors, true));
+            Assert.Contains(errors, error => error.MemberNames.Contains(nameof(form.PlanetaryMaximumPlanets)));
+        }
+    }
+
+    [Fact]
     public void CustomPolicyControlsRoundTripAndReportEveryDisabledOption()
     {
         var form = SettingsForm.From(new());

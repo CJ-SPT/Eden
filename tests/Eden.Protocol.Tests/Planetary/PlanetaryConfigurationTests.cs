@@ -1,14 +1,20 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Eden.Data.World.Inventory;
+using Eden.Data.World.Market;
+using Eden.Data.World.Planetary;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Planetary;
 using Eden.Server.Administration;
+using Eden.World.Catalog;
 using Eden.World.Configuration;
 using Eden.World.Planetary;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using static Eden.Protocol.Tests.Planetary.PlanetaryIndustryTests;
 
@@ -90,7 +96,7 @@ public sealed class PlanetaryConfigurationTests
         legacy["settings"]!.AsObject().Remove("planetaryIndustry");
         var imported = configuration.Import(initial.Generation, legacy.ToJsonString(), "legacy");
         Assert.Equal(new PlanetaryPolicy(), imported.Pending!.Draft.Settings.PlanetaryIndustry);
-        PlanetaryPolicy policy = new(2, 3, 2, 2);
+        PlanetaryPolicy policy = new(2, 3, 2, 2, 8);
         var pending = configuration.Save(
             imported.Generation,
             initial.Active.Draft with
@@ -188,11 +194,19 @@ public sealed class PlanetaryConfigurationTests
         using var f = Prepare();
         WorldConfigurationStore configuration = new(new(f.Db.Path), f.Clock);
         var draft = configuration.Read().Active.Draft;
-        var settings = draft.Settings with { PlanetaryIndustry = new(.1m, 100, 2, 3) };
+        var settings = draft.Settings with { PlanetaryIndustry = new(.1m, 100, 2, 3, 8) };
         Assert.Equal(settings.PlanetaryIndustry, SettingsForm.From(settings).Build().PlanetaryIndustry);
-        Assert.Equal(4, ConfigurationDisplay.Compare(draft, draft with { Settings = settings }).Count);
+        Assert.Equal(5, ConfigurationDisplay.Compare(draft, draft with { Settings = settings }).Count);
         configuration.Validate(draft with { Settings = settings });
-        PlanetaryPolicy[] invalid = [new(0), new(FactoryOutputMultiplier: 101), new(CpuMultiplier: -.1m), new(PowergridMultiplier: 0)];
+        PlanetaryPolicy[] invalid =
+        [
+            new(0),
+            new(FactoryOutputMultiplier: 101),
+            new(CpuMultiplier: -.1m),
+            new(PowergridMultiplier: 0),
+            new(MaximumPlanets: -1),
+            new(MaximumPlanets: PlanetaryRules.MaximumConfiguredPlanets + 1),
+        ];
         foreach (var policy in invalid)
         {
             Assert.Throws<InvalidDataException>(() =>
@@ -202,5 +216,125 @@ public sealed class PlanetaryConfigurationTests
         Assert.Throws<InvalidDataException>(() =>
             configuration.Validate(draft with { Settings = draft.Settings with { PlanetaryIndustry = null! } })
         );
+        var legacy = JsonNode.Parse(configuration.Export(configuration.Read().Active.Id))!;
+        legacy["settings"]!["planetaryIndustry"]!.AsObject().Remove("maximumPlanets");
+        var imported = configuration.Import(configuration.Read().Generation, legacy.ToJsonString(), "legacy");
+        Assert.Equal(0, imported.Pending!.Draft.Settings.PlanetaryIndustry.MaximumPlanets);
+    }
+
+    [Theory]
+    [InlineData(0, 0, 1)]
+    [InlineData(0, 5, 6)]
+    [InlineData(8, 0, 8)]
+    [InlineData(2, 5, 2)]
+    public async Task ResidentPlanetLimitEnforcesAdmissionWithoutChangingRejectedState(int maximum, int skill, int expected)
+    {
+        using var f = Prepare();
+        f.Train(PlanetaryRules.InterplanetaryConsolidationSkill, skill);
+        using (CatalogDbContext catalog = new(f.CatalogPath, writable: true))
+        {
+            for (int index = 1; index <= expected; index++)
+            {
+                int planet = PlanetId + index;
+                catalog.Database.ExecuteSql(
+                    $"""
+                    INSERT INTO Celestial(Id,SolarSystemId,TypeId,GroupId,Radius,X,Y,Z)
+                    SELECT {planet},SolarSystemId,TypeId,GroupId,Radius,X,Y,Z FROM Celestial WHERE Id={PlanetId}
+                    """
+                );
+                catalog.Database.ExecuteSql(
+                    $"""
+                    INSERT INTO SourceRecord(Dataset,Key,Data)
+                    SELECT Dataset,{planet.ToString()},Data FROM SourceRecord WHERE Dataset='sde/mapPlanets' AND Key={PlanetId.ToString()}
+                    """
+                );
+            }
+        }
+        long[] centers = Enumerable.Range(0, expected + 1).Select(_ => f.Grant(CommandCenter, cargo: true)).ToArray();
+        long replacement = f.Grant(CommandCenter, cargo: true);
+        WorldDatabase database = new(f.Db.Path);
+        WorldConfigurationStore configuration = new(database, f.Clock);
+        var active = configuration.Read();
+        configuration.Save(
+            active.Generation,
+            active.Active.Draft with
+            {
+                Settings = active.Active.Draft.Settings with { PlanetaryIndustry = new(MaximumPlanets: maximum) },
+            },
+            "test"
+        );
+        WorldConfigurationStore.Activate(database);
+        using (LiveWorld live = new(database, f.Clock, combatObjects: false, simulationObjects: false))
+        {
+            PilotPlanetaryIndustryStore industry = new(database, f.Clock, f.Db.Services.GetRequiredService<PilotTrainingStore>());
+            for (int index = 0; index < expected; index++)
+            {
+                Assert.Single(
+                    industry
+                        .Update(f.PilotId, PlanetId + index, [new CreatePlanetaryPin(new(centers[index]), CommandCenter, 1, 1)])
+                        .Colony.Pins
+                );
+            }
+            var before = WorldActionScope.Inspect(
+                database,
+                world => new
+                {
+                    Balance = world.Set<PilotWallet>().Find(f.PilotId)!.Cents,
+                    Identity = world.Set<SavedPlanetaryIdentity>().Find(1)!.NextPinId,
+                    Cargo = world.Set<OwnedItem>().Find(centers[^1])!.Quantity,
+                }
+            );
+            var error = Assert.Throws<InvalidDataException>(() =>
+                industry.Update(f.PilotId, PlanetId + expected, [new CreatePlanetaryPin(new(centers[^1]), CommandCenter, 1, 1)])
+            );
+            Assert.Contains($"limit of {expected} planets", error.Message);
+            Assert.Equal(expected, industry.List(f.PilotId).Count);
+            Assert.Null(industry.Read(f.PilotId, PlanetId + expected).Colony);
+            WorldActionScope.Inspect(
+                database,
+                world =>
+                {
+                    Assert.Equal(before.Balance, world.Set<PilotWallet>().Find(f.PilotId)!.Cents);
+                    Assert.Equal(before.Identity, world.Set<SavedPlanetaryIdentity>().Find(1)!.NextPinId);
+                    Assert.Equal(before.Cargo, world.Set<OwnedItem>().Find(centers[^1])!.Quantity);
+                    return true;
+                }
+            );
+            industry.Abandon(f.PilotId, PlanetId + expected - 1);
+            Assert.Single(
+                industry.Update(f.PilotId, PlanetId + expected, [new CreatePlanetaryPin(new(centers[^1]), CommandCenter, 1, 1)]).Colony.Pins
+            );
+            // Put the replacement back on the original planet for checkpoint assertions.
+            industry.Abandon(f.PilotId, PlanetId + expected);
+            industry.Update(f.PilotId, PlanetId + expected - 1, [new CreatePlanetaryPin(new(replacement), CommandCenter, 1, 1)]);
+            await live.FlushAsync();
+        }
+        // A lower limit and later restoration of skill-based limits grandfather saved colonies.
+        foreach (int lowered in new[] { 1, 0 })
+        {
+            WorldDatabase reopened = new(f.Db.Path);
+            var current = configuration.Read();
+            configuration.Save(
+                current.Generation,
+                current.Active.Draft with
+                {
+                    Settings = current.Active.Draft.Settings with { PlanetaryIndustry = new(MaximumPlanets: lowered) },
+                },
+                "test"
+            );
+            WorldConfigurationStore.Activate(reopened);
+            using LiveWorld live = new(reopened, f.Clock, combatObjects: false, simulationObjects: false);
+            PilotPlanetaryIndustryStore industry = new(reopened, f.Clock, f.Db.Services.GetRequiredService<PilotTrainingStore>());
+            Assert.Equal(expected, industry.List(f.PilotId).Count);
+            var colony = industry.Read(f.PilotId, PlanetId).Colony!;
+            Assert.Equal(1, industry.Update(f.PilotId, PlanetId, [new UpgradePlanetaryCommand(new(colony.Pins[0].Id), 1)]).Colony.Level);
+            if (expected >= PlanetaryRules.PlanetLimit(reopened.Settings.PlanetaryIndustry, skill))
+            {
+                Assert.Throws<InvalidDataException>(() =>
+                    industry.Update(f.PilotId, PlanetId + expected, [new CreatePlanetaryPin(new(centers[^1]), CommandCenter, 1, 1)])
+                );
+            }
+            await live.FlushAsync();
+        }
     }
 }

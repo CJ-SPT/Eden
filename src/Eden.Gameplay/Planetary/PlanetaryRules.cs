@@ -6,6 +6,8 @@ public static class PlanetaryRules
 {
     public const int CommandCenterUpgradesSkill = 2505;
     public const int InterplanetaryConsolidationSkill = 2495;
+    public const int MaximumConfiguredPlanets = 100;
+    private const int MaximumConsolidationLevel = 5;
     public const int RemoteSensingSkill = 13279;
     public const int PlanetologySkill = 2406;
     public const int AdvancedPlanetologySkill = 2403;
@@ -40,6 +42,23 @@ public static class PlanetaryRules
     public static int OfficePlanet(long id) => IsOffice(id) ? checked((int)(id - FirstOfficeId)) : 0;
 
     public static PlanetaryColony Empty(long owner, int planet, long now) => new(owner, planet, 0, now, FirstPinId, 1, [], [], []);
+
+    public static void ValidateMaximumPlanets(int maximum)
+    {
+        if (maximum is < 0 or > MaximumConfiguredPlanets)
+        {
+            throw new InvalidDataException($"Maximum planets must be between 0 (skill-based) and {MaximumConfiguredPlanets}.");
+        }
+    }
+
+    public static int PlanetLimit(PlanetaryPolicy policy, int consolidationLevel)
+    {
+        ValidateMaximumPlanets(policy.MaximumPlanets);
+        return policy.MaximumPlanets > 0 ? policy.MaximumPlanets : 1 + Math.Clamp(consolidationLevel, 0, MaximumConsolidationLevel);
+    }
+
+    public static int RequiredConsolidationLevel(PlanetaryPolicy policy, int colonies) =>
+        policy.MaximumPlanets > 0 ? 0 : Math.Clamp(colonies - 1, 0, MaximumConsolidationLevel);
 
     public static void Coordinates(double latitude, double longitude)
     {

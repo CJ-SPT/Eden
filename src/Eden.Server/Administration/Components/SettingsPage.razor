@@ -134,6 +134,13 @@ else
             </section>
             <section id="settings-PlanetaryIndustry" class="card" hidden="@(Workspace.Activity != SettingsActivity.PlanetaryIndustry)">
                 <h2>Planetary industry</h2>
+                <label>Maximum planets (0 = skill-based)
+                    <InputNumber @bind-Value="Form.PlanetaryMaximumPlanets" min="0"
+                        max="@Eden.Gameplay.Planetary.PlanetaryRules.MaximumConfiguredPlanets" step="1" />
+                </label>
+                <p class="muted">0 uses one planet plus Interplanetary Consolidation level. 1–100 sets the total per pilot,
+                    replacing that skill limit. Existing colonies remain usable when the limit is lowered.
+                    Save for restart, restart the server and reconnect to apply.</p>
                 <MultiplierControl Label="Extraction yield" @bind-Value="Form.PlanetaryExtractionYieldMultiplier"
                     Description="Scales newly installed extractor programs; existing programs keep their yield."
                     ExampleAmount="100" ExampleUnit="units" Reward="false" Speed="false" Efficiency="false" />

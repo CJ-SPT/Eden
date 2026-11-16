@@ -4,6 +4,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Mining;
+using Eden.Gameplay.Planetary;
 using Eden.Gameplay.Skills;
 
 namespace Eden.Gameplay.Configuration;
@@ -59,6 +60,7 @@ public static class WorldTuningRules
         ValidateRate(settings.PlanetaryIndustry.FactoryOutputMultiplier);
         ValidateRate(settings.PlanetaryIndustry.CpuMultiplier);
         ValidateRate(settings.PlanetaryIndustry.PowergridMultiplier);
+        PlanetaryRules.ValidateMaximumPlanets(settings.PlanetaryIndustry.MaximumPlanets);
         ValidateRate(settings.Structures.AnchoringSpeed);
         ValidateRate(settings.Structures.OnliningSpeed);
         ValidateRate(settings.Structures.UnanchoringSpeed);

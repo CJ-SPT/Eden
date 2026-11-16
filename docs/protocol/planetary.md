@@ -2,6 +2,81 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Configurable planet limit — November 16, 2026
+
+**Settings → Planetary industry → Maximum planets (0 = skill-based)** saves
+`settings.planetaryIndustry.maximumPlanets`. The default **0** retains one planet plus Interplanetary Consolidation
+level. An explicit **1–100** replaces that count with a total per pilot. Missing fields in older exports default to 0;
+negative values and values over 100 fail form and imported-policy validation. Changes activate on server restart,
+with the signed login adapter supplying the active limit on reconnect.
+
+Admission counts authoritative resident colonies under the existing world owner, before consuming command-center
+cargo, charging the wallet or allocating pin identities. Abandoning a colony frees a slot. Lowering the setting or
+restoring skill-based limits preserves existing colonies, including production and edits. Omega status, planet
+eligibility, cargo, wallet and building/upgrade requirements remain enforced. Checkpoints retain colonies and active
+configuration. An explicit count removes the Interplanetary Consolidation extraction floor; Command Center Upgrades
+protection remains. Returning to skill-based mode caps the consolidation floor at its real maximum of level V even
+when more than six grandfathered colonies exist.
+
+### Reference evidence
+
+Consulted [UniWiki Planetary Industry](https://wiki.eveuniversity.org/Planetary_Industry) and
+[Planet Management skills](https://wiki.eveuniversity.org/Skills:Planet_Management) on November 16, 2026:
+ordinary gameplay permits one initial planet plus one per Interplanetary Consolidation level, up to six.
+The optional count override and 100-planet configuration bound are Eden policies.
+The local EveJs reference `planetRuntimeStore.js`, identified by the SHA-256 in the historical record below, also
+checks one plus this skill's level; it is reference evidence only, with no implementation copied.
+
+Inert inspection of build **3662168** confirmed that
+`eve/client/script/environment/planet/clientColony.pyj` / `ClientColony.PostValidateCreatePin` checks `GetMyPlanets`
+and effective Interplanetary Consolidation before Submit. Its decompressed bytecode SHA-256 is
+`80198cc84f980a7ee1b866f99515650cc5f793677e3d66a5cd8b21b83e9b7758`.
+The existing signed adapter gives only that native function a private skills-service view with the configured
+count. It preserves native wallet and required-building-skill validation, leaves shared skill data untouched,
+unwraps previous tuning on reconnect, and restores the original function for default worlds. Default first logins
+still leave planetary modules unloaded. No separate client package or transport/Blue change is required.
+
+### Automated validation
+
+Focused tests cover typed count rules, form/import validation, old-export defaults, pending activation, resident
+admission/rejection, unchanged rejected cargo/wallet/identities, abandonment, lower-limit edits, reopened checkpoints,
+skill-extraction floors, and signed-adapter repeated tuning/reset with preserved wallet and building requirements.
+An additional headless check ran the actual pinned native validation code object under the client Python 2.7 runtime
+against inert service stubs for limits 1, 8, 100 and skill-based defaults, including wallet/skill rejection and resets.
+No client module body, rendering, network connection or game session was started by that check.
+
+The initial exact filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Planetary.PlanetaryConfigurationTests.ResidentPlanetLimitEnforcesAdmissionWithoutChangingRejectedState`
+through `tools/Test-Feature.ps1 -Filter`: **4 passed**. The exact signed-adapter and resident-extraction methods
+then passed **4 tests**. Final validation incorporated main's NPC-supply update at `e043aa92`:
+
+- Tool/solution restore and solution build passed, with zero warnings/errors; build **12.50 seconds**.
+- The final affected filter below passed **166 tests**, none skipped, in **83.20 seconds** wall time.
+- Both Python policy suites passed (**8 catalog/setup + 9 formatting-policy tests**, **1.75 seconds** combined).
+- Formatting verification passed (**64.03 seconds**), as did `git diff --check` and added local documentation links.
+  The full .NET suite was not run.
+
+Final test filter, joined with `|`:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Planetary
+FullyQualifiedName~Eden.Protocol.Tests.Administration.WorldSettingsPageTests
+FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldConfigurationTests
+FullyQualifiedName~Eden.Protocol.Tests.Persistence.SkillExtraction
+FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.SkillExtractionServiceTests
+FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.PilotLoginTests
+FullyQualifiedName=Eden.Protocol.Tests.PilotSessions.ConcordOverviewTests.SignedLoginExpressionIncludesPortraitsAndConcordColorWithAnEmptyChallengeResult
+FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.CorporationClientDiagnosticsTests
+```
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. Native rendering, input and gameplay feel remain unverified.
+
+### Optional maintainer checks
+
+- After saving an override and restarting/reconnecting, verify native placement and Submit at the chosen limit.
+
 ## Persistent colonies and production — November 11, 2026
 
 Planetary industry now supplies a personal, persistent production loop across the eight ordinary planet types.

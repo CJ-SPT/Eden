@@ -233,10 +233,13 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
                         throw new InvalidDataException("Deploy a command center from a ship in the planet's solar system.");
                     }
                     int colonies = world.Filter<SavedPlanetaryColony>(c => c.PilotId == pilotId).Count();
-                    int limit = 1 + PilotSkillReader.Level(world, catalog, pilotId, PlanetaryRules.InterplanetaryConsolidationSkill);
+                    int limit = PlanetaryRules.PlanetLimit(
+                        database.Settings.PlanetaryIndustry,
+                        PilotSkillReader.Level(world, catalog, pilotId, PlanetaryRules.InterplanetaryConsolidationSkill)
+                    );
                     if (colonies >= limit)
                     {
-                        throw new InvalidDataException("Train the planetary skills required for another colony.");
+                        throw new InvalidDataException($"This pilot has reached the planetary colony limit of {limit} planets.");
                     }
                     var center = centers[0];
                     if (

@@ -34,6 +34,7 @@ internal static class ConfigurationDisplay
         ["planetaryIndustry.factoryOutputMultiplier"] = "Planetary factory output",
         ["planetaryIndustry.cpuMultiplier"] = "Planetary command center CPU",
         ["planetaryIndustry.powergridMultiplier"] = "Planetary command center powergrid",
+        ["planetaryIndustry.maximumPlanets"] = "Maximum planets (0 = skill-based)",
         ["structures.anchoringSpeed"] = "Structure anchoring speed",
         ["structures.onliningSpeed"] = "Structure core onlining speed",
         ["structures.unanchoringSpeed"] = "Structure decommissioning speed",

@@ -20,9 +20,10 @@ public sealed class PlanetaryClientTests
             start.ArgumentList.Add(Path.Combine(AppContext.BaseDirectory, "planetary-client-tests", "planetary_client_test.py"));
             PlanetaryPolicy[] policies =
             [
-                new(CpuMultiplier: 2, PowergridMultiplier: 3, FactoryOutputMultiplier: 2.5m),
-                new(FactoryOutputMultiplier: .1m),
+                new(CpuMultiplier: 2, PowergridMultiplier: 3, FactoryOutputMultiplier: 2.5m, MaximumPlanets: 8),
+                new(FactoryOutputMultiplier: .1m, MaximumPlanets: 1),
                 new(),
+                new(MaximumPlanets: 12),
             ];
             foreach (var policy in policies)
             {
