@@ -145,8 +145,14 @@ else
                     Description="Scales newly installed extractor programs; existing programs keep their yield."
                     ExampleAmount="100" ExampleUnit="units" Reward="false" Speed="false" Efficiency="false" />
                 <MultiplierControl Label="Factory output" @bind-Value="Form.PlanetaryFactoryOutputMultiplier"
-                    Description="Scales completed factory batches after restart; ingredients and cycle times stay the same."
+                    Description="Scales completed factory batch quantities; ingredients per batch stay the same."
                     ExampleAmount="20" ExampleUnit="units" Reward="false" Speed="false" Efficiency="false" />
+                <MultiplierControl Label="Factory speed" @bind-Value="Form.PlanetaryFactorySpeedMultiplier"
+                    Description="Shortens factory cycles after restart, including running cycles. Extractor timing stays the same."
+                    ExampleAmount="1800" ExampleUnit="seconds per cycle" Reward="false" Speed="true" Efficiency="false" />
+                <MultiplierControl Label="Planetary storage capacity" @bind-Value="Form.PlanetaryStorageCapacityMultiplier"
+                    Description="Scales launchpads, storage facilities and command centers. Customs offices and factory buffers stay unchanged."
+                    ExampleAmount="10000" ExampleUnit="m³ per launchpad" Reward="false" Speed="false" Efficiency="false" />
                 <MultiplierControl Label="Command center CPU" @bind-Value="Form.PlanetaryCpuMultiplier"
                     Description="Scales CPU supplied at every command center upgrade level."
                     ExampleAmount="1675" ExampleUnit="tf" Reward="false" Speed="false" Efficiency="false" />
@@ -154,7 +160,9 @@ else
                     Description="Scales powergrid supplied at every command center upgrade level."
                     ExampleAmount="6000" ExampleUnit="MW" Reward="false" Speed="false" Efficiency="false" />
                 <p class="muted">Output rounds down to whole units, with a minimum of one per positive batch.
-                    Resize output routes and upgrade links to collect increased production. Storage limits still apply.</p>
+                    Resize output routes and upgrade links to collect increased production. Faster factories need more
+                    ingredients per hour and may need higher link upgrades. Cycles have a one-second minimum.</p>
+                <p class="muted">After reducing storage capacity, existing goods remain; collect them before adding more.</p>
                 <p class="muted">After reducing CPU or powergrid, remove buildings or upgrade the command center
                     until the colony fits before submitting edits.</p>
             </section>

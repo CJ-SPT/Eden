@@ -153,7 +153,7 @@ See the [protocol record](protocol/navigation.md#travel-configuration-november-1
 
 ## Planetary industry
 
-Open **Settings → Planetary industry** to set **Maximum planets (0 = skill-based)** and four independent
+Open **Settings → Planetary industry** to set **Maximum planets (0 = skill-based)** and six independent
 **0.1–100×** multipliers, all defaulting to **1×**. The planet limit defaults to **0**, preserving one planet plus
 the pilot's Interplanetary Consolidation level (one to six planets). Set **1–100** to replace the skill-based count
 with that total per pilot. For example, **12** allows each pilot up to twelve colonies regardless of that skill's level.
@@ -170,18 +170,33 @@ remains protected when existing command centers require it.
 | Control | Effect after Save for restart and restarting the server |
 | --- | --- |
 | Extraction yield | Scales the base yield of newly installed extractor programs and their survey quotes. Existing programs keep their saved yield and expiry. |
-| Factory output | Scales the product units per completed schematic cycle. Ingredients, input buffers and cycle lengths stay unchanged. Applies to outstanding cycles and offline catch-up processed after restart. |
+| Factory output | Scales the product units per completed schematic cycle. Ingredients and input buffers stay unchanged; Factory speed controls duration separately. Applies to outstanding cycles and offline catch-up processed after restart. |
+| Factory speed | Divides processor cycle duration by this value, with a one-second minimum. 10× turns a 30-minute basic cycle into 3 minutes and a 60-minute advanced/high-tech cycle into 6 minutes. Extractor timing stays unchanged. |
+| Planetary storage capacity | Scales launchpad, storage-facility and command-center capacity. 10× gives each launchpad 100,000 m³; 100× gives 1,000,000 m³. Customs offices remain 35,000 m³ and processor input buffers retain one batch. |
 | Command center CPU | Scales available CPU at all six command-center levels. Buildings, extractor heads and links still consume their normal CPU. |
 | Command center powergrid | Scales available powergrid at all six levels. Buildings, heads and links still consume their normal power. |
 
 Production rounds down to whole units with a minimum of one for a positive batch, including P4 recipes.
-Routes retain their saved quantities and bandwidth reservations. **Resize output routes and upgrade links** to collect
-increased production; unrouted output and overflow are still lost. Storage capacity is unchanged. When lowering output,
+Routes retain their saved quantities. **Resize output routes and upgrade links** to collect
+increased production; unrouted output and overflow are still lost. Faster factory cycles increase bandwidth required
+by both processor input and output routes. Existing links and routes are not automatically changed. Storage-only
+increases need no link changes. When lowering output,
 remove or recreate routes that exceed both the original and newly configured factory output before submitting edits.
 Lowering CPU or powergrid preserves existing buildings; remove enough buildings/links or upgrade the command center
 so the complete colony fits before submitting an edit.
 
-The signed login adapter synchronizes native planet-limit validation, CPU/power previews and factory products. Reconnect after server restart;
+Factory speed also recalculates a running processor's deadline from its saved cycle start. Work already due under
+the new duration completes once at the colony's last committed simulation time; prior events are never replayed.
+Offline catch-up then uses the active speed. Lowering speed can extend a running cycle. Input quantities per batch,
+extraction program deadlines and transfer cooldowns stay unchanged. Faster factories still need enough materials:
+an extractor route feeding only one ordinary basic-factory batch per half-hour will need a larger quantity to sustain
+faster P1 production.
+
+Lowering storage capacity preserves existing goods, including overfilled buildings. Export or transfer them out
+before adding more. New imports and production deliveries use the reduced limit.
+
+The signed login adapter synchronizes native planet-limit validation, storage capacities, CPU/power previews,
+factory products and cycle times, including the customs-window launchpad capacity and volume-per-hour displays. Reconnect after server restart;
 no separately rebuilt client package is required. Native rendering and interactive gameplay remain unverified.
 Extraction quotes and saved program parameters already carry the configured yield through the ordinary protocol.
 Policies and colony progress use the existing world configuration and resident checkpoint paths.
@@ -194,14 +209,18 @@ Configuration exports store these values under `settings.planetaryIndustry`:
   "factoryOutputMultiplier": 1,
   "cpuMultiplier": 1,
   "powergridMultiplier": 1,
-  "maximumPlanets": 0
+  "maximumPlanets": 0,
+  "storageCapacityMultiplier": 1,
+  "factorySpeedMultiplier": 1
 }
 ```
 
 Historical configuration documents that omit this group retain 1× behavior; an omitted `maximumPlanets` retains
-the skill-based limit. Drafts, original/active/pending comparisons, imports, validation and restore use the same settings.
+the skill-based limit. Omitted `storageCapacityMultiplier` and `factorySpeedMultiplier` each retain 1× behavior.
+Drafts, original/active/pending comparisons, imports, validation and restore use the same settings.
 See the [multiplier implementation record](protocol/planetary.md#world-configuration--november-14-2026) and
-[configurable planet limit](protocol/planetary.md#configurable-planet-limit--november-16-2026).
+[configurable planet limit](protocol/planetary.md#configurable-planet-limit--november-16-2026), plus the
+[capacity and speed implementation record](protocol/planetary.md#storage-capacity-and-factory-speed--november-16-2026).
 
 ## Progressive regional markets
 

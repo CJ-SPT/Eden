@@ -11,6 +11,14 @@ public static class PlanetarySimulation
             throw new InvalidDataException("Colony time cannot move backwards.");
         }
         var pins = colony.Pins.ToDictionary(p => p.Id);
+        foreach (var pin in colony.Pins.Where(p => p.SchematicId.HasValue && p.NextRunAt.HasValue))
+        {
+            // Active policy also retimes a running cycle from its saved start. If the
+            // shorter cycle is already due, finish it once at the last simulated time;
+            // never replay events before the colony's committed simulation boundary.
+            long deadline = checked(pin.LastRunAt + PlanetaryRules.FactoryCycleTicks(catalog.Schematics[pin.SchematicId!.Value], policy));
+            pins[pin.Id] = pin with { NextRunAt = Math.Max(colony.SimulatedAt, deadline) };
+        }
         void Start(long time)
         {
             // A processor keeps at most one cycle's ingredients while its current cycle
@@ -32,7 +40,7 @@ public static class PlanetarySimulation
                             continue;
                         }
                         int amount = Math.Min(route.Quantity, Quantity(source, route.TypeId));
-                        int accepted = Accept(pin, catalog, route.TypeId, amount);
+                        int accepted = Accept(pin, catalog, route.TypeId, amount, policy);
                         if (accepted > 0)
                         {
                             pins[source.Id] = Add(source, route.TypeId, -accepted);
@@ -48,7 +56,7 @@ public static class PlanetarySimulation
                     {
                         pin = Add(pin, ingredient.TypeId, -ingredient.Quantity);
                     }
-                    pin = pin with { NextRunAt = checked(time + schematic.CycleSeconds * TimeSpan.TicksPerSecond), LastRunAt = time };
+                    pin = pin with { NextRunAt = checked(time + PlanetaryRules.FactoryCycleTicks(schematic, policy)), LastRunAt = time };
                     // Establish the next-cycle buffer in this same event. A second
                     // read at the same timestamp must not pull an additional cycle.
                     PullInputs();
@@ -67,7 +75,7 @@ public static class PlanetarySimulation
             {
                 var destination = pins[route.Path[^1]];
                 int routed = Math.Min(quantity, route.Quantity);
-                int accepted = Accept(destination, catalog, type, routed);
+                int accepted = Accept(destination, catalog, type, routed, policy);
                 pins[destination.Id] = Add(destination, type, accepted);
                 // Overflow on a producer route is lost rather than silently redirected.
                 quantity -= routed;
@@ -142,7 +150,7 @@ public static class PlanetarySimulation
         };
     }
 
-    public static int Accept(PlanetaryPin pin, PlanetaryCatalog catalog, int type, int quantity)
+    public static int Accept(PlanetaryPin pin, PlanetaryCatalog catalog, int type, int quantity, PlanetaryPolicy? policy = null)
     {
         if (quantity <= 0 || !catalog.Volumes.TryGetValue(type, out double volume) || volume <= 0)
         {
@@ -159,7 +167,8 @@ public static class PlanetarySimulation
             return 0;
         }
         double used = pin.Contents.Sum(c => catalog.Volumes[c.TypeId] * c.Quantity);
-        return (int)Math.Min(quantity, Math.Max(0, Math.Floor((profile.Capacity - used + 1e-8) / volume)));
+        double capacity = PlanetaryRules.StorageCapacity(profile, policy);
+        return (int)Math.Min(quantity, Math.Max(0, Math.Floor((capacity - used + 1e-8) / volume)));
     }
 
     public static IReadOnlyList<PlanetaryCommodity> Commodities(IReadOnlyList<PlanetaryCommodity> commodities)
@@ -189,13 +198,14 @@ public static class PlanetarySimulation
         PlanetaryColony colony,
         PlanetaryCatalog catalog,
         long pinId,
-        IReadOnlyList<PlanetaryCommodity> commodities
+        IReadOnlyList<PlanetaryCommodity> commodities,
+        PlanetaryPolicy? policy = null
     )
     {
         var pin = PlanetaryRules.Pin(colony, pinId);
         foreach (var commodity in Commodities(commodities))
         {
-            if (Accept(pin, catalog, commodity.TypeId, commodity.Quantity) != commodity.Quantity)
+            if (Accept(pin, catalog, commodity.TypeId, commodity.Quantity, policy) != commodity.Quantity)
             {
                 throw new InvalidDataException("The planetary building cannot hold those commodities.");
             }
@@ -209,7 +219,8 @@ public static class PlanetarySimulation
         PlanetaryCatalog catalog,
         IReadOnlyList<long> path,
         IReadOnlyList<PlanetaryCommodity> commodities,
-        long now
+        long now,
+        PlanetaryPolicy? policy = null
     )
     {
         PlanetaryRules.Path(colony, path);
@@ -224,7 +235,7 @@ public static class PlanetarySimulation
             throw new InvalidDataException("Choose two storage buildings and wait for the source's transfer cooldown.");
         }
         colony = Remove(colony, source.Id, commodities);
-        colony = Deposit(colony, catalog, destination.Id, commodities);
+        colony = Deposit(colony, catalog, destination.Id, commodities, policy);
         double volume = commodities.Sum(c => catalog.Volumes[c.TypeId] * c.Quantity);
         double bandwidth = PlanetaryRules
             .Edges(path)

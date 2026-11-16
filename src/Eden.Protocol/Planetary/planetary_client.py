@@ -1,4 +1,4 @@
-"""Build 3662168: align colony counts, fitting, factory batches and extraction previews with world policy."""
+"""Build 3662168: align colony limits, storage, fitting, factory timing/products and extraction previews with world policy."""
 
 
 def install_planetary_tuning():
@@ -9,14 +9,20 @@ def install_planetary_tuning():
             and not getattr(sys.modules.get('eve.common.script.util.planetCommon'), '_eden_planetary', False)):
         return
     from eve.common.script.util import planetCommon
-    from decimal import Decimal, ROUND_FLOOR
+    from decimal import Decimal, ROUND_FLOOR, ROUND_CEILING
     from eve.common.script.planet.entities.processPin import ProcessPin
+    from eve.common.script.planet.entities.storagePin import StoragePin
+    from eve.common.lib import appConst
 
     cpu, power = (float(value) for value in eden_planetary_policy[:2])
     output = Decimal(eden_planetary_policy[2])
+    storage = float(eden_planetary_policy[4])
+    speed = Decimal(eden_planetary_policy[5])
     original_cpu = getattr(planetCommon.GetCPUOutput, '_eden_original', planetCommon.GetCPUOutput)
     original_power = getattr(planetCommon.GetPowerOutput, '_eden_original', planetCommon.GetPowerOutput)
     original_schematic = getattr(ProcessPin.SetSchematic, '_eden_original', ProcessPin.SetSchematic)
+    original_capacity = getattr(StoragePin.GetCapacity, '_eden_original', StoragePin.GetCapacity)
+    original_capacity = getattr(original_capacity, 'im_func', original_capacity)
 
     def cpu_output(level):
         return original_cpu(level) * cpu
@@ -24,18 +30,25 @@ def install_planetary_tuning():
     def power_output(level):
         return original_power(level) * power
 
+    def capacity(self):
+        return original_capacity(self) * storage
+
     def set_schematic(self, schematicID, schematic=None):
         result = original_schematic(self, schematicID, schematic)
         self.products = dict((type_id, max(1, int((Decimal(quantity) * output).to_integral_value(rounding=ROUND_FLOOR))))
                              for type_id, quantity in self.products.items() if quantity > 0)
+        if self.cycleTime:
+            self.cycleTime = max(appConst.SEC, int((Decimal(self.cycleTime) / speed).to_integral_value(rounding=ROUND_CEILING)))
         return result
 
     cpu_output._eden_original = original_cpu
     power_output._eden_original = original_power
     set_schematic._eden_original = original_schematic
+    capacity._eden_original = original_capacity
     planetCommon.GetCPUOutput = cpu_output
     planetCommon.GetPowerOutput = power_output
     ProcessPin.SetSchematic = set_schematic
+    StoragePin.GetCapacity = original_capacity if storage == 1 else capacity
     planetCommon._eden_planetary = True
 
     from eve.client.script.ui.shared.planet.pinContainers.ProcessorContainer import ProcessorContainer
@@ -60,7 +73,6 @@ def install_planetary_tuning():
     from eve.client.script.ui.shared.planet.planetEditModeContainer import PlanetEditModeContainer
     from eve.client.script.ui.shared.planet.planetsWindow.coloniesPanel import ColoniesPanel
     from types import FunctionType
-    from eve.common.lib import appConst
 
     maximum = int(eden_planetary_maximum)
     original_program = getattr(ClientColony.CreateProgram, '_eden_original', ClientColony.CreateProgram)

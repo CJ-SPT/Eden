@@ -13,6 +13,7 @@ assert 'eve.client.script.ui.shared.planet.pinContainers.ProcessorContainer' not
 
 names = ['eve', 'eve.common', 'eve.common.script', 'eve.common.script.planet',
          'eve.common.script.planet.entities', 'eve.common.script.planet.entities.processPin',
+         'eve.common.script.planet.entities.storagePin',
          'eve.common.lib', 'eve.common.lib.appConst', 'eve.client', 'eve.client.script',
          'eve.client.script.environment', 'eve.client.script.environment.planet',
          'eve.client.script.environment.planet.clientColony', 'eve.client.script.ui',
@@ -36,6 +37,20 @@ power = [6000, 9000, 12000, 15000, 17000, 19000]
 common = sys.modules['eve.common.script.util.planetCommon']
 common.GetCPUOutput = lambda level: cpu[level]
 common.GetPowerOutput = lambda level: power[level]
+appConst = sys.modules['eve.common.lib.appConst']
+appConst.SEC = 10000000
+
+
+class StoragePin:
+    def __init__(self, nominal):
+        self.nominal = nominal
+
+    def GetCapacity(self):
+        return self.nominal
+
+
+sys.modules['eve.common.script.planet.entities.storagePin'].StoragePin = StoragePin
+original_capacity = StoragePin.GetCapacity
 
 
 class ProcessPin:
@@ -43,7 +58,7 @@ class ProcessPin:
         self.schematicID = schematicID
         self.products = dict(schematic or {1: 20, 2: 5, 3: 3, 4: 1})
         self.demands = {5: 3000}
-        self.cycleTime = 1800
+        self.cycleTime = getattr(self, 'nominalCycleTicks', 1800 * appConst.SEC)
         return schematicID
 
     def GetProducts(self):
@@ -153,14 +168,17 @@ def rejects(call, message):
         assert str(error) == message
 
 
-for expression, cpu_scale, power_scale, products, maximum in [
-        (expressions[0], 2, 3, {1: 50, 2: 12, 3: 7, 4: 2}, 8),
-        (expressions[1], 1, 1, {1: 2, 2: 1, 3: 1, 4: 1}, 1),
-        (expressions[2], 1, 1, {1: 20, 2: 5, 3: 3, 4: 1}, 0),
-        (expressions[3], 1, 1, {1: 20, 2: 5, 3: 3, 4: 1}, 12),
-        (expressions[4], 100, 100, {1: 2000, 2: 500, 3: 300, 4: 100}, 100),
-        (expressions[5], 1, 1, {1: 20, 2: 5, 3: 3, 4: 1}, 0),
-        (expressions[2], 1, 1, {1: 20, 2: 5, 3: 3, 4: 1}, 0)]:
+for expression, cpu_scale, power_scale, products, maximum, storage_scale, speed in [
+        (expressions[0], 2, 3, {1: 50, 2: 12, 3: 7, 4: 2}, 8, 1, 1),
+        (expressions[1], 1, 1, {1: 2, 2: 1, 3: 1, 4: 1}, 1, 1, 1),
+        (expressions[2], 1, 1, {1: 20, 2: 5, 3: 3, 4: 1}, 0, 1, 1),
+        (expressions[3], 1, 1, {1: 20, 2: 5, 3: 3, 4: 1}, 12, 1, 1),
+        (expressions[4], 100, 100, {1: 2000, 2: 500, 3: 300, 4: 100}, 100, 1, 1),
+        (expressions[5], 1, 1, {1: 20, 2: 5, 3: 3, 4: 1}, 0, 1, 1),
+        (expressions[6], 1, 1, {1: 20, 2: 5, 3: 3, 4: 1}, 0, 10, 10),
+        (expressions[7], 1, 1, {1: 20, 2: 5, 3: 3, 4: 1}, 0, .1, 100),
+        (expressions[8], 1, 1, {1: 20, 2: 5, 3: 3, 4: 1}, 0, 100, .1),
+        (expressions[2], 1, 1, {1: 20, 2: 5, 3: 3, 4: 1}, 0, 1, 1)]:
     for _ in range(2):
         assert eval(expression, {'sm': sm}) == {}
         limit = maximum or 3
@@ -195,16 +213,24 @@ for expression, cpu_scale, power_scale, products, maximum in [
         for level in range(6):
             assert common.GetCPUOutput(level) == cpu[level] * cpu_scale
             assert common.GetPowerOutput(level) == power[level] * power_scale
+        for nominal in [500, 12000, 10000]:
+            assert StoragePin(nominal).GetCapacity() == nominal * storage_scale
+        if storage_scale == 1:
+            assert StoragePin.GetCapacity is original_capacity
         pin = ProcessPin()
         for _ in range(2):
             assert pin.SetSchematic(121) == 121
             assert pin.products == products
             assert pin.demands == {5: 3000}
-            assert pin.cycleTime == 1800
+            assert pin.cycleTime == 1800 * appConst.SEC / speed
         source = {1: 20, 2: 5, 3: 3, 4: 1}
         pin.SetSchematic(121, source)
         assert source == {1: 20, 2: 5, 3: 3, 4: 1}
         assert pin.products == products
+        tiny = ProcessPin()
+        tiny.nominalCycleTicks = 1
+        tiny.SetSchematic(121)
+        assert tiny.cycleTime == appConst.SEC
         for product_type, nominal in source.items():
             single = ProcessPin()
             recipe = {product_type: nominal}
@@ -216,7 +242,7 @@ for expression, cpu_scale, power_scale, products, maximum in [
                 assert panel.amountPerHourTxt.value == ('native-volume', dict(single.GetProducts()))
                 assert panel.native_updates == expected_calls
                 assert recipe == {product_type: nominal}
-                assert single.demands == {5: 3000} and single.cycleTime == 1800
+                assert single.demands == {5: 3000} and single.cycleTime == 1800 * appConst.SEC / speed
             single.schematicID = None
             panel._UpdateInfoCont()
             assert panel.amountPerCycleTxt.value == ('UI/PI/Common/UnitsAmount', {'amount': 0})

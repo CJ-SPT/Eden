@@ -2,6 +2,105 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+## Storage capacity and factory speed — November 16, 2026
+
+Planetary industry settings now include independent **Storage capacity** and **Factory speed** multipliers,
+both validated at **0.1–100×** and defaulting to **1×** in new worlds and older configuration documents.
+Administration form round-trips, comparisons, imports and restart activation use the existing world configuration
+path. No database migration, catalog rewrite or alternative persistence path was added.
+
+Capacity scales command centers, storage facilities and launchpads at production delivery, customs import and
+expedited-transfer admission. Factory ingredient buffers retain one batch, and customs offices retain 35,000 m³.
+Reducing capacity preserves existing goods; additional delivery is refused while the building is over capacity.
+At 10×, a launchpad holds **100,000 m³**. At 100× it holds **1,000,000 m³**.
+
+Factory speed divides nominal recipe duration and rounds up to a whole server tick, with a one-second minimum.
+All 68 recipes share that rule. At 10×, basic cycles take **3 minutes**, while advanced/high-tech cycles take
+**6 minutes**. Ingredients and product quantities per batch retain their existing meanings; output still has its
+separate multiplier. Extractor periods/expiry and expedited-transfer cooldowns stay unchanged.
+
+Advancement retimes a running factory cycle from its saved start using active policy. If that deadline is already
+due, completion is clamped to the last committed simulation time; completed history is never replayed. Subsequent
+cycles and offline catch-up use the active speed. Slowing factories can extend a running cycle. Inputs are consumed
+once, and repeated reads at the same timestamp preserve the same goods and deadlines.
+
+The signed client prelude now appends capacity and speed to its existing policy tuple. The idempotent adapter scales
+`StoragePin.GetCapacity` and each processor's own `cycleTime` after native `SetSchematic`, without changing shared
+recipes. These values feed native storage/transfer admission, customs-window launchpad capacity, cycle gauges and
+volume-per-hour calculations. Reconnecting to 1× restores normal capacity and timing; untuned initial logins stay lazy.
+
+### Links and material supply
+
+Storage increases need no link changes. Factory input/output bandwidth reservations use the effective cycle duration,
+so faster factories can require higher link upgrades. Existing route quantities and link levels are preserved.
+For example, the bandwidth regression admits a 100× Water-output route at normal speed, rejects it on the same link
+at 2× speed, then admits it after a link upgrade. The user must upgrade insufficient links before submitting edits.
+Extractor output routes also need sufficient raw quantities to sustain faster basic processors; factory speed does
+not increase their saved route amounts or accelerate the extractor itself.
+
+### Reference evidence
+
+[UniWiki planetary buildings](https://wiki.eveuniversity.org/Planetary_buildings) and
+[colony setup](https://wiki.eveuniversity.org/Setting_up_a_planetary_colony) were checked for normal storage,
+one-cycle processor buffers and routing constraints. These multipliers are Eden operator policy. The local EveJs
+`planet/planetRuntimeStore.js` snapshot, SHA-256
+`cb74256d55a9add0fa5fedd022362118a1fe0d67b27caaff302f30a7a8ce45da`, was consulted for recipe-cycle and routed-output
+boundaries; no implementation was copied. No Carbon-owned behavior changed.
+
+Inert inspection used original client build 3662168 at archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`:
+
+| Module | Decompressed SHA-256 |
+| --- | --- |
+| `eve/common/script/planet/entities/storagePin.pyj` | `264888ddbdac3834c817f0ab2fd38edd7f40a30fd22f03639094cdf1c945d7e9` |
+| `eve/common/script/planet/entities/processPin.pyj` | `28ecf66858b621a831a8c40ec3e4014ef731efa232a5f6c8836d183f209922a1` |
+| `eve/common/script/planet/entities/basePin.pyj` | `00c1a9ed66cc83162db177cd0b930f7d525de05f605384f7889127ab97a00e0d` |
+| `eve/client/script/ui/shared/planet/importExportUI.pyj` | `cdad9058b4f4bbf873ce26e9a9383115d6360fa11bf6d7b5172159d11cb9eb26` |
+
+Actual native `GetCapacity`, `GetSpaceportCapacityTotal`, `GetCycleTime`, `GetOutputVolumePerHour`, commodity-volume,
+bandwidth and processor-panel update functions passed under the pinned Python 2.7 runtime with inert data/UI stubs.
+An initial native harness comparison was too strict about floating-point volume grouping; it was corrected to a
+relative tolerance below displayed precision. No native module body, renderer or game session was started.
+
+### Automated validation
+
+The first exact filter through `tools/Test-Feature.ps1 -Filter` was
+`FullyQualifiedName=Eden.Protocol.Tests.Planetary.PlanetaryConfigurationTests.FactorySpeedChangesAllRecipeDeadlinesWithoutChangingIngredientsOrOutput`.
+It demonstrated unchanged deadlines before implementation: three non-1× cases failed and the 1× case passed.
+The completed focused feature checks passed **24 tests** in **18.36 seconds**. An intermediate fixture build omitted
+the qualification on `PlanetaryIndustryTests.Industry`; correcting that import ambiguity preceded the passing runs.
+
+Final affected validation passed **142 tests**, with **one optional browser check skipped**, in **32.87 seconds**.
+The filter joined these class selections with `|`:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Planetary
+FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldConfigurationTests
+FullyQualifiedName~Eden.Protocol.Tests.Administration.WorldSettingsPageTests
+FullyQualifiedName~Eden.Protocol.Tests.Administration.AdministrationTests
+FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.PilotLoginTests
+FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.ConcordOverviewTests
+```
+
+Coverage includes all recipes at four speeds, exact storage limits for all storage kinds, unchanged processor buffers,
+shrinking capacity without loss, speed restoration, already-due cycles, same-tick repetition, one-second minimum,
+bandwidth upgrades, customs import of 60,000 P1 units, expanded-capacity expedited transfers, checkpoint reopening,
+legacy imports, invalid ranges and native signed-adapter repetition/default restoration. Tool/solution restore and
+solution build passed with zero warnings/errors (**1.65 seconds**). Python policy suites passed **8 + 9** tests
+(**0.998 + 0.015 seconds**); formatting verification, documentation links and `git diff --check` passed.
+The full .NET suite was not requested or run.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. The user retains control of the server update/rebuild and restart.
+Neither live configuration values nor the active save were changed by this feature.
+
+### Optional maintainer checks
+
+After updating, save the desired capacity/speed values for restart, restart and reconnect. Check launchpad capacity
+in both its pin window and customs window; compare one basic factory's timer/volume; upgrade links or raw feed routes
+where the faster production requires them. See [operator examples and limits](../world-configuration.md#planetary-industry).
+
 ## Processor output-per-cycle display — November 16, 2026
 
 A maintainer screenshot showed Biomass **20 units** per cycle alongside **760 m³/hour** under a 100× factory

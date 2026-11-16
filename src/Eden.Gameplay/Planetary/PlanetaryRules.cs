@@ -483,6 +483,23 @@ public static class PlanetaryRules
         return quantity <= 0 ? 0 : Math.Max(1, checked((int)decimal.Floor(quantity * multiplier)));
     }
 
+    public static double StorageCapacity(PlanetaryType type, PlanetaryPolicy? policy = null)
+    {
+        decimal multiplier = policy?.StorageCapacityMultiplier ?? 1;
+        WorldTuningRules.ValidateRate(multiplier);
+        return type.Capacity * (IsStorage(type.Kind) ? (double)multiplier : 1);
+    }
+
+    public static long FactoryCycleTicks(PlanetarySchematic schematic, PlanetaryPolicy? policy = null)
+    {
+        decimal speed = policy?.FactorySpeedMultiplier ?? 1;
+        WorldTuningRules.ValidateRate(speed);
+        return Math.Max(
+            TimeSpan.TicksPerSecond,
+            checked((long)decimal.Ceiling(schematic.CycleSeconds * (decimal)TimeSpan.TicksPerSecond / speed))
+        );
+    }
+
     public static void Validate(PlanetaryColony colony, PlanetaryPlanet planet, PlanetaryCatalog catalog, PlanetaryPolicy? policy = null)
     {
         double cpu = 0;
@@ -526,7 +543,7 @@ public static class PlanetaryRules
                 {
                     throw new InvalidDataException("Storage routes must feed a processor's schematic inputs.");
                 }
-                cycle = catalog.Schematics[recipe].CycleSeconds * TimeSpan.TicksPerSecond;
+                cycle = FactoryCycleTicks(catalog.Schematics[recipe], policy);
             }
             else
             {
@@ -535,7 +552,7 @@ public static class PlanetaryRules
                 {
                     throw new InvalidDataException("Route the source building's installed product.");
                 }
-                cycle = source.Program?.CycleTicks ?? catalog.Schematics[source.SchematicId!.Value].CycleSeconds * TimeSpan.TicksPerSecond;
+                cycle = source.Program?.CycleTicks ?? FactoryCycleTicks(catalog.Schematics[source.SchematicId!.Value], policy);
             }
             if (
                 !IsStorage(destinationType.Kind)

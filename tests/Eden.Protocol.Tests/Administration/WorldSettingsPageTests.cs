@@ -17,6 +17,35 @@ namespace Eden.Protocol.Tests.Administration;
 public sealed class WorldSettingsPageTests
 {
     [Fact]
+    public void PlanetaryStorageAndSpeedControlsValidateRoundTripAndReportRevisionChanges()
+    {
+        var form = SettingsForm.From(new());
+        Assert.Equal(1, form.PlanetaryStorageCapacityMultiplier);
+        Assert.Equal(1, form.PlanetaryFactorySpeedMultiplier);
+        foreach (decimal value in new[] { .1m, 1m, 100m })
+        {
+            form.PlanetaryStorageCapacityMultiplier = value;
+            form.PlanetaryFactorySpeedMultiplier = value;
+            Assert.True(Validator.TryValidateObject(form, new(form), [], true));
+            var saved = SettingsForm.From(form.Build());
+            Assert.Equal(value, saved.PlanetaryStorageCapacityMultiplier);
+            Assert.Equal(value, saved.PlanetaryFactorySpeedMultiplier);
+        }
+        var changes = ConfigurationDisplay.Compare(new(), new() { Settings = form.Build() });
+        Assert.Contains(changes, change => change.Field == "Planetary storage capacity");
+        Assert.Contains(changes, change => change.Field == "Planetary factory speed");
+        foreach (decimal value in new[] { 0m, -.1m, 101m })
+        {
+            form.PlanetaryStorageCapacityMultiplier = value;
+            form.PlanetaryFactorySpeedMultiplier = value;
+            List<ValidationResult> errors = [];
+            Assert.False(Validator.TryValidateObject(form, new(form), errors, true));
+            Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.PlanetaryStorageCapacityMultiplier)));
+            Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.PlanetaryFactorySpeedMultiplier)));
+        }
+    }
+
+    [Fact]
     public void MaximumPlanetControlValidatesAndAppearsInRevisionChanges()
     {
         var form = SettingsForm.From(new());

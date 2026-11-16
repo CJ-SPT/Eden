@@ -60,6 +60,8 @@ public static class WorldTuningRules
         ValidateRate(settings.PlanetaryIndustry.FactoryOutputMultiplier);
         ValidateRate(settings.PlanetaryIndustry.CpuMultiplier);
         ValidateRate(settings.PlanetaryIndustry.PowergridMultiplier);
+        ValidateRate(settings.PlanetaryIndustry.StorageCapacityMultiplier);
+        ValidateRate(settings.PlanetaryIndustry.FactorySpeedMultiplier);
         PlanetaryRules.ValidateMaximumPlanets(settings.PlanetaryIndustry.MaximumPlanets);
         ValidateRate(settings.Structures.AnchoringSpeed);
         ValidateRate(settings.Structures.OnliningSpeed);

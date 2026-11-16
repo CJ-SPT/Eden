@@ -5,6 +5,7 @@ using Eden.Data.World.Market;
 using Eden.Data.World.Planetary;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Planetary;
 using Eden.Server.Administration;
 using Eden.World.Catalog;
@@ -22,6 +23,225 @@ namespace Eden.Protocol.Tests.Planetary;
 
 public sealed class PlanetaryConfigurationTests
 {
+    [Theory]
+    [InlineData(.1)]
+    [InlineData(1)]
+    [InlineData(10)]
+    [InlineData(100)]
+    public void StorageCapacityScalesAllStorageKindsAndKeepsProcessorBuffersAndExistingGoods(decimal multiplier)
+    {
+        using var f = Prepare();
+        var catalog = Catalog(f);
+        var policy = new PlanetaryPolicy(StorageCapacityMultiplier: multiplier);
+        foreach (var type in catalog.Pins.Values.Where(t => PlanetaryRules.IsStorage(t.Kind)))
+        {
+            double capacity = type.Capacity * (double)multiplier;
+            Assert.Equal(capacity, PlanetaryRules.StorageCapacity(type, policy));
+            int units = (int)Math.Floor(capacity / catalog.Volumes[Water]);
+            PlanetaryPin store = new(1, type.TypeId, 1, 1, 0, []);
+            PlanetaryColony colony = new(f.PilotId, PlanetId, 5, f.Clock.Now, 10, 10, [store], [], []);
+            var filled = PlanetarySimulation.Deposit(colony, catalog, store.Id, [new(Water, units)], policy);
+            Assert.Equal(units, PlanetarySimulation.Quantity(filled.Pins[0], Water));
+            Assert.Throws<InvalidDataException>(() => PlanetarySimulation.Deposit(filled, catalog, store.Id, [new(Water, 1)], policy));
+            var lowered = new PlanetaryPolicy(StorageCapacityMultiplier: .1m);
+            Assert.Equal(0, PlanetarySimulation.Accept(filled.Pins[0], catalog, Water, 1, lowered));
+            var afterLowering = PlanetarySimulation.Advance(filled, catalog, f.Clock.Now, lowered);
+            Assert.Equal(units, PlanetarySimulation.Quantity(afterLowering.Pins[0], Water));
+            Assert.Empty(store.Contents);
+        }
+        PlanetaryPin processor = new(1, Processor, 1, 1, 0, [], WaterSchematic);
+        Assert.Equal(3000, PlanetarySimulation.Accept(processor, catalog, PlanetaryResources.AqueousLiquids, 3001, policy));
+    }
+
+    [Fact]
+    public void SpeedChangesRetimeRunningCyclesWithoutReplayingPastWorkOrChangingExtraction()
+    {
+        using var f = Prepare();
+        var catalog = Catalog(f);
+        long start = f.Clock.Now;
+        PlanetaryPin store = new(1, Launchpad, 1, 1, 0, [new(PlanetaryResources.AqueousLiquids, 6000)]);
+        PlanetaryPin processor = new(2, Processor, 1, 1.001, 0, [], WaterSchematic);
+        PlanetaryColony colony = new(
+            f.PilotId,
+            PlanetId,
+            5,
+            start,
+            10,
+            10,
+            [store, processor],
+            [new(1, 2, 0)],
+            [new(1, [1, 2], PlanetaryResources.AqueousLiquids, 3000), new(2, [2, 1], Water, 20)]
+        );
+        var running = PlanetarySimulation.Advance(colony, catalog, start + 10 * TimeSpan.TicksPerMinute);
+        var fast = new PlanetaryPolicy(FactorySpeedMultiplier: 4);
+        var retimed = PlanetarySimulation.Advance(running, catalog, running.SimulatedAt, fast);
+        Assert.Equal(20, PlanetarySimulation.Quantity(retimed.Pins[0], Water));
+        Assert.Equal(running.SimulatedAt + 450 * TimeSpan.TicksPerSecond, retimed.Pins[1].NextRunAt);
+        Assert.Equal(
+            JsonSerializer.Serialize(retimed),
+            JsonSerializer.Serialize(PlanetarySimulation.Advance(retimed, catalog, retimed.SimulatedAt, fast))
+        );
+        var restored = PlanetarySimulation.Advance(retimed, catalog, retimed.SimulatedAt);
+        Assert.Equal(start + 40 * TimeSpan.TicksPerMinute, restored.Pins[1].NextRunAt);
+        Assert.Equal(20, PlanetarySimulation.Quantity(restored.Pins[0], Water));
+        var finished = PlanetarySimulation.Advance(restored, catalog, restored.Pins[1].NextRunAt!.Value);
+        Assert.Equal(40, PlanetarySimulation.Quantity(finished.Pins[0], Water));
+        Assert.Null(finished.Pins[1].NextRunAt);
+        var recipe = catalog.Schematics[WaterSchematic];
+        Assert.Equal(
+            TimeSpan.TicksPerSecond,
+            PlanetaryRules.FactoryCycleTicks(recipe with { CycleSeconds = 1 }, fast with { FactorySpeedMultiplier = 100 })
+        );
+        Assert.Equal(
+            12 * TimeSpan.TicksPerSecond / 10,
+            PlanetaryRules.FactoryCycleTicks(recipe with { CycleSeconds = 3 }, fast with { FactorySpeedMultiplier = 2.5m })
+        );
+        var extracted = Deploy(f);
+        var before = extracted.Pins.Single(p => p.TypeId == Extractor);
+        var after = PlanetarySimulation.Advance(extracted, catalog, extracted.SimulatedAt, fast).Pins.Single(p => p.Id == before.Id);
+        Assert.Equal(before, after);
+    }
+
+    [Fact]
+    public void FasterFactoriesReserveMoreLinkBandwidthAndStorageTransfersUseExpandedCapacity()
+    {
+        using var f = Prepare();
+        var catalog = Catalog(f);
+        PlanetaryPlanet planet = new(PlanetId, 1, PlanetaryResources.Barren, 1, 6000000, SpacePosition.Zero, true);
+        PlanetaryPin port = new(1, Launchpad, 1, 1, 0, []);
+        PlanetaryPin processor = new(2, Processor, 1, 1.001, 0, [], WaterSchematic);
+        PlanetaryColony colony = new(
+            f.PilotId,
+            PlanetId,
+            5,
+            f.Clock.Now,
+            10,
+            10,
+            [port, processor],
+            [new(1, 2, 0)],
+            [new(1, [1, 2], PlanetaryResources.AqueousLiquids, 3000), new(2, [2, 1], Water, 2000)]
+        );
+        var policy = new PlanetaryPolicy(FactoryOutputMultiplier: 100);
+        PlanetaryRules.Validate(colony, planet, catalog, policy);
+        var faster = policy with { FactorySpeedMultiplier = 2 };
+        Assert.Throws<InvalidDataException>(() => PlanetaryRules.Validate(colony, planet, catalog, faster));
+        PlanetaryRules.Validate(colony with { Links = [new(1, 2, 1)] }, planet, catalog, faster);
+        var storage = policy with { StorageCapacityMultiplier = 10 };
+        port = port with { Contents = [new(Water, 60000)] };
+        var destination = port with { Id = 3, Longitude = 1.001, Contents = [] };
+        colony = colony with { Pins = [port, destination], Links = [new(1, 3, 0)], Routes = [] };
+        Assert.Throws<InvalidDataException>(() => PlanetarySimulation.Transfer(colony, catalog, [1, 3], [new(Water, 60000)], f.Clock.Now));
+        var transferred = PlanetarySimulation.Transfer(colony, catalog, [1, 3], [new(Water, 60000)], f.Clock.Now, storage);
+        Assert.Empty(transferred.Colony.Pins[0].Contents);
+        Assert.Equal(60000, PlanetarySimulation.Quantity(transferred.Colony.Pins[1], Water));
+        Assert.Equal(60000, PlanetarySimulation.Quantity(port, Water));
+    }
+
+    [Fact]
+    public async Task LargeLaunchpadImportsAndFasterProductionUseActivePolicyAndSurviveReopen()
+    {
+        using var f = Prepare();
+        WorldDatabase database = new(f.Db.Path);
+        WorldConfigurationStore configuration = new(database, f.Clock);
+        var current = configuration.Read();
+        PlanetaryPolicy policy = new(StorageCapacityMultiplier: 10, FactorySpeedMultiplier: 10);
+        configuration.Save(
+            current.Generation,
+            current.Active.Draft with
+            {
+                Settings = current.Active.Draft.Settings with { PlanetaryIndustry = policy },
+            },
+            "storage/speed test"
+        );
+        WorldConfigurationStore.Activate(database);
+        string snapshot;
+        long port;
+        using (LiveWorld live = new(database, f.Clock, combatObjects: false, simulationObjects: false))
+        {
+            var colony = Deploy(f);
+            var industry = PlanetaryIndustryTests.Industry(f);
+            long office = PlanetaryRules.OfficeId(PlanetId);
+            var contact = Assert.Single(industry.OrbitContacts(f.Db.Store.FindPilot(1000001)!.SystemId, f.Clock.Now));
+            f.Db.Store.SetPosition(f.ShipId, contact.Position);
+            long water = f.Grant(Water, 60000, cargo: true);
+            long raw = f.Grant(PlanetaryResources.AqueousLiquids, 6000, cargo: true);
+            industry.MoveOrbitCargo(f.PilotId, office, true, new([water, raw], f.ShipId, (int)InventoryFlag.Hangar, null));
+            var imports = industry
+                .OrbitInventory(f.PilotId, office)
+                .Items.Select(i => new PlanetaryCargoRequest(i.Id, i.Quantity))
+                .ToArray();
+            port = colony.Pins.Single(p => p.TypeId == Launchpad).Id;
+            colony = industry.ImportExport(f.PilotId, office, port, imports, []).Colony;
+            Assert.Equal(60000, PlanetarySimulation.Quantity(colony.Pins.Single(p => p.Id == port), Water));
+            Assert.Equal(f.Clock.Now + 180 * TimeSpan.TicksPerSecond, colony.Pins.Single(p => p.TypeId == Processor).NextRunAt);
+            f.Clock.Seconds += 180;
+            colony = industry.Read(f.PilotId, PlanetId).Colony!;
+            Assert.Equal(60020, PlanetarySimulation.Quantity(colony.Pins.Single(p => p.Id == port), Water));
+            colony = industry
+                .Update(
+                    f.PilotId,
+                    PlanetId,
+                    [new CreatePlanetaryPin(new(40, 1), Launchpad, 1, 1.01), new CreatePlanetaryLink(new(port), new(40, 1), 0)]
+                )
+                .Colony;
+            long buffer = colony.Pins.Single(p => p.TypeId == Launchpad && p.Id != port).Id;
+            colony = industry.Transfer(f.PilotId, PlanetId, [port, buffer], [new(Water, 60000)]).Colony;
+            Assert.Equal(60000, PlanetarySimulation.Quantity(colony.Pins.Single(p => p.Id == buffer), Water));
+            snapshot = JsonSerializer.Serialize(colony);
+            await live.FlushAsync();
+        }
+        WorldDatabase reopened = new(f.Db.Path);
+        Assert.Equal(policy, reopened.Settings.PlanetaryIndustry);
+        using LiveWorld reopenedWorld = new(reopened, f.Clock, combatObjects: false, simulationObjects: false);
+        PilotPlanetaryIndustryStore store = new(reopened, f.Clock, f.Db.Services.GetRequiredService<PilotTrainingStore>());
+        Assert.Equal(snapshot, JsonSerializer.Serialize(store.Read(f.PilotId, PlanetId).Colony));
+        Assert.Empty(store.OrbitInventory(f.PilotId, PlanetaryRules.OfficeId(PlanetId)).Items);
+        store.ImportExport(f.PilotId, PlanetaryRules.OfficeId(PlanetId), port, [], [new(Water, 20)]);
+        Assert.Equal(20, Assert.Single(store.OrbitInventory(f.PilotId, PlanetaryRules.OfficeId(PlanetId)).Items).Quantity);
+    }
+
+    [Theory]
+    [InlineData(.1)]
+    [InlineData(1)]
+    [InlineData(2.5)]
+    [InlineData(100)]
+    public void FactorySpeedChangesAllRecipeDeadlinesWithoutChangingIngredientsOrOutput(decimal speed)
+    {
+        using var f = Prepare();
+        var catalog = Catalog(f);
+        var policy = JsonSerializer.Deserialize<PlanetaryPolicy>(
+            "{\"FactorySpeedMultiplier\":" + speed.ToString(System.Globalization.CultureInfo.InvariantCulture) + "}"
+        )!;
+        foreach (var recipe in catalog.Schematics.Values)
+        {
+            long start = f.Clock.Now;
+            long duration = Math.Max(
+                TimeSpan.TicksPerSecond,
+                checked((long)decimal.Ceiling(recipe.CycleSeconds * (decimal)TimeSpan.TicksPerSecond / speed))
+            );
+            PlanetaryPin store = new(1, Launchpad, 1, 1, 0, recipe.Inputs);
+            PlanetaryPin processor = new(2, recipe.PinTypes[0], 1, 1.001, 0, [], recipe.Id);
+            var routes = recipe
+                .Inputs.Select((i, index) => new PlanetaryRoute(index + 1, [1, 2], i.TypeId, i.Quantity))
+                .Append(new(recipe.Inputs.Count + 1, [2, 1], recipe.Output.TypeId, recipe.Output.Quantity))
+                .ToArray();
+            PlanetaryColony colony = new(f.PilotId, PlanetId, 5, start, 10, 10, [store, processor], [new(1, 2, 0)], routes);
+            var running = PlanetarySimulation.Advance(colony, catalog, start, policy);
+            Assert.Equal(start + duration, running.Pins.Single(p => p.Id == 2).NextRunAt);
+            Assert.Empty(running.Pins.Single(p => p.Id == 1).Contents);
+            var waiting = PlanetarySimulation.Advance(running, catalog, start + duration - 1, policy);
+            Assert.Empty(waiting.Pins.Single(p => p.Id == 1).Contents);
+            var finished = PlanetarySimulation.Advance(waiting, catalog, start + duration, policy);
+            Assert.Equal(recipe.Output.Quantity, PlanetarySimulation.Quantity(finished.Pins.Single(p => p.Id == 1), recipe.Output.TypeId));
+            Assert.Null(finished.Pins.Single(p => p.Id == 2).NextRunAt);
+            Assert.Equal(
+                JsonSerializer.Serialize(finished),
+                JsonSerializer.Serialize(PlanetarySimulation.Advance(finished, catalog, start + duration, policy))
+            );
+            Assert.Equal(recipe.Inputs, store.Contents);
+        }
+    }
+
     [Fact]
     public void CapacityMultipliersIndependentlyAdmitAndRejectColonyLayouts()
     {
@@ -194,9 +414,9 @@ public sealed class PlanetaryConfigurationTests
         using var f = Prepare();
         WorldConfigurationStore configuration = new(new(f.Db.Path), f.Clock);
         var draft = configuration.Read().Active.Draft;
-        var settings = draft.Settings with { PlanetaryIndustry = new(.1m, 100, 2, 3, 8) };
+        var settings = draft.Settings with { PlanetaryIndustry = new(.1m, 100, 2, 3, 8, 10, 2) };
         Assert.Equal(settings.PlanetaryIndustry, SettingsForm.From(settings).Build().PlanetaryIndustry);
-        Assert.Equal(5, ConfigurationDisplay.Compare(draft, draft with { Settings = settings }).Count);
+        Assert.Equal(7, ConfigurationDisplay.Compare(draft, draft with { Settings = settings }).Count);
         configuration.Validate(draft with { Settings = settings });
         PlanetaryPolicy[] invalid =
         [
@@ -204,6 +424,10 @@ public sealed class PlanetaryConfigurationTests
             new(FactoryOutputMultiplier: 101),
             new(CpuMultiplier: -.1m),
             new(PowergridMultiplier: 0),
+            new(StorageCapacityMultiplier: 0),
+            new(StorageCapacityMultiplier: 101),
+            new(FactorySpeedMultiplier: -.1m),
+            new(FactorySpeedMultiplier: 101),
             new(MaximumPlanets: -1),
             new(MaximumPlanets: PlanetaryRules.MaximumConfiguredPlanets + 1),
         ];
@@ -218,8 +442,12 @@ public sealed class PlanetaryConfigurationTests
         );
         var legacy = JsonNode.Parse(configuration.Export(configuration.Read().Active.Id))!;
         legacy["settings"]!["planetaryIndustry"]!.AsObject().Remove("maximumPlanets");
+        legacy["settings"]!["planetaryIndustry"]!.AsObject().Remove("storageCapacityMultiplier");
+        legacy["settings"]!["planetaryIndustry"]!.AsObject().Remove("factorySpeedMultiplier");
         var imported = configuration.Import(configuration.Read().Generation, legacy.ToJsonString(), "legacy");
         Assert.Equal(0, imported.Pending!.Draft.Settings.PlanetaryIndustry.MaximumPlanets);
+        Assert.Equal(1, imported.Pending.Draft.Settings.PlanetaryIndustry.StorageCapacityMultiplier);
+        Assert.Equal(1, imported.Pending.Draft.Settings.PlanetaryIndustry.FactorySpeedMultiplier);
     }
 
     [Theory]

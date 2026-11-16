@@ -383,7 +383,14 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
                 RequireOmega(world, pilotId);
                 var saved = Require(world, pilotId, planetId);
                 var definitions = PlanetaryCatalogReader.Read(catalog);
-                var transfer = PlanetarySimulation.Transfer(Advance(saved, definitions, now), definitions, path, commodities, now);
+                var transfer = PlanetarySimulation.Transfer(
+                    Advance(saved, definitions, now),
+                    definitions,
+                    path,
+                    commodities,
+                    now,
+                    database.Settings.PlanetaryIndustry
+                );
                 Save(saved, transfer.Colony);
                 return transfer;
             }
@@ -577,7 +584,7 @@ internal sealed class PilotPlanetaryIndustryStore(WorldDatabase database, TimePr
                 }
                 if (imported.Count > 0)
                 {
-                    colony = PlanetarySimulation.Deposit(colony, definitions, pinId, imported);
+                    colony = PlanetarySimulation.Deposit(colony, definitions, pinId, imported, database.Settings.PlanetaryIndustry);
                 }
                 double rate = PlanetaryRules.InterbusTaxRate;
                 long importTax = PlanetaryRules.TaxCents(definitions, imported, rate, import: true);

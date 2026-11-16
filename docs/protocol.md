@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[PI capacity and factory speed](protocol/planetary.md#storage-capacity-and-factory-speed--november-16-2026)
+configure planetary storage and processing duration with matching native previews and bandwidth reservations.
+
 [PI processor output counts](protocol/planetary.md#processor-output-per-cycle-display--november-16-2026)
 align the panel's units per cycle with its already modified products and output volume.
 

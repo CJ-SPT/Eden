@@ -167,6 +167,14 @@ public sealed class SettingsForm
     public decimal PlanetaryFactoryOutputMultiplier { get; set; } = 1;
 
     [Range(typeof(decimal), "0.1", "100")]
+    [Display(Name = "Planetary storage capacity")]
+    public decimal PlanetaryStorageCapacityMultiplier { get; set; } = 1;
+
+    [Range(typeof(decimal), "0.1", "100")]
+    [Display(Name = "Factory speed")]
+    public decimal PlanetaryFactorySpeedMultiplier { get; set; } = 1;
+
+    [Range(typeof(decimal), "0.1", "100")]
     [Display(Name = "Command center CPU")]
     public decimal PlanetaryCpuMultiplier { get; set; } = 1;
 
@@ -202,6 +210,8 @@ public sealed class SettingsForm
             ReprocessingEfficiency = settings.Industry.ReprocessingEfficiency,
             PlanetaryExtractionYieldMultiplier = settings.PlanetaryIndustry.ExtractionYieldMultiplier,
             PlanetaryFactoryOutputMultiplier = settings.PlanetaryIndustry.FactoryOutputMultiplier,
+            PlanetaryStorageCapacityMultiplier = settings.PlanetaryIndustry.StorageCapacityMultiplier,
+            PlanetaryFactorySpeedMultiplier = settings.PlanetaryIndustry.FactorySpeedMultiplier,
             PlanetaryCpuMultiplier = settings.PlanetaryIndustry.CpuMultiplier,
             PlanetaryPowergridMultiplier = settings.PlanetaryIndustry.PowergridMultiplier,
             PlanetaryMaximumPlanets = settings.PlanetaryIndustry.MaximumPlanets,
@@ -273,7 +283,9 @@ public sealed class SettingsForm
                 PlanetaryFactoryOutputMultiplier,
                 PlanetaryCpuMultiplier,
                 PlanetaryPowergridMultiplier,
-                PlanetaryMaximumPlanets
+                PlanetaryMaximumPlanets,
+                PlanetaryStorageCapacityMultiplier,
+                PlanetaryFactorySpeedMultiplier
             ),
             Structures = new(StructureAnchoringSpeed, StructureOnliningSpeed, StructureUnanchoringSpeed),
             NpcPopulation = new(Pirates, Guards, Convoys, Mining, MajorThreatAnomalies),
