@@ -13,6 +13,8 @@ public sealed record MissileLaunchPlatform(SpacePosition Position, SpacePosition
 
 public sealed record MissileTarget(SpacePosition Position, SpacePosition Velocity, float Radius);
 
+public sealed record MissileMotionChange(double Offset, MissileTarget Target);
+
 public enum MissileFlightStatus
 {
     Flying,

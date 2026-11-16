@@ -88,8 +88,11 @@ public sealed partial class PilotMissileTests
         using var snapshot = live?.CaptureSnapshot();
         if (snapshot is not null)
         {
+            long? previousQueueEnd;
             using (WorldDbContext before = new(snapshot.Database))
             {
+                // The pending queue can still be resident-only in the captured generation.
+                previousQueueEnd = before.Set<QueuedLevel>().Find(Victim, 0)?.EndTime;
                 before.Database.ExecuteSqlRaw(
                     """
                     CREATE TRIGGER RejectHomeCloneTransfer BEFORE INSERT ON WorldHomeCloneTransfer
@@ -102,7 +105,7 @@ public sealed partial class PilotMissileTests
             {
                 Assert.Equal(VictimShip, failed.Pilots.Find(Victim)!.ActiveShipId);
                 Assert.NotNull(failed.Set<SavedPilotImplant>().Find(implantItem));
-                Assert.Equal(original.EndTime, failed.Set<QueuedLevel>().Find(Victim, 0)!.EndTime);
+                Assert.Equal(previousQueueEnd, failed.Set<QueuedLevel>().Find(Victim, 0)?.EndTime);
                 Assert.Empty(failed.Set<SavedCombatReport>());
                 Assert.Empty(failed.Set<SavedHomeCloneTransfer>());
                 failed.Database.ExecuteSqlRaw("DROP TRIGGER RejectHomeCloneTransfer");
@@ -573,6 +576,12 @@ public sealed partial class PilotMissileTests
     public void NativeLaunchAndVictimNotificationUseTheExistingMissileAndDamageWires(bool fatal)
     {
         using var f = Prepare();
+        using (CatalogDbContext catalog = new(f.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSql(
+                $"DELETE FROM TypeAttribute WHERE ItemTypeId={Charge} AND AttributeId={(int)DogmaAttributeId.AimedMissileLaunch}"
+            );
+        }
         long launcher = MissileCombatTests.Load(f, Launcher, Charge);
         Space(f);
         using var sourceScope = f.Db.Services.CreateScope();
@@ -601,8 +610,10 @@ public sealed partial class PilotMissileTests
             AlmostLost(f);
         }
         Assert.Same(PilotCallResult.None, handler.Call(source, "dogmaIM", "Activate", [launcher, "useMissiles", VictimShip, 0L]));
-        Assert.Single(source.Flight.VisibleMissiles);
-        Advance(f, 3);
+        var missile = Assert.Single(source.Flight.VisibleMissiles);
+        Assert.Equal(SpacePosition.Zero, source.Flight.Velocity);
+        Assert.Equal(source.Flight.Heading.Unit * -1, missile.Flight.Velocity.Unit);
+        Advance(f);
         handler.Advance(source);
         targetScope.ServiceProvider.GetRequiredService<PilotUpdateCoordinator>().ApplyPlayerDamage(victim);
         var message = Assert.Single(victim.NotificationsBeforeFlight.OfType<DamageMessageNotification>()).Message.ToBlue();

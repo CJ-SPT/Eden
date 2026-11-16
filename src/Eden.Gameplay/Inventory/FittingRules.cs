@@ -72,6 +72,14 @@ public static class FittingRules
         attributes[DogmaAttributeId.ShieldRechargeTime] =
             attributes.GetValueOrDefault(DogmaAttributeId.ShieldRechargeTime)
             * (1 - InventoryDefinitions.OutputBonusPerSkillLevel * levels.GetValueOrDefault((int)DefenseSkill.ShieldOperation));
+        if (attributes.TryGetValue(DogmaAttributeId.ShieldUniformity, out double uniformity))
+        {
+            const double uniformityPerLevel = 0.05;
+            attributes[DogmaAttributeId.ShieldUniformity] = Math.Min(
+                1,
+                uniformity + uniformityPerLevel * levels.GetValueOrDefault((int)DefenseSkill.TacticalShieldManipulation)
+            );
+        }
         int targetLimit =
             TargetingDefinitions.BasePilotTargetLimit
             + levels.GetValueOrDefault((int)TargetingSkill.TargetManagement)

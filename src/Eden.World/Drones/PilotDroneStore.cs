@@ -808,7 +808,7 @@ internal sealed partial class PilotDroneStore(
             }
             var attributes = npc is null
                 ? PilotFittingStore.ShipAttributes(world, catalog, victim!.Id)
-                : PlayerEwarStore.NpcAttributes(world, npc.Id, catalog.FittingAttributes(npc.TypeId));
+                : PlayerEwarStore.NpcAttributes(world, npc.Id, PilotFittingStore.ReadAttributes(catalog, npc.TypeId));
             var damage = DroneRules.Shot(
                 contact,
                 target,
@@ -816,7 +816,8 @@ internal sealed partial class PilotDroneStore(
                 attributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius),
                 rolls is not null && rolls.TryGetValue(drone.ItemId, out double roll)
                     ? roll
-                    : RandomNumberGenerator.GetInt32(ProbabilityResolution) / (double)ProbabilityResolution
+                    : RandomNumberGenerator.GetInt32(ProbabilityResolution) / (double)ProbabilityResolution,
+                radius
             );
             drone.ReadyAt = checked(now + (long)Math.Ceiling(profile.CycleMilliseconds * TimeSpan.TicksPerMillisecond));
             DroneHit hit;

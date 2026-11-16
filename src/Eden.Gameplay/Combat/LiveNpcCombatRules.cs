@@ -36,7 +36,7 @@ public static class LiveNpcCombatRules
             attributes.GetValueOrDefault(DogmaAttributeId.WeaponSignatureResolution)
         );
         double quality = CombatDamage.ShotQuality(chance, roll);
-        var applied = CombatDamage.Apply(ship.Health.At(now), ship.Health.Defense, damage.Scale(quality));
+        var applied = CombatDamage.Apply(ship.Health.At(now), ship.Health.Defense, damage.Scale(quality), ship.ShipId, now);
         int turret = checked((int)attributes.GetValueOrDefault(DogmaAttributeId.EntityTurretType));
         var contributors = InteractionHistoryRules.AddDamage(
             ship.Contributions,

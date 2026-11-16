@@ -30,7 +30,10 @@ public sealed record ShipHealth(long ShipId, HullDefense Defense, HullDamage Rem
                 Value(DogmaAttributeId.StructureKineticResonance, 1),
                 Value(DogmaAttributeId.StructureThermalResonance, 1)
             )
-        );
+        )
+        {
+            ShieldUniformity = Value(DogmaAttributeId.ShieldUniformity, 1),
+        };
     }
 }
 
@@ -46,4 +49,5 @@ public enum DefenseSkill
     HullUpgrades = 3394,
     ShieldOperation = 3416,
     ShieldManagement = 3419,
+    TacticalShieldManipulation = 3420,
 }

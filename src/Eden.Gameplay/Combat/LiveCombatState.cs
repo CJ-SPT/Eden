@@ -271,7 +271,7 @@ public static class LiveCombatRules
         {
             throw new InvalidDataException("Load the same ammunition in every grouped weapon.");
         }
-        var damage = CombatDamage.Apply(target.Health.At(now), target.Health.Defense, combined);
+        var damage = CombatDamage.Apply(target.Health.At(now), target.Health.Defense, combined, target.Id, now);
         double average = qualities.Average();
         var first = weapons[0];
         var aggregate =

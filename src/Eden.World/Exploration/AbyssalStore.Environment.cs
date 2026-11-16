@@ -130,7 +130,7 @@ internal sealed partial class AbyssalStore
                 Math.Max(0, defense.Armor - npc.ArmorDamage),
                 Math.Max(0, defense.Structure - npc.StructureDamage)
             );
-            var result = CombatDamage.Apply(health, defense, damage);
+            var result = CombatDamage.Apply(health, defense, damage, npc.Id, now);
             npc.ShieldCharge = result.Remaining.Shield;
             npc.ArmorDamage = defense.Armor - result.Remaining.Armor;
             npc.StructureDamage = defense.Structure - result.Remaining.Structure;
@@ -148,7 +148,7 @@ internal sealed partial class AbyssalStore
         {
             if (Near(new(drone.X, drone.Y, drone.Z)))
             {
-                SmartbombStore.DamageDrone(world, drone, PilotDroneStore.Contact(world, catalog, drone), damage);
+                SmartbombStore.DamageDrone(world, drone, PilotDroneStore.Contact(world, catalog, drone), damage, now);
             }
         }
         foreach (

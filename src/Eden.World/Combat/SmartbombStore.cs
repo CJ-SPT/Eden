@@ -185,7 +185,7 @@ internal sealed class SmartbombStore(
         }
         foreach (var (row, contact) in drones)
         {
-            hits.Add(DamageDrone(world, row, contact, module.Damage));
+            hits.Add(DamageDrone(world, row, contact, module.Damage, now));
         }
         foreach (var (id, victim) in victims)
         {
@@ -279,10 +279,10 @@ internal sealed class SmartbombStore(
             : null;
     }
 
-    internal static SmartbombHit DamageDrone(WorldAction world, WorldDrone row, DroneContact contact, DamageVector damage)
+    internal static SmartbombHit DamageDrone(WorldAction world, WorldDrone row, DroneContact contact, DamageVector damage, long now)
     {
         var defense = contact.Profile.Defense;
-        var result = CombatDamage.Apply(contact.Health.Remaining, defense, damage);
+        var result = CombatDamage.Apply(contact.Health.Remaining, defense, damage, contact.Id, now);
         row.Shield = result.Remaining.Shield;
         row.ArmorDamage = defense.Armor - result.Remaining.Armor;
         row.StructureDamage = defense.Structure - result.Remaining.Structure;

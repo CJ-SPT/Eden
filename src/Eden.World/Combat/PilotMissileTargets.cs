@@ -77,7 +77,6 @@ internal sealed partial class PilotMissileStore
         WorldMissile row,
         MissilePayload payload,
         Pilot victim,
-        PilotCombatPresence contact,
         long time,
         DamageVector? rawDamage = null,
         bool bypassResistances = false
@@ -89,7 +88,7 @@ internal sealed partial class PilotMissileStore
             ? MissileRules.Application(
                 payload.Warhead,
                 attributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius),
-                contact.Velocity.Length
+                payload.Target!.Velocity.Length
             )
             : 1;
         var damage = rawDamage ?? payload.Warhead.Damage.Scale(application);

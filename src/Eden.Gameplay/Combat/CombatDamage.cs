@@ -26,6 +26,7 @@ public sealed record HullDefense(
     DamageVector StructureResonance
 )
 {
+    public double ShieldUniformity { get; init; } = 1;
     public HullDamage Undamaged => new(Shield, Armor, Structure);
 }
 
@@ -46,7 +47,7 @@ public static class CombatDamage
     public static HullDefense WithoutResistances(HullDefense defense)
     {
         DamageVector full = new(1, 1, 1, 1);
-        return defense with { ShieldResonance = full, ArmorResonance = full, StructureResonance = full };
+        return defense with { ShieldResonance = full, ArmorResonance = full, StructureResonance = full, ShieldUniformity = 1 };
     }
 
     public const double WreckingChance = 0.01;
@@ -121,10 +122,15 @@ public static class CombatDamage
         return roll < WreckingChance ? WreckingMultiplier : roll + HitQualityOffset;
     }
 
-    public static DamageResult Apply(HullDamage current, HullDefense defense, DamageVector incoming)
+    public static DamageResult Apply(HullDamage current, HullDefense defense, DamageVector incoming) =>
+        Apply(current, defense, incoming, 0, 0);
+
+    public static DamageResult Apply(HullDamage current, HullDefense defense, DamageVector incoming, long targetId, long time)
     {
         if (
-            !incoming.IsValid
+            !double.IsFinite(defense.ShieldUniformity)
+            || defense.ShieldUniformity is < 0 or > 1
+            || !incoming.IsValid
             || !defense.ShieldResonance.IsValid
             || !defense.ArmorResonance.IsValid
             || !defense.StructureResonance.IsValid
@@ -157,7 +163,30 @@ public static class CombatDamage
             remaining = remaining.Scale(1 - absorbed / damage);
             return Math.Max(0, health - absorbed);
         }
+        // The skill and catalog establish the threshold. Below it Eden uses the
+        // deficit as both penetration probability and the raw fraction that bypasses shields.
+        double penetration = current.Shield > 0 && defense.Shield > 0 ? 1 - defense.ShieldUniformity - current.Shield / defense.Shield : 0;
+        double bypass = 0;
+        if (penetration > 0)
+        {
+            // A fatal shot can be evaluated again during settlement. Its draw must survive replay.
+            long seed = targetId ^ time ^ BitConverter.DoubleToInt64Bits(current.Shield) ^ BitConverter.DoubleToInt64Bits(incoming.Total);
+            if (new Random(unchecked((int)(seed ^ (seed >> 32)))).NextDouble() < penetration)
+            {
+                bypass = penetration;
+                remaining = incoming.Scale(1 - bypass);
+            }
+        }
         double shield = Layer(current.Shield, defense.Shield, defense.ShieldResonance);
+        if (bypass > 0)
+        {
+            remaining = new(
+                remaining.Em + incoming.Em * bypass,
+                remaining.Explosive + incoming.Explosive * bypass,
+                remaining.Kinetic + incoming.Kinetic * bypass,
+                remaining.Thermal + incoming.Thermal * bypass
+            );
+        }
         double armor = Layer(current.Armor, defense.Armor, defense.ArmorResonance);
         double structure = Layer(current.Structure, defense.Structure, defense.StructureResonance);
         return new(new(shield, armor, structure), applied);
