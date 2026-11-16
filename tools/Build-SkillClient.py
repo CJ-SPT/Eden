@@ -17,6 +17,17 @@ import zlib
 PINNED_SHA256 = '37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368'
 PYTHON_SHA256 = '1266e119d5db70281831f06049faa2694e658a68d504e0cc5680ec5726ba3aa2'
 WRAPPERS = {
+    'logmodule/__init__.pyj': ('_LogException', '''
+def _LogException(exc_info, extraText, channel, toConsole, toLogServer, toAlertSvc, toMsgWindow, severity, show_locals):
+    try:
+        import eden_skill_overlay
+        eden_skill_overlay.record_client_error('native-exception', extraText, exc_info)
+    except Exception:
+        pass
+    def _eden_original(exc_info, extraText, channel, toConsole, toLogServer, toAlertSvc, toMsgWindow, severity, show_locals):
+        pass
+    return _eden_original(exc_info, extraText, channel, toConsole, toLogServer, toAlertSvc, toMsgWindow, severity, show_locals)
+'''),
     'eve/client/script/ui/shared/info/infoContentBase.pyj': (
         '<module>.InfoWindowMonolith.update_description_caption_and_sub_caption', '''
 def update_description_caption_and_sub_caption(self):

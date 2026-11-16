@@ -6,7 +6,7 @@ DATA = json.loads(DATA_JSON)
 _cache = {}
 
 
-def record_client_error(stage, identity):
+def record_client_error(stage, identity, exception_info=None):
     # Preserve the original exception; diagnostics must never change the client flow.
     try:
         import datetime
@@ -24,8 +24,9 @@ def record_client_error(stage, identity):
         maximum_bytes = 2 * 1024 * 1024
         if os.path.exists(path) and os.path.getsize(path) >= maximum_bytes:
             return
+        detail = traceback.format_exc() if exception_info is None else ''.join(traceback.format_exception(*exception_info))
         text = '%s UTC stage=%s character=%s\n%s\n' % (
-            datetime.datetime.utcnow().isoformat(), stage, identity, traceback.format_exc())
+            datetime.datetime.utcnow().isoformat(), stage, identity, detail)
         with open(path, 'ab') as output:
             output.write(text.encode('utf-8', 'replace'))
     except Exception:
