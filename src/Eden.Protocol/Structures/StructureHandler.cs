@@ -199,6 +199,11 @@ internal sealed class StructureHandler(
         {
             throw new InvalidDataException("Choose your corporation's structure access profile.");
         }
+        // Build 3662168 ConfirmDeployment sends an empty KeyVal for ordinary structures, including refineries.
+        if (extra is BlueInstance { Name: "util.KeyVal" or "utillib.KeyVal" } configuration)
+        {
+            extra = configuration.State;
+        }
         if (
             extra is not null
             && extra is not Dictionary<string, object?> { Count: 0 }

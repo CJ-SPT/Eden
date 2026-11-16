@@ -129,6 +129,26 @@ the failures, not acceptance of the corrected behavior.
 **Optional maintainer checks:** Warp to a moon's mining point through its native menu, then open the refinery deployment
 screen and verify that its reinforcement hour loads and the chosen configuration can be anchored.
 
+### Native anchor configuration container — November 16, 2026
+
+The user's follow-up anchoring screenshot reported "This deployment configuration is not supported."
+Build-3662168 `structureDeployment.ConfirmDeployment` creates a `util.KeyVal` and sends it as the tenth `Anchor`
+argument. For refineries it contains no fields. The adapter now unwraps the native `util.KeyVal`/`utillib.KeyVal`
+container before validating the configuration. Nonempty unsupported configuration fields remain rejected.
+Inert inspection used the same installed client archive fingerprint recorded above; the local EVE.js **261108.1**
+`structureDeploymentService.js` and `sovPlayerDeployment.normalizeExtraConfig` were consulted for the argument boundary.
+
+**Automated validation:** The existing exact-method filter
+`FullyQualifiedName~StructureTests.NativeDeploymentValidatesProfileAndPersistsRequestedMetadata` passed in 6.94 seconds.
+The final filter joined `StructureTests`, `StructureDeploymentDefaultsTests`, `StructureRulesTests` and `MoonExtractionTests`
+with `FullyQualifiedName~` and `|`; all **87 existing cases passed in 34.18 seconds**. Tool and solution restore, solution
+build (zero warnings/errors, 0.86 seconds), both Python policy suites (8 catalog and 9 formatting cases), formatting
+verification and whitespace checks passed. No new regression tests were added, as requested; the full .NET suite was not run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Retry confirming the Athanor deployment after the updated server starts.
+
 ## Structure compression and gas decompression — November 11, 2026
 
 Milestone 7 implements all three pinned `structureCompressionMgr` calls: `CompressItemInStructure(itemID)`,
