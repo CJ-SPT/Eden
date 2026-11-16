@@ -25,6 +25,7 @@ internal sealed class FlightSessionFactory(
     INpcEncounters encounters,
     IWrecks wrecks,
     IPilotShipAppearance appearance,
+    IPilotWarpDrive warpDrive,
     IPilotMissiles? missiles = null,
     IPilotTackle? tackle = null,
     IPilotDrones? drones = null,
@@ -73,7 +74,8 @@ internal sealed class FlightSessionFactory(
                 missions: missions,
                 commandBursts: commandBursts,
                 dedComplexes: dedComplexes,
-                fleets: fleets
+                fleets: fleets,
+                warpDrive: warpDrive
             );
         }
         catch

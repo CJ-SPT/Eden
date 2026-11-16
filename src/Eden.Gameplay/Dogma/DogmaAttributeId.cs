@@ -146,6 +146,7 @@ public enum DogmaAttributeId
     RookieEnergyCapacitorBonus = 1822,
     RookieEnergyDamageBonus = 1823,
     Mass = 4,
+    WarpCapacitorNeed = 153,
     CapacitorNeed = 6,
     StructureHitPoints = 9,
     PowerOutput = 11,

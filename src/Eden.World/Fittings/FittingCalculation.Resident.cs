@@ -459,6 +459,7 @@ internal sealed partial record FittingCalculation
         var hullSkills = HullCatalog.Skills(catalog, ship.TypeId).Where(skill => !MiningDefinitions.OwnsYieldSkill(skill)).ToHashSet();
         var relevantSkills = PassiveModules
             .Skills.Concat(MissileDefinitions.Skills)
+            .Concat([Eden.Gameplay.Flight.WarpCapacitorRules.WarpDriveOperationSkill])
             .Concat(AdvancedWeaponRules.Skills)
             .Concat(modules.Any(m => m.GroupId == CommandBurstRules.Group) ? CommandBurstCatalog.Skills : [])
             .Concat(Eden.Gameplay.Exploration.ProbeScanRules.Skills)

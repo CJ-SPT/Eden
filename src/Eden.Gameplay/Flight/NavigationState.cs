@@ -71,6 +71,15 @@ public sealed class NavigationState
 
     public void CancelAlignment() => WarpDestination = null;
 
+    public void LimitWarpDistance(SpacePosition origin, double distance)
+    {
+        if (WarpDestination is not { } destination)
+        {
+            throw new InvalidOperationException("No pending warp destination.");
+        }
+        WarpDestination = origin + (destination - origin).Unit * distance;
+    }
+
     public bool StartWarp(long shipId, FlightProperties hull, SpacePosition origin, StaticSpaceObject body, double range, int stamp) =>
         StartWarpPoint(shipId, hull, origin, CelestialWarpPoint.Resolve(body, origin), body.Id, range, stamp);
 

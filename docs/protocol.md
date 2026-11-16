@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Warp capacitor payment](protocol/navigation.md#warp-capacitor-payment-november-16-2026)
+charges ordinary warps, applies Warp Drive Operation, and limits travel to available capacitor.
+
 [Aggression box indicators](protocol/combat.md#aggression-box-indicators--november-15-2026)
 restore offensive indicators for integrated NPC guns and physical missile attackers, with explicit lifecycle cleanup.
 

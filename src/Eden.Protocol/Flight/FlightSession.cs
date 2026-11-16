@@ -14,6 +14,7 @@ using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Repair;
 using Eden.Protocol.Combat;
+using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Targeting;
 
@@ -43,7 +44,8 @@ internal sealed partial class FlightSession(
     IPilotMissions? missions = null,
     IPilotCommandBursts? commandBursts = null,
     IDedComplexTravel? dedComplexes = null,
-    ICooperativeFleets? fleets = null
+    ICooperativeFleets? fleets = null,
+    IPilotWarpDrive? warpDrive = null
 ) : IDisposable
 {
     internal const int ArrivalDurationTicks = FlightTravel.ArrivalDurationTicks;
@@ -121,6 +123,7 @@ internal sealed partial class FlightSession(
     internal void RenameShip(string name) => Pilot = Pilot with { Ship = Pilot.Ship with { Name = name } };
 
     public List<StampedDestinyUpdate> Updates { get; } = [];
+    internal List<PilotNotification> NotificationsBeforeFlight { get; } = [];
     public bool Moving => _navigation.Direction is not null || _navigation.Warp is not null || _navigation.Velocity != SpacePosition.Zero;
     internal SpatialStatus SpatialStatus => space.SpatialStatus(Pilot.ShipId);
     public bool Cloaked => SpatialStatus.CloakModuleId != 0;
@@ -1189,6 +1192,24 @@ internal sealed partial class FlightSession(
                     ? dedComplexes.ActivateGate(Pilot.PilotId, target, coordinates!, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
                     : missions!.ActivateGate(Pilot.PilotId, target, coordinates!);
             _gateInventoryChanges.AddRange(activation.Items);
+        }
+        else if (warpDrive is not null)
+        {
+            long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+            try
+            {
+                var payment = warpDrive.Activate(Pilot.PilotId, Pilot.ShipId, Pilot.Position!.DistanceTo(navigation.WarpDestination!), now);
+                navigation.LimitWarpDistance(Pilot.Position!, payment.Distance);
+                NotificationsBeforeFlight.Add(
+                    new ModuleAttributesChanged([
+                        new(Pilot.PilotId, new DogmaItemKey.Item(Pilot.ShipId), DogmaAttributeId.CapacitorCharge, now, payment.Capacitor),
+                    ])
+                );
+            }
+            catch (InvalidDataException error)
+            {
+                return new PilotCallResult.Failure(error.Message);
+            }
         }
         _navigation = navigation;
         missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);

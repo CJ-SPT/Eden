@@ -254,6 +254,7 @@ public sealed class CapsuleerHandoffTests(ITestOutputHelper output)
             host.GetRequiredService<INpcEncounters>(),
             host.GetRequiredService<Eden.Gameplay.Loot.IWrecks>(),
             host.GetRequiredService<IPilotShipAppearance>(),
+            host.GetRequiredService<IPilotWarpDrive>(),
             presence: host.GetRequiredService<IHumanPresence>(),
             presentation: host.GetRequiredService<ICapsuleerPresentation>()
         );
