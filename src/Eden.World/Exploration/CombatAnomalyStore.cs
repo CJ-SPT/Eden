@@ -170,7 +170,12 @@ internal sealed partial class CombatAnomalyStore(
             }
             var system = catalog.FindSystem(systemId);
             var faction = system is null ? null : NpcRegions.Pirates(system.RegionId);
-            if (faction is null || _definitions.IsEmpty)
+            int wormholeClass =
+                WormholeRules.IsWormholeSystem(systemId) && system is not null
+                    ? (int)(catalog.Read(CatalogData.Client.Systems, (long)systemId)?.WormholeClassID ?? 0)
+                    : 0;
+            bool wormhole = WormholeRules.IsWormholeSystem(systemId) && wormholeClass is >= 1 and <= 6;
+            if ((!wormhole && faction is null) || _definitions.IsEmpty)
             {
                 _views[key] = new(version, provider.Identity.Generation, long.MaxValue, [], majorThreat, pirates);
                 return _views[key].Sites;
@@ -178,13 +183,16 @@ internal sealed partial class CombatAnomalyStore(
             double security = catalog.Read(CatalogData.Client.Systems, (long)systemId)?.SecurityStatus ?? 0.7;
             var eligible = _definitions
                 .Where(d =>
-                    (d.Faction == faction || d.Faction == NpcPirateFaction.RogueDrones)
-                    && (!d.RequiresMajorThreat || majorThreat)
-                    && (
-                        signature
-                            ? d.Difficulty <= ProbeScanRules.MaximumSignatureDifficulty
-                            : AnomalyEncounterRules.Allows(d.Name, security)
-                    )
+                    wormhole
+                        ? !signature && d.WormholeClass == wormholeClass
+                        : d.WormholeClass == 0
+                            && (d.Faction == faction || d.Faction == NpcPirateFaction.RogueDrones)
+                            && (!d.RequiresMajorThreat || majorThreat)
+                            && (
+                                signature
+                                    ? d.Difficulty <= ProbeScanRules.MaximumSignatureDifficulty
+                                    : AnomalyEncounterRules.Allows(d.Name, security)
+                            )
                 )
                 .OrderBy(d => d.DungeonId)
                 .ToArray();
@@ -192,6 +200,10 @@ internal sealed partial class CombatAnomalyStore(
             {
                 _views[key] = new(version, provider.Identity.Generation, long.MaxValue, [], majorThreat, pirates);
                 return _views[key].Sites;
+            }
+            if (wormhole && LiveWorld.Find(database.Path) is null)
+            {
+                throw new InvalidOperationException("Sleeper site operations require the resident world.");
             }
             using WorldActionScope transaction = new(database, new(systems: [systemId]));
             var world = transaction.World;

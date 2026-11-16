@@ -570,6 +570,20 @@ internal sealed partial record FittingCalculation
                 );
             }
         }
+        if (Eden.World.Exploration.WormholeEnvironmentStore.At(catalog, ship.Position) is { } wormhole)
+        {
+            static Eden.Gameplay.Exploration.WormholeEffectTarget Target(FittingLocation item) =>
+                new(item.Item.Id, item.GroupId, item.RequiredSkills);
+            modifiers.AddRange(
+                Eden.Gameplay.Exploration.WormholeEnvironmentRules.Modifiers(
+                    wormhole,
+                    ship.Id,
+                    modules.Select(Target).ToArray(),
+                    locations.Select(Target).ToArray(),
+                    ownerTargets.Select(Target).ToArray()
+                )
+            );
+        }
         var requested = modifiers
             .Select(m => m.Attribute)
             .Concat([DogmaAttributeId.ModuleRepairRate, DogmaAttributeId.ModuleRepairCostMultiplier])

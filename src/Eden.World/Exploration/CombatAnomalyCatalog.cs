@@ -25,6 +25,7 @@ internal sealed record CombatAnomalyDefinition(
 {
     internal ImmutableArray<AnomalySpawnAnchor> SpawnAnchors { get; init; } = [];
     internal ImmutableArray<AnomalyEncounterWave> VersionOneWaves { get; init; } = [];
+    internal int WormholeClass { get; init; }
 
     internal ImmutableArray<AnomalyEncounterWave> WavesFor(int version) =>
         version == 1 && !VersionOneWaves.IsDefaultOrEmpty ? VersionOneWaves : Waves;
@@ -171,6 +172,7 @@ internal static class CombatAnomalyCatalog
                 }
             );
         }
+        definitions.AddRange(SleeperSiteCatalog.Read(catalog));
         return definitions.ToImmutableArray();
     }
 

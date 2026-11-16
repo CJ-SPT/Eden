@@ -6,15 +6,17 @@ import re
 import sqlite3
 
 
-def export(catalog_path, output, encounters):
+def export(catalog_path, output, encounters, extra_types=()):
     root = pathlib.Path(__file__).resolve().parent.parent
     facts = json.loads(encounters.read_text(encoding='utf-8'))
     names = {e['name'] for e in facts['encounters']}
+    bindings = {int(key) for e in facts['encounters'] for key in e.get('dungeonVariants', {})}
     with sqlite3.connect(catalog_path.resolve().as_uri() + '?mode=ro', uri=True) as db:
         def record(dataset, key):
             row = db.execute('SELECT Data FROM SourceRecord WHERE Dataset=? AND Key=?', (dataset, str(key))).fetchone()
             return json.loads(row[0]) if row else None
         pending = {i for e in facts['encounters'] for v in e['variants'] for w in v for g in w['groups'] for i in g['types']}
+        pending.update(extra_types)
         reward_source = (root / 'src/Eden.Gameplay/Combat/NpcCommanderLootRules.cs').read_text(encoding='utf-8')
         pending.update(int(value) for value in re.findall(r'^    \w+ = (\d+)', reward_source, re.MULTILINE))
         pending.update((222, 230, 238, 185, 193, 201, 246, 250, 254, 210, 209, 203, 399, 10836, 10838,
@@ -22,10 +24,10 @@ def export(catalog_path, output, encounters):
         records = {}
         for key, raw in db.execute("SELECT Key,Data FROM SourceRecord WHERE Dataset='sde/dungeons'"):
             definition = json.loads(raw)
-            if definition.get('name', {}).get('en', '').replace('Blood Raider ', 'Blood ') not in names:
+            if definition.get('name', {}).get('en', '').replace('Blood Raider ', 'Blood ') not in names and int(key) not in bindings:
                 continue
             dungeon = record('client/dungeons', key)
-            if not dungeon or dungeon.get('entryTypeID') != 28356:
+            if not dungeon or dungeon.get('entryTypeID') not in (28356, 19728):
                 continue
             records['sde/dungeons', int(key)] = definition
             records['client/dungeons', int(key)] = dungeon

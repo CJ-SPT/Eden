@@ -75,3 +75,88 @@ FullyQualifiedName~Eden.Protocol.Tests.Exploration.Wormhole|FullyQualifiedName~E
 **Live acceptance:** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks:** Inspect native stability/age labels while rolling a hole, and scan the replacement.
+
+## Sleeper combat and system effects — November 16, 2026
+
+Ordinary C1–C6 systems now populate class-appropriate Sleeper combat anomalies. The 24 standard combat reports
+bind to native dungeon geometry and NPC types from build 3662168. Arrival starts the encounter; trigger kills and
+saved wave deadlines use the existing resident anomaly machinery. Completion, replacement, NPC destruction,
+wreck contents and salvaging share the resident transaction and checkpoint path. New Sleeper operations require
+the resident world. They do not introduce an offline SQL gameplay implementation.
+
+Sleepers use native Unknown faction 500021 and have no NPC bounty. Wrecks contain the NPC's reported blue-loot
+quantities. Salvaging selects from the fifteen classic Ancient Salvage materials using Eden's existing deterministic
+salvage selection and empty-result policy; retail salvage probabilities are not asserted. Catalog-authorized NPC
+buyers pay the four documented blue-loot prices: 200,000, 500,000, 1,500,000 and 5,000,000 ISK. This corrects the
+buyer's unit price without adding suppliers, asks or unauthorized buyers. Sales retain the ordinary tax, inventory,
+wallet and rejection rules.
+
+The six wormhole phenomena use all 36 native class-specific beacon programs from `mapSecondarySuns`,
+`typedogma` and `dogmaeffects`. The resident fitting graph applies their native selectors and source values to
+ships, modules, ammunition and drones. System modifiers are exempt from fitted-module stacking penalties.
+Native maximum-attribute clamps still apply. NPC attributes are unaffected. Moving between different environments
+invalidates the resident fit; coordinate changes inside the same system do not. Initial `GetAllInfo` carries the
+native `systemWideEffectsOnShip` dictionary, keyed by `(sourceItemID, sourceTypeID)` with sets of effect IDs.
+Arrival and exit emit deduplicated `OnSystemWideEffectStart` and `OnSystemWideEffectStop` triples. An empty
+initial dictionary does not discard the handler's pending exit notifications, matching the pinned client's behavior.
+
+### Sources and reproducibility
+
+[UniWiki wormhole sites](https://wiki.eveuniversity.org/Wormhole_sites) supplies the class/site index; each embedded
+report records its own article URL and revision. [Perimeter Ambush Point](https://wiki.eveuniversity.org/Perimeter_Ambush_Point)
+provides a checked example: the full encounter yields 8.6 million ISK in blue loot.
+[Sleepers](https://wiki.eveuniversity.org/Sleepers), [wormhole space](https://wiki.eveuniversity.org/Wormhole_space)
+and [Tech 3 production](https://wiki.eveuniversity.org/Tech_3_Production) describe the rewards and system effects.
+NPC drop quantities come from the [WHDBX Sleeper index](https://evewh.ru/sleepers/); each embedded entry records
+its detail URL. Index names are reconciled with native catalog identities because some detail-page headings are
+incorrect. No reference implementation code was copied.
+
+`Import-WormholeReports.py`, `Import-SleeperLoot.py` and `Export-WormholeCatalog.py` reproduce the reports,
+loot and bounded native test catalog. The report importer also retains guarded data/relic research and rejects
+conditional reports it cannot represent; these records are not admitted as combat anomalies. Capital/Drifter
+escalations and special wormhole classes are outside this combat population.
+
+Consulted local evejs `wormholeEnvironmentRuntime.js` (SHA-256
+`9B9BF08F13BB786E2FE31EA8093F327A53592FDF6DC9707E86267CEA0F3B7435`) and `systemWideEffectsSync.js`
+(`6428C1400F14BAE6ADAC2C6497BA785A151A07F5C549D4FDB1FC10E2AE5F9310`) for behavioral comparison.
+The original native archive hash is recorded above. The headless native test now also executes the actual
+`systemWideEffects.pyj` start/stop handlers with inert services, including duplicate and final-stop behavior.
+No client process, rendering or live gameplay is involved.
+
+### Validation
+
+**Automated validation:** Exact-method development checks preceded affected-class runs. Data-driven resident
+tests exercise all six classes through real fatal-damage settlement, every wave, blue loot, Ancient Salvage,
+completion, replacement and checkpoint/restart. Separate tests cover fixed-price redemption, unchanged rejected
+sales and reopened balances. All 36 environment programs are checked against native values and attribute clamps,
+including effect removal and checkpoint/restart. Warm site and coordinate reads assert zero SQL commands,
+connections and fitting recalculations. The native catalog audit found exactly 36 effect types across 1,038 systems,
+all using supported selector and operation forms. The catalog fixture reproduced byte for byte.
+
+The affected filter passed **792 cases in 8 minutes 53 seconds** after fixing an extra catalog read during absent-system
+scans. The exact scanner regression passed in **13.43 seconds** (feature build **7.01 seconds**). Three unrelated
+checks failed identically on the preceding pushed commit `3e9de794` and were excluded from the final affected run:
+`ModuleAndBrainReadsShareTheCommittedGraphAndReturnIndependentAttributes` expects at most nine SQL commands
+but observes ten; `AllFiveStaticProfilesHaveImplementedHeatAndRetainExplicitHullDependencies` expects type 49713
+to be rejected although it is admitted; `MaintenanceUsesPricePriorityAndRejectsDuplicateConsumptionAfterRollback`
+leaves its deliberate failing SQL trigger installed and fails during teardown. The two earlier affected sequences were
+interrupted after detecting these failures; they are not reported as successful runs. Baseline checks ran in a separate
+detached worktree, with no changes to the baseline source.
+
+Affected filter (excluding the three exact method names above):
+
+```text
+FullyQualifiedName~Wormhole|FullyQualifiedName~SleeperSiteTests|FullyQualifiedName~CombatAnomaly|FullyQualifiedName~AnomalySpawnRule|FullyQualifiedName~AnomalyWarpIn|FullyQualifiedName~DogmaGraphTests|FullyQualifiedName~PassiveFittingTests|FullyQualifiedName~FittingSnapshotTests|FullyQualifiedName~CombatDroneTests|FullyQualifiedName~DroneHullTests|FullyQualifiedName~Heat|FullyQualifiedName~OverloadFitting|FullyQualifiedName~NpcSupplyTests|FullyQualifiedName~NpcRestingOrderTests|FullyQualifiedName~Eden.Protocol.Tests.Information
+```
+
+Tool restore, solution restore/build, both Python policy suites (8 catalog cases in 1.347 seconds and 9 formatting cases
+in 0.021 seconds), native controller/system-effect checks, formatting (2,350 files), line-width, documentation links and diff checks
+passed. After placing payloads and catalog models in `Eden.Data`, the final solution build passed with zero
+warnings/errors in **88.82 seconds**. The focused `SleeperSiteTests|WormholeEnvironmentTests` filter passed
+**11 cases in 41.00 seconds** (feature build **18.30 seconds**). These cases cover the final source and resource layout.
+No full .NET regression suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Inspect a Sleeper site and native system-effect icons, and redeem blue loot at an
+authorized NPC buyer.

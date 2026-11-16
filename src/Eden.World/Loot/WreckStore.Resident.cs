@@ -205,6 +205,13 @@ internal sealed partial class WreckStore
 
     private static IReadOnlyList<NpcLootDrop> Drops(WorldAction world, CatalogDbContext catalog, WorldNpc npc)
     {
+        if (
+            world is Eden.World.Runtime.Economy.EconomyTransaction
+            && Eden.World.Exploration.SleeperLootCatalog.Drops(npc.TypeId) is { } sleeper
+        )
+        {
+            return sleeper;
+        }
         if (NpcPopulationRules.IsMining(npc.Role))
         {
             var cargo = world.Set<WorldNpcMiningCargo>().Where(c => c.NpcId == npc.Id && c.Quantity > 0).ToArray();

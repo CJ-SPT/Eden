@@ -85,7 +85,7 @@ internal sealed partial class CombatAnomalyStore
         {
             Invalidate(world, -1);
             uint roll = NpcSpawnRules.Seed(site.SystemId, site.Id) % 100;
-            if (roll < DedEscalationRules.ChancePercent)
+            if (definition.WormholeClass == 0 && roll < DedEscalationRules.ChancePercent)
             {
                 GrantEscalation(world, catalog, site, pilot, DedEscalationRules.Destination(definition.Name, roll), now);
             }

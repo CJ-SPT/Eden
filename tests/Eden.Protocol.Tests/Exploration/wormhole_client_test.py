@@ -14,7 +14,8 @@ if not archive.exists():
 assert hashlib.sha256(archive.read_bytes()).hexdigest() == '37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368'
 with zipfile.ZipFile(archive) as source:
     blob = zlib.decompress(source.read('evegraphics/controllers/clientControllerRegistry.pyj'))
-worker = 'BLOB = %r\n' % blob
+    effects = zlib.decompress(source.read('eve/client/script/parklife/systemWideEffects.pyj'))
+worker = 'BLOB = %r\nEFFECTS = %r\n' % (blob, effects)
 worker += r'''
 import marshal
 
@@ -49,6 +50,24 @@ for size, visual in [(1.0, 1.0), (.7, 2.0), (.4, 3.0)]:
             assert values['WH_ShipMass'] == mass
             assert values['WH_State'] == 1
 print('48 pinned wormhole controller cases passed')
+functions = {c.co_name: (lambda: None).__class__(c, globals())
+             for c in walk(marshal.loads(EFFECTS[8:])) if c.co_name in ['OnSystemWideEffectStart', 'OnSystemWideEffectStop']}
+state = Stub()
+state._systemWideEffects = {}
+state.hasAddedEffect = lambda source, kind: (source, kind) in state._systemWideEffects
+state.hasNoEffects = lambda source, kind: not state._systemWideEffects.get((source, kind))
+start = functions['OnSystemWideEffectStart']
+stop = functions['OnSystemWideEffectStop']
+start(state, 3992, 8810031000001, 30844)
+start(state, 3992, 8810031000001, 30844)
+start(state, 3995, 8810031000001, 30844)
+assert state._systemWideEffects == {(8810031000001, 30844): set([3992, 3995])}
+stop(state, 3992, 8810031000001, 30844)
+assert state._systemWideEffects == {(8810031000001, 30844): set([3995])}
+stop(state, 3995, 8810031000001, 30844)
+stop(state, 3995, 8810031000001, 30844)
+assert state._systemWideEffects == {}
+print('Pinned system-wide effect start, duplicate, partial-stop and final-stop cases passed')
 '''
 with os.add_dll_directory(str(root / 'tq/bin64')):
     runtime = ctypes.CDLL(str(root / 'tq/bin64/python27.dll'))

@@ -9,6 +9,7 @@ public enum SalvageFamily
     RogueDrone,
     BloodRaider,
     Sansha,
+    Sleeper,
 }
 
 public enum SalvageMaterial
@@ -51,6 +52,21 @@ public enum SalvageMaterial
     ConductiveThermoplastic = 25623,
     IntactArmorPlates = 25624,
     EnhancedWardConsole = 25625,
+    FusedNanomechanicalEngines = 30018,
+    PowderedC540Graphite = 30019,
+    ModifiedFluidRouter = 30021,
+    HeuristicSelfassemblers = 30022,
+    CartesianTemporalCoordinator = 30024,
+    EmergentCombatAnalyzer = 30248,
+    NeurovisualInputMatrix = 30251,
+    ThermoelectricCatalysts = 30252,
+    ElectromechanicalHullSheeting = 30254,
+    ResonanceCalibrationMatrix = 30258,
+    MeltedNanoribbons = 30259,
+    JumpDriveControlNexus = 30268,
+    DefensiveControlNode = 30269,
+    CentralSystemController = 30270,
+    EmergentCombatIntelligence = 30271,
 }
 
 public static class SalvageLootRules
@@ -64,7 +80,26 @@ public static class SalvageLootRules
     public const int LargeMaximum = 10;
 
     public static IReadOnlyList<SalvageMaterial> Pool(SalvageFamily family, bool advanced = false) =>
-        advanced
+        family == SalvageFamily.Sleeper
+            ?
+            [
+                SalvageMaterial.FusedNanomechanicalEngines,
+                SalvageMaterial.PowderedC540Graphite,
+                SalvageMaterial.ModifiedFluidRouter,
+                SalvageMaterial.HeuristicSelfassemblers,
+                SalvageMaterial.CartesianTemporalCoordinator,
+                SalvageMaterial.EmergentCombatAnalyzer,
+                SalvageMaterial.NeurovisualInputMatrix,
+                SalvageMaterial.ThermoelectricCatalysts,
+                SalvageMaterial.ElectromechanicalHullSheeting,
+                SalvageMaterial.ResonanceCalibrationMatrix,
+                SalvageMaterial.MeltedNanoribbons,
+                SalvageMaterial.JumpDriveControlNexus,
+                SalvageMaterial.DefensiveControlNode,
+                SalvageMaterial.CentralSystemController,
+                SalvageMaterial.EmergentCombatIntelligence,
+            ]
+        : advanced
             ? family switch
             {
                 SalvageFamily.Amarr =>
@@ -135,81 +170,81 @@ public static class SalvageLootRules
                 ],
                 _ => [],
             }
-            : family switch
-            {
-                SalvageFamily.Amarr or SalvageFamily.BloodRaider or SalvageFamily.Sansha =>
-                [
-                    SalvageMaterial.ArmorPlates,
-                    SalvageMaterial.CharredMicroCircuit,
-                    SalvageMaterial.BurnedLogicCircuit,
-                    SalvageMaterial.ContaminatedNaniteCompound,
-                    SalvageMaterial.DefectiveCurrentPump,
-                    SalvageMaterial.FriedInterfaceCircuit,
-                    SalvageMaterial.MeltedCapacitorConsole,
-                    SalvageMaterial.TangledPowerConduit,
-                    SalvageMaterial.TrippedPowerCircuit,
-                ],
-                SalvageFamily.Minmatar =>
-                [
-                    SalvageMaterial.AlloyedTritaniumBar,
-                    SalvageMaterial.ArmorPlates,
-                    SalvageMaterial.CharredMicroCircuit,
-                    SalvageMaterial.BurnedLogicCircuit,
-                    SalvageMaterial.ContaminatedNaniteCompound,
-                    SalvageMaterial.FriedInterfaceCircuit,
-                    SalvageMaterial.MalfunctioningShieldEmitter,
-                    SalvageMaterial.SmashedTriggerUnit,
-                    SalvageMaterial.ThrusterConsole,
-                    SalvageMaterial.TrippedPowerCircuit,
-                ],
-                SalvageFamily.Caldari =>
-                [
-                    SalvageMaterial.CharredMicroCircuit,
-                    SalvageMaterial.BurnedLogicCircuit,
-                    SalvageMaterial.ConductivePolymer,
-                    SalvageMaterial.DamagedArtificialNeuralNetwork,
-                    SalvageMaterial.FriedInterfaceCircuit,
-                    SalvageMaterial.MalfunctioningShieldEmitter,
-                    SalvageMaterial.ScorchedTelemetryProcessor,
-                    SalvageMaterial.TrippedPowerCircuit,
-                    SalvageMaterial.WardConsole,
-                ],
-                SalvageFamily.Gallente =>
-                [
-                    SalvageMaterial.ArmorPlates,
-                    SalvageMaterial.BrokenDroneTransceiver,
-                    SalvageMaterial.CharredMicroCircuit,
-                    SalvageMaterial.BurnedLogicCircuit,
-                    SalvageMaterial.ConductivePolymer,
-                    SalvageMaterial.ContaminatedLorentzFluid,
-                    SalvageMaterial.ContaminatedNaniteCompound,
-                    SalvageMaterial.DamagedArtificialNeuralNetwork,
-                    SalvageMaterial.FriedInterfaceCircuit,
-                    SalvageMaterial.TrippedPowerCircuit,
-                ],
-                SalvageFamily.RogueDrone =>
-                [
-                    SalvageMaterial.AlloyedTritaniumBar,
-                    SalvageMaterial.ArmorPlates,
-                    SalvageMaterial.BrokenDroneTransceiver,
-                    SalvageMaterial.CharredMicroCircuit,
-                    SalvageMaterial.BurnedLogicCircuit,
-                    SalvageMaterial.ConductivePolymer,
-                    SalvageMaterial.ContaminatedLorentzFluid,
-                    SalvageMaterial.ContaminatedNaniteCompound,
-                    SalvageMaterial.DefectiveCurrentPump,
-                    SalvageMaterial.FriedInterfaceCircuit,
-                    SalvageMaterial.MalfunctioningShieldEmitter,
-                    SalvageMaterial.MeltedCapacitorConsole,
-                    SalvageMaterial.ScorchedTelemetryProcessor,
-                    SalvageMaterial.SmashedTriggerUnit,
-                    SalvageMaterial.TangledPowerConduit,
-                    SalvageMaterial.ThrusterConsole,
-                    SalvageMaterial.TrippedPowerCircuit,
-                    SalvageMaterial.WardConsole,
-                ],
-                _ => [],
-            };
+        : family switch
+        {
+            SalvageFamily.Amarr or SalvageFamily.BloodRaider or SalvageFamily.Sansha =>
+            [
+                SalvageMaterial.ArmorPlates,
+                SalvageMaterial.CharredMicroCircuit,
+                SalvageMaterial.BurnedLogicCircuit,
+                SalvageMaterial.ContaminatedNaniteCompound,
+                SalvageMaterial.DefectiveCurrentPump,
+                SalvageMaterial.FriedInterfaceCircuit,
+                SalvageMaterial.MeltedCapacitorConsole,
+                SalvageMaterial.TangledPowerConduit,
+                SalvageMaterial.TrippedPowerCircuit,
+            ],
+            SalvageFamily.Minmatar =>
+            [
+                SalvageMaterial.AlloyedTritaniumBar,
+                SalvageMaterial.ArmorPlates,
+                SalvageMaterial.CharredMicroCircuit,
+                SalvageMaterial.BurnedLogicCircuit,
+                SalvageMaterial.ContaminatedNaniteCompound,
+                SalvageMaterial.FriedInterfaceCircuit,
+                SalvageMaterial.MalfunctioningShieldEmitter,
+                SalvageMaterial.SmashedTriggerUnit,
+                SalvageMaterial.ThrusterConsole,
+                SalvageMaterial.TrippedPowerCircuit,
+            ],
+            SalvageFamily.Caldari =>
+            [
+                SalvageMaterial.CharredMicroCircuit,
+                SalvageMaterial.BurnedLogicCircuit,
+                SalvageMaterial.ConductivePolymer,
+                SalvageMaterial.DamagedArtificialNeuralNetwork,
+                SalvageMaterial.FriedInterfaceCircuit,
+                SalvageMaterial.MalfunctioningShieldEmitter,
+                SalvageMaterial.ScorchedTelemetryProcessor,
+                SalvageMaterial.TrippedPowerCircuit,
+                SalvageMaterial.WardConsole,
+            ],
+            SalvageFamily.Gallente =>
+            [
+                SalvageMaterial.ArmorPlates,
+                SalvageMaterial.BrokenDroneTransceiver,
+                SalvageMaterial.CharredMicroCircuit,
+                SalvageMaterial.BurnedLogicCircuit,
+                SalvageMaterial.ConductivePolymer,
+                SalvageMaterial.ContaminatedLorentzFluid,
+                SalvageMaterial.ContaminatedNaniteCompound,
+                SalvageMaterial.DamagedArtificialNeuralNetwork,
+                SalvageMaterial.FriedInterfaceCircuit,
+                SalvageMaterial.TrippedPowerCircuit,
+            ],
+            SalvageFamily.RogueDrone =>
+            [
+                SalvageMaterial.AlloyedTritaniumBar,
+                SalvageMaterial.ArmorPlates,
+                SalvageMaterial.BrokenDroneTransceiver,
+                SalvageMaterial.CharredMicroCircuit,
+                SalvageMaterial.BurnedLogicCircuit,
+                SalvageMaterial.ConductivePolymer,
+                SalvageMaterial.ContaminatedLorentzFluid,
+                SalvageMaterial.ContaminatedNaniteCompound,
+                SalvageMaterial.DefectiveCurrentPump,
+                SalvageMaterial.FriedInterfaceCircuit,
+                SalvageMaterial.MalfunctioningShieldEmitter,
+                SalvageMaterial.MeltedCapacitorConsole,
+                SalvageMaterial.ScorchedTelemetryProcessor,
+                SalvageMaterial.SmashedTriggerUnit,
+                SalvageMaterial.TangledPowerConduit,
+                SalvageMaterial.ThrusterConsole,
+                SalvageMaterial.TrippedPowerCircuit,
+                SalvageMaterial.WardConsole,
+            ],
+            _ => [],
+        };
 
     public static IReadOnlyList<ScanItem> Roll(SalvageFamily family, bool advanced, double difficulty, uint seed)
     {

@@ -17,7 +17,11 @@ public sealed record AnomalyEncounterReport(
     ImmutableDictionary<int, int>? DungeonVariants = null,
     string? LayoutSource = null,
     ImmutableDictionary<int, int>? VersionOneDungeonVariants = null
-);
+)
+{
+    public int WormholeClass { get; init; }
+    public WormholeSiteKind WormholeKind { get; init; }
+}
 
 public sealed record AnomalySpawnMember(int TypeId, int Group, bool Trigger, bool Sentry);
 

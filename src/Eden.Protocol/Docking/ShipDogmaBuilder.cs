@@ -39,7 +39,8 @@ internal sealed class ShipDogmaBuilder(
     IPilotDrones? droneStore = null,
     IPilotOverloading? overload = null,
     IPilotModuleConditions? conditions = null,
-    IPilotShipHeat? heat = null
+    IPilotShipHeat? heat = null,
+    Eden.Protocol.Exploration.WormholeEnvironmentHandler? environments = null
 )
 {
     private static InventoryRow Item(InventoryItem item) => InventoryRow.From(item);
@@ -253,7 +254,8 @@ internal sealed class ShipDogmaBuilder(
             shipInfo,
             magazines.ToDictionary(m => new DogmaItemKey.Charge(m.ShipId, m.FlagId, m.TypeId), m => magazinesWire.Prime(pilot.PilotId, m)),
             PrimePilot(pilot),
-            brain.Read(pilot.PilotId, pilot.ShipId)
+            brain.Read(pilot.PilotId, pilot.ShipId),
+            environments?.Read(pilot)
         );
     }
 

@@ -148,7 +148,8 @@ internal sealed record DogmaAllInfo(
     IReadOnlyDictionary<long, DogmaItemInfo<double>> ShipInfo,
     IReadOnlyDictionary<DogmaItemKey.Charge, DogmaItemInfo<double>> Charges,
     DogmaItemInfo<int> Character,
-    PilotBrainState Brain
+    PilotBrainState Brain,
+    IReadOnlyList<Eden.Gameplay.Exploration.WormholeSystemEffect>? SystemEffects = null
 ) : BlueModel
 {
     public override object ToBlue() =>
@@ -175,7 +176,9 @@ internal sealed record DogmaAllInfo(
                     Brain,
                 },
                 ["shipModifiedCharAttribs"] = null,
-                ["systemWideEffectsOnShip"] = null,
+                ["systemWideEffectsOnShip"] = SystemEffects is { Count: > 0 }
+                    ? new Eden.Protocol.Exploration.WormholeEffectsWire(SystemEffects)
+                    : null,
             }
         );
 }

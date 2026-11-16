@@ -24,7 +24,8 @@ internal static class SalvagePersistence
         }
         string name = catalog.RequireItem(wreck.TypeId).Name;
         SalvageFamily? family =
-            name.Contains("Blood", StringComparison.OrdinalIgnoreCase) ? SalvageFamily.BloodRaider
+            name.Contains("Sleeper", StringComparison.OrdinalIgnoreCase) ? SalvageFamily.Sleeper
+            : name.Contains("Blood", StringComparison.OrdinalIgnoreCase) ? SalvageFamily.BloodRaider
             : name.Contains("Sansha", StringComparison.OrdinalIgnoreCase) ? SalvageFamily.Sansha
             : name.Contains("Guristas", StringComparison.OrdinalIgnoreCase) || name.Contains("Caldari", StringComparison.OrdinalIgnoreCase)
                 ? SalvageFamily.Caldari

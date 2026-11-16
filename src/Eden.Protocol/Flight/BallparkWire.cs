@@ -208,6 +208,13 @@ internal sealed record NpcSlimItem(NpcContact Npc) : SlimItem
         // Native UI labels need Python unicode; UTF-8 bytes corrupt the diamond fleet marker.
         fields["name"] = new BlueUnicode(Npc.Name);
         fields["corpID"] = Npc.CorporationId;
+        if (
+            Npc.FactionId == Eden.Gameplay.Exploration.SleeperRules.FactionId
+            && Npc.CorporationId == Eden.Gameplay.Exploration.SleeperRules.SystemOwner
+        )
+        {
+            fields["corpID"] = null;
+        }
         fields["charID"] = null;
         fields["modules"] = new List<object?>();
         // Build 3662168's NPC bounty display normally reads catalog dogma.
