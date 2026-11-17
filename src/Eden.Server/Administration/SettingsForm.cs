@@ -81,6 +81,8 @@ public sealed class SettingsForm
     public bool AnomalyRatting { get; set; }
 
     public bool RoamingPvp { get; set; }
+    public bool RoamingGangs { get; set; }
+    public int RoamingGangSize { get; set; }
     public int RoamPercent { get; set; }
     public int GeneratedCombatPercent { get; set; }
 
@@ -321,6 +323,8 @@ public sealed class SettingsForm
             BeltRatting = settings.Capsuleers.BeltRatting,
             AnomalyRatting = settings.Capsuleers.AnomalyRatting,
             RoamingPvp = settings.Capsuleers.RoamingPvp,
+            RoamingGangs = settings.Capsuleers.RoamingGangs,
+            RoamingGangSize = settings.Capsuleers.RoamingGangSize,
             RoamPercent = settings.Capsuleers.RoamPercent,
             GeneratedCombatPercent = settings.Capsuleers.GeneratedCombatPercent,
             GateCamps = settings.Capsuleers.GateCamps,
@@ -394,6 +398,8 @@ public sealed class SettingsForm
                 BeltRatting = BeltRatting,
                 AnomalyRatting = AnomalyRatting,
                 RoamingPvp = RoamingPvp,
+                RoamingGangs = RoamingGangs,
+                RoamingGangSize = RoamingGangSize,
                 RoamPercent = RoamPercent,
                 GeneratedCombatPercent = GeneratedCombatPercent,
                 GateCamps = GateCamps,

@@ -27,6 +27,7 @@ internal sealed class CapsuleerOperation(
     internal bool MarketChanged { get; set; }
     internal bool TravelChanged { get; set; }
     internal bool HasWorld => _action is not null;
+    internal List<HaulerCheckpoint> GangEnrollments { get; } = [];
 
     internal WorldAction World
     {
@@ -90,6 +91,23 @@ internal sealed class CapsuleerOperation(
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.commitPublication");
         var live = LiveWorld.Find(database.Path);
+        if (
+            hauler is not null
+            && live?.HaulerCheckpoints.GetValueOrDefault(hauler.PilotId)?.Work.Gang is { } committedGang
+            && (
+                hauler.Work.Gang is null
+                || hauler.Work.Gang.Id == committedGang.Id
+                    && hauler.Work.Gang.Sequence == committedGang.Sequence
+                    && hauler.Work.Gang.Revision < committedGang.Revision
+            )
+        )
+        {
+            // A paused or sampled worker may still hold an earlier command revision.
+            hauler = hauler with
+            {
+                Work = hauler.Work with { Gang = committedGang },
+            };
+        }
         if (live?.CapsuleerJobs.TryGetValue(expected.PilotId, out var current) == true && current != expected)
         {
             throw new InvalidOperationException("A stale capsuleer job cannot commit.");
@@ -132,6 +150,28 @@ internal sealed class CapsuleerOperation(
         }
         if (live is not null)
         {
+            // Enrollment and shared command revisions publish only after the owning action commits.
+            // The existing checkpoint capture persists these immutable records in the same generation.
+            foreach (var enrollment in GangEnrollments)
+            {
+                live.HaulerCheckpoints[enrollment.PilotId] = enrollment;
+            }
+            if (hauler?.Work.Gang is { } gang)
+            {
+                foreach (var member in gang.Members)
+                {
+                    if (
+                        live.HaulerCheckpoints.GetValueOrDefault(member.PilotId) is { } checkpoint
+                        && checkpoint.Work.Gang is { } previous
+                        && previous.Id == gang.Id
+                        && previous.Sequence == gang.Sequence
+                        && previous.Revision < gang.Revision
+                    )
+                    {
+                        live.HaulerCheckpoints[member.PilotId] = checkpoint with { Work = checkpoint.Work with { Gang = gang } };
+                    }
+                }
+            }
             if (miner is not null)
             {
                 live.MinerCheckpoints[miner.PilotId] = miner;

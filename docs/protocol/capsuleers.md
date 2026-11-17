@@ -2,6 +2,100 @@
 
 [Protocol index](../protocol.md)
 
+## Smarter pilots and persistent roaming gangs — November 17, 2026
+
+Eligible nullsec pilots can form persistent hunting gangs from three to six existing, fitted ships. The default size
+is four; the existing roaming chance controls formation. The saved command contains a home, a connected route of up
+to three nullsec jumps, an endpoint, leader, hull-specific roster and roles, formation and return deadlines, current
+phase, and an expiring target report. Formation requires a usable damage source, sufficient health, and a fitted
+secondary tackler as well as a scout. It excludes freight deliveries, shopping trips and suspended pilots. Generated
+pilots from NPC corporations can cooperate locally; player corporation/alliance affiliations remain compatible.
+No ships, modules, ammunition, wallets or replacement grants are created by gang formation.
+
+The scout leaves eight seconds ahead of the main body after a thirty-second formation. The main body regroups at
+outbound gates, with a two-minute rendezvous limit. Members reuse ordinary gate travel, gate protection, hunting,
+locks, legality, weapon payments and loss settlement. They share a route and recent reports rather than teleporting.
+Reports expire after twelve human-active seconds and identify one system and grid. Scouts report contacts without
+initiating attacks; the leader and followers use those reports when selecting a primary. Each attacker must still
+see and legally target the victim. A gang waits for surviving members at the endpoint and returns home. Ship loss
+removes that hull from the active roster and elects a surviving leader; insufficient strength, a failed rendezvous,
+retreat, or the ten-minute sortie deadline orders a return. Arrivals use a short operational turnaround instead of
+civilian layovers; recovered members rest for two minutes. Replacement purchasing and regional campaigns remain later work.
+
+Individual hunting decisions now consider visible hull-class threat, nearby allies, the pilot's own available weapons,
+range, motion and estimated damage application. Corporation, alliance and camp affiliations identify visible opposing
+groups; unrelated neutrals are assessed separately. An eight-second commitment and score tolerance reduce unnecessary
+target switching. Enemy hull size provides an uncertain signature estimate; hidden enemy fits, resources and destinations
+are not inspected. Kiting and support roles retain weapon range instead of always closing to their own scrambler.
+Tackle and brawling roles close within tackle range. Propulsion pulses outside the desired range band while retaining
+capacitor reserves; an exhausted capacitor-dependent fit withdraws. Camps compare visible hull threat rather than counting
+all armed hulls equally. New generated Merlins also receive catalog-available starter propulsion, shield repair and damage
+control through the normal validated blueprint path. Existing owned fits are retained.
+
+Gang commands are immutable typed Gameplay records inside the existing resident hauler checkpoints. Membership and command
+revisions publish with the successful owning action, and stale worker snapshots cannot replace a newer command. Failed or
+stale actions publish no enrollment. The existing capture/projection path saves the roster, command, each ship's navigation,
+health, paid deadlines and job together. No new SQL gameplay path, offline gang implementation or schema table is added.
+
+Active gang members can continue through unoccupied systems on the existing bounded queue while any human has selected a
+pilot. Ordinary civilian population retains its occupied-system policy. Gang jobs are admitted again after a restart even
+when their current system is unoccupied. The shared human-active clock pauses while nobody is selected and while stopped;
+there is no offline sortie advancement or reward replay. Canonical autonomous contacts feed the ordinary combat-presence
+boundary independently of native scene materialization, preserving warp, arrival, jump, cloak and suspension protection.
+Resident lookups sample at most 32 local identities and return at most twelve contacts. Ordinary target and observer reads
+never reconstruct a fit or open a world database connection once warmed.
+
+The gameplay references are [EVE University solo PvP](https://wiki.eveuniversity.org/Solo_PvP) and
+[fleet command](https://wiki.eveuniversity.org/Fleet_Command_Guide). These explain range control, scouting, common objectives,
+primary targets and succession; gang sizes, estimates and timings above are Eden policies for pinned client build 3662168.
+Movement continues through Eden's existing Follow/Orbit/gate owners, with the
+[Carbon Ball.cpp reference at 27ee40b38a563d29054b32f64c3ebc87fabaec1f](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ball.cpp).
+The local `evejs/server/src/space/npc/npcBehaviorLoop.js` target-switch cooldown and explicit movement orders were also
+reviewed as behavioral references. That local snapshot has no Git metadata; its SHA-256 is
+`21ad46ab54d10507b6811c2ff14a49b0e0181d5aa38a1cccfcee0b97f6da843b`. No reference implementation code was copied.
+
+**Automated validation.** Tool restore and isolated solution restore passed. The final solution build passed with zero
+warnings/errors in 12.97 seconds. The final affected .NET filter below passed all **101 cases in 46 seconds** (48.59 seconds
+including runner startup). Its nine new cases cover target threat/application and commitment, role range and propulsion,
+resource exhaustion, settings, reports, loss succession, real paid unobserved combat, gang formation and unobserved travel,
+checkpoint/restart return, real hull destruction, stale/abandoned publication, and the last-human pause. Warm unobserved
+lock/tackle/damage cycles and shared command publication retain zero SQL commands, connections and fitting calculations.
+Both Python policy suites passed (eight catalog cases in 1.066 seconds and nine formatting cases in 0.015 seconds).
+Formatting and local documentation links were verified. The full .NET suite was not requested or run.
+
+Final filter:
+`FullyQualifiedName~PvpTacticsTests|FullyQualifiedName~RoamingGangTests|FullyQualifiedName~CapsuleerDefenseFrameTests|FullyQualifiedName~CapsuleerDefenseTests|FullyQualifiedName~CapsuleerDefenseModuleTests|FullyQualifiedName~CapsuleerDefenseLifecycleTests|FullyQualifiedName~PatrolTests|FullyQualifiedName~GateCampTests|FullyQualifiedName~WorldSettingsPageTests|FullyQualifiedName~GameplayDependenciesTests|FullyQualifiedName~DataModelOwnershipTests`.
+
+Before the neutral-affiliation correction, the broader affected filter completed **681 passes, 21 failures and one skip
+in 7 minutes 16 seconds**. All five added failures were the existing armed-patrol frame cases: refusing the whole neutral
+field led those artificially relocated pilots into a return path with no local home station. The affiliation correction
+restored their intended combat workload; all five passed in the final run without changing their assertions. All sixteen
+other failures reproduced with the same assertions on unchanged starting revision `fa2e1c6e`. They comprise two allocation
+limits, population suspension, residential visits, two mining restart comparisons, two old SQL resupply command counts,
+two receiving-only gate fixtures, two disconnected founder projections, two belt-activity sovereignty reads, one overpriced
+shopping case, and the fatal-shot session fixture's resident Abyssal requirement. Baseline comparisons selected 26 cases;
+sixteen failed and ten passed. Those existing fixtures and features were not changed for this milestone. The final focused
+run does not claim the broader suite is green.
+
+Broader filter:
+`FullyQualifiedName~Eden.Protocol.Tests.Capsuleers|FullyQualifiedName~TackleTests|FullyQualifiedName~TargetingTests|FullyQualifiedName~MissileCombatTests|FullyQualifiedName~PilotCombatTests|FullyQualifiedName~PilotDroneTests|FullyQualifiedName~FlightSessionTests|FullyQualifiedName~GameplayDependenciesTests|FullyQualifiedName~DataModelOwnershipTests|FullyQualifiedName~WorldSettingsPageTests|FullyQualifiedName~AdministrationTests`.
+
+The existing complete combat-frame workload retains every expected shooter and zero warmed SQL/connection/fitting budgets.
+Matched inputs produced the following baseline/final p95 frame times. Concurrent test load differed, so these samples are
+validation evidence, not an optimization or server-capacity claim. Checkpoint costs are measured separately.
+
+| Pilots / observers | Starting revision p95 | Final p95 | Final checkpoint capture / projection / write |
+| --- | --- | --- | --- |
+| 10 / 2 | 21.00 ms | 21.22 ms | 0.59 / 12.56 / 117.56 ms |
+| 50 / 2 | 31.57 ms | 21.22 ms | 0.37 / 12.20 / 14.51 ms |
+| 50 / 4 | 41.40 ms | 23.83 ms | 0.40 / 10.13 / 14.02 ms |
+| 100 / 2 | 61.82 ms | 40.88 ms | 0.47 / 22.62 / 14.60 ms |
+| 100 / 4 | 71.85 ms | 39.52 ms | 0.40 / 20.40 / 18.43 ms |
+
+**Live acceptance.** Not performed; agent client testing is disabled. Native rendering and gameplay feel remain unverified.
+
+**Optional maintainer checks.** Observe a gang departure and regroup, and assess a kiter/tackler encounter in the native client.
+
 ## Nullsec transit encounters
 
 On revision `b3f052d2`, a pilot reported a Sabre and Merlins leaving L3-I3K through the K-L690 gate.

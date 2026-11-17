@@ -6,6 +6,16 @@ namespace Eden.World.Capsuleers;
 
 internal static partial class CapsuleerTrafficRoutes
 {
+    internal static CapsuleerTrafficRoute? Roam(CatalogDbContext catalog, int station, long seed) =>
+        catalog
+            .Definition(s_journeys, station)
+            .Where(route =>
+                route.Systems.Length is > 1 and <= RoamingGangRules.MaximumJumps + 1
+                && route.Systems.All(system => catalog.Definitions.SystemSecurity.GetValueOrDefault(system, 1) <= 0)
+            )
+            .OrderBy(route => TravelerRoutineRules.Mix((ulong)route.DestinationStationId ^ (ulong)seed))
+            .FirstOrDefault();
+
     private static readonly CatalogDefinition<CapsuleerTrafficRoute[]> s_journeys = new(
         "capsuleer-destination-journeys",
         LoadJourneys,

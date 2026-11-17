@@ -109,7 +109,10 @@ internal sealed partial class CapsuleerHauler(
     private bool _background;
 
     internal bool RequiresDetail =>
-        (_work ?? Live?.HaulerCheckpoints.GetValueOrDefault(pilotId)?.Work) is { Defense: not null } or { Ratting: not null }
+        (_work ?? Live?.HaulerCheckpoints.GetValueOrDefault(pilotId)?.Work)
+            is { Defense: not null }
+                or { Ratting: not null }
+                or { Gang.Phase: RoamingGangPhase.Forming or RoamingGangPhase.Hunting or RoamingGangPhase.Returning }
         || _incoming.Length != 0
         || _warpBlocked
         || Volatile.Read(ref _threatenedShip) != 0;
@@ -161,6 +164,10 @@ internal sealed partial class CapsuleerHauler(
     internal HaulerObservation? Read(bool includeHealth = true)
     {
         EnsureCurrentHull();
+        if (_work is not null)
+        {
+            SynchronizeGang();
+        }
         return _pilot is null ? null : Observation(includeHealth);
     }
 
@@ -349,6 +356,7 @@ internal sealed partial class CapsuleerHauler(
                 Load();
             }
         }
+        SynchronizeGang(reconcile: true);
         _background = background && !RequiresDetail;
         if (!_background && Work.Activity != HaulerActivity.Inbound)
         {
@@ -384,7 +392,8 @@ internal sealed partial class CapsuleerHauler(
                 _obstacles,
                 Work.Retreating,
                 Work.Activity is not (HaulerActivity.Jumping or HaulerActivity.Inbound) && Work.Stamp >= Work.ArrivalUntil,
-                proactive: proactive
+                proactive: proactive,
+                pvpRole: InActiveGang ? GangMember?.Role : null
             );
         _pilot = defended.Pilot;
         _warpBlocked = defended.WarpBlocked ?? _warpBlocked;
@@ -427,6 +436,8 @@ internal sealed partial class CapsuleerHauler(
         _operation = new(database, job, marketSignal);
         try
         {
+            SynchronizeGang(reconcile: true);
+            ApplyGangReturn();
             if (Pilot.Position is not null && _warpBlocked && _navigation.Warp is null && _navigation.WarpDestination is not null)
             {
                 throw new InvalidDataException("Warp disruption interrupts the hauler's alignment.");
@@ -593,6 +604,7 @@ internal sealed partial class CapsuleerHauler(
         {
             return false;
         }
+        SynchronizeGang();
         int stamp = CapsuleerScheduleRules.Stamp(throughTicks, Work.ClockOffsetTicks);
         if (
             stamp <= Work.Stamp
@@ -666,6 +678,8 @@ internal sealed partial class CapsuleerHauler(
             {
                 Routine = previous?.Routine,
                 Defense = previous?.Defense,
+                Gang = previous?.Gang,
+                GangReturning = previous?.GangReturning ?? false,
             };
         }
         if (previous is null || previous.ShipId != Pilot.ShipId)
@@ -824,6 +838,10 @@ internal sealed partial class CapsuleerHauler(
         var supplies = resupply.Dock(database, _operation.World, _operation.Catalog, pilotId, Work.Resupply, Now);
         _operation.MarketChanged |= supplies.SpentCents != (Work.Resupply?.SpentCents ?? 0);
         _work = Work with { Resupply = supplies };
+        if (TryGangDeparture())
+        {
+            return;
+        }
         if (TryLaunchActivity())
         {
             return;
@@ -1016,6 +1034,10 @@ internal sealed partial class CapsuleerHauler(
         {
             if (GateTravelRules.InRange(Pilot.Position!, Pilot.Flight.ShipRadius, _target))
             {
+                if (WaitForGangAtGate(_target))
+                {
+                    return;
+                }
                 if (TryPatrolTransitGate(_target))
                 {
                     return;
@@ -1054,6 +1076,11 @@ internal sealed partial class CapsuleerHauler(
             int dwell = Work.Journey is { } journey
                 ? TravelerRoutineRules.LayoverSeconds(routine, journey.Kind, pilotId, Work.DwellSequence)
                 : HaulingRules.StationDwellSeconds(Pilot.PilotId, Work.DwellSequence);
+            if (Work.Gang is { Phase: not RoamingGangPhase.Complete })
+            {
+                // A gang's endpoint is an operational turn-around, not a civilian layover.
+                dwell = 1;
+            }
             if (routine.ShelterPending)
             {
                 dwell = Math.Max(dwell, TravelerRoutineRules.ShelterSeconds(routine, Work.DwellSequence));
@@ -1117,6 +1144,7 @@ internal sealed partial class CapsuleerHauler(
             RouteIndex = Work.RouteIndex + Work.RouteDirection,
             LaneDeparting = false,
             LastPatrolledGateId = 0,
+            GangRendezvousUntil = 0,
             ArrivalGateId = arrivalGateId,
             ArrivalAt = arrivalAt,
             DepartureAt = null,

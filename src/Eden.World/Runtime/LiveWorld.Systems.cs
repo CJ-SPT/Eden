@@ -192,6 +192,9 @@ internal sealed partial class LiveWorld
         return pilots;
     }
 
+    internal long? CapsuleerPilot(long ship) =>
+        _shipOwners.TryGetValue(ship, out long pilot) && CapsuleerJobs.ContainsKey(pilot) ? pilot : null;
+
     internal void ProjectShared(TransactionParticipants? participants, WorldDbContext? target = null)
     {
         using var context = UseShared();

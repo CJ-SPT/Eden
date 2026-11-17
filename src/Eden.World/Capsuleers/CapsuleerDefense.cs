@@ -139,12 +139,13 @@ internal sealed class CapsuleerDefense(
         bool forceRetreat = false,
         bool canFight = true,
         bool escapeFirst = false,
-        CapsuleerAttacker? proactive = null
+        CapsuleerAttacker? proactive = null,
+        PvpRole? pvpRole = null
     )
     {
         return LiveWorld.Execute(
             database.Path,
-            () => AdvanceOwned(pilot, navigation, saved, now, stamp, obstacles, forceRetreat, canFight, escapeFirst, proactive),
+            () => AdvanceOwned(pilot, navigation, saved, now, stamp, obstacles, forceRetreat, canFight, escapeFirst, proactive, pvpRole),
             nameof(Advance)
         );
     }
@@ -159,7 +160,8 @@ internal sealed class CapsuleerDefense(
         bool forceRetreat = false,
         bool canFight = true,
         bool escapeFirst = false,
-        CapsuleerAttacker? proactive = null
+        CapsuleerAttacker? proactive = null,
+        PvpRole? pvpRole = null
     )
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
@@ -280,7 +282,23 @@ internal sealed class CapsuleerDefense(
                     && attributes.GetValueOrDefault(DogmaAttributeId.DroneBandwidth) > 0;
         }
         bool combatShip = profile.Combat && !escapeFirst;
-        bool retreat = forceRetreat || state.Retreating || CapsuleerDefenseRules.Retreat(currentHealth, hasDamage) || !combatShip;
+        bool exhausted =
+            proactive is { Npc: false }
+            && live is not null
+            && PvpTactics.Exhausted(
+                CapsuleerDefenseRules.Fraction(
+                    ChargedResource.Recharged(
+                        live.Capacitor,
+                        live.CapacitorCapacity,
+                        live.CapacitorRechargeMilliseconds,
+                        Math.Max(0, (now - live.CapacitorAt) / (double)TimeSpan.TicksPerMillisecond)
+                    ),
+                    live.CapacitorCapacity
+                ),
+                profile.RattingWeapons
+            );
+        bool retreat =
+            forceRetreat || state.Retreating || CapsuleerDefenseRules.Retreat(currentHealth, hasDamage) || !combatShip || exhausted;
         bool offensive = CapsuleerDefenseRules.Offensive(combatShip, retreat, blocked);
         long attackedAt = candidates.Select(attacker => attacker.AttackedAt).DefaultIfEmpty(0).Max();
         bool newThreat = attackedAt > state.LastAttackAt;
@@ -331,6 +349,27 @@ internal sealed class CapsuleerDefense(
                 continue;
             }
             bool enabled = Enabled(module, profile, currentHealth, live, now, offensive, locked, blocked);
+            if (proactive is { Npc: false } && live is not null && module.Effect is DogmaEffect.Afterburner or DogmaEffect.Microwarpdrive)
+            {
+                double desired = PvpTactics.Range(
+                    PilotAwareness.FightingRange(profile.RattingWeapons, profile.TargetRange, MinimumCombatRange),
+                    profile.TargetRange,
+                    profile.TackleRange,
+                    pvpRole ?? profile.PvpRole
+                );
+                double available = ChargedResource.Recharged(
+                    live.Capacitor,
+                    live.CapacitorCapacity,
+                    live.CapacitorRechargeMilliseconds,
+                    Math.Max(0, (now - live.CapacitorAt) / (double)TimeSpan.TicksPerMillisecond)
+                );
+                enabled &= PvpTactics.Propel(
+                    Math.Max(0, pilot.Position.DistanceTo(target.Position) - pilot.Flight.ShipRadius - target.Radius),
+                    desired,
+                    CapsuleerDefenseRules.Fraction(available, live.CapacitorCapacity),
+                    retreat
+                );
+            }
             if (!enabled)
             {
                 if (previous is not null)
@@ -424,18 +463,12 @@ internal sealed class CapsuleerDefense(
                 double range = PilotAwareness.FightingRange(profile.RattingWeapons, profile.TargetRange, fallback);
                 if (proactive is { Npc: false })
                 {
-                    foreach (var module in profile.Modules)
-                    {
-                        if (
-                            module.Effect is DogmaEffect.WarpScrambler or DogmaEffect.WarpDisruptor
-                            && module.Attributes.GetValueOrDefault(DogmaAttributeId.MaxRange) is > 0 and var reach
-                        )
-                        {
-                            range = Math.Min(range, reach * .7);
-                        }
-                    }
+                    range = PvpTactics.Range(range, profile.TargetRange, profile.TackleRange, pvpRole ?? profile.PvpRole);
                 }
-                bool orbit = proactive is not null && range < 10_000;
+                bool orbit =
+                    proactive is not null
+                    && range < PvpTactics.KitingRange
+                    && (pvpRole ?? profile.PvpRole) is not (PvpRole.Kiter or PvpRole.ElectronicWarfare);
                 navigation.Follow(pilot.ShipId, stamp, pilot.Position, pilot.Flight.ShipRadius, body, range, orbit, true);
             }
             if (state.MotionStamp != stamp)

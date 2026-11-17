@@ -240,6 +240,10 @@ internal sealed partial class CapsuleerScheduler(
         }
         else
         {
+            if (!_loaded)
+            {
+                RestoreRoamingGangs(world);
+            }
             foreach (int observed in presence.Read().ActiveSystems)
             {
                 LoadSystem(world, observed, null);
@@ -361,7 +365,7 @@ internal sealed partial class CapsuleerScheduler(
                         executing = job;
                         long pilot = job.PilotId;
                         int system = _locations[pilot];
-                        if (!activity.ActiveSystems.Contains(system))
+                        if (!activity.ActiveSystems.Contains(system) && !ActiveGang(pilot))
                         {
                             throw new InvalidOperationException("A capsuleer job requires a player in its system.");
                         }
@@ -411,7 +415,9 @@ internal sealed partial class CapsuleerScheduler(
                         else if (_haulers.TryGetValue(job.PilotId, out var hauler))
                         {
                             using var phase = SessionPerformance.Phase("traffic.haulerAction");
+                            bool wasGang = ActiveGang(job.PilotId);
                             next = hauler.Execute(job, destinyStamp, preparedJourney: preparedJourney);
+                            _membershipDirty |= wasGang != ActiveGang(job.PilotId);
                             Current[job.PilotId] = next;
                             _completed++;
                             IndexLocation(job.PilotId, hauler.SystemId);
@@ -427,7 +433,7 @@ internal sealed partial class CapsuleerScheduler(
                         {
                             throw new InvalidDataException("The capsuleer job has no supported role.");
                         }
-                        if (!activity.ActiveSystems.Contains(_locations[pilot]))
+                        if (!activity.ActiveSystems.Contains(_locations[pilot]) && !ActiveGang(pilot))
                         {
                             PausePilot(pilot, throughTicks);
                             _running.Remove(pilot);
@@ -535,6 +541,16 @@ internal sealed partial class CapsuleerScheduler(
         foreach (int system in activity.ActiveSystems)
         {
             foreach (long pilot in _systemAgents.GetValueOrDefault(system) ?? [])
+            {
+                if (!_suspended.Contains(pilot))
+                {
+                    running.Add(pilot);
+                }
+            }
+        }
+        if (activity.Active)
+        {
+            foreach (long pilot in _haulers.Keys.Where(ActiveGang))
             {
                 if (!_suspended.Contains(pilot))
                 {

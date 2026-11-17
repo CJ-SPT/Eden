@@ -18,6 +18,8 @@ public sealed record PatrolProgress(PatrolKind Kind, int SystemId)
     public GateCamp? Camp { get; init; }
     public long NextLook { get; init; }
     public long LeaveGridAt { get; init; }
+    public long CommittedAt { get; init; }
+    public string? DecisionReason { get; init; }
 }
 
 public static class PatrolRules
@@ -41,9 +43,12 @@ public static class PatrolRules
             other.ShipId != pilot.ShipId
             && other.PilotId != pilot.PilotId
             && other.Hull is not (HullClass.Capsule or HullClass.Unclassified)
-            && (pilot.CorpId < CorporationRules.FirstCorporationId || pilot.CorpId != other.CorporationId)
-            && (pilot.Identity.AllianceId is null || pilot.Identity.AllianceId != other.AllianceId)
+            && !Friendly(pilot, other)
             && other.Position.DistanceTo(anchor) <= PursuitMeters
             && other.Position.DistanceTo(pilot.Position!) <= PursuitMeters
         );
+
+    public static bool Friendly(DockedPilot pilot, PilotSighting other) =>
+        pilot.CorpId >= CorporationRules.FirstCorporationId && pilot.CorpId == other.CorporationId
+        || pilot.Identity.AllianceId is not null && pilot.Identity.AllianceId == other.AllianceId;
 }

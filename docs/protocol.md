@@ -1,5 +1,7 @@
 # Protocol findings and milestone records
 
+[Smarter bots and persistent roaming gangs](protocol/capsuleers.md#smarter-pilots-and-persistent-roaming-gangs--november-17-2026) adds role-based hunting decisions, saved gang commands, coordinated nullsec travel and resident combat without native scenes.
+
 [Standard market and unified economy settings](protocol/industry.md#standard-live-order-market-and-unified-economy-settings-november-16-2026)
 records public snapshot import, individual price levels, supported station geography, finite stock, buy ranges and checkpoints.
 

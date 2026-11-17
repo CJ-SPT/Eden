@@ -74,6 +74,24 @@ Armed travelers also use the roam chance at outbound nullsec gates, including in
 to hunt waits 18–40 seconds for a visible target, can stay longer in a fight, then continues the original trip.
 Pilots delivering freight, shopping for supplies or retreating continue through the gate.
 
+### Persistent roaming gangs
+
+With **Persistent roaming gangs** enabled (default on), eligible nullsec pilots can assemble existing ships into a
+three-to-six-ship hunting gang. **Roaming gang size** defaults to four. The ordinary roam chance also controls formation.
+A gang needs at least three available combat ships at a station, including separate scout and tackle pilots, and a
+connected nullsec station route within three jumps. Sparse communities continue using individual roams.
+
+Gangs retain their home, roster, leader, roles and route across checkpoints and restarts. The scout departs first;
+the main body regroups at gates, shares short-lived target reports, and returns after reaching its endpoint, suffering
+losses, or exhausting its sortie time. Individual pilots use their own fits, damage application, health, ammunition and
+capacitor to decide how to engage. Kiting ships preserve range while tacklers close. Lost hulls remain lost.
+
+Active gangs keep traveling in unoccupied systems while somebody has a selected character. They pause when the last
+human leaves and while the server is stopped. This is an exception to the ordinary occupied-system population policy;
+no native scene is required for their combat contacts. Disabling gangs orders surviving active members home after restart;
+disabling all player bots pauses the entire population. New settings follow the ordinary save-and-restart workflow.
+[Implementation and automated evidence](protocol/capsuleers.md#smarter-pilots-and-persistent-roaming-gangs--november-17-2026).
+
 ## Pilot awareness
 
 World Configuration exposes situational awareness, belt ratting and combat anomaly ratting independently. All three default

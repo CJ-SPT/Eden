@@ -2,6 +2,7 @@ using Eden.Data.Catalog.Capsuleers;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Market;
 using Eden.World.Catalog;
 
 namespace Eden.World.Capsuleers;
@@ -32,9 +33,30 @@ internal static class CapsuleerPatrolFit
             {
                 equipment.Add(new(Scrambler, (int)InventoryFlag.MediumSlot0, 1));
             }
+            AddSupport(catalog, equipment);
             return new(0, "", 0, DateTimeOffset.UnixEpoch, 0, 0, TrafficSecurityBand.Null, Merlin, equipment.ToArray());
         }
     );
+
+    private static void AddSupport(CatalogDbContext catalog, List<TrafficEquipment> equipment)
+    {
+        // These optional starter modules are present in the full pinned catalog. Reduced catalogs
+        // retain the existing valid core fit; normal blueprint validation still owns skills and resources.
+        foreach (
+            var module in new[]
+            {
+                new TrafficEquipment((int)StarterMarketType.Afterburner, (int)InventoryFlag.MediumSlot0 + 1, 1),
+                new TrafficEquipment((int)StarterMarketType.SmallShieldBooster, (int)InventoryFlag.MediumSlot0 + 2, 1),
+                new TrafficEquipment((int)StarterMarketType.DamageControl, (int)InventoryFlag.LowSlot0, 1),
+            }
+        )
+        {
+            if (catalog.FittingType(module.TypeId) is not null)
+            {
+                equipment.Add(module);
+            }
+        }
+    }
 
     private const int Sabre = 22456;
     private const int SphereLauncher = 22782;

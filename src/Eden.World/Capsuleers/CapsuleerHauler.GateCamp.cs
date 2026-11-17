@@ -68,8 +68,10 @@ internal sealed partial class CapsuleerHauler
         bool Ally(PilotSighting other) =>
             watch.Member(other.PilotId) || other.Camp is { } mate && mate.GateId == camp.GateId && mate.Until == camp.Until;
         var opponents = PatrolRules.Candidates(Pilot, _target.Position, seen).Where(c => !Ally(c)).ToArray();
-        int allies = seen.Count(Ally);
-        if (opponents.Count(c => PilotAwareness.ArmedHull(c.Hull)) >= 3 + allies)
+        double friendlyStrength =
+            PvpTactics.Threat((Eden.Gameplay.Ships.HullClass)Pilot.ShipGroupId)
+            + seen.Where(Ally).Sum(contact => PvpTactics.Threat(contact.Hull));
+        if (opponents.Sum(contact => PvpTactics.Threat(contact.Hull)) > friendlyStrength * 2)
         {
             watch.Dispersing = true;
             watch.Leave(pilotId);

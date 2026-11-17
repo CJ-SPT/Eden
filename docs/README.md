@@ -1,5 +1,7 @@
 # Eden documentation
 
+[Smarter bots and persistent roaming gangs](protocol/capsuleers.md#smarter-pilots-and-persistent-roaming-gangs--november-17-2026) adds role-based hunting decisions, saved gang commands, coordinated nullsec travel and resident combat without native scenes.
+
 [Market presets](world-configuration.md#market-presets) combines economy and supply settings and explains the
 Standard preset's imported live order books, original locations/quantities and checkpoint behavior.
 

@@ -66,6 +66,8 @@ internal static class ConfigurationDisplay
         ["economy.beginnerMarketSupply"] = "Beginner market supply",
         ["progression.grantStartingEquipment"] = "Starting equipment for new pilots",
         ["capsuleers.enabled"] = "Player bots",
+        ["capsuleers.roamingGangs"] = "Persistent roaming gangs",
+        ["capsuleers.roamingGangSize"] = "Roaming gang size",
         ["capsuleers.miners"] = "Simulated miners",
         ["capsuleers.trafficMultiplier"] = "Station traffic density",
         ["capsuleers.freight.variedHulls"] = "Use regional hauler hulls",

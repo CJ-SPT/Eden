@@ -507,6 +507,9 @@ In **World & economy → Player bots**, configure the saved world's population:
   cargo type IDs and freight stack survival. These settings live under `settings.capsuleers.freight`.
   [Shipment defaults and cargo type rules](capsuleer-population.md#hauler-freight).
 - **Enable player bots** controls the entire population. Off despawns and pauses all simulated pilots after restart.
+- **Persistent roaming gangs** (`settings.capsuleers.roamingGangs`, default on) permits coordinated nullsec hunting with
+  existing ships. **Roaming gang size** (`settings.capsuleers.roamingGangSize`) accepts 3–6, default 4. The existing roam
+  chance controls formation. [Gang behavior and requirements](capsuleer-population.md#persistent-roaming-gangs).
 - **Simulated miners** allows up to one miner per eligible system, prepared globally on restart.
 - **Station traffic density** accepts **0–10×**, default **1×**. It scales the normal geography-based station roster,
   up to 60 travelers per community. Fractional densities use a saved-seed draw to distribute smaller rosters consistently.

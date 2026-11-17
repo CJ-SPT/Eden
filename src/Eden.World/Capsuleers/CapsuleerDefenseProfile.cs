@@ -28,6 +28,24 @@ internal sealed partial record CapsuleerDefenseProfile(bool Combat, CapsuleerDef
 {
     internal RattingWeapon[] RattingWeapons { get; init; } = [];
     internal double TargetRange { get; init; }
+    internal double TackleRange =>
+        Modules
+            .Where(module => module.Effect is DogmaEffect.WarpDisruptor or DogmaEffect.WarpScrambler)
+            .Select(module => module.Attributes.GetValueOrDefault(DogmaAttributeId.MaxRange))
+            .DefaultIfEmpty(0)
+            .Max();
+    internal PvpRole PvpRole =>
+        PvpTactics.Role(
+            PilotAwareness.FightingRange(RattingWeapons, TargetRange, 500),
+            TackleRange,
+            Modules.Any(module =>
+                module.Effect
+                    is DogmaEffect.PlayerEcm
+                        or DogmaEffect.SensorDampener
+                        or DogmaEffect.TrackingDisruptor
+                        or DogmaEffect.GuidanceDisruptor
+            )
+        );
 
     internal static CapsuleerDefenseProfile Read(WorldDbContext world, CatalogDbContext catalog, long pilotId)
     {

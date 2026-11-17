@@ -153,7 +153,8 @@ internal sealed class SharedSpace(
     IPilotCrimewatch? crimewatch = null,
     TimeProvider? clock = null,
     IWorldSynchronization? synchronization = null,
-    IPilotSpatialModules? spatial = null
+    IPilotSpatialModules? spatial = null,
+    IAutonomousPilotPresence? autonomous = null
 ) : IPilotCombatPresence
 {
     // The coordinator owns copied navigation states. Connections retain their socket and notification queue.
@@ -161,8 +162,22 @@ internal sealed class SharedSpace(
 
     private readonly PilotSightGrid _sightGrid = new();
 
-    public Eden.Gameplay.Capsuleers.PilotSighting[] Observe(int system, long ship, SpacePosition origin, long sample) =>
-        _sightGrid.Observe(_ships, system, ship, origin, sample);
+    public Eden.Gameplay.Capsuleers.PilotSighting[] Observe(int system, long ship, SpacePosition origin, long sample)
+    {
+        var native = _sightGrid.Observe(_ships, system, ship, origin, sample);
+        var residents = autonomous?.Observe(system, ship, origin, sample) ?? [];
+        if (residents.Length == 0)
+        {
+            return autonomous is null ? native : native.Where(contact => !autonomous.Owns(contact.ShipId)).ToArray();
+        }
+        return residents
+            .Where(contact => SpatialStatus(contact.ShipId).CloakModuleId == 0)
+            .Concat(native.Where(contact => autonomous?.Owns(contact.ShipId) != true))
+            .OrderBy(contact => origin.DistanceTo(contact.Position))
+            .ThenBy(contact => contact.ShipId)
+            .Take(12)
+            .ToArray();
+    }
 
     private readonly OwnershipMonitor _motionOwnership = new("flight");
 
@@ -586,6 +601,12 @@ internal sealed class SharedSpace(
     {
         using (EnterMotion(systemId: systemId))
         {
+            if (autonomous?.Owns(shipId) == true)
+            {
+                return autonomous.Read(systemId, shipId) is { Protected: false } resident && SpatialStatus(shipId).CloakModuleId == 0
+                    ? new(shipId, resident.Sighting.Position, resident.Sighting.Velocity)
+                    : null;
+            }
             if (!_ships.TryGetValue(shipId, out var ship))
             {
                 return null;
@@ -611,7 +632,11 @@ internal sealed class SharedSpace(
     public bool IsAreaProtected(int systemId, long shipId) =>
         RunMotion(
             systemId,
-            () => _ships.TryGetValue(shipId, out var ship) && (ship.Warp is not null || ship.DepartureGate is not null || ship.Arriving),
+            () =>
+                autonomous?.Owns(shipId) == true
+                    ? autonomous.Read(systemId, shipId)?.Protected == true
+                    : _ships.TryGetValue(shipId, out var ship)
+                        && (ship.Warp is not null || ship.DepartureGate is not null || ship.Arriving),
             nameof(IsAreaProtected)
         );
 
@@ -619,9 +644,13 @@ internal sealed class SharedSpace(
         RunMotion(
             systemId,
             () =>
-                _ships.TryGetValue(shipId, out var ship) && ship.Pilot.SystemId == systemId && ship.Pilot.Position is { } position
-                    ? new PilotCombatPresence(shipId, position, ship.Velocity)
-                    : null,
+                autonomous?.Owns(shipId) == true
+                    ? autonomous.Read(systemId, shipId) is { } resident
+                        ? new PilotCombatPresence(shipId, resident.Sighting.Position, resident.Sighting.Velocity)
+                        : null
+                    : _ships.TryGetValue(shipId, out var ship) && ship.Pilot.SystemId == systemId && ship.Pilot.Position is { } position
+                        ? new PilotCombatPresence(shipId, position, ship.Velocity)
+                        : null,
             nameof(FindArea)
         );
 
@@ -629,7 +658,7 @@ internal sealed class SharedSpace(
     {
         using (EnterMotion(systemId: systemId))
         {
-            if (_ships.ContainsKey(shipId))
+            if (_ships.ContainsKey(shipId) || autonomous?.Owns(shipId) == true)
             {
                 return FindOnline(systemId, shipId);
             }

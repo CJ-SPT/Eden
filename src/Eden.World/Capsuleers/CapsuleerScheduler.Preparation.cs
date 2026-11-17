@@ -79,7 +79,7 @@ internal sealed partial class CapsuleerScheduler
         if (
             work?.TargetId is > 0 and <= int.MaxValue
             && catalog.Definitions.Gates.TryGetValue((int)work.TargetId, out var gate)
-            && occupied.Contains(gate.DestinationSystemId)
+            && (occupied.Contains(gate.DestinationSystemId) || ActiveGang(job.PilotId))
         )
         {
             systems.Add(gate.DestinationSystemId);
@@ -123,7 +123,7 @@ internal sealed partial class CapsuleerScheduler
     internal bool PreparationCurrent(PreparationInput input) =>
         Current.GetValueOrDefault(input.Job.PilotId) == input.Job
         && _queue.NextJob == input.Job
-        && input.Systems.All(presence.Read().ActiveSystems.Contains)
+        && (ActiveGang(input.Job.PilotId) || input.Systems.All(presence.Read().ActiveSystems.Contains))
         && _locations.GetValueOrDefault(input.Job.PilotId) == input.SystemId
         && (Live?.PreparationRevision ?? 0) == input.Revision
         && (Live?.TrafficGeometry.Revision ?? 0) == input.Resources
