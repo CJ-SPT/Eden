@@ -11,7 +11,9 @@ public sealed class PvpTacticsTests
     [Fact]
     public void KiterKeepsWeaponRangeWhileTacklerClosesAndBrawlerOrbits()
     {
-        Assert.Equal(20_000, PvpTactics.Range(20_000, 30_000, 9_000, PvpRole.Kiter));
+        Assert.Equal(20_000, PvpTactics.Range(20_000, 30_000, 9_000, PvpRole.Kiter, alliedTackle: true));
+        Assert.Equal(7_200, PvpTactics.Range(20_000, 30_000, 9_000, PvpRole.Kiter));
+        Assert.True(PvpTactics.Band(20_000, 30_000, 9_000, PvpRole.Kiter).Maximum < 9_000);
         Assert.Equal(7_200, PvpTactics.Range(20_000, 30_000, 9_000, PvpRole.Tackle));
         Assert.Equal(PvpRole.Kiter, PvpTactics.Role(20_000, 9_000));
         Assert.Equal(PvpRole.Tackle, PvpTactics.Role(3_000, 9_000));
@@ -20,6 +22,16 @@ public sealed class PvpTacticsTests
         Assert.True(PvpTactics.Propel(5_000, 20_000, 1, false));
         Assert.False(PvpTactics.Propel(5_000, 20_000, .1, false));
         Assert.True(PvpTactics.Propel(5_000, 20_000, .1, true));
+    }
+
+    [Fact]
+    public void PursuitUsesABoundedHorizonAndObservedVelocity()
+    {
+        Assert.Equal(50_000, PvpTactics.PursuitDistance(new(50_000, 0, 0), SpacePosition.Zero, 0));
+        Assert.Equal(45_000, PvpTactics.PursuitDistance(new(50_000, 0, 0), SpacePosition.Zero, 500));
+        Assert.Equal(50_000, PvpTactics.PursuitDistance(new(50_000, 0, 0), new(500, 0, 0), 600));
+        Assert.Equal(0, PvpTactics.PursuitDistance(new(5_000, 0, 0), SpacePosition.Zero, 500));
+        Assert.Equal(50_000, PvpTactics.PursuitDistance(new(50_000, 0, 0), SpacePosition.Zero, double.PositiveInfinity));
     }
 
     [Fact]
@@ -32,7 +44,7 @@ public sealed class PvpTacticsTests
             PvpTactics.Select(SpacePosition.Zero, SpacePosition.Zero, weapons, opponents, strength, target, 0, elapsed, report);
         Assert.Equal(10, Choose([first, second], 2).TargetId);
         Assert.Equal(20, Choose([first, second], 2, report: 20).TargetId);
-        Assert.Equal(10, Choose([first, second], 2, target: 10, report: 20).TargetId);
+        Assert.Equal(20, Choose([first, second], 2, target: 10, report: 20).TargetId);
         Assert.Equal(20, Choose([first, second], 2, target: 10, elapsed: PvpTactics.CommitmentTicks, report: 20).TargetId);
         Assert.Equal(0, Choose([first with { Hull = HullClass.Battleship }], 1).TargetId);
         Assert.Equal(0, Choose([first with { AllianceId = 1 }, second with { AllianceId = 1 }], 1).TargetId);

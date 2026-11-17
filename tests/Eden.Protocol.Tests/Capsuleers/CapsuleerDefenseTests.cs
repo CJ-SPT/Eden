@@ -151,7 +151,9 @@ public sealed class CapsuleerDefenseTests
         }
         NavigationState navigation = new();
         var before = f.Health.Read(enemy.PilotId, f.Clock.Now);
+        f.Aggress();
         var locking = defense.Advance(pilot, navigation, null, f.Clock.Now, 0, [], proactive: target);
+        Assert.Equal(target!.ShipId, locking.State!.TargetId);
         Assert.Empty(locking.State!.Cycles);
         f.Clock.Milliseconds += (Assert.Single(locking.State.Locks).ReadyAt - f.Clock.Now) / TimeSpan.TicksPerMillisecond + 1;
         var fired = defense.Advance(locking.Pilot, navigation, locking.State, f.Clock.Now, 10, [], proactive: target);

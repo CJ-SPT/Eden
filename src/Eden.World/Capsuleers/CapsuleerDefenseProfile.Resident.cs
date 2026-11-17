@@ -204,6 +204,7 @@ internal sealed partial record CapsuleerDefenseProfile
         {
             RattingWeapons = ReadRatting(world, catalog, pilotId, pilot.ActiveShipId, fit, modules),
             TargetRange = fit.Graph.Read(pilot.ActiveShipId, DogmaAttributeId.MaxTargetRange),
+            ShipAttributes = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: fit),
         };
     }
 }

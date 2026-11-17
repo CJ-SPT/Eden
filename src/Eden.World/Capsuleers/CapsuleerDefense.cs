@@ -140,12 +140,27 @@ internal sealed class CapsuleerDefense(
         bool canFight = true,
         bool escapeFirst = false,
         CapsuleerAttacker? proactive = null,
-        PvpRole? pvpRole = null
+        PvpRole? pvpRole = null,
+        RoamingGang? gang = null
     )
     {
         return LiveWorld.Execute(
             database.Path,
-            () => AdvanceOwned(pilot, navigation, saved, now, stamp, obstacles, forceRetreat, canFight, escapeFirst, proactive, pvpRole),
+            () =>
+                AdvanceOwned(
+                    pilot,
+                    navigation,
+                    saved,
+                    now,
+                    stamp,
+                    obstacles,
+                    forceRetreat,
+                    canFight,
+                    escapeFirst,
+                    proactive,
+                    pvpRole,
+                    gang
+                ),
             nameof(Advance)
         );
     }
@@ -161,7 +176,8 @@ internal sealed class CapsuleerDefense(
         bool canFight = true,
         bool escapeFirst = false,
         CapsuleerAttacker? proactive = null,
-        PvpRole? pvpRole = null
+        PvpRole? pvpRole = null,
+        RoamingGang? gang = null
     )
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
@@ -210,7 +226,7 @@ internal sealed class CapsuleerDefense(
                 }
             )
             .ToArray();
-        var target = CapsuleerDefenseRules.Select(candidates) ?? proactive;
+        var target = proactive ?? CapsuleerDefenseRules.Select(candidates);
         if (target is null)
         {
             Stop(pilot.PilotId, state);
@@ -250,7 +266,7 @@ internal sealed class CapsuleerDefense(
                 .ToArray(),
         };
         var live = runtime?.DefenseShip(pilot.PilotId, now);
-        var attributes = fitting.ShipAttributes(pilot.PilotId);
+        var attributes = profile.ShipAttributes;
         blocked = attributes.GetValueOrDefault(DogmaAttributeId.WarpScrambleStatus) > 0;
         var currentHealth = health.Read(pilot.PilotId, now);
         bool hasDamage =
@@ -299,6 +315,20 @@ internal sealed class CapsuleerDefense(
             );
         bool retreat =
             forceRetreat || state.Retreating || CapsuleerDefenseRules.Retreat(currentHealth, hasDamage) || !combatShip || exhausted;
+        if (retreat && blocked)
+        {
+            target = CapsuleerDefenseRules.Select(candidates.Where(attacker => attacker.Tackling).ToArray()) ?? target;
+        }
+        bool alliedTackle =
+            gang is not null
+            && tackle
+                .Incoming(target.ShipId)
+                .Any(effect =>
+                    effect.SourceShipId != pilot.ShipId
+                    && effect.ExpiresAt > now
+                    && effect.Module.Strength > 0
+                    && gang.Members.Any(member => member.ShipId == effect.SourceShipId && member.Status == RoamingGangMemberStatus.Active)
+                );
         bool offensive = CapsuleerDefenseRules.Offensive(combatShip, retreat, blocked);
         long attackedAt = candidates.Select(attacker => attacker.AttackedAt).DefaultIfEmpty(0).Max();
         bool newThreat = attackedAt > state.LastAttackAt;
@@ -355,7 +385,8 @@ internal sealed class CapsuleerDefense(
                     PilotAwareness.FightingRange(profile.RattingWeapons, profile.TargetRange, MinimumCombatRange),
                     profile.TargetRange,
                     profile.TackleRange,
-                    pvpRole ?? profile.PvpRole
+                    pvpRole ?? profile.PvpRole,
+                    alliedTackle
                 );
                 double available = ChargedResource.Recharged(
                     live.Capacitor,
@@ -468,7 +499,7 @@ internal sealed class CapsuleerDefense(
                 double range = PilotAwareness.FightingRange(profile.RattingWeapons, profile.TargetRange, fallback);
                 if (proactive is { Npc: false })
                 {
-                    range = PvpTactics.Range(range, profile.TargetRange, profile.TackleRange, pvpRole ?? profile.PvpRole);
+                    range = PvpTactics.Range(range, profile.TargetRange, profile.TackleRange, pvpRole ?? profile.PvpRole, alliedTackle);
                 }
                 bool orbit =
                     proactive is not null
@@ -492,7 +523,7 @@ internal sealed class CapsuleerDefense(
             }
         }
         // Active propulsion uses the normal fitted speed and mass, including scram suppression.
-        attributes = fitting.ShipAttributes(pilot.PilotId);
+        attributes = Profile(pilot.PilotId).ShipAttributes;
         pilot = pilot with
         {
             Flight = pilot.Flight with

@@ -28,6 +28,7 @@ internal sealed partial record CapsuleerDefenseProfile(bool Combat, CapsuleerDef
 {
     internal RattingWeapon[] RattingWeapons { get; init; } = [];
     internal double TargetRange { get; init; }
+    internal IReadOnlyDictionary<DogmaAttributeId, double> ShipAttributes { get; init; } = new Dictionary<DogmaAttributeId, double>();
     internal double TackleRange =>
         Modules
             .Where(module => module.Effect is DogmaEffect.WarpDisruptor or DogmaEffect.WarpScrambler)
@@ -89,6 +90,7 @@ internal sealed partial record CapsuleerDefenseProfile(bool Combat, CapsuleerDef
         {
             RattingWeapons = ReadRatting(world, catalog, pilotId, pilot.ActiveShipId, fit, modules),
             TargetRange = fit.Graph.Read(pilot.ActiveShipId, DogmaAttributeId.MaxTargetRange),
+            ShipAttributes = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: fit),
         };
     }
 

@@ -396,7 +396,8 @@ internal sealed partial class CapsuleerHauler(
                 Work.Retreating,
                 Work.Activity is not (HaulerActivity.Jumping or HaulerActivity.Inbound) && Work.Stamp >= Work.ArrivalUntil,
                 proactive: proactive,
-                pvpRole: InActiveGang ? GangMember?.Role : null
+                pvpRole: InActiveGang ? GangMember?.Role : null,
+                gang: InActiveGang ? Work.Gang : null
             );
         _pilot = defended.Pilot;
         _warpBlocked = defended.WarpBlocked ?? _warpBlocked;

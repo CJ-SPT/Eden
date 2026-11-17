@@ -293,7 +293,17 @@ internal sealed partial class CapsuleerHauler
             case RattingPhase.Returning:
                 if (Work.TargetId != activity.StationId || _target?.Id != activity.StationId || Work.WaitingReason is not null)
                 {
-                    _target = Objects.Single(o => o.Id == activity.StationId);
+                    _target = Objects.FirstOrDefault(o => o.Id == activity.StationId);
+                    if (_target is null)
+                    {
+                        // A remote patrol cannot warp directly to its home station in another system.
+                        _work = Work with
+                        {
+                            Ratting = null,
+                        };
+                        BeginTravel();
+                        break;
+                    }
                     _work = Work with
                     {
                         TargetId = _target.Id,

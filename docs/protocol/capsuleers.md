@@ -32,13 +32,14 @@ real hull destruction, counters in the community's region, and checkpoint/restar
 
 ## Bot PvP improvements — November 17, 2026
 
-The implementation proceeds in five independently verified and pushed milestones:
+The implementation proceeds in six independently verified and pushed milestones:
 
 1. Capacitor management and fighting retreats.
 2. Shared primary authority, tackle-aware range bands and bounded interception estimates.
-3. Matchup-aware movement and damage application.
-4. Independent support assignments and multiple target locks.
-5. Deliberate ammunition selection and controlled heat.
+3. Nullsec engagement and finite reaction windows for hunted pilots.
+4. Matchup-aware movement and damage application.
+5. Independent support assignments and multiple target locks.
+6. Deliberate ammunition selection and controlled heat.
 
 ### Milestone 1: capacitor management and fighting retreats
 
@@ -74,6 +75,46 @@ in 1.192 seconds; 9 formatting cases in 0.018 seconds). Formatting and `git diff
 
 **Optional maintainer checks:** Observe a damaged pointed combat ship firing during its escape, then ceasing fire
 after tackle breaks. Native rendering and combat feel remain unverified.
+
+### Milestone 2: primary authority and finite pursuit
+
+A visible, legal, applicable shared primary takes precedence over individual target commitment. An incoming
+attacker no longer overrides the patrol's proactive primary. A retreating pointed ship can still switch to an
+actual incoming tackler, preserving the fighting-retreat exception. Normal target legality and range checks remain.
+
+Kiting ships with their own tackle keep a margin inside its fitted range until another active gang member has
+actually applied a positive, unexpired tackle effect to the same target. A role label or distant gang member alone
+does not count as coverage. The same desired range feeds motion and propulsion; the typed range band retains a
+15% tolerance. Losing allied coverage returns the ship to its own tackle range on the next defense evaluation.
+
+Target scoring estimates at most twenty seconds of pursuit using observed target velocity and half the pilot's
+current fitted maximum speed as a conservative acceleration allowance. Faster hulls no longer score remote
+targets as though they were already at ideal range. This is an estimate, not a prediction of hidden destinations.
+References: [EVE University tackling](https://wiki.eveuniversity.org/Tackling) and
+[solo PvP range control](https://wiki.eveuniversity.org/Solo_PvP). The horizon and allowance are Eden policies.
+
+The cached defense profile now shares its already-calculated ship attributes with defense activation and movement.
+Late engagement therefore does not cause a second cold fitting calculation. Normal fit-revision invalidation still
+refreshes skills, equipment and incoming effects. A remote patrol whose return station is outside its current system
+resumes ordinary route travel instead of attempting a direct warp to a nonexistent local station object.
+
+**Automated validation:** Tool/solution restore passed; solution build passed with zero warnings/errors in
+3.17 seconds. All 57 affected tests passed in 49.90 seconds wall time (45 seconds reported test duration), including
+unchanged zero-SQL/connection/fitting assertions in the 10/50/100-pilot frame workloads and separate checkpoint
+capture/projection/write measurements. The filter combined `FullyQualifiedName~` for `PvpTacticsTests`,
+`RoamingGangTests`, `PatrolTests`, `GateCampTests`, `CapsuleerDefenseTests`, `CapsuleerDefenseLifecycleTests`,
+`CapsuleerDefenseFrameTests`, `GameplayDependenciesTests` and `DataModelOwnershipTests`. Both Python policy suites
+passed (8 catalog cases in 1.364 seconds; 9 formatting cases in 0.019 seconds); formatting and diff checks passed.
+Initial affected validation had 55 passes and two warmed-fitting failures. Instrumentation traced the duplicate
+attribute calculation; the corrected run then exposed a remote-return assumption, which was fixed as described
+above. Temporary tracing was removed. The final run covers both corrections. No full suite was requested or run.
+Development began with exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.PvpTacticsTests.PursuitUsesABoundedHorizonAndObservedVelocity`.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Observe a gang retaining its primary while taking fire, and a kiter returning
+inside its own tackle range after the gang's tackler loses coverage. Native presentation remains unverified.
 
 ## Regional bot conflicts — November 17, 2026
 

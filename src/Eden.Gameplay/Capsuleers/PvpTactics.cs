@@ -7,6 +7,8 @@ namespace Eden.Gameplay.Capsuleers;
 
 public sealed record PvpDecision(long TargetId, double Score, string Reason);
 
+public sealed record PvpRangeBand(double Minimum, double Desired, double Maximum);
+
 public static class PvpTactics
 {
     private sealed record Affiliation(int? Alliance, int? Corporation, int? RegionalGroup, long CampGate, long CampUntil, long SoloShip);
@@ -27,6 +29,8 @@ public static class PvpTactics
     private const double EmergencyCapacitorFraction = .1;
     private const double PropulsionReserveFraction = .25;
     private const double RangeToleranceFraction = .15;
+    public const double PursuitSeconds = 20;
+    private const double AccelerationAllowance = .5;
     public static readonly long CommitmentTicks = TimeSpan.FromSeconds(8).Ticks;
 
     // Hull classes are uncertain threat estimates, not access to an opponent's fit or resources.
@@ -48,14 +52,31 @@ public static class PvpTactics
         : tackleRange > 0 ? PvpRole.Tackle
         : PvpRole.Brawler;
 
-    public static double Range(double weaponRange, double lockRange, double tackleRange, PvpRole role)
+    public static double Range(double weaponRange, double lockRange, double tackleRange, PvpRole role, bool alliedTackle = false) =>
+        Band(weaponRange, lockRange, tackleRange, role, alliedTackle).Desired;
+
+    public static PvpRangeBand Band(double weaponRange, double lockRange, double tackleRange, PvpRole role, bool alliedTackle = false)
     {
         double range = Math.Min(weaponRange, lockRange);
-        if (tackleRange > 0 && role is PvpRole.Tackle or PvpRole.Brawler)
+        bool maintainTackle = tackleRange > 0 && (role is PvpRole.Tackle or PvpRole.Brawler || !alliedTackle);
+        if (maintainTackle)
         {
             range = Math.Min(range, tackleRange * TackleRangeMargin);
         }
-        return Math.Clamp(range, MinimumRange, 100_000);
+        range = Math.Clamp(range, MinimumRange, 100_000);
+        return new(range * (1 - RangeToleranceFraction), range, range * (1 + RangeToleranceFraction));
+    }
+
+    public static double PursuitDistance(SpacePosition separation, SpacePosition targetVelocity, double approachSpeed)
+    {
+        double current = separation.Length;
+        if (!double.IsFinite(approachSpeed) || approachSpeed <= 0)
+        {
+            return current;
+        }
+        // A bounded horizon and acceleration allowance avoid treating a faster hull as an instant intercept.
+        double projected = (separation + targetVelocity * PursuitSeconds).Length;
+        return Math.Min(current, Math.Max(0, projected - approachSpeed * PursuitSeconds * AccelerationAllowance));
     }
 
     public static bool Exhausted(double capacitorFraction, IReadOnlyList<RattingWeapon> weapons) =>
@@ -93,7 +114,7 @@ public static class PvpTactics
         long elapsed,
         long reported = 0,
         bool cautious = true,
-        double approachSpeed = double.MaxValue
+        double approachSpeed = 0
     )
     {
         if (!double.IsFinite(friendlyStrength) || friendlyStrength <= 0)
@@ -117,15 +138,14 @@ public static class PvpTactics
                 return new(contact.ShipId, 0, "The target's visible group exceeds the patrol's strength.");
             }
             double distance = position.DistanceTo(contact.Position);
+            double reachable = PursuitDistance(contact.Position - position, contact.Velocity, approachSpeed);
             double angular = CombatDamage.AngularVelocity(contact.Position - position, contact.Velocity - velocity);
             // Visible hull size is a conservative signature estimate; hidden fitted attributes are not inspected.
             double signature = Math.Max(1, contact.Radius);
             double damage = weapons.Sum(source =>
                 Application(
                     source,
-                    approachSpeed > contact.Velocity.Length
-                        ? Math.Min(distance, source.Weapon.Optimal + source.Weapon.Falloff * .4)
-                        : distance,
+                    Math.Min(distance, Math.Max(reachable, source.Weapon.Optimal + source.Weapon.Falloff * .4)),
                     angular,
                     signature,
                     contact.Velocity.Length
@@ -150,6 +170,11 @@ public static class PvpTactics
         if (best is null)
         {
             return new(0, 0, "No visible target has useful damage application.");
+        }
+        var primary = scored.FirstOrDefault(choice => choice.TargetId == reported);
+        if (primary is not null)
+        {
+            return primary;
         }
         var retained = scored.FirstOrDefault(choice => choice.TargetId == currentTarget);
         return retained is not null && (elapsed - committedAt < CommitmentTicks || retained.Score >= best.Score * TargetRetention)
