@@ -52,6 +52,8 @@ public static class PvpTactics
     private const double RangeDamageFraction = .5;
     public static readonly long CommitmentTicks = TimeSpan.FromSeconds(8).Ticks;
 
+    public const double UnratedHullThreat = .5;
+
     // Hull classes are uncertain threat estimates, not access to an opponent's fit or resources.
     public static double Threat(HullClass hull) =>
         hull switch
@@ -73,7 +75,7 @@ public static class PvpTactics
             HullClass.ElectronicAttack => 2,
             HullClass.Destroyer or HullClass.Interdictor or HullClass.AssaultFrigate => 2,
             HullClass.Frigate or HullClass.Interceptor or HullClass.LogisticsFrigate or HullClass.StealthBomber => 1,
-            _ => .5,
+            _ => UnratedHullThreat,
         };
 
     public static PvpRole Role(double weaponRange, double tackleRange, bool electronicWarfare = false) =>

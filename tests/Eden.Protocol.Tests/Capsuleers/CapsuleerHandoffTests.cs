@@ -184,7 +184,7 @@ public sealed class CapsuleerHandoffTests(ITestOutputHelper output)
         {
             Assert.Equal(jobs.OrderBy(job => job.PilotId), CapsuleerPopulationStore.Jobs(saved).OrderBy(job => job.PilotId));
             var miner = saved.Set<Eden.Data.World.Capsuleers.SavedCapsuleerCommunity>().Single(row => row.PilotId == paid.Pilot.PilotId);
-            Assert.Equal(paid.Work, MinerCheckpoint.Read(miner.Progress));
+            CapsuleerTestDriver.AssertSavedMiner(paid.Work, miner.Progress);
         }
         Assert.Equal(0, reopened.GetRequiredService<CapsuleerScene>().MaterializedPilots);
         using var selected = reopened.GetRequiredService<IHumanPresence>().Select(Human, Source);

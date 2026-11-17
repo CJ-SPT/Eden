@@ -459,14 +459,16 @@ internal sealed partial class CapsuleerProvisioner
                 {
                     var cycle = PilotMiningStore.Begin(world, catalog, pilot, module, rock.Id, now);
                     int seconds = checked((int)Math.Ceiling(cycle.Laser.DurationMilliseconds / 1000));
+                    long duration = checked((long)Math.Ceiling(cycle.Laser.DurationMilliseconds * TimeSpan.TicksPerMillisecond));
                     work = work with
                     {
                         Activity = MinerActivity.Mining,
                         TargetId = rock.Id,
+                        WorkingBelt = rock.BeltId,
                         CycleSeconds = seconds,
                         DueStamp = seconds,
-                        DueTicks = elapsed + TimeSpan.FromSeconds(seconds).Ticks,
-                        PaidUntil = now + TimeSpan.FromSeconds(seconds).Ticks,
+                        DueTicks = checked(elapsed + duration),
+                        PaidUntil = checked(now + duration),
                     };
                 }
             }

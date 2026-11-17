@@ -484,27 +484,7 @@ internal sealed partial class CapsuleerHauler(
                 && !Work.Retreating
             )
             {
-                var leg = CapsuleerTrafficFlight.Leg(_route, Work, Pilot.SystemId);
-                int direction =
-                    _route.SourceStationId == _route.DestinationStationId || leg.Index == 0 ? -1
-                    : leg.Index == _route.Systems.Length - 1 ? 1
-                    : -leg.Direction;
-                _work = Work with
-                {
-                    RouteIndex = leg.Index,
-                    RouteDirection = direction,
-                    DestinationStationId = direction < 0 ? _route.SourceStationId : _route.DestinationStationId,
-                    Retreating = true,
-                    LaneDeparting = false,
-                };
-                if (Work.Ratting is { } activity)
-                {
-                    _work = Work with { Ratting = activity with { Phase = RattingPhase.Returning } };
-                }
-                else
-                {
-                    BeginTravel();
-                }
+                BeginRetreat();
             }
             if (!defended.HoldsNavigation)
             {
@@ -1101,6 +1081,19 @@ internal sealed partial class CapsuleerHauler(
         }
         if (_target.DestinationGateId is not null)
         {
+            if (!_background && GateIsDangerous())
+            {
+                _work = Work with
+                {
+                    Routine = TravelerRoutineRules.Threatened(
+                        Work.Routine ?? TravelerRoutineRules.Create(pilotId),
+                        Pilot.SystemId,
+                        Work.ActiveTicks
+                    ),
+                };
+                BeginRetreat();
+                return;
+            }
             if (GateTravelRules.InRange(Pilot.Position!, Pilot.Flight.ShipRadius, _target))
             {
                 if (WaitForGangAtGate(_target) || WaitForEscortAtGate(_target))
@@ -1227,36 +1220,55 @@ internal sealed partial class CapsuleerHauler(
 
     private long _nextLook;
 
-    private void WatchGate()
+    private void BeginRetreat()
+    {
+        var leg = CapsuleerTrafficFlight.Leg(_route, Work, Pilot.SystemId);
+        int direction =
+            _route.SourceStationId == _route.DestinationStationId || leg.Index == 0 ? -1
+            : leg.Index == _route.Systems.Length - 1 ? 1
+            : -leg.Direction;
+        _work = Work with
+        {
+            RouteIndex = leg.Index,
+            RouteDirection = direction,
+            DestinationStationId = direction < 0 ? _route.SourceStationId : _route.DestinationStationId,
+            Retreating = true,
+            LaneDeparting = false,
+        };
+        if (Work.Ratting is { } activity)
+        {
+            _work = Work with { Ratting = activity with { Phase = RattingPhase.Returning } };
+        }
+        else
+        {
+            BeginTravel();
+        }
+    }
+
+    private bool GateIsDangerous()
     {
         if (
             !database.Settings.Capsuleers.SituationalAwareness
             || Work.Retreating
             || Work.Freight?.Stacks.Length is not > 0
+                && (HullClass)Pilot.ShipGroupId
+                    is not (
+                        HullClass.Hauler
+                        or HullClass.DeepSpaceTransport
+                        or HullClass.BlockadeRunner
+                        or HullClass.Freighter
+                        or HullClass.JumpFreighter
+                    )
             || _target is not { DestinationSystemId: not null } gate
             || Pilot.Position is not { } position
             || Work.ActiveTicks < _nextLook
             || position.DistanceTo(gate.Position) > NpcEncounterDefinitions.VisibilityRange
         )
         {
-            return;
+            return false;
         }
         _nextLook = Work.ActiveTicks + TimeSpan.FromSeconds(PilotAwareness.LookSeconds(pilotId)).Ticks;
-        int? regionalGroup =
-            database.Settings.Capsuleers.RegionalConflicts && Live is { } live
-                ? RegionalConflictStore.GroupForPilot(live, database.Catalog, pilotId)
-                : null;
-        if (
-            TrafficRules.SecurityBand(database.Catalog.Definition(CapsuleerProvisioningCatalog.Security, Pilot.SystemId))
-                != TrafficSecurityBand.High
-            && defense
-                .Observe(Pilot, Work.ActiveTicks)
-                .Count(s => PilotAwareness.ArmedHull(s.Hull) && !PatrolRules.Friendly(Pilot, s, regionalGroup))
-                >= (PilotAwareness.Cautious(pilotId) ? 2 : 3)
-        )
-        {
-            ObserveAggression(Pilot.ShipId);
-        }
+        return defense.ObserveCivilianDanger(Pilot, _navigation.Velocity, Work.ActiveTicks, gate) == CivilianDanger.Escape;
     }
 
     private void ObserveDanger(int destinyStamp)
@@ -1270,7 +1282,6 @@ internal sealed partial class CapsuleerHauler(
         {
             return;
         }
-        WatchGate();
         var visible = encounters
             .Advance(Pilot.SystemId, Now)
             .Where(n => !n.Warping && n.Position.DistanceTo(Pilot.Position) <= AsteroidDefinitions.VisibilityRange)

@@ -192,7 +192,7 @@ public sealed class CapsuleerRuntimeTests
         const long elapsed = 123456789;
         using (WorldDbContext world = new(f.Database.Path))
         {
-            new MinerCheckpoint(miner, paid with { ActiveTicks = 0, DueTicks = 0, ClockOffsetTicks = 0 }).Apply(world);
+            new MinerCheckpoint(miner, paid with { ActiveTicks = 0, DueTicks = 0, ClockOffsetTicks = 0, WorkingBelt = 0 }).Apply(world);
             world.Set<SavedCapsuleerJob>().ExecuteDelete();
             world.Database.ExecuteSql($"UPDATE WorldCapsuleerClock SET ElapsedTicks={elapsed} WHERE Id=1");
             world.Database.ExecuteSqlRaw("PRAGMA user_version=116");
@@ -212,6 +212,7 @@ public sealed class CapsuleerRuntimeTests
         var resumed = CapsuleerTestDriver.Miner(reopened, f.Clock);
         Assert.Equal(MinerActivity.Mining, resumed.Work.Activity);
         Assert.Equal(paid.Stamp + 1, resumed.Work.Stamp);
+        Assert.Equal(paid.WorkingBelt, resumed.Work.WorkingBelt);
         Assert.Equal(deadline, resumed.Work.DueTicks);
         Assert.Equal(paid.Cycles, resumed.Work.Cycles);
         Assert.Equal(f.Clock.Now + deadline - resumed.Work.ActiveTicks, resumed.Work.PaidUntil);

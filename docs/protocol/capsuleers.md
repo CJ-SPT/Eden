@@ -2,6 +2,51 @@
 
 [Protocol index](../protocol.md)
 
+## Civilian danger and stripped belts — November 17, 2026
+
+With situational awareness enabled, miners at belts and freight pilots approaching gates in lowsec and nullsec use
+their existing on-grid sightings. Player corporation, alliance and friendly regional contacts are excluded. Civilian
+pilots recognize the same combat hull estimates as roaming gangs and distinguish a Venture by its visible type.
+A nearby tackle hull, an interceptor or interdictor holding the destination gate, or an armed ship closing into
+tackle range can prompt immediate withdrawal. A cautious miner also leaves on an ordinary armed sighting.
+A bolder miner can finish its paid cycle and still interrupt it if the threat closes. Freight pilots also withdraw
+from groups of two or three armed ships according to their usual risk tolerance. Gate decisions use the ship's
+position after movement, including the turn it lands from warp, before committing to a jump.
+
+The 24 km danger range and 100 m/s closing threshold are Eden policies. Pilots project the visible relative motion
+only to their next scheduled look. The same rules apply to human and autonomous contacts. Hull estimates do not
+require access to the other ship's fitted modules or cargo. Existing direct aggression and travel rules still govern
+combat and escape. Gameplay references include [lowsec safety](https://wiki.eveuniversity.org/Safety_Tips_for_Operating_in_Low_Sec)
+and [hauling](https://wiki.eveuniversity.org/Hauling).
+
+A miner checks for visible ordinary ore when it reaches a belt or loses its rock. It selects another rock on grid
+when possible. When the grid is stripped, it takes its existing cargo to another eligible belt directly. The pilot
+keeps all stripped belts for the outbound circuit, docks when every candidate is stripped or dangerous, and unloads
+through the ordinary inventory operation. While docked it can reconsider a stripped belt twelve active minutes after
+the observation. Empty-belt memory works independently of the danger setting. Checkpoints retain the belt, memory,
+navigation and paid cycle. Existing mid-shift saves can recover the belt from the recorded deposit.
+
+The local evejs reference handles an exhausted mining operation as a normal hauling or retreat decision in
+`server/src/services/mining/miningNpcOperations.js` (file SHA-256 `5ce327785991ee6ffb18b523e4af1862cccc93e2be6e13e09bdefc2855aff4cd`).
+Eden's civilian miners choose their own next belt. Both behaviors use existing flight and mining operations.
+
+**Automated validation.** The exact development filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.PilotAwarenessTests.MinerChangesBeltsWithCargoAndRemembersTheStrippedCircuitAfterRestart`.
+The final affected filter was
+`FullyQualifiedName~PilotAwarenessTests|FullyQualifiedName~CapsuleerMinerTests|FullyQualifiedName~CapsuleerHaulerTests|FullyQualifiedName~CapsuleerTrafficNavigationTests|FullyQualifiedName~PvpTacticsTests|FullyQualifiedName~TravelerRoutineTests|FullyQualifiedName~OccupiedCapsuleerSimulationTests|FullyQualifiedName~CapsuleerRuntimeTests|FullyQualifiedName~CapsuleerHandoffTests|FullyQualifiedName~ResidentBotEconomyTests`.
+All 87 cases passed in 49.29 seconds including runner startup. They cover stripping a belt before arrival,
+collecting its last unit, losing a paid target to another miner, returning with the original cargo, reopening a
+checkpoint in flight, a visible interdictor at a gate and a protected contact at the same gate. An older paid-cycle
+restart assertion also failed on the unmodified base. The affected restart fixtures now compare array contents
+before checking the remaining progress fields. Tool and solution restore passed. The solution built with zero warnings
+and errors in 18.71 seconds. The catalog and formatting policy suites passed 8 and 9 checks respectively.
+Formatting verification passed in 36.41 seconds.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** In lowsec, approach a mining bot in a tackle ship or follow its next warp after
+stripping the belt. Native timing and presentation remain unverified.
+
 ## Regional loss accounting across refuge regions — November 17, 2026
 
 A reported missile-kill failure was reproduced at `RegionalConflictStore.Loss`: a nullsec community may use a

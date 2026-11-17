@@ -138,6 +138,22 @@ internal sealed partial class CapsuleerDefense(
                 .Select(contact => contact with { SignatureEstimate = database.Catalog.Definition(s_observedSignature, contact.TypeId) })
                 .ToArray();
 
+    internal CivilianDanger ObserveCivilianDanger(DockedPilot pilot, SpacePosition velocity, long elapsed, StaticSpaceObject? gate = null)
+    {
+        if (
+            TrafficRules.SecurityBand(database.Catalog.Definition(CapsuleerProvisioningCatalog.Security, pilot.SystemId))
+            == TrafficSecurityBand.High
+        )
+        {
+            return CivilianDanger.Clear;
+        }
+        int? group =
+            database.Settings.Capsuleers.RegionalConflicts && LiveWorld.Find(database.Path) is { } live
+                ? RegionalConflictStore.GroupForPilot(live, database.Catalog, pilot.PilotId)
+                : null;
+        return PilotAwareness.Assess(pilot, velocity, Observe(pilot, elapsed), group, gate);
+    }
+
     internal CapsuleerAttacker? PatrolTarget(DockedPilot pilot, long target, SpacePosition anchor, long now) =>
         LiveCombatRuntime.Find(database.Path)?.PatrolTarget(pilot, target, anchor, presence, now);
 

@@ -101,7 +101,7 @@ public sealed class OccupiedCapsuleerSimulationTests
         using (WorldDbContext world = new(fixture.Database.Path))
         {
             var row = world.Set<SavedCapsuleerCommunity>().Single(m => m.PilotId == saved.PilotId);
-            Assert.Equal(paid!.Work, MinerCheckpoint.Read(row.Progress));
+            CapsuleerTestDriver.AssertSavedMiner(paid!.Work, row.Progress);
         }
         using var returned = reopened.GetRequiredService<IHumanPresence>().Select(90000001, Home);
         Assert.Contains(saved, restored.Jobs());

@@ -5,6 +5,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Ships;
 using Eden.Protocol.Flight;
 using Eden.Server;
 using Eden.World.Capsuleers;
@@ -220,7 +221,13 @@ public sealed class CapsuleerTrafficNavigationTests
     [InlineData(100, false, true)]
     [InlineData(0, false, false)]
     [InlineData(100, true, false)]
-    public async Task ArmedTravelerHuntsVisiblePilotsAtAStationlessExitGateThenContinues(int roamPercent, bool carriesFreight, bool sabre)
+    [InlineData(100, true, false, true)]
+    public async Task ArmedTravelerHuntsVisiblePilotsAtAStationlessExitGateThenContinues(
+        int roamPercent,
+        bool carriesFreight,
+        bool sabre,
+        bool visibleInterdictor = false
+    )
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false);
         MoveDestinationToRemote(f);
@@ -318,7 +325,17 @@ public sealed class CapsuleerTrafficNavigationTests
         var victim = host.GetRequiredService<SqliteWorld>().FindPilot(1000001)!;
         ShipContact contact = new(PilotContact.From(victim), SpacePosition.Zero, null, 0, null);
         var space = host.GetRequiredService<SharedSpace>();
-        space.Publish(contact with { Arriving = true });
+        space.Publish(
+            visibleInterdictor
+                ? contact with
+                {
+                    Pilot = contact.Pilot with { ShipGroupId = (int)HullClass.Interdictor },
+                }
+                : contact with
+                {
+                    Arriving = true,
+                }
+        );
         HaulerObservation Tick()
         {
             f.Clock.Seconds++;
@@ -326,6 +343,14 @@ public sealed class CapsuleerTrafficNavigationTests
             return scheduler.Hauler(pilot)!;
         }
         var observation = Tick();
+        if (visibleInterdictor)
+        {
+            Assert.True(observation.Work.Retreating);
+            Assert.Equal(Corridor, observation.Pilot.SystemId);
+            Assert.Contains(observation.Work.Routine!.Threats, threat => threat.SystemId == Corridor);
+            Assert.NotEqual(gateId, observation.Work.TargetId);
+            return;
+        }
         if (roamPercent == 0 || carriesFreight)
         {
             for (int i = 0; i < 20 && observation.Pilot.SystemId == Corridor; i++)

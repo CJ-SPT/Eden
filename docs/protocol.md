@@ -1,5 +1,7 @@
 # Protocol findings and milestone records
 
+[Civilian danger and stripped belts](protocol/capsuleers.md#civilian-danger-and-stripped-belts--november-17-2026) covers visible threats at belts and gates, paid mining cycles and direct travel between belts.
+
 [Regional bot conflicts](protocol/capsuleers.md#regional-bot-conflicts--november-17-2026) adds persistent regional
 rivalries, raids, interception, real freight escorts and witnessed defensive responses using existing roaming gangs.
 
