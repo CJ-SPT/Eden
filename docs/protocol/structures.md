@@ -13,8 +13,54 @@ Historical foundation limitations below describe their original milestones; this
 | Asset safety | Personal/corporate collection, timed delivery, paid recovery, native inventory and public loot | Implemented; validation below |
 | Incoming combat and loss | Paid weapons against structures, legal targeting, destruction settlement and automatic custody transitions | Implemented; validation below |
 | Tethering | Resident protection, native effects, access and timer checks, saved repair settlement | Implemented; validation below |
-| Defense | Combat fitting/control, supported defensive weapons and target updates | In progress; resident control, fitting, targeting and controlled scenes implemented; firing remains |
+| Defense | Combat fitting/control, supported defensive weapons and target updates | In progress; resident control, fitting, targeting, scenes and ammunition implemented; firing remains |
 | Service completion | Remaining native structure profiles/access, economic/clone services, ownership and specialized structure consumers | Planned |
+
+### Resident structure ammunition and reloads
+
+The native structure ammunition bay now stores corporation-owned charge-category items under cargo flag 5. Managers
+deposit or withdraw whole/partial stacks while docked, including atomic batch deposits. The pinned controller declares
+no capacity bar for this bay. Loading accepts accessible personal cargo/hangar stock or corporation bay stock, transfers
+loaded ammunition into real stacks inside the fitted modules, and validates charge groups/sizes and magazine capacity
+against catalog volume. Reloads save each module's deadline in the existing resident `WorldModuleCooldown` table.
+Paid cycles/reloads prevent ammunition changes. Damaged structures can replenish ammunition independently of defensive
+fitting's full-shield requirement. Batch failures preserve quantities, ownership, magazines and cooldowns. Exhausting
+supplied stock leaves subsequent magazines unchanged.
+
+Loaded charges participate in the structure dogma graph. Hull/ballistic/guidance modifiers reach missile charges, while
+the pinned scripts' `otherID` modifiers reach their loaded module. Cached inputs include charge identity, parent module
+and immutable profile; quantity changes do not require a fitting recalculation. Unloading a script restores the module's
+unscripted attributes. Existing item and cooldown projection supplies checkpoint/reopen persistence; schema **188** is unchanged.
+
+Native `LoadAmmo`/`UnloadAmmo`, tuple `ItemGetInfo`, GetAllInfo charge priming, slot quantities, reload notifications and
+personal withdrawal now route through that authority. Routing uses resident structure membership because ordinary ship
+and structure IDs overlap. Native replies retain the operator's actual docked ship. Warm magazine/charge reads assert
+zero SQL commands, connections and fitting calculations. Defensive firing and automatic weapon cycles remain subsequent work.
+
+References: [UniWiki structure fitting](https://wiki.eveuniversity.org/Fitting_upwell_structures) and
+[missile mechanics](https://wiki.eveuniversity.org/Missile_mechanics). Inert build-3662168 inspection of
+`inventorycommon/const.pyj` and `invControllers.pyj` verifies the controller's cargo flag, charge-category filter and
+inherited `hasCapacity = False`. Pinned effects 6322-6325 and 7026 supply ECM/scrambler script modifiers; hull effect 7039
+and module effects 6448/6449 supply missile damage/application modifiers. The corrected six-field charge-group export
+reproduces the unchanged 404-type fixture and SHA-256 recorded below. Read-only EVE.js 261108.1 comparison:
+`invBrokerService.js`, SHA-256 `8CEC4112DE1B312B547E39B789391B0D8E18DFCA95AA61170F82AEFADC1E9651`.
+No AGPL source was incorporated; existing Blue charge and item codecs are reused.
+
+**Automated validation:** Final root checks passed **349** affected cases (2m16s), tool/solution restore, a zero-warning/error
+build (10.45s), both Python policy suites (8 + 9), formatting (2,616 files), line width and diff verification in **206.93s**.
+The ten-case ammunition class covers native custody/priming, checkpoint/reopen, damage-time replenishment, modifier-profile
+resolution, scripts, exhausted batch supply, rejection/rollback and capacity validation. The earlier combined ammunition
+run passed 64 structure/ordinary cases before the final additions. The final filter joined `FullyQualifiedName~` predicates
+with `|` for `Eden.Protocol.Tests.Structures`, `Eden.Protocol.Tests.Ammunition`,
+`Eden.Protocol.Tests.Docking.StructureServiceTests`, `Eden.Protocol.Tests.Persistence.ModuleFittingTests`,
+`Eden.Protocol.Tests.Persistence.InventoryOwnershipTests`, `Eden.Protocol.Tests.Fittings.ApplyFittingTests`,
+`Eden.Protocol.Tests.Combat.MissileFittingTests`, `Eden.Protocol.Tests.Combat.MissileFlightTests` and
+`Eden.Protocol.Tests.PilotSessions.TypedSessionTests`. No full .NET suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Deposit ammunition through the native bay; inspect a reload and a loaded script;
+partially unload into the bay and withdraw a stack to the personal hangar.
 
 ### Resident structure targeting and controlled scenes
 

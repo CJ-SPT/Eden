@@ -273,6 +273,7 @@ internal sealed partial class PilotStructureStore(
         )
         {
             Fitting = fitting,
+            Magazines = world is EconomyTransaction ? Magazines(world, structure) : [],
             Equipment =
                 world is EconomyTransaction
                     ? StructureEquipmentPersistence

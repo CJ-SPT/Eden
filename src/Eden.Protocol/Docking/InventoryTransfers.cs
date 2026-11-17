@@ -28,7 +28,8 @@ internal sealed class InventoryTransfers(
     Eden.Gameplay.Structures.IPilotStructures? structures = null,
     ICargoContainers? containers = null,
     CargoContainerHandler? containerHandler = null,
-    Eden.Gameplay.Structures.IPilotStructureFitting? structureFitting = null
+    Eden.Gameplay.Structures.IPilotStructureFitting? structureFitting = null,
+    Eden.Gameplay.Structures.IPilotStructureAmmunition? structureAmmunition = null
 )
 {
     internal PilotCallResult Move(PilotCallContext context, string service, InventoryMoveRequest request)
@@ -94,6 +95,14 @@ internal sealed class InventoryTransfers(
                                     + Eden.Gameplay.Structures.StructureRules.MaximumServiceSlots
                             && quantity is null or 1
                                 ? structures.RemoveService(context.Pilot.PilotId, source, owned.Id)
+                            : owned.FlagId == (int)InventoryFlag.Cargo && owned.CategoryId == (int)InventoryCategory.Charge
+                                ? (structureAmmunition ?? throw new InvalidDataException("Structure ammunition is unavailable.")).Withdraw(
+                                    context.Pilot.PilotId,
+                                    source,
+                                    owned.Id,
+                                    quantity ?? owned.Quantity,
+                                    service != "@hangar"
+                                )
                             : structures.Withdraw(context.Pilot.PilotId, source, owned.Id, quantity ?? owned.Quantity, service != "@hangar")
                     );
                     return PilotCallResult.None;

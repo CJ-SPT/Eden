@@ -105,7 +105,8 @@ internal static class StructureEquipmentCatalog
         CatalogDbContext catalog,
         IReadOnlyDictionary<DogmaAttributeId, double> hull,
         IReadOnlyList<StructureFittedEquipment> equipment,
-        IReadOnlyList<PassiveModifier> hullModifiers
+        IReadOnlyList<PassiveModifier> hullModifiers,
+        IReadOnlyList<StructureLoadedCharge>? charges = null
     )
     {
         Dictionary<DogmaAttributeId, DogmaAttributeDefinition> result = [];
@@ -117,6 +118,12 @@ internal static class StructureEquipmentCatalog
                     )
                 )
                 .Concat(hullModifiers.SelectMany(modifier => new[] { modifier.Attribute, modifier.SourceAttribute }))
+                .Concat((charges ?? []).SelectMany(charge => charge.Profile.Attributes.Keys))
+                .Concat(
+                    (charges ?? []).SelectMany(charge =>
+                        charge.Profile.Modifiers.SelectMany(modifier => new[] { modifier.Attribute, modifier.SourceAttribute })
+                    )
+                )
                 .Distinct()
         );
         while (pending.TryDequeue(out var id))

@@ -11,6 +11,9 @@ five-/twenty-day delivery, paid personal/corporate recovery and public structure
 
 [Resident tethering](protocol/structures.md#resident-tethering-and-repair) records protection, native effects and saved repairs.
 
+[Resident structure ammunition](protocol/structures.md#resident-structure-ammunition-and-reloads) records bay custody,
+magazine transfers, loaded-charge dogma, native priming and saved reload deadlines.
+
 [Resident structure targeting](protocol/structures.md#resident-structure-targeting-and-controlled-scenes) records lease-owned
 acquisition, native deferred replies and controlled scene observers.
 

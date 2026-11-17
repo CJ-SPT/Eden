@@ -107,6 +107,17 @@ internal sealed class StructureControlHandler(
             {
                 return structures.Read(pilot, id) is { } structure ? dogma.Prime(structure) : PilotCallResult.None;
             }
+            if (
+                method == "ItemGetInfo"
+                && context.ControlledStructureId == id
+                && args is [object?[] { Length: 3 } key]
+                && key is [long source, long slot, long type]
+                && source == id
+            )
+            {
+                var magazine = structures.Read(pilot, id)?.Magazines.FirstOrDefault(item => item.FlagId == slot && item.TypeId == type);
+                return magazine is null ? PilotCallResult.None : dogma.PrimeCharge(context.Pilot, magazine);
+            }
             if (method == "ItemGetInfo" && args is [long moduleId] && context.ControlledStructureId == id)
             {
                 var structure = structures.Read(pilot, id)!;

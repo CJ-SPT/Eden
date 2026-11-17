@@ -16,7 +16,8 @@ internal sealed class StructureInventoryHandler(
     IPilotFleet fleet,
     InventoryTransfers transfers,
     IPilotStructureFitting fitting,
-    FittingOperations fittingOperations
+    FittingOperations fittingOperations,
+    IPilotStructureAmmunition ammunition
 ) : ISelectedPilotCallHandler
 {
     private const string Prefix = "@structure-inventory:";
@@ -80,6 +81,31 @@ internal sealed class StructureInventoryHandler(
                     "@hangar",
                     new(hangarItems.Cast<long>().ToArray(), hangarSource, (int)InventoryFlag.Hangar, amount)
                 );
+            }
+            if (
+                method == "MultiAdd"
+                && args is [List<object?> ammunitionItems, long _]
+                && Equals(keywords?.GetValueOrDefault("flag"), (long)InventoryFlag.Cargo)
+            )
+            {
+                if (
+                    ammunitionItems.Any(item => item is not long)
+                    || keywords?.Keys.Any(key => key is not ("flag" or "qty")) == true
+                    || keywords?.GetValueOrDefault("qty") is not (null or long and > 0 and <= int.MaxValue)
+                )
+                {
+                    throw new InvalidDataException("Choose valid ammunition stacks and quantity.");
+                }
+                int? amount = keywords?.GetValueOrDefault("qty") is long ammunitionAmount ? checked((int)ammunitionAmount) : null;
+                fittingOperations.NotifyStructureChanges(
+                    context,
+                    ammunition.Deposit(
+                        context.Pilot.PilotId,
+                        id,
+                        ammunitionItems.Select(item => new StructureAmmoDeposit((long)item!, amount)).ToArray()
+                    )
+                );
+                return PilotCallResult.None;
             }
             if (
                 method == "MultiAdd"
@@ -151,6 +177,7 @@ internal sealed class StructureInventoryHandler(
                 }
                 var result = flag switch
                 {
+                    (int)InventoryFlag.Cargo => ammunition.Deposit(context.Pilot.PilotId, id, item, quantity),
                     (int)InventoryFlag.AutoFit when quantity is null or 1 => fitting.Fit(context.Pilot.PilotId, id, [new(item)]),
                     StructureRules.CoreRoomFlag when quantity is null or 1 => structures.InstallCore(context.Pilot.PilotId, id, item),
                     StructureRules.FuelBayFlag => structures.DepositFuel(context.Pilot.PilotId, id, item, quantity),

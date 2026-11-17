@@ -8,7 +8,13 @@ using Eden.Protocol.Docking;
 namespace Eden.Protocol.Structures;
 
 [Injectable]
-internal sealed class StructureDogmaBuilder(IPilotStructures structures, IPilotFitting fitting, ShipDogmaBuilder ships, TimeProvider clock)
+internal sealed class StructureDogmaBuilder(
+    IPilotStructures structures,
+    IPilotFitting fitting,
+    ShipDogmaBuilder ships,
+    TimeProvider clock,
+    Eden.Protocol.Ammunition.MagazineWire magazines
+)
 {
     internal DogmaItemInfo<double> Prime(StructureSnapshot structure) =>
         new(
@@ -83,6 +89,8 @@ internal sealed class StructureDogmaBuilder(IPilotStructures structures, IPilotF
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var attributes = (structure.Fitting?.Equipment.GetValueOrDefault(module.Id) ?? fitting.Attributes(module.TypeId)).ToDictionary();
         attributes[DogmaAttributeId.IsOnline] = module.Online ? 1d : 0d;
+        attributes[DogmaAttributeId.NextActivationTime] =
+            structure.Magazines.SingleOrDefault(item => item.ModuleId == module.Id)?.ReadyAt ?? 0;
         if (structure.Modules.SingleOrDefault(m => m.ItemId == module.Id)?.HourlyFuel is int fuel)
         {
             attributes[DogmaAttributeId.ServiceModuleFuelAmount] = fuel;
@@ -95,6 +103,9 @@ internal sealed class StructureDogmaBuilder(IPilotStructures structures, IPilotF
         return new(new DogmaItemKey.Item(module.Id), InventoryRow.From(module), attributes, effects, now);
     }
 
+    internal DogmaItemInfo<double> PrimeCharge(DockedPilot pilot, Eden.Gameplay.Ammunition.Magazine magazine) =>
+        magazines.Prime(pilot.PilotId, magazine);
+
     internal DogmaAllInfo AllInfo(DockedPilot pilot, StructureSnapshot structure, bool controlling)
     {
         var original = ships.AllInfo(pilot);
@@ -104,6 +115,7 @@ internal sealed class StructureDogmaBuilder(IPilotStructures structures, IPilotF
             [structure.Id] = new(structure.Id, true),
             [pilot.PilotId] = new(pilot.PilotId),
         };
+        Dictionary<long, IReadOnlyDictionary<int, MagazineQuantity>> quantities = [];
         if (controlling)
         {
             foreach (
@@ -115,15 +127,26 @@ internal sealed class StructureDogmaBuilder(IPilotStructures structures, IPilotF
                 info[module.Id] = PrimeModule(pilot, structure, module);
                 instances[module.Id] = new(module.Id, module.Online);
             }
+            if (structure.Magazines.Count > 0)
+            {
+                quantities[structure.Id] = structure.Magazines.ToDictionary(
+                    magazine => magazine.FlagId,
+                    magazine => new MagazineQuantity(magazine)
+                );
+            }
         }
         return original with
         {
             StructureInfo = info,
             ShipInfo = controlling ? info : original.ShipInfo,
+            Charges = controlling
+                ? structure.Magazines.ToDictionary(
+                    magazine => new DogmaItemKey.Charge(magazine.ShipId, magazine.FlagId, magazine.TypeId),
+                    magazine => magazines.Prime(pilot.PilotId, magazine)
+                )
+                : original.Charges,
             ActiveShipId = controlling ? structure.Id : pilot.ShipId,
-            ShipState = controlling
-                ? new(instances, new Dictionary<long, IReadOnlyDictionary<int, MagazineQuantity>>())
-                : original.ShipState,
+            ShipState = controlling ? new(instances, quantities) : original.ShipState,
             Character =
                 controlling && original.Character.Item is { } item
                     ? original.Character with

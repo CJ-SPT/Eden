@@ -16,7 +16,8 @@ internal sealed class MagazineWire(
     IPilotCombat combat,
     IPilotInventory inventory,
     IPilotAmmunition? ammunition = null,
-    IPilotMining? mining = null
+    IPilotMining? mining = null,
+    Eden.Gameplay.Structures.IPilotStructureAmmunition? structureAmmunition = null
 )
 {
     internal static DogmaItemKey.Charge Key(Magazine magazine) => new(magazine.ShipId, magazine.FlagId, magazine.TypeId);
@@ -25,7 +26,13 @@ internal sealed class MagazineWire(
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var attributes = (
-            ammunition?.ChargeAttributes(pilotId, magazine.ShipId, magazine.ModuleId) ?? fitting.Attributes(magazine.TypeId)
+            structureAmmunition?.Handles(magazine.ShipId) == true
+                ? (structureAmmunition ?? throw new InvalidDataException("Structure ammunition is unavailable.")).ChargeAttributes(
+                    pilotId,
+                    magazine.ShipId,
+                    magazine.ModuleId
+                )
+                : ammunition?.ChargeAttributes(pilotId, magazine.ShipId, magazine.ModuleId) ?? fitting.Attributes(magazine.TypeId)
         ).ToDictionary(a => a.Key, a => a.Value);
         attributes[DogmaAttributeId.Quantity] = magazine.Quantity;
         attributes[DogmaAttributeId.Damage] = magazine.Damage;
@@ -92,6 +99,10 @@ internal sealed class MagazineWire(
                 }
             }
             var magazine = change.Current ?? change.Previous!;
+            if (structureAmmunition?.Handles(magazine.ShipId) == true)
+            {
+                continue;
+            }
             var module = inventory
                 .List(context.Pilot.PilotId, context.Pilot.ShipId)
                 .SingleOrDefault(i => i.Id == magazine.ModuleId && InventoryDefinitions.IsFittedSlot(i.FlagId));

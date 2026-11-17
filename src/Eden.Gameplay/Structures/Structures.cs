@@ -167,6 +167,7 @@ public sealed record StructureSnapshot(
 {
     public IReadOnlyList<StructureModule> Equipment { get; init; } = [];
     public StructureFittingState? Fitting { get; init; }
+    public IReadOnlyList<Ammunition.Magazine> Magazines { get; init; } = [];
     public StructureBattle? Battle { get; init; }
     public Combat.HullDamage? DamageFractions { get; init; }
     public StructureUpkeepState Upkeep { get; init; } = StructureUpkeepState.LowPower;

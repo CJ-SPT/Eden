@@ -31,7 +31,7 @@ def export(path, output):
         ids.update(equipment)
         charge_groups = {int(v) for i in equipment for a, v in db.execute(
             'SELECT AttributeId,Value FROM TypeAttribute WHERE ItemTypeId=?', (i,)
-        ) if a in (604, 605, 606, 609, 610) and v > 0}
+        ) if a in (604, 605, 606, 607, 608, 609) and v > 0}
         ids.update(i for i, g in db.execute('SELECT Id,GroupId FROM ItemType')
                    if g in charge_groups and definitions.get(i, {}).get('published') == 1)
         for i in hulls:

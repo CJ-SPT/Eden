@@ -23,7 +23,11 @@ public sealed record StructureFittingState(
     IReadOnlyDictionary<DogmaAttributeId, double> Attributes,
     IReadOnlyDictionary<long, IReadOnlyDictionary<DogmaAttributeId, double>> Equipment,
     StructureFittingCapacity Capacity
-);
+)
+{
+    public IReadOnlyDictionary<long, IReadOnlyDictionary<DogmaAttributeId, double>> Charges { get; init; } =
+        ImmutableDictionary<long, IReadOnlyDictionary<DogmaAttributeId, double>>.Empty;
+}
 
 public sealed record StructureFittingCapacity(int Low, int Medium, int High, int Rigs, int Launchers, int Turrets)
 {
@@ -59,11 +63,17 @@ public static class StructureFittingRules
         IReadOnlyList<StructureFittedEquipment> equipment,
         IReadOnlyList<PassiveModifier> hullModifiers,
         IReadOnlyDictionary<DogmaAttributeId, DogmaAttributeDefinition> definitions,
-        double security
+        double security,
+        IReadOnlyList<StructureLoadedCharge>? loaded = null
     )
     {
         List<DogmaNode> nodes = [new(structureId, basis)];
         List<DogmaModifier> modifiers = [];
+        var charges = loaded ?? [];
+        var locationItems = equipment
+            .Select(item => new DogmaEquipment(item.ItemId, item.Profile.GroupId, item.Profile.RequiredSkills))
+            .Concat(charges.Select(charge => new DogmaEquipment(charge.ItemId, charge.Profile.GroupId, charge.Profile.RequiredSkills)))
+            .ToArray();
         Add(structureId, hullModifiers, true, true);
         foreach (var item in equipment)
         {
@@ -78,6 +88,27 @@ public static class StructureFittingRules
             }
             nodes.Add(new(item.ItemId, attributes));
             Add(item.ItemId, item.Profile.Modifiers, item.Online, false);
+        }
+        foreach (var charge in charges)
+        {
+            nodes.Add(new(charge.ItemId, charge.Profile.Attributes));
+            var module = equipment.Single(item => item.ItemId == charge.ModuleId);
+            foreach (var modifier in charge.Profile.Modifiers)
+            {
+                if (modifier.Phase != PassiveEffectPhase.Fitted && !module.Online)
+                {
+                    continue;
+                }
+                long target = modifier.Target switch
+                {
+                    StructureChargeTarget.Module => charge.ModuleId,
+                    StructureChargeTarget.Structure => structureId,
+                    _ => charge.ItemId,
+                };
+                modifiers.Add(
+                    new(target, modifier.Attribute, modifier.Operation, new DogmaValue.Attribute(charge.ItemId, modifier.SourceAttribute))
+                );
+            }
         }
         var graph = new DogmaGraph(nodes, modifiers, definitions);
         var moduleAttributes = equipment.ToImmutableDictionary(
@@ -105,7 +136,13 @@ public static class StructureFittingRules
         hull[DogmaAttributeId.CalibrationLoad] = equipment.Sum(e =>
             moduleAttributes[e.ItemId].GetValueOrDefault(DogmaAttributeId.CalibrationCost)
         );
-        return new(hull.ToImmutableDictionary(), moduleAttributes, capacity);
+        return new(hull.ToImmutableDictionary(), moduleAttributes, capacity)
+        {
+            Charges = charges.ToImmutableDictionary(
+                charge => charge.ModuleId,
+                charge => (IReadOnlyDictionary<DogmaAttributeId, double>)graph.Attributes(charge.ItemId).ToImmutableDictionary()
+            ),
+        };
 
         void Add(long source, IReadOnlyList<PassiveModifier> entries, bool online, bool exempt)
         {
@@ -117,11 +154,11 @@ public static class StructureFittingRules
                 }
                 IEnumerable<long> targets = modifier.Selector switch
                 {
-                    ModifierSelector.Group => equipment.Where(e => e.Profile.GroupId == modifier.SelectionId).Select(e => e.ItemId),
-                    ModifierSelector.RequiredSkill => equipment
-                        .Where(e => e.Profile.RequiredSkills.Contains(modifier.SelectionId!.Value))
+                    ModifierSelector.Group => locationItems.Where(e => e.GroupId == modifier.SelectionId).Select(e => e.ItemId),
+                    ModifierSelector.RequiredSkill => locationItems
+                        .Where(e => e.RequiredSkills.Contains(modifier.SelectionId!.Value))
                         .Select(e => e.ItemId),
-                    ModifierSelector.Location => equipment.Select(e => e.ItemId),
+                    ModifierSelector.Location => locationItems.Select(e => e.ItemId),
                     ModifierSelector.Item => [modifier.Domain == ModifierDomain.Ship ? structureId : source],
                     _ => [],
                 };
@@ -140,6 +177,8 @@ public static class StructureFittingRules
             }
         }
     }
+
+    private sealed record DogmaEquipment(long ItemId, int GroupId, IReadOnlySet<int> RequiredSkills);
 
     public static void Check(StructureProfile structure, StructureFittingState state, IReadOnlyList<StructureFittedEquipment> equipment)
     {
