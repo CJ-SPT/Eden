@@ -24,6 +24,13 @@ internal sealed class PilotItemTrashStore(WorldDatabase database) : IPilotItemTr
         ItemTrashRules.CheckSelection(itemIds);
         using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: itemIds));
         var world = transaction.World;
+        if (
+            world is Eden.World.Runtime.Economy.EconomyTransaction
+            && itemIds.Any(id => Eden.World.Structures.AssetSafetyStore.Ancestor(world, id) is not null)
+        )
+        {
+            throw new InvalidDataException("Recover asset safety contents before trashing them.");
+        }
         using CatalogDbContext catalog = new(database.CatalogPath);
         if (
             !world.PilotExists(pilotId)

@@ -10,7 +10,8 @@ Historical foundation limitations below describe their original milestones; this
 | Milestone | Scope | Status |
 | --- | --- | --- |
 | Battle state | Catalog layer caps/resistances and pause thresholds, repairs, reinforcement, abandonment, native status and saved deadlines | Implemented; validation below |
-| Incoming combat and loss | Paid weapons against structures, legal targeting, destruction settlement, personal/corporate asset safety and recovery | Planned |
+| Asset safety | Personal/corporate collection, timed delivery, paid recovery, native inventory and public loot | Implemented; validation below |
+| Incoming combat and loss | Paid weapons against structures, legal targeting, destruction settlement and automatic custody transitions | Planned |
 | Defense and tethering | Combat fitting/control, supported defensive weapons, target updates, access-checked tether and repairs | Planned |
 | Service completion | Remaining native structure profiles/access, economic/clone services, ownership and specialized structure consumers | Planned |
 
@@ -83,6 +84,79 @@ final-newline/trailing-whitespace checks and `git diff --check` passed. The full
 **Live acceptance:** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks:** None for this foundation; incoming player weapon routing is not yet enabled.
+
+### Asset safety and public structure loot
+
+Schema **186** adds resident `WorldAssetSafety` and `WorldStructureLoot` records. Personal and corporation assets can be
+manually collected without docking permission after leaving the source structure. Active boarded ships, installed
+industry blueprints and fitted structure equipment are not collected by the manual operation. Automatic collection
+during destruction/decommissioning belongs to the incoming-combat/loss milestone.
+
+Collection preserves inventory identity, nested contents, singleton state, blueprint runs/efficiencies, stored hulls,
+fitted equipment and loaded charges. Corporation roots retain their original hangar-division flags. Pending wraps do
+not appear as ordinary usable inventory. After five days, an authorized owner can deliver to an accessible dockable
+structure or NPC station in the original system. After twenty days, an undelivered wrap relocates to its saved NPC
+destination exactly once. Selection uses straight-line catalog system coordinates: high-security origins use the
+nearest high-security station system, while low/null origins use the nearest low-security station system. Stable station
+identity breaks ties. Eligible system centers are batch-read and the resulting destination is cached by catalog generation.
+
+Delivered wraps use native inventory type **60**, group **1319**. Native inventory bindings list the contents and
+support ordinary `Add`/`MultiAdd` recovery to personal hangar/cargo or authorized corporation office divisions/deliveries.
+Recovery charges **0.5%** of reference value in the original system or **15%** after remote relocation, rounded up to
+cents. Valuation includes nested containers, fitted equipment and loaded charges; Eden's existing reference market
+estimates are used with a positive catalog-base-price fallback. Personal recovery debits its owner; corporation recovery
+requires the current CEO/Director and debits the master division. Journal reference type **123** comes from the pinned
+accounting-entry catalog. Custody, fees, partial-stack metadata, wallet history and wrap cleanup commit atomically.
+
+Recovery rechecks ownership, location, quantities, current authority, available funds and destination capacity. Wraps
+cannot be moved, trashed, traded or contracted to bypass recovery. A completed selection cannot be recovered a second
+time. Native created/delivered notifications invalidate the relevant asset views. Session monitors use owner-specific
+resident revisions and the next saved relocation deadline; unchanged/absent results require no SQL or fitting work.
+
+Wormhole and Pochven collection ejects assets into public structure-loot containers instead of protective wraps. These
+records retain their actual structure source and personal/corporate owner, independently of NPC or ship wreck records.
+They use ordinary range-checked inventory looting, abandoned-loot presentation, scanner discovery and checkpoint capture.
+Container lifetime follows Eden's existing two-hour loot policy. Exact expiry removes the container and its nested
+contents; taking a fitted hull or container transfers its surviving contents with it. There is no offline SQL gameplay path.
+
+Pinned-client inspection used `assetSafetySvc.pyj`, `assetSafetyControllers.pyj`, `assetSafetyEntry.pyj` and
+`assetSafetyDeliverWindow.pyj` from the original archive identified above. Native methods include character/corporation
+wrap lists, wrap names, destination lookup, personal/corporate collection and `MoveSafetyWrapToStructure` with its
+`destinationID` keyword. The Blue codecs remain unchanged. Gameplay references are
+[UniWiki asset safety](https://wiki.eveuniversity.org/Asset_safety) and the CCP asset-safety article linked above.
+EVE.js **261108.1** was checked as a reference: `structureAssetSafetyService.js` SHA-256
+`E501D18B46C52530FD8B77F6EC2B13208BE694ACDE35D5BA01493E835869E421` and `structureAssetSafetyRecovery.js` SHA-256
+`37980597DBF4A5A978F2FB9D09E1820BF2E17710E23D1D168DACB1F22015BAFD`. No AGPL source was incorporated.
+The reproducible structure catalog fixture now includes type 60 through `tools/Export-StructureCatalog.py`.
+
+**Automated validation:** Development began with
+`FullyQualifiedName=Eden.Protocol.Tests.Structures.AssetSafetyTests.NativeSafetyPreservesNestedAssetsAndShipsThenChargesAtomicPartialRecoveryAfterReopen`.
+The native/checkpoint/recovery flow passed after adding real fitted-module and loaded-charge custody, bound inventory
+reads, ordinary drag recovery and the zero-SQL revision monitor (one case, 7.60 seconds; build 5.10 seconds).
+The expanded safety class passed nine cases in 9.51 seconds (build 10.05 seconds). A failed initial wormhole check exposed
+the NPC/ship source requirement in ordinary wreck storage; dedicated structure-loot records replaced that attempted path.
+Its final exact case covers personal/corporate ejection, lawful third-party looting, warm contact reuse and exact expiry,
+passing in 7.20 seconds (build 4.91 seconds). The additional contract-bypass rejection passed in 7.21 seconds
+(build 5.10 seconds).
+
+Final root tool/solution restore, build (zero warnings/errors; 8.57 seconds), and **426 affected .NET cases** passed.
+The filter combined `FullyQualifiedName~` selectors for `Eden.Protocol.Tests.Structures`,
+`Eden.Protocol.Tests.Inventory.CargoContainer`, `Eden.Protocol.Tests.Inventory.ItemTrashTests`,
+`Eden.Protocol.Tests.Persistence.PilotInventoryTests`, `Eden.Protocol.Tests.Persistence.InactiveShipInventoryTests`,
+`Eden.Protocol.Tests.Docking.TypedInventoryTests`, `Eden.Protocol.Tests.PilotSessions.CorporationStorageTests`,
+`Eden.Protocol.Tests.PilotSessions.PlayerTradeTests`, `Eden.Protocol.Tests.Persistence.ContractAssetTests`,
+`Eden.Protocol.Tests.PilotSessions.ContractAssetServiceTests`, `Eden.Protocol.Tests.Loot.WreckTests`,
+`Eden.Protocol.Tests.Information.InformationTests`, `Eden.Protocol.Tests.Persistence.WorldMigrationTests`,
+`Eden.Protocol.Tests.Persistence.WorldInitializationTests` and `Eden.Protocol.Tests.Hosting` using `|`.
+Both Python policy suites passed (**8 catalog**, **9 formatting**), as did formatting/140-column verification
+(**2,588 files**) and `git diff --check`. The complete root validation sequence took **166.22 seconds**.
+Changed documentation local links, UTF-8, final newlines and trailing whitespace were checked separately.
+No full .NET suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Inspect a delivered wrap's native contents and recover one partial stack;
+verify corporation recovery in an office division. Native rendering and interactions remain unverified.
 
 ## Station and structure hull geometry — November 16, 2026
 

@@ -196,7 +196,16 @@ internal sealed partial class EconomyTransaction(
 
     internal override long NextItemId()
     {
-        string[] names = ["WorldItem", "WorldShip", "WorldPilotImplant", "WorldBooster", "WorldStructure", "WorldSovereigntyNode"];
+        string[] names =
+        [
+            "WorldItem",
+            "WorldShip",
+            "WorldPilotImplant",
+            "WorldBooster",
+            "WorldStructure",
+            "WorldSovereigntyNode",
+            "WorldAssetSafety",
+        ];
         long last = names.Select(name => _sequences.GetValueOrDefault(name, store.Sequence(name))).Max();
         return Next("WorldItem", Math.Max(last, InventoryDefinitions.FirstOwnedItemId));
     }

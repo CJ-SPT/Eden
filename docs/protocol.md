@@ -3,6 +3,9 @@
 [Upwell completion program](protocol/structures.md#upwell-completion-program--november-16-2026)
 records resident battle state, native damage/timer views and the remaining combat/recovery milestones.
 
+[Structure asset safety](protocol/structures.md#asset-safety-and-public-structure-loot) records resident custody,
+five-/twenty-day delivery, paid personal/corporate recovery and public structure loot.
+
 [Standard market and unified economy settings](protocol/industry.md#standard-live-order-market-and-unified-economy-settings-november-16-2026)
 records public snapshot import, individual price levels, supported station geography, finite stock, buy ranges and checkpoints.
 

@@ -13,6 +13,23 @@ internal sealed partial class CargoContainerStore
     {
         using var world = Live.Economy.Begin(new(pilots: [pilotId]));
         using CatalogDbContext catalog = new(database.CatalogPath);
+        if (Eden.World.Structures.AssetSafetyStore.Ancestor(world, request.SourceId) is not null)
+        {
+            var recovered = Eden.World.Structures.AssetSafetyStore.Recover(
+                world,
+                catalog,
+                pilotId,
+                destination,
+                request,
+                clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()
+            );
+            world.Commit();
+            return recovered.Changes;
+        }
+        if (request.ItemIds.Any(id => world.Set<Eden.Data.World.Structures.SavedAssetSafety>().Find(id) is not null))
+        {
+            throw new InvalidDataException("Recover safety contents before moving the wrap.");
+        }
         var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown pilot.");
         var ship = pilot.ActiveShip;
         bool depositing = world.Set<OwnedItem>().Find(destination) is not null;

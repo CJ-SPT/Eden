@@ -3,6 +3,9 @@
 [Upwell completion](protocol/structures.md#upwell-completion-program--november-16-2026) tracks structure combat,
 reinforcement, destruction, asset recovery and remaining services.
 
+[Structure asset safety](protocol/structures.md#asset-safety-and-public-structure-loot) covers manual collection,
+timed delivery, paid recovery and public wormhole/Pochven loot.
+
 [Market presets](world-configuration.md#market-presets) combines economy and supply settings and explains the
 Standard preset's imported live order books, original locations/quantities and checkpoint behavior.
 

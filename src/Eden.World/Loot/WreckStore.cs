@@ -269,6 +269,7 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
         using WorldActionScope scope = new(database, new(systems: [systemId]));
         using CatalogDbContext catalog = new(database.CatalogPath);
         var world = scope.World;
+        Eden.World.Structures.StructureLootStore.Expire(world, systemId, now);
         var expired = world.Filter<WorldWreck>(w => w.SystemId == systemId && w.ExpiresAt <= now).Select(w => w.Id).ToHashSet();
         if (expired.Count != 0)
         {
@@ -352,12 +353,18 @@ internal sealed partial class WreckStore(WorldDatabase database) : IWrecks
                 );
             })
             .Concat(Eden.World.Planetary.PlanetaryOrbitStore.Contacts(world, catalog, systemId, now))
+            .Concat(world is EconomyTransaction ? Eden.World.Structures.StructureLootStore.Contacts(world, catalog, systemId, now) : [])
             .ToArray();
     }
 
     public WreckInventory Read(long pilotId, long wreckId, long now)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
+        if (Eden.Gameplay.Structures.AssetSafetyRules.IsLootContainer(wreckId))
+        {
+            var live = LiveWorld.Find(database.Path) ?? throw new InvalidOperationException("Structure loot requires a resident world.");
+            return live.Economy.Inspect(world => Eden.World.Structures.StructureLootStore.Read(world, catalog, pilotId, wreckId, now));
+        }
         if (JetcanRules.IsJetcan(wreckId))
         {
             return LiveWorld.Find(database.Path) is { } live

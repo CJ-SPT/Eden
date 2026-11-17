@@ -45,6 +45,20 @@ internal sealed partial class WreckStore
         InventoryFlag destinationFlag = InventoryFlag.Cargo
     )
     {
+        if (Eden.Gameplay.Structures.AssetSafetyRules.IsLootContainer(wreckId))
+        {
+            return Eden.World.Structures.StructureLootStore.Take(
+                world,
+                catalog,
+                pilotId,
+                shipId,
+                wreckId,
+                itemIds,
+                quantity,
+                now,
+                destinationFlag
+            );
+        }
         if (JetcanRules.IsJetcan(wreckId))
         {
             return JetcanStore.Take(world, catalog, pilotId, shipId, wreckId, itemIds, quantity, now, destinationFlag);

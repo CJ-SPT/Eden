@@ -197,6 +197,10 @@ internal sealed partial class PilotContractStore(WorldDatabase database, Contrac
                 {
                     throw new InvalidDataException("Deliver or break an existing courier package before contracting it again.");
                 }
+                if (item.TypeId == Eden.Gameplay.Structures.AssetSafetyRules.WrapTypeId)
+                {
+                    throw new InvalidDataException("Recover safety contents before contracting them.");
+                }
                 if (!escrowIds.Add(item.Id) || escrowIds.Count + draft.RequestedItems.Count > ContractRules.MaximumItems)
                 {
                     throw new InvalidDataException("The contract has too many or overlapping nested items.");
