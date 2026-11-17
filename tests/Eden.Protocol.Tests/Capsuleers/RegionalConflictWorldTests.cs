@@ -27,6 +27,136 @@ public sealed class RegionalConflictWorldTests
     private const int Away = 30000142;
     private const int HomeStation = 60015157;
     private const long Human = 90000001;
+    private const int SupportMediumSlot = (int)InventoryFlag.MediumSlot0 + 3;
+
+    [Theory]
+    [InlineData(false, 2)]
+    [InlineData(true, 2)]
+    [InlineData(true, 1)]
+    public async Task EwarKeepsASecondLockAndItsOwnAssignmentAcrossRestart(bool supportOnly, int targetLimit)
+    {
+        using var fixture = new RoamingGangTests.Fixture(regional: true, supportCatalog: true, targetLimit: targetLimit);
+        long actor = fixture.Live.Economy.Read(world =>
+            world
+                .Set<SavedCapsuleerHauler>()
+                .Where(row => row.SourceStationId == HomeStation)
+                .OrderBy(row => row.PilotId)
+                .Select(row => row.PilotId)
+                .First()
+        );
+        long jammer;
+        using (var catalog = new CatalogDbContext(fixture.Database.CatalogPath))
+        using (var action = fixture.Live.Economy.Begin())
+        {
+            var pilot = action.Pilots.Find(actor)!;
+            CapsuleerCommunityStore.GrantRequirements(action, catalog, actor, 1955, []);
+            jammer = InventoryPersistence.NextId(action);
+            action.Add(
+                new OwnedItem
+                {
+                    Id = jammer,
+                    OwnerId = actor,
+                    LocationId = pilot.ActiveShipId,
+                    TypeId = 1955,
+                    Quantity = 1,
+                    Singleton = true,
+                    Online = true,
+                    FlagId = SupportMediumSlot,
+                }
+            );
+            if (supportOnly)
+            {
+                foreach (var gun in action.Set<OwnedItem>().Where(item => item.LocationId == pilot.ActiveShipId && item.TypeId == 561))
+                {
+                    gun.Online = false;
+                }
+            }
+            action.Commit();
+        }
+        var gang = fixture.Form();
+        Assert.Contains(gang.Members, member => member.PilotId == actor);
+        if (supportOnly)
+        {
+            Assert.Equal(PvpRole.ElectronicWarfare, gang.Members.Single(member => member.PilotId == actor).Role);
+            Assert.False(gang.Members.Single(member => member.PilotId == actor).DamageCapable);
+        }
+        using (var catalog = new CatalogDbContext(fixture.Database.CatalogPath))
+        using (var action = fixture.Live.Economy.Begin())
+        {
+            var anchor = SystemObjects.Geometry(catalog, Home).First(body => body.DestinationGateId is not null).Position;
+            foreach (long pilotId in new[] { actor, Human, Human + 1 })
+            {
+                var pilot = action.Pilots.Find(pilotId)!;
+                if (pilotId != actor)
+                {
+                    pilot.ActiveShip.TypeId = 603;
+                }
+                SqliteWorld.SetPosition(
+                    action,
+                    catalog,
+                    pilot.ActiveShipId,
+                    anchor
+                        + new SpacePosition(
+                            pilotId == actor ? 0
+                                : pilotId == Human ? 1_000
+                                : 1_500,
+                            0,
+                            0
+                        ),
+                    Home,
+                    fixture.Clock.Now
+                );
+            }
+            action.Commit();
+        }
+        var checkpoint = fixture.Live.HaulerCheckpoints[actor];
+        fixture.Live.HaulerCheckpoints[actor] = checkpoint with
+        {
+            Work = checkpoint.Work with
+            {
+                Activity = HaulerActivity.Flying,
+                ArrivalUntil = 0,
+                Navigation = new NavigationState().Capture(),
+            },
+        };
+        var ships = fixture.Host.GetRequiredService<SqliteWorld>();
+        var pilotShip = ships.FindPilot(-1, actor)!;
+        var primary = ships.FindPilot(1000001)!;
+        var secondary = ships.FindPilot(1000002)!;
+        var space = fixture.Host.GetRequiredService<SharedSpace>();
+        space.Publish(new(PilotContact.From(primary), SpacePosition.Zero, null, 0, null));
+        space.Publish(new(PilotContact.From(secondary), SpacePosition.Zero, null, 0, null));
+        var defense = fixture.Host.GetRequiredService<CapsuleerDefense>();
+        var target = Assert.IsType<CapsuleerAttacker>(
+            defense.PatrolTarget(pilotShip, primary.ShipId, pilotShip.Position!, fixture.Clock.Now)
+        );
+        NavigationState navigation = new();
+        var locking = defense.Advance(pilotShip, navigation, null, fixture.Clock.Now, 0, [], proactive: target, gang: gang);
+        Assert.Equal(targetLimit, locking.State!.Locks.Length);
+        fixture.Clock.Seconds += 30;
+        var active = defense.Advance(locking.Pilot, navigation, locking.State, fixture.Clock.Now, 30, [], proactive: target, gang: gang);
+        Assert.False(active.Escape);
+        Assert.Equal(primary.ShipId, active.State!.TargetId);
+        var effect = Assert.Single(active.State.Cycles, cycle => cycle.ModuleId == jammer);
+        Assert.Equal(DogmaEffect.PlayerEcm, effect.Effect);
+        Assert.Equal(targetLimit > 1 ? secondary.ShipId : primary.ShipId, effect.TargetId);
+        if (!supportOnly)
+        {
+            Assert.Contains(active.State.Cycles, cycle => cycle.Effect == DogmaEffect.ProjectileFired && cycle.TargetId == primary.ShipId);
+        }
+        var saved = checkpoint with { Work = checkpoint.Work with { Defense = active.State } };
+        using (var action = fixture.Live.Economy.Begin())
+        {
+            saved.Apply(action);
+            action.Commit();
+        }
+        fixture.Live.HaulerCheckpoints[actor] = saved;
+        await fixture.Live.FlushAsync();
+        fixture.Restart();
+        var restored = fixture.Live.HaulerCheckpoints[actor].Work.Defense!;
+        Assert.Equal(active.State.Locks, restored.Locks);
+        Assert.Equal(effect.ReadyAt, Assert.Single(restored.Cycles, cycle => cycle.ModuleId == jammer).ReadyAt);
+    }
 
     [Fact]
     public void OffensiveRaidInitiatesPaidCombatAgainstAVisibleNeutralPilot()

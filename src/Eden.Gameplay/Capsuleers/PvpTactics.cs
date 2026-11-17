@@ -59,9 +59,20 @@ public static class PvpTactics
             HullClass.Battleship => 8,
             HullClass.CombatBattlecruiser or HullClass.AttackBattlecruiser => 5,
             HullClass.HeavyAssaultCruiser or HullClass.HeavyInterdictionCruiser => 5,
-            HullClass.Cruiser or HullClass.ForceRecon or HullClass.CombatReconShip => 3,
+            HullClass.StrategicCruiser or HullClass.CommandShip => 6,
+            HullClass.Marauder or HullClass.BlackOps or HullClass.EliteBattleship => 10,
+            HullClass.Dreadnought
+            or HullClass.Carrier
+            or HullClass.ForceAuxiliary
+            or HullClass.LancerDreadnought
+            or HullClass.CommandCarrier => 32,
+            HullClass.Supercarrier => 64,
+            HullClass.Titan => 128,
+            HullClass.Cruiser or HullClass.ForceRecon or HullClass.CombatReconShip or HullClass.Logistics => 3,
+            HullClass.TacticalDestroyer or HullClass.CommandDestroyer => 3,
+            HullClass.ElectronicAttack => 2,
             HullClass.Destroyer or HullClass.Interdictor or HullClass.AssaultFrigate => 2,
-            HullClass.Frigate or HullClass.Interceptor => 1,
+            HullClass.Frigate or HullClass.Interceptor or HullClass.LogisticsFrigate or HullClass.StealthBomber => 1,
             _ => .5,
         };
 
@@ -77,7 +88,8 @@ public static class PvpTactics
     public static PvpRangeBand Band(double weaponRange, double lockRange, double tackleRange, PvpRole role, bool alliedTackle = false)
     {
         double range = Math.Min(weaponRange, lockRange);
-        bool maintainTackle = tackleRange > 0 && (role is PvpRole.Tackle or PvpRole.Brawler || !alliedTackle);
+        bool maintainTackle =
+            tackleRange > 0 && (role is PvpRole.Tackle or PvpRole.Brawler || !alliedTackle && role != PvpRole.ElectronicWarfare);
         if (maintainTackle)
         {
             range = Math.Min(range, tackleRange * TackleRangeMargin);
@@ -150,7 +162,8 @@ public static class PvpTactics
         double maximumSpeed,
         PvpRangeBand band,
         PvpRole role,
-        double radii = 0
+        double radii = 0,
+        ObservedPvpWeapon opponentWeapon = ObservedPvpWeapon.Unknown
     )
     {
         double distance = separation.Length;
@@ -161,6 +174,10 @@ public static class PvpTactics
         }
         if (role == PvpRole.Tackle && surfaceDistance > band.Maximum)
         {
+            if (opponentWeapon is ObservedPvpWeapon.Missile or ObservedPvpWeapon.Drone)
+            {
+                return new(PvpMovementKind.Follow);
+            }
             var radial = separation.Unit;
             var transverse = radial.Cross(new(0, 1, 0));
             if (transverse.Length == 0)
@@ -232,7 +249,8 @@ public static class PvpTactics
         long reported = 0,
         bool cautious = true,
         double approachSpeed = 0,
-        double sourceRadius = 0
+        double sourceRadius = 0,
+        double supportRange = 0
     )
     {
         if (!double.IsFinite(friendlyStrength) || friendlyStrength <= 0)
@@ -245,7 +263,8 @@ public static class PvpTactics
         double fullDamage = weapons
             .Where(source => source.AvailableShots > 0 && source.Weapon.CycleMilliseconds > 0)
             .Sum(source => source.Weapon.Damage.Total * 1000 / source.Weapon.CycleMilliseconds);
-        if (fullDamage <= 0 || !double.IsFinite(fullDamage))
+        bool supportOnly = fullDamage <= 0 && supportRange > 0;
+        if (!double.IsFinite(fullDamage) || fullDamage <= 0 && !supportOnly)
         {
             return new(0, 0, "No usable damage source remains.");
         }
@@ -258,6 +277,14 @@ public static class PvpTactics
             double radii = sourceRadius + contact.Radius;
             double distance = Math.Max(0, position.DistanceTo(contact.Position) - radii);
             double reachable = Math.Max(0, PursuitDistance(contact.Position - position, contact.Velocity, approachSpeed) - radii);
+            if (supportOnly)
+            {
+                return new(
+                    contact.ShipId,
+                    reachable <= supportRange ? PvpSupport.Priority(contact.Hull) : 0,
+                    "Supporting a visible engagement."
+                );
+            }
             double angular = CombatDamage.AngularVelocity(contact.Position - position, contact.Velocity - velocity);
             // Visible hull size is a conservative signature estimate; hidden fitted attributes are not inspected.
             double signature = Math.Max(1, contact.SignatureEstimate > 0 ? contact.SignatureEstimate : contact.Radius);
@@ -281,7 +308,7 @@ public static class PvpTactics
         }
         var scored = opponents
             .Select(Score)
-            .Where(choice => choice.Score >= fullDamage * MinimumApplication)
+            .Where(choice => choice.Score > 0 && choice.Score >= fullDamage * MinimumApplication)
             .OrderByDescending(choice => choice.Score)
             .ThenBy(choice => choice.TargetId)
             .ToArray();

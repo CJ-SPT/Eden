@@ -1,6 +1,7 @@
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Ships;
 using Eden.Server.Administration;
 
@@ -22,6 +23,54 @@ public sealed class PvpTacticsTests
         Assert.True(PvpTactics.Propel(5_000, 20_000, 1, false));
         Assert.False(PvpTactics.Propel(5_000, 20_000, .1, false));
         Assert.True(PvpTactics.Propel(5_000, 20_000, .1, true));
+    }
+
+    [Fact]
+    public void SupportPrioritizesLogisticsSpreadsAssignmentsAndAvoidsObservedWeaponMismatches()
+    {
+        PilotSighting primary = new(1, 10, 603, HullClass.Frigate, 1, null, new(1_000, 0, 0), SpacePosition.Zero, 40);
+        var logistics = primary with { PilotId = 2, ShipId = 20, Hull = HullClass.Logistics, ObservedWeapon = ObservedPvpWeapon.Missile };
+        var recon = primary with { PilotId = 3, ShipId = 30, Hull = HullClass.ForceRecon, ObservedWeapon = ObservedPvpWeapon.Turret };
+        PvpSupportModule ecm = new(DogmaEffect.PlayerEcm, 10_000, 0);
+        Assert.Equal(20, PvpSupport.Select(ecm, SpacePosition.Zero, 0, [primary, logistics, recon], 10, 0, new HashSet<long>()));
+        Assert.Equal(30, PvpSupport.Select(ecm, SpacePosition.Zero, 0, [primary, logistics, recon], 10, 0, new HashSet<long> { 20 }));
+        Assert.Equal(
+            30,
+            PvpSupport.Select(
+                ecm with
+                {
+                    Effect = DogmaEffect.TrackingDisruptor,
+                },
+                SpacePosition.Zero,
+                0,
+                [logistics, recon],
+                10,
+                0,
+                new HashSet<long>()
+            )
+        );
+        Assert.Equal(
+            20,
+            PvpSupport.Select(
+                ecm with
+                {
+                    Effect = DogmaEffect.GuidanceDisruptor,
+                },
+                SpacePosition.Zero,
+                0,
+                [logistics, recon],
+                10,
+                0,
+                new HashSet<long>()
+            )
+        );
+        Assert.False(PvpSupport.InRange(ecm, 10_001));
+        Assert.True(PvpSupport.InRange(ecm, 10_000));
+        Assert.Equal(
+            10,
+            PvpTactics.Select(SpacePosition.Zero, SpacePosition.Zero, [], [primary], 1, 0, 0, 0, supportRange: 10_000).TargetId
+        );
+        Assert.Equal(0, PvpTactics.Select(SpacePosition.Zero, SpacePosition.Zero, [], [primary], 1, 0, 0, 0).TargetId);
     }
 
     [Fact]
@@ -74,6 +123,18 @@ public sealed class PvpTacticsTests
         Assert.Equal(PvpMovementKind.Spiral, tackle.Kind);
         Assert.InRange(tackle.Direction!.Length, .999, 1.001);
         Assert.True(tackle.Direction.X > 0 && Math.Abs(tackle.Direction.Z) > 0);
+        var missileApproach = PvpTactics.Movement(
+            [rail],
+            new(10_000, 0, 0),
+            SpacePosition.Zero,
+            SpacePosition.Zero,
+            40,
+            1_000,
+            band,
+            PvpRole.Tackle,
+            opponentWeapon: ObservedPvpWeapon.Missile
+        );
+        Assert.Equal(PvpMovementKind.Follow, missileApproach.Kind);
         var kiter = PvpTactics.Movement([rail], new(1_000, 0, 0), new(100, 0, 0), new(-100, 0, 0), 40, 1_000, band, PvpRole.Kiter);
         Assert.Equal(PvpMovementKind.Evade, kiter.Kind);
         Assert.True(kiter.Direction!.X < 0);
@@ -150,6 +211,11 @@ public sealed class PvpTacticsTests
         Assert.Equal(RoamingGangMemberStatus.Lost, changed.Members[0].Status);
         Assert.Equal(RoamingGangMemberStatus.Active, gang.Members[0].Status);
         Assert.Equal(RoamingGangPhase.Hunting, changed.Phase);
+        var unsupported = gang with
+        {
+            Members = gang.Members.Select(member => member with { DamageCapable = member.Role == PvpRole.Scout }).ToArray(),
+        };
+        Assert.Equal(RoamingGangPhase.Returning, RoamingGangRules.Reconcile(unsupported, new HashSet<long> { 10, 20, 30, 40 }, 0).Phase);
         var retreat = RoamingGangRules.Reconcile(changed, new HashSet<long> { 20, 30 }, 0);
         Assert.Equal(RoamingGangPhase.Returning, retreat.Phase);
         Assert.Same(retreat, RoamingGangRules.Reconcile(retreat, new HashSet<long> { 20, 30 }, 0));

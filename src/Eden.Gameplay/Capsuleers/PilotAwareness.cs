@@ -18,6 +18,8 @@ public sealed record PilotSighting(
 )
 {
     public double SignatureEstimate { get; init; }
+    public ObservedPvpWeapon ObservedWeapon { get; init; }
+    public bool CapacitorWeaponObserved { get; init; }
 }
 
 public sealed record BeltMemory(long BeltId, long Until);

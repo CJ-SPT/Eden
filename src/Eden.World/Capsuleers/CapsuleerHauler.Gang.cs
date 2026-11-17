@@ -195,11 +195,7 @@ internal sealed partial class CapsuleerHauler
             return false;
         }
         var own = defense.Profile(pilotId);
-        if (
-            !own.Combat
-            || !own.RattingWeapons.Any(weapon => weapon.AvailableShots > 0)
-            || CapsuleerDefenseRules.Retreat(health.Read(pilotId, Now), true)
-        )
+        if (!own.Combat || !own.CanContribute || CapsuleerDefenseRules.Retreat(health.Read(pilotId, Now), true))
         {
             return false;
         }
@@ -243,7 +239,7 @@ internal sealed partial class CapsuleerHauler
                 continue;
             }
             var fit = CapsuleerDefenseProfile.Read(world, _operation.Catalog, row.PilotId);
-            if (!fit.Combat || !fit.RattingWeapons.Any(weapon => weapon.AvailableShots > 0))
+            if (!fit.Combat || !fit.CanContribute)
             {
                 continue;
             }
@@ -270,19 +266,29 @@ internal sealed partial class CapsuleerHauler
             );
             candidates.Add(new(other, work, fit));
         }
-        if (candidates.Count < RoamingGangRules.MinimumMembers || !candidates.Any(candidate => candidate.Fit.TackleRange > 0))
+        if (
+            candidates.Count < RoamingGangRules.MinimumMembers
+            || !candidates.Any(candidate => candidate.Fit.TackleRange > 0)
+            || !candidates.Any(candidate => candidate.Fit.HasDamage)
+        )
         {
             return false;
         }
         var scout = candidates
-            .OrderByDescending(candidate => candidate.Pilot.Flight.MaxSpeed)
+            .OrderBy(candidate => candidate.Fit.PvpRole == PvpRole.ElectronicWarfare)
+            .ThenByDescending(candidate => candidate.Pilot.Flight.MaxSpeed)
             .ThenBy(candidate => candidate.Pilot.PilotId)
             .First();
         var tackler = candidates
             .Where(candidate => candidate != scout && candidate.Fit.TackleRange > 0)
-            .OrderByDescending(candidate => candidate.Pilot.Flight.MaxSpeed)
+            .OrderBy(candidate => candidate.Fit.PvpRole == PvpRole.ElectronicWarfare)
+            .ThenByDescending(candidate => candidate.Pilot.Flight.MaxSpeed)
             .FirstOrDefault();
         if (tackler is null)
+        {
+            return false;
+        }
+        if (!candidates.Any(candidate => candidate != scout && candidate.Fit.HasDamage))
         {
             return false;
         }
@@ -302,6 +308,7 @@ internal sealed partial class CapsuleerHauler
             )
             {
                 Hull = (HullClass)candidate.Pilot.ShipGroupId,
+                DamageCapable = candidate.Fit.HasDamage,
             })
             .ToArray();
         long sequence = checked(Work.ActivitySequence + 1);

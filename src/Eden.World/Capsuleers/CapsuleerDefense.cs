@@ -35,7 +35,7 @@ internal sealed record CapsuleerDefenseResult(
 );
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class CapsuleerDefense(
+internal sealed partial class CapsuleerDefense(
     WorldDatabase database,
     IPilotFitting fitting,
     IPilotInventory inventory,
@@ -307,8 +307,10 @@ internal sealed class CapsuleerDefense(
                     && attributes.GetValueOrDefault(DogmaAttributeId.DroneBandwidth) > 0;
         }
         bool combatShip = profile.Combat && !escapeFirst;
+        bool hasSupport = profile.HasSupport && (gang is not null || !profile.Modules.Any(module => IsWeapon(module.Effect)));
         bool exhausted =
             !target.Npc
+            && !hasSupport
             && live is not null
             && PvpTactics.Exhausted(
                 CapsuleerDefenseRules.Fraction(
@@ -323,7 +325,11 @@ internal sealed class CapsuleerDefense(
                 profile.RattingWeapons
             );
         bool retreat =
-            forceRetreat || state.Retreating || CapsuleerDefenseRules.Retreat(currentHealth, hasDamage) || !combatShip || exhausted;
+            forceRetreat
+            || state.Retreating
+            || CapsuleerDefenseRules.Retreat(currentHealth, hasDamage || hasSupport)
+            || !combatShip
+            || exhausted;
         if (retreat && blocked)
         {
             target = CapsuleerDefenseRules.Select(candidates.Where(attacker => attacker.Tackling).ToArray()) ?? target;
@@ -342,38 +348,53 @@ internal sealed class CapsuleerDefense(
         long attackedAt = candidates.Select(attacker => attacker.AttackedAt).DefaultIfEmpty(0).Max();
         bool newThreat = attackedAt > state.LastAttackAt;
         state = state with { TargetId = target.ShipId, LastAttackAt = Math.Max(state.LastAttackAt, attackedAt), Retreating = retreat };
-        bool canLock =
-            attributes.GetValueOrDefault(DogmaAttributeId.MaxLockedTargets) > 0
-            && pilot.Position.DistanceTo(target.Position) - pilot.Flight.ShipRadius - target.Radius
+        var moduleTargets = SupportTargets(pilot, profile, state, target, live, gang, now, stamp, retreat);
+        bool CanLock(CapsuleerAttacker contact) =>
+            pilot.Position.DistanceTo(contact.Position) - pilot.Flight.ShipRadius - contact.Radius
                 <= attributes.GetValueOrDefault(DogmaAttributeId.MaxTargetRange)
-            && NpcEwarRules.CanTarget(jams, target.ShipId)
-            && !warfare
-                .Incoming(pilot.ShipId)
-                .Any(effect =>
-                    effect.Module.Effect == DogmaEffect.PlayerEcm && effect.Applied is not null && effect.SourceShipId != target.ShipId
-                );
-        foreach (var previous in state.Locks.Where(scan => scan.TargetId != target.ShipId || !canLock))
+            && NpcEwarRules.CanTarget(jams, contact.ShipId)
+            && PlayerEwarRules.CanTarget(warfare.Incoming(pilot.ShipId), contact.ShipId);
+        var planned = new[] { target }
+            .Concat(moduleTargets.Values.OfType<CapsuleerAttacker>())
+            .DistinctBy(contact => contact.ShipId)
+            .Where(CanLock)
+            .Take(Math.Max(0, checked((int)attributes.GetValueOrDefault(DogmaAttributeId.MaxLockedTargets))))
+            .ToArray();
+        foreach (var previous in state.Locks.Where(scan => !planned.Any(contact => contact.ShipId == scan.TargetId)))
         {
             locks.Remove(pilot.ShipId, previous.TargetId);
         }
-        var scan = canLock ? state.Locks.FirstOrDefault(scan => scan.TargetId == target.ShipId) : null;
-        if (canLock && scan is null)
+        List<CapsuleerLock> scans = [];
+        foreach (var contact in planned)
         {
-            double seconds = TargetingDefinitions.LockSeconds(
-                attributes.GetValueOrDefault(DogmaAttributeId.ScanResolution),
-                target.Signature
-            );
-            if (double.IsFinite(seconds) && seconds > 0)
+            var scan = state.Locks.FirstOrDefault(scan => scan.TargetId == contact.ShipId);
+            if (scan is null)
             {
-                scan = new(target.ShipId, checked(now + (long)Math.Ceiling(seconds * TimeSpan.TicksPerSecond)));
+                double seconds = TargetingDefinitions.LockSeconds(
+                    attributes.GetValueOrDefault(DogmaAttributeId.ScanResolution),
+                    contact.Signature
+                );
+                if (double.IsFinite(seconds) && seconds > 0)
+                {
+                    scan = new(contact.ShipId, checked(now + (long)Math.Ceiling(seconds * TimeSpan.TicksPerSecond)));
+                }
+            }
+            if (scan is null)
+            {
+                continue;
+            }
+            scans.Add(scan);
+            if (scan.ReadyAt <= now)
+            {
+                locks.Add(pilot.ShipId, contact.ShipId);
             }
         }
-        if (scan?.ReadyAt <= now)
-        {
-            locks.Add(pilot.ShipId, target.ShipId);
-        }
-        state = state with { Locks = scan is null ? [] : [scan] };
-        bool locked = scan?.ReadyAt <= now && locks.Contains(pilot.ShipId, target.ShipId);
+        state = state with { Locks = scans.ToArray() };
+        bool Locked(CapsuleerAttacker? contact) =>
+            contact is not null
+            && state.Locks.Any(scan => scan.TargetId == contact.ShipId && scan.ReadyAt <= now)
+            && locks.Contains(pilot.ShipId, contact.ShipId);
+        bool locked = Locked(target);
         var active = state.Cycles.ToDictionary(cycle => cycle.ModuleId);
         foreach (var module in profile.Modules.OrderBy(module => Priority(module.Effect)))
         {
@@ -382,16 +403,30 @@ internal sealed class CapsuleerDefense(
                 continue;
             }
             var previous = active.GetValueOrDefault(module.Item.Id);
-            if (previous?.ReadyAt > now && (!IsOffensive(module.Effect) || offensive && locked && previous.TargetId == target.ShipId))
+            var moduleTarget = moduleTargets.TryGetValue(module.Item.Id, out var assigned) ? assigned : target;
+            bool moduleLocked = Locked(moduleTarget);
+            if (
+                previous?.ReadyAt > now
+                && (!IsOffensive(module.Effect) || offensive && moduleLocked && previous.TargetId == moduleTarget!.ShipId)
+            )
             {
                 // A paid local cycle retains its duration even when that pulse fills the resource.
                 continue;
             }
-            bool enabled = Enabled(module, profile, currentHealth, live, now, offensive, locked, blocked, retreat && blocked);
+            bool enabled = Enabled(module, profile, currentHealth, live, now, offensive, moduleLocked, blocked, retreat && blocked);
+            if (IsOffensive(module.Effect) && !IsWeapon(module.Effect))
+            {
+                enabled &=
+                    moduleTarget is not null
+                    && PvpSupport.InRange(
+                        SupportModule(module),
+                        Math.Max(0, pilot.Position.DistanceTo(moduleTarget.Position) - pilot.Flight.ShipRadius - moduleTarget.Radius)
+                    );
+            }
             if (!target.Npc && live is not null && module.Effect is DogmaEffect.Afterburner or DogmaEffect.Microwarpdrive)
             {
                 double desired = PvpTactics.Range(
-                    PvpTactics.WeaponRange(profile.RattingWeapons, profile.TargetRange, MinimumCombatRange),
+                    profile.PvpRange,
                     profile.TargetRange,
                     profile.TackleRange,
                     pvpRole ?? profile.PvpRole,
@@ -426,7 +461,7 @@ internal sealed class CapsuleerDefense(
             try
             {
                 var renewed = runtime?.RenewDefense(pilot.PilotId, module, previous, now);
-                foreach (var cycle in renewed is null ? Start(pilot, navigation, module, target, now, stamp) : [renewed])
+                foreach (var cycle in renewed is null ? Start(pilot, navigation, module, moduleTarget ?? target, now, stamp) : [renewed])
                 {
                     active[cycle.ModuleId] = cycle with
                     {
@@ -509,13 +544,7 @@ internal sealed class CapsuleerDefense(
                 if (!target.Npc)
                 {
                     var role = pvpRole ?? profile.PvpRole;
-                    var band = PvpTactics.Band(
-                        PvpTactics.WeaponRange(profile.RattingWeapons, profile.TargetRange, fallback),
-                        profile.TargetRange,
-                        profile.TackleRange,
-                        role,
-                        alliedTackle
-                    );
+                    var band = PvpTactics.Band(profile.PvpRange, profile.TargetRange, profile.TackleRange, role, alliedTackle);
                     double signature = database.Catalog.Definition(s_observedSignature, target.TypeId);
                     var movement = PvpTactics.Movement(
                         profile.RattingWeapons,
@@ -526,7 +555,8 @@ internal sealed class CapsuleerDefense(
                         pilot.Flight.MaxSpeed,
                         band,
                         role,
-                        pilot.Flight.ShipRadius + target.Radius
+                        pilot.Flight.ShipRadius + target.Radius,
+                        WeaponObserved(live, target.ShipId).Kind
                     );
                     navigation.Follow(
                         pilot.ShipId,

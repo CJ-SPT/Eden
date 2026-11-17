@@ -203,6 +203,46 @@ No full suite was requested or run. Exact development filters used
 **Optional maintainer checks:** Observe a tackler approaching obliquely and a turret brawler reducing its own
 transversal when tracking suffers. Native motion and combat feel remain unverified.
 
+### Milestone 5: independent support and multiple locks
+
+EWAR and neutralizer modules may maintain their own targets while guns and drones retain the gang primary.
+Assignments favor visible logistics and electronic-support hulls, retain useful existing assignments and reduce
+duplicate coverage claimed by active gangmates. Failed ECM attempts do not claim successful suppression. Target
+painters and tackle continue to support the damage primary. Each assignment needs its own ordinary lock, with
+fitted/skill-clamped target capacity, scan time, targeting range and incoming ECM restrictions. A one-lock fit
+falls back to the primary. Module range is checked before activation so an out-of-range attempt cannot impose a
+long failure retry. Paid cycles, capacitor use, effect probability and checkpoints remain with the existing owners.
+
+Gunless support ships can join gangs that retain a damage-capable main body. Losing every main-body damage ship
+orders a return. Pure support pilots use their own support reach for navigation and no longer retreat merely
+because they lack ammunition. Old rosters retain their prior damage-capable interpretation when loaded.
+
+Weapon hints come only from damage already received by the bot, using the resident contribution lookup and a
+shared immutable catalog classification. Tracking/guidance disruption avoids a known incompatible weapon family;
+neutralizers favor an observed capacitor weapon. An observed missile/drone opponent permits a direct tackle
+approach; unknown opponents retain the conservative spiral. No opponent fit, cargo or hidden resource is inspected.
+These priorities and coverage penalties are Eden AI policy. Gameplay references:
+[EVE University EWAR tactics](https://wiki.eveuniversity.org/Electronic_warfare#EWAR_tactics),
+[fleet operations](https://wiki.eveuniversity.org/The_Rookie%27s_Guide_to_Fleet_Ops) and
+[ECM](https://wiki.eveuniversity.org/ECM). Actual module behavior remains pinned to client build 3662168/catalog.
+
+**Automated validation:** Tool/solution restore passed; solution build passed with zero warnings/errors in
+7.47 seconds. All 186 affected cases passed in 83.20 seconds wall time (80 seconds reported test duration).
+The filter combined `FullyQualifiedName~` for `PvpTacticsTests`, `CapsuleerDefenseTests`,
+`CapsuleerDefenseLifecycleTests`, `CapsuleerDefenseModuleTests`, `CapsuleerDefenseFrameTests`, `RoamingGangTests`,
+`RegionalConflictWorldTests`, `PatrolTests`, `GateCampTests`, `PlayerEwarTests`, `TargetingTests`,
+`GameplayDependenciesTests` and `DataModelOwnershipTests`. Both Python policy suites passed (8 catalog cases
+in 1.130 seconds; 9 formatting cases in 0.017 seconds); formatting and diff checks passed. No full suite was run.
+Exact development filters used `PvpTacticsTests.SupportPrioritizesLogisticsSpreadsAssignmentsAndAvoidsObservedWeaponMismatches`
+and `RegionalConflictWorldTests.EwarKeepsASecondLockAndItsOwnAssignmentAcrossRestart`, each prefixed by
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.`. The latter passed all three mixed/gunless/one-lock variants
+and retains paid ECM deadlines and locks through checkpoint/restart. Existing warmed frame budgets remain asserted.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Observe a gun/EWAR ship retaining a gun primary while jamming another target,
+and a gunless support pilot staying with its gang. Native lock/effect presentation remains unverified.
+
 ## Regional bot conflicts — November 17, 2026
 
 Regional operations extend the saved roaming-gang command with constellation-based patrol groups in null security.

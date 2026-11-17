@@ -4,6 +4,7 @@ using Eden.Data.World.Inventory;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Diagnostics;
@@ -388,13 +389,24 @@ public sealed class RoamingGangTests
         internal LiveWorld Live => Host.GetRequiredService<LiveWorld>();
         internal CapsuleerScheduler Scheduler => Host.GetRequiredService<CapsuleerScheduler>();
 
-        internal Fixture(bool regional = false, bool splitRegions = false)
+        internal Fixture(bool regional = false, bool splitRegions = false, bool supportCatalog = false, int? targetLimit = null)
         {
             PassiveCatalogFixture.LoadFrigateHulls(Database.CatalogPath);
             PassiveCatalogFixture.Load(Database.CatalogPath);
             PassiveCatalogFixture.LoadTackleTiers(Database.CatalogPath);
+            if (supportCatalog)
+            {
+                PassiveCatalogFixture.LoadPlayerEwar(Database.CatalogPath);
+            }
             using (var catalog = new CatalogDbContext(Database.CatalogPath, writable: true))
             {
+                if (targetLimit is { } limit)
+                {
+                    int targetAttribute = (int)DogmaAttributeId.MaxLockedTargets;
+                    catalog.Database.ExecuteSql(
+                        $"UPDATE TypeAttribute SET Value={limit} WHERE ItemTypeId=603 AND AttributeId={targetAttribute}"
+                    );
+                }
                 if (regional)
                 {
                     const int rivalConstellation = 20009999;

@@ -28,6 +28,17 @@ internal sealed partial record CapsuleerDefenseProfile(bool Combat, CapsuleerDef
 {
     internal RattingWeapon[] RattingWeapons { get; init; } = [];
     internal double TargetRange { get; init; }
+    internal bool HasDamage => RattingWeapons.Any(source => source.AvailableShots > 0 && source.Weapon.Damage.Total > 0);
+    internal bool HasSupport => Modules.Any(module => PvpSupport.Supported(module.Effect));
+    internal bool CanContribute => HasDamage || HasSupport;
+    internal double SupportRange =>
+        Modules
+            .Where(module => PvpSupport.Supported(module.Effect))
+            .Select(module => module.Attributes.GetValueOrDefault(DogmaAttributeId.MaxRange))
+            .DefaultIfEmpty(0)
+            .Max();
+    internal double PvpRange =>
+        !HasDamage && HasSupport ? Math.Min(TargetRange, SupportRange * .8) : PvpTactics.WeaponRange(RattingWeapons, TargetRange, 500);
     internal IReadOnlyDictionary<DogmaAttributeId, double> ShipAttributes { get; init; } = new Dictionary<DogmaAttributeId, double>();
     internal double TackleRange =>
         Modules
@@ -36,17 +47,19 @@ internal sealed partial record CapsuleerDefenseProfile(bool Combat, CapsuleerDef
             .DefaultIfEmpty(0)
             .Max();
     internal PvpRole PvpRole =>
-        PvpTactics.Role(
-            PvpTactics.WeaponRange(RattingWeapons, TargetRange, 500),
-            TackleRange,
-            Modules.Any(module =>
-                module.Effect
-                    is DogmaEffect.PlayerEcm
-                        or DogmaEffect.SensorDampener
-                        or DogmaEffect.TrackingDisruptor
-                        or DogmaEffect.GuidanceDisruptor
-            )
-        );
+        !HasDamage && TackleRange > 0 && !Modules.Any(module => PvpSupport.Independent(module.Effect))
+            ? PvpRole.Tackle
+            : PvpTactics.Role(
+                PvpRange,
+                TackleRange,
+                Modules.Any(module =>
+                    module.Effect
+                        is DogmaEffect.PlayerEcm
+                            or DogmaEffect.SensorDampener
+                            or DogmaEffect.TrackingDisruptor
+                            or DogmaEffect.GuidanceDisruptor
+                )
+            );
 
     internal static CapsuleerDefenseProfile Read(WorldDbContext world, CatalogDbContext catalog, long pilotId)
     {
