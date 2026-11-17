@@ -1,15 +1,18 @@
+using System.Runtime.CompilerServices;
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Fittings;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Ships;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
+using Eden.World.Market;
 using Eden.World.Runtime.Economy;
 
 namespace Eden.World.Capsuleers;
@@ -71,13 +74,57 @@ internal static class CapsuleerFreight
         }
     );
 
+    private static readonly ConditionalWeakTable<CapsuleerFreightPolicy, int[]> s_customIds = new();
+    private static readonly CatalogDefinition<Commodity?> s_customGoods = new(
+        "traffic-custom-commodity",
+        (catalog, id) => ReadCommodity(catalog, id)
+    );
+
+    private static Commodity? ReadCommodity(CatalogDbContext catalog, int id)
+    {
+        if (
+            catalog.FittingType(id) is not { } type
+            || (InventoryCategory)type.CategoryId
+                is not (
+                    InventoryCategory.Material
+                    or InventoryCategory.Module
+                    or InventoryCategory.Charge
+                    or InventoryCategory.Commodity
+                    or InventoryCategory.Drone
+                    or InventoryCategory.Asteroid
+                    or InventoryCategory.PlanetaryCommodity
+                    or InventoryCategory.PlanetaryResource
+                )
+        )
+        {
+            return null;
+        }
+        var source = catalog.Read(CatalogData.Client.Types, (long)id);
+        if (source?.Volume is not > 0 || !double.IsFinite(source.Volume.Value) || source.Published == 0)
+        {
+            return null;
+        }
+        double value = MarketSnapshotCatalog.Quotes.GetValueOrDefault(id)?.SellCents / 100d ?? source.BasePrice ?? 0;
+        if (!double.IsFinite(value) || value <= 0)
+        {
+            return null;
+        }
+        var item = new InventoryItem(0, type.Id, 0, 0, (int)InventoryFlag.Cargo, 1, type.GroupId, type.CategoryId, source.Volume.Value);
+        return new(item, new(type.Id, item.Volume, value));
+    }
+
     private const int HoldKeyFactor = 16;
 
-    internal static bool Available(CatalogDbContext catalog) =>
-        catalog.Definition(s_hulls, 0).Length != 0 && catalog.Definition(s_goods, 0).Length != 0;
+    internal static bool Available(CatalogDbContext catalog, CapsuleerFreightPolicy policy) =>
+        catalog.Definition(s_hulls, 0).Length != 0
+        && (!string.IsNullOrWhiteSpace(policy.CargoTypeIds) || catalog.Definition(s_goods, 0).Length != 0);
 
-    internal static int Hull(CatalogDbContext catalog, long seed, int system, int slot)
+    internal static int Hull(CatalogDbContext catalog, long seed, int system, int slot, bool varied = true)
     {
+        if (!varied && catalog.Definition(s_hulls, 0).Contains(HaulingRules.BadgerType))
+        {
+            return HaulingRules.BadgerType;
+        }
         var hulls = catalog.Definition(s_regionalHulls, catalog.RequireSystem(system).RegionId);
         return hulls[TrafficRules.Start(seed, system, slot, hulls.Length)];
     }
@@ -117,18 +164,7 @@ internal static class CapsuleerFreight
         var accepted = names.ToHashSet(StringComparer.OrdinalIgnoreCase);
         int ore = CapsuleerProvisioningCatalog.FreightOre(catalog);
         var candidates = catalog.Definitions.Items.Values.Where(i => accepted.Contains(i.Name) || i.Id == ore).OrderBy(i => i.Id);
-        List<Commodity> list = [];
-        foreach (var type in candidates)
-        {
-            var source = catalog.Read(CatalogData.Client.Types, (long)type.Id);
-            if (source?.Volume is not > 0 || !double.IsFinite(source.Volume.Value) || source.Published == 0)
-            {
-                continue;
-            }
-            var item = new InventoryItem(0, type.Id, 0, 0, (int)InventoryFlag.Cargo, 1, type.GroupId, type.CategoryId, source.Volume.Value);
-            list.Add(new(item, new(type.Id, item.Volume, Math.Max(1, source.BasePrice ?? 1))));
-        }
-        return list.ToArray();
+        return candidates.Select(c => ReadCommodity(catalog, c.Id)).OfType<Commodity>().ToArray();
     }
 
     private static bool Matches(FreightKind kind, InventoryCategory category) =>
@@ -151,7 +187,7 @@ internal static class CapsuleerFreight
         if (catalog.FittingType(hull)?.GroupId == (int)HullClass.Hauler)
         {
             _ = catalog.Definition(s_holds, checked(hull * HoldKeyFactor + (int)FreightRules.Kind((FreightHull)hull, 0)));
-            _ = catalog.Definition(s_holds, checked(hull * HoldKeyFactor + (int)FreightRules.Kind((FreightHull)hull, 1)));
+            _ = catalog.Definition(s_holds, checked(hull * HoldKeyFactor + (int)FreightRules.Kind((FreightHull)hull, 99)));
         }
     }
 
@@ -171,7 +207,8 @@ internal static class CapsuleerFreight
             return null;
         }
         ulong seed = TravelerRoutineRules.Mix(unchecked((ulong)pilot)) ^ (uint)destination;
-        var kind = FreightRules.Kind((FreightHull)hull, seed);
+        var policy = world.Settings.Capsuleers.Freight;
+        var kind = FreightRules.Kind((FreightHull)hull, seed, policy.CourierPercent);
         var hold = catalog.Definition(s_holds, checked(hull * HoldKeyFactor + (int)kind));
         int flag = (int)hold.Flag;
         double multiplier = hold.Flag == InventoryFlag.GeneralMiningHold ? (double)world.Settings.MiningHolds.GeneralMultiplier : 1;
@@ -179,7 +216,19 @@ internal static class CapsuleerFreight
             ? hold.Capacity * multiplier
             : PilotInventoryStore.HoldCapacity(world, catalog, pilot, ship, flag)
                 - InventoryPersistence.UsedVolume(world, catalog, pilot, ship, flag);
-        var load = FreightRules.Load(seed, sequence, hold.Kind, hold.Goods, free);
+        var goods = hold.Goods;
+        if (!string.IsNullOrWhiteSpace(policy.CargoTypeIds))
+        {
+            var allowed = ShipHoldRules.Definition(flag)!;
+            goods = s_customIds
+                .GetValue(policy, p => p.TypeIds())
+                .Select(id => catalog.Definition(s_customGoods, id))
+                .OfType<Commodity>()
+                .Where(c => allowed.Allows(c.Item))
+                .Select(c => c.Freight)
+                .ToArray();
+        }
+        var load = FreightRules.Load(seed, sequence, hold.Kind, goods, free, policy);
         List<FreightStack> stacks = [];
         if (load.Length > 0)
         {
@@ -268,7 +317,7 @@ internal static class CapsuleerFreight
         {
             return false;
         }
-        int hull = Hull(catalog, seed, agent.CommunitySystemId, agent.Slot);
+        int hull = Hull(catalog, seed, agent.CommunitySystemId, agent.Slot, world.Settings.Capsuleers.Freight.VariedHulls);
         double remaining =
             InventoryPersistence.UsedVolume(world, catalog, pilotId, shipId, (int)InventoryFlag.Cargo)
             - starter.Quantity * PilotInventoryStore.Volume(catalog, starter.TypeId);

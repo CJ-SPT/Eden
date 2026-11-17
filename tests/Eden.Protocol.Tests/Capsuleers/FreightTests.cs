@@ -3,13 +3,16 @@ using Eden.Data.World.Docking;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Loot;
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Protocol.Tests.Fixtures;
 using Eden.Server;
+using Eden.Server.Administration;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Combat;
+using Eden.World.Configuration;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -120,18 +123,53 @@ public sealed class FreightTests
         }
     }
 
+    [Fact]
+    public void FreightEditorRoundTripsAndRejectsInvalidBudgetsAndTypeIds()
+    {
+        var policy = new CapsuleerFreightPolicy(false, 10, 20, 30, 40, 50, 60, 70, "34, 215");
+        var settings = new WorldSettings { Capsuleers = new() { Freight = policy } };
+        var saved = SettingsForm.From(settings).Build().Capsuleers.Freight;
+        Assert.Equal(policy, saved);
+        Assert.Contains(
+            ConfigurationDisplay.Compare(new(), new() { Settings = settings }),
+            difference => difference.Field == "Ordinary freight maximum budget (ISK)" && difference.After == "20"
+        );
+        saved.Validate();
+        Assert.Equal(new[] { 34, 215 }, saved.TypeIds());
+        Assert.Throws<InvalidDataException>(() => (saved with { OrdinaryMinimumIsk = 21 }).Validate());
+        Assert.Throws<InvalidDataException>(() => (saved with { EmptyReturnPercent = 101 }).Validate());
+        Assert.Throws<InvalidDataException>(() => (saved with { CargoTypeIds = "34,34" }).Validate());
+        Assert.Throws<InvalidDataException>(() => (saved with { CargoTypeIds = "secret" }).Validate());
+        Assert.Equal(CapsuleerFreightPolicy.Default, System.Text.Json.JsonSerializer.Deserialize<CapsuleerPopulationPolicy>("{}")!.Freight);
+        var fixedPrice = saved with { OrdinaryMinimumIsk = 20, OrdinaryMaximumIsk = 20, EmptyReturnPercent = 100 };
+        FreightCommodity[] items = [new(34, 1, 2)];
+        Assert.Equal(10, Assert.Single(FreightRules.Load(1, 0, FreightKind.Bulk, items, 1000, fixedPrice)).Quantity);
+        Assert.Empty(FreightRules.Load(1, 1, FreightKind.Bulk, items, 1000, fixedPrice));
+    }
+
     private sealed class SurvivingFreight : IShipLootRoll
     {
         public bool Survives() => true;
     }
 
-    [Fact]
-    public async Task HaulerWreckRetainsTheScannableStacksAcrossCheckpoint()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(50)]
+    [InlineData(100)]
+    public async Task HaulerWreckRetainsTheScannableStacksAcrossCheckpoint(int survival)
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        WorldConfigurationStore configuration = new(f.Database, f.Clock);
+        var current = configuration.Read();
+        var draft = current.Active.Draft;
+        var policy = draft.Settings.Capsuleers with { Freight = new(WreckSurvivalPercent: survival, CargoTypeIds: "215") };
+        configuration.Save(current.Generation, draft with { Settings = draft.Settings with { Capsuleers = policy } }, "admin");
+        WorldConfigurationStore.Activate(f.Database);
         new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(Home);
         var founder = f.Founder();
         var manifest = HaulerCheckpoint.Read(founder.Progress)!.Freight!;
+        Assert.NotEmpty(manifest.Stacks);
+        Assert.All(manifest.Stacks, stack => Assert.Equal(215, stack.TypeId));
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         var live = host.GetRequiredService<LiveWorld>();
         using CatalogDbContext catalog = new(f.Database.CatalogPath);
@@ -167,7 +205,7 @@ public sealed class FreightTests
         using WorldDbContext reopened = new(f.Database.Path);
         var wreck = reopened.Set<WorldWreck>().Single(w => w.ShipId == founder.FounderShipId);
         Assert.Equal(
-            manifest.Stacks,
+            survival == 0 ? [] : manifest.Stacks,
             reopened
                 .Set<OwnedItem>()
                 .Where(i => i.LocationId == wreck.Id)

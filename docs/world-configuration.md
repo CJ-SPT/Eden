@@ -447,6 +447,9 @@ Catalog facts stay in generated models/shared definitions. Native service IDs, e
 
 In **World & economy → Player bots**, configure the saved world's population:
 
+- **Hauler freight** controls regional hull variety, ordinary/courier budget ranges in ISK, courier frequency, empty return trips,
+  cargo type IDs and freight stack survival. These settings live under `settings.capsuleers.freight`.
+  [Shipment defaults and cargo type rules](capsuleer-population.md#hauler-freight).
 - **Enable player bots** controls the entire population. Off despawns and pauses all simulated pilots after restart.
 - **Simulated miners** allows up to one miner per eligible system, prepared globally on restart.
 - **Station traffic density** accepts **0–10×**, default **1×**. It scales the normal geography-based station roster,

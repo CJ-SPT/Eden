@@ -2,6 +2,24 @@
 
 [Protocol index](../protocol.md)
 
+## Hauler freight settings
+
+The population settings editor and pending revision API persist hauler hull, cargo pool, budget, frequency
+and wreck-survival controls. Old saves deserialize with standard freight settings. Custom pools cache catalog
+records by type and skip goods lacking a usable volume or price. Budgets use the bundled sell-price snapshot
+with a catalog base-price fallback. Wreck overrides apply only to the recorded manifest on the original pilot ship.
+[Settings and defaults](../capsuleer-population.md#hauler-freight).
+
+**Automated validation.** The editor round-trip, ordered budgets and invalid type lists passed the exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.FreightTests.FreightEditorRoundTripsAndRejectsInvalidBudgetsAndTypeIds`.
+The combined freight, configuration/editor, population, resident admission, traffic performance and NPC combat selection
+passed 99 cases in 35 seconds with one opt-in browser test skipped. Loss tests exercise 0%, 50% and 100% survival using a
+saved custom cargo pool. The solution built in 4.65 seconds with zero warnings and errors.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer check.** Save a custom freight pool and inspect a new shipment after restart.
+
 ## Generated hauler hulls and freight
 
 Generated traffic chooses among the twelve ordinary Tech I haulers present in the build 3662168 catalog. Regional empire
@@ -24,7 +42,7 @@ continues to apply to normal hull flight.
 **Automated validation.** Exact initial filter `FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.FreightTests.DifferentShipmentsRespectVolumeValueAndReturnTrips`.
 The capsuleer namespace comparison ran 436 baseline and 439 candidate cases before the final regional weighting and wreck test.
 Both had the same eleven failures across gate traffic, population handoff, shopping, resupply and presentation fixtures.
-The matched four-observer 10× traffic workload had zero observation reads. For eleven pilots the baseline/candidate frame batches
+The matched four-observer 10Ã— traffic workload had zero observation reads. For eleven pilots the baseline/candidate frame batches
 took 57.59/28.01 ms, allocating 9.74/9.90 MB. Checkpoint capture took 1.56/0.75 ms, projection 14.60/22.87 ms and writing
 106.41/12.67 ms. These are individual noisy samples. Freight tests cover saved conversion, custom ships, capacity, destination
 variation and checkpointed wreck contents. Resident founder admission asserts zero SQL, connections and fitting calculations.

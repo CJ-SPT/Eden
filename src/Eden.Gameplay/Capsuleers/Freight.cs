@@ -1,3 +1,4 @@
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Inventory;
 
 namespace Eden.Gameplay.Capsuleers;
@@ -42,7 +43,7 @@ public static class FreightRules
 {
     public const int LegacyOreUnits = 100;
 
-    public static FreightKind Kind(FreightHull hull, ulong seed) =>
+    public static FreightKind Kind(FreightHull hull, ulong seed, int courierPercent = 8) =>
         hull switch
         {
             FreightHull.Miasmos => FreightKind.Ore,
@@ -50,7 +51,7 @@ public static class FreightRules
             FreightHull.Kryos => FreightKind.Minerals,
             FreightHull.Epithal => FreightKind.Planetary,
             FreightHull.Tayra or FreightHull.Bestower or FreightHull.Mammoth or FreightHull.IteronMarkV => FreightKind.Bulk,
-            _ => seed % 12 == 0 ? FreightKind.Courier : FreightKind.Delivery,
+            _ => seed % 100 < (ulong)courierPercent ? FreightKind.Courier : FreightKind.Delivery,
         };
 
     public static InventoryFlag PreferredHold(FreightKind kind) =>
@@ -63,19 +64,29 @@ public static class FreightRules
             _ => InventoryFlag.Cargo,
         };
 
-    public static FreightItem[] Load(ulong seed, long sequence, FreightKind kind, IReadOnlyList<FreightCommodity> goods, double free)
+    public static FreightItem[] Load(
+        ulong seed,
+        long sequence,
+        FreightKind kind,
+        IReadOnlyList<FreightCommodity> goods,
+        double free,
+        CapsuleerFreightPolicy? policy = null
+    )
     {
         if (goods.Count == 0 || !double.IsFinite(free) || free <= 0)
         {
             return [];
         }
+        policy ??= CapsuleerFreightPolicy.Default;
         ulong draw = TravelerRoutineRules.Mix(seed + unchecked((ulong)sequence));
-        if (sequence > 0 && draw % 7 == 0)
+        if (sequence > 0 && draw % 100 < (ulong)policy.EmptyReturnPercent)
         {
             return [];
         }
         // The manifest budget is a supply policy in ISK; no market lookup or wallet mutation.
-        double budget = (kind == FreightKind.Courier ? 4_000_000 : 750_000) * (.2 + draw % 81 / 100d);
+        long minimum = kind == FreightKind.Courier ? policy.CourierMinimumIsk : policy.OrdinaryMinimumIsk;
+        long maximum = kind == FreightKind.Courier ? policy.CourierMaximumIsk : policy.OrdinaryMaximumIsk;
+        double budget = minimum + (double)(TravelerRoutineRules.Mix(draw) % (ulong)(maximum - minimum + 1));
         double volume = free * (.08 + draw % 83 / 100d);
         int lines = Math.Min(goods.Count, 1 + (int)(draw % 4));
         int start = (int)(TravelerRoutineRules.Mix(draw) % (ulong)goods.Count);

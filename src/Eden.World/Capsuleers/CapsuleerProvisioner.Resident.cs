@@ -52,7 +52,8 @@ internal sealed partial class CapsuleerProvisioner
         var traffic = CapsuleerTrafficRoutes.Read(catalog, systemId);
         var origins = CapsuleerProvisioningCatalog.Origins(catalog);
         bool hasRoute = traffic.Routes.Length > 0;
-        bool canHaul = hasRoute && (database.Traffic.Profiles.Count > 0 || TrafficProvisioning.HasFallback(catalog));
+        bool canHaul =
+            hasRoute && (database.Traffic.Profiles.Count > 0 || CapsuleerFreight.Available(catalog, database.Settings.Capsuleers.Freight));
         int count = canHaul ? CapsuleerEncounterRules.Haulers(seed, systemId, traffic.GateCount, traffic.StationCount, policy) : 0;
         var agents = world
             .Set<SavedCapsuleerAgent>()
@@ -248,14 +249,19 @@ internal sealed partial class CapsuleerProvisioner
                     reservations: _startupReservations
                 )
                 : null;
-        if (career == CapsuleerCareer.Hauling && trafficProfile is null && !TrafficProvisioning.HasFallback(catalog))
+        if (
+            career == CapsuleerCareer.Hauling
+            && trafficProfile is null
+            && !CapsuleerFreight.Available(catalog, database.Settings.Capsuleers.Freight)
+        )
         {
             return null;
         }
         int hull =
             career == CapsuleerCareer.Mining
                 ? CapsuleerCommunityStore.VentureType
-                : trafficProfile?.HullTypeId ?? CapsuleerFreight.Hull(catalog, seed, site.SystemId, slot);
+                : trafficProfile?.HullTypeId
+                    ?? CapsuleerFreight.Hull(catalog, seed, site.SystemId, slot, database.Settings.Capsuleers.Freight.VariedHulls);
         int station = site.HomeStationId!.Value;
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         ulong roleSeed = CapsuleerProvisioningRules.Seed(seed, site.SystemId, career, slot);

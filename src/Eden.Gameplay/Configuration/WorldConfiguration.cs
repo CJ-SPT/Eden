@@ -92,7 +92,10 @@ public sealed record CapsuleerPopulationPolicy(
     bool Miners = true,
     decimal TrafficMultiplier = 1,
     int GateVisitors = TrafficJourneyRules.GateVisitorCount
-);
+)
+{
+    public CapsuleerFreightPolicy Freight { get; init; } = CapsuleerFreightPolicy.Default;
+}
 
 public sealed record SimulationPolicy(int CheckpointSeconds = 15, int MarketPollMilliseconds = 1000, int ResourceCheckSeconds = 60);
 

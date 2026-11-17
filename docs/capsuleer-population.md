@@ -61,6 +61,18 @@ Cargo is finite and can survive in the wreck. An empty return leg is possible.
 Untouched legacy Badgers with the original 100 units of ore convert at their next safe dock.
 [Implementation and old-save coverage](protocol/capsuleers.md#generated-hauler-hulls-and-freight).
 
+In **World & economy / Player bots**, set the ordinary and courier budget ranges in ISK. Ordinary trips default to
+150,000-750,000 ISK and eligible courier trips to 800,000-4,000,000 ISK. Defaults are 8% courier selection among
+eligible hulls, 14% empty subsequent trips and 50% wreck survival per freight stack. Actual loads can fall below
+budget due to hold capacity, unit volume or indivisible items. Valuation uses the bundled sell-price snapshot,
+then catalog base price. Unpriced items are skipped.
+
+Leave the cargo type list blank for standard goods or enter up to 64 distinct published inventory type IDs.
+Materials, modules, charges, commodities, drones, asteroids and planetary goods are accepted where the hold permits them.
+An explicit list replaces the default pool. An empty compatible pool produces an empty hold. A zero minimum and maximum
+disable that budget. Disable regional hulls to select the Badger where available. Changes activate on restart.
+Onboard freight retains its identity until delivery or destruction. Wreck survival uses the active setting at loss.
+
 ## zKill-backed travelers
 
 An optional local `traffic.sqlite` beside the world database supplies real pilot names, varied supported ships and complete victim fits. It is loaded at startup, and gameplay makes no network requests. An absent, incompatible or corrupt snapshot uses generated Tech I freighters with regional hull and shipment variety. Saved imported pilots keep their local identity, ship, equipment and losses even when the snapshot changes or disappears.

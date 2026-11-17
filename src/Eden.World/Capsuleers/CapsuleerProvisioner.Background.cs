@@ -107,11 +107,13 @@ internal sealed partial class CapsuleerProvisioner
                     reservations: planning!,
                     roster: roster
                 );
-                if (profile is null && !TrafficProvisioning.HasFallback(catalog))
+                if (profile is null && !CapsuleerFreight.Available(catalog, database.Settings.Capsuleers.Freight))
                 {
                     continue;
                 }
-                int hull = profile?.HullTypeId ?? CapsuleerFreight.Hull(catalog, seed, system, slot);
+                int hull =
+                    profile?.HullTypeId
+                    ?? CapsuleerFreight.Hull(catalog, seed, system, slot, database.Settings.Capsuleers.Freight.VariedHulls);
                 ulong roleSeed = CapsuleerProvisioningRules.Seed(seed, system, CapsuleerCareer.Hauling, slot);
                 int race = origins[(int)(roleSeed % (ulong)origins.Length)].RaceId;
                 CapsuleerFreight.Prepare(catalog, hull);

@@ -220,6 +220,31 @@ else
                 <label>Visitors per watched gate
                     <InputNumber @bind-Value="Form.GateVisitors" min="0" max="16" step="1" />
                 </label>
+                <label><InputCheckbox @bind-Value="Form.FreightVariedHulls" />Use regional hauler hulls</label>
+                <label>Ordinary freight minimum budget (ISK)
+                    <InputNumber @bind-Value="Form.FreightOrdinaryMinimumIsk" />
+                </label>
+                <label>Ordinary freight maximum budget (ISK)
+                    <InputNumber @bind-Value="Form.FreightOrdinaryMaximumIsk" />
+                </label>
+                <label>Courier minimum budget (ISK)
+                    <InputNumber @bind-Value="Form.FreightCourierMinimumIsk" />
+                </label>
+                <label>Courier maximum budget (ISK)
+                    <InputNumber @bind-Value="Form.FreightCourierMaximumIsk" />
+                </label>
+                <label>Valuable trips among eligible couriers (%)
+                    <InputNumber @bind-Value="Form.FreightCourierPercent" />
+                </label>
+                <label>Empty subsequent freight trips (%)
+                    <InputNumber @bind-Value="Form.FreightEmptyReturnPercent" />
+                </label>
+                <label>Freight stacks surviving destruction (%)
+                    <InputNumber @bind-Value="Form.FreightWreckSurvivalPercent" />
+                </label>
+                <label>Freight cargo type IDs (comma-separated, blank for standard goods)
+                    <InputText @bind-Value="Form.FreightCargoTypeIds" />
+                </label>
                 <p class="muted">Changes apply after restart. Lower populations despawn and pause excess pilots without deleting them.
                     Higher populations reuse saved pilots before creating new ones. Ships, possessions, losses and progress are retained.</p>
                 <p class="muted">Station traffic and miners are prepared globally on restart, before logins. Gate visitors are prepared

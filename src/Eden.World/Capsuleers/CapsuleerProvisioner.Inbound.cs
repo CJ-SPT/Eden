@@ -92,11 +92,13 @@ internal sealed partial class CapsuleerProvisioner
                 reservations: reservations,
                 roster: roster
             );
-            if (profile is null && !TrafficProvisioning.HasFallback(catalog))
+            if (profile is null && !CapsuleerFreight.Available(catalog, database.Settings.Capsuleers.Freight))
             {
                 return null;
             }
-            int hull = profile?.HullTypeId ?? CapsuleerFreight.Hull(catalog, seed, community, slot);
+            int hull =
+                profile?.HullTypeId
+                ?? CapsuleerFreight.Hull(catalog, seed, community, slot, database.Settings.Capsuleers.Freight.VariedHulls);
             ulong roleSeed = CapsuleerProvisioningRules.Seed(seed, community, CapsuleerCareer.Hauling, slot);
             int race = origins[(int)(roleSeed % (ulong)origins.Length)].RaceId;
             CapsuleerFreight.Prepare(catalog, hull);
@@ -200,7 +202,7 @@ internal sealed partial class CapsuleerProvisioner
             if (
                 Math.Max(observerCount, sourceCount) == 0
                 || origins.Length == 0
-                || database.Traffic.Profiles.Count == 0 && !TrafficProvisioning.HasFallback(catalog)
+                || database.Traffic.Profiles.Count == 0 && !CapsuleerFreight.Available(catalog, database.Settings.Capsuleers.Freight)
             )
             {
                 world.SaveChanges();
