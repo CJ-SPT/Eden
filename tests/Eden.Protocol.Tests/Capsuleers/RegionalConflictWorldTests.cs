@@ -6,6 +6,8 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Ships;
+using Eden.Gameplay.Skills;
+using Eden.Gameplay.Thermal;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Flight;
 using Eden.World.Capsuleers;
@@ -28,6 +30,49 @@ public sealed class RegionalConflictWorldTests
     private const int HomeStation = 60015157;
     private const long Human = 90000001;
     private const int SupportMediumSlot = (int)InventoryFlag.MediumSlot0 + 3;
+
+    [Fact]
+    public async Task PatrolPreparesThermodynamicsThroughTheResidentCheckpoint()
+    {
+        using var fixture = new RoamingGangTests.Fixture(thermalCatalog: true);
+        var gang = fixture.Form();
+        int ReadLevel(long id) =>
+            fixture
+                .Host.GetRequiredService<IPilotSkillReader>()
+                .ReadSkills(id)
+                .SingleOrDefault(skill => skill.TypeId == OverloadRules.ThermodynamicsSkill)
+                ?.Level
+            ?? 0;
+        long pilot = gang.Members.Where(member => ReadLevel(member.PilotId) == 3).Select(member => member.PilotId).First();
+        int Level() => ReadLevel(pilot);
+        Assert.Equal(3, Level());
+        var profiles = fixture.Host.GetRequiredService<CapsuleerDefense>().Profile(pilot);
+        Assert.Contains(profiles.Modules, module => module.Overload is not null);
+        var budget = new CapsuleerModuleBudget(
+            profiles.Modules.First(module => module.Overload is not null).Item.Id,
+            PvpResources.MaximumHeatedCycles,
+            fixture.Clock.Now + PvpResources.AmmunitionCheckTicks
+        );
+        var saved = fixture.Live.HaulerCheckpoints[pilot];
+        saved = saved with
+        {
+            Work = saved.Work with
+            {
+                Defense = new() { ShipId = saved.Work.ShipId, Budgets = [budget] },
+            },
+        };
+        using (var action = fixture.Live.Economy.Begin())
+        {
+            saved.Apply(action);
+            action.Commit();
+        }
+        fixture.Live.HaulerCheckpoints[pilot] = saved;
+        await fixture.Live.FlushAsync();
+        fixture.Restart();
+        Assert.Equal(3, Level());
+        Assert.Contains(fixture.Host.GetRequiredService<CapsuleerDefense>().Profile(pilot).Modules, module => module.Overload is not null);
+        Assert.Equal(budget, Assert.Single(fixture.Live.HaulerCheckpoints[pilot].Work.Defense!.Budgets));
+    }
 
     [Theory]
     [InlineData(false, 2)]
@@ -155,6 +200,7 @@ public sealed class RegionalConflictWorldTests
         fixture.Restart();
         var restored = fixture.Live.HaulerCheckpoints[actor].Work.Defense!;
         Assert.Equal(active.State.Locks, restored.Locks);
+        Assert.Equal(active.State.Budgets, restored.Budgets);
         Assert.Equal(effect.ReadyAt, Assert.Single(restored.Cycles, cycle => cycle.ModuleId == jammer).ReadyAt);
     }
 

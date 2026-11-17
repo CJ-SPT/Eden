@@ -33,6 +33,14 @@ public static class CapsuleerPauseRules
                     )
                     .ToArray(),
                 RecallUntil = defense.RecallUntil == 0 ? 0 : checked(defense.RecallUntil + wallDelay),
+                Budgets = defense
+                    .Budgets.Select(budget =>
+                        budget with
+                        {
+                            AmmoCheckAt = budget.AmmoCheckAt == 0 ? 0 : checked(budget.AmmoCheckAt + wallDelay),
+                        }
+                    )
+                    .ToArray(),
             };
         }
         return work with

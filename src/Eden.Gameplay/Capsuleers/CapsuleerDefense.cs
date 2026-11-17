@@ -58,6 +58,7 @@ public sealed record CapsuleerDefenseState
     public int MotionStamp { get; init; } = int.MinValue;
     public CapsuleerLock[] Locks { get; init; } = [];
     public CapsuleerModuleCycle[] Cycles { get; init; } = [];
+    public CapsuleerModuleBudget[] Budgets { get; init; } = [];
 }
 
 public static class CapsuleerDefenseRules

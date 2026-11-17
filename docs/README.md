@@ -4,7 +4,7 @@
 fixes ship-loss settlement for nullsec communities with a refuge station in another region.
 
 [Bot PvP improvements](protocol/capsuleers.md#bot-pvp-improvements--november-17-2026) records capacitor management,
-fighting retreats, shared primaries, neutral raids, saved warp preparation and the remaining tactical milestones.
+fighting retreats, shared primaries, neutral raids, saved warp preparation, movement, support assignments and paid ammo/heat decisions.
 
 [Regional bot conflicts](protocol/capsuleers.md#regional-bot-conflicts--november-17-2026) adds persistent regional
 rivalries, raids, interception, real freight escorts and witnessed defensive responses using existing roaming gangs.

@@ -389,7 +389,13 @@ public sealed class RoamingGangTests
         internal LiveWorld Live => Host.GetRequiredService<LiveWorld>();
         internal CapsuleerScheduler Scheduler => Host.GetRequiredService<CapsuleerScheduler>();
 
-        internal Fixture(bool regional = false, bool splitRegions = false, bool supportCatalog = false, int? targetLimit = null)
+        internal Fixture(
+            bool regional = false,
+            bool splitRegions = false,
+            bool supportCatalog = false,
+            int? targetLimit = null,
+            bool thermalCatalog = false
+        )
         {
             PassiveCatalogFixture.LoadFrigateHulls(Database.CatalogPath);
             PassiveCatalogFixture.Load(Database.CatalogPath);
@@ -397,6 +403,21 @@ public sealed class RoamingGangTests
             if (supportCatalog)
             {
                 PassiveCatalogFixture.LoadPlayerEwar(Database.CatalogPath);
+            }
+            if (thermalCatalog)
+            {
+                // Only Thermodynamics and its prerequisites are missing from this combat fixture.
+                const int scienceSkill = 3402;
+                PassiveCatalogFixture.LoadOverload(
+                    Database.CatalogPath,
+                    new HashSet<int>
+                    {
+                        Eden.Gameplay.Thermal.OverloadRules.ThermodynamicsSkill,
+                        (int)FittingSkill.PowerGridManagement,
+                        (int)FittingSkill.CapacitorManagement,
+                        scienceSkill,
+                    }
+                );
             }
             using (var catalog = new CatalogDbContext(Database.CatalogPath, writable: true))
             {

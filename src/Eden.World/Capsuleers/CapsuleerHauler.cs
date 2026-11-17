@@ -874,6 +874,7 @@ internal sealed partial class CapsuleerHauler(
             _pilot = ReadPilot(_operation.World, account);
             _navigation.AdoptHull();
         }
+        CapsuleerSupplyStore.PrepareCombatSkills(_operation.World, _operation.Catalog, pilotId);
         CapsuleerSupplyStore.Ensure(_operation.World, _operation.Catalog, pilotId, Founder.FounderShipId);
         UnloadRattingLoot();
         var supplies = resupply.Dock(database, _operation.World, _operation.Catalog, pilotId, Work.Resupply, Now);

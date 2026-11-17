@@ -6,6 +6,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Ships;
+using Eden.Gameplay.Thermal;
 using Eden.World.Catalog;
 using Eden.World.Combat.Weapons;
 using Eden.World.Drones;
@@ -13,6 +14,7 @@ using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Skills;
 using Eden.World.Storage;
+using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Capsuleers;
@@ -22,7 +24,10 @@ internal sealed record CapsuleerDefenseEquipment(
     DogmaEffect Effect,
     IReadOnlyDictionary<DogmaAttributeId, double> Attributes,
     bool Active
-);
+)
+{
+    internal OverloadProfile? Overload { get; init; }
+}
 
 internal sealed partial record CapsuleerDefenseProfile(bool Combat, CapsuleerDefenseEquipment[] Modules)
 {
@@ -90,7 +95,10 @@ internal sealed partial record CapsuleerDefenseProfile(bool Combat, CapsuleerDef
                 FittingCatalog.DefaultEffect(catalog, module.Item.TypeId) ?? DogmaEffect.Online,
                 fit.Graph.Attributes(module.Item.Id),
                 active.Contains(module.Item.Id)
-            ))
+            )
+            {
+                Overload = HeatProfile(catalog, fit, module.Item.TypeId),
+            })
             .ToArray();
         int tech = (int)catalog.FittingAttributes(pilot.ActiveShip.TypeId).GetValueOrDefault(DogmaAttributeId.TechLevel, 1);
         var hull = catalog.RequireItem(pilot.ActiveShip.TypeId);
@@ -105,6 +113,14 @@ internal sealed partial record CapsuleerDefenseProfile(bool Combat, CapsuleerDef
             TargetRange = fit.Graph.Read(pilot.ActiveShipId, DogmaAttributeId.MaxTargetRange),
             ShipAttributes = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: fit),
         };
+    }
+
+    private static OverloadProfile? HeatProfile(CatalogDbContext catalog, FittingCalculation fit, int type)
+    {
+        int level = fit.SkillLevels.GetValueOrDefault(OverloadRules.ThermodynamicsSkill);
+        return level > 0 && OverloadCatalog.Definition(catalog, type) is { } profile && level >= profile.RequiredThermodynamics
+            ? profile
+            : null;
     }
 
     private static RattingWeapon[] ReadRatting(

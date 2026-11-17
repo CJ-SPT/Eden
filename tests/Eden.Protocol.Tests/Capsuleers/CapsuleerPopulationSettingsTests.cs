@@ -311,6 +311,7 @@ public sealed class CapsuleerPopulationSettingsTests(Xunit.Abstractions.ITestOut
                 TargetId = 99,
                 Locks = [new(99, 1100)],
                 RecallUntil = 1200,
+                Budgets = [new(10, 2, 1300), new(11)],
             },
             RattingLoot = [88],
         };
@@ -323,6 +324,8 @@ public sealed class CapsuleerPopulationSettingsTests(Xunit.Abstractions.ITestOut
         Assert.Equal(5000, resumed.Ratting.LastObservedAt);
         Assert.Equal(5100, Assert.Single(resumed.Defense!.Locks).ReadyAt);
         Assert.Equal(5200, resumed.Defense.RecallUntil);
+        Assert.Equal(new CapsuleerModuleBudget(10, 2, 5300), resumed.Defense.Budgets[0]);
+        Assert.Equal(new CapsuleerModuleBudget(11), resumed.Defense.Budgets[1]);
         Assert.Same(work.Resupply, resumed.Resupply);
         Assert.Equal(work.RattingLoot, resumed.RattingLoot);
         Assert.Equal(work.Ratting.LootIds, resumed.Ratting.LootIds);

@@ -15,6 +15,7 @@ using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Repair;
 using Eden.Gameplay.Ships;
 using Eden.Gameplay.Targeting;
+using Eden.Gameplay.Thermal;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Runtime;
@@ -58,6 +59,8 @@ internal sealed partial class CapsuleerDefense(
     IPilotSignatureSuppression suppression,
     IPilotAssaultDamageControls damageControls,
     IPilotAmmunition ammunition,
+    IPilotOverloading overloading,
+    IPilotShipHeat shipHeat,
     IPilotHealth health
 )
 {
@@ -195,6 +198,7 @@ internal sealed partial class CapsuleerDefense(
         if (saved is not null && saved.ShipId != pilot.ShipId)
         {
             locks.RemoveShip(saved.ShipId);
+            overloading.Clear(pilot.PilotId, saved.ShipId);
         }
         if (pilot.Position is null || navigation.Warp is not null || pilot.ShipGroupId == FleetDefinitions.CapsuleGroup || !canFight)
         {
@@ -396,6 +400,7 @@ internal sealed partial class CapsuleerDefense(
             && locks.Contains(pilot.ShipId, contact.ShipId);
         bool locked = Locked(target);
         var active = state.Cycles.ToDictionary(cycle => cycle.ModuleId);
+        var budgets = state.Budgets.ToDictionary(budget => budget.ModuleId);
         foreach (var module in profile.Modules.OrderBy(module => Priority(module.Effect)))
         {
             if (module.Item.GroupId == InterdictionRules.LauncherGroup)
@@ -414,12 +419,24 @@ internal sealed partial class CapsuleerDefense(
                 continue;
             }
             bool enabled = Enabled(module, profile, currentHealth, live, now, offensive, moduleLocked, blocked, retreat && blocked);
+            var budget = budgets.GetValueOrDefault(module.Item.Id) ?? new CapsuleerModuleBudget(module.Item.Id);
+            bool heated =
+                enabled
+                && moduleTarget is not null
+                && Heat(pilot, module, budget, moduleTarget, retreat && blocked || CapsuleerDefenseRules.Retreat(currentHealth, true), now);
+            if (heated && live?.Banks.Values.FirstOrDefault(bank => bank.Contains(module.Item.Id)) is { } bank)
+            {
+                heated = !bank.Any(id => budgets.GetValueOrDefault(id)?.HeatedCycles >= PvpResources.MaximumHeatedCycles);
+            }
             if (IsOffensive(module.Effect) && !IsWeapon(module.Effect))
             {
                 enabled &=
                     moduleTarget is not null
                     && PvpSupport.InRange(
-                        SupportModule(module),
+                        SupportModule(module) with
+                        {
+                            Optimal = heated ? HeatedRange(module) : SupportModule(module).Optimal,
+                        },
                         Math.Max(0, pilot.Position.DistanceTo(moduleTarget.Position) - pilot.Flight.ShipRadius - moduleTarget.Radius)
                     );
             }
@@ -447,6 +464,7 @@ internal sealed partial class CapsuleerDefense(
             }
             if (!enabled)
             {
+                SelectHeat(pilot.PilotId, pilot.ShipId, module.Item.Id, module.Item.TypeId, false, now);
                 if (previous is not null)
                 {
                     StopModule(pilot.PilotId, pilot.ShipId, previous);
@@ -460,6 +478,42 @@ internal sealed partial class CapsuleerDefense(
             }
             try
             {
+                if (
+                    !target.Npc
+                    && moduleLocked
+                    && budget.AmmoCheckAt <= now
+                    && live?.Turrets.GetValueOrDefault(module.Item.Id) is { Definition.Error: null } turret
+                    && turret.ChargeItemId is not null
+                    && turret.ReadyAt <= now
+                )
+                {
+                    budgets[module.Item.Id] = budget = budget with { AmmoCheckAt = checked(now + PvpResources.AmmunitionCheckTicks) };
+                    var reloaded = ChooseAmmunition(
+                        pilot,
+                        module,
+                        turret.Definition.Weapon,
+                        turret.Quantity >= turret.Definition.Rounds,
+                        moduleTarget!,
+                        navigation.Velocity,
+                        now
+                    );
+                    if (reloaded is not null)
+                    {
+                        SelectHeat(pilot.PilotId, pilot.ShipId, module.Item.Id, module.Item.TypeId, false, now);
+                        foreach (long reloadedModule in reloaded.ModuleIds)
+                        {
+                            var item = profile.Modules.First(item => item.Item.Id == reloadedModule).Item;
+                            active[reloadedModule] = new(item.Id, item.TypeId, DogmaEffect.Online, 0, now, reloaded.ReadyAt)
+                            {
+                                FlagId = item.FlagId,
+                            };
+                            var changed = budgets.GetValueOrDefault(item.Id) ?? new CapsuleerModuleBudget(item.Id);
+                            budgets[item.Id] = changed with { AmmoCheckAt = budget.AmmoCheckAt };
+                        }
+                        continue;
+                    }
+                }
+                SelectHeat(pilot.PilotId, pilot.ShipId, module.Item.Id, module.Item.TypeId, heated, now);
                 var renewed = runtime?.RenewDefense(pilot.PilotId, module, previous, now);
                 foreach (var cycle in renewed is null ? Start(pilot, navigation, module, moduleTarget ?? target, now, stamp) : [renewed])
                 {
@@ -467,10 +521,16 @@ internal sealed partial class CapsuleerDefense(
                     {
                         FlagId = profile.Modules.First(item => item.Item.Id == cycle.ModuleId).Item.FlagId,
                     };
+                    if (overloading.Requested(pilot.PilotId, pilot.ShipId).Contains(cycle.ModuleId))
+                    {
+                        var used = budgets.GetValueOrDefault(cycle.ModuleId) ?? new CapsuleerModuleBudget(cycle.ModuleId);
+                        budgets[cycle.ModuleId] = used with { HeatedCycles = checked(used.HeatedCycles + 1) };
+                    }
                 }
             }
             catch (InvalidDataException)
             {
+                SelectHeat(pilot.PilotId, pilot.ShipId, module.Item.Id, module.Item.TypeId, false, now);
                 if (previous is not null)
                 {
                     StopModule(pilot.PilotId, pilot.ShipId, previous);
@@ -492,7 +552,7 @@ internal sealed partial class CapsuleerDefense(
             live = runtime?.DefenseShip(pilot.PilotId, now);
             currentHealth = health.Read(pilot.PilotId, now);
         }
-        state = state with { Cycles = active.Values.ToArray() };
+        state = state with { Cycles = active.Values.ToArray(), Budgets = budgets.Values.OrderBy(budget => budget.ModuleId).ToArray() };
         if (state.Cycles.Any(cycle => cycle.Effect is DogmaEffect.UseMissiles or DogmaEffect.AutoTargetingMissile))
         {
             missiles.Advance(pilot.SystemId, now);
@@ -1002,6 +1062,7 @@ internal sealed partial class CapsuleerDefense(
 
     private void Stop(long pilot, CapsuleerDefenseState state)
     {
+        overloading.Clear(pilot, state.ShipId);
         // Defense owns outgoing locks. Clearing incoming locks here makes peaceful pilots
         // lose every player's lock on each maintenance update, including during alignment.
         foreach (var scan in state.Locks)
@@ -1016,6 +1077,7 @@ internal sealed partial class CapsuleerDefense(
 
     private void StopModule(long pilot, long ship, CapsuleerModuleCycle cycle)
     {
+        SelectHeat(pilot, ship, cycle.ModuleId, cycle.TypeId, false, cycle.ReadyAt);
         switch (cycle.Effect)
         {
             case DogmaEffect.ActiveShieldResistance:

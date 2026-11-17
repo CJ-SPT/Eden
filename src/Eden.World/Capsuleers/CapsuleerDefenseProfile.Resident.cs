@@ -196,7 +196,10 @@ internal sealed partial record CapsuleerDefenseProfile
                 FittingCatalog.DefaultEffect(catalog, module.Item.TypeId) ?? DogmaEffect.Online,
                 fit.Graph.Attributes(module.Item.Id),
                 Enumerable.Contains(active, module.Item.Id)
-            ))
+            )
+            {
+                Overload = HeatProfile(catalog, fit, module.Item.TypeId),
+            })
             .ToArray();
         int tech = (int)catalog.FittingAttributes(pilot.ActiveShip.TypeId).GetValueOrDefault(DogmaAttributeId.TechLevel, 1);
         var hull = catalog.RequireItem(pilot.ActiveShip.TypeId);

@@ -8,7 +8,9 @@ using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Ships;
 using Eden.Gameplay.Skills;
+using Eden.Gameplay.Thermal;
 using Eden.World.Catalog;
 using Eden.World.Drones;
 using Eden.World.Fittings;
@@ -21,6 +23,35 @@ namespace Eden.World.Capsuleers;
 
 internal static partial class CapsuleerSupplyStore
 {
+    internal static void PrepareCombatSkills(WorldAction world, CatalogDbContext catalog, long pilotId)
+    {
+        const int combatThermodynamicsLevel = 3;
+        var pilot = world.Pilots.Find(pilotId)!;
+        var ship = pilot.ActiveShip;
+        var hull = catalog.RequireItem(ship.TypeId);
+        int tech = (int)catalog.FittingAttributes(ship.TypeId).GetValueOrDefault(DogmaAttributeId.TechLevel, 1);
+        double rank = catalog.FittingAttributes(OverloadRules.ThermodynamicsSkill).GetValueOrDefault(DogmaAttributeId.SkillTimeConstant);
+        if (
+            ship.OwnerId != pilotId
+            || ship.Position is not null
+            || !CapsuleerDefenseRules.CombatShip((HullClass)hull.GroupId, tech, true)
+            || rank <= 0
+        )
+        {
+            return;
+        }
+        long points = TrainedSkill.PointsForLevel(rank, combatThermodynamicsLevel);
+        var skill = world.Set<PilotSkill>().Find(pilotId, OverloadRules.ThermodynamicsSkill);
+        if (skill?.Points >= points)
+        {
+            return;
+        }
+        // Population preparation already grants the prerequisites for its owned combat fit.
+        CapsuleerCommunityStore.GrantRequirements(world, catalog, pilotId, OverloadRules.ThermodynamicsSkill, []);
+        skill ??= world.Add(new PilotSkill { PilotId = pilotId, TypeId = OverloadRules.ThermodynamicsSkill }).Entity;
+        skill.Points = Math.Max(skill.Points, points);
+    }
+
     internal static void Ensure(WorldAction world, CatalogDbContext catalog, long pilotId, long founderShip)
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.ensureSupplies");

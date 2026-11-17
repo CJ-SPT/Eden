@@ -243,6 +243,69 @@ and retains paid ECM deadlines and locks through checkpoint/restart. Existing wa
 **Optional maintainer checks:** Observe a gun/EWAR ship retaining a gun primary while jamming another target,
 and a gunless support pilot staying with its gang. Native lock/effect presentation remains unverified.
 
+### Milestone 6: ammunition choice and controlled heat
+
+Standard turret fits compare compatible ammunition already in their own cargo using observed range, angular motion
+and visible signature. The estimate adjusts their own fitted optimal, falloff and tracking for each catalog charge.
+A swap must improve estimated applied damage by more than 25% after amortizing the actual reload delay over thirty
+seconds. A saved thirty-second recheck deadline prevents oscillation. The ordinary ammunition owner still validates
+skills, bank membership, quantities and paid cycles, transfers the owned rounds and enforces reload time. A rejected
+optional swap preserves the current weapon. The comparison reads the resident magazine quantity rather than a projected
+database quantity and skips synthetic civilian charges. No ammunition is created or bought. Missile reloads retain the ordinary compatible
+loader; tactical missile-type changes, spool-reset tradeoffs and Vorton application remain outside this heuristic.
+
+Earned, supported overheating is limited to three successful cycles per module per defense encounter. Points and
+scrams can heat to catch a target just outside normal reach; weapons can heat during a trapped fighting retreat.
+The bot declines new heat at 45% rack heat, at 35% damage on any module in that rack, or when two more source damage
+pulses could burn its module. These are conservative AI limits, not guarantees against stochastic neighbor damage.
+Selections use the ordinary overload owner; successful weapon-bank cycles share the budget accounting. Failed cycles
+do not consume a success budget. Stopping a module or leaving combat clears its request while the ordinary owner
+settles any funded heat interval. Normal capacitor, ammunition, damage and cooldown payments remain mandatory.
+
+Docked combat traffic receives Thermodynamics III and its catalog prerequisites during resident population
+preparation, matching existing fit-skill preparation. Existing higher skills are preserved. Pilots already in space
+must return to dock for preparation; pilots without the earned level cannot bypass the ordinary overload checks.
+Module budgets and ammo deadlines join the existing typed hauler/miner checkpoint. Pause/resume shifts the wall-time
+ammo deadline while preserving consumed heat cycles. Actual heat and module damage use their existing checkpoints.
+
+References: [EVE University turret mechanics](https://wiki.eveuniversity.org/Turret_mechanics),
+[ammunition tradeoffs](https://wiki.eveuniversity.org/Turrets) and
+[overheating](https://wiki.eveuniversity.org/Overheating). Charge modifiers, reloads, overload bonuses and damage programs
+come from the pinned build-3662168 catalog; the existing movement/Carbon owner is unchanged. The comparison horizon,
+switch threshold, preparation level and heat limits are Eden policies. The AI does not infer hidden enemy resistances.
+
+**Automated validation:** Tool/solution restore passed; solution build passed with zero warnings/errors in
+0.68 seconds. All 228 final affected cases passed in 138.35 seconds wall time (135 seconds reported test duration).
+The filter combined `FullyQualifiedName~` for `PvpResourceTests`, `PvpTacticsTests`, `CapsuleerDefenseTests`,
+`CapsuleerDefenseLifecycleTests`, `CapsuleerDefenseModuleTests`, `CapsuleerDefenseFrameTests`, `RoamingGangTests`,
+`RegionalConflictWorldTests`, `PatrolTests`, `GateCampTests`, `CapsuleerSupplyTests`, `CapsuleerPopulationSettingsTests`,
+`AmmunitionTests`, `OverloadControlTests`, `OverloadFittingTests`, `ShipHeatTests`, `MissileHeatTests`,
+`GameplayDependenciesTests` and `DataModelOwnershipTests`, with the explicit exclusion below. Both Python policy
+suites passed (8 catalog cases in 1.701 seconds; 9 formatting cases in 0.066 seconds); formatting and diff checks passed.
+Existing warmed SQL/connection/fitting budgets remain asserted. No full suite was requested or run.
+
+The excluded `FullyQualifiedName!=Eden.Protocol.Tests.Capsuleers.CapsuleerPopulationSettingsTests.`
+`RestartSuspendsAndReusesSavedPilotsWithoutChangingTheirPossessionsOrReplayingJobs` fails at its empty visible-hauler
+assertion unchanged on main `a182106a` (8.41 seconds wall time). Its code is unchanged. The first expanded run was
+interrupted after that failure and civilian-charge failures. The latter were traced to the civilian gun's synthetic
+charge type 20132: optional selection now requires a real loaded charge item, and absent/noncharge catalog definitions
+are safely skipped. The corrected activation/retaliation rerun passed 31 cases; its only failure was the baseline
+population fixture. Temporary diagnostics were removed before final validation.
+
+Development used exact `FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.` filters for both `PvpResourceTests`
+methods, `CapsuleerDefenseModuleTests.DefenseChangesOwnedAmmunitionPaysReloadAndDoesNotRepeatIt` (single/banked guns),
+`CapsuleerDefenseModuleTests.DefenseHeatsTackleThroughThePaidOwnerAndHonorsItsSavedBudget`,
+`RegionalConflictWorldTests.PatrolPreparesThermodynamicsThroughTheResidentCheckpoint` and the existing pause/retaliation
+flows. The heat fixture initially withdrew after its only civilian gun failed to reach the target; it now carries an
+owned, paid long-range railgun and asserts actual heat generation. Thermodynamics preparation, exhausted heat budgets
+and ammo deadlines survive a reopened checkpoint. The thermal fixture imports only the skill and prerequisites,
+avoiding unrelated priced-material changes to its active configuration.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Observe a range-driven owned-ammo change and a short overheated tackle catch.
+Native reload/heat indicators and combat feel remain unverified.
+
 ## Regional bot conflicts — November 17, 2026
 
 Regional operations extend the saved roaming-gang command with constellation-based patrol groups in null security.
