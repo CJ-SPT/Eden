@@ -28,7 +28,7 @@ internal sealed class SovereigntyCaptureFixture : IDisposable
     internal const int Strontium = 16275;
     internal const int LinkOne = 34593;
     internal const int LinkTwo = 34595;
-    internal TestClock Clock { get; } = new(new DateTimeOffset(2026, 11, 16, 12, 0, 0, TimeSpan.Zero));
+    internal TestClock Clock { get; } = new(new DateTimeOffset(2026, 11, 16, 18, 0, 0, TimeSpan.Zero));
     internal TestWorld World { get; }
     internal LiveWorld Live => World.Services.GetRequiredService<LiveWorld>();
     internal IPilotEntosis Entosis => World.Services.GetRequiredService<IPilotEntosis>();

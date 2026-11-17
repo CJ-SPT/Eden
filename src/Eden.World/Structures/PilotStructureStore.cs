@@ -688,7 +688,7 @@ internal sealed partial class PilotStructureStore(
                         Structure = new(s.State, s.StateStartedAt, s.StateEndsAt, s.UnanchorAt, s.HasCore),
                         Sovereignty =
                             s.TypeId == Eden.Gameplay.Sovereignty.EntosisRules.HubTypeId
-                            && Eden.World.Sovereignty.PilotEntosisStore.Snapshot(world, systemId) is { } hub
+                            && Eden.World.Sovereignty.PilotEntosisStore.Snapshot(world, systemId, Now) is { } hub
                             && hub.HubId == s.Id
                                 ? hub
                                 : null,

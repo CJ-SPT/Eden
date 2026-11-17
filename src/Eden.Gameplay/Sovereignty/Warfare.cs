@@ -30,7 +30,12 @@ public sealed record SovereigntyConflict(
     long? CampaignAt,
     int DefenderPoints,
     TerritoryProgress Capture
-);
+)
+{
+    public decimal DefenseMultiplier { get; init; } = 1m;
+    public decimal WindowMultiplier { get; init; } = 1m;
+    public decimal CampaignMultiplier { get; init; } = 1m;
+}
 
 public sealed record SovereigntyCommandNode(
     long Id,
@@ -54,6 +59,7 @@ public static class SovereigntyWarfareRules
     public static readonly long PrimeChangeDelay = TimeSpan.FromHours(48).Ticks;
     public static readonly long TransitionOverlap = TimeSpan.TicksPerDay;
     public static readonly long ExtraNodeInterval = TimeSpan.FromMinutes(30).Ticks;
+    public static readonly long BaseVulnerabilityDuration = TimeSpan.FromHours(18).Ticks;
 
     // Eden chooses reproducible off-grid locations; these are placement policy, not CCP constants.
     public const double NodeOrbit = 5_000_000_000;
@@ -82,7 +88,7 @@ public static class SovereigntyWarfareRules
         {
             throw new InvalidDataException("Invalid vulnerability schedule.");
         }
-        long length = (long)(TimeSpan.FromHours(18).Ticks / multiplier);
+        long length = (long)(BaseVulnerabilityDuration / multiplier);
         long middle = now / TimeSpan.TicksPerDay * TimeSpan.TicksPerDay + hour * TimeSpan.TicksPerHour;
         if (now >= middle + length / 2)
         {
@@ -111,9 +117,9 @@ public static class SovereigntyWarfareRules
 
     public static bool Open(VulnerabilityWindow window, long now) => now >= window.StartsAt && now < window.EndsAt;
 
-    public static long CampaignDeadline(long reinforcedAt, int primeHour, long hubId)
+    public static long CampaignDeadline(long reinforcedAt, int primeHour, long hubId, decimal multiplier = 1m)
     {
-        var window = Window(primeHour, checked(reinforcedAt + 2 * TimeSpan.TicksPerDay));
+        var window = Window(primeHour, checked(reinforcedAt + 2 * TimeSpan.TicksPerDay), multiplier);
         // Stable jitter is selected once and persisted; replay/restart cannot reroll it.
         ulong seed = unchecked((ulong)hubId * DeterministicSeedMultiplier + (ulong)reinforcedAt);
         return checked(window.StartsAt + (long)(seed % (ulong)(window.EndsAt - window.StartsAt)));
@@ -147,7 +153,8 @@ public static class SovereigntyWarfareRules
         double regeneration,
         int defender,
         bool node,
-        long admissionEndsAt = long.MaxValue
+        long admissionEndsAt = long.MaxValue,
+        decimal attackMultiplier = 1m
     )
     {
         double lower = node ? -1 : 0;
@@ -156,6 +163,7 @@ public static class SovereigntyWarfareRules
             || state.Value < lower
             || state.Value > 1
             || duration <= 0
+            || attackMultiplier is < 1 or > SovereigntyRules.MaximumDefenseMultiplier
             || !double.IsFinite(regeneration)
             || regeneration < 0
             || now < 0
@@ -194,7 +202,7 @@ public static class SovereigntyWarfareRules
         long from = state.UpdatedAt;
         double Rate() =>
             defending > 0 && attacking > 0 ? 0
-            : attacking > 0 && (node || score < 1 || from < admissionEndsAt) ? -1
+            : attacking > 0 && (node || score < 1 || from < admissionEndsAt) ? -1 / (double)attackMultiplier
             : defending > 0 ? 1
             : regeneration;
         foreach (var change in events)

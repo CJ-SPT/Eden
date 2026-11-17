@@ -57,6 +57,43 @@ internal sealed partial class PilotEntosisStore
         );
     }
 
+    private long NextCampaignBoundary(WorldAction world, CatalogDbContext catalog, int constellation, long now)
+    {
+        var conflicts = world.Filter<SavedSovereigntyConflict>(row => row.ConstellationId == constellation).ToArray();
+        long next = conflicts
+            .Where(row => row.Phase == SovereigntyPhase.Reinforced && row.CampaignAt <= now)
+            .Select(row => row.CampaignAt!.Value)
+            .Concat(conflicts.Where(row => row.Phase == SovereigntyPhase.Campaign).Select(row => row.NextSpawnAt))
+            .Append(now)
+            .Min();
+        if (!conflicts.Any(row => row.Phase == SovereigntyPhase.Campaign))
+        {
+            return next;
+        }
+        var profile = EntosisCatalog.Defense(catalog, true);
+        foreach (var conflict in conflicts.Where(row => row.Phase == SovereigntyPhase.Campaign))
+        {
+            foreach (var node in world.Filter<SavedSovereigntyNode>(row => row.SourceSystemId == conflict.SystemId))
+            {
+                var progress = SovereigntyWarfareRules.Advance(
+                    new(node.Value, node.UpdatedAt),
+                    Contributions(world, catalog, Target(world, node.SystemId, node.Id)!, now),
+                    next,
+                    profile.Duration,
+                    profile.Regeneration,
+                    conflict.DefenderAllianceId,
+                    true,
+                    attackMultiplier: (decimal)conflict.CampaignAdm
+                );
+                if (progress.CompletedAt is long at)
+                {
+                    next = Math.Min(next, at);
+                }
+            }
+        }
+        return next;
+    }
+
     private void AdvanceConstellationCampaigns(WorldAction world, CatalogDbContext catalog, int constellation, long now)
     {
         if (
@@ -67,38 +104,13 @@ internal sealed partial class PilotEntosisStore
         {
             return;
         }
-        var profile = EntosisCatalog.Defense(catalog, true);
         while (true)
         {
             var conflicts = world
                 .Filter<SavedSovereigntyConflict>(row => row.ConstellationId == constellation)
                 .OrderBy(row => row.SystemId)
                 .ToArray();
-            long next = conflicts
-                .Where(row => row.Phase == SovereigntyPhase.Reinforced && row.CampaignAt <= now)
-                .Select(row => row.CampaignAt!.Value)
-                .Concat(conflicts.Where(row => row.Phase == SovereigntyPhase.Campaign).Select(row => row.NextSpawnAt))
-                .Append(now)
-                .Min();
-            foreach (var conflict in conflicts.Where(row => row.Phase == SovereigntyPhase.Campaign))
-            {
-                foreach (var node in world.Filter<SavedSovereigntyNode>(row => row.SourceSystemId == conflict.SystemId))
-                {
-                    var progress = SovereigntyWarfareRules.Advance(
-                        new(node.Value, node.UpdatedAt),
-                        Contributions(world, catalog, Target(world, node.SystemId, node.Id)!, now),
-                        next,
-                        profile.Duration,
-                        profile.Regeneration,
-                        conflict.DefenderAllianceId,
-                        true
-                    );
-                    if (progress.CompletedAt is long at)
-                    {
-                        next = Math.Min(next, at);
-                    }
-                }
-            }
+            long next = NextCampaignBoundary(world, catalog, constellation, now);
             // All campaigns reach the same event time before shared spawn capacity can be reused.
             foreach (var conflict in conflicts.Where(row => row.Phase == SovereigntyPhase.Campaign))
             {
@@ -148,7 +160,8 @@ internal sealed partial class PilotEntosisStore
                         profile.Duration,
                         profile.Regeneration,
                         conflict.DefenderAllianceId,
-                        true
+                        true,
+                        attackMultiplier: (decimal)conflict.CampaignAdm
                     )
                 ))
                 .ToArray();
@@ -169,7 +182,8 @@ internal sealed partial class PilotEntosisStore
                             profile.Duration,
                             profile.Regeneration,
                             conflict.DefenderAllianceId,
-                            true
+                            true,
+                            attackMultiplier: (decimal)conflict.CampaignAdm
                         );
                 node.Value = progress.Value;
                 node.UpdatedAt = progress.UpdatedAt;
@@ -247,6 +261,7 @@ internal sealed partial class PilotEntosisStore
             world.Remove(hub);
         }
         world.Remove(conflict);
+        SovereigntyDevelopmentPersistence.ReconcileCapital(world, conflict.DefenderAllianceId, at);
         // No winner receives a free replacement hull or automatic claim.
         conflict.Phase = SovereigntyPhase.Secure;
     }

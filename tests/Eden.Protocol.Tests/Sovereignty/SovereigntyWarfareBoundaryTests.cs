@@ -20,8 +20,8 @@ public sealed class SovereigntyWarfareBoundaryTests
         using SovereigntyCaptureFixture fixture = new();
         long defender = fixture.Fit();
         long attacker = fixture.Fit(pilot: SovereigntyCaptureFixture.OtherPilotId);
-        fixture.Grant(SovereigntyCaptureFixture.Strontium, 100);
-        fixture.Grant(SovereigntyCaptureFixture.Strontium, 100, pilot: SovereigntyCaptureFixture.OtherPilotId);
+        fixture.Grant(SovereigntyCaptureFixture.Strontium, 500);
+        fixture.Grant(SovereigntyCaptureFixture.Strontium, 500, pilot: SovereigntyCaptureFixture.OtherPilotId);
         long hub = SovereigntyCampaignTests.Claim(fixture, defender);
         using (var action = fixture.Live.Economy.Begin(TransactionParticipants.None))
         {
@@ -39,8 +39,8 @@ public sealed class SovereigntyWarfareBoundaryTests
         using SovereigntyCaptureFixture fixture = new();
         long defender = fixture.Fit();
         long attacker = fixture.Fit(pilot: SovereigntyCaptureFixture.OtherPilotId);
-        fixture.Grant(SovereigntyCaptureFixture.Strontium, 100);
-        fixture.Grant(SovereigntyCaptureFixture.Strontium, 100, pilot: SovereigntyCaptureFixture.OtherPilotId);
+        fixture.Grant(SovereigntyCaptureFixture.Strontium, 500);
+        fixture.Grant(SovereigntyCaptureFixture.Strontium, 500, pilot: SovereigntyCaptureFixture.OtherPilotId);
         long hub = SovereigntyCampaignTests.Claim(fixture, defender);
         SovereigntyCampaignTests.Reinforce(fixture, attacker, hub);
         long at = fixture.Entosis.Hub(SovereigntyCaptureFixture.SystemId)!.Conflict!.CampaignAt!.Value;
@@ -87,8 +87,8 @@ public sealed class SovereigntyWarfareBoundaryTests
         using SovereigntyCaptureFixture fixture = new();
         long defender = fixture.Fit();
         long attacker = fixture.Fit(pilot: SovereigntyCaptureFixture.OtherPilotId);
-        fixture.Grant(SovereigntyCaptureFixture.Strontium, 100);
-        fixture.Grant(SovereigntyCaptureFixture.Strontium, 100, pilot: SovereigntyCaptureFixture.OtherPilotId);
+        fixture.Grant(SovereigntyCaptureFixture.Strontium, 500);
+        fixture.Grant(SovereigntyCaptureFixture.Strontium, 500, pilot: SovereigntyCaptureFixture.OtherPilotId);
         long hub = SovereigntyCampaignTests.Claim(fixture, defender);
         fixture.Position(new(2_000_070_000, 0, 0), SovereigntyCaptureFixture.OtherPilotId);
         fixture.Lock(hub, SovereigntyCaptureFixture.OtherPilotId);
@@ -126,8 +126,8 @@ public sealed class SovereigntyWarfareBoundaryTests
         using SovereigntyCaptureFixture fixture = new();
         long defender = fixture.Fit();
         long attacker = fixture.Fit(pilot: SovereigntyCaptureFixture.OtherPilotId);
-        fixture.Grant(SovereigntyCaptureFixture.Strontium, 100);
-        long fuel = fixture.Grant(SovereigntyCaptureFixture.Strontium, 100, pilot: SovereigntyCaptureFixture.OtherPilotId);
+        fixture.Grant(SovereigntyCaptureFixture.Strontium, 500);
+        long fuel = fixture.Grant(SovereigntyCaptureFixture.Strontium, 500, pilot: SovereigntyCaptureFixture.OtherPilotId);
         long hub = SovereigntyCampaignTests.Claim(fixture, defender);
         fixture.Position(new(2_000_070_000, 0, 0), SovereigntyCaptureFixture.OtherPilotId);
         fixture.Lock(hub, SovereigntyCaptureFixture.OtherPilotId);
@@ -191,8 +191,8 @@ public sealed class SovereigntyWarfareBoundaryTests
         using SovereigntyCaptureFixture fixture = new();
         long defender = fixture.Fit();
         long attacker = fixture.Fit(pilot: SovereigntyCaptureFixture.OtherPilotId);
-        fixture.Grant(SovereigntyCaptureFixture.Strontium, 100);
-        fixture.Grant(SovereigntyCaptureFixture.Strontium, 100, pilot: SovereigntyCaptureFixture.OtherPilotId);
+        fixture.Grant(SovereigntyCaptureFixture.Strontium, 500);
+        fixture.Grant(SovereigntyCaptureFixture.Strontium, 500, pilot: SovereigntyCaptureFixture.OtherPilotId);
         long hub = SovereigntyCampaignTests.Claim(fixture, defender);
         SovereigntyCampaignTests.Reinforce(fixture, attacker, hub);
         long at = fixture.Entosis.Hub(SovereigntyCaptureFixture.SystemId)!.Conflict!.CampaignAt!.Value;

@@ -23,7 +23,15 @@ internal sealed record EconomySovereigntyConflict(
     long UpdatedAt,
     int? ScoringTeam,
     double Rate,
-    bool Blocked
+    bool Blocked,
+    long DevelopmentAt,
+    double AppliedAdm,
+    double WindowAdm,
+    double FollowingAdm,
+    long WindowCenter,
+    long NextWindowLockAt,
+    int ScheduledPrimeHour,
+    double CampaignAdm
 );
 
 internal sealed partial class ResidentEconomy
@@ -51,7 +59,15 @@ internal sealed partial class ResidentEconomy
                         row.UpdatedAt,
                         row.ScoringTeam,
                         row.Rate,
-                        row.Blocked
+                        row.Blocked,
+                        row.DevelopmentAt,
+                        row.AppliedAdm,
+                        row.WindowAdm,
+                        row.FollowingAdm,
+                        row.WindowCenter,
+                        row.NextWindowLockAt,
+                        row.ScheduledPrimeHour,
+                        row.CampaignAdm
                     ),
                 state => new SavedSovereigntyConflict
                 {
@@ -72,10 +88,19 @@ internal sealed partial class ResidentEconomy
                     ScoringTeam = state.ScoringTeam,
                     Rate = state.Rate,
                     Blocked = state.Blocked,
+                    DevelopmentAt = state.DevelopmentAt,
+                    AppliedAdm = state.AppliedAdm,
+                    WindowAdm = state.WindowAdm,
+                    FollowingAdm = state.FollowingAdm,
+                    WindowCenter = state.WindowCenter,
+                    NextWindowLockAt = state.NextWindowLockAt,
+                    ScheduledPrimeHour = state.ScheduledPrimeHour,
+                    CampaignAdm = state.CampaignAdm,
                 },
                 ProjectSovereigntyConflict,
                 "SystemId,HubId,ConstellationId,DefenderAllianceId,Phase,WindowStart,WindowEnd,CampaignAt,DefenderPoints,Secure"
-                    + "Until,Sequence,NextSpawnAt,Value,UpdatedAt,ScoringTeam,Rate,Blocked",
+                    + "Until,Sequence,NextSpawnAt,Value,UpdatedAt,ScoringTeam,Rate,Blocked,DevelopmentAt,AppliedAdm,WindowAdm,Followi"
+                    + "ngAdm,WindowCenter,NextWindowLockAt,ScheduledPrimeHour,CampaignAdm",
                 reader =>
                     new(
                         reader.GetInt32(1),
@@ -94,7 +119,15 @@ internal sealed partial class ResidentEconomy
                         reader.GetInt64(14),
                         reader.IsDBNull(15) ? null : reader.GetInt32(15),
                         reader.GetDouble(16),
-                        reader.GetBoolean(17)
+                        reader.GetBoolean(17),
+                        reader.GetInt64(18),
+                        reader.GetDouble(19),
+                        reader.GetDouble(20),
+                        reader.GetDouble(21),
+                        reader.GetInt64(22),
+                        reader.GetInt64(23),
+                        reader.GetInt32(24),
+                        reader.GetDouble(25)
                     ),
                 state => new(state.SystemId),
                 indexes:
@@ -133,7 +166,15 @@ internal sealed partial class ResidentEconomy
                     UpdatedAt,
                     ScoringTeam,
                     Rate,
-                    Blocked)
+                    Blocked,
+                    DevelopmentAt,
+                    AppliedAdm,
+                    WindowAdm,
+                    FollowingAdm,
+                    WindowCenter,
+                    NextWindowLockAt,
+                    ScheduledPrimeHour,
+                    CampaignAdm)
                 SELECT
                     json_extract(value,'$.SystemId'),
                     json_extract(value,'$.HubId'),
@@ -151,7 +192,15 @@ internal sealed partial class ResidentEconomy
                     json_extract(value,'$.UpdatedAt'),
                     json_extract(value,'$.ScoringTeam'),
                     json_extract(value,'$.Rate'),
-                    json_extract(value,'$.Blocked')
+                    json_extract(value,'$.Blocked'),
+                    json_extract(value,'$.DevelopmentAt'),
+                    json_extract(value,'$.AppliedAdm'),
+                    json_extract(value,'$.WindowAdm'),
+                    json_extract(value,'$.FollowingAdm'),
+                    json_extract(value,'$.WindowCenter'),
+                    json_extract(value,'$.NextWindowLockAt'),
+                    json_extract(value,'$.ScheduledPrimeHour'),
+                    json_extract(value,'$.CampaignAdm')
                 FROM json_each({rows}) WHERE 1
                 ON CONFLICT(SystemId) DO UPDATE SET
                     HubId=excluded.HubId,
@@ -169,7 +218,15 @@ internal sealed partial class ResidentEconomy
                     UpdatedAt=excluded.UpdatedAt,
                     ScoringTeam=excluded.ScoringTeam,
                     Rate=excluded.Rate,
-                    Blocked=excluded.Blocked
+                    Blocked=excluded.Blocked,
+                    DevelopmentAt=excluded.DevelopmentAt,
+                    AppliedAdm=excluded.AppliedAdm,
+                    WindowAdm=excluded.WindowAdm,
+                    FollowingAdm=excluded.FollowingAdm,
+                    WindowCenter=excluded.WindowCenter,
+                    NextWindowLockAt=excluded.NextWindowLockAt,
+                    ScheduledPrimeHour=excluded.ScheduledPrimeHour,
+                    CampaignAdm=excluded.CampaignAdm
                 """
             );
         }

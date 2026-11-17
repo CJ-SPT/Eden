@@ -15,8 +15,9 @@ public sealed class SovereigntyCampaignTests
         using SovereigntyCaptureFixture fixture = new();
         long defender = fixture.Fit();
         long attacker = fixture.Fit(pilot: SovereigntyCaptureFixture.OtherPilotId);
-        fixture.Grant(SovereigntyCaptureFixture.Strontium, 100);
-        fixture.Grant(SovereigntyCaptureFixture.Strontium, 100, pilot: SovereigntyCaptureFixture.OtherPilotId);
+        fixture.Grant(SovereigntyCaptureFixture.Strontium, 500);
+        fixture.Grant(SovereigntyCaptureFixture.Strontium, 500, pilot: SovereigntyCaptureFixture.OtherPilotId);
+        SovereigntyDevelopmentTests.AddClaim(fixture, 30003990);
         long hub = Claim(fixture, defender);
         var original = fixture.Claims.Read(SovereigntyCaptureFixture.SystemId)!;
         Reinforce(fixture, attacker, hub);
@@ -66,8 +67,8 @@ public sealed class SovereigntyCampaignTests
         using SovereigntyCaptureFixture fixture = new();
         long defender = fixture.Fit();
         long attacker = fixture.Fit(pilot: SovereigntyCaptureFixture.OtherPilotId);
-        fixture.Grant(SovereigntyCaptureFixture.Strontium, 100);
-        fixture.Grant(SovereigntyCaptureFixture.Strontium, 100, pilot: SovereigntyCaptureFixture.OtherPilotId);
+        fixture.Grant(SovereigntyCaptureFixture.Strontium, 500);
+        fixture.Grant(SovereigntyCaptureFixture.Strontium, 500, pilot: SovereigntyCaptureFixture.OtherPilotId);
         long hub = Claim(fixture, defender);
         var claim = fixture.Claims.Read(SovereigntyCaptureFixture.SystemId);
         Reinforce(fixture, attacker, hub);
@@ -76,7 +77,7 @@ public sealed class SovereigntyCampaignTests
         fixture.Entosis.AdvanceAll();
         if (hours == 72)
         {
-            var expected = SovereigntyWarfareRules.Window(18, fixture.Clock.Now);
+            var expected = SovereigntyWarfareRules.Window(18, fixture.Clock.Now, 3m);
             var immediate = fixture.Live.Economy.Inspect(world =>
             {
                 var row = world.Set<SavedSovereigntyConflict>().Find(SovereigntyCaptureFixture.SystemId)!;
@@ -102,8 +103,8 @@ public sealed class SovereigntyCampaignTests
         using SovereigntyCaptureFixture fixture = new();
         long defender = fixture.Fit();
         long attacker = fixture.Fit(pilot: SovereigntyCaptureFixture.OtherPilotId);
-        fixture.Grant(SovereigntyCaptureFixture.Strontium, 100);
-        fixture.Grant(SovereigntyCaptureFixture.Strontium, 100, pilot: SovereigntyCaptureFixture.OtherPilotId);
+        fixture.Grant(SovereigntyCaptureFixture.Strontium, 500);
+        fixture.Grant(SovereigntyCaptureFixture.Strontium, 500, pilot: SovereigntyCaptureFixture.OtherPilotId);
         long hub = Claim(fixture, defender);
         fixture.Entosis.SetPrimeHour(SovereigntyCaptureFixture.PilotId, 6);
         var prime = fixture.Entosis.PrimeTime(SovereigntyCaptureFixture.PilotId);
@@ -131,8 +132,8 @@ public sealed class SovereigntyCampaignTests
         using SovereigntyCaptureFixture fixture = new();
         long defender = fixture.Fit();
         long attacker = fixture.Fit(pilot: SovereigntyCaptureFixture.OtherPilotId);
-        fixture.Grant(SovereigntyCaptureFixture.Strontium, 100);
-        fixture.Grant(SovereigntyCaptureFixture.Strontium, 100, pilot: SovereigntyCaptureFixture.OtherPilotId);
+        fixture.Grant(SovereigntyCaptureFixture.Strontium, 500);
+        fixture.Grant(SovereigntyCaptureFixture.Strontium, 500, pilot: SovereigntyCaptureFixture.OtherPilotId);
         long hub = Claim(fixture, defender);
         Reinforce(fixture, attacker, hub);
         long at = fixture.Entosis.Hub(SovereigntyCaptureFixture.SystemId)!.Conflict!.CampaignAt!.Value;
@@ -183,8 +184,8 @@ public sealed class SovereigntyCampaignTests
         using SovereigntyCaptureFixture fixture = new();
         long defender = fixture.Fit();
         long attacker = fixture.Fit(pilot: SovereigntyCaptureFixture.OtherPilotId);
-        fixture.Grant(SovereigntyCaptureFixture.Strontium, 100);
-        fixture.Grant(SovereigntyCaptureFixture.Strontium, 100, pilot: SovereigntyCaptureFixture.OtherPilotId);
+        fixture.Grant(SovereigntyCaptureFixture.Strontium, 500);
+        fixture.Grant(SovereigntyCaptureFixture.Strontium, 500, pilot: SovereigntyCaptureFixture.OtherPilotId);
         long hub = Claim(fixture, defender);
         Reinforce(fixture, attacker, hub);
         long at = fixture.Entosis.Hub(SovereigntyCaptureFixture.SystemId)!.Conflict!.CampaignAt!.Value;
@@ -287,10 +288,14 @@ public sealed class SovereigntyCampaignTests
             fixture.Ship(SovereigntyCaptureFixture.OtherPilotId),
             module,
             hub,
-            10,
+            40,
             fixture.Clock.Now
         );
-        for (int cycle = 0; cycle < 6; cycle++)
+        for (
+            int cycle = 0;
+            cycle < 40 && fixture.Entosis.Hub(SovereigntyCaptureFixture.SystemId)!.Conflict!.Phase == SovereigntyPhase.Secure;
+            cycle++
+        )
         {
             fixture.Clock.AdvanceWallTime(TimeSpan.FromMinutes(2));
             fixture.Entosis.Renew(SovereigntyCaptureFixture.OtherPilotId, module, fixture.Clock.Now);
@@ -312,8 +317,8 @@ public sealed class SovereigntyCampaignTests
         fixture.Entosis.Renew(pilot, module, fixture.Clock.Now);
         fixture.Position(new(node.X + 1000, node.Y, node.Z), pilot, node.SystemId);
         fixture.Lock(node.Id, pilot);
-        fixture.Entosis.Activate(pilot, fixture.Ship(pilot), module, node.Id, 10, fixture.Clock.Now);
-        for (int cycle = 0; cycle < 8 && Nodes(fixture).Any(row => row.Id == node.Id); cycle++)
+        fixture.Entosis.Activate(pilot, fixture.Ship(pilot), module, node.Id, 40, fixture.Clock.Now);
+        for (int cycle = 0; cycle < 40 && Nodes(fixture).Any(row => row.Id == node.Id); cycle++)
         {
             fixture.Clock.AdvanceWallTime(TimeSpan.FromMinutes(2));
             fixture.Entosis.Renew(pilot, module, fixture.Clock.Now);

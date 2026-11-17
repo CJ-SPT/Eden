@@ -15,6 +15,7 @@ public sealed record SovereigntyHub(
 )
 {
     public SovereigntyConflict? Conflict { get; init; }
+    public SovereigntyDevelopment? Development { get; init; }
 }
 
 public sealed record CaptureProgress(
@@ -54,6 +55,11 @@ public interface IPilotEntosis
     StructureResult Deploy(long pilotId, long itemId);
     SovereigntyHub? Hub(int systemId);
     IReadOnlyList<SovereigntyClaim> Claims();
+    SovereigntyDevelopment Development(int systemId);
+    IReadOnlyList<SovereigntyDevelopment> AllDevelopment();
+    SovereigntyCapital Capital(long pilotId);
+    void SetCapital(long pilotId, int systemId);
+    void CancelCapital(long pilotId);
     AlliancePrimeTime PrimeTime(long pilotId);
     void SetPrimeHour(long pilotId, int hour);
     IReadOnlyList<SovereigntyHub> AllianceHubs(long pilotId);

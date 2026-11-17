@@ -45,8 +45,10 @@ internal sealed record SovereigntyStructureReply(SovereigntyHub Hub) : BlueModel
                 ["vulnerabilityState"] = Hub.Conflict is { Phase: SovereigntyPhase.Secure } secure
                     ? new object?[] { secure.Window.StartsAt, secure.Window.EndsAt }
                     : null,
-                ["defenseMultiplier"] = 1d,
-                ["isCapital"] = false,
+                ["defenseMultiplier"] = Hub.Conflict is { Phase: not SovereigntyPhase.Secure } campaign
+                    ? (double)campaign.CampaignMultiplier
+                    : (double)(Hub.Development?.DefenseMultiplier ?? 1m),
+                ["isCapital"] = Hub.Development?.IsCapital == true,
             }
         );
 }

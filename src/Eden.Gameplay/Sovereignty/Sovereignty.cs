@@ -57,6 +57,12 @@ public static class SovereigntyRules
         return s_strategicDays.Count(days => elapsed >= days * TimeSpan.TicksPerDay);
     }
 
+    public static long NextStrategicChange(long claimedAt, long now)
+    {
+        int level = StrategicIndex(claimedAt, now);
+        return level == MaximumIndex ? long.MaxValue : checked(claimedAt + s_strategicDays[level] * TimeSpan.TicksPerDay);
+    }
+
     public static decimal DefenseMultiplier(SovereigntyIndices indices, bool capital = false)
     {
         if (

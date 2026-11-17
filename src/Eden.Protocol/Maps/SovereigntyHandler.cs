@@ -46,6 +46,7 @@ internal sealed class SovereigntyHandler(IPilotEntosis entosis) : ISelectedPilot
 
         int requested = local ? context.Pilot.SystemId : checked((int)(long)args[0]!);
         var hub = entosis.Hub(requested);
+        var development = method == "GetDevelopmentIndicesForSystem" ? entosis.Development(requested) : null;
         return method switch
         {
             "GetSovStructuresInfoForSolarSystem" or "GetSovStructuresInfoForLocalSolarSystem" => new SovereigntyStructuresReply(hub),
@@ -56,8 +57,11 @@ internal sealed class SovereigntyHandler(IPilotEntosis entosis) : ISelectedPilot
             "GetDevelopmentIndicesForSystem" => new BlueMap<DogmaAttributeId, SovereigntyDevelopmentIndexReply>(
                 new Dictionary<DogmaAttributeId, SovereigntyDevelopmentIndexReply>
                 {
-                    [DogmaAttributeId.DevelopmentIndexMilitary] = new(0, false),
-                    [DogmaAttributeId.DevelopmentIndexIndustrial] = new(0, false),
+                    [DogmaAttributeId.DevelopmentIndexMilitary] = new((long)development!.MilitaryPoints, development.MilitaryIncreasing),
+                    [DogmaAttributeId.DevelopmentIndexIndustrial] = new(
+                        (long)development!.IndustrialPoints,
+                        development.IndustrialIncreasing
+                    ),
                 }
             ),
             _ => PilotCallResult.None,

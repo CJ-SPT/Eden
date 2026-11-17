@@ -18,7 +18,7 @@ def export(path, output):
             ).fetchone()
             return json.loads(row[0]) if row else None
 
-        pending = {34832, 32458, 16275, 601, 643, 19720, 20183, 11176, 3363, 3732}
+        pending = {34, 483, 1230, 30380, 34832, 32458, 16275, 601, 643, 19720, 20183, 11176, 3363, 3732}
         pending.update(row[0] for row in catalog.execute("SELECT Id FROM ItemType WHERE GroupId=1313"))
         records, types = {}, {}
         system_id = 30003995
@@ -59,6 +59,10 @@ def export(path, output):
                 value = record(dataset, type_id)
                 if value is not None:
                     records[dataset, type_id] = value
+            if type_id == 30380:
+                wreck = records.get(("client/types", type_id), {}).get("wreckTypeID")
+                if wreck:
+                    pending.add(int(wreck))
             for effect in records.get(("client/typedogma", type_id), {}).get("dogmaEffects", []):
                 key = effect["effectID"]
                 value = record("client/dogmaeffects", key)

@@ -21,7 +21,7 @@ internal sealed partial class PilotEntosisStore
         {
             return;
         }
-        if (!Live.Economy.Inspect(world => world.Set<SavedSovereigntyClaim>().Any()))
+        if (!Live.Economy.Inspect(world => world.Set<SavedSovereigntyClaim>().Any() || world.Set<SavedSovereigntyActivityEvent>().Any()))
         {
             return;
         }
@@ -36,6 +36,8 @@ internal sealed partial class PilotEntosisStore
             .Set<SavedSovereigntyConflict>()
             .GroupBy(row => row.ConstellationId)
             .Select(group => group.First().SystemId)
+            .Concat(action.Set<SavedSovereigntyActivityEvent>().Select(row => row.SystemId))
+            .Distinct()
             .ToArray();
         foreach (int system in representatives)
         {
@@ -100,7 +102,7 @@ internal sealed partial class PilotEntosisStore
             Advance(system, Now);
         }
         return Live.Economy.Inspect(world =>
-            (IReadOnlyList<SovereigntyHub>)systems.Select(system => Snapshot(world, system)).OfType<SovereigntyHub>().ToArray()
+            (IReadOnlyList<SovereigntyHub>)systems.Select(system => Snapshot(world, system, Now)).OfType<SovereigntyHub>().ToArray()
         );
     }
 
@@ -111,20 +113,25 @@ internal sealed partial class PilotEntosisStore
         long now
     )
     {
-        return world.Set<SavedSovereigntyConflict>().Find(claim.SystemId)
-            ?? world
-                .Add(
-                    new SavedSovereigntyConflict
-                    {
-                        SystemId = claim.SystemId,
-                        HubId = claim.HubId,
-                        ConstellationId = catalog.RequireSystem(claim.SystemId).ConstellationId,
-                        DefenderAllianceId = claim.AllianceId,
-                        Value = 1,
-                        UpdatedAt = now,
-                    }
-                )
-                .Entity;
+        if (world.Set<SavedSovereigntyConflict>().Find(claim.SystemId) is { } existing)
+        {
+            return existing;
+        }
+        SovereigntyDevelopmentPersistence.ReconcileCapital(world, claim.AllianceId, now);
+        double adm = (double)SovereigntyDevelopmentPersistence.Read(world, claim.SystemId, now).DefenseMultiplier;
+        var created = new SavedSovereigntyConflict
+        {
+            SystemId = claim.SystemId,
+            HubId = claim.HubId,
+            ConstellationId = catalog.RequireSystem(claim.SystemId).ConstellationId,
+            DefenderAllianceId = claim.AllianceId,
+            Value = 1,
+            UpdatedAt = now,
+            DevelopmentAt = now,
+            AppliedAdm = adm,
+        };
+        InitializeWindow(created, Prime(world, claim.AllianceId, now).CurrentHour, now, adm);
+        return world.Add(created).Entity;
     }
 
     private static EntosisTarget? Target(WorldAction world, int system, long id)
@@ -159,7 +166,25 @@ internal sealed partial class PilotEntosisStore
     }
 
     private static VulnerabilityWindow Window(WorldAction world, SavedSovereigntyConflict conflict, long now) =>
-        SovereigntyWarfareRules.Window(Prime(world, conflict.DefenderAllianceId, now), now);
+        ResolveWindow(world, conflict, now);
+
+    private static VulnerabilityWindow ResolveWindow(WorldAction world, SavedSovereigntyConflict row, long now)
+    {
+        var current = PlannedWindow(row, now);
+        var prime = Prime(world, row.DefenderAllianceId, now);
+        if (prime.PreviousHour is int oldHour)
+        {
+            decimal multiplier = (decimal)(SovereigntyWarfareRules.BaseVulnerabilityDuration / (double)(current.EndsAt - current.StartsAt));
+            var old = SovereigntyWarfareRules.Window(oldHour, now, Math.Clamp(multiplier, 1m, 6m));
+            if (SovereigntyWarfareRules.Open(old, now))
+            {
+                return SovereigntyWarfareRules.Open(current, now)
+                    ? new(Math.Min(old.StartsAt, current.StartsAt), Math.Max(old.EndsAt, current.EndsAt))
+                    : old;
+            }
+        }
+        return current;
+    }
 
     private static SovereigntyConflict Conflict(SavedSovereigntyConflict row) =>
         new(
@@ -172,7 +197,19 @@ internal sealed partial class PilotEntosisStore
             row.CampaignAt,
             row.DefenderPoints,
             new(row.Value, row.UpdatedAt, row.ScoringTeam, row.Rate, row.Blocked)
-        );
+        )
+        {
+            DefenseMultiplier = (decimal)row.AppliedAdm,
+            WindowMultiplier =
+                row.WindowEnd > row.WindowStart
+                    ? Math.Clamp(
+                        (decimal)(SovereigntyWarfareRules.BaseVulnerabilityDuration / (double)(row.WindowEnd - row.WindowStart)),
+                        1m,
+                        6m
+                    )
+                    : (decimal)row.WindowAdm,
+            CampaignMultiplier = (decimal)row.CampaignAdm,
+        };
 
     private EntosisContribution[] Contributions(WorldAction world, CatalogDbContext catalog, EntosisTarget target, long now)
     {
@@ -231,7 +268,7 @@ internal sealed partial class PilotEntosisStore
             ))
             .ToArray();
 
-    private void AdvanceWarfare(WorldAction world, CatalogDbContext catalog, int system, long now)
+    private void AdvanceWarfareStep(WorldAction world, CatalogDbContext catalog, int system, long now)
     {
         if (world.Set<SavedSovereigntyClaim>().Find(system) is { } claim)
         {
@@ -280,7 +317,8 @@ internal sealed partial class PilotEntosisStore
                     profile.Regeneration,
                     conflict.DefenderAllianceId,
                     false,
-                    SovereigntyWarfareRules.Open(previousWindow, conflict.UpdatedAt) ? previousWindow.EndsAt : 0
+                    SovereigntyWarfareRules.Open(previousWindow, conflict.UpdatedAt) ? previousWindow.EndsAt : 0,
+                    (decimal)conflict.AppliedAdm
                 );
                 Apply(conflict, progress);
                 if (progress.Value < 1 && !wasDisrupted)
@@ -297,10 +335,12 @@ internal sealed partial class PilotEntosisStore
                 if (progress.CompletedAt is long at && progress.Value == 0)
                 {
                     conflict.Phase = SovereigntyPhase.Reinforced;
+                    conflict.CampaignAdm = conflict.AppliedAdm;
                     conflict.CampaignAt = SovereigntyWarfareRules.CampaignDeadline(
                         at,
                         Prime(world, conflict.DefenderAllianceId, at).CurrentHour,
-                        conflict.HubId
+                        conflict.HubId,
+                        (decimal)conflict.CampaignAdm
                     );
                     conflict.DefenderPoints = SovereigntyWarfareRules.InitialDefenderPoints;
                     conflict.Rate = 0;

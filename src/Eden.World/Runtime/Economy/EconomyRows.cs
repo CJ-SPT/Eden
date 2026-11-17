@@ -863,6 +863,10 @@ internal sealed partial class ResidentEconomy
         RegisterSovereigntyPrime();
         RegisterSovereigntyConflict();
         RegisterSovereigntyNode();
+        RegisterSovereigntyActivity();
+        RegisterSovereigntyCapital();
+        RegisterSovereigntyCapitalChange();
+        RegisterSovereigntyActivityEvent();
         RegisterPilotActivity();
         RegisterCommandBursts();
         RegisterInterdiction();

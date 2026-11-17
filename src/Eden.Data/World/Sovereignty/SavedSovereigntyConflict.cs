@@ -21,4 +21,12 @@ public sealed class SavedSovereigntyConflict
     public int? ScoringTeam { get; set; }
     public double Rate { get; set; }
     public bool Blocked { get; set; }
+    public long DevelopmentAt { get; set; }
+    public double AppliedAdm { get; set; } = 1;
+    public double WindowAdm { get; set; } = 1;
+    public double FollowingAdm { get; set; } = 1;
+    public long WindowCenter { get; set; }
+    public long NextWindowLockAt { get; set; }
+    public int ScheduledPrimeHour { get; set; }
+    public double CampaignAdm { get; set; } = 1;
 }

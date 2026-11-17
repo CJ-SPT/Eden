@@ -22,6 +22,7 @@ internal sealed partial class PilotEntosisStore
         if (
             !Live.Economy.Inspect(world =>
                 world.Set<SavedSovereigntyHub>().Find(systemId) is not null
+                || world.Filter<SavedSovereigntyActivityEvent>(row => row.SystemId == systemId).Any()
                 || world.Filter<SavedSovereigntyConflict>(row => row.ConstellationId == definition.ConstellationId).Any()
             )
         )

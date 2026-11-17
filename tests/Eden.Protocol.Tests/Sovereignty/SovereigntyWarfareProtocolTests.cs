@@ -17,8 +17,8 @@ public sealed class SovereigntyWarfareProtocolTests
         using SovereigntyCaptureFixture fixture = new();
         long defender = fixture.Fit();
         long attacker = fixture.Fit(pilot: SovereigntyCaptureFixture.OtherPilotId);
-        fixture.Grant(SovereigntyCaptureFixture.Strontium, 100);
-        fixture.Grant(SovereigntyCaptureFixture.Strontium, 100, pilot: SovereigntyCaptureFixture.OtherPilotId);
+        fixture.Grant(SovereigntyCaptureFixture.Strontium, 500);
+        fixture.Grant(SovereigntyCaptureFixture.Strontium, 500, pilot: SovereigntyCaptureFixture.OtherPilotId);
         long hub = SovereigntyCampaignTests.Claim(fixture, defender);
         fixture.Position(new(1_000_000, 0, 0), system: 30000142);
         var pilot = fixture.World.Store.FindPilot(1000001)!;
@@ -51,8 +51,8 @@ public sealed class SovereigntyWarfareProtocolTests
         using SovereigntyCaptureFixture fixture = new();
         long defender = fixture.Fit();
         long attacker = fixture.Fit(pilot: SovereigntyCaptureFixture.OtherPilotId);
-        fixture.Grant(SovereigntyCaptureFixture.Strontium, 100);
-        fixture.Grant(SovereigntyCaptureFixture.Strontium, 100, pilot: SovereigntyCaptureFixture.OtherPilotId);
+        fixture.Grant(SovereigntyCaptureFixture.Strontium, 500);
+        fixture.Grant(SovereigntyCaptureFixture.Strontium, 500, pilot: SovereigntyCaptureFixture.OtherPilotId);
         long hub = SovereigntyCampaignTests.Claim(fixture, defender);
         var pilot = fixture.World.Store.FindPilot(1000001)!;
         using var scope = fixture.World.Services.CreateScope();

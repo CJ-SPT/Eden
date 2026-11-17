@@ -12,7 +12,7 @@ territory. Current gameplay references are [UniWiki sovereignty](https://wiki.ev
 | 1. Foundation | Typed claims and system eligibility, strategic-age and ADM rules, resident indexed reads, migration and coherent checkpoint/reopen coverage. Implemented below. |
 | 2. Deployment and initial capture | Inventory-backed deployment around the star; corporation/alliance authority; one neutral hub per eligible system; Entosis warm-up, paid cycles, range and ship restrictions; contested progress; atomic completed claims and native sovereignty/map views. Implemented below. |
 | 3. Territorial conflict | Vulnerability windows and delayed changes, reinforcement deadlines, constellation command-node campaigns, defense/regeneration and deterministic ownership-loss settlement; restart-safe progress and native notifications. Implemented below. |
-| 4. Activity and capitals | NPC-kill and mined-volume contributions, activity decay, strategic age in published views, capital selection/delays and single-system behavior; ADM connected to capture timers. |
+| 4. Activity and capitals | NPC-kill and mined-volume contributions, activity decay, strategic age in published views, capital selection/delays and single-system behavior; ADM connected to capture timers. Implemented below. |
 | 5. Resources and upgrades | Catalog-backed upgrades, stellar power, Skyhook resources, workforce routing, reagents/fuel, priorities, offline/low-power transitions and site-generation effects. |
 | 6. Infrastructure and cleanup | Ansiblex, beacons and jammers gated by active upgrades; access and map consumers; destruction, self-destruct, alliance departure/dissolution and Skyhook ownership transitions. |
 
@@ -391,3 +391,141 @@ FullyQualifiedName~Eden.Protocol.Tests.Sovereignty|FullyQualifiedName~Eden.Proto
 
 **Optional maintainer checks.** Change alliance prime time in the native sovereignty UI; observe an owned hub's
 reinforcement and campaign panel; warp to and capture a command node, checking its source name, bracket and beam.
+
+## Sovereignty activity and capitals — November 16, 2026
+
+### Activity inputs and decay
+
+Military and industrial indices now grow from committed resident gameplay. A qualifying pirate ship destruction queues
+one military input in the same transaction as fatal NPC settlement. Abyssal kills, pirate sentries/overseer sentries,
+navy/CONCORD, convoys and NPC miners do not qualify. The existing destroyed guard prevents repeat rewards. Player and
+mining-drone collection queue the actual ore/ice volume, including critical bonus, while excluding residue, gas and
+mission deposits. NPC mining, PI, manufacturing and market transactions are not industrial inputs. Credit depends on the
+system having a claim, irrespective of the contributing pilot's alliance. Reward/bounty multipliers do not multiply
+military input; increased gathering contributes the volume actually collected.
+
+[UniWiki sovereignty](https://wiki.eveuniversity.org/Sovereignty) does not establish an exact server earning formula.
+[CCP's legacy upgrades reference](https://support.eveonline.com/hc/en-us/articles/210777969-Sovereignty-System-Upgrades-Legacy-mode)
+describes NPC ships and mining volume as inputs, and
+[CCP's 119.5 notes](https://www.eveonline.com/news/view/patch-notes-for-119.5-release) explicitly include mining drones.
+Eden therefore uses an explicit calibration: **10,000 raw military points per qualifying ship** and **one raw industrial
+point per cubic metre collected**. These raw earning amounts are Eden policy, not a reconstruction of CCP's hidden formula.
+
+Static inspection of build-3662168 `eve/common/script/sys/devIndexUtil.pyj` supplies six activity bands of
+**9,600,000 points**, maximum **57,600,000**, and **100,000 points/hour** decay. Levels 1–5 start at 9.6, 19.2, 28.8,
+38.4 and 48 million points. Client military input modifiers at levels 0–5 are `5, 3, 2, 1.5, 1, .8`; industrial modifiers
+are `7.2, 2.36, 1.649, 1.2, .7, .35`. Large contributions split at each band using that band's modifier and saturate at
+the maximum. Both point balances decay continuously at exact clock resolution toward zero, including elapsed downtime.
+The 96-hour-per-band client decay agrees with the historical direction of
+[CCP's Dominion upkeep explanation](https://www.eveonline.com/news/view/dominion-upkeep-and-upgrades-the-expanded-edition).
+Continuous settlement is Eden scheduling policy; it does not claim CCP's downtime implementation. Native `increasing`
+means a contribution occurred within the preceding hour, another explicit Eden display policy. Strategic age uses the
+original claim timestamp and the existing exact 7/21/35/65/100-day thresholds.
+
+Schema **182** adds immutable resident activity, capital, capital-history and pending-input records plus conflict ADM/schedule fields.
+The input queue checkpoints with its originating inventory/destruction changes. The sovereignty owner consumes inputs
+by timestamp and identity after settling earlier capture progress; rollback discards the input, and consumed inputs
+cannot replay after restart. Scalar decay, indices, trends, ownership and saved deadlines share the resident owner.
+Detached checkpoint images retain their own generation as later resident inputs settle. New gameplay/service paths
+require the resident world; SQL remains limited to migration, hydration and checkpoint projection.
+
+### Capitals and capture scaling
+
+The executor corporation's CEO/directors can select an alliance-owned system as capital or cancel a pending transition.
+A change takes **seven days**, retains the current capital until its deadline and is invalidated if the destination is
+lost. An alliance holding exactly one system automatically receives that system's capital bonus immediately. Losing
+current ownership removes that capital; a sole remaining holding becomes capital. Pending/current identities and the
+transition deadline persist through restart. These choices follow
+[CCP's summer sovereignty report](https://www.eveonline.com/news/view/summer-2015-nullsec-and-sov-status-report) and the
+[single-system deployment clarification](https://www.eveonline.com/es/news/view/summer-of-sov-transition-and-deployment).
+Alliance departure/dissolution cleanup beyond capital invalidation remains milestone 6.
+Effective capital changes retain their timestamps so an inactive constellation settling through multiple transitions
+uses the bonus that applied during each interval, including across checkpoint/reopen.
+
+The live multiplier is **base 1 + military + industrial + strategic + 2 for capital**, capped at **6** using the bonus
+tables already recorded above. Owned-hub attackers now capture at `1 / ADM` of the base rate. Defender restoration,
+passive regeneration, opposing-side pause, neutral hub capture and module warm-up remain at their existing rates.
+Each index/capital boundary settles the previous multiplier before installing the next; a new input cannot rescale
+already-earned progress. Paid-cycle boundaries and offline scoring-lease invalidation remain authoritative.
+
+Daily vulnerability lengths are `18 hours / ADM`. The next day's length freezes at the current window's midpoint;
+changes after that cutoff wait for the following lock. Window centers and both frozen multipliers persist, and skipped
+constant-ADM days advance arithmetically. Prime-time changes preserve the frozen length through their handover and the
+existing overlap rule. A started disruption retains its nominal window for overtime. These scheduling choices implement
+the lock described by [CCP's ADM reference](https://support.eveonline.com/hc/en-us/articles/203354271-Activity-Defense-Multiplier).
+
+Reinforcement snapshots the **source system's ADM** into its campaign. Both its saved campaign deadline and all command
+nodes use this frozen multiplier, irrespective of later source activity/capital changes or the destination system's
+indices. Attacker node capture is slowed by the frozen ADM; defender links and unattended regeneration keep base speed.
+Existing version-181 campaigns retain their original multiplier of 1, deadline and earned progress when migrating.
+
+### Native views and source evidence
+
+`GetDevelopmentIndicesForSystem` returns current points and trend flags; `GetAllDevelopmentIndices` returns named native
+rows with military/industrial points and completed claim days. Structure, alliance-panel and local/alliance monitor
+views carry live ADM, frozen window/campaign occupancy and capital status. `GetCapitalSystemInfo`, `SetCapitalSystem`
+and `CancelCapitalSystemTransition` use the pinned allianceRegistry contracts. Capital commands queue
+`OnUpdateCapitalInfo`; completed capital changes emit `OnCapitalSystemChanged` with one three-element change tuple.
+`OnSolarSystemDevIndexChanged` invalidates native local index caches. Monitors publish index-band/trend changes even
+when the ADM cap hides their arithmetic effect, and unchanged reads emit no repeat notifications.
+
+Static xdis 6.3.0 inspection used the prepared archive/hash recorded above, including `devIndexUtil.pyj`, `sovSvc.pyj`,
+`all_cso.pyj` and `infoPanelLocationInfo.pyj`. The latter explicitly unpacks a single capital-change tuple; sovSvc's
+index-change callback accepts one system ID. The existing explicit Blue boundary/Carbon revision from milestone 2
+continues to apply; no codec, transport or Destiny engine behavior changed. No client was launched.
+
+The local AGPL reference was consulted only for behavior, with no implementation copied. It has no Git metadata;
+relevant source snapshot SHA-256 values are:
+
+| Reference | SHA-256 |
+| --- | --- |
+| `server/src/services/sovereignty/sovState.js` | `674bf18c62889b09d71b75f2add440feefa9620c39d665a52aa0f679d628df1f` |
+| `server/src/services/sovereignty/sovNotifications.js` | `ed7df442bb6ffbfb75348f11337b4b00b2a35db7b6de61eb75a3290a12a445a` |
+| `server/src/services/corporation/allianceRegistryRuntime.js` | `073f759c9ea8d219d6d72f89829a6c30737aba63dd1be31b1cf87d5b6ee7a5e1` |
+
+The deterministic catalog fixture adds a supported pirate/wreck and ore/mining dependencies; it contains **49 types**
+and **208 inert records**. Resources, upgrades and infrastructure remain later milestones. Native rendering and input
+remain unverified.
+
+**Automated validation.** Root checks passed in **207.36 s**: tool/solution restore, solution build with zero
+warnings/errors, **572 focused tests** (**170.89 s**, including **127 sovereignty cases**, **19 new**), both Python
+policy suites (**8 + 9 tests**) and formatting/width verification (**2,487 files**). No cases were excluded. The
+catalog re-export matches all **49 types / 208 records**; unchanged pre-existing types/records retain identical content.
+UTF-8, final newlines, changed guide file links and Git whitespace checks passed. The full .NET suite was not requested
+or run. Validation uses deterministic clocks and simulated sessions; native rendering, input and gameplay feel remain
+unverified.
+
+Coverage includes band-split earning, saturation/rejections, subsecond decay, attacker-only ADM scaling, qualifying
+fatal NPC settlement and rollback/deduplication, actual laser/drone ore yield and residue exclusion, capital authority,
+ownership, cancellation and exact seven-day transition, locked daily windows, nonretroactive capture-rate changes,
+frozen source campaign ADM across capital transition/destination/restart, version-181 migration, capital history and
+detached checkpoint generations. Warm development/hub/capital reads assert zero SQL commands/connections and fitting
+calculations. Immediate dependencies include mining/crystals/rewards/ledger, mining drones, NPC rewards, pilot combat,
+missiles/drones, maps, structures, inventory, alliance creation, Blue serialization, hosting and checkpoint machinery.
+
+Development began with exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Sovereignty.SovereigntyDevelopmentRulesTests.CreditsSplitAtClientBandsAndDecayPreservesSubsecondBoundaries`,
+which passed **1 test** (build **8.16 s**, tests **2.75 s**). The initial 121-case feature run passed **110/121**:
+the campaign fixtures reserved only ten paid cycles, too short for a capital's new ADM 3. Reservations now cover the
+scaled duration. The nine-node scoring-isolation test uses a noncapital source so unattended nodes cannot introduce
+additional defender points during the longer campaign. The corrected 121-case run passed, followed by **127/127**
+after integration and capital-history coverage. Other development failures caught incomplete pirate fixture wreck/loot
+dependencies, a nested committed test transaction, and a native assertion expecting one changed holding after several
+days; those fixture assumptions were corrected before root validation.
+
+After root validation, the pending-input restart test was strengthened to retain a nonzero military balance after
+one day's decay and to assert that the input is still pending immediately after reopening. Its exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Sovereignty.SovereigntyDevelopmentTests.PendingCreditsCheckpointTogetherAndReopenDecaysWithoutReplayingInputs`
+passed **1 test** (build **4.76 s**, tests **6.36 s**); formatting verification was repeated. Production code remained
+unchanged after the 572-case run.
+
+The root focused dependency filter was:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Sovereignty|FullyQualifiedName~Eden.Protocol.Tests.Maps|FullyQualifiedName~Eden.Protocol.Tests.Structures.StructureTests|FullyQualifiedName~TargetingTests|FullyQualifiedName~BlueMarshalTests|FullyQualifiedName~DetachedCheckpointTests|FullyQualifiedName~IncrementalCheckpointTests|FullyQualifiedName~Eden.Protocol.Tests.Market.ResidentEconomyTests|FullyQualifiedName~InventoryPersistenceTests|FullyQualifiedName~AllianceCreationTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting|FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningTests|FullyQualifiedName~MiningCrystalTests|FullyQualifiedName~MiningSkillPointRewardTests|FullyQualifiedName~PersonalMiningLedgerTests|FullyQualifiedName~MiningDroneLifecycleTests|FullyQualifiedName~PilotCombatTests|FullyQualifiedName~NpcSkillPointRewardTests|FullyQualifiedName~PilotMissileTests|FullyQualifiedName~PilotDroneTests
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Select/cancel an alliance capital in the native panel; observe activity/trends and ADM
+in the sovereignty UI; compare an owned-hub timer with a command node after its source capital changes.

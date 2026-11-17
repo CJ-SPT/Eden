@@ -161,7 +161,7 @@ internal sealed partial class PilotEntosisStore(
     public SovereigntyHub? Hub(int systemId)
     {
         Advance(systemId, Now);
-        return Live.Economy.Inspect(world => Snapshot(world, systemId));
+        return Live.Economy.Inspect(world => Snapshot(world, systemId, Now));
     }
 
     public IReadOnlyList<SovereigntyClaim> Claims() =>
@@ -174,7 +174,7 @@ internal sealed partial class PilotEntosisStore(
                     .ToArray()
         );
 
-    internal static SovereigntyHub? Snapshot(WorldAction world, int system)
+    internal static SovereigntyHub? Snapshot(WorldAction world, int system, long now)
     {
         var hub = world.Set<SavedSovereigntyHub>().Find(system);
         if (hub is null || world.Set<SavedStructure>().Find(hub.HubId) is not { State: not StructureState.Destroyed } structure)
@@ -200,6 +200,7 @@ internal sealed partial class PilotEntosisStore(
             hub.CaptureDuration
         )
         {
+            Development = SovereigntyDevelopmentPersistence.Read(world, system, now),
             Conflict = world.Set<SavedSovereigntyConflict>().Find(system) is { } conflict ? Conflict(conflict) : null,
         };
     }
