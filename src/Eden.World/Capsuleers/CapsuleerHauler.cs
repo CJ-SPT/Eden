@@ -369,7 +369,7 @@ internal sealed partial class CapsuleerHauler(
             )
         )
         {
-            _work = Work with { Ratting = sortie with { Phase = RattingPhase.Returning }, Retreating = true };
+            EndSortie(sortie);
         }
         var proactive = ProactiveTarget();
         var previousDefense = Work.Defense;
@@ -465,6 +465,10 @@ internal sealed partial class CapsuleerHauler(
                 if (resumeCourse && Pilot.Position is not null && Work.Ratting is null)
                 {
                     BeginTravel();
+                }
+                else if (resumeCourse && Work.Ratting is { Phase: RattingPhase.Searching, Patrol.Kind: PatrolKind.Transit })
+                {
+                    _navigation.SetAtRest();
                 }
                 Step();
             }
@@ -1012,6 +1016,10 @@ internal sealed partial class CapsuleerHauler(
         {
             if (GateTravelRules.InRange(Pilot.Position!, Pilot.Flight.ShipRadius, _target))
             {
+                if (TryPatrolTransitGate(_target))
+                {
+                    return;
+                }
                 var saved = _operation.World.Pilots.Single(p => p.Id == Pilot.PilotId);
                 Eden.World.Combat.CrimewatchPersistence.CheckTravel(
                     _operation.World,
@@ -1108,6 +1116,7 @@ internal sealed partial class CapsuleerHauler(
             ArrivalUntil = Work.Stamp + GateTravelRules.ArrivalTicks,
             RouteIndex = Work.RouteIndex + Work.RouteDirection,
             LaneDeparting = false,
+            LastPatrolledGateId = 0,
             ArrivalGateId = arrivalGateId,
             ArrivalAt = arrivalAt,
             DepartureAt = null,

@@ -45,6 +45,7 @@ public sealed record HaulerProgress(
     public long[] RattingLoot { get; init; } = [];
     public RattingProgress? Ratting { get; init; }
     public ResupplyProgress? Resupply { get; init; }
+    public long LastPatrolledGateId { get; init; }
     public long ActivitySequence { get; init; }
     public TravelerRoutine? Routine { get; init; }
     public CapsuleerDefenseState? Defense { get; init; }

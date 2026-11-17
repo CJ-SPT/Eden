@@ -1,12 +1,17 @@
 using Eden.Data.World.Capsuleers;
+using Eden.Data.World.Inventory;
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Inventory;
 using Eden.Protocol.Flight;
 using Eden.Server;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
+using Eden.World.Configuration;
 using Eden.World.Docking;
+using Eden.World.Inventory;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -160,6 +165,165 @@ public sealed class CapsuleerTrafficNavigationTests
             moved.Work.ActiveTicks,
             HaulerCheckpoint.Read(reopened.Set<SavedCapsuleerHauler>().Find(founder.Id)!.Progress)!.ActiveTicks
         );
+    }
+
+    [Theory]
+    [InlineData(100, false, false)]
+    [InlineData(100, false, true)]
+    [InlineData(0, false, false)]
+    [InlineData(100, true, false)]
+    public async Task ArmedTravelerHuntsVisiblePilotsAtAStationlessExitGateThenContinues(int roamPercent, bool carriesFreight, bool sabre)
+    {
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false);
+        MoveDestinationToRemote(f);
+        const long enemy = 90000001;
+        if (sabre)
+        {
+            PassiveCatalogFixture.LoadFrigateHulls(f.Database.CatalogPath);
+            PassiveCatalogFixture.LoadWormholes(f.Database.CatalogPath);
+            PassiveCatalogFixture.LoadTackleTiers(f.Database.CatalogPath, new HashSet<int> { 447 });
+            PassiveCatalogFixture.LoadInterdiction(f.Database.CatalogPath);
+        }
+        long gateId;
+        using (CatalogDbContext catalog = new(f.Database.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                UPDATE SourceRecord SET Data=json_set(Data,'$.security',-0.2)
+                    WHERE Dataset='client/solarsystemcontent' AND Key IN ('30000141','30000142');
+                INSERT OR REPLACE INTO SourceRecord VALUES ('client/systems','30000142','{{"securityStatus":-0.2}}');
+                """
+            );
+        }
+        var settings = new WorldConfigurationStore(f.Database, f.Clock);
+        var saved = settings.Read();
+        var draft = saved.Active.Draft;
+        var policy = draft.Settings.Capsuleers with
+        {
+            RoamingPvp = true,
+            RoamPercent = roamPercent,
+            GateCamps = true,
+            GeneratedCombatPercent = 100,
+            InterdictorPercent = sabre ? 100 : 0,
+        };
+        settings.Save(saved.Generation, draft with { Settings = draft.Settings with { Capsuleers = policy } }, "transit hunt");
+        WorldInitialization.Initialize(f.Database, f.Clock);
+        using var provisioner = new CapsuleerProvisioner(f.Database, f.Clock);
+        provisioner.EnsureSystem(Source);
+        var founder = f.Founder();
+        long pilot = founder.PilotId;
+        using (var world = new WorldDbContext(f.Database.Path))
+        using (var catalog = new CatalogDbContext(f.Database.CatalogPath))
+        using (var transaction = world.Database.BeginTransaction())
+        {
+            var gate = SystemObjects.Geometry(catalog, Corridor).Single(o => o.DestinationSystemId == Remote);
+            gateId = gate.Id;
+            var origin = gate.Position + new SpacePosition(gate.Radius + 900, 0, 0);
+            var row = world.Set<SavedCapsuleerHauler>().Single(h => h.PilotId == pilot);
+            row.RouteSystems = [Source, Corridor, Remote];
+            world.SaveChanges();
+            Assert.Equal(sabre ? 22456 : 603, world.Ships.Find(founder.FounderShipId)!.TypeId);
+            SqliteWorld.SetPosition(world, catalog, founder.FounderShipId, origin, Corridor, f.Clock.Now);
+            SqliteWorld.SetPosition(
+                world,
+                catalog,
+                world.Pilots.Find(enemy)!.ActiveShipId,
+                origin + new SpacePosition(2000, 0, 0),
+                Corridor,
+                f.Clock.Now
+            );
+            FreightManifest? manifest = null;
+            if (carriesFreight)
+            {
+                var item = new OwnedItem
+                {
+                    Id = InventoryPersistence.NextId(world),
+                    OwnerId = pilot,
+                    LocationId = founder.FounderShipId,
+                    FlagId = (int)InventoryFlag.Cargo,
+                    TypeId = 34,
+                    Quantity = 10,
+                };
+                world.Add(item);
+                manifest = new(1, DestinationStation, [new(item.Id, item.TypeId, item.Quantity)]);
+            }
+            var work = new HaulerProgress(
+                HaulerActivity.Flying,
+                0,
+                0,
+                founder.FounderShipId,
+                DestinationStation,
+                gateId,
+                new NavigationState().Capture(),
+                RouteIndex: 1
+            )
+            {
+                Freight = manifest,
+            };
+            new HaulerCheckpoint(pilot, work).Apply(world);
+            world.SaveChanges();
+            transaction.Commit();
+        }
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        using var observer = host.GetRequiredService<IHumanPresence>().Select(enemy, Corridor);
+        var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+        var victim = host.GetRequiredService<SqliteWorld>().FindPilot(1000001)!;
+        ShipContact contact = new(PilotContact.From(victim), SpacePosition.Zero, null, 0, null);
+        var space = host.GetRequiredService<SharedSpace>();
+        space.Publish(contact with { Arriving = true });
+        HaulerObservation Tick()
+        {
+            f.Clock.Seconds++;
+            scheduler.Run(checked((int)f.Clock.Seconds));
+            return scheduler.Hauler(pilot)!;
+        }
+        var observation = Tick();
+        if (roamPercent == 0 || carriesFreight)
+        {
+            for (int i = 0; i < 20 && observation.Pilot.SystemId == Corridor; i++)
+            {
+                Assert.Null(observation.Work.Ratting);
+                observation = Tick();
+            }
+            Assert.Equal(Remote, observation.Pilot.SystemId);
+            return;
+        }
+        for (int i = 0; i < 5; i++)
+        {
+            observation = Tick();
+        }
+        Assert.Equal(PatrolKind.Transit, observation.Work.Ratting?.Patrol?.Kind);
+        Assert.Null(observation.Work.Defense);
+        await host.GetRequiredService<LiveWorld>().FlushAsync();
+        using (WorldDbContext reopened = new(f.Database.Path))
+        {
+            var progress = HaulerCheckpoint.Read(reopened.Set<SavedCapsuleerHauler>().Single(h => h.PilotId == pilot).Progress)!;
+            Assert.Equal(gateId, progress.LastPatrolledGateId);
+            Assert.Equal(observation.Work.Ratting!.Patrol, progress.Ratting!.Patrol);
+        }
+        space.Publish(contact);
+        bool locked = false;
+        bool fired = false;
+        for (int i = 0; i < 40 && !fired; i++)
+        {
+            observation = Tick();
+            locked |= observation.Work.Defense?.Locks.Any(scan => scan.TargetId == victim.ShipId) == true;
+            fired =
+                observation.Work.Defense?.Cycles.Any(cycle =>
+                    cycle.TargetId == victim.ShipId && cycle.Effect == DogmaEffect.ProjectileFired
+                ) == true;
+        }
+        Assert.True(locked);
+        Assert.True(fired);
+        long firedAt = f.Clock.Now;
+        space.Leave(victim.ShipId);
+        for (int i = 0; i < 240 && observation.Pilot.SystemId == Corridor; i++)
+        {
+            observation = Tick();
+        }
+        Assert.Equal(Remote, observation.Pilot.SystemId);
+        Assert.Null(observation.Work.Ratting);
+        Assert.True(f.Clock.Now - firedAt >= CrimewatchRules.WeaponsDuration.Ticks);
     }
 
     [Fact]
