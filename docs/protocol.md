@@ -9,6 +9,8 @@ paid attacks, reinforcement eligibility, fatal custody and exact-deadline unanch
 [Structure asset safety](protocol/structures.md#asset-safety-and-public-structure-loot) records resident custody,
 five-/twenty-day delivery, paid personal/corporate recovery and public structure loot.
 
+[Resident tethering](protocol/structures.md#resident-tethering-and-repair) records protection, native effects and saved repairs.
+
 [Standard market and unified economy settings](protocol/industry.md#standard-live-order-market-and-unified-economy-settings-november-16-2026)
 records public snapshot import, individual price levels, supported station geography, finite stock, buy ranges and checkpoints.
 

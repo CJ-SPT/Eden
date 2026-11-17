@@ -44,6 +44,17 @@ internal sealed partial class EconomyTransaction(
             .Where(o => o.RegionId == region && (typeId is null || o.TypeId == typeId));
 
     internal override long NextExpiry => store.NextExpiry;
+    internal override Eden.Gameplay.Targeting.IPilotTargetLocks? TargetLocks => owner?.TargetLocks;
+
+    internal override bool TetherProtected(long ship, long now)
+    {
+        if (Set<Eden.Data.World.Structures.SavedPilotTether>().Find(ship) is null)
+        {
+            return false;
+        }
+        using CatalogDbContext? catalog = previewCatalog is null ? new(database!.CatalogPath) : null;
+        return Eden.World.Structures.PilotTetherStore.Protected(this, previewCatalog ?? catalog!, ship, now);
+    }
 
     internal override bool PilotExists(long id) => store.IsPilot(id);
 

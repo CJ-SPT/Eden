@@ -883,6 +883,7 @@ internal sealed partial class ResidentEconomy
         RegisterSovereigntyMiningLink();
         RegisterSovereigntyActivityEvent();
         RegisterStructureBattle();
+        RegisterPilotTether();
         RegisterAssetSafety();
         RegisterStructureLoot();
         RegisterPilotActivity();

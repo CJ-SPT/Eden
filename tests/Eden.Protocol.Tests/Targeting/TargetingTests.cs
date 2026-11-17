@@ -194,6 +194,7 @@ public sealed class TargetingTests
         long target = wing.Pilot.ShipId;
         object? Call(string method, params object?[] args) => targeting.CallWire(pilot, "dogmaIM", method, args);
         Assert.Equal(new object?[] { true, new List<object?>() }, Assert.IsType<object?[]>(Call("AddTarget", target)));
+        Assert.True(fixture.Locks.HasOutgoing(pilot.Pilot.ShipId));
         fixture.Clock.Seconds = 3;
         targeting.Advance(pilot);
         Assert.Empty(Assert.IsType<List<object?>>(Call("GetTargets")));
@@ -202,6 +203,7 @@ public sealed class TargetingTests
         fixture.Clock.Seconds = 4;
         targeting.Advance(pilot);
         Assert.True(targeting.IsLocked(target));
+        Assert.True(fixture.Locks.HasOutgoing(pilot.Pilot.ShipId));
         Assert.Equal(new object?[] { target }, Assert.IsType<List<object?>>(Call("GetTargets")));
         Assert.Equal(new object?[] { "add", target, null }, Assert.Single(pilot.Notifications).Arguments);
         observed.Advance(wing);
@@ -216,6 +218,7 @@ public sealed class TargetingTests
         pilot.Notifications.Clear();
         wing.Notifications.Clear();
         Assert.Null(Call("RemoveTarget", target));
+        Assert.False(fixture.Locks.HasOutgoing(pilot.Pilot.ShipId));
         Assert.Equal(new object?[] { "lost", target, null }, Assert.Single(pilot.Notifications).Arguments);
         observed.Advance(wing);
         Assert.Equal(new object?[] { "otherlost", pilot.Pilot.ShipId, null }, Assert.Single(wing.Notifications).Arguments);
@@ -230,7 +233,9 @@ public sealed class TargetingTests
         var (wing, _) = fixture.Client(1000002);
         long target = wing.Pilot.ShipId;
         _ = targeting.CallWire(pilot, "dogmaIM", "AddTarget", [target]);
+        Assert.True(fixture.Locks.HasOutgoing(pilot.Pilot.ShipId));
         Assert.Null(targeting.CallWire(pilot, "dogmaIM", "CancelAddTarget", [target]));
+        Assert.False(fixture.Locks.HasOutgoing(pilot.Pilot.ShipId));
         fixture.Clock.Seconds = 10;
         targeting.Advance(pilot);
         Assert.False(targeting.IsLocked(target));

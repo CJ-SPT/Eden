@@ -111,6 +111,10 @@ internal sealed class FlightScene(
         {
             return null;
         }
+        if (space.TetherProtected(id))
+        {
+            return null;
+        }
         if (space.Peers(context.Pilot).FirstOrDefault(s => s.Pilot.ShipId == id && s.Warp is null && s.DepartureGate is null) is { } ship)
         {
             return new(id, ship.Pilot.ShipTypeId, ship.Pilot.Position!, ship.Pilot.Flight.ShipRadius);
@@ -146,6 +150,7 @@ internal sealed class FlightScene(
 
     internal PilotWeaponTarget? FindPilotWeaponTarget(FlightSceneContext context, long id) =>
         context.CanTarget
+        && !space.TetherProtected(id)
         && space.Peers(context.Pilot).FirstOrDefault(s => s.Pilot.ShipId == id && s.Warp is null && s.DepartureGate is null && !s.Arriving)
             is { } ship
             ? new(id, ship.Velocity)

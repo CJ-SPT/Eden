@@ -39,6 +39,10 @@ internal sealed class SmartbombStore(
     {
         using WorldActionScope transaction = new(database, select: world => Participants(world, pilotId, shipId, candidates));
         var world = transaction.World;
+        if (world.TetherProtected(shipId, now))
+        {
+            throw new InvalidDataException("Release tethering before activating a smartbomb.");
+        }
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Pilots.Find(pilotId);
         var item = world.Set<OwnedItem>().Find(moduleId);

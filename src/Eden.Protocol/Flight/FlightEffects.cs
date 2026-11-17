@@ -18,6 +18,7 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
 
     internal void Replay(ShipContact ship, ShipContact? previous)
     {
+        Tether(ship.Pilot.ShipId, ship.Tether, previous?.Tether);
         if (ship.MicroJump != previous?.MicroJump)
         {
             if (previous?.MicroJump is { } ended)
@@ -87,6 +88,50 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
             }
         }
     }
+
+    internal void Tether(long ship, Eden.Gameplay.Structures.PilotTether? current, Eden.Gameplay.Structures.PilotTether? previous)
+    {
+        if (current == previous)
+        {
+            return;
+        }
+        if (previous is not null && current?.StructureId != previous.StructureId)
+        {
+            TetherEffect(ship, previous, false);
+        }
+        if (current is not null && previous?.StructureId != current.StructureId)
+        {
+            TetherEffect(ship, current, true);
+        }
+        bool wasRepairing = previous is { RepairCompleted: false };
+        bool repairing = current is { RepairCompleted: false };
+        if (repairing != wasRepairing)
+        {
+            emit(new DestinyCommand.SpecialEffect(ship, null, null, null, null, "effects.TetheringRepair", false, repairing, repairing));
+        }
+    }
+
+    private void TetherEffect(long ship, Eden.Gameplay.Structures.PilotTether tether, bool active) =>
+        emit(
+            new DestinyCommand.TimedSpecialEffect(
+                ship,
+                null,
+                null,
+                tether.StructureId,
+                null,
+                "effects.Tethering",
+                false,
+                active,
+                active,
+                TimeSpan.FromDays(1).TotalMilliseconds,
+                tether.EngagedAt,
+                new Dictionary<string, object?>
+                {
+                    ["targetRadius"] = tether.StructureRadius,
+                    ["linkBarrier"] = tether.StructureRadius + tether.Range,
+                }
+            )
+        );
 
     internal void CapacitorEffect(CapacitorCycle effect, bool active) => emit(CapacitorWire.Graphic(effect, active));
 

@@ -143,7 +143,8 @@ internal sealed record ShipContact(
     long? DepartureAt = null,
     bool Cloaked = false,
     SpatialActivation? MicroJump = null,
-    GateCamp? Camp = null
+    GateCamp? Camp = null,
+    Eden.Gameplay.Structures.PilotTether? Tether = null
 );
 
 internal sealed record MotionOrder(long Sequence, StampedDestinyUpdate Update);
@@ -153,7 +154,8 @@ internal sealed class SharedSpace(
     IPilotCrimewatch? crimewatch = null,
     TimeProvider? clock = null,
     IWorldSynchronization? synchronization = null,
-    IPilotSpatialModules? spatial = null
+    IPilotSpatialModules? spatial = null,
+    Eden.Gameplay.Structures.IPilotTethering? tethering = null
 ) : IPilotCombatPresence
 {
     // The coordinator owns copied navigation states. Connections retain their socket and notification queue.
@@ -162,7 +164,9 @@ internal sealed class SharedSpace(
     private readonly PilotSightGrid _sightGrid = new();
 
     public Eden.Gameplay.Capsuleers.PilotSighting[] Observe(int system, long ship, SpacePosition origin, long sample) =>
-        _sightGrid.Observe(_ships, system, ship, origin, sample);
+        _sightGrid.Observe(_ships, system, ship, origin, sample).Where(s => !TetherProtected(s.ShipId)).ToArray();
+
+    internal bool TetherProtected(long ship) => tethering?.Protected(ship) == true;
 
     private readonly OwnershipMonitor _motionOwnership = new("flight");
 
@@ -448,6 +452,7 @@ internal sealed class SharedSpace(
                 && !ship.Arriving
                 && SpatialStatus(ship.Pilot.ShipId).CloakModuleId == 0
                 && ship.Health?.Remaining.Destroyed != true
+                && !TetherProtected(ship.Pilot.ShipId)
             )
             .Select(ship => new NpcTargetCandidate(ship.Pilot.PilotId, ship.Pilot.ShipId))
             .ToArray();
@@ -598,6 +603,7 @@ internal sealed class SharedSpace(
                 && !ship.Arriving
                 && SpatialStatus(ship.Pilot.ShipId).CloakModuleId == 0
                 && ship.Health?.Remaining.Destroyed != true
+                && !TetherProtected(shipId)
                 ? new(shipId, position, ship.Velocity)
                 : null;
         }
@@ -611,8 +617,17 @@ internal sealed class SharedSpace(
     public bool IsAreaProtected(int systemId, long shipId) =>
         RunMotion(
             systemId,
-            () => _ships.TryGetValue(shipId, out var ship) && (ship.Warp is not null || ship.DepartureGate is not null || ship.Arriving),
+            () =>
+                _ships.TryGetValue(shipId, out var ship)
+                && (ship.Warp is not null || ship.DepartureGate is not null || ship.Arriving || TetherProtected(shipId)),
             nameof(IsAreaProtected)
+        );
+
+    public bool IsTravelProtected(int systemId, long shipId) =>
+        RunMotion(
+            systemId,
+            () => _ships.TryGetValue(shipId, out var ship) && (ship.Warp is not null || ship.DepartureGate is not null || ship.Arriving),
+            nameof(IsTravelProtected)
         );
 
     public PilotCombatPresence? FindArea(int systemId, long shipId) =>

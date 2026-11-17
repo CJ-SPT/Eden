@@ -9,6 +9,9 @@ paid attacks, reinforcement eligibility, fatal custody and exact-deadline unanch
 [Structure asset safety](protocol/structures.md#asset-safety-and-public-structure-loot) covers manual collection,
 timed delivery, paid recovery and public wormhole/Pochven loot.
 
+[Resident tethering](protocol/structures.md#resident-tethering-and-repair) covers authoritative protection, native effect replay
+and saved, engagement-only repair settlement.
+
 [Market presets](world-configuration.md#market-presets) combines economy and supply settings and explains the
 Standard preset's imported live order books, original locations/quantities and checkpoint behavior.
 

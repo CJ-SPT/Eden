@@ -13,6 +13,7 @@ internal static class StructureSchema
         model.Entity<SavedStructure>().HasIndex(s => s.SystemId);
         model.Entity<SavedStructure>().HasIndex(s => s.CorporationId);
         model.Entity<SavedStructureBattle>().ToTable("WorldStructureBattle").HasKey(s => s.StructureId);
+        model.Entity<SavedPilotTether>().ToTable("WorldPilotTether").HasKey(s => s.ShipId);
         model.Entity<SavedStructureBattle>().HasOne<SavedStructure>().WithMany().HasForeignKey(s => s.StructureId);
         model.Entity<SavedAssetSafety>().ToTable("WorldAssetSafety").HasKey(s => s.Id);
         model.Entity<SavedAssetSafety>().HasIndex(s => s.OwnerId);
@@ -42,6 +43,9 @@ internal static class StructureSchema
                 Shield REAL NOT NULL, Armor REAL NOT NULL, Hull REAL NOT NULL, RepairAt INTEGER,
                 DamageWindowAt INTEGER NOT NULL, ShieldWindow REAL NOT NULL, ArmorWindow REAL NOT NULL,
                 HullWindow REAL NOT NULL, PausedUntil INTEGER NOT NULL);
+            CREATE TABLE IF NOT EXISTS WorldPilotTether (
+                ShipId INTEGER PRIMARY KEY, PilotId INTEGER NOT NULL, StructureId INTEGER NOT NULL,
+                EngagedAt INTEGER NOT NULL, RepairAt INTEGER NOT NULL, RepairCompleted INTEGER NOT NULL);
             CREATE TABLE IF NOT EXISTS WorldAssetSafety (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT, OwnerId INTEGER NOT NULL, StructureId INTEGER NOT NULL,
                 SystemId INTEGER NOT NULL, Name TEXT NOT NULL, CreatedAt INTEGER NOT NULL, NearestStationId INTEGER NOT NULL,

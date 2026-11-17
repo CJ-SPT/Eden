@@ -412,6 +412,7 @@ internal sealed partial class LiveWorld : IDisposable
     }
 
     internal Eden.Gameplay.Fleets.ICooperativeFleets? Fleets { get; }
+    internal Eden.Gameplay.Targeting.IPilotTargetLocks? TargetLocks { get; }
 
     internal LiveWorld(
         WorldDatabase database,
@@ -422,10 +423,12 @@ internal sealed partial class LiveWorld : IDisposable
         bool residentReads = true,
         bool simulationObjects = true,
         Action<SqliteConnection, SqliteConnection>? copy = null,
-        Eden.Gameplay.Fleets.ICooperativeFleets? fleets = null
+        Eden.Gameplay.Fleets.ICooperativeFleets? fleets = null,
+        Eden.Gameplay.Targeting.IPilotTargetLocks? targetLocks = null
     )
     {
         Fleets = fleets;
+        TargetLocks = targetLocks;
         _database = database;
         _ownershipMonitor = new("world", _gate);
         _path = Path.GetFullPath(database.Path);

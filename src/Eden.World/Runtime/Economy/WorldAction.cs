@@ -22,6 +22,10 @@ internal abstract class WorldAction
 
     internal virtual bool HasStructureMissiles(int system) => false;
 
+    internal virtual Eden.Gameplay.Targeting.IPilotTargetLocks? TargetLocks => null;
+
+    internal virtual bool TetherProtected(long ship, long now) => false;
+
     internal virtual IReadOnlyCollection<int> StructureMissileSystems => [];
 
     internal bool BeginStructureMissileAdvance(int system, long now)

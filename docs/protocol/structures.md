@@ -12,8 +12,70 @@ Historical foundation limitations below describe their original milestones; this
 | Battle state | Catalog layer caps/resistances and pause thresholds, repairs, reinforcement, abandonment, native status and saved deadlines | Implemented; validation below |
 | Asset safety | Personal/corporate collection, timed delivery, paid recovery, native inventory and public loot | Implemented; validation below |
 | Incoming combat and loss | Paid weapons against structures, legal targeting, destruction settlement and automatic custody transitions | Implemented; validation below |
-| Defense and tethering | Combat fitting/control, supported defensive weapons, target updates, access-checked tether and repairs | Planned |
+| Tethering | Resident protection, native effects, access and timer checks, saved repair settlement | Implemented; validation below |
+| Defense | Combat fitting/control, supported defensive weapons and target updates | Planned |
 | Service completion | Remaining native structure profiles/access, economic/clone services, ownership and specialized structure consumers | Planned |
+
+### Resident tethering and repair
+
+Saved-world schema **187** adds `WorldPilotTether`. A piloted ship engages an accessible, cored, dockable structure inside
+its catalog tether range. Low power and reinforcement permit tethering; abandonment, loss of access/core, pending or
+completed outgoing locks, weapons timers, high-security criminal restrictions, cloak, travel and effective warp disruption
+prevent protection.
+High-security standing restrictions use CCP's six police thresholds. Moving or bumping beyond the surface range removes
+protection immediately on authoritative reads. Unchanged monitor reads use resident state without a transaction, SQL or
+fitting recalculation once warmed.
+
+Target acquisition, ordinary and resident player weapons, NPC fire, missiles and area damage honor the protection.
+Engagement clears incoming target locks, NPC aggression and incoming tackle/EWAR atomically. Bomb launchers and
+smartbombs reject activation while tethered. Existing weapons timers from command bursts and burst jammers break tether.
+Native `effects.Tethering` and `effects.TetheringRepair` replay after SetState and to observers; the existing effect
+sequencer supplies the native HUD indicators. Rendering and HUD presentation have not been exercised in the game.
+
+Repair need is sampled on engagement. Eden settles that repair once after a saved ten-second deadline; this cadence is
+an explicit emulator policy, not a measured CCP repair rate. Settlement restores ship HP/capacitor, fitted module heat
+damage and bay-drone health. Burnt-out modules remain offline; cargo modules and deployed drones remain damaged.
+Subsequent capacitor discharge does not restart repair until another engagement. Rollback and checkpoint/reopen retain
+the engagement and exactly-once repair boundary.
+
+Capital cynosural travel/fighters and faction-warfare tether restrictions depend on their separate authoritative systems;
+this milestone does not introduce those missing systems or claim their gameplay is implemented. Existing native structure
+defensive control/fitting and the remaining structure services are the next completion milestones.
+
+References and evidence:
+
+- [UniWiki tethering](https://wiki.eveuniversity.org/Tethering) and
+  [CCP ship tethering](https://support.eveonline.com/hc/en-us/articles/207568639-Upwell-Structure-Ship-Tethering) establish
+  protection, engagement-only repair checks, fitting/bay repair boundaries and disallowed actions.
+- [CCP Uprising security changes](https://www.eveonline.com/news/view/changes-to-security-status-and-abyssal-filaments)
+  establish the high-security standing thresholds; Alpha status alone does not prohibit tethering.
+- The original build-3662168 archive hash recorded below was inspected inertly. `structures/const.pyj` defines
+  `TETHER_ENABLED_STATES`; `shipRenderEffect.pyj` consumes the targeted effect's graphic-info dictionary;
+  `fxSequencer.pyj` and `shipHud/buffBarContainer.pyj` track active FX for the HUD. Pinned `client/effects` maps
+  `effects.Tethering` to graphic 21190 / ShipRenderTargetedEffect and TetheringRepair to ImpactEffect. Catalog dogma
+  attributes 2268 and 2343 provide tether range and module restrictions. No client code was executed.
+- Read-only EVE.js 261108.1 comparison: `structureTethering.js` SHA-256
+  `E1655DBF2ED0D23729126713E324E386C8CBA75678081633B38B62612C3EE143` and
+  `structureTetherRestrictionState.js` SHA-256
+  `73A15E89D333CE13EF2B5285DF0A78B410ECD1FC3B34D57B111FBFF209A01441`. No AGPL source was incorporated.
+
+**Automated validation:** Development checks passed range/protection, eligibility/deadline, checkpoint/reopen,
+native replay/attack rejection, fitted/bay repair boundaries, Void Bomb immunity and rejection of fresh NPC disruption.
+The broad affected run passed 282 core cases (1m27s) and 464 support cases (3m30s) before the last lock-index,
+legacy-position and non-damage effect guards. Final root validation passed **174** cases covering those changes,
+targeting, compression, area weapons, NPC EWAR, paired session frames, monitoring and populated fitting fleets.
+The final build had zero warnings/errors (4.55s); restore, both Python policy suites (8 + 9), formatting (2,600 files),
+line width and diff checks passed. Final root checks took **242.98s**, including formatting application.
+Initial validation exposed cleanup after host shutdown; the corrected teardown case passed before the final run.
+One intermediate run completed its .NET tests but its formatting check found the subsequent source edits; formatting
+was applied and the final check passed. Interrupted development runs are not counted as complete validations.
+Warmed tether reads/monitoring assert zero SQL commands, connections, fitting calculations and transaction/commit time.
+No full .NET suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Observe native tether/repair effects and HUD indicators; start a target scan or move beyond
+range; verify a repaired burnt-out module remains offline.
 
 ### Battle state and native status
 
