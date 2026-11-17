@@ -37,7 +37,7 @@ internal sealed partial record CapsuleerDefenseProfile(bool Combat, CapsuleerDef
             .Max();
     internal PvpRole PvpRole =>
         PvpTactics.Role(
-            PilotAwareness.FightingRange(RattingWeapons, TargetRange, 500),
+            PvpTactics.WeaponRange(RattingWeapons, TargetRange, 500),
             TackleRange,
             Modules.Any(module =>
                 module.Effect
@@ -222,6 +222,11 @@ internal sealed partial record CapsuleerDefenseProfile(bool Combat, CapsuleerDef
                                 ),
                                 int.MaxValue
                             )
+                            {
+                                DroneControlRange = fit.Graph.Read(pilotId, DogmaAttributeId.DroneControlDistance),
+                                DroneSpeed = drone.MaximumSpeed,
+                                DroneOrbitSpeed = drone.OrbitSpeed,
+                            }
                         );
                         remaining -= count;
                         bandwidth -= count * drone.Bandwidth;

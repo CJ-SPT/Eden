@@ -15,7 +15,10 @@ public sealed record PilotSighting(
     float Radius,
     GateCamp? Camp = null,
     int? RegionalGroupId = null
-);
+)
+{
+    public double SignatureEstimate { get; init; }
+}
 
 public sealed record BeltMemory(long BeltId, long Until);
 

@@ -148,6 +148,11 @@ internal sealed partial record CapsuleerDefenseProfile
                                 ),
                                 int.MaxValue
                             )
+                            {
+                                DroneControlRange = fit.Graph.Read(pilotId, DogmaAttributeId.DroneControlDistance),
+                                DroneSpeed = drone.MaximumSpeed,
+                                DroneOrbitSpeed = drone.OrbitSpeed,
+                            }
                         );
                         remaining -= count;
                         bandwidth -= count * drone.Bandwidth;

@@ -31,7 +31,12 @@ public sealed record ResupplyProgress(int StationId, long BudgetCents, long Spen
     public bool Checked { get; init; }
 }
 
-public sealed record RattingWeapon(CombatWeapon Weapon, int AvailableShots, MissileWarhead? Missile = null, int LoadedShots = 0);
+public sealed record RattingWeapon(CombatWeapon Weapon, int AvailableShots, MissileWarhead? Missile = null, int LoadedShots = 0)
+{
+    public double DroneControlRange { get; init; }
+    public double DroneSpeed { get; init; }
+    public double DroneOrbitSpeed { get; init; }
+}
 
 public sealed record RattingOpponent(
     long Id,

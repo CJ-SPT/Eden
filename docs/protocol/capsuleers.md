@@ -163,6 +163,46 @@ magazine from first target acquisition, so pre-departure resupply and shield rec
 **Optional maintainer checks:** Jump into a nullsec hunting grid and attempt lock/tackle before a bot leaves;
 observe an offensive gang initiating a fight with a neutral pilot. Native presentation and combat feel remain unverified.
 
+### Milestone 4: movement and weapon application
+
+PvP movement now follows typed decisions for range keeping, close orbit, tackle approach spirals, velocity matching
+when turret tracking is poor, and early separation when a kiter's observed relative motion predicts an overshoot.
+The two-second prediction uses visible positions and velocities. Tacklers use a conservative spiral on approach;
+the bot does not inspect the opponent's hidden weapons or fit to classify that approach. Acceleration, inertia,
+collision and speed changes still use the existing navigation owner rather than changing positions directly.
+
+Desired gun range uses a damage-weighted median rather than the shortest fitted auxiliary weapon. Mobile-drone
+weapon range no longer pulls a mixed fit into the drones' own firing orbit. Drone-only fits use their own skilled
+control range; target scoring checks control reach, pursuit speed and an approximate drone-orbit tracking estimate
+independently of the parent ship's angular velocity. Actual drone combat remains with its ordinary command owner.
+
+Visible hull types supply cached, unfitted catalog signature estimates. Missing catalog attributes retain the earlier
+visible-radius fallback. Opponent fitted signature, capacitor and resistance values are not read for tactical estimates.
+Range estimates use surface separation while angular velocity retains center-to-center geometry. Own skills,
+weapons, drone capability and propulsion use the existing invalidated defense profile.
+
+References: [EVE University turret mechanics](https://wiki.eveuniversity.org/Turret_mechanics),
+[manual piloting](https://wiki.eveuniversity.org/Manual_piloting), and
+[drone mechanics](https://wiki.eveuniversity.org/Drone_mechanics). Native movement still uses the Carbon revision
+recorded above. Steering thresholds and prediction horizons are Eden policies, not claims of server-identical AI.
+
+**Automated validation:** Tool/solution restore and solution build passed (zero warnings/errors, 9.36 seconds).
+All 98 affected tests passed in 52.28 seconds wall time (49 seconds reported test duration), including paid player
+and bot battles, drone lifecycle checks and warmed frame SQL/connection/fitting budgets. The final filter combined
+`FullyQualifiedName~` for `PvpTacticsTests`, `CapsuleerDefenseTests`, `CapsuleerDefenseLifecycleTests`,
+`CapsuleerDefenseModuleTests`, `CapsuleerDefenseFrameTests`, `RoamingGangTests`, `RegionalConflictWorldTests`,
+`PatrolTests`, `GateCampTests`, `GameplayDependenciesTests` and `DataModelOwnershipTests`. Both Python policy suites
+passed (8 catalog cases in 1.068 seconds; 9 formatting cases in 0.016 seconds); formatting and diff checks passed.
+No full suite was requested or run. Exact development filters used
+`PvpTacticsTests.MovementSpiralsForTackleMatchesVelocityForTrackingAndAnticipatesKitingOvershoot` and
+`PvpTacticsTests.RangeUsesMainWeaponsAndDroneControlRatherThanAuxiliaryOrDroneGunRange`, each prefixed by
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.`.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Observe a tackler approaching obliquely and a turret brawler reducing its own
+transversal when tracking suffers. Native motion and combat feel remain unverified.
+
 ## Regional bot conflicts — November 17, 2026
 
 Regional operations extend the saved roaming-gang command with constellation-based patrol groups in null security.

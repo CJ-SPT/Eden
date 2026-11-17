@@ -9,6 +9,17 @@ public sealed record PvpDecision(long TargetId, double Score, string Reason);
 
 public sealed record PvpRangeBand(double Minimum, double Desired, double Maximum);
 
+public enum PvpMovementKind
+{
+    Follow,
+    Orbit,
+    Spiral,
+    MatchVelocity,
+    Evade,
+}
+
+public sealed record PvpMovement(PvpMovementKind Kind, SpacePosition? Direction = null, double SpeedFraction = 1);
+
 public static class PvpTactics
 {
     private sealed record Affiliation(int? Alliance, int? Corporation, int? RegionalGroup, long CampGate, long CampUntil, long SoloShip);
@@ -31,6 +42,14 @@ public static class PvpTactics
     private const double RangeToleranceFraction = .15;
     public const double PursuitSeconds = 20;
     private const double AccelerationAllowance = .5;
+    private const double TrackingApplicationThreshold = .5;
+    private const double SpiralClosingFraction = .8;
+    private const double SpiralTransverseFraction = .6;
+    private const double EvasionHorizonSeconds = 2;
+    private const double DroneRangeMargin = .75;
+    private const double MissileRangeMargin = .8;
+    private const double FalloffRangeFraction = .4;
+    private const double RangeDamageFraction = .5;
     public static readonly long CommitmentTicks = TimeSpan.FromSeconds(8).Ticks;
 
     // Hull classes are uncertain threat estimates, not access to an opponent's fit or resources.
@@ -84,12 +103,110 @@ public static class PvpTactics
         || capacitorFraction < EmergencyCapacitorFraction
             && weapons.Where(source => source.AvailableShots > 0).All(source => source.Weapon.CapacitorNeed > 0);
 
+    public static double WeaponRange(IReadOnlyList<RattingWeapon> weapons, double lockRange, double fallback)
+    {
+        var guns = weapons
+            .Where(source => source.AvailableShots > 0 && source.Weapon.CycleMilliseconds > 0 && source.DroneControlRange <= 0)
+            .ToArray();
+        if (guns.Length == 0)
+        {
+            double control = weapons
+                .Where(source => source.AvailableShots > 0)
+                .Select(source => source.DroneControlRange)
+                .DefaultIfEmpty(0)
+                .Max();
+            return Math.Clamp(Math.Min(lockRange, control > 0 ? control * DroneRangeMargin : fallback), MinimumRange, 100_000);
+        }
+        double total = guns.Sum(Dps);
+        double accumulated = 0;
+        foreach (var source in guns.OrderBy(Reach))
+        {
+            accumulated += Dps(source);
+            if (accumulated >= total * RangeDamageFraction)
+            {
+                double range = Reach(source);
+                return Math.Clamp(Math.Min(lockRange, range), MinimumRange, 100_000);
+            }
+        }
+        return Math.Clamp(Math.Min(lockRange, fallback), MinimumRange, 100_000);
+    }
+
+    private static double Dps(RattingWeapon source) =>
+        source.AvailableShots > 0 && source.Weapon.CycleMilliseconds > 0
+            ? source.Weapon.Damage.Total * 1000 / source.Weapon.CycleMilliseconds
+            : 0;
+
+    private static double Reach(RattingWeapon source) =>
+        source.Missile is null
+            ? source.Weapon.Optimal + source.Weapon.Falloff * FalloffRangeFraction
+            : source.Weapon.Optimal * MissileRangeMargin;
+
+    public static PvpMovement Movement(
+        IReadOnlyList<RattingWeapon> weapons,
+        SpacePosition separation,
+        SpacePosition velocity,
+        SpacePosition targetVelocity,
+        double signature,
+        double maximumSpeed,
+        PvpRangeBand band,
+        PvpRole role,
+        double radii = 0
+    )
+    {
+        double distance = separation.Length;
+        double surfaceDistance = Math.Max(0, distance - radii);
+        if (role == PvpRole.Kiter && (separation + (targetVelocity - velocity) * EvasionHorizonSeconds).Length - radii < band.Minimum)
+        {
+            return new(PvpMovementKind.Evade, distance > 0 ? separation.Unit * -1 : new(1, 0, 0));
+        }
+        if (role == PvpRole.Tackle && surfaceDistance > band.Maximum)
+        {
+            var radial = separation.Unit;
+            var transverse = radial.Cross(new(0, 1, 0));
+            if (transverse.Length == 0)
+            {
+                transverse = new(1, 0, 0);
+            }
+            return new(PvpMovementKind.Spiral, (radial * SpiralClosingFraction + transverse.Unit * SpiralTransverseFraction).Unit);
+        }
+        bool inBand = surfaceDistance >= band.Minimum && surfaceDistance <= band.Maximum;
+        var turrets = weapons.Where(source => source.Missile is null && source.DroneControlRange <= 0).ToArray();
+        double angular = CombatDamage.AngularVelocity(separation, targetVelocity - velocity);
+        double stationary = turrets.Sum(source => Dps(source) * Application(source, surfaceDistance, 0, signature, targetVelocity.Length));
+        double moving = turrets.Sum(source =>
+            Dps(source) * Application(source, surfaceDistance, angular, signature, targetVelocity.Length)
+        );
+        if (inBand && role != PvpRole.Tackle && stationary > 0 && moving < stationary * TrackingApplicationThreshold)
+        {
+            return new(
+                PvpMovementKind.MatchVelocity,
+                targetVelocity.Unit,
+                Math.Clamp(targetVelocity.Length / Math.Max(1, maximumSpeed), 0, 1)
+            );
+        }
+        return new(
+            surfaceDistance < KitingRange && role is PvpRole.Brawler or PvpRole.Tackle ? PvpMovementKind.Orbit : PvpMovementKind.Follow
+        );
+    }
+
     public static bool Propel(double range, double desiredRange, double capacitorFraction, bool retreating) =>
         retreating
         || capacitorFraction >= PropulsionReserveFraction && Math.Abs(range - desiredRange) > desiredRange * RangeToleranceFraction;
 
     public static double Application(RattingWeapon source, double distance, double angular, double signature, double speed) =>
         source.AvailableShots <= 0 || source.Weapon.CycleMilliseconds <= 0 ? 0
+        : source.DroneControlRange > 0
+            ? distance <= source.DroneControlRange && speed < source.DroneSpeed
+                    ? CombatDamage.HitChance(
+                        source.Weapon.Optimal,
+                        Math.Max(speed, source.DroneOrbitSpeed) / Math.Max(1, source.Weapon.Optimal),
+                        signature,
+                        source.Weapon.Optimal,
+                        source.Weapon.Falloff,
+                        source.Weapon.Tracking,
+                        source.Weapon.SignatureResolution
+                    )
+                : 0
         : source.Missile is { } missile
             ? distance <= source.Weapon.Optimal ? MissileRules.Application(missile, signature, speed)
                 : 0
@@ -114,7 +231,8 @@ public static class PvpTactics
         long elapsed,
         long reported = 0,
         bool cautious = true,
-        double approachSpeed = 0
+        double approachSpeed = 0,
+        double sourceRadius = 0
     )
     {
         if (!double.IsFinite(friendlyStrength) || friendlyStrength <= 0)
@@ -137,15 +255,16 @@ public static class PvpTactics
             {
                 return new(contact.ShipId, 0, "The target's visible group exceeds the patrol's strength.");
             }
-            double distance = position.DistanceTo(contact.Position);
-            double reachable = PursuitDistance(contact.Position - position, contact.Velocity, approachSpeed);
+            double radii = sourceRadius + contact.Radius;
+            double distance = Math.Max(0, position.DistanceTo(contact.Position) - radii);
+            double reachable = Math.Max(0, PursuitDistance(contact.Position - position, contact.Velocity, approachSpeed) - radii);
             double angular = CombatDamage.AngularVelocity(contact.Position - position, contact.Velocity - velocity);
             // Visible hull size is a conservative signature estimate; hidden fitted attributes are not inspected.
-            double signature = Math.Max(1, contact.Radius);
+            double signature = Math.Max(1, contact.SignatureEstimate > 0 ? contact.SignatureEstimate : contact.Radius);
             double damage = weapons.Sum(source =>
                 Application(
                     source,
-                    Math.Min(distance, Math.Max(reachable, source.Weapon.Optimal + source.Weapon.Falloff * .4)),
+                    Math.Min(distance, Math.Max(reachable, source.Weapon.Optimal + source.Weapon.Falloff * FalloffRangeFraction)),
                     angular,
                     signature,
                     contact.Velocity.Length

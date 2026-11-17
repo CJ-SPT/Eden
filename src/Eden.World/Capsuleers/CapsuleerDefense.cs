@@ -122,9 +122,18 @@ internal sealed class CapsuleerDefense(
     private const double MinimumCombatRange = 500;
 
     private const int RetrySeconds = 30;
+    private static readonly CatalogDefinition<double> s_observedSignature = new(
+        "capsuleer-observed-signature",
+        (catalog, type) => Math.Max(0, catalog.FittingAttributes(type).GetValueOrDefault(DogmaAttributeId.SignatureRadius))
+    );
 
     internal PilotSighting[] Observe(DockedPilot pilot, long elapsed) =>
-        pilot.Position is null ? [] : presence.Observe(pilot.SystemId, pilot.ShipId, pilot.Position, elapsed / TimeSpan.TicksPerSecond);
+        pilot.Position is null
+            ? []
+            : presence
+                .Observe(pilot.SystemId, pilot.ShipId, pilot.Position, elapsed / TimeSpan.TicksPerSecond)
+                .Select(contact => contact with { SignatureEstimate = database.Catalog.Definition(s_observedSignature, contact.TypeId) })
+                .ToArray();
 
     internal CapsuleerAttacker? PatrolTarget(DockedPilot pilot, long target, SpacePosition anchor, long now) =>
         LiveCombatRuntime.Find(database.Path)?.PatrolTarget(pilot, target, anchor, presence, now);
@@ -299,7 +308,7 @@ internal sealed class CapsuleerDefense(
         }
         bool combatShip = profile.Combat && !escapeFirst;
         bool exhausted =
-            proactive is { Npc: false }
+            !target.Npc
             && live is not null
             && PvpTactics.Exhausted(
                 CapsuleerDefenseRules.Fraction(
@@ -379,10 +388,10 @@ internal sealed class CapsuleerDefense(
                 continue;
             }
             bool enabled = Enabled(module, profile, currentHealth, live, now, offensive, locked, blocked, retreat && blocked);
-            if (proactive is { Npc: false } && live is not null && module.Effect is DogmaEffect.Afterburner or DogmaEffect.Microwarpdrive)
+            if (!target.Npc && live is not null && module.Effect is DogmaEffect.Afterburner or DogmaEffect.Microwarpdrive)
             {
                 double desired = PvpTactics.Range(
-                    PilotAwareness.FightingRange(profile.RattingWeapons, profile.TargetRange, MinimumCombatRange),
+                    PvpTactics.WeaponRange(profile.RattingWeapons, profile.TargetRange, MinimumCombatRange),
                     profile.TargetRange,
                     profile.TackleRange,
                     pvpRole ?? profile.PvpRole,
@@ -497,15 +506,56 @@ internal sealed class CapsuleerDefense(
             {
                 double fallback = profile.RattingWeapons.Length == 0 ? drones.Control(pilot.PilotId).Range * .75 : MinimumCombatRange;
                 double range = PilotAwareness.FightingRange(profile.RattingWeapons, profile.TargetRange, fallback);
-                if (proactive is { Npc: false })
+                if (!target.Npc)
                 {
-                    range = PvpTactics.Range(range, profile.TargetRange, profile.TackleRange, pvpRole ?? profile.PvpRole, alliedTackle);
+                    var role = pvpRole ?? profile.PvpRole;
+                    var band = PvpTactics.Band(
+                        PvpTactics.WeaponRange(profile.RattingWeapons, profile.TargetRange, fallback),
+                        profile.TargetRange,
+                        profile.TackleRange,
+                        role,
+                        alliedTackle
+                    );
+                    double signature = database.Catalog.Definition(s_observedSignature, target.TypeId);
+                    var movement = PvpTactics.Movement(
+                        profile.RattingWeapons,
+                        target.Position - pilot.Position,
+                        navigation.Velocity,
+                        target.Velocity,
+                        Math.Max(1, signature > 0 ? signature : target.Radius),
+                        pilot.Flight.MaxSpeed,
+                        band,
+                        role,
+                        pilot.Flight.ShipRadius + target.Radius
+                    );
+                    navigation.Follow(
+                        pilot.ShipId,
+                        stamp,
+                        pilot.Position,
+                        pilot.Flight.ShipRadius,
+                        body,
+                        band.Desired,
+                        movement.Kind == PvpMovementKind.Orbit,
+                        true
+                    );
+                    if (movement.Direction is { } direction)
+                    {
+                        if (direction.Length > 0)
+                        {
+                            navigation.AlignTo(pilot.Position, pilot.Position + direction);
+                            navigation.SetSpeed(movement.SpeedFraction);
+                        }
+                        else
+                        {
+                            navigation.Stop();
+                        }
+                    }
                 }
-                bool orbit =
-                    proactive is not null
-                    && range < PvpTactics.KitingRange
-                    && (pvpRole ?? profile.PvpRole) is not (PvpRole.Kiter or PvpRole.ElectronicWarfare);
-                navigation.Follow(pilot.ShipId, stamp, pilot.Position, pilot.Flight.ShipRadius, body, range, orbit, true);
+                else
+                {
+                    bool orbit = proactive is not null && range < PvpTactics.KitingRange;
+                    navigation.Follow(pilot.ShipId, stamp, pilot.Position, pilot.Flight.ShipRadius, body, range, orbit, true);
+                }
             }
             if (state.MotionStamp != stamp)
             {

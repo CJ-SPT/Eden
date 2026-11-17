@@ -154,7 +154,8 @@ internal sealed partial class CapsuleerHauler
             Work.ActiveTicks,
             reported,
             PilotAwareness.Cautious(pilotId),
-            Pilot.Flight.MaxSpeed
+            Pilot.Flight.MaxSpeed,
+            Pilot.Flight.ShipRadius
         );
         bool scout = gang is not null && GangMember?.Role == PvpRole.Scout;
         if (scout && candidates.Length > 0)
