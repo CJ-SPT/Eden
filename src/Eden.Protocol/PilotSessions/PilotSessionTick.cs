@@ -106,12 +106,12 @@ internal sealed class PilotSessionTick(
             using (SessionLatency.Measure(SessionLatencyPhase.Contacts))
             using (SessionPerformance.Begin("contacts", diagnostics?.Trace ?? report))
             {
+                if (structures is not null && (flight.InBallpark || flight.Pilot.InStructure))
+                {
+                    flight.RefreshStructures(structures.Contacts(flight.Pilot.SystemId));
+                }
                 if (flight.InBallpark)
                 {
-                    if (structures is not null)
-                    {
-                        flight.RefreshStructures(structures.Contacts(flight.Pilot.SystemId));
-                    }
                     flight.RefreshAsteroids(asteroids.List(flight.Pilot.SystemId));
                     flight.RefreshWrecks();
                     flight.RefreshMissiles();

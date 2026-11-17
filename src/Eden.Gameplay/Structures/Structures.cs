@@ -116,7 +116,10 @@ public sealed record StructureServiceProfile(
     int MaximumFitted
 );
 
-public sealed record StructureModule(long ItemId, int TypeId, int Slot, bool Online, long? NextFuelAt);
+public sealed record StructureModule(long ItemId, int TypeId, int Slot, bool Online, long? NextFuelAt)
+{
+    public int? HourlyFuel { get; init; }
+}
 
 public sealed record StructureAccess(long MemberId, bool Allowed);
 
@@ -129,7 +132,10 @@ public sealed record StructureContact(
     long? UnanchorAt,
     bool HasCore,
     StructureUpkeepState UpkeepState = StructureUpkeepState.LowPower
-);
+)
+{
+    public double Yaw { get; init; }
+}
 
 public sealed record StructureSnapshot(
     long Id,
@@ -167,6 +173,8 @@ public sealed record StructureDeployment(
 
 public sealed record StructureResult(StructureSnapshot Structure, IReadOnlyList<Inventory.InventoryChange> Changes);
 
+public sealed record StructureServiceFit(long ItemId, int? Slot = null);
+
 public interface IPilotStructures
 {
     bool CanControl(long pilotId, long structureId);
@@ -182,6 +190,7 @@ public interface IPilotStructures
     IReadOnlyList<Inventory.InventoryItem> Inventory(long pilotId, long structureId);
     StructureResult InstallCore(long pilotId, long structureId, long itemId);
     StructureResult FitService(long pilotId, long structureId, long itemId, int slot);
+    StructureResult FitServices(long pilotId, long structureId, IReadOnlyList<StructureServiceFit> modules);
     StructureResult SetServiceOnline(long pilotId, long structureId, long moduleId, bool online);
     StructureResult RemoveService(long pilotId, long structureId, long moduleId);
     StructureResult DepositFuel(long pilotId, long structureId, long itemId, int? quantity = null);

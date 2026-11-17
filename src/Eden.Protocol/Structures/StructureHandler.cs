@@ -291,5 +291,20 @@ internal sealed class StructureHandler(
         {
             InventoryChangesWire.NotifyItemChange(context, change);
         }
+        context.Notifications.Add(new StructureServicesChanged(result.Structure.Id));
+        if (context.Pilot.InStructure && context.Pilot.DockedLocationId == result.Structure.Id)
+        {
+            context.Notifications.Add(new StructureHangarChanged(result.Structure));
+        }
     }
+}
+
+internal sealed record StructureServicesChanged(long StructureId) : PilotNotification("OnStructureServiceChanged")
+{
+    public override object?[] Arguments => [StructureId];
+}
+
+internal sealed record StructureHangarChanged(StructureSnapshot Structure) : PilotNotification("OnHangarViewStateUpdated")
+{
+    public override object?[] Arguments => [Structure.Id, new StructureHangarReply(Structure)];
 }

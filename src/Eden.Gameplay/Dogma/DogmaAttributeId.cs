@@ -3,6 +3,7 @@ namespace Eden.Gameplay.Dogma;
 // Attribute IDs from the build 3662168 catalog.
 public enum DogmaAttributeId
 {
+    ServiceModuleFuelAmount = 2109,
     EcmBurstRange = 142,
     ConsumptionType = 713,
     ConsumptionQuantity = 714,

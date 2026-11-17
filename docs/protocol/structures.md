@@ -433,6 +433,73 @@ evidence; rendering, button behavior and the native undock animation remain unve
 **Optional maintainer checks:** Update/restart and reconnect; open the hangar and take control; undock from control and
 confirm the original ship appears outside the Athanor.
 
+## Athanor setup flow audit — November 16, 2026
+
+The user's native lobby now opened without RPC popups, but its outside view remained black; undocking did not complete
+until a relog, and the displayed exit was wrong. The same setup exposed missing personal ship/hangar rows while controlling
+the structure, rejected core transfers through the hangar, and fitting calls that differed from the synthetic explicit-slot
+path. These observations are pre-fix failure evidence, not agent live acceptance.
+
+The audit checked the local EVE.js package **261108.1** and inert disassembly of the original signed V24.01 client archive,
+SHA-256 `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`. The relevant native modules are
+`structureView.pyj`, `structureDocking.pyj`, `structureHangarViewSvc.pyj`, `invCache.pyj`, `invControllers.pyj`,
+`fittingUtil.pyj`, `fittingSlotController.pyj`, `fittingDogmaLocationUtil.pyj` and moon-mining `schedulingSvc.pyj`.
+The C# changes are independent implementations; EVE.js source was not copied.
+
+| Native setup step | Owning behavior after this audit |
+| --- | --- |
+| Docked outside view / `beyonce.MachoBindObject` and `UpdateStateRequest` | A docked pilot can bind the system park and receive a rigid scene with the structure as camera ego, without publishing the docked ship as a combat contact. Empty native binds also send this snapshot. |
+| `structureDocking.Undock(structureID, shipID)` | Validates the current structure and real ship, accepts `None` only while controlling, releases control and explicitly sends the real ship's space snapshot. Upwell docking retains the system session field, so this cannot rely on an NPC-station system-entry callback. |
+| Exit locator and orientation | Uses the structure type's pinned directional locators, hull size and saved yaw; slims carry the same yaw in native degrees. Launches still extend past the enclosing collision sphere; authored hull collision shapes remain a separate gap. |
+| Structure `GetInventoryFromId` / `List` | Authorized managers get their personal items and docked ships alongside corporation service bays; guests retain personal hangar access. Container `10014` remains a personal-hangar alias. |
+| Hangar `Add` / `MultiAdd`, including `qty=None` | Transfers personal cargo into the hangar through the existing inventory operation. Core/fuel/service-bay transfers retain their authoritative structure operations. |
+| `MultiAdd(..., flag=flagAutoFit)` | Atomically fits a batch into free service slots, checking type restrictions, occupied slots, duplicate IDs and module limits. A failed batch leaves inventory unchanged. |
+| Native unfit `Add(moduleID, structureID, flag=flagHangar)` | Removes an offline removable service into the pilot's personal hangar; an online service is rejected. |
+| `dogmaIM.Activate` / `Deactivate` with effect `online` | Uses the controlled structure identity; the real docked ship remains the saved active ship. Explicit `SetModuleOnline` / `TakeModuleOffline` share the same effect and attribute notifications. |
+| `GetAllInfo`, hull/module `ItemGetInfo`, `GetShipConfiguration` | Primes installed corporation-owned services, online effects, actual CPU/power load and the adjusted hourly fuel amount used by the native scheduler. |
+| Service and hangar-state updates | Sends native `OnStructureServiceChanged(structureID)` and `OnHangarViewStateUpdated(structureID, state)`. A scoped monitor updates docked timer/power changes and returns immediately before pilot selection. |
+| Moon resource, extraction, schedule and cancel reads | Existing RPCs match the native planner; the extended resident setup flow now exercises them after onlining a Standup Moon Drill. Existing extraction tests cover saved deadlines, fracture and expiry. Calendar creation and moving chunk visuals remain unimplemented. |
+
+The locator fixture now includes the pinned hull graphics and directional-locator records exported from catalog build
+**3662168**. Its exporter remains read-only. New gameplay state uses the resident structure/inventory owner and existing
+checkpoint projection; this audit adds no SQLite gameplay path, migration or test case.
+
+Reference EVE.js files include `structureLocatorGeometry.js` (SHA-256
+`40D816E82149345A4B82E681A17BE0E435BE2B1B83EB1936F5DD958B11D33C46`), `inventory/invBrokerService.js`
+(`8CEC4112DE1B312B547E39B789391B0D8E18DFCA95AA61170F82AEFADC1E9651`) and `structureHangarViewManagerService.js`
+(`55C9ECD1EE647D7FBF71EEA945EA3AF2DEE82D4347F42A3DBE37838966980299`). Carbon Destiny revision
+`114e89fa584f0e1a81eb0a679aabf41af8870072` was consulted for rigid-ball and compound-collision behavior;
+this setup change leaves its binary ball format unchanged.
+
+[EVE University structure fitting](https://wiki.eveuniversity.org/Fitting_upwell_structures),
+[moon mining](https://wiki.eveuniversity.org/Moon_mining) and
+[quantum cores](https://wiki.eveuniversity.org/Quantum_Cores) provide gameplay context. The screenshot still shows
+Onlining; a structure without a core cannot tether. Tethering itself and detailed station/structure hull collisions remain
+unimplemented Eden features, as distinct from missing setup RPCs. See
+[CCP tethering](https://support.eveonline.com/hc/en-us/articles/207568639-Upwell-Structure-Ship-Tethering).
+
+**Automated validation:** The two existing structure-control cases were extended; no new
+cases were added for individual bugs. They cover native personal hangar/cargo access, core installation, automatic batch
+fitting and rollback, online/offline/unfit/refit, service dogma/fuel values, moon planning, checkpoint reopening, a docked
+outside-view bind, and both controlled and ordinary undocking. An initial broader run exposed an account-phase monitor
+guard omission and was stopped after 142 reported cases (125 passed, 17 failed); the guard was corrected, and the four
+focused selection/control cases then passed in 6.94 seconds. A subsequent affected run was stopped after 250 reported
+cases (248 passed, 2 failed): the new fuel display queried a service profile for the Sovereignty Hub's integral equipment.
+Non-service integral modules now retain an absent fuel value, and the 25 affected hull/recovery/control cases passed in
+17.00 seconds after the correction.
+
+The final `FullyQualifiedName~` filter joined `Eden.Protocol.Tests.Structures`, `Docking.TypedInventoryTests`,
+`PilotSessions.PilotServicesTests`, `PilotSessions.TypedSessionTests`, `PilotSessions.CharacterLogoffTests`,
+`Flight.FlightSessionTests`, `Flight.StationUndockTests`, `Persistence.ShipStorageTests` and `Mining.MiningTests`, each
+under `Eden.Protocol.Tests`, with `|`. All **321 cases passed in 125.49 seconds** (build 2.91 seconds). Tool and solution
+restore, solution build (zero warnings/errors, 0.91 seconds), both Python policy suites (8 catalog cases in 2.270 seconds,
+9 formatting cases in 0.084 seconds), formatting verification and whitespace checks passed. The full .NET suite was not run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** After updating and reconnecting, verify the docked outside scene and undock transition;
+open Ship/Item Hangars and transfer the core; take control, fit/online the drill and open the moon planner.
+
 ## Structure compression and gas decompression — November 11, 2026
 
 Milestone 7 implements all three pinned `structureCompressionMgr` calls: `CompressItemInStructure(itemID)`,

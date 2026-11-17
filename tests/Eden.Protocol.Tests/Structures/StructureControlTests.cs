@@ -9,7 +9,9 @@ using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Structures;
 using Eden.Protocol.Tests.PilotSessions;
+using Eden.World.Catalog;
 using Eden.World.Storage;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Fixture = Eden.Protocol.Tests.Structures.StructureTests.Fixture;
 
@@ -21,15 +23,29 @@ public sealed class StructureControlTests
     public async Task DockedControlInstallsAthanorCoreFuelAndServiceAndCheckpointsTheRealShip()
     {
         using Fixture f = new(liveWorld: true);
-        var structure = f.Deploy(35835);
+        using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
+        {
+            const string moon = """
+                {"security":0.4,"planets":{"40000990":{"moons":{
+                  "40000991":{"miningBeacon":{"position":{"x":10000000000,"y":0,"z":0}}}
+                }}}}
+                """;
+            catalog.Database.ExecuteSql($"INSERT OR REPLACE INTO SourceRecord VALUES ('client/solarsystemcontent','30001392',{moon})");
+        }
+        var structure = f.Structures.Deploy(f.PilotId, new(f.Item(35835), Fixture.Point, Math.PI / 2, "Rotated refinery")).Structure;
+        Assert.Equal(40000991, structure.MoonId);
         f.Clock.AdvanceWallTime(TimeSpan.FromDays(1));
         structure = f.Structures.Read(f.PilotId, structure.Id)!;
         Assert.Equal(StructureState.Onlining, structure.State);
         Assert.Null(structure.StateEndsAt);
         long core = f.Item(structure.Profile.CoreTypeId!.Value);
-        long fuel = f.Item(4051, 1000);
+        long fuel = f.Item(4051, 6000);
         long module = f.Item(35899);
+        long extraModule = f.Item(45009);
         var docked = f.Db.Services.GetRequiredService<IStationDocking>().Dock(f.PilotId, f.ShipId, structure.Id);
+        var exit = Assert.IsType<StationUndockPoint>(docked.Home.UndockPoint);
+        Assert.True(exit.Direction.X > 0.9);
+        Assert.InRange(Math.Abs(exit.Direction.Z), 0, 0.001);
         using var scope = f.Db.Services.CreateScope();
         var factory = scope.ServiceProvider.GetRequiredService<FlightSessionFactory>();
         using PilotCallContext context = new(1000001, docked.Account, [docked], factory.Create, 51, SignedSettings.Empty);
@@ -43,6 +59,17 @@ public sealed class StructureControlTests
         Assert.Contains(structure.Id, dockedInfo.StructureInfo!.Keys);
         Assert.Contains(docked.ShipId, dockedInfo.ShipInfo.Keys);
         CheckPersonalHangar();
+        Call(
+            "beyonce",
+            "MachoBindObject",
+            [(long)Fixture.SystemId, new object?[] { "UpdateStateRequest", Array.Empty<object?>(), new Dictionary<string, object?>() }]
+        );
+        Assert.Equal(
+            structure.Id,
+            Assert.Single(context.Flight.Updates.Select(update => update.Command).OfType<DestinyCommand.SetState>()).Snapshot.Ego
+        );
+        Assert.False(context.Flight.InBallpark);
+        context.Flight.Updates.Clear();
         Call("structureControl", "TakeControl", [structure.Id]);
         CheckPersonalHangar();
         Assert.Equal(structure.Id, context.ControlledStructureId);
@@ -65,6 +92,15 @@ public sealed class StructureControlTests
         string inventory = context.ResolveReference(reference.Id)!;
         Assert.StartsWith("@structure-inventory:", inventory);
         Assert.Equal(structure.Id, Assert.IsType<InventoryRow>(Call(inventory, "GetSelfInvItem", []).Reply).Id);
+        var visible = Assert.IsType<BlueList<InventoryRow>>(Call(inventory, "List", []).Reply).Items;
+        Assert.Contains(visible, item => item.Id == docked.ShipId && item.FlagId == (int)InventoryFlag.Hangar);
+        var shipInventory = Assert.IsType<BlueObjectReference>(Call("invbroker", "GetInventoryFromId", [docked.ShipId]).Reply.ToBlue());
+        Assert.Contains(
+            Assert.IsType<BlueList<InventoryRow>>(Call(context.ResolveReference(shipInventory.Id)!, "List", []).Reply).Items,
+            item => item.Id == core
+        );
+        Call(inventory, "Add", [core, docked.ShipId], new() { ["flag"] = 4L, ["qty"] = null });
+        Assert.Contains(Assert.IsType<BlueList<InventoryRow>>(Call(inventory, "List", [4L]).Reply).Items, item => item.Id == core);
         Assert.IsType<PilotCallResult.Failure>(
             router.Call(
                 context,
@@ -100,16 +136,65 @@ public sealed class StructureControlTests
         );
         Install(fuel, StructureRules.FuelBayFlag);
         Assert.Equal(
-            1000,
+            6000,
             f.Structures.Inventory(f.PilotId, structure.Id).Single(item => item.FlagId == StructureRules.FuelBayFlag).Quantity
         );
         f.Clock.AdvanceWallTime(TimeSpan.FromMinutes(15));
-        Install(module, StructureRules.FirstServiceSlot);
-        Call("dogmaIM", "SetModuleOnline", [structure.Id, module]);
+        scope.ServiceProvider.GetRequiredService<StructureControlHandler>().Advance(context);
+        Assert.Equal(StructureState.ShieldVulnerable, context.Notifications.OfType<StructureHangarChanged>().Last().Structure.State);
+        Assert.Throws<InvalidDataException>(() => f.Structures.FitServices(f.PilotId, structure.Id, [new(module), new(core)]));
+        Assert.Empty(f.Structures.Read(f.PilotId, structure.Id)!.Modules);
+        // Native fittingUtil.TryFit batches modules with flagAutoFit, then Godma activates the online effect.
+        Call(inventory, "MultiAdd", [new List<object?> { module, extraModule }, docked.ShipId], new() { ["flag"] = 0L, ["qty"] = null });
+        Assert.Equal(
+            new[] { StructureRules.FirstServiceSlot, StructureRules.FirstServiceSlot + 1 },
+            f.Structures.Read(f.PilotId, structure.Id)!.Modules.Select(m => m.Slot)
+        );
+        Call("dogmaIM", "Activate", [module, "online", null, 0L]);
+        Assert.IsType<PilotCallResult.Failure>(
+            router.Call(context, inventory, "Add", new object?[] { module, structure.Id }, _ => { }, new() { ["flag"] = 4L })
+        );
+        Call("dogmaIM", "Deactivate", [module, "online"]);
+        Call(inventory, "Add", [module, structure.Id], new() { ["flag"] = 4L, ["qty"] = null });
+        Assert.DoesNotContain(f.Structures.Read(f.PilotId, structure.Id)!.Modules, fitted => fitted.ItemId == module);
+        Call(inventory, "Add", [module, structure.Id], new() { ["flag"] = 0L });
+        Call("dogmaIM", "Activate", [module, "online", structure.Id, 0L]);
+        Call("dogmaIM", "Activate", [extraModule, "online", structure.Id, 0L]);
+        Assert.Contains(context.Notifications, n => n is StructureServicesChanged);
         var ready = f.Structures.Read(f.PilotId, structure.Id)!;
         Assert.Equal(StructureState.ShieldVulnerable, ready.State);
-        Assert.True(Assert.Single(ready.Modules).Online);
+        Assert.True(ready.Modules.Single(m => m.ItemId == module).Online);
+        var fittedInfo = Assert.IsType<DogmaAllInfo>(Call("dogmaIM", "GetAllInfo", [true, true, true]).Reply);
+        Assert.True(fittedInfo.ShipInfo[structure.Id].Attributes[Eden.Gameplay.Dogma.DogmaAttributeId.CpuLoad] > 0);
         Assert.Contains(StructureService.Reprocessing, ready.Services);
+        Assert.Contains(StructureService.MoonMining, ready.Services);
+        var drillInfo = Assert.IsType<DogmaItemInfo<double>>(Call("dogmaIM", "ItemGetInfo", [extraModule]).Reply);
+        Assert.True(drillInfo.Attributes[Eden.Gameplay.Dogma.DogmaAttributeId.IsOnline] > 0);
+        Assert.Equal(
+            (double)ready.Modules.Single(m => m.ItemId == extraModule).HourlyFuel!.Value,
+            drillInfo.Attributes[Eden.Gameplay.Dogma.DogmaAttributeId.ServiceModuleFuelAmount]
+        );
+        Call("ship", "GetShipConfiguration", [structure.Id]);
+        Assert.NotEmpty(
+            Assert.IsType<BlueMap<long, double>>(Call("moonExtractions", "GetMoonResourcesForStructure", [structure.Id]).Reply).Entries
+        );
+        var extraction = Assert
+            .IsType<MoonExtractionReply>(
+                Call("moonExtractions", "StartNewExtraction", [structure.Id, MoonMiningRules.MinimumExtractionSeconds, false]).Reply
+            )
+            .Extraction;
+        Assert.Equal(structure.Id, extraction.StructureId);
+        Assert.Single(
+            Assert
+                .IsType<BlueList<MoonExtractionReply>>(Call("moonExtractions", "GetExtractionsForCorp", [(long)f.CorporationId]).Reply)
+                .Items
+        );
+        Call("moonExtractions", "CancelExtraction", [structure.Id]);
+        Assert.Null(
+            Assert
+                .IsType<MoonExtractionWindow>(Call("moonExtractions", "GetExtractionAndEventIDFromStructureID", [structure.Id]).Reply)
+                .Extraction
+        );
         Call("structureControl", "ReleaseControl", []);
         Assert.Null(context.ControlledStructureId);
         Assert.Null(Call("structureControl", "GetStructurePilot", [structure.Id]).Reply.ToBlue());
@@ -136,9 +221,14 @@ public sealed class StructureControlTests
         Assert.Equal(docked.ShipId, context.Pilot.ShipId);
         Assert.NotNull(context.Pilot.Position);
         Assert.False(context.Pilot.InStructure);
+        Assert.Equal(
+            docked.ShipId,
+            Assert.Single(context.Flight.Updates.Select(update => update.Command).OfType<DestinyCommand.SetState>()).Snapshot.Ego
+        );
         Assert.Null(f.Db.Services.GetRequiredService<SharedStructureControl>().Pilot(structure.Id));
         Assert.NotNull(f.Db.Store.FindPilot(1000001)!.Position);
         Assert.Equal(Fixture.SystemId, f.Db.Store.FindPilot(1000001)!.SystemId);
+        Assert.Equal(StationUndocking.Launch(docked.ShipId, docked.Home, docked.Flight).Position, context.Pilot.Position);
 
         PilotCallResult.Success Call(string service, string method, object?[] args, Dictionary<string, object?>? keywords = null) =>
             Assert.IsType<PilotCallResult.Success>(router.Call(context, service, method, args, _ => { }, keywords));
@@ -220,6 +310,7 @@ public sealed class StructureControlTests
                         new object?[] { "GetAllInfo", new object?[] { true, true, true }, new Dictionary<string, object?>() },
                     ]
                 ),
+                PilotServicesTests.Request("beyonce", "MachoBindObject", [(long)Fixture.SystemId, null]),
                 PilotServicesTests.Request("structureControl", "TakeControl", [structure.Id]),
                 PilotServicesTests.Request(
                     "invbroker",
@@ -239,11 +330,10 @@ public sealed class StructureControlTests
                 ),
                 PilotServicesTests.Request("dogmaIM", "GetAllInfo", [true, true, true]),
                 PilotServicesTests.Request("structureControl", "ReleaseControl", []),
-                PilotServicesTests.Request("structureControl", "TakeControl", [structure.Id]),
                 PilotServicesTests.Request(
                     "structureDocking",
                     "Undock",
-                    [structure.Id, null],
+                    [structure.Id, docked.ShipId],
                     keywords: new() { ["ignoreContraband"] = false }
                 ),
             }

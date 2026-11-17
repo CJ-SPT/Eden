@@ -27,7 +27,9 @@ internal static class StructureCatalog
         catalog.Definition(s_profiles, typeId) ?? throw new InvalidDataException("This is not a published player Upwell structure.");
 
     internal static StructureServiceProfile Service(CatalogDbContext catalog, int typeId) =>
-        catalog.Definition(s_services, typeId) ?? throw new InvalidDataException("This is not a supported structure service module.");
+        ReadService(catalog, typeId) ?? throw new InvalidDataException("This is not a supported structure service module.");
+
+    internal static StructureServiceProfile? ReadService(CatalogDbContext catalog, int typeId) => catalog.Definition(s_services, typeId);
 
     internal static IEnumerable<StructureProfile> All(CatalogDbContext catalog) =>
         catalog

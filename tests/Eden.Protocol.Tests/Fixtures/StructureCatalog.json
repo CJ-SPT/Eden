@@ -16647,6 +16647,2154 @@
         "blueprintTypeID": 1130,
         "maxProductionLimit": 600
       }
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": 21137,
+      "data": {
+        "graphicLocationID": 51
+      }
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": 21138,
+      "data": {
+        "graphicLocationID": 30
+      }
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": 21139,
+      "data": {
+        "graphicLocationID": 45
+      }
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": 21315,
+      "data": {
+        "graphicLocationID": 45
+      }
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": 21344,
+      "data": {
+        "graphicLocationID": 44
+      }
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": 21405,
+      "data": {
+        "graphicLocationID": 52
+      }
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": 21406,
+      "data": {
+        "graphicLocationID": 53
+      }
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": 21445,
+      "data": {
+        "graphicLocationID": 56
+      }
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": 21451,
+      "data": {
+        "graphicLocationID": 57
+      }
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": 22142,
+      "data": {
+        "graphicLocationID": 20
+      }
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": 22150,
+      "data": {
+        "graphicLocationID": 21
+      }
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": 22161,
+      "data": {
+        "graphicLocationID": 55
+      }
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": 22189,
+      "data": {
+        "graphicLocationID": 29
+      }
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": 22195,
+      "data": {
+        "graphicLocationID": 30
+      }
+    },
+    {
+      "dataset": "client/graphicids",
+      "key": 27169,
+      "data": {
+        "graphicLocationID": 2071
+      }
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": 20,
+      "data": {
+        "directionalLocators": [
+          {
+            "category": "undockPointCapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 1512.27880859375,
+              "x": -36245.0703125,
+              "n_fields": 3,
+              "z": -639.1088256835938
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.04632454365491867,
+              "x": -0.9989264607429504,
+              "n_fields": 3,
+              "z": 0.0
+            },
+            "name": "capital1"
+          },
+          {
+            "category": "undockPointLarge",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -78.28593444824219,
+              "x": -33451.90625,
+              "n_fields": 3,
+              "z": -639.1088256835938
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.021941129118204117,
+              "x": -0.9997592568397522,
+              "n_fields": 3,
+              "z": 0.0
+            },
+            "name": "large1"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 193.72964477539062,
+              "x": -29673.27734375,
+              "n_fields": 3,
+              "z": 11716.4560546875
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.018489530310034752,
+              "x": -0.9998290538787842,
+              "n_fields": 3,
+              "z": 0.0
+            },
+            "name": "small1"
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": 21,
+      "data": {
+        "directionalLocators": [
+          {
+            "category": "undockPointCapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -2575.46728515625,
+              "x": 910.1516723632812,
+              "n_fields": 3,
+              "z": -36605.74609375
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 1.6285138570992785e-08,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": -1.0
+            },
+            "name": "capital1"
+          },
+          {
+            "category": "undockPointLarge",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -2575.46728515625,
+              "x": 910.1516723632812,
+              "n_fields": 3,
+              "z": -36605.74609375
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 1.6285138570992785e-08,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": -1.0
+            },
+            "name": "large1"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -2575.46728515625,
+              "x": 910.1516723632812,
+              "n_fields": 3,
+              "z": -36605.74609375
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 1.6285138570992785e-08,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": -1.0
+            },
+            "name": "small1"
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": 29,
+      "data": {
+        "directionalLocators": [
+          {
+            "category": "undockPointCapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -30561.86328125,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": -6209.4833984375
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 5.009637149555601e-09,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": -1.0
+            },
+            "name": "capital1"
+          },
+          {
+            "category": "undockPointLarge",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -31307.111328125,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": -3804.62744140625
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 5.009638481823231e-09,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": -1.0
+            },
+            "name": "large1"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -30040.66015625,
+              "x": 7565.56591796875,
+              "n_fields": 3,
+              "z": -7643.66845703125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -1.175359476413007e-09,
+              "x": -0.5486361980438232,
+              "n_fields": 3,
+              "z": -0.8360611796379089
+            },
+            "name": "small1"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -30040.66015625,
+              "x": -7546.52099609375,
+              "n_fields": 3,
+              "z": -7582.62109375
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -1.0524634497244278e-09,
+              "x": 0.5363729000091553,
+              "n_fields": 3,
+              "z": -0.8439810872077942
+            },
+            "name": "small2"
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": 30,
+      "data": {
+        "directionalLocators": [
+          {
+            "category": "undockPointCapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -5477.173828125,
+              "x": 4485.546875,
+              "n_fields": 3,
+              "z": -11414.37890625
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.06147445738315582,
+              "x": 0.6030168533325195,
+              "n_fields": 3,
+              "z": -0.795356273651123
+            },
+            "name": "capital1"
+          },
+          {
+            "category": "undockPointCapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -5401.5654296875,
+              "x": 1897.5352783203125,
+              "n_fields": 3,
+              "z": -13435.365234375
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -0.05469160154461861,
+              "x": 0.5813113451004028,
+              "n_fields": 3,
+              "z": -0.8118410706520081
+            },
+            "name": "capital2"
+          },
+          {
+            "category": "undockPointLarge",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 1949.8275146484375,
+              "x": -13237.3984375,
+              "n_fields": 3,
+              "z": -7818.8486328125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.16726069152355194,
+              "x": 0.6774669885635376,
+              "n_fields": 3,
+              "z": -0.7162836790084839
+            },
+            "name": "large1"
+          },
+          {
+            "category": "undockPointLarge",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 1540.7822265625,
+              "x": -1380.6903076171875,
+              "n_fields": 3,
+              "z": -9616.4990234375
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -0.01240494567900896,
+              "x": 0.6518444418907166,
+              "n_fields": 3,
+              "z": -0.7582512497901917
+            },
+            "name": "large2"
+          },
+          {
+            "category": "undockPointLarge",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 3337.7294921875,
+              "x": -14916.8095703125,
+              "n_fields": 3,
+              "z": -8543.6806640625
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.027656029909849167,
+              "x": 0.6364406943321228,
+              "n_fields": 3,
+              "z": -0.7708296775817871
+            },
+            "name": "large3"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 2879.777099609375,
+              "x": -21467.416015625,
+              "n_fields": 3,
+              "z": -9327.6962890625
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.018035346642136574,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": -0.999837338924408
+            },
+            "name": "small1"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 2904.279541015625,
+              "x": -2188.22216796875,
+              "n_fields": 3,
+              "z": -9587.3740234375
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.03551945090293884,
+              "x": 0.670951247215271,
+              "n_fields": 3,
+              "z": -0.7406502366065979
+            },
+            "name": "small2"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 1595.71728515625,
+              "x": -18144.685546875,
+              "n_fields": 3,
+              "z": -9636.7041015625
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -0.004132573027163744,
+              "x": -0.034758731722831726,
+              "n_fields": 3,
+              "z": -0.9993872046470642
+            },
+            "name": "small3"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 2868.468505859375,
+              "x": -18170.8828125,
+              "n_fields": 3,
+              "z": -9255.18359375
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.04322754219174385,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": -0.9990652799606323
+            },
+            "name": "small4"
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": 44,
+      "data": {
+        "directionalLocators": [
+          {
+            "category": "undockPointLarge",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -463.802490234375,
+              "x": 4569.5078125,
+              "n_fields": 3,
+              "z": 21625.578125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "large01"
+          },
+          {
+            "category": "undockPointLarge",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -463.802490234375,
+              "x": -4569.5078125,
+              "n_fields": 3,
+              "z": 21625.578125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "large02"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 2298.5517578125,
+              "n_fields": 3,
+              "z": 21625.578125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "small01"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -710.3009033203125,
+              "x": -2386.287353515625,
+              "n_fields": 3,
+              "z": 21625.578125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "small02"
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": 45,
+      "data": {
+        "directionalLocators": [
+          {
+            "category": "undockPointCapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 692.5843505859375,
+              "x": 15843.234375,
+              "n_fields": 3,
+              "z": -27646.021484375
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.04216505214571953,
+              "x": 1.818989489943217e-15,
+              "n_fields": 3,
+              "z": -0.9991106390953064
+            },
+            "name": "capital01"
+          },
+          {
+            "category": "undockPointCapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 1017.1029663085938,
+              "x": 5466.62060546875,
+              "n_fields": 3,
+              "z": -27676.314453125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.04216505214571953,
+              "x": 2.7284841290357072e-15,
+              "n_fields": 3,
+              "z": -0.9991106390953064
+            },
+            "name": "capital02"
+          },
+          {
+            "category": "undockPointCapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 952.0712890625,
+              "x": -5314.35400390625,
+              "n_fields": 3,
+              "z": -28061.41796875
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.04216505214571953,
+              "x": 2.7284841290357072e-15,
+              "n_fields": 3,
+              "z": -0.9991106390953064
+            },
+            "name": "capital03"
+          },
+          {
+            "category": "undockPointCapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 952.0712890625,
+              "x": -15762.9267578125,
+              "n_fields": 3,
+              "z": -27806.98046875
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.04216505214571953,
+              "x": 1.818989489943217e-15,
+              "n_fields": 3,
+              "z": -0.9991106390953064
+            },
+            "name": "capital04"
+          },
+          {
+            "category": "undockPointLarge",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -3900.111572265625,
+              "x": 22899.96875,
+              "n_fields": 3,
+              "z": -27276.986328125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.001775379991158843,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": -0.9999984502792358
+            },
+            "name": "large01"
+          },
+          {
+            "category": "undockPointLarge",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 897.7040405273438,
+              "x": -677.9574584960938,
+              "n_fields": 3,
+              "z": -27131.962890625
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.001775379991158843,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": -0.9999984502792358
+            },
+            "name": "large02"
+          },
+          {
+            "category": "undockPointLarge",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -3974.0546875,
+              "x": -22939.091796875,
+              "n_fields": 3,
+              "z": -27131.962890625
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.001775379991158843,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": -0.9999984502792358
+            },
+            "name": "large03"
+          },
+          {
+            "category": "undockPointLarge",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -3183.790771484375,
+              "x": 493.0232849121094,
+              "n_fields": 3,
+              "z": -27060.21484375
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -0.014616521075367928,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": -0.9998931884765625
+            },
+            "name": "large04"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 495.52911376953125,
+              "x": 25993.201171875,
+              "n_fields": 3,
+              "z": -28195.068359375
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -0.0031794700771570206,
+              "x": -0.22872121632099152,
+              "n_fields": 3,
+              "z": -0.9734867811203003
+            },
+            "name": "small01"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 639.8189697265625,
+              "x": 20185.44140625,
+              "n_fields": 3,
+              "z": -26752.4921875
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.03903266414999962,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": -0.9992379546165466
+            },
+            "name": "small02"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 832.7918090820312,
+              "x": 10335.8720703125,
+              "n_fields": 3,
+              "z": -26752.4921875
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.03903266414999962,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": -0.9992379546165466
+            },
+            "name": "small03"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -1303.710205078125,
+              "x": 10335.8720703125,
+              "n_fields": 3,
+              "z": -26752.4921875
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.03903266414999962,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": -0.9992379546165466
+            },
+            "name": "small04"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -6898.7470703125,
+              "x": 7196.4248046875,
+              "n_fields": 3,
+              "z": -26752.4921875
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.03903266414999962,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": -0.9992379546165466
+            },
+            "name": "small05"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -3046.7724609375,
+              "x": 19859.087890625,
+              "n_fields": 3,
+              "z": -26752.4921875
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.03903266414999962,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": -0.9992379546165466
+            },
+            "name": "small06"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -3046.7724609375,
+              "x": 27202.662109375,
+              "n_fields": 3,
+              "z": -28597.548828125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.037723273038864136,
+              "x": -0.2568396031856537,
+              "n_fields": 3,
+              "z": -0.9657175540924072
+            },
+            "name": "small07"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -6944.3896484375,
+              "x": -7166.56640625,
+              "n_fields": 3,
+              "z": -26864.45703125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.03903266414999962,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": -0.9992379546165466
+            },
+            "name": "small08"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -1330.9649658203125,
+              "x": -10327.4619140625,
+              "n_fields": 3,
+              "z": -26864.45703125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.03903266414999962,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": -0.9992379546165466
+            },
+            "name": "small09"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 860.7208862304688,
+              "x": -10368.083984375,
+              "n_fields": 3,
+              "z": -26864.45703125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.03903266414999962,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": -0.9992379546165466
+            },
+            "name": "small10"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 655.6858520507812,
+              "x": -20163.55078125,
+              "n_fields": 3,
+              "z": -26864.45703125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.03903266414999962,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": -0.9992379546165466
+            },
+            "name": "small11"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -3003.455810546875,
+              "x": -19871.052734375,
+              "n_fields": 3,
+              "z": -26864.45703125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.03903266414999962,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": -0.9992379546165466
+            },
+            "name": "small12"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 510.5680847167969,
+              "x": -26040.142578125,
+              "n_fields": 3,
+              "z": -28030.69921875
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.03802167996764183,
+              "x": 0.22612161934375763,
+              "n_fields": 3,
+              "z": -0.9733567237854004
+            },
+            "name": "small13"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -3241.546630859375,
+              "x": -27331.796875,
+              "n_fields": 3,
+              "z": -28563.046875
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.03788788989186287,
+              "x": 0.24041008949279785,
+              "n_fields": 3,
+              "z": -0.9699317216873169
+            },
+            "name": "small14"
+          },
+          {
+            "category": "undockPointSupercapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 17399.939453125,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 6340.77099609375
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -0.02035941556096077,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": -0.999792754650116
+            },
+            "name": "supercapital01"
+          },
+          {
+            "category": "undockPointSupercapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 17442.435546875,
+              "x": 10479.7158203125,
+              "n_fields": 3,
+              "z": 6673.56005859375
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -0.02035941556096077,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": -0.999792754650116
+            },
+            "name": "supercapital02"
+          },
+          {
+            "category": "undockPointSupercapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 17441.6875,
+              "x": -10657.080078125,
+              "n_fields": 3,
+              "z": 6271.7724609375
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -0.02035941556096077,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": -0.999792754650116
+            },
+            "name": "supercapital03"
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": 51,
+      "data": {
+        "directionalLocators": [
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 215.25921630859375,
+              "x": 6866.13623046875,
+              "n_fields": 3,
+              "z": -11538.0146484375
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.04619843512773514,
+              "x": -0.28238096833229065,
+              "n_fields": 3,
+              "z": -0.9581892490386963
+            },
+            "name": "subcapital1"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 215.10736083984375,
+              "x": 9581.4775390625,
+              "n_fields": 3,
+              "z": -12315.4072265625
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.036095112562179565,
+              "x": -0.2800765931606293,
+              "n_fields": 3,
+              "z": -0.959298849105835
+            },
+            "name": "subcapital2"
+          },
+          {
+            "category": "undockPointLarge",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -14.9716215133667,
+              "x": 4030.6669921875,
+              "n_fields": 3,
+              "z": -10789.33203125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -0.032464608550071716,
+              "x": -0.24560995399951935,
+              "n_fields": 3,
+              "z": -0.9688249826431274
+            },
+            "name": "subcapital3"
+          },
+          {
+            "category": "undockPointLarge",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -112.63899230957031,
+              "x": 340.41802978515625,
+              "n_fields": 3,
+              "z": -12707.28125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -0.007910403423011303,
+              "x": 0.19666439294815063,
+              "n_fields": 3,
+              "z": -0.9804389476776123
+            },
+            "name": "subcapital4"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 238.98765563964844,
+              "x": -5910.77783203125,
+              "n_fields": 3,
+              "z": -16764.244140625
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.03891666233539581,
+              "x": 0.27525362372398376,
+              "n_fields": 3,
+              "z": -0.9605836272239685
+            },
+            "name": "subcapital5"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 256.00823974609375,
+              "x": -2966.519287109375,
+              "n_fields": 3,
+              "z": -16526.91015625
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -0.04426764324307442,
+              "x": 0.28013983368873596,
+              "n_fields": 3,
+              "z": -0.9589380025863647
+            },
+            "name": "subcapital6"
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": 52,
+      "data": {
+        "directionalLocators": [
+          {
+            "category": "undockPointCapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -1394.589599609375,
+              "x": -12889.9013671875,
+              "n_fields": 3,
+              "z": 30727.3671875
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "capital01"
+          },
+          {
+            "category": "undockPointCapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -5107.07470703125,
+              "x": -12889.9013671875,
+              "n_fields": 3,
+              "z": 30727.3671875
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "capital02"
+          },
+          {
+            "category": "undockPointCapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -5107.07470703125,
+              "x": -9538.2490234375,
+              "n_fields": 3,
+              "z": 30727.3671875
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "capital03"
+          },
+          {
+            "category": "undockPointCapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -1390.885986328125,
+              "x": -9538.2490234375,
+              "n_fields": 3,
+              "z": 30727.3671875
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "capital04"
+          },
+          {
+            "category": "undockPointLarge",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 801.2556762695312,
+              "x": -19506.76171875,
+              "n_fields": 3,
+              "z": 32649.83203125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "large01"
+          },
+          {
+            "category": "undockPointLarge",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 1657.6318359375,
+              "x": -21285.212890625,
+              "n_fields": 3,
+              "z": 32649.83203125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "large02"
+          },
+          {
+            "category": "undockPointLarge",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 8831.328125,
+              "x": -16769.828125,
+              "n_fields": 3,
+              "z": 29800.130859375
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "large03"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 298.1668701171875,
+              "x": -21150.984375,
+              "n_fields": 3,
+              "z": 32649.83203125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "small01"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 2051.004150390625,
+              "x": -19162.69140625,
+              "n_fields": 3,
+              "z": 32649.83203125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "small02"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 10079.1689453125,
+              "x": -16769.828125,
+              "n_fields": 3,
+              "z": 29800.130859375
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "small03"
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": 53,
+      "data": {
+        "directionalLocators": [
+          {
+            "category": "undockPointCapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -7726.83056640625,
+              "x": -8085.19873046875,
+              "n_fields": 3,
+              "z": 56168.83203125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "capital01"
+          },
+          {
+            "category": "undockPointCapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -11764.3115234375,
+              "x": -8085.19873046875,
+              "n_fields": 3,
+              "z": 56168.83203125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "capital02"
+          },
+          {
+            "category": "undockPointCapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -7726.83056640625,
+              "x": -4764.99267578125,
+              "n_fields": 3,
+              "z": 56168.83203125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "capital03"
+          },
+          {
+            "category": "undockPointCapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -11764.3115234375,
+              "x": -4744.58056640625,
+              "n_fields": 3,
+              "z": 56168.83203125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "capital04"
+          },
+          {
+            "category": "undockPointCapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -7726.83056640625,
+              "x": 8085.19921875,
+              "n_fields": 3,
+              "z": 56168.83203125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "capital05"
+          },
+          {
+            "category": "undockPointCapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -11764.3115234375,
+              "x": 8085.19921875,
+              "n_fields": 3,
+              "z": 56168.83203125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "capital06"
+          },
+          {
+            "category": "undockPointCapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -7726.83056640625,
+              "x": 4764.9931640625,
+              "n_fields": 3,
+              "z": 56168.83203125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "capital07"
+          },
+          {
+            "category": "undockPointCapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -11764.3115234375,
+              "x": 4744.5810546875,
+              "n_fields": 3,
+              "z": 56168.83203125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "capital08"
+          },
+          {
+            "category": "undockPointLarge",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -9787.25,
+              "x": -1942.4578857421875,
+              "n_fields": 3,
+              "z": 55126.9296875
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "large01"
+          },
+          {
+            "category": "undockPointLarge",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -9787.25,
+              "x": 1942.4580078125,
+              "n_fields": 3,
+              "z": 55126.9296875
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "large02"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -8038.82275390625,
+              "x": -1896.3983154296875,
+              "n_fields": 3,
+              "z": 55116.359375
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "small01"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -8038.82275390625,
+              "x": 1896.39794921875,
+              "n_fields": 3,
+              "z": 55116.359375
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "small02"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -11724.9150390625,
+              "x": -1896.3983154296875,
+              "n_fields": 3,
+              "z": 55116.359375
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "small03"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -11724.9150390625,
+              "x": 1896.39794921875,
+              "n_fields": 3,
+              "z": 55116.359375
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "small04"
+          },
+          {
+            "category": "undockPointSupercapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 11873.00390625,
+              "x": -5476.1142578125,
+              "n_fields": 3,
+              "z": 54651.39453125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "supercapital01"
+          },
+          {
+            "category": "undockPointSupercapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 11873.00390625,
+              "x": 5476.11376953125,
+              "n_fields": 3,
+              "z": 54651.39453125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 0.0,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 1.0
+            },
+            "name": "supercapital02"
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": 55,
+      "data": {
+        "directionalLocators": [
+          {
+            "category": "undockPointCapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -605.83984375,
+              "x": 25440.607421875,
+              "n_fields": 3,
+              "z": 312.0338439941406
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 8.287962316444464e-09,
+              "x": 1.0,
+              "n_fields": 3,
+              "z": 0.0
+            },
+            "name": "capital1"
+          },
+          {
+            "category": "undockPointLarge",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -1690.9298095703125,
+              "x": 24072.7265625,
+              "n_fields": 3,
+              "z": 7443.90576171875
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 8.287963204622883e-09,
+              "x": 1.0,
+              "n_fields": 3,
+              "z": 0.0
+            },
+            "name": "large1"
+          },
+          {
+            "category": "undockPointLarge",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -1690.9298095703125,
+              "x": 24072.7265625,
+              "n_fields": 3,
+              "z": -6513.04345703125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 8.287963204622883e-09,
+              "x": 1.0,
+              "n_fields": 3,
+              "z": 0.0
+            },
+            "name": "large2"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -4188.41845703125,
+              "x": 25531.244140625,
+              "n_fields": 3,
+              "z": 312.0338439941406
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 8.287962316444464e-09,
+              "x": 1.0,
+              "n_fields": 3,
+              "z": 0.0
+            },
+            "name": "small1"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -4188.41845703125,
+              "x": 25531.244140625,
+              "n_fields": 3,
+              "z": -6239.06298828125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 8.287962316444464e-09,
+              "x": 1.0,
+              "n_fields": 3,
+              "z": 0.0
+            },
+            "name": "small2"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -4188.41845703125,
+              "x": 25531.244140625,
+              "n_fields": 3,
+              "z": 6986.38720703125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": 8.287962316444464e-09,
+              "x": 1.0,
+              "n_fields": 3,
+              "z": 0.0
+            },
+            "name": "small3"
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": 56,
+      "data": {
+        "directionalLocators": [
+          {
+            "category": "undockPointLarge",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -4186.1845703125,
+              "x": 3809.161865234375,
+              "n_fields": 3,
+              "z": 3937.866455078125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -0.15876851975917816,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 0.987315833568573
+            },
+            "name": "subcapital1"
+          },
+          {
+            "category": "undockPointLarge",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -3852.857421875,
+              "x": -4161.31298828125,
+              "n_fields": 3,
+              "z": 3937.86669921875
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -0.15128788352012634,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 0.9884897470474243
+            },
+            "name": "subcapital2"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -1173.575927734375,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 4852.0673828125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -0.15890075266361237,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 0.9872945547103882
+            },
+            "name": "subcapital3"
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": 57,
+      "data": {
+        "directionalLocators": [
+          {
+            "category": "undockPointCapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -3925.339111328125,
+              "x": -4234.4853515625,
+              "n_fields": 3,
+              "z": 4186.6513671875
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -0.06496234983205795,
+              "x": -9.094947449716085e-16,
+              "n_fields": 3,
+              "z": 0.9978877305984497
+            },
+            "name": "capital1"
+          },
+          {
+            "category": "undockPointCapital",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -3925.3388671875,
+              "x": 4198.35107421875,
+              "n_fields": 3,
+              "z": 4186.65087890625
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -0.06496234983205795,
+              "x": -9.094947449716085e-16,
+              "n_fields": 3,
+              "z": 0.9978877305984497
+            },
+            "name": "capital2"
+          },
+          {
+            "category": "undockPointLarge",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -1699.488037109375,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 5270.08935546875
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -0.15876851975917816,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 0.987315833568573
+            },
+            "name": "subcapital1"
+          },
+          {
+            "category": "undockPointLarge",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -3907.9033203125,
+              "x": -3814.206787109375,
+              "n_fields": 3,
+              "z": 4500.0
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -0.10175151377916336,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 0.9948098659515381
+            },
+            "name": "subcapital2"
+          },
+          {
+            "category": "undockPointLarge",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -3907.9033203125,
+              "x": 3717.98486328125,
+              "n_fields": 3,
+              "z": 4500.0
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -0.10175151377916336,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 0.9948098659515381
+            },
+            "name": "subcapital3"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -985.3684692382812,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 5272.80126953125
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -0.15890075266361237,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 0.9872945547103882
+            },
+            "name": "subcapital4"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -3907.9033203125,
+              "x": -4660.40771484375,
+              "n_fields": 3,
+              "z": 4500.0
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -0.10175151377916336,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 0.9948098659515381
+            },
+            "name": "subcapital5"
+          },
+          {
+            "category": "undockPointSmall",
+            "position": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -3907.9033203125,
+              "x": 4689.45947265625,
+              "n_fields": 3,
+              "z": 4500.0
+            },
+            "direction": {
+              "n_sequence_fields": 3,
+              "n_unnamed_fields": 0,
+              "y": -0.10175151377916336,
+              "x": 0.0,
+              "n_fields": 3,
+              "z": 0.9948098659515381
+            },
+            "name": "subcapital6"
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/graphiclocations",
+      "key": 2071,
+      "data": {
+        "directionalLocators": []
+      }
     }
   ]
 }

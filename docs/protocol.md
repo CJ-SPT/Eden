@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Athanor setup flow audit](protocol/structures.md#athanor-setup-flow-audit--november-16-2026)
+covers docked outside views, undock handoffs, personal inventory access, automatic fitting and service dogma.
+
 [Structure hangars and controlled undocking](protocol/structures.md#structure-hangar-container-and-controlled-undocking--november-16-2026)
 handles the native structure-container alias and launches the real ship when undocking from structure control.
 

@@ -94,7 +94,7 @@ internal sealed partial class FlightSession(
             commandBursts,
             fleets
         );
-    private FlightSceneContext SceneContext => new(Pilot, InBallpark || _controlledStructureId.HasValue, CanTarget, _simulatedStamp);
+    private FlightSceneContext SceneContext => new(Pilot, InBallpark || Pilot.InStructure, CanTarget, _simulatedStamp);
     private long? _controlledStructureId;
 
     internal void SetStructureControl(long? structureId)
@@ -971,12 +971,13 @@ internal sealed partial class FlightSession(
 
     private void SnapshotCore()
     {
-        if (_controlledStructureId is long structureId)
+        if (Pilot.InStructure)
         {
+            long structureId = Pilot.DockedLocationId;
             var addition = Ballpark.AddObjects(Scene.Objects, Stamp);
             if (!Scene.Objects.Any(body => body.Id == structureId))
             {
-                throw new InvalidDataException("The controlled structure is no longer in this system.");
+                throw new InvalidDataException("The docked structure is no longer in this system.");
             }
             Updates.Add(
                 new(
@@ -1353,7 +1354,7 @@ internal sealed partial class FlightSession(
             _navigation.SetVelocity(launch.Velocity);
             return PilotCallResult.None;
         }
-        if (command is FlightCommand.RefreshState && _controlledStructureId.HasValue)
+        if (command is FlightCommand.RefreshState && Pilot.InStructure)
         {
             Snapshot();
             return PilotCallResult.None;
