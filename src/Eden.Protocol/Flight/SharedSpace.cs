@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Docking;
@@ -141,7 +142,8 @@ internal sealed record ShipContact(
     GateArrivalContact? GateArrival = null,
     long? DepartureAt = null,
     bool Cloaked = false,
-    SpatialActivation? MicroJump = null
+    SpatialActivation? MicroJump = null,
+    GateCamp? Camp = null
 );
 
 internal sealed record MotionOrder(long Sequence, StampedDestinyUpdate Update);

@@ -49,6 +49,42 @@ public sealed class InterdictionTests
         Assert.Throws<InvalidDataException>(() => InterdictionRules.Resolve(new(double.NaN, 0, 0), destination, []));
     }
 
+    [Fact]
+    public void CamperSpendsOneProbeAndTrappedPilotBurnsClearBeforeWarping()
+    {
+        using var fixture = Prepare();
+        long ship = fixture.ShipId;
+        long module = fixture.Fit(Launcher);
+        Load(fixture, module, Probe);
+        var pilot = fixture.Db.Store.FindPilot(1000001)!;
+        fixture.Db.Store.SetPosition(ship, SpacePosition.Zero, pilot.SystemId);
+        pilot = fixture.Db.Store.FindPilot(1000001)!;
+        using ResidentFitCache cache = new(new(fixture.Db.Path));
+        using LiveWorld live = new(new(fixture.Db.Path), fixture.Clock, _ => { });
+        var defense = fixture.Db.Services.GetRequiredService<Eden.World.Capsuleers.CapsuleerDefense>();
+        Assert.True(defense.LaunchProbe(pilot, module, fixture.Clock.Now) > 0);
+        var store = fixture.Db.Services.GetRequiredService<IPilotInterdiction>();
+        Assert.Single(store.Contacts(pilot.SystemId, fixture.Clock.Now));
+        Assert.Equal(2, Assert.Single(fixture.Db.Services.GetRequiredService<IPilotAmmunition>().Read(pilot.PilotId, ship)).Quantity);
+        NavigationState navigation = new();
+        StaticSpaceObject target = new(1234, 1, 0, 0, 0, new(1_000_000, 0, 0), 0);
+        Assert.True(navigation.StartWarp(ship, pilot.Flight, SpacePosition.Zero, target, 0, 0));
+        Assert.True(defense.NavigateField(pilot, navigation, target, false, 0, fixture.Clock.Now, false));
+        Assert.Null(navigation.WarpDestination);
+        Assert.True(navigation.Direction!.X > 0);
+        for (int stamp = 1; stamp < 1500; stamp++)
+        {
+            var tick = navigation.Advance(ship, stamp, pilot.Flight, pilot.Position!, _ => target, []);
+            pilot = pilot with { Position = tick.Position };
+            if (!defense.NavigateField(pilot, navigation, target, true, stamp, fixture.Clock.Now, false))
+            {
+                break;
+            }
+        }
+        Assert.True(pilot.Position!.Length > 20_000);
+        Assert.NotNull(navigation.WarpDestination);
+    }
+
     [Theory]
     [InlineData(Probe, 20000, 120)]
     [InlineData(Surgical, 10000, 180)]

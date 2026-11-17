@@ -445,6 +445,7 @@ Historical native observations apply only to the recorded revision and actions. 
 
 [Cloaking and standard micro-jump drives](protocol/navigation.md#cloaking-and-standard-micro-jump-drives-november-9-2026) cover module visibility, saved delays, covert warp and paid standard-drive spools.
 
+[Temporary gate camps](protocol/capsuleers.md#temporary-gate-camps) ·
 [Nullsec PvP roams](protocol/capsuleers.md#nullsec-pvp-roams) ·
 [Pilot awareness and ratting](protocol/capsuleers.md#pilot-awareness-and-ratting) ·
 [Hauler freight settings](protocol/capsuleers.md#hauler-freight-settings) ·

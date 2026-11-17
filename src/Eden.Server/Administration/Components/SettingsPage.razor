@@ -223,6 +223,18 @@ else
                 <label><InputCheckbox @bind-Value="Form.SituationalAwareness" />React to ships and remember dangerous belts</label>
                 <label><InputCheckbox @bind-Value="Form.BeltRatting" />Run belt-ratting sorties</label>
                 <label><InputCheckbox @bind-Value="Form.AnomalyRatting" />Run ordinary combat anomalies</label>
+                <label><InputCheckbox @bind-Value="Form.GateCamps" />Temporary gate camps</label>
+                <label><InputCheckbox @bind-Value="Form.LowsecGateCamps" />Lowsec camps against legal targets</label>
+                <label><InputCheckbox @bind-Value="Form.CampBubbles" />Launch fitted interdiction probes</label>
+                <label>Camp chance per departure (%)
+                    <InputNumber @bind-Value="Form.CampPercent" />
+                </label>
+                <label>Gate camp shift length (seconds)
+                    <InputNumber @bind-Value="Form.CampSeconds" />
+                </label>
+                <label>Interdictors among generated nullsec combat fits (%)
+                    <InputNumber @bind-Value="Form.InterdictorPercent" />
+                </label>
                 <label><InputCheckbox @bind-Value="Form.RoamingPvp" />Nullsec PvP roams</label>
                 <label>Roam chance per departure (%)
                     <InputNumber @bind-Value="Form.RoamPercent" />

@@ -58,6 +58,14 @@ public sealed class SettingsForm
     public int RoamPercent { get; set; }
     public int GeneratedCombatPercent { get; set; }
 
+    public bool GateCamps { get; set; }
+    public bool LowsecGateCamps { get; set; }
+    public bool CampBubbles { get; set; }
+    public int CampPercent { get; set; }
+    public int CampSeconds { get; set; }
+
+    public int InterdictorPercent { get; set; }
+
     public bool GlobalProvisioning { get; set; }
     public bool SimulatedPilots { get; set; }
     public bool SimulatedMiners { get; set; }
@@ -288,6 +296,12 @@ public sealed class SettingsForm
             RoamingPvp = settings.Capsuleers.RoamingPvp,
             RoamPercent = settings.Capsuleers.RoamPercent,
             GeneratedCombatPercent = settings.Capsuleers.GeneratedCombatPercent,
+            GateCamps = settings.Capsuleers.GateCamps,
+            LowsecGateCamps = settings.Capsuleers.LowsecGateCamps,
+            CampBubbles = settings.Capsuleers.CampBubbles,
+            CampPercent = settings.Capsuleers.CampPercent,
+            CampSeconds = settings.Capsuleers.CampSeconds,
+            InterdictorPercent = settings.Capsuleers.InterdictorPercent,
             GateVisitors = settings.Capsuleers.GateVisitors,
             CheckpointSeconds = settings.Simulation.CheckpointSeconds,
             MarketPollMilliseconds = settings.Simulation.MarketPollMilliseconds,
@@ -354,6 +368,12 @@ public sealed class SettingsForm
                 RoamingPvp = RoamingPvp,
                 RoamPercent = RoamPercent,
                 GeneratedCombatPercent = GeneratedCombatPercent,
+                GateCamps = GateCamps,
+                LowsecGateCamps = LowsecGateCamps,
+                CampBubbles = CampBubbles,
+                CampPercent = CampPercent,
+                CampSeconds = CampSeconds,
+                InterdictorPercent = InterdictorPercent,
                 Freight = new(
                     FreightVariedHulls,
                     FreightOrdinaryMinimumIsk,

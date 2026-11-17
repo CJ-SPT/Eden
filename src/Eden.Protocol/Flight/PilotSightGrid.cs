@@ -111,7 +111,8 @@ internal sealed class PilotSightGrid
                                     pilot.AllianceId,
                                     at,
                                     ship.Velocity,
-                                    pilot.Flight.ShipRadius
+                                    pilot.Flight.ShipRadius,
+                                    ship.Camp
                                 )
                             );
                         }

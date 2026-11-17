@@ -17,10 +17,19 @@ namespace Eden.Protocol.Tests.Capsuleers;
 
 public sealed class PatrolTests
 {
-    [Fact]
-    public void GeneratedNullsecPilotsOwnTheirFitWithoutAnImportedIdentity()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void GeneratedNullsecPilotsOwnTheirFitWithoutAnImportedIdentity(bool interdictor)
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        if (interdictor)
+        {
+            PassiveCatalogFixture.LoadFrigateHulls(f.Database.CatalogPath);
+            PassiveCatalogFixture.LoadWormholes(f.Database.CatalogPath);
+            PassiveCatalogFixture.LoadTackleTiers(f.Database.CatalogPath, new HashSet<int> { 447 });
+            PassiveCatalogFixture.LoadInterdiction(f.Database.CatalogPath);
+        }
         using (CatalogDbContext edit = new(f.Database.CatalogPath, writable: true))
         {
             edit.Database.ExecuteSqlRaw(
@@ -32,6 +41,7 @@ public sealed class PatrolTests
         var saved = config.Read();
         var form = SettingsForm.From(saved.Active.Draft.Settings);
         form.GeneratedCombatPercent = 100;
+        form.InterdictorPercent = interdictor ? 100 : 0;
         form.RoamPercent = 100;
         var settings = form.Build();
         config.Save(saved.Generation, saved.Active.Draft with { Settings = settings }, "combat fits");
@@ -40,8 +50,18 @@ public sealed class PatrolTests
         provisioner.EnsureSystem(30000141);
         using WorldDbContext world = new(f.Database.Path);
         var pilot = Assert.Single(world.Set<SavedCapsuleerHauler>());
-        Assert.Equal(603, world.Ships.Find(pilot.FounderShipId)!.TypeId);
-        Assert.Equal(2, world.Set<OwnedItem>().Count(i => i.LocationId == pilot.FounderShipId && i.Online && i.TypeId == 561));
+        Assert.Equal(interdictor ? 22456 : 603, world.Ships.Find(pilot.FounderShipId)!.TypeId);
+        if (interdictor)
+        {
+            var launcher = world.Set<OwnedItem>().Single(i => i.LocationId == pilot.FounderShipId && i.Online && i.TypeId == 22782);
+            var probes = world.Set<OwnedItem>().Single(i => i.LocationId == launcher.Id);
+            Assert.Equal(22778, probes.TypeId);
+            Assert.Equal(3, probes.Quantity);
+        }
+        Assert.Equal(
+            interdictor ? 0 : 2,
+            world.Set<OwnedItem>().Count(i => i.LocationId == pilot.FounderShipId && i.Online && i.TypeId == 561)
+        );
         Assert.Empty(world.Set<SavedTrafficIdentity>());
         using CatalogDbContext catalog = new(f.Database.CatalogPath);
         Assert.Null(CapsuleerPatrolFit.Select(catalog, settings.Capsuleers, 1, 30000142, 0));
@@ -49,8 +69,10 @@ public sealed class PatrolTests
         Assert.Throws<InvalidDataException>(() => CapsuleerPopulationRules.Validate(settings.Capsuleers with { RoamPercent = 101 }));
     }
 
-    [Fact]
-    public void FittedPilotUndocksPatrolsSeveralGridsAndReturns()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FittedPilotUndocksVisitsItsAssignedGridsAndReturns(bool camp)
     {
         using CapsuleerHaulerTests.Fixture f = new(isolateRoute: true);
         var founder = f.Founder();
@@ -87,6 +109,9 @@ public sealed class PatrolTests
         var form = SettingsForm.From(saved.Active.Draft.Settings);
         form.RoamPercent = 100;
         form.GeneratedCombatPercent = 100;
+        form.GateCamps = camp;
+        form.CampPercent = 100;
+        form.CampSeconds = 180;
         form.BeltRatting = form.AnomalyRatting = false;
         config.Save(saved.Generation, saved.Active.Draft with { Settings = form.Build() }, "always roam");
         WorldInitialization.Initialize(f.Database, f.Clock);
@@ -99,7 +124,10 @@ public sealed class PatrolTests
         var observation = scheduler.Hauler(founder.PilotId)!;
         for (int i = 0; i < 1600; i++)
         {
-            if (observation.Work.Ratting is { Phase: RattingPhase.Searching, Patrol.Kind: PatrolKind.Roam } activity)
+            if (
+                observation.Work.Ratting is { Phase: RattingPhase.Searching, Patrol: { } patrol } activity
+                && patrol.Kind == (camp ? PatrolKind.GateCamp : PatrolKind.Roam)
+            )
             {
                 visited.Add(activity.Belts[activity.BeltIndex]);
             }
@@ -113,7 +141,7 @@ public sealed class PatrolTests
         }
         var job = scheduler.Jobs().Single(j => j.PilotId == founder.PilotId);
         Assert.True(
-            visited.Count >= 2,
+            camp ? visited.Count == 1 : visited.Count >= 2,
             $"Visited {visited.Count} grids, job {job}, last activity {observation.Work.Activity}, {observation.Work.WaitingReason}"
         );
         Assert.Null(observation.Pilot.Position);

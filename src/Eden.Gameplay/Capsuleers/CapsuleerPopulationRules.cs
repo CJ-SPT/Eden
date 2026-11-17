@@ -12,6 +12,10 @@ public static class CapsuleerPopulationRules
     public static void Validate(CapsuleerPopulationPolicy policy)
     {
         policy.Freight.Validate();
+        if (policy.InterdictorPercent is < 0 or > 100 || policy.CampPercent is < 0 or > 100 || policy.CampSeconds is < 30 or > 1800)
+        {
+            throw new InvalidDataException("Camp chance must be 0 to 100 percent and shifts must be 30 to 1800 seconds.");
+        }
         if (policy.RoamPercent is < 0 or > 100 || policy.GeneratedCombatPercent is < 0 or > 100)
         {
             throw new InvalidDataException("Patrol percentages must be between 0 and 100.");

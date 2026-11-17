@@ -48,6 +48,7 @@ public sealed record HaulerProgress(
     public long ActivitySequence { get; init; }
     public TravelerRoutine? Routine { get; init; }
     public CapsuleerDefenseState? Defense { get; init; }
+    public bool EscapingBubble { get; init; }
     public int LastMotionStamp { get; init; } = int.MinValue;
 }
 

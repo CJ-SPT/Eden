@@ -14,7 +14,10 @@ public enum InterdictionKind
 
 public sealed record InterdictionSphere(long Id, SpacePosition Center, double Radius);
 
-public sealed record InterdictionWarp(bool Blocked, SpacePosition Destination, long? FieldId = null);
+public sealed record InterdictionWarp(bool Blocked, SpacePosition Destination, long? FieldId = null)
+{
+    public SpacePosition? EscapePoint { get; init; }
+}
 
 public sealed record InterdictionActivation(
     long ModuleId,
@@ -154,7 +157,12 @@ public static class InterdictionRules
             }
             if (origin.DistanceTo(field.Center) <= field.Radius)
             {
-                return new(true, destination, field.Id);
+                var outward = origin - field.Center;
+                if (outward.Length <= 1)
+                {
+                    outward = direction.Length > 1 ? direction : new SpacePosition(1, 0, 0);
+                }
+                return new(true, destination, field.Id) { EscapePoint = field.Center + outward.Unit * (field.Radius + 1000) };
             }
             if (distance <= 1 || field.Center.DistanceTo(destination) > CaptureDistance)
             {

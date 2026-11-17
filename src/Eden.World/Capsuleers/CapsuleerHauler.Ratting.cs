@@ -120,7 +120,7 @@ internal sealed partial class CapsuleerHauler
     private bool TryLaunchSortie(ResupplyProgress supplies)
     {
         var policy = database.Settings.Capsuleers;
-        if (!policy.BeltRatting && !policy.AnomalyRatting && !policy.RoamingPvp)
+        if (!policy.BeltRatting && !policy.AnomalyRatting && !policy.RoamingPvp && !policy.GateCamps)
         {
             return false;
         }
@@ -158,7 +158,7 @@ internal sealed partial class CapsuleerHauler
         }
         long sequence = checked(Work.ActivitySequence + 1);
         _work = Work with { ActivitySequence = sequence };
-        if (TryLaunchPatrol(sequence))
+        if (TryLaunchCamp(sequence, profile) || TryLaunchPatrol(sequence))
         {
             return true;
         }
@@ -243,7 +243,16 @@ internal sealed partial class CapsuleerHauler
         }
         _work = Work with { WaitingReason = null };
         _navigation.CancelAlignment();
-        if (!_navigation.StartWarp(Pilot.ShipId, Pilot.Flight, Pilot.Position!, _target!, 0, Work.Stamp))
+        if (
+            !_navigation.StartWarp(
+                Pilot.ShipId,
+                Pilot.Flight,
+                Pilot.Position!,
+                _target!,
+                Work.Ratting is { Phase: RattingPhase.TravellingToBelt, Patrol.Camp: { } camp } ? GateCampRules.StandOff(camp.Role) : 0,
+                Work.Stamp
+            )
+        )
         {
             Follow();
         }

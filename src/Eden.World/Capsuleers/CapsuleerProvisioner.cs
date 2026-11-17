@@ -468,7 +468,9 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         world.Database.ExecuteSql(
             $"INSERT INTO WorldShip(Id,OwnerId,TypeId,StationId,Name) VALUES ({ship},{pilot},{hull},{station},{name})"
         );
-        bool blueprint = _startupReservations is not null && (career == CapsuleerCareer.Hauling || _requirePreparedBlueprints);
+        bool blueprint =
+            trafficProfile is null && fittedProfile is not null
+            || _startupReservations is not null && (career == CapsuleerCareer.Hauling || _requirePreparedBlueprints);
         if (!blueprint)
         {
             StartingSkills.Grant(world, catalog, pilot, origin.RaceId);

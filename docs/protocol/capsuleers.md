@@ -2,6 +2,45 @@
 
 [Protocol index](../protocol.md)
 
+## Temporary gate camps
+
+An eligible departure can start or join a three-position local watch. Members choose the same gate and shift.
+Their fitted tackle, damage and scouting ships warp to different stand-off ranges. Scouts report visible ships
+for 12 seconds. Combatants verify presence, distance and Crimewatch legality before locking or firing.
+The watch disperses under superior visible numbers and expires at the end of its configured shift.
+Lowsec camps are opt-in and take legal targets. Warp, jump and docking use the normal travel and weapons timers.
+
+A generated nullsec Sabre starts with three disruption probes, a scrambler, a 125mm autocannon and EMP S.
+The fitted launcher spends a charge and capacitor. A trapped simulated pilot can burn out of a field, retry
+its original warp, or jump a gate within reach. The same interdiction rules govern warp drag and catch.
+
+Gameplay references include [EVE University gate camps](https://wiki.eveuniversity.org/Gatecamps),
+[EVE University interdictors](https://wiki.eveuniversity.org/Interdictors) and the [Eden interdiction protocol record](interdiction.md).
+
+**Automated validation.** The first focused role test was
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.GateCampTests.ThreePilotsCoordinateOnOneGateAndDisperseAtTheShiftBoundary`.
+The resident integration cases cover a saved camp sharing one target after startup, normal scan and gun cycles, paid tackle,
+generated Sabre fit and magazine, paid probe deployment, sub-warp escape, ordinary docking, and configuration round trips.
+The scout, tackler and damage ship test took 9.23 ms median, 14.72 ms p95 and 17.69 ms maximum during the combined run.
+It recorded zero SQL commands and connections. Tackle changes caused eight fit evaluations across four of the 20 warmed frames.
+All 216 affected .NET cases passed in 77 seconds. The solution built cleanly in 10.02 seconds, and both Python policy suites
+passed (8 and 9 cases). The full .NET suite was outside the requested validation scope.
+
+After the camp changes, an isolated repeat of the five-case patrol matrix passed in 36 seconds. Each requested case
+completed every due job and updated every observer in each of 20 warmed frames, with zero SQL commands, connections and
+fit calculations. Formatting checked 2,461 files and the line-width and diff checks passed.
+
+| Pilots / observers | Median ms | p95 ms | Maximum ms | Checkpoint capture / projection / write ms |
+| --- | ---: | ---: | ---: | --- |
+| 50 / 2 | 11.92 | 14.61 | 14.65 | 0.41 / 9.83 / 14.52 |
+| 50 / 4 | 19.63 | 22.93 | 24.19 | 0.34 / 16.05 / 16.96 |
+| 100 / 2 | 34.23 | 49.32 | 52.33 | 0.76 / 31.40 / 18.35 |
+| 100 / 4 | 40.31 | 44.21 | 45.35 | 0.51 / 28.68 / 18.47 |
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Observe the scout and tackler landing, then try to leave a camp by gate or warp.
+
 ## Nullsec PvP roams
 
 Armed pilots can undock and patrol up to four local belts and gates. Hunters wait for visible targets, a real lock and

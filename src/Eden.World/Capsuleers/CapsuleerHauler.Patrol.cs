@@ -24,17 +24,18 @@ internal sealed partial class CapsuleerHauler
         {
             return false;
         }
+        LaunchPatrol(patrol, grids, TimeSpan.FromMinutes(RattingRules.MaximumMinutes).Ticks);
+        return true;
+    }
+
+    private void LaunchPatrol(PatrolProgress patrol, long[] grids, long duration)
+    {
         _work = Work with
         {
-            Ratting = new(Pilot.StationId, grids, 0, TimeSpan.FromMinutes(RattingRules.MaximumMinutes).Ticks)
-            {
-                Patrol = patrol,
-                LastObservedAt = Now,
-            },
+            Ratting = new(Pilot.StationId, grids, 0, duration) { Patrol = patrol, LastObservedAt = Now },
         };
         LaunchActivity();
         FlyToBelt();
-        return true;
     }
 
     private bool PatrolAllowed(PatrolProgress patrol) =>
@@ -47,6 +48,10 @@ internal sealed partial class CapsuleerHauler
 
     private CapsuleerAttacker? PatrolTarget(RattingProgress activity, PatrolProgress patrol)
     {
+        if (patrol.Camp is { } camp && activity.Phase != RattingPhase.Returning)
+        {
+            return CampTarget(activity, patrol, camp);
+        }
         if (activity.RemainingTicks <= 0 || !PatrolAllowed(patrol) || Work.Retreating)
         {
             _work = Work with { Ratting = activity with { Phase = RattingPhase.Returning, TargetId = 0 }, Retreating = true };

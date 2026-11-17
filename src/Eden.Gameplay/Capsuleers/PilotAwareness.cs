@@ -12,7 +12,8 @@ public sealed record PilotSighting(
     int? AllianceId,
     SpacePosition Position,
     SpacePosition Velocity,
-    float Radius
+    float Radius,
+    GateCamp? Camp = null
 );
 
 public sealed record BeltMemory(long BeltId, long Until);

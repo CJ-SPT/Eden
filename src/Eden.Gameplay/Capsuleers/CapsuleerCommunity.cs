@@ -52,6 +52,7 @@ public sealed record MinerProgress(
     public BeltMemory[] AvoidedBelts { get; init; } = [];
     public bool LeaveAfterCycle { get; init; }
     public CapsuleerDefenseState? Defense { get; init; }
+    public bool EscapingBubble { get; init; }
     public int LastMotionStamp { get; init; } = int.MinValue;
 }
 

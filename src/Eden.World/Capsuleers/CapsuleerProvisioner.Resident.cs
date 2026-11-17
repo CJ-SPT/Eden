@@ -318,7 +318,9 @@ internal sealed partial class CapsuleerProvisioner
                 SchoolId = origin.SchoolId,
             }
         );
-        bool blueprint = _startupReservations is not null && (career == CapsuleerCareer.Hauling || _requirePreparedBlueprints);
+        bool blueprint =
+            trafficProfile is null && fittedProfile is not null
+            || _startupReservations is not null && (career == CapsuleerCareer.Hauling || _requirePreparedBlueprints);
         if (!blueprint)
         {
             StartingSkills.Grant(world, catalog, pilot, origin.RaceId);

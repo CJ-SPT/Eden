@@ -687,6 +687,20 @@ internal sealed class CapsuleerMiner(
             return;
         }
         _work = Work with { LastMotionStamp = Work.Stamp };
+        if (_target is not null && (_navigation.WarpDestination is not null || Work.EscapingBubble))
+        {
+            bool escaping = defense.NavigateField(
+                Pilot,
+                _navigation,
+                _target,
+                Work.EscapingBubble,
+                Work.Stamp,
+                Now,
+                _warpBlocked,
+                ApproachRange
+            );
+            _work = Work with { EscapingBubble = escaping };
+        }
         bool wasWarping = _navigation.Warp is not null;
         var tick = _navigation.Advance(
             Pilot.ShipId,
@@ -718,7 +732,7 @@ internal sealed class CapsuleerMiner(
     private void Travel()
     {
         Move();
-        if (_navigation.Warp is not null || _navigation.WarpDestination is not null)
+        if (_navigation.Warp is not null || _navigation.WarpDestination is not null || Work.EscapingBubble)
         {
             return;
         }

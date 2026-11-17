@@ -9,10 +9,12 @@ namespace Eden.Gameplay.Capsuleers;
 public enum PatrolKind
 {
     Roam,
+    GateCamp,
 }
 
 public sealed record PatrolProgress(PatrolKind Kind, int SystemId)
 {
+    public GateCamp? Camp { get; init; }
     public long NextLook { get; init; }
     public long LeaveGridAt { get; init; }
 }
@@ -26,7 +28,10 @@ public static class PatrolRules
         TravelerRoutineRules.Mix((ulong)pilot ^ TravelerRoutineRules.Mix((ulong)sequence)) % 100 < (ulong)percent;
 
     public static bool Allowed(PatrolProgress patrol, double security, CapsuleerPopulationPolicy policy) =>
-        security <= 0 && policy.RoamingPvp;
+        patrol.Kind == PatrolKind.Roam
+            ? security <= 0 && policy.RoamingPvp
+            : policy.GateCamps
+                && (security <= 0 || policy.LowsecGateCamps && TrafficRules.SecurityBand(security) == TrafficSecurityBand.Low);
 
     public static int DwellSeconds(long pilot, long grid) => 18 + (int)(TravelerRoutineRules.Mix((ulong)(pilot ^ grid)) % 23);
 

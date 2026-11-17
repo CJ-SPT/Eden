@@ -53,6 +53,18 @@ retain their existing deferral rules. Use **Refresh population** while pilots tr
 visitors. Ordinary Local receives complete membership batches; delayed Local keeps its normal privacy rules.
 
 
+## Temporary gate camps
+
+Eligible combat pilots can form a three-ship camp at a local gate. A scout reports visible ships, a fitted tackler can
+hold a target, and a damage pilot fires after locking. Camp members share recent sightings and disperse when outnumbered.
+Nullsec camps are enabled by default, with a 20% chance per eligible departure during an open shift. A shift lasts
+240 seconds, followed by an equally long closed period. Operators can set the chance to 0–100% and the duration to
+30–1,800 seconds. The separate lowsec option defaults off and permits only legal targets when enabled.
+
+Bubble use defaults on. With the full catalog, 12% of newly generated nullsec combat fits can be interdictors.
+Change the percentage or disable bubble launches in the simulated pilot settings. New camp Sabres have an autocannon,
+a scrambler and three real disruption probes. Simulated travelers obey bubble drag and catch geometry and can burn clear.
+
 ## PvP roams
 
 Nullsec PvP roams default on. The default roam chance is 30% per eligible departure and 35% of new generated nullsec

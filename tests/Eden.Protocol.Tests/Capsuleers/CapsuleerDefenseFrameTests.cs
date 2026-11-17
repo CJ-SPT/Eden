@@ -120,9 +120,19 @@ public sealed class CapsuleerDefenseFrameTests(ITestOutputHelper output)
     [InlineData(50, 4)]
     [InlineData(100, 2)]
     [InlineData(100, 4)]
-    public async Task ArmedPatrolsOnOneGridWithFullObservers(int pilotCount, int observers)
+    public Task ArmedPatrolsOnOneGridWithFullObservers(int pilotCount, int observers) => CombatFrames(pilotCount, observers, false);
+
+    [Fact]
+    public Task ScoutReportsAndCampPartnersTackleAndFireOnTheSameVisibleShip() => CombatFrames(3, 2, true);
+
+    private async Task CombatFrames(int pilotCount, int observers, bool camp)
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        if (camp)
+        {
+            PassiveCatalogFixture.LoadTackleTiers(f.Database.CatalogPath);
+            PassiveCatalogFixture.LoadInterdiction(f.Database.CatalogPath);
+        }
         using (CatalogDbContext edit = new(f.Database.CatalogPath, writable: true))
         {
             edit.Database.ExecuteSqlRaw(
@@ -201,6 +211,10 @@ public sealed class CapsuleerDefenseFrameTests(ITestOutputHelper output)
                     HullTypeId = 603,
                     Equipment = [new(561, (int)InventoryFlag.HighSlot0, 1), new(215, (int)InventoryFlag.HighSlot0, 50)],
                 };
+                if (camp && i == (int)CampRole.Tackle)
+                {
+                    fit = fit with { Equipment = [.. fit.Equipment, new(447, (int)InventoryFlag.MediumSlot0, 1)] };
+                }
                 TrafficFitting.Apply(world, catalog, founder.PilotId, founder.FounderShipId, fit, f.Clock.Now);
                 SqliteWorld.SetPosition(
                     world,
@@ -223,7 +237,9 @@ public sealed class CapsuleerDefenseFrameTests(ITestOutputHelper output)
                     Ratting = new(founder.SourceStationId, [gate.Id], 0, TimeSpan.FromMinutes(5).Ticks)
                     {
                         Phase = RattingPhase.Searching,
-                        Patrol = new(PatrolKind.Roam, SourceSystem),
+                        Patrol = camp
+                            ? new(PatrolKind.GateCamp, SourceSystem) { Camp = new(gate.Id, TimeSpan.FromMinutes(4).Ticks, (CampRole)i) }
+                            : new(PatrolKind.Roam, SourceSystem),
                     },
                 };
                 new HaulerCheckpoint(founder.PilotId, work).Apply(world);
@@ -236,7 +252,7 @@ public sealed class CapsuleerDefenseFrameTests(ITestOutputHelper output)
                     world,
                     catalog,
                     pilot.ActiveShipId,
-                    origin + new SpacePosition(80_000, pilot.AccountId - 1000000, 0),
+                    origin + new SpacePosition(camp && pilot.Id == Enemy ? 1500 : 80_000, pilot.AccountId - 1000000, 0),
                     SourceSystem,
                     f.Clock.Now
                 );
@@ -257,6 +273,9 @@ public sealed class CapsuleerDefenseFrameTests(ITestOutputHelper output)
             HashSet<long> fired = [];
             List<double> times = [];
             int maximumWakes = 0;
+            bool tackled = false;
+            int fittingFrames = 0;
+            int fittingEvaluations = 0;
             for (int frame = 0; frame < 36; frame++)
             {
                 f.Clock.Seconds++;
@@ -285,7 +304,27 @@ public sealed class CapsuleerDefenseFrameTests(ITestOutputHelper output)
                     times.Add(Stopwatch.GetElapsedTime(start).TotalMilliseconds);
                     Assert.Equal(0, metrics.Commands);
                     Assert.Equal(0, metrics.Connections);
-                    Assert.Equal(0, metrics.FittingCalculations);
+                    if (!camp)
+                    {
+                        Assert.Equal(0, metrics.FittingCalculations);
+                    }
+                    else if (metrics.FittingCalculations > 0)
+                    {
+                        fittingFrames++;
+                        fittingEvaluations += metrics.FittingCalculations;
+                    }
+                }
+                if (camp)
+                {
+                    var tackler = scheduler.Hauler(pilots[(int)CampRole.Tackle])!.Work.Defense;
+                    if (tackler?.TargetId > 0)
+                    {
+                        Assert.Equal(EnemyShip, tackler.TargetId);
+                    }
+                    if (tackler?.TargetId == EnemyShip && tackler.Cycles.Any(c => c.Effect == DogmaEffect.WarpScrambler))
+                    {
+                        tackled = true;
+                    }
                 }
                 foreach (long pilot in pilots)
                 {
@@ -295,7 +334,17 @@ public sealed class CapsuleerDefenseFrameTests(ITestOutputHelper output)
                     }
                 }
             }
-            Assert.Equal(pilotCount, fired.Count);
+            Assert.Equal(camp ? 2 : pilotCount, fired.Count);
+            if (camp)
+            {
+                Assert.True(tackled);
+                Assert.True(fittingFrames < times.Count / 2, $"Tackle fit work in {fittingFrames} of {times.Count} warmed frames.");
+                output.WriteLine($"Paid tackle affected fits in {fittingFrames} warmed frames, {fittingEvaluations} evaluations.");
+                Assert.DoesNotContain(pilots[(int)CampRole.Scout], fired);
+                var watch = host.GetRequiredService<CapsuleerDefense>()
+                    .Camps.At(SourceSystem, scheduler.Hauler(pilots[0])!.Work.Ratting!.Belts[0], TimeSpan.FromMinutes(4).Ticks, 0);
+                Assert.Equal(EnemyShip, watch!.Reported(TimeSpan.FromSeconds(36).Ticks));
+            }
             times.Sort();
             output.WriteLine(
                 $"{pilots.Length} pilots, {observers} observers, {fired.Count} fired, max {maximumWakes} wakes. "

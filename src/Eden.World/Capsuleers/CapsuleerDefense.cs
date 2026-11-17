@@ -43,6 +43,7 @@ internal sealed class CapsuleerDefense(
     IPilotMissiles missiles,
     IPilotDrones drones,
     IPilotCombatPresence presence,
+    IPilotInterdiction interdiction,
     IPilotTargetLocks locks,
     IPilotTackle tackle,
     IPilotElectronicWarfare warfare,
@@ -60,6 +61,64 @@ internal sealed class CapsuleerDefense(
     IPilotHealth health
 )
 {
+    internal long LaunchProbe(DockedPilot pilot, long launcher, long now)
+    {
+        if (pilot.Position is not { } position || interdiction.Resolve(pilot.ShipId, pilot.SystemId, position, position, now).Blocked)
+        {
+            return TimeSpan.FromSeconds(15).Ticks;
+        }
+        try
+        {
+            var launch = interdiction.Launch(pilot.PilotId, pilot.ShipId, launcher, now);
+            // The ordinary launcher owner enforces the charge, capacitor and reactivation costs.
+            return Math.Max(TimeSpan.FromSeconds(30).Ticks, launch.ReadyAt - now);
+        }
+        catch (InvalidDataException)
+        {
+            return TimeSpan.FromMinutes(1).Ticks;
+        }
+    }
+
+    internal bool NavigateField(
+        DockedPilot pilot,
+        NavigationState course,
+        StaticSpaceObject target,
+        bool escaping,
+        int stamp,
+        long now,
+        bool pointed,
+        double standOff = 0
+    )
+    {
+        if (course.Warp is not null || course.WarpDestination is null && !escaping)
+        {
+            return false;
+        }
+        var origin = pilot.Position!;
+        if (course.WarpDestination is null && !pointed)
+        {
+            course.StartWarp(pilot.ShipId, pilot.Flight, origin, target, standOff, stamp);
+        }
+        var outcome = interdiction.Resolve(pilot.ShipId, pilot.SystemId, origin, course.WarpDestination ?? target.Position, now);
+        if (outcome.EscapePoint is { } escape)
+        {
+            course.CancelAlignment();
+            course.AlignTo(origin, escape);
+            return true;
+        }
+        if (course.WarpDestination is { } destination && outcome.Destination != destination)
+        {
+            course.RedirectWarp(outcome.Destination);
+        }
+        if (escaping && course.WarpDestination is null)
+        {
+            course.Follow(pilot.ShipId, stamp, origin, pilot.Flight.ShipRadius, target, standOff, false, true);
+        }
+        return false;
+    }
+
+    internal CapsuleerGateCamps Camps { get; } = new();
+
     private const double MinimumCombatRange = 500;
 
     private const int RetrySeconds = 30;
@@ -194,7 +253,9 @@ internal sealed class CapsuleerDefense(
         var currentHealth = health.Read(pilot.PilotId, now);
         bool hasDamage =
             profile.Modules.Any(module =>
-                IsWeapon(module.Effect) && !state.Cycles.Any(cycle => cycle.ModuleId == module.Item.Id && cycle.Unavailable)
+                module.Item.GroupId != InterdictionRules.LauncherGroup
+                && IsWeapon(module.Effect)
+                && !state.Cycles.Any(cycle => cycle.ModuleId == module.Item.Id && cycle.Unavailable)
             )
             || drones.HasControlled(pilot.PilotId, pilot.ShipId)
             || !state.DroneLaunchAttempted
@@ -206,7 +267,8 @@ internal sealed class CapsuleerDefense(
                 pair.Value.Definition.Error is null && !state.Cycles.Any(cycle => cycle.ModuleId == pair.Key && cycle.Unavailable)
             );
             bool launchers = profile.Modules.Any(module =>
-                module.Effect is DogmaEffect.UseMissiles or DogmaEffect.AutoTargetingMissile
+                module.Item.GroupId != InterdictionRules.LauncherGroup
+                && module.Effect is DogmaEffect.UseMissiles or DogmaEffect.AutoTargetingMissile
                 && !state.Cycles.Any(cycle => cycle.ModuleId == module.Item.Id && cycle.Unavailable)
             );
             hasDamage =
@@ -258,6 +320,10 @@ internal sealed class CapsuleerDefense(
         var active = state.Cycles.ToDictionary(cycle => cycle.ModuleId);
         foreach (var module in profile.Modules.OrderBy(module => Priority(module.Effect)))
         {
+            if (module.Item.GroupId == InterdictionRules.LauncherGroup)
+            {
+                continue;
+            }
             var previous = active.GetValueOrDefault(module.Item.Id);
             if (previous?.ReadyAt > now && (!IsOffensive(module.Effect) || offensive && locked && previous.TargetId == target.ShipId))
             {
@@ -356,6 +422,19 @@ internal sealed class CapsuleerDefense(
             {
                 double fallback = profile.RattingWeapons.Length == 0 ? drones.Control(pilot.PilotId).Range * .75 : MinimumCombatRange;
                 double range = PilotAwareness.FightingRange(profile.RattingWeapons, profile.TargetRange, fallback);
+                if (proactive is { Npc: false })
+                {
+                    foreach (var module in profile.Modules)
+                    {
+                        if (
+                            module.Effect is DogmaEffect.WarpScrambler or DogmaEffect.WarpDisruptor
+                            && module.Attributes.GetValueOrDefault(DogmaAttributeId.MaxRange) is > 0 and var reach
+                        )
+                        {
+                            range = Math.Min(range, reach * .7);
+                        }
+                    }
+                }
                 bool orbit = proactive is not null && range < 10_000;
                 navigation.Follow(pilot.ShipId, stamp, pilot.Position, pilot.Flight.ShipRadius, body, range, orbit, true);
             }

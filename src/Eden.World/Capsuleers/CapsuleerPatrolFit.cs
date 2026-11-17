@@ -36,10 +36,58 @@ internal static class CapsuleerPatrolFit
         }
     );
 
-    internal static TrafficProfile? Select(CatalogDbContext catalog, CapsuleerPopulationPolicy policy, long seed, int system, int slot) =>
-        policy.RoamingPvp
-        && catalog.Definition(CapsuleerProvisioningCatalog.Security, system) <= 0
-        && PatrolRules.Choose(seed ^ system, slot, policy.GeneratedCombatPercent)
-            ? catalog.Definition(s_fit, 0)
-            : null;
+    private const int Sabre = 22456;
+    private const int SphereLauncher = 22782;
+    private const int WarpDisruptProbe = 22778;
+    private const int GatlingAutocannon = 484;
+    private const int EmpSmall = 185;
+    private static readonly CatalogDefinition<TrafficProfile?> s_interdictor = new(
+        "patrol-sabre",
+        (catalog, _) =>
+        {
+            if (
+                new[] { Sabre, SphereLauncher, WarpDisruptProbe, GatlingAutocannon, EmpSmall, Scrambler }.Any(id =>
+                    catalog.FittingType(id) is null
+                )
+            )
+            {
+                return null;
+            }
+            return new(
+                0,
+                "",
+                0,
+                DateTimeOffset.UnixEpoch,
+                0,
+                0,
+                TrafficSecurityBand.Null,
+                Sabre,
+                [
+                    new(GatlingAutocannon, (int)InventoryFlag.HighSlot0, 1),
+                    new(EmpSmall, (int)InventoryFlag.HighSlot0, 40),
+                    new(SphereLauncher, (int)InventoryFlag.HighSlot1, 1),
+                    new(WarpDisruptProbe, (int)InventoryFlag.HighSlot1, 3),
+                    new(Scrambler, (int)InventoryFlag.MediumSlot0, 1),
+                ]
+            );
+        }
+    );
+
+    internal static TrafficProfile? Select(CatalogDbContext catalog, CapsuleerPopulationPolicy policy, long seed, int system, int slot)
+    {
+        if ((!policy.RoamingPvp && !policy.GateCamps) || !PatrolRules.Choose(seed ^ system, slot, policy.GeneratedCombatPercent))
+        {
+            return null;
+        }
+        double security = catalog.Definition(CapsuleerProvisioningCatalog.Security, system);
+        if (security > 0 && !(policy.GateCamps && policy.LowsecGateCamps && TrafficRules.SecurityBand(security) == TrafficSecurityBand.Low))
+        {
+            return null;
+        }
+        var interdictor =
+            policy.GateCamps && policy.CampBubbles && security <= 0 && PatrolRules.Choose(seed ^ system, ~slot, policy.InterdictorPercent)
+                ? catalog.Definition(s_interdictor, 0)
+                : null;
+        return interdictor ?? catalog.Definition(s_fit, 0);
+    }
 }

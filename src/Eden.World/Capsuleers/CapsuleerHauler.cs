@@ -541,6 +541,10 @@ internal sealed partial class CapsuleerHauler(
         var schedule = Schedule();
         var next = job.Next(schedule.DueTicks, schedule.Action);
         _operation.Commit(next, null, new HaulerCheckpoint(pilotId, Work));
+        if (Work.Ratting is { Phase: RattingPhase.TravellingToBelt, Patrol.Camp: { } camp })
+        {
+            defense.Camps.At(Pilot.SystemId, camp.GateId, camp.Until, Work.ActiveTicks)?.Join(pilotId, false, camp.Role);
+        }
         Interlocked.CompareExchange(ref _threatenedShip, 0, Pilot.ShipId);
         return next;
     }
@@ -625,6 +629,10 @@ internal sealed partial class CapsuleerHauler(
         _tackleRevision = -1;
         _warpBlocked = false;
         _work = Live?.HaulerCheckpoints.GetValueOrDefault(pilotId)?.Work ?? HaulerCheckpoint.Read(Founder.Progress);
+        if (_work is { Ratting.Patrol.Camp: { } camp } && Work.ShipId == Pilot.ShipId)
+        {
+            defense.Camps.At(Pilot.SystemId, camp.GateId, camp.Until, Work.ActiveTicks)?.Join(pilotId, false, camp.Role);
+        }
         var previous = _work;
         long anchor =
             previous?.ActiveTicks
@@ -925,6 +933,20 @@ internal sealed partial class CapsuleerHauler(
             return;
         }
         _work = Work with { LastMotionStamp = Work.Stamp };
+        if (_target is not null && (_navigation.WarpDestination is not null || Work.EscapingBubble))
+        {
+            bool escaping = defense.NavigateField(
+                Pilot,
+                _navigation,
+                _target,
+                Work.EscapingBubble,
+                Work.Stamp,
+                Now,
+                _warpBlocked,
+                Work.Ratting is { Phase: RattingPhase.TravellingToBelt, Patrol.Camp: { } camp } ? GateCampRules.StandOff(camp.Role) : 0
+            );
+            _work = Work with { EscapingBubble = escaping };
+        }
         bool wasWarping = _navigation.Warp is not null;
         var tick = _navigation.Advance(
             Pilot.ShipId,
@@ -952,7 +974,16 @@ internal sealed partial class CapsuleerHauler(
         {
             Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, _operation.Catalog, Pilot.ShipId);
         }
-        if (_navigation.Warp is not null || _navigation.WarpDestination is not null)
+        if (
+            _navigation.Warp is not null
+            || _navigation.WarpDestination is not null
+            || Work.EscapingBubble
+                && (
+                    _target?.DestinationGateId is null
+                    || Work.Ratting is not null
+                    || !GateTravelRules.InRange(Pilot.Position!, Pilot.Flight.ShipRadius, _target)
+                )
+        )
         {
             return;
         }
