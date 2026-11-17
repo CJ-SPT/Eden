@@ -8,7 +8,7 @@ internal static class PilotSessionWire
 {
     internal const string PacketNamespace = "carbon.common.script.net.machoNetPacket.";
 
-    private static Dictionary<string, object?> SessionFields(DockedPilot pilot)
+    private static Dictionary<string, object?> SessionFields(DockedPilot pilot, long? controlledStructureId = null)
     {
         // Build 3662168 walletUtil checks individual Accountant/division bits,
         // without treating Director as an implicit grant. Session roles are effective
@@ -30,12 +30,13 @@ internal static class PilotSessionWire
             ["rolesAtBase"] = rights.RolesAtBase,
             ["rolesAtOther"] = rights.RolesAtOther,
             ["corpAccountKey"] = (long)pilot.Identity.CorporationAccountKey,
-            ["shipid"] = pilot.ShipId,
+            ["shipid"] = controlledStructureId ?? pilot.ShipId,
             ["stationid"] = pilot.Position is null && !pilot.InStructure ? pilot.StationId : null,
             ["structureid"] = pilot.InStructure ? pilot.DockedLocationId : null,
-            ["solarsystemid"] = pilot.Position is null ? null : pilot.SystemId,
+            // Upwell inventories and dogma bind in the solar system even while the ship is docked.
+            ["solarsystemid"] = pilot.Position is not null || pilot.InStructure ? pilot.SystemId : null,
             ["stationid2"] = pilot.Position is null && !pilot.InStructure ? pilot.StationId : null,
-            ["locationid"] = pilot.LocationId,
+            ["locationid"] = pilot.InStructure ? pilot.SystemId : pilot.LocationId,
             ["solarsystemid2"] = pilot.SystemId,
             ["constellationid"] = pilot.ConstellationId,
             ["regionid"] = pilot.RegionId,
@@ -45,10 +46,19 @@ internal static class PilotSessionWire
         };
     }
 
-    internal static BlueInstance SessionChange(long accountId, long clientId, DockedPilot? pilot, DockedPilot? previous = null)
+    internal static BlueInstance SessionChange(
+        long accountId,
+        long clientId,
+        DockedPilot? pilot,
+        DockedPilot? previous = null,
+        long? controlledStructureId = null,
+        long? previousControlledStructureId = null
+    )
     {
-        var before = previous is null ? new Dictionary<string, object?>() : SessionFields(previous);
-        var after = pilot is null ? before.ToDictionary(field => field.Key, _ => (object?)null) : SessionFields(pilot);
+        var before = previous is null ? new Dictionary<string, object?>() : SessionFields(previous, previousControlledStructureId);
+        var after = pilot is null
+            ? before.ToDictionary(field => field.Key, _ => (object?)null)
+            : SessionFields(pilot, controlledStructureId);
         var changes = after
             .Where(field => !Equals(before.GetValueOrDefault(field.Key), field.Value))
             .ToDictionary(field => field.Key, field => (object?)new object?[] { before.GetValueOrDefault(field.Key), field.Value });

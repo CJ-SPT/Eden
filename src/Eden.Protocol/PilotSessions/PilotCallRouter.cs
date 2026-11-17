@@ -36,21 +36,44 @@ internal sealed class PilotCallContext(
 ) : IDisposable
 {
     public long AccountId { get; } = accountId;
+    internal long SessionId { get; } = sessionId;
     public long Roles { get; init; } = (long)PilotRole.Player;
     public AccountProfile Account { get; } = account;
     public IReadOnlyList<DockedPilot> Roster { get; set; } = roster;
     public FlightSession? ActiveFlight { get; private set; }
+    internal Eden.Protocol.Structures.StructureControlLease? StructureControl { get; private set; }
+    internal long? ControlledStructureId => StructureControl?.StructureId;
+
+    internal void TakeStructureControl(Eden.Protocol.Structures.StructureControlLease lease)
+    {
+        if (StructureControl != lease)
+        {
+            ReleaseStructureControl();
+            StructureControl = lease;
+        }
+        Flight.SetStructureControl(lease.StructureId);
+    }
+
+    internal void ReleaseStructureControl()
+    {
+        StructureControl?.Dispose();
+        StructureControl = null;
+        ActiveFlight?.SetStructureControl(null);
+    }
+
     public DockedPilot? DestroyedShip { get; private set; }
     public FlightSession Flight => ActiveFlight ?? throw new InvalidOperationException("Select a pilot before entering flight.");
 
     public void Select(DockedPilot pilot)
     {
+        ReleaseStructureControl();
         DestroyedShip = null;
         ActiveFlight = startFlight(pilot);
     }
 
     public void ChangeShip(DockedPilot pilot)
     {
+        ReleaseStructureControl();
         bool sameStation =
             ActiveFlight?.Pilot is { Position: null } previous
             && pilot.Position is null
@@ -69,15 +92,21 @@ internal sealed class PilotCallContext(
 
     public void ReplaceDestroyedShip(DockedPilot pilot, IReadOnlyList<StaticSpaceObject>? destination = null)
     {
+        ReleaseStructureControl();
         DestroyedShip = Pilot;
         Flight.ReplaceDestroyedShip(pilot, destination);
         Roster = Roster.Select(p => p.PilotId == pilot.PilotId ? pilot : p).ToArray();
     }
 
-    public void Dispose() => ActiveFlight?.Dispose();
+    public void Dispose()
+    {
+        ReleaseStructureControl();
+        ActiveFlight?.Dispose();
+    }
 
     public void LogOff()
     {
+        ReleaseStructureControl();
         ActiveFlight?.Dispose();
         ActiveFlight = null;
         DestroyedShip = null;
@@ -176,6 +205,17 @@ internal sealed class PilotCallRouter(
     )
     {
         keywords = ServiceKeywords(keywords);
+        if (
+            context.ControlledStructureId.HasValue
+            && (
+                service == "structureDocking" && method == "Undock"
+                || service == "ship" && method is "Undock" or "Board" or "LeaveShip"
+                || service == "beyonce" && method.StartsWith("Cmd", StringComparison.Ordinal)
+            )
+        )
+        {
+            return new PilotCallResult.Failure("Release structure control before moving or boarding your ship.");
+        }
         if (
             service
             is "jumpCloneSvc"

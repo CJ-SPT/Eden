@@ -94,7 +94,8 @@ internal sealed class PilotUpdateCoordinator(
     Eden.Protocol.Fleets.CommandBurstHandler? commandBursts = null,
     AutoMiningHandler? autoMining = null,
     InterdictionHandler? interdiction = null,
-    AreaWeaponHandler? areaWeapons = null
+    AreaWeaponHandler? areaWeapons = null,
+    Eden.Protocol.Structures.StructureControlHandler? structureControl = null
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -306,6 +307,7 @@ internal sealed class PilotUpdateCoordinator(
         using (SessionPerformance.Phase("update.background"))
         {
             corporations.Advance(context);
+            structureControl?.Advance(context);
             corporationWallet.Advance(context);
             bookmarks.Advance(context);
             accessGroups.Advance(context);

@@ -166,6 +166,10 @@ internal sealed class StructureHandler(
                     {
                         throw new InvalidDataException("Choose a valid structure and access setting.");
                     }
+                    if ((StructureSetting)setting == StructureSetting.CanControl)
+                    {
+                        return structures.CanControl(pilot, structureId);
+                    }
                     return StructureSettingAccess.Service((StructureSetting)setting) is { } required
                         && structures.HasService(pilot, structureId, required);
                 }

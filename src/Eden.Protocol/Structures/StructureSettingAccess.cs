@@ -48,8 +48,6 @@ internal static class StructureSettingAccess
             StructureSetting.JumpBridgeActivation => StructureService.JumpBridge,
             StructureSetting.CynoBeacon => StructureService.CynoBeacon,
             StructureSetting.AutomaticMoonMining => StructureService.AutomaticMoonMining,
-            // Eden has no player structure-control session yet. Do not enable the native Control button.
-            StructureSetting.CanControl => null,
             _ => null,
         };
 }

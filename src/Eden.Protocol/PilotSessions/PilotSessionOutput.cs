@@ -44,7 +44,7 @@ internal sealed class PilotSessionOutput(
         }
     }
 
-    public async Task AnnounceTransitionAsync(DockedPilot previous)
+    public async Task AnnounceTransitionAsync(DockedPilot previous, long? previousControl = null)
     {
         if (previous.ShipId != context.Pilot.ShipId)
         {
@@ -60,7 +60,9 @@ internal sealed class PilotSessionOutput(
         {
             context.ReleaseLocationReferences();
         }
-        await write(new PilotSessionChange(accountId, clientId, context.Pilot, previous).ToBlue());
+        await write(
+            new PilotSessionChange(accountId, clientId, context.Pilot, previous, context.ControlledStructureId, previousControl).ToBlue()
+        );
         report(
             previous.ShipId != context.Pilot.ShipId
                 ? $"Pilot {context.Pilot.PilotId} boarded ship {context.Pilot.ShipId} "

@@ -37,9 +37,17 @@ internal sealed record PilotCallRequest(object? ObjectId, string Method, object?
     public bool IsBindingWithoutCall => Arguments is object?[] { Length: 2 } bind && bind[1] is null;
 }
 
-internal sealed record PilotSessionChange(long AccountId, long ClientId, DockedPilot? Pilot, DockedPilot? Previous = null) : BlueModel
+internal sealed record PilotSessionChange(
+    long AccountId,
+    long ClientId,
+    DockedPilot? Pilot,
+    DockedPilot? Previous = null,
+    long? ControlledStructureId = null,
+    long? PreviousControlledStructureId = null
+) : BlueModel
 {
-    public override object ToBlue() => PilotSessionWire.SessionChange(AccountId, ClientId, Pilot, Previous);
+    public override object ToBlue() =>
+        PilotSessionWire.SessionChange(AccountId, ClientId, Pilot, Previous, ControlledStructureId, PreviousControlledStructureId);
 }
 
 internal sealed record AccountSessionState(long AccountId, long Roles = (long)PilotRole.Player) : BlueModel

@@ -373,8 +373,11 @@ internal sealed class InventoryHandler(
             // Native item menus walk container/ship ancestors with GetInventoryFromId
             // until GetSelfInvItem reaches the station. Reuse the existing personal hangar binding.
             ("invbroker", "GetInventoryFromId")
-                when pilot.Position is null && args is [long id, ..] && args.Length is 1 or 2 && id == pilot.DockedLocationId =>
-                context.Reference("@hangar", PilotBindingLifetime.Location),
+                when pilot.Position is null
+                    && args is [long id, ..]
+                    && args.Length is 1 or 2
+                    && id == pilot.DockedLocationId
+                    && context.ControlledStructureId != id => context.Reference("@hangar", PilotBindingLifetime.Location),
             ("invbroker", "GetInventoryFromId")
                 when args is [long id, ..] && fleet.Find(pilot.PilotId, id) is { } ship && CanReadShip(context, ship) => context.Reference(
                 $"{ShipInventoryPrefix}{id}",
@@ -405,9 +408,11 @@ internal sealed class InventoryHandler(
             ("@pilot", "List") => BlueEmpty.List,
             ("@hangar" or "@ship", "Add" or "MultiAdd") => MoveFromWire(context, service, method, args, keywords),
             ("@hangar" or "@ship" or "@pilot", "GetSelfInvItem") => ShipDogmaBuilder.Item(pilot, service[1..]),
-            ("dogmaIM", "GetAllInfo") => dogma.AllInfo(pilot),
+            ("dogmaIM", "GetAllInfo") when context.ControlledStructureId is null && !pilot.InStructure => dogma.AllInfo(pilot),
             ("dogmaIM", "GetLayerDamageValuesByItems") when args is [HashSet<long> ids] => dogma.DroneBayDamage(pilot, ids),
-            ("dogmaIM", "ItemGetInfo") when args is [long id] => ItemInfo(context, id),
+            ("dogmaIM", "ItemGetInfo")
+                when args is [long id] && id != context.ControlledStructureId && !(pilot.InStructure && id == pilot.DockedLocationId) =>
+                ItemInfo(context, id),
             ("dogmaIM", "ItemGetInfo")
                 when args is [object?[] { Length: 3 } key] && key is [long hull, long slot, long type] && hull == pilot.ShipId => ammunition
                 .Read(pilot.PilotId, hull)
@@ -415,7 +420,8 @@ internal sealed class InventoryHandler(
                 is { } magazine
                 ? magazinesWire.Prime(context.Pilot.PilotId, magazine)
                 : PilotCallResult.None,
-            ("dogmaIM", "SetModuleOnline" or "TakeModuleOffline") when args is [long ship, long module] => fittingOperations.SetOnline(
+            ("dogmaIM", "SetModuleOnline" or "TakeModuleOffline")
+                when args is [long ship, long module] && ship != context.ControlledStructureId => fittingOperations.SetOnline(
                 context,
                 ship,
                 module,

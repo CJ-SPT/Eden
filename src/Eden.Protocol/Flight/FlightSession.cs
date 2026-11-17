@@ -94,7 +94,18 @@ internal sealed partial class FlightSession(
             commandBursts,
             fleets
         );
-    private FlightSceneContext SceneContext => new(Pilot, InBallpark, CanTarget, _simulatedStamp);
+    private FlightSceneContext SceneContext => new(Pilot, InBallpark || _controlledStructureId.HasValue, CanTarget, _simulatedStamp);
+    private long? _controlledStructureId;
+
+    internal void SetStructureControl(long? structureId)
+    {
+        if (_controlledStructureId.HasValue && structureId is null)
+        {
+            Updates.Clear();
+        }
+        _controlledStructureId = structureId;
+    }
+
     private FlightModuleEffects ModuleEffects => _moduleEffects ??= new(_initialFlight, modules, Effects);
     private int Stamp => space.Stamp(clock);
 
@@ -959,6 +970,23 @@ internal sealed partial class FlightSession(
 
     private void SnapshotCore()
     {
+        if (_controlledStructureId is long structureId)
+        {
+            var addition = Ballpark.AddObjects(Scene.Objects, Stamp);
+            if (!Scene.Objects.Any(body => body.Id == structureId))
+            {
+                throw new InvalidDataException("The controlled structure is no longer in this system.");
+            }
+            Updates.Add(
+                new(
+                    Stamp,
+                    new DestinyCommand.SetState(
+                        new(addition.State, structureId, addition.Slims, new SolarSystemSlim(Pilot.SystemId), addition.Damage)
+                    )
+                )
+            );
+            return;
+        }
         // A new source SetState would run the client's asynchronous DoBallClear
         // and finalize the active jump camera before destination arrival.
         if (SourceSceneLocked)

@@ -9,7 +9,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Structures;
 
 [Injectable]
-internal sealed class StructureInventoryHandler(IPilotStructures structures) : ISelectedPilotCallHandler
+internal sealed class StructureInventoryHandler(IPilotStructures structures, IStructureContacts contacts) : ISelectedPilotCallHandler
 {
     private const string Prefix = "@structure-inventory:";
 
@@ -42,6 +42,16 @@ internal sealed class StructureInventoryHandler(IPilotStructures structures) : I
                 return PilotCallResult.Unsupported;
             }
             var items = structures.Inventory(context.Pilot.PilotId, id);
+            // Native drag/drop uses MultiAdd even for a single selected item. Each installation is one atomic command.
+            if (method == "MultiAdd" && args is [List<object?> { Count: 1 } selected, long source] && selected[0] is long itemId)
+            {
+                method = "Add";
+                args = [itemId, source];
+            }
+            if (method == "MultiAdd")
+            {
+                throw new InvalidDataException("Install one structure item or fuel stack at a time.");
+            }
             if (method == "List" && args is [] or [long _])
             {
                 return new BlueList<InventoryRow>(
@@ -51,20 +61,7 @@ internal sealed class StructureInventoryHandler(IPilotStructures structures) : I
             if (method == "GetSelfInvItem" && args.Length == 0)
             {
                 var s = structures.Read(context.Pilot.PilotId, id)!;
-                return InventoryRow.From(
-                    new(
-                        id,
-                        s.Profile.TypeId,
-                        s.CorporationId,
-                        s.SystemId,
-                        (int)InventoryFlag.AutoFit,
-                        1,
-                        s.Profile.GroupId,
-                        s.Profile.CategoryId,
-                        0,
-                        true
-                    )
-                );
+                return StructureDogmaBuilder.Item(s);
             }
             if (method == "Add" && args is [long item, long _])
             {
@@ -75,25 +72,25 @@ internal sealed class StructureInventoryHandler(IPilotStructures structures) : I
                 int flag = keywords?.GetValueOrDefault("flag") is long f
                     ? checked((int)f)
                     : throw new InvalidDataException("Choose a structure inventory flag.");
-                int quantity = keywords?.GetValueOrDefault("qty") is long q ? checked((int)q) : 1;
+                int? quantity = keywords?.GetValueOrDefault("qty") is long q ? checked((int)q) : null;
                 if (keywords?.Keys.Any(k => k is not ("flag" or "qty")) == true)
                 {
                     throw new InvalidDataException("Unexpected structure transfer arguments.");
                 }
                 var result = flag switch
                 {
-                    StructureRules.CoreRoomFlag when quantity == 1 => structures.InstallCore(context.Pilot.PilotId, id, item),
+                    StructureRules.CoreRoomFlag when quantity is null or 1 => structures.InstallCore(context.Pilot.PilotId, id, item),
                     StructureRules.FuelBayFlag => structures.DepositFuel(context.Pilot.PilotId, id, item, quantity),
                     >= StructureRules.FirstServiceSlot
-                    and < StructureRules.FirstServiceSlot + StructureRules.MaximumServiceSlots when quantity == 1 => structures.FitService(
-                        context.Pilot.PilotId,
-                        id,
-                        item,
-                        flag
-                    ),
+                    and < StructureRules.FirstServiceSlot + StructureRules.MaximumServiceSlots when quantity is null or 1 =>
+                        structures.FitService(context.Pilot.PilotId, id, item, flag),
                     _ => throw new InvalidDataException("Choose a core, service slot or structure fuel bay."),
                 };
                 StructureHandler.Notify(context, result);
+                if (context.ControlledStructureId == id)
+                {
+                    context.Flight.RefreshStructures(contacts.Contacts(context.Pilot.SystemId));
+                }
                 return PilotCallResult.None;
             }
             return PilotCallResult.Unsupported;

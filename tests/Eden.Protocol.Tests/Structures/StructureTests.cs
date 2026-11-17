@@ -439,7 +439,7 @@ public sealed class StructureTests
             }
             else
             {
-                Assert.Equal(setting == 19, Assert.IsType<bool>(Assert.IsType<PilotCallResult.Success>(permission).Reply.ToBlue()));
+                Assert.True(Assert.IsType<bool>(Assert.IsType<PilotCallResult.Success>(permission).Reply.ToBlue()));
             }
         }
         foreach (string method in new[] { "GetMyDockableStructures", "CheckMyDockingAccessToStructures" })

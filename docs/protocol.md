@@ -2,6 +2,9 @@
 
 [Area weapons and EWAR](protocol/area-weapons.md) records burst jammers, projectors, bombs, defenders and heavy grapplers.
 
+[Docked structure control and quantum cores](protocol/structures.md#docked-structure-control-and-quantum-core-setup--november-16-2026)
+adds native control sessions and setup inventories, and fixes the missing solar-system binding behind black docked screens.
+
 [Structure discovery and docked login](protocol/structures.md#structure-discovery-docked-login-and-access-reads--november-16-2026)
 fixes long structure location IDs, native directory/map reads and docking UI permission queries, and records timer/control gaps.
 

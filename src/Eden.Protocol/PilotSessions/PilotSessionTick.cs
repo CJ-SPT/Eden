@@ -54,6 +54,8 @@ internal sealed class PilotSessionTick(
             return;
         }
         var flight = context.Flight;
+        var previousControl = context.ControlledStructureId;
+        var beforeControl = context.Pilot;
         var beforePlayerDamage = flight.Pilot;
         using (SessionLatency.Measure(SessionLatencyPhase.PendingDamage))
         {
@@ -61,7 +63,7 @@ internal sealed class PilotSessionTick(
         }
         if (beforePlayerDamage.ShipId != context.Pilot.ShipId)
         {
-            await output.AnnounceTransitionAsync(beforePlayerDamage);
+            await output.AnnounceTransitionAsync(beforePlayerDamage, previousControl);
         }
         if (context.NextSkillCompletion <= clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
         {
@@ -135,7 +137,11 @@ internal sealed class PilotSessionTick(
         {
             PrepareUpdates();
         }
-        if (
+        if (previousControl != context.ControlledStructureId)
+        {
+            await output.AnnounceTransitionAsync(beforeControl, previousControl);
+        }
+        else if (
             beforeAttack is not null
             && (
                 beforeAttack.LocationId != context.Pilot.LocationId
@@ -149,7 +155,7 @@ internal sealed class PilotSessionTick(
             )
         )
         {
-            await output.AnnounceTransitionAsync(beforeAttack);
+            await output.AnnounceTransitionAsync(beforeAttack, previousControl);
         }
         using var outputLatency = SessionLatency.Measure(SessionLatencyPhase.Output);
         using var outputPerformance = SessionPerformance.Begin("output", diagnostics?.Trace ?? report);

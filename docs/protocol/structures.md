@@ -256,6 +256,89 @@ and immediate startup dependencies. No new cases or classes were added. Tool and
 **Optional maintainer checks:** After updating the server, log back into the docked character; check the Athanor in the
 system map/right-click menu and off-grid overview; select its bracket during a timed lifecycle phase.
 
+## Docked structure control and quantum-core setup — November 16, 2026
+
+Docked managers can now take and release control of an Upwell structure through the native `structureControl` service,
+install its quantum core, deposit fuel and fit/online supported service modules. The earlier control limitation in the
+discovery record above describes that revision; this milestone replaces it for docked setup.
+
+The user's subsequent black-screen log (`character-selection-2216.log`, November 16 at 23:47 UTC) identified a second
+startup blocker: `eveMoniker.GetLocationBindParams` raised "You have no place to go", and `hangarView` failed to acquire
+its inventory. Eden supplied `structureid` but neither `stationid` nor `solarsystemid`. Native Upwell sessions bind dogma
+and inventory in the solar system: both `solarsystemid` and `locationid` now contain that system while `structureid`
+retains the long structure identity. The authoritative docked location remains the structure; NPC station behavior is
+unchanged. This corrects the observed missing binding rather than attributing the black screen to rendering assets.
+
+**Control and authority.** `CharacterHasSetting(..., 17)` now checks the saved owning corporation and effective Station
+Manager/Director authority. `TakeControl(structureID)` also validates that the pilot's actual active ship is docked in
+that structure and that its lifecycle permits docking. Exclusive connection leases prevent two controllers, and
+`GetStructurePilot` reports the current controller. Repeated takeover by the same connection is idempotent; a different
+connection receives a busy rejection. Release, logoff, ship change and disconnect dispose the lease. Membership/role or
+structure-state changes revoke control during session updates.
+
+Taking control changes the native session's `shipid` to the structure and supplies a rigid structure ego snapshot. It
+does not change the saved active ship, move it into space, or insert a fake ship row for the structure. Releasing control
+restores the real ship's session identity. Ship movement, boarding and undocking are rejected until control is released.
+This is docked management control: boarding from space, controller takeover and manual structure weapons/fighters remain
+outside this milestone. The management view contains static system/structure contacts, not a combat observer stream.
+
+**Dogma and inventories.** Docked `GetAllInfo` now primes `structureInfo` as well as the actual ship. During control,
+`shipInfo`, `activeShipID`, activation state and character location identify the structure, including corporation-owned
+service modules. The structure binding takes precedence over the personal-hangar compatibility binding while controlled.
+`GetSelfInvItem` supplies the structure's assembled corporation-owned inventory row in the system.
+
+The pinned client calls its quantum-core bay `StructureDeedBay`, using `flagStructureDeed` (180). Its native drag/drop
+uses `MultiAdd`; single-item selections now reach the existing atomic core/service/fuel operations. Core installation
+checks hull-specific type, lifecycle, ownership and availability, consumes exactly one item and starts the saved repair
+deadline. Fuel transfers without an explicit quantity deposit the whole selected stack. Multi-item selections are
+rejected before mutation; install one item or fuel stack at a time. Controller slim updates publish core/timer and
+service power changes, and service onlining publishes the native online effect.
+
+All durable work uses the existing resident world command/checkpoint path. The control lease is intentionally connection
+state and does not survive reconnect. No SQL fallback, saved-world schema migration, client patch or core grant was added.
+See [EVE University quantum cores](https://wiki.eveuniversity.org/Quantum_Cores) and
+[anchoring structures](https://wiki.eveuniversity.org/Anchoring_structures) for the core, repair timer and fuel/setup flow.
+
+**Reference evidence:** Inert inspection used the signed V24.01 build-3662168 archive with SHA-256
+`37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`: native `structureControl.pyj`, `structureController.pyj`,
+`eveMoniker.pyj`, `godma.pyj`, `invControllers.pyj`, `invCache.pyj` and `inventorycommon/const.pyj`.
+The local EVE.js package is `261108.1`, without Git metadata. Behavior was independently implemented, with these source
+hashes recording the comparison; no AGPL source was copied:
+
+- `structureControlService.js`: SHA-256 `795AD6F1DC9B697FAE9A22D95B0A6CF8F71576E7B00C9C6D466AE256A1B33E70`.
+- `structureControlState.js`: SHA-256 `DF59A6E72C50725F041717461A66FE1D806028CE1D877B4E766B464B77EF00C5`.
+- `dogmaService/itemInfo.js`: SHA-256 `9314B5F2D12B998EC53A338248DD7514B0ACD07BD2CA341C3046D37FEB6E0C54`.
+
+[Carbon Destiny `Thunkers.cpp`, revision 27ee40b](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Thunkers.cpp)
+was consulted; the view reuses the existing rigid-ball/SetState adapters, without changing their binary formats.
+
+**Automated validation:** The exact filter joined the two methods of `StructureControlTests` with `FullyQualifiedName=`
+and `|`; both passed in 7.20 seconds. These are feature checks for native setup/persistence and session authority/lifetime,
+not new cases for each preceding small bug. The first uses a resident Athanor and native `MultiAdd`, validates rejection
+and duplicate installation without inventory changes, verifies the saved core/timer/fuel/service state and reopens a
+checkpoint showing the original active ship. The second exercises exclusive leases, logoff/disconnect cleanup and an
+actual simulated `IPilotSession` login/control/dogma/release sequence with native session deltas. Initial fixture failures
+were corrected for wire integer normalization, the newly enabled permission and fitting after the repair timer.
+The broader affected filter joined `Structures`, `PilotServicesTests`, `CharacterLogoffTests`, `TypedInventoryTests`,
+`TypedSessionTests`, `ShipStorageTests`, `ApplyFittingTests`, `FlightSessionTests` and `BallparkTests`, using their full
+`Eden.Protocol.Tests` namespace prefixes with `FullyQualifiedName~` and `|`. It passed **217 cases in 86.00 seconds**.
+After rebasing onto main's area-weapon milestone, the combined `Structures`, `PilotServicesTests`, `CharacterLogoffTests`
+and `Combat.AreaWeaponTests` filter passed **188 cases in 57.43 seconds**. The two exact control feature cases passed again
+in 6.69 seconds after adding control release to destroyed-ship replacement. The six immediate ejection/fatal-session
+cases passed in **9.39 seconds**, using `FullyQualifiedName~Eden.Protocol.Tests.Combat.NpcCombatTests.` with
+`OldCargoRefreshDuringEjectionReadsAnEmptyInventoryAndNeverRestoresAssets` and
+`SessionSendsTheFatalMessageAndCapsuleBallBeforeChangingShipId`, joined with `|`.
+
+Tool restore, solution restore and build passed; the integrated solution built with zero warnings/errors in 1.30 seconds.
+Both Python policy suites passed (8 catalog cases in 1.307 seconds and 9 formatting cases in 0.016 seconds). Formatting
+was applied and verification checked 2,451 files; line-width and whitespace checks passed. The full .NET suite was not run.
+
+**Live acceptance:** Not performed; agent client testing is disabled. The user's black-screen log is failure evidence,
+not acceptance of the corrected hangar or control view.
+
+**Optional maintainer checks:** Update/restart and reconnect to the docked Athanor; take control and place its matching
+quantum core in the Core Room; after the repair timer, deposit fuel and fit/online the desired service modules.
+
 ## Structure compression and gas decompression — November 11, 2026
 
 Milestone 7 implements all three pinned `structureCompressionMgr` calls: `CompressItemInStructure(itemID)`,

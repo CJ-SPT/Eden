@@ -79,6 +79,7 @@ internal sealed class PilotSessionCalls(
         );
         bool selected = context.Selected;
         DockedPilot? previous = context.ActiveFlight?.Pilot;
+        long? previousControl = context.ControlledStructureId;
         PilotCallResult result = PilotCallResult.None;
         void Dispatch()
         {
@@ -130,7 +131,9 @@ internal sealed class PilotSessionCalls(
         // Its durable capsule transition still has to reach the client.
         if (previous is not null && !context.Selected)
         {
-            await output.WriteAsync(new PilotSessionChange(accountId, clientId, null, previous).ToBlue());
+            await output.WriteAsync(
+                new PilotSessionChange(accountId, clientId, null, previous, PreviousControlledStructureId: previousControl).ToBlue()
+            );
             (diagnostics?.Information ?? report)(
                 $"Logged off pilot {previous.PilotId}; returned account {accountId} to character selection."
             );
@@ -139,6 +142,7 @@ internal sealed class PilotSessionCalls(
             previous is not null
             && (
                 previous.LocationId != context.Pilot.LocationId
+                || previousControl != context.ControlledStructureId
                 || previous.ShipId != context.Pilot.ShipId
                 || previous.CorpId != context.Pilot.CorpId
                 || previous.Identity.AllianceId != context.Pilot.Identity.AllianceId
@@ -149,7 +153,7 @@ internal sealed class PilotSessionCalls(
             )
         )
         {
-            await output.AnnounceTransitionAsync(previous);
+            await output.AnnounceTransitionAsync(previous, previousControl);
         }
         if (result is PilotCallResult.Failure validationError)
         {

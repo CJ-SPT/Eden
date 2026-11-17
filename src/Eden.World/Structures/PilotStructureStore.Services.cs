@@ -162,7 +162,7 @@ internal sealed partial class PilotStructureStore
             }
         );
 
-    public StructureResult DepositFuel(long pilotId, long structureId, long itemId, int quantity) =>
+    public StructureResult DepositFuel(long pilotId, long structureId, long itemId, int? quantity = null) =>
         Update(
             pilotId,
             structureId,
@@ -170,6 +170,7 @@ internal sealed partial class PilotStructureStore
             {
                 var item = AccessibleItem(world, pilot, structure, itemId);
                 var type = catalog.RequireItem(item.TypeId);
+                int amount = quantity ?? item.Quantity;
                 const int FuelBlockGroup = 1136;
                 if (type.GroupId != FuelBlockGroup)
                 {
@@ -180,14 +181,14 @@ internal sealed partial class PilotStructureStore
                     .AsEnumerable()
                     .Sum(i => PilotInventoryStore.Volume(catalog, i.TypeId) * i.Quantity);
                 if (
-                    used + PilotInventoryStore.Volume(catalog, item.TypeId) * quantity
+                    used + PilotInventoryStore.Volume(catalog, item.TypeId) * amount
                     > StructureCatalog.Require(catalog, structure.TypeId).FuelCapacity
                 )
                 {
                     throw new InvalidDataException("The structure fuel bay does not have enough space.");
                 }
                 int typeId = item.TypeId;
-                Consume(world, item, quantity);
+                Consume(world, item, amount);
                 InventoryPersistence.MergeOutput(
                     world,
                     catalog,
@@ -195,7 +196,7 @@ internal sealed partial class PilotStructureStore
                     structureId,
                     StructureRules.FuelBayFlag,
                     typeId,
-                    quantity
+                    amount
                 );
             }
         );

@@ -169,6 +169,8 @@ public sealed record StructureResult(StructureSnapshot Structure, IReadOnlyList<
 
 public interface IPilotStructures
 {
+    bool CanControl(long pilotId, long structureId);
+    StructureSnapshot AuthorizeControl(long pilotId, long structureId);
     IReadOnlyList<StructureSnapshot> List(long pilotId, int? systemId = null);
     StructureSnapshot? Read(long pilotId, long structureId);
     IReadOnlyList<StructureLocation> Names(IReadOnlyList<long> structureIds);
@@ -182,7 +184,7 @@ public interface IPilotStructures
     StructureResult FitService(long pilotId, long structureId, long itemId, int slot);
     StructureResult SetServiceOnline(long pilotId, long structureId, long moduleId, bool online);
     StructureResult RemoveService(long pilotId, long structureId, long moduleId);
-    StructureResult DepositFuel(long pilotId, long structureId, long itemId, int quantity);
+    StructureResult DepositFuel(long pilotId, long structureId, long itemId, int? quantity = null);
     StructureResult Unanchor(long pilotId, long structureId, bool cancel = false);
     StructureResult Recover(long pilotId, long structureId);
     StructureResult Withdraw(long pilotId, long structureId, long itemId, int quantity, bool toCargo);

@@ -149,7 +149,9 @@ internal sealed record DogmaAllInfo(
     IReadOnlyDictionary<DogmaItemKey.Charge, DogmaItemInfo<double>> Charges,
     DogmaItemInfo<int> Character,
     PilotBrainState Brain,
-    IReadOnlyList<Eden.Gameplay.Exploration.WormholeSystemEffect>? SystemEffects = null
+    IReadOnlyList<Eden.Gameplay.Exploration.WormholeSystemEffect>? SystemEffects = null,
+    IReadOnlyDictionary<long, DogmaItemInfo<double>>? StructureInfo = null,
+    long? ActiveShipId = null
 ) : BlueModel
 {
     public override object ToBlue() =>
@@ -158,7 +160,8 @@ internal sealed record DogmaAllInfo(
             new Dictionary<string, object?>
             {
                 ["shipState"] = ShipState,
-                ["structureInfo"] = null,
+                ["activeShipID"] = ActiveShipId ?? Character.Item?.LocationId,
+                ["structureInfo"] = StructureInfo is null ? null : new BlueMap<long, DogmaItemInfo<double>>(StructureInfo),
                 ["shipInfo"] =
                     Charges.Count == 0
                         ? (object)new BlueMap<long, DogmaItemInfo<double>>(ShipInfo)
