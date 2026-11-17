@@ -118,18 +118,27 @@ internal sealed partial class CapsuleerHauler
                     : Work.ActiveTicks + TimeSpan.FromSeconds(PatrolRules.DwellSeconds(pilotId, _target.Id)).Ticks,
         };
         var seen = defense.Observe(Pilot, Work.ActiveTicks);
+        ObserveRegional(seen, _target.Id);
         var gang = InActiveGang ? Work.Gang : null;
+        int? regionalGroup =
+            database.Settings.Capsuleers.RegionalConflicts && Live is { } live
+                ? RegionalConflictStore.GroupForPilot(live, database.Catalog, pilotId)
+                : null;
         bool Member(long other) => gang?.Members.Any(member => member.PilotId == other) == true;
         var candidates = PatrolRules
             .Candidates(Pilot, _target.Position, seen)
-            .Where(contact => !Member(contact.PilotId))
+            .Where(contact =>
+                !Member(contact.PilotId)
+                && !PatrolRules.Friendly(Pilot, contact, regionalGroup)
+                && (gang?.Regional is not { } order || RegionalConflictStore.CanTarget(database, order, contact, Work.ActiveTicks))
+            )
             .Where(contact => defense.PatrolTarget(Pilot, contact.ShipId, _target.Position, Now) is not null)
             .ToArray();
         var profile = defense.Profile(pilotId);
         double friendly =
             PvpTactics.Threat((Eden.Gameplay.Ships.HullClass)Pilot.ShipGroupId)
             + seen.Where(contact =>
-                    (Member(contact.PilotId) || PatrolRules.Friendly(Pilot, contact))
+                    (Member(contact.PilotId) || PatrolRules.Friendly(Pilot, contact, regionalGroup))
                     && contact.Position.DistanceTo(_target.Position) <= PatrolRules.PursuitMeters
                 )
                 .Sum(contact => PvpTactics.Threat(contact.Hull));

@@ -82,7 +82,8 @@ internal sealed class AutonomousPilotPresence(WorldDatabase database) : IAutonom
                 position,
                 navigation.Velocity,
                 (float)(type.Radius ?? 0),
-                hauler?.Ratting?.Patrol?.Camp
+                hauler?.Ratting?.Patrol?.Camp,
+                database.Settings.Capsuleers.RegionalConflicts ? RegionalConflictStore.GroupForPilot(live, database.Catalog, pilotId) : null
             ),
             protectedShip
         );

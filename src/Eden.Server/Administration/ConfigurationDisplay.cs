@@ -68,6 +68,8 @@ internal static class ConfigurationDisplay
         ["capsuleers.enabled"] = "Player bots",
         ["capsuleers.roamingGangs"] = "Persistent roaming gangs",
         ["capsuleers.roamingGangSize"] = "Roaming gang size",
+        ["capsuleers.regionalConflicts"] = "Regional conflicts",
+        ["capsuleers.regionalOperationsPerGroup"] = "Regional operations per group",
         ["capsuleers.miners"] = "Simulated miners",
         ["capsuleers.trafficMultiplier"] = "Station traffic density",
         ["capsuleers.freight.variedHulls"] = "Use regional hauler hulls",

@@ -166,7 +166,12 @@ public sealed class CapsuleerDefenseFrameTests(ITestOutputHelper output)
             {
                 Settings = draft.Settings with
                 {
-                    Capsuleers = new(Miners: false, TrafficMultiplier: 10, GateVisitors: 0) { GeneratedCombatPercent = 0 },
+                    // This measures independent neutral patrols; regional allies have a separate workload.
+                    Capsuleers = new(Miners: false, TrafficMultiplier: 10, GateVisitors: 0)
+                    {
+                        GeneratedCombatPercent = 0,
+                        RegionalConflicts = false,
+                    },
                 },
             },
             "armed patrol measurement"

@@ -378,7 +378,7 @@ public sealed class RoamingGangTests
         Assert.All(gang.Members, member => Assert.Equal(gang.ReturnAt, fixture.Live.HaulerCheckpoints[member.PilotId].Work.Gang!.ReturnAt));
     }
 
-    private sealed class Fixture : IDisposable
+    internal sealed class Fixture : IDisposable
     {
         private readonly CapsuleerHaulerTests.Fixture _world = new(legacyFounders: false, isolateRoute: true);
         private IDisposable? _presence;
@@ -388,13 +388,22 @@ public sealed class RoamingGangTests
         internal LiveWorld Live => Host.GetRequiredService<LiveWorld>();
         internal CapsuleerScheduler Scheduler => Host.GetRequiredService<CapsuleerScheduler>();
 
-        internal Fixture()
+        internal Fixture(bool regional = false)
         {
             PassiveCatalogFixture.LoadFrigateHulls(Database.CatalogPath);
             PassiveCatalogFixture.Load(Database.CatalogPath);
             PassiveCatalogFixture.LoadTackleTiers(Database.CatalogPath);
             using (var catalog = new CatalogDbContext(Database.CatalogPath, writable: true))
             {
+                if (regional)
+                {
+                    const int rivalConstellation = 20009999;
+                    int region = catalog.RequireSystem(Home).RegionId;
+                    catalog.Database.ExecuteSql(
+                        $"INSERT INTO Constellation VALUES ({rivalConstellation},'Rival test constellation',{region})"
+                    );
+                    catalog.Database.ExecuteSql($"UPDATE SolarSystem SET ConstellationId={rivalConstellation} WHERE Id={Away}");
+                }
                 foreach (int system in new[] { Home, Away })
                 {
                     string key = system.ToString(System.Globalization.CultureInfo.InvariantCulture);
@@ -429,11 +438,23 @@ public sealed class RoamingGangTests
             using (var provisioner = new CapsuleerProvisioner(Database, _world.Clock))
             {
                 provisioner.EnsureSystem(Home);
+                if (regional)
+                {
+                    // Both one-gate branches need a nonempty cast for this conflict scenario.
+                    using var setup = new WorldDbContext(Database.Path);
+                    setup.Database.ExecuteSqlRaw("UPDATE WorldCapsuleerProvisioning SET WorldSeed=2");
+                    provisioner.EnsureSystem(Away);
+                }
             }
             Host = ServerServices.Build(Database, _world.Clock, liveWorld: true);
             using (var action = Live.Economy.Begin())
             {
-                var roster = action.Set<SavedCapsuleerHauler>().OrderBy(row => row.PilotId).ToArray();
+                var roster = action
+                    .Set<SavedCapsuleerHauler>()
+                    .AsEnumerable()
+                    .OrderBy(row => action.Set<SavedCapsuleerAgent>().Find(row.PilotId)!.CommunitySystemId != Home)
+                    .ThenBy(row => row.PilotId)
+                    .ToArray();
                 Assert.True(roster.Length >= 4);
                 int corporation = action.Pilots.Find(roster[0].PilotId)!.CorporationId;
                 foreach (var row in roster.Take(4))

@@ -510,6 +510,10 @@ In **World & economy → Player bots**, configure the saved world's population:
 - **Persistent roaming gangs** (`settings.capsuleers.roamingGangs`, default on) permits coordinated nullsec hunting with
   existing ships. **Roaming gang size** (`settings.capsuleers.roamingGangSize`) accepts 3–6, default 4. The existing roam
   chance controls formation. [Gang behavior and requirements](capsuleer-population.md#persistent-roaming-gangs).
+- **Regional conflicts** (`settings.capsuleers.regionalConflicts`, default on) assigns existing gangs to regional raids,
+  interception, owned freight escorts and witnessed defensive responses. **Regional operations per group**
+  (`settings.capsuleers.regionalOperationsPerGroup`) accepts 1-3, default 1. Losses delay offensive launches; no replacement
+  ships are granted. Population reports groups and outcomes. [Regional behavior](capsuleer-population.md#regional-conflicts).
 - **Simulated miners** allows up to one miner per eligible system, prepared globally on restart.
 - **Station traffic density** accepts **0–10×**, default **1×**. It scales the normal geography-based station roster,
   up to 60 travelers per community. Fractional densities use a saved-seed draw to distribute smaller rosters consistently.

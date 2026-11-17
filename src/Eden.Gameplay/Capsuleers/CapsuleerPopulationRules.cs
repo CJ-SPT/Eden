@@ -12,6 +12,10 @@ public static class CapsuleerPopulationRules
     public static void Validate(CapsuleerPopulationPolicy policy)
     {
         policy.Freight.Validate();
+        if (policy.RegionalOperationsPerGroup is < 1 or > 3)
+        {
+            throw new InvalidDataException("Regional groups may run between one and three simultaneous operations.");
+        }
         if (policy.RoamingGangSize is < RoamingGangRules.MinimumMembers or > RoamingGangRules.MaximumMembers)
         {
             throw new InvalidDataException("Roaming gangs must have between three and six members.");

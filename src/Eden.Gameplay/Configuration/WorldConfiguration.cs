@@ -104,6 +104,8 @@ public sealed record CapsuleerPopulationPolicy(
     public bool RoamingPvp { get; init; } = true;
     public bool RoamingGangs { get; init; } = true;
     public int RoamingGangSize { get; init; } = 4;
+    public bool RegionalConflicts { get; init; } = true;
+    public int RegionalOperationsPerGroup { get; init; } = 1;
     public int RoamPercent { get; init; } = 30;
     public int GeneratedCombatPercent { get; init; } = 35;
     public bool SituationalAwareness { get; init; } = true;

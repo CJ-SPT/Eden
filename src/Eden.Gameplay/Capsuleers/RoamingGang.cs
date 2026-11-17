@@ -50,6 +50,7 @@ public sealed record RoamingGang(
     public RoamingGangPhase Phase { get; init; }
     public GangSighting? Sighting { get; init; }
     public string Reason { get; init; } = "Forming a hunting patrol.";
+    public RegionalOperation? Regional { get; init; }
 }
 
 public static class RoamingGangRules

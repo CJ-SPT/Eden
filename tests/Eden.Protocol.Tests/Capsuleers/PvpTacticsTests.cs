@@ -36,6 +36,8 @@ public sealed class PvpTacticsTests
         Assert.Equal(20, Choose([first, second], 2, target: 10, elapsed: PvpTactics.CommitmentTicks, report: 20).TargetId);
         Assert.Equal(0, Choose([first with { Hull = HullClass.Battleship }], 1).TargetId);
         Assert.Equal(0, Choose([first with { AllianceId = 1 }, second with { AllianceId = 1 }], 1).TargetId);
+        Assert.Equal(0, Choose([first with { RegionalGroupId = 1 }, second with { RegionalGroupId = 1 }], 1).TargetId);
+        Assert.Equal(10, Choose([first with { RegionalGroupId = 1 }, second with { RegionalGroupId = 2 }], 1).TargetId);
         Assert.Equal(10, Choose([first, second], 1).TargetId);
         Assert.Equal(0, Choose([first with { Position = new(50_000, 0, 0), Velocity = new(0, 1_000_000, 0) }], 1).TargetId);
         Assert.Equal(

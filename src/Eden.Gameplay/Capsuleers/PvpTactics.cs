@@ -9,13 +9,14 @@ public sealed record PvpDecision(long TargetId, double Score, string Reason);
 
 public static class PvpTactics
 {
-    private sealed record Affiliation(int? Alliance, int? Corporation, long CampGate, long CampUntil, long SoloShip);
+    private sealed record Affiliation(int? Alliance, int? Corporation, int? RegionalGroup, long CampGate, long CampUntil, long SoloShip);
 
     private static Affiliation Formation(PilotSighting contact) =>
-        contact.AllianceId is { } alliance ? new(alliance, null, 0, 0, 0)
-        : contact.CorporationId >= CorporationRules.FirstCorporationId ? new(null, contact.CorporationId, 0, 0, 0)
-        : contact.Camp is { } camp ? new(null, null, camp.GateId, camp.Until, 0)
-        : new(null, null, 0, 0, contact.ShipId);
+        contact.AllianceId is { } alliance ? new(alliance, null, null, 0, 0, 0)
+        : contact.CorporationId >= CorporationRules.FirstCorporationId ? new(null, contact.CorporationId, null, 0, 0, 0)
+        : contact.RegionalGroupId is { } group ? new(null, null, group, 0, 0, 0)
+        : contact.Camp is { } camp ? new(null, null, null, camp.GateId, camp.Until, 0)
+        : new(null, null, null, 0, 0, contact.ShipId);
 
     public const double MinimumRange = 500;
     public const double KitingRange = 10_000;

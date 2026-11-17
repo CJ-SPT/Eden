@@ -17,7 +17,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 184;
+    internal const int CurrentVersion = 185;
 
     public static void Open(
         WorldDbContext world,
@@ -120,6 +120,7 @@ internal static class WorldMigration
         ShipHeatPersistence.ValidateSaved(world);
         Eden.World.Capsuleers.CapsuleerCommunityStore.Initialize(world);
         Eden.World.Capsuleers.CapsuleerProvisioningSchema.Upgrade(world);
+        Eden.World.Capsuleers.RegionalConflictSchema.Upgrade(world);
 
         Eden.World.Capsuleers.CapsuleerPopulationStore.Initialize(world);
         Eden.World.Capsuleers.CapsuleerPopulationStore.Reconcile(world, catalog);

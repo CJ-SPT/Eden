@@ -160,6 +160,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         SpatialNavigationSchema.Configure(model);
         Eden.World.Capsuleers.CapsuleerCommunityStore.Configure(model);
         Eden.World.Capsuleers.CapsuleerPopulationStore.Configure(model);
+        Eden.World.Capsuleers.RegionalConflictSchema.Configure(model);
         ShipHeatSchema.Configure(model);
         NaniteRepairSchema.Configure(model);
         WorldConfigurationSchema.Configure(model);

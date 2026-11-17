@@ -2,6 +2,101 @@
 
 [Protocol index](../protocol.md)
 
+## Regional bot conflicts — November 17, 2026
+
+Regional operations extend the saved roaming-gang command with constellation-based patrol groups in null security.
+These are Eden population affiliations, separate from player corporations, alliances, faction warfare and sovereignty.
+A community discovers nearby prepared communities through existing connected station routes of at most three nullsec
+jumps, within its region. Up to two neighboring groups become rivals. Discovery adds metadata for existing populations;
+operation planning never creates pilots, ships, fits, ammunition, freight, money or replacements. Members of a regional
+gang must share their community affiliation; existing player corporation/alliance restrictions still apply.
+
+An available gang chooses its next objective in this order:
+
+1. **Defend** a recent witnessed attack or loss, or a rival combat ship actually sighted in its home constellation.
+   Local defense can launch and visit a public grid without leaving the home system.
+2. **Escort** an existing owned shipment that is already loaded and still in its source system. The guards follow the
+   shipment's actual connected route. The freighter waits at gates for the main body, with a finite rendezvous deadline.
+3. **Intercept** recently sighted rival freight, or alternate raids on a rival extraction site with patrols of its
+   transport corridor. Destination selection uses public catalog geography and prepared community locations.
+
+Pilots publish bounded, expiring contact reports from their existing observations. Reports retain a pilot, ship,
+system and grid; they expire after three human-active minutes and repeat at most every thirty seconds per unchanged
+contact. Opponent cargo contents, fitting, resources and future destinations are not inspected. Ordinary gang reports
+remain shorter-lived tactical target reports. Each attacker still needs a visible, legal target through the normal
+resident combat path. Regional objectives exclude friendly regional pilots and unrelated neutrals; a human pilot can
+become a defensive target through a witnessed attack or loss. Individual nonregional roams retain their existing policy.
+Regional affiliations also contribute to visible opposing fleet strength and civilian friend filtering. The saved home
+community determines affiliation before the first report, so discovery cannot change friends during an ongoing fight.
+
+Raids visit the selected grid using normal navigation and patrol behavior. Escort guards cover transit gates and wait
+at the endpoint until the shipment is delivered. Completion requires the original freight stacks to arrive with their
+owned quantities; missing cargo or destruction of the escorted hull aborts the operation. Operation expiry, too few
+surviving guards, retreat or rendezvous failure orders a finite withdrawal. No encounter is resolved through virtual
+offscreen damage. Active gangs and escorted shipments continue into unoccupied systems while someone is playing;
+all pause when the last selected human leaves and while the server is stopped.
+
+Ship destruction records regional losses, kills, threat pressure, the public loss grid and a five-minute offensive
+recovery deadline in the same resident transaction as the actual ship loss. A rejected action leaves both unchanged.
+Defensive and escort work can still be selected during offensive recovery. Pressure decays by two points per active
+minute; incident tension rises while established rivalries retain their baseline. A two-minute launch interval and
+one active operation per group by default bound escalation. The configurable limit accepts one to three. A completed
+raid means its patrol reached the objective and returned without losing a member; it does not claim a battle victory,
+capture territory, or replace lost equipment.
+
+World schema **185** adds `WorldRegionalConflict`. Typed resident records retain groups, rivalry tension, reports,
+operations, sequence receipts, loss counters and deadlines. SQL only loads or projects checkpoints. There is no offline
+SQL implementation of regional gameplay. A region admits at most 64 groups, 128 relationships, 64 reports and 192
+operation records; inactive operation history and loss receipts are bounded. Existing databases gain an empty conflict
+table without changing their pilots or possessions. Saved gang and freight assignments resume against the canonical
+operation after restart. Warm diagnostic reads and target filtering perform no SQL, connections or fitting calculations.
+
+**Administration:** Population shows group homes, pressure, losses, kills and operation objectives, status and reasons.
+World Configuration exposes `settings.capsuleers.regionalConflicts` (default on) and
+`settings.capsuleers.regionalOperationsPerGroup` (default 1). They follow the normal save-and-restart workflow. Disabling
+regional conflicts withdraws regional gangs and releases escorted freight to its ordinary routine. Disabling all bots
+pauses the population. Sparse communities continue ordinary individual patrols; additional ships are never granted to
+meet an operation's crew requirements.
+
+**References:** [EVE University fleet and gang types](https://wiki.eveuniversity.org/Fleet_and_Gang_Types) and
+[scouting](https://wiki.eveuniversity.org/Scouting) inform roaming, raids, escort and defensive roles. Persistent regional
+affiliations, cooldowns and operation budgets are Eden policy. Reviewed local evejs
+`server/src/space/npc/npcBehaviorLoop.js`, SHA-256
+`21AD46AB54D10507B6811C2FF14A49B0E0181D5AA38A1CCCFCEE0B97F6DA843B`; this checkout has no Git metadata.
+The implementation reuses Eden's existing native movement and combat rather than adding protocol commands or changing
+Destiny serialization. The prior gang milestone records the pinned Carbon movement reference and client build 3662168.
+
+**Automated validation:** Tool and solution restore passed. The final solution build passed with zero warnings/errors
+in 4.55 seconds. **123 focused .NET tests passed** in 70.27 seconds wall time (66 seconds reported test duration).
+Both Python policy suites passed (8 catalog checks and 9 formatting checks, 1.56 seconds combined). Formatting verification passed in 35.93 seconds; new documentation links, anchors and UTF-8 checks also passed. The full .NET suite was not requested or run.
+The final TRX is `artifacts/regional-conflicts/regional-conflicts-verified.trx`.
+
+The final filter was the union of `RegionalConflictTests`, `RegionalConflictWorldTests`, `RoamingGangTests`,
+`PvpTacticsTests`, `PatrolTests`, `GateCampTests`, `CapsuleerDefenseFrameTests`, `CapsuleerDefenseTests`,
+`CapsuleerDefenseModuleTests`, `CapsuleerDefenseLifecycleTests`, `FreightTests`, `WorldSettingsPageTests`,
+`GameplayDependenciesTests` and `DataModelOwnershipTests` using `FullyQualifiedName~` filters, plus the exact
+`AdministrationTests.PopulationControlsRenderAndSavePendingValuesThroughTheAuthenticatedEditor` and
+`AdministrationTests.PopulationRequiresAdministratorAndReportsSavedCoverageWithoutAdvancingJobs` methods using their
+full `Eden.Protocol.Tests.Administration` namespace. Initial development started with exact method filter
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.RegionalConflictTests.WitnessedAttacksTakePriorityAndLossesDelayOffensiveOperations`.
+
+Coverage includes pure priorities, report expiry, limits and duplicate launch rejection; real resident raid and
+local-defense navigation; autonomous rival combat with sightings, real damage and paid ammunition; freight delivery
+and missing cargo; atomic destruction and rollback; checkpoint/restart restoration; quiet-world pause; old-schema
+upgrade; warm SQL/connection/fitting budgets; authenticated configuration and population rendering.
+
+An initial affected run completed 117 passes and five failures in the independent-neutral patrol frame workload.
+It exposed affiliation being established after the first attack report. Affiliation now comes directly from the saved
+home community; the independent-neutral frame fixture explicitly disables regional conflicts so its original
+combat/performance assertions continue measuring that workload. All five pass in the final run. Regional enabled-world
+tests separately cover stable affiliation, rival targeting and friend rejection. Earlier routine implementation and
+fixture corrections were followed by focused reruns; they are not reported as successful validation of earlier code.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Observe a raid reaching a rival grid; follow an escorted shipment through a gate; inspect
+Population after an actual loss and restart. Native visuals and combat feel remain unverified.
+
 ## Smarter pilots and persistent roaming gangs — November 17, 2026
 
 Eligible nullsec pilots can form persistent hunting gangs from three to six existing, fitted ships. The default size

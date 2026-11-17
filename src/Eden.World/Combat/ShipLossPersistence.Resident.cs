@@ -136,6 +136,15 @@ internal static partial class ShipLossPersistence
             shareWithAttackers: true
         );
         var wreck = WreckStore.CreatePlayer(world, catalog, old, pilot, system, now, items, survivors);
+        RegionalConflictStore.Loss(
+            world,
+            catalog,
+            pilotId,
+            shipId,
+            system,
+            new(position.X, position.Y, position.Z),
+            playerAttacker?.CharacterId
+        );
         foreach (var stored in storedShips)
         {
             if (survivors.Contains(stored.Id))

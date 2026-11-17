@@ -6,6 +6,20 @@ namespace Eden.World.Capsuleers;
 
 internal static partial class CapsuleerTrafficRoutes
 {
+    private const int MaximumRegionalRoutes = 32;
+
+    internal static CapsuleerTrafficRoute[] RegionalRoutes(CatalogDbContext catalog, int station) =>
+        catalog
+            .Definition(s_journeys, station)
+            .Where(route =>
+                route.Systems.Length <= RoamingGangRules.MaximumJumps + 1
+                && route.Systems.All(system => catalog.Definitions.SystemSecurity.GetValueOrDefault(system, 1) <= 0)
+            )
+            .OrderBy(route => route.Systems.Length)
+            .ThenBy(route => route.DestinationStationId)
+            .Take(MaximumRegionalRoutes)
+            .ToArray();
+
     internal static CapsuleerTrafficRoute? Roam(CatalogDbContext catalog, int station, long seed) =>
         catalog
             .Definition(s_journeys, station)

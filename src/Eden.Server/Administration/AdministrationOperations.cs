@@ -24,7 +24,10 @@ internal sealed record AdminPopulationSnapshot(
     int MaterializedPilots,
     IReadOnlyList<CapsuleerSystemSummary> Systems,
     CapsuleerPopulationPolicy Policy
-);
+)
+{
+    public IReadOnlyList<RegionalConflictRegion> RegionalConflicts { get; init; } = [];
+}
 
 internal sealed record AdminRecordView(CatalogStoredRecord Record, IReadOnlyList<CatalogRelatedRecord> Relationships);
 
@@ -40,7 +43,8 @@ internal sealed partial class AdministrationOperations(
     ICapsuleerScene scene,
     Eden.World.Modding.ModStore mods,
     Eden.Server.Modding.ModPublisher modPublisher,
-    Eden.World.Storage.WorldDatabase database
+    Eden.World.Storage.WorldDatabase database,
+    IRegionalConflictDiagnostics? regionalConflicts = null
 )
 {
     private async Task Authorize(ClaimsPrincipal user)
@@ -72,7 +76,10 @@ internal sealed partial class AdministrationOperations(
             scene.MaterializedPilots,
             population.Systems(),
             configuration.Read().Active.Draft.Settings.Capsuleers
-        );
+        )
+        {
+            RegionalConflicts = regionalConflicts?.ReadConflicts() ?? [],
+        };
     }
 
     internal async Task<ConfigurationRevision> Revision(ClaimsPrincipal user, long id)

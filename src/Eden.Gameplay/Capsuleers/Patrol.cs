@@ -48,7 +48,8 @@ public static class PatrolRules
             && other.Position.DistanceTo(pilot.Position!) <= PursuitMeters
         );
 
-    public static bool Friendly(DockedPilot pilot, PilotSighting other) =>
+    public static bool Friendly(DockedPilot pilot, PilotSighting other, int? regionalGroup = null) =>
         pilot.CorpId >= CorporationRules.FirstCorporationId && pilot.CorpId == other.CorporationId
-        || pilot.Identity.AllianceId is not null && pilot.Identity.AllianceId == other.AllianceId;
+        || pilot.Identity.AllianceId is not null && pilot.Identity.AllianceId == other.AllianceId
+        || regionalGroup is not null && regionalGroup == other.RegionalGroupId;
 }

@@ -103,10 +103,14 @@ internal sealed class CapsuleerMiner(
             return false;
         }
         _nextLook = elapsed + TimeSpan.FromSeconds(PilotAwareness.LookSeconds(pilotId)).Ticks;
+        int? regionalGroup =
+            database.Settings.Capsuleers.RegionalConflicts && Live is { } live
+                ? RegionalConflictStore.GroupForPilot(live, database.Catalog, pilotId)
+                : null;
         if (
             TrafficRules.SecurityBand(database.Catalog.Definition(CapsuleerProvisioningCatalog.Security, Pilot.SystemId))
                 == TrafficSecurityBand.High
-            || !defense.Observe(Pilot, elapsed).Any(s => PilotAwareness.ArmedHull(s.Hull))
+            || !defense.Observe(Pilot, elapsed).Any(s => PilotAwareness.ArmedHull(s.Hull) && !PatrolRules.Friendly(Pilot, s, regionalGroup))
         )
         {
             return false;
@@ -275,6 +279,10 @@ internal sealed class CapsuleerMiner(
         _operation = new(database, job, marketSignal);
         try
         {
+            if (defended.NewThreat)
+            {
+                RegionalConflictStore.Attack(_operation, database, Pilot, Work.Defense, Work.WorkingBelt, Work.ActiveTicks);
+            }
             if (_resumeCount != resumes && Work.Activity == MinerActivity.Mining && Work.PaidUntil != 0 && Work.DueTicks > activeNow)
             {
                 if (!TryRebasePaidCycle(_operation, Work, activeNow, out var paid))

@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Regional bot conflicts](protocol/capsuleers.md#regional-bot-conflicts--november-17-2026) adds persistent regional
+rivalries, raids, interception, real freight escorts and witnessed defensive responses using existing roaming gangs.
+
 [Smarter bots and persistent roaming gangs](protocol/capsuleers.md#smarter-pilots-and-persistent-roaming-gangs--november-17-2026) adds role-based hunting decisions, saved gang commands, coordinated nullsec travel and resident combat without native scenes.
 
 [Market presets](world-configuration.md#market-presets) combines economy and supply settings and explains the

@@ -79,7 +79,8 @@ Pilots delivering freight, shopping for supplies or retreating continue through 
 With **Persistent roaming gangs** enabled (default on), eligible nullsec pilots can assemble existing ships into a
 three-to-six-ship hunting gang. **Roaming gang size** defaults to four. The ordinary roam chance also controls formation.
 A gang needs at least three available combat ships at a station, including separate scout and tackle pilots, and a
-connected nullsec station route within three jumps. Sparse communities continue using individual roams.
+connected nullsec station route within three jumps, or a witnessed local defensive objective. Sparse communities
+continue using individual roams.
 
 Gangs retain their home, roster, leader, roles and route across checkpoints and restarts. The scout departs first;
 the main body regroups at gates, shares short-lived target reports, and returns after reaching its endpoint, suffering
@@ -91,6 +92,25 @@ human leaves and while the server is stopped. This is an exception to the ordina
 no native scene is required for their combat contacts. Disabling gangs orders surviving active members home after restart;
 disabling all player bots pauses the entire population. New settings follow the ordinary save-and-restart workflow.
 [Implementation and automated evidence](protocol/capsuleers.md#smarter-pilots-and-persistent-roaming-gangs--november-17-2026).
+
+### Regional conflicts
+
+**Regional conflicts** defaults on. Existing nullsec communities share a constellation patrol affiliation and discover
+nearby rival communities in their region. Gangs use existing ships for raids at rival extraction sites, interception of
+transport corridors, escorts for real loaded freight, and responses to witnessed attacks or rival incursions. Reports
+expire; pilots still need visible, legal targets. Regional groups do not confer sovereignty or faction-warfare membership.
+
+An operation needs available crew and a public objective within three nullsec jumps. **Regional operations per group**
+accepts 1–3, default 1, with a two-minute launch interval. Losses delay further offensive launches for five active minutes;
+defense and escort work remain available. Pressure, rivalries, losses, kills, objectives and deadlines survive restart.
+Lost ships are never granted again. Sparse groups continue their ordinary individual routines.
+
+Escorts are assigned to existing owned freight at the start of its real route. The freighter waits for guards at gates;
+the operation succeeds when the original cargo is actually delivered. Missing cargo, lost guards, retreat and finite
+rendezvous or sortie deadlines can abort it. Escorted shipments share the active-gang exception for unoccupied systems.
+All pause when the last human leaves. Disabling regional conflicts returns its gangs home and releases freight to normal
+travel after restart; saved conflict history remains. Population shows regional groups, pressure and operation outcomes.
+[Implementation and automated evidence](protocol/capsuleers.md#regional-bot-conflicts--november-17-2026).
 
 ## Pilot awareness
 

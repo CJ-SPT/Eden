@@ -365,7 +365,7 @@ internal sealed partial class CapsuleerScheduler(
                         executing = job;
                         long pilot = job.PilotId;
                         int system = _locations[pilot];
-                        if (!activity.ActiveSystems.Contains(system) && !ActiveGang(pilot))
+                        if (!activity.ActiveSystems.Contains(system) && !ActiveOperation(pilot))
                         {
                             throw new InvalidOperationException("A capsuleer job requires a player in its system.");
                         }
@@ -415,9 +415,9 @@ internal sealed partial class CapsuleerScheduler(
                         else if (_haulers.TryGetValue(job.PilotId, out var hauler))
                         {
                             using var phase = SessionPerformance.Phase("traffic.haulerAction");
-                            bool wasGang = ActiveGang(job.PilotId);
+                            bool wasGang = ActiveOperation(job.PilotId);
                             next = hauler.Execute(job, destinyStamp, preparedJourney: preparedJourney);
-                            _membershipDirty |= wasGang != ActiveGang(job.PilotId);
+                            _membershipDirty |= wasGang != ActiveOperation(job.PilotId);
                             Current[job.PilotId] = next;
                             _completed++;
                             IndexLocation(job.PilotId, hauler.SystemId);
@@ -433,7 +433,7 @@ internal sealed partial class CapsuleerScheduler(
                         {
                             throw new InvalidDataException("The capsuleer job has no supported role.");
                         }
-                        if (!activity.ActiveSystems.Contains(_locations[pilot]) && !ActiveGang(pilot))
+                        if (!activity.ActiveSystems.Contains(_locations[pilot]) && !ActiveOperation(pilot))
                         {
                             PausePilot(pilot, throughTicks);
                             _running.Remove(pilot);
@@ -550,7 +550,7 @@ internal sealed partial class CapsuleerScheduler(
         }
         if (activity.Active)
         {
-            foreach (long pilot in _haulers.Keys.Where(ActiveGang))
+            foreach (long pilot in _haulers.Keys.Where(ActiveOperation))
             {
                 if (!_suspended.Contains(pilot))
                 {

@@ -52,6 +52,8 @@ public sealed record HaulerProgress(
     public RoamingGang? Gang { get; init; }
     public bool GangReturning { get; init; }
     public long GangRendezvousUntil { get; init; }
+    public RegionalEscort? RegionalEscort { get; init; }
+    public bool RegionalObjectiveVisited { get; init; }
     public bool EscapingBubble { get; init; }
     public int LastMotionStamp { get; init; } = int.MinValue;
 }

@@ -13,7 +13,8 @@ public sealed record PilotSighting(
     SpacePosition Position,
     SpacePosition Velocity,
     float Radius,
-    GateCamp? Camp = null
+    GateCamp? Camp = null,
+    int? RegionalGroupId = null
 );
 
 public sealed record BeltMemory(long BeltId, long Until);

@@ -7,8 +7,8 @@
 <PageTitle>Population · Eden</PageTitle>
 <h1>Autonomous population</h1>
 <button class="secondary" @onclick="Load">Refresh population</button>
-<p class="muted">Pilots run only in systems with a connected player. When the last player leaves, pilots pause and retain their ships,
-    possessions and pending work. Gate visitor preparation requires players on both sides of the gate.</p>
+<p class="muted">Ordinary pilots run in occupied systems. Active roaming gangs and escorted shipments continue while anyone is playing.
+    All pilots pause when the last player leaves, retaining their ships, possessions and pending work.</p>
 @if (Error is not null)
 {
     <p class="error" role="alert">@Error</p>
@@ -44,6 +44,28 @@
         @foreach (var reason in snapshot.Runtime.Blocked)
         {
             <p>@reason.Agents · @reason.Reason</p>
+        }
+    </section>
+    <section class="card">
+        <h2>Regional conflicts</h2>
+        @if (snapshot.RegionalConflicts.Count == 0)
+        {
+            <p class="muted">No regional operations have been established yet.</p>
+        }
+        @foreach (var region in snapshot.RegionalConflicts)
+        {
+            <h3>@Catalog.Regions.GetValueOrDefault(region.RegionId, "Unknown region")</h3>
+            <div class="scroll"><table><thead><tr><th>Group</th><th>Home</th><th>Threat pressure</th><th>Losses</th><th>Kills</th></tr></thead><tbody>
+                @foreach (var group in region.Groups)
+                {
+                    <tr><td>@group.Name</td><td>@Name(group.HomeSystemId)</td><td>@group.Pressure / 100</td><td>@group.Losses</td><td>@group.Kills</td></tr>
+                }
+            </tbody></table></div>
+            @foreach (var operation in region.Operations.Take(20))
+            {
+                <p>@(region.Groups.FirstOrDefault(group => group.Id == operation.Key.GroupId)?.Name) · @operation.Objective ·
+                    @Name(operation.TargetSystemId) · @operation.Status · @operation.Reason</p>
+            }
         }
     </section>
     <section class="card">

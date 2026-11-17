@@ -33,6 +33,7 @@ internal sealed partial class CapsuleerHauler
         {
             _work = Work with { Gang = committed };
         }
+        SynchronizeRegional();
         if (!reconcile || Live is not { } live || Work.Gang is not { } gang || gang.Phase == RoamingGangPhase.Complete)
         {
             return;
@@ -114,8 +115,21 @@ internal sealed partial class CapsuleerHauler
             _work = Work with { Activity = HaulerActivity.Docked, DueTicks = departure, WaitingReason = "Forming roaming gang." };
             return true;
         }
+        if (
+            gang.Regional is not null
+            && gang.HomeStationId == gang.DestinationStationId
+            && !Work.RegionalObjectiveVisited
+            && gang.Phase != RoamingGangPhase.Returning
+        )
+        {
+            return LaunchLocalRegional(gang);
+        }
         if (Pilot.StationId == gang.DestinationStationId)
         {
+            if (WaitForRegionalShipment())
+            {
+                return true;
+            }
             bool assembled = gang
                 .Members.Where(other => other.Status == RoamingGangMemberStatus.Active)
                 .All(other =>
@@ -189,12 +203,11 @@ internal sealed partial class CapsuleerHauler
         {
             return false;
         }
-        var route = CapsuleerTrafficRoutes.Roam(_operation.Catalog, Pilot.StationId, pilotId ^ Work.ActivitySequence);
-        if (route is null)
-        {
-            return false;
-        }
+        var route =
+            CapsuleerTrafficRoutes.Roam(_operation.Catalog, Pilot.StationId, pilotId ^ Work.ActivitySequence)
+            ?? new CapsuleerTrafficRoute(Pilot.StationId, Pilot.StationId, [Pilot.SystemId]);
         List<GangCandidate> candidates = [new(Pilot, Work, own)];
+        int? regionalGroup = policy.RegionalConflicts ? RegionalConflictStore.GroupForPilot(Live!, database.Catalog, pilotId) : null;
         var world = _operation.World;
         var roster = world
             .Set<SavedCapsuleerHauler>()
@@ -214,6 +227,7 @@ internal sealed partial class CapsuleerHauler
                 || saved.ActiveShip.Position is not null
                 || saved.ActiveShip.StationId != Pilot.StationId
                 || world.Set<SavedCapsuleerSuspension>().Find(row.PilotId) is not null
+                || regionalGroup is not null && RegionalConflictStore.GroupForPilot(Live!, database.Catalog, row.PilotId) != regionalGroup
             )
             {
                 continue;
@@ -272,6 +286,11 @@ internal sealed partial class CapsuleerHauler
         {
             return false;
         }
+        var regional = PlanRegional(ref route);
+        if (regional is null && (route.Systems.Length == 1 || RegionalLaunchBlocked()))
+        {
+            return false;
+        }
         var members = candidates
             .Select(candidate => new RoamingGangMember(
                 candidate.Pilot.PilotId,
@@ -297,12 +316,19 @@ internal sealed partial class CapsuleerHauler
             members,
             checked(Work.ActiveTicks + RoamingGangRules.FormationTicks),
             checked(Work.ActiveTicks + RoamingGangRules.SortieTicks)
-        );
+        )
+        {
+            Regional = regional,
+            Reason = regional?.Reason ?? "Hunting along a connected nullsec route.",
+        };
+        LaunchRegional(gang);
         foreach (var candidate in candidates.Where(candidate => candidate.Pilot.PilotId != pilotId))
         {
-            _operation.GangEnrollments.Add(new(candidate.Pilot.PilotId, candidate.Work with { Gang = gang, GangReturning = false }));
+            _operation.GangEnrollments.Add(
+                new(candidate.Pilot.PilotId, candidate.Work with { Gang = gang, GangReturning = false, RegionalObjectiveVisited = false })
+            );
         }
-        _work = Work with { Gang = gang, GangReturning = false, ActivitySequence = sequence };
+        _work = Work with { Gang = gang, GangReturning = false, ActivitySequence = sequence, RegionalObjectiveVisited = false };
         return true;
     }
 

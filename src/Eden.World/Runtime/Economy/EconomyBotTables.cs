@@ -8,6 +8,7 @@ internal sealed partial class ResidentEconomy
 {
     private void RegisterBotTables()
     {
+        RegisterRegionalConflicts();
         Register(
             new EconomyTable<Eden.Data.World.Agents.SavedMission, EconomySavedMission>(
                 "WorldMission",
@@ -3537,6 +3538,17 @@ internal sealed partial class EconomyTransaction
 
     private void ValidateBotRows()
     {
+        foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedRegionalConflict>())
+        {
+            if (
+                row.RegionId != row.State.RegionId
+                || row.State.Groups.Length > Eden.Gameplay.Capsuleers.RegionalConflictRules.MaximumGroups
+                || row.State.Operations.Length > Eden.Gameplay.Capsuleers.RegionalConflictRules.MaximumOperations
+            )
+            {
+                throw new InvalidDataException("Invalid resident regional conflict state.");
+            }
+        }
         foreach (var row in Retained<Eden.Data.World.Agents.SavedResearchProject>())
         {
             if (!PilotExists(row.PilotId) || !double.IsFinite(row.Points) || !double.IsFinite(row.PointsPerDay))

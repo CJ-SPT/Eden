@@ -150,6 +150,19 @@ internal sealed class CapsuleerOperation(
         }
         if (live is not null)
         {
+            if (
+                database.Settings.Capsuleers.RegionalConflicts
+                && hauler is not null
+                && hauler.Work.RegionalEscort is null
+                && !hauler.Work.Retreating
+                && live.HaulerCheckpoints.GetValueOrDefault(hauler.PilotId)?.Work.RegionalEscort is { } escort
+                && escort.ShipId == hauler.Work.ShipId
+                && hauler.Work.ActiveTicks < escort.Operation.ExpiresAt
+                && RegionalConflictStore.Operation(database, escort.Operation.Key)?.Status == RegionalOperationStatus.Active
+            )
+            {
+                hauler = hauler with { Work = hauler.Work with { RegionalEscort = escort } };
+            }
             // Enrollment and shared command revisions publish only after the owning action commits.
             // The existing checkpoint capture persists these immutable records in the same generation.
             foreach (var enrollment in GangEnrollments)

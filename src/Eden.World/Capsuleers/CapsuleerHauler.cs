@@ -1,4 +1,5 @@
 using Eden.Data.World.Capsuleers;
+using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
@@ -113,6 +114,7 @@ internal sealed partial class CapsuleerHauler(
             is { Defense: not null }
                 or { Ratting: not null }
                 or { Gang.Phase: RoamingGangPhase.Forming or RoamingGangPhase.Hunting or RoamingGangPhase.Returning }
+                or { RegionalEscort: not null }
         || _incoming.Length != 0
         || _warpBlocked
         || Volatile.Read(ref _threatenedShip) != 0;
@@ -339,6 +341,7 @@ internal sealed partial class CapsuleerHauler(
 
     internal CapsuleerJob Execute(CapsuleerJob job, int destinyStamp, bool background = false, PreparedJourney? preparedJourney = null)
     {
+        _regionalReports.Clear();
         _preparedJourney = preparedJourney;
         if (!_loaded)
         {
@@ -437,6 +440,18 @@ internal sealed partial class CapsuleerHauler(
         try
         {
             SynchronizeGang(reconcile: true);
+            PublishRegionalReports();
+            if (defended.NewThreat)
+            {
+                RegionalConflictStore.Attack(
+                    _operation,
+                    database,
+                    Pilot,
+                    Work.Defense,
+                    Work.Ratting is { } activity ? activity.Belts[activity.BeltIndex] : Work.TargetId,
+                    Work.ActiveTicks
+                );
+            }
             ApplyGangReturn();
             if (Pilot.Position is not null && _warpBlocked && _navigation.Warp is null && _navigation.WarpDestination is not null)
             {
@@ -554,6 +569,7 @@ internal sealed partial class CapsuleerHauler(
 
     private CapsuleerJob Commit(CapsuleerJob job)
     {
+        FinishRegional();
         _work = Work with { Navigation = _navigation.Capture() };
         var schedule = Schedule();
         var next = job.Next(schedule.DueTicks, schedule.Action);
@@ -680,6 +696,7 @@ internal sealed partial class CapsuleerHauler(
                 Defense = previous?.Defense,
                 Gang = previous?.Gang,
                 GangReturning = previous?.GangReturning ?? false,
+                RegionalEscort = previous?.RegionalEscort,
             };
         }
         if (previous is null || previous.ShipId != Pilot.ShipId)
@@ -864,7 +881,18 @@ internal sealed partial class CapsuleerHauler(
         {
             if (freight is not null)
             {
+                bool intact =
+                    Work.RegionalEscort is null
+                    || freight.Stacks.Length > 0
+                        && freight.Stacks.All(stack =>
+                            _operation.World.Set<OwnedItem>().Find(stack.ItemId) is { } item
+                            && item.OwnerId == pilotId
+                            && item.LocationId == Pilot.ShipId
+                            && item.TypeId == stack.TypeId
+                            && item.Quantity >= stack.Quantity
+                        );
                 CapsuleerFreight.Deliver(_operation.World, pilotId, Pilot.ShipId, freight);
+                DeliverRegionalShipment(intact);
             }
             freight = CapsuleerFreight.Load(
                 _operation.World,
@@ -1021,6 +1049,7 @@ internal sealed partial class CapsuleerHauler(
             }
             _navigation.Stop();
             _work = Work with { Ratting = Work.Ratting with { Phase = RattingPhase.Searching } };
+            RegionalArrival();
             return;
         }
         if (_target is null)
@@ -1034,7 +1063,7 @@ internal sealed partial class CapsuleerHauler(
         {
             if (GateTravelRules.InRange(Pilot.Position!, Pilot.Flight.ShipRadius, _target))
             {
-                if (WaitForGangAtGate(_target))
+                if (WaitForGangAtGate(_target) || WaitForEscortAtGate(_target))
                 {
                     return;
                 }
@@ -1076,7 +1105,7 @@ internal sealed partial class CapsuleerHauler(
             int dwell = Work.Journey is { } journey
                 ? TravelerRoutineRules.LayoverSeconds(routine, journey.Kind, pilotId, Work.DwellSequence)
                 : HaulingRules.StationDwellSeconds(Pilot.PilotId, Work.DwellSequence);
-            if (Work.Gang is { Phase: not RoamingGangPhase.Complete })
+            if (Work.Gang is { Phase: not RoamingGangPhase.Complete } || Work.RegionalEscort is not null)
             {
                 // A gang's endpoint is an operational turn-around, not a civilian layover.
                 dwell = 1;
@@ -1150,7 +1179,10 @@ internal sealed partial class CapsuleerHauler(
             DepartureAt = null,
         };
         RefreshObjects(loadResources: Live?.CapsuleerActivity.Read().ActiveSystems.Contains(Pilot.SystemId) != false);
-        BeginTravel();
+        if (!TryRegionalGrid())
+        {
+            BeginTravel();
+        }
     }
 
     private long _nextLook;
@@ -1170,10 +1202,16 @@ internal sealed partial class CapsuleerHauler(
             return;
         }
         _nextLook = Work.ActiveTicks + TimeSpan.FromSeconds(PilotAwareness.LookSeconds(pilotId)).Ticks;
+        int? regionalGroup =
+            database.Settings.Capsuleers.RegionalConflicts && Live is { } live
+                ? RegionalConflictStore.GroupForPilot(live, database.Catalog, pilotId)
+                : null;
         if (
             TrafficRules.SecurityBand(database.Catalog.Definition(CapsuleerProvisioningCatalog.Security, Pilot.SystemId))
                 != TrafficSecurityBand.High
-            && defense.Observe(Pilot, Work.ActiveTicks).Count(s => PilotAwareness.ArmedHull(s.Hull))
+            && defense
+                .Observe(Pilot, Work.ActiveTicks)
+                .Count(s => PilotAwareness.ArmedHull(s.Hull) && !PatrolRules.Friendly(Pilot, s, regionalGroup))
                 >= (PilotAwareness.Cautious(pilotId) ? 2 : 3)
         )
         {
