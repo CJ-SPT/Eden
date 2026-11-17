@@ -391,6 +391,10 @@ internal sealed class FlightScene(
         foreach (var changed in structures.Where(o => previous.FirstOrDefault(p => p.Id == o.Id) is { } old && old != o))
         {
             update(new DestinyCommand.OnSlimItemChange(changed.Id, new StaticSlimItem(changed)));
+            if (Ballpark.StructureDamage(changed) is { } damage)
+            {
+                update(new DestinyCommand.OnDamageStateChange(changed.Id, damage));
+            }
         }
         var added = structures.ExceptBy(previous.Select(o => o.Id), o => o.Id).ToArray();
         if (added.Length > 0)

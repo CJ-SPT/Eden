@@ -882,6 +882,7 @@ internal sealed partial class ResidentEconomy
         RegisterSovereigntySkyhook();
         RegisterSovereigntyMiningLink();
         RegisterSovereigntyActivityEvent();
+        RegisterStructureBattle();
         RegisterPilotActivity();
         RegisterCommandBursts();
         RegisterInterdiction();

@@ -90,10 +90,11 @@ internal sealed record StructureInfoReply(StructureSnapshot Structure, bool Acce
             ["wars"] = new List<object?>(),
             ["services"] = Access ? s.Services.ToDictionary(service => (long)service, _ => (object?)0d) : new Dictionary<long, object?>(),
             ["state"] = (int)s.State,
-            ["stateTimerStart"] = s.StateEndsAt.HasValue ? s.StateStartedAt : null,
-            ["stateTimerEnd"] = s.StateEndsAt,
+            ["stateTimerStart"] = s.TimerEnd.HasValue ? s.StateStartedAt : null,
+            ["stateTimerEnd"] = s.TimerEnd,
+            ["stateTimerPaused"] = s.TimerPausedAt,
             ["unanchoring"] = s.UnanchorAt,
-            ["upkeepState"] = s.Modules.Any(m => m.Online) ? 1 : 2,
+            ["upkeepState"] = (int)s.Upkeep,
             ["profileID"] = s.CorporationId,
             ["reinforceHour"] = s.ReinforceHour,
             ["reinforceWeekday"] = s.ReinforceWeekday,
@@ -121,11 +122,14 @@ internal sealed record StructureHangarReply(StructureSnapshot Structure) : BlueM
             new Dictionary<string, object?>
             {
                 ["_operatingState"] = (int)Structure.State,
-                ["_upkeepState"] = Structure.Modules.Any(m => m.Online) ? 1 : 2,
-                ["_damageState"] = Structure.State == StructureState.Onlining ? new object?[] { 0d, 0d, 1d } : new object?[] { 1d, 1d, 1d },
-                ["_timerStartAt"] = Structure.StateEndsAt.HasValue ? Structure.StateStartedAt : null,
-                ["_timerEndAt"] = Structure.StateEndsAt,
-                ["_timerPauseAt"] = null,
+                ["_upkeepState"] = (int)Structure.Upkeep,
+                ["_damageState"] =
+                    Structure.DamageFractions is { } health ? new object?[] { health.Shield, health.Armor, health.Structure }
+                    : Structure.State == StructureState.Onlining ? new object?[] { 0d, 0d, 1d }
+                    : new object?[] { 1d, 1d, 1d },
+                ["_timerStartAt"] = Structure.TimerEnd.HasValue ? Structure.StateStartedAt : null,
+                ["_timerEndAt"] = Structure.TimerEnd,
+                ["_timerPauseAt"] = Structure.TimerPausedAt,
             }
         );
 }

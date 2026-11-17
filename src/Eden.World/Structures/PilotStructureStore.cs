@@ -167,7 +167,7 @@ internal sealed partial class PilotStructureStore(
         return pilot.CorporationId == structure.CorporationId || structure.PublicAccess;
     }
 
-    internal static StructureSnapshot Snapshot(WorldAction world, CatalogDbContext catalog, SavedStructure structure)
+    internal static StructureSnapshot Snapshot(WorldAction world, CatalogDbContext catalog, SavedStructure structure, long now = 0)
     {
         var profile = StructureCatalog.Require(catalog, structure.TypeId);
         var modules = world
@@ -231,6 +231,7 @@ internal sealed partial class PilotStructureStore(
         {
             services.UnionWith([StructureService.Reactions, StructureService.Industry]);
         }
+        var battle = world is EconomyTransaction ? StructureBattlePersistence.Read(world, catalog, structure) : null;
         return new(
             structure.Id,
             profile,
@@ -252,7 +253,12 @@ internal sealed partial class PilotStructureStore(
             structure.StateStartedAt,
             structure.ReinforceWeekday,
             structure.ReinforceHour
-        );
+        )
+        {
+            Battle = battle,
+            DamageFractions = battle?.Health.Fractions(StructureBattlePersistence.Profile(catalog, structure.TypeId).Defense),
+            Upkeep = StructureRules.Upkeep(structure.LowPowerAt, modules.Any(m => m.Online), now),
+        };
     }
 
     public IReadOnlyList<StructureSnapshot> List(long pilotId, int? systemId = null) =>
@@ -262,7 +268,7 @@ internal sealed partial class PilotStructureStore(
                     .Filter<SavedStructure>(s => s.State != StructureState.Destroyed && (!systemId.HasValue || s.SystemId == systemId))
                     .OrderBy(s => s.Id)
                     .AsEnumerable()
-                    .Select(s => Snapshot(world, catalog, s))
+                    .Select(s => Snapshot(world, catalog, s, Now))
                     .ToArray(),
             systemId
         );
@@ -271,7 +277,7 @@ internal sealed partial class PilotStructureStore(
         Execute(
             (world, catalog, _) =>
                 world.Set<SavedStructure>().Find(structureId) is { State: not StructureState.Destroyed } s
-                    ? Snapshot(world, catalog, s)
+                    ? Snapshot(world, catalog, s, Now)
                     : null,
             structureId: structureId
         );
@@ -502,7 +508,7 @@ internal sealed partial class PilotStructureStore(
                     );
                     world.SaveChanges();
                 }
-                return Snapshot(world, catalog, structure);
+                return Snapshot(world, catalog, structure, now);
             }
         );
 
@@ -521,7 +527,7 @@ internal sealed partial class PilotStructureStore(
                 var pilot = Manage(world, structure, pilotId);
                 action(world, catalog, structure, pilot, now);
                 world.SaveChanges();
-                return Snapshot(world, catalog, structure);
+                return Snapshot(world, catalog, structure, now);
             }
         );
 
@@ -701,41 +707,47 @@ internal sealed partial class PilotStructureStore(
                     s => world.Filter<SavedStructureService>(module => module.StructureId == s.Id).ToArray()
                 );
                 var contacts = structures
-                    .Select(s => new StaticSpaceObject(
-                        s.Id,
-                        s.TypeId,
-                        StructureCatalog.Require(catalog, s.TypeId).GroupId,
-                        StructureCatalog.Require(catalog, s.TypeId).CategoryId,
-                        s.CorporationId,
-                        new(s.X, s.Y, s.Z),
-                        (float)StructureCatalog.Require(catalog, s.TypeId).Radius
-                    )
+                    .Select(s =>
                     {
-                        Name = s.Name,
-                        Collision = StaticCollisionCatalog.Read(catalog, s.TypeId)?.Rotate(s.Yaw),
-                        Structure = new(
-                            s.State,
-                            s.StateStartedAt,
-                            s.StateEndsAt,
-                            s.UnanchorAt,
-                            s.HasCore,
-                            modules[s.Id].Any(module => module.Online) ? StructureUpkeepState.FullPower : StructureUpkeepState.LowPower
+                        var battle = world is EconomyTransaction ? StructureBattlePersistence.Read(world, catalog, s) : null;
+                        return new StaticSpaceObject(
+                            s.Id,
+                            s.TypeId,
+                            StructureCatalog.Require(catalog, s.TypeId).GroupId,
+                            StructureCatalog.Require(catalog, s.TypeId).CategoryId,
+                            s.CorporationId,
+                            new(s.X, s.Y, s.Z),
+                            (float)StructureCatalog.Require(catalog, s.TypeId).Radius
                         )
                         {
-                            Yaw = s.Yaw,
-                        },
-                        Skyhook =
-                            world is EconomyTransaction
-                            && s.TypeId == Eden.Gameplay.Sovereignty.SovereigntyResourceRules.SkyhookTypeId
-                            && world.Set<Eden.Data.World.Sovereignty.SavedSovereigntySkyhook>().Find(s.Id) is { } skyhook
-                                ? Eden.World.Sovereignty.SovereigntyResourceStore.SkyhookView(world, catalog, skyhook, Now)
-                                : null,
-                        Sovereignty =
-                            s.TypeId == Eden.Gameplay.Sovereignty.EntosisRules.HubTypeId
-                            && Eden.World.Sovereignty.PilotEntosisStore.Snapshot(world, systemId, Now) is { } hub
-                            && hub.HubId == s.Id
-                                ? hub
-                                : null,
+                            Name = s.Name,
+                            Collision = StaticCollisionCatalog.Read(catalog, s.TypeId)?.Rotate(s.Yaw),
+                            Structure = new(
+                                s.State,
+                                s.StateStartedAt,
+                                s.StateEndsAt,
+                                s.UnanchorAt,
+                                s.HasCore,
+                                StructureRules.Upkeep(s.LowPowerAt, modules[s.Id].Any(module => module.Online), now)
+                            )
+                            {
+                                Yaw = s.Yaw,
+                                Battle = battle,
+                                DamageFractions = battle?.Health.Fractions(StructureBattlePersistence.Profile(catalog, s.TypeId).Defense),
+                            },
+                            Skyhook =
+                                world is EconomyTransaction
+                                && s.TypeId == Eden.Gameplay.Sovereignty.SovereigntyResourceRules.SkyhookTypeId
+                                && world.Set<Eden.Data.World.Sovereignty.SavedSovereigntySkyhook>().Find(s.Id) is { } skyhook
+                                    ? Eden.World.Sovereignty.SovereigntyResourceStore.SkyhookView(world, catalog, skyhook, Now)
+                                    : null,
+                            Sovereignty =
+                                s.TypeId == Eden.Gameplay.Sovereignty.EntosisRules.HubTypeId
+                                && Eden.World.Sovereignty.PilotEntosisStore.Snapshot(world, systemId, Now) is { } hub
+                                && hub.HubId == s.Id
+                                    ? hub
+                                    : null,
+                        };
                     })
                     .ToArray();
                 long deadline = structures
@@ -745,6 +757,27 @@ internal sealed partial class PilotStructureStore(
                     .Select(d => d!.Value)
                     .DefaultIfEmpty(long.MaxValue)
                     .Min();
+                if (world is EconomyTransaction)
+                {
+                    deadline = Math.Min(
+                        deadline,
+                        structures
+                            .SelectMany(s =>
+                            {
+                                var battle = world.Set<SavedStructureBattle>().Find(s.Id);
+                                return new[]
+                                {
+                                    battle?.RepairAt,
+                                    battle?.PausedUntil,
+                                    s.LowPowerAt is long low ? (long?)checked(low + StructureRules.AbandonmentDuration) : null,
+                                };
+                            })
+                            .Where(at => at > now)
+                            .Select(at => at!.Value)
+                            .DefaultIfEmpty(long.MaxValue)
+                            .Min()
+                    );
+                }
                 var extractions = world.Filter<SavedMoonExtraction>(e => e.SystemId == systemId);
                 long? nextFracture = extractions.Where(e => !e.Ended).Select(e => (long?)e.AutoFractureAt).Min();
                 long? nextExpiry = extractions.Select(e => e.FieldExpiresAt).Min();

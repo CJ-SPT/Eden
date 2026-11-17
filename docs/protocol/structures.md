@@ -2,6 +2,88 @@
 
 [Protocol index](../protocol.md) · [Documentation index](../README.md)
 
+## Upwell completion program — November 16, 2026
+
+The completion program continues the existing foundation with resident authority and checkpoint persistence.
+Historical foundation limitations below describe their original milestones; this program records subsequent work explicitly.
+
+| Milestone | Scope | Status |
+| --- | --- | --- |
+| Battle state | Catalog layer caps/resistances and pause thresholds, repairs, reinforcement, abandonment, native status and saved deadlines | Implemented; validation below |
+| Incoming combat and loss | Paid weapons against structures, legal targeting, destruction settlement, personal/corporate asset safety and recovery | Planned |
+| Defense and tethering | Combat fitting/control, supported defensive weapons, target updates, access-checked tether and repairs | Planned |
+| Service completion | Remaining native structure profiles/access, economic/clone services, ownership and specialized structure consumers | Planned |
+
+### Battle state and native status
+
+Saved-world schema **185** adds `WorldStructureBattle`. Hit points, the shared damage window, repair deadline and pause
+deadline are captured with the owning structure's state and reinforcement deadline in the same resident transaction.
+The new battle operation requires the resident world; it has no offline SQL gameplay implementation or damage RPC.
+Player weapon routing and destruction/asset settlement belong to the next milestone and are not enabled by this foundation.
+
+Damage uses catalog shield/armor/hull resonances, layer damage limits **2034–2036**, pause thresholds **3354–3356** and
+`CanHaveAutoRepair` **5770**. Caps apply to actual layer HP lost, shared across all attackers. The initial timing policy
+uses one-second UTC windows and one-second repair holds on qualifying damage; idle time cannot bank burst damage.
+This discretization is Eden's explicit server policy, not a claim about CCP's undisclosed damage-sampling implementation.
+Unopposed shield/armor repairs take 15 minutes and hull repairs take 30 minutes. Repairs restore all layers; profiles
+without automatic repairs retain their damage. A coreless onlining structure cannot repair itself into operation.
+
+Medium structures retain their armor reinforcement while low power and have no hull reinforcement. Large/XL low-power
+structures skip armor reinforcement. Flex structures skip armor reinforcement and, when low power, hull reinforcement.
+Abandoned structures have no reinforcement. Exits use the pinned security/size delay followed by the selected UTC hour
+and bounded jitter. The offset is deterministically mixed from structure identity and attack time, and the resulting
+deadline is saved once. Hull exposure/reinforcement offlines services and suspends unfinished industry at that transition.
+Low-power structures become abandoned after seven days; onlining a fueled service restores full power.
+
+Native slim, directory and hangar replies publish actual layer fractions, repair/reinforcement timers, pause state and
+abandonment. Initial/AddBalls damage states and subsequent damage/slim updates share those values. Contact caching
+includes battle changes and exact repair, pause and abandonment deadlines; warmed unchanged views retain their identity.
+
+References and evidence:
+
+- [UniWiki vulnerability](https://wiki.eveuniversity.org/Vulnerability),
+  [CCP vulnerability states](https://support.eveonline.com/hc/en-us/articles/208289385-Upwell-Structures-Vulnerability-States),
+  and [CCP asset safety](https://support.eveonline.com/hc/en-us/articles/208289365-Asset-Safety) were reviewed against the pinned client.
+- Inert inspection of the original build-3662168 archive, SHA-256
+  `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`, used `structures/const.pyj`,
+  `structures/structure.pyj` and `structures/reinforce.pyj`. The native state transitions, repair durations, reinforcement
+  delays and exit jitter are present in these modules. No client code was executed.
+- Local EVE.js **261108.1** has no Git revision. `structureState.js` SHA-256
+  `E12D487E9E2E0E5486CE03A60B1178EAADC5A74C0BE39813B026F16206376C1C` and `structureConstants.js` SHA-256
+  `C15E3373280732B15B01500E18139AC1A4D3A04FAE53384AC1744BD8F7149B09` identify the checked reference.
+  Its layer-cap/pause and auto-repair boundaries informed the audit; no AGPL source was incorporated.
+- Blue codecs and Destiny serialization remain existing adapters. The Carbon revisions recorded in the hull-geometry
+  section below remain the reference for those boundaries.
+
+**Automated validation:** Exact cap development passed one case; the expanded rule checks passed 12 cases.
+The exact resident rollback/checkpoint/reopen scenario passed in 7.07 seconds including runner overhead (build 5.21 seconds).
+An intermediate 80-case affected run passed 79 and failed an old assertion that expected Low Power after a year without
+fuel. It now expects Abandoned. After this and native damage-state additions, the focused correction filter passed
+21 cases in 7.97 seconds (build 4.84 seconds). The final hull-exposure/service-offline flow passed its exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Structures.StructureBattleTests.ResidentReinforcementExitsAtTheSavedDeadline`
+in 7.02 seconds (build 8.48 seconds).
+
+Final root tool/solution restore and build passed with zero warnings/errors (build 8.11 seconds). The affected filter
+combined `FullyQualifiedName~` selectors for `Eden.Protocol.Tests.Structures`, `Eden.Protocol.Tests.Docking.StructureServiceTests`,
+`Eden.Protocol.Tests.Hosting`, `Eden.Protocol.Tests.Persistence.WorldMigrationTests`,
+`Eden.Protocol.Tests.Persistence.WorldInitializationTests`, `Eden.Protocol.Tests.Persistence.CheckpointOwnershipTests`, and
+`Eden.Protocol.Tests.Flight.MissileBallparkTests` using `|`. It completed **213 cases: 203 passed, 10 failed** in 62.59 seconds.
+All ten failures are checkpoint-copy concurrency cases: four variants of
+`WarmDockedCallsCompleteDuringCheckpointCopyOnFirstPeriodicPoll` and six of
+`PausedCopyAllowsWarmFramesAndIndependentMovementWhileSqlWritersWait`. The same exact ten cases were independently run
+on unchanged main **fa2e1c6e577c8c3b65568b78acf0fb3a7eb17852** and all ten failed there as well (48.56 seconds;
+build 10.49 seconds). They stall in the existing `update.tackle` phase during paused checkpoint copying; the structure
+foundation does not establish a fix for that baseline issue. No test was disabled or weakened. Validation stopped after
+the failed affected run, investigated the exact failures against main, then completed the remaining policy checks.
+
+Both Python policy suites passed (**8 catalog**, **9 formatting**). Formatting/140-column verification passed for
+**2,578 files**; these policy and formatting checks took 28.15 seconds. Changed documentation local links, UTF-8,
+final-newline/trailing-whitespace checks and `git diff --check` passed. The full .NET suite was not requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None for this foundation; incoming player weapon routing is not yet enabled.
+
 ## Station and structure hull geometry — November 16, 2026
 
 The Athanor's catalog radius is a 45 km docking/range ball, while its visible model extends roughly 15 km from its

@@ -269,6 +269,19 @@ internal sealed partial class PilotStructureStore
                 ? world.Filter<SavedStructure>(s => s.SystemId == system && (s.StateEndsAt <= now || s.UnanchorAt <= now))
                 : world.Filter<SavedStructure>(s => s.StateEndsAt <= now || s.UnanchorAt <= now)
         ).ToArray();
+        if (world is EconomyTransaction)
+        {
+            var battleStructures = systemId is int battleSystem
+                ? world.Filter<SavedStructure>(s => s.SystemId == battleSystem && s.State != StructureState.Destroyed)
+                : world.Filter<SavedStructure>(s => s.State != StructureState.Destroyed);
+            var combatDue = battleStructures
+                .AsEnumerable()
+                .Where(s =>
+                    world.Set<SavedStructureBattle>().Find(s.Id) is { } battle
+                    && (battle.RepairAt <= now || battle.PausedUntil != 0 && battle.PausedUntil <= now)
+                );
+            due = due.Concat(combatDue).DistinctBy(s => s.Id).ToArray();
+        }
         foreach (var structure in due)
         {
             var profile = StructureCatalog.Require(catalog, structure.TypeId);
@@ -289,6 +302,14 @@ internal sealed partial class PilotStructureStore
                 structure.State = StructureState.ShieldVulnerable;
                 structure.StateStartedAt = structure.StateEndsAt!.Value;
                 structure.StateEndsAt = null;
+                if (world is EconomyTransaction)
+                {
+                    StructureBattlePersistence.Restore(world, catalog, structure);
+                }
+            }
+            if (world is EconomyTransaction)
+            {
+                StructureBattlePersistence.Advance(world, catalog, structure, now);
             }
         }
         world.SaveChanges();

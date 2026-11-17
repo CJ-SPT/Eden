@@ -37,7 +37,7 @@ internal sealed partial class PilotStructureStore
                 {
                     throw new InvalidDataException("Dock in this operational structure before taking control.");
                 }
-                return Snapshot(world, catalog, structure);
+                return Snapshot(world, catalog, structure, Now);
             },
             pilotId: pilotId,
             structureId: structureId

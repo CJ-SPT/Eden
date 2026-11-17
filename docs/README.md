@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Upwell completion](protocol/structures.md#upwell-completion-program--november-16-2026) tracks structure combat,
+reinforcement, destruction, asset recovery and remaining services.
+
 [Market presets](world-configuration.md#market-presets) combines economy and supply settings and explains the
 Standard preset's imported live order books, original locations/quantities and checkpoint behavior.
 

@@ -339,7 +339,7 @@ public sealed class StructureTests
         Assert.False(Assert.Single(exhausted.Modules).Online);
         Assert.DoesNotContain(StructureService.BasicManufacturing, exhausted.Services);
         Assert.Null(Assert.Single(exhausted.Modules).NextFuelAt);
-        Assert.Equal(StructureUpkeepState.LowPower, Assert.Single(contacts.Contacts(Fixture.SystemId)).Structure!.UpkeepState);
+        Assert.Equal(StructureUpkeepState.Abandoned, Assert.Single(contacts.Contacts(Fixture.SystemId)).Structure!.UpkeepState);
     }
 
     [Fact]
