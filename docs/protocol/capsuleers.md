@@ -929,6 +929,26 @@ FullyQualifiedName~CapsuleerPopulationRetryTests|FullyQualifiedName~CapsuleerBac
 
 **Optional maintainer checks:** None. Server scheduling and saved-state behavior are covered by automated tests.
 
+## Combat anomaly scouting on station departure — November 17, 2026
+
+A saved traveler repeatedly failed its Trade job while preparing to undock. An automated replay of a copy of the
+incident checkpoint reproduced the nested transaction in combat anomaly discovery. Loading a system's public site
+list can create sites or advance their waves. Travelers now scout a candidate before the station transaction opens.
+The ship's post-resupply fit, health and patrol priorities still decide whether it launches for that site.
+
+The same job advanced and undocked on replay after the fix. The scheduler regression starts with an uncached
+site list and verifies the ship's destination, a single job revision and zero scheduler failures. No live
+gameplay acceptance was performed. [Combat anomalies](https://wiki.eveuniversity.org/Guide_to_combat_sites)
+
+Focused validation filter
+
+```text
+FullyQualifiedName~PilotSpaceActivitiesTests|FullyQualifiedName~CombatAnomalyTests|FullyQualifiedName~RattingRulesTests|FullyQualifiedName~PatrolTests|FullyQualifiedName~RoamingGangTests|FullyQualifiedName~CapsuleerFailureTests|FullyQualifiedName~CapsuleerHaulerTests
+```
+
+The focused run passed 52 of 53 tests. The overpriced-ammunition shopping case also failed on the unchanged
+main revision (5ade3cd4).
+
 ## Traffic returning to occupied systems — November 17, 2026
 
 A player's presence in a traveler's home system keeps that pilot's route running through empty systems.

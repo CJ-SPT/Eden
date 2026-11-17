@@ -74,11 +74,28 @@ internal sealed partial class CapsuleerHauler
     private double RattingSignature(NpcContact target) =>
         Eden.World.Runtime.Combat.LiveCombatRuntime.Find(database.Path)?.RattingNpc(target.Id, Now)?.SignatureRadius ?? 1;
 
-    private bool TryLaunchActivity()
+    private CombatAnomaly? ScoutDepartureAnomaly()
+    {
+        if (_background || Work.Activity != HaulerActivity.Docked || Work.ActiveTicks < Work.DueTicks || Work.Ratting is not null)
+        {
+            return null;
+        }
+        var policy = database.Settings.Capsuleers;
+        long sequence = checked(Work.ActivitySequence + 1);
+        return
+            policy.AnomalyRatting
+            && (!policy.BeltRatting || sequence % RattingRules.AnomalyDepartureInterval == 0)
+            && (Work.Journey is null || Pilot.StationId == Work.Journey.DestinationStationId)
+            && RattingRules.Choose(pilotId, sequence)
+            ? ratting.ScoutAnomaly(Pilot.SystemId, Now, pilotId, sequence, Work.VisitedBelts, Work.ActiveTicks)
+            : null;
+    }
+
+    private bool TryLaunchActivity(CombatAnomaly? scoutedAnomaly)
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.launchActivity");
         var supplies = Work.Resupply!;
-        if (TryLaunchSortie(supplies))
+        if (TryLaunchSortie(supplies, scoutedAnomaly))
         {
             return true;
         }
@@ -117,7 +134,7 @@ internal sealed partial class CapsuleerHauler
         return false;
     }
 
-    private bool TryLaunchSortie(ResupplyProgress supplies)
+    private bool TryLaunchSortie(ResupplyProgress supplies, CombatAnomaly? site)
     {
         var policy = database.Settings.Capsuleers;
         if (!policy.BeltRatting && !policy.AnomalyRatting && !policy.RoamingPvp && !policy.GateCamps)
@@ -166,10 +183,6 @@ internal sealed partial class CapsuleerHauler
         {
             return false;
         }
-        CombatAnomaly? site =
-            policy.AnomalyRatting && (!policy.BeltRatting || sequence % 3 == 0)
-                ? ratting.ScoutAnomaly(Pilot.SystemId, Now, pilotId, sequence, Work.VisitedBelts, Work.ActiveTicks)
-                : null;
         long[] belts =
             site is not null ? [site.Id]
             : !policy.BeltRatting ? []

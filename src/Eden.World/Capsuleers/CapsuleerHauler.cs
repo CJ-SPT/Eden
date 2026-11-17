@@ -5,6 +5,7 @@ using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
@@ -459,6 +460,8 @@ internal sealed partial class CapsuleerHauler(
         _operation = new(database, job, marketSignal);
         try
         {
+            // Scouting can populate the system's public sites. Finish that work before opening the station transaction.
+            var scoutedAnomaly = ScoutDepartureAnomaly();
             SynchronizeGang(reconcile: true);
             PublishRegionalReports();
             if (defended.NewThreat)
@@ -496,7 +499,7 @@ internal sealed partial class CapsuleerHauler(
                 {
                     _navigation.SetAtRest();
                 }
-                Step();
+                Step(scoutedAnomaly);
             }
             return Commit(job);
         }
@@ -777,7 +780,7 @@ internal sealed partial class CapsuleerHauler(
         };
     }
 
-    private void Step()
+    private void Step(CombatAnomaly? scoutedAnomaly)
     {
         if (Work.Ratting is not null)
         {
@@ -787,7 +790,7 @@ internal sealed partial class CapsuleerHauler(
         switch (Work.Activity)
         {
             case HaulerActivity.Docked when Work.ActiveTicks >= Work.DueTicks:
-                TradeAndLaunch();
+                TradeAndLaunch(scoutedAnomaly);
                 break;
             case HaulerActivity.Flying:
                 Fly();
@@ -822,7 +825,7 @@ internal sealed partial class CapsuleerHauler(
             .OrderBy(i => i.Id)
             .ToArray();
 
-    private void TradeAndLaunch()
+    private void TradeAndLaunch(CombatAnomaly? scoutedAnomaly)
     {
         using var phase = SessionPerformance.Phase("traffic.tradeAndLaunch");
         if (Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup)
@@ -864,7 +867,7 @@ internal sealed partial class CapsuleerHauler(
         {
             return;
         }
-        if (TryLaunchActivity())
+        if (TryLaunchActivity(scoutedAnomaly))
         {
             return;
         }

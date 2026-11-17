@@ -59,6 +59,7 @@ public static class RattingRules
     public const int MaximumClearSeconds = 120;
     public const int MaximumShoppingJumps = 3;
     public const int DepartureDivisor = 3;
+    public const int AnomalyDepartureInterval = 3;
     public const int BudgetDivisor = 4;
     public const int ReferencePriceMultiplier = 2;
     private const double SurvivalMargin = 2;
