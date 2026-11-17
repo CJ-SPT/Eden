@@ -27,6 +27,80 @@ public sealed class RegionalConflictWorldTests
     private const int HomeStation = 60015157;
     private const long Human = 90000001;
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task FirstLossUsesTheCommunityRegionWhenItsHomeStationIsInAnotherRegion(bool botVictim)
+    {
+        using var fixture = new RoamingGangTests.Fixture(regional: true, splitRegions: true);
+        int regionId = fixture.Database.Catalog.Systems[Home].RegionId;
+        Assert.NotEqual(regionId, fixture.Database.Catalog.Systems[Away].RegionId);
+        long bot = fixture.Live.Economy.Read(world =>
+            world.Set<SavedCapsuleerAgent>().First(agent => agent.CommunitySystemId == Home).PilotId
+        );
+        using (var catalog = new CatalogDbContext(fixture.Database.CatalogPath))
+        using (var action = fixture.Live.Economy.Begin())
+        {
+            action.Set<SavedCapsuleerPopulation>().Find(Home)!.HomeStationId = 60003760;
+            var position = SystemObjects.Geometry(catalog, Home).First(body => body.DestinationGateId is not null).Position;
+            foreach (long pilotId in new[] { bot, Human })
+            {
+                var pilot = action.Pilots.Find(pilotId)!;
+                if (pilotId == Human)
+                {
+                    pilot.ActiveShip.TypeId = 603;
+                }
+                SqliteWorld.SetPosition(action, catalog, pilot.ActiveShipId, position, Home, fixture.Clock.Now);
+            }
+            action.Commit();
+        }
+        Assert.Empty(fixture.Host.GetRequiredService<IRegionalConflictDiagnostics>().ReadConflicts());
+        long victimId = botVictim ? bot : Human;
+        long attackerId = botVictim ? Human : bot;
+        long ship = fixture.Live.Economy.Read(world => world.Pilots.Find(victimId)!.ActiveShipId);
+        void Lose(bool commit)
+        {
+            using var catalog = new CatalogDbContext(fixture.Database.CatalogPath);
+            using var action = fixture.Live.Economy.Begin();
+            var victim = action.Pilots.Find(victimId)!;
+            var attacker = action.Pilots.Find(attackerId)!;
+            ShipLossPersistence.Apply(
+                action,
+                catalog,
+                victim,
+                null,
+                ship,
+                Home,
+                victim.ActiveShip.Position!,
+                fixture.Clock.Now,
+                new DropNothing(),
+                PilotInteractionHistoryStore.Player(action, attacker, attacker.ActiveShipId)
+            );
+            if (commit)
+            {
+                action.Commit();
+            }
+        }
+        Lose(commit: false);
+        Assert.True(fixture.Live.Economy.ActiveShip(victimId, ship));
+        Assert.Empty(fixture.Host.GetRequiredService<IRegionalConflictDiagnostics>().ReadConflicts());
+        Lose(commit: true);
+        Assert.False(fixture.Live.Economy.ActiveShip(victimId, ship));
+        Assert.Single(fixture.Live.Economy.Read(world => world.Set<ShipLoss>().Where(loss => loss.ShipId == ship).ToArray()));
+        var region = Assert.Single(fixture.Host.GetRequiredService<IRegionalConflictDiagnostics>().ReadConflicts());
+        Assert.Equal(regionId, region.RegionId);
+        var group = Assert.Single(region.Groups);
+        Assert.Equal(botVictim ? 1 : 0, group.Losses);
+        Assert.Equal(botVictim ? 0 : 1, group.Kills);
+        Assert.Contains(ship, region.RecentLosses);
+        await fixture.Live.FlushAsync();
+        fixture.Restart();
+        var restored = Assert.Single(fixture.Host.GetRequiredService<IRegionalConflictDiagnostics>().ReadConflicts());
+        Assert.Equal(region.RegionId, restored.RegionId);
+        Assert.Equal(region.Groups, restored.Groups);
+        Assert.Equal(region.RecentLosses, restored.RecentLosses);
+    }
+
     [Fact]
     public async Task RivalCommunitiesLaunchOnePaidRaidAndRetainItsObjectiveAcrossRestart()
     {

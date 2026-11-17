@@ -99,14 +99,20 @@ internal static class RegionalConflictStore
 
     internal static RegionalConflictRegion Ensure(WorldAction world, CatalogDbContext catalog, int station, long elapsed)
     {
-        var home = catalog.RequireStation(station);
-        var system = catalog.RequireSystem(home.SolarSystemId);
+        var system = catalog.RequireSystem(catalog.RequireStation(station).SolarSystemId);
+        return Ensure(world, catalog, new Home(system.ConstellationId, system.Id, station), elapsed);
+    }
+
+    private static RegionalConflictRegion Ensure(WorldAction world, CatalogDbContext catalog, Home home, long elapsed)
+    {
+        // Stationless communities can use a refuge in another region. Their affiliation still belongs to their home system.
+        var system = catalog.RequireSystem(home.SystemId);
         var row =
             world.Set<SavedRegionalConflict>().Find(system.RegionId)
             ?? world.Add(new SavedRegionalConflict { RegionId = system.RegionId, State = new(system.RegionId, 0) }).Entity;
         var region = RegionalConflictRules.Advance(row.State, elapsed);
         string name = catalog.Definitions.Constellations.GetValueOrDefault(system.ConstellationId)?.Name ?? system.Name;
-        region = RegionalConflictRules.Discover(region, new(system.ConstellationId, $"{name} patrol", system.Id, station));
+        region = RegionalConflictRules.Discover(region, new(home.GroupId, $"{name} patrol", system.Id, home.StationId));
         row.State = region;
         return region;
     }
@@ -282,7 +288,7 @@ internal static class RegionalConflictStore
         long elapsed = world.ActiveTicks;
         foreach (var home in homes)
         {
-            Ensure(world, catalog, home.StationId, elapsed);
+            Ensure(world, catalog, home, elapsed);
         }
         long grid = SystemObjects
             .Geometry(catalog, system)

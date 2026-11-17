@@ -2,6 +2,34 @@
 
 [Protocol index](../protocol.md)
 
+## Regional loss accounting across refuge regions — November 17, 2026
+
+A reported missile-kill failure was reproduced at `RegionalConflictStore.Loss`: a nullsec community may use a
+home/refuge station in a different region. Loss accounting created conflict state using that station's region,
+then looked up the community's actual region and dereferenced a missing row. Loss initialization now uses the
+typed community home system and affiliation, while retaining its refuge station as metadata. Ordinary station-based
+planning keeps its existing behavior. The ship loss, capsule, wreck and regional counters still commit atomically
+through the existing resident transaction; no database fallback or new persistence path is added.
+
+**Automated validation:** Both new cases passed in 10.23 seconds wall time (7 seconds test duration).
+Tool/solution restore and solution build passed (zero warnings/errors, 0.82 seconds). The affected filter combined
+`FullyQualifiedName~` for `RegionalConflictWorldTests`, `RegionalConflictTests`, `MissileCombatTests`,
+`PilotCombatTests`, `GameplayDependenciesTests` and `DataModelOwnershipTests`: 76 passed and one pre-existing
+fixture failure in 33.94 seconds wall time. The failing
+`PilotCombatTests.FatalShotSendsCombatTextBeforeRemovingTheTargetsClientRecord` also fails unchanged on main
+`128b0a13`: its nonresident session reaches the resident-only Abyssal handler. It does not reach regional loss
+accounting; this unrelated fixture is unchanged. Both Python policy suites passed (8 catalog cases in 1.221 seconds,
+9 formatting cases in 0.021 seconds); formatting and `git diff --check` passed. No full suite was requested or run.
+Exact development filter:
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.RegionalConflictWorldTests.FirstLossUsesTheCommunityRegionWhenItsHomeStationIsInAnotherRegion`.
+The bot-victim variant reproduced the reported null reference at line 297 before the fix. Coverage exercises the
+first regional loss before any gang has initialized state, both bot-victim and bot-attacker settlement, rollback,
+real hull destruction, counters in the community's region, and checkpoint/restart retention.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None required. Deployment and live missile-kill acceptance remain unverified.
+
 ## Bot PvP improvements — November 17, 2026
 
 The implementation proceeds in five independently verified and pushed milestones:

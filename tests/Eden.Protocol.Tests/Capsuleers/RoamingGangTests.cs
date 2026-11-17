@@ -388,7 +388,7 @@ public sealed class RoamingGangTests
         internal LiveWorld Live => Host.GetRequiredService<LiveWorld>();
         internal CapsuleerScheduler Scheduler => Host.GetRequiredService<CapsuleerScheduler>();
 
-        internal Fixture(bool regional = false)
+        internal Fixture(bool regional = false, bool splitRegions = false)
         {
             PassiveCatalogFixture.LoadFrigateHulls(Database.CatalogPath);
             PassiveCatalogFixture.Load(Database.CatalogPath);
@@ -403,6 +403,12 @@ public sealed class RoamingGangTests
                         $"INSERT INTO Constellation VALUES ({rivalConstellation},'Rival test constellation',{region})"
                     );
                     catalog.Database.ExecuteSql($"UPDATE SolarSystem SET ConstellationId={rivalConstellation} WHERE Id={Away}");
+                    if (splitRegions)
+                    {
+                        int remoteRegion = region + 1000;
+                        catalog.Database.ExecuteSql($"INSERT INTO Region VALUES ({remoteRegion},'Remote test region')");
+                        catalog.Database.ExecuteSql($"UPDATE Constellation SET RegionId={remoteRegion} WHERE Id={rivalConstellation}");
+                    }
                 }
                 foreach (int system in new[] { Home, Away })
                 {

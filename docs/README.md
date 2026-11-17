@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Regional loss accounting](protocol/capsuleers.md#regional-loss-accounting-across-refuge-regions--november-17-2026)
+fixes ship-loss settlement for nullsec communities with a refuge station in another region.
+
 [Bot PvP improvements](protocol/capsuleers.md#bot-pvp-improvements--november-17-2026) records capacitor management,
 fighting retreats and the remaining tactical milestones.
 
