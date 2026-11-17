@@ -9,6 +9,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
+using Eden.Gameplay.Ships;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
@@ -768,6 +769,15 @@ internal sealed partial class CapsuleerHauler(
         {
             throw new InvalidDataException("Waiting for a replacement hauling ship.");
         }
+        bool upgraded =
+            Work.Freight is null
+            && Pilot.ShipTypeId == HaulingRules.BadgerType
+            && CapsuleerFreight.Upgrade(_operation.World, _operation.Catalog, pilotId, Pilot.ShipId);
+        if (upgraded)
+        {
+            _pilot = ReadPilot(_operation.World, CapsuleerCommunityStore.MinerAccountId);
+            _navigation.AdoptHull();
+        }
         if (!_trafficRefreshChecked && database.Traffic.Profiles.Count > 0)
         {
             if (TrafficProvisioning.Refresh(database, _operation.World, _operation.Catalog, pilotId, _route, Now))
@@ -797,11 +807,36 @@ internal sealed partial class CapsuleerHauler(
         {
             AssignJourney();
         }
-        // The cargo belongs to this encounter. A dock changes its route, never
-        // purchases or lists goods on behalf of the independent regional economy.
+        var freight = Work.Freight;
+        int destination = Pilot.StationId == _route.DestinationStationId ? _route.SourceStationId : _route.DestinationStationId;
+        if (
+            freight?.Destination == Pilot.StationId
+            || upgraded
+            || (
+                freight is null
+                && Pilot.ShipGroupId == (int)HullClass.Hauler
+                && _operation.World.Set<SavedTrafficIdentity>().Find(pilotId) is not null
+            )
+        )
+        {
+            if (freight is not null)
+            {
+                CapsuleerFreight.Deliver(_operation.World, pilotId, Pilot.ShipId, freight);
+            }
+            freight = CapsuleerFreight.Load(
+                _operation.World,
+                _operation.Catalog,
+                pilotId,
+                Pilot.ShipId,
+                Pilot.ShipTypeId,
+                destination,
+                checked((freight?.Sequence ?? -1) + 1)
+            );
+        }
         _work = Work with
         {
-            DestinationStationId = Pilot.StationId == _route.DestinationStationId ? _route.SourceStationId : _route.DestinationStationId,
+            DestinationStationId = destination,
+            Freight = freight is not null && freight.Destination != destination ? freight with { Destination = destination } : freight,
             RouteIndex = Pilot.StationId == _route.SourceStationId ? 0 : _route.Systems.Length - 1,
             RouteDirection = Pilot.StationId == _route.SourceStationId ? 1 : -1,
             Retreating = false,

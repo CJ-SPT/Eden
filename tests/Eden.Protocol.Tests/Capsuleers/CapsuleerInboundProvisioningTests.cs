@@ -30,6 +30,7 @@ public sealed class CapsuleerInboundProvisioningTests(ITestOutputHelper output)
         using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
         var provisioner = new CapsuleerProvisioner(fixture.Database, fixture.Clock);
         long pilot = provisioner.EnsureInbound(s_gate)!.Value;
+        int[] cargo;
         string progress;
         long ship;
         long due;
@@ -58,7 +59,9 @@ public sealed class CapsuleerInboundProvisioningTests(ITestOutputHelper output)
             Assert.Equal(work.DueTicks, due);
             Assert.InRange(due, TimeSpan.FromSeconds(1).Ticks, TimeSpan.FromMinutes(3).Ticks);
             Assert.Equal(HaulingRules.StartingCents, world.Set<PilotWallet>().Single(wallet => wallet.PilotId == pilot).Cents);
-            Assert.Equal(100, world.Set<OwnedItem>().Single(item => item.LocationId == ship).Quantity);
+            cargo = world.Set<OwnedItem>().Where(item => item.LocationId == ship).OrderBy(i => i.Id).Select(i => i.Quantity).ToArray();
+            Assert.NotEmpty(cargo);
+            Assert.Equal(work.Freight!.Stacks.Select(s => s.Quantity), cargo);
         }
         WorldInitialization.Initialize(fixture.Database, fixture.Clock);
         var reopened = new CapsuleerProvisioner(fixture.Database, fixture.Clock);
@@ -71,7 +74,10 @@ public sealed class CapsuleerInboundProvisioningTests(ITestOutputHelper output)
         Assert.Equal(progress, founder.Progress);
         Assert.Equal(due, Assert.Single(savedWorld.Set<SavedCapsuleerJob>()).DueTicks);
         Assert.Equal(HaulingRules.StartingCents, savedWorld.Set<PilotWallet>().Single(wallet => wallet.PilotId == pilot).Cents);
-        Assert.Equal(100, savedWorld.Set<OwnedItem>().Single(item => item.LocationId == ship).Quantity);
+        Assert.Equal(
+            cargo,
+            savedWorld.Set<OwnedItem>().Where(item => item.LocationId == ship).OrderBy(i => i.Id).Select(i => i.Quantity).ToArray()
+        );
     }
 
     [Fact]

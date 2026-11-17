@@ -111,9 +111,10 @@ internal sealed partial class CapsuleerProvisioner
                 {
                     continue;
                 }
-                int hull = profile?.HullTypeId ?? HaulingRules.BadgerType;
+                int hull = profile?.HullTypeId ?? CapsuleerFreight.Hull(catalog, seed, system, slot);
                 ulong roleSeed = CapsuleerProvisioningRules.Seed(seed, system, CapsuleerCareer.Hauling, slot);
                 int race = origins[(int)(roleSeed % (ulong)origins.Length)].RaceId;
+                CapsuleerFreight.Prepare(catalog, hull);
                 (_startupBlueprints ??= new(catalog)).Prepare(catalog, race, hull, profile);
                 // The commit creates at most one founder. Preparing further fits here
                 // would delay entry and could evict the blueprint needed by this batch.

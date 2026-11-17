@@ -92,13 +92,14 @@ internal sealed partial class CapsuleerProvisioner
                 reservations: reservations,
                 roster: roster
             );
-            int hull = profile?.HullTypeId ?? HaulingRules.BadgerType;
             if (profile is null && !TrafficProvisioning.HasFallback(catalog))
             {
                 return null;
             }
+            int hull = profile?.HullTypeId ?? CapsuleerFreight.Hull(catalog, seed, community, slot);
             ulong roleSeed = CapsuleerProvisioningRules.Seed(seed, community, CapsuleerCareer.Hauling, slot);
             int race = origins[(int)(roleSeed % (ulong)origins.Length)].RaceId;
+            CapsuleerFreight.Prepare(catalog, hull);
             (_startupBlueprints ??= new(catalog)).Prepare(catalog, race, hull, profile);
         }
         cancellationToken.ThrowIfCancellationRequested();

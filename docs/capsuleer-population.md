@@ -53,9 +53,17 @@ retain their existing deferral rules. Use **Refresh population** while pilots tr
 visitors. Ordinary Local receives complete membership batches; delayed Local keeps its normal privacy rules.
 
 
+## Hauler freight
+
+The ordinary generated fleet includes fast, bulk and specialist haulers. Cargo follows the trip and hull.
+Scan a mineral hauler for minerals, an ammunition transport for charges or a local courier for supplies.
+Cargo is finite and can survive in the wreck. An empty return leg is possible.
+Untouched legacy Badgers with the original 100 units of ore convert at their next safe dock.
+[Implementation and old-save coverage](protocol/capsuleers.md#generated-hauler-hulls-and-freight).
+
 ## zKill-backed travelers
 
-An optional local `traffic.sqlite` beside the world database supplies real pilot names, varied supported ships and complete victim fits. It is loaded at startup, and gameplay makes no network requests. An absent, incompatible or corrupt snapshot leaves generated Badger traffic available. Saved imported pilots keep their local identity, ship, equipment and losses even when the snapshot changes or disappears.
+An optional local `traffic.sqlite` beside the world database supplies real pilot names, varied supported ships and complete victim fits. It is loaded at startup, and gameplay makes no network requests. An absent, incompatible or corrupt snapshot uses generated Tech I freighters with regional hull and shipment variety. Saved imported pilots keep their local identity, ship, equipment and losses even when the snapshot changes or disappears.
 
 Create or refresh the snapshot from the repository root:
 

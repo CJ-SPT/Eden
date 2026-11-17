@@ -301,7 +301,10 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
         Assert.Equal(HaulerActivity.Flying, encountered.Work.Activity);
         Assert.NotNull(encountered.Work.Navigation.WarpDestination);
         using WorldDbContext saved = new(f.Database.Path);
-        Assert.Equal(100, saved.Set<Eden.Data.World.Inventory.OwnedItem>().Where(i => i.LocationId == ship).Sum(i => i.Quantity));
+        Assert.Equal(
+            encountered.Work.Freight!.Stacks.Sum(i => i.Quantity),
+            saved.Set<Eden.Data.World.Inventory.OwnedItem>().Where(i => i.LocationId == ship).Sum(i => i.Quantity)
+        );
         Assert.Single(saved.Ships, s => s.Id == ship);
     }
 
@@ -398,7 +401,11 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
             using var returning = host.GetRequiredService<IHumanPresence>().Select(Human, Source);
             Assert.Equal(ship, host.GetRequiredService<ICapsuleerScheduler>().Hauler(pilot)!.Pilot.ShipId);
             using WorldDbContext world = new(f.Database.Path);
-            Assert.Equal(100, world.Set<Eden.Data.World.Inventory.OwnedItem>().Where(i => i.LocationId == ship).Sum(i => i.Quantity));
+            var freight = host.GetRequiredService<ICapsuleerScheduler>().Hauler(pilot)!.Work.Freight!;
+            Assert.Equal(
+                freight.Stacks.Sum(i => i.Quantity),
+                world.Set<Eden.Data.World.Inventory.OwnedItem>().Where(i => i.LocationId == ship).Sum(i => i.Quantity)
+            );
             Assert.Empty(world.Set<Eden.Data.World.Market.SavedPersonalOrder>().Where(o => o.PilotId == pilot));
         }
     }

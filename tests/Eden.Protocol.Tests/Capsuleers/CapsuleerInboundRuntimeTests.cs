@@ -221,7 +221,9 @@ public sealed class CapsuleerInboundRuntimeTests
         new HaulerCheckpoint(actor, later).Apply(world);
         using WorldDbContext reopened = new(f.Database.Path);
         var restored = HaulerCheckpoint.Read(reopened.Set<SavedCapsuleerHauler>().Single(h => h.PilotId == actor).Progress)!;
-        Assert.Equal(later with { Journey = null }, restored with { Journey = null });
+        Assert.Equal(later with { Journey = null, Freight = null }, restored with { Journey = null, Freight = null });
+        Assert.Equal(later.Freight!.Stacks, restored.Freight!.Stacks);
+        Assert.Equal(later.Freight, restored.Freight with { Stacks = later.Freight.Stacks });
         Assert.Equal(later.Journey!.Systems, restored.Journey!.Systems);
         Assert.Equal(later.Journey, restored.Journey with { Systems = later.Journey.Systems });
         Assert.Equal(

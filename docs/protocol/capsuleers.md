@@ -2,6 +2,41 @@
 
 [Protocol index](../protocol.md)
 
+## Generated hauler hulls and freight
+
+Generated traffic chooses among the twelve ordinary Tech I haulers present in the build 3662168 catalog. Regional empire
+hulls receive double weight. Specialist ships carry compatible goods in a supported hold. Freighters can carry bulk materials,
+local supplies or higher-value courier cargo. Shipment quantities depend on free volume and a bounded catalog-value budget.
+Some return legs run empty. Selection, delivery and the saved manifest share the pilot's existing transaction and checkpoint.
+Cargo scanners, kill reports and wreck settlement read these actual stacks. Docking consumes only cargo still owned and carried
+from the delivered manifest. Other possessions remain aboard. No trading or live price lookup participates in freight generation.
+
+In existing saves the next safe dock recognizes the original pilot, ship and exact starter ore stack. It replaces that stack
+once and grants the skills for the selected hull. Altered names, fits, damage, losses and cargo that cannot transfer defer conversion.
+Imported fits retain their identity. Catalog hull and cargo choices are memoized and prepared ahead of live admission.
+Movement, observer reads and gate transit do no shipment planning.
+
+Gameplay references: [hauling](https://wiki.eveuniversity.org/Hauling) and [hauler roles](https://wiki.eveuniversity.org/Tech_I_Role_Reference).
+The local evejs NPC equipment and movement loop was inspected. Freight uses Eden's resident inventory and existing movement.
+The published [Carbon Destiny reference](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ball.cpp)
+continues to apply to normal hull flight.
+
+**Automated validation.** Exact initial filter `FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.FreightTests.DifferentShipmentsRespectVolumeValueAndReturnTrips`.
+The capsuleer namespace comparison ran 436 baseline and 439 candidate cases before the final regional weighting and wreck test.
+Both had the same eleven failures across gate traffic, population handoff, shopping, resupply and presentation fixtures.
+The matched four-observer 10× traffic workload had zero observation reads. For eleven pilots the baseline/candidate frame batches
+took 57.59/28.01 ms, allocating 9.74/9.90 MB. Checkpoint capture took 1.56/0.75 ms, projection 14.60/22.87 ms and writing
+106.41/12.67 ms. These are individual noisy samples. Freight tests cover saved conversion, custom ships, capacity, destination
+variation and checkpointed wreck contents. Resident founder admission asserts zero SQL, connections and fitting calculations.
+
+The final focused selection covered freight, admission, inbound provisioning, encounters, blueprints, snapshot import and migration,
+global population, startup and traffic performance, and information scanners. All 149 passed in 53 seconds. The build passed
+without warnings or errors in 7.23 seconds. Both Python policy suites passed (8 catalog and 9 formatting cases).
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer check.** Cargo-scan several haulers and compare a destroyed ship's wreck with its scan.
+
 ## Shared bot presentation - November 16, 2026
 
 Each active system retains immutable miner and hauler observations against resident shared/local versions, its activation

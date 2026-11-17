@@ -163,7 +163,7 @@ public sealed class TrafficSnapshotTests
     }
 
     [Fact]
-    public void DeterministicCompleteFitProvisioningKeepsRealIdentityEquipmentAndNoStarterCargo()
+    public void DeterministicCompleteFitProvisioningKeepsRealIdentityEquipmentAndSeparateFreight()
     {
         using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
         Install(fixture.Database, Profile());
@@ -174,7 +174,9 @@ public sealed class TrafficSnapshotTests
         var pilot = world.Pilots.Include(value => value.ActiveShip).Single(value => value.Id == identity.PilotId);
         Assert.Equal("Real Traffic Pilot", pilot.Name);
         Assert.Equal(648, pilot.ActiveShip.TypeId);
-        var fitted = Assert.Single(world.Set<OwnedItem>().Where(value => value.LocationId == pilot.ActiveShipId));
+        var fitted = Assert.Single(
+            world.Set<OwnedItem>().Where(value => value.LocationId == pilot.ActiveShipId && value.FlagId != (int)InventoryFlag.Cargo)
+        );
         Assert.Equal(1317, fitted.TypeId);
         Assert.Equal((int)InventoryFlag.LowSlot0, fitted.FlagId);
         Assert.True(fitted.Online);
@@ -189,7 +191,16 @@ public sealed class TrafficSnapshotTests
         WorldInitialization.Initialize(fixture.Database, fixture.Clock);
         using WorldDbContext reopened = new(fixture.Database.Path);
         Assert.Equal(identity.CharacterId, Assert.Single(reopened.Set<SavedTrafficIdentity>()).CharacterId);
-        Assert.Equal(fitted.Id, Assert.Single(reopened.Set<OwnedItem>().Where(value => value.LocationId == pilot.ActiveShipId)).Id);
+        Assert.Equal(
+            fitted.Id,
+            Assert
+                .Single(
+                    reopened
+                        .Set<OwnedItem>()
+                        .Where(value => value.LocationId == pilot.ActiveShipId && value.FlagId == (int)InventoryFlag.LowSlot0)
+                )
+                .Id
+        );
     }
 
     [Fact]
@@ -371,10 +382,11 @@ public sealed class TrafficSnapshotTests
         using WorldDbContext saved = new(fixture.Database.Path);
         var identity = Assert.Single(saved.Set<SavedTrafficIdentity>());
         long ship = saved.Pilots.Single(pilot => pilot.Id == identity.PilotId).ActiveShipId;
-        Assert.All(
-            saved.Set<OwnedItem>().Where(item => item.LocationId == ship),
-            item => Assert.NotEqual((int)InventoryFlag.Cargo, item.FlagId)
-        );
+        var freight = HaulerCheckpoint
+            .Read(saved.Set<SavedCapsuleerHauler>().Single(h => h.PilotId == identity.PilotId).Progress)!
+            .Freight!;
+        Assert.All(freight.Stacks, stack => Assert.Equal(stack.Quantity, saved.Set<OwnedItem>().Find(stack.ItemId)!.Quantity));
+        Assert.DoesNotContain(saved.Set<OwnedItem>().Where(item => item.LocationId == ship), item => item.TypeId == 1230);
     }
 
     [Fact]
@@ -433,6 +445,7 @@ public sealed class TrafficSnapshotTests
             var agent = setup.Set<SavedCapsuleerAgent>().Single(value => value.Career == CapsuleerCareer.Hauling);
             pilotId = agent.PilotId;
             shipId = agent.FounderShipId;
+            FreightTests.SetLegacyCargo(setup, fixture.Database, pilotId, shipId);
             setup.Database.ExecuteSql($"DELETE FROM WorldPosition WHERE ShipId={shipId}");
             if (changed == "flight")
             {
@@ -539,6 +552,7 @@ public sealed class TrafficSnapshotTests
             pilot = agent.PilotId;
             ship = agent.FounderShipId;
             originalName = setup.Pilots.Single(value => value.Id == pilot).Name;
+            FreightTests.SetLegacyCargo(setup, fixture.Database, pilot, ship);
             setup.Database.ExecuteSql($"DELETE FROM WorldPosition WHERE ShipId={ship}");
             setup.Database.ExecuteSqlRaw(
                 """
