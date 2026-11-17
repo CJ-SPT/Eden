@@ -457,9 +457,9 @@ internal sealed class SharedSpace(
             .Select(ship => new NpcTargetCandidate(ship.Pilot.PilotId, ship.Pilot.ShipId))
             .ToArray();
 
-    public ShipContact[] Peers(DockedPilot pilot)
+    public ShipContact[] Peers(DockedPilot pilot, SpacePosition? origin = null, long? observerId = null)
     {
-        return RunMotion(pilot.SystemId, () => PeersOwned(pilot), nameof(Peers));
+        return RunMotion(pilot.SystemId, () => PeersOwned(pilot, origin, observerId), nameof(Peers));
     }
 
     internal CommandBurstCandidate[] CommandBurstCandidates(DockedPilot pilot) =>
@@ -529,7 +529,7 @@ internal sealed class SharedSpace(
             SmartbombRules.InRange(origin, pilot.Flight.ShipRadius, position, radius, NavigationDefinitions.MaximumTargetDistance);
     }
 
-    private ShipContact[] PeersOwned(DockedPilot pilot)
+    private ShipContact[] PeersOwned(DockedPilot pilot, SpacePosition? origin, long? observerId)
     {
         using (EnterMotion(systemId: pilot.SystemId))
         {
@@ -544,9 +544,9 @@ internal sealed class SharedSpace(
                 .Select(g => g.First())
                 .Where(ship =>
                     ship.Pilot.SystemId == pilot.SystemId
-                    && ship.Pilot.ShipId != pilot.ShipId
+                    && ship.Pilot.ShipId != (observerId ?? pilot.ShipId)
                     && SpatialStatus(ship.Pilot.ShipId).CloakModuleId == 0
-                    && pilot.Position is { } viewer
+                    && (origin ?? pilot.Position) is { } viewer
                     && ship.Pilot.Position is { } other
                     && viewer.DistanceTo(other) <= NavigationDefinitions.MaximumTargetDistance
                 )

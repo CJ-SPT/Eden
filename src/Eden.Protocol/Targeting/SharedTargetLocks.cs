@@ -60,6 +60,14 @@ internal sealed class SharedTargetLocks : IPilotTargetLocks, IPilotLockBreaks
         }
     }
 
+    public bool ContainsPending(long ship, long target)
+    {
+        lock (_gate)
+        {
+            return _pending.Contains((ship, target));
+        }
+    }
+
     internal void Reveal(long ship, long target)
     {
         lock (_gate)

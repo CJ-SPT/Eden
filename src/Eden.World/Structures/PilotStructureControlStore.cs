@@ -1,4 +1,6 @@
+using System.Collections.Immutable;
 using Eden.Gameplay.Structures;
+using Eden.Gameplay.Targeting;
 using Eden.Infrastructure.Registration;
 using Eden.World.Runtime;
 using Eden.World.Storage;
@@ -64,7 +66,26 @@ internal sealed class PilotStructureControlStore(WorldDatabase database, IPilotS
 
 internal sealed class ResidentStructureControl(StructureControlToken token, LiveWorld owner, string path) : IStructureControlLease
 {
+    private readonly Lock _gate = new();
     public StructureControlToken Token { get; } = token;
+    internal ImmutableDictionary<long, StructureTargetLock> Targets { get; set; } = ImmutableDictionary<long, StructureTargetLock>.Empty;
+    internal long LockRevision { get; set; }
+
+    internal T WithActive<T>(Func<T> action)
+    {
+        lock (_gate)
+        {
+            if (
+                !ReferenceEquals(LiveWorld.Find(path), owner)
+                || !owner.StructureControllers.TryGetValue(Token.StructureId, out var current)
+                || !ReferenceEquals(current, this)
+            )
+            {
+                throw new InvalidDataException("This structure control lease is no longer active.");
+            }
+            return action();
+        }
+    }
 
     public void Dispose()
     {
@@ -73,6 +94,23 @@ internal sealed class ResidentStructureControl(StructureControlToken token, Live
         {
             return;
         }
-        owner.StructureControllers.TryRemove(KeyValuePair.Create(Token.StructureId, this));
+        lock (_gate)
+        {
+            if (owner.StructureControllers.TryRemove(KeyValuePair.Create(Token.StructureId, this)))
+            {
+                if (owner.TargetLocks is IPilotLockBreaks breaks)
+                {
+                    breaks.BreakOutgoing(Token.StructureId);
+                }
+                else
+                {
+                    foreach (long target in Targets.Keys)
+                    {
+                        owner.TargetLocks?.Remove(Token.StructureId, target);
+                    }
+                }
+                Targets = ImmutableDictionary<long, StructureTargetLock>.Empty;
+            }
+        }
     }
 }

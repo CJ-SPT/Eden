@@ -13,8 +13,57 @@ Historical foundation limitations below describe their original milestones; this
 | Asset safety | Personal/corporate collection, timed delivery, paid recovery, native inventory and public loot | Implemented; validation below |
 | Incoming combat and loss | Paid weapons against structures, legal targeting, destruction settlement and automatic custody transitions | Implemented; validation below |
 | Tethering | Resident protection, native effects, access and timer checks, saved repair settlement | Implemented; validation below |
-| Defense | Combat fitting/control, supported defensive weapons and target updates | In progress; resident control and defensive fitting implemented; firing remains |
+| Defense | Combat fitting/control, supported defensive weapons and target updates | In progress; resident control, fitting, targeting and controlled scenes implemented; firing remains |
 | Service completion | Remaining native structure profiles/access, economic/clone services, ownership and specialized structure consumers | Planned |
+
+### Resident structure targeting and controlled scenes
+
+Target scans and completed locks now belong to the resident control lease. World validates the exact lease, current
+docking/management authority, installed core and vulnerable operational state. The source is the structure rather than
+the pilot's docked ship. Target limits, scan resolution and range come from the fitted hull; ordinary ship-targeting
+skills do not apply. The pinned maximum-range attribute (797) caps acquisition at 490 km, with surface distance using
+both collision radii. Pending scans count against the target limit. Range loss, unavailable/warping or tethered targets,
+reinforcement and shared lock cancellation remove scans and completed locks. A cancelled pending edge cannot later
+complete after its target becomes available again.
+
+The native `AddTarget` RPC stays pending until the resident wall-clock deadline, while other calls remain available.
+The protocol adapter owns only deferred replies and notification comparisons. Releasing or losing control cancels
+pending replies and clears outgoing locks while preserving ships targeting the structure. Acquisition state is connection
+state and is intentionally not checkpointed; old lease generations cannot restore it.
+
+Controlled SetState now includes nearby ships, NPCs, drones, missiles and wrecks around an explicit structure observer.
+The real docked ship is neither moved nor published as the structure. Ordinary entity codecs and stamped updates are
+reused, including subsequent peer membership/movement and NPC refresh. Logged-off ships remain visible until their
+existing logoff deadline; removal then streams without resetting the scene. Normal ship snapshots retain their existing
+serialization order. This provides the targeting and observation boundary for defensive firing, which remains subsequent work.
+
+References: [UniWiki targeting](https://wiki.eveuniversity.org/Targeting),
+[structure fitting](https://wiki.eveuniversity.org/Fitting_upwell_structures) and
+[CCP structure defense](https://support.eveonline.com/hc/en-us/articles/209985225-Upwell-Structures-Quick-Facts).
+The original build-3662168 archive recorded below was inspected inertly: `targetMgr.pyj` uses the session ship's
+`maxTargetRange` and native surface distance, and its lock completion/cancellation paths consume the existing replies.
+The fixture retains targeting attributes 76, 192, 564 and maximum attribute 797. Consulted
+[Carbon Destiny Thunkers.cpp, revision 114e89fa](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Thunkers.cpp)
+for existing surface-distance and ball-stream behavior. Blue formats and Destiny entity encodings are unchanged.
+
+**Automated validation:** Final root checks passed **288** affected cases (1m25s), tool/solution restore, a zero-warning/error
+build (9.08s), both Python policy suites (8 + 9), formatting (2,612 files), line width and diff verification in **131.46s**.
+Warm targeting reads assert zero SQL commands, connections and fitting calculations. Native coverage includes the deferred
+reply, populated controlled SetState, a complete session tick, logged-off peer retention/expiry, streamed removal and
+pending-reply cancellation on release. Development corrected a test NPC without a home anchor and a test expectation that
+disconnect immediately removes a ship; the existing logoff deadline is preserved. No full .NET suite was requested or run.
+The final filter joined `FullyQualifiedName~` predicates with `|` for `Eden.Protocol.Tests.Structures`,
+`Eden.Protocol.Tests.Targeting`, `Eden.Protocol.Tests.PilotSessions.TargetLockSessionTests`,
+`Eden.Protocol.Tests.Flight.TypedFlightTests`, `Eden.Protocol.Tests.Flight.FlightSessionTests`,
+`Eden.Protocol.Tests.Flight.StaticSceneFrameTests`, `Eden.Protocol.Tests.Flight.MissileBallparkTests`,
+`Eden.Protocol.Tests.Combat.NpcSceneReadTests`, `Eden.Protocol.Tests.Combat.NpcSceneUpdateTests`,
+`Eden.Protocol.Tests.Combat.NpcSceneIndexTests`, `Eden.Protocol.Tests.Combat.ResidentQuerySessionTests` and
+`Eden.Protocol.Tests.Docking.StructureServiceTests`.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Take control with another ship nearby; complete and cancel native target scans;
+release control and verify the target UI and docked ship presentation.
 
 ### Resident defensive fitting and full-power dogma
 

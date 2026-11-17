@@ -14,7 +14,8 @@ internal sealed class TargetingHandler(
     IPilotFitting fitting,
     SharedTargetLocks shared,
     INpcElectronicWarfare? npcEwar = null,
-    IPilotElectronicWarfare? electronicWarfare = null
+    IPilotElectronicWarfare? electronicWarfare = null,
+    Eden.Protocol.Structures.StructureTargetingAdapter? structureTargeting = null
 ) : ISelectedPilotCallHandler, IDisposable
 {
     private sealed record PendingLock(long Started, double Seconds, bool Silent = false)
@@ -37,6 +38,23 @@ internal sealed class TargetingHandler(
     {
         if (!context.Selected)
         {
+            return;
+        }
+        structureTargeting?.Advance(context);
+        if (context.ControlledStructureId is not null)
+        {
+            if (_shipId != 0)
+            {
+                foreach (long id in _pending.Keys.Concat(_locked).Distinct())
+                {
+                    Notify(context, TargetChange.Lost, id);
+                }
+                foreach (long id in _targeters)
+                {
+                    Notify(context, TargetChange.OtherLost, id);
+                }
+                ResetShip();
+            }
             return;
         }
         if (_shipId != 0 && _shipId != context.Pilot.ShipId)
@@ -239,6 +257,11 @@ internal sealed class TargetingHandler(
         {
             return PilotCallResult.Unsupported;
         }
+        if (context.ControlledStructureId is not null)
+        {
+            return structureTargeting?.Call(context, method, args, keywords)
+                ?? new PilotCallResult.Failure("Structure targeting is unavailable.");
+        }
         context.Flight.Checkpoint();
         Advance(context);
         switch (method)
@@ -302,6 +325,12 @@ internal sealed class TargetingHandler(
             .ToArray();
 
     public void Reset()
+    {
+        structureTargeting?.Reset();
+        ResetShip();
+    }
+
+    private void ResetShip()
     {
         shared.RemoveShip(_shipId);
         CancelPendingReplies();

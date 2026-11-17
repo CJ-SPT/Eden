@@ -11,6 +11,9 @@ five-/twenty-day delivery, paid personal/corporate recovery and public structure
 
 [Resident tethering](protocol/structures.md#resident-tethering-and-repair) records protection, native effects and saved repairs.
 
+[Resident structure targeting](protocol/structures.md#resident-structure-targeting-and-controlled-scenes) records lease-owned
+acquisition, native deferred replies and controlled scene observers.
+
 [Resident defensive fitting](protocol/structures.md#resident-defensive-fitting-and-full-power-dogma) records rack equipment,
 rig and budget validation, full-power dogma and saved damage fractions.
 

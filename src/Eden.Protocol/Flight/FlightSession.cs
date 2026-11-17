@@ -128,8 +128,9 @@ internal sealed partial class FlightSession(
             commandBursts,
             fleets
         );
-    private FlightSceneContext SceneContext => new(Pilot, InBallpark || Pilot.InStructure, CanTarget, _simulatedStamp);
+    private FlightSceneContext SceneContext => new(Pilot, InBallpark || Pilot.InStructure, CanTarget, _simulatedStamp, _structureObserver);
     private long? _controlledStructureId;
+    private StaticSpaceObject? _structureObserver;
 
     internal void SetStructureControl(long? structureId)
     {
@@ -138,6 +139,7 @@ internal sealed partial class FlightSession(
             Updates.Clear();
         }
         _controlledStructureId = structureId;
+        _structureObserver = structureId is long id ? Scene.Objects.FirstOrDefault(body => body.Id == id) : null;
     }
 
     private FlightModuleEffects ModuleEffects => _moduleEffects ??= new(_initialFlight, modules, Effects);
@@ -418,7 +420,14 @@ internal sealed partial class FlightSession(
 
     public void RefreshAsteroids(IReadOnlyList<StaticSpaceObject> asteroids) => Scene.RefreshAsteroids(SceneContext, asteroids);
 
-    internal void RefreshStructures(IReadOnlyList<StaticSpaceObject> structures) => Scene.RefreshStructures(SceneContext, structures);
+    internal void RefreshStructures(IReadOnlyList<StaticSpaceObject> structures)
+    {
+        if (_controlledStructureId is long id)
+        {
+            _structureObserver = structures.FirstOrDefault(body => body.Id == id);
+        }
+        Scene.RefreshStructures(SceneContext, structures);
+    }
 
     internal void RefreshAbyssal(IReadOnlyList<StaticSpaceObject> contacts) => Scene.RefreshAbyssal(SceneContext, contacts);
 
@@ -788,6 +797,14 @@ internal sealed partial class FlightSession(
 
     private void RefreshPeersCore()
     {
+        if (_controlledStructureId is not null)
+        {
+            if (_structureObserver is not null)
+            {
+                Scene.RefreshStructurePeers(SceneContext);
+            }
+            return;
+        }
         Checkpoint();
         PublishMotion();
         var contact = CreateContact();
@@ -1021,6 +1038,11 @@ internal sealed partial class FlightSession(
     {
         if (Pilot.InStructure)
         {
+            if (_structureObserver is not null)
+            {
+                Scene.SnapshotStructure(SceneContext);
+                return;
+            }
             long structureId = Pilot.DockedLocationId;
             var addition = Ballpark.AddObjects(Scene.Objects, Stamp);
             if (!Scene.Objects.Any(body => body.Id == structureId))

@@ -27,9 +27,33 @@ internal static partial class Ballpark
         IReadOnlyList<WreckContact>? wrecks = null,
         IReadOnlyList<MissileContact>? missiles = null,
         IReadOnlyList<DroneContact>? drones = null
+    ) => SnapshotCore(own.Pilot.ShipId, own.Pilot.SystemId, own, stamp, objects, peers, npcs, wrecks, missiles, drones);
+
+    internal static BallparkSnapshot StructureSnapshot(
+        long structureId,
+        int systemId,
+        int stamp,
+        IReadOnlyList<StaticSpaceObject> objects,
+        ShipContact[] peers,
+        IReadOnlyList<NpcContact> npcs,
+        IReadOnlyList<WreckContact> wrecks,
+        IReadOnlyList<MissileContact> missiles,
+        IReadOnlyList<DroneContact> drones
+    ) => SnapshotCore(structureId, systemId, null, stamp, objects, peers, npcs, wrecks, missiles, drones);
+
+    private static BallparkSnapshot SnapshotCore(
+        long ego,
+        int systemId,
+        ShipContact? own,
+        int stamp,
+        IReadOnlyList<StaticSpaceObject> objects,
+        ShipContact[] peers,
+        IReadOnlyList<NpcContact> npcs,
+        IReadOnlyList<WreckContact>? wrecks,
+        IReadOnlyList<MissileContact>? missiles,
+        IReadOnlyList<DroneContact>? drones
     )
     {
-        var pilot = own.Pilot;
         using ArrayPoolBufferWriter<byte> buffer = new();
         using BinaryWriter writer = new(buffer.AsStream());
         writer.Write((byte)0); // DESTINY_FULLSTATE
@@ -39,7 +63,10 @@ internal static partial class Ballpark
         {
             items.Add(WriteObject(writer, body));
         }
-        items.Add(WriteShip(writer, own, stamp));
+        if (own is not null)
+        {
+            items.Add(WriteShip(writer, own, stamp));
+        }
         foreach (var peer in peers)
         {
             items.Add(WriteShip(writer, peer, stamp));
@@ -60,8 +87,8 @@ internal static partial class Ballpark
         {
             items.Add(WriteDrone(writer, drone));
         }
-        var damage = peers
-            .Prepend(own)
+        var ships = own is null ? peers.AsEnumerable() : peers.Prepend(own);
+        var damage = ships
             .Where(s => s.Health is not null)
             .Select(s => s.Health!)
             .Concat(npcs.Select(n => n.Health))
@@ -76,9 +103,9 @@ internal static partial class Ballpark
         }
         return new(
             buffer.WrittenSpan.ToArray(),
-            pilot.ShipId,
+            ego,
             items,
-            new SolarSystemSlim(pilot.SystemId),
+            new SolarSystemSlim(systemId),
             damage,
             drones?.Where(d => d.ShipId != 0).Select(d => new Eden.Protocol.Drones.DroneState(d)).ToArray()
         );
