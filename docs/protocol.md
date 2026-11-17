@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Distant warping ships](protocol/navigation.md#distant-warping-ships-in-the-overview-november-17-2026)
+leave the observer grid when their timed warp moves beyond visibility, even between position publications.
+
 [Gate-arrival cloak](protocol/navigation.md#gate-arrival-cloak-november-17-2026) adds the saved 60-second
 deadline, native timer, hidden arrival and movement cancellation after gate and wormhole jumps.
 

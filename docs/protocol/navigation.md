@@ -9,6 +9,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 ## Contents
 
 - [Gate-arrival cloak, November 17, 2026](#gate-arrival-cloak-november-17-2026)
+- [Distant warping ships in the overview, November 17, 2026](#distant-warping-ships-in-the-overview-november-17-2026)
 - [Travel configuration, November 15, 2026](#travel-configuration-november-15-2026)
 - [Stargate handoff timing, November 14, 2026](#stargate-handoff-timing-november-14-2026)
 - [Shared bookmark folders and access lists, November 11, 2026](#shared-bookmark-folders-and-access-lists--november-11-2026)
@@ -122,6 +123,56 @@ Added documentation links/anchors and `git diff --check` passed. The full .NET s
 
 **Optional maintainer checks.** Jump through a gate and wait for expiry; repeat and move immediately.
 From another pilot, verify the receiving gate flashes while the arriving ship stays hidden.
+
+## Distant warping ships in the overview, November 17, 2026
+
+The maintainer's screenshot shows a Bestower still in the overview at **83.5 AU**. A reproducible
+presentation boundary retained a peer using only its last published position while Destiny continued
+advancing its published warp. If that position was still local, the peer diff emitted no removal even
+when the timed warp was far outside the observer's visibility range.
+
+Peer visibility now also samples the existing immutable warp at the shared Destiny stamp. A distant
+warp leaves the observer's peer set through the normal `RemoveBalls` adapter. The saved location,
+warp course and existing visibility distance are retained. Ordinary nearby movement and subsequent
+valid re-entry still use the usual peer diff. A snapshot also excludes the distant warp.
+
+Gameplay reference: [UniWiki grids](https://wiki.eveuniversity.org/Grid_Manipulation), which distinguishes
+grid-visible ships from distant objects. Carbon Destiny revision
+[27ee40b, Ballpark.cpp](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp)
+was consulted for stamped simulation and visibility; the existing `WarpCourse.Sample` supplies the
+position calculation. The local older-build EVE.js comparison used `space/runtime/scene/visibility.js`,
+SHA-256 `4d55b4825a399f3dce6d2d1f44728d8a223e842ddd9682dec5b1c8e17f2760b3`, for departure/addition ordering.
+No codec, saved-world state or gameplay position was changed.
+
+**Automated validation.** The exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Flight.GateActivityProtocolTests.WarpingPeerLeavesTheObserversGridEvenWhenItsLastPositionHasNotBeenRepublished`
+first failed on the missing departure (9.55-second build, 5.98-second test command), then passed after
+the correction (6.06-second build, 5.91-second test command). The extended flow checks initial entry,
+nearby warp retention, distant departure, repeated reads, snapshots and valid re-entry.
+The first combined selection passed 70 cases and failed the two single-observer allocation-budget
+variants of `CapsuleerPresentationTests.UnchangedPresentationSharesObservationsAcrossAdvancingFrames`
+(4.90-second build, 26.65-second test command). The exact method on unchanged `main` at `01b9030f`
+reproduced both failures, with one variant passing (1.11-second build, 7.80-second test command).
+Baseline allocation totals were **6,862,624 / 6,865,728 bytes**, versus **6,862,616 / 6,865,728 bytes**
+on this branch, against the existing 6 MiB limit. SQL commands, connections and fitting calculations
+were zero on both revisions. That unrelated allocation-budget method is excluded from final validation.
+The final affected filter is:
+
+```text
+(FullyQualifiedName~Eden.Protocol.Tests.Flight|FullyQualifiedName~Eden.Protocol.Tests.Targeting|FullyQualifiedName~Eden.Protocol.Tests.Propulsion.SpatialModuleOperationTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerPresentationTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerTrafficNavigationTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerInboundGateAcceptanceTests)&FullyQualifiedName!~Eden.Protocol.Tests.Capsuleers.CapsuleerPresentationTests.UnchangedPresentationSharesObservationsAcrossAdvancingFrames
+```
+
+The final selection passed **367 tests**, zero failed/skipped, in **174.05 seconds**. Tool restore
+(**0.16 seconds**), solution restore (**0.57 seconds**) and the solution build (**4.28 seconds**,
+zero warnings/errors) passed. Both Python policy suites passed: **8 catalog tests** in **1.14 seconds**
+and **9 formatting tests** in **0.12 seconds**. Formatting verification passed for **2,602 files**,
+including the 140-character width policy, in **25.77 seconds**. The final sequence took **206.09 seconds**.
+Added documentation links/anchors and `git diff --check` passed. The full .NET suite was not requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled. The supplied screenshot establishes
+the reported symptom; native presentation of the correction remains unverified.
+
+**Optional maintainer checks.** Watch a hauler warp away and confirm that its overview row disappears.
 
 ## Travel configuration, November 15, 2026
 

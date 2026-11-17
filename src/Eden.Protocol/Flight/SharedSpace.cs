@@ -386,10 +386,12 @@ internal sealed class SharedSpace(
     }
 
     private long _epoch = long.MinValue;
+    private TimeProvider? _stampClock;
 
     // A Destiny stamp in a peer's ball record must refer to the same tick for both clients.
     public int Stamp(TimeProvider clock)
     {
+        Interlocked.CompareExchange(ref _stampClock, clock, null);
         long now = clock.GetTimestamp();
         long epoch = Interlocked.CompareExchange(ref _epoch, now, long.MinValue);
         return epoch == long.MinValue ? 1 : 1 + (int)Math.Max(0, clock.GetElapsedTime(epoch, now).TotalSeconds);
@@ -584,13 +586,29 @@ internal sealed class SharedSpace(
                     && ship.Pilot.ShipId != pilot.ShipId
                     && !IsCloaked(ship.Pilot.ShipId)
                     && pilot.Position is { } viewer
-                    && ship.Pilot.Position is { } other
-                    && viewer.DistanceTo(other) <= NavigationDefinitions.MaximumTargetDistance
+                    && PeerInRange(ship, viewer)
                 )
                 .OrderBy(ship => ship.Pilot.ShipId)
                 .Select(ExpireTimedDefenses)
                 .ToArray();
         }
+    }
+
+    private bool PeerInRange(ShipContact ship, SpacePosition viewer)
+    {
+        if (ship.Pilot.Position is not { } position || viewer.DistanceTo(position) > NavigationDefinitions.MaximumTargetDistance)
+        {
+            return false;
+        }
+        var visibilityClock = clock ?? Volatile.Read(ref _stampClock);
+        if (ship.Warp is not { } warp || visibilityClock is null)
+        {
+            return true;
+        }
+        // Destiny keeps advancing a published warp between observations. A stale
+        // source position must not retain its now-distant ball in the overview.
+        var rendered = warp.Sample(Stamp(visibilityClock), exitSpeed: 0).Position;
+        return viewer.DistanceTo(rendered) <= NavigationDefinitions.MaximumTargetDistance;
     }
 
     private ShipContact ExpireTimedDefenses(ShipContact ship)
