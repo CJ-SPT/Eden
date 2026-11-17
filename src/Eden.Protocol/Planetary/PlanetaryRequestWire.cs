@@ -79,8 +79,18 @@ internal static class PlanetaryRequestWire
         {
             throw new InvalidDataException("Too many planetary cargo entries.");
         }
-        return dictionary.Select(p => new PlanetaryCargoRequest(p.Key, Int32(p.Value))).ToArray();
+        return dictionary.Select(p => new PlanetaryCargoRequest(p.Key, CargoQuantity(p.Value))).ToArray();
     }
+
+    private static int CargoQuantity(object? value) =>
+        value switch
+        {
+            long quantity => checked((int)quantity),
+            // Native PI simulation and quantity controls can retain whole quantities
+            // as Python floats. Accept exact units without rounding fractional cargo.
+            double quantity when double.IsFinite(quantity) && Math.Truncate(quantity) == quantity => checked((int)quantity),
+            _ => throw new InvalidDataException("Choose a whole planetary cargo quantity."),
+        };
 
     internal static IReadOnlyList<PlanetaryCommodity> Commodities(object? value) =>
         Cargo(value).Select(c => new PlanetaryCommodity(checked((int)c.ItemId), c.Quantity)).ToArray();

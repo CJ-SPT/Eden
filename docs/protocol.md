@@ -1,5 +1,9 @@
 # Protocol findings and milestone records
 
+[PI customs quantities and transfer refresh](protocol/planetary.md#customs-quantity-parsing-and-staged-transfer-refresh--november-16-2026)
+fix the integer error, preserve queued transfers across production refreshes and order completion updates.
+
+
 [Station and structure hull geometry](protocol/structures.md#station-and-structure-hull-geometry--november-16-2026)
 records automated client mesh export, compound collisions and locator-based undock clearance.
 

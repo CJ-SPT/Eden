@@ -31,7 +31,8 @@ internal static class LoginClient
             "Eden.Protocol.Docking.presence_lists_client.py",
             "Eden.Protocol.Corporations.corporation_diagnostics_client.py",
             "Eden.Protocol.Skills.free_points_client.py",
-            "Eden.Protocol.Planetary.planetary_client.py"
+            "Eden.Protocol.Planetary.planetary_client.py",
+            "Eden.Protocol.Planetary.customs_transfer_client.py"
         );
 
     internal static byte[] Expression => s_expression.Value;

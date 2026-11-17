@@ -147,9 +147,10 @@ internal sealed class PlanetaryIndustryHandler(IPilotPlanetaryIndustry industry)
     }
 }
 
-internal sealed record PlanetaryStateChanged(int PlanetId) : PilotNotification("OnMajorPlanetStateUpdate")
+internal sealed record PlanetaryStateChanged(int PlanetId, bool CommandCentersChanged = true)
+    : PilotNotification("OnMajorPlanetStateUpdate")
 {
-    public override object?[] Arguments => [PlanetId, true];
+    public override object?[] Arguments => [PlanetId, CommandCentersChanged];
 }
 
 internal sealed record PlanetaryLaunchesChanged() : PilotNotification("OnPILaunchesChange")
