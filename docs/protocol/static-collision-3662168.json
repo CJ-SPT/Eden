@@ -1,0 +1,5471 @@
+{
+  "build": 3662168,
+  "generator": "mesh-surface-capsules-v2",
+  "scope": "structures",
+  "resourceIndexSha256": "cba0852b46e3a1501c6c0653546c4520dbd6aba02a51e1da3409f5efeb253f03",
+  "converter": {
+    "repository": "https://github.com/neptuwunium/Knit",
+    "revision": "30c0b48255bd3e8c845dd6de77aefded1eb7fd4e"
+  },
+  "types": [
+    {
+      "typeId": 54,
+      "graphicId": 237,
+      "profile": "mesh_4e12e41003c8664576ef68bc35385be3",
+      "hull": "cs4",
+      "graphicFile": null
+    },
+    {
+      "typeId": 56,
+      "graphicId": 2307,
+      "profile": "mesh_6c22903931eb31e668d6ea5122676ef8",
+      "hull": "gs1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 57,
+      "graphicId": 2306,
+      "profile": "mesh_603c2678d4988b9ba6712103ad6391f8",
+      "hull": "gs2",
+      "graphicFile": null
+    },
+    {
+      "typeId": 1529,
+      "graphicId": 1019,
+      "profile": "mesh_92c7a930b8ff4f263af4ad6abc3106b6",
+      "hull": "cs1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 1530,
+      "graphicId": 1018,
+      "profile": "mesh_5b7829a7b5dfaff6c6a5e4edce37bd63",
+      "hull": "cs2",
+      "graphicFile": null
+    },
+    {
+      "typeId": 1531,
+      "graphicId": 1017,
+      "profile": "mesh_e159cefae96dbab1f726cf30d0de8931",
+      "hull": "cs3",
+      "graphicFile": null
+    },
+    {
+      "typeId": 1926,
+      "graphicId": 1068,
+      "profile": "mesh_81d6dcfab59ce5f32375d730f0ffd508",
+      "hull": "as2",
+      "graphicFile": null
+    },
+    {
+      "typeId": 1927,
+      "graphicId": 1069,
+      "profile": "mesh_a7aff2833e6f030f5618cd61f96f18d1",
+      "hull": "as1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 1928,
+      "graphicId": 1070,
+      "profile": "mesh_07f0df079493a962b640fbffc24ff2a8",
+      "hull": "as5",
+      "graphicFile": null
+    },
+    {
+      "typeId": 1929,
+      "graphicId": 1071,
+      "profile": "mesh_1eb7634570642228801a353f512bb805",
+      "hull": "as7",
+      "graphicFile": null
+    },
+    {
+      "typeId": 1930,
+      "graphicId": 1072,
+      "profile": "mesh_7f8f2eab255ae34d37dac1a2abed209f",
+      "hull": "as9",
+      "graphicFile": null
+    },
+    {
+      "typeId": 1931,
+      "graphicId": 1073,
+      "profile": "mesh_74432fd646edd27b8c76bf134eebcc16",
+      "hull": "as3",
+      "graphicFile": null
+    },
+    {
+      "typeId": 1932,
+      "graphicId": 1074,
+      "profile": "mesh_ad84a27cd37e12687091169d44e555e8",
+      "hull": "as4",
+      "graphicFile": null
+    },
+    {
+      "typeId": 2071,
+      "graphicId": 1255,
+      "profile": "mesh_bcef293979b0557fd763f93b58ea0b6d",
+      "hull": "gs6",
+      "graphicFile": null
+    },
+    {
+      "typeId": 2233,
+      "graphicId": 4579,
+      "profile": "mesh_3b24f6f383f518a468970443005fb28b",
+      "hull": "ohangar01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 2496,
+      "graphicId": 1132,
+      "profile": "mesh_a69eda9dbf0298fd36ce975a9923a8d6",
+      "hull": "ms2",
+      "graphicFile": null
+    },
+    {
+      "typeId": 2497,
+      "graphicId": 1133,
+      "profile": "mesh_04873104ed55f4ce3b0e39096df765e2",
+      "hull": "ms4",
+      "graphicFile": null
+    },
+    {
+      "typeId": 2498,
+      "graphicId": 1134,
+      "profile": "mesh_c046bc0c29f8772f6b5c5ab9131eecfd",
+      "hull": "ms1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 2499,
+      "graphicId": 1135,
+      "profile": "mesh_e27ed35753c75aca47ef7f54fcfeba96",
+      "hull": "ms5",
+      "graphicFile": null
+    },
+    {
+      "typeId": 2500,
+      "graphicId": 1136,
+      "profile": "mesh_d7a03bc3a5cd2b4899b55c8efb055462",
+      "hull": "ms6",
+      "graphicFile": null
+    },
+    {
+      "typeId": 2501,
+      "graphicId": 1137,
+      "profile": "mesh_4988bd97e80edf2cfac6fe02ca34bc43",
+      "hull": "ms7",
+      "graphicFile": null
+    },
+    {
+      "typeId": 2502,
+      "graphicId": 1138,
+      "profile": "mesh_1ffb6244c3588f93f26954269fb1df24",
+      "hull": "ms3",
+      "graphicFile": null
+    },
+    {
+      "typeId": 3522,
+      "graphicId": 2378,
+      "profile": "mesh_323185ac933efcf1d488595c1895c3f6",
+      "hull": "gh01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 3864,
+      "graphicId": 1249,
+      "profile": "mesh_fe13ccb50d1a4fb52bf82194c23820f6",
+      "hull": "as8",
+      "graphicFile": null
+    },
+    {
+      "typeId": 3865,
+      "graphicId": 2308,
+      "profile": "mesh_154e88265e236d4d791096e727454db1",
+      "hull": "gs3",
+      "graphicFile": null
+    },
+    {
+      "typeId": 3866,
+      "graphicId": 1253,
+      "profile": "mesh_82592a803abea05b3065e5ea1489330d",
+      "hull": "gs4",
+      "graphicFile": null
+    },
+    {
+      "typeId": 3867,
+      "graphicId": 1254,
+      "profile": "mesh_1ff52d194ab65f3a9a0f3e5ce1fb773e",
+      "hull": "gs5",
+      "graphicFile": null
+    },
+    {
+      "typeId": 3868,
+      "graphicId": 1255,
+      "profile": "mesh_bcef293979b0557fd763f93b58ea0b6d",
+      "hull": "gs6",
+      "graphicFile": null
+    },
+    {
+      "typeId": 3869,
+      "graphicId": 1256,
+      "profile": "mesh_00d770f17fa8887369ce657249e04489",
+      "hull": "gs7",
+      "graphicFile": null
+    },
+    {
+      "typeId": 3870,
+      "graphicId": 1257,
+      "profile": "mesh_6382f39766f6387dd074300d6c425ad8",
+      "hull": "gs8",
+      "graphicFile": null
+    },
+    {
+      "typeId": 3871,
+      "graphicId": 1267,
+      "profile": "mesh_f5e351e27dd62d904a6f6873291f4174",
+      "hull": "cs5",
+      "graphicFile": null
+    },
+    {
+      "typeId": 3872,
+      "graphicId": 1251,
+      "profile": "mesh_2e86713607d7da68773a6a31b01755f3",
+      "hull": "cs7",
+      "graphicFile": null
+    },
+    {
+      "typeId": 3962,
+      "graphicId": 2625,
+      "profile": "mesh_5c27bf0eaee3e1953a3e9737c1444a74",
+      "hull": "sy01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 3964,
+      "graphicId": 1692,
+      "profile": "mesh_052a432aa6ab9629152e1bdba8a3f9b7",
+      "hull": "umo",
+      "graphicFile": null
+    },
+    {
+      "typeId": 4023,
+      "graphicId": 1251,
+      "profile": "mesh_2e86713607d7da68773a6a31b01755f3",
+      "hull": "cs7",
+      "graphicFile": null
+    },
+    {
+      "typeId": 4024,
+      "graphicId": 1309,
+      "profile": "mesh_120ac78fac1b9aad068a65d30a8d7f63",
+      "hull": "cs8",
+      "graphicFile": null
+    },
+    {
+      "typeId": 4318,
+      "graphicId": 4579,
+      "profile": "mesh_3b24f6f383f518a468970443005fb28b",
+      "hull": "ohangar01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 4359,
+      "graphicId": 2374,
+      "profile": "mesh_3db39bf99845c1a5244058d4ec5f34e3",
+      "hull": "gpc01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 4361,
+      "graphicId": 2599,
+      "profile": "mesh_0b18516170bfc56575345758039a2277",
+      "hull": "cct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 4386,
+      "graphicId": 2309,
+      "profile": "mesh_bf283c08eb6e7e3331467679c9bdba8b",
+      "hull": "wd1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 9856,
+      "graphicId": 1373,
+      "profile": "mesh_eb7dac5a8f6c53a735b608235ab98e37",
+      "hull": "as6",
+      "graphicFile": null
+    },
+    {
+      "typeId": 9857,
+      "graphicId": 1249,
+      "profile": "mesh_fe13ccb50d1a4fb52bf82194c23820f6",
+      "hull": "as8",
+      "graphicFile": null
+    },
+    {
+      "typeId": 9867,
+      "graphicId": 2008,
+      "profile": "mesh_ba0c3143ae6228a8fd9cf4b4f3576cd9",
+      "hull": "js1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 9868,
+      "graphicId": 3395,
+      "profile": "mesh_27d55f661f23f5160a92349fcb81c6e1",
+      "hull": "cons1_wreck",
+      "graphicFile": null
+    },
+    {
+      "typeId": 9873,
+      "graphicId": 1637,
+      "profile": "mesh_ad84a27cd37e12687091169d44e555e8",
+      "hull": "as4",
+      "graphicFile": null
+    },
+    {
+      "typeId": 10795,
+      "graphicId": 2008,
+      "profile": "mesh_ba0c3143ae6228a8fd9cf4b4f3576cd9",
+      "hull": "js1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 12198,
+      "graphicId": 2309,
+      "profile": "mesh_bf283c08eb6e7e3331467679c9bdba8b",
+      "hull": "wd1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 12199,
+      "graphicId": 2309,
+      "profile": "mesh_bf283c08eb6e7e3331467679c9bdba8b",
+      "hull": "wd1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 12200,
+      "graphicId": 2309,
+      "profile": "mesh_bf283c08eb6e7e3331467679c9bdba8b",
+      "hull": "wd1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 12235,
+      "graphicId": 2593,
+      "profile": "mesh_eb5a8f0d0f0847836552a25ed31f7426",
+      "hull": "act1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 12236,
+      "graphicId": 2594,
+      "profile": "mesh_22857b3f81548601470f3be706b821dc",
+      "hull": "gct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 12237,
+      "graphicId": 2595,
+      "profile": "mesh_632752bbc0fd46c992cb3c04760b423e",
+      "hull": "ghg01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 12238,
+      "graphicId": 2300,
+      "profile": "mesh_cf16ffed80fee48868aef09441bb9378",
+      "hull": "genrefinery01_s",
+      "graphicFile": null
+    },
+    {
+      "typeId": 12239,
+      "graphicId": 2300,
+      "profile": "mesh_cf16ffed80fee48868aef09441bb9378",
+      "hull": "genrefinery01_s",
+      "graphicFile": null
+    },
+    {
+      "typeId": 12240,
+      "graphicId": 2301,
+      "profile": "mesh_255923a37a60dadf42ca333dda2b4342",
+      "hull": "gw01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 12242,
+      "graphicId": 2306,
+      "profile": "mesh_603c2678d4988b9ba6712103ad6391f8",
+      "hull": "gs2",
+      "graphicFile": null
+    },
+    {
+      "typeId": 12294,
+      "graphicId": 2307,
+      "profile": "mesh_6c22903931eb31e668d6ea5122676ef8",
+      "hull": "gs1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 12295,
+      "graphicId": 2308,
+      "profile": "mesh_154e88265e236d4d791096e727454db1",
+      "hull": "gs3",
+      "graphicFile": null
+    },
+    {
+      "typeId": 13780,
+      "graphicId": 2366,
+      "profile": "mesh_8ef19253a6ecc921aac23cb6b9463999",
+      "hull": "gf01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 14343,
+      "graphicId": 2598,
+      "profile": "mesh_560f80ef93b7f5b2a361a9857803e9e8",
+      "hull": "gensilo01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 16213,
+      "graphicId": 2599,
+      "profile": "mesh_0b18516170bfc56575345758039a2277",
+      "hull": "cct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 16214,
+      "graphicId": 2600,
+      "profile": "mesh_597e2bc2ad866f847da1647e5468ab03",
+      "hull": "mct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 16216,
+      "graphicId": 2373,
+      "profile": "mesh_42ff723e27d7a8004a190e86a80f9d53",
+      "hull": "gl01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 16217,
+      "graphicId": 2374,
+      "profile": "mesh_3db39bf99845c1a5244058d4ec5f34e3",
+      "hull": "gpc01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 16219,
+      "graphicId": 2301,
+      "profile": "mesh_255923a37a60dadf42ca333dda2b4342",
+      "hull": "gw01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 16220,
+      "graphicId": 2377,
+      "profile": "mesh_578453242397e0177ceba413616b4b78",
+      "hull": "gr01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 16221,
+      "graphicId": 2378,
+      "profile": "mesh_323185ac933efcf1d488595c1895c3f6",
+      "hull": "gh01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 16222,
+      "graphicId": 2603,
+      "profile": "mesh_eea0ae5f7d694ee5eb87d3d533ba3d0e",
+      "hull": "gda01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 16223,
+      "graphicId": 2380,
+      "profile": "mesh_8c6620c5cb8b8ca0f821efcb9e30e78f",
+      "hull": "gsg01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 16286,
+      "graphicId": 2593,
+      "profile": "mesh_eb5a8f0d0f0847836552a25ed31f7426",
+      "hull": "act1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 16631,
+      "graphicId": 1216,
+      "profile": "mesh_0e8b824b32a0f4132ba1d2f5ae68e0cb",
+      "hull": "msl01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 16688,
+      "graphicId": 1216,
+      "profile": "mesh_0e8b824b32a0f4132ba1d2f5ae68e0cb",
+      "hull": "msl01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 16689,
+      "graphicId": 2751,
+      "profile": "mesh_2192a1ea00d37b0699d7f2b8e16ebf75",
+      "hull": "gda02",
+      "graphicFile": null
+    },
+    {
+      "typeId": 16690,
+      "graphicId": 1213,
+      "profile": "mesh_c6ca892ecad98bdc73d934b9e7a0ae22",
+      "hull": "gsl01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 16691,
+      "graphicId": 1213,
+      "profile": "mesh_c6ca892ecad98bdc73d934b9e7a0ae22",
+      "hull": "gsl01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 16692,
+      "graphicId": 2751,
+      "profile": "mesh_2192a1ea00d37b0699d7f2b8e16ebf75",
+      "hull": "gda02",
+      "graphicFile": null
+    },
+    {
+      "typeId": 16694,
+      "graphicId": 2751,
+      "profile": "mesh_2192a1ea00d37b0699d7f2b8e16ebf75",
+      "hull": "gda02",
+      "graphicFile": null
+    },
+    {
+      "typeId": 16695,
+      "graphicId": 2603,
+      "profile": "mesh_eea0ae5f7d694ee5eb87d3d533ba3d0e",
+      "hull": "gda01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 16696,
+      "graphicId": 2603,
+      "profile": "mesh_eea0ae5f7d694ee5eb87d3d533ba3d0e",
+      "hull": "gda01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 16697,
+      "graphicId": 2603,
+      "profile": "mesh_eea0ae5f7d694ee5eb87d3d533ba3d0e",
+      "hull": "gda01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 16867,
+      "graphicId": 2751,
+      "profile": "mesh_2192a1ea00d37b0699d7f2b8e16ebf75",
+      "hull": "gda02",
+      "graphicFile": null
+    },
+    {
+      "typeId": 16869,
+      "graphicId": 2377,
+      "profile": "mesh_578453242397e0177ceba413616b4b78",
+      "hull": "gr01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17167,
+      "graphicId": 1006,
+      "profile": "mesh_68c6f5ef71c484bb41b3e11ae02e67d0",
+      "hull": "asl_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17168,
+      "graphicId": 1006,
+      "profile": "mesh_68c6f5ef71c484bb41b3e11ae02e67d0",
+      "hull": "asl_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17172,
+      "graphicId": 2374,
+      "profile": "mesh_3db39bf99845c1a5244058d4ec5f34e3",
+      "hull": "gpc01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17173,
+      "graphicId": 2374,
+      "profile": "mesh_3db39bf99845c1a5244058d4ec5f34e3",
+      "hull": "gpc01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17174,
+      "graphicId": 2613,
+      "profile": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "hull": "gea01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17175,
+      "graphicId": 2613,
+      "profile": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "hull": "gea01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17176,
+      "graphicId": 2613,
+      "profile": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "hull": "gea01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17177,
+      "graphicId": 2613,
+      "profile": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "hull": "gea01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17178,
+      "graphicId": 2613,
+      "profile": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "hull": "gea01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17180,
+      "graphicId": 2613,
+      "profile": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "hull": "gea01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17181,
+      "graphicId": 2615,
+      "profile": "mesh_b84cd015ac53b479f2e7682e67c22984",
+      "hull": "gsa01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17182,
+      "graphicId": 2615,
+      "profile": "mesh_b84cd015ac53b479f2e7682e67c22984",
+      "hull": "gsa01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17184,
+      "graphicId": 2380,
+      "profile": "mesh_8c6620c5cb8b8ca0f821efcb9e30e78f",
+      "hull": "gsg01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17185,
+      "graphicId": 2380,
+      "profile": "mesh_8c6620c5cb8b8ca0f821efcb9e30e78f",
+      "hull": "gsg01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17186,
+      "graphicId": 2380,
+      "profile": "mesh_8c6620c5cb8b8ca0f821efcb9e30e78f",
+      "hull": "gsg01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17187,
+      "graphicId": 2380,
+      "profile": "mesh_8c6620c5cb8b8ca0f821efcb9e30e78f",
+      "hull": "gsg01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17188,
+      "graphicId": 2603,
+      "profile": "mesh_eea0ae5f7d694ee5eb87d3d533ba3d0e",
+      "hull": "gda01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17402,
+      "graphicId": 2751,
+      "profile": "mesh_2192a1ea00d37b0699d7f2b8e16ebf75",
+      "hull": "gda02",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17403,
+      "graphicId": 1213,
+      "profile": "mesh_c6ca892ecad98bdc73d934b9e7a0ae22",
+      "hull": "gsl01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17404,
+      "graphicId": 1213,
+      "profile": "mesh_c6ca892ecad98bdc73d934b9e7a0ae22",
+      "hull": "gsl01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17406,
+      "graphicId": 2751,
+      "profile": "mesh_2192a1ea00d37b0699d7f2b8e16ebf75",
+      "hull": "gda02",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17407,
+      "graphicId": 1006,
+      "profile": "mesh_68c6f5ef71c484bb41b3e11ae02e67d0",
+      "hull": "asl_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17408,
+      "graphicId": 1006,
+      "profile": "mesh_68c6f5ef71c484bb41b3e11ae02e67d0",
+      "hull": "asl_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17621,
+      "graphicId": 2301,
+      "profile": "mesh_255923a37a60dadf42ca333dda2b4342",
+      "hull": "gw01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17701,
+      "graphicId": 2613,
+      "profile": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "hull": "gea01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17764,
+      "graphicId": 2301,
+      "profile": "mesh_255923a37a60dadf42ca333dda2b4342",
+      "hull": "gw01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17770,
+      "graphicId": 2751,
+      "profile": "mesh_2192a1ea00d37b0699d7f2b8e16ebf75",
+      "hull": "gda02",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17771,
+      "graphicId": 1216,
+      "profile": "mesh_0e8b824b32a0f4132ba1d2f5ae68e0cb",
+      "hull": "msl01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17772,
+      "graphicId": 1216,
+      "profile": "mesh_0e8b824b32a0f4132ba1d2f5ae68e0cb",
+      "hull": "msl01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17773,
+      "graphicId": 2603,
+      "profile": "mesh_eea0ae5f7d694ee5eb87d3d533ba3d0e",
+      "hull": "gda01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17899,
+      "graphicId": 2613,
+      "profile": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "hull": "gea01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 17982,
+      "graphicId": 2598,
+      "profile": "mesh_560f80ef93b7f5b2a361a9857803e9e8",
+      "hull": "gensilo01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 18586,
+      "graphicId": 2613,
+      "profile": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "hull": "gea01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 19470,
+      "graphicId": 2300,
+      "profile": "mesh_cf16ffed80fee48868aef09441bb9378",
+      "hull": "genrefinery01_s",
+      "graphicFile": null
+    },
+    {
+      "typeId": 19757,
+      "graphicId": 2758,
+      "profile": "mesh_848d91cb6ec1c5ef0beb7dfb12a6eea1",
+      "hull": "mo1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 20059,
+      "graphicId": 2593,
+      "profile": "mesh_eb5a8f0d0f0847836552a25ed31f7426",
+      "hull": "act1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 20060,
+      "graphicId": 2593,
+      "profile": "mesh_eb5a8f0d0f0847836552a25ed31f7426",
+      "hull": "act1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 20061,
+      "graphicId": 2599,
+      "profile": "mesh_0b18516170bfc56575345758039a2277",
+      "hull": "cct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 20062,
+      "graphicId": 2599,
+      "profile": "mesh_0b18516170bfc56575345758039a2277",
+      "hull": "cct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 20063,
+      "graphicId": 2594,
+      "profile": "mesh_22857b3f81548601470f3be706b821dc",
+      "hull": "gct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 20064,
+      "graphicId": 2594,
+      "profile": "mesh_22857b3f81548601470f3be706b821dc",
+      "hull": "gct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 20065,
+      "graphicId": 2600,
+      "profile": "mesh_597e2bc2ad866f847da1647e5468ab03",
+      "hull": "mct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 20066,
+      "graphicId": 2600,
+      "profile": "mesh_597e2bc2ad866f847da1647e5468ab03",
+      "hull": "mct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 20175,
+      "graphicId": 2377,
+      "profile": "mesh_578453242397e0177ceba413616b4b78",
+      "hull": "gr01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 20176,
+      "graphicId": 2377,
+      "profile": "mesh_578453242397e0177ceba413616b4b78",
+      "hull": "gr01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 21642,
+      "graphicId": 2784,
+      "profile": "mesh_4abdaa8c19275ef92c6b6511ec5a09a8",
+      "hull": "co1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 21644,
+      "graphicId": 2785,
+      "profile": "mesh_a8a15af20ee00ca33e479c128f8f40e3",
+      "hull": "ao1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 21645,
+      "graphicId": 2783,
+      "profile": "mesh_a18efca2403d8e7b5c44ac585ff794ad",
+      "hull": "go1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 21646,
+      "graphicId": 2758,
+      "profile": "mesh_848d91cb6ec1c5ef0beb7dfb12a6eea1",
+      "hull": "mo1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 22296,
+      "graphicId": 2787,
+      "profile": "mesh_fe13ccb50d1a4fb52bf82194c23820f6",
+      "hull": "as8",
+      "graphicFile": null
+    },
+    {
+      "typeId": 22297,
+      "graphicId": 2788,
+      "profile": "mesh_16c747cfc406a53562d88e56a3a8136e",
+      "hull": "as10",
+      "graphicFile": null
+    },
+    {
+      "typeId": 22298,
+      "graphicId": 2789,
+      "profile": "mesh_eb7dac5a8f6c53a735b608235ab98e37",
+      "hull": "as6",
+      "graphicFile": null
+    },
+    {
+      "typeId": 22634,
+      "graphicId": 2377,
+      "profile": "mesh_578453242397e0177ceba413616b4b78",
+      "hull": "gr01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 24567,
+      "graphicId": 2373,
+      "profile": "mesh_42ff723e27d7a8004a190e86a80f9d53",
+      "hull": "gl01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 24574,
+      "graphicId": 2625,
+      "profile": "mesh_5c27bf0eaee3e1953a3e9737c1444a74",
+      "hull": "sy01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 24575,
+      "graphicId": 2977,
+      "profile": "mesh_9588999fd8923ebcce51f67672d15b43",
+      "hull": "gty01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 24646,
+      "graphicId": 2977,
+      "profile": "mesh_9588999fd8923ebcce51f67672d15b43",
+      "hull": "gty01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 24652,
+      "graphicId": 2301,
+      "profile": "mesh_255923a37a60dadf42ca333dda2b4342",
+      "hull": "gw01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 24653,
+      "graphicId": 2625,
+      "profile": "mesh_5c27bf0eaee3e1953a3e9737c1444a74",
+      "hull": "sy01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 24654,
+      "graphicId": 2625,
+      "profile": "mesh_5c27bf0eaee3e1953a3e9737c1444a74",
+      "hull": "sy01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 24655,
+      "graphicId": 2625,
+      "profile": "mesh_5c27bf0eaee3e1953a3e9737c1444a74",
+      "hull": "sy01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 24656,
+      "graphicId": 2625,
+      "profile": "mesh_5c27bf0eaee3e1953a3e9737c1444a74",
+      "hull": "sy01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 24657,
+      "graphicId": 2625,
+      "profile": "mesh_5c27bf0eaee3e1953a3e9737c1444a74",
+      "hull": "sy01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 24658,
+      "graphicId": 2377,
+      "profile": "mesh_578453242397e0177ceba413616b4b78",
+      "hull": "gr01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 24659,
+      "graphicId": 2377,
+      "profile": "mesh_578453242397e0177ceba413616b4b78",
+      "hull": "gr01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 24660,
+      "graphicId": 2377,
+      "profile": "mesh_578453242397e0177ceba413616b4b78",
+      "hull": "gr01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 24684,
+      "graphicId": 2377,
+      "profile": "mesh_578453242397e0177ceba413616b4b78",
+      "hull": "gr01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 25270,
+      "graphicId": 2598,
+      "profile": "mesh_560f80ef93b7f5b2a361a9857803e9e8",
+      "hull": "gensilo01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 25271,
+      "graphicId": 2598,
+      "profile": "mesh_560f80ef93b7f5b2a361a9857803e9e8",
+      "hull": "gensilo01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 25280,
+      "graphicId": 2598,
+      "profile": "mesh_560f80ef93b7f5b2a361a9857803e9e8",
+      "hull": "gensilo01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 25305,
+      "graphicId": 2377,
+      "profile": "mesh_578453242397e0177ceba413616b4b78",
+      "hull": "gr01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 25821,
+      "graphicId": 2598,
+      "profile": "mesh_560f80ef93b7f5b2a361a9857803e9e8",
+      "hull": "gensilo01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 26849,
+      "graphicId": 3206,
+      "profile": "mesh_bf283c08eb6e7e3331467679c9bdba8b",
+      "hull": "wd1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 26888,
+      "graphicId": 2309,
+      "profile": "mesh_bf283c08eb6e7e3331467679c9bdba8b",
+      "hull": "wd1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 26890,
+      "graphicId": 2309,
+      "profile": "mesh_bf283c08eb6e7e3331467679c9bdba8b",
+      "hull": "wd1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 26892,
+      "graphicId": 2309,
+      "profile": "mesh_bf283c08eb6e7e3331467679c9bdba8b",
+      "hull": "wd1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27530,
+      "graphicId": 3292,
+      "profile": "mesh_eb5a8f0d0f0847836552a25ed31f7426",
+      "hull": "act1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27532,
+      "graphicId": 3292,
+      "profile": "mesh_eb5a8f0d0f0847836552a25ed31f7426",
+      "hull": "act1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27533,
+      "graphicId": 3294,
+      "profile": "mesh_0b18516170bfc56575345758039a2277",
+      "hull": "cct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27535,
+      "graphicId": 3294,
+      "profile": "mesh_0b18516170bfc56575345758039a2277",
+      "hull": "cct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27536,
+      "graphicId": 3298,
+      "profile": "mesh_22857b3f81548601470f3be706b821dc",
+      "hull": "gct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27538,
+      "graphicId": 3298,
+      "profile": "mesh_22857b3f81548601470f3be706b821dc",
+      "hull": "gct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27539,
+      "graphicId": 3290,
+      "profile": "mesh_0e6c5fb1dabe5ca6a14db319ce0b80b4",
+      "hull": "angct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27540,
+      "graphicId": 3290,
+      "profile": "mesh_0e6c5fb1dabe5ca6a14db319ce0b80b4",
+      "hull": "angct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27542,
+      "graphicId": 2751,
+      "profile": "mesh_2192a1ea00d37b0699d7f2b8e16ebf75",
+      "hull": "gda02",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27544,
+      "graphicId": 2751,
+      "profile": "mesh_2192a1ea00d37b0699d7f2b8e16ebf75",
+      "hull": "gda02",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27545,
+      "graphicId": 2751,
+      "profile": "mesh_2192a1ea00d37b0699d7f2b8e16ebf75",
+      "hull": "gda02",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27547,
+      "graphicId": 2751,
+      "profile": "mesh_2192a1ea00d37b0699d7f2b8e16ebf75",
+      "hull": "gda02",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27548,
+      "graphicId": 2751,
+      "profile": "mesh_2192a1ea00d37b0699d7f2b8e16ebf75",
+      "hull": "gda02",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27550,
+      "graphicId": 2751,
+      "profile": "mesh_2192a1ea00d37b0699d7f2b8e16ebf75",
+      "hull": "gda02",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27551,
+      "graphicId": 2751,
+      "profile": "mesh_2192a1ea00d37b0699d7f2b8e16ebf75",
+      "hull": "gda02",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27553,
+      "graphicId": 2751,
+      "profile": "mesh_2192a1ea00d37b0699d7f2b8e16ebf75",
+      "hull": "gda02",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27554,
+      "graphicId": 2751,
+      "profile": "mesh_2192a1ea00d37b0699d7f2b8e16ebf75",
+      "hull": "gda02",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27556,
+      "graphicId": 2751,
+      "profile": "mesh_2192a1ea00d37b0699d7f2b8e16ebf75",
+      "hull": "gda02",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27557,
+      "graphicId": 2751,
+      "profile": "mesh_2192a1ea00d37b0699d7f2b8e16ebf75",
+      "hull": "gda02",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27559,
+      "graphicId": 2751,
+      "profile": "mesh_2192a1ea00d37b0699d7f2b8e16ebf75",
+      "hull": "gda02",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27560,
+      "graphicId": 2603,
+      "profile": "mesh_eea0ae5f7d694ee5eb87d3d533ba3d0e",
+      "hull": "gda01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27562,
+      "graphicId": 2603,
+      "profile": "mesh_eea0ae5f7d694ee5eb87d3d533ba3d0e",
+      "hull": "gda01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27563,
+      "graphicId": 2615,
+      "profile": "mesh_b84cd015ac53b479f2e7682e67c22984",
+      "hull": "gsa01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27565,
+      "graphicId": 2615,
+      "profile": "mesh_b84cd015ac53b479f2e7682e67c22984",
+      "hull": "gsa01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27567,
+      "graphicId": 2615,
+      "profile": "mesh_b84cd015ac53b479f2e7682e67c22984",
+      "hull": "gsa01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27569,
+      "graphicId": 2615,
+      "profile": "mesh_b84cd015ac53b479f2e7682e67c22984",
+      "hull": "gsa01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27570,
+      "graphicId": 2613,
+      "profile": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "hull": "gea01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27573,
+      "graphicId": 2613,
+      "profile": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "hull": "gea01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27574,
+      "graphicId": 2613,
+      "profile": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "hull": "gea01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27576,
+      "graphicId": 2613,
+      "profile": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "hull": "gea01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27577,
+      "graphicId": 2613,
+      "profile": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "hull": "gea01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27579,
+      "graphicId": 2613,
+      "profile": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "hull": "gea01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27580,
+      "graphicId": 2613,
+      "profile": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "hull": "gea01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27582,
+      "graphicId": 2613,
+      "profile": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "hull": "gea01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27583,
+      "graphicId": 2613,
+      "profile": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "hull": "gea01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27585,
+      "graphicId": 2613,
+      "profile": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "hull": "gea01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27589,
+      "graphicId": 3292,
+      "profile": "mesh_eb5a8f0d0f0847836552a25ed31f7426",
+      "hull": "act1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27591,
+      "graphicId": 3292,
+      "profile": "mesh_eb5a8f0d0f0847836552a25ed31f7426",
+      "hull": "act1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27592,
+      "graphicId": 3292,
+      "profile": "mesh_eb5a8f0d0f0847836552a25ed31f7426",
+      "hull": "act1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27594,
+      "graphicId": 3292,
+      "profile": "mesh_eb5a8f0d0f0847836552a25ed31f7426",
+      "hull": "act1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27595,
+      "graphicId": 3294,
+      "profile": "mesh_0b18516170bfc56575345758039a2277",
+      "hull": "cct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27597,
+      "graphicId": 3294,
+      "profile": "mesh_0b18516170bfc56575345758039a2277",
+      "hull": "cct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27598,
+      "graphicId": 3294,
+      "profile": "mesh_0b18516170bfc56575345758039a2277",
+      "hull": "cct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27600,
+      "graphicId": 3294,
+      "profile": "mesh_0b18516170bfc56575345758039a2277",
+      "hull": "cct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27601,
+      "graphicId": 3298,
+      "profile": "mesh_22857b3f81548601470f3be706b821dc",
+      "hull": "gct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27603,
+      "graphicId": 3298,
+      "profile": "mesh_22857b3f81548601470f3be706b821dc",
+      "hull": "gct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27604,
+      "graphicId": 3298,
+      "profile": "mesh_22857b3f81548601470f3be706b821dc",
+      "hull": "gct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27606,
+      "graphicId": 3298,
+      "profile": "mesh_22857b3f81548601470f3be706b821dc",
+      "hull": "gct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27607,
+      "graphicId": 3290,
+      "profile": "mesh_0e6c5fb1dabe5ca6a14db319ce0b80b4",
+      "hull": "angct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27609,
+      "graphicId": 3290,
+      "profile": "mesh_0e6c5fb1dabe5ca6a14db319ce0b80b4",
+      "hull": "angct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27610,
+      "graphicId": 3290,
+      "profile": "mesh_0e6c5fb1dabe5ca6a14db319ce0b80b4",
+      "hull": "angct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27612,
+      "graphicId": 3290,
+      "profile": "mesh_0e6c5fb1dabe5ca6a14db319ce0b80b4",
+      "hull": "angct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27613,
+      "graphicId": 22215,
+      "profile": "mesh_c6ca892ecad98bdc73d934b9e7a0ae22",
+      "hull": "gsl01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27615,
+      "graphicId": 1213,
+      "profile": "mesh_c6ca892ecad98bdc73d934b9e7a0ae22",
+      "hull": "gsl01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27616,
+      "graphicId": 22215,
+      "profile": "mesh_c6ca892ecad98bdc73d934b9e7a0ae22",
+      "hull": "gsl01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27618,
+      "graphicId": 1213,
+      "profile": "mesh_c6ca892ecad98bdc73d934b9e7a0ae22",
+      "hull": "gsl01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27619,
+      "graphicId": 22215,
+      "profile": "mesh_c6ca892ecad98bdc73d934b9e7a0ae22",
+      "hull": "gsl01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27621,
+      "graphicId": 1213,
+      "profile": "mesh_c6ca892ecad98bdc73d934b9e7a0ae22",
+      "hull": "gsl01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27622,
+      "graphicId": 22215,
+      "profile": "mesh_c6ca892ecad98bdc73d934b9e7a0ae22",
+      "hull": "gsl01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27624,
+      "graphicId": 1213,
+      "profile": "mesh_c6ca892ecad98bdc73d934b9e7a0ae22",
+      "hull": "gsl01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27625,
+      "graphicId": 1006,
+      "profile": "mesh_68c6f5ef71c484bb41b3e11ae02e67d0",
+      "hull": "asl_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27627,
+      "graphicId": 1006,
+      "profile": "mesh_68c6f5ef71c484bb41b3e11ae02e67d0",
+      "hull": "asl_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27628,
+      "graphicId": 1006,
+      "profile": "mesh_68c6f5ef71c484bb41b3e11ae02e67d0",
+      "hull": "asl_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27630,
+      "graphicId": 1006,
+      "profile": "mesh_68c6f5ef71c484bb41b3e11ae02e67d0",
+      "hull": "asl_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27631,
+      "graphicId": 1006,
+      "profile": "mesh_68c6f5ef71c484bb41b3e11ae02e67d0",
+      "hull": "asl_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27633,
+      "graphicId": 1006,
+      "profile": "mesh_68c6f5ef71c484bb41b3e11ae02e67d0",
+      "hull": "asl_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27634,
+      "graphicId": 1006,
+      "profile": "mesh_68c6f5ef71c484bb41b3e11ae02e67d0",
+      "hull": "asl_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27636,
+      "graphicId": 1006,
+      "profile": "mesh_68c6f5ef71c484bb41b3e11ae02e67d0",
+      "hull": "asl_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27638,
+      "graphicId": 2603,
+      "profile": "mesh_eea0ae5f7d694ee5eb87d3d533ba3d0e",
+      "hull": "gda01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27640,
+      "graphicId": 2603,
+      "profile": "mesh_eea0ae5f7d694ee5eb87d3d533ba3d0e",
+      "hull": "gda01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27641,
+      "graphicId": 2603,
+      "profile": "mesh_eea0ae5f7d694ee5eb87d3d533ba3d0e",
+      "hull": "gda01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27643,
+      "graphicId": 2603,
+      "profile": "mesh_eea0ae5f7d694ee5eb87d3d533ba3d0e",
+      "hull": "gda01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27644,
+      "graphicId": 22216,
+      "profile": "mesh_0e8b824b32a0f4132ba1d2f5ae68e0cb",
+      "hull": "msl01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27646,
+      "graphicId": 1216,
+      "profile": "mesh_0e8b824b32a0f4132ba1d2f5ae68e0cb",
+      "hull": "msl01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27647,
+      "graphicId": 22216,
+      "profile": "mesh_0e8b824b32a0f4132ba1d2f5ae68e0cb",
+      "hull": "msl01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27649,
+      "graphicId": 1216,
+      "profile": "mesh_0e8b824b32a0f4132ba1d2f5ae68e0cb",
+      "hull": "msl01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27650,
+      "graphicId": 22216,
+      "profile": "mesh_0e8b824b32a0f4132ba1d2f5ae68e0cb",
+      "hull": "msl01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27652,
+      "graphicId": 1216,
+      "profile": "mesh_0e8b824b32a0f4132ba1d2f5ae68e0cb",
+      "hull": "msl01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27653,
+      "graphicId": 22216,
+      "profile": "mesh_0e8b824b32a0f4132ba1d2f5ae68e0cb",
+      "hull": "msl01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27655,
+      "graphicId": 1216,
+      "profile": "mesh_0e8b824b32a0f4132ba1d2f5ae68e0cb",
+      "hull": "msl01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27672,
+      "graphicId": 2613,
+      "profile": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "hull": "gea01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27673,
+      "graphicId": 2613,
+      "profile": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "hull": "gea01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27674,
+      "graphicId": 2615,
+      "profile": "mesh_b84cd015ac53b479f2e7682e67c22984",
+      "hull": "gsa01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27675,
+      "graphicId": 2615,
+      "profile": "mesh_b84cd015ac53b479f2e7682e67c22984",
+      "hull": "gsa01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27676,
+      "graphicId": 2598,
+      "profile": "mesh_560f80ef93b7f5b2a361a9857803e9e8",
+      "hull": "gensilo01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27766,
+      "graphicId": 2751,
+      "profile": "mesh_2192a1ea00d37b0699d7f2b8e16ebf75",
+      "hull": "gda02",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27767,
+      "graphicId": 2751,
+      "profile": "mesh_2192a1ea00d37b0699d7f2b8e16ebf75",
+      "hull": "gda02",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27768,
+      "graphicId": 1006,
+      "profile": "mesh_68c6f5ef71c484bb41b3e11ae02e67d0",
+      "hull": "asl_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27769,
+      "graphicId": 1006,
+      "profile": "mesh_68c6f5ef71c484bb41b3e11ae02e67d0",
+      "hull": "asl_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27770,
+      "graphicId": 1006,
+      "profile": "mesh_68c6f5ef71c484bb41b3e11ae02e67d0",
+      "hull": "asl_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27771,
+      "graphicId": 1006,
+      "profile": "mesh_68c6f5ef71c484bb41b3e11ae02e67d0",
+      "hull": "asl_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27772,
+      "graphicId": 2751,
+      "profile": "mesh_2192a1ea00d37b0699d7f2b8e16ebf75",
+      "hull": "gda02",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27773,
+      "graphicId": 2751,
+      "profile": "mesh_2192a1ea00d37b0699d7f2b8e16ebf75",
+      "hull": "gda02",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27774,
+      "graphicId": 1006,
+      "profile": "mesh_68c6f5ef71c484bb41b3e11ae02e67d0",
+      "hull": "asl_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27775,
+      "graphicId": 1006,
+      "profile": "mesh_68c6f5ef71c484bb41b3e11ae02e67d0",
+      "hull": "asl_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27776,
+      "graphicId": 1006,
+      "profile": "mesh_68c6f5ef71c484bb41b3e11ae02e67d0",
+      "hull": "asl_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27777,
+      "graphicId": 1006,
+      "profile": "mesh_68c6f5ef71c484bb41b3e11ae02e67d0",
+      "hull": "asl_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27778,
+      "graphicId": 2613,
+      "profile": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "hull": "gea01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27779,
+      "graphicId": 2613,
+      "profile": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "hull": "gea01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27780,
+      "graphicId": 3295,
+      "profile": "mesh_cc2f32c66df5f49f13951fc35d94ecc5",
+      "hull": "sct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27782,
+      "graphicId": 3295,
+      "profile": "mesh_cc2f32c66df5f49f13951fc35d94ecc5",
+      "hull": "sct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27784,
+      "graphicId": 3295,
+      "profile": "mesh_cc2f32c66df5f49f13951fc35d94ecc5",
+      "hull": "sct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27786,
+      "graphicId": 3295,
+      "profile": "mesh_cc2f32c66df5f49f13951fc35d94ecc5",
+      "hull": "sct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27788,
+      "graphicId": 3295,
+      "profile": "mesh_cc2f32c66df5f49f13951fc35d94ecc5",
+      "hull": "sct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27790,
+      "graphicId": 3295,
+      "profile": "mesh_cc2f32c66df5f49f13951fc35d94ecc5",
+      "hull": "sct1_t1a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27855,
+      "graphicId": 2613,
+      "profile": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "hull": "gea01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27856,
+      "graphicId": 2613,
+      "profile": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "hull": "gea01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27857,
+      "graphicId": 2613,
+      "profile": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "hull": "gea01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27858,
+      "graphicId": 2613,
+      "profile": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "hull": "gea01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 27897,
+      "graphicId": 2374,
+      "profile": "mesh_3db39bf99845c1a5244058d4ec5f34e3",
+      "hull": "gpc01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 28191,
+      "graphicId": 2613,
+      "profile": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "hull": "gea01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 28314,
+      "graphicId": 2598,
+      "profile": "mesh_560f80ef93b7f5b2a361a9857803e9e8",
+      "hull": "gensilo01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 28315,
+      "graphicId": 2598,
+      "profile": "mesh_560f80ef93b7f5b2a361a9857803e9e8",
+      "hull": "gensilo01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 28316,
+      "graphicId": 2598,
+      "profile": "mesh_560f80ef93b7f5b2a361a9857803e9e8",
+      "hull": "gensilo01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 28317,
+      "graphicId": 2598,
+      "profile": "mesh_560f80ef93b7f5b2a361a9857803e9e8",
+      "hull": "gensilo01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 28318,
+      "graphicId": 2377,
+      "profile": "mesh_578453242397e0177ceba413616b4b78",
+      "hull": "gr01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 28319,
+      "graphicId": 2377,
+      "profile": "mesh_578453242397e0177ceba413616b4b78",
+      "hull": "gr01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 28351,
+      "graphicId": 2373,
+      "profile": "mesh_42ff723e27d7a8004a190e86a80f9d53",
+      "hull": "gl01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 28770,
+      "graphicId": 2309,
+      "profile": "mesh_bf283c08eb6e7e3331467679c9bdba8b",
+      "hull": "wd1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 28772,
+      "graphicId": 2309,
+      "profile": "mesh_bf283c08eb6e7e3331467679c9bdba8b",
+      "hull": "wd1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 28774,
+      "graphicId": 2309,
+      "profile": "mesh_bf283c08eb6e7e3331467679c9bdba8b",
+      "hull": "wd1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 28884,
+      "graphicId": 2598,
+      "profile": "mesh_560f80ef93b7f5b2a361a9857803e9e8",
+      "hull": "gensilo01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 29323,
+      "graphicId": 1019,
+      "profile": "mesh_92c7a930b8ff4f263af4ad6abc3106b6",
+      "hull": "cs1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 29387,
+      "graphicId": 1068,
+      "profile": "mesh_81d6dcfab59ce5f32375d730f0ffd508",
+      "hull": "as2",
+      "graphicFile": null
+    },
+    {
+      "typeId": 29388,
+      "graphicId": 1069,
+      "profile": "mesh_a7aff2833e6f030f5618cd61f96f18d1",
+      "hull": "as1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 29389,
+      "graphicId": 1074,
+      "profile": "mesh_ad84a27cd37e12687091169d44e555e8",
+      "hull": "as4",
+      "graphicFile": null
+    },
+    {
+      "typeId": 29390,
+      "graphicId": 3395,
+      "profile": "mesh_27d55f661f23f5160a92349fcb81c6e1",
+      "hull": "cons1_wreck",
+      "graphicFile": null
+    },
+    {
+      "typeId": 29613,
+      "graphicId": 2625,
+      "profile": "mesh_5c27bf0eaee3e1953a3e9737c1444a74",
+      "hull": "sy01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 30389,
+      "graphicId": 2625,
+      "profile": "mesh_5c27bf0eaee3e1953a3e9737c1444a74",
+      "hull": "sy01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 30655,
+      "graphicId": 2598,
+      "profile": "mesh_560f80ef93b7f5b2a361a9857803e9e8",
+      "hull": "gensilo01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 30656,
+      "graphicId": 2377,
+      "profile": "mesh_578453242397e0177ceba413616b4b78",
+      "hull": "gr01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 32226,
+      "graphicId": 3822,
+      "profile": "mesh_4552303da8c32138dff79c78356020f4",
+      "hull": "scm1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 32245,
+      "graphicId": 2373,
+      "profile": "mesh_42ff723e27d7a8004a190e86a80f9d53",
+      "hull": "gl01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 32250,
+      "graphicId": 3826,
+      "profile": "mesh_7217f700225b8dedad4cd77391d89c8a",
+      "hull": "sd1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 32300,
+      "graphicId": 3822,
+      "profile": "mesh_4552303da8c32138dff79c78356020f4",
+      "hull": "scm1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 32302,
+      "graphicId": 3826,
+      "profile": "mesh_7217f700225b8dedad4cd77391d89c8a",
+      "hull": "sd1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 32313,
+      "graphicId": 3827,
+      "profile": "mesh_badf58d34cbb95b54321cdd7ea20c4d7",
+      "hull": "scb1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 32458,
+      "graphicId": 27335,
+      "profile": "mesh_bf3b9391678fcc49d10ae2a2124b6e25",
+      "hull": "sh01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 33149,
+      "graphicId": 2301,
+      "profile": "mesh_255923a37a60dadf42ca333dda2b4342",
+      "hull": "gw01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 33474,
+      "graphicId": 20390,
+      "profile": "mesh_ade86c2f38d88ac882a0bd3639b1f0b6",
+      "hull": "gsu01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 33475,
+      "graphicId": 20387,
+      "profile": "mesh_6d1e681084daace05d4b466bf2d02246",
+      "hull": "gat01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 33476,
+      "graphicId": 20388,
+      "profile": "mesh_ddea4f9142a44ca24b56752f96c0a21b",
+      "hull": "mcd01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 33477,
+      "graphicId": 20389,
+      "profile": "mesh_d05a9b109b7c7f8624b1894d9c683d40",
+      "hull": "mlu01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 33478,
+      "graphicId": 20397,
+      "profile": "mesh_d05a9b109b7c7f8624b1894d9c683d40",
+      "hull": "mlu01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 33479,
+      "graphicId": 20398,
+      "profile": "mesh_d05a9b109b7c7f8624b1894d9c683d40",
+      "hull": "mlu01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 33520,
+      "graphicId": 20390,
+      "profile": "mesh_ade86c2f38d88ac882a0bd3639b1f0b6",
+      "hull": "gsu01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 33522,
+      "graphicId": 20390,
+      "profile": "mesh_ade86c2f38d88ac882a0bd3639b1f0b6",
+      "hull": "gsu01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 33581,
+      "graphicId": 20437,
+      "profile": "mesh_d05a9b109b7c7f8624b1894d9c683d40",
+      "hull": "mlu01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 33583,
+      "graphicId": 20436,
+      "profile": "mesh_d05a9b109b7c7f8624b1894d9c683d40",
+      "hull": "mlu01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 33585,
+      "graphicId": 20446,
+      "profile": "mesh_d6b83f36b09b2f1d2c2395c5e43d8765",
+      "hull": "mbma_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 33587,
+      "graphicId": 20438,
+      "profile": "mesh_b4287f78e691007d3c0e072e71a690f2",
+      "hull": "gdu01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 33589,
+      "graphicId": 20439,
+      "profile": "mesh_0e2ad5c0d267f7aa18b39852be64fe97",
+      "hull": "mdd01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 33591,
+      "graphicId": 20450,
+      "profile": "mesh_e90524ae55fa0bbbc2de03a06a83e5d7",
+      "hull": "mmjd_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 33595,
+      "graphicId": 20447,
+      "profile": "mesh_d6b83f36b09b2f1d2c2395c5e43d8765",
+      "hull": "mbmc_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 33608,
+      "graphicId": 20448,
+      "profile": "mesh_d6b83f36b09b2f1d2c2395c5e43d8765",
+      "hull": "mbmg_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 33610,
+      "graphicId": 20449,
+      "profile": "mesh_d6b83f36b09b2f1d2c2395c5e43d8765",
+      "hull": "mbmm_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 33700,
+      "graphicId": 20387,
+      "profile": "mesh_6d1e681084daace05d4b466bf2d02246",
+      "hull": "gat01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 33702,
+      "graphicId": 20387,
+      "profile": "mesh_6d1e681084daace05d4b466bf2d02246",
+      "hull": "gat01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 33867,
+      "graphicId": 2377,
+      "profile": "mesh_578453242397e0177ceba413616b4b78",
+      "hull": "gr01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 33990,
+      "graphicId": 20450,
+      "profile": "mesh_e90524ae55fa0bbbc2de03a06a83e5d7",
+      "hull": "mmjd_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 34325,
+      "graphicId": 20967,
+      "profile": "mesh_e4dde830dc230d42bcc5f47d0831339d",
+      "hull": "soes1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 34326,
+      "graphicId": 20968,
+      "profile": "mesh_88479a3871702e3d863300f0df1e9256",
+      "hull": "soes2",
+      "graphicFile": null
+    },
+    {
+      "typeId": 35825,
+      "graphicId": 21344,
+      "profile": "mesh_2434e640f7e6ff92c13fff9251b85d4a",
+      "hull": "iam1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 35826,
+      "graphicId": 21405,
+      "profile": "mesh_6a6f1cf91753bed6a1f41956560d4f1c",
+      "hull": "ial1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 35827,
+      "graphicId": 21406,
+      "profile": "mesh_719733ac8d56dc4b29549c6f7d10c19e",
+      "hull": "iaxl1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 35832,
+      "graphicId": 21137,
+      "profile": "mesh_8a7851f7b675772072a5cf9292e06f0f",
+      "hull": "cm1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 35833,
+      "graphicId": 21138,
+      "profile": "mesh_99c4f8422b9075daca62a41c02a9edfa",
+      "hull": "cl1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 35834,
+      "graphicId": 21139,
+      "profile": "mesh_0f36964bd820f28c70f2cfcdd2aba8e0",
+      "hull": "cxl1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 35835,
+      "graphicId": 21445,
+      "profile": "mesh_71f4b5bf44fdcfcba048b03a181ea287",
+      "hull": "refm1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 35836,
+      "graphicId": 21451,
+      "profile": "mesh_9a94a229ec6695aa064885c67b124ad0",
+      "hull": "refl1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 35837,
+      "graphicId": 3465,
+      "profile": "mesh_0846e1d59578a4ef0f840255e9fd5f1f",
+      "hull": "ssg",
+      "graphicFile": null
+    },
+    {
+      "typeId": 35840,
+      "graphicId": 22262,
+      "profile": "mesh_58533308a076b505eee9469589c7ba35",
+      "hull": "cyb01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 35841,
+      "graphicId": 22269,
+      "profile": "mesh_8e1036d6c324be01a0bdc0f600aeb300",
+      "hull": "jub01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 35845,
+      "graphicId": 22298,
+      "profile": "mesh_5baa67e2d43b4a32413f89df897d7644",
+      "hull": "sa1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 36523,
+      "graphicId": 20439,
+      "profile": "mesh_0e2ad5c0d267f7aa18b39852be64fe97",
+      "hull": "mdd01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 37534,
+      "graphicId": 22252,
+      "profile": "mesh_2c747a13bf215a21aa13df77f7ea8024",
+      "hull": "cyj01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 37535,
+      "graphicId": 21137,
+      "profile": "mesh_8a7851f7b675772072a5cf9292e06f0f",
+      "hull": "cm1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 37536,
+      "graphicId": 21137,
+      "profile": "mesh_8a7851f7b675772072a5cf9292e06f0f",
+      "hull": "cm1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 40340,
+      "graphicId": 21315,
+      "profile": "mesh_0f36964bd820f28c70f2cfcdd2aba8e0",
+      "hull": "cxl1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 45006,
+      "graphicId": 21406,
+      "profile": "mesh_719733ac8d56dc4b29549c6f7d10c19e",
+      "hull": "iaxl1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 46363,
+      "graphicId": 21863,
+      "profile": "mesh_f5e351e27dd62d904a6f6873291f4174",
+      "hull": "cs5",
+      "graphicFile": null
+    },
+    {
+      "typeId": 46364,
+      "graphicId": 21865,
+      "profile": "mesh_16c747cfc406a53562d88e56a3a8136e",
+      "hull": "as10",
+      "graphicFile": null
+    },
+    {
+      "typeId": 47512,
+      "graphicId": 22195,
+      "profile": "mesh_99c4f8422b9075daca62a41c02a9edfa",
+      "hull": "cl1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 47513,
+      "graphicId": 22142,
+      "profile": "mesh_3a73c29c1756f9c0044b2d1ca17c954a",
+      "hull": "ao1l_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 47514,
+      "graphicId": 22150,
+      "profile": "mesh_fd8898aa34d1ac61942c5c81132e170b",
+      "hull": "co1l_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 47515,
+      "graphicId": 22189,
+      "profile": "mesh_e4dfdff45d42cc5d4c60e7fec886a442",
+      "hull": "go1l_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 47516,
+      "graphicId": 22161,
+      "profile": "mesh_778989b456ae6f3e88aea7e9ece19076",
+      "hull": "mo1l_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 48463,
+      "graphicId": 3827,
+      "profile": "mesh_badf58d34cbb95b54321cdd7ea20c4d7",
+      "hull": "scb1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 48899,
+      "graphicId": 20438,
+      "profile": "mesh_b4287f78e691007d3c0e072e71a690f2",
+      "hull": "gdu01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 49600,
+      "graphicId": 22303,
+      "profile": "mesh_d38b50fd7d69db3db057eeebc9f8858c",
+      "hull": "sm1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 49601,
+      "graphicId": 22304,
+      "profile": "mesh_e314d3433ef7bd928c5f4e5d3527601f",
+      "hull": "sf1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 52678,
+      "graphicId": 24488,
+      "profile": "mesh_6cf16abf523140b27976947ed54dea73",
+      "hull": "jita",
+      "graphicFile": null
+    },
+    {
+      "typeId": 56701,
+      "graphicId": 24889,
+      "profile": "mesh_6d1e681084daace05d4b466bf2d02246",
+      "hull": "gat01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 57319,
+      "graphicId": 24934,
+      "profile": "mesh_7a00faa28966faac11110a0390be3823",
+      "hull": "pcd01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 58904,
+      "graphicId": 25008,
+      "profile": "mesh_2302f3550595f6c969db63fe1c681ac0",
+      "hull": "ddd01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 58906,
+      "graphicId": 24934,
+      "profile": "mesh_7a00faa28966faac11110a0390be3823",
+      "hull": "pcd01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 59630,
+      "graphicId": 24934,
+      "profile": "mesh_7a00faa28966faac11110a0390be3823",
+      "hull": "pcd01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 59956,
+      "graphicId": 25047,
+      "profile": "mesh_f3937ecc0bfb3ff5ee83a47524f40436",
+      "hull": "airs1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 60244,
+      "graphicId": 25113,
+      "profile": "mesh_126d5084a536cee432be27ff1d423275",
+      "hull": "conral",
+      "graphicFile": null
+    },
+    {
+      "typeId": 71116,
+      "graphicId": 22142,
+      "profile": "mesh_3a73c29c1756f9c0044b2d1ca17c954a",
+      "hull": "ao1l_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 71117,
+      "graphicId": 22150,
+      "profile": "mesh_fd8898aa34d1ac61942c5c81132e170b",
+      "hull": "co1l_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 71118,
+      "graphicId": 22189,
+      "profile": "mesh_e4dfdff45d42cc5d4c60e7fec886a442",
+      "hull": "go1l_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 71119,
+      "graphicId": 22161,
+      "profile": "mesh_778989b456ae6f3e88aea7e9ece19076",
+      "hull": "mo1l_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 71361,
+      "graphicId": 25623,
+      "profile": "mesh_a18efca2403d8e7b5c44ac585ff794ad",
+      "hull": "go1_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 73225,
+      "graphicId": 25664,
+      "profile": "mesh_414ef3e640059f3777f05f52f47a1822",
+      "hull": "ama_plinth_01a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 73226,
+      "graphicId": 25667,
+      "profile": "mesh_c628c72d2ab3e3139b1d7e62980d02c1",
+      "hull": "min_plinth_01a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 73227,
+      "graphicId": 25665,
+      "profile": "mesh_c628c72d2ab3e3139b1d7e62980d02c1",
+      "hull": "cal_plinth_01a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 73228,
+      "graphicId": 25666,
+      "profile": "mesh_822b17801b51788156d4bbee193642af",
+      "hull": "gal_plinth_01a",
+      "graphicFile": null
+    },
+    {
+      "typeId": 73270,
+      "graphicId": 1217,
+      "profile": "mesh_bd98ce24c3ead4ca7656bbbdd60b18dd",
+      "hull": "usj_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 73271,
+      "graphicId": 1217,
+      "profile": "mesh_bd98ce24c3ead4ca7656bbbdd60b18dd",
+      "hull": "usj_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 73272,
+      "graphicId": 1217,
+      "profile": "mesh_bd98ce24c3ead4ca7656bbbdd60b18dd",
+      "hull": "usj_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 73273,
+      "graphicId": 1217,
+      "profile": "mesh_bd98ce24c3ead4ca7656bbbdd60b18dd",
+      "hull": "usj_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 74397,
+      "graphicId": 25677,
+      "profile": "mesh_2cfdab5cfe13c7883cea6049c8fa784d",
+      "hull": "ms3_wreck",
+      "graphicFile": null
+    },
+    {
+      "typeId": 75677,
+      "graphicId": 25008,
+      "profile": "mesh_2302f3550595f6c969db63fe1c681ac0",
+      "hull": "ddd01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 78260,
+      "graphicId": 26446,
+      "profile": "mesh_9994d16210f005a11b544a2afc27a45e",
+      "hull": "deafob01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 78334,
+      "graphicId": 26281,
+      "profile": "mesh_d1e35eb8cfd3120265783c8b0674ac6c",
+      "hull": "js4",
+      "graphicFile": null
+    },
+    {
+      "typeId": 79172,
+      "graphicId": 26375,
+      "profile": "mesh_9994d16210f005a11b544a2afc27a45e",
+      "hull": "deafob01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 81080,
+      "graphicId": 27169,
+      "profile": "mesh_be11889ff482a0651a7235f4bd4316e0",
+      "hull": "shoh01_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 81826,
+      "graphicId": 27379,
+      "profile": "mesh_a62e1becc62bf324c8ca3e5428ddc4f3",
+      "hull": "uw_mm01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 81951,
+      "graphicId": 27378,
+      "profile": "mesh_6d1e681084daace05d4b466bf2d02246",
+      "hull": "gat01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 85230,
+      "graphicId": 27893,
+      "profile": "mesh_243ed7e872d32758fc775651de5f17f7",
+      "hull": "deamd01b_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 85980,
+      "graphicId": 27912,
+      "profile": "mesh_07873677893e3c0935992b22f5b4eebd",
+      "hull": "deamd01a_t1",
+      "graphicFile": null
+    },
+    {
+      "typeId": 90037,
+      "graphicId": 28856,
+      "profile": "mesh_ae5bc1e37a6c013424accc8ac69694ec",
+      "hull": "ore_pa01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 90161,
+      "graphicId": 28856,
+      "profile": "mesh_ae5bc1e37a6c013424accc8ac69694ec",
+      "hull": "ore_pa01",
+      "graphicFile": null
+    },
+    {
+      "typeId": 92183,
+      "graphicId": 25113,
+      "profile": "mesh_126d5084a536cee432be27ff1d423275",
+      "hull": "conral",
+      "graphicFile": null
+    },
+    {
+      "typeId": 92885,
+      "graphicId": 33585,
+      "profile": "mesh_95ad7bd210b4c03b179179f146137049",
+      "hull": "airs2",
+      "graphicFile": null
+    }
+  ],
+  "profiles": [
+    {
+      "key": "mesh_00d770f17fa8887369ce657249e04489",
+      "pitch": 1200,
+      "radius": 1440.0,
+      "bounds": {
+        "min": {
+          "x": -19952.0234375,
+          "y": -16588.935546875,
+          "z": -36248.0625
+        },
+        "max": {
+          "x": 18544.11328125,
+          "y": 18282.013671875,
+          "z": 35442.640625
+        }
+      },
+      "triangles": 41137,
+      "geometry": "res:/dx9/model/station/gallente/gs7/gs7.gr2",
+      "md5": "00d770f17fa8887369ce657249e04489",
+      "sha256": "29bd3c113c831a7fc169021cd8f951ec73957980a3262fd433395e5774e5aa64",
+      "spheres": 476,
+      "capsules": 810
+    },
+    {
+      "key": "mesh_04873104ed55f4ce3b0e39096df765e2",
+      "pitch": 575,
+      "radius": 690.0,
+      "bounds": {
+        "min": {
+          "x": -19592.705078125,
+          "y": -16682.517578125,
+          "z": -25545.49609375
+        },
+        "max": {
+          "x": 21007.076171875,
+          "y": 17294.5546875,
+          "z": 11651.3359375
+        }
+      },
+      "triangles": 43182,
+      "geometry": "res:/dx9/model/station/minmatar/ms4/ms4.gr2",
+      "md5": "04873104ed55f4ce3b0e39096df765e2",
+      "sha256": "d536553922416a2eb1d384739724645b3e6eaf8a0b451cfb5220f3dc6a071112",
+      "spheres": 476,
+      "capsules": 1373
+    },
+    {
+      "key": "mesh_052a432aa6ab9629152e1bdba8a3f9b7",
+      "pitch": 100,
+      "radius": 120.0,
+      "bounds": {
+        "min": {
+          "x": -2063.495361328125,
+          "y": -4518.330078125,
+          "z": -549.9666137695312
+        },
+        "max": {
+          "x": 2069.502685546875,
+          "y": 4584.34130859375,
+          "z": 531.3410034179688
+        }
+      },
+      "triangles": 45,
+      "geometry": "res:/dx9/model/artifact/universal/monolith/umo.gr2",
+      "md5": "052a432aa6ab9629152e1bdba8a3f9b7",
+      "sha256": "a680cda7c0dc0f3d4ce72adde674204651ac7802e194d8e521e7a50d3608698f",
+      "spheres": 1,
+      "capsules": 122
+    },
+    {
+      "key": "mesh_07873677893e3c0935992b22f5b4eebd",
+      "pitch": 175,
+      "radius": 210.0,
+      "bounds": {
+        "min": {
+          "x": -2133.038818359375,
+          "y": -3633.945556640625,
+          "z": -1321.580322265625
+        },
+        "max": {
+          "x": 5303.77294921875,
+          "y": 4452.3896484375,
+          "z": 1325.679443359375
+        }
+      },
+      "triangles": 89394,
+      "geometry": "res:/dx9/model/deployables/deathless/mercenaryden/deamd01/deamd01a_t1.gr2",
+      "md5": "07873677893e3c0935992b22f5b4eebd",
+      "sha256": "574fa24f6d66d62a017fa236fac65e335624f409cf6dd6027775bf524c56967c",
+      "spheres": 307,
+      "capsules": 1117
+    },
+    {
+      "key": "mesh_07f0df079493a962b640fbffc24ff2a8",
+      "pitch": 1000,
+      "radius": 1200.0,
+      "bounds": {
+        "min": {
+          "x": -17202.841796875,
+          "y": -27095.537109375,
+          "z": -17189.947265625
+        },
+        "max": {
+          "x": 17172.07421875,
+          "y": 20124.6640625,
+          "z": 17421.677734375
+        }
+      },
+      "triangles": 42246,
+      "geometry": "res:/dx9/model/station/amarr/as5/as5.gr2",
+      "md5": "07f0df079493a962b640fbffc24ff2a8",
+      "sha256": "705b2f30fcb7a781f6159549f835042606949b18635b2e629ae5eac41b46c112",
+      "spheres": 636,
+      "capsules": 814
+    },
+    {
+      "key": "mesh_0846e1d59578a4ef0f840255e9fd5f1f",
+      "pitch": 100,
+      "radius": 120.0,
+      "bounds": {
+        "min": {
+          "x": -1944.421875,
+          "y": -827.3828125,
+          "z": -3460.46875
+        },
+        "max": {
+          "x": 1944.421875,
+          "y": 1006.375,
+          "z": 3477.3125
+        }
+      },
+      "triangles": 30660,
+      "geometry": "res:/dx9/model/jumpgate/smuggler/ssg/ssg.gr2",
+      "md5": "0846e1d59578a4ef0f840255e9fd5f1f",
+      "sha256": "823276b09a202696bf948aa2f7406feb30bbfd07a81cfe8bfdaebf9ae6864149",
+      "spheres": 251,
+      "capsules": 412
+    },
+    {
+      "key": "mesh_0b18516170bfc56575345758039a2277",
+      "pitch": 100,
+      "radius": 120.0,
+      "bounds": {
+        "min": {
+          "x": -1070.70751953125,
+          "y": -3031.02099609375,
+          "z": -517.15625
+        },
+        "max": {
+          "x": 1070.64013671875,
+          "y": 3421.129638671875,
+          "z": 490.734375
+        }
+      },
+      "triangles": 12423,
+      "geometry": "res:/dx9/model/structure/caldari/controltower/cct1/cct1_t1a.gr2",
+      "md5": "0b18516170bfc56575345758039a2277",
+      "sha256": "073fe3c8d38b22447ac2b0661b1ce914a22d1e3cf01e3af2b2129cc108a68e29",
+      "spheres": 26,
+      "capsules": 75
+    },
+    {
+      "key": "mesh_0e2ad5c0d267f7aa18b39852be64fe97",
+      "pitch": 1.084361448287964,
+      "radius": 1.3012337379455567,
+      "bounds": {
+        "min": {
+          "x": -26.873437076807022,
+          "y": -27.096095144748688,
+          "z": -26.94471529552059
+        },
+        "max": {
+          "x": 26.868975669145584,
+          "y": 27.121977269649506,
+          "z": 26.833061026868357
+        }
+      },
+      "triangles": 9004,
+      "geometry": "res:/dx9/model/deployables/mobile/dscandisruptor/mdd01/mdd01.gr2",
+      "md5": "0e2ad5c0d267f7aa18b39852be64fe97",
+      "sha256": "0c83fd9e511257394d1e6a764c385650e4c6a09a66e9723ead3bced5583b41bd",
+      "spheres": 432,
+      "capsules": 1182
+    },
+    {
+      "key": "mesh_0e6c5fb1dabe5ca6a14db319ce0b80b4",
+      "pitch": 100,
+      "radius": 120.0,
+      "bounds": {
+        "min": {
+          "x": -463.8487854003906,
+          "y": -3870.017822265625,
+          "z": -1165.3004150390625
+        },
+        "max": {
+          "x": 362.543212890625,
+          "y": 2757.551513671875,
+          "z": 1428.2694091796875
+        }
+      },
+      "triangles": 15510,
+      "geometry": "res:/dx9/model/structure/angel/controltower/angct1/angct1_t1a.gr2",
+      "md5": "0e6c5fb1dabe5ca6a14db319ce0b80b4",
+      "sha256": "3b61111cc006c3f065d6d58f289b1dbb840831274078ecaec210398aefd42dfd",
+      "spheres": 85,
+      "capsules": 130
+    },
+    {
+      "key": "mesh_0e8b824b32a0f4132ba1d2f5ae68e0cb",
+      "pitch": 1.8830794067382812,
+      "radius": 2.2596952880859376,
+      "bounds": {
+        "min": {
+          "x": -58.64621353149414,
+          "y": -10.113919258117676,
+          "z": -60.628116607666016
+        },
+        "max": {
+          "x": 59.04624938964844,
+          "y": 10.113919258117676,
+          "z": 52.29056167602539
+        }
+      },
+      "triangles": 2856,
+      "geometry": "res:/dx9/model/structure/minmatar/sentry/l/msl01_t1.gr2",
+      "md5": "0e8b824b32a0f4132ba1d2f5ae68e0cb",
+      "sha256": "3ea6e10b59647990c33db75db0d49b5fb8f32e271ece605efc4eee35a9dfaca1",
+      "spheres": 338,
+      "capsules": 750
+    },
+    {
+      "key": "mesh_0f36964bd820f28c70f2cfcdd2aba8e0",
+      "pitch": 3350,
+      "radius": 4020.0,
+      "bounds": {
+        "min": {
+          "x": -75827.25,
+          "y": -58351.515625,
+          "z": -56899.1953125
+        },
+        "max": {
+          "x": 75827.25,
+          "y": 101361.40625,
+          "z": 71815.53125
+        }
+      },
+      "triangles": 40320,
+      "geometry": "res:/dx9/model/deployables/generic/citadel/xl/cxl1/cxl1_t1.gr2",
+      "md5": "0f36964bd820f28c70f2cfcdd2aba8e0",
+      "sha256": "29f788b202bf2858fd0d8a7445361839493b57b10cd873f4a46f0cc1a5dfd6c6",
+      "spheres": 577,
+      "capsules": 1002
+    },
+    {
+      "key": "mesh_120ac78fac1b9aad068a65d30a8d7f63",
+      "pitch": 1175,
+      "radius": 1410.0,
+      "bounds": {
+        "min": {
+          "x": -29160.8515625,
+          "y": -31808.09375,
+          "z": -39833.3828125
+        },
+        "max": {
+          "x": 33719.87109375,
+          "y": 23482.4765625,
+          "z": 44963.328125
+        }
+      },
+      "triangles": 36187,
+      "geometry": "res:/dx9/model/station/caldari/cs8/cs8.gr2",
+      "md5": "120ac78fac1b9aad068a65d30a8d7f63",
+      "sha256": "1bde38d73c2a57359dbe185bc976d6d95a328b323e5a09adeaf6b43347331133",
+      "spheres": 395,
+      "capsules": 950
+    },
+    {
+      "key": "mesh_126d5084a536cee432be27ff1d423275",
+      "pitch": 2.3797119832911484,
+      "radius": 2.855654379949378,
+      "bounds": {
+        "min": {
+          "x": -23.556362327608184,
+          "y": -99.15466597046452,
+          "z": -27.616294349010563
+        },
+        "max": {
+          "x": 27.67627188322149,
+          "y": 99.15466597046452,
+          "z": 27.36028741304077
+        }
+      },
+      "triangles": 10980,
+      "geometry": "res:/dx9/model/deployables/concord/analyzer/conral.gr2",
+      "md5": "126d5084a536cee432be27ff1d423275",
+      "sha256": "0c8e6f45b04657de4e54238e42ac50180527f302419d48013be217d8528adc16",
+      "spheres": 350,
+      "capsules": 946
+    },
+    {
+      "key": "mesh_154e88265e236d4d791096e727454db1",
+      "pitch": 750,
+      "radius": 900.0,
+      "bounds": {
+        "min": {
+          "x": -18812.36328125,
+          "y": -48841.89453125,
+          "z": -19546.79296875
+        },
+        "max": {
+          "x": 25368.09765625,
+          "y": 20831.234375,
+          "z": 23739.30859375
+        }
+      },
+      "triangles": 40936,
+      "geometry": "res:/dx9/model/station/gallente/gs3/gs3.gr2",
+      "md5": "154e88265e236d4d791096e727454db1",
+      "sha256": "57f7e243bfe425f04b92c9b05f40a923e8ffc2c696f97f15b89c1e7ea48f648a",
+      "spheres": 695,
+      "capsules": 1126
+    },
+    {
+      "key": "mesh_16c747cfc406a53562d88e56a3a8136e",
+      "pitch": 550,
+      "radius": 660.0,
+      "bounds": {
+        "min": {
+          "x": -7764.7490234375,
+          "y": -38281.5703125,
+          "z": -10997.4150390625
+        },
+        "max": {
+          "x": 7764.7490234375,
+          "y": 26616.130859375,
+          "z": 15404.8876953125
+        }
+      },
+      "triangles": 39376,
+      "geometry": "res:/dx9/model/station/amarr/as10/as10.gr2",
+      "md5": "16c747cfc406a53562d88e56a3a8136e",
+      "sha256": "962d8bcd52ba2504c3566fe81cfd4188bc44f2ceb32fc7d4756d7c4ec61aa3b6",
+      "spheres": 650,
+      "capsules": 1156
+    },
+    {
+      "key": "mesh_1eb7634570642228801a353f512bb805",
+      "pitch": 700,
+      "radius": 840.0,
+      "bounds": {
+        "min": {
+          "x": -10881.7314453125,
+          "y": -21629.953125,
+          "z": -13082.302734375
+        },
+        "max": {
+          "x": 12437.75,
+          "y": 26408.89453125,
+          "z": 11901.1328125
+        }
+      },
+      "triangles": 40224,
+      "geometry": "res:/dx9/model/station/amarr/as7/as7.gr2",
+      "md5": "1eb7634570642228801a353f512bb805",
+      "sha256": "8f0d384952397a84ad7a705a3bd62933063c7706e8b785e5012a22f154028a31",
+      "spheres": 482,
+      "capsules": 891
+    },
+    {
+      "key": "mesh_1ff52d194ab65f3a9a0f3e5ce1fb773e",
+      "pitch": 725,
+      "radius": 870.0,
+      "bounds": {
+        "min": {
+          "x": -13810.1015625,
+          "y": -21940.41015625,
+          "z": -19945.31640625
+        },
+        "max": {
+          "x": 20931.1953125,
+          "y": 11804.8115234375,
+          "z": 20259.869140625
+        }
+      },
+      "triangles": 39933,
+      "geometry": "res:/dx9/model/station/gallente/gs5/gs5.gr2",
+      "md5": "1ff52d194ab65f3a9a0f3e5ce1fb773e",
+      "sha256": "e82fa2bd4e99446144d904a24d7909c999db3f5202301d61cfdcf6c47f13e460",
+      "spheres": 573,
+      "capsules": 859
+    },
+    {
+      "key": "mesh_1ffb6244c3588f93f26954269fb1df24",
+      "pitch": 475,
+      "radius": 570.0,
+      "bounds": {
+        "min": {
+          "x": -11341.3857421875,
+          "y": -19303.263671875,
+          "z": -12379.8349609375
+        },
+        "max": {
+          "x": 11035.3837890625,
+          "y": 15138.9091796875,
+          "z": 12223.2353515625
+        }
+      },
+      "triangles": 43735,
+      "geometry": "res:/dx9/model/station/minmatar/ms3/ms3.gr2",
+      "md5": "1ffb6244c3588f93f26954269fb1df24",
+      "sha256": "ef91eda352ab505a7df4e5a6db5cfe58b93e93e6ee64c7e21d5c15f2646b7cf4",
+      "spheres": 544,
+      "capsules": 1392
+    },
+    {
+      "key": "mesh_2192a1ea00d37b0699d7f2b8e16ebf75",
+      "pitch": 11.633950195312499,
+      "radius": 13.960740234374999,
+      "bounds": {
+        "min": {
+          "x": -441.1513671875,
+          "y": -104.9951171875,
+          "z": -222.04931640625
+        },
+        "max": {
+          "x": 528.344482421875,
+          "y": 153.154296875,
+          "z": 247.21240234375
+        }
+      },
+      "triangles": 4328,
+      "geometry": "res:/dx9/model/deployables/generic/defensearray/gda02/gda02.gr2",
+      "md5": "2192a1ea00d37b0699d7f2b8e16ebf75",
+      "sha256": "efbb13fa22d42613d750a139d04e558904da354d83ecb431b0d3acea7c5c1aaa",
+      "spheres": 327,
+      "capsules": 1134
+    },
+    {
+      "key": "mesh_22857b3f81548601470f3be706b821dc",
+      "pitch": 100,
+      "radius": 120.0,
+      "bounds": {
+        "min": {
+          "x": -1224.5372314453125,
+          "y": -4423.458984375,
+          "z": -1131.795654296875
+        },
+        "max": {
+          "x": 1224.537353515625,
+          "y": 2372.178466796875,
+          "z": 1233.2337646484375
+        }
+      },
+      "triangles": 21722,
+      "geometry": "res:/dx9/model/structure/gallente/controltower/gct1/gct1_t1a.gr2",
+      "md5": "22857b3f81548601470f3be706b821dc",
+      "sha256": "bb85e64df9368911add2b464f7bb60ddcc28c88c7ae3e0c8dd708e0c97483dd8",
+      "spheres": 132,
+      "capsules": 207
+    },
+    {
+      "key": "mesh_2302f3550595f6c969db63fe1c681ac0",
+      "pitch": 0.900328125,
+      "radius": 1.08039375,
+      "bounds": {
+        "min": {
+          "x": -21.10595425625901,
+          "y": -37.513671875,
+          "z": -35.61059434406043
+        },
+        "max": {
+          "x": 41.14160246622147,
+          "y": 37.513671875,
+          "z": 35.64892564620725
+        }
+      },
+      "triangles": 14708,
+      "geometry": "res:/dx9/model/deployables/generic/anti-stealth/ddd01/ddd01_t1.gr2",
+      "md5": "2302f3550595f6c969db63fe1c681ac0",
+      "sha256": "8b8c0799e4304ba3c400499cef140f22eecbca9767fea62b968561aab5b31d46",
+      "spheres": 511,
+      "capsules": 679
+    },
+    {
+      "key": "mesh_2434e640f7e6ff92c13fff9251b85d4a",
+      "pitch": 1000,
+      "radius": 1200.0,
+      "bounds": {
+        "min": {
+          "x": -23982.19921875,
+          "y": -24456.900390625,
+          "z": -21663.5
+        },
+        "max": {
+          "x": 23982.19921875,
+          "y": 16689.400390625,
+          "z": 21217.19921875
+        }
+      },
+      "triangles": 24028,
+      "geometry": "res:/dx9/model/deployables/generic/industrialarray/m/iam1/iam1_t1.gr2",
+      "md5": "2434e640f7e6ff92c13fff9251b85d4a",
+      "sha256": "2a7443f8d0a03245e4cc6e9c841b69072d9ae7cbe3642f41fea88c02566cbcb9",
+      "spheres": 258,
+      "capsules": 1191
+    },
+    {
+      "key": "mesh_243ed7e872d32758fc775651de5f17f7",
+      "pitch": 175,
+      "radius": 210.0,
+      "bounds": {
+        "min": {
+          "x": -2133.03125,
+          "y": -2078.09375,
+          "z": -1144.2421875
+        },
+        "max": {
+          "x": 5303.75,
+          "y": 4452.375,
+          "z": 1144.2421875
+        }
+      },
+      "triangles": 74025,
+      "geometry": "res:/dx9/model/deployables/deathless/mercenaryden/deamd01/deamd01b_t1.gr2",
+      "md5": "243ed7e872d32758fc775651de5f17f7",
+      "sha256": "b20f67bc94a453ddfbb73286d77ab2ebe44a31b52af3bbf08da2a130f350fc4f",
+      "spheres": 294,
+      "capsules": 993
+    },
+    {
+      "key": "mesh_255923a37a60dadf42ca333dda2b4342",
+      "pitch": 100,
+      "radius": 120.0,
+      "bounds": {
+        "min": {
+          "x": -844.8155517578125,
+          "y": -606.9219970703125,
+          "z": -792.06689453125
+        },
+        "max": {
+          "x": 659.0626831054688,
+          "y": 279.3216247558594,
+          "z": 693.1770629882812
+        }
+      },
+      "triangles": 9230,
+      "geometry": "res:/dx9/model/deployables/generic/warehouse/gw01/gw01.gr2",
+      "md5": "255923a37a60dadf42ca333dda2b4342",
+      "sha256": "c4807fb572af46a2ce3aefcc0d69220a1edaee1c09581bb96d678a75b96e09ae",
+      "spheres": 107,
+      "capsules": 95
+    },
+    {
+      "key": "mesh_27d55f661f23f5160a92349fcb81c6e1",
+      "pitch": 825,
+      "radius": 990.0,
+      "bounds": {
+        "min": {
+          "x": -36273.21875,
+          "y": -52638.296875,
+          "z": -58441.53125
+        },
+        "max": {
+          "x": 17194.22265625,
+          "y": 29084.40625,
+          "z": 38827.3515625
+        }
+      },
+      "triangles": 42259,
+      "geometry": "res:/dx9/model/station/concord/cons1/wreck/cons1_wreck.gr2",
+      "md5": "27d55f661f23f5160a92349fcb81c6e1",
+      "sha256": "bc658181912a3653b7312b08ebffb5709883495317a321764b6e6351c6a48671",
+      "spheres": 850,
+      "capsules": 520
+    },
+    {
+      "key": "mesh_2c747a13bf215a21aa13df77f7ea8024",
+      "pitch": 175,
+      "radius": 210.0,
+      "bounds": {
+        "min": {
+          "x": -2956.0,
+          "y": -9888.2216796875,
+          "z": -1209.0947265625
+        },
+        "max": {
+          "x": 2956.0,
+          "y": 9607.38530117807,
+          "z": 1684.09130859375
+        }
+      },
+      "triangles": 26240,
+      "geometry": "res:/dx9/model/deployables/generic/navigation/cynojammer/cyj01.gr2",
+      "md5": "2c747a13bf215a21aa13df77f7ea8024",
+      "sha256": "5f091ee119d621f29d3ebf08b0e58cde083144413b72e78e05b066c3648feb24",
+      "spheres": 118,
+      "capsules": 202
+    },
+    {
+      "key": "mesh_2cfdab5cfe13c7883cea6049c8fa784d",
+      "pitch": 750,
+      "radius": 900.0,
+      "bounds": {
+        "min": {
+          "x": -14525.251953125,
+          "y": -21247.646484375,
+          "z": -11536.7373046875
+        },
+        "max": {
+          "x": 12537.65234375,
+          "y": 22744.833984375,
+          "z": 18105.017578125
+        }
+      },
+      "triangles": 72899,
+      "geometry": "res:/dx9/model/station/minmatar/ms3/wreck/ms3_wreck.gr2",
+      "md5": "2cfdab5cfe13c7883cea6049c8fa784d",
+      "sha256": "4082846653c550abaf7d358e28822ce919d3942fe3694c4eb373a1a1f0bb190e",
+      "spheres": 839,
+      "capsules": 708
+    },
+    {
+      "key": "mesh_2e86713607d7da68773a6a31b01755f3",
+      "pitch": 850,
+      "radius": 1020.0,
+      "bounds": {
+        "min": {
+          "x": -26250.046875,
+          "y": -47355.94140625,
+          "z": -37218.70703125
+        },
+        "max": {
+          "x": 22186.912109375,
+          "y": 25291.6796875,
+          "z": 41638.984375
+        }
+      },
+      "triangles": 42037,
+      "geometry": "res:/dx9/model/station/caldari/cs7/cs7.gr2",
+      "md5": "2e86713607d7da68773a6a31b01755f3",
+      "sha256": "694c2fa57a0f3e3bb37b215949d92ddc0c07593d8a8fec25df9b04f1bf9ae35f",
+      "spheres": 536,
+      "capsules": 1462
+    },
+    {
+      "key": "mesh_323185ac933efcf1d488595c1895c3f6",
+      "pitch": 100,
+      "radius": 120.0,
+      "bounds": {
+        "min": {
+          "x": -297.77723410725594,
+          "y": -285.92615430802107,
+          "z": -1126.4207763671875
+        },
+        "max": {
+          "x": 299.7055844962597,
+          "y": 426.69573974609375,
+          "z": 1288.0285949707031
+        }
+      },
+      "triangles": 10256,
+      "geometry": "res:/dx9/model/deployables/generic/harvester/gh01/gh01.gr2",
+      "md5": "323185ac933efcf1d488595c1895c3f6",
+      "sha256": "5edcfa171147bac4e4e53f69e348d4346866820760e8d5f6dd3bd9172c641146",
+      "spheres": 22,
+      "capsules": 54
+    },
+    {
+      "key": "mesh_3a73c29c1756f9c0044b2d1ca17c954a",
+      "pitch": 825,
+      "radius": 990.0,
+      "bounds": {
+        "min": {
+          "x": -40568.40652635032,
+          "y": -10821.75788621737,
+          "z": -11202.258865371827
+        },
+        "max": {
+          "x": 57065.91054498064,
+          "y": 22906.031406034945,
+          "z": 20403.00209210941
+        }
+      },
+      "triangles": 13706,
+      "geometry": "res:/dx9/model/outposts/amarr/ao1l/ao1l_t1.gr2",
+      "md5": "3a73c29c1756f9c0044b2d1ca17c954a",
+      "sha256": "93265a4bf3c72e04094b4580dcfe5cbf5707a0a614df9bfcf1e4a6b496694083",
+      "spheres": 313,
+      "capsules": 840
+    },
+    {
+      "key": "mesh_3b24f6f383f518a468970443005fb28b",
+      "pitch": 125,
+      "radius": 150.0,
+      "bounds": {
+        "min": {
+          "x": -3517.650390625,
+          "y": -7320.7958984375,
+          "z": -1837.031005859375
+        },
+        "max": {
+          "x": 3517.650390625,
+          "y": 7320.9287109375,
+          "z": 1965.2542724609375
+        }
+      },
+      "triangles": 19830,
+      "geometry": "res:/dx9/model/structure/orbital/hangar01/hangar01.gr2",
+      "md5": "3b24f6f383f518a468970443005fb28b",
+      "sha256": "5f244d6166e8484f8ab53c314ca0ed276746a20cbf220702364ca894dbfce4b7",
+      "spheres": 344,
+      "capsules": 1298
+    },
+    {
+      "key": "mesh_3db39bf99845c1a5244058d4ec5f34e3",
+      "pitch": 14.230761108398438,
+      "radius": 17.076913330078124,
+      "bounds": {
+        "min": {
+          "x": -373.5625,
+          "y": -377.359375,
+          "z": -373.5625
+        },
+        "max": {
+          "x": 373.5625,
+          "y": 571.3580322265625,
+          "z": 373.5625
+        }
+      },
+      "triangles": 8332,
+      "geometry": "res:/dx9/model/deployables/generic/powercore/gpc01/gpc01.gr2",
+      "md5": "3db39bf99845c1a5244058d4ec5f34e3",
+      "sha256": "e801a14d514f3810fd698eeea21287f8f9348ab447ae013fef3134efc7c76168",
+      "spheres": 747,
+      "capsules": 1188
+    },
+    {
+      "key": "mesh_414ef3e640059f3777f05f52f47a1822",
+      "pitch": 100,
+      "radius": 120.0,
+      "bounds": {
+        "min": {
+          "x": -5303.4775390625,
+          "y": -1689.603759765625,
+          "z": -3834.83544921875
+        },
+        "max": {
+          "x": 2408.325927734375,
+          "y": 932.4892578125,
+          "z": 3258.24072265625
+        }
+      },
+      "triangles": 10067,
+      "geometry": "res:/dx9/model/structure/monument/base/plinth_01/plinth_01a.gr2",
+      "md5": "414ef3e640059f3777f05f52f47a1822",
+      "sha256": "3a120887c56e42a880a5a6b9ab2c898a5d3a7491f3ae77132a1fe8b41e8b6839",
+      "spheres": 376,
+      "capsules": 1324
+    },
+    {
+      "key": "mesh_42ff723e27d7a8004a190e86a80f9d53",
+      "pitch": 100,
+      "radius": 120.0,
+      "bounds": {
+        "min": {
+          "x": -837.4837646484375,
+          "y": -397.6560363769531,
+          "z": -489.00579833984375
+        },
+        "max": {
+          "x": 415.9673156738281,
+          "y": 366.3163757324219,
+          "z": 419.4837341308594
+        }
+      },
+      "triangles": 8588,
+      "geometry": "res:/dx9/model/deployables/generic/lab/gl01/gl01.gr2",
+      "md5": "42ff723e27d7a8004a190e86a80f9d53",
+      "sha256": "04e11ecc89e8a370d0fc73b5d1c92d4dcaa6a73fa6733832bca6688ea694abe8",
+      "spheres": 35,
+      "capsules": 30
+    },
+    {
+      "key": "mesh_4552303da8c32138dff79c78356020f4",
+      "pitch": 100,
+      "radius": 120.0,
+      "bounds": {
+        "min": {
+          "x": -743.30908203125,
+          "y": -850.8740234375,
+          "z": -487.2762451171875
+        },
+        "max": {
+          "x": 743.0361328125,
+          "y": 1515.1585773233423,
+          "z": 810.0962524414062
+        }
+      },
+      "triangles": 12310,
+      "geometry": "res:/dx9/model/deployables/sovereignty/claimmarker/scm1/scm1_t1.gr2",
+      "md5": "4552303da8c32138dff79c78356020f4",
+      "sha256": "709d6edfddbaa19a9d857592451eb5ed6572daeb35d8bd1d9214f0d4d5c7319a",
+      "spheres": 104,
+      "capsules": 91
+    },
+    {
+      "key": "mesh_4988bd97e80edf2cfac6fe02ca34bc43",
+      "pitch": 600,
+      "radius": 720.0,
+      "bounds": {
+        "min": {
+          "x": -17444.919921875,
+          "y": -20689.50390625,
+          "z": -18419.56640625
+        },
+        "max": {
+          "x": 17444.916015625,
+          "y": 23839.98828125,
+          "z": 13200.951171875
+        }
+      },
+      "triangles": 45010,
+      "geometry": "res:/dx9/model/station/minmatar/ms7/ms7.gr2",
+      "md5": "4988bd97e80edf2cfac6fe02ca34bc43",
+      "sha256": "02fef83253043cc67dc491df02a3a6df22d16129c13eb530327f048548c7b807",
+      "spheres": 647,
+      "capsules": 1222
+    },
+    {
+      "key": "mesh_4abdaa8c19275ef92c6b6511ec5a09a8",
+      "pitch": 250,
+      "radius": 300.0,
+      "bounds": {
+        "min": {
+          "x": -13197.82421875,
+          "y": -3840.15185546875,
+          "z": -13678.068359375
+        },
+        "max": {
+          "x": 10490.40625,
+          "y": 2547.603759765625,
+          "z": 7981.95947265625
+        }
+      },
+      "triangles": 15518,
+      "geometry": "res:/dx9/model/outposts/caldari/co1/co1_t1.gr2",
+      "md5": "4abdaa8c19275ef92c6b6511ec5a09a8",
+      "sha256": "c55f72bc1c45a6e840ef32f511e9f172537adc9f7254385690590e6d41ddac95",
+      "spheres": 500,
+      "capsules": 889
+    },
+    {
+      "key": "mesh_4e12e41003c8664576ef68bc35385be3",
+      "pitch": 250,
+      "radius": 300.0,
+      "bounds": {
+        "min": {
+          "x": -7088.2041015625,
+          "y": -15176.2890625,
+          "z": -2883.15234375
+        },
+        "max": {
+          "x": 7080.021484375,
+          "y": 14460.095703125,
+          "z": 6622.11376953125
+        }
+      },
+      "triangles": 40792,
+      "geometry": "res:/dx9/model/station/caldari/cs4/cs4.gr2",
+      "md5": "4e12e41003c8664576ef68bc35385be3",
+      "sha256": "479d33dd14ae6e5bd40d385da6d8349b7c52a23164d5fcafc4d877f3edd4fcc9",
+      "spheres": 563,
+      "capsules": 1324
+    },
+    {
+      "key": "mesh_560f80ef93b7f5b2a361a9857803e9e8",
+      "pitch": 17.540750366210936,
+      "radius": 21.048900439453124,
+      "bounds": {
+        "min": {
+          "x": -332.6653137207031,
+          "y": -386.69219970703125,
+          "z": -325.8384094238281
+        },
+        "max": {
+          "x": 328.91986083984375,
+          "y": 536.5051879882812,
+          "z": 324.83831787109375
+        }
+      },
+      "triangles": 11252,
+      "geometry": "res:/dx9/model/deployables/generic/silo/gensilo01/gensilo01.gr2",
+      "md5": "560f80ef93b7f5b2a361a9857803e9e8",
+      "sha256": "6ee01d7ed0122d8951e847cb1d98085323ec7cd6e59814d0acf1602a8373eaea",
+      "spheres": 559,
+      "capsules": 1367
+    },
+    {
+      "key": "mesh_578453242397e0177ceba413616b4b78",
+      "pitch": 100,
+      "radius": 120.0,
+      "bounds": {
+        "min": {
+          "x": -274.802978515625,
+          "y": -486.1275939941406,
+          "z": -800.0440673828125
+        },
+        "max": {
+          "x": 274.802978515625,
+          "y": 438.4010314941406,
+          "z": 947.7674560546875
+        }
+      },
+      "triangles": 9602,
+      "geometry": "res:/dx9/model/deployables/generic/reactor/gr01/gr01.gr2",
+      "md5": "578453242397e0177ceba413616b4b78",
+      "sha256": "ba6abf4f9463210632d0e95a48e6cb47e6cafdbd69a831180d629e5155997964",
+      "spheres": 28,
+      "capsules": 55
+    },
+    {
+      "key": "mesh_58533308a076b505eee9469589c7ba35",
+      "pitch": 125,
+      "radius": 150.0,
+      "bounds": {
+        "min": {
+          "x": -6850.5,
+          "y": -1785.412109375,
+          "z": -1785.412109375
+        },
+        "max": {
+          "x": 6850.5,
+          "y": 1785.412109375,
+          "z": 1785.412109375
+        }
+      },
+      "triangles": 29472,
+      "geometry": "res:/dx9/model/deployables/generic/navigation/cynobeacon/cyb01.gr2",
+      "md5": "58533308a076b505eee9469589c7ba35",
+      "sha256": "72979cd15dd15b384d84b7b2893b120a53c4e69d1ab3cc5c71b4daae480a571c",
+      "spheres": 584,
+      "capsules": 1000
+    },
+    {
+      "key": "mesh_597e2bc2ad866f847da1647e5468ab03",
+      "pitch": 100,
+      "radius": 120.0,
+      "bounds": {
+        "min": {
+          "x": -463.8487854003906,
+          "y": -3870.017822265625,
+          "z": -1165.3004150390625
+        },
+        "max": {
+          "x": 362.543212890625,
+          "y": 2757.551513671875,
+          "z": 1428.2694091796875
+        }
+      },
+      "triangles": 15510,
+      "geometry": "res:/dx9/model/structure/minmatar/controltower/mct1/mct1_t1a.gr2",
+      "md5": "597e2bc2ad866f847da1647e5468ab03",
+      "sha256": "df975ea78f20faeb050868ea878858ff4717afa7d822ca90d740a63324f5a854",
+      "spheres": 85,
+      "capsules": 130
+    },
+    {
+      "key": "mesh_5b7829a7b5dfaff6c6a5e4edce37bd63",
+      "pitch": 700,
+      "radius": 840.0,
+      "bounds": {
+        "min": {
+          "x": -16483.12890625,
+          "y": -28797.150390625,
+          "z": -15146.2890625
+        },
+        "max": {
+          "x": 14525.3984375,
+          "y": 21294.55859375,
+          "z": 19732.7109375
+        }
+      },
+      "triangles": 40255,
+      "geometry": "res:/dx9/model/station/caldari/cs2/cs2.gr2",
+      "md5": "5b7829a7b5dfaff6c6a5e4edce37bd63",
+      "sha256": "88b29ab6545e1992f4a22391e62dac8b8fe4b74e16d44fa9927ecc91099131e9",
+      "spheres": 398,
+      "capsules": 965
+    },
+    {
+      "key": "mesh_5baa67e2d43b4a32413f89df897d7644",
+      "pitch": 100,
+      "radius": 120.0,
+      "bounds": {
+        "min": {
+          "x": -1742.703369140625,
+          "y": -390.9423828125,
+          "z": -1096.425048828125
+        },
+        "max": {
+          "x": 1742.703369140625,
+          "y": 3236.935546875,
+          "z": 1096.425048828125
+        }
+      },
+      "triangles": 36808,
+      "geometry": "res:/dx9/model/deployables/generic/publicity/monument/sa1/sa1.gr2",
+      "md5": "5baa67e2d43b4a32413f89df897d7644",
+      "sha256": "c4cc79f7baff18eec7780615ae812ccd44b1eafea064d60977e645e791c08e74",
+      "spheres": 221,
+      "capsules": 269
+    },
+    {
+      "key": "mesh_5c27bf0eaee3e1953a3e9737c1444a74",
+      "pitch": 100,
+      "radius": 120.0,
+      "bounds": {
+        "min": {
+          "x": -416.88427734375,
+          "y": -212.4442138671875,
+          "z": -1570.906005859375
+        },
+        "max": {
+          "x": 1178.740234375,
+          "y": 577.6616587281037,
+          "z": 1466.8951416015625
+        }
+      },
+      "triangles": 14102,
+      "geometry": "res:/dx9/model/deployables/generic/shipyard/sy01/sy01.gr2",
+      "md5": "5c27bf0eaee3e1953a3e9737c1444a74",
+      "sha256": "2ed1e63c06d908e250dc98e907c5d6b71b3456f14f20d88ebfc916764be17f69",
+      "spheres": 100,
+      "capsules": 82
+    },
+    {
+      "key": "mesh_603c2678d4988b9ba6712103ad6391f8",
+      "pitch": 725,
+      "radius": 870.0,
+      "bounds": {
+        "min": {
+          "x": -34891.578125,
+          "y": -28353.65234375,
+          "z": -38413.21875
+        },
+        "max": {
+          "x": 33959.80078125,
+          "y": 11231.7490234375,
+          "z": 22266.408203125
+        }
+      },
+      "triangles": 42807,
+      "geometry": "res:/dx9/model/station/gallente/gs2/gs2.gr2",
+      "md5": "603c2678d4988b9ba6712103ad6391f8",
+      "sha256": "267fc130451e0a0dfa669326fae5a47fc81241a5bda8ef4db34edb5d6679445f",
+      "spheres": 716,
+      "capsules": 1203
+    },
+    {
+      "key": "mesh_60cdb11df28554da0b83cc14ffa5199b",
+      "pitch": 100,
+      "radius": 120.0,
+      "bounds": {
+        "min": {
+          "x": -598.0758056640625,
+          "y": -529.348876953125,
+          "z": -419.10296630859375
+        },
+        "max": {
+          "x": 602.0488891601562,
+          "y": 374.96844482421875,
+          "z": 575.9882202148438
+        }
+      },
+      "triangles": 6079,
+      "geometry": "res:/dx9/model/deployables/generic/emitterarray/gea01/gea01.gr2",
+      "md5": "60cdb11df28554da0b83cc14ffa5199b",
+      "sha256": "90675ea9e59af047e14397b593b2cf408fb75a7a48daf33ee246161cd1738e2e",
+      "spheres": 21,
+      "capsules": 23
+    },
+    {
+      "key": "mesh_632752bbc0fd46c992cb3c04760b423e",
+      "pitch": 100,
+      "radius": 120.0,
+      "bounds": {
+        "min": {
+          "x": -244.81845092773438,
+          "y": -374.55743408203125,
+          "z": -611.3499145507812
+        },
+        "max": {
+          "x": 244.81845092773438,
+          "y": 376.5543212890625,
+          "z": 741.37646484375
+        }
+      },
+      "triangles": 6662,
+      "geometry": "res:/dx9/model/deployables/generic/hangar/ghg01/ghg01.gr2",
+      "md5": "632752bbc0fd46c992cb3c04760b423e",
+      "sha256": "6b0e8dc3b0862312c6dda24718c83a2af2a6658190898a1a88a7baa799e05ed0",
+      "spheres": 19,
+      "capsules": 33
+    },
+    {
+      "key": "mesh_6382f39766f6387dd074300d6c425ad8",
+      "pitch": 925,
+      "radius": 1110.0,
+      "bounds": {
+        "min": {
+          "x": -27571.326171875,
+          "y": -21213.103515625,
+          "z": -21656.015625
+        },
+        "max": {
+          "x": 26285.626953125,
+          "y": 13036.50390625,
+          "z": 24335.732421875
+        }
+      },
+      "triangles": 38430,
+      "geometry": "res:/dx9/model/station/gallente/gs8/gs8.gr2",
+      "md5": "6382f39766f6387dd074300d6c425ad8",
+      "sha256": "1db03496990abf01e7ecf6e6bfac3b7a97ca020230638c033340c6d9e588b210",
+      "spheres": 575,
+      "capsules": 789
+    },
+    {
+      "key": "mesh_68c6f5ef71c484bb41b3e11ae02e67d0",
+      "pitch": 1.501043514251709,
+      "radius": 1.8012522171020506,
+      "bounds": {
+        "min": {
+          "x": -30.37940788269043,
+          "y": -12.260194778442383,
+          "z": -29.776355743408203
+        },
+        "max": {
+          "x": 27.244983673095703,
+          "y": 12.890972137451172,
+          "z": 27.956087112426758
+        }
+      },
+      "triangles": 2987,
+      "geometry": "res:/dx9/model/structure/amarr/sentry/l/asl_t1.gr2",
+      "md5": "68c6f5ef71c484bb41b3e11ae02e67d0",
+      "sha256": "30a02f61375898b88380d46a99294aebc935d51e81e93b59ffb6d33043404e6c",
+      "spheres": 474,
+      "capsules": 858
+    },
+    {
+      "key": "mesh_6a6f1cf91753bed6a1f41956560d4f1c",
+      "pitch": 1325,
+      "radius": 1590.0,
+      "bounds": {
+        "min": {
+          "x": -37216.83984375,
+          "y": -23712.6640625,
+          "z": -33876.15234375
+        },
+        "max": {
+          "x": 40715.671875,
+          "y": 19481.76171875,
+          "z": 32402.94140625
+        }
+      },
+      "triangles": 37227,
+      "geometry": "res:/dx9/model/deployables/generic/industrialarray/l/ial1/ial1_t1.gr2",
+      "md5": "6a6f1cf91753bed6a1f41956560d4f1c",
+      "sha256": "a622348e304b3af06289e8c438ecbafbea267afb33a83765b9362eff6d0e0eea",
+      "spheres": 428,
+      "capsules": 1315
+    },
+    {
+      "key": "mesh_6c22903931eb31e668d6ea5122676ef8",
+      "pitch": 625,
+      "radius": 750.0,
+      "bounds": {
+        "min": {
+          "x": -16019.529296875,
+          "y": -22472.892578125,
+          "z": -20985.5390625
+        },
+        "max": {
+          "x": 20436.83984375,
+          "y": 6006.05859375,
+          "z": 25205.107421875
+        }
+      },
+      "triangles": 39594,
+      "geometry": "res:/dx9/model/station/gallente/gs1/gs1.gr2",
+      "md5": "6c22903931eb31e668d6ea5122676ef8",
+      "sha256": "bffd926021651bc6d973a5becc747432056cf1db7c620379495caf42ef803ee8",
+      "spheres": 598,
+      "capsules": 1139
+    },
+    {
+      "key": "mesh_6cf16abf523140b27976947ed54dea73",
+      "pitch": 4125,
+      "radius": 4950.0,
+      "bounds": {
+        "min": {
+          "x": -169580.5,
+          "y": -156906.234375,
+          "z": -92938.4140625
+        },
+        "max": {
+          "x": 142547.265625,
+          "y": 85264.515625,
+          "z": 92458.28125
+        }
+      },
+      "triangles": 316119,
+      "geometry": "res:/dx9/model/station/caldari/jita/jita.gr2",
+      "md5": "6cf16abf523140b27976947ed54dea73",
+      "sha256": "97a18a17af52008b1efe409b600a257d17d0e68758e84bffe8e87f909bd7fcc6",
+      "spheres": 457,
+      "capsules": 889
+    },
+    {
+      "key": "mesh_6d1e681084daace05d4b466bf2d02246",
+      "pitch": 0.7854133987426757,
+      "radius": 0.9424960784912108,
+      "bounds": {
+        "min": {
+          "x": -16.77179718017578,
+          "y": -21.070316314697266,
+          "z": -16.77179718017578
+        },
+        "max": {
+          "x": 16.77179718017578,
+          "y": 20.267230987548828,
+          "z": 16.77179718017578
+        }
+      },
+      "triangles": 3300,
+      "geometry": "res:/dx9/model/deployables/generic/autotractor/gat01/gat01.gr2",
+      "md5": "6d1e681084daace05d4b466bf2d02246",
+      "sha256": "be74bac189c3c73a5e2884ccf94dcafa23ef408e2c2ea3f9fe15173279ee592e",
+      "spheres": 403,
+      "capsules": 1010
+    },
+    {
+      "key": "mesh_719733ac8d56dc4b29549c6f7d10c19e",
+      "pitch": 3100,
+      "radius": 3720.0,
+      "bounds": {
+        "min": {
+          "x": -73733.671875,
+          "y": -39950.0,
+          "z": -75250.0
+        },
+        "max": {
+          "x": 73733.671875,
+          "y": 33600.0,
+          "z": 72927.0625
+        }
+      },
+      "triangles": 46330,
+      "geometry": "res:/dx9/model/deployables/generic/industrialarray/xl/iaxl1/iaxl1_t1.gr2",
+      "md5": "719733ac8d56dc4b29549c6f7d10c19e",
+      "sha256": "5ace487d7afb7901d75e1b0588de6d83ef72bc1f78309cbafade243537d4795b",
+      "spheres": 328,
+      "capsules": 1068
+    },
+    {
+      "key": "mesh_71f4b5bf44fdcfcba048b03a181ea287",
+      "pitch": 725,
+      "radius": 870.0,
+      "bounds": {
+        "min": {
+          "x": -15005.5,
+          "y": -10784.625,
+          "z": -15075.75
+        },
+        "max": {
+          "x": 15005.5,
+          "y": 9067.0625,
+          "z": 15075.75
+        }
+      },
+      "triangles": 20378,
+      "geometry": "res:/dx9/model/deployables/generic/refinery/m/refm1_t1.gr2",
+      "md5": "71f4b5bf44fdcfcba048b03a181ea287",
+      "sha256": "7af1e9f4496793517fc272bafe13b0c535171af2ee7b920e39ebc8609d138bf3",
+      "spheres": 453,
+      "capsules": 957
+    },
+    {
+      "key": "mesh_7217f700225b8dedad4cd77391d89c8a",
+      "pitch": 5.830692626953125,
+      "radius": 6.996831152343749,
+      "bounds": {
+        "min": {
+          "x": -84.33047485351562,
+          "y": -242.94552612304688,
+          "z": -84.70858764648438
+        },
+        "max": {
+          "x": 84.33047485351562,
+          "y": 242.94552612304688,
+          "z": 84.70858764648438
+        }
+      },
+      "triangles": 6832,
+      "geometry": "res:/dx9/model/deployables/sovereignty/disruptor/sd1/sd1_t1.gr2",
+      "md5": "7217f700225b8dedad4cd77391d89c8a",
+      "sha256": "61473b0dc15a2b5849f66f1a7845b07bd75ea7c4eadcb8bbeb1ae7be80f01c37",
+      "spheres": 496,
+      "capsules": 796
+    },
+    {
+      "key": "mesh_74432fd646edd27b8c76bf134eebcc16",
+      "pitch": 575,
+      "radius": 690.0,
+      "bounds": {
+        "min": {
+          "x": -21188.42578125,
+          "y": -28125.04296875,
+          "z": -7393.12646484375
+        },
+        "max": {
+          "x": 7494.14453125,
+          "y": 25508.525390625,
+          "z": 7393.0693359375
+        }
+      },
+      "triangles": 38908,
+      "geometry": "res:/dx9/model/station/amarr/as3/as3.gr2",
+      "md5": "74432fd646edd27b8c76bf134eebcc16",
+      "sha256": "3befcd29350cc1fefbc12b1e80a0d66c5a9c35266cb29d06720f1edfbf7661e7",
+      "spheres": 512,
+      "capsules": 1150
+    },
+    {
+      "key": "mesh_778989b456ae6f3e88aea7e9ece19076",
+      "pitch": 1000,
+      "radius": 1200.0,
+      "bounds": {
+        "min": {
+          "x": -30046.1953125,
+          "y": -15936.119140625,
+          "z": -21682.837890625
+        },
+        "max": {
+          "x": 29338.1953125,
+          "y": 18763.19921875,
+          "z": 22103.640625
+        }
+      },
+      "triangles": 16238,
+      "geometry": "res:/dx9/model/outposts/minmatar/mo1l/mo1l_t1.gr2",
+      "md5": "778989b456ae6f3e88aea7e9ece19076",
+      "sha256": "588eb634570c54a57c8fc520e78c35ff8a63711f6e1dc7a5d70bc5654b4f4451",
+      "spheres": 368,
+      "capsules": 1131
+    },
+    {
+      "key": "mesh_7a00faa28966faac11110a0390be3823",
+      "pitch": 1.548958740234375,
+      "radius": 1.8587504882812498,
+      "bounds": {
+        "min": {
+          "x": -23.297730424859317,
+          "y": -52.570556640625,
+          "z": -23.2977294921875
+        },
+        "max": {
+          "x": 23.297729504719143,
+          "y": 50.693359375,
+          "z": 23.2977294921875
+        }
+      },
+      "triangles": 10226,
+      "geometry": "res:/dx9/model/deployables/mobile/personalcyno/pcd01_t1.gr2",
+      "md5": "7a00faa28966faac11110a0390be3823",
+      "sha256": "83da88f1466b2db91b64461d1c1b68dea69758f78212c3ccfe1d78d5b2d435fc",
+      "spheres": 320,
+      "capsules": 1069
+    },
+    {
+      "key": "mesh_7f8f2eab255ae34d37dac1a2abed209f",
+      "pitch": 750,
+      "radius": 900.0,
+      "bounds": {
+        "min": {
+          "x": -15765.7490234375,
+          "y": -26895.314453125,
+          "z": -11524.6279296875
+        },
+        "max": {
+          "x": 18427.513671875,
+          "y": 6438.5751953125,
+          "z": 17500.052734375
+        }
+      },
+      "triangles": 40536,
+      "geometry": "res:/dx9/model/station/amarr/as9/as9.gr2",
+      "md5": "7f8f2eab255ae34d37dac1a2abed209f",
+      "sha256": "d35a8d9eb59c453dc6b1fc47bb0db3cd655e3683b34ea13c8c87d55f6d01dc3e",
+      "spheres": 632,
+      "capsules": 871
+    },
+    {
+      "key": "mesh_81d6dcfab59ce5f32375d730f0ffd508",
+      "pitch": 1200,
+      "radius": 1440.0,
+      "bounds": {
+        "min": {
+          "x": -38597.234375,
+          "y": -38506.640625,
+          "z": -30148.2734375
+        },
+        "max": {
+          "x": 31907.990234375,
+          "y": 25248.939453125,
+          "z": 30148.056640625
+        }
+      },
+      "triangles": 38891,
+      "geometry": "res:/dx9/model/station/amarr/as2/as2.gr2",
+      "md5": "81d6dcfab59ce5f32375d730f0ffd508",
+      "sha256": "c12a4a8cf2429b954d5c47638b99d5316c2bbe08744032e694c41e27d55269c9",
+      "spheres": 553,
+      "capsules": 1132
+    },
+    {
+      "key": "mesh_822b17801b51788156d4bbee193642af",
+      "pitch": 100,
+      "radius": 120.0,
+      "bounds": {
+        "min": {
+          "x": -5303.4775390625,
+          "y": -1689.603759765625,
+          "z": -3834.83544921875
+        },
+        "max": {
+          "x": 2408.325927734375,
+          "y": 932.4892578125,
+          "z": 3258.24072265625
+        }
+      },
+      "triangles": 10614,
+      "geometry": "res:/dx9/model/structure/monument/base/plinth_01/plinth_01c.gr2",
+      "md5": "822b17801b51788156d4bbee193642af",
+      "sha256": "35beb9b49c9658d3a2f9552a7ddd18b4398da93915339c786c483dfdde7d9334",
+      "spheres": 375,
+      "capsules": 1324
+    },
+    {
+      "key": "mesh_82592a803abea05b3065e5ea1489330d",
+      "pitch": 750,
+      "radius": 900.0,
+      "bounds": {
+        "min": {
+          "x": -24922.8984375,
+          "y": -23612.84375,
+          "z": -23117.119140625
+        },
+        "max": {
+          "x": 17186.943359375,
+          "y": 12063.158203125,
+          "z": 19022.4296875
+        }
+      },
+      "triangles": 40667,
+      "geometry": "res:/dx9/model/station/gallente/gs4/gs4.gr2",
+      "md5": "82592a803abea05b3065e5ea1489330d",
+      "sha256": "0b5f873c90eab0e3e90ebed791f25d839e40295bb9560e16646166d5844f60a9",
+      "spheres": 674,
+      "capsules": 1182
+    },
+    {
+      "key": "mesh_848d91cb6ec1c5ef0beb7dfb12a6eea1",
+      "pitch": 325,
+      "radius": 390.0,
+      "bounds": {
+        "min": {
+          "x": -10729.49609375,
+          "y": -5690.7880859375,
+          "z": -7742.94140625
+        },
+        "max": {
+          "x": 10476.669921875,
+          "y": 6700.3388671875,
+          "z": 7893.2099609375
+        }
+      },
+      "triangles": 16328,
+      "geometry": "res:/dx9/model/outposts/minmatar/mo1/mo1_t1.gr2",
+      "md5": "848d91cb6ec1c5ef0beb7dfb12a6eea1",
+      "sha256": "7c6113f65b5a7b8d173d19b58631c00e875ea296b7692f39bdc13ea3fe5088a5",
+      "spheres": 389,
+      "capsules": 1389
+    },
+    {
+      "key": "mesh_88479a3871702e3d863300f0df1e9256",
+      "pitch": 725,
+      "radius": 870.0,
+      "bounds": {
+        "min": {
+          "x": -13810.1015625,
+          "y": -21940.41015625,
+          "z": -19945.31640625
+        },
+        "max": {
+          "x": 20931.1953125,
+          "y": 11804.8115234375,
+          "z": 20259.869140625
+        }
+      },
+      "triangles": 39933,
+      "geometry": "res:/dx9/model/station/soe/soes2/soes2.gr2",
+      "md5": "88479a3871702e3d863300f0df1e9256",
+      "sha256": "c2cd829c0e47c1d79ef9383e1a4ca7b53fdd7c87772d6c2876450c57dfe808ce",
+      "spheres": 573,
+      "capsules": 859
+    },
+    {
+      "key": "mesh_8a7851f7b675772072a5cf9292e06f0f",
+      "pitch": 575,
+      "radius": 690.0,
+      "bounds": {
+        "min": {
+          "x": -17326.125,
+          "y": -14783.5,
+          "z": -16759.75
+        },
+        "max": {
+          "x": 23567.75,
+          "y": 10424.404296875,
+          "z": 19497.5
+        }
+      },
+      "triangles": 23414,
+      "geometry": "res:/dx9/model/deployables/generic/citadel/m/cm1/cm1_t1.gr2",
+      "md5": "8a7851f7b675772072a5cf9292e06f0f",
+      "sha256": "e27ed2e7aee7ee49743520c7e271addcd262d39740a9358f222540acef7e7ece",
+      "spheres": 514,
+      "capsules": 1107
+    },
+    {
+      "key": "mesh_8c6620c5cb8b8ca0f821efcb9e30e78f",
+      "pitch": 100,
+      "radius": 120.0,
+      "bounds": {
+        "min": {
+          "x": -509.4547119140625,
+          "y": -496.9086608886719,
+          "z": -1266.2694091796875
+        },
+        "max": {
+          "x": 509.4547424316406,
+          "y": 496.9086608886719,
+          "z": 504.5538330078125
+        }
+      },
+      "triangles": 13414,
+      "geometry": "res:/dx9/model/deployables/generic/shieldgenerator/gsg01/gsg01.gr2",
+      "md5": "8c6620c5cb8b8ca0f821efcb9e30e78f",
+      "sha256": "6613bf7916f8ccca5b16540e32fe0bcbb87566dbc034bc87b0e8b09cdd4c3583",
+      "spheres": 67,
+      "capsules": 85
+    },
+    {
+      "key": "mesh_8e1036d6c324be01a0bdc0f600aeb300",
+      "pitch": 175,
+      "radius": 210.0,
+      "bounds": {
+        "min": {
+          "x": -6661.60400390625,
+          "y": -6797.63818359375,
+          "z": -3222.12158203125
+        },
+        "max": {
+          "x": 6661.60400390625,
+          "y": 6231.140625,
+          "z": 3222.12158203125
+        }
+      },
+      "triangles": 39744,
+      "geometry": "res:/dx9/model/deployables/generic/navigation/jumpbridge/jub01.gr2",
+      "md5": "8e1036d6c324be01a0bdc0f600aeb300",
+      "sha256": "430695c0c9de816a86bf2bf8fff590be8b8fe0fb1202770e603c30802ae59e0b",
+      "spheres": 497,
+      "capsules": 1037
+    },
+    {
+      "key": "mesh_8ef19253a6ecc921aac23cb6b9463999",
+      "pitch": 100,
+      "radius": 120.0,
+      "bounds": {
+        "min": {
+          "x": -999.6935424804688,
+          "y": -2037.6845703125,
+          "z": -1035.4761962890625
+        },
+        "max": {
+          "x": 873.7222900390625,
+          "y": 1339.2969970703125,
+          "z": 580.2515258789062
+        }
+      },
+      "triangles": 8405,
+      "geometry": "res:/dx9/model/deployables/generic/factory/gf01/gf01.gr2",
+      "md5": "8ef19253a6ecc921aac23cb6b9463999",
+      "sha256": "a645427c3aad3bbcbbce9f1ae58a9d78e8b3937233980ddb5f2d4fc492f50e6c",
+      "spheres": 74,
+      "capsules": 202
+    },
+    {
+      "key": "mesh_92c7a930b8ff4f263af4ad6abc3106b6",
+      "pitch": 1000,
+      "radius": 1200.0,
+      "bounds": {
+        "min": {
+          "x": -32963.80859375,
+          "y": -25766.9375,
+          "z": -51671.328125
+        },
+        "max": {
+          "x": 28449.38671875,
+          "y": 24629.98046875,
+          "z": 44272.15625
+        }
+      },
+      "triangles": 39970,
+      "geometry": "res:/dx9/model/station/caldari/cs1/cs1.gr2",
+      "md5": "92c7a930b8ff4f263af4ad6abc3106b6",
+      "sha256": "e96bebb39c1d56c4aa1cf7ee526d7c06a20d8ee22d332e210aeb70818a335333",
+      "spheres": 580,
+      "capsules": 1023
+    },
+    {
+      "key": "mesh_9588999fd8923ebcce51f67672d15b43",
+      "pitch": 250,
+      "radius": 300.0,
+      "bounds": {
+        "min": {
+          "x": -11762.8955078125,
+          "y": -4808.1357421875,
+          "z": -5980.27490234375
+        },
+        "max": {
+          "x": 11762.8955078125,
+          "y": 6992.30224609375,
+          "z": 5980.2734375
+        }
+      },
+      "triangles": 24418,
+      "geometry": "res:/dx9/model/deployables/generic/titanyard/gty01/gty01.gr2",
+      "md5": "9588999fd8923ebcce51f67672d15b43",
+      "sha256": "cf4d04e61d2e247c546304c1ae63c8a00fe2f472da7f7530c6ec78c2dda417c1",
+      "spheres": 363,
+      "capsules": 1372
+    },
+    {
+      "key": "mesh_95ad7bd210b4c03b179179f146137049",
+      "pitch": 1850,
+      "radius": 2220.0,
+      "bounds": {
+        "min": {
+          "x": -31866.455078125,
+          "y": -46391.16666216769,
+          "z": -91638.03654564734
+        },
+        "max": {
+          "x": 66027.078125,
+          "y": 37553.34712246518,
+          "z": 47397.696506846856
+        }
+      },
+      "triangles": 543663,
+      "geometry": "res:/dx9/model/station/air/airs2/airs2.gr2",
+      "md5": "95ad7bd210b4c03b179179f146137049",
+      "sha256": "aebad66bf7ee490effd91cf0b1984a7c6d454a53351097aadeeeb079a9d0b531",
+      "spheres": 595,
+      "capsules": 1192
+    },
+    {
+      "key": "mesh_9994d16210f005a11b544a2afc27a45e",
+      "pitch": 475,
+      "radius": 570.0,
+      "bounds": {
+        "min": {
+          "x": -8082.74658203125,
+          "y": -11507.03515625,
+          "z": -14981.1376953125
+        },
+        "max": {
+          "x": 8082.74609375,
+          "y": 9811.9384765625,
+          "z": 28445.798828125
+        }
+      },
+      "triangles": 149604,
+      "geometry": "res:/dx9/model/deployables/deathless/forwardoperating/basepad/deafob01.gr2",
+      "md5": "9994d16210f005a11b544a2afc27a45e",
+      "sha256": "d98cdcb5bb1e92551c2b064ba00982369bd4123a201dcdf10173b11184fdcbc0",
+      "spheres": 465,
+      "capsules": 1164
+    },
+    {
+      "key": "mesh_99c4f8422b9075daca62a41c02a9edfa",
+      "pitch": 875,
+      "radius": 1050.0,
+      "bounds": {
+        "min": {
+          "x": -45234.6015625,
+          "y": -12976.029296875,
+          "z": -18266.02734375
+        },
+        "max": {
+          "x": 59546.05859375,
+          "y": 8718.7900390625,
+          "z": 15473.984375
+        }
+      },
+      "triangles": 35954,
+      "geometry": "res:/dx9/model/deployables/generic/citadel/l/cl1/cl1_t1.gr2",
+      "md5": "99c4f8422b9075daca62a41c02a9edfa",
+      "sha256": "1f11c20a2671c25ea09ece696e72b78c7361504e1f71e5b464b90b572dee6dff",
+      "spheres": 490,
+      "capsules": 1321
+    },
+    {
+      "key": "mesh_9a94a229ec6695aa064885c67b124ad0",
+      "pitch": 725,
+      "radius": 870.0,
+      "bounds": {
+        "min": {
+          "x": -15005.5,
+          "y": -8211.1875,
+          "z": -15075.75
+        },
+        "max": {
+          "x": 15005.5,
+          "y": 11014.0,
+          "z": 15075.75
+        }
+      },
+      "triangles": 18074,
+      "geometry": "res:/dx9/model/deployables/generic/refinery/l/refl1_t1.gr2",
+      "md5": "9a94a229ec6695aa064885c67b124ad0",
+      "sha256": "cd90f6ad373889f2b04a630401a3a3231fc46f1be173a76ade3207cabe7ad642",
+      "spheres": 633,
+      "capsules": 1042
+    },
+    {
+      "key": "mesh_a18efca2403d8e7b5c44ac585ff794ad",
+      "pitch": 450,
+      "radius": 540.0,
+      "bounds": {
+        "min": {
+          "x": -13119.765625,
+          "y": -24859.859375,
+          "z": -6734.01416015625
+        },
+        "max": {
+          "x": 9300.099609375,
+          "y": 27940.822265625,
+          "z": 6992.16796875
+        }
+      },
+      "triangles": 12018,
+      "geometry": "res:/dx9/model/outposts/gallente/go1/go1_t1.gr2",
+      "md5": "a18efca2403d8e7b5c44ac585ff794ad",
+      "sha256": "a35bdb46213980afa66c9af1ecdc5c12928391bbbf608d5cd7cc0c95fea754cf",
+      "spheres": 298,
+      "capsules": 653
+    },
+    {
+      "key": "mesh_a62e1becc62bf324c8ca3e5428ddc4f3",
+      "pitch": 725,
+      "radius": 870.0,
+      "bounds": {
+        "min": {
+          "x": -20568.720703125,
+          "y": -18657.7265625,
+          "z": -12467.423828125
+        },
+        "max": {
+          "x": 11825.583984375,
+          "y": 10660.2265625,
+          "z": 1131.8402099609375
+        }
+      },
+      "triangles": 208441,
+      "geometry": "res:/dx9/model/deployables/generic/moonminer/uw_mm01.gr2",
+      "md5": "a62e1becc62bf324c8ca3e5428ddc4f3",
+      "sha256": "a54eb3cd5ccd58aa541d0ea8a43f31db266cd610938b033fa6008ef91fb685d7",
+      "spheres": 379,
+      "capsules": 1138
+    },
+    {
+      "key": "mesh_a69eda9dbf0298fd36ce975a9923a8d6",
+      "pitch": 950,
+      "radius": 1140.0,
+      "bounds": {
+        "min": {
+          "x": -30953.26171875,
+          "y": -18378.5546875,
+          "z": -20164.45703125
+        },
+        "max": {
+          "x": 24175.775390625,
+          "y": 16478.357421875,
+          "z": 23787.30078125
+        }
+      },
+      "triangles": 46755,
+      "geometry": "res:/dx9/model/station/minmatar/ms2/ms2.gr2",
+      "md5": "a69eda9dbf0298fd36ce975a9923a8d6",
+      "sha256": "1ff1316ebb7f44df71fb15862678f0069f0961e0548785b3e93fc241a3a7fee7",
+      "spheres": 320,
+      "capsules": 1092
+    },
+    {
+      "key": "mesh_a7aff2833e6f030f5618cd61f96f18d1",
+      "pitch": 1225,
+      "radius": 1470.0,
+      "bounds": {
+        "min": {
+          "x": -25075.275390625,
+          "y": -42199.828125,
+          "z": -18500.0703125
+        },
+        "max": {
+          "x": 15369.763671875,
+          "y": 47937.8671875,
+          "z": 19996.708984375
+        }
+      },
+      "triangles": 40141,
+      "geometry": "res:/dx9/model/station/amarr/as1/as1.gr2",
+      "md5": "a7aff2833e6f030f5618cd61f96f18d1",
+      "sha256": "7d78b552ef15ce2d47f8603a6eb110b3ee05da35fb9ada587543fa7a5bd60266",
+      "spheres": 520,
+      "capsules": 914
+    },
+    {
+      "key": "mesh_a8a15af20ee00ca33e479c128f8f40e3",
+      "pitch": 300,
+      "radius": 360.0,
+      "bounds": {
+        "min": {
+          "x": -14488.7158203125,
+          "y": -3864.913330078125,
+          "z": -4000.806640625
+        },
+        "max": {
+          "x": 20380.681640625,
+          "y": 8180.72509765625,
+          "z": 7286.78662109375
+        }
+      },
+      "triangles": 13706,
+      "geometry": "res:/dx9/model/outposts/amarr/ao1/ao1_t1.gr2",
+      "md5": "a8a15af20ee00ca33e479c128f8f40e3",
+      "sha256": "e91d979249292f9b266abdb6e418cfd7a891a66db034d43f573f93fde4073317",
+      "spheres": 309,
+      "capsules": 816
+    },
+    {
+      "key": "mesh_ad84a27cd37e12687091169d44e555e8",
+      "pitch": 300,
+      "radius": 360.0,
+      "bounds": {
+        "min": {
+          "x": -6616.587890625,
+          "y": -16480.91015625,
+          "z": -3110.53759765625
+        },
+        "max": {
+          "x": 5963.625,
+          "y": 18553.921875,
+          "z": 3118.821533203125
+        }
+      },
+      "triangles": 37170,
+      "geometry": "res:/dx9/model/station/amarr/as4/as4.gr2",
+      "md5": "ad84a27cd37e12687091169d44e555e8",
+      "sha256": "46263afccac8e1d6c41902084d81f2ce2fb8f78cc9d24af55e6df066efbdee01",
+      "spheres": 599,
+      "capsules": 1348
+    },
+    {
+      "key": "mesh_ade86c2f38d88ac882a0bd3639b1f0b6",
+      "pitch": 0.9885104351043702,
+      "radius": 1.1862125221252442,
+      "bounds": {
+        "min": {
+          "x": -18.89250373840332,
+          "y": -19.161712646484375,
+          "z": -27.496978759765625
+        },
+        "max": {
+          "x": 18.89250373840332,
+          "y": 15.1978120803833,
+          "z": 24.52988624572754
+        }
+      },
+      "triangles": 5046,
+      "geometry": "res:/dx9/model/deployables/generic/serviceunit/gsu01/gsu01.gr2",
+      "md5": "ade86c2f38d88ac882a0bd3639b1f0b6",
+      "sha256": "366a16aa5a20a3a1be2f598b499ced3f45e329646e585930e357beeacc580167",
+      "spheres": 369,
+      "capsules": 1014
+    },
+    {
+      "key": "mesh_ae5bc1e37a6c013424accc8ac69694ec",
+      "pitch": 7.6171149796697675,
+      "radius": 9.14053797560372,
+      "bounds": {
+        "min": {
+          "x": -156.63006591796875,
+          "y": -102.08042907714844,
+          "z": -122.39514265171883
+        },
+        "max": {
+          "x": 156.63006591796875,
+          "y": 106.07246398925781,
+          "z": 278.5056457519531
+        }
+      },
+      "triangles": 46982,
+      "geometry": "res:/dx9/model/deployables/ore/phaseanchor/ore_pa01.gr2",
+      "md5": "ae5bc1e37a6c013424accc8ac69694ec",
+      "sha256": "229d637c4ce23405304ccaf7d134fa52397782f97b97013495a9236875b99f16",
+      "spheres": 595,
+      "capsules": 1109
+    },
+    {
+      "key": "mesh_b4287f78e691007d3c0e072e71a690f2",
+      "pitch": 0.5280211667913154,
+      "radius": 0.6336254001495785,
+      "bounds": {
+        "min": {
+          "x": -11.000439395956922,
+          "y": -11.000440123893181,
+          "z": -11.000438244627341
+        },
+        "max": {
+          "x": 11.00043967046487,
+          "y": 11.00044182574496,
+          "z": 11.000438130644502
+        }
+      },
+      "triangles": 1476,
+      "geometry": "res:/dx9/model/deployables/generic/decoyunit/gdu01/gdu01.gr2",
+      "md5": "b4287f78e691007d3c0e072e71a690f2",
+      "sha256": "492366b66055e712c8108be63faf10911047989a57d0274972f08a6b013d2746",
+      "spheres": 796,
+      "capsules": 1104
+    },
+    {
+      "key": "mesh_b84cd015ac53b479f2e7682e67c22984",
+      "pitch": 100,
+      "radius": 120.0,
+      "bounds": {
+        "min": {
+          "x": -687.4434814453125,
+          "y": -476.48388671875,
+          "z": -480.7344970703125
+        },
+        "max": {
+          "x": 692.0101928710938,
+          "y": 462.3902282714844,
+          "z": 663.0484619140625
+        }
+      },
+      "triangles": 6023,
+      "geometry": "res:/dx9/model/deployables/generic/scramblerarray/gsa01/gsa01.gr2",
+      "md5": "b84cd015ac53b479f2e7682e67c22984",
+      "sha256": "48c4168d3757aed04821a4524b37bf6652d16b961e1639aa4dfe35a05b267a0a",
+      "spheres": 30,
+      "capsules": 31
+    },
+    {
+      "key": "mesh_ba0c3143ae6228a8fd9cf4b4f3576cd9",
+      "pitch": 1250,
+      "radius": 1500.0,
+      "bounds": {
+        "min": {
+          "x": -28605.130859375,
+          "y": -46906.0859375,
+          "z": -30623.931640625
+        },
+        "max": {
+          "x": 28605.12890625,
+          "y": 26906.087890625,
+          "z": 30623.931640625
+        }
+      },
+      "triangles": 39668,
+      "geometry": "res:/dx9/model/station/jove/js1/js1.gr2",
+      "md5": "ba0c3143ae6228a8fd9cf4b4f3576cd9",
+      "sha256": "cb9a9950e1c68dd67a039045235e5de9dee9cb9e271b45a66f8ee5a79ea2fbe2",
+      "spheres": 643,
+      "capsules": 1073
+    },
+    {
+      "key": "mesh_badf58d34cbb95b54321cdd7ea20c4d7",
+      "pitch": 225,
+      "radius": 270.0,
+      "bounds": {
+        "min": {
+          "x": -3433.244384765625,
+          "y": -1175.625,
+          "z": -9295.9716796875
+        },
+        "max": {
+          "x": 6246.78955078125,
+          "y": 5734.3662109375,
+          "z": 9295.9716796875
+        }
+      },
+      "triangles": 19832,
+      "geometry": "res:/dx9/model/deployables/sovereignty/commandbase/scb1/scb1_t1.gr2",
+      "md5": "badf58d34cbb95b54321cdd7ea20c4d7",
+      "sha256": "74aa597c3a68e7ff44ca89ffa26a0280ebec140e9bb731beccc2f5d10672e63e",
+      "spheres": 471,
+      "capsules": 1008
+    },
+    {
+      "key": "mesh_bcef293979b0557fd763f93b58ea0b6d",
+      "pitch": 700,
+      "radius": 840.0,
+      "bounds": {
+        "min": {
+          "x": -23498.9296875,
+          "y": -29813.759765625,
+          "z": -19275.58984375
+        },
+        "max": {
+          "x": 18808.666015625,
+          "y": 20075.740234375,
+          "z": 23498.9296875
+        }
+      },
+      "triangles": 39806,
+      "geometry": "res:/dx9/model/station/gallente/gs6/gs6.gr2",
+      "md5": "bcef293979b0557fd763f93b58ea0b6d",
+      "sha256": "40bc22af16978e7281290a99ce025206a9a51779b6c40a0ed4ff3b5300e2159c",
+      "spheres": 540,
+      "capsules": 1006
+    },
+    {
+      "key": "mesh_bd98ce24c3ead4ca7656bbbdd60b18dd",
+      "pitch": 4.4219600830078125,
+      "radius": 5.3063520996093745,
+      "bounds": {
+        "min": {
+          "x": -141.2028045654297,
+          "y": -217.98265075683594,
+          "z": -141.2028045654297
+        },
+        "max": {
+          "x": 141.2028045654297,
+          "y": 150.51402282714844,
+          "z": 141.2028045654297
+        }
+      },
+      "triangles": 2622,
+      "geometry": "res:/dx9/model/structure/universal/sensorjammer/usj_t1.gr2",
+      "md5": "bd98ce24c3ead4ca7656bbbdd60b18dd",
+      "sha256": "c78fb349f9b1ffeed78772b92d8dc67e227b1aa76862133d320955359d2c1dc4",
+      "spheres": 570,
+      "capsules": 999
+    },
+    {
+      "key": "mesh_be11889ff482a0651a7235f4bd4316e0",
+      "pitch": 650,
+      "radius": 780.0,
+      "bounds": {
+        "min": {
+          "x": -4958.57861328125,
+          "y": -28727.70703125,
+          "z": -8921.5419921875
+        },
+        "max": {
+          "x": 3663.5302734375,
+          "y": 47555.1171875,
+          "z": 14929.9716796875
+        }
+      },
+      "triangles": 166748,
+      "geometry": "res:/dx9/model/deployables/generic/skyhook/head/shoh01_t1.gr2",
+      "md5": "be11889ff482a0651a7235f4bd4316e0",
+      "sha256": "2b580d08b1b8eb4d6c2509548272928626fc6e16050fac9a1f7f7550460a311e",
+      "spheres": 276,
+      "capsules": 1522
+    },
+    {
+      "key": "mesh_bf283c08eb6e7e3331467679c9bdba8b",
+      "pitch": 1.1251121520996095,
+      "radius": 1.3501345825195312,
+      "bounds": {
+        "min": {
+          "x": -22.67064094543457,
+          "y": -21.539836883544922,
+          "z": -19.219133377075195
+        },
+        "max": {
+          "x": 22.764318466186523,
+          "y": 25.33983612060547,
+          "z": 21.61506462097168
+        }
+      },
+      "triangles": 2084,
+      "geometry": "res:/dx9/model/deployables/generic/warpdisruptor/wd1_t1.gr2",
+      "md5": "bf283c08eb6e7e3331467679c9bdba8b",
+      "sha256": "74aefa13a14cc739672b758962ca16c17946e88e4ee9e42b0b8228757ed63e0b",
+      "spheres": 349,
+      "capsules": 1041
+    },
+    {
+      "key": "mesh_bf3b9391678fcc49d10ae2a2124b6e25",
+      "pitch": 850,
+      "radius": 1020.0,
+      "bounds": {
+        "min": {
+          "x": -49464.94921875,
+          "y": -12516.71875,
+          "z": -4220.99560546875
+        },
+        "max": {
+          "x": 51380.671875,
+          "y": 41969.7890625,
+          "z": 4096.74951171875
+        }
+      },
+      "triangles": 52005,
+      "geometry": "res:/dx9/model/deployables/sovereignty/sovhub/sh01/sh01_t1.gr2",
+      "md5": "bf3b9391678fcc49d10ae2a2124b6e25",
+      "sha256": "b2942e7b478182eb4c43c35db678040c190eb5b22ab587525dfedda0ea7f5538",
+      "spheres": 331,
+      "capsules": 1026
+    },
+    {
+      "key": "mesh_c046bc0c29f8772f6b5c5ab9131eecfd",
+      "pitch": 1250,
+      "radius": 1500.0,
+      "bounds": {
+        "min": {
+          "x": -29737.63671875,
+          "y": -35900.66796875,
+          "z": -32402.13671875
+        },
+        "max": {
+          "x": 29286.908203125,
+          "y": 22217.5234375,
+          "z": 18989.251953125
+        }
+      },
+      "triangles": 42869,
+      "geometry": "res:/dx9/model/station/minmatar/ms1/ms1.gr2",
+      "md5": "c046bc0c29f8772f6b5c5ab9131eecfd",
+      "sha256": "18dd97126452dc80e26786198cc4de1dd52c301034bbadcf9675fdfee7f74c69",
+      "spheres": 381,
+      "capsules": 1052
+    },
+    {
+      "key": "mesh_c628c72d2ab3e3139b1d7e62980d02c1",
+      "pitch": 100,
+      "radius": 120.0,
+      "bounds": {
+        "min": {
+          "x": -5303.4775390625,
+          "y": -1689.603759765625,
+          "z": -3834.83544921875
+        },
+        "max": {
+          "x": 2408.325927734375,
+          "y": 932.4892578125,
+          "z": 3258.24072265625
+        }
+      },
+      "triangles": 10067,
+      "geometry": "res:/dx9/model/structure/monument/base/plinth_01/plinth_01b.gr2",
+      "md5": "c628c72d2ab3e3139b1d7e62980d02c1",
+      "sha256": "900214daf6f536ab729ddb1e3b5c4114869457f969bedc601874bfa78516519a",
+      "spheres": 376,
+      "capsules": 1324
+    },
+    {
+      "key": "mesh_c6ca892ecad98bdc73d934b9e7a0ae22",
+      "pitch": 1.5420675659179688,
+      "radius": 1.8504810791015625,
+      "bounds": {
+        "min": {
+          "x": -64.86035919189453,
+          "y": -43.0566520690918,
+          "z": -24.480710983276367
+        },
+        "max": {
+          "x": 63.64527130126953,
+          "y": 42.258365631103516,
+          "z": 24.480709075927734
+        }
+      },
+      "triangles": 3000,
+      "geometry": "res:/dx9/model/structure/gallente/sentry/l/gsl01_t1.gr2",
+      "md5": "c6ca892ecad98bdc73d934b9e7a0ae22",
+      "sha256": "5ef88cf34446019c31813da4df4a2743f65f673cb12d3868a5a992ce306d5407",
+      "spheres": 420,
+      "capsules": 867
+    },
+    {
+      "key": "mesh_cc2f32c66df5f49f13951fc35d94ecc5",
+      "pitch": 100,
+      "radius": 120.0,
+      "bounds": {
+        "min": {
+          "x": -1224.5372314453125,
+          "y": -4423.458984375,
+          "z": -1131.795654296875
+        },
+        "max": {
+          "x": 1224.537353515625,
+          "y": 2372.178466796875,
+          "z": 1233.2337646484375
+        }
+      },
+      "triangles": 21722,
+      "geometry": "res:/dx9/model/structure/sansha/controltower/sct1/sct1_t1a.gr2",
+      "md5": "cc2f32c66df5f49f13951fc35d94ecc5",
+      "sha256": "0d47b3ba81366cc5b29a45d5cdf28f5950b95ed2996bb14dd40e37f3dc357d49",
+      "spheres": 132,
+      "capsules": 207
+    },
+    {
+      "key": "mesh_cf16ffed80fee48868aef09441bb9378",
+      "pitch": 13.957588562011718,
+      "radius": 16.74910627441406,
+      "bounds": {
+        "min": {
+          "x": -426.90496826171875,
+          "y": -426.652099609375,
+          "z": -195.63624572753906
+        },
+        "max": {
+          "x": 307.7049560546875,
+          "y": 241.50161743164062,
+          "z": 336.4084777832031
+        }
+      },
+      "triangles": 10010,
+      "geometry": "res:/dx9/model/deployables/generic/refinery/genrefinery01/s/genrefinery01_s.gr2",
+      "md5": "cf16ffed80fee48868aef09441bb9378",
+      "sha256": "61e1ca65359fdb5ca0fa466bede77ab6c694c5d5ee77744709387bf780e9496b",
+      "spheres": 517,
+      "capsules": 1263
+    },
+    {
+      "key": "mesh_d05a9b109b7c7f8624b1894d9c683d40",
+      "pitch": 1.908770351409912,
+      "radius": 2.2905244216918943,
+      "bounds": {
+        "min": {
+          "x": -43.670501708984375,
+          "y": -23.731199264526367,
+          "z": -42.28799819946289
+        },
+        "max": {
+          "x": 43.670501708984375,
+          "y": 37.38079833984375,
+          "z": 58.17359924316406
+        }
+      },
+      "triangles": 5706,
+      "geometry": "res:/dx9/model/deployables/mobile/larcenyunit/mlu01/mlu01.gr2",
+      "md5": "d05a9b109b7c7f8624b1894d9c683d40",
+      "sha256": "e2f398a36d0390edb4c67ddfbc99f4be4f21b2b9f4badb6810ee3c138fc836de",
+      "spheres": 599,
+      "capsules": 1107
+    },
+    {
+      "key": "mesh_d1e35eb8cfd3120265783c8b0674ac6c",
+      "pitch": 6375,
+      "radius": 7650.0,
+      "bounds": {
+        "min": {
+          "x": -203170.5,
+          "y": -478588.28125,
+          "z": -180283.015625
+        },
+        "max": {
+          "x": 203170.5,
+          "y": 10080.6962890625,
+          "z": 180283.015625
+        }
+      },
+      "triangles": 374018,
+      "geometry": "res:/dx9/model/station/jove/js4/js4.gr2",
+      "md5": "d1e35eb8cfd3120265783c8b0674ac6c",
+      "sha256": "113fb98a489f00077f12c1f68684df686fd5133266fc54d484a8f4d302bd0927",
+      "spheres": 396,
+      "capsules": 1173
+    },
+    {
+      "key": "mesh_d38b50fd7d69db3db057eeebc9f8858c",
+      "pitch": 100,
+      "radius": 120.0,
+      "bounds": {
+        "min": {
+          "x": -1742.703369140625,
+          "y": -390.9423828125,
+          "z": -1096.425048828125
+        },
+        "max": {
+          "x": 1742.703369140625,
+          "y": 3385.920654296875,
+          "z": 1096.425048828125
+        }
+      },
+      "triangles": 39006,
+      "geometry": "res:/dx9/model/deployables/generic/publicity/monument/sm1/sm1.gr2",
+      "md5": "d38b50fd7d69db3db057eeebc9f8858c",
+      "sha256": "f4c3195171c2eff3c26e657d515b2c8976b18bdced0b9c371468bd915a313325",
+      "spheres": 211,
+      "capsules": 283
+    },
+    {
+      "key": "mesh_d6b83f36b09b2f1d2c2395c5e43d8765",
+      "pitch": 0.7348930664062501,
+      "radius": 0.8818716796875,
+      "bounds": {
+        "min": {
+          "x": -40.827392578125,
+          "y": -33.5546875,
+          "z": -12.8780517578125
+        },
+        "max": {
+          "x": 40.827392578125,
+          "y": 16.2108154296875,
+          "z": 8.44000244140625
+        }
+      },
+      "triangles": 3211,
+      "geometry": "res:/dx9/model/deployables/mobile/bountymonitor/amarr/mbma_t1.gr2",
+      "md5": "d6b83f36b09b2f1d2c2395c5e43d8765",
+      "sha256": "8bf438ea03dbf9a9af16f9b82a36f62a89326990fb1d9dc9b35b1f3a263ee0ed",
+      "spheres": 461,
+      "capsules": 1111
+    },
+    {
+      "key": "mesh_d7a03bc3a5cd2b4899b55c8efb055462",
+      "pitch": 875,
+      "radius": 1050.0,
+      "bounds": {
+        "min": {
+          "x": -25019.62109375,
+          "y": -30073.189453125,
+          "z": -26699.16796875
+        },
+        "max": {
+          "x": 23739.8828125,
+          "y": 19991.154296875,
+          "z": 19756.17578125
+        }
+      },
+      "triangles": 45244,
+      "geometry": "res:/dx9/model/station/minmatar/ms6/ms6.gr2",
+      "md5": "d7a03bc3a5cd2b4899b55c8efb055462",
+      "sha256": "fe226dd8378827af7bc2d511cab2d4f283d86353dadf3378aff80dadfdeb93ee",
+      "spheres": 479,
+      "capsules": 1004
+    },
+    {
+      "key": "mesh_ddea4f9142a44ca24b56752f96c0a21b",
+      "pitch": 1.92174015045166,
+      "radius": 2.306088180541992,
+      "bounds": {
+        "min": {
+          "x": -34.21662521362305,
+          "y": -17.43524742126465,
+          "z": -50.57210922241211
+        },
+        "max": {
+          "x": 34.21662521362305,
+          "y": 17.43524742126465,
+          "z": 50.57210922241211
+        }
+      },
+      "triangles": 6448,
+      "geometry": "res:/dx9/model/deployables/mobile/cynodisruptor/mcd01/mcd01.gr2",
+      "md5": "ddea4f9142a44ca24b56752f96c0a21b",
+      "sha256": "4e4a23c7087e4b45975d305419e00bff2956543f8eae0e0dc3fbf51d2c41bb80",
+      "spheres": 448,
+      "capsules": 732
+    },
+    {
+      "key": "mesh_e159cefae96dbab1f726cf30d0de8931",
+      "pitch": 625,
+      "radius": 750.0,
+      "bounds": {
+        "min": {
+          "x": -16756.322265625,
+          "y": -12498.580078125,
+          "z": -27953.71484375
+        },
+        "max": {
+          "x": 21913.51953125,
+          "y": 7971.36083984375,
+          "z": 44247.51953125
+        }
+      },
+      "triangles": 38529,
+      "geometry": "res:/dx9/model/station/caldari/cs3/cs3.gr2",
+      "md5": "e159cefae96dbab1f726cf30d0de8931",
+      "sha256": "9e43a860469f285fe6f7060c902a01f14593483e24efcc02d329cd157ad9bbc9",
+      "spheres": 668,
+      "capsules": 1330
+    },
+    {
+      "key": "mesh_e27ed35753c75aca47ef7f54fcfeba96",
+      "pitch": 1100,
+      "radius": 1320.0,
+      "bounds": {
+        "min": {
+          "x": -11887.39453125,
+          "y": -10839.6669921875,
+          "z": -6164.958984375
+        },
+        "max": {
+          "x": 18108.833984375,
+          "y": 29465.80859375,
+          "z": 43688.140625
+        }
+      },
+      "triangles": 44683,
+      "geometry": "res:/dx9/model/station/minmatar/ms5/ms5.gr2",
+      "md5": "e27ed35753c75aca47ef7f54fcfeba96",
+      "sha256": "492aba286c3c4fa474b0185388af94d112590b04928944308d4de73d124936f2",
+      "spheres": 577,
+      "capsules": 846
+    },
+    {
+      "key": "mesh_e314d3433ef7bd928c5f4e5d3527601f",
+      "pitch": 100,
+      "radius": 120.0,
+      "bounds": {
+        "min": {
+          "x": -1742.703369140625,
+          "y": -390.9423828125,
+          "z": -1096.425048828125
+        },
+        "max": {
+          "x": 1742.703369140625,
+          "y": 6473.11328125,
+          "z": 1096.425048828125
+        }
+      },
+      "triangles": 34836,
+      "geometry": "res:/dx9/model/deployables/generic/publicity/monument/sf1/sf1.gr2",
+      "md5": "e314d3433ef7bd928c5f4e5d3527601f",
+      "sha256": "a4afca913e30802d1a91e076be7da89cbd241a08d75b3817116187cbf550000b",
+      "spheres": 184,
+      "capsules": 321
+    },
+    {
+      "key": "mesh_e4dde830dc230d42bcc5f47d0831339d",
+      "pitch": 1200,
+      "radius": 1440.0,
+      "bounds": {
+        "min": {
+          "x": -19952.0234375,
+          "y": -16588.935546875,
+          "z": -36248.0625
+        },
+        "max": {
+          "x": 18544.11328125,
+          "y": 18282.013671875,
+          "z": 35442.640625
+        }
+      },
+      "triangles": 41137,
+      "geometry": "res:/dx9/model/station/soe/soes1/soes1.gr2",
+      "md5": "e4dde830dc230d42bcc5f47d0831339d",
+      "sha256": "2fe2c8a1470276657d2797fcde6af426c7fc3d5bb7ec2a435206750d7b9029fe",
+      "spheres": 476,
+      "capsules": 810
+    },
+    {
+      "key": "mesh_e4dfdff45d42cc5d4c60e7fec886a442",
+      "pitch": 900,
+      "radius": 1080.0,
+      "bounds": {
+        "min": {
+          "x": -26239.53125,
+          "y": -49719.71875,
+          "z": -13468.0283203125
+        },
+        "max": {
+          "x": 18600.19921875,
+          "y": 55881.64453125,
+          "z": 13984.3359375
+        }
+      },
+      "triangles": 12018,
+      "geometry": "res:/dx9/model/outposts/gallente/go1l/go1l_t1.gr2",
+      "md5": "e4dfdff45d42cc5d4c60e7fec886a442",
+      "sha256": "5c314b66df61dd3041f727ca51183d21ce9d6b522a8889f2a6fc137865d21968",
+      "spheres": 298,
+      "capsules": 653
+    },
+    {
+      "key": "mesh_e90524ae55fa0bbbc2de03a06a83e5d7",
+      "pitch": 1.3564253997802735,
+      "radius": 1.6277104797363282,
+      "bounds": {
+        "min": {
+          "x": -26.826364517211914,
+          "y": -19.814849853515625,
+          "z": -45.21417999267578
+        },
+        "max": {
+          "x": 51.51327896118164,
+          "y": 16.779272079467773,
+          "z": 45.21417999267578
+        }
+      },
+      "triangles": 8448,
+      "geometry": "res:/dx9/model/deployables/mobile/microjumpdrive/mmjd_t1.gr2",
+      "md5": "e90524ae55fa0bbbc2de03a06a83e5d7",
+      "sha256": "1a11576eb19726ca6fe7d75450e8a8a22c8faa246e6dce347fc9e8d620b559e2",
+      "spheres": 638,
+      "capsules": 934
+    },
+    {
+      "key": "mesh_eb5a8f0d0f0847836552a25ed31f7426",
+      "pitch": 100,
+      "radius": 120.0,
+      "bounds": {
+        "min": {
+          "x": -1379.037109375,
+          "y": -3336.365234375,
+          "z": -1038.505615234375
+        },
+        "max": {
+          "x": 1378.945556640625,
+          "y": 3470.435791015625,
+          "z": 829.5093994140625
+        }
+      },
+      "triangles": 22612,
+      "geometry": "res:/dx9/model/structure/amarr/controltower/act1/act1_t1a.gr2",
+      "md5": "eb5a8f0d0f0847836552a25ed31f7426",
+      "sha256": "4d768774108e8ee70446736426f0ccd4140565f03849c37c795adb3e102ef629",
+      "spheres": 53,
+      "capsules": 126
+    },
+    {
+      "key": "mesh_eb7dac5a8f6c53a735b608235ab98e37",
+      "pitch": 400,
+      "radius": 480.0,
+      "bounds": {
+        "min": {
+          "x": -10833.916015625,
+          "y": -24880.169921875,
+          "z": -6867.21875
+        },
+        "max": {
+          "x": 8131.333984375,
+          "y": 20907.330078125,
+          "z": 15590.78125
+        }
+      },
+      "triangles": 38001,
+      "geometry": "res:/dx9/model/station/amarr/as6/as6.gr2",
+      "md5": "eb7dac5a8f6c53a735b608235ab98e37",
+      "sha256": "f97a793250af41a680c591ee3f96429827ca89600679eeb1796e96cbc7c1b74a",
+      "spheres": 564,
+      "capsules": 1224
+    },
+    {
+      "key": "mesh_eea0ae5f7d694ee5eb87d3d533ba3d0e",
+      "pitch": 6.334453857421875,
+      "radius": 7.601344628906249,
+      "bounds": {
+        "min": {
+          "x": -263.9355773925781,
+          "y": -216.76272583007812,
+          "z": -135.48472595214844
+        },
+        "max": {
+          "x": 263.9355773925781,
+          "y": 225.97940063476562,
+          "z": 135.48472595214844
+        }
+      },
+      "triangles": 7958,
+      "geometry": "res:/dx9/model/deployables/generic/defensearray/gda01/gda01.gr2",
+      "md5": "eea0ae5f7d694ee5eb87d3d533ba3d0e",
+      "sha256": "b29aec2d690cf7639a0c391a7cde28e39411f6bb10303e2aaa6815c2bf7d6e5d",
+      "spheres": 531,
+      "capsules": 957
+    },
+    {
+      "key": "mesh_f3937ecc0bfb3ff5ee83a47524f40436",
+      "pitch": 625,
+      "radius": 750.0,
+      "bounds": {
+        "min": {
+          "x": -37161.95703125,
+          "y": -14310.740234375,
+          "z": -28624.013671875
+        },
+        "max": {
+          "x": 37161.95703125,
+          "y": 11170.4384765625,
+          "z": 18212.1328125
+        }
+      },
+      "triangles": 438391,
+      "geometry": "res:/dx9/model/station/air/airs1/airs1.gr2",
+      "md5": "f3937ecc0bfb3ff5ee83a47524f40436",
+      "sha256": "fc1fa0f27d43d55452e56a58ccf266a0cb1562aad8820c89cbfad203e546abcd",
+      "spheres": 660,
+      "capsules": 1267
+    },
+    {
+      "key": "mesh_f5e351e27dd62d904a6f6873291f4174",
+      "pitch": 1100,
+      "radius": 1320.0,
+      "bounds": {
+        "min": {
+          "x": -12980.841796875,
+          "y": -26978.537109375,
+          "z": -14654.279296875
+        },
+        "max": {
+          "x": 14691.5625,
+          "y": 22836.4375,
+          "z": 15796.0859375
+        }
+      },
+      "triangles": 39136,
+      "geometry": "res:/dx9/model/station/caldari/cs5/cs5.gr2",
+      "md5": "f5e351e27dd62d904a6f6873291f4174",
+      "sha256": "c3c58c6a70e06249810b3bdb3756efcd343c9b12c8e4565c2d0921e94aa1696b",
+      "spheres": 451,
+      "capsules": 887
+    },
+    {
+      "key": "mesh_fd8898aa34d1ac61942c5c81132e170b",
+      "pitch": 750,
+      "radius": 900.0,
+      "bounds": {
+        "min": {
+          "x": -39593.47265625,
+          "y": -11520.4560546875,
+          "z": -41034.203125
+        },
+        "max": {
+          "x": 31471.21875,
+          "y": 7642.8115234375,
+          "z": 23945.87890625
+        }
+      },
+      "triangles": 15518,
+      "geometry": "res:/dx9/model/outposts/caldari/co1l/co1l_t1.gr2",
+      "md5": "fd8898aa34d1ac61942c5c81132e170b",
+      "sha256": "f627228a23d849c24dbd311a1d123637e49be5abd2a9015d872666284424566a",
+      "spheres": 500,
+      "capsules": 889
+    },
+    {
+      "key": "mesh_fe13ccb50d1a4fb52bf82194c23820f6",
+      "pitch": 625,
+      "radius": 750.0,
+      "bounds": {
+        "min": {
+          "x": -23016.41015625,
+          "y": -21991.38671875,
+          "z": -6854.30908203125
+        },
+        "max": {
+          "x": 22933.01171875,
+          "y": 22846.234375,
+          "z": 7115.228515625
+        }
+      },
+      "triangles": 39634,
+      "geometry": "res:/dx9/model/station/amarr/as8/as8.gr2",
+      "md5": "fe13ccb50d1a4fb52bf82194c23820f6",
+      "sha256": "533043c1d73785506512e1278b552ca45b5e099a01733f47145926b378015e27",
+      "spheres": 623,
+      "capsules": 1223
+    }
+  ],
+  "missing": [
+    {
+      "typeId": 26,
+      "name": "Office Folder",
+      "reason": "No graphic is assigned to this type"
+    },
+    {
+      "typeId": 27,
+      "name": "Office",
+      "reason": "No graphic is assigned to this type"
+    },
+    {
+      "typeId": 28,
+      "name": "Factory Folder",
+      "reason": "No graphic is assigned to this type"
+    },
+    {
+      "typeId": 58,
+      "name": "C-O-1",
+      "reason": "No graphic is assigned to this type"
+    },
+    {
+      "typeId": 59,
+      "name": "C-O-2",
+      "reason": "No graphic is assigned to this type"
+    },
+    {
+      "typeId": 34120,
+      "name": "Mobile Competitive Vault",
+      "reason": "No graphic is assigned to this type"
+    },
+    {
+      "typeId": 35828,
+      "name": "Medium Laboratory",
+      "reason": "No graphic is assigned to this type"
+    },
+    {
+      "typeId": 35829,
+      "name": "Large Laboratory",
+      "reason": "No graphic is assigned to this type"
+    },
+    {
+      "typeId": 35830,
+      "name": "X-Large Laboratory",
+      "reason": "No graphic is assigned to this type"
+    },
+    {
+      "typeId": 35838,
+      "name": "Medium Observatory Array",
+      "reason": "No graphic is assigned to this type"
+    },
+    {
+      "typeId": 35839,
+      "name": "Large Observatory Array",
+      "reason": "No graphic is assigned to this type"
+    },
+    {
+      "typeId": 35842,
+      "name": "Medium Administration Hub",
+      "reason": "No graphic is assigned to this type"
+    },
+    {
+      "typeId": 35843,
+      "name": "Large Administration Hub",
+      "reason": "No graphic is assigned to this type"
+    },
+    {
+      "typeId": 35844,
+      "name": "X-Large Administration Hub",
+      "reason": "No graphic is assigned to this type"
+    },
+    {
+      "typeId": 37533,
+      "name": "X-Large Observatory Array",
+      "reason": "No graphic is assigned to this type"
+    }
+  ],
+  "payloadSha256": "cba89054120e4bd637efd1bfa94ee4e192094e078963122ef04bc976936fd0c6"
+}

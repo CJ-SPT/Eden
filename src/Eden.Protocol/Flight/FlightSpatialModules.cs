@@ -17,7 +17,14 @@ internal sealed partial class FlightSession
             return true;
         }
         bool Near(SpacePosition position, double radius) => SpatialModuleRules.Proximity(own, Pilot.Flight.ShipRadius, position, radius);
-        return Scene.Objects.Any(o => (o.Solid || MiningDefinitions.IsResource(o.CategoryId, o.GroupId)) && Near(o.Position, o.Radius))
+        return Scene.Objects.Any(o =>
+                (o.Solid || MiningDefinitions.IsResource(o.CategoryId, o.GroupId))
+                && (
+                    o.Collision is { } geometry
+                        ? geometry.Intersects(own - o.Position, Pilot.Flight.ShipRadius + SpatialModuleRules.DecloakDistance, false)
+                        : Near(o.Position, o.Radius)
+                )
+            )
             || space.Peers(Pilot).Any(p => Near(p.Pilot.Position!, p.Pilot.Flight.ShipRadius))
             || VisibleNpcs.Any(n => Near(n.Position, n.Radius))
             || VisibleWrecks.Any(w => Near(w.Position, w.Radius))

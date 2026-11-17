@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Station and structure hull geometry](protocol/structures.md#station-and-structure-hull-geometry--november-16-2026)
+records automated client mesh export, compound collisions and locator-based undock clearance.
+
 [Athanor setup flow audit](protocol/structures.md#athanor-setup-flow-audit--november-16-2026)
 covers docked outside views, undock handoffs, personal inventory access, automatic fitting and service dogma.
 

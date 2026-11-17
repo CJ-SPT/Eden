@@ -49,6 +49,41 @@ From the repository root, run `.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\Ed
 
 Stop the server before rebuilding. Setup prints source counts and verifies typed reads before printing `Activated` and the installed path. By default, setup writes to `src/Eden.Server/data/catalog.sqlite`. Use `-Output` to write a catalog for another server. An interrupted import or checksum error leaves the previous catalog available. Restore the matching input files and rerun the same command.
 
+### Exporting station and structure geometry
+
+The server includes baked build-3662168 collision profiles; ordinary setup needs no mesh converter or client at runtime.
+To regenerate all station, deployable, starbase, sovereignty, orbital and Upwell structure profiles from a prepared client:
+
+```powershell
+.\tools\Export-StaticCollisionGeometry.ps1 -DevelopmentRoot 'E:\EdenDev\3662168' -Preflight
+.\tools\Export-StaticCollisionGeometry.ps1 -DevelopmentRoot 'E:\EdenDev\3662168'
+```
+
+Use `-Catalog` for a catalog outside the default server data directory and `-Resources` for a separate shared `ResFiles`
+cache. The command opens the catalog read-only and verifies the pinned resource index and each input's checksum.
+It bootstraps the pinned external [Knit converter](https://github.com/neptuwunium/Knit) into ignored `artifacts/tools`,
+builds it against the pinned SDK, and converts and bakes unique meshes with two workers. `-Workers` changes that limit;
+`-Converter` reuses an existing external `Knit.Convert.dll`. First-time bootstrap needs Git and network access.
+It never launches the client or changes a saved world. Allow several minutes and additional disk space for mesh inputs
+and intermediate glTF files. Unchanged resource hashes reuse completed profiles; `-Refresh` forces a new bake.
+
+The generated payload is `src/Eden.Data/Catalog/Flight/static-collision-3662168.json.gz`; its coverage, missing types,
+source hashes and primitive counts are in [the provenance manifest](protocol/static-collision-3662168.json).
+Build the server after regeneration to embed the new payload. To rebuild the catalog and geometry together, add
+`-CollisionGeometry` to `Setup-Catalog.ps1`; its `-GeometryResources`, `-GeometryConverter` and `-GeometryWorkers`
+parameters forward the corresponding exporter options. Catalog rebuilding retains the server-stop procedure above;
+geometry export alone reads existing files and does not require stopping a server.
+
+The default export covers 384 model-backed types using 117 meshes (798 KiB compressed, 7.14 MiB raw JSON).
+Fifteen catalog entries have no graphic, including office containers, two obsolete stations and unfinished structure
+definitions; their exclusions are explicit in the manifest. Missing or modified graphics retain the sphere fallback.
+These conservative mesh-derived shapes approximate the visible hull, rather than reproducing private CCP collision data.
+The [protocol record](protocol/structures.md#station-and-structure-hull-geometry--november-16-2026) describes runtime use
+and remaining limitations. The developer-only `-Scope all-static` also exports fixed collidable scenery and gates;
+those extra types are outside this station/structure runtime integration. Moving ships keep native spherical collisions.
+
+### Starting with saved data
+
 Start the server with `dotnet run --no-build --project src/Eden.Server`. The server uses `src/Eden.Server/data/world.sqlite` from source or `data/world.sqlite` beside the published executable. Set `EDEN_DATA_DIR` to choose a different data directory for the server and catalog setup. Relative values resolve from the server folder. An explicit `--world` path takes precedence and uses the catalog beside that save.
 
 The first startup initializes a new world with Eden Pilot and Eden Wing. Existing saves migrate to the current schema, preserving their assets and supported history. Normal startup loads the saved world into RAM and checkpoints committed gameplay changes every 15 seconds. Graceful shutdown flushes remaining changes. Authentication mutations also request a durable checkpoint before returning. Save failures remain visible by default. Set `EDEN_VERBOSE_LOGGING=1` for routine checkpoint diagnostics.

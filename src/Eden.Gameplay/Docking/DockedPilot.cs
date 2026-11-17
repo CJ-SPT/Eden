@@ -63,7 +63,10 @@ public sealed record PilotStation(
     SpacePosition Position,
     StationIdentity Identity,
     StationUndockPoint? UndockPoint = null
-);
+)
+{
+    public StaticCollisionGeometry? Collision { get; init; }
+}
 
 public sealed record PilotLocation(SpacePosition? Position = null, FlightSystem? System = null);
 

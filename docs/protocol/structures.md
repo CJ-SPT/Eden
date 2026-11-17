@@ -2,6 +2,81 @@
 
 [Protocol index](../protocol.md) · [Documentation index](../README.md)
 
+## Station and structure hull geometry — November 16, 2026
+
+The Athanor's catalog radius is a 45 km docking/range ball, while its visible model extends roughly 15 km from its
+origin. Treating that range ball as solid blocked the docking-ring interior and pushed undocking ships away from the
+authored exits. Stations and player structures now retain their existing range radius but use conservative local hull
+spheres and capsules for physical collision. Their native rigid parent is non-massive; only its collision children are
+massive, preserving clear passages. The server uses the same primitives for swept ship collisions, warp-in clearance,
+login recovery, developer translocation and nearby-object decloaking. Compound profiles have spatial trees; warmed
+queries visit local candidates rather than every primitive. Catalog profiles and rotated structure views are shared.
+
+Undocking starts at the build-3662168 `client/graphiclocations` directional locator selected for the ship category.
+Saved structure yaw rotates both exit and collider. Clearance extends along the exit ray only when required by actual
+hull primitives, with room for the ship and its launch motion. It no longer extends every exit beyond the range sphere.
+The existing native speed multiplier/cap, real-ship launch, session handoff and checkpoint paths remain in use.
+Objects without matching graphical metadata retain the previous sphere fallback. No saved-world schema changes are needed.
+
+`tools/Export-StaticCollisionGeometry.ps1` automates the offline pipeline described in the
+[client guide](../development-client.md#exporting-station-and-structure-geometry). It enumerates catalog categories
+3 (stations), 22 (deployables), 23 (starbases), 40 (sovereignty), 46 (orbitals) and 65 (structures), resolves their SOF or
+direct graphics, verifies cached resource MD5s and converts unique meshes. Surface sampling and deterministic capsule
+merging cap each profile at 2,000 primitives; the radius conservatively covers the sampled triangles and grid rounding.
+Smaller objects use finer grids. Animation and private CCP collision authoring are not reproduced; these are approximate
+visible-hull envelopes. Turrets, attached effects and procedural effects are outside the mesh bake. Specialized gameplay
+for an exported type is not implied by the presence of its geometry. Moving ships retain native spherical collisions.
+
+Coverage is **399 candidate types, 384 model-backed types and 117 unique meshes**. The 15 graphics-free exclusions are
+listed in the [generated provenance manifest](static-collision-3662168.json). The embedded data occupies **816,699 bytes**
+compressed (**7,483,737 bytes** raw JSON). Mesh inputs total **413,967,242 bytes** before conversion; these inputs and
+the much larger intermediate glTF data remain outside version control. Repeated exports reuse resource hashes and are
+byte-identical; failures preserve the previous complete payload. The server requires neither client files nor a converter
+at runtime. The ordinary catalog setup can opt into this export with `-CollisionGeometry`.
+
+References and provenance:
+
+- [EVE University Upwell structures](https://wiki.eveuniversity.org/Upwell_structures) and
+  [warp mechanics](https://wiki.eveuniversity.org/Warp_mechanics) distinguish docking access/range from physical obstruction.
+- Pinned client resource index SHA-256: `CBA0852B46E3A1501C6C0653546C4520DBD6ABA02A51E1DA3409F5EFEB253F03`.
+  The manifest records each source geometry URI, MD5, SHA-256, bounds and primitive count.
+- Inert native build-3662168 client inspection used the original archive SHA-256
+  `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368` and its directional locator catalog.
+- [Carbon Destiny](https://github.com/carbonengine/destiny) revision
+  `114e89fa584f0e1a81eb0a679aabf41af8870072`, `Thunkers.cpp` and `Ball.cpp`, establishes rigid mini-ball/capsule tails,
+  non-massive parents and local primitive coordinates. Its moving/free balls explicitly skip compound child colliders.
+- External [Knit](https://github.com/neptuwunium/Knit) revision `30c0b48255bd3e8c845dd6de77aefded1eb7fd4e`
+  (EUPL-1.2), with Neptune `7904bdf045ace2f0be0b7c0f87151a9c3fb48490`, is used only as an offline converter in ignored
+  artifacts. No converter source is incorporated or linked into Eden. The wrapper adapts its target framework to .NET 10.
+- Local EVE.js **261108.1** supplies 44 station and 19 structure exit records and captured Abyssal collision examples,
+  but no general station/structure hull dataset. It was checked as a behavior reference; no AGPL code or data was copied.
+
+**Automated validation:** The final affected filter joined `StaticCollisionGeometryTests`,
+`StaticCollisionAllocationTests`, `ShipCollisionTests`, `CollisionIndexTests`, `StationUndockTests`,
+`StructureControlTests`, `Eden.Protocol.Tests.Structures.StructureTests`, `SiteWarpInRuleTests`, `TranslocationTests`,
+`TranslocationTargetTests`, `SpatialModuleTests`, `SpatialModuleProtocolTests`, `SpatialModuleOperationTests`,
+`AnomalyWarpInTests` and `MovementPersistenceTests` with `FullyQualifiedName~` and `|` through `tools/Test-Feature.ps1`.
+All **248 cases passed in 125.90 seconds** (build 1.28 seconds), after integrating main `b3f052d2`.
+Coverage includes all 117 baked profiles, native child serialization, open passages and capsule boundaries,
+allocation/candidate bounds, all 44 existing station exit variants, all 20 published Upwell hulls with rotated exits,
+resident Athanor setup/checkpoint/control, immediate undock-to-warp and saved arrival. Existing flow checks were extended;
+four new pure cases cover the compound geometry feature. Six earlier native stream checks were corrected to parse
+optional child tails instead of assuming fixed 39-byte rigid records. Exact-method development checks passed before
+the combined run. An additional actual-Athanor open/solid point assertion passed in the existing control flow
+(one case, 13.47 seconds; build 10.04 seconds).
+
+Tool/solution restore and the solution build passed with zero warnings/errors (0.76 seconds).
+The catalog Python policy suite passed eight cases in 1.044 seconds and formatting policy passed nine in 0.015 seconds.
+Formatting verified 2,471 files and the 140-column rule. Full export/conversion, pinned-converter bootstrap, preflight,
+fresh-profile equivalence, byte-identical incremental export, wrong-client rejection and output preservation passed;
+the latter combined exporter smoke checks took 2.42 seconds. Documentation links and `git diff --check` passed.
+The full .NET suite was not requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled. Native rendering and bumping feel remain unverified.
+
+**Optional maintainer checks:** Fly through the Athanor ring, undock without relogging and inspect the exit direction,
+and compare a station's visible hull with its bump boundary after deploying the updated server.
+
 ## Manual moon extraction
 
 Build 3662168 supplies the mining-beacon coordinates in `client/solarsystemcontent`. A refinery placed within 250 km binds to

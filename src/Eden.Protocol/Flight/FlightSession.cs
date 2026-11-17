@@ -1002,6 +1002,20 @@ internal sealed partial class FlightSession(
             foreach (var body in Scene.Objects.Where(o => o.GroupId != AsteroidDefinitions.BeltGroup))
             {
                 var radial = position - body.Position;
+                if (!body.Solid)
+                {
+                    continue;
+                }
+                if (body.Collision is { } geometry)
+                {
+                    var cleared = geometry.Unstick(radial, Pilot.Flight.ShipRadius);
+                    if (cleared != radial)
+                    {
+                        position = body.Position + cleared;
+                        SetPosition(position);
+                    }
+                    continue;
+                }
                 double surface = body.Radius + Pilot.Flight.ShipRadius;
                 if (radial.Length < surface - 0.01)
                 {

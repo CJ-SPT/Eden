@@ -18,6 +18,8 @@ public sealed record SpacePosition(double X, double Y, double Z)
 
     public SpacePosition Cross(SpacePosition other) => new(Y * other.Z - Z * other.Y, Z * other.X - X * other.Z, X * other.Y - Y * other.X);
 
+    public SpacePosition RotateYaw(double yaw) => new(X * Math.Cos(yaw) + Z * Math.Sin(yaw), Y, Z * Math.Cos(yaw) - X * Math.Sin(yaw));
+
     public static SpacePosition operator +(SpacePosition a, SpacePosition b) => new(a.X + b.X, a.Y + b.Y, a.Z + b.Z);
 
     public static SpacePosition operator -(SpacePosition a, SpacePosition b) => new(a.X - b.X, a.Y - b.Y, a.Z - b.Z);

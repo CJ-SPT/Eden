@@ -80,7 +80,10 @@ public sealed partial class SqliteWorld
                 new(structure.X, structure.Y, structure.Z),
                 new(structure.Name, profile.GroupId, StructureRules.CategoryId),
                 exit is null ? null : StationUndocking.Rotate(exit, structure.Yaw)
-            ),
+            )
+            {
+                Collision = StaticCollisionCatalog.Read(catalog, structure.TypeId)?.Rotate(structure.Yaw),
+            },
             Flight = pilot.Flight with { StationRadius = (float)profile.Radius },
         };
     }

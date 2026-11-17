@@ -47,9 +47,10 @@ def export(path, output):
             raw = db.execute("SELECT Data FROM SourceRecord WHERE Dataset='client/graphicids' AND Key=?", (str(graphic),)).fetchone()
             if raw:
                 value = json.loads(raw[0])
+                records.append(dict(dataset='client/graphicids', key=graphic,
+                                    data=dict(graphicLocationID=value.get('graphicLocationID'),
+                                              sofHullName=value.get('sofHullName'), graphicFile=value.get('graphicFile'))))
                 if value.get('graphicLocationID') is not None:
-                    records.append(dict(dataset='client/graphicids', key=graphic,
-                                        data=dict(graphicLocationID=value['graphicLocationID'])))
                     locations.add(value['graphicLocationID'])
         for location in sorted(locations):
             raw = db.execute("SELECT Data FROM SourceRecord WHERE Dataset='client/graphiclocations' AND Key=?", (str(location),)).fetchone()

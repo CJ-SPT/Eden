@@ -69,13 +69,14 @@ public sealed class StationUndockTests
         var points = StationUndockCatalog.Read(catalog, typeId);
         Assert.Equal(expected.PointCount, points.Count);
         var pilot = db.Store.FindPilot(1000001)!;
-        var station = pilot.Home with { TypeId = typeId, Position = Amsen };
+        var station = pilot.Home with { TypeId = typeId, Position = Amsen, Collision = StaticCollisionCatalog.Read(catalog, typeId) };
+        var geometry = Assert.IsType<StaticCollisionGeometry>(station.Collision);
         foreach (var group in new[] { HullClass.Corvette, HullClass.Battleship, HullClass.Carrier, HullClass.Titan })
         {
             var hull = pilot.Flight with { StationRadius = expected.Radius, ShipRadius = group == HullClass.Titan ? 6000 : 47 };
             station = station with { UndockPoint = StationUndocking.SelectPoint(pilot.ShipId, (int)group, points) };
             var launch = StationUndocking.Launch(pilot.ShipId, station, hull);
-            Assert.True(launch.Position.DistanceTo(Amsen) - expected.Radius - hull.ShipRadius >= 499.99);
+            Assert.False(geometry.Intersects(launch.Position - Amsen, hull.ShipRadius + 499.99));
             Assert.Equal(1, launch.Direction.Length, 8);
             Assert.Equal(Math.Min(1.75 * hull.MaxSpeed, 700), launch.Velocity.Length, 7);
             var matching = points.Where(point => point.Category == StationUndocking.Category((int)group)).ToArray();
@@ -131,8 +132,26 @@ public sealed class StationUndockTests
         var state = Assert.IsType<DestinyCommand.SetState>(Assert.Single(session.Updates).Command).Snapshot;
         using (BinaryReader reader = new(new MemoryStream(state.State)))
         {
-            // Each rigid static ball occupies 39 bytes before the free ship.
-            reader.BaseStream.Position = 5 + db.Objects.Count * 39 + 8;
+            reader.BaseStream.Position = 5;
+            foreach (var body in db.Objects)
+            {
+                Assert.Equal(body.Id, reader.ReadInt64());
+                Assert.Equal((byte)NavigationMode.Rigid, reader.ReadByte());
+                reader.BaseStream.Position += sizeof(float) + 3 * sizeof(double);
+                var flags = (DestinyBallFlags)reader.ReadByte();
+                Assert.Equal(-1, reader.ReadSByte());
+                if (flags.HasFlag(DestinyBallFlags.HasMiniBalls))
+                {
+                    int count = reader.ReadUInt16();
+                    reader.BaseStream.Position += count * (3 * sizeof(double) + sizeof(float));
+                }
+                if (flags.HasFlag(DestinyBallFlags.HasMiniCapsules))
+                {
+                    int count = reader.ReadUInt16();
+                    reader.BaseStream.Position += count * (6 * sizeof(double) + sizeof(float));
+                }
+            }
+            Assert.Equal(pilot.ShipId, reader.ReadInt64());
             Assert.Equal((byte)NavigationMode.Goto, reader.ReadByte());
             reader.BaseStream.Position += 4 + 24 + 1 + 8 + 1 + 8 + 4 + 4 + 4;
             Assert.Equal(session.Velocity, new(reader.ReadDouble(), reader.ReadDouble(), reader.ReadDouble()));
