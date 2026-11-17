@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Gate-arrival cloak, November 17, 2026](#gate-arrival-cloak-november-17-2026)
 - [Travel configuration, November 15, 2026](#travel-configuration-november-15-2026)
 - [Stargate handoff timing, November 14, 2026](#stargate-handoff-timing-november-14-2026)
 - [Shared bookmark folders and access lists, November 11, 2026](#shared-bookmark-folders-and-access-lists--november-11-2026)
@@ -44,6 +45,83 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Stargate travel, November 2, 2026](#stargate-travel-november-2-2026)
 - [Native player Orbit and moving navigation targets](#native-player-orbit-and-moving-navigation-targets)
 - [Shared ship motion and collision correction](#shared-ship-motion-and-collision-correction)
+
+## Gate-arrival cloak, November 17, 2026
+
+The reported missing jump-gate cloak was an unimplemented lifecycle: arrival supplied an eight-tick
+protection window and jump effect, but no cloak or native timer. Resident stargate and wormhole transfers
+now save a 60-second cloak deadline atomically with destination placement. Checkpoints and cold reopen
+retain that deadline rather than granting another minute. Schema **186** adds `GateCloakUntil` to the
+existing spatial-navigation row; old saves default to zero. New cloak commands require the resident world.
+
+The owner receives restore-mode `CloakBall`, the no-animation cloak effect and
+`OnJumpCloakUpdated(shipID, endTime, duration)`, with FILETIME ticks for both deadline and duration.
+Successful movement, stop, warp and ordinary module activation end gate cloak; the catalog's
+`canActivateInGateCloak` (**3123**) retains it for exempt fitted modules. Invalid navigation preserves
+the cloak. Cancellation sends the native timer cancellation and decloak update. Device-cloak rules,
+reactivation delays and targeting recalibration remain separate. Nearby objects cannot break gate cloak.
+
+While protected, a ship is absent from peer grids, target acquisition, NPC targets, directional scans,
+smartbomb candidates and area damage. The receiving gate can still flash without adding the hidden ship.
+Observers evaluate the saved deadline directly, including when the owner's next frame has not arrived.
+Authoritative position changes also clear the old deadline for autonomous movement and relocations.
+No new SQLite gameplay fallback was added.
+
+Gameplay references: [UniWiki cloaking](https://wiki.eveuniversity.org/Cloak) and
+[jump-cloak timers](https://wiki.eveuniversity.org/Timers#Jump_Cloak_Timer).
+Inert build-3662168 inspection confirms `crimewatchTimers.TimerContainer.OnJumpCloakUpdated` accepts
+`(shipID,endTime,duration)` and `OnJumpCloakCancelled` accepts `(shipID)`; the decoded payload SHA-256 is
+`ec59e24560aa1e0b9e0c37a4d0252bdf761ccddad245979d0dbe6ec47fa4ef59`.
+The pinned `environment/effects/cloaking` supplies `CloakNoAnim`.
+[Carbon Destiny Ballpark.cpp at 27ee40b](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp)
+confirms `CloakBall` clears massiveness and adds a proximity sensor only for normal device cloaks.
+The local older-build EVE.js comparison used restore mode **2** and the same timer shape:
+`space/runtime/shipCloak.js` SHA-256 `8c017e8cbb7dd8debe7780cd70b774c8376bcf10b54fbc406713d078e6c2c829`
+and `space/runtime/scene/cloaking.js` SHA-256 `8c30f470349435fb6dfe3a19c9852441812d08eaf6490040e1cb867f5b32e0c5`.
+No reference implementation was copied and no client code was executed.
+
+**Automated validation.** The initial exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Flight.GateCloakTests.GateArrivalCloaksTheShipUntilMovementOrTheExactDeadline`
+failed on the uncloaked arrival (15.39-second build, 13.06-second test command). After implementation,
+the exact five-variant selection passed in 7.62 seconds with a 4.77-second build. Combining gate-cloak
+and gate-activity classes passed 19 cases in 8.79 seconds with a 6.13-second build. Two intermediate
+test builds caught a wrong candidate property name and an xUnit assertion style issue; both were corrected.
+Coverage includes exact expiry without an owner frame, heading/speed/stop/warp, invalid movement,
+hidden receiving-gate effects, targeting, scanning, area candidates, nearby ships, rejected transfers,
+foreign cancellation, native timers, checkpoint projection, cold reopen and cancellation persistence.
+The first broader affected selection passed **85 tests** in **37.37 seconds**, with an **8.85-second** build.
+The following broad run was interrupted after two inbound-traffic assertions expected immediate visible
+arrival hulls. Those assertions now count hidden arrivals, retain exact gate-activity and Local checks,
+and reject hidden hulls and ship flashes in the observer grid. The corrected inbound method plus
+`GateCloakTests` passed **11 cases** in **16.37 seconds** (9.35-second build) after integrating `main`
+at `01b9030f`. The exact version-185 upgrade test passed in **5.97 seconds** (4.83-second build).
+Another run stopped on the hauler's immediate-visibility assertion; its corrected hidden-arrival check
+passed the exact method in **7.59 seconds** (4.79-second build). A later run stopped on
+`PilotSpaceActivitiesTests.ShoppingChoosesRealAffordableStockAndHonorsThreatMemory(overpriced: true, avoided: false)`.
+The exact shopping method independently reproduced that failure on unchanged `main` at `01b9030f`
+(one failed, two passed; 9.22-second build and 7.88-second test command). That unrelated method is
+excluded from the final selection; its existing failure remains unresolved in this milestone.
+Slow destination loading also checks that an already-expired deadline cannot gain another arrival window.
+The final affected filter is:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Flight|FullyQualifiedName~Eden.Protocol.Tests.Propulsion.SpatialModule|FullyQualifiedName~Eden.Protocol.Tests.Propulsion.InterdictionTests|FullyQualifiedName~Eden.Protocol.Tests.Propulsion.HicInterdictionTests|FullyQualifiedName~Eden.Protocol.Tests.Exploration.WormholeTravelTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldMigrationTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldInitializationTests|FullyQualifiedName~Eden.Protocol.Tests.Targeting|FullyQualifiedName~Eden.Protocol.Tests.Combat.Smartbomb|FullyQualifiedName~Eden.Protocol.Tests.Combat.AreaWeapon|FullyQualifiedName~Eden.Protocol.Tests.Information.Directional|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerInboundGateAcceptanceTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerHaulerTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.GateCampTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.CapsuleerGateWatchTests|FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.PilotSpaceActivitiesTests
+```
+
+The OR-combined filter above is grouped and combined with
+`FullyQualifiedName!~Eden.Protocol.Tests.Capsuleers.PilotSpaceActivitiesTests.ShoppingChoosesRealAffordableStockAndHonorsThreatMemory`.
+
+The final selection passed **447 tests**, zero failed/skipped, in **245.56 seconds**. Tool restore
+(**0.15 seconds**), solution restore (**0.55 seconds**), and the solution build (**0.79 seconds**,
+zero warnings/errors) passed. Both Python policy suites passed: **8 catalog tests** in **1.15 seconds**
+and **9 formatting tests** in **0.12 seconds**. Formatting verification passed for **2,602 files** with
+the 140-character width policy in **26.03 seconds**; the final sequence took **274.35 seconds**.
+Added documentation links/anchors and `git diff --check` passed. The full .NET suite was not requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Jump through a gate and wait for expiry; repeat and move immediately.
+From another pilot, verify the receiving gate flashes while the arriving ship stays hidden.
 
 ## Travel configuration, November 15, 2026
 

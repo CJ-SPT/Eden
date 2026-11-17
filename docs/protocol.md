@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Gate-arrival cloak](protocol/navigation.md#gate-arrival-cloak-november-17-2026) adds the saved 60-second
+deadline, native timer, hidden arrival and movement cancellation after gate and wormhole jumps.
+
 [Multifit exhausted-stack notifications](protocol/fitting.md#multifit-exhausted-stack-notifications-november-17-2026)
 correct the rejected item change behind an invisible fitted module and stale hangar entry.
 

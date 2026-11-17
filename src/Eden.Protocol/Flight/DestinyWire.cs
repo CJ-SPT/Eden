@@ -72,11 +72,13 @@ internal abstract record DestinyCommand(string Name) : BlueModel
         protected override object?[] Arguments => [Id, Damage];
     }
 
-    internal sealed record CloakBall(long Id) : DestinyCommand("CloakBall")
+    internal sealed record CloakBall(long Id, bool Gate = false) : DestinyCommand("CloakBall")
     {
         // Pinned mass-sector cloak mode 1 is an ordinary module cloak.
         private const int NormalCloakMode = 1;
-        protected override object?[] Arguments => [Id, NormalCloakMode, Eden.Gameplay.Propulsion.SpatialModuleRules.DecloakDistance];
+        internal const int GateCloakMode = 2;
+        protected override object?[] Arguments =>
+            [Id, Gate ? GateCloakMode : NormalCloakMode, Gate ? 0d : Eden.Gameplay.Propulsion.SpatialModuleRules.DecloakDistance];
     }
 
     internal sealed record UncloakBall(long Id) : DestinyCommand("UncloakBall")

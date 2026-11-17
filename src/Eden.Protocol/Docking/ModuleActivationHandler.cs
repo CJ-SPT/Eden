@@ -60,6 +60,10 @@ internal sealed class ModuleActivationHandler(
             return PilotCallResult.Unsupported;
         }
         string effectName = BlueMarshal.Text(args[1]);
+        if (method == "Activate" && args is [long module, _, _, long])
+        {
+            context.Flight.PrepareGateCloakModule(module);
+        }
         if (effectName == Eden.Protocol.Sovereignty.EntosisHandler.EffectName && keywords is { Count: > 0 })
         {
             return new PilotCallResult.Failure("Unexpected Entosis activation arguments.");

@@ -324,7 +324,13 @@ internal static partial class Ballpark
             | (ship.Warp is null && !ship.Cloaked ? DestinyBallFlags.Massive : DestinyBallFlags.None);
         WriteBallHeader(writer, pilot.ShipId, (byte)mode, pilot.Flight.ShipRadius, pilot.Position!, (byte)flags);
         writer.Write(pilot.Flight.Mass);
-        writer.Write((byte)(ship.Cloaked ? 1 : 0)); // Pinned Destiny mass-sector cloak mode.
+        writer.Write(
+            (byte)(
+                ship.GateCloakUntil != 0 ? DestinyCommand.CloakBall.GateCloakMode
+                : ship.Cloaked ? 1
+                : 0
+            )
+        );
         writer.Write(-1L); // Force-field harmonic
         writer.Write(pilot.CorpId);
         writer.Write(pilot.AllianceId ?? -1);

@@ -139,7 +139,9 @@ internal sealed partial class FlightSession(
     internal List<PilotNotification> NotificationsBeforeFlight { get; } = [];
     public bool Moving => _navigation.Direction is not null || _navigation.Warp is not null || _navigation.Velocity != SpacePosition.Zero;
     internal SpatialStatus SpatialStatus => space.SpatialStatus(Pilot.ShipId);
-    public bool Cloaked => SpatialStatus.CloakModuleId != 0;
+    internal bool ModuleCloaked => SpatialStatus.CloakModuleId != 0;
+    internal bool GateCloaked => SpatialStatus.GateCloaked(clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+    public bool Cloaked => ModuleCloaked || GateCloaked;
     public SpacePosition Heading => _navigation.Direction ?? _navigation.LastHeading;
     private SpatialActivation? _microJump;
     public bool MicroJumpSpooling => _microJump is not null;
@@ -414,6 +416,7 @@ internal sealed partial class FlightSession(
     {
         using (space.UseSystem(Pilot.SystemId))
         {
+            SynchronizeGateCloak();
             RefreshTackle();
             RefreshInterdiction();
             int now = Stamp;
@@ -581,7 +584,7 @@ internal sealed partial class FlightSession(
             (int)Math.Round(Pilot.Flight.WarpSpeed * 1000),
             _navigation.FollowTarget?.Id ?? 0,
             _travel.Gate?.Destination.SourceId,
-            _travel.IsArriving(Stamp),
+            _travel.IsArriving(Stamp) && (SpatialStatus.GateCloakUntil == 0 || GateCloaked),
             ModuleEffects.Modules,
             ModuleEffects.Mining,
             health?.Read(Pilot.PilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()),
@@ -603,7 +606,8 @@ internal sealed partial class FlightSession(
             GateArrival: _travel.Arrival,
             DepartureAt: _travel.DepartureAt,
             Cloaked: Cloaked,
-            MicroJump: _microJump
+            MicroJump: _microJump,
+            GateCloakUntil: GateCloaked ? SpatialStatus.GateCloakUntil : 0
         );
 
     public void RefreshFitting(IReadOnlyDictionary<DogmaAttributeId, double> attributes)
@@ -1035,6 +1039,7 @@ internal sealed partial class FlightSession(
         }
         bool entering = !InBallpark;
         InBallpark = true;
+        SynchronizeGateCloak();
         bool arriving = _travel.BeginArrival(entering, Stamp);
         PublishMotion();
         var contact = CreateContact();
@@ -1101,6 +1106,7 @@ internal sealed partial class FlightSession(
             return departure.Result;
         }
         // Keep the source scene alive for the camera handoff before transferring the pilot.
+        CancelGateCloak();
         if (!automatic)
         {
             PilotNavigationRevision++;
@@ -1129,6 +1135,7 @@ internal sealed partial class FlightSession(
             throw new InvalidDataException("Wait until your ship is ready to enter the wormhole.");
         }
         var destination = travel.Prepare(Pilot.PilotId, Pilot.ShipId, entrance);
+        CancelGateCloak();
         var objects = systems.Load(destination.System.Id);
         PilotNavigationRevision++;
         _travel.BeginGate(
@@ -1225,7 +1232,7 @@ internal sealed partial class FlightSession(
             return blocked;
         }
         RefreshTackle(true);
-        if (MicroJumpSpooling || Cloaked && !SpatialStatus.WarpSafe)
+        if (MicroJumpSpooling || ModuleCloaked && !SpatialStatus.WarpSafe)
         {
             return new PilotCallResult.Failure("The active cloak or micro-jump spool prevents warp.");
         }
@@ -1345,6 +1352,10 @@ internal sealed partial class FlightSession(
             try
             {
                 var result = ExecuteCommand(command);
+                if (command is not FlightCommand.RefreshState && result is PilotCallResult.Success)
+                {
+                    CancelGateCloak();
+                }
                 if (!automatic && command is not FlightCommand.RefreshState && result is PilotCallResult.Success)
                 {
                     PilotNavigationRevision++;
@@ -1380,7 +1391,7 @@ internal sealed partial class FlightSession(
         {
             return new PilotCallResult.Failure("Wait for the micro-jump spool to finish before navigating.");
         }
-        if (Cloaked && command is FlightCommand.Dock or FlightCommand.Jump or FlightCommand.ActivateAccelerationGate)
+        if (ModuleCloaked && command is FlightCommand.Dock or FlightCommand.Jump or FlightCommand.ActivateAccelerationGate)
         {
             return new PilotCallResult.Failure("Decloak before docking or using a gate.");
         }

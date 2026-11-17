@@ -80,9 +80,10 @@ public sealed class CapsuleerHaulerTests
         );
         using var destinationObserver = host.GetRequiredService<IHumanPresence>().Select(human.PilotId, DestinationSystem);
         host.GetRequiredService<ICapsuleerPresentation>().Refresh();
-        Assert.Contains(
+        Assert.True(space.IsGateCloaked(arrival.ShipId));
+        Assert.DoesNotContain(
             space.Peers(human with { Position = arrival.Position, CurrentSystem = arrival.CurrentSystem }),
-            peer => peer.Pilot.PilotId == hauler && peer.Arriving
+            peer => peer.Pilot.PilotId == hauler
         );
         Assert.DoesNotContain(space.Peers(human with { Position = arrival.Position }), peer => peer.Pilot.PilotId == hauler);
         destinationObserver.Dispose();

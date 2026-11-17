@@ -143,7 +143,8 @@ internal sealed record ShipContact(
     long? DepartureAt = null,
     bool Cloaked = false,
     SpatialActivation? MicroJump = null,
-    GateCamp? Camp = null
+    GateCamp? Camp = null,
+    long GateCloakUntil = 0
 );
 
 internal sealed record MotionOrder(long Sequence, StampedDestinyUpdate Update);
@@ -154,7 +155,8 @@ internal sealed class SharedSpace(
     TimeProvider? clock = null,
     IWorldSynchronization? synchronization = null,
     IPilotSpatialModules? spatial = null,
-    IAutonomousPilotPresence? autonomous = null
+    IAutonomousPilotPresence? autonomous = null,
+    IPilotGateCloak? gateCloaks = null
 ) : IPilotCombatPresence
 {
     // The coordinator owns copied navigation states. Connections retain their socket and notification queue.
@@ -164,14 +166,14 @@ internal sealed class SharedSpace(
 
     public Eden.Gameplay.Capsuleers.PilotSighting[] Observe(int system, long ship, SpacePosition origin, long sample)
     {
-        var native = _sightGrid.Observe(_ships, system, ship, origin, sample);
+        var native = _sightGrid.Observe(_ships, system, ship, origin, sample, Now);
         var residents = autonomous?.Observe(system, ship, origin, sample) ?? [];
         if (residents.Length == 0)
         {
             return autonomous is null ? native : native.Where(contact => !autonomous.Owns(contact.ShipId)).ToArray();
         }
         return residents
-            .Where(contact => SpatialStatus(contact.ShipId).CloakModuleId == 0)
+            .Where(contact => !IsCloaked(contact.ShipId))
             .Concat(native.Where(contact => autonomous?.Owns(contact.ShipId) != true))
             .OrderBy(contact => origin.DistanceTo(contact.Position))
             .ThenBy(contact => contact.ShipId)
@@ -215,6 +217,18 @@ internal sealed class SharedSpace(
     internal const int MovementHistoryTicks = 32;
 
     internal SpatialStatus SpatialStatus(long ship) => spatial?.Status(ship) ?? new();
+
+    private long Now => (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc();
+
+    internal bool IsCloaked(long ship) => SpatialStatus(ship).Cloaked(Now);
+
+    internal bool IsGateCloaked(long ship) => SpatialStatus(ship).GateCloaked(Now);
+
+    private bool ArrivalProtected(ShipContact ship) => ship.Arriving && (ship.GateCloakUntil == 0 || IsGateCloaked(ship.Pilot.ShipId));
+
+    internal void CancelGateCloak(long pilot, long ship) => gateCloaks?.Cancel(pilot, ship);
+
+    internal bool PreservesGateCloak(long pilot, long ship, long module) => gateCloaks?.PreservesCloak(pilot, ship, module) == true;
 
     private readonly ConcurrentDictionary<long, IReadOnlyList<MotionOrder>> _orders = new();
     private readonly ConcurrentDictionary<long, long> _orderSequences = new();
@@ -460,8 +474,8 @@ internal sealed class SharedSpace(
                 && ship.Warp is null
                 && ship.AlignTo is null
                 && ship.DepartureGate is null
-                && !ship.Arriving
-                && SpatialStatus(ship.Pilot.ShipId).CloakModuleId == 0
+                && !ArrivalProtected(ship)
+                && !IsCloaked(ship.Pilot.ShipId)
                 && ship.Health?.Remaining.Destroyed != true
             )
             .Select(ship => new NpcTargetCandidate(ship.Pilot.PilotId, ship.Pilot.ShipId))
@@ -471,6 +485,17 @@ internal sealed class SharedSpace(
     {
         return RunMotion(pilot.SystemId, () => PeersOwned(pilot), nameof(Peers));
     }
+
+    internal IEnumerable<ShipContact> GateArrivals(DockedPilot pilot) =>
+        _ships.Values.Where(ship =>
+            ship.GateArrival is not null
+            && ship.Pilot.SystemId == pilot.SystemId
+            && IsGateCloaked(ship.Pilot.ShipId)
+            && ship.Pilot.ShipId != pilot.ShipId
+            && pilot.Position is { } viewer
+            && ship.Pilot.Position is { } position
+            && viewer.DistanceTo(position) <= NavigationDefinitions.MaximumTargetDistance
+        );
 
     internal CommandBurstCandidate[] CommandBurstCandidates(DockedPilot pilot) =>
         RunMotion(
@@ -486,9 +511,9 @@ internal sealed class SharedSpace(
                         && ship.Pilot.ShipGroupId != FleetDefinitions.CapsuleGroup
                         && ship.Warp is null
                         && ship.DepartureGate is null
-                        && !ship.Arriving
+                        && !ArrivalProtected(ship)
                         && ship.Health?.Remaining.Destroyed != true
-                        && SpatialStatus(ship.Pilot.ShipId).CloakModuleId == 0
+                        && !IsCloaked(ship.Pilot.ShipId)
                     )
                     .Select(ship => new CommandBurstCandidate(ship.Pilot.PilotId, ship.Pilot.ShipId, ship.Pilot.Position!))
                     .ToArray();
@@ -515,7 +540,8 @@ internal sealed class SharedSpace(
                         && Near(position, ship.Pilot.Flight.ShipRadius)
                         && ship.Warp is null
                         && ship.DepartureGate is null
-                        && !ship.Arriving
+                        && !ArrivalProtected(ship)
+                        && !IsGateCloaked(ship.Pilot.ShipId)
                         && (includeCloaked || SpatialStatus(ship.Pilot.ShipId).CloakModuleId == 0)
                         && ship.Health?.Remaining.Destroyed != true
                     )
@@ -527,6 +553,7 @@ internal sealed class SharedSpace(
                             entry.Pilot.Position is { } position
                             && Near(position, entry.Pilot.Flight.ShipRadius)
                             && !_ships.ContainsKey(entry.Pilot.ShipId)
+                            && !IsGateCloaked(entry.Pilot.ShipId)
                         )
                         .Select(entry => new SmartbombShip(entry.Pilot.ShipId, entry.Pilot.Position!))
                     ?? [];
@@ -555,7 +582,7 @@ internal sealed class SharedSpace(
                 .Where(ship =>
                     ship.Pilot.SystemId == pilot.SystemId
                     && ship.Pilot.ShipId != pilot.ShipId
-                    && SpatialStatus(ship.Pilot.ShipId).CloakModuleId == 0
+                    && !IsCloaked(ship.Pilot.ShipId)
                     && pilot.Position is { } viewer
                     && ship.Pilot.Position is { } other
                     && viewer.DistanceTo(other) <= NavigationDefinitions.MaximumTargetDistance
@@ -568,6 +595,10 @@ internal sealed class SharedSpace(
 
     private ShipContact ExpireTimedDefenses(ShipContact ship)
     {
+        if (ship.GateCloakUntil != 0 && !IsGateCloaked(ship.Pilot.ShipId))
+        {
+            ship = ship with { Cloaked = SpatialStatus(ship.Pilot.ShipId).CloakModuleId != 0, GateCloakUntil = 0, Arriving = false };
+        }
         if (ship.SignatureSuppressions is not { Length: > 0 } && ship.AssaultDamageControls is not { Length: > 0 })
         {
             return ship;
@@ -603,7 +634,7 @@ internal sealed class SharedSpace(
         {
             if (autonomous?.Owns(shipId) == true)
             {
-                return autonomous.Read(systemId, shipId) is { Protected: false } resident && SpatialStatus(shipId).CloakModuleId == 0
+                return autonomous.Read(systemId, shipId) is { Protected: false } resident && !IsCloaked(shipId)
                     ? new(shipId, resident.Sighting.Position, resident.Sighting.Velocity)
                     : null;
             }
@@ -616,8 +647,8 @@ internal sealed class SharedSpace(
                 && ship.Pilot.Position is { } position
                 && ship.Warp is null
                 && ship.DepartureGate is null
-                && !ship.Arriving
-                && SpatialStatus(ship.Pilot.ShipId).CloakModuleId == 0
+                && !ArrivalProtected(ship)
+                && !IsCloaked(ship.Pilot.ShipId)
                 && ship.Health?.Remaining.Destroyed != true
                 ? new(shipId, position, ship.Velocity)
                 : null;
@@ -633,10 +664,13 @@ internal sealed class SharedSpace(
         RunMotion(
             systemId,
             () =>
-                autonomous?.Owns(shipId) == true
-                    ? autonomous.Read(systemId, shipId)?.Protected == true
-                    : _ships.TryGetValue(shipId, out var ship)
-                        && (ship.Warp is not null || ship.DepartureGate is not null || ship.Arriving),
+                IsGateCloaked(shipId)
+                || (
+                    autonomous?.Owns(shipId) == true
+                        ? autonomous.Read(systemId, shipId)?.Protected == true
+                        : _ships.TryGetValue(shipId, out var ship)
+                            && (ship.Warp is not null || ship.DepartureGate is not null || ArrivalProtected(ship))
+                ),
             nameof(IsAreaProtected)
         );
 
@@ -658,6 +692,10 @@ internal sealed class SharedSpace(
     {
         using (EnterMotion(systemId: systemId))
         {
+            if (IsGateCloaked(shipId))
+            {
+                return null;
+            }
             if (_ships.ContainsKey(shipId) || autonomous?.Owns(shipId) == true)
             {
                 return FindOnline(systemId, shipId);

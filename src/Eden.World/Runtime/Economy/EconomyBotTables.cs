@@ -2786,12 +2786,14 @@ internal sealed partial class ResidentEconomy
                         row.TargetingReadyAt,
                         row.VelocityX,
                         row.VelocityY,
-                        row.VelocityZ
+                        row.VelocityZ,
+                        row.GateCloakUntil
                     ),
                 state => new Eden.Data.World.Propulsion.SpatialNavigationState
                 {
                     ShipId = state.ShipId,
                     CloakModuleId = state.CloakModuleId,
+                    GateCloakUntil = state.GateCloakUntil,
                     CloakReactivationMilliseconds = state.CloakReactivationMilliseconds,
                     CloakTargetingMilliseconds = state.CloakTargetingMilliseconds,
                     HeadingX = state.HeadingX,
@@ -2807,7 +2809,7 @@ internal sealed partial class ResidentEconomy
                 },
                 ProjectSpatialNavigationState,
                 "ShipId,CloakModuleId,CloakReactivationMilliseconds,CloakTargetingMilliseconds,HeadingX,HeadingY,"
-                    + "HeadingZ,JumpEndsAt,JumpModuleId,JumpStartedAt,TargetingReadyAt,VelocityX,VelocityY,VelocityZ",
+                    + "HeadingZ,JumpEndsAt,JumpModuleId,JumpStartedAt,TargetingReadyAt,VelocityX,VelocityY,VelocityZ,GateCloakUntil",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -2823,7 +2825,8 @@ internal sealed partial class ResidentEconomy
                         reader.GetInt64(11),
                         reader.GetDouble(12),
                         reader.GetDouble(13),
-                        reader.GetDouble(14)
+                        reader.GetDouble(14),
+                        reader.GetInt64(15)
                     ),
                 state => new(state.ShipId),
                 indexes:
@@ -4269,7 +4272,8 @@ internal sealed partial class EconomyTransaction
         foreach (var row in Retained<Eden.Data.World.Propulsion.SpatialNavigationState>())
         {
             if (
-                !double.IsFinite(row.CloakReactivationMilliseconds)
+                row.GateCloakUntil < 0
+                || !double.IsFinite(row.CloakReactivationMilliseconds)
                 || !double.IsFinite(row.CloakTargetingMilliseconds)
                 || !double.IsFinite(row.HeadingX)
                 || !double.IsFinite(row.HeadingY)

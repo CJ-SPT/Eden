@@ -324,6 +324,7 @@ internal sealed class WormholeTravelStore(WorldDatabase database, SqliteWorld sh
             connection.Saved.ReplaceAt = now + WormholeRules.ReplacementSeconds * TimeSpan.TicksPerSecond;
         }
         SqliteWorld.SetPosition(world, catalog, shipId, arrival, connection.Destination, now);
+        Eden.World.Propulsion.GateCloakPersistence.Start(world, shipId, now);
         var result = ships.FindPilot(world, pilot.AccountId, pilotId)!;
         transaction.Commit();
         LiveWorld.Find(database.Path)?.Heat.ClearSelection(pilotId, shipId);

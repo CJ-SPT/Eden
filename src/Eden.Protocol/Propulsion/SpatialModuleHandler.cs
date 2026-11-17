@@ -55,7 +55,7 @@ internal sealed class SpatialModuleHandler(TimeProvider clock, IPilotSpatialModu
 
     internal bool BlocksModule(PilotCallContext context, bool offensive)
     {
-        if (!context.Flight.Cloaked)
+        if (!context.Flight.ModuleCloaked)
         {
             return false;
         }

@@ -31,7 +31,13 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
         }
         if (ship.Cloaked && previous is null)
         {
-            emit(new DestinyCommand.CloakBall(ship.Pilot.ShipId));
+            emit(new DestinyCommand.CloakBall(ship.Pilot.ShipId, ship.GateCloakUntil != 0));
+            if (ship.GateCloakUntil != 0)
+            {
+                emit(
+                    new DestinyCommand.SpecialEffect(ship.Pilot.ShipId, null, null, null, null, "effects.CloakNoAnim", false, true, false)
+                );
+            }
         }
         RefreshMining(ship, previous);
         RefreshWeapons(ship, previous);

@@ -13,12 +13,14 @@ internal static class SpatialNavigationSchema
         model.Entity<SpatialNavigationState>().HasOne<Ship>().WithMany().HasForeignKey(s => s.ShipId).OnDelete(DeleteBehavior.Cascade);
     }
 
-    internal static void Upgrade(WorldDbContext world) =>
+    internal static void Upgrade(WorldDbContext world)
+    {
         world.Database.ExecuteSqlRaw(
             """
             CREATE TABLE IF NOT EXISTS WorldSpatialNavigation(
                 ShipId INTEGER PRIMARY KEY REFERENCES WorldShip(Id) ON DELETE CASCADE,
                 TargetingReadyAt INTEGER NOT NULL DEFAULT 0,
+                GateCloakUntil INTEGER NOT NULL DEFAULT 0,
                 CloakModuleId INTEGER NOT NULL DEFAULT 0,
                 CloakTargetingMilliseconds REAL NOT NULL DEFAULT 0, CloakReactivationMilliseconds REAL NOT NULL DEFAULT 0,
                 JumpModuleId INTEGER NOT NULL DEFAULT 0, JumpStartedAt INTEGER NOT NULL DEFAULT 0,
@@ -27,4 +29,14 @@ internal static class SpatialNavigationSchema
                 VelocityX REAL NOT NULL DEFAULT 0, VelocityY REAL NOT NULL DEFAULT 0, VelocityZ REAL NOT NULL DEFAULT 0);
             """
         );
+        if (
+            !world
+                .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldSpatialNavigation')")
+                .AsEnumerable()
+                .Contains("GateCloakUntil")
+        )
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldSpatialNavigation ADD COLUMN GateCloakUntil INTEGER NOT NULL DEFAULT 0");
+        }
+    }
 }

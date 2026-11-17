@@ -64,6 +64,7 @@ internal sealed partial class PilotGateTravelStore
             radius
         );
         SqliteWorld.SetPosition(world, catalog, shipId, arrival, gate.DestinationSystemId, now);
+        Eden.World.Propulsion.GateCloakPersistence.Start(world, shipId, now);
         return new(pilot.AccountId, arrival, SystemObjects.FindSystem(catalog, gate.DestinationSystemId));
     }
 }

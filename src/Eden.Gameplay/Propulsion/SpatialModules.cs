@@ -29,7 +29,18 @@ public sealed record SpatialActivation(
     IReadOnlyDictionary<DogmaAttributeId, double> ShipAttributes
 );
 
-public sealed record SpatialStatus(long CloakModuleId = 0, bool WarpSafe = false, long TargetingReadyAt = 0);
+public sealed record SpatialStatus(long CloakModuleId = 0, bool WarpSafe = false, long TargetingReadyAt = 0, long GateCloakUntil = 0)
+{
+    public bool GateCloaked(long now) => GateCloakUntil > now;
+
+    public bool Cloaked(long now) => CloakModuleId != 0 || GateCloaked(now);
+}
+
+public interface IPilotGateCloak
+{
+    void Cancel(long pilotId, long shipId);
+    bool PreservesCloak(long pilotId, long shipId, long moduleId);
+}
 
 public sealed record MicroJumpResult(SpacePosition Position, SpacePosition Velocity);
 

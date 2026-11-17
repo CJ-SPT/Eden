@@ -570,4 +570,7 @@ public enum DogmaAttributeId
     GasDecompressionEfficiencyBonus = 3260,
     GasDecompressionStructureBonus = 3261,
     GasDecompressionBaseEfficiency = 3262,
+
+    // Build 3662168: modules with this attribute retain gate cloak on activation.
+    CanActivateInGateCloak = 3123,
 }

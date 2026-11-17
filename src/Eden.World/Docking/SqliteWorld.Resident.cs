@@ -60,6 +60,21 @@ public sealed partial class SqliteWorld
     )
     {
         var saved = world.Positions.Find(shipId);
+        if (
+            saved is not null
+            && (
+                position is null
+                || saved.X != position.X
+                || saved.Y != position.Y
+                || saved.Z != position.Z
+                || systemId is int next && saved.SystemId != next
+            )
+        )
+        {
+            // Autonomous movement and administrative relocations also end an old arrival cloak.
+            // A gate transfer installs its destination deadline after changing position.
+            Eden.World.Propulsion.GateCloakPersistence.Cancel(world, shipId);
+        }
         if (position is not null && systemId is int sameSystem && saved?.SystemId == sameSystem)
         {
             // Ordinary movement changes coordinates only. Membership, crimewatch,

@@ -10,6 +10,25 @@ namespace Eden.Protocol.Tests.Persistence;
 public sealed class WorldMigrationTests
 {
     [Fact]
+    public void Version185AddsAnInactiveGateCloakWithoutChangingExistingNavigationDeadlines()
+    {
+        using TestWorld fixture = new(freshInitialization: true);
+        long ship = fixture.Store.FindPilot(1000001)!.ShipId;
+        using (WorldDbContext world = new(fixture.Path))
+        {
+            world.Add(new Eden.Data.World.Propulsion.SpatialNavigationState { ShipId = ship, TargetingReadyAt = 123 });
+            world.SaveChanges();
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldSpatialNavigation DROP COLUMN GateCloakUntil; PRAGMA user_version=185;");
+        }
+        WorldInitialization.Initialize(new(fixture.Path));
+        using WorldDbContext reopened = new(fixture.Path);
+        var state = reopened.Set<Eden.Data.World.Propulsion.SpatialNavigationState>().Find(ship)!;
+        Assert.Equal(0, state.GateCloakUntil);
+        Assert.Equal(123, state.TargetingReadyAt);
+        Assert.Equal(WorldMigration.CurrentVersion, reopened.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+    }
+
+    [Fact]
     public void Version140ShipFitTriggersUpgradeAndRemainEffectiveAfterReopen()
     {
         using TestWorld fixture = new(freshInitialization: true);

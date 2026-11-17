@@ -64,7 +64,14 @@ internal sealed class PilotSightGrid
         }
     }
 
-    internal PilotSighting[] Observe(IReadOnlyDictionary<long, ShipContact> ships, int system, long own, SpacePosition origin, long sample)
+    internal PilotSighting[] Observe(
+        IReadOnlyDictionary<long, ShipContact> ships,
+        int system,
+        long own,
+        SpacePosition origin,
+        long sample,
+        long now
+    )
     {
         var cell = Key(system, origin)!.Value;
         List<PilotSighting>? seen = null;
@@ -90,8 +97,8 @@ internal sealed class PilotSightGrid
                                 || !ships.TryGetValue(id, out var ship)
                                 || ship.Pilot.SystemId != system
                                 || ship.Pilot.Position is not { } at
-                                || ship.Cloaked
-                                || ship.Arriving
+                                || ship.Cloaked && (ship.GateCloakUntil == 0 || ship.GateCloakUntil > now)
+                                || ship.Arriving && (ship.GateCloakUntil == 0 || ship.GateCloakUntil > now)
                                 || ship.DepartureGate is not null
                                 || ship.Warp is not null
                                 || ship.Health?.Remaining.Destroyed == true

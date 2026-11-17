@@ -184,7 +184,8 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
             var secondUpdates = second.Updates.Select(u => u.Command).ToArray();
             first.Updates.Clear();
             second.Updates.Clear();
-            var newArrivals = firstContacts
+            var arrivalContacts = firstContacts.Concat(space.GateArrivals(first.Pilot)).DistinctBy(c => c.Pilot.ShipId).ToArray();
+            var newArrivals = arrivalContacts
                 .Where(c => c.Arriving && (!previousContacts.TryGetValue(c.Pilot.ShipId, out var old) || !old.Arriving))
                 .ToArray();
             var newDepartures = firstContacts
@@ -219,7 +220,7 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
                     Assert.Equal(sourceSystem, effect.SystemId);
                 }
             }
-            previousContacts = firstContacts.ToDictionary(c => c.Pilot.ShipId);
+            previousContacts = arrivalContacts.ToDictionary(c => c.Pilot.ShipId);
             while (firstChat.Events.TryRead(out var delivery))
             {
                 if (delivery.Event is ChatEvent.Presence { Available: true } joined)
@@ -282,20 +283,22 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
                 {
                     Assert.Equal(old.ShipId, pilot.ShipId);
                     Assert.Contains((id, pilot.ShipId), seenInSource);
-                    var contact = Assert.Single(firstContacts, c => c.Pilot.PilotId == id);
+                    var contact = Assert.Single(newArrivals, c => c.Pilot.PilotId == id);
                     Assert.True(contact.Arriving);
                     Assert.Contains(newArrivals, c => c.Pilot.ShipId == pilot.ShipId);
                     foreach (var updates in new[] { firstUpdates, secondUpdates })
                     {
-                        Assert.Single(
+                        Assert.DoesNotContain(
                             updates.OfType<DestinyCommand.SpecialEffect>(),
                             e => e.Id == pilot.ShipId && e.Graphic == "effects.JumpIn"
                         );
                     }
                     Assert.True(contact.Pilot.Position!.DistanceTo(gate.Position) < ObserverClearance * 4);
-                    Assert.Contains(secondContacts, c => c.Pilot.ShipId == pilot.ShipId && c.Arriving);
-                    Assert.Contains(first.VisiblePilots(), p => p.PilotId == id && p.ShipId == pilot.ShipId);
-                    Assert.Contains(second.VisiblePilots(), p => p.PilotId == id && p.ShipId == pilot.ShipId);
+                    Assert.DoesNotContain(firstContacts, c => c.Pilot.ShipId == pilot.ShipId);
+                    Assert.DoesNotContain(secondContacts, c => c.Pilot.ShipId == pilot.ShipId);
+                    Assert.DoesNotContain(first.VisiblePilots(), p => p.PilotId == id && p.ShipId == pilot.ShipId);
+                    Assert.DoesNotContain(second.VisiblePilots(), p => p.PilotId == id && p.ShipId == pilot.ShipId);
+                    Assert.True(space.IsAreaProtected(receivingSystem, pilot.ShipId));
                     Assert.Contains(chat.Members(firstChat.Id, room), p => p.Id == id);
                     Assert.Contains(chat.Members(secondChat.Id, room), p => p.Id == id);
                     Assert.Contains(id, firstLocalArrivals);

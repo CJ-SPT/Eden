@@ -570,14 +570,18 @@ internal sealed class FlightScene(
 
     internal void RefreshPeers(FlightSceneContext context)
     {
+        foreach (var arrival in space.GateArrivals(context.Pilot))
+        {
+            ObserveGateArrival(arrival);
+        }
         var current = space.Peers(context.Pilot);
         var previousById = _peers.ToDictionary(ship => ship.Pilot.ShipId);
         foreach (var departed in _peers.ExceptBy(current.Select(ship => ship.Pilot.ShipId), ship => ship.Pilot.ShipId))
         {
-            if (space.SpatialStatus(departed.Pilot.ShipId).CloakModuleId != 0)
+            if (space.IsCloaked(departed.Pilot.ShipId))
             {
                 _cloakedPeers.Add(departed.Pilot.ShipId);
-                update(new DestinyCommand.CloakBall(departed.Pilot.ShipId));
+                update(new DestinyCommand.CloakBall(departed.Pilot.ShipId, space.IsGateCloaked(departed.Pilot.ShipId)));
                 update(
                     new DestinyCommand.SpecialEffect(departed.Pilot.ShipId, null, null, null, null, "effects.Cloak", false, true, false)
                 );

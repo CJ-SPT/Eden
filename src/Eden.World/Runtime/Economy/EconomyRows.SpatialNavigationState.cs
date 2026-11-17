@@ -18,7 +18,8 @@ internal sealed record EconomySpatialNavigationState(
     long TargetingReadyAt,
     double VelocityX,
     double VelocityY,
-    double VelocityZ
+    double VelocityZ,
+    long GateCloakUntil = 0
 );
 
 internal sealed partial class ResidentEconomy
@@ -51,7 +52,7 @@ internal sealed partial class ResidentEconomy
                     $"""
                     INSERT INTO WorldSpatialNavigation(
                         ShipId,CloakModuleId,CloakReactivationMilliseconds,CloakTargetingMilliseconds,HeadingX,HeadingY,
-                        HeadingZ,JumpEndsAt,JumpModuleId,JumpStartedAt,TargetingReadyAt,VelocityX,VelocityY,VelocityZ
+                        HeadingZ,JumpEndsAt,JumpModuleId,JumpStartedAt,TargetingReadyAt,VelocityX,VelocityY,VelocityZ,GateCloakUntil
                     )
                     SELECT
                         json_extract(value,'$.ShipId'),json_extract(value,'$.CloakModuleId'),
@@ -61,7 +62,7 @@ internal sealed partial class ResidentEconomy
                         json_extract(value,'$.JumpEndsAt'),json_extract(value,'$.JumpModuleId'),
                         json_extract(value,'$.JumpStartedAt'),json_extract(value,'$.TargetingReadyAt'),
                         json_extract(value,'$.VelocityX'),json_extract(value,'$.VelocityY'),
-                        json_extract(value,'$.VelocityZ')
+                        json_extract(value,'$.VelocityZ'),json_extract(value,'$.GateCloakUntil')
                     FROM json_each({values}) WHERE 1
                     ON CONFLICT(ShipId) DO UPDATE SET
                         CloakModuleId=excluded.CloakModuleId,
@@ -70,7 +71,7 @@ internal sealed partial class ResidentEconomy
                         HeadingY=excluded.HeadingY,HeadingZ=excluded.HeadingZ,JumpEndsAt=excluded.JumpEndsAt,
                         JumpModuleId=excluded.JumpModuleId,JumpStartedAt=excluded.JumpStartedAt,
                         TargetingReadyAt=excluded.TargetingReadyAt,VelocityX=excluded.VelocityX,
-                        VelocityY=excluded.VelocityY,VelocityZ=excluded.VelocityZ
+                        VelocityY=excluded.VelocityY,VelocityZ=excluded.VelocityZ,GateCloakUntil=excluded.GateCloakUntil
                     """
                 );
             }

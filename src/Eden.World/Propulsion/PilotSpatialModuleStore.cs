@@ -29,7 +29,9 @@ using Microsoft.EntityFrameworkCore;
 namespace Eden.World.Propulsion;
 
 [Injectable]
-internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTargetLocks? locks = null) : IPilotSpatialModules
+internal sealed partial class PilotSpatialModuleStore(WorldDatabase database, IPilotTargetLocks? locks = null)
+    : IPilotSpatialModules,
+        IPilotGateCloak
 {
     public SpatialStatus Status(long shipId) =>
         LiveReadModels.Find(database.Path)?.SpatialNavigation(shipId, () => ReadStatus(shipId)) ?? ReadStatus(shipId);
@@ -57,7 +59,8 @@ internal sealed class PilotSpatialModuleStore(WorldDatabase database, IPilotTarg
         return new(
             module?.Id ?? 0,
             module is not null && FittingCatalog.DefaultEffect(catalog, module.TypeId) == DogmaEffect.CovertCloaking,
-            state is { CloakModuleId: not 0 } && module is null ? long.MaxValue : state?.TargetingReadyAt ?? 0
+            state is { CloakModuleId: not 0 } && module is null ? long.MaxValue : state?.TargetingReadyAt ?? 0,
+            state?.GateCloakUntil ?? 0
         );
     }
 
