@@ -284,7 +284,7 @@ internal sealed partial class PilotCombatStore(
         }
         else if (structure is not null)
         {
-            StructureCombatTargets.Check(world, catalog, structure, now);
+            StructureCombatTargets.Check(world, catalog, structure, now, pilotId);
             target = new(
                 structure.SystemId,
                 structure.TypeId,
@@ -360,7 +360,7 @@ internal sealed partial class PilotCombatStore(
         }
         else if (structure is not null)
         {
-            StructureCombatTargets.Aggress(world, pilotId, target.SystemId, now, cycleEnd);
+            StructureCombatTargets.Aggress(world, pilotId, structure.Id, target.SystemId, now, cycleEnd);
         }
         else
         {

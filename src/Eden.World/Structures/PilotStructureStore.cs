@@ -274,6 +274,12 @@ internal sealed partial class PilotStructureStore(
         {
             Fitting = fitting,
             Magazines = world is EconomyTransaction ? Magazines(world, structure) : [],
+            Weapons =
+                Eden.World.Runtime.LiveWorld.Find(world.WorldPath)
+                    ?.StructureControllers.GetValueOrDefault(structure.Id)
+                    ?.Weapons.Values.OrderBy(cycle => cycle.ModuleId)
+                    .ToArray()
+                ?? [],
             Equipment =
                 world is EconomyTransaction
                     ? StructureEquipmentPersistence
@@ -758,6 +764,13 @@ internal sealed partial class PilotStructureStore(
                                 StructureRules.Upkeep(s.LowPowerAt, modules[s.Id].Any(module => module.Online), now)
                             )
                             {
+                                Equipment = world
+                                    .Filter<OwnedItem>(item => item.LocationId == s.Id && item.OwnerId == s.CorporationId)
+                                    .AsEnumerable()
+                                    .Where(item => InventoryDefinitions.IsFittedSlot(item.FlagId))
+                                    .OrderBy(item => item.FlagId)
+                                    .Select(item => new StructureModule(item.Id, item.TypeId, item.FlagId, item.Online, null))
+                                    .ToArray(),
                                 Yaw = s.Yaw,
                                 Battle = battle,
                                 DamageFractions = battle?.Health.Fractions(StructureBattlePersistence.Profile(world, catalog, s).Defense),

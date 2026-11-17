@@ -39,7 +39,8 @@ internal static partial class NpcDamagePersistence
         int? weaponType = null,
         int? sourceType = null,
         bool paidProjectile = false,
-        bool bypassResistances = false
+        bool bypassResistances = false,
+        Eden.Gameplay.Characters.CombatParty? sourceParty = null
     )
     {
         if (npc.DestroyedAt.HasValue || npc.RetiredAt.HasValue)
@@ -48,7 +49,7 @@ internal static partial class NpcDamagePersistence
         }
         // A paid missile already checked safety and recorded CONCORD hostility
         // at launch. Its impact cannot recheck a later safety setting or hull.
-        if (!paidProjectile || npc.Role != NpcRole.Concord)
+        if ((!paidProjectile || npc.Role != NpcRole.Concord) && world.Structure(attackingShip) is null)
         {
             NpcHostility.Record(world, catalog, npc, attackingShip, now);
         }
@@ -76,7 +77,8 @@ internal static partial class NpcDamagePersistence
             npc.Id,
             now
         );
-        var attacker = PilotInteractionHistoryStore.Player(world, pilot, attackingShip, weaponType, result.Remaining.Destroyed);
+        var attacker =
+            sourceParty ?? PilotInteractionHistoryStore.Player(world, pilot, attackingShip, weaponType, result.Remaining.Destroyed);
         if (sourceType is > 0)
         {
             attacker = attacker with { ShipTypeId = sourceType };

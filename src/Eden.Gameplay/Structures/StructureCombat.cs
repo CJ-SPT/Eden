@@ -56,15 +56,15 @@ public static class StructureCombatRules
                 or StructureState.AnchorVulnerable
                 or StructureState.DeployVulnerable;
 
-    public static void CheckAttack(StructureProfile structure, double security, StructureBattle battle)
+    public static void CheckAttack(StructureProfile structure, double security, StructureBattle battle, bool retaliation = false)
     {
         if (structure.Family == StructureFamily.SovereigntyHub)
         {
             throw new InvalidDataException("Sovereignty hubs require Entosis warfare.");
         }
-        if (!double.IsFinite(security) || security >= StructureRules.HighSecurityBoundary)
+        if (!double.IsFinite(security) || security >= StructureRules.HighSecurityBoundary && !retaliation)
         {
-            // CCP requires a declared war for high-security structure attacks. Eden has no war authority yet.
+            // High-security attacks require war authority or retaliation against this exact attacking structure.
             throw new InvalidDataException("A declared war is required to attack a high-security structure.");
         }
         if (!Vulnerable(battle.State))

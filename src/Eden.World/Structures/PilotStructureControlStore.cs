@@ -69,6 +69,7 @@ internal sealed class ResidentStructureControl(StructureControlToken token, Live
     private readonly Lock _gate = new();
     public StructureControlToken Token { get; } = token;
     internal ImmutableDictionary<long, StructureTargetLock> Targets { get; set; } = ImmutableDictionary<long, StructureTargetLock>.Empty;
+    internal ImmutableDictionary<long, StructureWeaponCycle> Weapons { get; set; } = ImmutableDictionary<long, StructureWeaponCycle>.Empty;
     internal long LockRevision { get; set; }
 
     internal T WithActive<T>(Func<T> action)
@@ -110,6 +111,7 @@ internal sealed class ResidentStructureControl(StructureControlToken token, Live
                     }
                 }
                 Targets = ImmutableDictionary<long, StructureTargetLock>.Empty;
+                Weapons = ImmutableDictionary<long, StructureWeaponCycle>.Empty;
             }
         }
     }

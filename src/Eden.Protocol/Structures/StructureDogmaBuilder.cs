@@ -100,6 +100,19 @@ internal sealed class StructureDogmaBuilder(
         {
             effects[DogmaEffect.Online] = new(module.Id, pilot.PilotId, structure.Id, null, DogmaEffect.Online, now, null, 0);
         }
+        if (structure.Weapons.SingleOrDefault(cycle => cycle.ModuleId == module.Id) is { } cycle)
+        {
+            effects[DogmaEffect.UseMissiles] = new(
+                module.Id,
+                pilot.PilotId,
+                structure.Id,
+                cycle.TargetId,
+                DogmaEffect.UseMissiles,
+                cycle.StartedAt,
+                cycle.DurationMilliseconds,
+                cycle.Repeats
+            );
+        }
         return new(new DogmaItemKey.Item(module.Id), InventoryRow.From(module), attributes, effects, now);
     }
 

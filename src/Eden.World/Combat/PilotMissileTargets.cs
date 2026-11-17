@@ -94,7 +94,7 @@ internal sealed partial class PilotMissileStore
         var damage = rawDamage ?? payload.Warhead.Damage.Scale(application);
         var result = PilotHealthStore.Apply(world, row.TargetId, defense, damage, time, bypassResistances);
         var attacker = world.Pilots.Find(row.PilotId)!;
-        var party = PilotInteractionHistoryStore.Player(world, attacker, row.SourceShipId, row.LauncherTypeId);
+        var party = payload.Source ?? PilotInteractionHistoryStore.Player(world, attacker, row.SourceShipId, row.LauncherTypeId);
         PilotInteractionHistoryStore.Damage(world, row.TargetId, party, result.Applied);
         CrimewatchPersistence.PlayerImpact(world, row.PilotId, victim.Id, row.SystemId, time);
         var loss = result.Remaining.Destroyed

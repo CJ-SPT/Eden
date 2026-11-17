@@ -135,6 +135,7 @@ public sealed record StructureContact(
     StructureUpkeepState UpkeepState = StructureUpkeepState.LowPower
 )
 {
+    public IReadOnlyList<StructureModule> Equipment { get; init; } = [];
     public double Yaw { get; init; }
     public StructureBattle? Battle { get; init; }
     public Combat.HullDamage? DamageFractions { get; init; }
@@ -167,6 +168,7 @@ public sealed record StructureSnapshot(
 {
     public IReadOnlyList<StructureModule> Equipment { get; init; } = [];
     public StructureFittingState? Fitting { get; init; }
+    public IReadOnlyList<StructureWeaponCycle> Weapons { get; init; } = [];
     public IReadOnlyList<Ammunition.Magazine> Magazines { get; init; } = [];
     public StructureBattle? Battle { get; init; }
     public Combat.HullDamage? DamageFractions { get; init; }

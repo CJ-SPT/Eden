@@ -469,6 +469,16 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
                     )
                     {
                         changes.Add(new("WorldItemMembership", key.Id, Resident: true));
+                        foreach (
+                            long location in new[] { before, after }
+                                .OfType<Eden.Data.World.Inventory.OwnedItem>()
+                                .Where(item => Eden.Gameplay.Inventory.InventoryDefinitions.IsFittedSlot(item.FlagId))
+                                .Select(item => item.LocationId)
+                                .Distinct()
+                        )
+                        {
+                            changes.Add(new("WorldFittedEquipment", location, Resident: true));
+                        }
                     }
                 }
             }

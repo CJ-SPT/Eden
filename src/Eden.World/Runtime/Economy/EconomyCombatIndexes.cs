@@ -166,7 +166,7 @@ internal sealed partial class ResidentEconomy
         {
             if (row.Status is MissileFlightStatus.Flying or MissileFlightStatus.Attached)
             {
-                if (row.SourceKind == MissileSourceKind.Pilot)
+                if (row.SourceKind is MissileSourceKind.Pilot or MissileSourceKind.Structure)
                 {
                     AdjustCount(_pilotMissileSystems, row.SystemId, add);
                     if (row.TargetKind == MissileTargetKind.Structure)
@@ -179,7 +179,11 @@ internal sealed partial class ResidentEconomy
                     AdjustCount(_npcMissilePilots, row.PilotId, add);
                 }
             }
-            if (row.SourceKind == MissileSourceKind.Pilot && row.Outcome is not null && !row.Reported)
+            if (
+                (row.SourceKind == MissileSourceKind.Pilot || row.SourceKind == MissileSourceKind.Structure)
+                && row.Outcome is not null
+                && !row.Reported
+            )
             {
                 AdjustCount(_missileReportPilots, row.PilotId, add);
             }

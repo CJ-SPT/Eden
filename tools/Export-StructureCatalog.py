@@ -20,7 +20,7 @@ def export(path, output):
         ) if definitions.get(i, {}).get('published') == 1]
         services = [35892, 35894, 35899, 35891, 45550, 35886, 35878, 35881, 35877,
                     45538, 45537, 45539, 45009, 35913, 35912, 35914, 82941, 78330]
-        ids = set(hulls + services + [ASSET_SAFETY_WRAP_TYPE, 34, 35, 670, 1130, 215, 3380])
+        ids = set(hulls + services + [ASSET_SAFETY_WRAP_TYPE, 34, 35, 670, 1130, 215, 3380, 37796, 37797, 37798, 37799])
         equipment = []
         for i, in db.execute('SELECT t.Id FROM ItemType t JOIN ItemGroup g ON g.Id=t.GroupId WHERE g.CategoryId=66'):
             if definitions.get(i, {}).get('published') != 1:

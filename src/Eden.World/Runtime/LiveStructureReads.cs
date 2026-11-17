@@ -22,6 +22,7 @@ internal sealed partial class LiveReadModels
         "WorldSovereigntySkyhook",
         "WorldMoonExtraction",
         "WorldShip",
+        "WorldFittedEquipment",
         "WorldItemMembership"
     );
 
@@ -35,17 +36,23 @@ internal sealed partial class LiveReadModels
         _structures.ObserveValues(
             changes,
             (key, view, change) =>
-                change.Table is "WorldSovereigntyHub" or "WorldSovereigntyClaim" or "WorldSovereigntyConflict" or "WorldSovereigntyActivity"
+                change.Table == "WorldFittedEquipment" ? view.Contacts.Any(contact => contact.Id == change.Id)
+                : change.Table == "WorldItemMembership" && !change.Resident ? true
+                : change.Table
+                    is "WorldSovereigntyHub"
+                        or "WorldSovereigntyClaim"
+                        or "WorldSovereigntyConflict"
+                        or "WorldSovereigntyActivity"
                     ? key.System == change.Id
-                    : change.Table
-                        is "WorldSovereigntyPrime"
-                            or "WorldSovereigntyCapital"
-                            or "WorldSovereigntySkyhook"
-                            or "WorldStructureService"
-                            or "WorldStructureBattle"
-                            or "WorldStructure"
-                            or "WorldMoonExtraction"
-                        || view.WaitingForAssets
+                : change.Table
+                    is "WorldSovereigntyPrime"
+                        or "WorldSovereigntyCapital"
+                        or "WorldSovereigntySkyhook"
+                        or "WorldStructureService"
+                        or "WorldStructureBattle"
+                        or "WorldStructure"
+                        or "WorldMoonExtraction"
+                    || view.WaitingForAssets
         );
         _structureNames.Observe(changes, (id, change) => id == change.Id);
     }

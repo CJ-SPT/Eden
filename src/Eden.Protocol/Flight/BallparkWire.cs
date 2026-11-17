@@ -109,6 +109,9 @@ internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
         if (Body.Structure is { } structure)
         {
             fields["corpID"] = Body.OwnerId;
+            fields["modules"] = structure
+                .Equipment.Select(module => (object?)new object?[] { module.ItemId, module.TypeId, module.Slot })
+                .ToList();
             fields["structureState"] = (int)structure.State;
             fields["state"] = (int)structure.State;
             // The native construction animation reads timer and upkeepState from the slim item.

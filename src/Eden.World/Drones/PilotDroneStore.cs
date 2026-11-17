@@ -342,7 +342,7 @@ internal sealed partial class PilotDroneStore(
             var structure = targetId is long structureId ? StructureCombatTargets.Find(world, structureId) : null;
             if (structure is not null)
             {
-                StructureCombatTargets.Check(world, catalog, structure, now);
+                StructureCombatTargets.Check(world, catalog, structure, now, pilotId);
                 if (
                     structure.SystemId != systemId
                     || Position(position).DistanceTo(StructureCombatTargets.Position(structure))
@@ -352,7 +352,7 @@ internal sealed partial class PilotDroneStore(
                 {
                     throw new InvalidDataException("The structure is outside drone control range.");
                 }
-                StructureCombatTargets.Aggress(world, pilotId, systemId, now, now);
+                StructureCombatTargets.Aggress(world, pilotId, structure.Id, systemId, now, now);
             }
             else if (npc is null)
             {
@@ -783,7 +783,7 @@ internal sealed partial class PilotDroneStore(
             {
                 try
                 {
-                    StructureCombatTargets.Check(world, catalog, structure, now);
+                    StructureCombatTargets.Check(world, catalog, structure, now, pilotId);
                     if (
                         structure.SystemId != systemId
                         || drone.DelegationMode != DroneDelegationMode.None
@@ -931,7 +931,7 @@ internal sealed partial class PilotDroneStore(
             DroneHit hit;
             if (structure is not null)
             {
-                StructureCombatTargets.Aggress(world, pilotId, systemId, now, drone.ReadyAt);
+                StructureCombatTargets.Aggress(world, pilotId, structure.Id, systemId, now, drone.ReadyAt);
                 var result = StructureCombatTargets.Apply(world, catalog, structure, damage, now);
                 hit = new(
                     drone.ItemId,

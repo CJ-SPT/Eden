@@ -13,8 +13,84 @@ Historical foundation limitations below describe their original milestones; this
 | Asset safety | Personal/corporate collection, timed delivery, paid recovery, native inventory and public loot | Implemented; validation below |
 | Incoming combat and loss | Paid weapons against structures, legal targeting, destruction settlement and automatic custody transitions | Implemented; validation below |
 | Tethering | Resident protection, native effects, access and timer checks, saved repair settlement | Implemented; validation below |
-| Defense | Combat fitting/control, supported defensive weapons and target updates | In progress; resident control, fitting, targeting, scenes and ammunition implemented; firing remains |
+| Defense | Combat fitting/control, supported defensive weapons and target updates | In progress; resident control, fitting, targeting, ammunition and defensive missile firing implemented; EWAR/area defenses remain |
 | Service completion | Remaining native structure profiles/access, economic/clone services, ownership and specialized structure consumers | Planned |
+
+### Resident defensive missile firing
+
+Standup anticapital and multirole launchers now fire through a resident structure authority. Each launch requires the
+exact current control lease, a cored operational structure, an online fitted corporate launcher, a completed resident
+lock, compatible loaded ammunition and an elapsed reload/cycle deadline. The four pinned published launcher variants
+(35921, 47323, 35922 and 47298) use cycles of 15, 12, 3 and 2.4 seconds respectively, before fitted modifiers.
+These families consume one round and no capacitor. Failed checks preserve ammunition, deadlines and projectile state.
+Other defensive effects fail closed rather than using the gunner's docked ship.
+
+Cycles and repeat counts belong to the resident control lease. Repeated activation on the same active target does not
+pay twice; changing target requires stopping. A delayed callback starts at most one new paid cycle at its current time,
+with no catch-up launches. Each repeated launch revalidates targeting and legality. Deactivation finishes the paid cycle;
+loss of control clears connection cycles. The existing saved module cooldown still blocks firing through a replacement
+controller, and already-paid missiles survive release, disconnect and checkpoint/reopen. Destruction or removal of the
+source structure expires its remaining flights. Structure IDs use actual resident membership, not a numeric cutoff.
+
+The common physical missile simulation handles NPC, player-ship and vulnerable structure targets, including missile
+application, target motion, health, ordinary destruction/reward settlement and exactly-once impact reports. Structure
+contacts settle before battle/repair deadlines. Launch payloads snapshot the actual source structure, operator,
+corporation, alliance and weapon for later damage history. Existing item/cooldown/missile projection is reused; schema
+**188** is unchanged. The catalog fixture now includes the four structure operating skills: **408 types**, SHA-256
+`98b0a8fda3954ce3210cd2498eb572aedf93b19996f77631503bf7639eb33597`.
+Structure Missile Systems (37796) reads its pinned 2% damage bonus per level; normal ship skills do not enter this graph.
+
+Structure safety is always green, independently of the operator's saved preference and private limited engagements.
+In empire space, player targets require a suspect/criminal flag, outlaw status or saved incoming hostility against this
+exact structure. Ship attacks now record that structure-specific hostility at the paid weapon boundary. A ship attacked
+by a structure can return fire against that exact structure, including in high security; this does not invent war rights
+against other structures. Rights expire with their saved deadlines. Neutral structure attacks outside null security are
+likewise rejected unless this structure is retaliating. CONCORD cannot be attacked. No suspect/criminal flag is assigned
+to the operator by defensive firing.
+
+Native Activate/Deactivate, Godma effect notifications, active-effect priming, saved next-activation times and magazine
+updates use the structure identity. Controlled session ticks advance cycles and physical missiles. Fitted equipment
+triples are present on structure slim items for native hardpoint/missile presentation. A resident fitted-membership event
+invalidates only contact views containing the changed structure; ordinary cargo quantity changes do not invalidate them.
+The structure safety view does not overwrite the operator's saved ship safety preference.
+
+Remaining defense work includes capacitor-backed EWAR/tackle, guided bombs, point defenses, doomsdays, drone targets,
+and NPC retaliation against structures. Ordinary NPC aggression currently requires a real ship target; defensive launches
+and impacts intentionally do not create an invalid ship reference or a fake ship. Structure-targeting NPC AI needs its own
+authority. Fighter/capital systems and war declarations remain separate dependencies. This missile milestone does not
+complete the overall structure program or establish native visual acceptance.
+
+References: [UniWiki structure fitting](https://wiki.eveuniversity.org/Fitting_upwell_structures),
+[CCP structure quick facts](https://support.eveonline.com/hc/en-us/articles/209985225-Upwell-Structures-Quick-Facts)
+and [CCP structure skill bonuses](https://www.eveonline.com/news/view/structure-fitting-in-the-citadel-expansion).
+Inert inspection of the signed build-3662168 archive (hash recorded below) checks `structure.pyj` hardpoint fitting,
+`eveSpaceObject/missile.pyj` launch-module lookup and the existing native module activation shapes. Existing Blue/Destiny
+codecs are reused; Carbon Destiny reference remains revision
+[`114e89fa584f0e1a81eb0a679aabf41af8870072`](https://github.com/carbonengine/destiny/tree/114e89fa584f0e1a81eb0a679aabf41af8870072).
+No AGPL implementation was incorporated.
+
+**Automated validation:** Final root checks passed **784** affected .NET cases (6m48s), tool/solution restore, a zero-warning/
+error build (4.48s), both Python policy suites (8 + 9), formatting (2,621 files), line width and diff verification in
+**447.12s**. Documentation UTF-8/whitespace and **1,460** local links passed. The seventeen-case weapon class covers both
+launcher families/tiers, paid flight checkpoint/reopen, controller replacement, late and duplicate callbacks, physical
+NPC/player/structure impacts, fatal NPC attribution and exactly-once bounty payment, green safety, personal-engagement
+isolation, high-security retaliation and expiry, native session ticks/effect priming, contact invalidation, operating skill
+damage and rejection rollback. Warm unchanged cycle reads assert zero SQL commands, connections and fitting calculations.
+Development corrected a fixture's missing NPC wreck/home data, the native module-list wire type and an attempt to put a
+structure into the ordinary NPC aggression table; final focused flows and root checks passed after those corrections.
+
+The final filter joined `FullyQualifiedName~Eden.Protocol.Tests.` predicates with `|` for: `Structures`, `Ammunition`,
+`Docking.StructureServiceTests`, `Persistence.ModuleFittingTests`, `Persistence.InventoryOwnershipTests`,
+`Fittings.ApplyFittingTests`, `PilotSessions.TypedSessionTests`, `Combat.MissileFittingTests`, `Combat.MissileFlightTests`,
+`Combat.PilotMissileTests`, `Combat.MissileCombatTests`, `Combat.MissileRulesTests`, `Combat.NpcMissileTests`,
+`Combat.NpcMissileTimingTests`, `Combat.ResidentNpcMissileTests`, `Combat.PilotCombatTests`, `Combat.NpcCombatTests`,
+`Combat.CrimewatchTests`, `Combat.CombatDroneTests`, `Combat.ExpandedCombatDroneTests`, `Combat.DroneCombatTriggerTests`
+and `Combat.SessionPerformanceTests`. No full .NET suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Fire and stop a Standup launcher in the native controlled scene; release control with a
+missile in flight; inspect hardpoints, ammunition counts and the green safety display.
 
 ### Resident structure ammunition and reloads
 

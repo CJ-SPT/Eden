@@ -11972,6 +11972,198 @@
       ]
     },
     {
+      "id": 37796,
+      "name": "Structure Missile Systems",
+      "groupId": 1545,
+      "groupName": "Structure Management",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 166.0
+        },
+        {
+          "id": 181,
+          "value": 168.0
+        },
+        {
+          "id": 182,
+          "value": 3319.0
+        },
+        {
+          "id": 183,
+          "value": 11584.0
+        },
+        {
+          "id": 275,
+          "value": 2.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 1.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 292,
+          "value": 2.0
+        }
+      ]
+    },
+    {
+      "id": 37797,
+      "name": "Structure Doomsday Operation",
+      "groupId": 1545,
+      "groupName": "Structure Management",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 66,
+          "value": -2.0
+        },
+        {
+          "id": 180,
+          "value": 166.0
+        },
+        {
+          "id": 181,
+          "value": 168.0
+        },
+        {
+          "id": 182,
+          "value": 3402.0
+        },
+        {
+          "id": 183,
+          "value": 11584.0
+        },
+        {
+          "id": 275,
+          "value": 2.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 1.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        }
+      ]
+    },
+    {
+      "id": 37798,
+      "name": "Structure Electronic Systems",
+      "groupId": 1545,
+      "groupName": "Structure Management",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 166.0
+        },
+        {
+          "id": 181,
+          "value": 168.0
+        },
+        {
+          "id": 182,
+          "value": 3426.0
+        },
+        {
+          "id": 183,
+          "value": 11584.0
+        },
+        {
+          "id": 275,
+          "value": 2.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 1.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 317,
+          "value": -3.0
+        }
+      ]
+    },
+    {
+      "id": 37799,
+      "name": "Structure Engineering Systems",
+      "groupId": 1545,
+      "groupName": "Structure Management",
+      "categoryId": 16,
+      "mass": 0.0,
+      "radius": 1.0,
+      "capacity": 0.0,
+      "attributes": [
+        {
+          "id": 180,
+          "value": 166.0
+        },
+        {
+          "id": 181,
+          "value": 168.0
+        },
+        {
+          "id": 182,
+          "value": 3413.0
+        },
+        {
+          "id": 183,
+          "value": 11584.0
+        },
+        {
+          "id": 275,
+          "value": 2.0
+        },
+        {
+          "id": 277,
+          "value": 1.0
+        },
+        {
+          "id": 278,
+          "value": 1.0
+        },
+        {
+          "id": 280,
+          "value": 0.0
+        },
+        {
+          "id": 317,
+          "value": -2.0
+        }
+      ]
+    },
+    {
       "id": 37821,
       "name": "Standup Gravimetric ECM Script",
       "groupId": 1549,
@@ -55903,6 +56095,314 @@
     },
     {
       "dataset": "client/types",
+      "key": 37796,
+      "data": {
+        "descriptionID": 515078,
+        "typeID": 37796,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 510631,
+        "iconID": 33,
+        "published": 1,
+        "marketGroupID": 2152,
+        "volume": 0.01,
+        "mass": 0.0,
+        "basePrice": 5000000.0,
+        "portionSize": 1,
+        "groupID": 1545
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 37796,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 180,
+            "value": 166.0
+          },
+          {
+            "attributeID": 181,
+            "value": 168.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3319.0
+          },
+          {
+            "attributeID": 183,
+            "value": 11584.0
+          },
+          {
+            "attributeID": 275,
+            "value": 2.0
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 278,
+            "value": 1.0
+          },
+          {
+            "attributeID": 280,
+            "value": 0.0
+          },
+          {
+            "attributeID": 292,
+            "value": 2.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 152,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6396,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 37797,
+      "data": {
+        "descriptionID": 515079,
+        "typeID": 37797,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 510632,
+        "iconID": 33,
+        "published": 1,
+        "marketGroupID": 2152,
+        "volume": 0.01,
+        "mass": 0.0,
+        "basePrice": 5000000.0,
+        "portionSize": 1,
+        "groupID": 1545
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 37797,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 66,
+            "value": -2.0
+          },
+          {
+            "attributeID": 180,
+            "value": 166.0
+          },
+          {
+            "attributeID": 181,
+            "value": 168.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3402.0
+          },
+          {
+            "attributeID": 183,
+            "value": 11584.0
+          },
+          {
+            "attributeID": 275,
+            "value": 2.0
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 278,
+            "value": 1.0
+          },
+          {
+            "attributeID": 280,
+            "value": 0.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 208,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6679,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 37798,
+      "data": {
+        "descriptionID": 515080,
+        "typeID": 37798,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 510633,
+        "iconID": 33,
+        "published": 1,
+        "marketGroupID": 2152,
+        "volume": 0.01,
+        "mass": 0.0,
+        "basePrice": 5000000.0,
+        "portionSize": 1,
+        "groupID": 1545
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 37798,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 180,
+            "value": 166.0
+          },
+          {
+            "attributeID": 181,
+            "value": 168.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3426.0
+          },
+          {
+            "attributeID": 183,
+            "value": 11584.0
+          },
+          {
+            "attributeID": 275,
+            "value": 2.0
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 278,
+            "value": 1.0
+          },
+          {
+            "attributeID": 280,
+            "value": 0.0
+          },
+          {
+            "attributeID": 317,
+            "value": -3.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 225,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6400,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 37799,
+      "data": {
+        "descriptionID": 515081,
+        "typeID": 37799,
+        "radius": 1.0,
+        "capacity": 0.0,
+        "typeNameID": 510634,
+        "iconID": 33,
+        "published": 1,
+        "marketGroupID": 2152,
+        "volume": 0.01,
+        "mass": 0.0,
+        "basePrice": 5000000.0,
+        "portionSize": 1,
+        "groupID": 1545
+      }
+    },
+    {
+      "dataset": "client/typedogma",
+      "key": 37799,
+      "data": {
+        "dogmaAttributes": [
+          {
+            "attributeID": 180,
+            "value": 166.0
+          },
+          {
+            "attributeID": 181,
+            "value": 168.0
+          },
+          {
+            "attributeID": 182,
+            "value": 3413.0
+          },
+          {
+            "attributeID": 183,
+            "value": 11584.0
+          },
+          {
+            "attributeID": 275,
+            "value": 2.0
+          },
+          {
+            "attributeID": 277,
+            "value": 1.0
+          },
+          {
+            "attributeID": 278,
+            "value": 1.0
+          },
+          {
+            "attributeID": 280,
+            "value": 0.0
+          },
+          {
+            "attributeID": 317,
+            "value": -2.0
+          }
+        ],
+        "dogmaEffects": [
+          {
+            "effectID": 132,
+            "isDefault": 1
+          },
+          {
+            "effectID": 225,
+            "isDefault": 0
+          },
+          {
+            "effectID": 6401,
+            "isDefault": 0
+          }
+        ]
+      }
+    },
+    {
+      "dataset": "client/types",
       "key": 37821,
       "data": {
         "descriptionID": 515919,
@@ -94420,6 +94920,92 @@
     },
     {
       "dataset": "client/dogmaeffects",
+      "key": 152,
+      "data": {
+        "descriptionID": 107056,
+        "isAssistance": 0,
+        "displayNameID": 109446,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectName": "skillBoostDamageMultiplierBonus",
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 292,
+            "operation": 0,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectID": 152,
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 208,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 208,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 66,
+            "operation": 0,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "propulsionJammingSkillBoostDurationBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 225,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "iconID": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 225,
+        "modifierInfo": [
+          {
+            "domain": "itemID",
+            "modifiedAttributeID": 317,
+            "operation": 0,
+            "modifyingAttributeID": 280,
+            "func": "ItemModifier"
+          }
+        ],
+        "effectName": "accerationControlSkillBoostCapNeedBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
       "key": 412,
       "data": {
         "isAssistance": 0,
@@ -94903,6 +95489,202 @@
           }
         ],
         "effectName": "scriptscanRadarStrengthBonusBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 6396,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 6396,
+        "modifierInfo": [
+          {
+            "domain": "structureID",
+            "modifiedAttributeID": 114,
+            "modifyingAttributeID": 292,
+            "func": "LocationGroupModifier",
+            "operation": 6,
+            "groupID": 1548
+          },
+          {
+            "domain": "structureID",
+            "modifiedAttributeID": 116,
+            "modifyingAttributeID": 292,
+            "func": "LocationGroupModifier",
+            "operation": 6,
+            "groupID": 1548
+          },
+          {
+            "domain": "structureID",
+            "modifiedAttributeID": 117,
+            "modifyingAttributeID": 292,
+            "func": "LocationGroupModifier",
+            "operation": 6,
+            "groupID": 1548
+          },
+          {
+            "domain": "structureID",
+            "modifiedAttributeID": 118,
+            "modifyingAttributeID": 292,
+            "func": "LocationGroupModifier",
+            "operation": 6,
+            "groupID": 1548
+          },
+          {
+            "domain": "structureID",
+            "modifiedAttributeID": 114,
+            "modifyingAttributeID": 292,
+            "func": "LocationGroupModifier",
+            "operation": 6,
+            "groupID": 1547
+          },
+          {
+            "domain": "structureID",
+            "modifiedAttributeID": 116,
+            "modifyingAttributeID": 292,
+            "func": "LocationGroupModifier",
+            "operation": 6,
+            "groupID": 1547
+          },
+          {
+            "domain": "structureID",
+            "modifiedAttributeID": 117,
+            "modifyingAttributeID": 292,
+            "func": "LocationGroupModifier",
+            "operation": 6,
+            "groupID": 1547
+          },
+          {
+            "domain": "structureID",
+            "modifiedAttributeID": 118,
+            "modifyingAttributeID": 292,
+            "func": "LocationGroupModifier",
+            "operation": 6,
+            "groupID": 1547
+          },
+          {
+            "domain": "structureID",
+            "modifiedAttributeID": 114,
+            "modifyingAttributeID": 292,
+            "func": "LocationGroupModifier",
+            "operation": 6,
+            "groupID": 1546
+          },
+          {
+            "domain": "structureID",
+            "modifiedAttributeID": 116,
+            "modifyingAttributeID": 292,
+            "func": "LocationGroupModifier",
+            "operation": 6,
+            "groupID": 1546
+          },
+          {
+            "domain": "structureID",
+            "modifiedAttributeID": 117,
+            "modifyingAttributeID": 292,
+            "func": "LocationGroupModifier",
+            "operation": 6,
+            "groupID": 1546
+          },
+          {
+            "domain": "structureID",
+            "modifiedAttributeID": 118,
+            "modifyingAttributeID": 292,
+            "func": "LocationGroupModifier",
+            "operation": 6,
+            "groupID": 1546
+          }
+        ],
+        "effectName": "skillStructureMissileDamageBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 6400,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 6400,
+        "modifierInfo": [
+          {
+            "domain": "structureID",
+            "modifiedAttributeID": 6,
+            "modifyingAttributeID": 317,
+            "func": "LocationGroupModifier",
+            "operation": 6,
+            "groupID": 1441
+          },
+          {
+            "domain": "structureID",
+            "modifiedAttributeID": 6,
+            "modifyingAttributeID": 317,
+            "func": "LocationGroupModifier",
+            "operation": 6,
+            "groupID": 1442
+          },
+          {
+            "domain": "structureID",
+            "modifiedAttributeID": 6,
+            "modifyingAttributeID": 317,
+            "func": "LocationGroupModifier",
+            "operation": 6,
+            "groupID": 1332
+          }
+        ],
+        "effectName": "skillStructureElectronicSystemsCapNeedBonus",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 1
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 6401,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 6401,
+        "modifierInfo": [
+          {
+            "domain": "structureID",
+            "modifiedAttributeID": 6,
+            "modifyingAttributeID": 317,
+            "func": "LocationGroupModifier",
+            "operation": 6,
+            "groupID": 1329
+          },
+          {
+            "domain": "structureID",
+            "modifiedAttributeID": 6,
+            "modifyingAttributeID": 317,
+            "func": "LocationGroupModifier",
+            "operation": 6,
+            "groupID": 1330
+          }
+        ],
+        "effectName": "skillStructureEngineeringSystemsCapNeedBonus",
         "guid": "",
         "propulsionChance": 0,
         "published": 1
@@ -96020,6 +96802,34 @@
           }
         ],
         "effectName": "structureRigIceYield",
+        "guid": "",
+        "propulsionChance": 0,
+        "published": 0
+      }
+    },
+    {
+      "dataset": "client/dogmaeffects",
+      "key": 6679,
+      "data": {
+        "isAssistance": 0,
+        "isOffensive": 0,
+        "effectCategory": 0,
+        "isWarpSafe": 0,
+        "electronicChance": 0,
+        "rangeChance": 0,
+        "disallowAutoRepeat": 0,
+        "effectID": 6679,
+        "modifierInfo": [
+          {
+            "domain": "structureID",
+            "modifiedAttributeID": 73,
+            "modifyingAttributeID": 66,
+            "func": "LocationGroupModifier",
+            "operation": 6,
+            "groupID": 1333
+          }
+        ],
+        "effectName": "skillStructureDoomsdayDurationBonus",
         "guid": "",
         "propulsionChance": 0,
         "published": 0
@@ -99409,6 +100219,25 @@
     },
     {
       "dataset": "client/dogmaattributes",
+      "key": 66,
+      "data": {
+        "stackable": 1,
+        "iconID": 1392,
+        "displayNameID": 233137,
+        "dataType": 5,
+        "defaultValue": 0.0,
+        "unitID": 105,
+        "name": "durationBonus",
+        "attributeID": 66,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "description": "Bonus to duration."
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
       "key": 67,
       "data": {
         "stackable": 1,
@@ -100069,6 +100898,25 @@
     },
     {
       "dataset": "client/dogmaattributes",
+      "key": 183,
+      "data": {
+        "stackable": 1,
+        "iconID": 33,
+        "displayNameID": 232928,
+        "dataType": 11,
+        "defaultValue": 0.0,
+        "unitID": 116,
+        "name": "requiredSkill2",
+        "attributeID": 183,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 8,
+        "description": "The type ID of the skill that is required."
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
       "key": 188,
       "data": {
         "stackable": 1,
@@ -100658,6 +101506,22 @@
     },
     {
       "dataset": "client/dogmaattributes",
+      "key": 278,
+      "data": {
+        "stackable": 1,
+        "description": "Required skill level for skill 2",
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "attributeID": 278,
+        "published": 0,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 8,
+        "name": "requiredSkill2Level"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
       "key": 280,
       "data": {
         "stackable": 1,
@@ -100712,6 +101576,25 @@
         "tooltipTitleID": 295325,
         "categoryID": 10,
         "description": "This defines the total capacity of drones allowed in the drone bay of the ship"
+      }
+    },
+    {
+      "dataset": "client/dogmaattributes",
+      "key": 292,
+      "data": {
+        "stackable": 1,
+        "iconID": 1432,
+        "displayNameID": 233075,
+        "dataType": 4,
+        "defaultValue": 0.0,
+        "unitID": 105,
+        "name": "damageMultiplierBonus",
+        "attributeID": 292,
+        "published": 1,
+        "highIsGood": 1,
+        "displayWhenZero": 0,
+        "categoryID": 7,
+        "description": "Autogenerated skill attribute, damageMultiplierBonus"
       }
     },
     {
