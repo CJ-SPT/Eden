@@ -6,15 +6,19 @@ using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Structures;
 
-[Injectable]
+[Injectable(InjectionType.Scoped)]
 internal sealed class StructureControlHandler(
     IPilotStructures structures,
     IStructureContacts contacts,
     SharedStructureControl controllers,
     StructureDogmaBuilder dogma,
-    TimeProvider clock
+    Eden.Protocol.Docking.FittingOperations fitting
 ) : ISelectedPilotCallHandler
 {
+    private sealed record HangarState(long StructureId, StructureContact Contact);
+
+    private HangarState? _hangarState;
+
     public PilotCallResult Call(
         PilotCallContext context,
         string service,
@@ -26,24 +30,26 @@ internal sealed class StructureControlHandler(
         try
         {
             long pilot = context.Pilot.PilotId;
-            if (service == "structureDocking" && method == "Undock" && context.ControlledStructureId is long controlled)
+            if (service == "structureDocking" && method == "Undock")
             {
                 if (
                     args is not [long structureId, var requestedShip]
-                    || structureId != controlled
                     || !context.Pilot.InStructure
-                    || context.Pilot.DockedLocationId != controlled
-                    || requestedShip is not null && !Equals(requestedShip, context.Pilot.ShipId)
+                    || context.Pilot.DockedLocationId != structureId
+                    || !(
+                        Equals(requestedShip, context.Pilot.ShipId) || requestedShip is null && context.ControlledStructureId == structureId
+                    )
                     || keywords?.Keys.Any(key => key != "ignoreContraband") == true
                     || keywords?.GetValueOrDefault("ignoreContraband") is not (null or false or true or 0L or 1L)
                 )
                 {
-                    throw new InvalidDataException("Undock from your controlled structure in your active ship.");
+                    throw new InvalidDataException("Undock from your current structure in your active ship.");
                 }
                 var result = context.Flight.Execute(new FlightCommand.Undock(context.Pilot.ShipId));
                 if (result is PilotCallResult.Success)
                 {
                     context.ReleaseStructureControl();
+                    context.Flight.Updates.Clear();
                     context.Flight.Snapshot();
                 }
                 return result;
@@ -69,11 +75,13 @@ internal sealed class StructureControlHandler(
                 if (method == "ReleaseControl" && args.Length == 0)
                 {
                     context.ReleaseStructureControl();
+                    context.Flight.Snapshot();
                     return PilotCallResult.None;
                 }
                 if (method == "EjectFromStructure" && args is [var restore] && (restore is null || Equals(restore, context.Pilot.ShipId)))
                 {
                     context.ReleaseStructureControl();
+                    context.Flight.Snapshot();
                     return PilotCallResult.None;
                 }
                 if (method == "BoardStructure")
@@ -99,6 +107,15 @@ internal sealed class StructureControlHandler(
             {
                 return structures.Read(pilot, id) is { } structure ? dogma.Prime(structure) : PilotCallResult.None;
             }
+            if (method == "ItemGetInfo" && args is [long moduleId] && context.ControlledStructureId == id)
+            {
+                var structure = structures.Read(pilot, id)!;
+                var fittedItem = structures.Inventory(pilot, id).SingleOrDefault(i => i.Id == moduleId);
+                if (fittedItem is not null && structure.Modules.Any(m => m.ItemId == moduleId))
+                {
+                    return dogma.PrimeModule(context.Pilot, structure, fittedItem);
+                }
+            }
             if (
                 context.ControlledStructureId == id
                 && args is [long ship, long module]
@@ -106,20 +123,7 @@ internal sealed class StructureControlHandler(
                 && method is "SetModuleOnline" or "TakeModuleOffline"
             )
             {
-                var result = structures.SetServiceOnline(pilot, id, module, method == "SetModuleOnline");
-                StructureHandler.Notify(context, result);
-                bool online = method == "SetModuleOnline";
-                long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-                context.Notifications.Add(
-                    new Eden.Protocol.Docking.ShipEffectChanged(
-                        new(module, pilot, id, null, Eden.Gameplay.Inventory.DogmaEffect.Online, now, null, 0),
-                        now,
-                        online,
-                        online
-                    )
-                );
-                context.Flight.RefreshStructures(contacts.Contacts(context.Pilot.SystemId));
-                return PilotCallResult.None;
+                return fitting.SetOnline(context, id, module, method == "SetModuleOnline");
             }
             return PilotCallResult.Unsupported;
         }
@@ -131,6 +135,29 @@ internal sealed class StructureControlHandler(
 
     internal void Advance(PilotCallContext context)
     {
+        if (!context.Selected)
+        {
+            _hangarState = null;
+            return;
+        }
+        if (context.Pilot.InStructure)
+        {
+            long docked = context.Pilot.DockedLocationId;
+            var contact = contacts.Contacts(context.Pilot.SystemId).FirstOrDefault(body => body.Id == docked)?.Structure;
+            if (contact is not null && _hangarState != new HangarState(docked, contact))
+            {
+                if (structures.Read(context.Pilot.PilotId, docked) is { } structure)
+                {
+                    context.Notifications.Add(new StructureHangarChanged(structure));
+                    context.Notifications.Add(new StructureServicesChanged(docked));
+                }
+                _hangarState = new(docked, contact);
+            }
+        }
+        else
+        {
+            _hangarState = null;
+        }
         if (context.ControlledStructureId is not long structureId)
         {
             return;

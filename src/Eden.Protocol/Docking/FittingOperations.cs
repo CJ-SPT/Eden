@@ -18,7 +18,9 @@ internal sealed class FittingOperations(
     ShipDogmaBuilder dogma,
     IPilotWeaponBanks banks,
     DroneAttributeUpdates droneUpdates,
-    Eden.Gameplay.Structures.IPilotStructures structures
+    Eden.Gameplay.Structures.IPilotStructures structures,
+    Eden.Gameplay.Structures.IStructureContacts structureContacts,
+    Eden.Protocol.Structures.StructureDogmaBuilder structureDogma
 )
 {
     internal IReadOnlyList<WeaponBank> ReadBanks(PilotCallContext context) => banks.Read(context.Pilot.PilotId, context.Pilot.ShipId);
@@ -98,10 +100,19 @@ internal sealed class FittingOperations(
                 && structures.Read(context.Pilot.PilotId, ship) is not null
             )
             {
-                Eden.Protocol.Structures.StructureHandler.Notify(
-                    context,
-                    structures.SetServiceOnline(context.Pilot.PilotId, ship, module, online)
+                var result = structures.SetServiceOnline(context.Pilot.PilotId, ship, module, online);
+                Eden.Protocol.Structures.StructureHandler.Notify(context, result);
+                NotifyOnlineChanges(context, result.Changes);
+                long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+                var prime = structureDogma.Prime(result.Structure);
+                context.Notifications.Add(
+                    new ModuleAttributesChanged(
+                        prime
+                            .Attributes.Select(a => new ModuleAttributeChange(context.Pilot.PilotId, prime.Key, a.Key, now, a.Value))
+                            .ToArray()
+                    )
                 );
+                context.Flight.RefreshStructures(structureContacts.Contacts(context.Pilot.SystemId));
                 return PilotCallResult.None;
             }
             var previousBanks = ReadBanks(context);

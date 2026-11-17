@@ -1,4 +1,5 @@
 using System.Globalization;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
@@ -9,7 +10,13 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Structures;
 
 [Injectable]
-internal sealed class StructureInventoryHandler(IPilotStructures structures, IStructureContacts contacts) : ISelectedPilotCallHandler
+internal sealed class StructureInventoryHandler(
+    IPilotStructures structures,
+    IStructureContacts contacts,
+    IPilotInventory personalInventory,
+    IPilotFleet fleet,
+    InventoryTransfers transfers
+) : ISelectedPilotCallHandler
 {
     private const string Prefix = "@structure-inventory:";
 
@@ -42,6 +49,58 @@ internal sealed class StructureInventoryHandler(IPilotStructures structures, ISt
                 return PilotCallResult.Unsupported;
             }
             var items = structures.Inventory(context.Pilot.PilotId, id);
+            if (context.Pilot.InStructure && context.Pilot.DockedLocationId == id)
+            {
+                // Native invCache shares one structure container between the fitting view and Item/Ship Hangars.
+                // Keep the pilot's personal rows visible alongside the authorized corporation service bays.
+                items = items
+                    .Concat(personalInventory.List(context.Pilot.PilotId, id))
+                    .Concat(fleet.Ships(context.Pilot.PilotId, id))
+                    .DistinctBy(item => item.Id)
+                    .ToArray();
+            }
+            if (
+                method == "MultiAdd"
+                && args is [List<object?> hangarItems, long hangarSource]
+                && Equals(keywords?.GetValueOrDefault("flag"), (long)InventoryFlag.Hangar)
+            )
+            {
+                if (
+                    keywords?.Keys.Any(k => k is not ("flag" or "qty")) == true
+                    || keywords?.GetValueOrDefault("qty") is not (null or long)
+                    || hangarItems.Any(item => item is not long)
+                )
+                {
+                    throw new InvalidDataException("Choose valid hangar transfer items and quantity.");
+                }
+                int? amount = keywords?.GetValueOrDefault("qty") is long selectedAmount ? checked((int)selectedAmount) : null;
+                return transfers.Move(
+                    context,
+                    "@hangar",
+                    new(hangarItems.Cast<long>().ToArray(), hangarSource, (int)InventoryFlag.Hangar, amount)
+                );
+            }
+            if (
+                method == "MultiAdd"
+                && args is [List<object?> batch, long _]
+                && Equals(keywords?.GetValueOrDefault("flag"), (long)InventoryFlag.AutoFit)
+            )
+            {
+                if (
+                    keywords?.Keys.Any(k => k is not ("flag" or "qty")) == true
+                    || keywords?.GetValueOrDefault("qty") is not (null or 1L)
+                    || batch.Any(item => item is not long)
+                )
+                {
+                    throw new InvalidDataException("Choose whole service modules to fit.");
+                }
+                StructureHandler.Notify(
+                    context,
+                    structures.FitServices(context.Pilot.PilotId, id, batch.Select(item => new StructureServiceFit((long)item!)).ToArray())
+                );
+                context.Flight.RefreshStructures(contacts.Contacts(context.Pilot.SystemId));
+                return PilotCallResult.None;
+            }
             // Native drag/drop uses MultiAdd even for a single selected item. Each installation is one atomic command.
             if (method == "MultiAdd" && args is [List<object?> { Count: 1 } selected, long source] && selected[0] is long itemId)
             {
@@ -63,9 +122,9 @@ internal sealed class StructureInventoryHandler(IPilotStructures structures, ISt
                 var s = structures.Read(context.Pilot.PilotId, id)!;
                 return StructureDogmaBuilder.Item(s);
             }
-            if (method == "Add" && args is [long item, long _])
+            if (method == "Add" && args is [long item, long transferSource])
             {
-                if (keywords?.TryGetValue("qty", out var selectedQuantity) == true && selectedQuantity is not long)
+                if (keywords?.TryGetValue("qty", out var selectedQuantity) == true && selectedQuantity is not (null or long))
                 {
                     throw new InvalidDataException("Choose an integer structure transfer quantity.");
                 }
@@ -77,8 +136,13 @@ internal sealed class StructureInventoryHandler(IPilotStructures structures, ISt
                 {
                     throw new InvalidDataException("Unexpected structure transfer arguments.");
                 }
+                if (flag == (int)InventoryFlag.Hangar)
+                {
+                    return transfers.Move(context, "@hangar", new([item], transferSource, flag, quantity));
+                }
                 var result = flag switch
                 {
+                    (int)InventoryFlag.AutoFit when quantity is null or 1 => structures.FitServices(context.Pilot.PilotId, id, [new(item)]),
                     StructureRules.CoreRoomFlag when quantity is null or 1 => structures.InstallCore(context.Pilot.PilotId, id, item),
                     StructureRules.FuelBayFlag => structures.DepositFuel(context.Pilot.PilotId, id, item, quantity),
                     >= StructureRules.FirstServiceSlot

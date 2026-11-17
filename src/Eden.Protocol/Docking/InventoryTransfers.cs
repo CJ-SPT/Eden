@@ -80,7 +80,14 @@ internal sealed class InventoryTransfers(
                     }
                     Eden.Protocol.Structures.StructureHandler.Notify(
                         context,
-                        structures.Withdraw(context.Pilot.PilotId, source, owned.Id, quantity ?? owned.Quantity, service != "@hangar")
+                        service == "@hangar"
+                        && owned.FlagId >= Eden.Gameplay.Structures.StructureRules.FirstServiceSlot
+                        && owned.FlagId
+                            < Eden.Gameplay.Structures.StructureRules.FirstServiceSlot
+                                + Eden.Gameplay.Structures.StructureRules.MaximumServiceSlots
+                        && quantity is null or 1
+                            ? structures.RemoveService(context.Pilot.PilotId, source, owned.Id)
+                            : structures.Withdraw(context.Pilot.PilotId, source, owned.Id, quantity ?? owned.Quantity, service != "@hangar")
                     );
                     return PilotCallResult.None;
                 }

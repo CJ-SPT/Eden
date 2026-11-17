@@ -378,10 +378,7 @@ internal sealed class PilotCallRouter(
                 }
                 if (
                     service is "beyonce" or "entity"
-                    && (
-                        context.Pilot.Position is null && context.ControlledStructureId is null
-                        || !Equals(args[0], (long)context.Pilot.SystemId)
-                    )
+                    && (context.Pilot.Position is null && !context.Pilot.InStructure || !Equals(args[0], (long)context.Pilot.SystemId))
                 )
                 {
                     return PilotCallResult.Unsupported;

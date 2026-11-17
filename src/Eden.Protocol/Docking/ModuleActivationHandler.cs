@@ -173,11 +173,17 @@ internal sealed class ModuleActivationHandler(
         {
             // Pinned Godma EffectWrapper uses these calls from the module menu,
             // including when the first operation is nested inside MachoBindObject.
-            ("Deactivate", [long module, _]) => inventory.SetOnline(context, context.Pilot.ShipId, module, false),
-            ("Activate", [long module, _, var target, long repeats])
-                when (target is null || Equals(target, context.Pilot.ShipId)) && repeats is >= 0 and <= int.MaxValue => inventory.SetOnline(
+            ("Deactivate", [long module, _]) => inventory.SetOnline(
                 context,
-                context.Pilot.ShipId,
+                context.ControlledStructureId ?? context.Pilot.ShipId,
+                module,
+                false
+            ),
+            ("Activate", [long module, _, var target, long repeats])
+                when (target is null || Equals(target, context.ControlledStructureId ?? context.Pilot.ShipId))
+                    && repeats is >= 0 and <= int.MaxValue => inventory.SetOnline(
+                context,
+                context.ControlledStructureId ?? context.Pilot.ShipId,
                 module,
                 true
             ),

@@ -25,7 +25,8 @@ internal sealed class InventoryHandler(
     DeferredRefitPrimes refits,
     IPilotContracts contracts,
     IPilotInventoryStacks stacks,
-    ICorporationStorage corporationStorage
+    ICorporationStorage corporationStorage,
+    Eden.Gameplay.Structures.IPilotStructures structures
 ) : IPilotCallHandler, ISelectedPilotCallHandler
 {
     internal const string ShipInventoryPrefix = "@ship:";
@@ -379,7 +380,7 @@ internal sealed class InventoryHandler(
                     && args is [long id, ..]
                     && args.Length is 1 or 2
                     && id == pilot.DockedLocationId
-                    && context.ControlledStructureId != id => context.Reference("@hangar", PilotBindingLifetime.Location),
+                    && !structures.CanControl(pilot.PilotId, id) => context.Reference("@hangar", PilotBindingLifetime.Location),
             ("invbroker", "GetInventoryFromId")
                 when args is [long id, ..] && fleet.Find(pilot.PilotId, id) is { } ship && CanReadShip(context, ship) => context.Reference(
                 $"{ShipInventoryPrefix}{id}",

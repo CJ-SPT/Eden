@@ -57,6 +57,16 @@ public static class StationUndocking
         return candidates.Length > 0 ? candidates[(int)((ulong)shipId % (uint)candidates.Length)] : null;
     }
 
+    public static StationUndockPoint Rotate(StationUndockPoint point, double yaw) =>
+        point with
+        {
+            Position = Rotate(point.Position, yaw),
+            Direction = Rotate(point.Direction, yaw),
+        };
+
+    private static SpacePosition Rotate(SpacePosition vector, double yaw) =>
+        new(vector.X * Math.Cos(yaw) + vector.Z * Math.Sin(yaw), vector.Y, vector.Z * Math.Cos(yaw) - vector.X * Math.Sin(yaw));
+
     public static UndockLaunch Launch(long shipId, PilotStation station, FlightProperties hull)
     {
         // Native GetUndockDirection falls back to local origin and +Z when metadata is absent.

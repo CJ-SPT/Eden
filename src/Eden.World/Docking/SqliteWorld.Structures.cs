@@ -67,6 +67,7 @@ public sealed partial class SqliteWorld
         var structure = PilotStructureStore.Require(world, structureId);
         var profile = StructureCatalog.Require(catalog, structure.TypeId);
         var system = catalog.RequireSystem(structure.SystemId);
+        var exit = StationUndocking.SelectPoint(pilot.ShipId, pilot.ShipGroupId, StationUndockCatalog.Read(catalog, structure.TypeId));
         return pilot with
         {
             Home = new(
@@ -77,7 +78,8 @@ public sealed partial class SqliteWorld
                 0,
                 structure.MoonId ?? 0,
                 new(structure.X, structure.Y, structure.Z),
-                new(structure.Name, profile.GroupId, StructureRules.CategoryId)
+                new(structure.Name, profile.GroupId, StructureRules.CategoryId),
+                exit is null ? null : StationUndocking.Rotate(exit, structure.Yaw)
             ),
             Flight = pilot.Flight with { StationRadius = (float)profile.Radius },
         };

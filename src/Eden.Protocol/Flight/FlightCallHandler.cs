@@ -32,8 +32,8 @@ internal sealed class FlightCallHandler(
         Dictionary<string, object?>? keywords = null
     )
     {
-        // The native controller sends shipID=None. Its owner restores the real ship and releases the control lease.
-        if (service == "structureDocking" && method == "Undock" && context.ControlledStructureId.HasValue)
+        // Structure docking validates the long structure identity and the native shipID=None control form together.
+        if (service == "structureDocking" && method == "Undock")
         {
             return PilotCallResult.Unsupported;
         }
@@ -282,6 +282,16 @@ internal sealed class FlightCallHandler(
             fleets.CancelWarpOrders(context.Pilot.PilotId);
         }
         var result = command is FlightCommand.Jump jump ? context.Flight.StartJump(jump, systems) : context.Flight.Execute(command);
+        if (
+            result is PilotCallResult.Success
+            && command is FlightCommand.Undock
+            && context.Pilot.Home.Id >= StructureRules.FirstStructureId
+        )
+        {
+            // Upwell docking keeps solarsystemid unchanged. The client will not recreate its park
+            // through the NPC-station system-entry path, so explicitly replace the docked observer ego.
+            context.Flight.Snapshot();
+        }
         long? destination = command switch
         {
             FlightCommand.WarpTo warpTo => warpTo.TargetId,

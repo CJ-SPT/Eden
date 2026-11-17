@@ -214,7 +214,7 @@ internal sealed class PilotSessionCalls(
             service == "beyonce"
             && method == "MachoBindObject"
             && call.IsBindingWithoutCall
-            && context.ActiveFlight?.Pilot.Position is not null
+            && (context.Pilot.Position is not null || context.Pilot.InStructure)
         )
         {
             if (handoff is not null)

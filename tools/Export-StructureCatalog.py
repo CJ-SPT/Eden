@@ -41,6 +41,22 @@ def export(path, output):
         raw = db.execute("SELECT Data FROM SourceRecord WHERE Dataset='client/blueprints' AND Key=?",
                          (json.dumps('1130'),)).fetchone()
         records.append(dict(dataset='client/blueprints', key=1130, data=json.loads(raw[0])))
+        graphics = {definitions[i]['graphicID'] for i in hulls if definitions[i].get('graphicID') is not None}
+        locations = set()
+        for graphic in sorted(graphics):
+            raw = db.execute("SELECT Data FROM SourceRecord WHERE Dataset='client/graphicids' AND Key=?", (str(graphic),)).fetchone()
+            if raw:
+                value = json.loads(raw[0])
+                if value.get('graphicLocationID') is not None:
+                    records.append(dict(dataset='client/graphicids', key=graphic,
+                                        data=dict(graphicLocationID=value['graphicLocationID'])))
+                    locations.add(value['graphicLocationID'])
+        for location in sorted(locations):
+            raw = db.execute("SELECT Data FROM SourceRecord WHERE Dataset='client/graphiclocations' AND Key=?", (str(location),)).fetchone()
+            if raw:
+                points = [p for p in json.loads(raw[0]).get('directionalLocators', [])
+                          if p.get('category', '').startswith('undockPoint')]
+                records.append(dict(dataset='client/graphiclocations', key=location, data=dict(directionalLocators=points)))
         data = dict(build=3662168, hulls=hulls, types=types, records=records)
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(json.dumps(data, indent=2) + '\n', encoding='utf-8')

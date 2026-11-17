@@ -101,6 +101,8 @@ internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
             fields["stateTimer"] = structure.StateEndsAt is long end ? new object?[] { structure.StateStartedAt, end, null } : null;
             fields["unanchoring"] = structure.UnanchorAt;
             fields["hasCore"] = structure.HasCore;
+            // Native dunRotation is expressed in degrees; deployment yaw is saved in radians.
+            fields["dunRotation"] = new object?[] { structure.Yaw * 180 / Math.PI, 0d, 0d };
         }
         if (Body.Wormhole is { } wormhole)
         {

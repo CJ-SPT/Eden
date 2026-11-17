@@ -157,13 +157,21 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
 
     internal static StructureSnapshot Snapshot(WorldAction world, CatalogDbContext catalog, SavedStructure structure)
     {
+        var profile = StructureCatalog.Require(catalog, structure.TypeId);
         var modules = world
             .Filter<SavedStructureService>(m => m.StructureId == structure.Id)
             .OrderBy(m => m.Slot)
             .AsEnumerable()
-            .Select(m => new StructureModule(m.ItemId, world.Set<OwnedItem>().Find(m.ItemId)!.TypeId, m.Slot, m.Online, m.NextFuelAt))
+            .Select(m =>
+            {
+                int typeId = world.Set<OwnedItem>().Find(m.ItemId)!.TypeId;
+                var service = StructureCatalog.ReadService(catalog, typeId);
+                return new StructureModule(m.ItemId, typeId, m.Slot, m.Online, m.NextFuelAt)
+                {
+                    HourlyFuel = service is null ? null : AdjustedFuel(catalog, profile, service, service.HourlyFuel),
+                };
+            })
             .ToArray();
-        var profile = StructureCatalog.Require(catalog, structure.TypeId);
         HashSet<StructureService> services = [];
         if (profile.Dockable && StructureRules.CanDock(profile, structure.State, 0))
         {
@@ -689,7 +697,10 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
                             s.UnanchorAt,
                             s.HasCore,
                             modules[s.Id].Any(module => module.Online) ? StructureUpkeepState.FullPower : StructureUpkeepState.LowPower
-                        ),
+                        )
+                        {
+                            Yaw = s.Yaw,
+                        },
                     })
                     .ToArray();
                 long deadline = structures

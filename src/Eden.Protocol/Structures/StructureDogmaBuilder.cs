@@ -14,10 +14,21 @@ internal sealed class StructureDogmaBuilder(IPilotStructures structures, IPilotF
         new(
             new DogmaItemKey.Item(structure.Id),
             Item(structure),
-            fitting.Attributes(structure.Profile.TypeId),
+            Attributes(structure),
             new Dictionary<DogmaEffect, DogmaActiveEffect>(),
             clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()
         );
+
+    private IReadOnlyDictionary<DogmaAttributeId, double> Attributes(StructureSnapshot structure)
+    {
+        var attributes = fitting.Attributes(structure.Profile.TypeId).ToDictionary();
+        var modules = structure.Modules.Where(module => module.Online).Select(module => fitting.Attributes(module.TypeId)).ToArray();
+        attributes[DogmaAttributeId.CpuOutput] = structure.Profile.Cpu;
+        attributes[DogmaAttributeId.PowerOutput] = structure.Profile.Power;
+        attributes[DogmaAttributeId.CpuLoad] = modules.Sum(module => module.GetValueOrDefault(DogmaAttributeId.Cpu));
+        attributes[DogmaAttributeId.PowerLoad] = modules.Sum(module => module.GetValueOrDefault(DogmaAttributeId.Power));
+        return attributes;
+    }
 
     internal static InventoryRow Item(StructureSnapshot structure) =>
         new(
@@ -31,6 +42,23 @@ internal sealed class StructureDogmaBuilder(IPilotStructures structures, IPilotF
             structure.Profile.CategoryId
         );
 
+    internal DogmaItemInfo<double> PrimeModule(DockedPilot pilot, StructureSnapshot structure, InventoryItem module)
+    {
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        var attributes = fitting.Attributes(module.TypeId).ToDictionary();
+        attributes[DogmaAttributeId.IsOnline] = module.Online ? 1d : 0d;
+        if (structure.Modules.Single(m => m.ItemId == module.Id).HourlyFuel is int fuel)
+        {
+            attributes[DogmaAttributeId.ServiceModuleFuelAmount] = fuel;
+        }
+        Dictionary<DogmaEffect, DogmaActiveEffect> effects = [];
+        if (module.Online)
+        {
+            effects[DogmaEffect.Online] = new(module.Id, pilot.PilotId, structure.Id, null, DogmaEffect.Online, now, null, 0);
+        }
+        return new(new DogmaItemKey.Item(module.Id), InventoryRow.From(module), attributes, effects, now);
+    }
+
     internal DogmaAllInfo AllInfo(DockedPilot pilot, StructureSnapshot structure, bool controlling)
     {
         var original = ships.AllInfo(pilot);
@@ -42,21 +70,13 @@ internal sealed class StructureDogmaBuilder(IPilotStructures structures, IPilotF
         };
         if (controlling)
         {
-            long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
             foreach (
                 var module in structures
                     .Inventory(pilot.PilotId, structure.Id)
-                    .Where(item => InventoryDefinitions.IsFittedSlot(item.FlagId) || structure.Modules.Any(m => m.ItemId == item.Id))
+                    .Where(item => structure.Modules.Any(m => m.ItemId == item.Id))
             )
             {
-                var attributes = fitting.Attributes(module.TypeId).ToDictionary(pair => pair.Key, pair => pair.Value);
-                attributes[DogmaAttributeId.IsOnline] = module.Online ? 1d : 0d;
-                Dictionary<DogmaEffect, DogmaActiveEffect> effects = [];
-                if (module.Online)
-                {
-                    effects[DogmaEffect.Online] = new(module.Id, pilot.PilotId, structure.Id, null, DogmaEffect.Online, now, null, 0);
-                }
-                info[module.Id] = new(new DogmaItemKey.Item(module.Id), InventoryRow.From(module), attributes, effects, now);
+                info[module.Id] = PrimeModule(pilot, structure, module);
                 instances[module.Id] = new(module.Id, module.Online);
             }
         }

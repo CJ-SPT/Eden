@@ -13,6 +13,9 @@ namespace Eden.World.Structures;
 internal sealed partial class PilotStructureStore
 {
     public StructureResult FitService(long pilotId, long structureId, long itemId, int slot) =>
+        FitServices(pilotId, structureId, [new(itemId, slot)]);
+
+    public StructureResult FitServices(long pilotId, long structureId, IReadOnlyList<StructureServiceFit> modules) =>
         Update(
             pilotId,
             structureId,
@@ -22,43 +25,55 @@ internal sealed partial class PilotStructureStore
                 {
                     throw new InvalidDataException("Core and online the structure before fitting services.");
                 }
-                var item = AccessibleItem(world, pilot, structure, itemId);
                 var profile = StructureCatalog.Require(catalog, structure.TypeId);
-                var module = StructureCatalog.Service(catalog, item.TypeId);
-                StructureRules.CheckServiceFit(profile, module, slot);
-                var installed = world.Filter<SavedStructureService>(m => m.StructureId == structureId).ToArray();
-                if (
-                    installed.Any(m => m.Slot == slot)
-                    || module.MaximumFitted > 0
-                        && installed.Count(m => world.Set<OwnedItem>().Find(m.ItemId)!.TypeId == item.TypeId) >= module.MaximumFitted
-                )
+                var installed = world.Filter<SavedStructureService>(m => m.StructureId == structureId).ToList();
+                if (modules.Count == 0 || modules.Select(m => m.ItemId).Distinct().Count() != modules.Count)
                 {
-                    throw new InvalidDataException("The service slot or module limit is already occupied.");
+                    throw new InvalidDataException("Choose distinct service modules to fit.");
                 }
-                if (item.Quantity > 1)
+                foreach (var fit in modules)
                 {
-                    item.Quantity--;
-                    item = new OwnedItem
+                    var item = AccessibleItem(world, pilot, structure, fit.ItemId);
+                    var module = StructureCatalog.Service(catalog, item.TypeId);
+                    int slot =
+                        fit.Slot
+                        ?? Enumerable
+                            .Range(StructureRules.FirstServiceSlot, profile.ServiceSlots)
+                            .FirstOrDefault(candidate => installed.All(m => m.Slot != candidate));
+                    StructureRules.CheckServiceFit(profile, module, slot);
+                    if (
+                        installed.Any(m => m.Slot == slot)
+                        || module.MaximumFitted > 0
+                            && installed.Count(m => world.Set<OwnedItem>().Find(m.ItemId)!.TypeId == item.TypeId) >= module.MaximumFitted
+                    )
                     {
-                        Id = InventoryPersistence.NextId(world),
-                        OwnerId = pilotId,
-                        TypeId = item.TypeId,
-                        Quantity = 1,
-                    };
-                    world.Add(item);
-                }
-                item.Singleton = true;
-                item.OwnerId = structure.CorporationId;
-                item.LocationId = structureId;
-                item.FlagId = slot;
-                world.Add(
-                    new SavedStructureService
+                        throw new InvalidDataException("The service slot or module limit is already occupied.");
+                    }
+                    if (item.Quantity > 1)
+                    {
+                        item.Quantity--;
+                        item = new OwnedItem
+                        {
+                            Id = InventoryPersistence.NextId(world),
+                            OwnerId = pilotId,
+                            TypeId = item.TypeId,
+                            Quantity = 1,
+                        };
+                        world.Add(item);
+                    }
+                    item.Singleton = true;
+                    item.OwnerId = structure.CorporationId;
+                    item.LocationId = structureId;
+                    item.FlagId = slot;
+                    var service = new SavedStructureService
                     {
                         ItemId = item.Id,
                         StructureId = structureId,
                         Slot = slot,
-                    }
-                );
+                    };
+                    world.Add(service);
+                    installed.Add(service);
+                }
             }
         );
 

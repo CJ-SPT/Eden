@@ -30,7 +30,7 @@ internal sealed class FleetHandler(
         }
         if ((service, method) == ("ship", "GetShipConfiguration"))
         {
-            return args is [long id] && id == context.Pilot.ShipId
+            return args is [long id] && id == (context.ControlledStructureId ?? context.Pilot.ShipId)
                 ? new ShipSharingConfiguration()
                 : new PilotCallResult.Failure("Read the configuration of your active ship.");
         }
