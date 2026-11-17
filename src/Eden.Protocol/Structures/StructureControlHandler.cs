@@ -111,7 +111,7 @@ internal sealed class StructureControlHandler(
             {
                 var structure = structures.Read(pilot, id)!;
                 var fittedItem = structures.Inventory(pilot, id).SingleOrDefault(i => i.Id == moduleId);
-                if (fittedItem is not null && structure.Modules.Any(m => m.ItemId == moduleId))
+                if (fittedItem is not null && structure.Modules.Concat(structure.Equipment).Any(m => m.ItemId == moduleId))
                 {
                     return dogma.PrimeModule(context.Pilot, structure, fittedItem);
                 }

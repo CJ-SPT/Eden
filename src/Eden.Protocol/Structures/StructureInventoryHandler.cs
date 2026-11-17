@@ -12,10 +12,11 @@ namespace Eden.Protocol.Structures;
 [Injectable]
 internal sealed class StructureInventoryHandler(
     IPilotStructures structures,
-    IStructureContacts contacts,
     IPilotInventory personalInventory,
     IPilotFleet fleet,
-    InventoryTransfers transfers
+    InventoryTransfers transfers,
+    IPilotStructureFitting fitting,
+    FittingOperations fittingOperations
 ) : ISelectedPilotCallHandler
 {
     private const string Prefix = "@structure-inventory:";
@@ -92,13 +93,12 @@ internal sealed class StructureInventoryHandler(
                     || batch.Any(item => item is not long)
                 )
                 {
-                    throw new InvalidDataException("Choose whole service modules to fit.");
+                    throw new InvalidDataException("Choose whole structure equipment items to fit.");
                 }
-                StructureHandler.Notify(
+                fittingOperations.NotifyStructureChanges(
                     context,
-                    structures.FitServices(context.Pilot.PilotId, id, batch.Select(item => new StructureServiceFit((long)item!)).ToArray())
+                    fitting.Fit(context.Pilot.PilotId, id, batch.Select(item => new StructureServiceFit((long)item!)).ToArray())
                 );
-                context.Flight.RefreshStructures(contacts.Contacts(context.Pilot.SystemId));
                 return PilotCallResult.None;
             }
             // Native drag/drop uses MultiAdd even for a single selected item. Each installation is one atomic command.
@@ -116,6 +116,15 @@ internal sealed class StructureInventoryHandler(
                 return new BlueList<InventoryRow>(
                     items.Where(i => args.Length == 0 || i.FlagId == (long)args[0]!).Select(InventoryRow.From).ToArray()
                 );
+            }
+            if (method == "DestroyFitting" && args is [long rig] && keywords is not { Count: > 0 })
+            {
+                if (!items.Any(item => item.Id == rig && InventoryDefinitions.IsRigSlot(item.FlagId)))
+                {
+                    throw new InvalidDataException("Choose a fitted structure rig to destroy.");
+                }
+                fittingOperations.NotifyStructureChanges(context, fitting.Remove(context.Pilot.PilotId, id, rig));
+                return PilotCallResult.None;
             }
             if (method == "GetSelfInvItem" && args.Length == 0)
             {
@@ -142,19 +151,20 @@ internal sealed class StructureInventoryHandler(
                 }
                 var result = flag switch
                 {
-                    (int)InventoryFlag.AutoFit when quantity is null or 1 => structures.FitServices(context.Pilot.PilotId, id, [new(item)]),
+                    (int)InventoryFlag.AutoFit when quantity is null or 1 => fitting.Fit(context.Pilot.PilotId, id, [new(item)]),
                     StructureRules.CoreRoomFlag when quantity is null or 1 => structures.InstallCore(context.Pilot.PilotId, id, item),
                     StructureRules.FuelBayFlag => structures.DepositFuel(context.Pilot.PilotId, id, item, quantity),
                     >= StructureRules.FirstServiceSlot
                     and < StructureRules.FirstServiceSlot + StructureRules.MaximumServiceSlots when quantity is null or 1 =>
                         structures.FitService(context.Pilot.PilotId, id, item, flag),
+                    _ when InventoryDefinitions.IsFittedSlot(flag) && quantity is null or 1 => fitting.Fit(
+                        context.Pilot.PilotId,
+                        id,
+                        [new(item, flag)]
+                    ),
                     _ => throw new InvalidDataException("Choose a core, service slot or structure fuel bay."),
                 };
-                StructureHandler.Notify(context, result);
-                if (context.ControlledStructureId == id)
-                {
-                    context.Flight.RefreshStructures(contacts.Contacts(context.Pilot.SystemId));
-                }
+                fittingOperations.NotifyStructureChanges(context, result);
                 return PilotCallResult.None;
             }
             return PilotCallResult.Unsupported;

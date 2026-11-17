@@ -1,5 +1,7 @@
+using Eden.Data.World.Structures;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
+using Eden.Protocol.Tests.Structures;
 using Eden.World.Fittings;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
@@ -9,6 +11,50 @@ namespace Eden.Protocol.Tests.Persistence;
 
 public sealed class WorldMigrationTests
 {
+    [Fact]
+    public void Version187StructureBattleUpgradePreservesDamageAndSavedDeadlines()
+    {
+        using StructureTests.Fixture fixture = new();
+        var structure = fixture.Online();
+        long repairAt = fixture.Clock.Now + TimeSpan.TicksPerMinute;
+        using (WorldDbContext world = new(fixture.Db.Path))
+        {
+            world.Add(
+                new SavedStructureBattle
+                {
+                    StructureId = structure.Id,
+                    Shield = 123,
+                    Armor = 456,
+                    Hull = 789,
+                    RepairAt = repairAt,
+                }
+            );
+            world.SaveChanges();
+            world.Database.ExecuteSqlRaw(
+                """
+                ALTER TABLE WorldStructureBattle DROP COLUMN ShieldCapacity;
+                ALTER TABLE WorldStructureBattle DROP COLUMN ArmorCapacity;
+                ALTER TABLE WorldStructureBattle DROP COLUMN HullCapacity;
+                PRAGMA user_version=187;
+                """
+            );
+        }
+        for (int reopen = 0; reopen < 2; reopen++)
+        {
+            WorldInitialization.Initialize(new(fixture.Db.Path));
+            using WorldDbContext world = new(fixture.Db.Path);
+            var battle = world.Set<SavedStructureBattle>().Find(structure.Id)!;
+            Assert.Equal(123, battle.Shield);
+            Assert.Equal(456, battle.Armor);
+            Assert.Equal(789, battle.Hull);
+            Assert.Equal(repairAt, battle.RepairAt);
+            Assert.Equal(0, battle.ShieldCapacity);
+            Assert.Equal(0, battle.ArmorCapacity);
+            Assert.Equal(0, battle.HullCapacity);
+            Assert.Equal(WorldMigration.CurrentVersion, world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        }
+    }
+
     [Fact]
     public void Version140ShipFitTriggersUpgradeAndRemainEffectiveAfterReopen()
     {

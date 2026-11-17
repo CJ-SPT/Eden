@@ -55,17 +55,13 @@ internal static class StructureCombatTargets
         long now
     )
     {
+        var defense = StructureBattlePersistence.Profile(world, catalog, structure).Defense;
         var hit = StructureBattlePersistence.Apply(world, catalog, structure, damage, now);
         bool destroyed = hit.Battle.State == StructureState.Destroyed;
         if (destroyed)
         {
             StructureDeparture.Settle(world, catalog, structure, now, destroyed: true);
         }
-        return new(
-            new(structure.Id, StructureBattlePersistence.Profile(catalog, structure.TypeId).Defense, hit.Battle.Health),
-            hit.Applied,
-            destroyed,
-            null
-        );
+        return new(new(structure.Id, defense, hit.Battle.Health), hit.Applied, destroyed, null);
     }
 }

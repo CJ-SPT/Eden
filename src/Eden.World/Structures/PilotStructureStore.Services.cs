@@ -110,7 +110,16 @@ internal sealed partial class PilotStructureStore
                         .ToArray()
                         .Select(m => StructureCatalog.Service(catalog, world.Set<OwnedItem>().Find(m.ItemId)!.TypeId))
                         .ToArray();
-                    if (active.Sum(m => m.Cpu) + service.Cpu > profile.Cpu || active.Sum(m => m.Power) + service.Power > profile.Power)
+                    var fit = world is EconomyTransaction ? StructureEquipmentPersistence.Read(world, catalog, structure) : null;
+                    double cpu = fit is null
+                        ? profile.Cpu - active.Sum(m => m.Cpu)
+                        : fit.Attributes.GetValueOrDefault(DogmaAttributeId.CpuOutput)
+                            - fit.Attributes.GetValueOrDefault(DogmaAttributeId.CpuLoad);
+                    double power = fit is null
+                        ? profile.Power - active.Sum(m => m.Power)
+                        : fit.Attributes.GetValueOrDefault(DogmaAttributeId.PowerOutput)
+                            - fit.Attributes.GetValueOrDefault(DogmaAttributeId.PowerLoad);
+                    if (service.Cpu > cpu || service.Power > power)
                     {
                         throw new InvalidDataException("The structure does not have enough available CPU or powergrid.");
                     }

@@ -175,6 +175,18 @@ internal sealed partial class PilotStructureStore(
     internal static StructureSnapshot Snapshot(WorldAction world, CatalogDbContext catalog, SavedStructure structure, long now = 0)
     {
         var profile = StructureCatalog.Require(catalog, structure.TypeId);
+        var fitting = world is EconomyTransaction ? StructureEquipmentPersistence.Read(world, catalog, structure) : null;
+        if (fitting is not null)
+        {
+            profile = profile with
+            {
+                Cpu = fitting.Attributes.GetValueOrDefault(Eden.Gameplay.Dogma.DogmaAttributeId.CpuOutput),
+                Power = fitting.Attributes.GetValueOrDefault(Eden.Gameplay.Dogma.DogmaAttributeId.PowerOutput),
+                Shield = fitting.Attributes.GetValueOrDefault(Eden.Gameplay.Dogma.DogmaAttributeId.ShieldCapacity),
+                Armor = fitting.Attributes.GetValueOrDefault(Eden.Gameplay.Dogma.DogmaAttributeId.ArmorHitPoints),
+                Hull = fitting.Attributes.GetValueOrDefault(Eden.Gameplay.Dogma.DogmaAttributeId.StructureHitPoints),
+            };
+        }
         var modules = world
             .Filter<SavedStructureService>(m => m.StructureId == structure.Id)
             .OrderBy(m => m.Slot)
@@ -260,8 +272,17 @@ internal sealed partial class PilotStructureStore(
             structure.ReinforceHour
         )
         {
+            Fitting = fitting,
+            Equipment =
+                world is EconomyTransaction
+                    ? StructureEquipmentPersistence
+                        .Equipment(world, catalog, structure)
+                        .Where(item => !item.Profile.Service)
+                        .Select(item => new StructureModule(item.ItemId, item.Profile.TypeId, item.FlagId, item.Online, null))
+                        .ToArray()
+                    : [],
             Battle = battle,
-            DamageFractions = battle?.Health.Fractions(StructureBattlePersistence.Profile(catalog, structure.TypeId).Defense),
+            DamageFractions = battle?.Health.Fractions(StructureBattlePersistence.Profile(world, catalog, structure).Defense),
             Upkeep = StructureRules.Upkeep(structure.LowPowerAt, modules.Any(m => m.Online), now),
         };
     }
@@ -738,7 +759,7 @@ internal sealed partial class PilotStructureStore(
                             {
                                 Yaw = s.Yaw,
                                 Battle = battle,
-                                DamageFractions = battle?.Health.Fractions(StructureBattlePersistence.Profile(catalog, s.TypeId).Defense),
+                                DamageFractions = battle?.Health.Fractions(StructureBattlePersistence.Profile(world, catalog, s).Defense),
                             },
                             Skyhook =
                                 world is EconomyTransaction

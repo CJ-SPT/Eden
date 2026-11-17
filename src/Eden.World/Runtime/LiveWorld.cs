@@ -414,6 +414,7 @@ internal sealed partial class LiveWorld : IDisposable
     internal Eden.Gameplay.Fleets.ICooperativeFleets? Fleets { get; }
     internal Eden.Gameplay.Targeting.IPilotTargetLocks? TargetLocks { get; }
     internal ConcurrentDictionary<long, Eden.World.Structures.ResidentStructureControl> StructureControllers { get; } = [];
+    internal ConcurrentDictionary<long, Eden.World.Structures.StructureFittingCacheEntry> StructureFittings { get; } = [];
 
     internal LiveWorld(
         WorldDatabase database,

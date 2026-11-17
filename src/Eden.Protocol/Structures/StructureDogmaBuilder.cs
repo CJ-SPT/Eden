@@ -19,14 +19,50 @@ internal sealed class StructureDogmaBuilder(IPilotStructures structures, IPilotF
             clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()
         );
 
+    internal void NotifyAttributes(Eden.Protocol.PilotSessions.PilotCallContext context, StructureSnapshot structure)
+    {
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        var hull = Prime(structure);
+        var changes = hull
+            .Attributes.Select(attribute => new ModuleAttributeChange(context.Pilot.PilotId, hull.Key, attribute.Key, now, attribute.Value))
+            .ToList();
+        foreach (
+            var item in structures
+                .Inventory(context.Pilot.PilotId, structure.Id)
+                .Where(item => structure.Modules.Concat(structure.Equipment).Any(module => module.ItemId == item.Id))
+        )
+        {
+            var module = PrimeModule(context.Pilot, structure, item);
+            changes.AddRange(
+                module.Attributes.Select(attribute => new ModuleAttributeChange(
+                    context.Pilot.PilotId,
+                    module.Key,
+                    attribute.Key,
+                    now,
+                    attribute.Value
+                ))
+            );
+        }
+        context.Notifications.Add(new ModuleAttributesChanged(changes));
+    }
+
     private IReadOnlyDictionary<DogmaAttributeId, double> Attributes(StructureSnapshot structure)
     {
-        var attributes = fitting.Attributes(structure.Profile.TypeId).ToDictionary();
-        var modules = structure.Modules.Where(module => module.Online).Select(module => fitting.Attributes(module.TypeId)).ToArray();
-        attributes[DogmaAttributeId.CpuOutput] = structure.Profile.Cpu;
-        attributes[DogmaAttributeId.PowerOutput] = structure.Profile.Power;
-        attributes[DogmaAttributeId.CpuLoad] = modules.Sum(module => module.GetValueOrDefault(DogmaAttributeId.Cpu));
-        attributes[DogmaAttributeId.PowerLoad] = modules.Sum(module => module.GetValueOrDefault(DogmaAttributeId.Power));
+        var attributes = (structure.Fitting?.Attributes ?? fitting.Attributes(structure.Profile.TypeId)).ToDictionary();
+        if (structure.Fitting is null)
+        {
+            var modules = structure.Modules.Where(module => module.Online).Select(module => fitting.Attributes(module.TypeId)).ToArray();
+            attributes[DogmaAttributeId.CpuOutput] = structure.Profile.Cpu;
+            attributes[DogmaAttributeId.PowerOutput] = structure.Profile.Power;
+            attributes[DogmaAttributeId.CpuLoad] = modules.Sum(module => module.GetValueOrDefault(DogmaAttributeId.Cpu));
+            attributes[DogmaAttributeId.PowerLoad] = modules.Sum(module => module.GetValueOrDefault(DogmaAttributeId.Power));
+        }
+        if (structure.Battle is { } battle)
+        {
+            attributes[DogmaAttributeId.ShieldCharge] = battle.Health.Shield;
+            attributes[DogmaAttributeId.ArmorDamage] = structure.Profile.Armor - battle.Health.Armor;
+            attributes[DogmaAttributeId.Damage] = structure.Profile.Hull - battle.Health.Structure;
+        }
         return attributes;
     }
 
@@ -45,9 +81,9 @@ internal sealed class StructureDogmaBuilder(IPilotStructures structures, IPilotF
     internal DogmaItemInfo<double> PrimeModule(DockedPilot pilot, StructureSnapshot structure, InventoryItem module)
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        var attributes = fitting.Attributes(module.TypeId).ToDictionary();
+        var attributes = (structure.Fitting?.Equipment.GetValueOrDefault(module.Id) ?? fitting.Attributes(module.TypeId)).ToDictionary();
         attributes[DogmaAttributeId.IsOnline] = module.Online ? 1d : 0d;
-        if (structure.Modules.Single(m => m.ItemId == module.Id).HourlyFuel is int fuel)
+        if (structure.Modules.SingleOrDefault(m => m.ItemId == module.Id)?.HourlyFuel is int fuel)
         {
             attributes[DogmaAttributeId.ServiceModuleFuelAmount] = fuel;
         }
@@ -73,7 +109,7 @@ internal sealed class StructureDogmaBuilder(IPilotStructures structures, IPilotF
             foreach (
                 var module in structures
                     .Inventory(pilot.PilotId, structure.Id)
-                    .Where(item => structure.Modules.Any(m => m.ItemId == item.Id))
+                    .Where(item => structure.Modules.Concat(structure.Equipment).Any(m => m.ItemId == item.Id))
             )
             {
                 info[module.Id] = PrimeModule(pilot, structure, module);

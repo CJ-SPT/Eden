@@ -27,7 +27,8 @@ internal sealed class InventoryTransfers(
     Eden.Gameplay.Exploration.IPilotHacking? hacking = null,
     Eden.Gameplay.Structures.IPilotStructures? structures = null,
     ICargoContainers? containers = null,
-    CargoContainerHandler? containerHandler = null
+    CargoContainerHandler? containerHandler = null,
+    Eden.Gameplay.Structures.IPilotStructureFitting? structureFitting = null
 )
 {
     internal PilotCallResult Move(PilotCallContext context, string service, InventoryMoveRequest request)
@@ -78,15 +79,21 @@ internal sealed class InventoryTransfers(
                     {
                         throw new InvalidDataException("Withdraw structure contents into personal hangar or ordinary cargo.");
                     }
-                    Eden.Protocol.Structures.StructureHandler.Notify(
+                    fittingOperations.NotifyStructureChanges(
                         context,
-                        service == "@hangar"
-                        && owned.FlagId >= Eden.Gameplay.Structures.StructureRules.FirstServiceSlot
-                        && owned.FlagId
-                            < Eden.Gameplay.Structures.StructureRules.FirstServiceSlot
-                                + Eden.Gameplay.Structures.StructureRules.MaximumServiceSlots
-                        && quantity is null or 1
-                            ? structures.RemoveService(context.Pilot.PilotId, source, owned.Id)
+                        service == "@hangar" && InventoryDefinitions.IsFittedSlot(owned.FlagId) && quantity is null or 1
+                                ? (structureFitting ?? throw new InvalidDataException("Structure fitting is unavailable.")).Remove(
+                                    context.Pilot.PilotId,
+                                    source,
+                                    owned.Id
+                                )
+                            : service == "@hangar"
+                            && owned.FlagId >= Eden.Gameplay.Structures.StructureRules.FirstServiceSlot
+                            && owned.FlagId
+                                < Eden.Gameplay.Structures.StructureRules.FirstServiceSlot
+                                    + Eden.Gameplay.Structures.StructureRules.MaximumServiceSlots
+                            && quantity is null or 1
+                                ? structures.RemoveService(context.Pilot.PilotId, source, owned.Id)
                             : structures.Withdraw(context.Pilot.PilotId, source, owned.Id, quantity ?? owned.Quantity, service != "@hangar")
                     );
                     return PilotCallResult.None;

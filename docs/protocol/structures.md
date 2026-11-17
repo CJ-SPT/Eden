@@ -13,8 +13,53 @@ Historical foundation limitations below describe their original milestones; this
 | Asset safety | Personal/corporate collection, timed delivery, paid recovery, native inventory and public loot | Implemented; validation below |
 | Incoming combat and loss | Paid weapons against structures, legal targeting, destruction settlement and automatic custody transitions | Implemented; validation below |
 | Tethering | Resident protection, native effects, access and timer checks, saved repair settlement | Implemented; validation below |
-| Defense | Combat fitting/control, supported defensive weapons and target updates | In progress; resident control authority implemented |
+| Defense | Combat fitting/control, supported defensive weapons and target updates | In progress; resident control and defensive fitting implemented; firing remains |
 | Service completion | Remaining native structure profiles/access, economic/clone services, ownership and specialized structure consumers | Planned |
+
+### Resident defensive fitting and full-power dogma
+
+Defensive equipment now fits through the native structure inventory alongside service modules. Resident authority
+validates hull restrictions, rack occupancy, launcher/turret hardpoints, CPU, powergrid, calibration, module/group limits,
+rig size and shared T1/T2 rig families. Batch fitting is atomic, splits packaged stacks and transfers fitted equipment to
+the owning corporation. Removing a rig destroys it. Fitting changes require docking, management authority, an installed
+core, full shields and no repair/reinforcement or decommission timer. Paid cycles and loaded equipment prevent removal.
+Services retain their distinct online/fuel rules, including switching to full power while under shield attack.
+
+The structure dogma graph evaluates fitted and online effects from the pinned catalog, with hull role modifiers and
+security-specific rig coefficients. Ordinary ship fitting skills do not enter this graph. The immutable fitting cache
+includes exact equipment, online state, hull definitions and system security; rolled-back candidates cannot replace a
+committed view. Warmed unchanged reads perform no SQL, connections or fitting calculations.
+
+Pinned effects 7008, 7040 and the service full-power assignment connect attributes 2743/2744, 2751 and 2804/2805.
+An online service multiplies shield and armor capacity by four and enables layered armor plating; hull capacity stays
+unchanged. Saved-world schema **188** retains the capacity image beside saved HP. Reads preserve the damage fraction
+when fitting or power changes capacity. Legacy rows without an image use their original catalog capacities. Projection
+and checkpoint/reopen retain the image, so power toggling cannot restore damage or apply the multiplier twice.
+
+References: [UniWiki fitting Upwell structures](https://wiki.eveuniversity.org/Fitting_upwell_structures),
+[CCP structure quick facts](https://support.eveonline.com/hc/en-us/articles/209985225-Upwell-Structures-Quick-Facts) and
+[CCP vulnerability states](https://support.eveonline.com/hc/en-us/articles/208289385-Upwell-Structures-Vulnerability-States).
+The expanded build-3662168 fixture contains 404 types, including published rack equipment and compatible charges;
+SHA-256 `9bffc6be9a41cf4e42973439dc18586641065b25688bd1906ac9db4c0388c805`.
+Read-only EVE.js 261108.1 comparison: `structureFullPowerDogma.js`, SHA-256
+`5DADA7810FF3FF529CE35D6FAC3CEB54C95A0292C0F5C960D56124BDE549DF69`. No AGPL source was incorporated.
+This milestone supplies fitting and authoritative defensive attributes; defensive firing is subsequent work.
+
+**Automated validation:** Final root checks passed **218** affected cases, tool/solution restore, a zero-warning/error
+build (0.71s), both Python policy suites (8 + 9), formatting (2,608 files), line width and diff verification in **98.59s**.
+Documentation encoding, whitespace and 769 local links passed. The final filter joined `FullyQualifiedName~` predicates
+with `|` for `Eden.Protocol.Tests.Structures`, `Eden.Protocol.Tests.Docking.StructureServiceTests`,
+`Eden.Protocol.Tests.Persistence.WorldMigrationTests`, `Eden.Protocol.Tests.Persistence.WorldInitializationTests`,
+`Eden.Protocol.Tests.Persistence.ModuleFittingTests`, `Eden.Protocol.Tests.Docking.TypedInventoryTests` and
+`Eden.Protocol.Tests.Persistence.InventoryOwnershipTests`. The earlier 204-case batch preceded the final native
+attribute notifications and migration regression. A subsequent root attempt was interrupted after two new assertions
+resolved a scoped protocol service from the root test provider; the fixture scope was corrected, both exact variants
+passed, and the final batch above passed. No full .NET suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Fit mixed rack equipment through the native fitting view; inspect module/hull attributes
+while switching a service online/offline; destroy a fitted rig and confirm the native inventory presentation.
 
 ### Resident structure-control authority
 

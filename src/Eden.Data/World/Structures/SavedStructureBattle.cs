@@ -6,6 +6,9 @@ public sealed class SavedStructureBattle
     public double Shield { get; set; }
     public double Armor { get; set; }
     public double Hull { get; set; }
+    public double ShieldCapacity { get; set; }
+    public double ArmorCapacity { get; set; }
+    public double HullCapacity { get; set; }
     public long? RepairAt { get; set; }
     public long DamageWindowAt { get; set; }
     public double ShieldWindow { get; set; }

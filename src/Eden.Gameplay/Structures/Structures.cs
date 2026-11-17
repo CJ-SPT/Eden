@@ -165,6 +165,8 @@ public sealed record StructureSnapshot(
     int ReinforceHour = StructureRules.DefaultReinforceHour
 )
 {
+    public IReadOnlyList<StructureModule> Equipment { get; init; } = [];
+    public StructureFittingState? Fitting { get; init; }
     public StructureBattle? Battle { get; init; }
     public Combat.HullDamage? DamageFractions { get; init; }
     public StructureUpkeepState Upkeep { get; init; } = StructureUpkeepState.LowPower;

@@ -42,7 +42,8 @@ internal static class StructureSchema
                 StructureId INTEGER PRIMARY KEY REFERENCES WorldStructure(Id) ON DELETE CASCADE,
                 Shield REAL NOT NULL, Armor REAL NOT NULL, Hull REAL NOT NULL, RepairAt INTEGER,
                 DamageWindowAt INTEGER NOT NULL, ShieldWindow REAL NOT NULL, ArmorWindow REAL NOT NULL,
-                HullWindow REAL NOT NULL, PausedUntil INTEGER NOT NULL);
+                HullWindow REAL NOT NULL, PausedUntil INTEGER NOT NULL,
+                ShieldCapacity REAL NOT NULL DEFAULT 0, ArmorCapacity REAL NOT NULL DEFAULT 0, HullCapacity REAL NOT NULL DEFAULT 0);
             CREATE TABLE IF NOT EXISTS WorldPilotTether (
                 ShipId INTEGER PRIMARY KEY, PilotId INTEGER NOT NULL, StructureId INTEGER NOT NULL,
                 EngagedAt INTEGER NOT NULL, RepairAt INTEGER NOT NULL, RepairCompleted INTEGER NOT NULL);
@@ -60,6 +61,30 @@ internal static class StructureSchema
             CREATE INDEX IF NOT EXISTS IX_WorldStructureLoot_OwnerId ON WorldStructureLoot(OwnerId);
             """
         );
+        if (
+            !world
+                .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldStructureBattle')")
+                .Contains("ShieldCapacity")
+        )
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldStructureBattle ADD COLUMN ShieldCapacity REAL NOT NULL DEFAULT 0");
+        }
+        if (
+            !world
+                .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldStructureBattle')")
+                .Contains("ArmorCapacity")
+        )
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldStructureBattle ADD COLUMN ArmorCapacity REAL NOT NULL DEFAULT 0");
+        }
+        if (
+            !world
+                .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldStructureBattle')")
+                .Contains("HullCapacity")
+        )
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldStructureBattle ADD COLUMN HullCapacity REAL NOT NULL DEFAULT 0");
+        }
         if (!world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldIndustryJob')").Contains("SuspendedAt"))
         {
             world.Database.ExecuteSqlRaw("ALTER TABLE WorldIndustryJob ADD COLUMN SuspendedAt INTEGER");

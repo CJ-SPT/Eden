@@ -24,6 +24,17 @@ internal static class StructureBattlePersistence
 
     internal static StructureCombatProfile Profile(CatalogDbContext catalog, int typeId) => catalog.Definition(s_profiles, typeId);
 
+    internal static StructureCombatProfile Profile(WorldAction world, CatalogDbContext catalog, SavedStructure structure)
+    {
+        var basis = Profile(catalog, structure.TypeId);
+        return world is EconomyTransaction
+            ? basis with
+            {
+                Defense = ShipHealth.DefenseFrom(StructureEquipmentPersistence.Read(world, catalog, structure).Attributes),
+            }
+            : basis;
+    }
+
     private static StructureCombatProfile Load(CatalogDbContext catalog, int typeId)
     {
         var attributes = catalog.FittingAttributes(typeId);
@@ -39,12 +50,32 @@ internal static class StructureBattlePersistence
     internal static StructureBattle Read(WorldAction world, CatalogDbContext catalog, SavedStructure structure)
     {
         var saved = world.Set<SavedStructureBattle>().Find(structure.Id);
-        var defense = Profile(catalog, structure.TypeId).Defense;
+        var defense = Profile(world, catalog, structure).Defense;
         var health =
             saved is not null ? new HullDamage(saved.Shield, saved.Armor, saved.Hull)
             : structure.State is StructureState.Onlining or StructureState.AnchorVulnerable or StructureState.DeployVulnerable
                 ? new(0, 0, defense.Structure)
             : defense.Undamaged;
+        if (saved is not null && world is EconomyTransaction)
+        {
+            // Legacy rows held the unmodified catalog capacities. New rows retain their exact saved capacity image.
+            var legacy = Profile(catalog, structure.TypeId).Defense;
+            double Resize(double current, double previous, double basis, double capacity) =>
+                Math.Clamp(
+                    (
+                        previous > 0 ? current / previous
+                        : basis > 0 ? current / basis
+                        : 1
+                    ) * capacity,
+                    0,
+                    capacity
+                );
+            health = new(
+                Resize(saved.Shield, saved.ShieldCapacity, legacy.Shield, defense.Shield),
+                Resize(saved.Armor, saved.ArmorCapacity, legacy.Armor, defense.Armor),
+                Resize(saved.Hull, saved.HullCapacity, legacy.Structure, defense.Structure)
+            );
+        }
         return new(
             structure.State,
             structure.StateStartedAt,
@@ -71,7 +102,7 @@ internal static class StructureBattlePersistence
         long jitter = checked((long)(seed % (ulong)(2 * jitterLimit + 1))) - jitterLimit;
         return new(
             profile,
-            Profile(catalog, structure.TypeId),
+            Profile(world, catalog, structure),
             world.Filter<SavedStructureService>(m => m.StructureId == structure.Id && m.Online).Any(),
             structure.LowPowerAt is long low && now - low >= StructureRules.AbandonmentDuration,
             WormholeRules.IsWormholeSystem(structure.SystemId),
@@ -96,7 +127,7 @@ internal static class StructureBattlePersistence
         {
             hit = hit with { Battle = hit.Battle with { EndsAt = hit.Battle.RepairAt } };
         }
-        Write(world, structure, hit.Battle);
+        Write(world, catalog, structure, hit.Battle);
         if (
             before.State != hit.Battle.State
             && hit.Battle.State is StructureState.HullReinforced or StructureState.HullVulnerable or StructureState.Destroyed
@@ -129,7 +160,7 @@ internal static class StructureBattlePersistence
         var after = StructureCombatRules.Advance(Context(world, catalog, structure, now), before, now);
         if (before != after)
         {
-            Write(world, structure, after);
+            Write(world, catalog, structure, after);
         }
     }
 
@@ -139,12 +170,13 @@ internal static class StructureBattlePersistence
         {
             Write(
                 world,
+                catalog,
                 structure,
                 new(
                     structure.State,
                     structure.StateStartedAt,
                     structure.StateEndsAt,
-                    Profile(catalog, structure.TypeId).Defense.Undamaged,
+                    Profile(world, catalog, structure).Defense.Undamaged,
                     null,
                     0,
                     new(0, 0, 0),
@@ -154,7 +186,7 @@ internal static class StructureBattlePersistence
         }
     }
 
-    private static void Write(WorldAction world, SavedStructure structure, StructureBattle battle)
+    private static void Write(WorldAction world, CatalogDbContext catalog, SavedStructure structure, StructureBattle battle)
     {
         var row = world.Set<SavedStructureBattle>().Find(structure.Id);
         if (row is null)
@@ -168,6 +200,10 @@ internal static class StructureBattlePersistence
         row.Shield = battle.Health.Shield;
         row.Armor = battle.Health.Armor;
         row.Hull = battle.Health.Structure;
+        var defense = Profile(world, catalog, structure).Defense;
+        row.ShieldCapacity = defense.Shield;
+        row.ArmorCapacity = defense.Armor;
+        row.HullCapacity = defense.Structure;
         row.RepairAt = battle.RepairAt;
         row.DamageWindowAt = battle.DamageWindowAt;
         row.ShieldWindow = battle.WindowDamage.Shield;
