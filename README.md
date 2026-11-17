@@ -23,6 +23,11 @@ dotnet run --no-build --project src/Eden.Server
 
 ## Current status
 
+[Sovereignty](docs/protocol/sovereignty.md) supports neutral hub deployment, paid Entosis capture, vulnerability windows,
+reinforcement, command-node campaigns, activity indices, alliance capitals and live ADM capture scaling. Resident claims,
+checkpoint recovery, native sovereignty/map views, Skyhook resources, workforce networks and catalog-backed upgrades
+are implemented. Active detection and prospecting upgrades feed site generation; infrastructure consumers remain planned.
+
 [Player-bot failure isolation](docs/protocol/capsuleers.md#bot-failure-isolation---november-16-2026) backs off broken pilots
 while healthy bots continue, preserving authoritative jobs and committed economic progress.
 [Population preparation retries](docs/protocol/capsuleers.md#population-preparation-retries---november-16-2026) recover

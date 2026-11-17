@@ -1,0 +1,9 @@
+syntax = "proto3";
+package eve_public.sovereignty.hub.upgrade_type;
+option csharp_namespace = "Eden.Protocol.Gateway.Sovereignty.HubUpgrade_Type";
+
+// Wire projection from build 3662168 eve_public/sovereignty/hub/upgrade/upgrade_type.proto.
+
+message Identifier {
+  uint64 sequential = 1;
+}

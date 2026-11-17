@@ -5,6 +5,7 @@ public sealed class SavedExplorationSite
     public long Id { get; set; }
     public int SystemId { get; set; }
     public int Kind { get; set; }
+    public int SovereigntySlot { get; set; }
     public int DungeonId { get; set; }
     public double X { get; set; }
     public double Y { get; set; }

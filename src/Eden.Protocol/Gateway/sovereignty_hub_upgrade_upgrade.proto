@@ -1,0 +1,42 @@
+syntax = "proto3";
+package eve_public.sovereignty.hub.upgrade;
+option csharp_namespace = "Eden.Protocol.Gateway.Sovereignty.Upgrades";
+
+// Wire projection from build 3662168 eve_public/sovereignty/hub/upgrade/upgrade.proto.
+import "google/protobuf/timestamp.proto";
+import "sovereignty_hub_hub.proto";
+import "sovereignty_hub_upgrade_upgrade_type.proto";
+import "sovereignty_identifiers.proto";
+
+message Identifier {
+  .eve_public.sovereignty.hub.Identifier hub = 1;
+  .eden.gateway.sovereignty.Identifier installation_type = 2;
+  .eve_public.sovereignty.hub.upgrade_type.Identifier upgrade_type = 3;
+}
+
+message Definition {
+  .eden.gateway.sovereignty.Identifier installation_type = 1;
+  uint64 power_required = 2;
+  uint64 workforce_required = 3;
+  .eden.gateway.sovereignty.Identifier fuel_type = 4;
+  uint32 fuel_consumption_per_hour = 5;
+  uint32 fuel_startup_cost = 6;
+  string mutually_exclusive_group = 7;
+  uint64 power_produced = 8;
+  uint64 workforce_produced = 9;
+}
+
+message Attributes {
+  .eve_public.sovereignty.hub.upgrade.Definition definition = 1;
+  int32 power_state = 2;
+}
+
+message HubUpgrades {
+  message Upgrade {
+    .eve_public.sovereignty.hub.upgrade.Identifier identifier = 1;
+    .eve_public.sovereignty.hub.upgrade.Attributes attributes = 2;
+  }
+  .eve_public.sovereignty.hub.Identifier hub = 1;
+  repeated .eve_public.sovereignty.hub.upgrade.HubUpgrades.Upgrade upgrades = 2;
+  .google.protobuf.Timestamp last_updated = 3;
+}

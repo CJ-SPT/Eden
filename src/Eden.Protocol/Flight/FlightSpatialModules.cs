@@ -6,6 +6,10 @@ namespace Eden.Protocol.Flight;
 
 internal sealed partial class FlightSession
 {
+    private bool EntosisActive => entosis?.TravelLocked(Pilot.ShipId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) == true;
+
+    internal void RefreshEntosis() => ApplyFlightProperties();
+
     private long _cloakGraceUntil;
     internal bool CanActivatePropulsion =>
         CanUseSelfModules && !InWarp && (!Cloaked || clock.GetUtcNow().UtcDateTime.ToFileTimeUtc() < _cloakGraceUntil);

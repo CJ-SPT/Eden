@@ -1,0 +1,52 @@
+syntax = "proto3";
+package eve_public.sovereignty.hub.upgrade.api;
+option csharp_namespace = "Eden.Protocol.Gateway.Sovereignty.UpgradeApi";
+
+// Wire projection from build 3662168 eve_public/sovereignty/hub/upgrade/api/requests.proto.
+import "sovereignty_hub_hub.proto";
+import "sovereignty_hub_upgrade_upgrade.proto";
+import "sovereignty_identifiers.proto";
+
+message ProcessConfigurationRequest {
+  message UpgradeConfiguration {
+    .eden.gateway.sovereignty.Identifier upgrade_type = 1;
+    bool online = 2;
+  }
+  repeated .eden.gateway.sovereignty.Identifier new_upgrades = 1;
+  repeated .eve_public.sovereignty.hub.upgrade.api.ProcessConfigurationRequest.UpgradeConfiguration configuration = 2;
+  .eve_public.sovereignty.hub.Identifier hub = 3;
+}
+
+message ProcessConfigurationResponse {
+  .eve_public.sovereignty.hub.upgrade.HubUpgrades hub_upgrades = 1;
+}
+
+message UninstallRequest {
+  .eve_public.sovereignty.hub.upgrade.Identifier upgrade = 1;
+}
+
+message UninstallResponse {
+}
+
+message GetHubUpgradesRequest {
+  .eve_public.sovereignty.hub.Identifier hub = 1;
+}
+
+message GetHubUpgradesResponse {
+  .eve_public.sovereignty.hub.upgrade.HubUpgrades hub_upgrades = 1;
+}
+
+message GetRequest {
+  .eve_public.sovereignty.hub.upgrade.Identifier upgrade = 1;
+}
+
+message GetResponse {
+  .eve_public.sovereignty.hub.upgrade.Attributes attributes = 1;
+}
+
+message GetDefinitionsRequest {
+}
+
+message GetDefinitionsResponse {
+  repeated .eve_public.sovereignty.hub.upgrade.Definition definitions = 1;
+}

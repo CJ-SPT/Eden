@@ -82,6 +82,22 @@ internal sealed record MissileSlimItem(MissileContact Missile) : SlimItem
 
 internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
 {
+    // Build 3662168 entosisController.NEUTRAL uses inventorycommon.const.ownerSystem.
+    private const int NeutralEntosisDefender = 1;
+
+    private static object?[] TerritoryScore(Eden.Gameplay.Sovereignty.TerritoryProgress progress, int defender)
+    {
+        int controller = progress.Value < 0 ? Eden.Gameplay.Sovereignty.SovereigntyWarfareRules.Attackers : defender;
+        double rate = progress.Value < 0 ? -progress.Rate : progress.Rate;
+        return
+        [
+            controller,
+            progress.ScoringTeam,
+            new object?[] { Math.Abs(progress.Value), progress.UpdatedAt, rate, progress.Blocked },
+            defender,
+        ];
+    }
+
     public override object ToBlue()
     {
         var fields = Fields(Body.Id, Body.TypeId, Body.OwnerId, Body.GroupId, Body.CategoryId);
@@ -103,6 +119,55 @@ internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
             fields["hasCore"] = structure.HasCore;
             // Native dunRotation is expressed in degrees; deployment yaw is saved in radians.
             fields["dunRotation"] = new object?[] { structure.Yaw * 180 / Math.PI, 0d, 0d };
+        }
+        if (Body.Skyhook is { } skyhook)
+        {
+            fields["planetID"] = skyhook.PlanetId;
+            fields["allianceID"] = skyhook.AllianceId == 0 ? null : skyhook.AllianceId;
+            // Pinned orbitalSkyhook.OnSlimItemUpdated reads an orbital state, not the Upwell enum.
+            fields["skyhook_state"] = Eden.Gameplay.Sovereignty.SovereigntyResourceRules.SkyhookShieldVulnerableState;
+            fields["component_activate"] = new object?[] { skyhook.Active, skyhook.Active ? null : skyhook.OnlineAt };
+        }
+        if (Body.Sovereignty is { } hub)
+        {
+            fields["allianceID"] = hub.Claim?.AllianceId;
+            fields["claimTime"] = hub.Claim?.ClaimedAt;
+            fields["entosis_score"] = new object?[]
+            {
+                hub.Capture.ControllingAllianceId,
+                hub.Capture.ScoringAllianceId,
+                new object?[]
+                {
+                    (double)hub.Capture.ProgressTicks / hub.CaptureDuration,
+                    hub.Capture.UpdatedAt,
+                    (double)hub.Capture.Rate,
+                    hub.Capture.Blocked,
+                },
+                NeutralEntosisDefender,
+            };
+        }
+        if (Body.Sovereignty?.Conflict is { } conflict)
+        {
+            fields["entosis_score"] =
+                conflict.Phase == Eden.Gameplay.Sovereignty.SovereigntyPhase.Secure
+                    ? TerritoryScore(conflict.Capture, conflict.DefenderAllianceId)
+                    : null;
+        }
+        if (Body.CommandNode is { } node)
+        {
+            fields["allianceID"] = node.AllianceId;
+            fields["entosis_score"] = TerritoryScore(node.Capture, node.AllianceId);
+            fields["campaign_sourceInfo"] = new object?[]
+            {
+                node.SourceSystemId,
+                Eden.Gameplay.Sovereignty.SovereigntyWarfareRules.HubDefenseEvent,
+                node.HubId,
+                node.AllianceId,
+            };
+        }
+        else if (Body.Sovereignty is null && Body.GroupId == Eden.Gameplay.Sovereignty.SovereigntyRules.HubGroupId)
+        {
+            fields["entosis_score"] = null;
         }
         if (Body.Wormhole is { } wormhole)
         {

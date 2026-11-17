@@ -17,7 +17,8 @@ internal sealed record EconomyExplorationSite(
     long? ReplaceAt,
     long? ResponseAt,
     bool ResponseSpawned,
-    bool Detonated
+    bool Detonated,
+    int SovereigntySlot
 );
 
 internal sealed partial class ResidentEconomy
@@ -41,7 +42,8 @@ internal sealed partial class ResidentEconomy
                         row.ReplaceAt,
                         row.ResponseAt,
                         row.ResponseSpawned,
-                        row.Detonated
+                        row.Detonated,
+                        row.SovereigntySlot
                     ),
                 state => new SavedExplorationSite
                 {
@@ -57,9 +59,10 @@ internal sealed partial class ResidentEconomy
                     ResponseAt = state.ResponseAt,
                     ResponseSpawned = state.ResponseSpawned,
                     Detonated = state.Detonated,
+                    SovereigntySlot = state.SovereigntySlot,
                 },
                 ProjectExplorationSites,
-                "Id,SystemId,Kind,DungeonId,X,Y,Z,ExpiresAt,ReplaceAt,ResponseAt,ResponseSpawned,Detonated",
+                "Id,SystemId,Kind,DungeonId,X,Y,Z,ExpiresAt,ReplaceAt,ResponseAt,ResponseSpawned,Detonated,SovereigntySlot",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -73,10 +76,11 @@ internal sealed partial class ResidentEconomy
                         reader.IsDBNull(9) ? null : reader.GetInt64(9),
                         reader.IsDBNull(10) ? null : reader.GetInt64(10),
                         reader.GetBoolean(11),
-                        reader.GetBoolean(12)
+                        reader.GetBoolean(12),
+                        reader.GetInt32(13)
                     ),
                 state => new(state.Id),
-                indexes: [new("SystemId", row => row.SystemId)],
+                indexes: [new("SystemId", row => row.SystemId), new("SovereigntySlot", row => row.SovereigntySlot)],
                 primaryColumn: "Id"
             )
         );
@@ -95,14 +99,14 @@ internal sealed partial class ResidentEconomy
             world.Database.ExecuteSql(
                 $"""
                 INSERT INTO WorldExplorationSite(
-                    Id,SystemId,Kind,DungeonId,X,Y,Z,ExpiresAt,ReplaceAt,ResponseAt,ResponseSpawned,Detonated)
+                    Id,SystemId,Kind,DungeonId,X,Y,Z,ExpiresAt,ReplaceAt,ResponseAt,ResponseSpawned,Detonated,SovereigntySlot)
                 SELECT json_extract(value,'$.Id'),json_extract(value,'$.SystemId'),json_extract(value,'$.Kind'),
                     json_extract(value,'$.DungeonId'),json_extract(value,'$.X'),json_extract(value,'$.Y'),json_extract(value,'$.Z'),
                     json_extract(value,'$.ExpiresAt'),json_extract(value,'$.ReplaceAt'),json_extract(value,'$.ResponseAt'),
-                    json_extract(value,'$.ResponseSpawned'),json_extract(value,'$.Detonated')
+                    json_extract(value,'$.ResponseSpawned'),json_extract(value,'$.Detonated'),json_extract(value,'$.SovereigntySlot')
                 FROM json_each({values}) WHERE 1
                 ON CONFLICT(Id) DO UPDATE SET ReplaceAt=excluded.ReplaceAt,ResponseAt=excluded.ResponseAt,
-                    ResponseSpawned=excluded.ResponseSpawned,Detonated=excluded.Detonated
+                    ResponseSpawned=excluded.ResponseSpawned,Detonated=excluded.Detonated,SovereigntySlot=excluded.SovereigntySlot
                 """
             );
         }

@@ -110,7 +110,10 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
     private readonly ResidentSnapshot<(int System, MiningFamily Family, long Catalog), MiningSiteView> _miningSites = new(
         "resident.miningSites",
         "WorldMiningSite",
-        "WorldSleeperSite"
+        "WorldSleeperSite",
+        "WorldSovereigntyUpgrade",
+        "WorldSovereigntyClaim",
+        "WorldSovereigntyMiningLink"
     );
 
     private readonly ResidentSnapshot<int, JetcanView> _jetcans = new("resident.jetcans", "WorldJetcan", "WorldPilotSecurity");

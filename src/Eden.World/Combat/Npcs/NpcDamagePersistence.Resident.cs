@@ -105,6 +105,20 @@ internal static partial class NpcDamagePersistence
                 Eden.World.Exploration.AbyssalStore.Killed(world, catalog, npc, pilot, now);
                 return new(new(npc.Id, defense, result.Remaining), result.Applied, true, null);
             }
+            if (
+                npc.Role == NpcRole.Pirate
+                && catalog.RequireItem(npc.TypeId).GroupId
+                    is not (NpcEncounterDefinitions.SentryGroup or NpcEncounterDefinitions.OverseerSentryGroup)
+            )
+            {
+                Eden.World.Sovereignty.SovereigntyDevelopmentPersistence.Record(
+                    world,
+                    npc.SystemId,
+                    Eden.Gameplay.Sovereignty.SovereigntyActivityKind.Military,
+                    1,
+                    now
+                );
+            }
             NpcPopulationSeeder.RecordKill(world, npc, now);
             Eden.World.Exploration.CombatAnomalyStore.Killed(world, catalog, npc, now, pilot.Id);
             Eden.World.Agents.PilotMissionStore.Killed(world, catalog, npc, now);

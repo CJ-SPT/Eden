@@ -16,19 +16,34 @@ public sealed class GatewayRequests(
     TimeProvider clock,
     ICelestialResourceDirectory celestialResources,
     ICharacterDirectory characters,
-    IPlayerCorporations corporations
+    IPlayerCorporations corporations,
+    Eden.Gameplay.Sovereignty.ISovereigntyResources? sovereignty = null,
+    Eden.Protocol.Sovereignty.SovereigntyGatewayUpdates? sovereigntyUpdates = null
 )
 {
     private readonly ByteString _instanceId = ByteString.CopyFrom(Guid.NewGuid().ToByteArray());
     private const string PersonalPlans = "eve_public.character.skill.plan.";
     private const string FreelanceProjects = "eve_public.freelance.project.api.";
 
-    public Response Handle(Request request)
+    public Response Handle(Request request, long? authenticatedAccount = null)
     {
         string type = Any.GetTypeName(request.Payload?.TypeUrl ?? "");
         var payload = request.Payload?.Value ?? ByteString.Empty;
         var reply =
-            CorporationPaletteRequests.Read(type, payload, request.AuthoritativeContext, characters, corporations)
+            (
+                sovereignty is null
+                    ? null
+                    : SovereigntyResourceRequests.Read(
+                        type,
+                        payload,
+                        request.AuthoritativeContext,
+                        authenticatedAccount,
+                        sovereignty,
+                        celestialResources,
+                        sovereigntyUpdates
+                    )
+            )
+            ?? CorporationPaletteRequests.Read(type, payload, request.AuthoritativeContext, characters, corporations)
             ?? CelestialResourceRequests.Read(type, payload, celestialResources);
         IMessage? result =
             reply?.Payload
@@ -84,4 +99,8 @@ public sealed class GatewayRequests(
         }
         return response;
     }
+
+    public IReadOnlyList<Notice> SovereigntyNotices(long accountId) => sovereigntyUpdates?.Notices(accountId) ?? [];
+
+    public void ForgetSovereigntyNotices(long accountId) => sovereigntyUpdates?.Forget(accountId);
 }

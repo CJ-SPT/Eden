@@ -2,6 +2,8 @@
 
 [Area weapons and EWAR](protocol/area-weapons.md) records burst jammers, projectors, bombs, defenders and heavy grapplers.
 
+[Sovereignty](protocol/sovereignty.md) records deployment, Entosis capture, vulnerability windows, campaigns, activity indices, capitals, live ADM, Skyhook resources and upgrades.
+
 [Alliances](protocol/alliances.md) records resident alliance implementation, pinned client contracts and milestone validation.
 
 [Interdiction](protocol/interdiction.md) records launched bubbles, focused HIC scripts, nullifiers and resident checkpoint persistence.

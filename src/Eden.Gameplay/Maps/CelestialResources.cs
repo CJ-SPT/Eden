@@ -10,7 +10,12 @@ public sealed record PlanetReagentResource(
 
 public sealed record PlanetResourceDefinition(long PlanetId, long Power, long Workforce, PlanetReagentResource? Reagent);
 
-public sealed record CelestialResourceSnapshot(string Revision, IReadOnlyList<PlanetResourceDefinition> Planets);
+public sealed record StarResourceDefinition(long StarId, long Power);
+
+public sealed record CelestialResourceSnapshot(string Revision, IReadOnlyList<PlanetResourceDefinition> Planets)
+{
+    public IReadOnlyList<StarResourceDefinition> Stars { get; init; } = [];
+}
 
 public interface ICelestialResourceDirectory
 {

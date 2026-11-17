@@ -14,7 +14,7 @@ namespace Eden.World.Exploration;
 
 internal sealed partial class CombatAnomalyStore
 {
-    private static void Invalidate(WorldAction world, int system) =>
+    internal static void Invalidate(WorldAction world, int system) =>
         world.AfterCommit(() => s_versions.AddOrUpdate((world.WorldPath, system), 1, (_, old) => old + 1));
 
     internal static void Killed(WorldAction world, CatalogDbContext catalog, WorldNpc npc, long now, long pilot = 0)

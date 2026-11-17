@@ -49,7 +49,6 @@ public sealed class StructureTests
             35840,
             81826,
             81080,
-            32458,
         }.Select(id => new object[] { id });
 
     internal sealed class Fixture : IDisposable
@@ -120,9 +119,18 @@ public sealed class StructureTests
 
     [Theory]
     [MemberData(nameof(Hulls))]
-    public void EveryPublishedUpwellHullDeploysWithNativeIdentityAndReopensWithoutDuplicatingInventory(int typeId)
+    public void PublishedHullsUseTheirDeploymentLifecycleWithoutDuplicatingInventory(int typeId)
     {
         using Fixture f = new();
+        if (typeId == Eden.Gameplay.Sovereignty.SovereigntyResourceRules.SkyhookTypeId)
+        {
+            long item = f.Item(typeId);
+            Assert.Throws<InvalidDataException>(() => f.Structures.Deploy(f.PilotId, new(item, Fixture.Point, 0, "Skyhook")));
+            using WorldDbContext unchanged = new(f.Db.Path);
+            Assert.Equal(1, unchanged.Set<OwnedItem>().Find(item)!.Quantity);
+            Assert.Empty(unchanged.Set<SavedStructure>());
+            return;
+        }
         var structure = f.Deploy(typeId);
         Assert.True(structure.Id > StructureRules.FirstStructureId);
         Assert.NotEqual(f.ShipId, structure.Id);
@@ -165,6 +173,38 @@ public sealed class StructureTests
                 );
             }
         }
+    }
+
+    [Fact]
+    public void LegacySkyhooksRemainDecommissionableWithoutBecomingResourceHarvesters()
+    {
+        using Fixture f = new();
+        const long legacyId = StructureRules.FirstStructureId + 1;
+        using (WorldDbContext world = new(f.Db.Path))
+        {
+            world.Add(
+                new SavedStructure
+                {
+                    Id = legacyId,
+                    TypeId = Eden.Gameplay.Sovereignty.SovereigntyResourceRules.SkyhookTypeId,
+                    CorporationId = f.CorporationId,
+                    SystemId = Fixture.SystemId,
+                    State = StructureState.ShieldVulnerable,
+                    DeployedAt = f.Clock.Now,
+                    StateStartedAt = f.Clock.Now,
+                    X = Fixture.Point.X,
+                    Y = Fixture.Point.Y,
+                    Z = Fixture.Point.Z,
+                }
+            );
+            world.SaveChanges();
+        }
+        Assert.NotNull(f.Structures.Unanchor(f.PilotId, legacyId).Structure.UnanchorAt);
+        f.Clock.AdvanceWallTime(TimeSpan.FromDays(7));
+        Assert.Equal(StructureState.Unanchored, f.Structures.Read(f.PilotId, legacyId)!.State);
+        using WorldDbContext saved = new(f.Db.Path);
+        Assert.Empty(saved.Set<Eden.Data.World.Sovereignty.SavedSovereigntySkyhook>());
+        Assert.Single(saved.Set<SavedStructure>());
     }
 
     [Fact]

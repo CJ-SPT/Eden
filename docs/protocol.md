@@ -671,6 +671,11 @@ reuse, exact health deadlines, scoped invalidation and matched frame/checkpoint 
 
 - [Pilot services subscription and checkout, November 8, 2026](protocol/characters.md#pilot-services-subscription-and-checkout-november-8-2026)
 
+- [Sovereignty plan and resident foundation, November 16, 2026](protocol/sovereignty.md)
+- [Neutral hub deployment and Entosis capture, November 16, 2026](protocol/sovereignty.md#neutral-hub-deployment-and-entosis-capture--november-16-2026)
+- [Sovereignty conflict and command nodes, November 16, 2026](protocol/sovereignty.md#sovereignty-conflict-and-command-nodes--november-16-2026)
+- [Sovereignty activity and capitals, November 16, 2026](protocol/sovereignty.md#sovereignty-activity-and-capitals--november-16-2026)
+- [Sovereignty resources and upgrades, November 16, 2026](protocol/sovereignty.md#sovereignty-resources-and-upgrades--november-16-2026)
 - [Sovereignty information tab, November 8, 2026](protocol/navigation.md#sovereignty-information-tab-november-8-2026)
 
 - [Null-security system information, November 8, 2026](protocol/navigation.md#null-security-system-information-november-8-2026)

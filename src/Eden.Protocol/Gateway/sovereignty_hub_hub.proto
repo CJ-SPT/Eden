@@ -1,0 +1,9 @@
+syntax = "proto3";
+package eve_public.sovereignty.hub;
+option csharp_namespace = "Eden.Protocol.Gateway.Sovereignty.Hub";
+
+// Wire projection from build 3662168 eve_public/sovereignty/hub/hub.proto.
+
+message Identifier {
+  uint64 sequential = 1;
+}

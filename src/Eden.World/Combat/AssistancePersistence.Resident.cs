@@ -30,6 +30,7 @@ internal static partial class AssistancePersistence
 
     internal static AssistanceDecision Check(WorldAction world, CatalogDbContext catalog, Pilot source, Pilot target, long now)
     {
+        Eden.World.Sovereignty.EntosisPersistence.RequireAssistance(world, target.ActiveShipId, now);
         var timers = world.Set<SavedCrimewatch>().Find(target.Id)?.Timers() ?? CrimewatchTimers.Empty;
         int system = CrimewatchPersistence.System(catalog, source.ActiveShip);
         return AssistanceRules.Decide(

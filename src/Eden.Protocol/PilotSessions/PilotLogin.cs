@@ -59,6 +59,7 @@ public sealed class PilotLogin(
         }
 
         authenticated?.Invoke(accountId);
+        using var gatewayAccess = identity.OpenGatewayAccess(credentials.Ticket, accountId);
         long clientId = Interlocked.Increment(ref s_nextClientId);
         await packets.WriteAsync(new LoginSession(accountId, clientId, identity.ReadRoles(accountId)));
         (diagnostics?.Information ?? report)($"Authenticated account {accountId}; session {clientId} established.");

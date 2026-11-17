@@ -17,10 +17,11 @@ using Eden.World.Storage;
 namespace Eden.World.Structures;
 
 [Injectable]
-internal sealed partial class PilotStructureStore(WorldDatabase database, TimeProvider clock)
-    : IPilotStructures,
-        IStructureContacts,
-        IMoonExtractions
+internal sealed partial class PilotStructureStore(
+    WorldDatabase database,
+    TimeProvider clock,
+    Eden.Gameplay.Sovereignty.IPilotEntosis? entosis = null
+) : IPilotStructures, IStructureContacts, IMoonExtractions
 {
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
@@ -115,6 +116,17 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
 
     private static Pilot Manage(WorldAction world, SavedStructure structure, long pilotId)
     {
+        if (
+            (
+                structure.TypeId == Eden.Gameplay.Sovereignty.EntosisRules.HubTypeId
+                || structure.TypeId == Eden.Gameplay.Sovereignty.SovereigntyResourceRules.SkyhookTypeId
+                    && world.Set<Eden.Data.World.Sovereignty.SavedSovereigntySkyhook>().Find(structure.Id) is not null
+            )
+            && structure.State != StructureState.Unanchored
+        )
+        {
+            throw new InvalidDataException("Sovereignty hubs use their own management and territorial-conflict lifecycle.");
+        }
         var pilot = Pilot(world, pilotId);
         var corporation = world.Set<SavedCorporation>().Find(structure.CorporationId);
         if (
@@ -348,6 +360,10 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
                     throw new InvalidDataException("The packaged structure must be in your active ship's cargo.");
                 }
                 var profile = StructureCatalog.Require(catalog, item.TypeId);
+                if (profile.Family is StructureFamily.SovereigntyHub or StructureFamily.Skyhook)
+                {
+                    throw new InvalidDataException("Launch sovereignty hubs and Orbital Skyhooks through their dedicated Deploy action.");
+                }
                 int system = position.SystemId ?? catalog.RequireStation(ship.StationId).SolarSystemId;
                 double security = catalog.Definitions.SystemSecurity.GetValueOrDefault(system);
                 if (
@@ -660,10 +676,16 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
 
     public IReadOnlyList<StaticSpaceObject> Contacts(int systemId)
     {
+        if (entosis?.Available == true)
+        {
+            entosis.Advance(systemId, Now);
+        }
         var reads = Eden.World.Runtime.LiveReadModels.Find(database.Path);
-        return (
+        var contacts = (
             reads?.Structures(systemId, database.Catalog.Identity.Generation, Now, () => LoadContacts(systemId)) ?? LoadContacts(systemId)
         ).Contacts;
+        var nodes = entosis?.Available == true ? entosis.CommandNodes(systemId) : [];
+        return nodes.Count == 0 ? contacts : contacts.Concat(nodes).ToArray();
     }
 
     private Eden.World.Runtime.StructureContactView LoadContacts(int systemId) =>
@@ -702,6 +724,18 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
                         {
                             Yaw = s.Yaw,
                         },
+                        Skyhook =
+                            world is EconomyTransaction
+                            && s.TypeId == Eden.Gameplay.Sovereignty.SovereigntyResourceRules.SkyhookTypeId
+                            && world.Set<Eden.Data.World.Sovereignty.SavedSovereigntySkyhook>().Find(s.Id) is { } skyhook
+                                ? Eden.World.Sovereignty.SovereigntyResourceStore.SkyhookView(world, catalog, skyhook, Now)
+                                : null,
+                        Sovereignty =
+                            s.TypeId == Eden.Gameplay.Sovereignty.EntosisRules.HubTypeId
+                            && Eden.World.Sovereignty.PilotEntosisStore.Snapshot(world, systemId, Now) is { } hub
+                            && hub.HubId == s.Id
+                                ? hub
+                                : null,
                     })
                     .ToArray();
                 long deadline = structures
@@ -715,6 +749,19 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
                 long? nextFracture = extractions.Where(e => !e.Ended).Select(e => (long?)e.AutoFractureAt).Min();
                 long? nextExpiry = extractions.Select(e => e.FieldExpiresAt).Min();
                 deadline = Math.Min(deadline, Math.Min(nextFracture ?? long.MaxValue, nextExpiry ?? long.MaxValue));
+                if (world is EconomyTransaction)
+                {
+                    deadline = Math.Min(
+                        deadline,
+                        world
+                            .Filter<Eden.Data.World.Sovereignty.SavedSovereigntySkyhook>(row => row.SystemId == systemId)
+                            .Select(row => row.OnlineAt)
+                            .Where(at => at > Now)
+                            .AsEnumerable()
+                            .DefaultIfEmpty(long.MaxValue)
+                            .Min()
+                    );
+                }
                 return new Eden.World.Runtime.StructureContactView(
                     Array.AsReadOnly(contacts),
                     deadline,

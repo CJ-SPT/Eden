@@ -70,6 +70,7 @@
     <EmbeddedResource Include="Fixtures/WormholeCatalog.json" />
     <EmbeddedResource Include="Fixtures/CommandBurstCatalog.json" />
     <EmbeddedResource Include="Fixtures/InterdictionCatalog.json" />
+    <EmbeddedResource Include="Fixtures/SovereigntyCatalog.json" />
     <EmbeddedResource Include="Fixtures/RigCatalog.json" />
     <EmbeddedResource Include="Fixtures/PlayerEwarCatalog.json" />
     <EmbeddedResource Include="Fixtures/RemoteRepairCatalog.json" />

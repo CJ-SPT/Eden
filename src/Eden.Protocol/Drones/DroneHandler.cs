@@ -15,7 +15,8 @@ internal sealed class DroneHandler(
     IPilotDrones drones,
     TimeProvider clock,
     TargetingHandler targeting,
-    CharacterInteractionHistoryHandler? history = null
+    CharacterInteractionHistoryHandler? history = null,
+    Eden.Protocol.Sovereignty.EntosisHandler? entosis = null
 ) : ISelectedPilotCallHandler
 {
     private long _nextTick;
@@ -94,7 +95,10 @@ internal sealed class DroneHandler(
             }
             if (launch)
             {
-                if (args is not [List<object?> items, var behalf, bool] || behalf is not null && !Equals(behalf, context.Pilot.PilotId))
+                if (
+                    args is not [List<object?> items, var behalf, bool]
+                    || behalf is not null && !Equals(behalf, context.Pilot.PilotId) && !Equals(behalf, (long)context.Pilot.CorpId)
+                )
                 {
                     return new PilotCallResult.Failure("Choose drones from your own ship's drone bay.");
                 }
@@ -105,6 +109,14 @@ internal sealed class DroneHandler(
                             : throw new InvalidDataException("Invalid drone launch selection.")
                     )
                     .ToArray();
+                if (entosis?.Launch(context, requests) is { } sovereigntyLaunch)
+                {
+                    return sovereigntyLaunch;
+                }
+                if (behalf is not null && !Equals(behalf, context.Pilot.PilotId))
+                {
+                    return new PilotCallResult.Failure("Launch drones for your selected pilot.");
+                }
                 var result = drones.Launch(context.Pilot.PilotId, requests, now);
                 Notify(context, result.Changes);
                 context.Flight.RefreshDrones();

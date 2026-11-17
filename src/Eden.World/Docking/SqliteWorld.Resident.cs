@@ -141,6 +141,7 @@ public sealed partial class SqliteWorld
 
     internal DockedPilot Dock(WorldAction world, CatalogDbContext catalog, long pilotId, long shipId, int stationId)
     {
+        Eden.World.Sovereignty.EntosisPersistence.RequireTravel(world, shipId, _clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         var pilot = world.Pilots.Single(p => p.Id == pilotId);
         var destination = catalog.FindStation(stationId);
         if (pilot.ActiveShipId != shipId || pilot.ActiveShip.Position is not { } position || destination is null)

@@ -38,11 +38,24 @@ internal static class PassiveCatalogFixture
         string RegionName
     );
 
+    private sealed record CelestialDefinition(
+        int Id,
+        int SolarSystemId,
+        int TypeId,
+        int GroupId,
+        double? Radius,
+        int? OrbitId,
+        double X,
+        double Y,
+        double Z
+    );
+
     private sealed record Fixture(
         int Build,
         IReadOnlyList<TypeDefinition> Types,
         IReadOnlyList<Record> Records,
-        IReadOnlyList<SystemDefinition>? Systems = null
+        IReadOnlyList<SystemDefinition>? Systems = null,
+        IReadOnlyList<CelestialDefinition>? Celestials = null
     );
 
     private static readonly ConcurrentDictionary<string, Lazy<Fixture>> Fixtures = new(StringComparer.Ordinal);
@@ -111,6 +124,8 @@ internal static class PassiveCatalogFixture
         Load(path, "CapacitorModuleCatalog.json", types);
 
     internal static void LoadInterdiction(string path) => Load(path, "InterdictionCatalog.json", null);
+
+    internal static void LoadSovereignty(string path) => Load(path, "SovereigntyCatalog.json", null);
 
     internal static void LoadCommandBursts(string path) => Load(path, "CommandBurstCatalog.json", null);
 
@@ -274,6 +289,15 @@ internal static class PassiveCatalogFixture
                 $"INSERT OR IGNORE INTO Constellation VALUES ({system.ConstellationId},{system.ConstellationName},{system.RegionId})"
             );
             catalog.Database.ExecuteSql($"INSERT OR IGNORE INTO SolarSystem VALUES ({system.Id},{system.Name},{system.ConstellationId})");
+        }
+        foreach (var body in data.Celestials ?? [])
+        {
+            catalog.Database.ExecuteSql(
+                $"""
+                INSERT OR REPLACE INTO Celestial(Id,SolarSystemId,TypeId,GroupId,Radius,OrbitId,X,Y,Z)
+                VALUES ({body.Id},{body.SolarSystemId},{body.TypeId},{body.GroupId},{body.Radius},{body.OrbitId},{body.X},{body.Y},{body.Z})
+                """
+            );
         }
         foreach (var record in data.Records)
         {

@@ -26,7 +26,7 @@ public sealed class MapStartupTests
     [InlineData(true)]
     public void MapStartupPreservesNativeContainerShapesAndSelectionGating(bool inSpace)
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         using var scope = world.Services.CreateScope();
         var savedPilot = world.Store.FindPilot(1000001)!;
         var home = world.Services.GetRequiredService<IPilotHomeStation>().Read(savedPilot.PilotId);
@@ -78,7 +78,7 @@ public sealed class MapStartupTests
     [Fact]
     public async Task NativeMapInformationPacketsIncludeInterferenceWithoutDestinationErrors()
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         var home = world.Services.GetRequiredService<IPilotHomeStation>().Read(world.Store.FindPilot(1000001)!.PilotId);
         Queue<object?> input = new(
             new[] { PilotServicesTests.Request("charUnboundMgr", "SelectCharacterID", [90000001L]) }

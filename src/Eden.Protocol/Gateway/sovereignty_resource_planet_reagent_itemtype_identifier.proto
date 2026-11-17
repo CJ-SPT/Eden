@@ -1,0 +1,9 @@
+syntax = "proto3";
+package eve_public.sovereignty.resource.planet.reagent.itemtype;
+option csharp_namespace = "Eden.Protocol.Gateway.Sovereignty.ResourcePlanetReagentItemtype";
+
+// Wire projection from build 3662168 eve_public/sovereignty/resource/planet/reagent/itemtype/identifier.proto.
+
+message Identifier {
+  uint64 sequential = 1;
+}

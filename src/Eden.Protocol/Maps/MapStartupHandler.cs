@@ -5,7 +5,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Maps;
 
 [Injectable]
-internal sealed class MapStartupHandler : ISelectedPilotCallHandler
+internal sealed class MapStartupHandler(Eden.Gameplay.Sovereignty.IPilotEntosis entosis) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -44,7 +44,7 @@ internal sealed class MapStartupHandler : ISelectedPilotCallHandler
         {
             "solarsystemInterferenceMgr" when method == "GetLocalInterferenceState" => PilotCallResult.None,
             "structureDirectory" => new EmptyJumpBridgeAccessReply(),
-            "stationSvc" => BlueEmpty.List,
+            "stationSvc" => new Eden.Protocol.Sovereignty.AllianceSystemsReply(entosis.Claims()),
             _ => BlueEmpty.IndexedDictionary,
         };
     }

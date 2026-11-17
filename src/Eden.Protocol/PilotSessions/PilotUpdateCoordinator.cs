@@ -95,7 +95,10 @@ internal sealed class PilotUpdateCoordinator(
     AutoMiningHandler? autoMining = null,
     InterdictionHandler? interdiction = null,
     AreaWeaponHandler? areaWeapons = null,
-    Eden.Protocol.Structures.StructureControlHandler? structureControl = null
+    Eden.Protocol.Structures.StructureControlHandler? structureControl = null,
+    Eden.Protocol.Sovereignty.EntosisHandler? entosis = null,
+    Eden.Protocol.Sovereignty.SovereigntyMonitor? sovereignty = null,
+    Eden.Protocol.Sovereignty.SovereigntyGatewayUpdates? sovereigntyGateway = null
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -165,6 +168,7 @@ internal sealed class PilotUpdateCoordinator(
 
     public void Leave(PilotCallContext context)
     {
+        sovereigntyGateway?.Forget(context.AccountId);
         ApplyPlayerDamage(context);
         context.ActiveFlight?.Checkpoint();
         context.ActiveFlight?.PrepareDisconnect();
@@ -214,6 +218,7 @@ internal sealed class PilotUpdateCoordinator(
         areaWeapons?.Cancel(context);
         commandBursts?.Cancel(context);
         interdiction?.Cancel(context);
+        entosis?.Cancel(context);
         missiles.Cancel(context);
         shields.Cancel(context);
         repairs.Cancel(context);
@@ -270,6 +275,7 @@ internal sealed class PilotUpdateCoordinator(
         {
             tackle.Advance(context);
             interdiction?.Advance(context);
+            entosis?.Advance(context);
         }
         autoMining?.CheckFlight(context);
         mining.Advance(context);
@@ -294,6 +300,8 @@ internal sealed class PilotUpdateCoordinator(
         overload.Advance(context);
         burnout.Advance(context);
         industry.Advance(context);
+        sovereignty?.Advance(context);
+        sovereigntyGateway?.Advance(context);
         using (SessionPerformance.Phase("update.npcCombat"))
         {
             npcCombat.Advance(context);

@@ -1,0 +1,8 @@
+syntax = "proto3";
+package eden.gateway.sovereignty;
+option csharp_namespace = "Eden.Protocol.Gateway.Sovereignty";
+
+// Positive sequential IDs use the same varint wire form in these native identifier projections.
+message Identifier {
+  uint64 sequential = 1;
+}

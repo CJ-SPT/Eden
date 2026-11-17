@@ -376,6 +376,16 @@ internal sealed partial class PilotMiningStore
             PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.Mined);
             PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.TotalMined, extracted + bonus);
         }
+        if (laser.Family != MiningFamily.Gas && !MissionMiningRules.IsDeposit(asteroid.Id))
+        {
+            Eden.World.Sovereignty.SovereigntyDevelopmentPersistence.Record(
+                world,
+                asteroid.SystemId,
+                Eden.Gameplay.Sovereignty.SovereigntyActivityKind.Industrial,
+                (extracted + bonus) * oreVolume,
+                now
+            );
+        }
         PersonalMiningLedgerStore.Record(world, pilot, asteroid, now, new(checked((long)extracted + bonus), bonus, collected.Residue));
         world.RemoveRange(world.Set<ModuleCooldown>().Where(c => c.ModuleId == moduleId && c.Kind == ModuleCooldownKind.Cycle));
         world.SaveChanges();

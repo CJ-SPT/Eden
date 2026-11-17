@@ -44,4 +44,10 @@ message Response {
 
 // The local gateway accepts the event stream and keeps notice subscribers connected.
 message Event {}
-message Notice {}
+message Notice {
+  google.protobuf.Timestamp dispatched = 1;
+  bytes uuid = 2;
+  string internal_origin = 3;
+  string tenant = 4;
+  google.protobuf.Any payload = 5;
+}

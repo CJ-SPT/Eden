@@ -1,0 +1,31 @@
+syntax = "proto3";
+package eve_public.sovereignty.hub.fuel.api;
+option csharp_namespace = "Eden.Protocol.Gateway.Sovereignty.FuelApi";
+
+// Wire projection from build 3662168 eve_public/sovereignty/hub/fuel/api/requests.proto.
+import "google/protobuf/timestamp.proto";
+import "sovereignty_hub_hub.proto";
+import "sovereignty_identifiers.proto";
+
+message GetRequest {
+  .eve_public.sovereignty.hub.Identifier hub = 1;
+}
+
+message GetResponse {
+  message Fuel {
+    .eden.gateway.sovereignty.Identifier fuel_type = 1;
+    uint32 amount = 2;
+    uint32 burned_per_hour = 3;
+  }
+  repeated .eve_public.sovereignty.hub.fuel.api.GetResponse.Fuel fuels = 1;
+  .google.protobuf.Timestamp last_updated = 2;
+}
+
+message AddRequest {
+  .eden.gateway.sovereignty.Identifier fuel_item = 1;
+  uint32 amount = 2;
+  .eve_public.sovereignty.hub.Identifier hub = 3;
+}
+
+message AddResponse {
+}

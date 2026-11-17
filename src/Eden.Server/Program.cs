@@ -292,6 +292,9 @@ internal static class Program
             var abyssalMaintenance = services.GetRequiredService<AbyssalMaintenance>();
             lifetime.OnStop(nameof(AbyssalMaintenance), abyssalMaintenance.Dispose);
             abyssalMaintenance.Start();
+            var sovereigntyMaintenance = services.GetRequiredService<SovereigntyMaintenance>();
+            lifetime.OnStop(nameof(SovereigntyMaintenance), sovereigntyMaintenance.Dispose);
+            sovereigntyMaintenance.Start();
             var corporationMaintenance = services.GetRequiredService<CorporationMaintenance>();
             lifetime.OnStop(nameof(CorporationMaintenance), corporationMaintenance.Dispose);
             corporationMaintenance.Start();
@@ -300,7 +303,11 @@ internal static class Program
             capsuleerMaintenance.Start();
             var population = services.GetRequiredService<CapsuleerPopulationMaintenance>();
             lifetime.OnStop(nameof(CapsuleerPopulationMaintenance), population.Dispose);
-            var gateway = LocalGateway.Create(services.GetRequiredService<GatewayRequests>(), options);
+            var gateway = LocalGateway.Create(
+                services.GetRequiredService<GatewayRequests>(),
+                options,
+                services.GetRequiredService<IGatewayAuthentication>()
+            );
             lifetime.OnStop("gateway", gateway.DisposeAsync);
             var api = LauncherApi.Create(
                 options,

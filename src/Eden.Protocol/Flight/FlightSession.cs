@@ -46,7 +46,8 @@ internal sealed partial class FlightSession(
     IDedComplexTravel? dedComplexes = null,
     ICooperativeFleets? fleets = null,
     IPilotWarpDrive? warpDrive = null,
-    IPilotInterdiction? interdiction = null
+    IPilotInterdiction? interdiction = null,
+    Eden.Gameplay.Sovereignty.IPilotEntosis? entosis = null
 ) : IDisposable
 {
     internal const int ArrivalDurationTicks = FlightTravel.ArrivalDurationTicks;
@@ -635,6 +636,10 @@ internal sealed partial class FlightSession(
     private void ApplyFlightProperties()
     {
         var properties = ModuleEffects.Flight;
+        if (entosis?.SpeedLimit(Pilot.ShipId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) is double limit)
+        {
+            properties = properties with { MaxSpeed = (float)Math.Min(properties.MaxSpeed, limit) };
+        }
         if (Pilot.Flight == properties)
         {
             return;
@@ -899,6 +904,10 @@ internal sealed partial class FlightSession(
         IReadOnlyList<StaticSpaceObject> destinationObjects
     )
     {
+        if (EntosisActive)
+        {
+            throw new InvalidDataException("Wait for the paid Entosis cycle to finish before translocating.");
+        }
         using (space.UseSystem(Pilot.SystemId))
         {
             bool wasWarping = _navigation.Warp is not null || _navigation.WarpDestination is not null;
@@ -1075,6 +1084,10 @@ internal sealed partial class FlightSession(
 
     public PilotCallResult StartJump(FlightCommand.Jump request, ISystemObjects systems, bool automatic = false)
     {
+        if (EntosisActive)
+        {
+            return new PilotCallResult.Failure("Wait for the paid Entosis cycle to finish before jumping.");
+        }
         Checkpoint();
         var departure = _travel.PrepareGate(
             new(Pilot, InBallpark, InWarp, _navigation.WarpDestination is not null),
@@ -1106,6 +1119,10 @@ internal sealed partial class FlightSession(
 
     internal void StartWormholeJump(long entrance, IWormholeTravel travel, ISystemObjects systems)
     {
+        if (EntosisActive)
+        {
+            throw new InvalidDataException("Wait for the paid Entosis cycle to finish before jumping.");
+        }
         Checkpoint();
         if (!CanUseSelfModules || InWarp || PreparingWarp || MicroJumpSpooling)
         {
@@ -1347,6 +1364,18 @@ internal sealed partial class FlightSession(
 
     private PilotCallResult ExecuteCommand(FlightCommand command)
     {
+        if (
+            EntosisActive
+            && command
+                is FlightCommand.WarpTo
+                    or FlightCommand.WarpToPoint
+                    or FlightCommand.Dock
+                    or FlightCommand.Jump
+                    or FlightCommand.ActivateAccelerationGate
+        )
+        {
+            return new PilotCallResult.Failure("Wait for the paid Entosis cycle to finish before travelling.");
+        }
         if (MicroJumpSpooling && command is not (FlightCommand.RefreshState or FlightCommand.Speed or FlightCommand.Stop))
         {
             return new PilotCallResult.Failure("Wait for the micro-jump spool to finish before navigating.");

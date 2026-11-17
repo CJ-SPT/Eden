@@ -10,7 +10,11 @@ namespace Eden.Protocol.Serialization;
 internal sealed record BlueInstance(string Name, object? State);
 
 // Outbound constructors for native data rows. Incoming packets can never invoke a constructor.
-internal sealed record BlueConstructor(string Name, object?[] Arguments, object? State = null);
+internal sealed record BlueConstructor(string Name, object?[] Arguments, object? State = null)
+{
+    internal const string SovereigntyClaimClass = "sovereignty.data_types.SovClaimInfo";
+    internal const string SovereigntyHubClass = "sovereignty.data_types.SovHubInfo";
+}
 
 internal sealed record BlueGlobal(string Name);
 
@@ -181,11 +185,25 @@ internal static class BlueMarshal
             if (
                 Read(depth + 1) is not object?[] { Length: 2 or 3 } pair
                 || pair[0] is not BlueGlobal global
-                || pair[1] is not object?[] { Length: 1 } args
+                || pair[1] is not object?[] args
                 || reader.ReadByte() != 45
             )
             {
                 throw new InvalidDataException("Unsupported Blue reduction.");
+            }
+            if (pair.Length == 2 && global.Name is BlueConstructor.SovereigntyClaimClass or BlueConstructor.SovereigntyHubClass)
+            {
+                int expected = global.Name == BlueConstructor.SovereigntyClaimClass ? 3 : 4;
+                if (args.Length != expected || args.Any(value => value is not null and not (long and >= 0)) || reader.ReadByte() != 45)
+                {
+                    throw new InvalidDataException("Invalid sovereignty data tuple.");
+                }
+                // Retain native data-object constructors as inert data; never invoke a global.
+                return new BlueConstructor(global.Name, args);
+            }
+            if (args.Length != 1)
+            {
+                throw new InvalidDataException("Unsupported Blue reduction arguments.");
             }
             // FittingSvc builds a defaultdict(set) with type IDs as keys and
             // sets of item IDs as values. The second iterator is key then value.

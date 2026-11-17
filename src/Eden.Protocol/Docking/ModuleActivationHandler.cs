@@ -43,7 +43,8 @@ internal sealed class ModuleActivationHandler(
     SmartbombHandler? smartbombs = null,
     CommandBurstHandler? commandBursts = null,
     InterdictionHandler? interdiction = null,
-    AreaWeaponHandler? areaWeapons = null
+    AreaWeaponHandler? areaWeapons = null,
+    Eden.Protocol.Sovereignty.EntosisHandler? entosis = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -59,6 +60,10 @@ internal sealed class ModuleActivationHandler(
             return PilotCallResult.Unsupported;
         }
         string effectName = BlueMarshal.Text(args[1]);
+        if (effectName == Eden.Protocol.Sovereignty.EntosisHandler.EffectName && keywords is { Count: > 0 })
+        {
+            return new PilotCallResult.Failure("Unexpected Entosis activation arguments.");
+        }
         bool offensive =
             CombatWireDefinitions.Handles(effectName)
             || effectName == MissileHandler.EffectName
@@ -95,6 +100,7 @@ internal sealed class ModuleActivationHandler(
         }
         var result = effectName switch
         {
+            Eden.Protocol.Sovereignty.EntosisHandler.EffectName => entosis?.Call(context, method, args) ?? PilotCallResult.Unsupported,
             var name when SpatialModuleHandler.Handles(name) => spatial?.Call(context, method, args) ?? PilotCallResult.Unsupported,
             Eden.Protocol.Exploration.HackingHandler.EffectName => hacking?.CallModule(context, method, args)
                 ?? PilotCallResult.Unsupported,

@@ -1,0 +1,71 @@
+syntax = "proto3";
+package eve_public.sovereignty.hub.workforce;
+option csharp_namespace = "Eden.Protocol.Gateway.Sovereignty.Workforce";
+
+// Wire projection from build 3662168 eve_public/sovereignty/hub/workforce/workforce.proto.
+import "sovereignty_identifiers.proto";
+
+message ImportConfiguration {
+  message Source {
+    .eden.gateway.sovereignty.Identifier source = 1;
+  }
+  repeated .eve_public.sovereignty.hub.workforce.ImportConfiguration.Source sources = 1;
+}
+
+message ImportState {
+  message Source {
+    .eden.gateway.sovereignty.Identifier source = 1;
+    uint64 amount = 2;
+  }
+  repeated .eve_public.sovereignty.hub.workforce.ImportState.Source sources = 1;
+}
+
+message ExportConfiguration {
+  .eden.gateway.sovereignty.Identifier destination = 1;
+  uint64 amount = 2;
+  oneof export_destination {
+    .eden.gateway.sovereignty.Identifier destination_system = 3;
+    bool no_destination = 4;
+  }
+}
+
+message ExportState {
+  message Connected {
+    .eden.gateway.sovereignty.Identifier destination_system = 1;
+    uint64 exported_quantity = 2;
+  }
+  message Disconnected {
+    uint64 local_reserve = 1;
+  }
+  .eden.gateway.sovereignty.Identifier destination = 1;
+  uint64 amount = 2;
+  oneof export_destination {
+    .eden.gateway.sovereignty.Identifier destination_system = 3;
+    bool no_destination = 4;
+  }
+  oneof exporting {
+    .eve_public.sovereignty.hub.workforce.ExportState.Connected connected = 5;
+    .eve_public.sovereignty.hub.workforce.ExportState.Disconnected disconnected = 6;
+  }
+}
+
+message Transit {
+}
+
+message Configuration {
+  oneof mode {
+    bool inactive = 1;
+    .eve_public.sovereignty.hub.workforce.ImportConfiguration import_settings = 2;
+    .eve_public.sovereignty.hub.workforce.ExportConfiguration export_settings = 3;
+    bool transit = 4;
+  }
+}
+
+message State {
+  oneof mode {
+    bool inactive = 1;
+    .eve_public.sovereignty.hub.workforce.ImportState import_state = 2;
+    .eve_public.sovereignty.hub.workforce.ExportState export_state = 3;
+    .eve_public.sovereignty.hub.workforce.Transit transit = 4;
+  }
+}

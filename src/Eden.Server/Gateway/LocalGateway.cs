@@ -15,7 +15,11 @@ namespace Eden.Server.Gateway;
 
 internal static class LocalGateway
 {
-    public static WebApplication Create(GatewayRequests requests, LauncherOptions? configuration = null)
+    public static WebApplication Create(
+        GatewayRequests requests,
+        LauncherOptions? configuration = null,
+        IGatewayAuthentication? authentication = null
+    )
     {
         var builder = WebApplication.CreateSlimBuilder();
         builder.Logging.ClearProviders();
@@ -39,6 +43,7 @@ internal static class LocalGateway
         });
         builder.Services.AddGrpc();
         builder.Services.AddSingleton(requests);
+        builder.Services.AddSingleton(authentication ?? (IGatewayAuthentication)new PublicGatewayAuthentication());
         var app = builder.Build();
         app.Use(
             async (context, next) =>
@@ -69,10 +74,15 @@ internal static class LocalGateway
         app.MapGrpcService<EventStream>();
         return app;
     }
+
+    private sealed class PublicGatewayAuthentication : IGatewayAuthentication
+    {
+        public long? Account(string authorization) => null;
+    }
 }
 
 [Injectable]
-internal sealed class RequestStream(GatewayRequests requests) : Requests.RequestsBase
+internal sealed class RequestStream(GatewayRequests requests, IGatewayAuthentication authentication) : Requests.RequestsBase
 {
     public override Task<Empty> Ping(Empty request, ServerCallContext context) => Task.FromResult(new Empty());
 
@@ -81,7 +91,8 @@ internal sealed class RequestStream(GatewayRequests requests) : Requests.Request
         await context.WriteResponseHeadersAsync(new Metadata());
         await foreach (var request in input.ReadAllAsync(context.CancellationToken))
         {
-            var response = requests.Handle(request);
+            long? account = authentication.Account(context.RequestHeaders.GetValue("authorization") ?? "");
+            var response = requests.Handle(request, account);
             ServerLog.Console.Debug($"Gateway {Any.GetTypeName(request.Payload?.TypeUrl ?? "")} ({response.StatusCode}).");
             await output.WriteAsync(response);
         }
@@ -89,16 +100,44 @@ internal sealed class RequestStream(GatewayRequests requests) : Requests.Request
 }
 
 [Injectable]
-internal sealed class NoticeStream : Notices.NoticesBase
+internal sealed class NoticeStream(GatewayRequests requests, IGatewayAuthentication authentication) : Notices.NoticesBase
 {
     public override Task<Empty> Ping(Empty request, ServerCallContext context) => Task.FromResult(new Empty());
 
     public override async Task Consume(IAsyncStreamReader<Empty> input, IServerStreamWriter<Notice> output, ServerCallContext context)
     {
         await context.WriteResponseHeadersAsync(new Metadata());
-        while (await input.MoveNext(context.CancellationToken))
+        using var stopping = CancellationTokenSource.CreateLinkedTokenSource(context.CancellationToken);
+        using PeriodicTimer timer = new(TimeSpan.FromSeconds(1));
+        string authorization = context.RequestHeaders.GetValue("authorization") ?? "";
+        async Task Receive()
         {
-            // Keep the subscription open. This host publishes gameplay notifications over MachoNet.
+            while (await input.MoveNext(stopping.Token)) { }
+        }
+        async Task Publish()
+        {
+            while (await timer.WaitForNextTickAsync(stopping.Token))
+            {
+                if (authentication.Account(authorization) is not long account)
+                {
+                    continue;
+                }
+                foreach (var notice in requests.SovereigntyNotices(account))
+                {
+                    await output.WriteAsync(notice, stopping.Token);
+                }
+            }
+        }
+        Task receive = Receive(),
+            publish = Publish();
+        try
+        {
+            await await Task.WhenAny(receive, publish);
+        }
+        finally
+        {
+            await stopping.CancelAsync();
+            await Task.WhenAll(receive, publish).ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
         }
     }
 }

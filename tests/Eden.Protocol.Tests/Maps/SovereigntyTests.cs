@@ -32,7 +32,7 @@ public sealed class SovereigntyTests
     [InlineData(true, NullSecuritySystemId)]
     public void SovereigntyReadsPreserveNativeShapesSelectionAndSavedState(bool inSpace, long systemId)
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         using var scope = world.Services.CreateScope();
         var savedPilot = world.Store.FindPilot(1000001)!;
         var pilot = inSpace
@@ -105,7 +105,7 @@ public sealed class SovereigntyTests
     [Fact]
     public async Task NativeSovereigntyPanelPacketsReturnUnclaimedSystemInformationWithoutDestinationErrors()
     {
-        using TestWorld world = new();
+        using TestWorld world = new(liveWorld: true);
         var calls = PanelCalls(NullSecuritySystemId);
         Queue<object?> input = new(
             new[] { PilotServicesTests.Request("charUnboundMgr", "SelectCharacterID", [90000001L]) }

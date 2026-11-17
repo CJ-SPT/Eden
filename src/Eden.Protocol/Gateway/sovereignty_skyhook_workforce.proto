@@ -1,0 +1,12 @@
+syntax = "proto3";
+package eve_public.sovereignty.skyhook;
+option csharp_namespace = "Eden.Protocol.Gateway.Sovereignty.Skyhook";
+
+// Wire projection from build 3662168 eve_public/sovereignty/skyhook/workforce.proto.
+
+message Workforce {
+  oneof available {
+    uint64 amount = 1;
+    bool none = 2;
+  }
+}

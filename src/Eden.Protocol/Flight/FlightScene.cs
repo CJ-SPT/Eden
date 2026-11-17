@@ -131,7 +131,12 @@ internal sealed class FlightScene(
             VisibleObjects(context)
                 .FirstOrDefault(o =>
                     o.Id == id
-                    && (MiningDefinitions.IsResource(o.CategoryId, o.GroupId) || Eden.Gameplay.Exploration.HackingRules.IsContainer(o.Id))
+                    && (
+                        MiningDefinitions.IsResource(o.CategoryId, o.GroupId)
+                        || o.GroupId == Eden.Gameplay.Sovereignty.SovereigntyRules.HubGroupId
+                        || o.GroupId == Eden.Gameplay.Sovereignty.SovereigntyWarfareRules.CommandNodeGroupId
+                        || Eden.Gameplay.Exploration.HackingRules.IsContainer(o.Id)
+                    )
                 )
                 is { } targetObject
             ? new(id, targetObject.TypeId, targetObject.Position, targetObject.Radius)
@@ -372,8 +377,8 @@ internal sealed class FlightScene(
         {
             return;
         }
-        var previous = Objects.Where(o => o.CategoryId == Eden.Gameplay.Structures.StructureRules.CategoryId).ToArray();
-        Objects = Objects.Where(o => o.CategoryId != Eden.Gameplay.Structures.StructureRules.CategoryId).Concat(structures).ToArray();
+        var previous = Objects.Where(o => o.Structure is not null).ToArray();
+        Objects = Objects.Where(o => o.Structure is null).Concat(structures).ToArray();
         _structures = structures;
         if (!context.InBallpark)
         {
