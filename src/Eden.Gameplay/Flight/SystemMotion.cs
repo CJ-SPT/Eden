@@ -74,33 +74,56 @@ public static class ShipCollisions
         {
             yield break;
         }
+        List<int>? candidates = null;
         foreach (var body in obstacles)
         {
+            double broadRadius = body.Collision is { } compound
+                ? MathF.BitIncrement(ship.Hull.ShipRadius) + Math.Max(body.Radius, compound.BoundingRadius)
+                : ship.Hull.ShipRadius + body.Radius;
             // Use the same swept contact test as Potential before allocating a
             // fixed body and hull. Keep float radius addition and caller ordering.
-            if (
-                ship.Id == body.Id
-                || !body.Solid
-                || ContactTime(ship, body.Position, body.Position, ship.Hull.ShipRadius + body.Radius) < 0
-            )
+            if (ship.Id == body.Id || !body.Solid || ContactTime(ship, body.Position, body.Position, broadRadius) < 0)
             {
                 continue;
             }
-            yield return new CollisionMotion(
-                body.Id,
-                ship.Hull with
+            if (body.Collision is { } geometry)
+            {
+                candidates ??= [];
+                var start = ship.Start - body.Position;
+                var end = ship.Position - body.Position;
+                geometry.Find(start, end, ship.Hull.ShipRadius, candidates);
+                StaticCollisionImpact? first = null;
+                StaticCollisionPrimitive? chosen = null;
+                double deepest = double.NegativeInfinity;
+                foreach (int index in candidates)
                 {
-                    ShipRadius = body.Radius,
-                },
-                body.Position,
-                SpacePosition.Zero,
-                body.Position,
-                SpacePosition.Zero,
-                Solid: body.Solid,
-                Fixed: true
-            );
+                    var primitive = geometry.Primitives[index];
+                    var impact = primitive.Sweep(start, end, ship.Hull.ShipRadius);
+                    if (impact is null || first is not null && impact.Time > first.Time)
+                    {
+                        continue;
+                    }
+                    double depth = primitive.Radius + ship.Hull.ShipRadius - start.DistanceTo(impact.Centre);
+                    if (first is not null && impact.Time == first.Time && (impact.Time != 0 || depth <= deepest))
+                    {
+                        continue;
+                    }
+                    first = impact;
+                    chosen = primitive;
+                    deepest = depth;
+                }
+                if (first is not null)
+                {
+                    yield return Fixed(ship, body.Id, body.Position + first.Centre, chosen!.Radius);
+                }
+                continue;
+            }
+            yield return Fixed(ship, body.Id, body.Position, body.Radius);
         }
     }
+
+    private static CollisionMotion Fixed(CollisionMotion ship, long id, SpacePosition position, float radius) =>
+        new(id, ship.Hull with { ShipRadius = radius }, position, SpacePosition.Zero, position, SpacePosition.Zero, Fixed: true);
 
     private static CollisionResult ResolveOne(CollisionMotion ship, IEnumerable<CollisionMotion> others)
     {

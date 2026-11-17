@@ -19,6 +19,8 @@ public interface IPilotTranslocation
 
 public static class TranslocationRules
 {
+    private const int MaximumCompoundClearancePasses = 64;
+
     // Eden's GM travel policy places ships 10 km outside the destination's surface.
     public const double ArrivalClearance = 10_000;
 
@@ -31,13 +33,24 @@ public static class TranslocationRules
         var position = target.Position + new SpacePosition(target.Radius + shipRadius + ArrivalClearance, 0, 0);
         // Moving only along +X passes each intersected body's far surface once.
         // Recheck earlier bodies when another body's clearance overlaps them.
-        for (int pass = 0; pass <= obstacles.Count; pass++)
+        for (int pass = 0; pass <= Math.Max(obstacles.Count, MaximumCompoundClearancePasses); pass++)
         {
             bool moved = false;
             foreach (var body in obstacles)
             {
                 if (!body.Solid)
                 {
+                    continue;
+                }
+                if (body.Collision is { } geometry)
+                {
+                    var local = position - body.Position;
+                    var cleared = geometry.ClearAlongRay(local, new(1, 0, 0), shipRadius + ArrivalClearance);
+                    if (cleared != local)
+                    {
+                        position = body.Position + cleared;
+                        moved = true;
+                    }
                     continue;
                 }
                 double surface = Math.Max(0, body.Radius) + shipRadius + ArrivalClearance;

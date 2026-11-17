@@ -17,6 +17,7 @@ using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Structures;
 using Eden.Protocol.Tests.PilotSessions;
+using Eden.World.Catalog;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -137,6 +138,33 @@ public sealed class StructureTests
         Assert.DoesNotContain(saved.Set<OwnedItem>(), i => i.TypeId == typeId && i.LocationId == f.ShipId);
         Assert.Throws<InvalidDataException>(() => f.Structures.Deploy(f.PilotId, new(0, Fixture.Point, 0, "Duplicate")));
         Assert.Single(saved.Set<SavedStructure>());
+        using CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath);
+        var geometry = Assert.IsType<StaticCollisionGeometry>(StaticCollisionCatalog.Read(catalog, typeId));
+        var contact = Assert.Single(f.Db.Services.GetRequiredService<IStructureContacts>().Contacts(Fixture.SystemId));
+        Assert.Equal(geometry, contact.Collision);
+        var pilot = f.Db.Store.FindPilot(1000001)!;
+        foreach (var point in StationUndockCatalog.Read(catalog, typeId))
+        {
+            foreach (double yaw in new[] { 0, Math.PI / 2, Math.PI })
+            {
+                var rotated = geometry.Rotate(yaw);
+                var station = pilot.Home with
+                {
+                    Position = structure.Position,
+                    UndockPoint = StationUndocking.Rotate(point, yaw),
+                    Collision = rotated,
+                };
+                var hull = pilot.Flight with { ShipRadius = 6000 };
+                var launch = StationUndocking.Launch(pilot.ShipId, station, hull);
+                Assert.False(rotated.Intersects(launch.Position - structure.Position, hull.ShipRadius + 499.99));
+                Assert.InRange(launch.Direction.DistanceTo(point.Direction.RotateYaw(yaw)), 0, 1e-12);
+                Assert.InRange(
+                    (launch.Position - structure.Position - station.UndockPoint.Position).Cross(launch.Direction).Length,
+                    0,
+                    0.0001
+                );
+            }
+        }
     }
 
     [Fact]

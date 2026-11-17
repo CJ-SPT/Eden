@@ -79,13 +79,44 @@ internal static partial class Ballpark
 
     private static SlimItem WriteObject(BinaryWriter writer, StaticSpaceObject body)
     {
-        // Rigid balls have only the formation ID after the common header.
-        // Room scenery and asteroids stay local; celestials are system-wide.
+        // Compound primitives are separate massive collision children. Their parent remains a
+        // non-massive range/docking ball, otherwise its enclosing sphere would still block openings.
+        var collision = body.Solid ? body.Collision : null;
         var flags =
-            (body.GroupId == AsteroidDefinitions.BeltGroup || !body.Solid ? DestinyBallFlags.None : DestinyBallFlags.Massive)
-            | (body.CategoryId == AsteroidDefinitions.Category || !body.IsGlobal ? DestinyBallFlags.None : DestinyBallFlags.Global);
+            (
+                body.GroupId == AsteroidDefinitions.BeltGroup || !body.Solid || collision is not null
+                    ? DestinyBallFlags.None
+                    : DestinyBallFlags.Massive
+            ) | (body.CategoryId == AsteroidDefinitions.Category || !body.IsGlobal ? DestinyBallFlags.None : DestinyBallFlags.Global);
+        if (collision?.Spheres.Count > 0)
+        {
+            flags |= DestinyBallFlags.HasMiniBalls;
+        }
+        if (collision?.Capsules.Count > 0)
+        {
+            flags |= DestinyBallFlags.HasMiniCapsules;
+        }
         WriteBallHeader(writer, body.Id, (byte)NavigationMode.Rigid, body.Radius, body.Position, (byte)flags);
         writer.Write((sbyte)-1);
+        if (collision?.Spheres.Count > 0)
+        {
+            writer.Write(checked((ushort)collision.Spheres.Count));
+            foreach (var sphere in collision.Spheres)
+            {
+                WritePosition(writer, sphere.Start);
+                writer.Write(sphere.Radius);
+            }
+        }
+        if (collision?.Capsules.Count > 0)
+        {
+            writer.Write(checked((ushort)collision.Capsules.Count));
+            foreach (var capsule in collision.Capsules)
+            {
+                WritePosition(writer, capsule.Start);
+                WritePosition(writer, capsule.End);
+                writer.Write(capsule.Radius);
+            }
+        }
         return new StaticSlimItem(body);
     }
 

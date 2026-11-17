@@ -44,6 +44,11 @@ public sealed class StructureControlTests
         long extraModule = f.Item(45009);
         var docked = f.Db.Services.GetRequiredService<IStationDocking>().Dock(f.PilotId, f.ShipId, structure.Id);
         var exit = Assert.IsType<StationUndockPoint>(docked.Home.UndockPoint);
+        var collision = Assert.IsType<Eden.Gameplay.Flight.StaticCollisionGeometry>(docked.Home.Collision);
+        Assert.False(collision.Intersects(new(30_000, 0, 0), docked.Flight.ShipRadius));
+        // Local +Z contains open space inside the model bounds; this deployment rotates it onto world +X.
+        Assert.False(collision.Intersects(new(5000, 0, 0), docked.Flight.ShipRadius));
+        Assert.True(collision.Intersects(new(0, 0, -5000), docked.Flight.ShipRadius));
         Assert.True(exit.Direction.X > 0.9);
         Assert.InRange(Math.Abs(exit.Direction.Z), 0, 0.001);
         using var scope = f.Db.Services.CreateScope();
@@ -229,6 +234,8 @@ public sealed class StructureControlTests
         Assert.NotNull(f.Db.Store.FindPilot(1000001)!.Position);
         Assert.Equal(Fixture.SystemId, f.Db.Store.FindPilot(1000001)!.SystemId);
         Assert.Equal(StationUndocking.Launch(docked.ShipId, docked.Home, docked.Flight).Position, context.Pilot.Position);
+        Assert.True(context.Pilot.Position!.DistanceTo(structure.Position) < structure.Profile.Radius);
+        Assert.False(collision.Intersects(context.Pilot.Position - structure.Position, docked.Flight.ShipRadius));
 
         PilotCallResult.Success Call(string service, string method, object?[] args, Dictionary<string, object?>? keywords = null) =>
             Assert.IsType<PilotCallResult.Success>(router.Call(context, service, method, args, _ => { }, keywords));

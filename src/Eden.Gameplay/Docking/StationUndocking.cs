@@ -60,12 +60,9 @@ public static class StationUndocking
     public static StationUndockPoint Rotate(StationUndockPoint point, double yaw) =>
         point with
         {
-            Position = Rotate(point.Position, yaw),
-            Direction = Rotate(point.Direction, yaw),
+            Position = point.Position.RotateYaw(yaw),
+            Direction = point.Direction.RotateYaw(yaw),
         };
-
-    private static SpacePosition Rotate(SpacePosition vector, double yaw) =>
-        new(vector.X * Math.Cos(yaw) + vector.Z * Math.Sin(yaw), vector.Y, vector.Z * Math.Cos(yaw) - vector.X * Math.Sin(yaw));
 
     public static UndockLaunch Launch(long shipId, PilotStation station, FlightProperties hull)
     {
@@ -75,15 +72,21 @@ public static class StationUndocking
             ?? new StationUndockPoint(UndockCategory.Any, new(shipId % 2 == 0 ? FallbackLaneSpacing : 0, 0, 0), new(0, 0, 1));
         var direction = selected.Direction.Unit;
         var offset = selected.Position;
-        // Station collision currently uses the catalog's enclosing sphere. Extend the real exit ray
-        // past that sphere, retaining its lateral locator offset and room to accelerate into warp.
         double clearance = Math.Max(MinimumClearance, hull.MaxSpeed * hull.InertiaTime);
-        double radius = hull.StationRadius + hull.ShipRadius + clearance;
-        double along = offset.Dot(direction);
-        double discriminant = along * along + radius * radius - offset.Dot(offset);
-        if (discriminant >= 0)
+        if (station.Collision is { } collision)
         {
-            offset += direction * Math.Max(0, -along + Math.Sqrt(discriminant));
+            offset = collision.ClearAlongRay(offset, direction, hull.ShipRadius + clearance);
+        }
+        else
+        {
+            // Legacy catalog objects without mesh geometry retain the enclosing-sphere fallback.
+            double radius = hull.StationRadius + hull.ShipRadius + clearance;
+            double along = offset.Dot(direction);
+            double discriminant = along * along + radius * radius - offset.Dot(offset);
+            if (discriminant >= 0)
+            {
+                offset += direction * Math.Max(0, -along + Math.Sqrt(discriminant));
+            }
         }
         var velocity = direction * Math.Min(hull.MaxSpeed * VelocityMultiplier, MaximumLaunchSpeed);
         return new(station.Position + offset, direction, velocity);

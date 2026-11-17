@@ -99,6 +99,9 @@ internal sealed class SystemObjects(
                         new(station.X, station.Y, station.Z),
                         (float)(type.Radius ?? 0)
                     )
+                    {
+                        Collision = StaticCollisionCatalog.Read(catalog, station.TypeId),
+                    }
                 );
             }
         }

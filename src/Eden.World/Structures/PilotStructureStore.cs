@@ -690,6 +690,7 @@ internal sealed partial class PilotStructureStore(WorldDatabase database, TimePr
                     )
                     {
                         Name = s.Name,
+                        Collision = StaticCollisionCatalog.Read(catalog, s.TypeId)?.Rotate(s.Yaw),
                         Structure = new(
                             s.State,
                             s.StateStartedAt,

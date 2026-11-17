@@ -255,7 +255,10 @@ public sealed partial class SqliteWorld
                 new(station.X, station.Y, station.Z),
                 identity,
                 StationUndocking.SelectPoint(ship.Id, type.GroupId, StationUndockCatalog.Read(catalog, station.TypeId))
-            ),
+            )
+            {
+                Collision = StaticCollisionCatalog.Read(catalog, station.TypeId),
+            },
             new(
                 ship.Position is { } p ? new(p.X, p.Y, p.Z) : null,
                 ship.Position?.SystemId is int id ? SystemObjects.FindSystem(catalog, id) : null
