@@ -13,8 +13,42 @@ Historical foundation limitations below describe their original milestones; this
 | Asset safety | Personal/corporate collection, timed delivery, paid recovery, native inventory and public loot | Implemented; validation below |
 | Incoming combat and loss | Paid weapons against structures, legal targeting, destruction settlement and automatic custody transitions | Implemented; validation below |
 | Tethering | Resident protection, native effects, access and timer checks, saved repair settlement | Implemented; validation below |
-| Defense | Combat fitting/control, supported defensive weapons and target updates | Planned |
+| Defense | Combat fitting/control, supported defensive weapons and target updates | In progress; resident control authority implemented |
 | Service completion | Remaining native structure profiles/access, economic/clone services, ownership and specialized structure consumers | Planned |
+
+### Resident structure-control authority
+
+Exclusive structure control is now owned by the resident world. The protocol adapter retains the native control/session
+behavior while Gameplay exposes a typed lease token and World validates docked location and corporation authority.
+Separate service instances share the same resident registry. Every acquisition receives a unique lease ID; a released
+token cannot authorize a later acquisition, including after checkpoint/reopen. Disposing an old lease cannot release
+its replacement. Control is connection state and is intentionally not restored from a checkpoint.
+
+The current-controller observer is a cheap registry lookup. Mutation consumers must call the authoritative `Require`
+operation, which verifies the exact token and current docking/role permissions under the persistence owner before
+returning the structure. This avoids acquiring the persistence owner while holding a simulation-only lease. Disconnect,
+logoff, ship changes and native release retain their existing cleanup paths. Defensive fitting and firing are subsequent
+parts of the completion program; this authority boundary does not by itself implement those actions.
+
+[UniWiki structure permissions](https://wiki.eveuniversity.org/Structure_permissions) and
+[CCP structure management](https://support.eveonline.com/hc/en-us/articles/208289605-Structure-Management) were reviewed
+alongside the pinned native control evidence recorded below. The read-only EVE.js 261108.1 comparison used
+`structureControlService.js`, SHA-256 `795AD6F1DC9B697FAE9A22D95B0A6CF8F71576E7B00C9C6D466AE256A1B33E70`;
+no AGPL source was incorporated. Native request and reply shapes are unchanged.
+
+**Automated validation:** The exact stale-lease/service-instance flow passed before expansion. The expanded three-case
+control class, including checkpoint/reopen and native disconnect, passed (build 14.55s, tests 11.17s including runner).
+Final root validation passed **30** affected cases using the structure control, attack, tether and pilot-selection filters;
+the matched cases belonged to the three structure classes. The build had zero warnings/errors (3.23s). Tool/solution
+restore, both Python policy suites (8 + 9), formatting (2,602 files), line width, diff and documentation checks passed.
+Root checks took **78.25s**. An initial native disconnect check exposed an attempt to enter persistence while holding a
+simulation-only lease; acquisition/validation now take the persistence owner first, and the exact check and final batch
+passed. No full .NET suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None required for this authority-only milestone; native defensive interaction remains
+unverified until the corresponding feature is implemented and exercised.
 
 ### Resident tethering and repair
 

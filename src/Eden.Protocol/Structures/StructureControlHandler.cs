@@ -67,9 +67,8 @@ internal sealed class StructureControlHandler(
                 }
                 if (method == "TakeControl" && args is [long structureId] && structureId >= StructureRules.FirstStructureId)
                 {
-                    _ = structures.AuthorizeControl(pilot, structureId);
-                    context.Flight.RefreshStructures(contacts.Contacts(context.Pilot.SystemId));
                     context.TakeStructureControl(controllers.Acquire(structureId, pilot, context.SessionId));
+                    context.Flight.RefreshStructures(contacts.Contacts(context.Pilot.SystemId));
                     context.Flight.Snapshot();
                     return PilotCallResult.None;
                 }

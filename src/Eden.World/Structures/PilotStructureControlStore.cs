@@ -1,0 +1,78 @@
+using Eden.Gameplay.Structures;
+using Eden.Infrastructure.Registration;
+using Eden.World.Runtime;
+using Eden.World.Storage;
+
+namespace Eden.World.Structures;
+
+[Injectable]
+internal sealed class PilotStructureControlStore(WorldDatabase database, IPilotStructures structures) : IPilotStructureControl
+{
+    private LiveWorld Live =>
+        LiveWorld.Find(database.Path) ?? throw new InvalidOperationException("Structure control requires the resident world.");
+
+    public IStructureControlLease Acquire(long structureId, long pilotId, long sessionId)
+    {
+        var live = Live;
+        using var ownership = live.EnterPersistence(nameof(Acquire));
+        _ = structures.AuthorizeControl(pilotId, structureId);
+        if (sessionId <= 0)
+        {
+            throw new InvalidDataException("An authenticated session is required to control a structure.");
+        }
+        if (live.StructureControllers.TryGetValue(structureId, out var previous))
+        {
+            if (previous.Token.PilotId == pilotId && previous.Token.SessionId == sessionId)
+            {
+                return previous;
+            }
+            throw new InvalidDataException("Another pilot is controlling this structure.");
+        }
+        var token = new StructureControlToken(structureId, pilotId, sessionId, Guid.NewGuid());
+        var lease = new ResidentStructureControl(token, live, database.Path);
+        if (!live.StructureControllers.TryAdd(structureId, lease))
+        {
+            throw new InvalidDataException("Another pilot is controlling this structure.");
+        }
+        return lease;
+    }
+
+    public long? Pilot(long structureId)
+    {
+        if (LiveWorld.Find(database.Path) is not { } live)
+        {
+            return null;
+        }
+        if (!live.StructureControllers.TryGetValue(structureId, out var lease))
+        {
+            return null;
+        }
+        return lease.Token.PilotId;
+    }
+
+    public StructureSnapshot Require(StructureControlToken token)
+    {
+        var live = Live;
+        using var ownership = live.EnterPersistence(nameof(Require));
+        if (!live.StructureControllers.TryGetValue(token.StructureId, out var lease) || lease.Token != token)
+        {
+            throw new InvalidDataException("This structure control lease is no longer active.");
+        }
+        return structures.AuthorizeControl(token.PilotId, token.StructureId);
+    }
+}
+
+internal sealed class ResidentStructureControl(StructureControlToken token, LiveWorld owner, string path) : IStructureControlLease
+{
+    public StructureControlToken Token { get; } = token;
+
+    public void Dispose()
+    {
+        // A connection may be disposed after its resident host, or after a new host has opened the same saved world.
+        if (!ReferenceEquals(LiveWorld.Find(path), owner))
+        {
+            return;
+        }
+        owner.StructureControllers.TryRemove(KeyValuePair.Create(Token.StructureId, this));
+    }
+}

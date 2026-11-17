@@ -20,6 +20,42 @@ namespace Eden.Protocol.Tests.Structures;
 public sealed class StructureControlTests
 {
     [Fact]
+    public async Task ResidentControlRejectsCompetingSessionsAndStaleLeaseGenerationsAcrossServiceInstances()
+    {
+        using Fixture f = new(liveWorld: true);
+        var structure = f.Online();
+        f.Db.Services.GetRequiredService<IStationDocking>().Dock(f.PilotId, f.ShipId, structure.Id);
+        var control = f.Db.Services.GetRequiredService<IPilotStructureControl>();
+        var second = new Eden.World.Structures.PilotStructureControlStore(new(f.Db.Path), f.Structures);
+        var first = control.Acquire(structure.Id, f.PilotId, 101);
+        Assert.Same(first, second.Acquire(structure.Id, f.PilotId, 101));
+        Assert.Throws<InvalidDataException>(() => second.Acquire(structure.Id, f.PilotId, 102));
+        Assert.Equal(structure.Id, control.Require(first.Token).Id);
+        first.Dispose();
+        using var current = second.Acquire(structure.Id, f.PilotId, 102);
+        Assert.NotEqual(current.Token.LeaseId, first.Token.LeaseId);
+        first.Dispose();
+        Assert.Equal(f.PilotId, control.Pilot(structure.Id));
+        Assert.Throws<InvalidDataException>(() => control.Require(first.Token));
+        Assert.Equal(structure.Id, control.Require(current.Token).Id);
+        f.Db.Store.SetPosition(f.ShipId, Fixture.Point, Fixture.SystemId);
+        Assert.Throws<InvalidDataException>(() => control.Require(current.Token));
+        current.Dispose();
+        Assert.Null(control.Pilot(structure.Id));
+        f.Db.Services.GetRequiredService<IStationDocking>().Dock(f.PilotId, f.ShipId, structure.Id);
+        await Eden.World.Runtime.LiveWorld.Find(f.Db.Path)!.FlushAsync();
+        string copy = Path.Combine(Path.GetDirectoryName(f.Db.Path)!, "control-lease.sqlite");
+        File.Copy(f.Db.Path, copy);
+        using Eden.World.Runtime.LiveWorld reopened = new(new(copy), f.Clock);
+        var savedStructures = new Eden.World.Structures.PilotStructureStore(new(copy), f.Clock);
+        var restarted = new Eden.World.Structures.PilotStructureControlStore(new(copy), savedStructures);
+        Assert.Null(restarted.Pilot(structure.Id));
+        using var restored = restarted.Acquire(structure.Id, f.PilotId, 101);
+        Assert.NotEqual(first.Token.LeaseId, restored.Token.LeaseId);
+        Assert.Throws<InvalidDataException>(() => restarted.Require(first.Token));
+    }
+
+    [Fact]
     public async Task DockedControlInstallsAthanorCoreFuelAndServiceAndCheckpointsTheRealShip()
     {
         using Fixture f = new(liveWorld: true);

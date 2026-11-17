@@ -12,6 +12,9 @@ timed delivery, paid recovery and public wormhole/Pochven loot.
 [Resident tethering](protocol/structures.md#resident-tethering-and-repair) covers authoritative protection, native effect replay
 and saved, engagement-only repair settlement.
 
+[Resident structure control](protocol/structures.md#resident-structure-control-authority) records exclusive leases and
+authoritative validation for subsequent defensive commands.
+
 [Market presets](world-configuration.md#market-presets) combines economy and supply settings and explains the
 Standard preset's imported live order books, original locations/quantities and checkpoint behavior.
 
