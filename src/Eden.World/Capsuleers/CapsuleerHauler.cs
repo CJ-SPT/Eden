@@ -176,15 +176,17 @@ internal sealed partial class CapsuleerHauler(
             Load();
         }
         long delay = Math.Max(0, elapsed - Math.Max(Work.ActiveTicks, pausedAt ?? 0));
-        if (pausedAt is null && delay == 0 && Work.Ratting is null)
+        // A visible flying ship needs its next motion pulse even when an older save paired its
+        // alignment with a distant job deadline. Otherwise Destiny predicts a warp from a frozen grid.
+        long latestFlightPulse = checked(elapsed + TimeSpan.TicksPerSecond);
+        bool flying = Work.Activity == HaulerActivity.Flying && Pilot.Position is not null;
+        if (pausedAt is null && delay == 0 && Work.Ratting is null && (!flying || job.DueTicks <= latestFlightPulse))
         {
             return job;
         }
         var resumed = CapsuleerPauseRules.Resume(Work, delay, Now) with { InboundPaused = false };
-        var next = job.Next(
-            Math.Max(checked(elapsed + (pausedAt is null ? TimeSpan.TicksPerSecond : 1)), checked(job.DueTicks + delay)),
-            job.Action
-        );
+        long due = Math.Max(checked(elapsed + (pausedAt is null ? TimeSpan.TicksPerSecond : 1)), checked(job.DueTicks + delay));
+        var next = job.Next(flying ? Math.Min(latestFlightPulse, due) : due, job.Action);
         using CapsuleerOperation operation = new(database, job, marketSignal);
         operation.Commit(next, null, new HaulerCheckpoint(pilotId, resumed));
         _work = resumed;
@@ -689,9 +691,7 @@ internal sealed partial class CapsuleerHauler(
         transaction.Commit();
         transaction.Dispose();
         RefreshObjects();
-        _target =
-            _objects.FirstOrDefault(o => o.Id == Work.TargetId)
-            ?? (Work.Ratting?.Phase == RattingPhase.TravellingToBelt ? SiteTarget(Work.Ratting) : null);
+        _target = _objects.FirstOrDefault(o => o.Id == Work.TargetId) ?? SiteTarget(Work.Ratting);
     }
 
     private void RefreshObjects(bool loadResources = true)

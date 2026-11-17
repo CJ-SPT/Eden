@@ -57,16 +57,15 @@ internal sealed class CapsuleerRatting(
 
     internal void Arrive(DockedPilot pilot, long now) => anomalies.Arrive(pilot.SystemId, pilot.Position!, now);
 
-    internal NpcContact[] Pirates(DockedPilot pilot, long belt, long now) =>
+    internal NpcContact[] Pirates(DockedPilot pilot, StaticSpaceObject site, long now) =>
         encounters
             .ReadScene(pilot.SystemId, pilot.Position!, now)
             .Visible.Where(n =>
                 n.Role == NpcRole.Pirate
-                && (
-                    belt >= CombatAnomalyRules.FirstSiteId
-                        ? n.AnchorKind == NpcAnchorKind.Anomaly && n.AnchorId == belt
-                        : n.AnchorKind == NpcAnchorKind.Belt
-                )
+                && n.AnchorId == site.Id
+                && n.AnchorKind == (site.Id >= CombatAnomalyRules.FirstSiteId ? NpcAnchorKind.Anomaly : NpcAnchorKind.Belt)
+                && WithinSite(site, n.Position)
+                && WithinSite(site, pilot.Position!)
                 && !n.Health.Remaining.Destroyed
                 && n.Warp is null
                 && pilot.Position!.DistanceTo(n.Position) <= NpcEncounterDefinitions.VisibilityRange
@@ -74,16 +73,20 @@ internal sealed class CapsuleerRatting(
             .OrderBy(n => n.Id)
             .ToArray();
 
-    internal IReadOnlyList<WreckContact> Wrecks(DockedPilot pilot, long now) =>
+    internal IReadOnlyList<WreckContact> Wrecks(DockedPilot pilot, StaticSpaceObject site, long now) =>
         wrecks
             .List(pilot.SystemId, now)
             .Where(w =>
                 w.OwnerId == pilot.PilotId
+                && WithinSite(site, w.Position)
                 && !w.Empty
                 && w.Id < WreckDefinitions.FirstPlayerWreckId
                 && pilot.Position!.DistanceTo(w.Position) <= WreckDefinitions.VisibilityRange
             )
             .ToArray();
+
+    private static bool WithinSite(StaticSpaceObject site, SpacePosition position) =>
+        site.Id >= CombatAnomalyRules.FirstSiteId || site.Position.DistanceTo(position) <= NpcEncounterDefinitions.ChaseLeash;
 
     internal RattingAssessment Assess(DockedPilot pilot, NpcContact[] contacts, long now)
     {

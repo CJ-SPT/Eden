@@ -305,6 +305,12 @@ public sealed class PilotSpaceActivitiesTests
         var activity = f.Db.Services.GetRequiredService<CapsuleerRatting>();
         var controller = f.Db.Services.GetRequiredService<CapsuleerDefense>();
         var enemy = f.Db.Services.GetRequiredService<INpcEncounters>().List(f.Npc.SystemId, f.Clock.Now).Single(n => n.Id == f.Npc.Id);
+        using var siteCatalog = new CatalogDbContext(new WorldDatabase(f.Db.Path).CatalogPath);
+        var belt = SystemObjects.Geometry(siteCatalog, enemy.SystemId).Single(body => body.Id == enemy.AnchorId);
+        Assert.Contains(activity.Pirates(f.Pilot, belt, f.Clock.Now), contact => contact.Id == enemy.Id);
+        Assert.DoesNotContain(activity.Pirates(f.Pilot, belt with { Id = belt.Id + 1 }, f.Clock.Now), contact => contact.Id == enemy.Id);
+        var distantBelt = belt with { Position = belt.Position + new SpacePosition(120_000, 0, 0) };
+        Assert.DoesNotContain(activity.Pirates(f.Pilot, distantBelt, f.Clock.Now), contact => contact.Id == enemy.Id);
         var assessment = activity.Assess(f.Pilot, [enemy], f.Clock.Now);
         Assert.True(
             assessment.Capable,
@@ -398,9 +404,9 @@ public sealed class PilotSpaceActivitiesTests
             using CatalogDbContext catalog = new(f.Database.CatalogPath);
             var belt = SystemObjects.Geometry(catalog, SystemId).Single(c => c.Id == 40009051);
             using WorldDbContext world = new(f.Database.Path);
-            for (int index = 0; index < 2; index++)
+            for (int index = 0; index < 3; index++)
             {
-                long owner = index == 0 ? pilot : world.Set<SavedCapsuleerAgent>().Single(a => a.Career == CapsuleerCareer.Mining).PilotId;
+                long owner = index != 1 ? pilot : world.Set<SavedCapsuleerAgent>().Single(a => a.Career == CapsuleerCareer.Mining).PilotId;
                 long npc = 4000000000099 + index;
                 long wreck = 8000000000099 + index;
                 world.Add(
@@ -422,7 +428,7 @@ public sealed class PilotSpaceActivitiesTests
                         TypeId = 26557,
                         Name = "Owned test wreck",
                         SystemId = SystemId,
-                        X = belt.Position.X + 1000,
+                        X = belt.Position.X + (index == 2 ? 120_000 : 1000),
                         Y = belt.Position.Y,
                         Z = belt.Position.Z,
                         CreatedAt = f.Clock.Now,
@@ -499,6 +505,7 @@ public sealed class PilotSpaceActivitiesTests
                 );
                 Assert.Empty(saved.Set<OwnedItem>().Where(i => i.LocationId == 8000000000099));
                 Assert.Equal(100, saved.Set<OwnedItem>().Single(i => i.LocationId == 8000000000100).Quantity);
+                Assert.Equal(100, saved.Set<OwnedItem>().Single(i => i.LocationId == 8000000000101).Quantity);
             }
             await host.GetRequiredService<LiveWorld>().FlushAsync();
             host.Dispose();

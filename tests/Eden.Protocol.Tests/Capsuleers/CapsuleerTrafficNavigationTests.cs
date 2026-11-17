@@ -2,6 +2,7 @@ using Eden.Data.World.Capsuleers;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
+using Eden.Protocol.Flight;
 using Eden.Server;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
@@ -79,7 +80,7 @@ public sealed class CapsuleerTrafficNavigationTests
     }
 
     [Fact]
-    public void StationlessOpeningStartsAtARealGateAndContinuesToNextGate()
+    public async Task StationlessOpeningStartsAtARealGateAndContinuesToNextGate()
     {
         using CapsuleerHaulerTests.Fixture f = new();
         MoveDestinationToRemote(f);
@@ -109,6 +110,56 @@ public sealed class CapsuleerTrafficNavigationTests
         Assert.Equal(GateTravelRules.Arrival(saved.ShipId, incoming.Position, incoming.Radius, saved.Flight.ShipRadius), saved.Position);
         Assert.NotNull(work.Navigation.WarpDestination);
         Assert.True(work.Navigation.Velocity.Length > 0);
+
+        // A historical checkpoint had a valid gate alignment paired with a next action many hours away.
+        long elapsed = TimeSpan.FromHours(50).Ticks;
+        var checkpoint = work with { ActiveTicks = elapsed, ClockOffsetTicks = elapsed };
+        new HaulerCheckpoint(founder.PilotId, checkpoint).Apply(world);
+        world.Set<SavedCapsuleerHauler>().Single(h => h.PilotId == founder.PilotId).RouteSystems = route.Systems;
+        world.Set<SavedCapsuleerClock>().Single().ElapsedTicks = elapsed;
+        world.Set<SavedCapsuleerJob>().Single(j => j.PilotId == founder.PilotId).DueTicks = elapsed + TimeSpan.FromHours(31).Ticks;
+        world.SaveChanges();
+
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        using var observer = host.GetRequiredService<IHumanPresence>().Select(90000001, Corridor);
+        var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+        scheduler.Run(0);
+        var next = Assert.Single(scheduler.Jobs(), j => j.PilotId == founder.PilotId);
+        Assert.InRange(next.DueTicks, elapsed + 1, elapsed + TimeSpan.TicksPerSecond);
+        var viewer = ships.FindPilot(1000001)! with { Position = saved.Position, CurrentSystem = saved.CurrentSystem };
+        var presentation = host.GetRequiredService<ICapsuleerPresentation>();
+        var space = host.GetRequiredService<SharedSpace>();
+        presentation.Refresh();
+        var aligning = Assert.Single(space.Peers(viewer), peer => peer.Pilot.PilotId == founder.PilotId);
+        Assert.Equal(saved.Position, aligning.Pilot.Position);
+        Assert.Equal(work.Navigation.WarpDestination, aligning.AlignTo);
+        f.Clock.Seconds++;
+        scheduler.Run(1);
+        var moved = scheduler.Hauler(founder.PilotId)!;
+        Assert.NotEqual(saved.Position, moved.Pilot.Position);
+        Assert.Equal(outgoing.Id, moved.Work.TargetId);
+        bool observedWarp = false;
+        for (int stamp = 2; stamp < 90; stamp++)
+        {
+            f.Clock.Seconds++;
+            scheduler.Run(stamp);
+            presentation.Refresh();
+            var contact = space.Peers(viewer).SingleOrDefault(peer => peer.Pilot.PilotId == founder.PilotId);
+            if (contact is null)
+            {
+                break;
+            }
+            observedWarp |= contact.Warp is not null;
+        }
+        Assert.True(observedWarp);
+        Assert.DoesNotContain(space.Peers(viewer), peer => peer.Pilot.PilotId == founder.PilotId);
+        moved = scheduler.Hauler(founder.PilotId)!;
+        await host.GetRequiredService<LiveWorld>().FlushAsync();
+        using WorldDbContext reopened = new(f.Database.Path);
+        Assert.Equal(
+            moved.Work.ActiveTicks,
+            HaulerCheckpoint.Read(reopened.Set<SavedCapsuleerHauler>().Find(founder.Id)!.Progress)!.ActiveTicks
+        );
     }
 
     [Fact]

@@ -44,7 +44,7 @@ internal sealed partial class CapsuleerHauler
         {
             return null;
         }
-        var enemies = ratting.Pirates(Pilot, activity.Belts[activity.BeltIndex], Now);
+        var enemies = ratting.Pirates(Pilot, _target!, Now);
         if (enemies.Length == 0)
         {
             _work = Work with { Ratting = activity with { Phase = RattingPhase.Looting, TargetId = 0 } };
@@ -311,7 +311,7 @@ internal sealed partial class CapsuleerHauler
                 {
                     ratting.Arrive(Pilot, Now);
                 }
-                var enemies = ratting.Pirates(Pilot, activity.Belts[activity.BeltIndex], Now);
+                var enemies = ratting.Pirates(Pilot, _target!, Now);
                 if (enemies.Length > 0 && !_background && ratting.Assess(Pilot, enemies, Now).Capable)
                 {
                     _work = Work with { Ratting = activity with { Phase = RattingPhase.Fighting, TargetId = enemies[0].Id } };
@@ -326,7 +326,7 @@ internal sealed partial class CapsuleerHauler
                 }
                 break;
             case RattingPhase.Looting:
-                if (ratting.Pirates(Pilot, activity.Belts[activity.BeltIndex], Now).Length > 0)
+                if (ratting.Pirates(Pilot, _target!, Now).Length > 0)
                 {
                     NextBelt();
                     break;
@@ -365,7 +365,7 @@ internal sealed partial class CapsuleerHauler
     {
         var activity = Work.Ratting!;
         var wreck = ratting
-            .Wrecks(Pilot, Now)
+            .Wrecks(Pilot, _target!, Now)
             .Where(w => !activity.VisitedWrecks.Contains(w.Id))
             .OrderBy(w => Pilot.Position!.DistanceTo(w.Position))
             .ThenBy(w => w.Id)
@@ -375,7 +375,15 @@ internal sealed partial class CapsuleerHauler
             NextBelt();
             return;
         }
-        _target = new(wreck.Id, wreck.TypeId, WreckDefinitions.Group, WreckDefinitions.Category, 0, wreck.Position, wreck.Radius)
+        StaticSpaceObject wreckTarget = new(
+            wreck.Id,
+            wreck.TypeId,
+            WreckDefinitions.Group,
+            WreckDefinitions.Category,
+            0,
+            wreck.Position,
+            wreck.Radius
+        )
         {
             IsGlobal = false,
             Solid = false,
@@ -387,7 +395,7 @@ internal sealed partial class CapsuleerHauler
                 Work.Stamp,
                 Pilot.Position,
                 Pilot.Flight.ShipRadius,
-                _target,
+                wreckTarget,
                 WreckDefinitions.TransferRange / 2,
                 false,
                 true
@@ -397,7 +405,7 @@ internal sealed partial class CapsuleerHauler
                 Work.Stamp,
                 Pilot.Flight,
                 Pilot.Position,
-                id => id == wreck.Id ? _target : null,
+                id => id == wreck.Id ? wreckTarget : null,
                 _obstacles
             );
             _pilot = Pilot with { Position = moved.Position };

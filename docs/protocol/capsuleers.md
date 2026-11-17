@@ -2,6 +2,46 @@
 
 [Protocol index](../protocol.md)
 
+## Stalled gate traffic and belt pursuit
+
+A pilot reported apparent instant group departures on landing cloaked in Z-UZZN. On server revision `7c8f69b8`,
+two successive checkpoints showed five enabled travelers at the same positions near the YW-SYT and C-7SBM gates.
+They had ordinary travel orders to the opposite gate. Four had a pending alignment at movement stamp zero.
+Their next job was over 31 hours ahead of the saved population clock. The fifth traveler was over 14 hours from its next update.
+
+A pilot entering the grid receives the saved position, alignment destination and elapsed alignment time.
+Destiny can start predicting warp locally while the server still has the ship at its departure gate. A later observer
+can then receive the same starting position and warp order again. This explains the reported appearance without a sighting
+of the cloaked pilot. The checkpoints do not record the individual packets the client received.
+[Carbon alignment and warp entry, revision 27ee40b](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ball.cpp#L1776-L1814).
+
+When an occupied system resumes, an in-flight pilot now receives a movement update within one second.
+The saved ship, position and course continue through the ordinary flight scheduler and checkpoint path.
+
+Belt ratters used to consider any visible belt pirate and owned NPC wrecks up to 250 km from their ship.
+They now match the pirate's assigned belt and apply the existing 50 km NPC pursuit distance around the belt center
+to proactive combat and wreck selection. The belt remains the reference point while the ship approaches a wreck.
+The server checkpoints did not identify the particular ratter in the report.
+[EVE University belt ratting](https://wiki.eveuniversity.org/NullSec_Ratting).
+
+**Automated validation.** The exact development filter
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerTrafficNavigationTests.StationlessOpeningStartsAtARealGateAndContinuesToNextGate`
+reproduced the 31-hour deadline. The corrected case checks the observer's alignment and warp contacts, departure from the grid,
+continued travel to the original gate, and reopened checkpoint. Ratting tests cover a pirate from a different belt, a distant
+belt, local owned loot, another pilot's loot, and an owned wreck 120 km away. The solution built with zero warnings or errors
+in 5.72 seconds. The affected run passed 97 of 105 cases in 44 seconds. The same eight cases failed with the same assertions
+on unmodified `7c8f69b8` in a 12-case comparison that took 15 seconds. They concern one overpriced shopping case, two mining
+restart comparisons, two presentation allocation limits, one residential traffic observation, and two receiving-only gate
+visitor fixtures. Both Python suites passed (8 catalog and 9 formatting cases). Formatting checked 2,466 files.
+
+Affected filter:
+`FullyQualifiedName~CapsuleerTrafficNavigationTests|FullyQualifiedName~CapsuleerTrafficObservationTests|FullyQualifiedName~CapsuleerHandoffTests|FullyQualifiedName~CapsuleerTierTests|FullyQualifiedName~OccupiedCapsuleerSimulationTests|FullyQualifiedName~CapsuleerSchedulingTests|FullyQualifiedName~CapsuleerDeadlineTests|FullyQualifiedName~CapsuleerInboundGateAcceptanceTests|FullyQualifiedName~CapsuleerPresentationTests|FullyQualifiedName~PilotSpaceActivitiesTests|FullyQualifiedName~PilotAwarenessTests|FullyQualifiedName~PatrolTests|FullyQualifiedName~GateCampTests|FullyQualifiedName~RattingRulesTests`.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** After updating, revisit the YW-SYT and C-7SBM gates while cloaked and watch a traveling ship
+leave. Watch a belt ratter finish a nearby wreck and move on.
+
 ## Temporary gate camps
 
 An eligible departure can start or join a three-position local watch. Members choose the same gate and shift.
