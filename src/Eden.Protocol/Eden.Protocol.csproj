@@ -36,6 +36,7 @@
       ProtoRoot="Gateway"
       GrpcServices="None"
     />
+    <Protobuf Include="Gateway/sovereignty_*.proto" ProtoRoot="Gateway" GrpcServices="None" />
     <InternalsVisibleTo Include="Eden.Protocol.Tests" />
     <InternalsVisibleTo Include="Eden.Benchmarks" />
   </ItemGroup>

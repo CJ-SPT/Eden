@@ -11,8 +11,12 @@ using Eden.Protocol.PilotSessions;
 namespace Eden.Protocol.Sovereignty;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class EntosisHandler(IPilotEntosis entosis, Eden.Gameplay.Structures.IStructureContacts structures, TimeProvider clock)
-    : IModuleEffectSource
+internal sealed class EntosisHandler(
+    IPilotEntosis entosis,
+    Eden.Gameplay.Structures.IStructureContacts structures,
+    TimeProvider clock,
+    ISovereigntyResources? resources = null
+) : IModuleEffectSource
 {
     internal const string EffectName = "entosisLink";
     private readonly Dictionary<long, EntosisCycle> _effects = [];
@@ -23,6 +27,27 @@ internal sealed class EntosisHandler(IPilotEntosis entosis, Eden.Gameplay.Struct
         if (!entosis.Available)
         {
             return null;
+        }
+        if (resources is not null && items.Any(item => resources.IsSkyhookItem(context.Pilot.PilotId, item.Id)))
+        {
+            if (items.Count != 1 || items[0].Quantity != 1)
+            {
+                return new PilotCallResult.Failure("Deploy one skyhook at a time.");
+            }
+            try
+            {
+                var skyhook = resources.DeploySkyhook(context.Pilot.PilotId, items[0].Id);
+                foreach (var change in skyhook.Changes)
+                {
+                    InventoryChangesWire.NotifyItemChange(context, change);
+                }
+                context.Flight.RefreshStructures(structures.Contacts(context.Pilot.SystemId));
+                return new SovereigntyLaunchReply(items[0].Id, skyhook.Skyhook.Id);
+            }
+            catch (UnauthorizedAccessException error)
+            {
+                return new PilotCallResult.Failure(error.Message);
+            }
         }
         if (!items.Any(item => entosis.IsHubItem(context.Pilot.PilotId, item.Id)))
         {

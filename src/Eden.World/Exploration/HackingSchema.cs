@@ -47,6 +47,10 @@ internal static class HackingSchema
                 """
             );
         }
+        if (!columns.Contains("SovereigntySlot"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldExplorationSite ADD COLUMN SovereigntySlot INTEGER NOT NULL DEFAULT 0;");
+        }
         var attemptColumns = world
             .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldHackingAttempt')")
             .ToHashSet();

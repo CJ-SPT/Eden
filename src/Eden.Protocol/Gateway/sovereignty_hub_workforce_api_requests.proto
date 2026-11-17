@@ -1,0 +1,46 @@
+syntax = "proto3";
+package eve_public.sovereignty.hub.workforce.api;
+option csharp_namespace = "Eden.Protocol.Gateway.Sovereignty.WorkforceApi";
+
+// Wire projection from build 3662168 eve_public/sovereignty/hub/workforce/api/requests.proto.
+import "sovereignty_hub_hub.proto";
+import "sovereignty_hub_workforce_workforce.proto";
+import "sovereignty_identifiers.proto";
+
+message GetConfigurationRequest {
+  .eve_public.sovereignty.hub.Identifier hub = 1;
+}
+
+message GetConfigurationResponse {
+  .eve_public.sovereignty.hub.workforce.Configuration configuration = 1;
+}
+
+message ConfigureRequest {
+  .eve_public.sovereignty.hub.Identifier hub = 1;
+  .eve_public.sovereignty.hub.workforce.Configuration configuration = 2;
+}
+
+message ConfigureResponse {
+}
+
+message GetStateRequest {
+  .eve_public.sovereignty.hub.Identifier hub = 1;
+}
+
+message GetStateResponse {
+  .eve_public.sovereignty.hub.workforce.State state = 1;
+}
+
+message GetNetworkableHubsRequest {
+  .eve_public.sovereignty.hub.Identifier hub = 1;
+}
+
+message GetNetworkableHubsResponse {
+  message NetworkedHub {
+    .eve_public.sovereignty.hub.Identifier hub = 1;
+    .eden.gateway.sovereignty.Identifier system = 2;
+    .eve_public.sovereignty.hub.workforce.Configuration configuration = 3;
+    .eve_public.sovereignty.hub.workforce.State state = 4;
+  }
+  repeated .eve_public.sovereignty.hub.workforce.api.GetNetworkableHubsResponse.NetworkedHub hubs = 1;
+}

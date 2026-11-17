@@ -1,0 +1,25 @@
+syntax = "proto3";
+package eve_public.sovereignty.hub.api;
+option csharp_namespace = "Eden.Protocol.Gateway.Sovereignty.HubApi";
+
+// Wire projection from build 3662168 eve_public/sovereignty/hub/api/requests.proto.
+import "sovereignty_hub_hub.proto";
+
+message GetResourcesRequest {
+  .eve_public.sovereignty.hub.Identifier hub = 1;
+}
+
+message GetResourcesResponse {
+  message Power {
+    uint64 available = 1;
+    uint64 allocated = 2;
+    uint64 local_harvest = 3;
+  }
+  message Workforce {
+    uint64 available = 1;
+    uint64 allocated = 2;
+    uint64 local_harvest = 3;
+  }
+  .eve_public.sovereignty.hub.api.GetResourcesResponse.Power power = 1;
+  .eve_public.sovereignty.hub.api.GetResourcesResponse.Workforce workforce = 2;
+}

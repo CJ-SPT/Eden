@@ -1,6 +1,7 @@
 using System.Net;
 using Eden.Gameplay.Content;
 using Eden.Gameplay.Maps;
+using Eden.Gameplay.Sovereignty;
 using Eden.Protocol.Gateway.CelestialResources;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
@@ -22,9 +23,18 @@ internal static class CelestialResourceRequests
             {
                 case StarApi + "GetAllConfigurationsRequest":
                     _ = Stars.GetAllConfigurationsRequest.Parser.ParseFrom(payload);
-                    // The pinned catalog has no authoritative stellar power configurations.
-                    // An empty collection lets Sun Show Info retain its other static attributes.
-                    return new(HttpStatusCode.OK, new Stars.GetAllConfigurationsResponse());
+                    // Despite its name, sde/planetResources also contains stellar power keyed by star identity.
+                    var stellar = new Stars.GetAllConfigurationsResponse();
+                    stellar.Configurations.Add(
+                        directory
+                            .Read()
+                            .Stars.Select(star => new StarConfiguration
+                            {
+                                Star = new SequentialIdentifier { Sequential = checked((ulong)star.StarId) },
+                                Power = checked((ulong)star.Power),
+                            })
+                    );
+                    return new(HttpStatusCode.OK, stellar);
                 case PlanetApi + "GetAllDefinitionsRequest":
                     var all = Planets.GetAllDefinitionsRequest.Parser.ParseFrom(payload);
                     var snapshot = directory.Read();
@@ -84,8 +94,8 @@ internal static class CelestialResourceRequests
                         CyclePeriod = new Duration { Seconds = reagent.CycleSeconds },
                         SecuredCapacity = checked((uint)reagent.SecuredCapacity),
                         UnsecuredCapacity = checked((uint)reagent.UnsecuredCapacity),
-                        // The SDE does not publish the security split. The Info window
-                        // uses the total amount/period; no skyhook simulation is enabled.
+                        // The pinned Skyhook policy secures half of each completed cycle.
+                        SecuredPercentage = SovereigntyResourceRules.ReagentSecuredPercent,
                     },
                 }
             );

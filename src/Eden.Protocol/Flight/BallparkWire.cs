@@ -115,6 +115,14 @@ internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
             fields["unanchoring"] = structure.UnanchorAt;
             fields["hasCore"] = structure.HasCore;
         }
+        if (Body.Skyhook is { } skyhook)
+        {
+            fields["planetID"] = skyhook.PlanetId;
+            fields["allianceID"] = skyhook.AllianceId == 0 ? null : skyhook.AllianceId;
+            // Pinned orbitalSkyhook.OnSlimItemUpdated reads an orbital state, not the Upwell enum.
+            fields["skyhook_state"] = Eden.Gameplay.Sovereignty.SovereigntyResourceRules.SkyhookShieldVulnerableState;
+            fields["component_activate"] = new object?[] { skyhook.Active, skyhook.Active ? null : skyhook.OnlineAt };
+        }
         if (Body.Sovereignty is { } hub)
         {
             fields["allianceID"] = hub.Claim?.AllianceId;

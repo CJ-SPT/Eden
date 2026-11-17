@@ -16,7 +16,8 @@ namespace Eden.World.Mining;
 internal sealed record MiningSiteView(long Deadline, IReadOnlyList<CombatAnomaly> Sites);
 
 [Injectable(InjectionType.Singleton)]
-internal sealed partial class MiningSiteStore(WorldDatabase database) : IMiningSites
+internal sealed partial class MiningSiteStore(WorldDatabase database, Eden.Gameplay.Sovereignty.ISovereigntyResources? sovereignty = null)
+    : IMiningSites
 {
     // Keep resource sites apart from combat placements and vary replacement ice fields.
     private const int GasPlacement = 25;
@@ -26,7 +27,28 @@ internal sealed partial class MiningSiteStore(WorldDatabase database) : IMiningS
 
     public IReadOnlyList<CombatAnomaly> Signatures(int systemId, long now) => Get(systemId, now, MiningFamily.Gas);
 
-    public IReadOnlyList<CombatAnomaly> Anomalies(int systemId, long now) => Get(systemId, now, MiningFamily.Ice);
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<
+        int,
+        (IReadOnlyList<CombatAnomaly> Ice, IReadOnlyList<CombatAnomaly> Ore, IReadOnlyList<CombatAnomaly> Combined)
+    > _combined = new();
+
+    public IReadOnlyList<CombatAnomaly> Anomalies(int systemId, long now)
+    {
+        sovereignty?.AdvanceAll();
+        var ice = Get(systemId, now, MiningFamily.Ice);
+        var ore = SovereigntyOres(systemId, now);
+        if (ore.Count == 0)
+        {
+            return ice;
+        }
+        if (_combined.TryGetValue(systemId, out var cached) && ReferenceEquals(cached.Ice, ice) && ReferenceEquals(cached.Ore, ore))
+        {
+            return cached.Combined;
+        }
+        var result = ice.Concat(ore).ToArray();
+        _combined[systemId] = (ice, ore, result);
+        return result;
+    }
 
     private IReadOnlyList<CombatAnomaly> Get(int systemId, long now, MiningFamily family)
     {

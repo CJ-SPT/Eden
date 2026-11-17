@@ -1,0 +1,22 @@
+syntax = "proto3";
+package eve_public.sovereignty.hub.upgrade.api;
+option csharp_namespace = "Eden.Protocol.Gateway.Sovereignty.UpgradeApi";
+
+// Wire projection from build 3662168 eve_public/sovereignty/hub/upgrade/api/notices.proto.
+import "sovereignty_hub_hub.proto";
+import "sovereignty_hub_upgrade_upgrade.proto";
+import "sovereignty_identifiers.proto";
+
+message UninstalledNotice {
+  .eve_public.sovereignty.hub.upgrade.Identifier upgrade = 1;
+  .eden.gateway.sovereignty.Identifier upgrade_type = 2;
+  .eve_public.sovereignty.hub.Identifier hub = 3;
+}
+
+message HubUpgradesConfiguredNotice {
+  .eve_public.sovereignty.hub.upgrade.HubUpgrades hub_upgrades = 1;
+}
+
+message HubUpgradesSimulatedNotice {
+  .eve_public.sovereignty.hub.upgrade.HubUpgrades hub_upgrades = 1;
+}

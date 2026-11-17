@@ -7,4 +7,5 @@ public interface ILoginIdentity
     RSA Key { get; }
     ValueTask<long?> ValidateTicketAsync(string ticket, CancellationToken cancellationToken);
     long ReadRoles(long accountId) => (long)PilotRole.Player;
+    IDisposable? OpenGatewayAccess(string ticket, long accountId) => null;
 }

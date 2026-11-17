@@ -20,7 +20,8 @@ internal sealed partial class CombatAnomalyStore(
     WorldDatabase database,
     IPirateExploration? exploration = null,
     IMiningSites? mining = null,
-    IWormholeTravel? wormholes = null
+    IWormholeTravel? wormholes = null,
+    Eden.Gameplay.Sovereignty.ISovereigntyResources? sovereignty = null
 ) : ICombatAnomalies, IDedComplexTravel, IDedEscalations
 {
     private sealed record SiteSlotIdentity(long Id, int Slot);
@@ -141,6 +142,7 @@ internal sealed partial class CombatAnomalyStore(
 
     private IReadOnlyList<CombatAnomaly> ListCoreOwned(int systemId, long now, bool signature)
     {
+        sovereignty?.AdvanceAll();
         var key = (systemId, signature);
         // Take the resident owner before the shared movement gate. Bot execution
         // already owns the world when it requests these same views.
@@ -181,13 +183,14 @@ internal sealed partial class CombatAnomalyStore(
                 return _views[key].Sites;
             }
             double security = catalog.Read(CatalogData.Client.Systems, (long)systemId)?.SecurityStatus ?? 0.7;
+            var upgrades = Eden.World.Sovereignty.SovereigntySites.Read(database.Path, catalog, systemId);
             var eligible = _definitions
                 .Where(d =>
                     wormhole
                         ? !signature && d.WormholeClass == wormholeClass && d.WormholeKind == WormholeSiteKind.Combat
                         : d.WormholeClass == 0
                             && (d.Faction == faction || d.Faction == NpcPirateFaction.RogueDrones)
-                            && (!d.RequiresMajorThreat || majorThreat)
+                            && (!d.RequiresMajorThreat || majorThreat || upgrades.Major > 0)
                             && (
                                 signature
                                     ? d.Difficulty <= ProbeScanRules.MaximumSignatureDifficulty
@@ -225,7 +228,9 @@ internal sealed partial class CombatAnomalyStore(
             int slots = Math.Min(signature ? ProbeScanRules.SignaturesPerSystem : AnomalyEncounterRules.SitesPerSystem, eligible.Length);
             long? nextId = null;
             bool changed = false;
-            for (int slot = 0; slot < slots; slot++)
+            int bonus = signature || wormhole ? 0 : upgrades.Minor + upgrades.Major + upgrades.Drones;
+            var activeSlots = Enumerable.Range(0, slots).Concat(Enumerable.Range(AnomalyEncounterRules.SitesPerSystem, bonus));
+            foreach (int slot in activeSlots)
             {
                 if (!pirates)
                 {
@@ -239,7 +244,32 @@ internal sealed partial class CombatAnomalyStore(
                 long id = nextId ?? NextSiteId(world);
                 nextId = checked(id + 1);
                 uint choice = NpcSpawnRules.Seed(systemId, slot, checked((int)(id - CombatAnomalyRules.FirstSiteId)));
-                var definition = eligible[(int)(choice % eligible.Length)];
+                var choices = eligible;
+                if (slot >= AnomalyEncounterRules.SitesPerSystem)
+                {
+                    bool minor = slot - AnomalyEncounterRules.SitesPerSystem < upgrades.Minor;
+                    bool drone = slot - AnomalyEncounterRules.SitesPerSystem >= upgrades.Minor + upgrades.Major;
+                    choices = eligible
+                        .Where(definition =>
+                            drone ? definition.Faction == NpcPirateFaction.RogueDrones
+                            : minor
+                                ? definition.Name.Contains("Refuge", StringComparison.OrdinalIgnoreCase)
+                                    || definition.Name.Contains("Rally Point", StringComparison.OrdinalIgnoreCase)
+                            : definition.Name.Contains("Hub", StringComparison.OrdinalIgnoreCase)
+                                || definition.Name.Contains("Haven", StringComparison.OrdinalIgnoreCase)
+                                || definition.Name.Contains("Sanctum", StringComparison.OrdinalIgnoreCase)
+                        )
+                        .ToArray();
+                    if (choices.Length == 0 && !drone)
+                    {
+                        choices = eligible.Where(definition => minor ? definition.Difficulty <= 3 : definition.Difficulty >= 4).ToArray();
+                    }
+                    if (choices.Length == 0)
+                    {
+                        continue;
+                    }
+                }
+                var definition = choices[(int)(choice % choices.Length)];
                 var anchor = catalog.CelestialsInSystem(systemId).OrderBy(c => c.Id).First();
                 double offset = CombatAnomalyRules.PlacementOffset * (slot + (signature ? AnomalyEncounterRules.SitesPerSystem : 0) + 1);
                 site = new()
@@ -293,7 +323,7 @@ internal sealed partial class CombatAnomalyStore(
                 : long.MaxValue;
             transaction.Commit();
             long deadline = latest
-                .Values.Where(s => s.ReplaceAt.HasValue)
+                .Values.Where(s => s.ReplaceAt.HasValue && activeSlots.Contains(s.Slot))
                 .Select(s => s.ReplaceAt!.Value)
                 .DefaultIfEmpty(long.MaxValue)
                 .Min();

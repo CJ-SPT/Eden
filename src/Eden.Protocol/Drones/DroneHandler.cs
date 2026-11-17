@@ -95,7 +95,10 @@ internal sealed class DroneHandler(
             }
             if (launch)
             {
-                if (args is not [List<object?> items, var behalf, bool] || behalf is not null && !Equals(behalf, context.Pilot.PilotId))
+                if (
+                    args is not [List<object?> items, var behalf, bool]
+                    || behalf is not null && !Equals(behalf, context.Pilot.PilotId) && !Equals(behalf, (long)context.Pilot.CorpId)
+                )
                 {
                     return new PilotCallResult.Failure("Choose drones from your own ship's drone bay.");
                 }
@@ -109,6 +112,10 @@ internal sealed class DroneHandler(
                 if (entosis?.Launch(context, requests) is { } sovereigntyLaunch)
                 {
                     return sovereigntyLaunch;
+                }
+                if (behalf is not null && !Equals(behalf, context.Pilot.PilotId))
+                {
+                    return new PilotCallResult.Failure("Launch drones for your selected pilot.");
                 }
                 var result = drones.Launch(context.Pilot.PilotId, requests, now);
                 Notify(context, result.Changes);

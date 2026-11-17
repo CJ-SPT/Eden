@@ -1,0 +1,111 @@
+syntax = "proto3";
+package eve_public.sovereignty.skyhook.api;
+option csharp_namespace = "Eden.Protocol.Gateway.Sovereignty.SkyhookApi";
+
+// Wire projection from build 3662168 eve_public/sovereignty/skyhook/api/notices.proto.
+import "google/protobuf/timestamp.proto";
+import "semanticversion.proto";
+import "sovereignty_identifiers.proto";
+import "sovereignty_resource_planet_reagent.proto";
+import "sovereignty_resource_planet_reagent_itemtype_identifier.proto";
+import "sovereignty_skyhook_theftvulnerability.proto";
+import "sovereignty_skyhook_workforce.proto";
+
+message ReagentSimulationsNotice {
+  message ReagentSimulation {
+    .eden.gateway.sovereignty.Identifier reagent = 1;
+    .eve_public.sovereignty.resource.planet.reagent.itemtype.Identifier reagent_type = 6;
+    .eve_public.sovereignty.resource.planet.reagent.MaturationSimulation maturation = 2;
+    .eve_public.sovereignty.resource.planet.reagent.HarvestSimulation harvest = 3;
+    .eve_public.sovereignty.resource.planet.reagent.Simulation simulation = 4;
+  }
+  .eden.gateway.sovereignty.Identifier skyhook = 1;
+  .eden.gateway.sovereignty.Identifier planet = 2;
+  repeated .eve_public.sovereignty.skyhook.api.ReagentSimulationsNotice.ReagentSimulation simulations = 3;
+}
+
+message ReagentDefinitionsNotice {
+  message ReagentDefinition {
+    .eden.gateway.sovereignty.Identifier reagent = 1;
+    .eve_public.sovereignty.resource.planet.reagent.itemtype.Identifier reagent_type = 3;
+    .eve_public.sovereignty.resource.planet.reagent.Definition definition = 2;
+  }
+  .eden.gateway.sovereignty.Identifier skyhook = 1;
+  .eden.gateway.sovereignty.Identifier planet = 2;
+  repeated .eve_public.sovereignty.skyhook.api.ReagentDefinitionsNotice.ReagentDefinition definition = 3;
+  .eve_public.semanticversion.Specification planet_resources_definitions_version = 4;
+}
+
+message ReagentConfigurationsNotice {
+  message ReagentConfiguration {
+    .eden.gateway.sovereignty.Identifier type = 1;
+    .eve_public.sovereignty.resource.planet.reagent.itemtype.Identifier reagent_type = 4;
+    .eve_public.sovereignty.resource.planet.reagent.HarvestConfiguration harvest = 2;
+    .eve_public.sovereignty.resource.planet.reagent.MaturationConfiguration maturation = 3;
+  }
+  .eden.gateway.sovereignty.Identifier skyhook = 1;
+  .eden.gateway.sovereignty.Identifier planet = 2;
+  repeated .eve_public.sovereignty.skyhook.api.ReagentConfigurationsNotice.ReagentConfiguration configurations = 3;
+}
+
+message ActivationNotice {
+  .eden.gateway.sovereignty.Identifier solar_system = 1;
+  .eden.gateway.sovereignty.Identifier planet = 2;
+  .eden.gateway.sovereignty.Identifier skyhook = 3;
+  bool active = 4;
+}
+
+message WorkforceChangedNotice {
+  .eden.gateway.sovereignty.Identifier solar_system = 1;
+  .eden.gateway.sovereignty.Identifier planet = 2;
+  .eden.gateway.sovereignty.Identifier skyhook = 3;
+  uint64 workforce = 4;
+}
+
+message AllInSolarSystemNotice {
+  message Skyhook {
+    message ReagentSimulation {
+      .eden.gateway.sovereignty.Identifier reagent = 1;
+      .eve_public.sovereignty.resource.planet.reagent.itemtype.Identifier reagent_type = 5;
+      .eve_public.sovereignty.resource.planet.reagent.MaturationSimulation maturation = 2;
+      .eve_public.sovereignty.resource.planet.reagent.HarvestSimulation harvest = 3;
+      .eve_public.sovereignty.resource.planet.reagent.Simulation simulation = 4;
+    }
+    message ReagentDefinition {
+      .eden.gateway.sovereignty.Identifier reagent = 1;
+      .eve_public.sovereignty.resource.planet.reagent.itemtype.Identifier reagent_type = 6;
+      .eve_public.sovereignty.resource.planet.reagent.Definition definition = 2;
+    }
+    .eden.gateway.sovereignty.Identifier skyhook = 1;
+    repeated .eve_public.sovereignty.skyhook.api.AllInSolarSystemNotice.Skyhook.ReagentSimulation reagent_simulations = 2;
+    bool active = 3;
+    repeated .eve_public.sovereignty.skyhook.api.AllInSolarSystemNotice.Skyhook.ReagentDefinition reagent_definitions = 4;
+    .eve_public.sovereignty.skyhook.Workforce effective_workforce = 9;
+    .eve_public.semanticversion.Specification planet_resources_definitions_version = 10;
+    oneof vulnerability {
+      .eve_public.sovereignty.skyhook.TheftVulnerability theft_vulnerability = 5;
+      bool unknown = 6;
+    }
+    oneof workforce {
+      uint64 workforce_available = 7;
+      bool none = 8;
+    }
+  }
+  repeated .eve_public.sovereignty.skyhook.api.AllInSolarSystemNotice.Skyhook skyhooks = 1;
+  .eden.gateway.sovereignty.Identifier solar_system = 2;
+}
+
+message TheftVulnerabilityWindowScheduledNotice {
+  .eden.gateway.sovereignty.Identifier skyhook = 1;
+  .google.protobuf.Timestamp start_time = 2;
+  .google.protobuf.Timestamp end_time = 3;
+}
+
+message TheftVulnerabilityWindowStartedNotice {
+  .eden.gateway.sovereignty.Identifier skyhook = 1;
+  .google.protobuf.Timestamp end_time = 2;
+}
+
+message TheftVulnerabilityWindowEndedNotice {
+  .eden.gateway.sovereignty.Identifier skyhook = 1;
+}

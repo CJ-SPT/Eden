@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
@@ -9,8 +10,42 @@ using Eden.Server.Launcher;
 namespace Eden.Server.Authentication;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class DevelopmentIdentity(TimeProvider clock, LauncherStore accounts, LauncherOptions options) : ILoginIdentity, IDisposable
+internal sealed class DevelopmentIdentity(TimeProvider clock, LauncherStore accounts, LauncherOptions options)
+    : ILoginIdentity,
+        Eden.Protocol.Gateway.IGatewayAuthentication,
+        IDisposable
 {
+    private sealed class GatewayCredential(long accountId)
+    {
+        public long AccountId { get; } = accountId;
+    }
+
+    private readonly ConcurrentDictionary<string, GatewayCredential> _gatewayCredentials = new(StringComparer.Ordinal);
+
+    public long? Account(string authorization)
+    {
+        if (authorization.Length > 4096 || !authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+        string fingerprint = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(authorization[7..])));
+        return _gatewayCredentials.GetValueOrDefault(fingerprint)?.AccountId;
+    }
+
+    public IDisposable OpenGatewayAccess(string ticket, long accountId)
+    {
+        string fingerprint = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(ticket)));
+        var credential = new GatewayCredential(accountId);
+        _gatewayCredentials[fingerprint] = credential;
+        return new GatewayLease(this, fingerprint, credential);
+    }
+
+    private sealed class GatewayLease(DevelopmentIdentity owner, string fingerprint, GatewayCredential credential) : IDisposable
+    {
+        public void Dispose() =>
+            ((ICollection<KeyValuePair<string, GatewayCredential>>)owner._gatewayCredentials).Remove(new(fingerprint, credential));
+    }
+
     private const string KeyName = "Eden.LocalLogin.3662168";
     private const int SigningKeySize = 3072;
 

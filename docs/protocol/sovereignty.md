@@ -13,8 +13,8 @@ territory. Current gameplay references are [UniWiki sovereignty](https://wiki.ev
 | 2. Deployment and initial capture | Inventory-backed deployment around the star; corporation/alliance authority; one neutral hub per eligible system; Entosis warm-up, paid cycles, range and ship restrictions; contested progress; atomic completed claims and native sovereignty/map views. Implemented below. |
 | 3. Territorial conflict | Vulnerability windows and delayed changes, reinforcement deadlines, constellation command-node campaigns, defense/regeneration and deterministic ownership-loss settlement; restart-safe progress and native notifications. Implemented below. |
 | 4. Activity and capitals | NPC-kill and mined-volume contributions, activity decay, strategic age in published views, capital selection/delays and single-system behavior; ADM connected to capture timers. Implemented below. |
-| 5. Resources and upgrades | Catalog-backed upgrades, stellar power, Skyhook resources, workforce routing, reagents/fuel, priorities, offline/low-power transitions and site-generation effects. |
-| 6. Infrastructure and cleanup | Ansiblex, beacons and jammers gated by active upgrades; access and map consumers; destruction, self-destruct, alliance departure/dissolution and Skyhook ownership transitions. |
+| 5. Resources and upgrades | Catalog-backed upgrades, stellar power, Skyhook resources, workforce routing, reagents/fuel, priorities, offline/low-power transitions and site-generation effects. Implemented below. |
+| 6. Infrastructure and cleanup | Ansiblex, beacons, jammers and stability-generator ship bonuses gated by active upgrades; access and map consumers; destruction, self-destruct, alliance departure/dissolution and Skyhook ownership transitions. |
 
 Each milestone needs focused automated rules, resident transactions, checkpoint/reopen and native-boundary tests where
 applicable, followed by the repository's root validation and a remotely verified commit before the next milestone starts.
@@ -529,3 +529,172 @@ FullyQualifiedName~Eden.Protocol.Tests.Sovereignty|FullyQualifiedName~Eden.Proto
 
 **Optional maintainer checks.** Select/cancel an alliance capital in the native panel; observe activity/trends and ADM
 in the sovereignty UI; compare an owned-hub timer with a command node after its source capital changes.
+
+## Sovereignty resources and upgrades — November 16, 2026
+
+Schema **183** adds seven saved resource tables with explicit immutable resident mappings: per-hub budgets, installed
+upgrades, shared fuel ledgers, workforce configuration/sources, Skyhooks and ore-site provenance. Exploration sites gain
+a saved sovereignty slot (existing sites remain slot zero). Initial hydration, migration and detached checkpoint
+projection use SQL; resource commands, reads, timers and site effects require the resident world. Inventory debits,
+configuration, startup fuel and resulting power states commit together. Failed commands preserve inventory and resources.
+
+### Catalog resources and resource operations
+
+Definitions use **44 published** upgrades from **49** pinned `sde/sovereigntyUpgrades` records. The three unpublished drone
+arrays and both QA definitions are excluded. Requirements, production, exclusivity and startup/hourly reagent costs come
+from this export, rather than historical prices in public articles. For example, Cynosural Navigation consumes power
+250, workforce 1500, 62000 Magmatic Gas at startup and 205/hour. The native public definition reply retains all published
+upgrade definitions; resource allocation alone does not implement each upgrade's downstream consumer (see below).
+
+Despite its name, `sde/planetResources` contains stellar entries: **2712** of its **25798** records identify stars in
+`sde/mapStars`. The shared directory now separates stars from planets and serves actual native star power configurations.
+C-7SBM's star **40252918** supplies **900** power. Skyhooks harvest only their planet's exported power/workforce/reagent
+profile; unavailable resources never acquire a fabricated fallback. Local power cannot be transferred.
+
+An owning corporation's effective Station Manager/Director/CEO launches one packaged Orbital Skyhook **81080** through
+the native Deploy action, including corporation-owned cargo. Deployment requires claimable nullsec and proximity to a
+planet, rejects a second live hook and atomically consumes one hull. A claim or alliance is not required to deploy.
+Previously saved generic Skyhooks remain decommissionable through their original lifecycle; migration does not turn
+them into resource harvesters. Newly deployed resource Skyhooks reject generic Upwell management.
+The component's catalog activation delay is **1800 seconds**. Only active, completed hooks belonging to the claim's
+alliance contribute power/workforce to its hub. Hooks may harvest reagents without a system claim.
+
+Placement is an explicit **Eden policy**: within 50 million metres of the planet's surface, the hook is placed five
+million metres above it in the ship's radial direction. The component export names an orbital placement function but
+provides no numeric altitude. Harvesting uses complete exported cycles, separate secured/surplus capacity limits and a
+**50% secured** split, rounded down independently for each cycle; the surplus retains the other units. This integer
+policy makes one late callback equivalent to repeated complete cycles. Deactivation pauses production and resets a
+partial cycle. Capped stocks, cycle cursors, activation deadlines and partial withdrawals survive checkpoints.
+
+Managers can extract positive quantities from secured stock to fitted ship cargo, subject to available capacity,
+cloaking and edge-to-edge range (10 km). Surplus theft, theft vulnerability, Skyhook damage/ownership transfer and access
+lists belong to the next milestone. The current slim advertises the pinned shield-vulnerable state **210** and native
+activation fields; it does not imply that the theft/combat lifecycle is implemented.
+
+Workforce supports inactive, import, export and transit configurations. A destination explicitly accepts at most three
+source systems. Exports traverse alliance-owned stargates through transit-mode hubs and are limited to the source's
+local harvested workforce. Disconnected exports remain available locally; generated workforce cannot be re-exported.
+Topology changes settle old allocations before publishing both systems' new budgets. No network configuration creates
+resources or consumes an imported quantity twice.
+
+### Upgrade lifecycle and site effects
+
+Installation consumes one real packaged upgrade from cargo, fleet hangar or infrastructure hold within hub range.
+The request must configure every installed/new type exactly once. Duplicate identities/types, foreign managers,
+unsupported items and installations exceeding potential system power fail atomically. Uninstall destroys the upgrade
+without a refund. Reagent deposits debit real inventory into a bounded shared hub ledger.
+
+Priority order determines allocation. Mutually exclusive groups admit one running type, and resource-producing upgrades
+only help lower-priority entries. Native power states are Offline **1**, Online **2**, Low Power **3** and startup Pending
+**4**. Resource/fuel shortages retain the configured intent; restoring inputs resumes allocation. Manual offlining clears
+the startup-paid state. Fractional hourly consumption persists as an integer numerator in ticks/hour; shared-fuel
+thresholds reallocate at exact deadlines, so delayed callbacks and repeated ticks produce identical ledgers. Late Skyhook
+activation splits settlement at its original deadline. Claim-loss campaigns settle and destroy the old hub's resource
+state at ownership loss; already earned finite sites remain until completion/depletion.
+
+Active minor/major detection arrays add one to three supported combat slots by tier. Exploration detectors add one to
+three data slots and relic slots; ghost sites and wormholes are unchanged. Prospecting arrays create one finite site
+of their catalog ore family, eight rocks per tier with 10000 units per tier per rock, with ten-minute replacement after
+depletion. Existing generated sites survive offlining; offline upgrades stop replacement. Slot identities and ore
+provenance persist across reopening. State changes invalidate shared resident views immediately. Warm resource reads
+assert zero SQL commands, connections and fitting calculations.
+
+These rosters, quantities and placements are **Eden calibration**, not a reconstruction of CCP's hidden distribution
+service. Exported distribution dogma identifiers are not dungeon identifiers and are never interpreted as such. Combat
+slots select supported regional minor/major profiles; ore mappings are Veldspar, Mordunium, Kylixium, Griemeer, Nocxite,
+Hezorime and Ueganite. The pinned catalog determines resource requirements and ore identities.
+
+Ansiblex, cynosural beacon/jammer and supercapital consumers, and the four stability generators' ship bonuses, remain
+milestone 6 work. Their published upgrades can be installed and consume their catalog resources; this does not grant
+those downstream capabilities. Skyhook theft, access lists, alliance departure/dissolution and ownership transitions
+also remain explicit milestone 6 boundaries. Native UI input, rendering and live relay authentication remain unverified.
+
+### Native contracts and evidence
+
+Static xdis **6.3.0** inspection used the prepared build archive/hash recorded above; protobuf descriptor bytes were read
+inertly and projected into named schemas. Relevant packages are `eve_public.sovereignty.hub.upgrade.api`, `hub.fuel.api`,
+`hub.workforce.api`, `hub.api` and `skyhook.api`. The implementation covers definition/upgrade/fuel/resource reads,
+configuration, installation/uninstall, fuel deposit, workforce networks and Skyhook reads/activation. Native updates use
+`HubUpgradesSimulatedNotice`, uninstall and resource-simulation notices, plus Skyhook activation, workforce and reagent
+simulation notices. The notice envelope preserves native field tags.
+The native component extraction and authorization methods use `beyonce.CallComponentFromClient`; corporation Skyhook
+listings return named KeyVal rows. Existing explicit Blue conversion and the milestone-2 Carbon boundary remain in use;
+no Blue codec or Destiny simulation implementation was changed. The pinned Skyhook notice listener reads
+`ReagentSimulation.simulation` through `HarvestSplitSimulationState.create_from_proto`; this is the populated secured/
+surplus snapshot, rather than the newer harvest/maturation fields.
+
+Private gateway operations require an authenticated account whose selected character belongs to it, then apply resident
+corporation/alliance authority. Client-supplied character context is not authentication. After game-login proof, the host
+holds only a hash of the login ticket for a Bearer gateway lease lasting that connection; public streams retain no private
+access. The real transport forwards Authorization metadata. A notice subscription rechecks the lease and publishes only
+changed observed hubs. Committed gateway inventory debits enter the existing Macho item-notification queue. Automated
+contract tests establish these boundaries; they do not establish that the native launcher/client forwards the expected
+credential in a live session.
+
+Gameplay references consulted: [UniWiki sovereignty](https://wiki.eveuniversity.org/Sovereignty),
+[UniWiki Skyhook](https://wiki.eveuniversity.org/Skyhook),
+[CCP Sovereignty Hub](https://support.eveonline.com/hc/en-us/articles/14339751569436-Sovereignty-Hub),
+[CCP transition and upgrades](https://www.eveonline.com/news/view/sovereignty-updates-transition-and-upgrades) and the
+[official system-resource workbook](https://web.ccpgamescdn.com/aws/eveonline/files/EquinoxSystemResourceData4.xlsx).
+Historical public costs are superseded by the pinned export where they differ. The inert focused fixture contains
+**119 types / 516 records**, including all published/unpublished upgrade records and constellation resource/stargate inputs.
+
+The local AGPL reference was consulted for behavior only; no implementation was copied. Snapshot SHA-256 values:
+
+| Reference under `server/src/services/sovereignty/` | SHA-256 |
+| --- | --- |
+| `sovHubFuelBurn.js` | `38ab746d5b50f61b1d9c31bc6aefc56d673c377ae0b66903b01ca68737ac77c7` |
+| `sovHubUpgradeInstall.js` | `ab180fb5fd10f306f1bdc0929a8adc8909322981ca7aff8f70104d9d8ec1a8d0` |
+| `sovUpgradeSupport.js` | `da97b6c2a110b36e8c22eac0eb1db9a31816b23bc4131b57150ac2827a20abdc` |
+| `colonyResourcesMgrService.js` | `c4b253530480ca49126c6c7cada12ff933f42ebef4e7db4b18f637da96b917a3` |
+| `sovStaticAuthority.js` | `9e3f1d7b801455f5bb5357289752359602a5be8a8045432056334c7b4a3e323d` |
+| `sovStaticData.js` | `37af5ef18049e9ab12a986f6c68cc7e709d994ab814c3d6fe8ab2774a5170a47` |
+
+**Automated validation.** Root checks passed in **400.93 s**: tool/solution restore, solution build with zero
+warnings/errors, **721 focused tests** (**344.97 s**, including **148 sovereignty cases / 21 new**), both Python policy
+suites (**8 + 9 tests**) and formatting/width verification (**2520 files**). No cases were excluded. The full .NET suite
+was not requested or run. The final legacy-management compatibility adjustment and its affected classes are validated
+separately below. UTF-8, final newlines, changed guide links and Git whitespace checks passed.
+
+The last compatibility guard preserves decommissioning for generic Skyhooks saved before this milestone, while new
+resource Skyhooks reject generic Upwell management. After that adjustment, root tool/solution restore, a zero-warning
+solution build, **49 sovereignty-protocol and structure tests** (**44.12 s**), both Python policy suites (**8 + 9**) and
+formatting verification (**2520 files**) passed in **108.33 s**. Its focused filter was
+`FullyQualifiedName~SovereigntyResourceProtocolTests|FullyQualifiedName~Eden.Protocol.Tests.Structures.StructureTests`.
+The 721-case dependency run preceded only this narrow management guard and the corresponding assertions; no other
+production code changed afterward.
+
+Development started with exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Sovereignty.SovereigntyResourceRulesTests.PriorityProductionAndSharedFuelExhaustionSettleAtExactBoundaries`:
+**1 passed**, build **12.92 s**, tests **4.13 s**. Coverage includes exact shared-fuel thresholds and repeated subsecond
+callbacks; priority/production/exclusivity and disconnected workforce routes; actual inventory installation/deposit and
+unchanged-state rejection; timed Skyhook harvests/caps, repeated activation and partial withdrawals; migration from
+version 182, fuel/cycle/network/site checkpoints and reopening; physical native deployment, authenticated HTTP/2,
+credential replacement, private notice deduplication and committed inventory notifications. The deterministic catalog
+re-export matches **119 types / 516 records** and preserves every pre-existing fixture identity/value.
+
+The first 160-case dependency run passed **159**, with one packet fixture expecting the former zero secured percentage;
+the fixture now independently encodes the 50% field. The first root attempt was deliberately stopped after **188**
+completed cases (**158 passed / 30 failed**) exposed EF translation of the new Skyhook deadline and exploration-slot
+queries in existing nonresident fixtures. New projections now run only against resident state; no resource SQL fallback
+was added. The targeted native/Agency/site rerun passed **25/25** (build **7.73 s**, tests **17.06 s**).
+
+A second root attempt was stopped after **568** completed cases (**566 passed / 2 failed**). The generic hull theory
+still expected Skyhook deployment through Upwell operations; it now verifies rejection and unchanged inventory, while
+the native launch test covers successful dedicated deployment. The existing hacking history test also caught increased
+allocations. A first predicate-only correction reduced allocations but still failed that budget (**29/30** passed).
+Positive sovereignty slots now have a resident index, and systems without extra slots retain the original base query.
+The unchanged history budgets and upgrade-generated site tests then passed **5/5** (build **9.53 s**, tests **18.25 s**).
+No tests were disabled or excluded to accommodate these corrections. Final native Skyhook notices were added before
+the final root run. Native rendering/input and live credential forwarding remain unverified.
+
+The root focused dependency filter is:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Sovereignty|FullyQualifiedName~Eden.Protocol.Tests.Gateway|FullyQualifiedName~Eden.Protocol.Tests.Hosting|FullyQualifiedName~Eden.Protocol.Tests.Exploration|FullyQualifiedName~Eden.Protocol.Tests.Maps|FullyQualifiedName~Eden.Protocol.Tests.Structures.StructureTests|FullyQualifiedName~Eden.Protocol.Tests.Mining.MiningTests|FullyQualifiedName~MiningDroneLifecycleTests|FullyQualifiedName~InventoryPersistenceTests|FullyQualifiedName~Eden.Protocol.Tests.Market.ResidentEconomyTests|FullyQualifiedName~DetachedCheckpointTests|FullyQualifiedName~IncrementalCheckpointTests|FullyQualifiedName~PilotDroneTests|FullyQualifiedName~PilotLoginTests
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Deploy/activate a Skyhook and withdraw secured reagent; configure/deposit fuel and change
+upgrade priority in the hub UI; observe workforce connectivity and generated site markers across a power outage.

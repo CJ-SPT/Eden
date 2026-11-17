@@ -303,7 +303,11 @@ internal static class Program
             capsuleerMaintenance.Start();
             var population = services.GetRequiredService<CapsuleerPopulationMaintenance>();
             lifetime.OnStop(nameof(CapsuleerPopulationMaintenance), population.Dispose);
-            var gateway = LocalGateway.Create(services.GetRequiredService<GatewayRequests>(), options);
+            var gateway = LocalGateway.Create(
+                services.GetRequiredService<GatewayRequests>(),
+                options,
+                services.GetRequiredService<IGatewayAuthentication>()
+            );
             lifetime.OnStop("gateway", gateway.DisposeAsync);
             var api = LauncherApi.Create(
                 options,

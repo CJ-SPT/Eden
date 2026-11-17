@@ -200,7 +200,7 @@ internal sealed partial class PilotEntosisStore
                 world.Remove(node);
                 if (conflict.DefenderPoints is <= 0 or >= 100)
                 {
-                    SettleCampaign(world, conflict, first);
+                    SettleCampaign(world, catalog, conflict, first);
                     break;
                 }
                 Spawn(world, catalog, conflict, first);
@@ -221,7 +221,7 @@ internal sealed partial class PilotEntosisStore
         }
     }
 
-    private void SettleCampaign(WorldAction world, SavedSovereigntyConflict conflict, long at)
+    private void SettleCampaign(WorldAction world, CatalogDbContext catalog, SavedSovereigntyConflict conflict, long at)
     {
         foreach (var node in world.Filter<SavedSovereigntyNode>(row => row.SourceSystemId == conflict.SystemId).ToArray())
         {
@@ -260,6 +260,7 @@ internal sealed partial class PilotEntosisStore
         {
             world.Remove(hub);
         }
+        SovereigntyResourcePersistence.DestroyHub(world, catalog, conflict.HubId, at);
         world.Remove(conflict);
         SovereigntyDevelopmentPersistence.ReconcileCapital(world, conflict.DefenderAllianceId, at);
         // No winner receives a free replacement hull or automatic claim.

@@ -866,6 +866,13 @@ internal sealed partial class ResidentEconomy
         RegisterSovereigntyActivity();
         RegisterSovereigntyCapital();
         RegisterSovereigntyCapitalChange();
+        RegisterSovereigntyResourceHub();
+        RegisterSovereigntyUpgrade();
+        RegisterSovereigntyFuel();
+        RegisterSovereigntyWorkforce();
+        RegisterSovereigntyWorkforceSource();
+        RegisterSovereigntySkyhook();
+        RegisterSovereigntyMiningLink();
         RegisterSovereigntyActivityEvent();
         RegisterPilotActivity();
         RegisterCommandBursts();

@@ -17,6 +17,7 @@ internal sealed partial class LiveReadModels
         "WorldSovereigntyPrime",
         "WorldSovereigntyActivity",
         "WorldSovereigntyCapital",
+        "WorldSovereigntySkyhook",
         "WorldMoonExtraction",
         "WorldShip",
         "WorldItemMembership"
@@ -34,7 +35,12 @@ internal sealed partial class LiveReadModels
             (key, view, change) =>
                 change.Table is "WorldSovereigntyHub" or "WorldSovereigntyClaim" or "WorldSovereigntyConflict" or "WorldSovereigntyActivity"
                     ? key.System == change.Id
-                    : change.Table is "WorldSovereigntyPrime" or "WorldSovereigntyCapital" or "WorldStructure" or "WorldMoonExtraction"
+                    : change.Table
+                        is "WorldSovereigntyPrime"
+                            or "WorldSovereigntyCapital"
+                            or "WorldSovereigntySkyhook"
+                            or "WorldStructure"
+                            or "WorldMoonExtraction"
                         || view.WaitingForAssets
         );
         _structureNames.Observe(changes, (id, change) => id == change.Id);

@@ -5,7 +5,7 @@ using Eden.Infrastructure.Registration;
 namespace Eden.Server.Maintenance;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class SovereigntyMaintenance(IPilotEntosis entosis, TimeProvider clock) : IDisposable
+internal sealed class SovereigntyMaintenance(TimeProvider clock, ISovereigntyResources resources) : IDisposable
 {
     private Task _loop = Task.CompletedTask;
     private PeriodicTimer? _timer;
@@ -14,7 +14,7 @@ internal sealed class SovereigntyMaintenance(IPilotEntosis entosis, TimeProvider
     {
         if (_timer is null)
         {
-            entosis.AdvanceAll();
+            resources.AdvanceAll();
             _timer = new PeriodicTimer(TimeSpan.FromSeconds(1), clock);
             _loop = Run(_timer);
         }
@@ -26,7 +26,7 @@ internal sealed class SovereigntyMaintenance(IPilotEntosis entosis, TimeProvider
         {
             try
             {
-                entosis.AdvanceAll();
+                resources.AdvanceAll();
             }
             catch (Exception error)
             {

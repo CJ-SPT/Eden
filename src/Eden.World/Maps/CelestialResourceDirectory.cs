@@ -24,8 +24,16 @@ internal sealed class CelestialResourceDirectory(WorldDatabase database) : ICele
 
     private static CelestialResourceSnapshot Load(CatalogDbContext catalog)
     {
+        var starIds = catalog.Records(CatalogData.Sde.MapStars).Keys.ToHashSet();
+        var resources = catalog.Records(CatalogData.Sde.PlanetResources);
+        var stars = resources
+            .Where(row => starIds.Contains(row.Key))
+            .Select(row => new StarResourceDefinition(row.Key, row.Value.Power ?? 0))
+            .OrderBy(row => row.StarId)
+            .ToImmutableArray();
         var planets = catalog
             .Records(CatalogData.Sde.PlanetResources)
+            .Where(row => !starIds.Contains(row.Key))
             .OrderBy(row => row.Key)
             .Select(row => new PlanetResourceDefinition(
                 row.Key,
@@ -45,6 +53,7 @@ internal sealed class CelestialResourceDirectory(WorldDatabase database) : ICele
         using MemoryStream image = new();
         using (BinaryWriter writer = new(image, System.Text.Encoding.UTF8, leaveOpen: true))
         {
+            writer.Write(Eden.Gameplay.Sovereignty.SovereigntyResourceRules.ReagentSecuredPercent);
             foreach (var planet in planets)
             {
                 if (planet.PlanetId <= 0 || planet.Power < 0 || planet.Workforce < 0)
@@ -75,6 +84,9 @@ internal sealed class CelestialResourceDirectory(WorldDatabase database) : ICele
                 }
             }
         }
-        return new(Convert.ToHexStringLower(SHA256.HashData(image.GetBuffer().AsSpan(0, checked((int)image.Length)))), planets);
+        return new(Convert.ToHexStringLower(SHA256.HashData(image.GetBuffer().AsSpan(0, checked((int)image.Length)))), planets)
+        {
+            Stars = stars,
+        };
     }
 }

@@ -24,10 +24,18 @@ internal sealed partial class PirateExplorationStore(
     WorldDatabase database,
     SqliteWorld lookup,
     PilotLossSettlement losses,
-    IPilotDamageEvents damageEvents
+    IPilotDamageEvents damageEvents,
+    Eden.Gameplay.Sovereignty.ISovereigntyResources? sovereignty = null
 ) : IPirateExploration, IPilotHacking
 {
-    private sealed record View(long Catalog, long Deadline, bool Enabled, IReadOnlyList<CombatAnomaly> Sites, long Version = 0);
+    private sealed record View(
+        long Catalog,
+        long Deadline,
+        bool Enabled,
+        IReadOnlyList<CombatAnomaly> Sites,
+        long Version = 0,
+        long SovereigntyVersion = 0
+    );
 
     private readonly ConcurrentDictionary<int, View> _views = [];
 
@@ -41,6 +49,8 @@ internal sealed partial class PirateExplorationStore(
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
         using (database.EnterMovement())
         {
+            sovereignty?.AdvanceAll();
+            long sovereigntyVersion = Eden.World.Sovereignty.SovereigntySites.Version(database.Path, systemId);
             long generation = database.Catalog.Identity.Generation;
             bool enabled = database.Settings.NpcPopulation.Pirates;
             long version = WormholeRules.IsWormholeSystem(systemId) ? CombatAnomalyStore.ResidentVersion(database.Path, systemId) : 0;
@@ -49,6 +59,7 @@ internal sealed partial class PirateExplorationStore(
                 && view.Catalog == generation
                 && view.Enabled == enabled
                 && view.Version == version
+                && view.SovereigntyVersion == sovereigntyVersion
                 && now < view.Deadline
             )
             {
@@ -59,7 +70,7 @@ internal sealed partial class PirateExplorationStore(
             var faction = system is null ? null : NpcRegions.Pirates(system.RegionId);
             if (system is null || !enabled || faction is null && !WormholeRules.IsWormholeSystem(systemId))
             {
-                _views[systemId] = new(generation, long.MaxValue, enabled, [], version);
+                _views[systemId] = new(generation, long.MaxValue, enabled, [], version, sovereigntyVersion);
                 return _views[systemId].Sites;
             }
             bool wormhole = WormholeRules.IsWormholeSystem(systemId);
@@ -78,166 +89,213 @@ internal sealed partial class PirateExplorationStore(
                 : 2;
             List<CombatAnomaly> sites = [];
             long deadline = long.MaxValue;
+            int explorationTier = Eden.World.Sovereignty.SovereigntySites.Read(world, catalog, systemId).Exploration;
             foreach (var kind in Enum.GetValues<ExplorationKind>())
             {
                 if (wormhole && kind != ExplorationKind.Ghost && wormholeClass is not (>= 1 and <= 6))
                 {
                     continue;
                 }
-                long? siteId = world
-                    .Filter<SavedExplorationSite>(s => s.SystemId == systemId && s.Kind == (int)kind)
-                    .Select(s => (long?)s.Id)
-                    .OrderByDescending(id => id)
-                    .FirstOrDefault();
-                var row = siteId is long selected ? world.Set<SavedExplorationSite>().Find(selected) : null;
-                if (row is not null && row.ExpiresAt <= now && row.ReplaceAt is null)
+                int existingSlots = 0;
+                if (world is EconomyTransaction)
                 {
-                    Retire(world, row, row.ExpiresAt);
+                    // Positive slot buckets are small even when the base site's archive is large.
+                    for (
+                        int candidate = 1;
+                        candidate <= Eden.Gameplay.Sovereignty.SovereigntyResourceRules.MaximumDetectionTier;
+                        candidate++
+                    )
+                    {
+                        if (
+                            world
+                                .Filter<SavedExplorationSite>(site =>
+                                    site.SovereigntySlot == candidate && site.SystemId == systemId && site.Kind == (int)kind
+                                )
+                                .Any()
+                        )
+                        {
+                            existingSlots = candidate;
+                        }
+                    }
                 }
-                if (row is null || row.ReplaceAt <= now)
+                int slots = wormhole || kind == ExplorationKind.Ghost ? 0 : Math.Max(explorationTier, existingSlots);
+                for (int sovereigntySlot = 0; sovereigntySlot <= slots; sovereigntySlot++)
                 {
-                    IEnumerable<ExplorationDefinition> candidates =
-                        kind == ExplorationKind.Ghost ? GhostSiteCatalog.Read(catalog)
-                        : wormhole ? sleepers
-                        : HackingCatalog.Sites;
-                    var eligible = candidates
-                        .Where(s =>
-                            (wormhole || s.FactionId == (int?)faction)
-                            && s.Kind == kind
-                            && (
-                                wormhole && kind != ExplorationKind.Ghost
-                                    ? s.WormholeClass == wormholeClass
-                                    : s.Band == (wormhole ? GhostSiteRules.WormholeBand : band)
-                            )
-                            && s.Containers.All(c =>
-                                catalog.FittingType(c.TypeId)?.GroupId is int group
+                    var candidatesForSlot = world.Filter<SavedExplorationSite>(site => site.SystemId == systemId && site.Kind == (int)kind);
+                    if (slots > 0)
+                    {
+                        candidatesForSlot = candidatesForSlot.Where(site => site.SovereigntySlot == sovereigntySlot);
+                    }
+                    long? siteId = candidatesForSlot.Select(site => (long?)site.Id).OrderByDescending(id => id).FirstOrDefault();
+                    var row = siteId is long selected ? world.Set<SavedExplorationSite>().Find(selected) : null;
+                    if (row is not null && row.ExpiresAt <= now && row.ReplaceAt is null)
+                    {
+                        Retire(world, row, row.ExpiresAt);
+                    }
+                    if (sovereigntySlot > explorationTier && (row is null || row.ReplaceAt is not null))
+                    {
+                        continue;
+                    }
+                    if (row is null || row.ReplaceAt <= now)
+                    {
+                        IEnumerable<ExplorationDefinition> candidates =
+                            kind == ExplorationKind.Ghost ? GhostSiteCatalog.Read(catalog)
+                            : wormhole ? sleepers
+                            : HackingCatalog.Sites;
+                        var eligible = candidates
+                            .Where(s =>
+                                (wormhole || s.FactionId == (int?)faction)
+                                && s.Kind == kind
                                 && (
-                                    group == (kind == ExplorationKind.Ghost ? GhostSiteRules.ContainerGroup : HackingRules.ContainerGroup)
-                                    || s.WormholeClass > 0 && group == SleeperRules.RelicContainerGroup
+                                    wormhole && kind != ExplorationKind.Ghost
+                                        ? s.WormholeClass == wormholeClass
+                                        : s.Band == (wormhole ? GhostSiteRules.WormholeBand : band)
+                                )
+                                && s.Containers.All(c =>
+                                    catalog.FittingType(c.TypeId)?.GroupId is int group
+                                    && (
+                                        group
+                                            == (kind == ExplorationKind.Ghost ? GhostSiteRules.ContainerGroup : HackingRules.ContainerGroup)
+                                        || s.WormholeClass > 0 && group == SleeperRules.RelicContainerGroup
+                                    )
                                 )
                             )
-                        )
-                        .ToArray();
-                    if (eligible.Length == 0)
-                    {
-                        continue;
-                    }
-                    long id = Math.Max(
-                        HackingRules.FirstSiteId,
-                        (world.Filter<SavedExplorationSite>(_ => true).Max(s => (long?)s.Id) ?? 0) + 1
-                    );
-                    int prior =
-                        row is not null && wormhole && kind != ExplorationKind.Ghost
-                            ? Array.FindIndex(eligible, candidate => candidate.DungeonId == row.DungeonId)
-                            : -1;
-                    var definition = eligible[(int)((prior >= 0 ? prior + 1 : id + systemId) % eligible.Length)];
-                    var anchor = catalog.CelestialsInSystem(systemId).OrderBy(c => c.Id).FirstOrDefault();
-                    if (anchor is null)
-                    {
-                        continue;
-                    }
-                    double offset = CombatAnomalyRules.PlacementOffset * (10 + (int)kind);
-                    row = new()
-                    {
-                        Id = id,
-                        SystemId = systemId,
-                        Kind = (int)kind,
-                        DungeonId = definition.DungeonId,
-                        X = anchor.X - offset,
-                        Y = anchor.Y + offset,
-                        Z = anchor.Z + offset,
-                        ExpiresAt = checked(now + (definition.WormholeClass > 0 ? SleeperRules.SiteLifetime : HackingRules.SiteLifetime)),
-                    };
-                    world.Add(row);
-                    for (int index = 0; index < definition.Containers.Count; index++)
-                    {
-                        if (definition.Containers[index].Optional && !SleeperRules.HasTalocan(id))
+                            .ToArray();
+                        if (eligible.Length == 0)
                         {
                             continue;
                         }
-                        world.Add(
-                            new SavedHackingContainer
-                            {
-                                Id = checked(
-                                    HackingRules.FirstContainerId + (id - HackingRules.FirstSiteId) * HackingRules.ContainersPerSite + index
-                                ),
-                                SiteId = id,
-                                Index = index,
-                                LootSeed = RandomNumberGenerator.GetInt32(int.MaxValue),
-                            }
+                        long id = Math.Max(
+                            HackingRules.FirstSiteId,
+                            (world.Filter<SavedExplorationSite>(_ => true).Max(s => (long?)s.Id) ?? 0) + 1
                         );
+                        int prior =
+                            row is not null && wormhole && kind != ExplorationKind.Ghost
+                                ? Array.FindIndex(eligible, candidate => candidate.DungeonId == row.DungeonId)
+                                : -1;
+                        var definition = eligible[(int)((prior >= 0 ? prior + 1 : id + systemId) % eligible.Length)];
+                        var anchor = catalog.CelestialsInSystem(systemId).OrderBy(c => c.Id).FirstOrDefault();
+                        if (anchor is null)
+                        {
+                            continue;
+                        }
+                        double offset = CombatAnomalyRules.PlacementOffset * (10 + (int)kind + sovereigntySlot * 4);
+                        row = new()
+                        {
+                            Id = id,
+                            SystemId = systemId,
+                            Kind = (int)kind,
+                            SovereigntySlot = sovereigntySlot,
+                            DungeonId = definition.DungeonId,
+                            X = anchor.X - offset,
+                            Y = anchor.Y + offset,
+                            Z = anchor.Z + offset,
+                            ExpiresAt = checked(
+                                now + (definition.WormholeClass > 0 ? SleeperRules.SiteLifetime : HackingRules.SiteLifetime)
+                            ),
+                        };
+                        world.Add(row);
+                        for (int index = 0; index < definition.Containers.Count; index++)
+                        {
+                            if (definition.Containers[index].Optional && !SleeperRules.HasTalocan(id))
+                            {
+                                continue;
+                            }
+                            world.Add(
+                                new SavedHackingContainer
+                                {
+                                    Id = checked(
+                                        HackingRules.FirstContainerId
+                                        + (id - HackingRules.FirstSiteId) * HackingRules.ContainersPerSite
+                                        + index
+                                    ),
+                                    SiteId = id,
+                                    Index = index,
+                                    LootSeed = RandomNumberGenerator.GetInt32(int.MaxValue),
+                                }
+                            );
+                        }
+                        world.SaveChanges();
                     }
-                    world.SaveChanges();
-                }
-                if (row.ReplaceAt is long due)
-                {
-                    deadline = Math.Min(deadline, due);
-                    continue;
-                }
-                var profile = Definition(catalog, row);
-                WorldCombatAnomaly? guarded = null;
-                if (profile.WormholeClass > 0)
-                {
-                    guarded = CombatAnomalyStore.EnsureGuarded(world, catalog, row.Id, systemId, row.DungeonId, new(row.X, row.Y, row.Z));
-                    deadline = Math.Min(deadline, CombatAnomalyStore.AdvanceGuarded(world, catalog, row.Id, now));
-                }
-                if (kind == ExplorationKind.Ghost)
-                {
-                    deadline = Math.Min(deadline, AdvanceGhostSite(world, catalog, row, profile, now));
-                }
-                var containers = world.Filter<SavedHackingContainer>(c => c.SiteId == row.Id).OrderBy(c => c.Index).ToArray();
-                if (profile.WormholeClass > 0)
-                {
-                    RecoverSleeperHacks(world, catalog, row, containers, now);
-                }
-                if (containers.All(c => c.Destroyed || c.Hacked && c.Empty))
-                {
-                    Retire(world, row, now);
-                    deadline = Math.Min(deadline, row.ReplaceAt!.Value);
-                    continue;
-                }
-                var busy = containers
-                    .Where(c => world.Filter<SavedHackingAttempt>(a => a.ContainerId == c.Id).Any())
-                    .Select(c => c.Id)
-                    .ToHashSet();
-                sites.Add(
-                    new(
-                        row.Id,
-                        ScannerTargetIds.FromExplorationSequence(row.Id - HackingRules.FirstSiteId),
-                        systemId,
-                        profile.DungeonId,
-                        profile.NameId,
-                        profile.Difficulty,
-                        new(row.X, row.Y, row.Z),
-                        row.ResponseAt is not null || guarded is { Wave: >= 0 },
-                        containers
-                            .Where(c => !c.Destroyed)
-                            .Select(c => Object(catalog, row, c, busy.Contains(c.Id), profile))
-                            .Concat(
-                                profile.Scenery.Select(
-                                    (body, index) =>
-                                        body with
-                                        {
-                                            Id =
-                                                GhostSiteRules.FirstSceneryId
-                                                + (row.Id - HackingRules.FirstSiteId) * HackingRules.ContainersPerSite
-                                                + index,
-                                            Position = new SpacePosition(row.X, row.Y, row.Z) + body.Position,
-                                        }
+                    if (row.ReplaceAt is long due)
+                    {
+                        deadline = Math.Min(deadline, due);
+                        continue;
+                    }
+                    var profile = Definition(catalog, row);
+                    WorldCombatAnomaly? guarded = null;
+                    if (profile.WormholeClass > 0)
+                    {
+                        guarded = CombatAnomalyStore.EnsureGuarded(
+                            world,
+                            catalog,
+                            row.Id,
+                            systemId,
+                            row.DungeonId,
+                            new(row.X, row.Y, row.Z)
+                        );
+                        deadline = Math.Min(deadline, CombatAnomalyStore.AdvanceGuarded(world, catalog, row.Id, now));
+                    }
+                    if (kind == ExplorationKind.Ghost)
+                    {
+                        deadline = Math.Min(deadline, AdvanceGhostSite(world, catalog, row, profile, now));
+                    }
+                    var containers = world.Filter<SavedHackingContainer>(c => c.SiteId == row.Id).OrderBy(c => c.Index).ToArray();
+                    if (profile.WormholeClass > 0)
+                    {
+                        RecoverSleeperHacks(world, catalog, row, containers, now);
+                    }
+                    if (containers.All(c => c.Destroyed || c.Hacked && c.Empty))
+                    {
+                        Retire(world, row, now);
+                        deadline = Math.Min(deadline, row.ReplaceAt!.Value);
+                        continue;
+                    }
+                    var busy = containers
+                        .Where(c => world.Filter<SavedHackingAttempt>(a => a.ContainerId == c.Id).Any())
+                        .Select(c => c.Id)
+                        .ToHashSet();
+                    sites.Add(
+                        new(
+                            row.Id,
+                            ScannerTargetIds.FromExplorationSequence(row.Id - HackingRules.FirstSiteId),
+                            systemId,
+                            profile.DungeonId,
+                            profile.NameId,
+                            profile.Difficulty,
+                            new(row.X, row.Y, row.Z),
+                            row.ResponseAt is not null || guarded is { Wave: >= 0 },
+                            containers
+                                .Where(c => !c.Destroyed)
+                                .Select(c => Object(catalog, row, c, busy.Contains(c.Id), profile))
+                                .Concat(
+                                    profile.Scenery.Select(
+                                        (body, index) =>
+                                            body with
+                                            {
+                                                Id =
+                                                    GhostSiteRules.FirstSceneryId
+                                                    + (row.Id - HackingRules.FirstSiteId) * HackingRules.ContainersPerSite
+                                                    + index,
+                                                Position = new SpacePosition(row.X, row.Y, row.Z) + body.Position,
+                                            }
+                                    )
                                 )
-                            )
-                            .ToArray(),
-                        profile.FactionId,
-                        true,
-                        kind,
-                        GhostCountdownEnd: row.ResponseSpawned && !row.Detonated ? row.ResponseAt + GhostSiteRules.VisibleCountdown : null,
-                        GhostRoomId: profile.RoomId
-                    )
-                );
-                deadline = Math.Min(deadline, row.ExpiresAt);
+                                .ToArray(),
+                            profile.FactionId,
+                            true,
+                            kind,
+                            GhostCountdownEnd: row.ResponseSpawned && !row.Detonated
+                                ? row.ResponseAt + GhostSiteRules.VisibleCountdown
+                                : null,
+                            GhostRoomId: profile.RoomId
+                        )
+                    );
+                    deadline = Math.Min(deadline, row.ExpiresAt);
+                }
             }
             transaction.Commit();
-            _views[systemId] = new(generation, deadline, enabled, sites.ToArray(), version);
+            _views[systemId] = new(generation, deadline, enabled, sites.ToArray(), version, sovereigntyVersion);
             return _views[systemId].Sites;
         }
     }

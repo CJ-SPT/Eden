@@ -18,7 +18,7 @@ def export(path, output):
             ).fetchone()
             return json.loads(row[0]) if row else None
 
-        pending = {34, 483, 1230, 30380, 34832, 32458, 16275, 601, 643, 19720, 20183, 11176, 3363, 3732}
+        pending = {81080, 81143, 81144, 34, 483, 1230, 30380, 34832, 32458, 16275, 601, 643, 19720, 20183, 11176, 3363, 3732}
         pending.update(row[0] for row in catalog.execute("SELECT Id FROM ItemType WHERE GroupId=1313"))
         records, types = {}, {}
         system_id = 30003995
@@ -35,7 +35,25 @@ def export(path, output):
             "SELECT Id,SolarSystemId,TypeId,GroupId,Radius,OrbitId,X,Y,Z FROM Celestial "
             "WHERE SolarSystemId=? AND GroupId=6", (system_id,)
         ).fetchone()
-        pending.add(star[2])
+        celestials = list(catalog.execute(
+            "SELECT c.Id,c.SolarSystemId,c.TypeId,c.GroupId,c.Radius,c.OrbitId,c.X,c.Y,c.Z FROM Celestial c "
+            "JOIN SolarSystem s ON s.Id=c.SolarSystemId WHERE s.ConstellationId=? AND c.GroupId IN (6,7) ORDER BY c.Id",
+            (constellation_id,)))
+        for celestial in celestials:
+            pending.add(celestial[2])
+            for dataset in ("sde/mapStars", "sde/mapPlanets", "sde/planetResources"):
+                value = record(dataset, celestial[0])
+                if value is not None:
+                    records[dataset, celestial[0]] = value
+        for key, value in catalog.execute("SELECT Key,Data FROM SourceRecord WHERE Dataset='sde/sovereigntyUpgrades'"):
+            pending.add(int(key))
+            records["sde/sovereigntyUpgrades", int(key)] = json.loads(value)
+        ore_names = ("Veldspar", "Mordunium", "Kylixium", "Griemeer", "Nocxite", "Hezorime", "Ueganite")
+        for name in ore_names:
+            row = catalog.execute("SELECT Id FROM ItemType WHERE Name=?", (name,)).fetchone()
+            if row is None:
+                raise ValueError("Missing upgrade ore " + name)
+            pending.add(row[0])
         while pending:
             type_id = min(pending)
             pending.remove(type_id)
@@ -77,6 +95,8 @@ def export(path, output):
             value = record("sde/mapSolarSystems", sid)
             if value:
                 records["sde/mapSolarSystems", sid] = value
+                for gate in value.get("stargateIDs", []):
+                    records["sde/mapStargates", gate] = record("sde/mapStargates", gate)
             constellation_systems.append({"id": sid, "name": name, "constellationId": constellation_id,
                 "constellationName": constellation["name"]["en"], "regionId": region_id,
                 "regionName": region["name"]["en"]})
@@ -87,8 +107,8 @@ def export(path, output):
                         for (dataset, key), value in sorted(records.items())],
             "systems": constellation_systems,
             "celestials": [dict(zip(
-                ["id", "solarSystemId", "typeId", "groupId", "radius", "orbitId", "x", "y", "z"], star
-            ))],
+                ["id", "solarSystemId", "typeId", "groupId", "radius", "orbitId", "x", "y", "z"], row
+            )) for row in celestials],
         }
         output.write_text(json.dumps(data, indent=2, ensure_ascii=True) + "\n", encoding="utf-8")
         print(f"Exported {len(types)} types and {len(records)} inert source records to {output}")

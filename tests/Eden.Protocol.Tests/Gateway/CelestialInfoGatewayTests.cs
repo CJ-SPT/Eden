@@ -74,10 +74,11 @@ public sealed class CelestialInfoGatewayTests
         Assert.Equal(0, reagent.Definition.CyclePeriod.Nanos);
         Assert.Equal(4320u, reagent.Definition.SecuredCapacity);
         Assert.Equal(8640u, reagent.Definition.UnsecuredCapacity);
+        Assert.Equal(50u, reagent.Definition.SecuredPercentage);
         // Independently serialized with the descriptors extracted as inert data from
         // the original 3662168 planet/planet_pb2.pyj and its identifier/reagent imports.
         Assert.Equal(
-            Convert.FromHexString("0A050883B48913221C0A0408F7F904120E08C815120308901C20E02128C0431A0408F7F904"),
+            Convert.FromHexString("0A050883B48913221E0A0408F7F904121008C815120308901C183220E02128C0431A0408F7F904"),
             definitions.Definitions[2].ToByteArray()
         );
         Assert.Equal((uint)BuildContentPolicy.PinnedBuild, definitions.Version.Major);

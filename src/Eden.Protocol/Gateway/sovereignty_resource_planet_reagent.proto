@@ -1,0 +1,47 @@
+syntax = "proto3";
+package eve_public.sovereignty.resource.planet.reagent;
+option csharp_namespace = "Eden.Protocol.Gateway.Sovereignty.ResourcePlanetReagent";
+
+// Wire projection from build 3662168 eve_public/sovereignty/resource/planet/reagent.proto.
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+
+message Definition {
+  uint32 amount_per_cycle = 1;
+  .google.protobuf.Duration cycle_period = 2;
+  uint32 secured_percentage = 3;
+  uint32 secured_capacity = 4;
+  uint32 unsecured_capacity = 5;
+}
+
+message Simulation {
+  uint32 secured_stock = 1;
+  uint32 unsecured_stock = 2;
+  .google.protobuf.Timestamp last_cycle = 3;
+}
+
+message MaturationConfiguration {
+  uint32 percentage = 1;
+  .google.protobuf.Duration cycle_period = 2;
+  uint64 min = 3;
+  uint64 max = 4;
+}
+
+message MaturationSimulation {
+  uint32 stock = 1;
+  .google.protobuf.Timestamp last_cycle = 2;
+  .eve_public.sovereignty.resource.planet.reagent.MaturationConfiguration config = 3;
+}
+
+message HarvestConfiguration {
+  uint32 amount_per_cycle = 1;
+  .google.protobuf.Duration cycle_period = 2;
+  uint64 min_stock = 3;
+  uint64 max_stock = 4;
+}
+
+message HarvestSimulation {
+  uint32 stock = 1;
+  .google.protobuf.Timestamp last_cycle = 2;
+  .eve_public.sovereignty.resource.planet.reagent.HarvestConfiguration config = 3;
+}
