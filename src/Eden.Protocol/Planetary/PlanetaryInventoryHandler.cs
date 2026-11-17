@@ -81,8 +81,10 @@ internal sealed class PlanetaryInventoryHandler(IPilotPlanetaryIndustry industry
                     PlanetaryRequestWire.Cargo(imports),
                     PlanetaryRequestWire.Commodities(exports)
                 );
+                // Rebuild the native colony before inventory callbacks rebuild the
+                // customs panes, so they cannot restore the pre-transfer launchpad.
+                context.Notifications.Add(new PlanetaryStateChanged(change.Colony.PlanetId, CommandCentersChanged: false));
                 PlanetaryIndustryHandler.Notify(context, change);
-                context.Notifications.Add(new PlanetaryStateChanged(change.Colony.PlanetId));
                 return PilotCallResult.None;
             }
             if (args.Length != 2 || args[1] is not long source || keywords?.Keys.Any(k => k is not ("qty" or "flag")) == true)

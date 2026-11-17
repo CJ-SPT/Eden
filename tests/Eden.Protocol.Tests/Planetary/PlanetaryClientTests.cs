@@ -10,6 +10,40 @@ namespace Eden.Protocol.Tests.Planetary;
 public sealed class PlanetaryClientTests
 {
     [Fact]
+    public async Task CustomsRefreshPreservesPendingTransfersAndPreventsReentrantConfirmation()
+    {
+        string path = Path.Combine(Path.GetTempPath(), "eden-customs-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var expression = ClientExpression.CreateWithPrelude(
+                "eden-customs-test",
+                "",
+                "Eden.Protocol.Planetary.customs_transfer_client.py"
+            );
+            await File.WriteAllBytesAsync(path, BlueRead.Bytes(BlueMarshal.Decode(expression)));
+            ProcessStartInfo start = new("python") { RedirectStandardOutput = true, RedirectStandardError = true };
+            start.ArgumentList.Add(Path.Combine(AppContext.BaseDirectory, "planetary-client-tests", "customs_transfer_client_test.py"));
+            start.ArgumentList.Add(path);
+            using var process = Process.Start(start)!;
+            Task<string> output = process.StandardOutput.ReadToEndAsync();
+            Task<string> error = process.StandardError.ReadToEndAsync();
+            using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(30));
+            await process.WaitForExitAsync(timeout.Token);
+            Assert.True(process.ExitCode == 0, await output + await error);
+            Assert.Contains("Customs transfer assertions passed", await output);
+            foreach (var policy in new PlanetaryPolicy[] { new(), new(StorageCapacityMultiplier: 100) })
+            {
+                string signed = Encoding.ASCII.GetString(BlueRead.Bytes(BlueMarshal.Decode(LoginClient.For(policy))));
+                Assert.Contains("install_planetary_transfer_refresh()", signed);
+            }
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task SignedAdapterScalesFittingAndProductsWithoutCompoundingAndRestoresDefaults()
     {
         string directory = Path.Combine(Path.GetTempPath(), "eden-planetary-" + Guid.NewGuid().ToString("N"));

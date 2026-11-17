@@ -2,6 +2,84 @@
 
 [Documentation index](../README.md) / [Protocol index](../protocol.md)
 
+
+## Customs quantity parsing and staged transfer refresh — November 16, 2026
+
+The maintainer's Ipref VII screenshot shows 244,000 Biomass queued on the office side with
+**Expected a planetary integer**. The maintainer separately reports goods returning from the left pane after
+clicking Transfer without an error. These are treated as separate request-parsing and native refresh failures.
+
+`PlanetaryRequestWire.Cargo` now converts finite, exactly integral Python float quantities to bounded Int32 units.
+It accepts `244000.0` just as it accepts `244000`; it never rounds fractional quantities. NaN, infinities, fractional
+values, strings, booleans and overflows remain rejected before mutation. IDs retain strict integer parsing.
+The shared quantity adapter also covers command launches and expedited transfers. Resident authority, capacity,
+commodity ownership, availability, taxes and checkpoint persistence continue through the existing operations.
+
+Build 3662168 `PlanetaryImportExportUI.OnRefreshPins` calls `ResetContents`, which clears both `importContents`
+and `exportContents`. A local production refresh can therefore discard the player's queued transfer. The signed
+`customs_transfer_client.py` adapter suppresses that local callback while either map contains a selection or a
+confirmation is in flight. It leaves authoritative planet-change and inventory callbacks active. Its confirmation
+guard also prevents a second click from submitting the same batch while the first RPC yields. The guard releases
+in `finally`, including after rejection, and repeated installation unwraps the original methods.
+
+Customs completion now queues `OnMajorPlanetStateUpdate(planetID, false)` before inventory changes. This starts
+the authoritative colony reload before inventory callbacks rebuild the panes using the cached launchpad.
+The false flag correctly describes unchanged command-center membership. This adapter is included in signed
+logins for both default and modified worlds; the existing policy adapter still keeps default colony tuning lazy.
+Updating the server and fully reconnecting the client is required to install the new signed callback wrappers.
+
+### Reference evidence
+
+[UniWiki colony management](https://wiki.eveuniversity.org/Colony_management) describes staging exports from the
+right launchpad pane into the left customs pane, then confirming Transfer. Inert inspection of original pinned
+build-3662168 `eve/client/script/ui/shared/planet/importExportUI.pyj` (decompressed SHA-256
+`cdad9058b4f4bbf873ce26e9a9383115d6360fa11bf6d7b5172159d11cb9eb26`) confirms unchanged dictionary quantity
+values in `ConfirmCommodityTransfer`, the map-clearing `ResetContents`, and its `OnRefreshPins`, `OnItemChange`
+and `OnPlanetPinsChanged` callers. `planetSvc.pyj` SHA-256
+`fc0c6624a87083ab816231662f5135277204cf57b9821f0f96297fb5d6b89550` confirms that major-state notification
+reloads the planet through `Init` before scattering `OnPlanetPinsChanged`. The float request reproduces the
+reported parser error automatically; the screenshot alone does not identify which client calculation produced it.
+
+The local reference engine's `planetaryImportExport.js` snapshot SHA-256 is
+`b267d900cdb14b90fb4e8d677820079c013dd67e782559c7b49597765c44ff97`; its settlement helper snapshot
+`ef4520de3ce4e1a135ccf204a24eca51662fcb785385c8697dc2e35327ee8abb` sends major planet updates before item
+changes. The reference checkout has no Git metadata, so these file hashes identify the inspected revision.
+No reference implementation was copied; no Carbon-owned codec, transport or simulation code changed.
+
+### Automated validation
+
+The initial exact filter through `tools/Test-Feature.ps1 -Filter` was
+`FullyQualifiedName=Eden.Protocol.Tests.Planetary.PlanetaryProtocolTests.CustomsWireTransfersAcceptEmptyOppositeMapsAndPreserveGoodsTaxesAndRejections`.
+The integer case passed and the new float case failed with the screenshot's exact error (build **12.62 s**,
+tests **10.28 s**). Both cases then passed after the quantity correction. An initial adapter run caught a missing
+embedded-resource registration; after registration its exact test
+`FullyQualifiedName=Eden.Protocol.Tests.Planetary.PlanetaryClientTests.CustomsRefreshPreservesPendingTransfersAndPreventsReentrantConfirmation`
+passed (build **2.18 s**, tests **2.25 s**).
+
+The resident protocol regression marshals real request maps, imports goods, exports twice into the same stack,
+checks immediate refreshed contents and authoritative taxes, verifies notification order and unchanged-state
+rejection, then reopens the checkpoint to verify colony, orbital cargo and wallet. The headless signed-adapter
+regression exercises repeated local refreshes, import/export/mixed selections, a callback during confirmation,
+a second confirmation while pending, authoritative completion, rejection/retry and repeated installation.
+
+Final validation passed **197 focused tests**, none failed/skipped, in **40.13 s** (feature build **1.12 s**):
+`FullyQualifiedName~Eden.Protocol.Tests.Planetary|FullyQualifiedName~Eden.Protocol.Tests.Serialization.BlueMarshalTests|FullyQualifiedName~Eden.Protocol.Tests.Loot.WreckTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.PilotLoginTests|FullyQualifiedName~Eden.Protocol.Tests.PilotSessions.ConcordOverviewTests`.
+`EDEN_TEST_CLIENT_ROOT=E:/EdenDev/3662168` enabled the existing inert Python 2.7 full signed-login check with a
+customs-window stub, in addition to the Python 3 callback harness. Tool/solution restore and solution build passed
+with zero warnings/errors (solution build **4.86 s**). Both Python policy suites passed **8 + 9** checks
+(**1.152 + 0.013 s**). Formatting verification, `git diff --check` and PI documentation links passed. The full .NET suite was
+not requested or run.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. The reported silent snap-back is addressed at the observed native
+reset path and notification ordering; final rendering and interactive behavior remain unverified.
+
+### Optional maintainer checks
+
+After deployment, fully restart/reconnect the client. Queue Biomass for export, let a production refresh pass,
+then confirm Transfer and reopen the office to check both sides. Try a partial import and one repeated export.
+
 ## Customs storage and tax configuration — November 16, 2026
 
 The existing `StorageCapacityMultiplier` now covers each pilot's private customs-office hold as well as

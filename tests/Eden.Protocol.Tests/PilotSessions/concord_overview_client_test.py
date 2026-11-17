@@ -55,6 +55,7 @@ names += ['eve.client.script.ui.shared.neocom', 'eve.client.script.ui.shared.neo
           'eve.client.script.ui.shared.neocom.corporation.corporationWindow',
           'eve.client.script.ui.services.corporation',
           'eve.client.script.ui.services.corporation.base_corporation']
+names += ['eve.client.script.ui.shared.planet', 'eve.client.script.ui.shared.planet.importExportUI']
 names += ['user_licenses', 'user_licenses.client', 'user_licenses.client.messenger',
           'user_licenses.client.messenger.request_messenger', 'user_licenses.client.user_license',
           'user_licenses.client.user_license_type']
@@ -66,6 +67,9 @@ for name in names:
     if parent:
         setattr(sys.modules[parent], child, module)
 photo = sys.modules['eve.client.script.ui.services.evePhotosvc']
+sys.modules['eve.client.script.ui.shared.planet.importExportUI'].PlanetaryImportExportUI = type(
+    'PlanetaryImportExportUI', (object,), {
+        'OnRefreshPins': lambda *args: None, 'ConfirmCommodityTransfer': lambda *args: None})
 sys.modules['user_licenses.client.messenger.request_messenger'].PublicUserLicenseRequestMessenger = type(
     'PublicUserLicenseRequestMessenger', (object,), {'get_user_license_request': lambda *args: None})
 sys.modules['user_licenses.client.user_license'].UserLicense = type('UserLicense', (object,), {})

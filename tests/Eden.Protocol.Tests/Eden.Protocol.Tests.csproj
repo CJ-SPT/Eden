@@ -25,6 +25,11 @@
       CopyToOutputDirectory="PreserveNewest"
     />
     <Content
+      Include="Planetary/customs_transfer_client_test.py"
+      Link="planetary-client-tests/customs_transfer_client_test.py"
+      CopyToOutputDirectory="PreserveNewest"
+    />
+    <Content
       Include="../../tools/Test-AdministrationInteractivity.py"
       Link="administration-browser-tests/Test-AdministrationInteractivity.py"
       CopyToOutputDirectory="PreserveNewest"
