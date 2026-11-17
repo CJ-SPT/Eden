@@ -212,8 +212,7 @@ internal sealed class PilotCallRouter(
         if (
             context.ControlledStructureId.HasValue
             && (
-                service == "structureDocking" && method == "Undock"
-                || service == "ship" && method is "Undock" or "Board" or "LeaveShip"
+                service == "ship" && method is "Undock" or "Board" or "LeaveShip"
                 || service == "beyonce" && method.StartsWith("Cmd", StringComparison.Ordinal)
             )
         )

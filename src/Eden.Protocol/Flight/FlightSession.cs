@@ -956,8 +956,9 @@ internal sealed partial class FlightSession(
 
     private void SetPosition(SpacePosition? position)
     {
-        world.SetPosition(Pilot.ShipId, position);
-        Pilot = Pilot with { Position = position, CurrentSystem = position is null ? null : Pilot.CurrentSystem };
+        var currentSystem = Pilot.CurrentSystem ?? (Pilot.InStructure ? Pilot.Home.System : null);
+        world.SetPosition(Pilot.ShipId, position, currentSystem?.Id);
+        Pilot = Pilot with { Position = position, CurrentSystem = position is null ? null : currentSystem };
     }
 
     public void Snapshot()

@@ -32,6 +32,11 @@ internal sealed class FlightCallHandler(
         Dictionary<string, object?>? keywords = null
     )
     {
+        // The native controller sends shipID=None. Its owner restores the real ship and releases the control lease.
+        if (service == "structureDocking" && method == "Undock" && context.ControlledStructureId.HasValue)
+        {
+            return PilotCallResult.Unsupported;
+        }
         if (service == "beyonce" && method == "GetCynoJammerState")
         {
             if (args.Length != 0 || keywords is { Count: > 0 })

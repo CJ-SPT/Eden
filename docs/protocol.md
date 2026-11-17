@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Structure hangars and controlled undocking](protocol/structures.md#structure-hangar-container-and-controlled-undocking--november-16-2026)
+handles the native structure-container alias and launches the real ship when undocking from structure control.
+
 [Structure moniker and docked-system correction](protocol/structures.md#structure-moniker-and-docked-system-correction--november-16-2026)
 aligns native inventory binds and resident combat/heat membership with the docked structure's system.
 

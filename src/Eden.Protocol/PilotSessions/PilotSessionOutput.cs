@@ -56,7 +56,7 @@ internal sealed class PilotSessionOutput(
                 await FlushFlightUpdatesAsync();
             }
         }
-        if (previous.LocationId != context.Pilot.LocationId)
+        if (Location(previous) != Location(context.Pilot))
         {
             context.ReleaseLocationReferences();
         }

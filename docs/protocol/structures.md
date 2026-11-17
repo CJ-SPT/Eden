@@ -381,6 +381,58 @@ failure, not successful native rendering after this change.
 
 **Optional maintainer checks:** Update/restart, reconnect to the docked character, then open its inventory and take control.
 
+## Structure hangar container and controlled undocking — November 16, 2026
+
+The next two screenshots showed `invbroker.MachoBindObject (GetInventory)` during hangar loading and taking control.
+Native `invCache.GetInventory` rewrites `containerHangar` (10004) to `containerStructure` (10014) whenever `structureid`
+is present. Eden handled only 10004. Both named container IDs now resolve to the pilot's existing personal hangar while
+docked at a structure. Its `GetSelfInvItem` supplies structure type/owner metadata, and `List(flagHangar)` includes the
+real docked ship needed by `hangarView.GetShipItemFromHangar`.
+
+The user's undock report had two related causes. `character-selection-26632.log` showed `AbortUndock` failing in
+`hangarView.GetStationType` on the same missing container read. Separately, native
+`structureDocking.TryUndockOnServer` sends `(structureID, None)` with `ignoreContraband` when controlling a structure.
+The control guard rejected that request. The structure-control owner now validates the structure and requested ship,
+launches the pilot's actual saved ship, then releases control and sends its normal flight snapshot. Rejected requests
+retain the control lease. The existing command handling continues to reject moving or boarding the ship through other
+control-mode calls.
+
+Undocking now supplies the known system ID with the position write. Otherwise clearing `StructureId` could leave a new
+position without a system and select the last NPC station's system during subsequent reads. Native location-based bound
+references also use the same wire-location calculation as session fields: docking/undocking at an Upwell structure
+retains the system location. This keeps the cached inventory manager usable across the transition.
+
+Inert inspection used the original signed V24.01 build-3662168 archive, SHA-256
+`37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`: `invCache.pyj`, `inventorycommon/const.pyj`,
+`hangarView.pyj`, `undockingSvc.pyj` and `structureDocking.pyj`. Local EVE.js package `261108.1` was checked at
+`inventory/invBrokerService.js` (`Handle_GetInventory`) and `structure/structureDockingService.js` (`Handle_Undock`).
+Its structure-container alias and active-ship fallback agree with the pinned client. No source was copied.
+[EVE University Upwell services](https://wiki.eveuniversity.org/Upwell_structure#Upwell_Structure_Services) provides the
+gameplay context for personal hangars and docking. This change uses existing inventory and movement operations and
+does not alter Blue or Destiny binary formats.
+
+**Automated validation:** The two existing `StructureControlTests` methods passed in 7.40 seconds after adding native
+container requests before and during control, structure metadata and hangar ship assertions, native controlled undock
+with `shipID=None`, and retained system bindings after the transition. The simulated `IPilotSession` includes both
+embedded `GetInventory` binds and the controlled undock request. No cases or classes were added. Development runs caught
+the missing system ID on undock. An initial affected run had four NPC movement snapshot mismatches after an unconditional
+system write; the correction retains existing NPC location representation and resolves the structure's system when
+leaving it. The two structure methods and four affected movement methods then passed in 12.27 seconds.
+
+The final `FullyQualifiedName~` filter joined `Eden.Protocol.Tests.Structures`,
+`Eden.Protocol.Tests.Docking.TypedInventoryTests`, `Eden.Protocol.Tests.PilotSessions.PilotServicesTests`,
+`Eden.Protocol.Tests.PilotSessions.TypedSessionTests`, `Eden.Protocol.Tests.PilotSessions.CharacterLogoffTests`,
+`Eden.Protocol.Tests.Flight.FlightSessionTests` and `Eden.Protocol.Tests.Persistence.ShipStorageTests` with `|`.
+All **211 cases passed in 87.90 seconds**. Tool and solution restore, final solution build (zero warnings/errors,
+0.64 seconds), both Python policy suites (8 catalog cases in 1.161 seconds, 9 formatting cases in 0.016 seconds),
+formatting verification across 2,451 files and whitespace checks passed. The full .NET suite was not run.
+
+**Live acceptance:** Not performed; agent client testing is disabled. The supplied screenshots and logs are failure
+evidence; rendering, button behavior and the native undock animation remain unverified after this change.
+
+**Optional maintainer checks:** Update/restart and reconnect; open the hangar and take control; undock from control and
+confirm the original ship appears outside the Athanor.
+
 ## Structure compression and gas decompression — November 11, 2026
 
 Milestone 7 implements all three pinned `structureCompressionMgr` calls: `CompressItemInStructure(itemID)`,

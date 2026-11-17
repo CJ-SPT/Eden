@@ -1,3 +1,4 @@
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
@@ -25,6 +26,28 @@ internal sealed class StructureControlHandler(
         try
         {
             long pilot = context.Pilot.PilotId;
+            if (service == "structureDocking" && method == "Undock" && context.ControlledStructureId is long controlled)
+            {
+                if (
+                    args is not [long structureId, var requestedShip]
+                    || structureId != controlled
+                    || !context.Pilot.InStructure
+                    || context.Pilot.DockedLocationId != controlled
+                    || requestedShip is not null && !Equals(requestedShip, context.Pilot.ShipId)
+                    || keywords?.Keys.Any(key => key != "ignoreContraband") == true
+                    || keywords?.GetValueOrDefault("ignoreContraband") is not (null or false or true or 0L or 1L)
+                )
+                {
+                    throw new InvalidDataException("Undock from your controlled structure in your active ship.");
+                }
+                var result = context.Flight.Execute(new FlightCommand.Undock(context.Pilot.ShipId));
+                if (result is PilotCallResult.Success)
+                {
+                    context.ReleaseStructureControl();
+                    context.Flight.Snapshot();
+                }
+                return result;
+            }
             if (service == "structureControl")
             {
                 if (keywords is { Count: > 0 })

@@ -42,7 +42,9 @@ public sealed class StructureControlTests
         var dockedInfo = Assert.IsType<DogmaAllInfo>(Call("dogmaIM", "GetAllInfo", [true, true, true]).Reply);
         Assert.Contains(structure.Id, dockedInfo.StructureInfo!.Keys);
         Assert.Contains(docked.ShipId, dockedInfo.ShipInfo.Keys);
+        CheckPersonalHangar();
         Call("structureControl", "TakeControl", [structure.Id]);
+        CheckPersonalHangar();
         Assert.Equal(structure.Id, context.ControlledStructureId);
         Assert.Equal(docked.ShipId, context.Pilot.ShipId);
         Assert.Equal(f.PilotId, Call("structureControl", "GetStructurePilot", [structure.Id]).Reply.ToBlue());
@@ -57,7 +59,7 @@ public sealed class StructureControlTests
         Assert.Equal(structure.Id, controlInfo.ActiveShipId);
         Assert.Equal(structure.Id, controlInfo.StructureInfo![structure.Id].Item!.Id);
         Assert.IsType<PilotCallResult.Failure>(
-            router.Call(context, "structureDocking", "Undock", new object?[] { structure.Id, docked.ShipId }, _ => { })
+            router.Call(context, "structureDocking", "Undock", new object?[] { structure.Id, long.MaxValue }, _ => { })
         );
         var reference = Assert.IsType<BlueObjectReference>(Call("invbroker", "GetInventoryFromId", [structure.Id]).Reply.ToBlue());
         string inventory = context.ResolveReference(reference.Id)!;
@@ -123,12 +125,39 @@ public sealed class StructureControlTests
         Assert.Equal(structure.Id, reopened.Ships.Find(docked.ShipId)!.StructureId);
         Assert.True(reopened.Set<SavedStructure>().Find(structure.Id)!.HasCore);
         Assert.Single(reopened.Set<OwnedItem>(), item => item.LocationId == structure.Id && item.FlagId == StructureRules.CoreRoomFlag);
+        Call("structureControl", "TakeControl", [structure.Id]);
+        var systemInventory = context.Reference("invbroker", PilotBindingLifetime.Location);
+        var beforeUndock = context.Pilot;
+        Call("structureDocking", "Undock", [structure.Id, null], new() { ["ignoreContraband"] = false });
+        PilotSessionOutput output = new(context, 1000001, 51, _ => Task.CompletedTask, _ => { });
+        await output.AnnounceTransitionAsync(beforeUndock, structure.Id);
+        Assert.Equal("invbroker", context.ResolveReference(systemInventory.Id));
+        Assert.Null(context.ControlledStructureId);
+        Assert.Equal(docked.ShipId, context.Pilot.ShipId);
+        Assert.NotNull(context.Pilot.Position);
+        Assert.False(context.Pilot.InStructure);
+        Assert.Null(f.Db.Services.GetRequiredService<SharedStructureControl>().Pilot(structure.Id));
+        Assert.NotNull(f.Db.Store.FindPilot(1000001)!.Position);
+        Assert.Equal(Fixture.SystemId, f.Db.Store.FindPilot(1000001)!.SystemId);
 
         PilotCallResult.Success Call(string service, string method, object?[] args, Dictionary<string, object?>? keywords = null) =>
             Assert.IsType<PilotCallResult.Success>(router.Call(context, service, method, args, _ => { }, keywords));
 
         void Install(long item, int flag) =>
             Call(inventory, "MultiAdd", [new List<object?> { item }, docked.ShipId], new() { ["flag"] = (long)flag });
+
+        void CheckPersonalHangar()
+        {
+            var hangar = Assert.IsType<BlueObjectReference>(Call("invbroker", "GetInventory", [10014L, null]).Reply.ToBlue());
+            string service = context.ResolveReference(hangar.Id)!;
+            Assert.Equal("@hangar", service);
+            var row = Assert.IsType<InventoryRow>(Call(service, "GetSelfInvItem", []).Reply);
+            Assert.Equal(structure.Id, row.Id);
+            Assert.Equal(structure.Profile.TypeId, row.TypeId);
+            Assert.Equal(structure.CorporationId, row.OwnerId);
+            var items = Assert.IsType<BlueList<InventoryRow>>(Call(service, "List", [4L]).Reply).Items;
+            Assert.Contains(items, item => item.Id == docked.ShipId && item.LocationId == structure.Id);
+        }
     }
 
     [Fact]
@@ -172,6 +201,14 @@ public sealed class StructureControlTests
                     "MachoBindObject",
                     [
                         new object?[] { (long)Fixture.SystemId, 5L },
+                        new object?[] { "GetInventory", new object?[] { 10014L, null }, new Dictionary<string, object?>() },
+                    ]
+                ),
+                PilotServicesTests.Request(
+                    "invbroker",
+                    "MachoBindObject",
+                    [
+                        new object?[] { (long)Fixture.SystemId, 5L },
                         new object?[] { "GetInventoryFromId", new object?[] { structure.Id }, new Dictionary<string, object?>() },
                     ]
                 ),
@@ -185,6 +222,14 @@ public sealed class StructureControlTests
                 ),
                 PilotServicesTests.Request("structureControl", "TakeControl", [structure.Id]),
                 PilotServicesTests.Request(
+                    "invbroker",
+                    "MachoBindObject",
+                    [
+                        new object?[] { (long)Fixture.SystemId, 5L },
+                        new object?[] { "GetInventory", new object?[] { 10014L, null }, new Dictionary<string, object?>() },
+                    ]
+                ),
+                PilotServicesTests.Request(
                     "beyonce",
                     "MachoBindObject",
                     [
@@ -194,6 +239,13 @@ public sealed class StructureControlTests
                 ),
                 PilotServicesTests.Request("dogmaIM", "GetAllInfo", [true, true, true]),
                 PilotServicesTests.Request("structureControl", "ReleaseControl", []),
+                PilotServicesTests.Request("structureControl", "TakeControl", [structure.Id]),
+                PilotServicesTests.Request(
+                    "structureDocking",
+                    "Undock",
+                    [structure.Id, null],
+                    keywords: new() { ["ignoreContraband"] = false }
+                ),
             }
         );
         List<BlueInstance> packets = [];

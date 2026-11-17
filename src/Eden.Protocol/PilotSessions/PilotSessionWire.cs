@@ -8,6 +8,8 @@ internal static class PilotSessionWire
 {
     internal const string PacketNamespace = "carbon.common.script.net.machoNetPacket.";
 
+    internal static long Location(DockedPilot pilot) => pilot.InStructure ? pilot.SystemId : pilot.LocationId;
+
     private static Dictionary<string, object?> SessionFields(DockedPilot pilot, long? controlledStructureId = null)
     {
         // Build 3662168 walletUtil checks individual Accountant/division bits,
@@ -36,7 +38,7 @@ internal static class PilotSessionWire
             // Upwell inventories and dogma bind in the solar system even while the ship is docked.
             ["solarsystemid"] = pilot.Position is not null || pilot.InStructure ? pilot.SystemId : null,
             ["stationid2"] = pilot.Position is null && !pilot.InStructure ? pilot.StationId : null,
-            ["locationid"] = pilot.InStructure ? pilot.SystemId : pilot.LocationId,
+            ["locationid"] = Location(pilot),
             ["solarsystemid2"] = pilot.SystemId,
             ["constellationid"] = pilot.ConstellationId,
             ["regionid"] = pilot.RegionId,

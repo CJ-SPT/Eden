@@ -13,6 +13,13 @@ public enum InventoryColumn
     Singleton = 10,
 }
 
+// Build 3662168 inventorycommon.const; invCache rewrites the hangar container in an Upwell session.
+internal enum InventoryContainerId : long
+{
+    Hangar = 10004,
+    Structure = 10014,
+}
+
 internal static class InventoryWireDefinitions
 {
     public const string OnlineEffectName = "online";

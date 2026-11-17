@@ -366,10 +366,12 @@ internal sealed class InventoryHandler(
             ("corpStationMgr", "DoStandingCheckForStationService") when pilot.Position is null && args is [(long)StationService.Fitting] =>
                 PilotCallResult.None,
             ("corpFittingMgr", "GetCommunityFittings") => BlueEmpty.IndexedDictionary,
-            ("invbroker", "GetInventory") when pilot.Position is null && args is [10004L, ..] => context.Reference(
-                "@hangar",
-                PilotBindingLifetime.Location
-            ),
+            ("invbroker", "GetInventory")
+                when pilot.Position is null
+                    && (
+                        args is [(long)InventoryContainerId.Hangar, ..]
+                        || pilot.InStructure && args is [(long)InventoryContainerId.Structure, ..]
+                    ) => context.Reference("@hangar", PilotBindingLifetime.Location),
             // Native item menus walk container/ship ancestors with GetInventoryFromId
             // until GetSelfInvItem reaches the station. Reuse the existing personal hangar binding.
             ("invbroker", "GetInventoryFromId")
