@@ -132,7 +132,8 @@ internal sealed class FlightScene(
                 .FirstOrDefault(o =>
                     o.Id == id
                     && (
-                        MiningDefinitions.IsResource(o.CategoryId, o.GroupId)
+                        o.Structure is { } structure && Eden.Gameplay.Structures.StructureCombatRules.Vulnerable(structure.State)
+                        || MiningDefinitions.IsResource(o.CategoryId, o.GroupId)
                         || o.GroupId == Eden.Gameplay.Sovereignty.SovereigntyRules.HubGroupId
                         || o.GroupId == Eden.Gameplay.Sovereignty.SovereigntyWarfareRules.CommandNodeGroupId
                         || Eden.Gameplay.Exploration.HackingRules.IsContainer(o.Id)
@@ -386,7 +387,9 @@ internal sealed class FlightScene(
         }
         foreach (var removed in previous.ExceptBy(structures.Select(o => o.Id), o => o.Id))
         {
-            update(new DestinyCommand.RemoveBall(removed.Id, false));
+            update(
+                new DestinyCommand.RemoveBall(removed.Id, removed.Structure?.State != Eden.Gameplay.Structures.StructureState.Unanchored)
+            );
         }
         foreach (var changed in structures.Where(o => previous.FirstOrDefault(p => p.Id == o.Id) is { } old && old != o))
         {

@@ -12,6 +12,7 @@ internal sealed partial class ResidentEconomy
     private readonly ConcurrentDictionary<long, byte> _pilotIdentities = new();
     private readonly ConcurrentDictionary<long, byte> _shipIdentities = new();
     private readonly ConcurrentDictionary<int, int> _pilotMissileSystems = new();
+    private readonly ConcurrentDictionary<int, int> _structureMissileSystems = new();
     private readonly ConcurrentDictionary<long, int> _npcMissilePilots = new();
     private readonly ConcurrentDictionary<long, int> _missileReportPilots = new();
     private readonly ConcurrentDictionary<long, byte> _missileImpacts = new();
@@ -32,6 +33,7 @@ internal sealed partial class ResidentEconomy
         _pilotIdentities.Clear();
         _shipIdentities.Clear();
         _pilotMissileSystems.Clear();
+        _structureMissileSystems.Clear();
         _npcMissilePilots.Clear();
         _missileReportPilots.Clear();
         _missileImpacts.Clear();
@@ -76,6 +78,10 @@ internal sealed partial class ResidentEconomy
     internal bool IsShip(long ship) => _shipIdentities.ContainsKey(ship);
 
     internal bool HasPilotMissiles(int system) => _pilotMissileSystems.ContainsKey(system);
+
+    internal bool HasStructureMissiles(int system) => _structureMissileSystems.ContainsKey(system);
+
+    internal IReadOnlyCollection<int> StructureMissileSystems => _structureMissileSystems.Keys.ToArray();
 
     internal bool HasShipLoss(long ship) => _tables[typeof(ShipLoss)].Contains(new(ship));
 
@@ -130,6 +136,7 @@ internal sealed partial class ResidentEconomy
             && before.SourceKind == after.SourceKind
             && before.SystemId == after.SystemId
             && before.TargetId == after.TargetId
+            && before.TargetKind == after.TargetKind
             && before.PilotId == after.PilotId
             && before.Status == after.Status
             && (before.Outcome is not null && !before.Reported) == (after.Outcome is not null && !after.Reported)
@@ -162,6 +169,10 @@ internal sealed partial class ResidentEconomy
                 if (row.SourceKind == MissileSourceKind.Pilot)
                 {
                     AdjustCount(_pilotMissileSystems, row.SystemId, add);
+                    if (row.TargetKind == MissileTargetKind.Structure)
+                    {
+                        AdjustCount(_structureMissileSystems, row.SystemId, add);
+                    }
                 }
                 else if (row.SourceKind == MissileSourceKind.Npc)
                 {

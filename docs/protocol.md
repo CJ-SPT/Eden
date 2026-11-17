@@ -3,6 +3,9 @@
 [Upwell completion program](protocol/structures.md#upwell-completion-program--november-16-2026)
 records resident battle state, native damage/timer views and the remaining combat/recovery milestones.
 
+[Incoming structure combat and loss](protocol/structures.md#incoming-weapons-destruction-and-automatic-custody) records
+paid attacks, reinforcement eligibility, fatal custody and exact-deadline unanchoring.
+
 [Structure asset safety](protocol/structures.md#asset-safety-and-public-structure-loot) records resident custody,
 five-/twenty-day delivery, paid personal/corporate recovery and public structure loot.
 

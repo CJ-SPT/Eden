@@ -22,7 +22,8 @@ internal sealed partial class AssetSafetyStore
         SavedStructure structure,
         long owner,
         long now,
-        bool eject
+        bool eject,
+        bool allowEmpty = false
     )
     {
         if (world is not EconomyTransaction)
@@ -52,32 +53,17 @@ internal sealed partial class AssetSafetyStore
             .ToArray();
         if (items.Length == 0 && ships.Length == 0)
         {
+            if (allowEmpty)
+            {
+                return null;
+            }
             throw new InvalidDataException("There are no available assets to move to safety.");
         }
         long location;
         SavedAssetSafety? wrap = null;
         if (eject)
         {
-            location = world.Next("WorldStructureLoot", AssetSafetyRules.FirstLootContainerId - 1);
-            if (location >= AssetSafetyRules.LootContainerLimit)
-            {
-                throw new InvalidDataException("No cargo container identities remain.");
-            }
-            world.Add(
-                new SavedStructureLoot
-                {
-                    Id = location,
-                    OwnerId = owner,
-                    CorporationId = structure.CorporationId,
-                    StructureId = structure.Id,
-                    SystemId = structure.SystemId,
-                    Name = structure.Name + " assets",
-                    X = structure.X + StructureCatalog.Require(catalog, structure.TypeId).Radius,
-                    Y = structure.Y,
-                    Z = structure.Z,
-                    ExpiresAt = checked(now + JetcanRules.Lifetime),
-                }
-            );
+            location = CreateLoot(world, catalog, structure, owner, now);
         }
         else
         {
@@ -109,6 +95,65 @@ internal sealed partial class AssetSafetyStore
             ship.StorageFlagId = eject ? (int)InventoryFlag.Cargo : ship.StorageFlagId;
         }
         return wrap;
+    }
+
+    internal static void RelocateDelivered(WorldAction world, CatalogDbContext catalog, SavedStructure structure, long now, bool eject)
+    {
+        foreach (var wrap in world.Filter<SavedAssetSafety>(w => w.DestinationId == structure.Id && w.DeliveredAt != null).ToArray())
+        {
+            var item = world.Set<OwnedItem>().Find(wrap.Id) ?? throw new InvalidDataException("The delivered safety wrap is missing.");
+            if (eject)
+            {
+                long container = CreateLoot(world, catalog, structure, wrap.OwnerId, now);
+                foreach (var child in world.Filter<OwnedItem>(c => c.LocationId == wrap.Id))
+                {
+                    child.LocationId = container;
+                    child.FlagId = (int)InventoryFlag.Cargo;
+                }
+                foreach (var ship in world.Filter<Ship>(c => c.StoredInId == wrap.Id))
+                {
+                    ship.StoredInId = container;
+                    ship.StorageFlagId = (int)InventoryFlag.Cargo;
+                }
+                world.Remove(wrap);
+            }
+            else
+            {
+                wrap.StructureId = structure.Id;
+                wrap.SystemId = structure.SystemId;
+                wrap.CreatedAt = now;
+                wrap.DestinationId = null;
+                wrap.DeliveredAt = null;
+                wrap.NearestStationId = NearestStation(catalog, structure.SystemId);
+                wrap.Name = structure.Name + " (" + catalog.RequireSystem(structure.SystemId).Name + ")";
+            }
+            world.Remove(item);
+        }
+    }
+
+    internal static long CreateLoot(WorldAction world, CatalogDbContext catalog, SavedStructure structure, long owner, long now)
+    {
+        long id = world.Next("WorldStructureLoot", AssetSafetyRules.FirstLootContainerId - 1);
+        if (id >= AssetSafetyRules.LootContainerLimit)
+        {
+            throw new InvalidDataException("No cargo container identities remain.");
+        }
+        world.Add(
+            new SavedStructureLoot
+            {
+                Id = id,
+                OwnerId = owner,
+                CorporationId = structure.CorporationId,
+                StructureId = structure.Id,
+                SystemId = structure.SystemId,
+                Name = structure.Name + " assets",
+                X = structure.X + StructureCatalog.Require(catalog, structure.TypeId).Radius,
+                Y = structure.Y,
+                Z = structure.Z,
+                ExpiresAt = checked(now + JetcanRules.Lifetime),
+            }
+        );
+        return id;
     }
 
     public AssetSafetyWrap Deliver(long pilotId, long wrapId, int systemId, long destinationId) =>

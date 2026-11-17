@@ -1,8 +1,8 @@
-# Player Upwell structures — November 10, 2026
+# Player Upwell structures â€” November 10, 2026
 
-[Protocol index](../protocol.md) · [Documentation index](../README.md)
+[Protocol index](../protocol.md) Â· [Documentation index](../README.md)
 
-## Upwell completion program — November 16, 2026
+## Upwell completion program â€” November 16, 2026
 
 The completion program continues the existing foundation with resident authority and checkpoint persistence.
 Historical foundation limitations below describe their original milestones; this program records subsequent work explicitly.
@@ -11,7 +11,7 @@ Historical foundation limitations below describe their original milestones; this
 | --- | --- | --- |
 | Battle state | Catalog layer caps/resistances and pause thresholds, repairs, reinforcement, abandonment, native status and saved deadlines | Implemented; validation below |
 | Asset safety | Personal/corporate collection, timed delivery, paid recovery, native inventory and public loot | Implemented; validation below |
-| Incoming combat and loss | Paid weapons against structures, legal targeting, destruction settlement and automatic custody transitions | Planned |
+| Incoming combat and loss | Paid weapons against structures, legal targeting, destruction settlement and automatic custody transitions | Implemented; validation below |
 | Defense and tethering | Combat fitting/control, supported defensive weapons, target updates, access-checked tether and repairs | Planned |
 | Service completion | Remaining native structure profiles/access, economic/clone services, ownership and specialized structure consumers | Planned |
 
@@ -22,7 +22,7 @@ deadline are captured with the owning structure's state and reinforcement deadli
 The new battle operation requires the resident world; it has no offline SQL gameplay implementation or damage RPC.
 Player weapon routing and destruction/asset settlement belong to the next milestone and are not enabled by this foundation.
 
-Damage uses catalog shield/armor/hull resonances, layer damage limits **2034–2036**, pause thresholds **3354–3356** and
+Damage uses catalog shield/armor/hull resonances, layer damage limits **2034â€“2036**, pause thresholds **3354â€“3356** and
 `CanHaveAutoRepair` **5770**. Caps apply to actual layer HP lost, shared across all attackers. The initial timing policy
 uses one-second UTC windows and one-second repair holds on qualifying damage; idle time cannot bank burst damage.
 This discretization is Eden's explicit server policy, not a claim about CCP's undisclosed damage-sampling implementation.
@@ -90,7 +90,7 @@ final-newline/trailing-whitespace checks and `git diff --check` passed. The full
 Schema **186** adds resident `WorldAssetSafety` and `WorldStructureLoot` records. Personal and corporation assets can be
 manually collected without docking permission after leaving the source structure. Active boarded ships, installed
 industry blueprints and fitted structure equipment are not collected by the manual operation. Automatic collection
-during destruction/decommissioning belongs to the incoming-combat/loss milestone.
+during destruction/decommissioning is recorded in the incoming-combat/loss milestone below.
 
 Collection preserves inventory identity, nested contents, singleton state, blueprint runs/efficiencies, stored hulls,
 fitted equipment and loaded charges. Corporation roots retain their original hangar-division flags. Pending wraps do
@@ -158,7 +158,108 @@ No full .NET suite was requested or run.
 **Optional maintainer checks:** Inspect a delivered wrap's native contents and recover one partial stack;
 verify corporation recovery in an office division. Native rendering and interactions remain unverified.
 
-## Station and structure hull geometry — November 16, 2026
+### Incoming weapons, destruction and automatic custody
+
+Resident ship turrets (including the existing grouped/advanced weapon path), ordinary missiles and combat drones now
+attack vulnerable Upwell structures. Native targeting recognizes structure contacts; turret/launcher activation and drone
+orders retain their lock checks. Catalog range, hit/application calculations, skills, capacitor, ammunition, cooldowns
+and overload costs stay in their existing paid operations. All attackers share the saved layer cap/repair window.
+Native damage/slim updates follow committed hits, reinforcement removes eligibility and fatal removal uses destruction
+presentation. Missile targets retain their distinct saved kind; launch pays immediately and physical contact applies damage
+once. Earlier structure-bound missile contacts settle before structure reads, repair deadlines and later paid attacks.
+The resolver can publish an actual contact before the next full movement boundary; it never publishes a predicted future
+contact. A per-system resident flight index and per-action advancement guard avoid scanning combat history or replaying
+the same work for every attacker. Reopened checkpoints rebuild that index from saved flights. Shots against invulnerable,
+unavailable or out-of-range targets do not pay their weapon costs.
+
+High-security structure attacks are rejected before payment because CCP requires an active declared war and Eden has no
+war authority yet. Low/null-security structure offense extends the attacker's weapons/PvP timers. Sovereignty hubs retain
+their Entosis ownership mechanics. Existing area-weapon and utility-EWAR target sets are unchanged by this milestone.
+
+Fatal damage and completed unanchoring settle custody in the same resident transaction as the terminal structure state.
+Boarded ships retain their pilot, cargo and fittings and enter space outside the structure's range sphere. Connected docked
+pilots adopt the saved evacuation and discard old location bindings. Stored personal/corporate roots enter timed asset
+safety; wormholes/Pochven eject them, and abandoned destruction also ejects them. Already delivered wraps at a departing
+destination return to pending custody under their original identity, or eject their contents where safety is disabled.
+They cannot become inaccessible nested wraps. Unanchoring completes at its saved deadline despite docked ships or personal
+assets; the packaged hull remains in space for the existing capacity-checked recovery operation.
+
+Installed industry jobs cancel atomically, release their blueprint and consume reserved copy runs consistently with Eden's
+existing cancellation semantics. Completed manufacturing/reaction output, or reserved inputs for unfinished jobs, receives
+Eden's normal independent 50% stack-survival roll and surviving stacks become public loot. Rigs and integral equipment are
+removed; ordinary structure fittings/fuel use the same 50% policy, and the installed quantum core always survives as its
+original item. Nested contents of destroyed fittings are removed with them. The wreck survival policy is Eden's documented
+choice, not an assertion of CCP's private loot implementation. Services/access records are cleared on destruction, active
+moon extractions end, and the destroyed structure remains a nonusable tombstone for saved custody/history. Rejected or
+rolled-back settlements cannot publish custody, consume a shot or create a duplicate drop.
+
+The vulnerability/deployment/asset-safety CCP articles and UniWiki pages linked above remain the gameplay references.
+In particular, CCP's vulnerability states explicitly require wars for high-security attacks; its deployment article
+specifies core survival and recovery of the decommissioned hull from space. Local EVE.js **261108.1** lifecycle/loot
+boundaries were checked in `structureState.js` (hash above) and `structureDestructionLootState.js`, SHA-256
+`B41A9AB1B70C69AE0FB7A25F8993FE513096F2B208DE940DD1DF07A89AF55A75`. The reference drops all non-rig fittings;
+Eden instead uses its existing ship-loot survival policy. No AGPL source was incorporated. Native Blue/Destiny adapters
+remain unchanged; no client code was executed and there is no offline SQL structure-combat/departure implementation.
+
+**Automated validation:** The initial exact filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Structures.StructureAttackTests.PaidTurretDamagesTheStructureAndRejectedReinforcementCannotPayAgain`.
+The paid-shot check passed after training its real catalog requirement (7.34 seconds; build 6.17 seconds). The expanded
+warm check initially exposed that the minimal NPC test fixture deliberately disables the production fitting cache; it
+now explicitly supplies that cache and asserts zero SQL commands, connections and fitting calculations. Native lock/fire,
+reinforcement lock loss and delivered-wrap relocation passed together; fatal settlement/checkpoint and exact-deadline
+evacuation/unanchoring also passed. Physical missile payment/contact/persisted-target checks passed in 7.29 seconds
+(build 4.87 seconds), and combat drone attack/reinforcement-stop passed in 7.34 seconds (build 8.19 seconds).
+The abandonment/rollback and connected docked-session evacuation checks passed two cases in 8.21 seconds (build 5.05 seconds).
+The combined attack/rule filter passed **33 cases** in 15.49 seconds (build 8.49 seconds) before the final timing additions.
+The same ordinary/repair-pending/subsecond missile flow passed three cases in 8.85 seconds (build 5.13 seconds);
+checkpoint reopening is also exercised by its final form. Assisted attacks retain the owner's surface-distance control
+limit and cannot replay a rejected trigger after returning into range.
+
+An initial broad root run built successfully (4.56 seconds) but ended without a final TRX and is recorded as incomplete.
+Its observed failure was `PilotCombatTests.FatalShotSendsCombatTextBeforeRemovingTheTargetsClientRecord`, whose offline
+fixture failed in the unchanged resident-only Abyssal monitor before the combat assertion. The exact test reproduced on
+unchanged main **fa2e1c6e577c8c3b65568b78acf0fb3a7eb17852** (11.16 seconds; build 3.46 seconds). Its fixture now starts
+a resident world, matching the existing correction on `codex/full-suite-fixes`; no assertion or gameplay fallback was
+weakened. That case and the assisted-structure range/retrigger case passed together in 7.76 seconds (build 7.02 seconds).
+The broad root validation restored tools/solution, built with zero warnings/errors (11.15 seconds), and passed
+**1,061 affected cases** in three independent batches:
+
+| Batch | Passed | Elapsed including runner |
+| --- | ---: | ---: |
+| Core structure/combat/missile flows | 340 | 124.69 seconds |
+| Drones/delegation/session replays | 364 | 221.53 seconds |
+| Supporting services/persistence/hosting | 357 | 362.97 seconds |
+
+Each selector below was prefixed with `FullyQualifiedName~Eden.Protocol.Tests.` and combined with `|`:
+
+- Core: `Structures`, `Docking.StructureServiceTests`, `Combat.PilotCombatTests`, `Combat.MissileCombatTests`,
+  `Combat.PilotMissileTests`, `Combat.ResidentMissileLaunchTests`, `Combat.MissileFlightTests`, `Combat.MissileRulesTests`,
+  `Combat.NpcMissileTimingTests`, `Combat.AdvancedWeaponTests`, `Combat.WeaponBankTests`, `Flight.MissileBallparkTests`.
+- Drones: `Combat.ResidentDroneTests`, `Combat.PilotDroneTests`, `Combat.CombatDroneTests`, `Combat.DroneDelegation`,
+  `Combat.DroneSynchronizationTests`, `Combat.LiveDroneRulesTests`, `Combat.DronePerformanceReplayTests`,
+  `Combat.DroneDamageRangeTests`.
+- Support: `Thermal.Overload`, `Loot.WreckTests`, `Industry`, `Hosting`, `Persistence.WorldMigrationTests`,
+  `Persistence.WorldInitializationTests`, `Sovereignty.SovereigntyResource`, `Sovereignty.SovereigntyDeploymentTests`.
+
+Both Python policy suites passed (**8 catalog**, **9 formatting**), as did formatting/140-column verification
+(**2,593 files**) and `git diff --check`. The broad root sequence took **750.64 seconds**. Its compiled code precedes
+three final changes: skipping structure lookup in legacy SQL combat, avoiding global flight participants for unknown
+structure IDs, and accepting an actual zero-time contact inside the structure range ball.
+
+Final root tool/solution restore, build (zero warnings/errors; 7.64 seconds), and **213 focused cases** passed after
+those changes. Its selectors were `Structures.StructureAttackTests`, `Combat.PilotCombatTests`,
+`Combat.MissileCombatTests`, `Combat.PilotDroneTests`, `Combat.DroneDelegationTests`, `Combat.DroneDamageRangeTests`, and
+`Combat.MissileFlightTests`, using the same prefix/join convention. This includes all four ordinary, pending-repair,
+subsecond and inside-range-ball missile variants, each reopened from a saved flight. Both policy suites and formatting
+verification passed again; the final root sequence took **125.66 seconds**. Documentation local links, UTF-8, final
+newlines and trailing whitespace passed separate checks. The full .NET suite was not requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Observe native structure targeting/damage/reinforcement; observe a docked session's
+forced departure and public core loot. Rendering and gameplay feel remain unverified.
+
+## Station and structure hull geometry â€” November 16, 2026
 
 The Athanor's catalog radius is a 45 km docking/range ball, while its visible model extends roughly 15 km from its
 origin. Treating that range ball as solid blocked the docking-ring interior and pushed undocking ships away from the
@@ -270,12 +371,12 @@ in 16.43 seconds. The solution built without warnings or errors. Both Python pol
 **Optional maintainer checks:** Inspect the beacon and placement preview at a catalog moon, align a survey launcher and inspect
 the delayed result, and check the scheduling and ledger views on a copied save.
 
-### Correct moon ore identities — November 16, 2026
+### Correct moon ore identities â€” November 16, 2026
 
 The composition table now uses the build-3662168 asteroid identities rather than assuming consecutive type IDs.
 The rare tier is Carnotite **45502**, Zircon **45503**, Pollucite **45504** and Cinnabar **45506**. The exceptional tier is
 Xenotime **45510**, Monazite **45511**, Loparite **45512** and Ytterbite **45513**. The previous table selected SKINs
-**45505** and **45507–45509**, placed Cinnabar in the exceptional tier and omitted all four exceptional ores.
+**45505** and **45507â€“45509**, placed Cinnabar in the exceptional tier and omitted all four exceptional ores.
 Named ore values document the gaps, and the shared AutoMining ore list receives the corrected identities as well.
 
 All 20 base moon ores are reachable in both lowsec and nullsec, supplying all 20 raw moon materials through the existing
@@ -286,7 +387,7 @@ lowsec and nullsec and the fixed shares remain Eden policy, not a reproduction o
 
 New extractions use the corrected composition after the updated server starts. Existing extractions retain their saved
 composition, and existing asteroid fields are not rewritten. Cancel and restart an unfinished pull to use the corrected
-table. In particular, Efa V – Moon 2 now supplies 70% Xenotime and 30% Zeolites instead of the old Cinnabar result.
+table. In particular, Efa V â€“ Moon 2 now supplies 70% Xenotime and 30% Zeolites instead of the old Cinnabar result.
 
 References: [CCP Moon Mining](https://support.eveonline.com/hc/en-us/articles/115005404229-Moon-Mining) and
 [EVE University moon ores](https://wiki.eveuniversity.org/Moon_mining#Moon-specific_Ore). IDs and yields were checked against
@@ -311,7 +412,7 @@ Tool and solution restore, the solution build (zero warnings/errors, 6.23 second
 
 **Optional maintainer checks:** Inspect a corrected rare or exceptional moon's survey/planner composition in the native client.
 
-### Native refinery setup calls — November 16, 2026
+### Native refinery setup calls â€” November 16, 2026
 
 User screenshots reported `Unsupported local call beyonce.MachoBindObject (CmdWarpToStuff)` when choosing a moon's
 mining point, followed by `corpRegistry.MachoBindObject (GetStructureReinforceDefault)` during structure setup.
@@ -324,7 +425,7 @@ fleet, capacitor and interdiction paths remain in force; the caller supplies no 
 `corpRegistry.GetStructureReinforceDefault` now returns the native tuple **`(255, 18)`**, meaning no preferred weekday
 and Eden's existing default **18:00 UTC** hour. It rejects unexpected arguments and does not change corporation state.
 The build-3662168 deployment picker sends weekday **255** back to `structureDeployment.Anchor`. Deployment now accepts
-and checkpoints that sentinel alongside the existing weekday values **0–6**, while rejecting other days and invalid
+and checkpoints that sentinel alongside the existing weekday values **0â€“6**, while rejecting other days and invalid
 hours. Corporation-wide customization of the default hour is outside this repair.
 
 Inert inspection of the installed build-3662168 archive confirmed
@@ -360,7 +461,7 @@ the failures, not acceptance of the corrected behavior.
 **Optional maintainer checks:** Warp to a moon's mining point through its native menu, then open the refinery deployment
 screen and verify that its reinforcement hour loads and the chosen configuration can be anchored.
 
-### Native anchor configuration container — November 16, 2026
+### Native anchor configuration container â€” November 16, 2026
 
 The user's follow-up anchoring screenshot reported "This deployment configuration is not supported."
 Build-3662168 `structureDeployment.ConfirmDeployment` creates a `util.KeyVal` and sends it as the tenth `Anchor`
@@ -380,7 +481,7 @@ verification and whitespace checks passed. No new regression tests were added, a
 
 **Optional maintainer checks:** Retry confirming the Athanor deployment after the updated server starts.
 
-### Anchored structure scene publication — November 16, 2026
+### Anchored structure scene publication â€” November 16, 2026
 
 The user reported that confirming Anchor consumed the hull without showing a structure. Read-only remote verification
 on revision `ab8c3e6e` confirmed a saved Athanor in state **Anchoring (2)** with a running saved deadline. No inventory
@@ -421,7 +522,7 @@ establish the failure context, not acceptance of the corrected rendering.
 **Optional maintainer checks:** After updating the server, reconnect and check the existing Athanor's construction model
 and timer; confirm a future deployment appears immediately after Anchor.
 
-## Structure discovery, docked login and access reads — November 16, 2026
+## Structure discovery, docked login and access reads â€” November 16, 2026
 
 The user's docking attempt persisted the ship inside the Athanor, then the docked UI queried the missing
 `structureSettings.CharacterHasSetting` method. On reconnect, the selection card exposed the compatibility `StationId`
@@ -487,7 +588,7 @@ and immediate startup dependencies. No new cases or classes were added. Tool and
 **Optional maintainer checks:** After updating the server, log back into the docked character; check the Athanor in the
 system map/right-click menu and off-grid overview; select its bracket during a timed lifecycle phase.
 
-## Docked structure control and quantum-core setup — November 16, 2026
+## Docked structure control and quantum-core setup â€” November 16, 2026
 
 Docked managers can now take and release control of an Upwell structure through the native `structureControl` service,
 install its quantum core, deposit fuel and fit/online supported service modules. The earlier control limitation in the
@@ -570,7 +671,7 @@ not acceptance of the corrected hangar or control view.
 **Optional maintainer checks:** Update/restart and reconnect to the docked Athanor; take control and place its matching
 quantum core in the Core Room; after the repair timer, deposit fuel and fit/online the desired service modules.
 
-## Structure moniker and docked-system correction — November 16, 2026
+## Structure moniker and docked-system correction â€” November 16, 2026
 
 The next user login reached inventory startup but failed with `invbroker.MachoBindObject (GetInventoryFromId)`.
 `character-selection-25108.log` (November 17 at 00:11 UTC, November 16 local time) also recorded "The ship's system
@@ -612,7 +713,7 @@ failure, not successful native rendering after this change.
 
 **Optional maintainer checks:** Update/restart, reconnect to the docked character, then open its inventory and take control.
 
-## Structure hangar container and controlled undocking — November 16, 2026
+## Structure hangar container and controlled undocking â€” November 16, 2026
 
 The next two screenshots showed `invbroker.MachoBindObject (GetInventory)` during hangar loading and taking control.
 Native `invCache.GetInventory` rewrites `containerHangar` (10004) to `containerStructure` (10014) whenever `structureid`
@@ -664,7 +765,7 @@ evidence; rendering, button behavior and the native undock animation remain unve
 **Optional maintainer checks:** Update/restart and reconnect; open the hangar and take control; undock from control and
 confirm the original ship appears outside the Athanor.
 
-## Athanor setup flow audit — November 16, 2026
+## Athanor setup flow audit â€” November 16, 2026
 
 The user's native lobby now opened without RPC popups, but its outside view remained black; undocking did not complete
 until a relog, and the displayed exit was wrong. The same setup exposed missing personal ship/hangar rows while controlling
@@ -731,7 +832,7 @@ restore, solution build (zero warnings/errors, 0.91 seconds), both Python policy
 **Optional maintainer checks:** After updating and reconnecting, verify the docked outside scene and undock transition;
 open Ship/Item Hangars and transfer the core; take control, fit/online the drill and open the moon planner.
 
-## Structure compression and gas decompression — November 11, 2026
+## Structure compression and gas decompression â€” November 11, 2026
 
 Milestone 7 implements all three pinned `structureCompressionMgr` calls: `CompressItemInStructure(itemID)`,
 `DecompressGasInStructure(itemID)` and `GetMyGasDecompressionEfficiency()`. The two mutations return the native tuple
@@ -837,9 +938,9 @@ names share resident caching and refresh when their owning structure row changes
 ## Administration
 
 The Settings page has a **Structures** tab with independent **Anchoring speed**,
-**Core onlining speed** and **Decommissioning speed** controls. Each accepts **0.1–100×**,
-defaults to **1×**, and participates in revision comparison, JSON import/export and save for
-restart. A speed of 2× halves the duration. Existing deadlines retain their original terms;
+**Core onlining speed** and **Decommissioning speed** controls. Each accepts **0.1â€“100Ã—**,
+defaults to **1Ã—**, and participates in revision comparison, JSON import/export and save for
+restart. A speed of 2Ã— halves the duration. Existing deadlines retain their original terms;
 a newly started phase uses the active setting at that time. Fuel's hourly cadence is unchanged.
 
 Ordinary dockable hulls anchor for 24 hours and online for 15 minutes after core installation.
@@ -882,7 +983,7 @@ Moon mining and reactions are still required for the missing T2 material sources
 Weapon/control fitting, structure combat, damage caps, reinforcement battles, tethering,
 abandonment/destruction, loot and asset safety are also pending. Reinforcement day/hour choices
 are validated and saved as metadata; no reinforcement combat is simulated. Fuel capacity is
-an explicit shared Eden policy of 30,000 m³ until specialized bays are modeled. No structure
+an explicit shared Eden policy of 30,000 mÂ³ until specialized bays are modeled. No structure
 rig bonuses or configurable service taxes are claimed. These limits must remain visible in
 status reports; support for a hull's lifecycle does not imply its specialized service works.
 
@@ -895,7 +996,7 @@ and service ownership. Structure identities share the inventory allocator and hi
 they cannot collide with ships, items or later recovered deployments. Inventory, core, fuel,
 service and recovery mutations commit together with rejection/unchanged-state checks.
 
-Build-specific inventory flags are service slots 164–171, structure fuel bay 172 and core room
+Build-specific inventory flags are service slots 164â€“171, structure fuel bay 172 and core room
 180. Native session changes set `structureid`, clear `stationid`/`stationid2` and retain the true
 64-bit location. The hangar reply is the inert native
 `structures.structureHangarViewState.StructureHangarViewState` new-object form. Its class is

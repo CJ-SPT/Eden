@@ -49,7 +49,12 @@ internal sealed partial class PilotMissileStore
                     .Select(row => row.SourceShipId)
             );
         }
-        return new(pilots: [pilotId], ships: ships, resources: resources);
+        return new(
+            systems: target is long selected && world.Structure(selected) is { } structure ? [structure.SystemId] : [],
+            pilots: [pilotId],
+            ships: ships,
+            resources: resources
+        );
     }
 
     private static IQueryable<WorldMissile> Flying(WorldAction world, int system) =>

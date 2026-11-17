@@ -264,6 +264,10 @@ internal sealed partial class PilotStructureStore
 
     internal static void Advance(WorldAction world, CatalogDbContext catalog, long now, int? systemId = null)
     {
+        foreach (int missileSystem in systemId is int selected ? new[] { selected } : world.StructureMissileSystems)
+        {
+            StructureMissileSettlement.Advance(world, catalog, missileSystem, now);
+        }
         var due = (
             systemId is int system
                 ? world.Filter<SavedStructure>(s => s.SystemId == system && (s.StateEndsAt <= now || s.UnanchorAt <= now))
@@ -381,11 +385,15 @@ internal sealed partial class PilotStructureStore
                 module.NextFuelAt = null;
                 world.Set<OwnedItem>().Find(module.ItemId)!.Online = false;
             }
-            // Services stop at the saved deadline even if personal assets delay packaging.
-            // Settle their preceding fuel hours before changing the module state.
+            // Settle custody at the saved deadline, after paying the preceding fuel hours.
+            if (world is EconomyTransaction)
+            {
+                StructureDeparture.Settle(world, catalog, structure, stoppedAt, destroyed: false);
+            }
             if (
-                !world.Filter<Eden.Data.World.Inventory.Ship>(s => s.StructureId == structure.Id).Any()
-                && !world.Filter<OwnedItem>(i => i.LocationId == structure.Id && i.OwnerId != structure.CorporationId).Any()
+                world is EconomyTransaction
+                || !world.Filter<Eden.Data.World.Inventory.Ship>(s => s.StructureId == structure.Id).Any()
+                    && !world.Filter<OwnedItem>(i => i.LocationId == structure.Id && i.OwnerId != structure.CorporationId).Any()
             )
             {
                 structure.State = StructureState.Unanchored;

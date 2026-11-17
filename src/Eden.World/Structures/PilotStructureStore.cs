@@ -87,7 +87,12 @@ internal sealed partial class PilotStructureStore(
             select: world =>
             {
                 int? selectedSystem = ResolveSystem(world);
-                return new(pilots: pilotId is long pilot ? [pilot] : [], systems: selectedSystem is int system ? [system] : []);
+                return new(
+                    pilots: pilotId is long pilot ? [pilot] : [],
+                    systems: selectedSystem is int system ? [system]
+                        : structureId is null ? world.StructureMissileSystems
+                        : []
+                );
             }
         );
         var world = scope.World;

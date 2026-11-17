@@ -3,6 +3,9 @@
 [Upwell completion](protocol/structures.md#upwell-completion-program--november-16-2026) tracks structure combat,
 reinforcement, destruction, asset recovery and remaining services.
 
+[Incoming structure combat and loss](protocol/structures.md#incoming-weapons-destruction-and-automatic-custody) records
+paid attacks, reinforcement eligibility, fatal custody and exact-deadline unanchoring.
+
 [Structure asset safety](protocol/structures.md#asset-safety-and-public-structure-loot) covers manual collection,
 timed delivery, paid recovery and public wormhole/Pochven loot.
 

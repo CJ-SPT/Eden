@@ -44,6 +44,33 @@ public sealed class StructureCombatRulesTests
     private static StructureBattle Battle() =>
         new(StructureState.ShieldVulnerable, s_now, null, new(1000, 1000, 1000), null, 0, new(0, 0, 0), 0);
 
+    [Theory]
+    [InlineData(-0.9, false)]
+    [InlineData(0, false)]
+    [InlineData(0.449, false)]
+    [InlineData(0.45, true)]
+    [InlineData(0.9, true)]
+    [InlineData(double.NaN, true)]
+    public void StructureAttacksRespectTheHighSecurityBoundaryWithoutInventingWarRights(double security, bool rejected)
+    {
+        var battle = Battle();
+        if (rejected)
+        {
+            Assert.Throws<InvalidDataException>(() => StructureCombatRules.CheckAttack(s_structure, security, battle));
+        }
+        else
+        {
+            StructureCombatRules.CheckAttack(s_structure, security, battle);
+        }
+        Assert.Throws<InvalidDataException>(() =>
+            StructureCombatRules.CheckAttack(s_structure, 0, battle with { State = StructureState.ArmorReinforced })
+        );
+        Assert.Throws<InvalidDataException>(() =>
+            StructureCombatRules.CheckAttack(s_structure with { Family = StructureFamily.SovereigntyHub }, 0, battle)
+        );
+        Assert.Equal(StructureState.ShieldVulnerable, battle.State);
+    }
+
     [Fact]
     public void MultipleAttackersShareTheLayerCapAndRepairPauseWithoutBankingIdleDamage()
     {

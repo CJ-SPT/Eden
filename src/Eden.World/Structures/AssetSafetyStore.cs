@@ -50,19 +50,35 @@ internal sealed partial class AssetSafetyStore(WorldDatabase database, TimeProvi
             database,
             select: world =>
             {
-                long corporation = world.Pilots.Find(pilot)?.CorporationId ?? 0;
+                var selected = world.Pilots.Find(pilot);
+                long corporation = selected?.CorporationId ?? 0;
+                int? dockedSystem = selected?.ActiveShip.StructureId is long docked ? world.Structure(docked)?.SystemId : null;
                 var wraps = world.Filter<SavedAssetSafety>(w => w.OwnerId == pilot || w.OwnerId == corporation).ToArray();
                 return new(
                     pilots: [pilot],
                     systems: wraps
                         .Select(w => w.SystemId)
                         .Concat(wraps.Select(w => catalog.RequireStation(w.NearestStationId).SolarSystemId))
-                        .Concat(system is int selected ? [selected] : [])
+                        .Concat(system is int requested ? [requested] : [])
+                        .Concat(dockedSystem is int local ? [local] : [])
                         .Distinct()
                 );
             }
         );
-        var result = operation(scope.World, catalog, Now);
+        long now = Now;
+        if (system is int requestedSystem)
+        {
+            StructureMissileSettlement.Advance(scope.World, catalog, requestedSystem, now);
+        }
+        if (
+            scope.World.Pilots.Find(pilot)?.ActiveShip.StructureId is long docked
+            && scope.World.Structure(docked) is { } structure
+            && structure.SystemId != system
+        )
+        {
+            StructureMissileSettlement.Advance(scope.World, catalog, structure.SystemId, now);
+        }
+        var result = operation(scope.World, catalog, now);
         scope.Commit();
         return result;
     }

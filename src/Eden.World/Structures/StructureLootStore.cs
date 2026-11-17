@@ -147,6 +147,17 @@ internal static class StructureLootStore
         }
     }
 
+    internal static void DestroyContents(WorldAction world, long root)
+    {
+        var contents = Descendants(world, root);
+        foreach (var ship in contents.Ships)
+        {
+            PilotInsuranceStore.VoidRemovedHull(world, ship.Id);
+            world.Remove(ship);
+        }
+        world.RemoveRange(contents.Items);
+    }
+
     private sealed record Contents(IReadOnlyList<OwnedItem> Items, IReadOnlyList<Ship> Ships);
 
     private static Contents Descendants(WorldAction world, long root)

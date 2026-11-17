@@ -18,6 +18,21 @@ namespace Eden.World.Runtime.Economy;
 internal abstract class WorldAction
 {
     private readonly List<Action> _committed = [];
+    private readonly Dictionary<int, long> _structureMissileAdvances = [];
+
+    internal virtual bool HasStructureMissiles(int system) => false;
+
+    internal virtual IReadOnlyCollection<int> StructureMissileSystems => [];
+
+    internal bool BeginStructureMissileAdvance(int system, long now)
+    {
+        if (_structureMissileAdvances.TryGetValue(system, out long advanced) && now <= advanced)
+        {
+            return false;
+        }
+        _structureMissileAdvances[system] = now;
+        return true;
+    }
 
     internal void AfterCommit(Action action) => _committed.Add(action);
 

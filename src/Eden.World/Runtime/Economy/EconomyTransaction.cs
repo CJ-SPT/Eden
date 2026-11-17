@@ -210,6 +210,10 @@ internal sealed partial class EconomyTransaction(
         return Next("WorldItem", Math.Max(last, InventoryDefinitions.FirstOwnedItemId));
     }
 
+    internal override bool HasStructureMissiles(int system) => store.HasStructureMissiles(system);
+
+    internal override IReadOnlyCollection<int> StructureMissileSystems => store.StructureMissileSystems;
+
     internal bool Overlay<T>(T row)
         where T : class
     {
