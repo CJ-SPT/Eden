@@ -116,6 +116,53 @@ Development began with exact filter
 **Optional maintainer checks:** Observe a gang retaining its primary while taking fire, and a kiter returning
 inside its own tackle range after the gang's tackler loses coverage. Native presentation remains unverified.
 
+### Milestone 3: nullsec engagement and warp preparation
+
+Offensive regional raids and interceptions may initiate combat against visible neutral pilots without a prior
+attack report. Same-group, corporation/alliance friendship, visible strength, application and ordinary combat legality
+still gate each actual attack. Escort and defensive objectives retain their narrower target policy. This corrects
+the earlier explicit neutral exclusion that could make nullsec gangs ignore a human hunter.
+
+Every new autonomous miner or traveler warp order now has a deterministic four-to-eight human-active-second
+preparation window. The ship moves under an ordinary Follow order during that window, leaving time to lock and
+tackle it without publishing a premature native warp alignment. After the saved deadline, ordinary alignment,
+interdiction and warp mechanics apply. Tackle continues to prevent release after the deadline. Repeated evaluations
+do not renew the delay; a warp already in progress is not interrupted. Nearby subwarp journeys do not incur a warp
+delay. Restoring a pending legacy alignment converts it to delayed preparation before publishing the resumed scene.
+
+The deadline is saved in the existing typed miner/hauler checkpoint. Paused work shifts it with its existing active
+clock, and unobserved travel wakes at the pending preparation deadline rather than skipping to a distant approach.
+Resume prepares a private navigation copy and publishes it only after its owning action commits. There is no new
+schema, SQL gameplay path, teleport or special immunity for a bot that is being hunted.
+
+The reaction window is Eden policy requested for hunting, rather than an EVE server timing claim. Gameplay reference:
+[EVE University tackling](https://wiki.eveuniversity.org/Tackling). Movement reuses the existing Follow and Warp owners,
+checked against [Carbon Ball.cpp revision 27ee40b](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ball.cpp).
+
+**Automated validation:** Tool/solution restore and solution build passed (zero warnings/errors, 0.66 seconds).
+All 107 affected cases passed in 52.55 seconds wall time (50 seconds reported test duration). The final filter
+combined `FullyQualifiedName~` for `CapsuleerTrafficNavigationTests`, `CapsuleerSchedulingTests`,
+`CapsuleerDeadlineTests`, `CapsuleerMinerTests`, `CapsuleerHaulerTests`, `RoamingGangTests`,
+`RegionalConflictWorldTests`, `RegionalConflictTests`, `CapsuleerDefenseFrameTests`, `GameplayDependenciesTests`
+and `DataModelOwnershipTests`. Both Python policy suites passed (8 catalog cases in 1.317 seconds; 9 formatting
+cases in 0.017 seconds). Formatting verification and diff checks passed. No full suite was requested or run.
+An initial affected run had 101 passes and six failures: five miner flows treated preparation as arrival, and
+the bot-versus-bot fixture compared pre-resupply magazines with post-resupply quantities. Miner travel now waits
+for preparation; both battle fixtures sample each shooter's resident magazine after acquisition. The final run
+covers these corrections and preserves real damage, paid ammunition and warmed performance assertions.
+Exact development filters used
+`CapsuleerTrafficNavigationTests.PendingWarpGivesAHunterTimeAndTackleStillBlocksRelease`,
+`CapsuleerTrafficNavigationTests.StationlessOpeningStartsAtARealGateAndContinuesToNextGate`, and
+`RegionalConflictWorldTests.OffensiveRaidInitiatesPaidCombatAgainstAVisibleNeutralPilot`, each with the full
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.` prefix. The last two passed together in 8.47 seconds wall time.
+The neutral-raid fixture initializes the victim's new hull at full health and compares each attacker's resident
+magazine from first target acquisition, so pre-departure resupply and shield recharge cannot masquerade as firing.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Jump into a nullsec hunting grid and attempt lock/tackle before a bot leaves;
+observe an offensive gang initiating a fight with a neutral pilot. Native presentation and combat feel remain unverified.
+
 ## Regional bot conflicts — November 17, 2026
 
 Regional operations extend the saved roaming-gang command with constellation-based patrol groups in null security.

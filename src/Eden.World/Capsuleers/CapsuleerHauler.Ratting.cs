@@ -242,20 +242,7 @@ internal sealed partial class CapsuleerHauler
             throw new InvalidDataException("Warp disruption prevents the ratting pilot from leaving.");
         }
         _work = Work with { WaitingReason = null };
-        _navigation.CancelAlignment();
-        if (
-            !_navigation.StartWarp(
-                Pilot.ShipId,
-                Pilot.Flight,
-                Pilot.Position!,
-                _target!,
-                Work.Ratting is { Phase: RattingPhase.TravellingToBelt, Patrol.Camp: { } camp } ? GateCampRules.StandOff(camp.Role) : 0,
-                Work.Stamp
-            )
-        )
-        {
-            Follow();
-        }
+        _work = Work with { WarpReadyAt = CapsuleerWarpRules.Begin(_navigation, WarpOrder(_target!), Work.ActiveTicks) };
     }
 
     private void EndSortie(RattingProgress activity) =>

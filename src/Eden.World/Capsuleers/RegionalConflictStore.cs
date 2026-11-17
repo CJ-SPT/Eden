@@ -359,6 +359,7 @@ internal static class RegionalConflictStore
                 && report.Kind is RegionalReportKind.Attack or RegionalReportKind.Loss
             ) == true;
         return reportedAttacker
+            || contact.RegionalGroupId is null && operation.Objective is RegionalObjective.Raid or RegionalObjective.Intercept
             || contact.RegionalGroupId is { } other
                 && region is not null
                 && RegionalConflictRules.Rivals(region, operation.Key.GroupId, other)

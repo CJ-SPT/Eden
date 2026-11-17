@@ -10,6 +10,7 @@ public static class CapsuleerPauseRules
             ActiveTicks = checked(work.ActiveTicks + delay),
             ClockOffsetTicks = checked(work.ClockOffsetTicks + delay),
             DueTicks = work.DueTicks == 0 ? 0 : checked(work.DueTicks + delay),
+            WarpReadyAt = work.WarpReadyAt == 0 ? 0 : checked(work.WarpReadyAt + delay),
         };
 
     public static HaulerProgress Resume(HaulerProgress work, long delay, long now)
@@ -37,6 +38,7 @@ public static class CapsuleerPauseRules
         return work with
         {
             Defense = defense,
+            WarpReadyAt = work.WarpReadyAt == 0 ? 0 : checked(work.WarpReadyAt + delay),
             Ratting = work.Ratting is { } ratting
                 ? ratting with
                 {
