@@ -53,6 +53,12 @@ retain their existing deferral rules. Use **Refresh population** while pilots tr
 visitors. Ordinary Local receives complete membership batches; delayed Local keeps its normal privacy rules.
 
 
+## Pilot awareness
+
+World Configuration exposes situational awareness, belt ratting and combat anomaly ratting independently. All three default
+on. Cautious miners can leave a threatened belt in dangerous space. Bolder miners finish their paid cycle. Loaded haulers
+remember danger and may turn back. Ratters with usable weapons select from suitable belts and ordinary public combat anomalies.
+
 ## Hauler freight
 
 The ordinary generated fleet includes fast, bulk and specialist haulers. Cargo follows the trip and hull.

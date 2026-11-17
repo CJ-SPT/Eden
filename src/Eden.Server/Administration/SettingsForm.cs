@@ -50,6 +50,10 @@ public sealed class SettingsForm
     public int FreightWreckSurvivalPercent { get; set; }
     public string FreightCargoTypeIds { get; set; } = "";
 
+    public bool SituationalAwareness { get; set; }
+    public bool BeltRatting { get; set; }
+    public bool AnomalyRatting { get; set; }
+
     public bool GlobalProvisioning { get; set; }
     public bool SimulatedPilots { get; set; }
     public bool SimulatedMiners { get; set; }
@@ -274,6 +278,9 @@ public sealed class SettingsForm
             FreightEmptyReturnPercent = settings.Capsuleers.Freight.EmptyReturnPercent,
             FreightWreckSurvivalPercent = settings.Capsuleers.Freight.WreckSurvivalPercent,
             FreightCargoTypeIds = settings.Capsuleers.Freight.CargoTypeIds,
+            SituationalAwareness = settings.Capsuleers.SituationalAwareness,
+            BeltRatting = settings.Capsuleers.BeltRatting,
+            AnomalyRatting = settings.Capsuleers.AnomalyRatting,
             GateVisitors = settings.Capsuleers.GateVisitors,
             CheckpointSeconds = settings.Simulation.CheckpointSeconds,
             MarketPollMilliseconds = settings.Simulation.MarketPollMilliseconds,
@@ -334,6 +341,9 @@ public sealed class SettingsForm
             ),
             Capsuleers = new(GlobalProvisioning, SimulatedPilots, SimulatedMiners, TrafficMultiplier, GateVisitors)
             {
+                SituationalAwareness = SituationalAwareness,
+                BeltRatting = BeltRatting,
+                AnomalyRatting = AnomalyRatting,
                 Freight = new(
                     FreightVariedHulls,
                     FreightOrdinaryMinimumIsk,

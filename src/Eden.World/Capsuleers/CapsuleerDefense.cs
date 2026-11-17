@@ -61,8 +61,11 @@ internal sealed class CapsuleerDefense(
 )
 {
     private const double MinimumCombatRange = 500;
-    private const double MaximumCombatRange = 100_000;
+
     private const int RetrySeconds = 30;
+
+    internal PilotSighting[] Observe(DockedPilot pilot, long elapsed) =>
+        pilot.Position is null ? [] : presence.Observe(pilot.SystemId, pilot.ShipId, pilot.Position, elapsed / TimeSpan.TicksPerSecond);
 
     internal CapsuleerDefenseResult Advance(
         DockedPilot pilot,
@@ -348,16 +351,10 @@ internal sealed class CapsuleerDefense(
             }
             else
             {
-                var ranges = profile
-                    .Modules.Where(module => IsWeapon(module.Effect))
-                    .Select(module => module.Attributes.GetValueOrDefault(DogmaAttributeId.MaxRange, MinimumCombatRange))
-                    .ToArray();
-                double range = Math.Clamp(
-                    ranges.Length > 0 ? ranges.Min() : drones.Control(pilot.PilotId).Range * .75,
-                    MinimumCombatRange,
-                    MaximumCombatRange
-                );
-                navigation.Follow(pilot.ShipId, stamp, pilot.Position, pilot.Flight.ShipRadius, body, range, false, true);
+                double fallback = profile.RattingWeapons.Length == 0 ? drones.Control(pilot.PilotId).Range * .75 : MinimumCombatRange;
+                double range = PilotAwareness.FightingRange(profile.RattingWeapons, profile.TargetRange, fallback);
+                bool orbit = proactive is not null && range < 10_000;
+                navigation.Follow(pilot.ShipId, stamp, pilot.Position, pilot.Flight.ShipRadius, body, range, orbit, true);
             }
             if (state.MotionStamp != stamp)
             {

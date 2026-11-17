@@ -40,6 +40,7 @@ public sealed record HaulerProgress(
     TrafficJourney? Journey = null
 )
 {
+    public BeltMemory[] VisitedBelts { get; init; } = [];
     public FreightManifest? Freight { get; init; }
     public long[] RattingLoot { get; init; } = [];
     public RattingProgress? Ratting { get; init; }

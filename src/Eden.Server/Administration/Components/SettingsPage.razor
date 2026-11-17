@@ -220,6 +220,9 @@ else
                 <label>Visitors per watched gate
                     <InputNumber @bind-Value="Form.GateVisitors" min="0" max="16" step="1" />
                 </label>
+                <label><InputCheckbox @bind-Value="Form.SituationalAwareness" />React to ships and remember dangerous belts</label>
+                <label><InputCheckbox @bind-Value="Form.BeltRatting" />Run belt-ratting sorties</label>
+                <label><InputCheckbox @bind-Value="Form.AnomalyRatting" />Run ordinary combat anomalies</label>
                 <label><InputCheckbox @bind-Value="Form.FreightVariedHulls" />Use regional hauler hulls</label>
                 <label>Ordinary freight minimum budget (ISK)
                     <InputNumber @bind-Value="Form.FreightOrdinaryMinimumIsk" />

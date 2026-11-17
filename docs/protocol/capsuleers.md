@@ -2,6 +2,22 @@
 
 [Protocol index](../protocol.md)
 
+## Pilot awareness and ratting
+
+Visible contacts are indexed per system and spatial cell. A pilot samples up to 16 entries per neighboring cell and
+retains at most 12 sightings. Arriving, departing, cloaked and warping ships are excluded. Mining decisions and traveler
+threat memory depend on local observations. Ratters can visit public combat anomalies and choose fighting distance from
+their available weapons. Checkpoints store the selected site and bounded belt memory.
+
+**Automated validation.** The exact populated spatial-index regression and the combined awareness, mining, defense,
+traveler, ratting, anomaly, settings and traffic performance filter passed. The combined run passed 87 tests in 47 seconds.
+A 2,000-ship scene exercised bounded visibility with zero SQL commands, connections or fit calculations on the observation
+path. The solution built cleanly in 8.55 seconds. Both Python policy suites passed (8 and 9 cases), as did formatting and width checks.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Observe a miner changing belts after a combat ship lands, or follow a ratter into a public anomaly.
+
 ## Hauler freight settings
 
 The population settings editor and pending revision API persist hauler hull, cargo pool, budget, frequency

@@ -358,6 +358,13 @@ internal sealed partial class CapsuleerHauler(
             _background = _background && !RequiresDetail;
         }
         AdvanceRattingClock(job.DueTicks);
+        if (
+            Work.Ratting is { } sortie
+            && !(sortie.AnomalyPosition is null ? database.Settings.Capsuleers.BeltRatting : database.Settings.Capsuleers.AnomalyRatting)
+        )
+        {
+            _work = Work with { Ratting = sortie with { Phase = RattingPhase.Returning }, Retreating = true };
+        }
         var proactive = ProactiveTarget();
         var previousDefense = Work.Defense;
         var defended = _background
@@ -670,7 +677,9 @@ internal sealed partial class CapsuleerHauler(
         transaction.Commit();
         transaction.Dispose();
         RefreshObjects();
-        _target = _objects.FirstOrDefault(o => o.Id == Work.TargetId);
+        _target =
+            _objects.FirstOrDefault(o => o.Id == Work.TargetId)
+            ?? (Work.Ratting?.Phase == RattingPhase.TravellingToBelt ? SiteTarget(Work.Ratting) : null);
     }
 
     private void RefreshObjects(bool loadResources = true)
@@ -1072,6 +1081,33 @@ internal sealed partial class CapsuleerHauler(
         BeginTravel();
     }
 
+    private long _nextLook;
+
+    private void WatchGate()
+    {
+        if (
+            !database.Settings.Capsuleers.SituationalAwareness
+            || Work.Retreating
+            || Work.Freight?.Stacks.Length is not > 0
+            || _target is not { DestinationSystemId: not null } gate
+            || Pilot.Position is not { } position
+            || Work.ActiveTicks < _nextLook
+            || position.DistanceTo(gate.Position) > NpcEncounterDefinitions.VisibilityRange
+        )
+        {
+            return;
+        }
+        _nextLook = Work.ActiveTicks + TimeSpan.FromSeconds(PilotAwareness.LookSeconds(pilotId)).Ticks;
+        if (
+            TrafficRules.SecurityBand(database.Catalog.SystemSecurity.GetValueOrDefault(Pilot.SystemId, 1)) != TrafficSecurityBand.High
+            && defense.Observe(Pilot, Work.ActiveTicks).Count(s => PilotAwareness.ArmedHull(s.Hull))
+                >= (PilotAwareness.Cautious(pilotId) ? 2 : 3)
+        )
+        {
+            ObserveAggression(Pilot.ShipId);
+        }
+    }
+
     private void ObserveDanger(int destinyStamp)
     {
         if (
@@ -1083,6 +1119,7 @@ internal sealed partial class CapsuleerHauler(
         {
             return;
         }
+        WatchGate();
         var visible = encounters
             .Advance(Pilot.SystemId, Now)
             .Where(n => !n.Warping && n.Position.DistanceTo(Pilot.Position) <= AsteroidDefinitions.VisibilityRange)

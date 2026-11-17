@@ -48,6 +48,9 @@ public sealed record MinerProgress(
     long ClockOffsetTicks = 0
 )
 {
+    public long WorkingBelt { get; init; }
+    public BeltMemory[] AvoidedBelts { get; init; } = [];
+    public bool LeaveAfterCycle { get; init; }
     public CapsuleerDefenseState? Defense { get; init; }
     public int LastMotionStamp { get; init; } = int.MinValue;
 }

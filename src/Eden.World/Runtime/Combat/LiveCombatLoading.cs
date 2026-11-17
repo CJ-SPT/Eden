@@ -175,7 +175,7 @@ internal sealed partial class LiveCombatRuntime
             CategoryId = type.CategoryId,
             Name = npc.Name ?? type.Name,
             AnchorKind = npc.AnchorKind,
-            AnchorId = npc.BeltId,
+            AnchorId = npc.AnchorKind == NpcAnchorKind.Anomaly ? npc.EncounterId : npc.BeltId,
             StandingThresholds = profile.StandingThresholds,
             MissileRange = missileRange,
             RepairProfile = NpcRepairRules.Profile(attributes),

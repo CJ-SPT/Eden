@@ -1,3 +1,4 @@
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Insurance;
@@ -12,6 +13,8 @@ public sealed record PilotCombatPresence(long ShipId, SpacePosition Position, Sp
 
 public interface IPilotCombatPresence
 {
+    PilotSighting[] Observe(int system, long ship, SpacePosition origin, long sample) => [];
+
     PilotCombatPresence? Find(int systemId, long shipId);
 
     PilotCombatPresence? FindOnline(int systemId, long shipId) => Find(systemId, shipId);
