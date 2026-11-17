@@ -348,7 +348,7 @@ internal sealed class CapsuleerDefense(
                 // A paid local cycle retains its duration even when that pulse fills the resource.
                 continue;
             }
-            bool enabled = Enabled(module, profile, currentHealth, live, now, offensive, locked, blocked);
+            bool enabled = Enabled(module, profile, currentHealth, live, now, offensive, locked, blocked, retreat && blocked);
             if (proactive is { Npc: false } && live is not null && module.Effect is DogmaEffect.Afterburner or DogmaEffect.Microwarpdrive)
             {
                 double desired = PvpTactics.Range(
@@ -435,7 +435,12 @@ internal sealed class CapsuleerDefense(
         {
             drones.Advance(pilot.PilotId, now, stamp);
         }
-        bool recalling = retreat && state.RecallUntil > now && !blocked && drones.HasControlled(pilot.PilotId, pilot.ShipId);
+        bool recalling =
+            retreat
+            && !CapsuleerDefenseRules.Retreat(currentHealth, true)
+            && state.RecallUntil > now
+            && !blocked
+            && drones.HasControlled(pilot.PilotId, pilot.ShipId);
         bool hold = !retreat || recalling;
         if (hold)
         {
@@ -603,7 +608,9 @@ internal sealed class CapsuleerDefense(
             or DogmaEffect.StructureRepair => 2,
             DogmaEffect.AssaultDamageControl or DogmaEffect.SignatureSuppression or DogmaEffect.WarpCoreStabilizer => 3,
             DogmaEffect.Afterburner or DogmaEffect.Microwarpdrive => 4,
-            _ => 5,
+            DogmaEffect.WarpDisruptor or DogmaEffect.WarpScrambler => 5,
+            DogmaEffect.StasisWebifier or DogmaEffect.EnergyNosferatu => 6,
+            _ => 7,
         };
 
     private static bool Enabled(
@@ -614,7 +621,8 @@ internal sealed class CapsuleerDefense(
         long now,
         bool offensive,
         bool locked,
-        bool blocked
+        bool blocked,
+        bool fightingRetreat
     )
     {
         double capacitor = live is null
@@ -640,7 +648,8 @@ internal sealed class CapsuleerDefense(
             offensive,
             locked,
             blocked,
-            shieldTank || !armorTank && health.Defense.Shield >= health.Defense.Armor
+            shieldTank || !armorTank && health.Defense.Shield >= health.Defense.Armor,
+            fightingRetreat
         );
     }
 

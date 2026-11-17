@@ -24,15 +24,19 @@ namespace Eden.Protocol.Tests.Capsuleers;
 public sealed class CapsuleerDefenseLifecycleTests
 {
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void LockingAloneDoesNotProvokeButTackleMakesAMiningFitFightWhileTrapped(bool core)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public void LockingAloneDoesNotProvokeButTackleMakesAMiningFitFightWhileTrapped(bool core, bool combatShip)
     {
         const long enemy = 90000002;
         const long enemyShip = 1000000000002;
         using var f = CapsuleerDefenseModuleTests.Prepare(3242, DogmaEffect.WarpDisruptor);
         f.Fit((int)CombatWeaponType.CivilianGatlingRailgun);
-        f.Fit((int)MiningLaserType.MinerI);
+        if (!combatShip)
+        {
+            f.Fit((int)MiningLaserType.MinerI);
+        }
         if (core)
         {
             f.Fit(10998);
@@ -81,7 +85,7 @@ public sealed class CapsuleerDefenseLifecycleTests
             new HashSet<long> { f.ShipId },
             f.Clock.Now
         );
-        var scan = controller.Advance(pilot, navigation, null, f.Clock.Now, 0, []);
+        var scan = controller.Advance(pilot, navigation, null, f.Clock.Now, 0, [], forceRetreat: combatShip);
         Assert.True(scan.NewThreat);
         Assert.True(scan.Escape);
         Assert.False(scan.HoldsNavigation);

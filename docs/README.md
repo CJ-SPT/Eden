@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Bot PvP improvements](protocol/capsuleers.md#bot-pvp-improvements--november-17-2026) records capacitor management,
+fighting retreats and the remaining tactical milestones.
+
 [Regional bot conflicts](protocol/capsuleers.md#regional-bot-conflicts--november-17-2026) adds persistent regional
 rivalries, raids, interception, real freight escorts and witnessed defensive responses using existing roaming gangs.
 

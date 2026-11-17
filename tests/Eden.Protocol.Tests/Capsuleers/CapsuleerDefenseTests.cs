@@ -370,6 +370,14 @@ public sealed class CapsuleerDefenseTests
         Assert.False(Enabled(DogmaEffect.SensorBooster, 19, true));
         Assert.False(Enabled(DogmaEffect.SensorBooster, 20, true));
         Assert.True(Enabled(DogmaEffect.SensorBooster, 21, true));
+        Assert.True(CapsuleerDefenseRules.ShouldActivate(DogmaEffect.ProjectileFired, 0, health, 0, 100, true, true, false, true));
+        Assert.True(CapsuleerDefenseRules.ShouldActivate(DogmaEffect.UseMissiles, 0, health, 0, 100, true, true, false, true));
+        Assert.False(CapsuleerDefenseRules.ShouldActivate(DogmaEffect.LaserFired, 1, health, 0, 100, true, true, true, true, true));
+        Assert.True(CapsuleerDefenseRules.ShouldActivate(DogmaEffect.LaserFired, 1, health, 1, 100, true, true, true, true, true));
+        Assert.False(CapsuleerDefenseRules.ShouldActivate(DogmaEffect.LaserFired, 1, health, 1, 100, true, true, false, true));
+        Assert.True(CapsuleerDefenseRules.ShouldActivate(DogmaEffect.WarpScrambler, 1, health, 1, 100, true, true, false, true));
+        Assert.False(CapsuleerDefenseRules.ShouldActivate(DogmaEffect.UseMissiles, 0, health, 0, 100, false, true, false, true));
+        Assert.False(CapsuleerDefenseRules.ShouldActivate(DogmaEffect.UseMissiles, 0, health, 0, 100, true, false, false, true));
     }
 
     [Fact]
@@ -384,7 +392,8 @@ public sealed class CapsuleerDefenseTests
         Assert.False(CapsuleerDefenseRules.CombatShip(HullClass.Frigate, 1, false));
         Assert.True(CapsuleerDefenseRules.Offensive(false, true, true));
         Assert.False(CapsuleerDefenseRules.Offensive(false, true, false));
-        Assert.False(CapsuleerDefenseRules.Offensive(true, true, true));
+        Assert.True(CapsuleerDefenseRules.Offensive(true, true, true));
+        Assert.False(CapsuleerDefenseRules.Offensive(true, true, false));
         HullDefense defense = new(100, 100, 100, 1000, new(1, 1, 1, 1), new(1, 1, 1, 1), new(1, 1, 1, 1));
         Assert.False(CapsuleerDefenseRules.Retreat(new(1, defense, new(0, 30, 75)), true));
         Assert.True(CapsuleerDefenseRules.Retreat(new(1, defense, new(0, 29, 75)), true));

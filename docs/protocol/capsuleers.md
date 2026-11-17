@@ -2,6 +2,51 @@
 
 [Protocol index](../protocol.md)
 
+## Bot PvP improvements — November 17, 2026
+
+The implementation proceeds in five independently verified and pushed milestones:
+
+1. Capacitor management and fighting retreats.
+2. Shared primary authority, tackle-aware range bands and bounded interception estimates.
+3. Matchup-aware movement and damage application.
+4. Independent support assignments and multiple target locks.
+5. Deliberate ammunition selection and controlled heat.
+
+### Milestone 1: capacitor management and fighting retreats
+
+Zero-capacitor weapons remain usable below the ordinary 20% offensive reserve. Paid tackle, webs and Nosferatu
+can use their affordable capacitor rather than surrendering tackle to preserve that reserve. Repairs, hardeners,
+escape modules and propulsion retain priority; tackle and webs precede other offensive payments. A trapped
+retreating pilot can spend its remaining affordable capacitor on weapons and disabling effects against its attacker.
+All payments, legality checks, reloads and cycle deadlines still use the ordinary resident action owners.
+
+Combat ships now fight while pointed, as civilian pilots already did. They continue escape navigation while
+attacking a tackler and cancel offensive repeats as soon as their fitted warp-blocking status clears. This avoids
+renewing aggression unnecessarily during a free escape. A pilot below the existing health retreat thresholds
+does not stop to wait for drones; healthy ordered withdrawals retain their ten-second recall window. Existing
+checkpoint state retains paid deadlines and the retreat flag; no new persistence or SQL gameplay path is added.
+
+References: [EVE University capacitor warfare](https://wiki.eveuniversity.org/Capacitor_warfare),
+[CCP warp scrambling and disruption](https://support.eveonline.com/hc/en-us/articles/115004925705-Warp-Scrambling-and-Warp-Disruption),
+and [CCP weapons timers](https://support.eveonline.com/hc/en-us/articles/203208932-Weapon-and-Logoff-Timers).
+The reserve and recall policies are Eden decisions; fitted costs and strengths come from client build 3662168.
+The existing Carbon movement owner is unchanged. Local evejs behavior remains a behavioral reference only;
+the source revision and hash are recorded under the roaming-gang milestone below. No reference code was copied.
+
+**Automated validation:** Tool and solution restore passed. Solution build passed with zero warnings/errors
+in 1.40 seconds. All 78 affected tests passed in 53.16 seconds wall time (50 seconds reported test duration).
+The final filter combined `FullyQualifiedName~` for `CapsuleerDefenseTests`, `CapsuleerDefenseLifecycleTests`,
+`CapsuleerDefenseModuleTests`, `CapsuleerDefenseFrameTests`, `PvpTacticsTests`, `RoamingGangTests`,
+`GameplayDependenciesTests` and `DataModelOwnershipTests`. Both Python policy suites passed (8 catalog cases
+in 1.192 seconds; 9 formatting cases in 0.018 seconds). Formatting and `git diff --check` passed. The full
+.NET suite was not requested or run. Development began with exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerDefenseTests.ActivationRulesUseTheTankLayerAndReserveCapacitor`.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Observe a damaged pointed combat ship firing during its escape, then ceasing fire
+after tackle breaks. Native rendering and combat feel remain unverified.
+
 ## Regional bot conflicts — November 17, 2026
 
 Regional operations extend the saved roaming-gang command with constellation-based patrol groups in null security.
