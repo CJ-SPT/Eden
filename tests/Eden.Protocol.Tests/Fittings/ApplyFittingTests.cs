@@ -23,9 +23,10 @@ public sealed class ApplyFittingTests
     private const int Drone = 2454;
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void AppliesNativeSimulationFitAndReportsShortages(bool liveWorld)
+    [InlineData(false, 3)]
+    [InlineData(true, 3)]
+    [InlineData(true, 2)]
+    public void AppliesNativeSimulationFitAndReportsShortages(bool liveWorld, int moduleStock)
     {
         using AmmunitionTests.Fixture fixture = new(liveWorld);
         using var scope = fixture.Db.Services.CreateScope();
@@ -36,7 +37,7 @@ public sealed class ApplyFittingTests
         var miner = Assert.Single(fixture.Inventory.List(pilot.PilotId, pilot.StationId), item => item.TypeId == Miner);
         using (WorldDbContext world = new(fixture.Db.Path))
         {
-            world.Set<OwnedItem>().Find(miner.Id)!.Quantity = 3;
+            world.Set<OwnedItem>().Find(miner.Id)!.Quantity = moduleStock;
             world.SaveChanges();
         }
         using (CatalogDbContext catalog = new(new WorldDatabase(fixture.Db.Path).CatalogPath, writable: true))
@@ -77,13 +78,33 @@ public sealed class ApplyFittingTests
         Assert.Equal((int)InventoryFlag.DroneBay, Assert.Single(items, item => item.TypeId == Drone).FlagId);
         Assert.Equal(30, Assert.Single(items, item => item.TypeId == Antimatter).Quantity);
         var hangar = fixture.Inventory.List(pilot.PilotId, pilot.StationId);
-        Assert.Equal(1, Assert.Single(hangar, item => item.Id == miner.Id).Quantity);
+        if (moduleStock == 2)
+        {
+            Assert.DoesNotContain(hangar, item => item.Id == miner.Id);
+        }
+        else
+        {
+            Assert.Equal(1, Assert.Single(hangar, item => item.Id == miner.Id).Quantity);
+        }
         Assert.Equal((int)InventoryFlag.Hangar, Assert.Single(hangar, item => item.Id == fixture.Gun).FlagId);
         Assert.Equal(250, hangar.Where(item => item.TypeId == Iron).Sum(item => item.Quantity));
         var changes = context.Notifications.OfType<ItemChanged>().ToArray();
         Assert.Equal(changes.Length, changes.Select(change => change.Item.Id).Distinct().Count());
-        Assert.Equal(3, Assert.Single(changes, change => change.Item.Id == miner.Id).Previous[InventoryColumn.Quantity]);
-        Assert.All(modules, module => Assert.Contains(changes, change => change.Item.Id == module.Id));
+        Assert.Equal(moduleStock, Assert.Single(changes, change => change.Item.Id == miner.Id).Previous[InventoryColumn.StackSize]);
+        if (moduleStock > 2)
+        {
+            Assert.Equal(moduleStock, Assert.Single(changes, change => change.Item.Id == miner.Id).Previous[InventoryColumn.Quantity]);
+        }
+        Assert.All(
+            modules,
+            module =>
+            {
+                var notice = Assert.Single(changes, change => change.Item.Id == module.Id);
+                Assert.Equal(InventoryRow.From(module), notice.Item);
+                Assert.DoesNotContain(InventoryColumn.Quantity, notice.Previous);
+                Assert.NotEmpty(BlueMarshal.Encode(notice.Arguments));
+            }
+        );
         Assert.Contains(context.Notifications, notification => notification is ModuleAttributesChanged);
         Assert.Empty(fixture.Ammo.Read(pilot.PilotId, pilot.ShipId));
 

@@ -56,12 +56,15 @@ public sealed class MultifitTests
         Assert.Equal(fitRigs ? 2 : 0, required.GetValueOrDefault(rig));
     }
 
-    [Fact]
-    public async Task NativeBoundMultifitSplitsPackagesFitsInactiveHullsAndSurvivesCheckpoint()
+    [Theory]
+    [InlineData(4)]
+    [InlineData(5)]
+    [InlineData(6)]
+    public async Task NativeBoundMultifitSplitsPackagesFitsInactiveHullsAndSurvivesCheckpoint(int moduleStock)
     {
         using var fixture = Create();
         long package = Grant(fixture, Hull, 3);
-        long modules = Grant(fixture, Miner, 4);
+        long modules = Grant(fixture, Miner, moduleStock);
         long ammo = Grant(fixture, Charge, 50);
         using var scope = fixture.Db.Services.CreateScope();
         var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
@@ -96,7 +99,14 @@ public sealed class MultifitTests
         }
         var hangar = fixture.Inventory.List(pilot.PilotId, pilot.DockedLocationId);
         Assert.Equal(1, Assert.Single(hangar, item => item.Id == package).Quantity);
-        Assert.DoesNotContain(hangar, item => item.Id == modules);
+        if (moduleStock == 4)
+        {
+            Assert.DoesNotContain(hangar, item => item.Id == modules);
+        }
+        else
+        {
+            Assert.Equal(moduleStock - 4, Assert.Single(hangar, item => item.Id == modules).Quantity);
+        }
         Assert.Equal(30, Assert.Single(hangar, item => item.Id == ammo).Quantity);
         Assert.Equal(activeItems, fixture.Inventory.List(pilot.PilotId, pilot.ShipId));
         Assert.Equal(pilot.ShipId, fixture.Pilot.ShipId);
@@ -105,12 +115,33 @@ public sealed class MultifitTests
         var changes = context.Notifications.OfType<ItemChanged>().ToArray();
         Assert.Equal(changes.Length, changes.Select(change => change.Item.Id).Distinct().Count());
         Assert.Equal(3, Assert.Single(changes, change => change.Item.Id == package).Previous[InventoryColumn.StackSize]);
+        Assert.Equal(moduleStock, Assert.Single(changes, change => change.Item.Id == modules).Previous[InventoryColumn.StackSize]);
+        Assert.All(
+            changes.Where(change => change.Item.Quantity == InventoryWireDefinitions.AssembledQuantity),
+            change => Assert.DoesNotContain(InventoryColumn.Quantity, change.Previous)
+        );
+        foreach (var ship in ships)
+        {
+            foreach (var item in fixture.Inventory.List(pilot.PilotId, ship.Id))
+            {
+                var notice = Assert.Single(changes, change => change.Item.Id == item.Id);
+                Assert.Equal(InventoryRow.From(item), notice.Item);
+                Assert.NotEmpty(BlueMarshal.Encode(notice.Arguments));
+            }
+        }
         Assert.DoesNotContain(context.Notifications, notification => notification is ModuleAttributesChanged);
 
         await LiveWorld.Find(fixture.Db.Path)!.FlushAsync();
         using WorldDbContext reopened = new(fixture.Db.Path);
         Assert.Equal(pilot.ShipId, reopened.Pilots.Find(pilot.PilotId)!.ActiveShipId);
         Assert.Equal(1, reopened.Set<OwnedItem>().Find(package)!.Quantity);
+        Assert.Equal(
+            moduleStock,
+            reopened
+                .Set<OwnedItem>()
+                .Where(item => item.Id == modules || ships.Select(ship => ship.Id).Contains(item.LocationId) && item.TypeId == Miner)
+                .Sum(item => item.Quantity)
+        );
         foreach (var ship in ships)
         {
             Assert.Equal("Batch fit", reopened.Ships.Find(ship.Id)!.Name);

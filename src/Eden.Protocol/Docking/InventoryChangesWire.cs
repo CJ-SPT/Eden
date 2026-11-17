@@ -69,7 +69,13 @@ internal static class InventoryChangesWire
             }
             if (previous.Quantity != item.Quantity)
             {
-                old[InventoryColumn.Quantity] = previous.Quantity;
+                // A coalesced batch can consume a whole stack and fit its last unit
+                // under the original ID. invCache rejects ixQuantity when the new
+                // physical quantity is negative; ixStackSize carries the old count.
+                if (!item.Singleton)
+                {
+                    old[InventoryColumn.Quantity] = previous.Quantity;
+                }
                 old[InventoryColumn.StackSize] = previous.Quantity;
             }
         }

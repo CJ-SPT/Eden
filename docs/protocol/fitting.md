@@ -30,6 +30,59 @@ policy suites, and formatting verification passed.
 
 **Optional maintainer checks.** None.
 
+## Multifit exhausted-stack notifications, November 17, 2026
+
+The maintainer reported an invisible fitted module occupying a slot while appearing to remain in the
+hangar after Multifit. The resident batch correctly moves each unit and coalesces changes by item ID.
+When the original stack's last unit becomes an assembled module, its final change spans the original
+stack quantity and the fitted singleton. The shared notification adapter previously included
+`ixQuantity` alongside the assembled row's negative physical quantity (**-1**).
+
+Inert inspection of pinned build **3662168** `invCache.OnItemChange`, lines 252–255, confirms that an
+`ixQuantity` change with a negative old or new physical quantity raises `RuntimeError` before inventory
+cache processing and Godma forwarding. This explains the stale hangar entry and absent fitted module
+without a second authoritative item. The adapter now omits `ixQuantity` for assembled rows while
+retaining `ixStackSize` with the original count, plus the location, flag and singleton changes.
+Ordinary stack quantity notifications retain both quantity fields. The correction applies to Multifit
+and saved-fit application through their existing shared adapter.
+
+The decoded `eve/client/script/environment/invCache.pyj` payload SHA-256 is
+`0a8e0dc64921c75f095a0b61eea9319eee24fa61b2024256b3247a3bc147cda8`.
+The [EVE University fitting guide](https://wiki.eveuniversity.org/Fitting_ships) supplies the gameplay reference.
+Local EVE.js `invBroker/fittingOperations.js` was consulted for its committed fitting-change publication
+contract (SHA-256 `c0f37f9719aa8c4c46a01601967d680c25671537b9d329001159ac054347a1d5`, no Git metadata).
+Existing Blue DBRow serialization retains the
+[Carbon Marshal.cpp reference at fcbf0c2](https://github.com/carbonengine/blue/blob/fcbf0c2e7f092568adb82edb7b8fb97df75ad4ae/src/Marshal.cpp).
+The codec, resident inventory transaction and checkpoint format are unchanged.
+
+**Automated validation.** The exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Fittings.MultifitTests.NativeBoundMultifitSplitsPackagesFitsInactiveHullsAndSurvivesCheckpoint`
+initially passed the two leftover-stack variants and failed the exhausted-stack variant on the invalid
+`ixQuantity` field (9.74-second build, 8.01-second test command). After the correction, combining that
+method with `FullyQualifiedName=Eden.Protocol.Tests.Fittings.ApplyFittingTests.AppliesNativeSimulationFitAndReportsShortages`
+passed all six cases (5.68-second build, 8.47-second test command). These extend existing flows with
+exhausted stacks, one/two leftover units, final notification rows, original stack counts, conserved units,
+checkpoint persistence and repeated saved-fit application.
+
+Final validation against `main` at `5ade3cd4` passed **404 affected tests**, zero failed/skipped, in
+**203.36 seconds** command wall time with this filter:
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Fittings|FullyQualifiedName~Eden.Protocol.Tests.Inventory|FullyQualifiedName~Eden.Protocol.Tests.Persistence.PilotFleetTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.PilotFittingTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.FittingConstraintTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ModuleFittingTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.ShipRigTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.PilotInventoryTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.InventoryStack|FullyQualifiedName~Eden.Protocol.Tests.Docking.TypedInventoryTests|FullyQualifiedName~Eden.Protocol.Tests.Agents.MissionSingletonTests|FullyQualifiedName~Eden.Protocol.Tests.Ammunition.AmmunitionTests
+```
+
+Tool restore (**0.17 seconds**), solution restore (**0.72 seconds**) and the solution build
+(**18.46 seconds**, zero warnings/errors) passed. Both Python policy suites passed: **8 catalog tests**
+(**1.42 seconds**) and **9 formatting tests** (**0.16 seconds**). Formatting verification passed for
+**2,598 files** with the 140-character width policy in **46.25 seconds**. The final validation sequence
+took **270.54 seconds**. Added documentation links/anchors and `git diff --check` passed.
+The full .NET suite was not requested or run.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** After updating and reconnecting, Multifit a plan that consumes the full
+module stack, then board the resulting hull and verify its modules and the hangar display.
+
 ## Native Multifit batches, November 15, 2026
 
 The reported `Unsupported local call ship.MachoBindObject (FitShips)` came from the native Multifit window.

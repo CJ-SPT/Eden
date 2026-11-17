@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Multifit exhausted-stack notifications](protocol/fitting.md#multifit-exhausted-stack-notifications-november-17-2026)
+correct the rejected item change behind an invisible fitted module and stale hangar entry.
+
 The November 17 combat and traffic fixes cover [abandoned drones](protocol/drones.md#drone-control-on-ship-destruction--november-17-2026),
 [observer grid updates](protocol/navigation.md#observing-a-loss-and-a-warp-in-the-same-update--november-17-2026)
 and [returning traffic](protocol/capsuleers.md#traffic-returning-to-occupied-systems--november-17-2026).
