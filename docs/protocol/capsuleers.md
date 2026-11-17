@@ -2,6 +2,310 @@
 
 [Protocol index](../protocol.md)
 
+## Regional loss accounting across refuge regions — November 17, 2026
+
+A reported missile-kill failure was reproduced at `RegionalConflictStore.Loss`: a nullsec community may use a
+home/refuge station in a different region. Loss accounting created conflict state using that station's region,
+then looked up the community's actual region and dereferenced a missing row. Loss initialization now uses the
+typed community home system and affiliation, while retaining its refuge station as metadata. Ordinary station-based
+planning keeps its existing behavior. The ship loss, capsule, wreck and regional counters still commit atomically
+through the existing resident transaction; no database fallback or new persistence path is added.
+
+**Automated validation:** Both new cases passed in 10.23 seconds wall time (7 seconds test duration).
+Tool/solution restore and solution build passed (zero warnings/errors, 0.82 seconds). The affected filter combined
+`FullyQualifiedName~` for `RegionalConflictWorldTests`, `RegionalConflictTests`, `MissileCombatTests`,
+`PilotCombatTests`, `GameplayDependenciesTests` and `DataModelOwnershipTests`: 76 passed and one pre-existing
+fixture failure in 33.94 seconds wall time. The failing
+`PilotCombatTests.FatalShotSendsCombatTextBeforeRemovingTheTargetsClientRecord` also fails unchanged on main
+`128b0a13`: its nonresident session reaches the resident-only Abyssal handler. It does not reach regional loss
+accounting; this unrelated fixture is unchanged. Both Python policy suites passed (8 catalog cases in 1.221 seconds,
+9 formatting cases in 0.021 seconds); formatting and `git diff --check` passed. No full suite was requested or run.
+Exact development filter:
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.RegionalConflictWorldTests.FirstLossUsesTheCommunityRegionWhenItsHomeStationIsInAnotherRegion`.
+The bot-victim variant reproduced the reported null reference at line 297 before the fix. Coverage exercises the
+first regional loss before any gang has initialized state, both bot-victim and bot-attacker settlement, rollback,
+real hull destruction, counters in the community's region, and checkpoint/restart retention.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None required. Deployment and live missile-kill acceptance remain unverified.
+
+## Bot PvP improvements — November 17, 2026
+
+The implementation proceeds in six independently verified and pushed milestones:
+
+1. Capacitor management and fighting retreats.
+2. Shared primary authority, tackle-aware range bands and bounded interception estimates.
+3. Nullsec engagement and finite reaction windows for hunted pilots.
+4. Matchup-aware movement and damage application.
+5. Independent support assignments and multiple target locks.
+6. Deliberate ammunition selection and controlled heat.
+
+### Milestone 1: capacitor management and fighting retreats
+
+Zero-capacitor weapons remain usable below the ordinary 20% offensive reserve. Paid tackle, webs and Nosferatu
+can use their affordable capacitor rather than surrendering tackle to preserve that reserve. Repairs, hardeners,
+escape modules and propulsion retain priority; tackle and webs precede other offensive payments. A trapped
+retreating pilot can spend its remaining affordable capacitor on weapons and disabling effects against its attacker.
+All payments, legality checks, reloads and cycle deadlines still use the ordinary resident action owners.
+
+Combat ships now fight while pointed, as civilian pilots already did. They continue escape navigation while
+attacking a tackler and cancel offensive repeats as soon as their fitted warp-blocking status clears. This avoids
+renewing aggression unnecessarily during a free escape. A pilot below the existing health retreat thresholds
+does not stop to wait for drones; healthy ordered withdrawals retain their ten-second recall window. Existing
+checkpoint state retains paid deadlines and the retreat flag; no new persistence or SQL gameplay path is added.
+
+References: [EVE University capacitor warfare](https://wiki.eveuniversity.org/Capacitor_warfare),
+[CCP warp scrambling and disruption](https://support.eveonline.com/hc/en-us/articles/115004925705-Warp-Scrambling-and-Warp-Disruption),
+and [CCP weapons timers](https://support.eveonline.com/hc/en-us/articles/203208932-Weapon-and-Logoff-Timers).
+The reserve and recall policies are Eden decisions; fitted costs and strengths come from client build 3662168.
+The existing Carbon movement owner is unchanged. Local evejs behavior remains a behavioral reference only;
+the source revision and hash are recorded under the roaming-gang milestone below. No reference code was copied.
+
+**Automated validation:** Tool and solution restore passed. Solution build passed with zero warnings/errors
+in 1.40 seconds. All 78 affected tests passed in 53.16 seconds wall time (50 seconds reported test duration).
+The final filter combined `FullyQualifiedName~` for `CapsuleerDefenseTests`, `CapsuleerDefenseLifecycleTests`,
+`CapsuleerDefenseModuleTests`, `CapsuleerDefenseFrameTests`, `PvpTacticsTests`, `RoamingGangTests`,
+`GameplayDependenciesTests` and `DataModelOwnershipTests`. Both Python policy suites passed (8 catalog cases
+in 1.192 seconds; 9 formatting cases in 0.018 seconds). Formatting and `git diff --check` passed. The full
+.NET suite was not requested or run. Development began with exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerDefenseTests.ActivationRulesUseTheTankLayerAndReserveCapacitor`.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Observe a damaged pointed combat ship firing during its escape, then ceasing fire
+after tackle breaks. Native rendering and combat feel remain unverified.
+
+### Milestone 2: primary authority and finite pursuit
+
+A visible, legal, applicable shared primary takes precedence over individual target commitment. An incoming
+attacker no longer overrides the patrol's proactive primary. A retreating pointed ship can still switch to an
+actual incoming tackler, preserving the fighting-retreat exception. Normal target legality and range checks remain.
+
+Kiting ships with their own tackle keep a margin inside its fitted range until another active gang member has
+actually applied a positive, unexpired tackle effect to the same target. A role label or distant gang member alone
+does not count as coverage. The same desired range feeds motion and propulsion; the typed range band retains a
+15% tolerance. Losing allied coverage returns the ship to its own tackle range on the next defense evaluation.
+
+Target scoring estimates at most twenty seconds of pursuit using observed target velocity and half the pilot's
+current fitted maximum speed as a conservative acceleration allowance. Faster hulls no longer score remote
+targets as though they were already at ideal range. This is an estimate, not a prediction of hidden destinations.
+References: [EVE University tackling](https://wiki.eveuniversity.org/Tackling) and
+[solo PvP range control](https://wiki.eveuniversity.org/Solo_PvP). The horizon and allowance are Eden policies.
+
+The cached defense profile now shares its already-calculated ship attributes with defense activation and movement.
+Late engagement therefore does not cause a second cold fitting calculation. Normal fit-revision invalidation still
+refreshes skills, equipment and incoming effects. A remote patrol whose return station is outside its current system
+resumes ordinary route travel instead of attempting a direct warp to a nonexistent local station object.
+
+**Automated validation:** Tool/solution restore passed; solution build passed with zero warnings/errors in
+3.17 seconds. All 57 affected tests passed in 49.90 seconds wall time (45 seconds reported test duration), including
+unchanged zero-SQL/connection/fitting assertions in the 10/50/100-pilot frame workloads and separate checkpoint
+capture/projection/write measurements. The filter combined `FullyQualifiedName~` for `PvpTacticsTests`,
+`RoamingGangTests`, `PatrolTests`, `GateCampTests`, `CapsuleerDefenseTests`, `CapsuleerDefenseLifecycleTests`,
+`CapsuleerDefenseFrameTests`, `GameplayDependenciesTests` and `DataModelOwnershipTests`. Both Python policy suites
+passed (8 catalog cases in 1.364 seconds; 9 formatting cases in 0.019 seconds); formatting and diff checks passed.
+Initial affected validation had 55 passes and two warmed-fitting failures. Instrumentation traced the duplicate
+attribute calculation; the corrected run then exposed a remote-return assumption, which was fixed as described
+above. Temporary tracing was removed. The final run covers both corrections. No full suite was requested or run.
+Development began with exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.PvpTacticsTests.PursuitUsesABoundedHorizonAndObservedVelocity`.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Observe a gang retaining its primary while taking fire, and a kiter returning
+inside its own tackle range after the gang's tackler loses coverage. Native presentation remains unverified.
+
+### Milestone 3: nullsec engagement and warp preparation
+
+Offensive regional raids and interceptions may initiate combat against visible neutral pilots without a prior
+attack report. Same-group, corporation/alliance friendship, visible strength, application and ordinary combat legality
+still gate each actual attack. Escort and defensive objectives retain their narrower target policy. This corrects
+the earlier explicit neutral exclusion that could make nullsec gangs ignore a human hunter.
+
+Every new autonomous miner or traveler warp order now has a deterministic four-to-eight human-active-second
+preparation window. The ship moves under an ordinary Follow order during that window, leaving time to lock and
+tackle it without publishing a premature native warp alignment. After the saved deadline, ordinary alignment,
+interdiction and warp mechanics apply. Tackle continues to prevent release after the deadline. Repeated evaluations
+do not renew the delay; a warp already in progress is not interrupted. Nearby subwarp journeys do not incur a warp
+delay. Restoring a pending legacy alignment converts it to delayed preparation before publishing the resumed scene.
+
+The deadline is saved in the existing typed miner/hauler checkpoint. Paused work shifts it with its existing active
+clock, and unobserved travel wakes at the pending preparation deadline rather than skipping to a distant approach.
+Resume prepares a private navigation copy and publishes it only after its owning action commits. There is no new
+schema, SQL gameplay path, teleport or special immunity for a bot that is being hunted.
+
+The reaction window is Eden policy requested for hunting, rather than an EVE server timing claim. Gameplay reference:
+[EVE University tackling](https://wiki.eveuniversity.org/Tackling). Movement reuses the existing Follow and Warp owners,
+checked against [Carbon Ball.cpp revision 27ee40b](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ball.cpp).
+
+**Automated validation:** Tool/solution restore and solution build passed (zero warnings/errors, 0.66 seconds).
+All 107 affected cases passed in 52.55 seconds wall time (50 seconds reported test duration). The final filter
+combined `FullyQualifiedName~` for `CapsuleerTrafficNavigationTests`, `CapsuleerSchedulingTests`,
+`CapsuleerDeadlineTests`, `CapsuleerMinerTests`, `CapsuleerHaulerTests`, `RoamingGangTests`,
+`RegionalConflictWorldTests`, `RegionalConflictTests`, `CapsuleerDefenseFrameTests`, `GameplayDependenciesTests`
+and `DataModelOwnershipTests`. Both Python policy suites passed (8 catalog cases in 1.317 seconds; 9 formatting
+cases in 0.017 seconds). Formatting verification and diff checks passed. No full suite was requested or run.
+An initial affected run had 101 passes and six failures: five miner flows treated preparation as arrival, and
+the bot-versus-bot fixture compared pre-resupply magazines with post-resupply quantities. Miner travel now waits
+for preparation; both battle fixtures sample each shooter's resident magazine after acquisition. The final run
+covers these corrections and preserves real damage, paid ammunition and warmed performance assertions.
+Exact development filters used
+`CapsuleerTrafficNavigationTests.PendingWarpGivesAHunterTimeAndTackleStillBlocksRelease`,
+`CapsuleerTrafficNavigationTests.StationlessOpeningStartsAtARealGateAndContinuesToNextGate`, and
+`RegionalConflictWorldTests.OffensiveRaidInitiatesPaidCombatAgainstAVisibleNeutralPilot`, each with the full
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.` prefix. The last two passed together in 8.47 seconds wall time.
+The neutral-raid fixture initializes the victim's new hull at full health and compares each attacker's resident
+magazine from first target acquisition, so pre-departure resupply and shield recharge cannot masquerade as firing.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Jump into a nullsec hunting grid and attempt lock/tackle before a bot leaves;
+observe an offensive gang initiating a fight with a neutral pilot. Native presentation and combat feel remain unverified.
+
+### Milestone 4: movement and weapon application
+
+PvP movement now follows typed decisions for range keeping, close orbit, tackle approach spirals, velocity matching
+when turret tracking is poor, and early separation when a kiter's observed relative motion predicts an overshoot.
+The two-second prediction uses visible positions and velocities. Tacklers use a conservative spiral on approach;
+the bot does not inspect the opponent's hidden weapons or fit to classify that approach. Acceleration, inertia,
+collision and speed changes still use the existing navigation owner rather than changing positions directly.
+
+Desired gun range uses a damage-weighted median rather than the shortest fitted auxiliary weapon. Mobile-drone
+weapon range no longer pulls a mixed fit into the drones' own firing orbit. Drone-only fits use their own skilled
+control range; target scoring checks control reach, pursuit speed and an approximate drone-orbit tracking estimate
+independently of the parent ship's angular velocity. Actual drone combat remains with its ordinary command owner.
+
+Visible hull types supply cached, unfitted catalog signature estimates. Missing catalog attributes retain the earlier
+visible-radius fallback. Opponent fitted signature, capacitor and resistance values are not read for tactical estimates.
+Range estimates use surface separation while angular velocity retains center-to-center geometry. Own skills,
+weapons, drone capability and propulsion use the existing invalidated defense profile.
+
+References: [EVE University turret mechanics](https://wiki.eveuniversity.org/Turret_mechanics),
+[manual piloting](https://wiki.eveuniversity.org/Manual_piloting), and
+[drone mechanics](https://wiki.eveuniversity.org/Drone_mechanics). Native movement still uses the Carbon revision
+recorded above. Steering thresholds and prediction horizons are Eden policies, not claims of server-identical AI.
+
+**Automated validation:** Tool/solution restore and solution build passed (zero warnings/errors, 9.36 seconds).
+All 98 affected tests passed in 52.28 seconds wall time (49 seconds reported test duration), including paid player
+and bot battles, drone lifecycle checks and warmed frame SQL/connection/fitting budgets. The final filter combined
+`FullyQualifiedName~` for `PvpTacticsTests`, `CapsuleerDefenseTests`, `CapsuleerDefenseLifecycleTests`,
+`CapsuleerDefenseModuleTests`, `CapsuleerDefenseFrameTests`, `RoamingGangTests`, `RegionalConflictWorldTests`,
+`PatrolTests`, `GateCampTests`, `GameplayDependenciesTests` and `DataModelOwnershipTests`. Both Python policy suites
+passed (8 catalog cases in 1.068 seconds; 9 formatting cases in 0.016 seconds); formatting and diff checks passed.
+No full suite was requested or run. Exact development filters used
+`PvpTacticsTests.MovementSpiralsForTackleMatchesVelocityForTrackingAndAnticipatesKitingOvershoot` and
+`PvpTacticsTests.RangeUsesMainWeaponsAndDroneControlRatherThanAuxiliaryOrDroneGunRange`, each prefixed by
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.`.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Observe a tackler approaching obliquely and a turret brawler reducing its own
+transversal when tracking suffers. Native motion and combat feel remain unverified.
+
+### Milestone 5: independent support and multiple locks
+
+EWAR and neutralizer modules may maintain their own targets while guns and drones retain the gang primary.
+Assignments favor visible logistics and electronic-support hulls, retain useful existing assignments and reduce
+duplicate coverage claimed by active gangmates. Failed ECM attempts do not claim successful suppression. Target
+painters and tackle continue to support the damage primary. Each assignment needs its own ordinary lock, with
+fitted/skill-clamped target capacity, scan time, targeting range and incoming ECM restrictions. A one-lock fit
+falls back to the primary. Module range is checked before activation so an out-of-range attempt cannot impose a
+long failure retry. Paid cycles, capacitor use, effect probability and checkpoints remain with the existing owners.
+
+Gunless support ships can join gangs that retain a damage-capable main body. Losing every main-body damage ship
+orders a return. Pure support pilots use their own support reach for navigation and no longer retreat merely
+because they lack ammunition. Old rosters retain their prior damage-capable interpretation when loaded.
+
+Weapon hints come only from damage already received by the bot, using the resident contribution lookup and a
+shared immutable catalog classification. Tracking/guidance disruption avoids a known incompatible weapon family;
+neutralizers favor an observed capacitor weapon. An observed missile/drone opponent permits a direct tackle
+approach; unknown opponents retain the conservative spiral. No opponent fit, cargo or hidden resource is inspected.
+These priorities and coverage penalties are Eden AI policy. Gameplay references:
+[EVE University EWAR tactics](https://wiki.eveuniversity.org/Electronic_warfare#EWAR_tactics),
+[fleet operations](https://wiki.eveuniversity.org/The_Rookie%27s_Guide_to_Fleet_Ops) and
+[ECM](https://wiki.eveuniversity.org/ECM). Actual module behavior remains pinned to client build 3662168/catalog.
+
+**Automated validation:** Tool/solution restore passed; solution build passed with zero warnings/errors in
+7.47 seconds. All 186 affected cases passed in 83.20 seconds wall time (80 seconds reported test duration).
+The filter combined `FullyQualifiedName~` for `PvpTacticsTests`, `CapsuleerDefenseTests`,
+`CapsuleerDefenseLifecycleTests`, `CapsuleerDefenseModuleTests`, `CapsuleerDefenseFrameTests`, `RoamingGangTests`,
+`RegionalConflictWorldTests`, `PatrolTests`, `GateCampTests`, `PlayerEwarTests`, `TargetingTests`,
+`GameplayDependenciesTests` and `DataModelOwnershipTests`. Both Python policy suites passed (8 catalog cases
+in 1.130 seconds; 9 formatting cases in 0.017 seconds); formatting and diff checks passed. No full suite was run.
+Exact development filters used `PvpTacticsTests.SupportPrioritizesLogisticsSpreadsAssignmentsAndAvoidsObservedWeaponMismatches`
+and `RegionalConflictWorldTests.EwarKeepsASecondLockAndItsOwnAssignmentAcrossRestart`, each prefixed by
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.`. The latter passed all three mixed/gunless/one-lock variants
+and retains paid ECM deadlines and locks through checkpoint/restart. Existing warmed frame budgets remain asserted.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Observe a gun/EWAR ship retaining a gun primary while jamming another target,
+and a gunless support pilot staying with its gang. Native lock/effect presentation remains unverified.
+
+### Milestone 6: ammunition choice and controlled heat
+
+Standard turret fits compare compatible ammunition already in their own cargo using observed range, angular motion
+and visible signature. The estimate adjusts their own fitted optimal, falloff and tracking for each catalog charge.
+A swap must improve estimated applied damage by more than 25% after amortizing the actual reload delay over thirty
+seconds. A saved thirty-second recheck deadline prevents oscillation. The ordinary ammunition owner still validates
+skills, bank membership, quantities and paid cycles, transfers the owned rounds and enforces reload time. A rejected
+optional swap preserves the current weapon. The comparison reads the resident magazine quantity rather than a projected
+database quantity and skips synthetic civilian charges. No ammunition is created or bought. Missile reloads retain the ordinary compatible
+loader; tactical missile-type changes, spool-reset tradeoffs and Vorton application remain outside this heuristic.
+
+Earned, supported overheating is limited to three successful cycles per module per defense encounter. Points and
+scrams can heat to catch a target just outside normal reach; weapons can heat during a trapped fighting retreat.
+The bot declines new heat at 45% rack heat, at 35% damage on any module in that rack, or when two more source damage
+pulses could burn its module. These are conservative AI limits, not guarantees against stochastic neighbor damage.
+Selections use the ordinary overload owner; successful weapon-bank cycles share the budget accounting. Failed cycles
+do not consume a success budget. Stopping a module or leaving combat clears its request while the ordinary owner
+settles any funded heat interval. Normal capacitor, ammunition, damage and cooldown payments remain mandatory.
+
+Docked combat traffic receives Thermodynamics III and its catalog prerequisites during resident population
+preparation, matching existing fit-skill preparation. Existing higher skills are preserved. Pilots already in space
+must return to dock for preparation; pilots without the earned level cannot bypass the ordinary overload checks.
+Module budgets and ammo deadlines join the existing typed hauler/miner checkpoint. Pause/resume shifts the wall-time
+ammo deadline while preserving consumed heat cycles. Actual heat and module damage use their existing checkpoints.
+
+References: [EVE University turret mechanics](https://wiki.eveuniversity.org/Turret_mechanics),
+[ammunition tradeoffs](https://wiki.eveuniversity.org/Turrets) and
+[overheating](https://wiki.eveuniversity.org/Overheating). Charge modifiers, reloads, overload bonuses and damage programs
+come from the pinned build-3662168 catalog; the existing movement/Carbon owner is unchanged. The comparison horizon,
+switch threshold, preparation level and heat limits are Eden policies. The AI does not infer hidden enemy resistances.
+
+**Automated validation:** Tool/solution restore passed; solution build passed with zero warnings/errors in
+0.68 seconds. All 228 final affected cases passed in 138.35 seconds wall time (135 seconds reported test duration).
+The filter combined `FullyQualifiedName~` for `PvpResourceTests`, `PvpTacticsTests`, `CapsuleerDefenseTests`,
+`CapsuleerDefenseLifecycleTests`, `CapsuleerDefenseModuleTests`, `CapsuleerDefenseFrameTests`, `RoamingGangTests`,
+`RegionalConflictWorldTests`, `PatrolTests`, `GateCampTests`, `CapsuleerSupplyTests`, `CapsuleerPopulationSettingsTests`,
+`AmmunitionTests`, `OverloadControlTests`, `OverloadFittingTests`, `ShipHeatTests`, `MissileHeatTests`,
+`GameplayDependenciesTests` and `DataModelOwnershipTests`, with the explicit exclusion below. Both Python policy
+suites passed (8 catalog cases in 1.701 seconds; 9 formatting cases in 0.066 seconds); formatting and diff checks passed.
+Existing warmed SQL/connection/fitting budgets remain asserted. No full suite was requested or run.
+
+The excluded `FullyQualifiedName!=Eden.Protocol.Tests.Capsuleers.CapsuleerPopulationSettingsTests.`
+`RestartSuspendsAndReusesSavedPilotsWithoutChangingTheirPossessionsOrReplayingJobs` fails at its empty visible-hauler
+assertion unchanged on main `a182106a` (8.41 seconds wall time). Its code is unchanged. The first expanded run was
+interrupted after that failure and civilian-charge failures. The latter were traced to the civilian gun's synthetic
+charge type 20132: optional selection now requires a real loaded charge item, and absent/noncharge catalog definitions
+are safely skipped. The corrected activation/retaliation rerun passed 31 cases; its only failure was the baseline
+population fixture. Temporary diagnostics were removed before final validation.
+
+Development used exact `FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.` filters for both `PvpResourceTests`
+methods, `CapsuleerDefenseModuleTests.DefenseChangesOwnedAmmunitionPaysReloadAndDoesNotRepeatIt` (single/banked guns),
+`CapsuleerDefenseModuleTests.DefenseHeatsTackleThroughThePaidOwnerAndHonorsItsSavedBudget`,
+`RegionalConflictWorldTests.PatrolPreparesThermodynamicsThroughTheResidentCheckpoint` and the existing pause/retaliation
+flows. The heat fixture initially withdrew after its only civilian gun failed to reach the target; it now carries an
+owned, paid long-range railgun and asserts actual heat generation. Thermodynamics preparation, exhausted heat budgets
+and ammo deadlines survive a reopened checkpoint. The thermal fixture imports only the skill and prerequisites,
+avoiding unrelated priced-material changes to its active configuration.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Observe a range-driven owned-ammo change and a short overheated tackle catch.
+Native reload/heat indicators and combat feel remain unverified.
+
 ## Regional bot conflicts — November 17, 2026
 
 Regional operations extend the saved roaming-gang command with constellation-based patrol groups in null security.

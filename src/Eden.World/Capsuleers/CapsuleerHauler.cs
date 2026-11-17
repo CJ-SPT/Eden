@@ -189,15 +189,34 @@ internal sealed partial class CapsuleerHauler(
         // alignment with a distant job deadline. Otherwise Destiny predicts a warp from a frozen grid.
         long latestFlightPulse = checked(elapsed + TimeSpan.TicksPerSecond);
         bool flying = Work.Activity == HaulerActivity.Flying && Pilot.Position is not null;
-        if (pausedAt is null && delay == 0 && Work.Ratting is null && (!flying || job.DueTicks <= latestFlightPulse))
+        if (
+            pausedAt is null
+            && delay == 0
+            && Work.Ratting is null
+            && (!flying || job.DueTicks <= latestFlightPulse)
+            && (Work.WarpReadyAt > 0 || _navigation.WarpDestination is null || _navigation.Warp is not null)
+        )
         {
             return job;
         }
         var resumed = CapsuleerPauseRules.Resume(Work, delay, Now) with { InboundPaused = false };
+        if (
+            Work.WarpReadyAt == 0
+            && Pilot.Position is not null
+            && _target is not null
+            && _navigation.Warp is null
+            && _navigation.WarpDestination is not null
+        )
+        {
+            var navigation = NavigationState.Restore(resumed.Navigation, Pilot.Flight);
+            long ready = CapsuleerWarpRules.Begin(navigation, WarpOrder(_target), elapsed);
+            resumed = resumed with { WarpReadyAt = ready, Navigation = navigation.Capture() };
+        }
         long due = Math.Max(checked(elapsed + (pausedAt is null ? TimeSpan.TicksPerSecond : 1)), checked(job.DueTicks + delay));
         var next = job.Next(flying ? Math.Min(latestFlightPulse, due) : due, job.Action);
         using CapsuleerOperation operation = new(database, job, marketSignal);
         operation.Commit(next, null, new HaulerCheckpoint(pilotId, resumed));
+        _navigation = NavigationState.Restore(resumed.Navigation, Pilot.Flight);
         _work = resumed;
         return next;
     }
@@ -396,7 +415,8 @@ internal sealed partial class CapsuleerHauler(
                 Work.Retreating,
                 Work.Activity is not (HaulerActivity.Jumping or HaulerActivity.Inbound) && Work.Stamp >= Work.ArrivalUntil,
                 proactive: proactive,
-                pvpRole: InActiveGang ? GangMember?.Role : null
+                pvpRole: InActiveGang ? GangMember?.Role : null,
+                gang: InActiveGang ? Work.Gang : null
             );
         _pilot = defended.Pilot;
         _warpBlocked = defended.WarpBlocked ?? _warpBlocked;
@@ -585,7 +605,11 @@ internal sealed partial class CapsuleerHauler(
     private CapsuleerSchedule Schedule()
     {
         var schedule = CapsuleerScheduleRules.Next(Work, Pilot.Position is not null, _background);
-        if (
+        if (_background && Work.WarpReadyAt > Work.ActiveTicks)
+        {
+            schedule = schedule with { DueTicks = Work.WarpReadyAt };
+        }
+        else if (
             _background
             && Work.Defense is null
             && CapsuleerScheduleRules.WarpDeadline(Work.Navigation, Pilot.Flight, Work.ClockOffsetTicks, Work.ActiveTicks) is { } exit
@@ -850,6 +874,7 @@ internal sealed partial class CapsuleerHauler(
             _pilot = ReadPilot(_operation.World, account);
             _navigation.AdoptHull();
         }
+        CapsuleerSupplyStore.PrepareCombatSkills(_operation.World, _operation.Catalog, pilotId);
         CapsuleerSupplyStore.Ensure(_operation.World, _operation.Catalog, pilotId, Founder.FounderShipId);
         UnloadRattingLoot();
         var supplies = resupply.Dock(database, _operation.World, _operation.Catalog, pilotId, Work.Resupply, Now);
@@ -957,12 +982,20 @@ internal sealed partial class CapsuleerHauler(
         _work = Work with { Activity = HaulerActivity.Flying, TargetId = target.Id };
         // A nearby refuge needs subwarp movement. Do not retain an old outbound alignment
         // when StartWarp rejects the new destination as too close.
-        _navigation.CancelAlignment();
-        if (!_navigation.StartWarp(Pilot.ShipId, Pilot.Flight, Pilot.Position!, target, 0, Work.Stamp))
+        _work = Work with
         {
-            Follow();
-        }
+            WarpReadyAt = CapsuleerWarpRules.Begin(_navigation, WarpOrder(target), Work.ActiveTicks),
+        };
     }
+
+    private CapsuleerWarpOrder WarpOrder(StaticSpaceObject target) =>
+        new(
+            Pilot,
+            target,
+            Work.Stamp,
+            CapsuleerTrafficFlight.ApproachRange,
+            Work.Ratting is { Phase: RattingPhase.TravellingToBelt, Patrol.Camp: { } camp } ? GateCampRules.StandOff(camp.Role) : 0
+        );
 
     private void Follow() =>
         _navigation.Follow(
@@ -983,7 +1016,14 @@ internal sealed partial class CapsuleerHauler(
             return;
         }
         _work = Work with { LastMotionStamp = Work.Stamp };
-        if (_target is not null && (_navigation.WarpDestination is not null || Work.EscapingBubble))
+        if (_target is not null)
+        {
+            _work = Work with
+            {
+                WarpReadyAt = CapsuleerWarpRules.Advance(_navigation, WarpOrder(_target), Work.WarpReadyAt, Work.ActiveTicks, _warpBlocked),
+            };
+        }
+        if (_target is not null && Work.ActiveTicks >= Work.WarpReadyAt && (_navigation.WarpDestination is not null || Work.EscapingBubble))
         {
             bool escaping = defense.NavigateField(
                 Pilot,

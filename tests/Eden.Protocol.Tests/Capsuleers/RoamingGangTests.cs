@@ -4,6 +4,7 @@ using Eden.Data.World.Inventory;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Diagnostics;
@@ -388,13 +389,45 @@ public sealed class RoamingGangTests
         internal LiveWorld Live => Host.GetRequiredService<LiveWorld>();
         internal CapsuleerScheduler Scheduler => Host.GetRequiredService<CapsuleerScheduler>();
 
-        internal Fixture(bool regional = false)
+        internal Fixture(
+            bool regional = false,
+            bool splitRegions = false,
+            bool supportCatalog = false,
+            int? targetLimit = null,
+            bool thermalCatalog = false
+        )
         {
             PassiveCatalogFixture.LoadFrigateHulls(Database.CatalogPath);
             PassiveCatalogFixture.Load(Database.CatalogPath);
             PassiveCatalogFixture.LoadTackleTiers(Database.CatalogPath);
+            if (supportCatalog)
+            {
+                PassiveCatalogFixture.LoadPlayerEwar(Database.CatalogPath);
+            }
+            if (thermalCatalog)
+            {
+                // Only Thermodynamics and its prerequisites are missing from this combat fixture.
+                const int scienceSkill = 3402;
+                PassiveCatalogFixture.LoadOverload(
+                    Database.CatalogPath,
+                    new HashSet<int>
+                    {
+                        Eden.Gameplay.Thermal.OverloadRules.ThermodynamicsSkill,
+                        (int)FittingSkill.PowerGridManagement,
+                        (int)FittingSkill.CapacitorManagement,
+                        scienceSkill,
+                    }
+                );
+            }
             using (var catalog = new CatalogDbContext(Database.CatalogPath, writable: true))
             {
+                if (targetLimit is { } limit)
+                {
+                    int targetAttribute = (int)DogmaAttributeId.MaxLockedTargets;
+                    catalog.Database.ExecuteSql(
+                        $"UPDATE TypeAttribute SET Value={limit} WHERE ItemTypeId=603 AND AttributeId={targetAttribute}"
+                    );
+                }
                 if (regional)
                 {
                     const int rivalConstellation = 20009999;
@@ -403,6 +436,12 @@ public sealed class RoamingGangTests
                         $"INSERT INTO Constellation VALUES ({rivalConstellation},'Rival test constellation',{region})"
                     );
                     catalog.Database.ExecuteSql($"UPDATE SolarSystem SET ConstellationId={rivalConstellation} WHERE Id={Away}");
+                    if (splitRegions)
+                    {
+                        int remoteRegion = region + 1000;
+                        catalog.Database.ExecuteSql($"INSERT INTO Region VALUES ({remoteRegion},'Remote test region')");
+                        catalog.Database.ExecuteSql($"UPDATE Constellation SET RegionId={remoteRegion} WHERE Id={rivalConstellation}");
+                    }
                 }
                 foreach (int system in new[] { Home, Away })
                 {

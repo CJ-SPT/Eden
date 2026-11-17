@@ -148,6 +148,11 @@ internal sealed partial record CapsuleerDefenseProfile
                                 ),
                                 int.MaxValue
                             )
+                            {
+                                DroneControlRange = fit.Graph.Read(pilotId, DogmaAttributeId.DroneControlDistance),
+                                DroneSpeed = drone.MaximumSpeed,
+                                DroneOrbitSpeed = drone.OrbitSpeed,
+                            }
                         );
                         remaining -= count;
                         bandwidth -= count * drone.Bandwidth;
@@ -191,7 +196,10 @@ internal sealed partial record CapsuleerDefenseProfile
                 FittingCatalog.DefaultEffect(catalog, module.Item.TypeId) ?? DogmaEffect.Online,
                 fit.Graph.Attributes(module.Item.Id),
                 Enumerable.Contains(active, module.Item.Id)
-            ))
+            )
+            {
+                Overload = HeatProfile(catalog, fit, module.Item.TypeId),
+            })
             .ToArray();
         int tech = (int)catalog.FittingAttributes(pilot.ActiveShip.TypeId).GetValueOrDefault(DogmaAttributeId.TechLevel, 1);
         var hull = catalog.RequireItem(pilot.ActiveShip.TypeId);
@@ -204,6 +212,7 @@ internal sealed partial record CapsuleerDefenseProfile
         {
             RattingWeapons = ReadRatting(world, catalog, pilotId, pilot.ActiveShipId, fit, modules),
             TargetRange = fit.Graph.Read(pilot.ActiveShipId, DogmaAttributeId.MaxTargetRange),
+            ShipAttributes = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: fit),
         };
     }
 }

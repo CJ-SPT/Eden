@@ -58,6 +58,7 @@ public sealed record CapsuleerDefenseState
     public int MotionStamp { get; init; } = int.MinValue;
     public CapsuleerLock[] Locks { get; init; } = [];
     public CapsuleerModuleCycle[] Cycles { get; init; } = [];
+    public CapsuleerModuleBudget[] Budgets { get; init; } = [];
 }
 
 public static class CapsuleerDefenseRules
@@ -102,8 +103,7 @@ public static class CapsuleerDefenseRules
 
     public static double Fraction(double current, double maximum) => maximum > 0 ? Math.Clamp(current / maximum, 0, 1) : 1;
 
-    public static bool Offensive(bool combatShip, bool retreating, bool warpBlocked) =>
-        combatShip && !retreating || !combatShip && warpBlocked;
+    public static bool Offensive(bool combatShip, bool retreating, bool warpBlocked) => combatShip && !retreating || warpBlocked;
 
     public static bool ShouldActivate(
         DogmaEffect effect,
@@ -114,12 +114,14 @@ public static class CapsuleerDefenseRules
         bool offensive,
         bool locked,
         bool blocked,
-        bool shieldTank
+        bool shieldTank,
+        bool fightingRetreat = false
     )
     {
         double fraction = Fraction(capacitor, capacity);
         bool affordable = double.IsFinite(cost) && cost >= 0 && capacitor >= cost;
-        bool reserved = affordable && Fraction(capacitor - cost, capacity) >= OffensiveCapacitorReserve;
+        bool reserved = affordable && (cost == 0 || Fraction(capacitor - cost, capacity) >= OffensiveCapacitorReserve);
+        bool emergency = affordable && fightingRetreat;
         double shield = Fraction(health.Remaining.Shield, health.Defense.Shield);
         double armor = Fraction(health.Remaining.Armor, health.Defense.Armor);
         double hull = Fraction(health.Remaining.Structure, health.Defense.Structure);
@@ -138,20 +140,19 @@ public static class CapsuleerDefenseRules
             or DogmaEffect.TrackingComputer
             or DogmaEffect.MissileGuidanceComputer
             or DogmaEffect.OmnidirectionalTrackingLink => reserved && offensive,
-            DogmaEffect.LaserFired
-            or DogmaEffect.ProjectileFired
-            or DogmaEffect.UseMissiles
-            or DogmaEffect.AutoTargetingMissile
-            or DogmaEffect.StasisWebifier
-            or DogmaEffect.WarpDisruptor
-            or DogmaEffect.WarpScrambler
-            or DogmaEffect.PlayerEcm
+            DogmaEffect.LaserFired or DogmaEffect.ProjectileFired or DogmaEffect.UseMissiles or DogmaEffect.AutoTargetingMissile => (
+                reserved || emergency
+            )
+                && offensive
+                && locked,
+            DogmaEffect.StasisWebifier or DogmaEffect.WarpDisruptor or DogmaEffect.WarpScrambler or DogmaEffect.EnergyNosferatu =>
+                affordable && offensive && locked,
+            DogmaEffect.PlayerEcm
             or DogmaEffect.SensorDampener
             or DogmaEffect.TrackingDisruptor
             or DogmaEffect.GuidanceDisruptor
             or DogmaEffect.TargetPainter
-            or DogmaEffect.EnergyNeutralizer
-            or DogmaEffect.EnergyNosferatu => reserved && offensive && locked,
+            or DogmaEffect.EnergyNeutralizer => (reserved || emergency) && offensive && locked,
             _ => false,
         };
     }

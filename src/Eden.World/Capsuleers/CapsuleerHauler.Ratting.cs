@@ -242,20 +242,7 @@ internal sealed partial class CapsuleerHauler
             throw new InvalidDataException("Warp disruption prevents the ratting pilot from leaving.");
         }
         _work = Work with { WaitingReason = null };
-        _navigation.CancelAlignment();
-        if (
-            !_navigation.StartWarp(
-                Pilot.ShipId,
-                Pilot.Flight,
-                Pilot.Position!,
-                _target!,
-                Work.Ratting is { Phase: RattingPhase.TravellingToBelt, Patrol.Camp: { } camp } ? GateCampRules.StandOff(camp.Role) : 0,
-                Work.Stamp
-            )
-        )
-        {
-            Follow();
-        }
+        _work = Work with { WarpReadyAt = CapsuleerWarpRules.Begin(_navigation, WarpOrder(_target!), Work.ActiveTicks) };
     }
 
     private void EndSortie(RattingProgress activity) =>
@@ -293,7 +280,17 @@ internal sealed partial class CapsuleerHauler
             case RattingPhase.Returning:
                 if (Work.TargetId != activity.StationId || _target?.Id != activity.StationId || Work.WaitingReason is not null)
                 {
-                    _target = Objects.Single(o => o.Id == activity.StationId);
+                    _target = Objects.FirstOrDefault(o => o.Id == activity.StationId);
+                    if (_target is null)
+                    {
+                        // A remote patrol cannot warp directly to its home station in another system.
+                        _work = Work with
+                        {
+                            Ratting = null,
+                        };
+                        BeginTravel();
+                        break;
+                    }
                     _work = Work with
                     {
                         TargetId = _target.Id,

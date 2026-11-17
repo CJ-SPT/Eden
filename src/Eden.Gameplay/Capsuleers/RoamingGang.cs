@@ -29,6 +29,7 @@ public sealed record RoamingGangMember(long PilotId, long ShipId, PvpRole Role)
 {
     public RoamingGangMemberStatus Status { get; init; }
     public Eden.Gameplay.Ships.HullClass Hull { get; init; }
+    public bool DamageCapable { get; init; } = true;
 }
 
 public sealed record GangSighting(long ShipId, int SystemId, long GridId, long SeenAt, long ExpiresAt);
@@ -87,7 +88,12 @@ public static class RoamingGangRules
                 .FirstOrDefault();
         var phase =
             active.Length == 0 ? RoamingGangPhase.Complete
-            : gang.Phase != RoamingGangPhase.Complete && (elapsed >= gang.ReturnAt || active.Length < MinimumMembers)
+            : gang.Phase != RoamingGangPhase.Complete
+            && (
+                elapsed >= gang.ReturnAt
+                || active.Length < MinimumMembers
+                || !active.Any(member => member.Role != PvpRole.Scout && member.DamageCapable)
+            )
                 ? RoamingGangPhase.Returning
             : gang.Phase;
         if (members.SequenceEqual(gang.Members) && leader == gang.LeaderId && phase == gang.Phase)

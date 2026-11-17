@@ -15,7 +15,12 @@ public sealed record PilotSighting(
     float Radius,
     GateCamp? Camp = null,
     int? RegionalGroupId = null
-);
+)
+{
+    public double SignatureEstimate { get; init; }
+    public ObservedPvpWeapon ObservedWeapon { get; init; }
+    public bool CapacitorWeaponObserved { get; init; }
+}
 
 public sealed record BeltMemory(long BeltId, long Until);
 

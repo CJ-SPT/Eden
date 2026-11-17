@@ -27,6 +27,44 @@ public sealed class CapsuleerTrafficNavigationTests
     private const int SourceStation = 60015157;
     private const int DestinationStation = 60003760;
 
+    [Fact]
+    public void PendingWarpGivesAHunterTimeAndTackleStillBlocksRelease()
+    {
+        using CapsuleerHaulerTests.Fixture f = new();
+        var founder = f.Founder();
+        var pilot = new SqliteWorld(f.Database, f.Clock).FindPilot(-1, founder.PilotId)!;
+        using var catalog = new CatalogDbContext(f.Database.CatalogPath);
+        var target = SystemObjects.Geometry(catalog, Source).Single(body => body.Id == SourceStation);
+        pilot = pilot with { Position = target.Position + new SpacePosition(1_000_000, 0, 0) };
+        NavigationState navigation = new();
+        navigation.SetVelocity(new(-pilot.Flight.MaxSpeed, 0, 0));
+        CapsuleerWarpOrder order = new(pilot, target, 0, 2_500);
+        long ready = CapsuleerWarpRules.Begin(navigation, order, 0);
+        Assert.InRange(ready, TimeSpan.FromSeconds(4).Ticks, TimeSpan.FromSeconds(8).Ticks);
+        Assert.NotNull(navigation.FollowTarget);
+        Assert.Null(navigation.WarpDestination);
+        for (long elapsed = 0; elapsed < ready; elapsed += TimeSpan.TicksPerSecond)
+        {
+            Assert.Equal(ready, CapsuleerWarpRules.Advance(navigation, order, ready, elapsed, false));
+            Assert.Null(navigation.WarpDestination);
+            Assert.Null(navigation.Warp);
+        }
+        navigation = NavigationState.Restore(navigation.Capture(), pilot.Flight);
+        Assert.Equal(ready, CapsuleerWarpRules.Advance(navigation, order, ready, ready, true));
+        Assert.Null(navigation.WarpDestination);
+        CapsuleerWarpRules.Advance(navigation, order, ready, ready, false);
+        Assert.NotNull(navigation.WarpDestination);
+        var resumed = CapsuleerPauseRules.Resume(
+            new HaulerProgress(HaulerActivity.Flying, 0, 0, pilot.ShipId, SourceStation, target.Id, navigation.Capture())
+            {
+                WarpReadyAt = ready,
+            },
+            TimeSpan.TicksPerSecond,
+            f.Clock.Now
+        );
+        Assert.Equal(ready + TimeSpan.TicksPerSecond, resumed.WarpReadyAt);
+    }
+
     [Theory]
     [InlineData(0, 1, false, 0, 1, Corridor)]
     [InlineData(1, 1, false, 1, 1, Remote)]
@@ -137,12 +175,22 @@ public sealed class CapsuleerTrafficNavigationTests
         presentation.Refresh();
         var aligning = Assert.Single(space.Peers(viewer), peer => peer.Pilot.PilotId == founder.PilotId);
         Assert.Equal(saved.Position, aligning.Pilot.Position);
-        Assert.Equal(work.Navigation.WarpDestination, aligning.AlignTo);
+        Assert.Null(aligning.AlignTo);
         f.Clock.Seconds++;
         scheduler.Run(1);
         var moved = scheduler.Hauler(founder.PilotId)!;
         Assert.NotEqual(saved.Position, moved.Pilot.Position);
         Assert.Equal(outgoing.Id, moved.Work.TargetId);
+        Assert.Null(moved.Work.Navigation.Warp);
+        Assert.True(moved.Work.WarpReadyAt > moved.Work.ActiveTicks);
+        await host.GetRequiredService<LiveWorld>().FlushAsync();
+        using (WorldDbContext pending = new(f.Database.Path))
+        {
+            Assert.Equal(
+                moved.Work.WarpReadyAt,
+                HaulerCheckpoint.Read(pending.Set<SavedCapsuleerHauler>().Find(founder.Id)!.Progress)!.WarpReadyAt
+            );
+        }
         bool observedWarp = false;
         for (int stamp = 2; stamp < 90; stamp++)
         {

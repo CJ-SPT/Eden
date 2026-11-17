@@ -6,6 +6,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Ships;
+using Eden.Gameplay.Thermal;
 using Eden.World.Catalog;
 using Eden.World.Combat.Weapons;
 using Eden.World.Drones;
@@ -13,6 +14,7 @@ using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Skills;
 using Eden.World.Storage;
+using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Capsuleers;
@@ -22,12 +24,27 @@ internal sealed record CapsuleerDefenseEquipment(
     DogmaEffect Effect,
     IReadOnlyDictionary<DogmaAttributeId, double> Attributes,
     bool Active
-);
+)
+{
+    internal OverloadProfile? Overload { get; init; }
+}
 
 internal sealed partial record CapsuleerDefenseProfile(bool Combat, CapsuleerDefenseEquipment[] Modules)
 {
     internal RattingWeapon[] RattingWeapons { get; init; } = [];
     internal double TargetRange { get; init; }
+    internal bool HasDamage => RattingWeapons.Any(source => source.AvailableShots > 0 && source.Weapon.Damage.Total > 0);
+    internal bool HasSupport => Modules.Any(module => PvpSupport.Supported(module.Effect));
+    internal bool CanContribute => HasDamage || HasSupport;
+    internal double SupportRange =>
+        Modules
+            .Where(module => PvpSupport.Supported(module.Effect))
+            .Select(module => module.Attributes.GetValueOrDefault(DogmaAttributeId.MaxRange))
+            .DefaultIfEmpty(0)
+            .Max();
+    internal double PvpRange =>
+        !HasDamage && HasSupport ? Math.Min(TargetRange, SupportRange * .8) : PvpTactics.WeaponRange(RattingWeapons, TargetRange, 500);
+    internal IReadOnlyDictionary<DogmaAttributeId, double> ShipAttributes { get; init; } = new Dictionary<DogmaAttributeId, double>();
     internal double TackleRange =>
         Modules
             .Where(module => module.Effect is DogmaEffect.WarpDisruptor or DogmaEffect.WarpScrambler)
@@ -35,17 +52,19 @@ internal sealed partial record CapsuleerDefenseProfile(bool Combat, CapsuleerDef
             .DefaultIfEmpty(0)
             .Max();
     internal PvpRole PvpRole =>
-        PvpTactics.Role(
-            PilotAwareness.FightingRange(RattingWeapons, TargetRange, 500),
-            TackleRange,
-            Modules.Any(module =>
-                module.Effect
-                    is DogmaEffect.PlayerEcm
-                        or DogmaEffect.SensorDampener
-                        or DogmaEffect.TrackingDisruptor
-                        or DogmaEffect.GuidanceDisruptor
-            )
-        );
+        !HasDamage && TackleRange > 0 && !Modules.Any(module => PvpSupport.Independent(module.Effect))
+            ? PvpRole.Tackle
+            : PvpTactics.Role(
+                PvpRange,
+                TackleRange,
+                Modules.Any(module =>
+                    module.Effect
+                        is DogmaEffect.PlayerEcm
+                            or DogmaEffect.SensorDampener
+                            or DogmaEffect.TrackingDisruptor
+                            or DogmaEffect.GuidanceDisruptor
+                )
+            );
 
     internal static CapsuleerDefenseProfile Read(WorldDbContext world, CatalogDbContext catalog, long pilotId)
     {
@@ -76,7 +95,10 @@ internal sealed partial record CapsuleerDefenseProfile(bool Combat, CapsuleerDef
                 FittingCatalog.DefaultEffect(catalog, module.Item.TypeId) ?? DogmaEffect.Online,
                 fit.Graph.Attributes(module.Item.Id),
                 active.Contains(module.Item.Id)
-            ))
+            )
+            {
+                Overload = HeatProfile(catalog, fit, module.Item.TypeId),
+            })
             .ToArray();
         int tech = (int)catalog.FittingAttributes(pilot.ActiveShip.TypeId).GetValueOrDefault(DogmaAttributeId.TechLevel, 1);
         var hull = catalog.RequireItem(pilot.ActiveShip.TypeId);
@@ -89,7 +111,16 @@ internal sealed partial record CapsuleerDefenseProfile(bool Combat, CapsuleerDef
         {
             RattingWeapons = ReadRatting(world, catalog, pilotId, pilot.ActiveShipId, fit, modules),
             TargetRange = fit.Graph.Read(pilot.ActiveShipId, DogmaAttributeId.MaxTargetRange),
+            ShipAttributes = PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: fit),
         };
+    }
+
+    private static OverloadProfile? HeatProfile(CatalogDbContext catalog, FittingCalculation fit, int type)
+    {
+        int level = fit.SkillLevels.GetValueOrDefault(OverloadRules.ThermodynamicsSkill);
+        return level > 0 && OverloadCatalog.Definition(catalog, type) is { } profile && level >= profile.RequiredThermodynamics
+            ? profile
+            : null;
     }
 
     private static RattingWeapon[] ReadRatting(
@@ -220,6 +251,11 @@ internal sealed partial record CapsuleerDefenseProfile(bool Combat, CapsuleerDef
                                 ),
                                 int.MaxValue
                             )
+                            {
+                                DroneControlRange = fit.Graph.Read(pilotId, DogmaAttributeId.DroneControlDistance),
+                                DroneSpeed = drone.MaximumSpeed,
+                                DroneOrbitSpeed = drone.OrbitSpeed,
+                            }
                         );
                         remaining -= count;
                         bandwidth -= count * drone.Bandwidth;

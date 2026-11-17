@@ -183,6 +183,18 @@ internal sealed class CapsuleerMiner(
         _resumeCount = -1;
         long delay = Math.Max(0, elapsed - Math.Max(Work.ActiveTicks, pausedAt));
         var resumed = CapsuleerPauseRules.Resume(Work, delay);
+        if (
+            Work.WarpReadyAt == 0
+            && Pilot.Position is not null
+            && _target is not null
+            && _navigation.Warp is null
+            && _navigation.WarpDestination is not null
+        )
+        {
+            var navigation = NavigationState.Restore(resumed.Navigation, Pilot.Flight);
+            long ready = CapsuleerWarpRules.Begin(navigation, new(Pilot, _target, Work.Stamp, ApproachRange), elapsed);
+            resumed = resumed with { WarpReadyAt = ready, Navigation = navigation.Capture() };
+        }
         long earliest = checked(elapsed + 1);
         var next = job.Next(Math.Max(earliest, checked(job.DueTicks + delay)), job.Action);
         using CapsuleerOperation operation = new(database, job, marketSignal);
@@ -196,6 +208,7 @@ internal sealed class CapsuleerMiner(
             resumed = paid;
         }
         operation.Commit(next, new MinerCheckpoint(pilotId, resumed), null);
+        _navigation = NavigationState.Restore(resumed.Navigation, Pilot.Flight);
         _work = resumed;
         return next;
     }
@@ -676,10 +689,10 @@ internal sealed class CapsuleerMiner(
         {
             throw new InvalidDataException("Warp disruption prevents the miner from leaving.");
         }
-        if (!_navigation.StartWarp(Pilot.ShipId, Pilot.Flight, Pilot.Position!, target, 0, Work.Stamp))
+        _work = Work with
         {
-            Follow(target);
-        }
+            WarpReadyAt = CapsuleerWarpRules.Begin(_navigation, new(Pilot, target, Work.Stamp, ApproachRange), Work.ActiveTicks),
+        };
     }
 
     private void Follow(StaticSpaceObject target) =>
@@ -695,7 +708,20 @@ internal sealed class CapsuleerMiner(
             return;
         }
         _work = Work with { LastMotionStamp = Work.Stamp };
-        if (_target is not null && (_navigation.WarpDestination is not null || Work.EscapingBubble))
+        if (_target is not null)
+        {
+            _work = Work with
+            {
+                WarpReadyAt = CapsuleerWarpRules.Advance(
+                    _navigation,
+                    new(Pilot, _target, Work.Stamp, ApproachRange),
+                    Work.WarpReadyAt,
+                    Work.ActiveTicks,
+                    _warpBlocked
+                ),
+            };
+        }
+        if (_target is not null && Work.ActiveTicks >= Work.WarpReadyAt && (_navigation.WarpDestination is not null || Work.EscapingBubble))
         {
             bool escaping = defense.NavigateField(
                 Pilot,
@@ -740,7 +766,12 @@ internal sealed class CapsuleerMiner(
     private void Travel()
     {
         Move();
-        if (_navigation.Warp is not null || _navigation.WarpDestination is not null || Work.EscapingBubble)
+        if (
+            _navigation.Warp is not null
+            || _navigation.WarpDestination is not null
+            || Work.EscapingBubble
+            || Work.WarpReadyAt > Work.ActiveTicks
+        )
         {
             return;
         }

@@ -8,6 +8,8 @@ using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Targeting;
+using Eden.Gameplay.Thermal;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Tests.Persistence;
@@ -26,6 +28,119 @@ public sealed class CapsuleerDefenseModuleTests
     private const long Enemy = 90000002;
     private const long EnemyShip = 1000000000002;
     private const int System = 30000142;
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DefenseChangesOwnedAmmunitionPaysReloadAndDoesNotRepeatIt(bool bank)
+    {
+        using Fixture f = Prepare(561, DogmaEffect.ProjectileFired);
+        long module = f.Fit(561);
+        long[] modules = bank ? [module, f.Fit(561)] : [module];
+        const int ownedRounds = 2000;
+        long iron = f.Grant((int)HybridChargeType.IronSmall, ownedRounds);
+        long antimatter = f.Grant((int)HybridChargeType.AntimatterSmall, ownedRounds, cargo: true);
+        var ammo = f.Db.Services.GetRequiredService<IPilotAmmunition>();
+        ammo.Load(f.PilotId, f.ShipId, modules, [iron], f.StationId, f.Clock.Now);
+        f.Clock.Milliseconds += 60_000;
+        if (bank)
+        {
+            f.Db.Services.GetRequiredService<IPilotWeaponBanks>().Change(f.PilotId, f.ShipId, WeaponBankOperation.Link, module, modules[1]);
+        }
+        Space(f, DogmaEffect.ProjectileFired);
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        var defense = f.Db.Services.GetRequiredService<CapsuleerDefense>();
+        var pilot = f.Db.Store.FindPilot(1000001)!;
+        var target = Assert.IsType<CapsuleerAttacker>(defense.PatrolTarget(pilot, EnemyShip, pilot.Position!, f.Clock.Now));
+        var locks = f.Db.Services.GetRequiredService<IPilotTargetLocks>();
+        locks.Add(f.ShipId, EnemyShip);
+        CapsuleerDefenseState state = new() { ShipId = f.ShipId, Locks = [new(EnemyShip, f.Clock.Now)] };
+        NavigationState navigation = new();
+        var reloading = defense.Advance(pilot, navigation, state, f.Clock.Now, 0, [], proactive: target);
+        var paid = Assert.Single(reloading.State!.Cycles, cycle => cycle.ModuleId == module);
+        Assert.Equal(DogmaEffect.Online, paid.Effect);
+        Assert.True(paid.ReadyAt > f.Clock.Now);
+        var magazines = ammo.Read(f.PilotId, f.ShipId).ToArray();
+        Assert.Equal(modules.Length, magazines.Length);
+        Assert.All(
+            magazines,
+            magazine =>
+            {
+                Assert.Equal((int)HybridChargeType.AntimatterSmall, magazine.TypeId);
+                Assert.True(magazine.Quantity > 0);
+            }
+        );
+        Assert.All(
+            reloading.State.Cycles.Where(cycle => modules.Contains(cycle.ModuleId)),
+            cycle =>
+            {
+                Assert.Equal(DogmaEffect.Online, cycle.Effect);
+                Assert.False(cycle.Unavailable);
+                Assert.Equal(paid.ReadyAt, cycle.ReadyAt);
+            }
+        );
+        int remaining = f.Inventory.List(f.PilotId, f.ShipId).Where(item => item.Id == antimatter).Sum(item => item.Quantity);
+        Assert.Equal(ownedRounds, remaining + magazines.Sum(magazine => magazine.Quantity));
+        var duplicate = defense.Advance(reloading.Pilot, navigation, reloading.State, f.Clock.Now, 0, [], proactive: target);
+        Assert.Equal(paid.ReadyAt, Assert.Single(duplicate.State!.Cycles, cycle => cycle.ModuleId == module).ReadyAt);
+        Assert.Equal(magazines, ammo.Read(f.PilotId, f.ShipId));
+        f.Clock.Milliseconds += (paid.ReadyAt - f.Clock.Now) / TimeSpan.TicksPerMillisecond + 1;
+        var shooting = defense.Advance(duplicate.Pilot, navigation, duplicate.State, f.Clock.Now, 0, [], proactive: target);
+        Assert.Equal(DogmaEffect.ProjectileFired, Assert.Single(shooting.State!.Cycles, cycle => cycle.ModuleId == module).Effect);
+        Assert.All(
+            modules,
+            id =>
+                Assert.True(
+                    ammo.Read(f.PilotId, f.ShipId).Single(magazine => magazine.ModuleId == id).Quantity
+                        < magazines.Single(magazine => magazine.ModuleId == id).Quantity
+                )
+        );
+        Assert.True(Assert.Single(shooting.State.Budgets, budget => budget.ModuleId == module).AmmoCheckAt > f.Clock.Now);
+    }
+
+    [Fact]
+    public void DefenseHeatsTackleThroughThePaidOwnerAndHonorsItsSavedBudget()
+    {
+        using Fixture f = Prepare(3242, DogmaEffect.WarpDisruptor);
+        PassiveCatalogFixture.LoadOverload(f.CatalogPath);
+        PassiveCatalogFixture.LoadWeaponTiers(f.CatalogPath);
+        f.Train(OverloadRules.ThermodynamicsSkill, 3);
+        long module = f.Fit(3242);
+        long gun = f.Fit(561);
+        long iron = f.Grant((int)HybridChargeType.IronSmall, 100);
+        f.Db.Services.GetRequiredService<IPilotAmmunition>().Load(f.PilotId, f.ShipId, [gun], [iron], f.StationId, f.Clock.Now);
+        f.Clock.Milliseconds += 60_000;
+        Space(f, DogmaEffect.WarpDisruptor);
+        var pilot = f.Db.Store.FindPilot(1000001)!;
+        f.Db.Store.SetPosition(EnemyShip, pilot.Position! + new SpacePosition(22_000 + pilot.Flight.ShipRadius + 100, 0, 0), System);
+        var contact = f.Db.Store.FindPilot(1000002)!;
+        f.Db.Services.GetRequiredService<SharedSpace>().Publish(new(PilotContact.From(contact), SpacePosition.Zero, null, 0, null));
+        using LiveWorld live = new(new(f.Db.Path), f.Clock, _ => { });
+        var defense = f.Db.Services.GetRequiredService<CapsuleerDefense>();
+        var target = Assert.IsType<CapsuleerAttacker>(defense.PatrolTarget(pilot, EnemyShip, pilot.Position!, f.Clock.Now));
+        var locks = f.Db.Services.GetRequiredService<IPilotTargetLocks>();
+        locks.Add(f.ShipId, EnemyShip);
+        CapsuleerDefenseState state = new() { ShipId = f.ShipId, Locks = [new(EnemyShip, f.Clock.Now)] };
+        NavigationState navigation = new();
+        var active = defense.Advance(pilot, navigation, state, f.Clock.Now, 0, [], proactive: target);
+        var cycle = Assert.Single(active.State!.Cycles, cycle => cycle.ModuleId == module);
+        Assert.Equal(DogmaEffect.WarpDisruptor, cycle.Effect);
+        Assert.True(cycle.Tackle!.Range > 22_000);
+        Assert.Equal(1, Assert.Single(active.State.Budgets, budget => budget.ModuleId == module).HeatedCycles);
+        var heat = f.Db.Services.GetRequiredService<IPilotShipHeat>();
+        var initialHeat = heat.Read(f.PilotId, f.ShipId, f.Clock.Now);
+        Assert.Contains(initialHeat.Cycles, paid => paid.ModuleId == module && paid.CompletesAt == cycle.ReadyAt && paid.Absorption > 0);
+        var duplicate = defense.Advance(active.Pilot, navigation, active.State, f.Clock.Now, 0, [], proactive: target);
+        Assert.Equal(active.State.Budgets, duplicate.State!.Budgets);
+        Assert.Contains(heat.Read(f.PilotId, f.ShipId, f.Clock.Now).Cycles, paid => paid.ModuleId == module);
+        f.Clock.Milliseconds += (cycle.ReadyAt - f.Clock.Now) / TimeSpan.TicksPerMillisecond + 1;
+        Assert.True(heat.Read(f.PilotId, f.ShipId, f.Clock.Now).Heat(ModuleRack.Medium) > 0);
+        var exhausted = duplicate.State with { Budgets = [new(module, PvpResources.MaximumHeatedCycles)] };
+        var cooled = defense.Advance(duplicate.Pilot, navigation, exhausted, f.Clock.Now, 0, [], proactive: target);
+        Assert.DoesNotContain(module, f.Db.Services.GetRequiredService<IPilotOverloading>().Requested(f.PilotId, f.ShipId));
+        Assert.DoesNotContain(cooled.State!.Cycles, current => current.ModuleId == module && current.Effect == DogmaEffect.WarpDisruptor);
+        Assert.True(heat.Read(f.PilotId, f.ShipId, f.Clock.Now).Heat(ModuleRack.Medium) > 0);
+    }
 
     // Supported module IDs from the committed build-3662168 fixture extracts.
     [Theory]

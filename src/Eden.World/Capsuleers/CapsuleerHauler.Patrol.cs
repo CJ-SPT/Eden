@@ -51,7 +51,7 @@ internal sealed partial class CapsuleerHauler
         var fit = defense.Profile(pilotId);
         if (
             !fit.Combat
-            || !fit.RattingWeapons.Any(weapon => weapon.AvailableShots > 0)
+            || !(fit.HasDamage || InActiveGang && fit.HasSupport)
             || health.Read(pilotId, Now) is not { } current
             || CapsuleerDefenseRules.Retreat(current, true)
         )
@@ -154,7 +154,9 @@ internal sealed partial class CapsuleerHauler
             Work.ActiveTicks,
             reported,
             PilotAwareness.Cautious(pilotId),
-            Pilot.Flight.MaxSpeed
+            Pilot.Flight.MaxSpeed,
+            Pilot.Flight.ShipRadius,
+            profile.HasSupport ? profile.SupportRange : 0
         );
         bool scout = gang is not null && GangMember?.Role == PvpRole.Scout;
         if (scout && candidates.Length > 0)

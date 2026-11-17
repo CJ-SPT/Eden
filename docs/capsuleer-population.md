@@ -74,6 +74,13 @@ Armed travelers also use the roam chance at outbound nullsec gates, including in
 to hunt waits 18–40 seconds for a visible target, can stay longer in a fight, then continues the original trip.
 Pilots delivering freight, shopping for supplies or retreating continue through the gate.
 
+New miner and traveler warp orders wait four to eight active seconds before issuing warp alignment. Ships continue
+ordinary subwarp movement during preparation and can be locked and tackled. The saved deadline survives checkpoints
+and pauses with the pilot's active clock; repeated reads do not extend it. A warp already in progress completes normally.
+Offensive regional raids and interceptions can engage suitable neutral pilots in nullsec without waiting to be attacked;
+escorts and defensive objectives retain their narrower targeting policy. Friendship and normal combat legality still apply.
+[Tactical implementation and evidence](protocol/capsuleers.md#milestone-3-nullsec-engagement-and-warp-preparation).
+
 ### Persistent roaming gangs
 
 With **Persistent roaming gangs** enabled (default on), eligible nullsec pilots can assemble existing ships into a
