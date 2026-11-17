@@ -242,6 +242,7 @@ internal static class Program
             Console.WriteLine("Account password updated. Previous launcher sessions have been revoked.");
             return;
         }
+        WorldWipeRequest worldWipe = new(worldPath);
         await ServerLifetime.RunAsync(async lifetime =>
         {
             var world = services.GetRequiredService<Eden.World.Runtime.LiveWorld>();
@@ -334,7 +335,8 @@ internal static class Program
                     administrationPort,
                     administrationOrigin,
                     IPAddress.Parse(options.ListenAddress),
-                    options.CertificatePath
+                    options.CertificatePath,
+                    worldWipe
                 );
                 lifetime.OnStop("administration", administration.DisposeAsync);
                 lifetime.OnStop("administration listener", () => new ValueTask(administration.StopAsync()));
@@ -369,7 +371,12 @@ internal static class Program
             {
                 population.Start();
             }
-            if (await Task.WhenAny(server, chat.Completion) == chat.Completion)
+            var completed = await Task.WhenAny(server, chat.Completion, worldWipe.ShutdownRequested);
+            if (completed == worldWipe.ShutdownRequested)
+            {
+                await shutdown.CancelAsync();
+            }
+            if (completed == chat.Completion)
             {
                 await chat.Completion;
                 throw new InvalidOperationException("Chat stopped before the game listener.");
@@ -377,6 +384,14 @@ internal static class Program
             joined = true;
             await server;
         });
+        // Reaching here requires every producer and the final resident checkpoint to
+        // have stopped successfully. Never replace a save while a resident owner exists.
+        if (worldWipe.ShutdownRequested.IsCompletedSuccessfully && worldWipe.Pending is { } wipe)
+        {
+            ServerLog.Console.Information($"Backing up and wiping world. Backup directory: {wipe.BackupDirectory}");
+            WorldWipe.Execute(worldPath, wipe.BackupDirectory);
+            ServerLog.Console.Information("World wipe complete. Accounts retained. Restart Eden to initialize the fresh world.");
+        }
     }
 
     private static string ReadPassword()

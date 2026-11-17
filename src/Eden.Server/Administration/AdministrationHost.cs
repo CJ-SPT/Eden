@@ -34,7 +34,8 @@ internal static class AdministrationHost
         int port = DefaultPort,
         string? publicOrigin = null,
         IPAddress? listenAddress = null,
-        string? certificatePath = null
+        string? certificatePath = null,
+        WorldWipeRequest? worldWipe = null
     )
     {
         if (port is < 0 or > 65535)
@@ -84,6 +85,7 @@ internal static class AdministrationHost
             }
         });
         builder.Services.AddSingleton(administrators);
+        builder.Services.AddSingleton(worldWipe ?? new WorldWipeRequest(worldPath));
         builder.Services.ConfigureHttpJsonOptions(options =>
             options.SerializerOptions.UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow
         );
@@ -279,6 +281,26 @@ internal static class AdministrationHost
             (HttpContext context, IAntiforgery antiforgery) => new { token = antiforgery.GetAndStoreTokens(context).RequestToken }
         );
         api.MapGet("/performance", (ClaimsPrincipal user, AdministrationOperations operations) => operations.Performance(user));
+        api.MapPost(
+            "/world/wipe",
+            async (HttpContext context, AdministrationOperations operations, WorldWipeRequest wipe) =>
+            {
+                var form = await context.Request.ReadFormAsync();
+                var plan = await operations.WipeWorld(context.User, form["confirmation"].ToString(), wipe);
+                context.Response.OnCompleted(wipe.BeginShutdown);
+                string backup = WebUtility.HtmlEncode(plan.BackupDirectory);
+                return Results.Content(
+                    "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><title>World wipe requested</title>"
+                        + "<h1>World wipe requested</h1><p>Eden is stopping. The wipe will run only after a successful shutdown "
+                        + "and verified backup.</p><p>Backup directory: <code>"
+                        + backup
+                        + "</code></p>"
+                        + "<p>Wait for the server console to report completion before restarting. "
+                        + "If it reports a failure, keep the server stopped and inspect the error.</p></html>",
+                    "text/html"
+                );
+            }
+        );
         api.MapGet("/population", (ClaimsPrincipal user, AdministrationOperations operations) => operations.Population(user));
         api.MapGet("/mods", (ClaimsPrincipal user, AdministrationOperations operations) => operations.Mods(user));
         api.MapPost(

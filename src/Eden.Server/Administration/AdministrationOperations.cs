@@ -55,6 +55,12 @@ internal sealed partial class AdministrationOperations(
         }
     }
 
+    internal async Task<WorldWipePlan> WipeWorld(ClaimsPrincipal user, string confirmation, WorldWipeRequest wipe)
+    {
+        await Authorize(user);
+        return wipe.Prepare(confirmation);
+    }
+
     internal async Task<ConfigurationState> Read(ClaimsPrincipal user)
     {
         await Authorize(user);
