@@ -28,6 +28,50 @@ internal sealed partial class CapsuleerHauler
         return true;
     }
 
+    private bool TryPatrolTransitGate(StaticSpaceObject gate)
+    {
+        var policy = database.Settings.Capsuleers;
+        if (
+            _background
+            || !policy.RoamingPvp
+            || Work.Retreating
+            || Work.Freight?.Stacks.Length > 0
+            || Work.Resupply?.DestinationStationId is not null
+            || Work.LastPatrolledGateId == gate.Id
+            || !PatrolRules.Choose(pilotId, gate.Id ^ (Work.Journey?.Sequence ?? Work.DwellSequence), policy.RoamPercent)
+        )
+        {
+            return false;
+        }
+        var patrol = new PatrolProgress(PatrolKind.Transit, Pilot.SystemId);
+        if (!PatrolAllowed(patrol))
+        {
+            return false;
+        }
+        var fit = defense.Profile(pilotId);
+        if (
+            !fit.Combat
+            || !fit.RattingWeapons.Any(weapon => weapon.AvailableShots > 0)
+            || health.Read(pilotId, Now) is not { } current
+            || CapsuleerDefenseRules.Retreat(current, true)
+        )
+        {
+            return false;
+        }
+        _navigation.SetAtRest();
+        _work = Work with
+        {
+            LastPatrolledGateId = gate.Id,
+            Ratting = new(Work.DestinationStationId, [gate.Id], 0, TimeSpan.FromMinutes(RattingRules.MaximumMinutes).Ticks)
+            {
+                Phase = RattingPhase.Searching,
+                Patrol = patrol,
+                LastObservedAt = Now,
+            },
+        };
+        return true;
+    }
+
     private void LaunchPatrol(PatrolProgress patrol, long[] grids, long duration)
     {
         _work = Work with
@@ -54,7 +98,7 @@ internal sealed partial class CapsuleerHauler
         }
         if (activity.RemainingTicks <= 0 || !PatrolAllowed(patrol) || Work.Retreating)
         {
-            _work = Work with { Ratting = activity with { Phase = RattingPhase.Returning, TargetId = 0 }, Retreating = true };
+            EndSortie(activity);
             return null;
         }
         if (activity.Phase is not (RattingPhase.Searching or RattingPhase.Fighting) || _navigation.Warp is not null || _target is null)

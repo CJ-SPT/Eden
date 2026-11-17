@@ -2,6 +2,34 @@
 
 [Protocol index](../protocol.md)
 
+## Nullsec transit encounters
+
+On revision `b3f052d2`, a pilot reported a Sabre and Merlins leaving L3-I3K through the K-L690 gate.
+The K-L690 checkpoint showed one Sabre and three Merlins with ordinary onward orders to NDII-Q. Neither system has an
+NPC station. The decision to start a hunt previously required a station departure, and combat classification excluded
+Tech II interdictors even when the generated Sabre had a paid and loaded combat fit.
+
+On reaching jump range, eligible nullsec travelers now roll the existing roaming chance once per gate and journey.
+A successful pilot watches that gate using the ordinary roam search interval, sight grid, target selection, lock time,
+pursuit distance, ammunition and aggression rules. The fit must support combat and have usable weapons, and the pilot
+must have enough health to fight. An active freight delivery, supply trip or retreat takes precedence. Transit hunters
+reuse their saved journey, stay on their original leg through a checkpoint, and pay the normal weapons timer before jumping.
+The last watched gate is saved until the crossing, so approaching it again after combat cannot start another watch.
+Tech II interdictors qualify for combat when armed. Gate camps retain their separate roles and probe-launch policy.
+[EVE University gate camps](https://wiki.eveuniversity.org/Gatecamps).
+
+**Automated validation.** The solution build passed in 4.15 seconds. All 88 focused .NET cases passed in 44 seconds,
+including provisioned Sabre and Merlin travel through a stationless system, gate cloak, combat, freight and disabled roaming.
+Both Python policy suites passed (17 cases), and formatting and line-width verification passed.
+
+The focused .NET filter was
+`FullyQualifiedName~CapsuleerTrafficNavigationTests|FullyQualifiedName~Capsuleers.PatrolTests|FullyQualifiedName~GateCampTests|FullyQualifiedName~CapsuleerDefenseTests|FullyQualifiedName~CapsuleerDefenseModuleTests|FullyQualifiedName~CapsuleerDefenseLifecycleTests|FullyQualifiedName~PilotAwarenessTests|FullyQualifiedName~CapsuleerFitRetentionTests|FullyQualifiedName~CapsuleerDefenseFrameTests.ScoutReportsAndCampPartnersTackleAndFireOnTheSameVisibleShip|FullyQualifiedName~CapsuleerDefenseFrameTests.ArmedPatrolsOnOneGridWithFullObservers`.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer check.** After deployment, observe an outbound gate in a stationless nullsec system with roaming enabled
+and a visible ship in fighting range.
+
 ## Stalled gate traffic and belt pursuit
 
 A pilot reported apparent instant group departures on landing cloaked in Z-UZZN. On server revision `7c8f69b8`,

@@ -80,7 +80,11 @@ public static class CapsuleerDefenseRules
     public static bool CombatShip(HullClass hull, int tech, bool hasDamage) =>
         hasDamage
         && hull != HullClass.Shuttle
-        && (HullSupportRules.IsClass(hull, HullCohort.Combat, tech) || HullSupportRules.IsClass(hull, HullCohort.Small, tech));
+        && (
+            HullSupportRules.IsClass(hull, HullCohort.Combat, tech)
+            || HullSupportRules.IsClass(hull, HullCohort.Small, tech)
+            || tech == 2 && hull == HullClass.Interdictor
+        );
 
     public static bool Retreat(ShipHealth health, bool hasDamage)
     {

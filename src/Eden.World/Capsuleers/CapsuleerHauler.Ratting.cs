@@ -258,6 +258,13 @@ internal sealed partial class CapsuleerHauler
         }
     }
 
+    private void EndSortie(RattingProgress activity) =>
+        _work = Work with
+        {
+            Ratting = activity with { Phase = RattingPhase.Returning, TargetId = 0 },
+            Retreating = Work.Retreating || activity.Patrol?.Kind != PatrolKind.Transit,
+        };
+
     private void RattingStep()
     {
         var activity = Work.Ratting!;
@@ -278,6 +285,10 @@ internal sealed partial class CapsuleerHauler
         {
             case RattingPhase.TravellingToBelt:
                 Fly();
+                break;
+            case RattingPhase.Returning when activity.Patrol?.Kind == PatrolKind.Transit:
+                _work = Work with { Ratting = null };
+                BeginTravel();
                 break;
             case RattingPhase.Returning:
                 if (Work.TargetId != activity.StationId || _target?.Id != activity.StationId || Work.WaitingReason is not null)
@@ -339,6 +350,11 @@ internal sealed partial class CapsuleerHauler
     private void NextBelt()
     {
         var activity = Work.Ratting!;
+        if (activity.Patrol?.Kind == PatrolKind.Transit)
+        {
+            EndSortie(activity);
+            return;
+        }
         _work = Work with
         {
             VisitedBelts = PilotAwareness.Remember(Work.VisitedBelts, activity.Belts[activity.BeltIndex], Work.ActiveTicks),

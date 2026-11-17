@@ -70,6 +70,9 @@ a scrambler and three real disruption probes. Simulated travelers obey bubble dr
 Nullsec PvP roams default on. The default roam chance is 30% per eligible departure and 35% of new generated nullsec
 traffic pilots can receive combat fits. Both percentages accept 0 to 100. Existing fitted pilots can take a patrol after
 docking. They visit up to four local belts and gates, hold briefly on each grid and return to their station.
+Armed travelers also use the roam chance at outbound nullsec gates, including in stationless systems. A pilot selected
+to hunt waits 18–40 seconds for a visible target, can stay longer in a fight, then continues the original trip.
+Pilots delivering freight, shopping for supplies or retreating continue through the gate.
 
 ## Pilot awareness
 

@@ -10,6 +10,7 @@ public enum PatrolKind
 {
     Roam,
     GateCamp,
+    Transit,
 }
 
 public sealed record PatrolProgress(PatrolKind Kind, int SystemId)
@@ -28,7 +29,7 @@ public static class PatrolRules
         TravelerRoutineRules.Mix((ulong)pilot ^ TravelerRoutineRules.Mix((ulong)sequence)) % 100 < (ulong)percent;
 
     public static bool Allowed(PatrolProgress patrol, double security, CapsuleerPopulationPolicy policy) =>
-        patrol.Kind == PatrolKind.Roam
+        patrol.Kind is PatrolKind.Roam or PatrolKind.Transit
             ? security <= 0 && policy.RoamingPvp
             : policy.GateCamps
                 && (security <= 0 || policy.LowsecGateCamps && TrafficRules.SecurityBand(security) == TrafficSecurityBand.Low);
