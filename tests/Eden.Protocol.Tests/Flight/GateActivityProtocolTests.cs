@@ -11,6 +11,29 @@ namespace Eden.Protocol.Tests.Flight;
 
 public sealed class GateActivityProtocolTests
 {
+    [Fact]
+    public void PeerLossAndUnobservedWarpInOneRefreshPreserveTheObserversGrid()
+    {
+        using Fixture fixture = new();
+        var viewer = fixture.Viewer(1000001);
+        var peer = fixture.Actor(arriving: false) with { DepartureGate = null, DepartureAt = null };
+        var lost = peer with { Pilot = peer.Pilot with { PilotId = peer.Pilot.PilotId + 1, ShipId = peer.Pilot.ShipId + 1 } };
+        fixture.Space.Publish(peer);
+        fixture.Space.Publish(lost);
+        viewer.Refresh();
+        viewer.Updates.Clear();
+        var origin = peer.Pilot.Position!;
+        fixture.Space.Leave(lost.Pilot.ShipId);
+        fixture.Space.Publish(peer with { Warp = new(origin, origin + new SpacePosition(1_000_000, 0, 0), 1, peer.Pilot.Flight, 0) });
+        viewer.Refresh();
+        Assert.Equal(lost.Pilot.ShipId, Assert.Single(viewer.Updates.OfType<DestinyCommand.RemoveBall>()).Id);
+        Assert.Single(viewer.Updates.OfType<DestinyCommand.AddBalls>());
+        Assert.Empty(viewer.Updates.OfType<DestinyCommand.SetState>());
+        viewer.Updates.Clear();
+        viewer.Refresh();
+        Assert.Empty(viewer.Updates);
+    }
+
     [Theory]
     [InlineData(true, "Arrival")]
     [InlineData(false, "Departure")]
@@ -331,6 +354,6 @@ public sealed class GateActivityProtocolTests
 
         internal void Snapshot() => _scene.Snapshot(_context, _fixture.Space.Peers(_context.Pilot), _own);
 
-        internal void Refresh() => _scene.RefreshPeers(_context, _own);
+        internal void Refresh() => _scene.RefreshPeers(_context);
     }
 }

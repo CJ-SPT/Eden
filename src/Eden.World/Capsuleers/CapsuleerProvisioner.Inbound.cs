@@ -24,7 +24,7 @@ internal sealed partial class CapsuleerProvisioner
         var gate = request.Gate;
         using (synchronization.Enter("inbound observer snapshot"))
         {
-            if (!BothOccupied(gate))
+            if (!ReceiverOccupied(gate))
             {
                 return null;
             }
@@ -33,7 +33,7 @@ internal sealed partial class CapsuleerProvisioner
         int slot = checked(gateSlot + request.Visitor * TrafficJourneyRules.VisitorSlotStride);
         int community = gate.ArrivalGateId == gateSlot ? gate.ObserverSystemId : gate.SourceSystemId;
         var route = CapsuleerTrafficRoutes.Inbound(catalog, gate, request.BothObserved, request.Visitor);
-        if (route is null || route.Systems[0] != gate.SourceSystemId)
+        if (route is null)
         {
             return null;
         }
@@ -107,7 +107,7 @@ internal sealed partial class CapsuleerProvisioner
         }
         cancellationToken.ThrowIfCancellationRequested();
         using var owner = synchronization.Enter("inbound prepared founder");
-        if (!BothOccupied(gate))
+        if (!ReceiverOccupied(gate))
         {
             return null;
         }
@@ -131,10 +131,10 @@ internal sealed partial class CapsuleerProvisioner
         }
     }
 
-    private bool BothOccupied(WatchedTrafficGate gate)
+    private bool ReceiverOccupied(WatchedTrafficGate gate)
     {
         var systems = LiveWorld.Find(database.Path)?.CapsuleerActivity.Read().ActiveSystems;
-        return systems?.Contains(gate.SourceSystemId) == true && systems.Contains(gate.ObserverSystemId);
+        return systems?.Contains(gate.ObserverSystemId) == true;
     }
 
     internal long? EnsureInbound(WatchedTrafficGate gate, bool sourceObserved = false, int visitor = 0)

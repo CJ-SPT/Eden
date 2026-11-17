@@ -1,5 +1,9 @@
 # Protocol findings and milestone records
 
+The November 17 combat and traffic fixes cover [abandoned drones](protocol/drones.md#drone-control-on-ship-destruction--november-17-2026),
+[observer grid updates](protocol/navigation.md#observing-a-loss-and-a-warp-in-the-same-update--november-17-2026)
+and [returning traffic](protocol/capsuleers.md#traffic-returning-to-occupied-systems--november-17-2026).
+
 [Civilian danger and stripped belts](protocol/capsuleers.md#civilian-danger-and-stripped-belts--november-17-2026) covers visible threats at belts and gates, paid mining cycles and direct travel between belts.
 
 [Regional bot conflicts](protocol/capsuleers.md#regional-bot-conflicts--november-17-2026) adds persistent regional

@@ -433,3 +433,12 @@ Review and development checks corrected an extra query in the existing resident 
 **Optional maintainer checks:** launch/engage/recall light and medium drones on a Brutix; compare the owner and a second pilot's drone motion/effects; leave drones behind through warp/reconnect and confirm identity/damage retention. These checks are optional and do not block automated milestone completion.
 
 The November 6 startup compatibility follow-up defers pre-migration drone-cache hydration and reconciles missing drone schema on current saves. See the [startup/save repair evidence](combat.md#mining-and-drone-startup-compatibility-fixes-november-6-2026).
+
+
+## Drone control on ship destruction — November 17, 2026
+
+Ship destruction releases the lost hull's deployed drones in the transaction that settles the loss. A surviving
+observer sees the abandoned drone stop in space even if the controller was a bot and never advances again.
+The drone keeps its item identity and owner. Loading a system also releases drones tied to a recorded ship loss in older
+checkpoints. The fatal-volley check covers the observer contact and the reopened
+drone record. Live acceptance was not performed. [EVE University drone mechanics](https://wiki.eveuniversity.org/Drone_mechanics)

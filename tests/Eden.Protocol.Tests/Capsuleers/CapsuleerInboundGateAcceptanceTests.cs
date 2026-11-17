@@ -12,6 +12,7 @@ using Eden.Server.Maintenance;
 using Eden.World.Catalog;
 using Eden.World.Docking;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -120,6 +121,7 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
         first.Snapshot();
         using var second = factory.Create(secondPilot);
         second.Snapshot();
+        host.GetRequiredService<CapsuleerMaintenance>().Refresh();
         host.PrepareActivatedPopulations();
         var firstSession = Guid.NewGuid();
         var secondSession = Guid.NewGuid();
@@ -158,12 +160,19 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
             Assert.Equal(2, presence.Read().SelectedSessions);
             if (populationRevision != live.CapsuleerRevision)
             {
-                using WorldDbContext world = new(database.Path);
-                candidates = world
-                    .Set<SavedCapsuleerHauler>()
-                    .Where(h => h.RouteSystems != null && h.RouteSystems.Contains(receivingSystem) && h.RouteSystems.Contains(sourceSystem))
-                    .Select(h => h.PilotId)
-                    .ToArray();
+                candidates = WorldActionScope.Inspect(
+                    database,
+                    world =>
+                        world
+                            .Set<SavedCapsuleerHauler>()
+                            .Where(h =>
+                                h.RouteSystems != null
+                                && Enumerable.Contains(h.RouteSystems, receivingSystem)
+                                && Enumerable.Contains(h.RouteSystems, sourceSystem)
+                            )
+                            .Select(h => h.PilotId)
+                            .ToArray()
+                );
                 populationRevision = live.CapsuleerRevision;
             }
             var firstContacts = space.Peers(first.Pilot).Where(c => !humans.Contains(c.Pilot.PilotId)).ToArray();
@@ -391,12 +400,15 @@ public sealed class CapsuleerInboundGateAcceptanceTests(ITestOutputHelper output
             first.Snapshot();
             using var second = factory.Create(FindHuman(ships, database, humans[1]));
             second.Snapshot();
+            host.GetRequiredService<CapsuleerMaintenance>().Refresh();
             host.PrepareActivatedPopulations();
             clock.Seconds += 10;
             host.GetRequiredService<CapsuleerMaintenance>().Tick();
-            using WorldDbContext world = new(database.Path);
             long slot = Math.Min(gate.Id, gate.DestinationGateId!.Value) + TrafficJourneyRules.VisitorSlotStride;
-            var actor = world.Set<SavedCapsuleerAgent>().Single(a => a.Career == CapsuleerCareer.Hauling && a.Slot == slot);
+            var actor = WorldActionScope.Inspect(
+                database,
+                world => world.Set<SavedCapsuleerAgent>().Single(a => a.Career == CapsuleerCareer.Hauling && a.Slot == slot)
+            );
             pilot = actor.PilotId;
             ship = actor.FounderShipId;
             var observation = host.GetRequiredService<ICapsuleerScheduler>().Hauler(pilot)!;

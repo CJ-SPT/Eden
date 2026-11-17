@@ -157,7 +157,7 @@ public sealed class CapsuleerBackgroundPreparationTests
     }
 
     [Fact]
-    public void WatchingGateQueuesVisitorsOnlyWhenBothSystemsAreOccupied()
+    public void WatchingEitherEndQueuesSharedGateVisitors()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
         var configuration = new WorldConfigurationStore(f.Database, f.Clock);
@@ -184,9 +184,9 @@ public sealed class CapsuleerBackgroundPreparationTests
             Assert.Empty(saved.Set<SavedCapsuleerAgent>());
         }
         var scheduler = host.GetRequiredService<CapsuleerScheduler>();
-        Assert.Null(scheduler.NextInboundPreparation());
+        Assert.False(scheduler.NextInboundPreparation()!.BothObserved);
         using var source = host.GetRequiredService<IHumanPresence>().Select(90000002, gate.DestinationSystemId!.Value);
-        Assert.NotNull(scheduler.NextInboundPreparation());
+        Assert.True(scheduler.NextInboundPreparation()!.BothObserved);
         var preparation = host.GetRequiredService<ICapsuleerBackgroundPreparation>();
         var synchronization = host.GetRequiredService<IWorldSynchronization>();
         int planned = 0;

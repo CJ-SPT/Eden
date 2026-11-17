@@ -1,4 +1,5 @@
 using Eden.Data.World.Capsuleers;
+using Eden.Data.World.Combat;
 using Eden.Data.World.Drones;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
@@ -74,14 +75,22 @@ internal sealed partial class LiveCombatRuntime
             .Set<WorldDrone>()
             .Where(d => d.SystemId == system && !world.Set<SavedCapsuleerSuspension>().Any(pause => pause.PilotId == d.PilotId))
             .AsEnumerable()
-            .Select(d => new LiveDrone(
-                PilotDroneStore.Contact(world, catalog, d),
-                d.UpdatedAt,
-                d.ReadyAt,
-                d.CommandedAt,
-                d.ArmorDamage,
-                d.StructureDamage
-            ))
+            .Select(drone =>
+            {
+                // Older checkpoints can still assign a deployed drone to a hull recorded as lost.
+                if (drone.ControllerShipId != 0 && world.Set<ShipLoss>().Find(drone.ControllerShipId) is not null)
+                {
+                    PilotDroneStore.Abandon(world, drone);
+                }
+                return new LiveDrone(
+                    PilotDroneStore.Contact(world, catalog, drone),
+                    drone.UpdatedAt,
+                    drone.ReadyAt,
+                    drone.CommandedAt,
+                    drone.ArmorDamage,
+                    drone.StructureDamage
+                );
+            })
             .ToArray();
     }
 

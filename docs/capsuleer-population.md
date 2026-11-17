@@ -16,22 +16,18 @@ the main population switch pauses both, including miners. Reciprocal gate observ
 Suspended jobs retain their remaining timing and cannot produce offline rewards or duplicate starter grants.
 See [configuration details](world-configuration.md#autonomous-population).
 
-The station-traffic multiplier applies when a region is entered after restart. It scales
-each system's geography-based traffic roster; miners use their separate enable switch and remain limited to one per eligible
-system. New gate visitors are prepared when a gate is watched. Startup reuses saved slots and opens logins without waiting for
-expansion. The entered system activates first, followed by its region in background batches. Untouched regions stay dormant.
-Saved NPCs in dormant regions are retained without loading their simulation jobs. Unchanged completed rosters are reused.
-Regional preparation creates residents without continuously scheduling every resident. Previously visited systems and
-explicit gate visitors keep progressing remotely in roughly minute-scale batches. Selected human systems and unfinished
-interactions retain detailed simulation. Remote updates may lag under load; returning uses committed state and skips
-unprocessed time rather than replaying a history of actions. Existing paid work, ships, cargo and wallets are retained.
-Remote cursors, deadlines and role progress now remain authoritative in ordinary resident objects. Releasing native scene
-detail retains compact moving positions, and checkpoints capture these records together with the relational economic image.
-Ordinary warmed remote navigation and routine settlement do not issue SQL. Docking, gate transfers, finite resource payments,
-inventory and market transactions still use the existing SQL transaction boundary; eliminating those transactions is subsequent
-work, requiring shared resident ownership and equivalent rejection/rollback rules for both humans and bots.
-See [resident routine evidence](protocol/performance.md#resident-remote-bot-routines-november-11-2026).
-The simulation clock still pauses when no humans are selected and while the server is stopped.
+The station-traffic multiplier scales each system's geography-based traveler roster. Players activate the roster by
+selecting a character in the system. A traveler based there can finish a trip through empty systems and return while
+a player stays behind, including a player who stays docked. Dedicated miners work the belts in their home system.
+
+Watching either end of a stargate can bring additional visitors through it. Those pilots use the same ships, station
+waits and gate transfers throughout their trips. An established visitor can continue while either system is occupied,
+even after a player moves away from the gate. Players on the receiving side see arrivals appear in Local. Active
+roaming gangs and escorted shipments can also cross empty systems while anyone is playing.
+
+When the last player leaves the world, the simulation clock pauses. Re-entry resumes eligible pilots from saved
+positions and deadlines. [Returning traffic](protocol/capsuleers.md#traffic-returning-to-occupied-systems--november-17-2026)
+
 A failed community expansion rolls back that community while others continue. Completed communities survive and are reused on restart.
 Unexpected system and gate-visitor preparation failures retry automatically while their systems remain occupied, with
 backoff from one to thirty seconds. Already committed founders and visitors are reused. Retry waits wake early when
@@ -46,8 +42,8 @@ for measurements and automated persistence checks. A running server must be rebu
 
 
 The **Population** page shows the active settings and separates saved, enabled, paused, scheduled and watched-system pilots.
-Saved pilots include retained inactive pilots; watched-system pilots include docked guests. Preparation runs only for regions
-entered in this server session, using the active settings and traffic snapshot. Prepared totals can include dormant saved regions.
+Saved pilots include retained inactive pilots; watched-system pilots include docked guests. Community preparation runs for occupied systems using the active settings and traffic snapshot. Prepared totals can
+include saved communities whose systems are currently empty.
 Deferred systems retain a pending-preparation label. Transient failures retry while occupied; catalog-ineligible slots
 retain their existing deferral rules. Use **Refresh population** while pilots travel. Local shows the pilots currently in your system, rather than the entire saved population or each gate's reserved
 visitors. Ordinary Local receives complete membership batches; delayed Local keeps its normal privacy rules.

@@ -929,6 +929,25 @@ FullyQualifiedName~CapsuleerPopulationRetryTests|FullyQualifiedName~CapsuleerBac
 
 **Optional maintainer checks:** None. Server scheduling and saved-state behavior are covered by automated tests.
 
+## Traffic returning to occupied systems — November 17, 2026
+
+A player's presence in a traveler's home system keeps that pilot's route running through empty systems.
+A player watching a stargate can also admit the configured gate visitors. Both ends share each saved visitor
+identity. The unseen approach uses the reciprocal gate, preserves the ship and enters Local through the regular
+system transfer. If a player is already in the departure system, new visitors begin at their source station.
+Miners still work the belts of their home system. All routines pause when the last human leaves the world.
+
+The receiving-side session checks follow distinct ships for one simulated hour, including after restart with a
+visitor waiting at a station. The home hauler check also follows the same ship back after the only human leaves
+and re-enters the home system away from the gate. Both one-hour fixture runs observed five distinct pilots and
+12 arrivals. Live acceptance was not performed.
+
+The combined combat, flight and traffic validation used this .NET test filter.
+
+```text
+FullyQualifiedName~PilotDroneTests|FullyQualifiedName~CombatDroneTests|FullyQualifiedName~GateActivityProtocolTests|FullyQualifiedName~FlightBoundaryTests|FullyQualifiedName~ShipCollisionTests|FullyQualifiedName~CapsuleerHaulerTests|FullyQualifiedName~CapsuleerInbound|FullyQualifiedName~CapsuleerBackgroundPreparationTests|FullyQualifiedName~OccupiedCapsuleerSimulationTests|FullyQualifiedName~CapsuleerGateWatchTests|FullyQualifiedName~CapsuleerPopulationRetryTests|FullyQualifiedName~CapsuleerTrafficPerformanceTests|FullyQualifiedName~CapsuleerSchedulingTests|FullyQualifiedName~CapsuleerPopulationSettingsTests|FullyQualifiedName~DronePerformanceReplayTests
+```
+
 ## Occupied-system simulation - November 12, 2026
 
 Each solar system runs its capsuleer jobs while at least one connected player has selected a character there.

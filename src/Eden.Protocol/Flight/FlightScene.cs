@@ -568,23 +568,10 @@ internal sealed class FlightScene(
     internal void CorrectPosition(long id, SpacePosition position, SpacePosition velocity, int stamp) =>
         FlightEffects.CorrectPosition(send, id, position, velocity, stamp);
 
-    internal void RefreshPeers(FlightSceneContext context, ShipContact contact, bool preserveSourceState = false)
+    internal void RefreshPeers(FlightSceneContext context)
     {
         var current = space.Peers(context.Pilot);
         var previousById = _peers.ToDictionary(ship => ship.Pilot.ShipId);
-        if (
-            !preserveSourceState
-            && current.Any(ship =>
-                ship.Warp is not null
-                && previousById.TryGetValue(ship.Pilot.ShipId, out var old)
-                && old.Warp != ship.Warp
-                && old.AlignTo != ship.Warp.Destination
-            )
-        )
-        {
-            Snapshot(context, current, contact);
-            return;
-        }
         foreach (var departed in _peers.ExceptBy(current.Select(ship => ship.Pilot.ShipId), ship => ship.Pilot.ShipId))
         {
             if (space.SpatialStatus(departed.Pilot.ShipId).CloakModuleId != 0)
@@ -650,12 +637,13 @@ internal sealed class FlightScene(
             }
             long after = _peerOrderSequences.GetValueOrDefault(ship.Pilot.ShipId);
             bool missing = space.MissingOrders(ship.Pilot.ShipId, after) || ship.Stamp - previous.Stamp > SharedSpace.MovementHistoryTicks;
-            if (missing)
+            bool missedWarp = ship.Warp is { } warp && previous.Warp != warp && previous.AlignTo != warp.Destination;
+            if (missing && ship.Warp is null)
             {
                 CorrectPosition(ship.Pilot.ShipId, ship.Pilot.Position!, ship.Velocity, ship.Stamp);
                 ApplyCourse(context, ship);
             }
-            else
+            else if (!missing)
             {
                 foreach (var order in space.Orders(ship.Pilot.ShipId, after))
                 {
@@ -668,6 +656,11 @@ internal sealed class FlightScene(
                         send(order.Update);
                     }
                 }
+            }
+            if (ship.Warp is not null && (missing || missedWarp))
+            {
+                // Native AddBalls applies partial full state to an existing ID, including its original warp start stamp.
+                update(new DestinyCommand.AddBalls(Ballpark.AddShip(ship, space.Stamp(clock))));
             }
             _peerOrderSequences[ship.Pilot.ShipId] = space.OrderSequence(ship.Pilot.ShipId);
             if (ship.Warp is not null)

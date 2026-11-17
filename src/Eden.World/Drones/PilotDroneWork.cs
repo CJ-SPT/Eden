@@ -70,7 +70,7 @@ internal sealed partial class PilotDroneStore
         world.RemoveRange(world.Filter<WorldTackle>(e => e.ModuleId == id));
     }
 
-    private static void CancelWork(WorldAction world, WorldDrone drone, long now)
+    private static void CancelWork(WorldAction world, WorldDrone drone)
     {
         ClearDroneEffects(world, drone.ItemId);
         if (drone.WorkJson is not null)

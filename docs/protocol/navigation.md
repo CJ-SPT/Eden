@@ -1057,3 +1057,12 @@ The full .NET suite was not requested or run.
 
 **Optional maintainer checks:** Observe the native capacitor gauge during a long warp and a capacitor-limited
 partial warp.
+
+
+## Observing a loss and a warp in the same update — November 17, 2026
+
+A missed alignment previously caused the observer to receive a complete ballpark snapshot. Peer refresh now
+removes the departed hull and sends the warping ship's timed state through a single-ship AddBalls update.
+The same partial-state mechanism already handles NPC warps. The automated check exercises both events in
+one refresh and checks that a second refresh emits nothing. The original in-client reset remains unconfirmed.
+[Carbon Destiny state stream at 27ee40b](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Thunkers.cpp)

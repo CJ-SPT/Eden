@@ -754,7 +754,7 @@ internal sealed partial class FlightSession(
         PublishMotion();
         var contact = CreateContact();
         space.Publish(contact);
-        Scene.RefreshPeers(SceneContext, contact, preserveSourceState: SourceSceneLocked);
+        Scene.RefreshPeers(SceneContext);
     }
 
     internal IReadOnlyList<ShipContact> VisiblePeers => Scene.VisiblePeers;

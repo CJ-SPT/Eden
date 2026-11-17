@@ -85,6 +85,23 @@ public sealed class CapsuleerHaulerTests
             peer => peer.Pilot.PilotId == hauler && peer.Arriving
         );
         Assert.DoesNotContain(space.Peers(human with { Position = arrival.Position }), peer => peer.Pilot.PilotId == hauler);
+        destinationObserver.Dispose();
+        CapsuleerMinerTests.UpdateSelection(host, session, null);
+        var presence = host.GetRequiredService<IHumanPresence>();
+        Assert.Empty(presence.Read().ActiveSystems);
+        f.Clock.Seconds += 600;
+        worker.Tick();
+        CapsuleerMinerTests.UpdateSelection(host, session, new(human.PilotId, human.Name, human.CorpId, SourceSystem, 0));
+        var rejoined = chat.Authenticate(human.PilotId.ToString(), chat.IssueToken(session));
+        chat.Join(rejoined.Id, room, null);
+        Assert.Equal(new[] { SourceSystem }, presence.Read().ActiveSystems);
+        for (int i = 0; i < 3000 && chat.User(hauler)?.SystemId != SourceSystem; i++)
+        {
+            f.Clock.Seconds++;
+            worker.Tick();
+        }
+        Assert.Contains(chat.Members(rejoined.Id, room), p => p.Id == hauler);
+        Assert.Equal(arrival.ShipId, ships.FindPilot(-1, hauler)!.ShipId);
     }
 
     [Fact]

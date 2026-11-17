@@ -397,7 +397,7 @@ internal sealed partial class PilotDroneStore(
             {
                 CollectInterruptedMining(world, catalog, pilot, drone, now);
             }
-            CancelWork(world, drone, now);
+            CancelWork(world, drone);
             if (workOrder)
             {
                 var previous = ReadWork(drone);
@@ -929,11 +929,21 @@ internal sealed partial class PilotDroneStore(
     public void Release(long pilotId, long shipId)
     {
         using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [shipId]));
-        var world = transaction.World;
-        foreach (var drone in world.Set<WorldDrone>().Where(d => d.PilotId == pilotId && d.ControllerShipId == shipId))
-        {
-            Release(drone);
-        }
+        Release(transaction.World, pilotId, shipId);
         transaction.Commit();
+    }
+
+    internal static void Release(WorldAction world, long pilotId, long shipId)
+    {
+        foreach (var drone in world.Filter<WorldDrone>(d => d.PilotId == pilotId && d.ControllerShipId == shipId))
+        {
+            Abandon(world, drone);
+        }
+    }
+
+    internal static void Abandon(WorldAction world, WorldDrone drone)
+    {
+        CancelWork(world, drone);
+        Release(drone);
     }
 }

@@ -277,9 +277,15 @@ internal sealed partial class CapsuleerScheduler(
         }
         var ships = localShips.ToArray();
         var pilots = world.Pilots.Where(p => Enumerable.Contains(ships, p.ActiveShipId)).Select(p => p.Id).ToArray();
+        // A visitor slot stores the smaller reciprocal gate ID, plus a stride per visitor.
+        var lanes = database.Catalog.GatesInSystem(system).Select(gate => Math.Min(gate.Id, gate.DestinationId)).ToArray();
         var agents = world
             .Set<SavedCapsuleerAgent>()
-            .Where(agent => Enumerable.Contains(pilots, agent.PilotId))
+            .Where(agent =>
+                Enumerable.Contains(pilots, agent.PilotId)
+                || agent.Career == CapsuleerCareer.Hauling
+                    && (agent.CommunitySystemId == system || Enumerable.Contains(lanes, agent.Slot % TrafficJourneyRules.VisitorSlotStride))
+            )
             .OrderBy(a => a.PilotId)
             .ToArray();
         Register(world, agents);
@@ -299,6 +305,14 @@ internal sealed partial class CapsuleerScheduler(
                 continue;
             }
             _communities[pilot] = agent.CommunitySystemId;
+            if (
+                agent.Career == CapsuleerCareer.Hauling
+                && agent.Slot >= CapsuleerPopulationRules.MaximumHomeRosterSlots
+                && database.Catalog.Gates.TryGetValue(agent.Slot % TrafficJourneyRules.VisitorSlotStride, out var lane)
+            )
+            {
+                _visitorDestinations[pilot] = lane.DestinationSystemId;
+            }
             if (!Current.ContainsKey(pilot))
             {
                 var saved = world.Set<SavedCapsuleerJob>().Find(pilot)!;
@@ -365,9 +379,9 @@ internal sealed partial class CapsuleerScheduler(
                         executing = job;
                         long pilot = job.PilotId;
                         int system = _locations[pilot];
-                        if (!activity.ActiveSystems.Contains(system) && !ActiveOperation(pilot))
+                        if (!activity.ActiveSystems.Contains(system) && !ServesOccupiedSystem(pilot, activity.ActiveSystems))
                         {
-                            throw new InvalidOperationException("A capsuleer job requires a player in its system.");
+                            throw new InvalidOperationException("The capsuleer job has no active system or travel assignment.");
                         }
                         using var systemContext = Live?.UseSystem(system);
                         if (_resuming.TryGetValue(pilot, out long entry))
@@ -416,7 +430,12 @@ internal sealed partial class CapsuleerScheduler(
                         {
                             using var phase = SessionPerformance.Phase("traffic.haulerAction");
                             bool wasGang = ActiveOperation(job.PilotId);
-                            next = hauler.Execute(job, destinyStamp, preparedJourney: preparedJourney);
+                            next = hauler.Execute(
+                                job,
+                                destinyStamp,
+                                background: !activity.ActiveSystems.Contains(system) && !wasGang,
+                                preparedJourney: preparedJourney
+                            );
                             _membershipDirty |= wasGang != ActiveOperation(job.PilotId);
                             Current[job.PilotId] = next;
                             _completed++;
@@ -433,7 +452,7 @@ internal sealed partial class CapsuleerScheduler(
                         {
                             throw new InvalidDataException("The capsuleer job has no supported role.");
                         }
-                        if (!activity.ActiveSystems.Contains(_locations[pilot]) && !ActiveOperation(pilot))
+                        if (!activity.ActiveSystems.Contains(_locations[pilot]) && !ServesOccupiedSystem(pilot, activity.ActiveSystems))
                         {
                             PausePilot(pilot, throughTicks);
                             _running.Remove(pilot);
@@ -498,9 +517,7 @@ internal sealed partial class CapsuleerScheduler(
     {
         var policy = _populationSettings.Settings.Capsuleers;
         IReadOnlyList<WatchedTrafficGate> gates =
-            policy.Enabled && policy.GateVisitors > 0 && activity.ActiveSystems.Count > 1
-                ? gateWatch.Read(activity).Where(gate => activity.ActiveSystems.Contains(gate.SourceSystemId)).ToArray()
-                : [];
+            policy.Enabled && policy.GateVisitors > 0 && activity.ActiveSystems.Count > 0 ? gateWatch.Read(activity) : [];
         if (
             !_membershipDirty
             && _reconciledResumes == activity.Resumes
@@ -535,7 +552,7 @@ internal sealed partial class CapsuleerScheduler(
                 Live?.CombatForSystem(state.SystemId)?.ReleaseObserverContacts(state.SystemId);
             }
         }
-        ReconcileInbound(gates);
+        ReconcileInbound(gates, activity.ActiveSystems);
         var running = _nextRunning;
         running.Clear();
         foreach (int system in activity.ActiveSystems)
@@ -550,7 +567,7 @@ internal sealed partial class CapsuleerScheduler(
         }
         if (activity.Active)
         {
-            foreach (long pilot in _haulers.Keys.Where(ActiveOperation))
+            foreach (long pilot in _haulers.Keys.Where(pilot => ServesOccupiedSystem(pilot, activity.ActiveSystems)))
             {
                 if (!_suspended.Contains(pilot))
                 {
