@@ -104,7 +104,8 @@ internal sealed class CapsuleerMiner(
         }
         _nextLook = elapsed + TimeSpan.FromSeconds(PilotAwareness.LookSeconds(pilotId)).Ticks;
         if (
-            TrafficRules.SecurityBand(database.Catalog.SystemSecurity.GetValueOrDefault(Pilot.SystemId, 1)) == TrafficSecurityBand.High
+            TrafficRules.SecurityBand(database.Catalog.Definition(CapsuleerProvisioningCatalog.Security, Pilot.SystemId))
+                == TrafficSecurityBand.High
             || !defense.Observe(Pilot, elapsed).Any(s => PilotAwareness.ArmedHull(s.Hull))
         )
         {

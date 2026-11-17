@@ -92,6 +92,7 @@ internal sealed partial class CapsuleerProvisioner
                 reservations: reservations,
                 roster: roster
             );
+            profile ??= CapsuleerPatrolFit.Select(catalog, database.Settings.Capsuleers, seed, community, slot);
             if (profile is null && !CapsuleerFreight.Available(catalog, database.Settings.Capsuleers.Freight))
             {
                 return null;

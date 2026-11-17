@@ -360,7 +360,11 @@ internal sealed partial class CapsuleerHauler(
         AdvanceRattingClock(job.DueTicks);
         if (
             Work.Ratting is { } sortie
-            && !(sortie.AnomalyPosition is null ? database.Settings.Capsuleers.BeltRatting : database.Settings.Capsuleers.AnomalyRatting)
+            && !(
+                sortie.Patrol is { } patrol ? PatrolAllowed(patrol)
+                : sortie.AnomalyPosition is null ? database.Settings.Capsuleers.BeltRatting
+                : database.Settings.Capsuleers.AnomalyRatting
+            )
         )
         {
             _work = Work with { Ratting = sortie with { Phase = RattingPhase.Returning }, Retreating = true };
@@ -1099,7 +1103,8 @@ internal sealed partial class CapsuleerHauler(
         }
         _nextLook = Work.ActiveTicks + TimeSpan.FromSeconds(PilotAwareness.LookSeconds(pilotId)).Ticks;
         if (
-            TrafficRules.SecurityBand(database.Catalog.SystemSecurity.GetValueOrDefault(Pilot.SystemId, 1)) != TrafficSecurityBand.High
+            TrafficRules.SecurityBand(database.Catalog.Definition(CapsuleerProvisioningCatalog.Security, Pilot.SystemId))
+                != TrafficSecurityBand.High
             && defense.Observe(Pilot, Work.ActiveTicks).Count(s => PilotAwareness.ArmedHull(s.Hull))
                 >= (PilotAwareness.Cautious(pilotId) ? 2 : 3)
         )

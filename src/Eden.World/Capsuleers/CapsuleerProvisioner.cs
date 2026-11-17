@@ -414,9 +414,16 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
                     reservations: _startupReservations
                 )
                 : null;
+        var fittedProfile =
+            trafficProfile
+            ?? (
+                career == CapsuleerCareer.Hauling
+                    ? CapsuleerPatrolFit.Select(catalog, database.Settings.Capsuleers, seed, site.SystemId, slot)
+                    : null
+            );
         if (
             career == CapsuleerCareer.Hauling
-            && trafficProfile is null
+            && fittedProfile is null
             && !CapsuleerFreight.Available(catalog, database.Settings.Capsuleers.Freight)
         )
         {
@@ -425,7 +432,7 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         int hull =
             career == CapsuleerCareer.Mining
                 ? CapsuleerCommunityStore.VentureType
-                : trafficProfile?.HullTypeId
+                : fittedProfile?.HullTypeId
                     ?? CapsuleerFreight.Hull(catalog, seed, site.SystemId, slot, database.Settings.Capsuleers.Freight.VariedHulls);
         int station = site.HomeStationId!.Value;
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
@@ -527,7 +534,7 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
                 catalog,
                 origin.RaceId,
                 hull,
-                trafficProfile,
+                fittedProfile,
                 pilot,
                 ship,
                 station,
@@ -536,12 +543,12 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
                 mining: career == CapsuleerCareer.Mining
             );
         }
+        if (fittedProfile is not null && !blueprint)
+        {
+            TrafficFitting.Apply(world, catalog, pilot, ship, fittedProfile, now);
+        }
         if (trafficProfile is not null)
         {
-            if (!blueprint)
-            {
-                TrafficFitting.Apply(world, catalog, pilot, ship, trafficProfile, now);
-            }
             TrafficProvisioning.Record(database, world, pilot, trafficProfile);
         }
         if (career == CapsuleerCareer.Mining && !blueprint)

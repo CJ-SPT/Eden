@@ -54,6 +54,10 @@ public sealed class SettingsForm
     public bool BeltRatting { get; set; }
     public bool AnomalyRatting { get; set; }
 
+    public bool RoamingPvp { get; set; }
+    public int RoamPercent { get; set; }
+    public int GeneratedCombatPercent { get; set; }
+
     public bool GlobalProvisioning { get; set; }
     public bool SimulatedPilots { get; set; }
     public bool SimulatedMiners { get; set; }
@@ -281,6 +285,9 @@ public sealed class SettingsForm
             SituationalAwareness = settings.Capsuleers.SituationalAwareness,
             BeltRatting = settings.Capsuleers.BeltRatting,
             AnomalyRatting = settings.Capsuleers.AnomalyRatting,
+            RoamingPvp = settings.Capsuleers.RoamingPvp,
+            RoamPercent = settings.Capsuleers.RoamPercent,
+            GeneratedCombatPercent = settings.Capsuleers.GeneratedCombatPercent,
             GateVisitors = settings.Capsuleers.GateVisitors,
             CheckpointSeconds = settings.Simulation.CheckpointSeconds,
             MarketPollMilliseconds = settings.Simulation.MarketPollMilliseconds,
@@ -344,6 +351,9 @@ public sealed class SettingsForm
                 SituationalAwareness = SituationalAwareness,
                 BeltRatting = BeltRatting,
                 AnomalyRatting = AnomalyRatting,
+                RoamingPvp = RoamingPvp,
+                RoamPercent = RoamPercent,
+                GeneratedCombatPercent = GeneratedCombatPercent,
                 Freight = new(
                     FreightVariedHulls,
                     FreightOrdinaryMinimumIsk,

@@ -12,6 +12,10 @@ public static class CapsuleerPopulationRules
     public static void Validate(CapsuleerPopulationPolicy policy)
     {
         policy.Freight.Validate();
+        if (policy.RoamPercent is < 0 or > 100 || policy.GeneratedCombatPercent is < 0 or > 100)
+        {
+            throw new InvalidDataException("Patrol percentages must be between 0 and 100.");
+        }
         if (policy.TrafficMultiplier is < 0 or > MaximumTrafficMultiplier || policy.GateVisitors is < 0 or > MaximumGateVisitors)
         {
             throw new InvalidDataException("Simulated-pilot traffic density must be between 0 and 10, and gate visitors between 0 and 16.");

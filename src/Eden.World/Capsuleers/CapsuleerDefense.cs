@@ -67,6 +67,9 @@ internal sealed class CapsuleerDefense(
     internal PilotSighting[] Observe(DockedPilot pilot, long elapsed) =>
         pilot.Position is null ? [] : presence.Observe(pilot.SystemId, pilot.ShipId, pilot.Position, elapsed / TimeSpan.TicksPerSecond);
 
+    internal CapsuleerAttacker? PatrolTarget(DockedPilot pilot, long target, SpacePosition anchor, long now) =>
+        LiveCombatRuntime.Find(database.Path)?.PatrolTarget(pilot, target, anchor, presence, now);
+
     internal CapsuleerDefenseResult Advance(
         DockedPilot pilot,
         NavigationState navigation,

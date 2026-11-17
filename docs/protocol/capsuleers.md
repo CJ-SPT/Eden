@@ -2,6 +2,45 @@
 
 [Protocol index](../protocol.md)
 
+## Nullsec PvP roams
+
+Armed pilots can undock and patrol up to four local belts and gates. Hunters wait for visible targets, a real lock and
+a legal shot. They spend ammunition and capacitor and give up pursuit beyond 75 km. Capsules and player corporation or
+alliance mates are excluded. Patrols, targets and their deadlines survive checkpoints and population pauses. Generated
+nullsec combat pilots use owned rail Merlins. Imported pilots retain their recorded fits. The circuit and fitting mix
+are Eden policies. [EVE University solo PvP](https://wiki.eveuniversity.org/Solo_PvP).
+
+**Automated validation.** The exact legality test covers nullsec attacks, target lock delay, damage, lost presence,
+low/high security refusals and 100 warm revalidations without SQL or fit work. The scheduler test covers undock,
+multiple grids and return. Ten armed pilots and two full observer sessions ran 36 one-second frames. All ten fired.
+The last 20 frames took 6.77 ms median, 7.98 ms p95 and 8.97 ms maximum in the isolated run, with zero SQL commands,
+connections or fitting calculations. Checkpoint writing was outside this measurement. The earlier 28.01 ms freight timing
+covers 200 unchanged-presentation ticks.
+
+The isolated scale run measured the entire one-second frame, draining all due jobs before completing every distinct
+observer session update and encoding its packets. All pilots fired. Two origin communities supplied the largest fleet.
+The 20 warmed frames in each case recorded zero SQL commands, connections and fit calculations.
+
+| Pilots | Observers | Median ms | p95 ms | Max ms | Max maintenance wakes | Checkpoint capture / projection / write ms |
+| ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 50 | 2 | 21.92 | 32.56 | 34.02 | 2 | 0.53 / 20.69 / 16.55 |
+| 50 | 4 | 12.26 | 15.03 | 15.16 | 2 | 0.29 / 7.65 / 14.72 |
+| 100 | 2 | 32.44 | 37.46 | 38.02 | 4 | 0.80 / 18.04 / 14.00 |
+| 100 | 4 | 28.41 | 38.97 | 39.04 | 4 | 0.50 / 17.84 / 19.21 |
+
+The isolated matrix used the exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerDefenseFrameTests.ArmedPatrolsOnOneGridWithFullObservers`.
+Results reflect one run per combination on the synthetic railgun fleet. File saves were timed separately.
+
+The combined patrol, awareness, defense, provisioning, fit, population pause, performance and administration selection passed
+121 cases in 42 seconds. The clean solution build took 7.72 seconds. The Python catalog and formatting policy suites passed
+8 and 9 cases respectively. Local security selection caches only the requested system and passes the isolated provisioning
+regression with an unreadable unrelated system record.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Observe a nullsec hunter locking a visible ship and breaking pursuit after it warps away.
+
 ## Pilot awareness and ratting
 
 Visible contacts are indexed per system and spatial cell. A pilot samples up to 16 entries per neighboring cell and

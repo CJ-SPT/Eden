@@ -36,6 +36,10 @@ internal sealed partial class CapsuleerHauler
 
     private CapsuleerAttacker? ProactiveTarget()
     {
+        if (Work.Ratting is { Patrol: { } patrol } sortie)
+        {
+            return Pilot.Position is not null && !_background ? PatrolTarget(sortie, patrol) : null;
+        }
         if (Work.Ratting is not { Phase: RattingPhase.Fighting } activity || _background || Pilot.Position is null)
         {
             return null;
@@ -74,6 +78,10 @@ internal sealed partial class CapsuleerHauler
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.launchActivity");
         var supplies = Work.Resupply!;
+        if (TryLaunchSortie(supplies))
+        {
+            return true;
+        }
         if (supplies.DestinationStationId is null && supplies.Requirements.Length > 0)
         {
             var avoided = (Work.Routine?.Threats ?? []).Where(t => t.ExpiresAt > Work.ActiveTicks).Select(t => t.SystemId).ToHashSet();
@@ -106,8 +114,13 @@ internal sealed partial class CapsuleerHauler
                 return true;
             }
         }
+        return false;
+    }
+
+    private bool TryLaunchSortie(ResupplyProgress supplies)
+    {
         var policy = database.Settings.Capsuleers;
-        if (!policy.BeltRatting && !policy.AnomalyRatting)
+        if (!policy.BeltRatting && !policy.AnomalyRatting && !policy.RoamingPvp)
         {
             return false;
         }
@@ -126,7 +139,7 @@ internal sealed partial class CapsuleerHauler
             || !profile.Combat
             || TrafficRules.LightHull((HullClass)Pilot.ShipGroupId)
             || profile.RattingWeapons.Length == 0
-            || supplies.Requirements.Any(r => !r.Drone)
+            || !profile.RattingWeapons.Any(w => w.AvailableShots > 0)
             || CapsuleerDefenseRules.Retreat(
                 PilotHealthStore.Read(
                     _operation.World,
@@ -145,7 +158,11 @@ internal sealed partial class CapsuleerHauler
         }
         long sequence = checked(Work.ActivitySequence + 1);
         _work = Work with { ActivitySequence = sequence };
-        if (!RattingRules.Choose(pilotId, sequence))
+        if (TryLaunchPatrol(sequence))
+        {
+            return true;
+        }
+        if (supplies.Requirements.Any(r => !r.Drone) || !RattingRules.Choose(pilotId, sequence))
         {
             return false;
         }
@@ -273,6 +290,14 @@ internal sealed partial class CapsuleerHauler
                 break;
             case RattingPhase.Searching:
             case RattingPhase.Fighting:
+                if (activity.Patrol is { } patrol)
+                {
+                    if (patrol.LeaveGridAt > 0 && Work.ActiveTicks >= patrol.LeaveGridAt)
+                    {
+                        NextBelt();
+                    }
+                    break;
+                }
                 if (activity.AnomalyPosition is not null && activity.Phase == RattingPhase.Searching)
                 {
                     ratting.Arrive(Pilot, Now);
@@ -315,7 +340,14 @@ internal sealed partial class CapsuleerHauler
         }
         else
         {
-            _work = Work with { Ratting = activity with { BeltIndex = activity.BeltIndex + 1 } };
+            _work = Work with
+            {
+                Ratting = activity with
+                {
+                    BeltIndex = activity.BeltIndex + 1,
+                    Patrol = activity.Patrol is { } patrol ? patrol with { LeaveGridAt = 0, NextLook = 0 } : null,
+                },
+            };
             FlyToBelt();
         }
     }

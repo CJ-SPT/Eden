@@ -14,6 +14,7 @@ public enum RattingPhase
 public sealed record RattingProgress(int StationId, long[] Belts, int BeltIndex, long RemainingTicks)
 {
     public Eden.Gameplay.Flight.SpacePosition? AnomalyPosition { get; init; }
+    public PatrolProgress? Patrol { get; init; }
     public long LastObservedAt { get; init; }
     public RattingPhase Phase { get; init; }
     public long TargetId { get; init; }

@@ -223,6 +223,13 @@ else
                 <label><InputCheckbox @bind-Value="Form.SituationalAwareness" />React to ships and remember dangerous belts</label>
                 <label><InputCheckbox @bind-Value="Form.BeltRatting" />Run belt-ratting sorties</label>
                 <label><InputCheckbox @bind-Value="Form.AnomalyRatting" />Run ordinary combat anomalies</label>
+                <label><InputCheckbox @bind-Value="Form.RoamingPvp" />Nullsec PvP roams</label>
+                <label>Roam chance per departure (%)
+                    <InputNumber @bind-Value="Form.RoamPercent" />
+                </label>
+                <label>Combat fits among generated nullsec pilots (%)
+                    <InputNumber @bind-Value="Form.GeneratedCombatPercent" />
+                </label>
                 <label><InputCheckbox @bind-Value="Form.FreightVariedHulls" />Use regional hauler hulls</label>
                 <label>Ordinary freight minimum budget (ISK)
                     <InputNumber @bind-Value="Form.FreightOrdinaryMinimumIsk" />

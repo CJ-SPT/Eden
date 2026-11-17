@@ -37,7 +37,19 @@ public static class CapsuleerPauseRules
         return work with
         {
             Defense = defense,
-            Ratting = work.Ratting is { } ratting ? ratting with { LastObservedAt = now } : null,
+            Ratting = work.Ratting is { } ratting
+                ? ratting with
+                {
+                    LastObservedAt = now,
+                    Patrol = ratting.Patrol is { } patrol
+                        ? patrol with
+                        {
+                            NextLook = patrol.NextLook == 0 ? 0 : checked(patrol.NextLook + delay),
+                            LeaveGridAt = patrol.LeaveGridAt == 0 ? 0 : checked(patrol.LeaveGridAt + delay),
+                        }
+                        : null,
+                }
+                : null,
             ActiveTicks = checked(work.ActiveTicks + delay),
             ClockOffsetTicks = checked(work.ClockOffsetTicks + delay),
             DueTicks = work.DueTicks == 0 ? 0 : checked(work.DueTicks + delay),

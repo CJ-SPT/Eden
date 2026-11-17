@@ -107,6 +107,61 @@ public sealed class CapsuleerDefenseTests
     }
 
     [Theory]
+    [InlineData(0, true)]
+    [InlineData(.2, false)]
+    [InlineData(.8, false)]
+    public void PatrolUsesVisibleLegalTargetsAndPaysForAnActualAttack(double security, bool legal)
+    {
+        using NpcCombatTests.Fixture f = new(liveWorld: true, useTestClock: true);
+        ConcordTests.Catalog(f, security);
+        var database = new WorldDatabase(f.Db.Path);
+        using (CatalogDbContext catalog = new(database.CatalogPath, writable: true))
+        {
+            string data = System.Text.Json.JsonSerializer.Serialize(new { securityStatus = security });
+            catalog.Database.ExecuteSql($"INSERT OR REPLACE INTO SourceRecord VALUES ('client/systems','30000144',{data})");
+        }
+        var services = f.Db.Services;
+        var space = services.GetRequiredService<SharedSpace>();
+        var defense = services.GetRequiredService<CapsuleerDefense>();
+        var pilot = f.Pilot;
+        var anchor = pilot.Position!;
+        f.Db.Store.SetPosition(AttackerShip, anchor + new SpacePosition(1000, 0, 0), SystemId);
+        var enemy = f.Db.Store.FindPilot(1000002)!;
+        var contact = new ShipContact(PilotContact.From(enemy), SpacePosition.Zero, null, 0, null);
+        space.Publish(new(PilotContact.From(pilot), SpacePosition.Zero, null, 0, null));
+        space.Publish(contact with { Arriving = true });
+        Assert.Null(defense.PatrolTarget(pilot, enemy.ShipId, anchor, f.Clock.Now));
+        space.Publish(contact);
+        var target = defense.PatrolTarget(pilot, enemy.ShipId, anchor, f.Clock.Now);
+        Assert.Equal(legal, target is not null);
+        if (!legal)
+        {
+            return;
+        }
+        Assert.Null(defense.PatrolTarget(pilot, enemy.ShipId, anchor + new SpacePosition(200_000, 0, 0), f.Clock.Now));
+        using (var metrics = SessionPerformance.Begin("warm patrol revalidation", _ => { }, force: true)!)
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                Assert.NotNull(defense.PatrolTarget(pilot, enemy.ShipId, anchor, f.Clock.Now));
+            }
+            Assert.Equal(0, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+            Assert.Equal(0, metrics.FittingCalculations);
+        }
+        NavigationState navigation = new();
+        var before = f.Health.Read(enemy.PilotId, f.Clock.Now);
+        var locking = defense.Advance(pilot, navigation, null, f.Clock.Now, 0, [], proactive: target);
+        Assert.Empty(locking.State!.Cycles);
+        f.Clock.Milliseconds += (Assert.Single(locking.State.Locks).ReadyAt - f.Clock.Now) / TimeSpan.TicksPerMillisecond + 1;
+        var fired = defense.Advance(locking.Pilot, navigation, locking.State, f.Clock.Now, 10, [], proactive: target);
+        Assert.Contains(fired.State!.Cycles, cycle => cycle.ModuleId == f.Module && cycle.Effect == DogmaEffect.LaserFired);
+        Assert.True(f.Health.Read(enemy.PilotId, f.Clock.Now).Remaining.Shield < before.Remaining.Shield);
+        space.Leave(enemy.ShipId);
+        Assert.Null(defense.PatrolTarget(pilot, enemy.ShipId, anchor, f.Clock.Now));
+    }
+
+    [Theory]
     [InlineData(0)]
     [InlineData(.2)]
     [InlineData(.8)]

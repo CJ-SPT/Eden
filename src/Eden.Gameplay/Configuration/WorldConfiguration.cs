@@ -94,6 +94,9 @@ public sealed record CapsuleerPopulationPolicy(
     int GateVisitors = TrafficJourneyRules.GateVisitorCount
 )
 {
+    public bool RoamingPvp { get; init; } = true;
+    public int RoamPercent { get; init; } = 30;
+    public int GeneratedCombatPercent { get; init; } = 35;
     public bool SituationalAwareness { get; init; } = true;
     public bool BeltRatting { get; init; } = true;
     public bool AnomalyRatting { get; init; } = true;

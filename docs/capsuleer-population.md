@@ -53,6 +53,12 @@ retain their existing deferral rules. Use **Refresh population** while pilots tr
 visitors. Ordinary Local receives complete membership batches; delayed Local keeps its normal privacy rules.
 
 
+## PvP roams
+
+Nullsec PvP roams default on. The default roam chance is 30% per eligible departure and 35% of new generated nullsec
+traffic pilots can receive combat fits. Both percentages accept 0 to 100. Existing fitted pilots can take a patrol after
+docking. They visit up to four local belts and gates, hold briefly on each grid and return to their station.
+
 ## Pilot awareness
 
 World Configuration exposes situational awareness, belt ratting and combat anomaly ratting independently. All three default
