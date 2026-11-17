@@ -180,7 +180,9 @@ internal sealed partial class LiveCombatRuntime
             pilot.ActiveShipId,
             pilot.CorporationId,
             pilot.ActiveShip.TypeId,
-            position?.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId,
+            position?.SystemId
+                ?? (pilot.ActiveShip.StructureId is long structureId ? world.Structure(structureId)?.SystemId : null)
+                ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId,
             position is null ? null : new SpacePosition(position.X, position.Y, position.Z),
             hull.Radius ?? 0,
             attributes.GetValueOrDefault(DogmaAttributeId.MaxTargetRange),

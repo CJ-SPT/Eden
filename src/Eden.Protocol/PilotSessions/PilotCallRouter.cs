@@ -154,6 +154,10 @@ internal sealed class PilotCallRouter(
     IAlliances? alliances = null
 )
 {
+    // Build 3662168 eveMoniker.GetLocationBindParams uses inventory group IDs for its moniker tuple.
+    private const int SolarSystemGroupId = 5;
+    private const int StationGroupId = 15;
+
     public string ResolveService(PilotCallContext context, object?[] route, object? objectId)
     {
         return route switch
@@ -323,7 +327,10 @@ internal sealed class PilotCallRouter(
             }
             if (method == "MachoBindObject" && args.Length == 2)
             {
-                long locationGroup = context.Pilot.Position is null ? (context.Pilot.InStructure ? context.Pilot.Station.GroupId : 15) : 5;
+                // Upwell monikers bind in the solar system, including while the real ship remains docked.
+                bool systemLocation = context.Pilot.Position is not null || context.Pilot.InStructure;
+                long bindLocation = systemLocation ? context.Pilot.SystemId : context.Pilot.DockedLocationId;
+                long locationGroup = systemLocation ? SolarSystemGroupId : StationGroupId;
                 if (
                     service == "insuranceSvc"
                     && (
@@ -363,14 +370,20 @@ internal sealed class PilotCallRouter(
                     && (
                         args[0] is not object?[] bind
                         || bind is not [long location, long group]
-                        || location != context.Pilot.LocationId
+                        || location != bindLocation
                         || group != locationGroup
                     )
                 )
                 {
                     return PilotCallResult.Unsupported;
                 }
-                if (service is "beyonce" or "entity" && (context.Pilot.Position is null || !Equals(args[0], (long)context.Pilot.SystemId)))
+                if (
+                    service is "beyonce" or "entity"
+                    && (
+                        context.Pilot.Position is null && context.ControlledStructureId is null
+                        || !Equals(args[0], (long)context.Pilot.SystemId)
+                    )
+                )
                 {
                     return PilotCallResult.Unsupported;
                 }

@@ -135,6 +135,12 @@ public sealed class StructureControlTests
     public async Task ControlRequiresAuthorityAndExclusiveSessionAndReleasesOnLogoffAndDisconnect()
     {
         using Fixture f = new(liveWorld: true);
+        // The last NPC station can be in another system after deploying and docking at an Upwell structure.
+        using (WorldDbContext saved = new(f.Db.Path))
+        {
+            saved.Ships.Find(f.ShipId)!.StationId = 60003760;
+            saved.SaveChanges();
+        }
         var structure = f.Online(35835);
         Assert.True(f.Structures.CanControl(f.PilotId, structure.Id));
         Assert.False(f.Structures.CanControl(90000002, structure.Id));
@@ -161,7 +167,31 @@ public sealed class StructureControlTests
             new[]
             {
                 PilotServicesTests.Request("charUnboundMgr", "SelectCharacterID", [f.PilotId]),
+                PilotServicesTests.Request(
+                    "invbroker",
+                    "MachoBindObject",
+                    [
+                        new object?[] { (long)Fixture.SystemId, 5L },
+                        new object?[] { "GetInventoryFromId", new object?[] { structure.Id }, new Dictionary<string, object?>() },
+                    ]
+                ),
+                PilotServicesTests.Request(
+                    "dogmaIM",
+                    "MachoBindObject",
+                    [
+                        new object?[] { (long)Fixture.SystemId, 5L },
+                        new object?[] { "GetAllInfo", new object?[] { true, true, true }, new Dictionary<string, object?>() },
+                    ]
+                ),
                 PilotServicesTests.Request("structureControl", "TakeControl", [structure.Id]),
+                PilotServicesTests.Request(
+                    "beyonce",
+                    "MachoBindObject",
+                    [
+                        (long)Fixture.SystemId,
+                        new object?[] { "UpdateStateRequest", Array.Empty<object?>(), new Dictionary<string, object?>() },
+                    ]
+                ),
                 PilotServicesTests.Request("dogmaIM", "GetAllInfo", [true, true, true]),
                 PilotServicesTests.Request("structureControl", "ReleaseControl", []),
             }
@@ -185,7 +215,14 @@ public sealed class StructureControlTests
                     CancellationToken.None
                 )
         );
-        Assert.DoesNotContain(packets, packet => packet.Name.EndsWith(".ErrorResponse", StringComparison.Ordinal));
+        var errors = packets
+            .Where(packet => packet.Name.EndsWith(".ErrorResponse", StringComparison.Ordinal))
+            .Select(packet => BlueRead.Tuple(BlueRead.Tuple(packet.State, 14)[4], 3)[2])
+            .Select(error =>
+                error is string message ? message : System.Text.Encoding.UTF8.GetString(BlueRead.Bytes(BlueRead.Tuple(error, 1)[0]))
+            )
+            .ToArray();
+        Assert.True(errors.Length == 0, string.Join(Environment.NewLine, errors));
         var shipChanges = packets
             .Where(packet => packet.Name.EndsWith(".SessionChangeNotification", StringComparison.Ordinal))
             .Select(Changes)

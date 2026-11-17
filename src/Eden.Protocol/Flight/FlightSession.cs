@@ -1352,6 +1352,11 @@ internal sealed partial class FlightSession(
             _navigation.SetVelocity(launch.Velocity);
             return PilotCallResult.None;
         }
+        if (command is FlightCommand.RefreshState && _controlledStructureId.HasValue)
+        {
+            Snapshot();
+            return PilotCallResult.None;
+        }
         if (command is FlightCommand.Undock || Pilot.Position is null)
         {
             return PilotCallResult.Unsupported;

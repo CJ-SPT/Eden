@@ -10,7 +10,10 @@ internal sealed partial class LiveCombatRuntime
     {
         var row = owner.Economy.Peek<FlightPosition>(id);
         var hull = owner.Economy.Peek<Ship>(id);
-        int? destination = row?.SystemId ?? (hull is null ? null : database.Catalog.FindStation(hull.StationId)?.SolarSystemId);
+        int? destination =
+            row?.SystemId
+            ?? (hull?.StructureId is long structureId ? owner.Economy.Structure(structureId)?.SystemId : null)
+            ?? (hull is null ? null : database.Catalog.FindStation(hull.StationId)?.SolarSystemId);
         SpacePosition? position = row is null ? null : new(row.X, row.Y, row.Z);
         if (_shipPilots.TryGetValue(id, out long pilot) && _ships.TryGetValue(pilot, out var ship))
         {

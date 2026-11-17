@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Structure moniker and docked-system correction](protocol/structures.md#structure-moniker-and-docked-system-correction--november-16-2026)
+aligns native inventory binds and resident combat/heat membership with the docked structure's system.
+
 [Area weapons and EWAR](protocol/area-weapons.md) records burst jammers, projectors, bombs, defenders and heavy grapplers.
 
 [Docked structure control and quantum cores](protocol/structures.md#docked-structure-control-and-quantum-core-setup--november-16-2026)

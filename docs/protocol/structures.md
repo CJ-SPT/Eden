@@ -339,6 +339,48 @@ not acceptance of the corrected hangar or control view.
 **Optional maintainer checks:** Update/restart and reconnect to the docked Athanor; take control and place its matching
 quantum core in the Core Room; after the repair timer, deposit fuel and fit/online the desired service modules.
 
+## Structure moniker and docked-system correction — November 16, 2026
+
+The next user login reached inventory startup but failed with `invbroker.MachoBindObject (GetInventoryFromId)`.
+`character-selection-25108.log` (November 17 at 00:11 UTC, November 16 local time) also recorded "The ship's system
+membership changed" during dogma priming. These were distinct server-side gaps exposed after the prior session-field fix.
+
+The native inventory/ship/clone moniker tuple is `(solarSystemID, groupSolarSystem)` for an Upwell session. The router
+still validated the structure's ID/group because the physical ship was docked. It now validates the solar system and its
+named group constant, matching `eveMoniker.GetLocationBindParams`; NPC station monikers retain their station binding.
+The first call embedded inside `MachoBindObject` still runs through its ordinary owner and permission checks.
+
+Resident combat loading and economic membership updates, and resident heat loading, also used the last NPC station's
+system when a ship had no space-position row. They now resolve the saved docked structure before falling back to the NPC
+station. The active ship, its stored location and its inventory are unchanged. This fixes the ownership mismatch during
+`GetAllInfo` without moving the ship, modifying the save or bypassing the system-owner check.
+
+The controller's scalar system bind and `UpdateStateRequest` now admit its existing rigid structure observer snapshot
+while the real ship stays docked. Ordinary docked pilots still cannot acquire a flight ballpark or issue movement commands.
+
+References remain the signed V24.01 archive/hash and native moniker/inventory modules recorded in the preceding milestone.
+The local EVE.js package `261108.1` was checked again at `structureControlState.js` (its retained system location during
+control) and `inventory/invBrokerService.js` (`GetInventoryFromId`'s bound inventory context). No source was copied and no
+Blue/Destiny binary format changed. The gameplay context remains
+[EVE University quantum-core setup](https://wiki.eveuniversity.org/Quantum_Cores).
+
+**Automated validation:** The existing exact method
+`FullyQualifiedName=Eden.Protocol.Tests.Structures.StructureControlTests.ControlRequiresAuthorityAndExclusiveSessionAndReleasesOnLogoffAndDisconnect`
+passed in 6.48 seconds. Its existing simulated session now sends native embedded inventory and dogma binds and a
+controller ballpark bind, with the last NPC station deliberately in another system. Initial runs identified the remaining
+controller refresh rejection, which was corrected. No test cases or classes were added. The final filter joined
+`Eden.Protocol.Tests.Structures`, `Eden.Protocol.Tests.PilotSessions.PilotServicesTests`,
+`Eden.Protocol.Tests.Flight.FlightSessionTests`, `Eden.Protocol.Tests.Thermal.ShipHeatTests` and
+`Eden.Protocol.Tests.Combat.ResidentQuerySessionTests` with `FullyQualifiedName~` and `|`.
+All **193 cases passed in 55.04 seconds**. Tool and solution restore, solution build (zero warnings/errors, 0.85 seconds),
+both Python policy suites (8 catalog cases in 1.198 seconds, 9 formatting cases in 0.018 seconds), formatting and whitespace
+checks passed. The full .NET suite was not run.
+
+**Live acceptance:** Not performed; agent client testing is disabled. The supplied screenshot and log establish the
+failure, not successful native rendering after this change.
+
+**Optional maintainer checks:** Update/restart, reconnect to the docked character, then open its inventory and take control.
+
 ## Structure compression and gas decompression — November 11, 2026
 
 Milestone 7 implements all three pinned `structureCompressionMgr` calls: `CompressItemInStructure(itemID)`,
