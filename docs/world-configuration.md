@@ -8,8 +8,7 @@ A draft saves as **pending restart**. Saving, restoring and importing use the sa
 
 | Settings group | Editable server policies |
 | --- | --- |
-| Economy | Charge service costs, default manufacturing index and progressive regional markets. |
-| Development supply | Testing market and initial wallet grants; institutional stock; testing stock/price; grant amount for future pilots. |
+| Economy & market | Standard, Progressive, Testing, NPC-only and Custom market presets; relevant supply quantities/prices, LP-store datacores, reference history and service costs. |
 | Gathering | Separate ore, ice and gas yield multipliers, mining hold capacity multipliers, and belt renewal settings. |
 | Rewards | NPC bounty ISK, mission ISK, mission loyalty points and positive mission standing-gain multipliers. |
 | NPC population | Enable new pirates/anomalies, guards, convoys and mining populations independently. Existing living residents remain. An optional Major Threat anomaly override enables the six advanced nullsec families without sovereignty upgrades. |
@@ -28,6 +27,60 @@ A draft saves as **pending restart**. Saving, restoring and importing use the sa
 Changes affect future operations. Balances, installed jobs and paid costs, quoted obligations, historical transactions and saved deadlines are not rewritten. Existing grants are not replayed. Testing NPC market orders refresh under the selected policy on subsequent market operations; personal orders and escrow keep their saved terms. Disabling an NPC population prevents new spawns without deleting residents or changing their mechanics. Simulated-pilot limits also pause and despawn excess saved pilots at restart, as described below.
 
 ## World tuning
+
+### Market presets
+
+The **World & economy → Economy & market** section combines the former Economy and Development supply cards.
+Existing settings are preserved; combinations that do not match a preset appear as **Custom**. Choosing a preset
+changes market supply switches only. Wallet grants, balances, owned goods, player orders, service costs and
+reference-history choices retain their settings.
+
+| Preset | Supply |
+| --- | --- |
+| Standard | Individual captured public live orders, with original supported stations, sides, prices, quantities, ranges, minimum volumes and expiration deadlines. |
+| Progressive | Production unlocks plus regional NPC assortment and beginner supply. |
+| Testing | Renewable development stock at the configured fixed price. Existing eligibility exclusions still apply. |
+| NPC only | Corporation catalog offers at their normal stations. |
+| Custom | Individual supply switches, including combinations from older settings. Progressive takes precedence over Testing. |
+
+Standard requires `settings.economy.standardMarket=true`, `settings.economy.progressiveMarkets=false` and
+`settings.developmentSupply.testingMarket=false`. It replaces generated NPC/progression supply while selected.
+The existing hub and starter supply supplements do not alter imported orders. The stock and testing-price controls
+are hidden for Standard because the imported quantities and prices are authoritative. Initial wallet grants
+remain under Progression.
+
+Import a snapshot before selecting Standard. From the repository root, with the server's installed catalog and
+the destination **beside its saved world**:
+
+```powershell
+python tools/Import-LiveMarket.py --catalog src/Eden.Server/data/catalog.sqlite --output src/Eden.Server/data/market-orders
+```
+
+Use the active catalog if skill/mod activation has selected a different catalog file. The importer downloads the
+[EVE Ref full public order snapshot](https://docs.everef.net/datasets/market-orders.html), filters it against that
+catalog and publishes a manifest plus immutable compressed regional files. It never modifies the saved world.
+For reproducible offline imports, pass `--input path/to/orders.csv.bz2 --captured-at 2026-11-16T12:00:00Z`.
+The capture timestamp must describe the source snapshot, not the import time.
+
+The settings page reports capture time, compatible order count, regions and excluded orders. The manifest records
+exclusion reasons: unsupported locations/items, location mismatches, already expired orders, or values outside
+the pinned client's supported price/quantity/range limits. Player structures and newer catalog content are not
+relocated or substituted. Public market data does not expose trader identities; local station corporations act
+as counterparties. NPC-looking orders are finite too; Standard does not apply Eden's renewable NPC stock policy.
+
+Choose **Standard**, save, then restart. Trading depletes resident orders and checkpoints preserve that depletion,
+local order identities and transactions. Original live deadlines continue to run. Reopening the same captured
+snapshot does not refill stock. A newer capture replaces imported quantities once per station on subsequent
+market access and retires removed orders; it intentionally establishes a new external stock baseline. This is
+an offline snapshot, with no network requests during gameplay and no automatic continuous synchronization.
+
+Keep `market-orders/` beside the world when deploying or restoring it, including its manifest and referenced
+generation directory. The files are runtime data excluded from Git. Failed imports leave the previous manifest
+active. Servers keep their current immutable snapshot until restart, so an import can be staged while running.
+Do not remove a generation still referenced by a running server. Selection and activation reject missing or
+incompatible manifests; regional checksums and order validation reject corrupt data before publishing orders.
+
+Native protocol and automated evidence: [Standard market implementation](protocol/industry.md#standard-live-order-market-and-unified-economy-settings-november-16-2026).
 
 The Settings page groups controls into **Gathering**, **Rewards**, **Progression**, **Structures**, **Industry**, **Planetary industry**, **Travel**, **World & economy** and **Advanced**.
 

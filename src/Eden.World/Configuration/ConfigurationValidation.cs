@@ -48,6 +48,10 @@ internal static class ConfigurationValidation
             throw new InvalidDataException("Every typed settings group is required.");
         }
         WorldTuningRules.Validate(settings);
+        if (settings.Economy.StandardMarket && (settings.DevelopmentSupply.TestingMarket || settings.Economy.ProgressiveMarkets != false))
+        {
+            throw new InvalidDataException("Standard market requires testing and progressive markets to be disabled.");
+        }
         Eden.Gameplay.Capsuleers.CapsuleerPopulationRules.Validate(settings.Capsuleers);
         var supply = settings.DevelopmentSupply;
         NpcSupplyRules.ValidateStock(supply.InstitutionalStock);

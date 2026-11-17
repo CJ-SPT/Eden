@@ -9,6 +9,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Market;
 using Eden.World.Catalog;
 using Eden.World.Configuration;
 using Eden.World.Market;
@@ -356,6 +357,10 @@ internal sealed partial class EconomyTransaction(
                 || order.Remaining > order.Entered
                 || order.PriceCents <= 0
                 || !assortments.Add(assortment)
+                || (order.Kind == NpcMarketKind.Standard ? order.SourceOrderId <= 0 : order.SourceOrderId != 0)
+                || order.DurationDays is < 1 or > MarketDefinitions.NpcOrderDays
+                || order.MinimumVolume < 1
+                || order.MinimumVolume > order.Entered
                 || store
                     .NpcMarketOrders(assortment)
                     .Any(key => key.Id != order.Id && npcOrders.Find(key) is { } other && NpcMarketAssortment.For(other) == assortment)

@@ -291,6 +291,7 @@ internal sealed partial class PilotMarketStore(
 
     private MarketSummary ReadOrders(long pilotId, int? typeId, MarketScope? scope)
     {
+        RequireResidentStandardMarket();
         if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
         {
             return ResidentReadOrders(live, pilotId, typeId, scope);

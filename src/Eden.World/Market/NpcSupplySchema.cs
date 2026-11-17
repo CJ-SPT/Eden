@@ -20,9 +20,8 @@ internal static class NpcSupplySchema
         world.Database.ExecuteSqlRaw(
             """
             DROP INDEX IF EXISTS IX_WorldMarketOrder_StationId_TypeId_Bid;
-            CREATE UNIQUE INDEX IF NOT EXISTS IX_WorldMarketOrder_StationId_TypeId_Bid_Kind
-                ON WorldMarketOrder(StationId,TypeId,Bid,Kind);
             """
         );
+        StandardMarketSchema.Upgrade(world);
     }
 }

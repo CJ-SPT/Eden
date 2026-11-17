@@ -33,6 +33,11 @@ internal sealed partial class PilotMarketStore
 
     internal void WarmMarketCatalog()
     {
+        if (database.Settings.Economy.StandardMarket)
+        {
+            _ = database.MarketSnapshot.Manifest;
+            return;
+        }
         bool testing = Economy().TestingMarket;
         bool progressive = database.Settings.Economy.ProgressiveMarkets ?? !testing;
         if (testing && !progressive)

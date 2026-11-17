@@ -17,6 +17,61 @@ namespace Eden.Protocol.Tests.Administration;
 public sealed class AdministrationComponentTests
 {
     [Theory]
+    [InlineData(MarketPreset.Standard, true, false, false)]
+    [InlineData(MarketPreset.Progressive, false, true, false)]
+    [InlineData(MarketPreset.Testing, false, false, true)]
+    [InlineData(MarketPreset.NpcOnly, false, false, false)]
+    public void MarketPresetsRoundTripWithoutChangingOtherEconomyOptions(MarketPreset preset, bool standard, bool progressive, bool testing)
+    {
+        var form = SettingsForm.From(new WorldSettings());
+        form.TestingPriceIsk = 1.23m;
+        form.MarketPreset = preset;
+        var saved = form.Build();
+        Assert.Equal(standard, saved.Economy.StandardMarket);
+        Assert.Equal(progressive, saved.Economy.ProgressiveMarkets);
+        Assert.Equal(testing, saved.DevelopmentSupply.TestingMarket);
+        Assert.True(saved.Economy.EmpireLpDatacores);
+        Assert.True(saved.Economy.SimulatedMarketHistory);
+        Assert.Equal(123, saved.DevelopmentSupply.TestingPriceCents);
+        Assert.True(saved.DevelopmentSupply.TestingGrants);
+        Assert.Equal(preset, SettingsForm.From(saved).MarketPreset);
+        form.MarketPreset = MarketPreset.Custom;
+        Assert.Equal(saved, form.Build());
+    }
+
+    [Fact]
+    public async Task UnifiedEconomySectionShowsThePresetAndRelevantSupplyControls()
+    {
+        using var services = new ServiceCollection().AddLogging().BuildServiceProvider();
+        await using HtmlRenderer renderer = new(services, services.GetRequiredService<ILoggerFactory>());
+        await renderer.Dispatcher.InvokeAsync(async () =>
+        {
+            foreach (var preset in Enum.GetValues<MarketPreset>())
+            {
+                var form = SettingsForm.From(new WorldSettings());
+                form.MarketPreset = preset;
+                var component = await renderer.RenderComponentAsync<EconomySettings>(
+                    ParameterView.FromDictionary(new Dictionary<string, object?> { [nameof(EconomySettings.Form)] = form })
+                );
+                string html = component.ToHtmlString();
+                Assert.Contains("Economy &amp; market", html);
+                Assert.Contains("Standard", html);
+                Assert.DoesNotContain("Development supply", html);
+                Assert.Equal(
+                    form.TestingMarket && !form.ProgressiveMarkets && !form.StandardMarket,
+                    html.Contains("Testing price (ISK)", StringComparison.Ordinal)
+                );
+                Assert.Equal(preset == MarketPreset.Custom, html.Contains("Custom market supply", StringComparison.Ordinal));
+                if (preset == MarketPreset.Standard)
+                {
+                    Assert.Contains("No live order snapshot is installed", html);
+                    Assert.DoesNotContain("NPC stock per order", html);
+                }
+            }
+        });
+    }
+
+    [Theory]
     [InlineData(true)]
     [InlineData(false)]
     public void SavingKeepsTheProgressiveMarketChoiceWhenDevelopmentSupplyChanges(bool enabled)

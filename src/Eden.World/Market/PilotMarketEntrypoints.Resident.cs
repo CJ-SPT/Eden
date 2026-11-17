@@ -220,9 +220,11 @@ internal sealed partial class PilotMarketStore
         }
         int system = pilot.ActiveShip.Position?.SystemId ?? station.SolarSystemId;
         int region = catalog.RequireSystem(system).RegionId;
-        var kind = world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingMarket: false }
-            ? NpcMarketKind.Institutional
-            : NpcMarketKind.Development;
+        var kind = MarketKind(world);
+        if (world.Settings.Economy.StandardMarket)
+        {
+            SeedStandardRegion(world, catalog, region);
+        }
         bool progressive = RegionalMarketStore.Enabled(world);
         if (progressive)
         {
@@ -265,6 +267,7 @@ internal sealed partial class PilotMarketStore
             .Where(o =>
                 o.Remaining > 0
                 && o.Issued > cutoff
+                && o.Issued + (long)o.DurationDays * TimeSpan.TicksPerDay > Now
                 && (progressive ? o.Kind is NpcMarketKind.Regional or NpcMarketKind.Institutional : o.Kind == kind)
                 && InScope(o)
             )
@@ -279,7 +282,10 @@ internal sealed partial class PilotMarketStore
                 o.PriceCents,
                 o.Remaining,
                 o.Entered,
-                o.Issued
+                o.Issued,
+                DurationDays: o.DurationDays,
+                Range: o.Range,
+                MinimumVolume: o.MinimumVolume
             ));
         var result = (scope.HasValue ? BestAskPerType(npcOrders) : npcOrders).ToArray();
         var personal = world
@@ -305,7 +311,7 @@ internal sealed partial class PilotMarketStore
         }
         var book = combined.OrderBy(o => o.Id).ToArray();
         long expires = Math.Min(
-            result.Select(o => o.Issued + TimeSpan.FromDays(MarketDefinitions.NpcOrderDays).Ticks).DefaultIfEmpty(long.MaxValue).Min(),
+            result.Select(o => o.Issued + TimeSpan.FromDays(o.DurationDays).Ticks).DefaultIfEmpty(long.MaxValue).Min(),
             personalRows.Select(o => o.Expires).DefaultIfEmpty(long.MaxValue).Min()
         );
         long activeUntil = long.MaxValue;

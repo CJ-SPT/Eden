@@ -122,7 +122,12 @@ public sealed class NpcSupplyTests
         {
             world.Database.ExecuteSqlRaw(
                 """
-                DROP INDEX IX_WorldMarketOrder_StationId_TypeId_Bid_Kind;
+                DROP INDEX IX_WorldMarketOrder_StationId_TypeId_Bid_Kind_SourceOrderId;
+                ALTER TABLE WorldMarketOrder DROP COLUMN SourceOrderId;
+                ALTER TABLE WorldMarketOrder DROP COLUMN DurationDays;
+                ALTER TABLE WorldMarketOrder DROP COLUMN Range;
+                ALTER TABLE WorldMarketOrder DROP COLUMN MinimumVolume;
+                ALTER TABLE WorldMarketStation DROP COLUMN StandardSnapshotTicks;
                 ALTER TABLE WorldMarketOrder DROP COLUMN Kind;
                 ALTER TABLE WorldEconomy DROP COLUMN InstitutionalStock;
                 CREATE UNIQUE INDEX IX_WorldMarketOrder_StationId_TypeId_Bid ON WorldMarketOrder(StationId,TypeId,Bid);

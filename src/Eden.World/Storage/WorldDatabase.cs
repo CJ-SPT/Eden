@@ -8,6 +8,8 @@ namespace Eden.World.Storage;
 
 public sealed record WorldDatabase(string Path)
 {
+    private Eden.World.Market.LiveMarketSnapshotCatalog? _marketSnapshot;
+    public Eden.World.Market.LiveMarketSnapshotCatalog MarketSnapshot => _marketSnapshot ??= new(this);
     private Eden.World.Capsuleers.TrafficSnapshot? _traffic;
     internal Eden.World.Capsuleers.TrafficSnapshot Traffic => _traffic ??= ReadTraffic();
 

@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Standard market and unified economy settings](protocol/industry.md#standard-live-order-market-and-unified-economy-settings-november-16-2026)
+records public snapshot import, individual price levels, supported station geography, finite stock, buy ranges and checkpoints.
+
 [PI customs quantities and transfer refresh](protocol/planetary.md#customs-quantity-parsing-and-staged-transfer-refresh--november-16-2026)
 fix the integer error, preserve queued transfers across production refreshes and order completion updates.
 

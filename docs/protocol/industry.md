@@ -7,6 +7,85 @@ Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP
 [Planetary industry](planetary.md) now covers surface colonies, extraction, all 68 processing schematics,
 command launches and NPC customs import/export. Earlier milestone scope statements below remain historical.
 
+## Standard live order market and unified economy settings (November 16, 2026)
+
+The administration **Economy & market** section replaces the separate Economy and Development supply cards.
+Standard, Progressive, Testing, NPC-only and Custom presets share one selector, with explanations and relevant
+stock/price controls. Existing mixed settings remain Custom; presets preserve unrelated economic policies and
+initial-wallet grants. The Standard option reports snapshot capture time and admitted/excluded coverage.
+
+Standard uses `tools/Import-LiveMarket.py` and a separate `market-orders/` runtime artifact beside the saved world.
+The importer reads an [EVE Ref full public order snapshot](https://docs.everef.net/datasets/market-orders.html),
+which preserves public ESI order fields. It retains individual orders and price levels, original supported station
+locations, buy/sell sides, remaining and entered quantities, prices, issue dates, durations, minimum volumes and
+buy ranges. Compatible published market types are eligible without progression, blueprint-tech or player-input
+supply restrictions. Unsupported types and locations, expired rows and unsupported numeric values are counted
+with explicit exclusion reasons. No order is relocated to a regional hub. Public data omits trader identity;
+local station corporations supply the counterparties. Player structures and private orders are outside this import.
+
+The local automated import captured **1,470,856 compatible orders across 38 regions**, source timestamp
+**2026-11-17 03:16:15 UTC** (November 16 in the maintainer's local time). It excluded 27,190 unsupported-item rows,
+106,863 unsupported-location rows, 617 location mismatches and 100 expired rows. This runtime payload is excluded
+from Git and has not been deployed to another server or activated in the existing local save.
+
+Regional immutable files are checksummed and catalog-fingerprinted. Failed exports preserve the prior manifest.
+Servers hold their current snapshot until restart. Resident transactions seed a region once, retain independent
+live-order source identities and preserve local execution identities across newer captures. A checkpointed station
+capture marker prevents consumed orders from refilling on restart or repeated reads. Newer captures replace stock
+once and retire removed orders. Imported asks and bids deplete, preserve price/time priority and expire at their
+original deadlines. Minimum volumes allow the final smaller remainder; station, system, jump and region buy ranges
+are enforced against the shared pinned stargate graph. No live network requests or SQL gameplay implementation
+were added. Standard reads and player trades require the resident world owner; checkpoint projection carries the
+new metadata and station markers through world schema **184**.
+
+The existing native `blue.DBRow` order descriptor remains unchanged. `range`, `minVolume` and `duration` now carry
+explicit typed order values, with the prior station/one/year defaults for existing modes. Inert inspection of build
+**3662168** `marketutil/const.pyj` confirmed `rangeStation=-1`, `rangeSolarSystem=0` and `rangeRegion=32767`;
+extracted bytecode SHA-256 `BC513BAF70D72532CD4152D1D63C1C98CE29421AA1E6E2566E39CF19337A156B`.
+No game process or interactive acceptance was used.
+
+References consulted November 16, 2026: [EVE University trading](https://wiki.eveuniversity.org/Trading),
+[CCP market pagination](https://developers.eveonline.com/docs/services/esi/pagination/x-pages/) and
+[EVE Ref's dataset format](https://docs.everef.net/datasets/market-orders.html). Local evejs
+`server/src/services/market/marketRules.js` was inspected as a behavioral reference
+(SHA-256 `3891FEDB315D5FF92E841F85458D3362F7631894E2000D2F8F658A40A145905D`;
+checkout revision metadata unavailable). No reference implementation code was copied.
+
+**Automated validation:** Tool and solution restore passed. The final incremental solution build passed with
+zero warnings/errors in **0.70 seconds**. The affected filter below passed **384 tests**, with **one disabled browser
+acceptance test skipped**, in **95.19 seconds** (feature build **1.19 seconds**). Both Python policy suites passed
+(**8 catalog setup**, **9 formatting**) and all **4 offline importer checks** passed. Formatting verification,
+140-column coverage, documentation anchors, UTF-8, final-newline, trailing-whitespace and diff checks passed.
+
+Initial exact filters covered preset persistence, checkpointed depth matching and the unified component. One
+broader run was interrupted after finding a missing admin-host dependency registration; the registration was
+corrected and the exact authenticated settings-page check passed. Another affected run was interrupted when two
+existing SQL-trigger rollback fixtures failed. Both failures reproduced on unchanged baseline **89d8be84** in a
+separate clean checkout (**2/2 failed**, **7.21 seconds**); that checkout was removed after verification. They remain
+excluded from the final affected filter: `NpcRestingOrderTests.MaintenanceUsesPricePriorityAndRejectsDuplicateConsumptionAfterRollback`
+leaves its deliberate settlement trigger in place under resident semantics, and
+`RegionalMarketTests.FailedPaymentRollsBackStockGoodsAndHistoryAndRetrySettlesOnce` fails with a retained world-owner
+file during fixture disposal. Neither baseline fixture was changed as part of this market preset implementation.
+
+The 2,500-order warmed scenario asserts zero SQL commands, connections and fitting calculations across reads,
+depletion and immediate same-tick summaries. The new resident tests cover failed purchase/sale unchanged state,
+multiple live price levels, source identity, minimum volumes, buy-range boundaries, expiry, corrupt regional data,
+new capture replacement and checkpoint reopen without replenishment. Offline importer checks cover sides, exact
+prices/quantities, range translation, exclusion reasons and preservation of the old manifest on failure.
+No full .NET suite was requested or run. Cold first access seeds the region; latency for the complete live-size
+regional payload and native rendering remain unverified.
+
+```text
+(FullyQualifiedName~Eden.Protocol.Tests.Market|FullyQualifiedName~Eden.Protocol.Tests.Administration.AdministrationTests|FullyQualifiedName~Eden.Protocol.Tests.Administration.AdministrationComponentTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldInitializationTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldMigrationTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldConfigurationTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.DetachedCheckpointTests|FullyQualifiedName~Eden.Protocol.Tests.Persistence.IncrementalCheckpointTests|FullyQualifiedName~Eden.Protocol.Tests.Economy.EconomicLifecycleTests)&FullyQualifiedName!~MaintenanceUsesPricePriorityAndRejectsDuplicateConsumptionAfterRollback&FullyQualifiedName!~FailedPaymentRollsBackStockGoodsAndHistoryAndRetrySettlesOnce
+```
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** After installing the snapshot beside the intended server world, select Standard
+and restart; inspect a regional multi-price book and trade a small quantity from the native market window.
+
+See [market-preset setup and refresh behavior](../world-configuration.md#market-presets).
+
 ## Container industry workflows, November 15, 2026
 
 Personal assembled containers in the current station or structure Item Hangar now appear in

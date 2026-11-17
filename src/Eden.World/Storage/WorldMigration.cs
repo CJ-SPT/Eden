@@ -17,7 +17,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 183;
+    internal const int CurrentVersion = 184;
 
     public static void Open(
         WorldDbContext world,
@@ -37,6 +37,7 @@ internal static class WorldMigration
         // Every step receives the original version, even after historical PRAGMA writes.
         LegacyWorldMigration.Initialize(world, version);
         InitialEconomyMigration.Initialize(world, version, economy, economics);
+        Eden.World.Market.StandardMarketSchema.Upgrade(world);
         WorldVersions06To20.Apply(world, catalog, version);
         if (version is >= 6 and < ScienceSchema.Version)
         {

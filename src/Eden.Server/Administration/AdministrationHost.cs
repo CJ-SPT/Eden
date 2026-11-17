@@ -88,6 +88,7 @@ internal static class AdministrationHost
             options.SerializerOptions.UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow
         );
         builder.Services.AddSingleton(worldServices.GetRequiredService<IWorldConfiguration>());
+        builder.Services.AddSingleton(worldServices.GetRequiredService<WorldDatabase>());
         builder.Services.AddSingleton(worldServices.GetRequiredService<CatalogProvider>());
         builder.Services.AddSingleton(provider => new CatalogBrowser(provider.GetRequiredService<CatalogProvider>()));
         builder.Services.AddScoped<AdministrationOperations>();

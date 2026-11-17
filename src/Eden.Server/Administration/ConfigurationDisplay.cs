@@ -59,6 +59,7 @@ internal static class ConfigurationDisplay
         ["npcPopulation.majorThreatAnomalies"] = "Major Threat anomaly tiers",
         ["exploration.alwaysResolvedSignatures"] = "Always resolve cosmic signatures",
         ["economy.progressiveMarkets"] = "Progressive regional markets",
+        ["economy.standardMarket"] = "Mirror live market orders",
         ["economy.empireLpDatacores"] = "Empire LP-store datacores",
         ["economy.simulatedMarketHistory"] = "Simulated market history",
         ["economy.regionalHubSupply"] = "Regional hub supply",

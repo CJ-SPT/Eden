@@ -556,6 +556,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         model.Entity<PilotWallet>().HasOne<Pilot>().WithMany().HasForeignKey(w => w.PilotId);
         model.Entity<MarketStation>().ToTable("WorldMarketStation").HasKey(s => s.StationId);
         model.Entity<MarketStation>().Property(s => s.SeedVersion).HasDefaultValue(0);
+        model.Entity<MarketStation>().Property(s => s.StandardSnapshotTicks).HasDefaultValue(0);
         model
             .Entity<TestingWalletGrant>()
             .ToTable("WorldTestingGrant", t => t.HasCheckConstraint("CK_TestingGrant_Amounts", "AmountCents > 0 AND BalanceCents >= 0"))
@@ -579,10 +580,15 @@ public sealed partial class WorldDbContext(string path) : DbContext
                 o.TypeId,
                 o.Bid,
                 o.Kind,
+                o.SourceOrderId,
             })
             .IsUnique();
         model.Entity<NpcMarketOrder>().HasIndex(o => o.RegionId);
         model.Entity<NpcMarketOrder>().Property(o => o.Kind).HasDefaultValue(Eden.Gameplay.Market.NpcMarketKind.Development);
+        model.Entity<NpcMarketOrder>().Property(o => o.SourceOrderId).HasDefaultValue(0);
+        model.Entity<NpcMarketOrder>().Property(o => o.DurationDays).HasDefaultValue(Eden.Gameplay.Market.MarketDefinitions.NpcOrderDays);
+        model.Entity<NpcMarketOrder>().Property(o => o.Range).HasDefaultValue(Eden.Gameplay.Market.MarketDefinitions.StationRange);
+        model.Entity<NpcMarketOrder>().Property(o => o.MinimumVolume).HasDefaultValue(1);
         model
             .Entity<NpcMarketOrder>()
             .HasIndex(o => new

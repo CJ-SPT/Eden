@@ -165,17 +165,16 @@ internal sealed partial class PilotMarketStore
             .Where(o => o.Remaining > 0)
             .Select(o => new Candidate(o, null));
         long cutoff = clock.GetUtcNow().AddDays(-MarketDefinitions.NpcOrderDays).UtcDateTime.ToFileTimeUtc();
-        var kind = world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingMarket: false }
-            ? NpcMarketKind.Institutional
-            : NpcMarketKind.Development;
+        var kind = MarketKind(world);
         bool progressive = RegionalMarketStore.Enabled(world);
         var npcs = world
             .Set<NpcMarketOrder>()
             .Where(o =>
-                o.StationId == incoming.StationId
+                (o.StationId == incoming.StationId || o.Kind == NpcMarketKind.Standard && !incoming.Bid && o.RegionId == incoming.RegionId)
                 && o.TypeId == incoming.TypeId
                 && o.Bid != incoming.Bid
                 && o.Issued > cutoff
+                && o.Issued + (long)o.DurationDays * TimeSpan.TicksPerDay > now
                 && (
                     progressive
                         ? o.Kind == NpcMarketKind.Institutional
@@ -184,6 +183,8 @@ internal sealed partial class PilotMarketStore
                 )
                 && (!npcDemandOnly || o.Kind == NpcMarketKind.Regional && o.Bid)
             )
+            .ToArray()
+            .Where(order => order.Kind != NpcMarketKind.Standard || StandardBidReaches(catalog, order, incoming))
             .ToArray();
         var candidates = personal
             .Concat(npcs.Where(o => o.Remaining > 0).Select(o => new Candidate(null, o)))
@@ -198,6 +199,13 @@ internal sealed partial class PilotMarketStore
             if (incoming.Remaining == 0)
             {
                 break;
+            }
+            if (
+                candidate.Npc is { Kind: NpcMarketKind.Standard } liveOrder
+                && !StandardMarketRules.CanFill(incoming.Remaining, liveOrder.Remaining, liveOrder.MinimumVolume)
+            )
+            {
+                continue;
             }
             var fill = PersonalMarketRules.Match(
                 incoming.Bid,
@@ -303,6 +311,11 @@ internal sealed partial class PilotMarketStore
             }
             else if (candidate.Npc is { } npc)
             {
+                if (npc.Kind == NpcMarketKind.Standard)
+                {
+                    npc.Remaining -= quantity;
+                    continue;
+                }
                 if (npc.Kind == NpcMarketKind.Regional)
                 {
                     npc.Remaining -= quantity;

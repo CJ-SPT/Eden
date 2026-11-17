@@ -14,7 +14,8 @@ public sealed record EconomicPolicy(
     bool EmpireLpDatacores = true,
     bool SimulatedMarketHistory = true,
     bool RegionalHubSupply = true,
-    bool BeginnerMarketSupply = true
+    bool BeginnerMarketSupply = true,
+    bool StandardMarket = false
 );
 
 public sealed record DevelopmentSupplyPolicy(

@@ -11,8 +11,11 @@ namespace Eden.World.Market;
 internal sealed partial class RegionalMarketStore
 {
     internal static bool Enabled(WorldAction world) =>
-        world.Settings.Economy.ProgressiveMarkets
-        ?? world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingMarket: false };
+        !world.Settings.Economy.StandardMarket
+        && (
+            world.Settings.Economy.ProgressiveMarkets
+            ?? world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingMarket: false }
+        );
 
     internal void Advance(
         WorldAction world,

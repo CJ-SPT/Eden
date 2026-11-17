@@ -48,7 +48,27 @@ public sealed class WorldConfigurationStore(WorldDatabase database, TimeProvider
             .ToImmutableArray();
     }
 
-    public void Validate(WorldConfigurationDraft draft) => ConfigurationValidation.Validate(draft, database.Catalog);
+    public void Validate(WorldConfigurationDraft draft)
+    {
+        ConfigurationValidation.Validate(draft, database.Catalog);
+        ValidateMarketSnapshot(database, draft);
+    }
+
+    private static void ValidateMarketSnapshot(WorldDatabase database, WorldConfigurationDraft draft)
+    {
+        if (!draft.Settings.Economy.StandardMarket)
+        {
+            return;
+        }
+        try
+        {
+            _ = database.MarketSnapshot.ReadManifest();
+        }
+        catch (Exception error) when (error is IOException or InvalidDataException or System.Text.Json.JsonException)
+        {
+            throw new InvalidDataException("Import a compatible live market order snapshot before selecting Standard market.", error);
+        }
+    }
 
     public ConfigurationState Save(long expectedGeneration, WorldConfigurationDraft draft, string author)
     {
@@ -186,6 +206,7 @@ public sealed class WorldConfigurationStore(WorldDatabase database, TimeProvider
             {
                 var pending = Revision(world.Set<SavedConfigurationRevision>().Find(pendingId)!);
                 ConfigurationValidation.Validate(pending.Draft, database.Catalog);
+                ValidateMarketSnapshot(database, pending.Draft);
                 Apply(world, pending.Draft);
                 state.ActiveRevisionId = pending.Id;
                 state.PendingRevisionId = null;
@@ -203,6 +224,7 @@ public sealed class WorldConfigurationStore(WorldDatabase database, TimeProvider
             world.SaveChanges();
         }
         transaction.Commit();
+        ValidateMarketSnapshot(database, active.Draft);
         database.Configuration.Install(active);
     }
 

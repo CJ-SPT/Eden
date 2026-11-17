@@ -10,6 +10,32 @@ namespace Eden.Server.Administration;
 public sealed class SettingsForm
 {
     public bool ServiceCosts { get; set; }
+    public bool StandardMarket { get; set; }
+    private bool _customMarketPreset;
+    public MarketPreset MarketPreset
+    {
+        get =>
+            _customMarketPreset ? MarketPreset.Custom
+            : StandardMarket && !ProgressiveMarkets && !TestingMarket && !RegionalHubSupply && !BeginnerMarketSupply ? MarketPreset.Standard
+            : !StandardMarket && ProgressiveMarkets && !TestingMarket && RegionalHubSupply && BeginnerMarketSupply
+                ? MarketPreset.Progressive
+            : !StandardMarket && !ProgressiveMarkets && TestingMarket && !RegionalHubSupply && !BeginnerMarketSupply ? MarketPreset.Testing
+            : !StandardMarket && !ProgressiveMarkets && !TestingMarket && !RegionalHubSupply && !BeginnerMarketSupply ? MarketPreset.NpcOnly
+            : MarketPreset.Custom;
+        set
+        {
+            _customMarketPreset = value == MarketPreset.Custom;
+            if (_customMarketPreset)
+            {
+                return;
+            }
+            StandardMarket = value == MarketPreset.Standard;
+            ProgressiveMarkets = value == MarketPreset.Progressive;
+            TestingMarket = value == MarketPreset.Testing;
+            RegionalHubSupply = value == MarketPreset.Progressive;
+            BeginnerMarketSupply = value == MarketPreset.Progressive;
+        }
+    }
     public bool ProgressiveMarkets { get; set; }
     public bool EmpireLpDatacores { get; set; }
     public bool SimulatedMarketHistory { get; set; }
@@ -259,6 +285,7 @@ public sealed class SettingsForm
             RegionalHubSupply = settings.Economy.RegionalHubSupply,
             BeginnerMarketSupply = settings.Economy.BeginnerMarketSupply,
             ServiceCosts = settings.Economy.ChargeServiceCosts,
+            StandardMarket = settings.Economy.StandardMarket,
             ProgressiveMarkets = settings.Economy.ProgressiveMarkets ?? !settings.DevelopmentSupply.TestingMarket,
             ManufacturingIndex = settings.Economy.DefaultManufacturingIndex,
             TestingMarket = settings.DevelopmentSupply.TestingMarket,
@@ -321,7 +348,8 @@ public sealed class SettingsForm
                 EmpireLpDatacores,
                 SimulatedMarketHistory,
                 RegionalHubSupply,
-                BeginnerMarketSupply
+                BeginnerMarketSupply,
+                StandardMarket
             ),
             DevelopmentSupply = new(
                 TestingMarket,

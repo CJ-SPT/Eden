@@ -24,5 +24,6 @@ chat-tls.pfx
 *.admin-keys/
 eve-online-static-data-*-jsonl.zip
 __pycache__/
+**/market-orders/
 *.sqlite.cache/
 *.import.owner

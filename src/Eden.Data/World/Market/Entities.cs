@@ -26,6 +26,7 @@ public sealed class MarketStation
     public int StationId { get; set; }
     public long CreatedAt { get; set; }
     public int SeedVersion { get; set; }
+    public long StandardSnapshotTicks { get; set; }
 }
 
 public sealed class NpcMarketOrder
@@ -42,6 +43,10 @@ public sealed class NpcMarketOrder
     public int Entered { get; set; }
     public long Issued { get; set; }
     public Eden.Gameplay.Market.NpcMarketKind Kind { get; set; }
+    public long SourceOrderId { get; set; }
+    public int DurationDays { get; set; } = MarketDefinitions.NpcOrderDays;
+    public int Range { get; set; } = MarketDefinitions.StationRange;
+    public int MinimumVolume { get; set; } = 1;
 }
 
 public sealed class PilotWallet

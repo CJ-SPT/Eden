@@ -51,6 +51,11 @@ internal sealed partial class PilotMarketStore
         bool includeDemand = true
     )
     {
+        if (world.Settings.Economy.StandardMarket)
+        {
+            SeedStandardRegion(world, catalog, station.RegionId);
+            return;
+        }
         if (RegionalMarketStore.Enabled(world))
         {
             SeedInstitutional(world, catalog, station);
@@ -135,6 +140,10 @@ internal sealed partial class PilotMarketStore
 
     private void Refresh(WorldAction world, IQueryable<NpcMarketOrder> orders)
     {
+        if (world.Settings.Economy.StandardMarket)
+        {
+            return;
+        }
         if (
             RegionalMarketStore.Enabled(world)
             || world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingMarket: false }
@@ -245,9 +254,7 @@ internal sealed partial class PilotMarketStore
             Seed(world, catalog, station, includeDemand: false);
         }
         world.SaveChanges();
-        var kind = world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId) is { TestingMarket: false }
-            ? NpcMarketKind.Institutional
-            : NpcMarketKind.Development;
+        var kind = MarketKind(world);
         long cutoff = Now - TimeSpan.FromDays(MarketDefinitions.NpcOrderDays).Ticks;
         var npc = world
             .Set<NpcMarketOrder>()
@@ -257,6 +264,7 @@ internal sealed partial class PilotMarketStore
                 && o.Remaining > 0
                 && Enumerable.Contains(types, o.TypeId)
                 && o.Issued > cutoff
+                && o.Issued + (long)o.DurationDays * TimeSpan.TicksPerDay > Now
                 && (progressive ? o.Kind == NpcMarketKind.Institutional || o.Kind == NpcMarketKind.Regional : o.Kind == kind)
             )
             .AsEnumerable()
@@ -271,7 +279,10 @@ internal sealed partial class PilotMarketStore
                 o.PriceCents,
                 o.Remaining,
                 o.Entered,
-                o.Issued
+                o.Issued,
+                DurationDays: o.DurationDays,
+                Range: o.Range,
+                MinimumVolume: o.MinimumVolume
             ));
         var personal = world
             .Set<SavedPersonalOrder>()

@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Market presets](world-configuration.md#market-presets) combines economy and supply settings and explains the
+Standard preset's imported live order books, original locations/quantities and checkpoint behavior.
+
 [Area weapons and EWAR](protocol/area-weapons.md) records burst jammers, projectors, bombs, defenders and heavy grapplers.
 
 [Sovereignty](protocol/sovereignty.md) records deployment, Entosis capture, vulnerability windows, campaigns, activity indices, capitals, live ADM, Skyhook resources and upgrades.

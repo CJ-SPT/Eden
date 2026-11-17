@@ -294,7 +294,7 @@ internal sealed partial class ResidentEconomy
     }
 }
 
-internal sealed record EconomyMarketStation(int StationId, long CreatedAt, int SeedVersion);
+internal sealed record EconomyMarketStation(int StationId, long CreatedAt, int SeedVersion, long StandardSnapshotTicks);
 
 internal sealed partial class ResidentEconomy
 {
@@ -319,10 +319,11 @@ internal sealed partial class ResidentEconomy
                 string values = JsonSerializer.Serialize(rows);
                 world.Database.ExecuteSql(
                     $"""
-                    INSERT INTO WorldMarketStation(StationId,CreatedAt,SeedVersion)
+                    INSERT INTO WorldMarketStation(StationId,CreatedAt,SeedVersion,StandardSnapshotTicks)
                     SELECT json_extract(value,'$.StationId'),json_extract(value,'$.CreatedAt'),json_extract(value,
-                        '$.SeedVersion') FROM json_each({values}) WHERE 1
-                    ON CONFLICT(StationId) DO UPDATE SET CreatedAt=excluded.CreatedAt,SeedVersion=excluded.SeedVersion
+                        '$.SeedVersion'),json_extract(value,'$.StandardSnapshotTicks') FROM json_each({values}) WHERE 1
+                    ON CONFLICT(StationId) DO UPDATE SET CreatedAt=excluded.CreatedAt,SeedVersion=excluded.SeedVersion,
+                        StandardSnapshotTicks=excluded.StandardSnapshotTicks
                     """
                 );
             }
@@ -330,9 +331,10 @@ internal sealed partial class ResidentEconomy
     }
 }
 
-internal readonly record struct NpcMarketAssortment(int StationId, int TypeId, bool Bid, NpcMarketKind Kind)
+internal readonly record struct NpcMarketAssortment(int StationId, int TypeId, bool Bid, NpcMarketKind Kind, long SourceOrderId = 0)
 {
-    internal static NpcMarketAssortment For(NpcMarketOrder order) => new(order.StationId, order.TypeId, order.Bid, order.Kind);
+    internal static NpcMarketAssortment For(NpcMarketOrder order) =>
+        new(order.StationId, order.TypeId, order.Bid, order.Kind, order.SourceOrderId);
 }
 
 internal sealed record EconomyNpcMarketOrder(
@@ -347,7 +349,11 @@ internal sealed record EconomyNpcMarketOrder(
     int Remaining,
     int Entered,
     long Issued,
-    Eden.Gameplay.Market.NpcMarketKind Kind
+    Eden.Gameplay.Market.NpcMarketKind Kind,
+    long SourceOrderId,
+    int DurationDays,
+    int Range,
+    int MinimumVolume
 );
 
 internal sealed partial class ResidentEconomy
@@ -374,16 +380,18 @@ internal sealed partial class ResidentEconomy
                 world.Database.ExecuteSql(
                     $"""
                     INSERT INTO WorldMarketOrder(Id,StationId,SystemId,RegionId,OwnerId,TypeId,Bid,PriceCents,Remaining,
-                        Entered,Issued,Kind)
+                        Entered,Issued,Kind,SourceOrderId,DurationDays,Range,MinimumVolume)
                     SELECT json_extract(value,'$.Id'),json_extract(value,'$.StationId'),json_extract(value,'$.SystemId'),
                         json_extract(value,'$.RegionId'),json_extract(value,'$.OwnerId'),json_extract(value,'$.TypeId'),
                         json_extract(value,'$.Bid'),json_extract(value,'$.PriceCents'),json_extract(value,'$.Remaining'),
                         json_extract(value,'$.Entered'),json_extract(value,'$.Issued'),json_extract(value,
-                        '$.Kind') FROM json_each({values}) WHERE 1
+                        '$.Kind'),json_extract(value,'$.SourceOrderId'),json_extract(value,'$.DurationDays'),
+                        json_extract(value,'$.Range'),json_extract(value,'$.MinimumVolume') FROM json_each({values}) WHERE 1
                     ON CONFLICT(Id) DO UPDATE SET StationId=excluded.StationId,SystemId=excluded.SystemId,
                         RegionId=excluded.RegionId,OwnerId=excluded.OwnerId,TypeId=excluded.TypeId,Bid=excluded.Bid,
                         PriceCents=excluded.PriceCents,Remaining=excluded.Remaining,Entered=excluded.Entered,
-                        Issued=excluded.Issued,Kind=excluded.Kind
+                        Issued=excluded.Issued,Kind=excluded.Kind,SourceOrderId=excluded.SourceOrderId,
+                        DurationDays=excluded.DurationDays,Range=excluded.Range,MinimumVolume=excluded.MinimumVolume
                     """
                 );
             }
@@ -1161,16 +1169,17 @@ internal sealed partial class ResidentEconomy
             new EconomyTable<MarketStation, EconomyMarketStation>(
                 "WorldMarketStation",
                 row => new(row.StationId),
-                row => new(row.StationId, row.CreatedAt, row.SeedVersion),
+                row => new(row.StationId, row.CreatedAt, row.SeedVersion, row.StandardSnapshotTicks),
                 state => new MarketStation
                 {
                     StationId = state.StationId,
                     CreatedAt = state.CreatedAt,
                     SeedVersion = state.SeedVersion,
+                    StandardSnapshotTicks = state.StandardSnapshotTicks,
                 },
                 ProjectMarketStation,
-                "StationId,CreatedAt,SeedVersion",
-                reader => new(reader.GetInt32(1), reader.GetInt64(2), reader.GetInt32(3)),
+                "StationId,CreatedAt,SeedVersion,StandardSnapshotTicks",
+                reader => new(reader.GetInt32(1), reader.GetInt64(2), reader.GetInt32(3), reader.GetInt64(4)),
                 state => new(state.StationId),
                 readOnly: false,
                 indexes: [],
@@ -1194,7 +1203,11 @@ internal sealed partial class ResidentEconomy
                         row.Remaining,
                         row.Entered,
                         row.Issued,
-                        row.Kind
+                        row.Kind,
+                        row.SourceOrderId,
+                        row.DurationDays,
+                        row.Range,
+                        row.MinimumVolume
                     ),
                 state => new NpcMarketOrder
                 {
@@ -1210,9 +1223,14 @@ internal sealed partial class ResidentEconomy
                     Entered = state.Entered,
                     Issued = state.Issued,
                     Kind = state.Kind,
+                    SourceOrderId = state.SourceOrderId,
+                    DurationDays = state.DurationDays,
+                    Range = state.Range,
+                    MinimumVolume = state.MinimumVolume,
                 },
                 ProjectNpcMarketOrder,
-                "Id,StationId,SystemId,RegionId,OwnerId,TypeId,Bid,PriceCents,Remaining,Entered,Issued,Kind",
+                "Id,StationId,SystemId,RegionId,OwnerId,TypeId,Bid,PriceCents,Remaining,Entered,Issued,Kind,"
+                    + "SourceOrderId,DurationDays,Range,MinimumVolume",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -1226,7 +1244,11 @@ internal sealed partial class ResidentEconomy
                         reader.GetInt32(9),
                         reader.GetInt32(10),
                         reader.GetInt64(11),
-                        (Eden.Gameplay.Market.NpcMarketKind)reader.GetInt32(12)
+                        (Eden.Gameplay.Market.NpcMarketKind)reader.GetInt32(12),
+                        reader.GetInt64(13),
+                        reader.GetInt32(14),
+                        reader.GetInt32(15),
+                        reader.GetInt32(16)
                     ),
                 state => new(state.Id),
                 readOnly: false,
@@ -1236,7 +1258,10 @@ internal sealed partial class ResidentEconomy
                     new("RegionId", row => row.RegionId, member: EconomyIndexMember.RowId),
                     new("OwnerId", row => row.OwnerId, member: EconomyIndexMember.RowId),
                     new("TypeId", row => row.TypeId, member: EconomyIndexMember.RowId),
-                    new(nameof(NpcMarketAssortment), row => new NpcMarketAssortment(row.StationId, row.TypeId, row.Bid, row.Kind)),
+                    new(
+                        nameof(NpcMarketAssortment),
+                        row => new NpcMarketAssortment(row.StationId, row.TypeId, row.Bid, row.Kind, row.SourceOrderId)
+                    ),
                 ],
                 primaryColumn: "Id",
                 rowIdIsKey: true

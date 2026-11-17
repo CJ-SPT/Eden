@@ -33,6 +33,7 @@ public partial class SettingsPage
     private string? Error;
     private string? Message;
     private bool Busy;
+    private AdminMarketSnapshot? MarketSnapshot;
 
     private async Task<ClaimsPrincipal> User() => (await Authentication.GetAuthenticationStateAsync()).User;
 
@@ -44,6 +45,7 @@ public partial class SettingsPage
         {
             var user = await User();
             State = await Operations.Read(user);
+            MarketSnapshot = await Operations.MarketSnapshot(user);
             Original = (await Operations.Revision(user, 1)).Draft;
             Workspace.Load(State.Pending?.Draft ?? State.Active.Draft);
             SetContext();

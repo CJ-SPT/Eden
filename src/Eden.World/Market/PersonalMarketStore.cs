@@ -462,6 +462,7 @@ internal sealed partial class PilotMarketStore
 
     private MarketResult ExecuteBuy(long pilotId, int stationId, IReadOnlyList<MarketPurchase> items, int days)
     {
+        RequireResidentStandardMarket();
         if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
         {
             return ResidentBuy(live, pilotId, stationId, items, days);
@@ -520,6 +521,7 @@ internal sealed partial class PilotMarketStore
 
     private MarketResult ExecuteSell(long pilotId, IReadOnlyList<MarketSale> items, int days)
     {
+        RequireResidentStandardMarket();
         if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
         {
             return ResidentSell(live, pilotId, items, days);
