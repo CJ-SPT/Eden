@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Combat anomaly scouting on station departure](protocol/capsuleers.md#combat-anomaly-scouting-on-station-departure--november-17-2026)
+records the saved Trade job failure, its transaction boundary and the checkpoint replay.
+
 The November 17 combat and traffic fixes cover [abandoned drones](protocol/drones.md#drone-control-on-ship-destruction--november-17-2026),
 [observer grid updates](protocol/navigation.md#observing-a-loss-and-a-warp-in-the-same-update--november-17-2026)
 and [returning traffic](protocol/capsuleers.md#traffic-returning-to-occupied-systems--november-17-2026).

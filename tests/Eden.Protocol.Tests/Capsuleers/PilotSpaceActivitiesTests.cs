@@ -7,6 +7,7 @@ using Eden.Data.World.Loot;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
@@ -349,12 +350,29 @@ public sealed class PilotSpaceActivitiesTests
         Assert.Equal(balance, reread.Set<PilotWallet>().Find(pilot.PilotId)!.Cents);
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task TravelerPausesAtABeltWhenUnobservedAndReturnsToTheActualStation(bool loot)
+    [Fact]
+    public void DockedTravelerScoutsAColdCombatAnomalyAndUndocksOnTheSameTradeJob()
     {
         using CapsuleerHaulerTests.Fixture f = new();
+        PassiveCatalogFixture.LoadCombatAnomalies(f.Database.CatalogPath);
+        long pilot = PrepareDockedRatter(f, anomaly: true);
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        using var observer = host.GetRequiredService<IHumanPresence>().Select(90000001, SystemId);
+        var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+        var job = scheduler.Jobs().Single(job => job.PilotId == pilot);
+        Assert.Equal(CapsuleerAction.Trade, job.Action);
+        var observation = CapsuleerTestDriver.Hauler(host, f.Clock);
+        Assert.Equal(job.Revision + 1, scheduler.Jobs().Single(job => job.PilotId == pilot).Revision);
+        Assert.Equal(0, scheduler.Read().Failures);
+        Assert.NotNull(observation.Pilot.Position);
+        var sortie = Assert.IsType<RattingProgress>(observation.Work.Ratting);
+        Assert.NotNull(sortie.AnomalyPosition);
+        var sites = host.GetRequiredService<ICombatAnomalies>().List(SystemId, f.Clock.Now);
+        Assert.Contains(sites, site => site.Id == observation.Work.TargetId && site.Position == sortie.AnomalyPosition);
+    }
+
+    private static long PrepareDockedRatter(CapsuleerHaulerTests.Fixture f, bool anomaly = false)
+    {
         long pilot = FitTraveler(f);
         using (WorldDbContext world = new(f.Database.Path))
         {
@@ -370,7 +388,9 @@ public sealed class PilotSpaceActivitiesTests
                     FlagId = (int)InventoryFlag.Cargo,
                 }
             );
-            long choice = Enumerable.Range(1, 100).First(i => RattingRules.Choose(pilot, i));
+            long choice = Enumerable
+                .Range(1, 100)
+                .First(i => RattingRules.Choose(pilot, i) && (i % RattingRules.AnomalyDepartureInterval == 0) == anomaly);
             var progress = new HaulerProgress(
                 HaulerActivity.Docked,
                 0,
@@ -390,6 +410,16 @@ public sealed class PilotSpaceActivitiesTests
             );
             world.SaveChanges();
         }
+        return pilot;
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TravelerPausesAtABeltWhenUnobservedAndReturnsToTheActualStation(bool loot)
+    {
+        using CapsuleerHaulerTests.Fixture f = new();
+        long pilot = PrepareDockedRatter(f);
         if (loot)
         {
             using (CatalogDbContext edited = new(f.Database.CatalogPath, writable: true))
