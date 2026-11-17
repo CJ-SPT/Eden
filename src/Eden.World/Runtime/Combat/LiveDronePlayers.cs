@@ -64,9 +64,13 @@ internal sealed partial class LiveCombatRuntime
             security = Loading(() =>
             {
                 using CatalogDbContext catalog = new(database.CatalogPath);
-                return CrimewatchPersistence.Security(catalog, system);
+                return catalog.Read(CatalogData.Client.Systems, (long)system)?.SecurityStatus ?? double.NaN;
             });
             _droneSecurity[system] = security;
+        }
+        if (!double.IsFinite(security))
+        {
+            return null;
         }
         var key = (Math.Min(source.PilotId, victim.PilotId), Math.Max(source.PilotId, victim.PilotId));
         long engagement =

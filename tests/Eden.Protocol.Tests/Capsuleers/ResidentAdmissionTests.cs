@@ -56,6 +56,7 @@ public sealed class ResidentAdmissionTests
         var origin = CapsuleerProvisioningCatalog.Origins(catalog).First();
         using CapsuleerShipBlueprints blueprints = new(catalog);
         blueprints.Prepare(catalog, origin.RaceId, hull, null, mining: mining);
+        CapsuleerFreight.Prepare(catalog, hull);
         long account = live.Economy.Inspect(world =>
             world.Pilots.Where(pilot => pilot.Id == Human).Select(pilot => pilot.AccountId).Single()
         );
@@ -109,6 +110,12 @@ public sealed class ResidentAdmissionTests
                     requirePrepared: true,
                     mining: mining
                 );
+                if (!mining)
+                {
+                    Assert.NotEmpty(
+                        CapsuleerFreight.Load(action, catalog, BlueprintPilot, BlueprintShip, hull, Station, 0, emptyHull: true)!.Stacks
+                    );
+                }
                 skills = action.Set<PilotSkill>().Count(skill => skill.PilotId == BlueprintPilot);
                 items = action.Set<OwnedItem>().Count(item => item.OwnerId == BlueprintPilot);
                 Assert.True(skills > 0);

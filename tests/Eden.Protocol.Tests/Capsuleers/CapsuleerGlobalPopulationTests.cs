@@ -272,7 +272,8 @@ public sealed class CapsuleerGlobalPopulationTests
             catalog.Database.ExecuteSqlRaw(
                 """
                 UPDATE SourceRecord SET Data='{{}}' WHERE Dataset='client/types' AND Key IN
-                    (SELECT CAST(t.Id AS TEXT) FROM ItemType t JOIN ItemGroup g ON g.Id=t.GroupId WHERE g.CategoryId=25)
+                    (SELECT CAST(t.Id AS TEXT) FROM ItemType t JOIN ItemGroup g ON g.Id=t.GroupId
+                     WHERE g.CategoryId IN (4,7,8,17,18,25,42,43) AND t.Id != 1317)
                 """
             );
         }

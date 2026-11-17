@@ -71,21 +71,6 @@ public sealed class CapsuleerShipBlueprintTests(ITestOutputHelper output)
             {
                 TrafficFitting.Apply(world, catalog, ordinaryPilot, ordinaryShip, profile, f.Clock.Now);
             }
-            else
-            {
-                world.Add(
-                    new OwnedItem
-                    {
-                        Id = ordinaryShip + 1,
-                        OwnerId = ordinaryPilot,
-                        TypeId = CapsuleerProvisioningCatalog.FreightOre(catalog),
-                        LocationId = ordinaryShip,
-                        FlagId = (int)InventoryFlag.Cargo,
-                        Quantity = 100,
-                    }
-                );
-                world.SaveChanges();
-            }
             CapsuleerSupplyStore.Ensure(world, catalog, ordinaryPilot, ordinaryShip);
             CreateIdentity(world, copiedPilot, copiedShip);
             blueprints.Create(world, catalog, origin.RaceId, hull, profile, copiedPilot, copiedShip, station, f.Clock.Now);

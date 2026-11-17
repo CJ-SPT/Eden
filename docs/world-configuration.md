@@ -19,6 +19,9 @@ A draft saves as **pending restart**. Saving, restoring and importing use the sa
 | Planetary industry | Maximum planets per pilot, extraction yield, factory output, command-center CPU and powergrid multipliers. |
 | Structures | Minimum corporation age for anchoring; anchoring, core onlining and decommissioning speeds for new timers. |
 | Simulated pilots | Enable or pause simulated pilots/miners, station traffic density (0–10×), and visitors per watched gate (0–16). |
+| Gate camps | Enable camps, allow legal lowsec targets, tune shifts and departure chance, configure interdictor frequency and probe use. |
+| PvP patrols | Enable nullsec roams, tune departure chance and the percentage of generated nullsec combat fits. |
+| Pilot activities | Situational awareness, belt ratting and public combat anomaly ratting. |
 | Simulation | Checkpoint interval, market maintenance interval and resource check interval. |
 | Travel | Warp speed and align speed multipliers; autopilot gate landing distance, from 0 to 100,000 metres. |
 
@@ -447,6 +450,9 @@ Catalog facts stay in generated models/shared definitions. Native service IDs, e
 
 In **World & economy → Player bots**, configure the saved world's population:
 
+- **Hauler freight** controls regional hull variety, ordinary/courier budget ranges in ISK, courier frequency, empty return trips,
+  cargo type IDs and freight stack survival. These settings live under `settings.capsuleers.freight`.
+  [Shipment defaults and cargo type rules](capsuleer-population.md#hauler-freight).
 - **Enable player bots** controls the entire population. Off despawns and pauses all simulated pilots after restart.
 - **Simulated miners** allows up to one miner per eligible system, prepared globally on restart.
 - **Station traffic density** accepts **0–10×**, default **1×**. It scales the normal geography-based station roster,

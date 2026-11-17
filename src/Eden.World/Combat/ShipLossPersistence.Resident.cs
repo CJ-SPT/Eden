@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Eden.Data.Catalog;
+using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
@@ -9,6 +10,7 @@ using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Inventory;
+using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Combat.Npcs;
@@ -49,7 +51,22 @@ internal static partial class ShipLossPersistence
         var storedManifests = storedShips.Select(s => ShipStoragePersistence.Manifest(world, s)).ToArray();
         string storedManifest = JsonSerializer.Serialize(storedManifests);
         string manifest = JsonSerializer.Serialize(items);
-        var survivors = items.Where(i => !InventoryDefinitions.IsRigSlot(i.FlagId) && lootRoll.Survives()).Select(i => i.Id).ToHashSet();
+        var chance = world.Settings.Capsuleers.Freight.WreckSurvivalPercent;
+        HashSet<long>? freight = null;
+        if (chance != 50 && world.Set<SavedCapsuleerAgent>().Find(pilotId)?.FounderShipId == shipId)
+        {
+            var work =
+                LiveWorld.Find(world.WorldPath)?.HaulerCheckpoints.GetValueOrDefault(pilotId)?.Work
+                ?? HaulerCheckpoint.Read(world.Filter<SavedCapsuleerHauler>(h => h.PilotId == pilotId).SingleOrDefault()?.Progress);
+            freight = work?.Freight?.Stacks.Select(stack => stack.ItemId).ToHashSet();
+        }
+        var survivors = items
+            .Where(i =>
+                !InventoryDefinitions.IsRigSlot(i.FlagId)
+                && (freight?.Contains(i.Id) == true ? lootRoll.Survives(chance) : lootRoll.Survives())
+            )
+            .Select(i => i.Id)
+            .ToHashSet();
         foreach (var stored in storedShips)
         {
             if (lootRoll.Survives())

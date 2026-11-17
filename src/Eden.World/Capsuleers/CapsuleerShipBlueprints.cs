@@ -282,22 +282,6 @@ internal sealed partial class CapsuleerShipBlueprints : IDisposable
         {
             TrafficFitting.Apply(world, catalog, TemplatePilot, TemplateShip, profile, TemplateTime);
         }
-        else
-        {
-            const int StarterOreUnits = 100;
-            world.Add(
-                new OwnedItem
-                {
-                    Id = InventoryPersistence.NextId(world),
-                    OwnerId = TemplatePilot,
-                    TypeId = CapsuleerProvisioningCatalog.FreightOre(catalog),
-                    LocationId = TemplateShip,
-                    FlagId = (int)InventoryFlag.Cargo,
-                    Quantity = StarterOreUnits,
-                }
-            );
-            world.SaveChanges();
-        }
         CapsuleerSupplyStore.Ensure(world, catalog, TemplatePilot, TemplateShip);
         world.SaveChanges();
         var items = world.Set<OwnedItem>().OrderBy(item => item.Id).ToArray();

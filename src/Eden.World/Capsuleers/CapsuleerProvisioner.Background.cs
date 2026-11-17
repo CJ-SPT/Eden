@@ -107,13 +107,17 @@ internal sealed partial class CapsuleerProvisioner
                     reservations: planning!,
                     roster: roster
                 );
-                if (profile is null && !TrafficProvisioning.HasFallback(catalog))
+                profile ??= CapsuleerPatrolFit.Select(catalog, database.Settings.Capsuleers, seed, system, slot);
+                if (profile is null && !CapsuleerFreight.Available(catalog, database.Settings.Capsuleers.Freight))
                 {
                     continue;
                 }
-                int hull = profile?.HullTypeId ?? HaulingRules.BadgerType;
+                int hull =
+                    profile?.HullTypeId
+                    ?? CapsuleerFreight.Hull(catalog, seed, system, slot, database.Settings.Capsuleers.Freight.VariedHulls);
                 ulong roleSeed = CapsuleerProvisioningRules.Seed(seed, system, CapsuleerCareer.Hauling, slot);
                 int race = origins[(int)(roleSeed % (ulong)origins.Length)].RaceId;
+                CapsuleerFreight.Prepare(catalog, hull);
                 (_startupBlueprints ??= new(catalog)).Prepare(catalog, race, hull, profile);
                 // The commit creates at most one founder. Preparing further fits here
                 // would delay entry and could evict the blueprint needed by this batch.

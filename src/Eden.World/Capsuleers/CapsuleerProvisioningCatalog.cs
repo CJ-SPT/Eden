@@ -15,6 +15,10 @@ internal sealed record CapsuleerSite(int SystemId, CapsuleerEligibility Eligibil
 
 internal static class CapsuleerProvisioningCatalog
 {
+    internal static readonly CatalogDefinition<double> Security = new(
+        "capsuleer-local-security",
+        (catalog, system) => catalog.Read(CatalogData.Client.Solarsystemcontent, (long)system)?.Security ?? 1
+    );
     private static readonly CatalogDefinition<CapsuleerOrigin[]> s_origins = new("capsuleer-origins", (catalog, _) => LoadOrigins(catalog));
     private static readonly CatalogDefinition<CapsuleerSite> s_miningSites = new("capsuleer-mining-site", MiningSite);
 

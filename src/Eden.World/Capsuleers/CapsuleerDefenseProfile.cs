@@ -87,6 +87,10 @@ internal sealed partial record CapsuleerDefenseProfile(bool Combat, CapsuleerDef
         var cargo = world.Set<OwnedItem>().Where(i => i.OwnerId == pilotId && i.LocationId == ship).ToArray();
         foreach (var module in modules)
         {
+            if (module.Item.GroupId == Eden.Gameplay.Propulsion.InterdictionRules.LauncherGroup)
+            {
+                continue;
+            }
             bool missile = module.Effect == DogmaEffect.UseMissiles;
             if (!missile && module.Effect is not (DogmaEffect.LaserFired or DogmaEffect.ProjectileFired))
             {

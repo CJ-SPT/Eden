@@ -36,9 +36,6 @@ internal static partial class TrafficProvisioning
             );
     }
 
-    internal static bool HasFallback(CatalogDbContext catalog) =>
-        catalog.FittingType(HaulingRules.BadgerType) is not null && CapsuleerProvisioningCatalog.FreightOre(catalog) != 0;
-
     internal static TrafficProfile? Select(
         WorldDatabase database,
         WorldDbContext world,

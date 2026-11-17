@@ -2,6 +2,153 @@
 
 [Protocol index](../protocol.md)
 
+## Temporary gate camps
+
+An eligible departure can start or join a three-position local watch. Members choose the same gate and shift.
+Their fitted tackle, damage and scouting ships warp to different stand-off ranges. Scouts report visible ships
+for 12 seconds. Combatants verify presence, distance and Crimewatch legality before locking or firing.
+The watch disperses under superior visible numbers and expires at the end of its configured shift.
+Lowsec camps are opt-in and take legal targets. Warp, jump and docking use the normal travel and weapons timers.
+
+A generated nullsec Sabre starts with three disruption probes, a scrambler, a 125mm autocannon and EMP S.
+The fitted launcher spends a charge and capacitor. A trapped simulated pilot can burn out of a field, retry
+its original warp, or jump a gate within reach. The same interdiction rules govern warp drag and catch.
+
+Gameplay references include [EVE University gate camps](https://wiki.eveuniversity.org/Gatecamps),
+[EVE University interdictors](https://wiki.eveuniversity.org/Interdictors) and the [Eden interdiction protocol record](interdiction.md).
+
+**Automated validation.** The first focused role test was
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.GateCampTests.ThreePilotsCoordinateOnOneGateAndDisperseAtTheShiftBoundary`.
+The resident integration cases cover a saved camp sharing one target after startup, normal scan and gun cycles, paid tackle,
+generated Sabre fit and magazine, paid probe deployment, sub-warp escape, ordinary docking, and configuration round trips.
+The scout, tackler and damage ship test took 9.23 ms median, 14.72 ms p95 and 17.69 ms maximum during the combined run.
+It recorded zero SQL commands and connections. Tackle changes caused eight fit evaluations across four of the 20 warmed frames.
+All 216 affected .NET cases passed in 77 seconds. The solution built cleanly in 10.02 seconds, and both Python policy suites
+passed (8 and 9 cases). The full .NET suite was outside the requested validation scope.
+
+After the camp changes, an isolated repeat of the five-case patrol matrix passed in 36 seconds. Each requested case
+completed every due job and updated every observer in each of 20 warmed frames, with zero SQL commands, connections and
+fit calculations. Formatting checked 2,461 files and the line-width and diff checks passed.
+
+| Pilots / observers | Median ms | p95 ms | Maximum ms | Checkpoint capture / projection / write ms |
+| --- | ---: | ---: | ---: | --- |
+| 50 / 2 | 11.92 | 14.61 | 14.65 | 0.41 / 9.83 / 14.52 |
+| 50 / 4 | 19.63 | 22.93 | 24.19 | 0.34 / 16.05 / 16.96 |
+| 100 / 2 | 34.23 | 49.32 | 52.33 | 0.76 / 31.40 / 18.35 |
+| 100 / 4 | 40.31 | 44.21 | 45.35 | 0.51 / 28.68 / 18.47 |
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Observe the scout and tackler landing, then try to leave a camp by gate or warp.
+
+## Nullsec PvP roams
+
+Armed pilots can undock and patrol up to four local belts and gates. Hunters wait for visible targets, a real lock and
+a legal shot. They spend ammunition and capacitor and give up pursuit beyond 75 km. Capsules and player corporation or
+alliance mates are excluded. Patrols, targets and their deadlines survive checkpoints and population pauses. Generated
+nullsec combat pilots use owned rail Merlins. Imported pilots retain their recorded fits. The circuit and fitting mix
+are Eden policies. [EVE University solo PvP](https://wiki.eveuniversity.org/Solo_PvP).
+
+**Automated validation.** The exact legality test covers nullsec attacks, target lock delay, damage, lost presence,
+low/high security refusals and 100 warm revalidations without SQL or fit work. The scheduler test covers undock,
+multiple grids and return. Ten armed pilots and two full observer sessions ran 36 one-second frames. All ten fired.
+The last 20 frames took 6.77 ms median, 7.98 ms p95 and 8.97 ms maximum in the isolated run, with zero SQL commands,
+connections or fitting calculations. Checkpoint writing was outside this measurement. The earlier 28.01 ms freight timing
+covers 200 unchanged-presentation ticks.
+
+The isolated scale run measured the entire one-second frame, draining all due jobs before completing every distinct
+observer session update and encoding its packets. All pilots fired. Two origin communities supplied the largest fleet.
+The 20 warmed frames in each case recorded zero SQL commands, connections and fit calculations.
+
+| Pilots | Observers | Median ms | p95 ms | Max ms | Max maintenance wakes | Checkpoint capture / projection / write ms |
+| ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| 50 | 2 | 21.92 | 32.56 | 34.02 | 2 | 0.53 / 20.69 / 16.55 |
+| 50 | 4 | 12.26 | 15.03 | 15.16 | 2 | 0.29 / 7.65 / 14.72 |
+| 100 | 2 | 32.44 | 37.46 | 38.02 | 4 | 0.80 / 18.04 / 14.00 |
+| 100 | 4 | 28.41 | 38.97 | 39.04 | 4 | 0.50 / 17.84 / 19.21 |
+
+The isolated matrix used the exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerDefenseFrameTests.ArmedPatrolsOnOneGridWithFullObservers`.
+Results reflect one run per combination on the synthetic railgun fleet. File saves were timed separately.
+
+The combined patrol, awareness, defense, provisioning, fit, population pause, performance and administration selection passed
+121 cases in 42 seconds. The clean solution build took 7.72 seconds. The Python catalog and formatting policy suites passed
+8 and 9 cases respectively. Local security selection caches only the requested system and passes the isolated provisioning
+regression with an unreadable unrelated system record.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Observe a nullsec hunter locking a visible ship and breaking pursuit after it warps away.
+
+## Pilot awareness and ratting
+
+Visible contacts are indexed per system and spatial cell. A pilot samples up to 16 entries per neighboring cell and
+retains at most 12 sightings. Arriving, departing, cloaked and warping ships are excluded. Mining decisions and traveler
+threat memory depend on local observations. Ratters can visit public combat anomalies and choose fighting distance from
+their available weapons. Checkpoints store the selected site and bounded belt memory.
+
+**Automated validation.** The exact populated spatial-index regression and the combined awareness, mining, defense,
+traveler, ratting, anomaly, settings and traffic performance filter passed. The combined run passed 87 tests in 47 seconds.
+A 2,000-ship scene exercised bounded visibility with zero SQL commands, connections or fit calculations on the observation
+path. The solution built cleanly in 8.55 seconds. Both Python policy suites passed (8 and 9 cases), as did formatting and width checks.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Observe a miner changing belts after a combat ship lands, or follow a ratter into a public anomaly.
+
+## Hauler freight settings
+
+The population settings editor and pending revision API persist hauler hull, cargo pool, budget, frequency
+and wreck-survival controls. Old saves deserialize with standard freight settings. Custom pools cache catalog
+records by type and skip goods lacking a usable volume or price. Budgets use the bundled sell-price snapshot
+with a catalog base-price fallback. Wreck overrides apply only to the recorded manifest on the original pilot ship.
+[Settings and defaults](../capsuleer-population.md#hauler-freight).
+
+**Automated validation.** The editor round-trip, ordered budgets and invalid type lists passed the exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.FreightTests.FreightEditorRoundTripsAndRejectsInvalidBudgetsAndTypeIds`.
+The combined freight, configuration/editor, population, resident admission, traffic performance and NPC combat selection
+passed 99 cases in 35 seconds with one opt-in browser test skipped. Loss tests exercise 0%, 50% and 100% survival using a
+saved custom cargo pool. The solution built in 4.65 seconds with zero warnings and errors.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer check.** Save a custom freight pool and inspect a new shipment after restart.
+
+## Generated hauler hulls and freight
+
+Generated traffic chooses among the twelve ordinary Tech I haulers present in the build 3662168 catalog. Regional empire
+hulls receive double weight. Specialist ships carry compatible goods in a supported hold. Freighters can carry bulk materials,
+local supplies or higher-value courier cargo. Shipment quantities depend on free volume and a bounded catalog-value budget.
+Some return legs run empty. Selection, delivery and the saved manifest share the pilot's existing transaction and checkpoint.
+Cargo scanners, kill reports and wreck settlement read these actual stacks. Docking consumes only cargo still owned and carried
+from the delivered manifest. Other possessions remain aboard. No trading or live price lookup participates in freight generation.
+
+In existing saves the next safe dock recognizes the original pilot, ship and exact starter ore stack. It replaces that stack
+once and grants the skills for the selected hull. Altered names, fits, damage, losses and cargo that cannot transfer defer conversion.
+Imported fits retain their identity. Catalog hull and cargo choices are memoized and prepared ahead of live admission.
+Movement, observer reads and gate transit do no shipment planning.
+
+Gameplay references: [hauling](https://wiki.eveuniversity.org/Hauling) and [hauler roles](https://wiki.eveuniversity.org/Tech_I_Role_Reference).
+The local evejs NPC equipment and movement loop was inspected. Freight uses Eden's resident inventory and existing movement.
+The published [Carbon Destiny reference](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ball.cpp)
+continues to apply to normal hull flight.
+
+**Automated validation.** Exact initial filter `FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.FreightTests.DifferentShipmentsRespectVolumeValueAndReturnTrips`.
+The capsuleer namespace comparison ran 436 baseline and 439 candidate cases before the final regional weighting and wreck test.
+Both had the same eleven failures across gate traffic, population handoff, shopping, resupply and presentation fixtures.
+The matched four-observer 10× traffic workload had zero observation reads. For eleven pilots the baseline/candidate frame batches
+took 57.59/28.01 ms, allocating 9.74/9.90 MB. Checkpoint capture took 1.56/0.75 ms, projection 14.60/22.87 ms and writing
+106.41/12.67 ms. These are individual noisy samples. Freight tests cover saved conversion, custom ships, capacity, destination
+variation and checkpointed wreck contents. Resident founder admission asserts zero SQL, connections and fitting calculations.
+
+The final focused selection covered freight, admission, inbound provisioning, encounters, blueprints, snapshot import and migration,
+global population, startup and traffic performance, and information scanners. All 149 passed in 53 seconds. The build passed
+without warnings or errors in 7.23 seconds. Both Python policy suites passed (8 catalog and 9 formatting cases).
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer check.** Cargo-scan several haulers and compare a destroyed ship's wreck with its scan.
+
 ## Shared bot presentation - November 16, 2026
 
 Each active system retains immutable miner and hauler observations against resident shared/local versions, its activation

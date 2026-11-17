@@ -55,7 +55,7 @@ internal sealed partial class CapsuleerProvisioner
         if (
             Math.Max(observerCount, sourceCount) == 0
             || origins.Length == 0
-            || database.Traffic.Profiles.Count == 0 && !TrafficProvisioning.HasFallback(catalog)
+            || database.Traffic.Profiles.Count == 0 && !CapsuleerFreight.Available(catalog, database.Settings.Capsuleers.Freight)
         )
         {
             world.SaveChanges();

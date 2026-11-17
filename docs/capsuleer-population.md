@@ -53,9 +53,53 @@ retain their existing deferral rules. Use **Refresh population** while pilots tr
 visitors. Ordinary Local receives complete membership batches; delayed Local keeps its normal privacy rules.
 
 
+## Temporary gate camps
+
+Eligible combat pilots can form a three-ship camp at a local gate. A scout reports visible ships, a fitted tackler can
+hold a target, and a damage pilot fires after locking. Camp members share recent sightings and disperse when outnumbered.
+Nullsec camps are enabled by default, with a 20% chance per eligible departure during an open shift. A shift lasts
+240 seconds, followed by an equally long closed period. Operators can set the chance to 0–100% and the duration to
+30–1,800 seconds. The separate lowsec option defaults off and permits only legal targets when enabled.
+
+Bubble use defaults on. With the full catalog, 12% of newly generated nullsec combat fits can be interdictors.
+Change the percentage or disable bubble launches in the simulated pilot settings. New camp Sabres have an autocannon,
+a scrambler and three real disruption probes. Simulated travelers obey bubble drag and catch geometry and can burn clear.
+
+## PvP roams
+
+Nullsec PvP roams default on. The default roam chance is 30% per eligible departure and 35% of new generated nullsec
+traffic pilots can receive combat fits. Both percentages accept 0 to 100. Existing fitted pilots can take a patrol after
+docking. They visit up to four local belts and gates, hold briefly on each grid and return to their station.
+
+## Pilot awareness
+
+World Configuration exposes situational awareness, belt ratting and combat anomaly ratting independently. All three default
+on. Cautious miners can leave a threatened belt in dangerous space. Bolder miners finish their paid cycle. Loaded haulers
+remember danger and may turn back. Ratters with usable weapons select from suitable belts and ordinary public combat anomalies.
+
+## Hauler freight
+
+The ordinary generated fleet includes fast, bulk and specialist haulers. Cargo follows the trip and hull.
+Scan a mineral hauler for minerals, an ammunition transport for charges or a local courier for supplies.
+Cargo is finite and can survive in the wreck. An empty return leg is possible.
+Untouched legacy Badgers with the original 100 units of ore convert at their next safe dock.
+[Implementation and old-save coverage](protocol/capsuleers.md#generated-hauler-hulls-and-freight).
+
+In **World & economy / Player bots**, set the ordinary and courier budget ranges in ISK. Ordinary trips default to
+150,000-750,000 ISK and eligible courier trips to 800,000-4,000,000 ISK. Defaults are 8% courier selection among
+eligible hulls, 14% empty subsequent trips and 50% wreck survival per freight stack. Actual loads can fall below
+budget due to hold capacity, unit volume or indivisible items. Valuation uses the bundled sell-price snapshot,
+then catalog base price. Unpriced items are skipped.
+
+Leave the cargo type list blank for standard goods or enter up to 64 distinct published inventory type IDs.
+Materials, modules, charges, commodities, drones, asteroids and planetary goods are accepted where the hold permits them.
+An explicit list replaces the default pool. An empty compatible pool produces an empty hold. A zero minimum and maximum
+disable that budget. Disable regional hulls to select the Badger where available. Changes activate on restart.
+Onboard freight retains its identity until delivery or destruction. Wreck survival uses the active setting at loss.
+
 ## zKill-backed travelers
 
-An optional local `traffic.sqlite` beside the world database supplies real pilot names, varied supported ships and complete victim fits. It is loaded at startup, and gameplay makes no network requests. An absent, incompatible or corrupt snapshot leaves generated Badger traffic available. Saved imported pilots keep their local identity, ship, equipment and losses even when the snapshot changes or disappears.
+An optional local `traffic.sqlite` beside the world database supplies real pilot names, varied supported ships and complete victim fits. It is loaded at startup, and gameplay makes no network requests. An absent, incompatible or corrupt snapshot uses generated Tech I freighters with regional hull and shipment variety. Saved imported pilots keep their local identity, ship, equipment and losses even when the snapshot changes or disappears.
 
 Create or refresh the snapshot from the repository root:
 

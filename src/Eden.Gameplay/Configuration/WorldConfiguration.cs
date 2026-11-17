@@ -92,7 +92,22 @@ public sealed record CapsuleerPopulationPolicy(
     bool Miners = true,
     decimal TrafficMultiplier = 1,
     int GateVisitors = TrafficJourneyRules.GateVisitorCount
-);
+)
+{
+    public int InterdictorPercent { get; init; } = 12;
+    public bool GateCamps { get; init; } = true;
+    public bool LowsecGateCamps { get; init; }
+    public bool CampBubbles { get; init; } = true;
+    public int CampPercent { get; init; } = 20;
+    public int CampSeconds { get; init; } = 240;
+    public bool RoamingPvp { get; init; } = true;
+    public int RoamPercent { get; init; } = 30;
+    public int GeneratedCombatPercent { get; init; } = 35;
+    public bool SituationalAwareness { get; init; } = true;
+    public bool BeltRatting { get; init; } = true;
+    public bool AnomalyRatting { get; init; } = true;
+    public CapsuleerFreightPolicy Freight { get; init; } = CapsuleerFreightPolicy.Default;
+}
 
 public sealed record SimulationPolicy(int CheckpointSeconds = 15, int MarketPollMilliseconds = 1000, int ResourceCheckSeconds = 60);
 

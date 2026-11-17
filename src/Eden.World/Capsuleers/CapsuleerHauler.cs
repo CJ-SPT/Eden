@@ -9,6 +9,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
+using Eden.Gameplay.Ships;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
@@ -357,6 +358,17 @@ internal sealed partial class CapsuleerHauler(
             _background = _background && !RequiresDetail;
         }
         AdvanceRattingClock(job.DueTicks);
+        if (
+            Work.Ratting is { } sortie
+            && !(
+                sortie.Patrol is { } patrol ? PatrolAllowed(patrol)
+                : sortie.AnomalyPosition is null ? database.Settings.Capsuleers.BeltRatting
+                : database.Settings.Capsuleers.AnomalyRatting
+            )
+        )
+        {
+            _work = Work with { Ratting = sortie with { Phase = RattingPhase.Returning }, Retreating = true };
+        }
         var proactive = ProactiveTarget();
         var previousDefense = Work.Defense;
         var defended = _background
@@ -529,6 +541,10 @@ internal sealed partial class CapsuleerHauler(
         var schedule = Schedule();
         var next = job.Next(schedule.DueTicks, schedule.Action);
         _operation.Commit(next, null, new HaulerCheckpoint(pilotId, Work));
+        if (Work.Ratting is { Phase: RattingPhase.TravellingToBelt, Patrol.Camp: { } camp })
+        {
+            defense.Camps.At(Pilot.SystemId, camp.GateId, camp.Until, Work.ActiveTicks)?.Join(pilotId, false, camp.Role);
+        }
         Interlocked.CompareExchange(ref _threatenedShip, 0, Pilot.ShipId);
         return next;
     }
@@ -613,6 +629,10 @@ internal sealed partial class CapsuleerHauler(
         _tackleRevision = -1;
         _warpBlocked = false;
         _work = Live?.HaulerCheckpoints.GetValueOrDefault(pilotId)?.Work ?? HaulerCheckpoint.Read(Founder.Progress);
+        if (_work is { Ratting.Patrol.Camp: { } camp } && Work.ShipId == Pilot.ShipId)
+        {
+            defense.Camps.At(Pilot.SystemId, camp.GateId, camp.Until, Work.ActiveTicks)?.Join(pilotId, false, camp.Role);
+        }
         var previous = _work;
         long anchor =
             previous?.ActiveTicks
@@ -669,7 +689,9 @@ internal sealed partial class CapsuleerHauler(
         transaction.Commit();
         transaction.Dispose();
         RefreshObjects();
-        _target = _objects.FirstOrDefault(o => o.Id == Work.TargetId);
+        _target =
+            _objects.FirstOrDefault(o => o.Id == Work.TargetId)
+            ?? (Work.Ratting?.Phase == RattingPhase.TravellingToBelt ? SiteTarget(Work.Ratting) : null);
     }
 
     private void RefreshObjects(bool loadResources = true)
@@ -768,6 +790,15 @@ internal sealed partial class CapsuleerHauler(
         {
             throw new InvalidDataException("Waiting for a replacement hauling ship.");
         }
+        bool upgraded =
+            Work.Freight is null
+            && Pilot.ShipTypeId == HaulingRules.BadgerType
+            && CapsuleerFreight.Upgrade(_operation.World, _operation.Catalog, pilotId, Pilot.ShipId);
+        if (upgraded)
+        {
+            _pilot = ReadPilot(_operation.World, CapsuleerCommunityStore.MinerAccountId);
+            _navigation.AdoptHull();
+        }
         if (!_trafficRefreshChecked && database.Traffic.Profiles.Count > 0)
         {
             if (TrafficProvisioning.Refresh(database, _operation.World, _operation.Catalog, pilotId, _route, Now))
@@ -797,11 +828,36 @@ internal sealed partial class CapsuleerHauler(
         {
             AssignJourney();
         }
-        // The cargo belongs to this encounter. A dock changes its route, never
-        // purchases or lists goods on behalf of the independent regional economy.
+        var freight = Work.Freight;
+        int destination = Pilot.StationId == _route.DestinationStationId ? _route.SourceStationId : _route.DestinationStationId;
+        if (
+            freight?.Destination == Pilot.StationId
+            || upgraded
+            || (
+                freight is null
+                && Pilot.ShipGroupId == (int)HullClass.Hauler
+                && _operation.World.Set<SavedTrafficIdentity>().Find(pilotId) is not null
+            )
+        )
+        {
+            if (freight is not null)
+            {
+                CapsuleerFreight.Deliver(_operation.World, pilotId, Pilot.ShipId, freight);
+            }
+            freight = CapsuleerFreight.Load(
+                _operation.World,
+                _operation.Catalog,
+                pilotId,
+                Pilot.ShipId,
+                Pilot.ShipTypeId,
+                destination,
+                checked((freight?.Sequence ?? -1) + 1)
+            );
+        }
         _work = Work with
         {
-            DestinationStationId = Pilot.StationId == _route.DestinationStationId ? _route.SourceStationId : _route.DestinationStationId,
+            DestinationStationId = destination,
+            Freight = freight is not null && freight.Destination != destination ? freight with { Destination = destination } : freight,
             RouteIndex = Pilot.StationId == _route.SourceStationId ? 0 : _route.Systems.Length - 1,
             RouteDirection = Pilot.StationId == _route.SourceStationId ? 1 : -1,
             Retreating = false,
@@ -877,6 +933,20 @@ internal sealed partial class CapsuleerHauler(
             return;
         }
         _work = Work with { LastMotionStamp = Work.Stamp };
+        if (_target is not null && (_navigation.WarpDestination is not null || Work.EscapingBubble))
+        {
+            bool escaping = defense.NavigateField(
+                Pilot,
+                _navigation,
+                _target,
+                Work.EscapingBubble,
+                Work.Stamp,
+                Now,
+                _warpBlocked,
+                Work.Ratting is { Phase: RattingPhase.TravellingToBelt, Patrol.Camp: { } camp } ? GateCampRules.StandOff(camp.Role) : 0
+            );
+            _work = Work with { EscapingBubble = escaping };
+        }
         bool wasWarping = _navigation.Warp is not null;
         var tick = _navigation.Advance(
             Pilot.ShipId,
@@ -904,7 +974,16 @@ internal sealed partial class CapsuleerHauler(
         {
             Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, _operation.Catalog, Pilot.ShipId);
         }
-        if (_navigation.Warp is not null || _navigation.WarpDestination is not null)
+        if (
+            _navigation.Warp is not null
+            || _navigation.WarpDestination is not null
+            || Work.EscapingBubble
+                && (
+                    _target?.DestinationGateId is null
+                    || Work.Ratting is not null
+                    || !GateTravelRules.InRange(Pilot.Position!, Pilot.Flight.ShipRadius, _target)
+                )
+        )
         {
             return;
         }
@@ -1037,6 +1116,34 @@ internal sealed partial class CapsuleerHauler(
         BeginTravel();
     }
 
+    private long _nextLook;
+
+    private void WatchGate()
+    {
+        if (
+            !database.Settings.Capsuleers.SituationalAwareness
+            || Work.Retreating
+            || Work.Freight?.Stacks.Length is not > 0
+            || _target is not { DestinationSystemId: not null } gate
+            || Pilot.Position is not { } position
+            || Work.ActiveTicks < _nextLook
+            || position.DistanceTo(gate.Position) > NpcEncounterDefinitions.VisibilityRange
+        )
+        {
+            return;
+        }
+        _nextLook = Work.ActiveTicks + TimeSpan.FromSeconds(PilotAwareness.LookSeconds(pilotId)).Ticks;
+        if (
+            TrafficRules.SecurityBand(database.Catalog.Definition(CapsuleerProvisioningCatalog.Security, Pilot.SystemId))
+                != TrafficSecurityBand.High
+            && defense.Observe(Pilot, Work.ActiveTicks).Count(s => PilotAwareness.ArmedHull(s.Hull))
+                >= (PilotAwareness.Cautious(pilotId) ? 2 : 3)
+        )
+        {
+            ObserveAggression(Pilot.ShipId);
+        }
+    }
+
     private void ObserveDanger(int destinyStamp)
     {
         if (
@@ -1048,6 +1155,7 @@ internal sealed partial class CapsuleerHauler(
         {
             return;
         }
+        WatchGate();
         var visible = encounters
             .Advance(Pilot.SystemId, Now)
             .Where(n => !n.Warping && n.Position.DistanceTo(Pilot.Position) <= AsteroidDefinitions.VisibilityRange)

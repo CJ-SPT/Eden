@@ -40,6 +40,32 @@ public sealed class SettingsForm
     public bool AlwaysResolvedSignatures { get; set; }
     public bool StartingSkills { get; set; }
     public bool StartingEquipment { get; set; }
+    public bool FreightVariedHulls { get; set; }
+    public long FreightOrdinaryMinimumIsk { get; set; }
+    public long FreightOrdinaryMaximumIsk { get; set; }
+    public long FreightCourierMinimumIsk { get; set; }
+    public long FreightCourierMaximumIsk { get; set; }
+    public int FreightCourierPercent { get; set; }
+    public int FreightEmptyReturnPercent { get; set; }
+    public int FreightWreckSurvivalPercent { get; set; }
+    public string FreightCargoTypeIds { get; set; } = "";
+
+    public bool SituationalAwareness { get; set; }
+    public bool BeltRatting { get; set; }
+    public bool AnomalyRatting { get; set; }
+
+    public bool RoamingPvp { get; set; }
+    public int RoamPercent { get; set; }
+    public int GeneratedCombatPercent { get; set; }
+
+    public bool GateCamps { get; set; }
+    public bool LowsecGateCamps { get; set; }
+    public bool CampBubbles { get; set; }
+    public int CampPercent { get; set; }
+    public int CampSeconds { get; set; }
+
+    public int InterdictorPercent { get; set; }
+
     public bool GlobalProvisioning { get; set; }
     public bool SimulatedPilots { get; set; }
     public bool SimulatedMiners { get; set; }
@@ -255,6 +281,27 @@ public sealed class SettingsForm
             SimulatedPilots = settings.Capsuleers.Enabled,
             SimulatedMiners = settings.Capsuleers.Miners,
             TrafficMultiplier = settings.Capsuleers.TrafficMultiplier,
+            FreightVariedHulls = settings.Capsuleers.Freight.VariedHulls,
+            FreightOrdinaryMinimumIsk = settings.Capsuleers.Freight.OrdinaryMinimumIsk,
+            FreightOrdinaryMaximumIsk = settings.Capsuleers.Freight.OrdinaryMaximumIsk,
+            FreightCourierMinimumIsk = settings.Capsuleers.Freight.CourierMinimumIsk,
+            FreightCourierMaximumIsk = settings.Capsuleers.Freight.CourierMaximumIsk,
+            FreightCourierPercent = settings.Capsuleers.Freight.CourierPercent,
+            FreightEmptyReturnPercent = settings.Capsuleers.Freight.EmptyReturnPercent,
+            FreightWreckSurvivalPercent = settings.Capsuleers.Freight.WreckSurvivalPercent,
+            FreightCargoTypeIds = settings.Capsuleers.Freight.CargoTypeIds,
+            SituationalAwareness = settings.Capsuleers.SituationalAwareness,
+            BeltRatting = settings.Capsuleers.BeltRatting,
+            AnomalyRatting = settings.Capsuleers.AnomalyRatting,
+            RoamingPvp = settings.Capsuleers.RoamingPvp,
+            RoamPercent = settings.Capsuleers.RoamPercent,
+            GeneratedCombatPercent = settings.Capsuleers.GeneratedCombatPercent,
+            GateCamps = settings.Capsuleers.GateCamps,
+            LowsecGateCamps = settings.Capsuleers.LowsecGateCamps,
+            CampBubbles = settings.Capsuleers.CampBubbles,
+            CampPercent = settings.Capsuleers.CampPercent,
+            CampSeconds = settings.Capsuleers.CampSeconds,
+            InterdictorPercent = settings.Capsuleers.InterdictorPercent,
             GateVisitors = settings.Capsuleers.GateVisitors,
             CheckpointSeconds = settings.Simulation.CheckpointSeconds,
             MarketPollMilliseconds = settings.Simulation.MarketPollMilliseconds,
@@ -313,7 +360,32 @@ public sealed class SettingsForm
                 MiningIskPerSkillPoint,
                 StartingEquipment
             ),
-            Capsuleers = new(GlobalProvisioning, SimulatedPilots, SimulatedMiners, TrafficMultiplier, GateVisitors),
+            Capsuleers = new(GlobalProvisioning, SimulatedPilots, SimulatedMiners, TrafficMultiplier, GateVisitors)
+            {
+                SituationalAwareness = SituationalAwareness,
+                BeltRatting = BeltRatting,
+                AnomalyRatting = AnomalyRatting,
+                RoamingPvp = RoamingPvp,
+                RoamPercent = RoamPercent,
+                GeneratedCombatPercent = GeneratedCombatPercent,
+                GateCamps = GateCamps,
+                LowsecGateCamps = LowsecGateCamps,
+                CampBubbles = CampBubbles,
+                CampPercent = CampPercent,
+                CampSeconds = CampSeconds,
+                InterdictorPercent = InterdictorPercent,
+                Freight = new(
+                    FreightVariedHulls,
+                    FreightOrdinaryMinimumIsk,
+                    FreightOrdinaryMaximumIsk,
+                    FreightCourierMinimumIsk,
+                    FreightCourierMaximumIsk,
+                    FreightCourierPercent,
+                    FreightEmptyReturnPercent,
+                    FreightWreckSurvivalPercent,
+                    FreightCargoTypeIds
+                ),
+            },
             Simulation = new(CheckpointSeconds, MarketPollMilliseconds, ResourceCheckSeconds),
             Navigation = new(AutopilotGateLandingMeters, WarpSpeedMultiplier, AlignSpeedMultiplier),
             Exploration = new(AlwaysResolvedSignatures),

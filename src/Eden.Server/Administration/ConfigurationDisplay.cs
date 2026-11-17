@@ -67,6 +67,27 @@ internal static class ConfigurationDisplay
         ["capsuleers.enabled"] = "Player bots",
         ["capsuleers.miners"] = "Simulated miners",
         ["capsuleers.trafficMultiplier"] = "Station traffic density",
+        ["capsuleers.freight.variedHulls"] = "Use regional hauler hulls",
+        ["capsuleers.freight.ordinaryMinimumIsk"] = "Ordinary freight minimum budget (ISK)",
+        ["capsuleers.freight.ordinaryMaximumIsk"] = "Ordinary freight maximum budget (ISK)",
+        ["capsuleers.freight.courierMinimumIsk"] = "Courier minimum budget (ISK)",
+        ["capsuleers.freight.courierMaximumIsk"] = "Courier maximum budget (ISK)",
+        ["capsuleers.freight.courierPercent"] = "Valuable trips among eligible couriers (%)",
+        ["capsuleers.freight.emptyReturnPercent"] = "Empty subsequent freight trips (%)",
+        ["capsuleers.freight.wreckSurvivalPercent"] = "Freight stacks surviving destruction (%)",
+        ["capsuleers.freight.cargoTypeIds"] = "Freight cargo type IDs (comma-separated, blank for standard goods)",
+        ["capsuleers.situationalAwareness"] = "React to ships and remember dangerous belts",
+        ["capsuleers.beltRatting"] = "Run belt-ratting sorties",
+        ["capsuleers.anomalyRatting"] = "Run ordinary combat anomalies",
+        ["capsuleers.roamingPvp"] = "Nullsec PvP roams",
+        ["capsuleers.roamPercent"] = "Roam chance per departure (%)",
+        ["capsuleers.generatedCombatPercent"] = "Combat fits among generated nullsec pilots (%)",
+        ["capsuleers.gateCamps"] = "Temporary gate camps",
+        ["capsuleers.lowsecGateCamps"] = "Lowsec camps against legal targets",
+        ["capsuleers.campBubbles"] = "Launch fitted interdiction probes",
+        ["capsuleers.campPercent"] = "Camp chance per departure (%)",
+        ["capsuleers.campSeconds"] = "Gate camp shift length (seconds)",
+        ["capsuleers.interdictorPercent"] = "Interdictors among generated nullsec combat fits (%)",
         ["capsuleers.gateVisitors"] = "Visitors per watched gate",
         ["capsuleers.globalProvisioning"] = "Legacy global provisioning preference",
         ["progression.grantStartingSkills"] = "Starting skills for new pilots",
@@ -171,25 +192,33 @@ internal static class ConfigurationDisplay
         }
     }
 
-    private static Dictionary<string, string> Values(WorldSettings settings) =>
-        JsonSerializer
-            .SerializeToElement(settings, JsonSerializerOptions.Web)
-            .EnumerateObject()
-            .SelectMany(group =>
-                group
-                    .Value.EnumerateObject()
-                    .Select(field => new KeyValuePair<string, string>(
-                        group.Name + "." + field.Name,
-                        field.Name is "testingPriceCents" or "grantCents"
-                            ? (field.Value.GetDecimal() / 100m).ToString(System.Globalization.CultureInfo.InvariantCulture)
-                            : field.Value.ValueKind switch
-                            {
-                                JsonValueKind.True => "On",
-                                JsonValueKind.False => "Off",
-                                _ when s_multipliers.Contains(group.Name + "." + field.Name) => field.Value.GetDecimal() + "×",
-                                _ => field.Value.GetRawText(),
-                            }
-                    ))
-            )
-            .ToDictionary();
+    private static Dictionary<string, string> Values(WorldSettings settings)
+    {
+        Dictionary<string, string> values = [];
+        Add(JsonSerializer.SerializeToElement(settings, JsonSerializerOptions.Web), "");
+        return values;
+
+        void Add(JsonElement group, string prefix)
+        {
+            foreach (var field in group.EnumerateObject())
+            {
+                string path = prefix.Length == 0 ? field.Name : prefix + "." + field.Name;
+                if (field.Value.ValueKind == JsonValueKind.Object)
+                {
+                    Add(field.Value, path);
+                    continue;
+                }
+                values[path] = field.Name is "testingPriceCents" or "grantCents"
+                    ? (field.Value.GetDecimal() / 100m).ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    : field.Value.ValueKind switch
+                    {
+                        JsonValueKind.True => "On",
+                        JsonValueKind.False => "Off",
+                        JsonValueKind.String => field.Value.GetString() ?? "",
+                        _ when s_multipliers.Contains(path) => field.Value.GetDecimal() + "×",
+                        _ => field.Value.GetRawText(),
+                    };
+            }
+        }
+    }
 }

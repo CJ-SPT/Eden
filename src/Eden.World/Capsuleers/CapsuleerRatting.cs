@@ -3,6 +3,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
+using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Loot;
@@ -21,7 +22,8 @@ internal sealed class CapsuleerRatting(
     INpcEncounters encounters,
     IWrecks wrecks,
     CapsuleerDefense defense,
-    IPilotDrones drones
+    IPilotDrones drones,
+    ICombatAnomalies anomalies
 )
 {
     private const int MaximumCachedAssessments = 512;
@@ -38,12 +40,33 @@ internal sealed class CapsuleerRatting(
         RattingAssessment Result
     );
 
+    internal CombatAnomaly? ScoutAnomaly(int system, long now, long pilot, long sequence, BeltMemory[] memory, long elapsed) =>
+        anomalies
+            .List(system, now)
+            .Where(s =>
+                !s.IsSignature
+                && !s.Ded
+                && !s.Wormhole
+                && s.Exploration is null
+                && s.Mining is null
+                && s.Difficulty <= 3
+                && !memory.Any(b => b.BeltId == s.Id && b.Until > elapsed)
+            )
+            .OrderBy(s => TravelerRoutineRules.Mix((ulong)s.Id ^ (ulong)pilot ^ (ulong)sequence))
+            .FirstOrDefault();
+
+    internal void Arrive(DockedPilot pilot, long now) => anomalies.Arrive(pilot.SystemId, pilot.Position!, now);
+
     internal NpcContact[] Pirates(DockedPilot pilot, long belt, long now) =>
         encounters
             .ReadScene(pilot.SystemId, pilot.Position!, now)
             .Visible.Where(n =>
                 n.Role == NpcRole.Pirate
-                && n.AnchorKind == NpcAnchorKind.Belt
+                && (
+                    belt >= CombatAnomalyRules.FirstSiteId
+                        ? n.AnchorKind == NpcAnchorKind.Anomaly && n.AnchorId == belt
+                        : n.AnchorKind == NpcAnchorKind.Belt
+                )
                 && !n.Health.Remaining.Destroyed
                 && n.Warp is null
                 && pilot.Position!.DistanceTo(n.Position) <= NpcEncounterDefinitions.VisibilityRange

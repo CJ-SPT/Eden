@@ -108,6 +108,7 @@ internal sealed class CapsuleerScene(SharedSpace space, TimeProvider clock, Shar
                 Arriving: observation.Work.Stamp < observation.Work.ArrivalUntil,
                 GateArrival: observation.Work is { ArrivalGateId: long gate, ArrivalAt: long arrived } ? new(gate, arrived) : null,
                 DepartureAt: observation.Work.DepartureAt,
+                Camp: observation.Work.Ratting?.Patrol?.Camp,
                 Defense: observation.Work.Defense
             )
         );
@@ -140,7 +141,8 @@ internal sealed class CapsuleerScene(SharedSpace space, TimeProvider clock, Shar
         bool Arriving = false,
         GateArrivalContact? GateArrival = null,
         long? DepartureAt = null,
-        CapsuleerDefenseState? Defense = null
+        CapsuleerDefenseState? Defense = null,
+        GateCamp? Camp = null
     );
 
     private sealed class PilotScene(SharedSpace space, TimeProvider clock)
@@ -253,6 +255,7 @@ internal sealed class CapsuleerScene(SharedSpace space, TimeProvider clock, Shar
                     FollowMode: nav.FollowMode,
                     Stamp: stamp,
                     GateArrival: observation.GateArrival,
+                    Camp: observation.Camp,
                     DepartureAt: observation.DepartureAt,
                     Weapons: cycles
                         .Where(cycle => cycle.Effect is DogmaEffect.LaserFired or DogmaEffect.ProjectileFired)

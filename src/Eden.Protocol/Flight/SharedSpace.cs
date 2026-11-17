@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Docking;
@@ -141,7 +142,8 @@ internal sealed record ShipContact(
     GateArrivalContact? GateArrival = null,
     long? DepartureAt = null,
     bool Cloaked = false,
-    SpatialActivation? MicroJump = null
+    SpatialActivation? MicroJump = null,
+    GateCamp? Camp = null
 );
 
 internal sealed record MotionOrder(long Sequence, StampedDestinyUpdate Update);
@@ -156,6 +158,11 @@ internal sealed class SharedSpace(
 {
     // The coordinator owns copied navigation states. Connections retain their socket and notification queue.
     private readonly ConcurrentDictionary<long, ShipContact> _ships = new();
+
+    private readonly PilotSightGrid _sightGrid = new();
+
+    public Eden.Gameplay.Capsuleers.PilotSighting[] Observe(int system, long ship, SpacePosition origin, long sample) =>
+        _sightGrid.Observe(_ships, system, ship, origin, sample);
 
     private readonly OwnershipMonitor _motionOwnership = new("flight");
 
@@ -327,6 +334,7 @@ internal sealed class SharedSpace(
                         .ToArray();
                     if (_ships.TryGetValue(ship.Id, out var contact))
                     {
+                        _sightGrid.Move(ship.Id, contact.Pilot.SystemId, contact.Pilot.Position, ship.SystemId, ship.Position);
                         _ships[ship.Id] = contact with
                         {
                             Pilot = contact.Pilot with { Position = ship.Position },
@@ -379,6 +387,13 @@ internal sealed class SharedSpace(
                 }
             }
             _ships[ship.Pilot.ShipId] = ship;
+            _sightGrid.Move(
+                ship.Pilot.ShipId,
+                current?.Pilot.SystemId ?? 0,
+                current?.Pilot.Position,
+                ship.Pilot.SystemId,
+                ship.Pilot.Position
+            );
         }
     }
 
@@ -391,7 +406,10 @@ internal sealed class SharedSpace(
     {
         using (EnterMotion())
         {
-            _ships.TryRemove(shipId, out _);
+            if (_ships.TryRemove(shipId, out var previous))
+            {
+                _sightGrid.Move(shipId, previous.Pilot.SystemId, previous.Pilot.Position, 0, null);
+            }
             _motion.TryRemove(shipId, out _);
             _history.TryRemove(shipId, out _);
             _orders.TryRemove(shipId, out _);

@@ -112,6 +112,7 @@ public sealed class ResidentBotEconomyTests(ITestOutputHelper output)
             var agent = setup.Set<SavedCapsuleerAgent>().Single(a => a.Career == CapsuleerCareer.Hauling);
             pilotId = agent.PilotId;
             shipId = agent.FounderShipId;
+            FreightTests.SetLegacyCargo(setup, fixture.Database, pilotId, shipId);
             setup.Database.ExecuteSql($"DELETE FROM WorldPosition WHERE ShipId={shipId}");
             var pilot = setup.Pilots.Find(pilotId)!;
             original = pilot.Name;

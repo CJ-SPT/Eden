@@ -92,6 +92,49 @@ internal sealed partial class LiveCombatRuntime
         return CanRun ? Ship(pilot, now).SettleRepairs(now) : null;
     }
 
+    internal CapsuleerAttacker? PatrolTarget(
+        Eden.Gameplay.Docking.DockedPilot pilot,
+        long target,
+        SpacePosition anchor,
+        IPilotCombatPresence presence,
+        long now
+    ) =>
+        Execute(
+            () =>
+            {
+                using var ownership = owner.Enter();
+                if (
+                    target == pilot.ShipId
+                    || pilot.Position is null
+                    || DronePlayerFor(target) is not { Capsule: false } victim
+                    || DronePresence(victim, presence, pilot.SystemId, now) is not { } contact
+                    || contact.Position.DistanceTo(anchor) > PatrolRules.PursuitMeters
+                    || contact.Position.DistanceTo(pilot.Position) > PatrolRules.PursuitMeters
+                    || DronePlayerFor(pilot.ShipId) is not { } source
+                    || DroneLegality(source, victim, pilot.SystemId, now)?.Flag != CrimewatchFlag.None
+                )
+                {
+                    return null;
+                }
+                var other = Ship(victim.PilotId, now);
+                return other.Health.At(now).Destroyed
+                    ? null
+                    : new CapsuleerAttacker(
+                        victim.PilotId,
+                        target,
+                        other.TypeId,
+                        contact.Position,
+                        contact.Velocity,
+                        other.Radius,
+                        other.SignatureRadius,
+                        0,
+                        false,
+                        false
+                    );
+            },
+            nameof(PatrolTarget)
+        );
+
     internal CapsuleerAttacker[] DefenseAttackers(long pilot, IPilotCombatPresence presence, long now)
     {
         return Execute(() => DefenseAttackersOwned(pilot, presence, now), nameof(DefenseAttackers));

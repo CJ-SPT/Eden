@@ -6,6 +6,9 @@ namespace Eden.World.Combat;
 internal interface IShipLootRoll
 {
     bool Survives();
+
+    bool Survives(int percent) =>
+        percent == 50 ? Survives() : percent > 0 && (percent >= 100 || RandomNumberGenerator.GetInt32(100) < percent);
 }
 
 [Injectable]

@@ -159,7 +159,8 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         var traffic = CapsuleerTrafficRoutes.Read(catalog, systemId);
         var origins = CapsuleerProvisioningCatalog.Origins(catalog);
         bool hasRoute = traffic.Routes.Length > 0;
-        bool canHaul = hasRoute && (database.Traffic.Profiles.Count > 0 || TrafficProvisioning.HasFallback(catalog));
+        bool canHaul =
+            hasRoute && (database.Traffic.Profiles.Count > 0 || CapsuleerFreight.Available(catalog, database.Settings.Capsuleers.Freight));
         int count = canHaul ? CapsuleerEncounterRules.Haulers(seed, systemId, traffic.GateCount, traffic.StationCount, policy) : 0;
         var agents = world
             .Set<SavedCapsuleerAgent>()
@@ -319,7 +320,7 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         );
         string trafficIdentity = database.Traffic.Manifest?.Identity ?? "fallback";
         return $"{catalog.Definitions.Identity.SourceFingerprint}|{file.Length}|{file.LastWriteTimeUtc.Ticks}|{seed}|"
-            + $"{settingsIdentity}|{trafficIdentity}";
+            + $"{settingsIdentity}|{trafficIdentity}|{policy.Freight.VariedHulls}|{policy.Freight.CargoTypeIds}";
     }
 
     private static CapsuleerTrafficRoute SelectRoute(
@@ -413,12 +414,26 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
                     reservations: _startupReservations
                 )
                 : null;
-        if (career == CapsuleerCareer.Hauling && trafficProfile is null && !TrafficProvisioning.HasFallback(catalog))
+        var fittedProfile =
+            trafficProfile
+            ?? (
+                career == CapsuleerCareer.Hauling
+                    ? CapsuleerPatrolFit.Select(catalog, database.Settings.Capsuleers, seed, site.SystemId, slot)
+                    : null
+            );
+        if (
+            career == CapsuleerCareer.Hauling
+            && fittedProfile is null
+            && !CapsuleerFreight.Available(catalog, database.Settings.Capsuleers.Freight)
+        )
         {
             return null;
         }
         int hull =
-            career == CapsuleerCareer.Mining ? CapsuleerCommunityStore.VentureType : trafficProfile?.HullTypeId ?? HaulingRules.BadgerType;
+            career == CapsuleerCareer.Mining
+                ? CapsuleerCommunityStore.VentureType
+                : fittedProfile?.HullTypeId
+                    ?? CapsuleerFreight.Hull(catalog, seed, site.SystemId, slot, database.Settings.Capsuleers.Freight.VariedHulls);
         int station = site.HomeStationId!.Value;
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         ulong roleSeed = CapsuleerProvisioningRules.Seed(seed, site.SystemId, career, slot);
@@ -453,7 +468,9 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         world.Database.ExecuteSql(
             $"INSERT INTO WorldShip(Id,OwnerId,TypeId,StationId,Name) VALUES ({ship},{pilot},{hull},{station},{name})"
         );
-        bool blueprint = _startupReservations is not null && (career == CapsuleerCareer.Hauling || _requirePreparedBlueprints);
+        bool blueprint =
+            trafficProfile is null && fittedProfile is not null
+            || _startupReservations is not null && (career == CapsuleerCareer.Hauling || _requirePreparedBlueprints);
         if (!blueprint)
         {
             StartingSkills.Grant(world, catalog, pilot, origin.RaceId);
@@ -509,22 +526,6 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
                 }
             );
         }
-        if (career == CapsuleerCareer.Hauling && trafficProfile is null && !blueprint)
-        {
-            const int starterOreUnits = 100;
-            int ore = CapsuleerProvisioningCatalog.FreightOre(catalog);
-            world.Add(
-                new OwnedItem
-                {
-                    Id = ship + 1,
-                    OwnerId = pilot,
-                    TypeId = ore,
-                    LocationId = ship,
-                    FlagId = (int)InventoryFlag.Cargo,
-                    Quantity = starterOreUnits,
-                }
-            );
-        }
         world.Add(new SavedHomeStation { PilotId = pilot, StationId = station });
         world.Add(new PilotWallet { PilotId = pilot, Cents = cents });
         world.SaveChanges();
@@ -535,7 +536,7 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
                 catalog,
                 origin.RaceId,
                 hull,
-                trafficProfile,
+                fittedProfile,
                 pilot,
                 ship,
                 station,
@@ -544,12 +545,12 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
                 mining: career == CapsuleerCareer.Mining
             );
         }
+        if (fittedProfile is not null && !blueprint)
+        {
+            TrafficFitting.Apply(world, catalog, pilot, ship, fittedProfile, now);
+        }
         if (trafficProfile is not null)
         {
-            if (!blueprint)
-            {
-                TrafficFitting.Apply(world, catalog, pilot, ship, trafficProfile, now);
-            }
             TrafficProvisioning.Record(database, world, pilot, trafficProfile);
         }
         if (career == CapsuleerCareer.Mining && !blueprint)
@@ -628,6 +629,17 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
             var work = watchedGate is null
                 ? CapsuleerTrafficFlight.Opening(world, catalog, docked, route!, site.SystemId, opening, elapsed, now)
                 : CapsuleerTrafficFlight.OpeningInbound(world, catalog, docked, route!, watchedGate, elapsed, now, sourceObserved, visitor);
+            var freight = CapsuleerFreight.Load(
+                new SqlWorldAction(world),
+                catalog,
+                pilot,
+                ship,
+                hull,
+                route!.DestinationStationId,
+                0,
+                emptyHull: trafficProfile is null
+            );
+            work = work with { Freight = freight };
             if (initialJourney is not null)
             {
                 work = work with { Journey = initialJourney };

@@ -95,6 +95,17 @@ internal sealed partial class EconomyTransaction
                 pilots.Add(current.PilotId);
             }
         }
+        else if (
+            before is WorldTackle oldTackle
+            && after is WorldTackle newTackle
+            && oldTackle.TargetId == newTackle.TargetId
+            && oldTackle.TargetKind == newTackle.TargetKind
+            && oldTackle.Module() == newTackle.Module()
+        )
+        {
+            // Extending the same paid tackle changes the deadline. The fitted graph consumes only its target and modifiers.
+            return [];
+        }
         else if (before is Ship || after is Ship)
         {
             var previous = before as Ship;
