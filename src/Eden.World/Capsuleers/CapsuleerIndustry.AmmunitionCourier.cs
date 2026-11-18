@@ -17,7 +17,7 @@ using Rules = Eden.Gameplay.Capsuleers.CapsuleerAmmunitionSupplyRules;
 
 namespace Eden.World.Capsuleers;
 
-internal sealed partial class CapsuleerAmmunitionSupply
+internal sealed partial class CapsuleerIndustry
 {
     internal sealed record Collection(CorporationSupplyRun Run, CapsuleerTrafficRoute Route);
 

@@ -3,6 +3,9 @@
 [Autonomous bot alliances](protocol/alliances.md#autonomous-bot-alliances) covers neighboring bot corporations forming,
 recruiting and maintaining an alliance through the ordinary corporation services.
 
+[Demand-driven bot manufacturing](protocol/capsuleers.md#demand-driven-bot-manufacturing) covers the catalog recipes,
+local purchase orders, corporate procurement and jobs that supply the public market.
+
 [Corporation ammunition supply](protocol/capsuleers.md#corporation-ammunition-supply) covers manufacturing, public sales,
 paid courier trips and reserve resupply by simulated corporations.
 

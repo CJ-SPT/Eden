@@ -18,7 +18,7 @@ internal sealed partial class CapsuleerHauler
             {
                 if (Work.Freight is { } delivered)
                 {
-                    CapsuleerAmmunitionSupply.Deliver(world, catalog, Pilot, assigned, delivered);
+                    CapsuleerIndustry.Deliver(world, catalog, Pilot, assigned, delivered);
                 }
                 _work = Work with
                 {
@@ -56,7 +56,7 @@ internal sealed partial class CapsuleerHauler
             .Where(observed => observed.ExpiresAt > Work.ActiveTicks)
             .Select(observed => observed.SystemId)
             .ToHashSet();
-        if (CapsuleerAmmunitionSupply.PlanCollection(world, catalog, live, Pilot, avoided, Now) is not { } collection)
+        if (CapsuleerIndustry.PlanCollection(world, catalog, live, Pilot, avoided, Now) is not { } collection)
         {
             return false;
         }

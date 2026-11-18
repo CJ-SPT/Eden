@@ -11,6 +11,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Protocol.Market;
 using Eden.Protocol.Tests.Combat;
+using Eden.Protocol.Tests.Industry;
 using Eden.Protocol.Tests.PilotSessions;
 using Eden.Server;
 using Eden.Server.Maintenance;
@@ -44,20 +45,7 @@ public sealed class CapsuleerAmmunitionSupplyTests
         using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
         CapsuleerCorporationTests.PrepareExistingSave(fixture);
         PrepareCatalog(fixture);
-        var configuration = new WorldConfigurationStore(fixture.Database, fixture.Clock);
-        var startup = configuration.Read();
-        var draft = startup.Active.Draft;
-        configuration.Save(
-            startup.Generation,
-            draft with
-            {
-                Settings = draft.Settings with
-                {
-                    Economy = draft.Settings.Economy with { ProgressiveMarkets = false, StandardMarket = false },
-                },
-            },
-            "Ammunition chain fixture"
-        );
+        UseLocalOrders(fixture);
         using (WorldDbContext save = new(fixture.Database.Path))
         {
             save.Database.ExecuteSqlRaw(
@@ -137,7 +125,7 @@ public sealed class CapsuleerAmmunitionSupplyTests
                     .Id
             );
             privateBook.PlaceSell(Customer, [new(blueprint, FactoryStation, Rules.BlueprintType, MarketDefinitions.CentsPerIsk, 1)], 1);
-            var ammunition = host.GetRequiredService<CapsuleerAmmunitionSupply>();
+            var ammunition = host.GetRequiredService<CapsuleerIndustry>();
             var ships = host.GetRequiredService<SqliteWorld>();
             using (var dock = live.Economy.Begin(TransactionParticipants.None))
             {
@@ -188,7 +176,7 @@ public sealed class CapsuleerAmmunitionSupplyTests
             using (var review = live.Economy.Begin(TransactionParticipants.None))
             {
                 var pilot = ships.FindPilot(review, -1, courier)!;
-                var plan = CapsuleerAmmunitionSupply.PlanCollection(review, catalog, live, pilot, new HashSet<int>(), fixture.Clock.Now);
+                var plan = CapsuleerIndustry.PlanCollection(review, catalog, live, pilot, new HashSet<int>(), fixture.Clock.Now);
                 Assert.NotNull(plan);
                 Assert.Equal(listingId, plan.Run.OrderId);
             }
@@ -218,7 +206,7 @@ public sealed class CapsuleerAmmunitionSupplyTests
             live.Economy.Read(world =>
             {
                 Assert.Equal(499 - shipment, world.Set<SavedPersonalOrder>().Find(listingId)!.Remaining);
-                Assert.Empty(CapsuleerAmmunitionSupply.DepotStock(world, buyer, Depot));
+                Assert.Empty(CapsuleerIndustry.DepotStock(world, buyer, Depot));
                 Assert.Equal(courier, world.Set<OwnedItem>().Find(cargo.ItemId)!.OwnerId);
                 var sales = world
                     .Filter<SavedWalletLedger>(row => row.OwnerId == seller)
@@ -254,11 +242,11 @@ public sealed class CapsuleerAmmunitionSupplyTests
         }
         Assert.Null(resumed.Hauler(courier)!.Work.CorporationSupply);
         using var received = restored.Economy.Begin(TransactionParticipants.None);
-        Assert.Equal(shipment, CapsuleerAmmunitionSupply.DepotStock(received, buyer, Depot).Sum(item => item.Quantity));
+        Assert.Equal(shipment, CapsuleerIndustry.DepotStock(received, buyer, Depot).Sum(item => item.Quantity));
         using CatalogDbContext reopenedCatalog = new(fixture.Database.CatalogPath);
         var deliveryPilot = reopened.GetRequiredService<SqliteWorld>().FindPilot(received, -1, courier)!;
-        CapsuleerAmmunitionSupply.Deliver(received, reopenedCatalog, deliveryPilot, new(buyer, listingId), paidShipment);
-        Assert.Equal(shipment, CapsuleerAmmunitionSupply.DepotStock(received, buyer, Depot).Sum(item => item.Quantity));
+        CapsuleerIndustry.Deliver(received, reopenedCatalog, deliveryPilot, new(buyer, listingId), paidShipment);
+        Assert.Equal(shipment, CapsuleerIndustry.DepotStock(received, buyer, Depot).Sum(item => item.Quantity));
         long combatShip = received.Pilots.Find(combat)!.ActiveShipId;
         var gun = Assert.Single(
             received
@@ -280,7 +268,7 @@ public sealed class CapsuleerAmmunitionSupplyTests
             received
                 .Filter<OwnedItem>(item => item.OwnerId == combat)
                 .Where(item => item.TypeId == Rules.ChargeType)
-                .Sum(item => item.Quantity) + CapsuleerAmmunitionSupply.DepotStock(received, buyer, Depot).Sum(item => item.Quantity)
+                .Sum(item => item.Quantity) + CapsuleerIndustry.DepotStock(received, buyer, Depot).Sum(item => item.Quantity)
         );
         Assert.Single(
             received
@@ -288,6 +276,157 @@ public sealed class CapsuleerAmmunitionSupplyTests
                 .Where(row => row.EntryType == WalletEntryType.MarketTransaction && row.AmountCents == -purchaseCents)
         );
         received.Commit();
+    }
+
+    [Theory]
+    [InlineData(785, false)] // 150mm Railgun I, with a blueprint bought from the local market.
+    [InlineData(950, true)] // Merlin, with one licensed copy run.
+    public async Task LocalDemandFundsCatalogManufacturingAndDeliveryAfterRestart(int blueprintType, bool copy)
+    {
+        const int requested = 2;
+        const long unitBid = 100_000_000;
+        const long corporateCapital = 50_000_000;
+        const long inputPrice = 100;
+        const long pilotBalance = 1_000_000;
+        var recipe = StarterProductionTests.ReadAudit().Recipes.Single(recipe => recipe.BlueprintId == blueprintType);
+        int product = Assert.Single(recipe.Products).TypeID;
+        int runs = copy ? 1 : requested;
+
+        using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
+        CapsuleerCorporationTests.PrepareExistingSave(fixture);
+        PassiveCatalogFixture.LoadStarterProduction(fixture.Database.CatalogPath);
+        PrepareCatalog(fixture);
+        UseLocalOrders(fixture);
+        WorldInitialization.Initialize(fixture.Database, fixture.Clock);
+
+        long producer;
+        int corporation;
+        long jobId;
+        long bidId;
+        long inputCost = (recipe.Materials.Sum(material => material.Quantity * runs) + (copy ? 0 : 1)) * inputPrice;
+        using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+            using (var setup = live.Economy.Begin(TransactionParticipants.None))
+            {
+                setup.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId)!.TestingMarket = false;
+                setup.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId)!.TestingGrants = false;
+                producer = setup.Set<SavedCapsuleerAgent>().Single(agent => agent.Career == CapsuleerCareer.Mining).PilotId;
+                setup.Pilots.Find(producer)!.ActiveShip.StationId = FactoryStation;
+                setup.Pilots.Find(Customer)!.ActiveShip.StationId = FactoryStation;
+                corporation = Charter(setup, catalog, producer, "Demand Works", "DMND", fixture.Clock.Now);
+                setup.Set<SavedCorporation>().Find(corporation)!.BalanceCents = corporateCapital;
+                setup.Set<PilotWallet>().Find(producer)!.Cents = pilotBalance;
+                setup.Add(new PilotWallet { PilotId = Customer, Cents = 3 * unitBid });
+                foreach (var material in recipe.Materials)
+                {
+                    AddStock(setup, Customer, FactoryStation, material.TypeID, material.Quantity * runs);
+                }
+                AddStock(setup, copy ? producer : Customer, FactoryStation, blueprintType, 1);
+                if (copy)
+                {
+                    var license = setup.Filter<OwnedItem>(item => item.OwnerId == producer).Single(item => item.TypeId == blueprintType);
+                    license.BlueprintRuns = 1;
+                    license.Singleton = true;
+                }
+                setup.Commit();
+            }
+
+            var book = host.GetRequiredService<IPersonalMarket>();
+            book.PlaceBuy(Customer, new(FactoryStation, product, unitBid, requested, 7));
+            bidId = Assert.Single(book.PersonalOrders(Customer)).Id;
+            var industry = host.GetRequiredService<CapsuleerIndustry>();
+            var ships = host.GetRequiredService<SqliteWorld>();
+            using (var unavailable = live.Economy.Begin(TransactionParticipants.None))
+            {
+                Assert.False(industry.Produce(unavailable, catalog, ships.FindPilot(unavailable, -1, producer)!, fixture.Clock.Now));
+                Assert.Empty(unavailable.Set<IndustryJob>());
+                Assert.Equal(corporateCapital, unavailable.Set<SavedCorporation>().Find(corporation)!.BalanceCents);
+                unavailable.Commit();
+            }
+            MarketSale[] inputs = live.Economy.Read(world =>
+                world
+                    .Filter<OwnedItem>(item => item.OwnerId == Customer)
+                    .Where(item => item.LocationId == FactoryStation)
+                    .AsEnumerable()
+                    .Where(item => item.TypeId == blueprintType || recipe.Materials.Any(m => m.TypeID == item.TypeId))
+                    .Select(item => new MarketSale(item.Id, FactoryStation, item.TypeId, inputPrice, item.Quantity))
+                    .ToArray()
+            );
+            book.PlaceSell(Customer, inputs, 7);
+            using (var unfunded = live.Economy.Begin(TransactionParticipants.None))
+            {
+                var treasury = unfunded.Set<SavedCorporation>().Find(corporation)!;
+                var wallet = unfunded.Set<PilotWallet>().Find(producer)!;
+                treasury.BalanceCents = 0;
+                wallet.Cents = 0;
+                Assert.False(industry.Produce(unfunded, catalog, ships.FindPilot(unfunded, -1, producer)!, fixture.Clock.Now));
+                Assert.Empty(unfunded.Set<IndustryJob>());
+                var asks = unfunded.Filter<SavedPersonalOrder>(order => order.PilotId == Customer).Where(order => !order.Bid).ToArray();
+                Assert.All(
+                    inputs,
+                    input => Assert.Equal(input.Quantity, Assert.Single(asks, order => order.TypeId == input.TypeId).Remaining)
+                );
+            }
+            using (var dock = live.Economy.Begin(TransactionParticipants.None))
+            {
+                var pilot = ships.FindPilot(dock, -1, producer)!;
+                Assert.True(industry.Produce(dock, catalog, pilot, fixture.Clock.Now));
+                Assert.False(industry.Produce(dock, catalog, pilot, fixture.Clock.Now));
+                var job = Assert.Single(dock.Set<IndustryJob>());
+                jobId = job.Id;
+                Assert.Equal(blueprintType, job.BlueprintTypeId);
+                Assert.Equal(copy, job.BlueprintCopy);
+                Assert.Equal(product, job.ProductTypeId);
+                Assert.Equal(runs, job.Runs);
+                Assert.Equal(runs, job.OutputQuantity);
+                Assert.Equal(corporation, job.OutputCorporationId);
+                Assert.Equal(IndustryJobStatus.Installed, job.Status);
+                Assert.Equal(corporateCapital - inputCost - job.CostCents, dock.Set<SavedCorporation>().Find(corporation)!.BalanceCents);
+                Assert.Equal(pilotBalance, dock.Set<PilotWallet>().Find(producer)!.Cents);
+                Assert.All(recipe.Materials, material => Assert.Equal(0, Stock(dock, producer, FactoryStation, material.TypeID)));
+                Assert.Equal(0, Stock(dock, Customer, FactoryStation, product));
+                dock.Commit();
+            }
+            await live.FlushAsync();
+        }
+
+        fixture.Clock.Seconds += recipe.Time * runs;
+        using var reopened = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var restored = reopened.GetRequiredService<LiveWorld>();
+        using CatalogDbContext reopenedCatalog = new(fixture.Database.CatalogPath);
+        using var delivery = restored.Economy.Begin(TransactionParticipants.None);
+        var operatorPilot = reopened.GetRequiredService<SqliteWorld>().FindPilot(delivery, -1, producer)!;
+        Assert.True(reopened.GetRequiredService<CapsuleerIndustry>().Produce(delivery, reopenedCatalog, operatorPilot, fixture.Clock.Now));
+        Assert.Equal(IndustryJobStatus.Delivered, delivery.Set<IndustryJob>().Find(jobId)!.Status);
+        Assert.Equal(runs, Stock(delivery, Customer, FactoryStation, product));
+        Assert.Equal(requested - runs, delivery.Set<SavedPersonalOrder>().Find(bidId)!.Remaining);
+        Assert.Equal(copy ? 0 : 1, Stock(delivery, producer, FactoryStation, blueprintType));
+        var fill = MarketRules.Fill(runs, runs, unitBid, MarketRules.SalesTax(0));
+        Assert.Contains(
+            delivery.Filter<SavedWalletLedger>(row => row.OwnerId == corporation),
+            row => row.EntryType == WalletEntryType.MarketTransaction && row.AmountCents == fill.GrossCents - fill.TaxCents
+        );
+        delivery.Commit();
+    }
+
+    private static void UseLocalOrders(CapsuleerHaulerTests.Fixture fixture)
+    {
+        var configuration = new WorldConfigurationStore(fixture.Database, fixture.Clock);
+        var startup = configuration.Read();
+        var draft = startup.Active.Draft;
+        configuration.Save(
+            startup.Generation,
+            draft with
+            {
+                Settings = draft.Settings with
+                {
+                    Economy = draft.Settings.Economy with { ProgressiveMarkets = false, StandardMarket = false },
+                },
+            },
+            "Corporate industry fixture"
+        );
     }
 
     private static long Stock(WorldAction world, long pilot, int station, int type) =>

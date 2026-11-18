@@ -31,11 +31,7 @@ using Rules = Eden.Gameplay.Capsuleers.CapsuleerAmmunitionSupplyRules;
 namespace Eden.World.Capsuleers;
 
 [Injectable]
-internal sealed partial class CapsuleerAmmunitionSupply(
-    PilotIndustryStore industry,
-    PilotReprocessingStore refinery,
-    PilotMarketStore market
-)
+internal sealed partial class CapsuleerIndustry(PilotIndustryStore industry, PilotReprocessingStore refinery, PilotMarketStore market)
 {
     private static readonly CatalogDefinition<bool> s_ironCompatible = new(
         "capsuleer-iron-ammunition-compatibility",
@@ -64,16 +60,13 @@ internal sealed partial class CapsuleerAmmunitionSupply(
             : null;
 
     internal static OwnedItem[] DepotStock(WorldAction world, int corporation, long station) =>
+        DepotStacks(world, corporation, station).Where(item => item.TypeId == Rules.ChargeType).OrderBy(item => item.Id).ToArray();
+
+    private static IEnumerable<OwnedItem> DepotStacks(WorldAction world, int corporation, long station) =>
         world
             .Filter<OwnedItem>(item => item.OwnerId == corporation)
-            .Where(item =>
-                item.LocationId == station
-                && item.FlagId == CorporationStorageRules.MarketDeliveriesFlag
-                && item.TypeId == Rules.ChargeType
-                && !item.Singleton
-            )
-            .OrderBy(item => item.Id)
-            .ToArray();
+            .Where(item => item.LocationId == station && item.FlagId == CorporationStorageRules.MarketDeliveriesFlag && !item.Singleton)
+            .AsEnumerable();
 
     private static OwnedItem[] Hangar(WorldAction world, long pilot, int station) =>
         world
@@ -112,13 +105,18 @@ internal sealed partial class CapsuleerAmmunitionSupply(
         return true;
     }
 
-    private static long ReferencePrice(CatalogDbContext catalog, int type) =>
-        MarketSnapshotCatalog.Quotes.GetValueOrDefault(type)?.SellCents
-        ?? (
-            catalog.Read(CatalogData.Client.Types, (long)type)?.BasePrice is > 0 and double price
-                ? PersonalMarketRules.Round((decimal)price * MarketDefinitions.CentsPerIsk)
-                : 0
-        );
+    private static readonly CatalogDefinition<long> s_referencePrice = new(
+        "capsuleer-industry-reference-price",
+        (catalog, type) =>
+            MarketSnapshotCatalog.Quotes.GetValueOrDefault(type)?.SellCents
+            ?? (
+                catalog.Read(CatalogData.Client.Types, (long)type)?.BasePrice is > 0 and double price
+                    ? PersonalMarketRules.Round((decimal)price * MarketDefinitions.CentsPerIsk)
+                    : 0
+            )
+    );
+
+    private static long ReferencePrice(CatalogDbContext catalog, int type) => catalog.Definition(s_referencePrice, type);
 
     internal bool Produce(EconomyTransaction world, CatalogDbContext catalog, DockedPilot operatorPilot, long now)
     {
@@ -129,8 +127,6 @@ internal sealed partial class CapsuleerAmmunitionSupply(
             || operatorPilot.InStructure
             || !StationCapabilities.Has(catalog, operatorPilot.OperationId, StationService.Market)
             || !StationCapabilities.Has(catalog, operatorPilot.OperationId, StationService.Manufacturing)
-            || ManufacturingCatalog.Recipes(catalog).GetValueOrDefault(Rules.BlueprintType) is not { } recipe
-            || recipe.ProductTypeId != Rules.ChargeType
         )
         {
             return false;
@@ -152,52 +148,64 @@ internal sealed partial class CapsuleerAmmunitionSupply(
         {
             return false;
         }
-        var listing = world
+        var jobs = world.Filter<IndustryJob>(job => job.OutputCorporationId == corporation.Id);
+        var listed = world
             .Filter<SavedPersonalOrder>(order => order.CorporationId == corporation.Id)
-            .Any(order =>
-                !order.Bid && order.TypeId == Rules.ChargeType && order.Status == PersonalOrderStatus.Open && order.Expires > now
-            );
-        if (listing)
+            .Where(order => !order.Bid && order.Status == PersonalOrderStatus.Open && order.Expires > now)
+            .Select(order => order.TypeId)
+            .ToHashSet();
+        var depot = DepotStacks(world, corporation.Id, location).OrderBy(item => item.Id).ToArray();
+        bool busy =
+            running.Any(job => job.Status == IndustryJobStatus.Installed) || jobs.Any(job => job.Status == IndustryJobStatus.Installed);
+        if ((busy && depot.Length == 0) || !PilotMarketStore.HasSupplyListingSlot(world, catalog, pilot))
         {
             return false;
         }
-
-        var stock = DepotStock(world, corporation.Id, location).FirstOrDefault();
-        if (stock is not null)
+        var bids = LocalProductionBids(world, pilot, corporation.Id, location, now);
+        foreach (var stock in depot.Where(item => !listed.Contains(item.TypeId)))
         {
+            var demand = bids[stock.TypeId];
+            var bid = demand.FirstOrDefault(order => order.Remaining >= stock.Quantity) ?? demand.FirstOrDefault();
             if (
-                !world
-                    .Filter<IndustryJob>(job => job.OutputCorporationId == corporation.Id)
-                    .Any(job =>
-                        job.StationId == location && job.ProductTypeId == Rules.ChargeType && job.Status == IndustryJobStatus.Delivered
-                    )
+                jobs.Any(job => job.StationId == location && job.ProductTypeId == stock.TypeId && job.Status == IndustryJobStatus.Delivered)
+                && ListStock(world, catalog, corporation, pilot, stock, bid, now)
             )
             {
-                return false;
-            }
-            long price = Math.Max(
-                ReferencePrice(catalog, Rules.ChargeType),
-                (PersonalMarketRules.MinimumBrokerFeeCents * 2 + stock.Quantity - 1) / stock.Quantity
-            );
-            int quantity = checked((int)stock.Quantity);
-            if (Fund(world, corporation, pilot, PilotMarketStore.SupplyBrokerFee(world, catalog, pilot, location, price, quantity), now))
-            {
-                market.ListCorporationSupply(world, catalog, pilot, corporation, stock, price, Rules.ListingDays);
                 return true;
             }
-            return false;
         }
-        if (
-            running.Any(job => job.Status == IndustryJobStatus.Installed)
-            || world
-                .Filter<IndustryJob>(job => job.OutputCorporationId == corporation.Id)
-                .Any(job => job.Status == IndustryJobStatus.Installed)
-        )
+        if (busy)
         {
             return false;
         }
 
         var hangar = Hangar(world, pilot, location);
+        listed.UnionWith(depot.Select(item => item.TypeId));
+        if (TryProduceForDemand(world, catalog, operatorPilot, corporation, hangar, bids, listed, now) is bool changed)
+        {
+            return changed;
+        }
+        return !listed.Contains(Rules.ChargeType) && ProduceIron(world, catalog, operatorPilot, corporation, hangar, now);
+    }
+
+    private bool ProduceIron(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        DockedPilot operatorPilot,
+        SavedCorporation corporation,
+        OwnedItem[] hangar,
+        long now
+    )
+    {
+        if (
+            ManufacturingCatalog.Recipes(catalog).GetValueOrDefault(Rules.BlueprintType) is not { } recipe
+            || recipe.ProductTypeId != Rules.ChargeType
+        )
+        {
+            return false;
+        }
+        long pilot = operatorPilot.PilotId;
+        int location = operatorPilot.StationId;
         var blueprint = hangar.FirstOrDefault(item => item.TypeId == Rules.BlueprintType && item.BlueprintRuns < 0);
         var materials = IndustryMaterials.Calculate(recipe.Materials, Rules.ProductionRuns, blueprint?.MaterialEfficiency ?? 0);
         var missing = materials
@@ -226,15 +234,10 @@ internal sealed partial class CapsuleerAmmunitionSupply(
         }
         foreach (var skill in recipe.Skills)
         {
-            double rank = catalog.FittingAttributes(skill.TypeId).GetValueOrDefault(DogmaAttributeId.SkillTimeConstant);
-            if (rank <= 0)
+            if (!Qualify(world, catalog, pilot, skill))
             {
                 return false;
             }
-            var trained =
-                world.Set<PilotSkill>().Find(pilot, skill.TypeId)
-                ?? world.Add(new PilotSkill { PilotId = pilot, TypeId = skill.TypeId }).Entity;
-            trained.Points = Math.Max(trained.Points, TrainedSkill.PointsForLevel(rank, skill.Level));
         }
 
         double security = ManufacturingCatalog.Security(catalog, operatorPilot.SystemId);
@@ -256,6 +259,51 @@ internal sealed partial class CapsuleerAmmunitionSupply(
             );
         }
         return false;
+    }
+
+    private bool ListStock(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        SavedCorporation corporation,
+        long pilot,
+        OwnedItem stock,
+        SavedPersonalOrder? bid,
+        long now
+    )
+    {
+        int quantity = stock.Quantity;
+        long reference =
+            stock.TypeId == Rules.ChargeType
+                ? ReferencePrice(catalog, stock.TypeId)
+                : bid?.PriceCents ?? ReferencePrice(catalog, stock.TypeId);
+        long minimum =
+            stock.TypeId != Rules.ChargeType && bid is not null
+                ? 1
+                : (PersonalMarketRules.MinimumBrokerFeeCents * 2 + quantity - 1) / quantity;
+        long price = Math.Clamp(reference, minimum, (long)(MarketDefinitions.MaximumOrderPrice * MarketDefinitions.CentsPerIsk));
+        quantity = (int)Math.Min(quantity, long.MaxValue / price);
+        int location = checked((int)stock.LocationId);
+        long fee = PilotMarketStore.SupplyBrokerFee(world, catalog, pilot, location, price, quantity);
+        if (!Fund(world, corporation, pilot, fee, now))
+        {
+            return false;
+        }
+        market.ListCorporationSupply(world, catalog, pilot, corporation, stock, quantity, price, Rules.ListingDays);
+        return true;
+    }
+
+    private static bool Qualify(WorldAction world, CatalogDbContext catalog, long pilot, ManufacturingRequiredSkill skill)
+    {
+        double rank = catalog.FittingAttributes(skill.TypeId).GetValueOrDefault(DogmaAttributeId.SkillTimeConstant);
+        if (rank <= 0)
+        {
+            return false;
+        }
+        var trained =
+            world.Set<PilotSkill>().Find(pilot, skill.TypeId)
+            ?? world.Add(new PilotSkill { PilotId = pilot, TypeId = skill.TypeId }).Entity;
+        trained.Points = Math.Max(trained.Points, TrainedSkill.PointsForLevel(rank, skill.Level));
+        return true;
     }
 
     private bool BuyInput(EconomyTransaction world, CatalogDbContext catalog, long pilot, int station, int type, int quantity)

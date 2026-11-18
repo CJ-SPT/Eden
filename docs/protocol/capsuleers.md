@@ -2,6 +2,61 @@
 
 [Protocol index](../protocol.md)
 
+## Demand-driven bot manufacturing
+
+At an NPC station with factory and market services, a miner in a bot-led corporation considers open local buy orders from
+other pilots. The product-to-recipe lookup comes from the published build 3662168 manufacturing catalog. It uses the same
+facility restrictions and required skills as player jobs. The miner can qualify at Industry I, use an owned original or
+licensed copy, buy an original locally, and source missing inputs from ordinary local sell orders. It can also refine
+owned ore that yields a missing ingredient while working from an owned blueprint.
+
+The planner tries up to five runs per job, capped by the buy order's quantity, recipe timing and any copy license. It
+checks that projected proceeds after broker fees and tax exceed the estimated cost of the job, owned inputs and purchases,
+including the cost of any blueprint it needs to buy. The corporation pays for purchases and installation. An operator can
+cover a treasury shortfall from its own ISK, using the existing contribution cap. The resident transaction settles purchases,
+moves goods into the operator's manufacturing hangar, and consumes job inputs together. A corporation runs one supply job at
+a time and skips products it already has in local deliveries or on the market.
+
+The regular docked routine delivers finished jobs into Market Deliveries. It lists finished stock at a current bid price
+when available or at a catalog-backed reference price. The ordinary market handles escrow, matching, taxes and fees. Iron
+Charge S also keeps its established supply route and can be produced for stocking while local demand offers no eligible job.
+Blueprint research, invention, reactions and broader procurement routes remain future industry activities.
+
+EVE University describes the blueprint, material and skill prerequisites. The feature reuses Eden's station manufacturing
+lifecycle. The EVE.js reference for industry install and wallet settlement is `industryInstallSettlementState.js` at SHA-256
+`8bfe741f7afce165241becc22549118cf95633bc36cb58099968193d1d2ee3dd`. The existing market and industry wire records cover
+the client calls used here. [EVE University manufacturing](https://wiki.eveuniversity.org/Manufacturing) ·
+[Eden station manufacturing](industry.md)
+
+### Automated validation
+
+The exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerAmmunitionSupplyTests.LocalDemandFundsCatalogManufacturingAndDeliveryAfterRestart`
+passed both cases in 10 seconds. The tests use the pinned 150mm Railgun I and Merlin recipes, exercise local blueprint
+and materials purchases, enforce limited copy runs, and reopen jobs before delivery. They verify the buyer's order
+and inventory, corporate ledger and retained blueprint.
+
+The broader development run passed 140 tests in 6 minutes 11 seconds before the final blueprint run-limit adjustment and
+funding regression assertions. It used `FullyQualifiedName~` filters for `CapsuleerAmmunitionSupplyTests`, `CapsuleerMinerTests`,
+`CapsuleerHaulerTests`, `CapsuleerInboundRuntimeTests`, `Eden.Protocol.Tests.Industry.IndustryTests`,
+`StarterProductionTests`, `ReprocessingTests`, `PersonalMarketTests`, `StandardMarketTests`,
+`MarketReadCompatibilityTests` and `CorporationWalletTests`.
+
+The final focused run passed 107 tests in 5 minutes 18 seconds with the same class filters apart from
+`CapsuleerMinerTests`, `CapsuleerHaulerTests` and `CapsuleerInboundRuntimeTests`. It verifies that a corporation with
+insufficient funds leaves the input orders untouched. Tool and solution restore passed, and the build completed in 14
+seconds with zero warnings or errors. Both Python policy suites passed all 17 cases. Formatting, documentation links and
+diff whitespace checks passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+Place a buy order at a station where a funded bot corporation has factory access and local inputs. Verify the resulting
+purchase in the wallet and inventory after the job time has elapsed.
+
 ## Corporation ammunition supply
 
 World schema 189 adds optional corporation ownership to industry output and sell orders. Existing personal records retain
