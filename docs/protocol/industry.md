@@ -2367,3 +2367,52 @@ Not performed; agent client testing is disabled.
 
 - Relaunch through Eden Launcher, search for a mining system and unload station, then verify the native panel layout.
 - Check visible rat escape and fleet following with player clients; native presentation and gameplay feel remain unverified.
+
+## Development market supply for bots
+
+The resident development market seeds individual types for bot shopping, resupply and purchases. It shares the
+catalog eligibility, pricing, stock refresh and order identity rules with ordinary development-market seeding.
+Opening the player market still prepares the local catalog. Finite NPC bids and regional and Standard market policies
+keep their existing behavior.
+
+On the dedicated 8 GB host, one checkpoint interval added 2,337,236 development orders at 121 stations. Market
+tables and indexes gained 263 MiB. Projecting that checkpoint took 38.51 seconds and allocated about 2.08 GiB.
+Hauler progress was 32.6 MiB, with the largest saved record at 2,451 bytes after the earlier navigation migration.
+
+Schema 191 deletes untouched development asks that can be reconstructed from catalog defaults. It preserves executed
+order IDs and history, depleted orders, finite bids and regional stock records. Startup compacts the database before
+copying it into RAM. Stations previously marked complete can rebuild the full catalog when a player opens the market.
+
+### Automated validation
+
+The focused regression quotes one catalog type and buys another as a saved bot, verifies that the third type never
+seeds, replenishes the bought order, and reopens schema 190 through migration. The bought order and its ledger entry
+retain their ID after migration.
+
+The matched Release probe requested four item types at each of four previously unprepared stations in a copied
+23,323-bot world. It seeded 77,264 orders and allocated 361.3 MiB before the change. It seeded 20 orders, including
+configured bids, and allocated 2.2 MiB after the change. Checkpoint projection allocation fell from 69.3 MiB to 0.3 MiB.
+The updated 121-station probe seeded 605 orders, allocated 45.8 MiB during shopping, and retained 1.9 MiB after
+collection. Its checkpoint projection allocated 0.9 MiB.
+
+The solution built with zero warnings. The affected run passed 205 of 206 cases in 146 seconds. The only failure,
+`RegionalMarketTests.FailedPaymentRollsBackStockGoodsAndHistoryAndRetrySettlesOnce`, reproduced on unchanged
+`3343af3c` with the same Windows fixture cleanup error on the world owner file. The filter was:
+
+```text
+FullyQualifiedName~TestingMarketTests|FullyQualifiedName~Market.MarketTests|FullyQualifiedName~MarketReadCompatibilityTests|FullyQualifiedName~MarketSummaryPerformanceTests|FullyQualifiedName~PersonalMarketTests|FullyQualifiedName~StandardMarketTests|FullyQualifiedName~RegionalMarketTests|FullyQualifiedName~NpcSupplyTests|FullyQualifiedName~CapsuleerSupplyTests|FullyQualifiedName~CapsuleerAmmunitionSupplyTests|FullyQualifiedName~ResidentBotEconomyTests|FullyQualifiedName~CapsuleerTrafficNavigationTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~WorldInitializationTests
+```
+
+A final focused run passed 55 cases in 39 seconds. Both Python policy suites and formatting passed.
+
+```text
+FullyQualifiedName~TestingMarketTests|FullyQualifiedName~MarketReadCompatibilityTests|FullyQualifiedName~CapsuleerAmmunitionSupplyTests|FullyQualifiedName~ResidentBotEconomyTests|FullyQualifiedName~CapsuleerTrafficNavigationTests|FullyQualifiedName~WorldInitializationTests
+```
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+Check checkpoint size and process memory after several minutes of normal bot activity at the current traffic multiplier.

@@ -48,7 +48,8 @@ internal sealed partial class PilotMarketStore
         CatalogDbContext catalog,
         CatalogStationDefinition station,
         int? typeId = null,
-        bool includeDemand = true
+        bool includeDemand = true,
+        bool scopedDevelopmentSupply = false
     )
     {
         if (world.Settings.Economy.StandardMarket)
@@ -67,45 +68,45 @@ internal sealed partial class PilotMarketStore
             SeedInstitutional(world, catalog, station);
             return;
         }
-        var marker = world.Set<MarketStation>().Find(station.Id);
+        SeedDevelopment(world, catalog, station, scopedDevelopmentSupply ? typeId : null);
+    }
+
+    private void SeedDevelopment(WorldAction world, CatalogDbContext catalog, CatalogStationDefinition station, int? typeId)
+    {
+        var stations = world.Set<MarketStation>();
+        var marker = stations.Find(station.Id);
+        var orders = world.Set<NpcMarketOrder>().Where(o => o.StationId == station.Id);
+        if (typeId is int selected)
+        {
+            orders = orders.Where(o => o.TypeId == selected);
+        }
         if (marker?.SeedVersion == TestingMarketRules.SeedVersion)
         {
-            Refresh(world, world.Set<NpcMarketOrder>().Where(o => o.StationId == station.Id));
+            Refresh(world, orders);
             return;
         }
-        marker ??= world.Add(new MarketStation { StationId = station.Id, CreatedAt = Now }).Entity;
-        var existing = world
-            .Set<NpcMarketOrder>()
-            .Where(o => o.StationId == station.Id && o.Kind == NpcMarketKind.Development)
-            .ToDictionary(o => (o.TypeId, o.Bid));
+        var existing = orders.Where(o => o.Kind == NpcMarketKind.Development).ToDictionary(o => (o.TypeId, o.Bid));
         var knownTypes = catalog.Definitions.Items;
-        var types = catalog.RecordsInSourceOrder(CatalogData.Client.Types);
-        foreach (var record in types)
+        long now = Now;
+        long cutoff = now - TimeSpan.FromDays(MarketDefinitions.NpcOrderDays).Ticks;
+        bool seeded = false;
+        if (typeId is int requested)
         {
-            int id = checked((int)record.Key);
-            var type = record.Value;
-            int? group = type.MarketGroupID is > 0 and <= int.MaxValue ? (int)type.MarketGroupID : null;
-            if (
-                !knownTypes.TryGetValue(id, out var item)
-                || RegionalMarketRules.IsPlayerSuppliedIndustryInput(id, (InventoryCategory)item.CategoryId, item.GroupId)
-                || !TestingMarketRules.IsEligible(new(id, type.Published == 1, group))
-            )
+            if (catalog.Read(CatalogData.Client.Types, (long)requested) is { } type)
             {
-                continue;
+                SeedAsk(requested, type.Published == 1, type.MarketGroupID);
             }
-            if (!existing.TryGetValue((id, false), out var order))
-            {
-                order = AddOrder(id, false);
-            }
-            // Reuse existing identities so the historical execution ledger remains valid.
-            order.PriceCents = world.Settings.DevelopmentSupply.TestingPriceCents;
-            order.Remaining = world.Settings.DevelopmentSupply.TestingStock;
-            order.Entered = world.Settings.DevelopmentSupply.TestingStock;
-            order.Issued = Now;
         }
-        foreach (var offer in s_offers.Where(o => o.BuyPriceCents.HasValue && knownTypes.ContainsKey(o.TypeId)))
+        else
         {
-            if (existing.ContainsKey((offer.TypeId, true)))
+            foreach (var record in catalog.RecordsInSourceOrder(CatalogData.Client.Types))
+            {
+                SeedAsk(checked((int)record.Key), record.Value.Published == 1, record.Value.MarketGroupID);
+            }
+        }
+        foreach (var offer in s_offers.Where(o => o.BuyPriceCents.HasValue && (typeId is null || o.TypeId == typeId)))
+        {
+            if (!knownTypes.ContainsKey(offer.TypeId) || existing.ContainsKey((offer.TypeId, true)))
             {
                 continue;
             }
@@ -117,9 +118,37 @@ internal sealed partial class PilotMarketStore
             order.PriceCents = offer.BuyPriceCents!.Value;
             order.Remaining = offer.Demand;
             order.Entered = offer.Demand;
+            seeded = true;
         }
-        marker.SeedVersion = TestingMarketRules.SeedVersion;
+        if (typeId is null || seeded)
+        {
+            marker ??= world.Add(new MarketStation { StationId = station.Id, CreatedAt = now }).Entity;
+            marker.SeedVersion = typeId is null ? TestingMarketRules.SeedVersion : TestingMarketRules.SelectedTypesSeedVersion;
+        }
         world.SaveChanges();
+
+        void SeedAsk(int id, bool published, long? marketGroup)
+        {
+            int? group = marketGroup is > 0 and <= int.MaxValue ? (int)marketGroup : null;
+            if (
+                !knownTypes.TryGetValue(id, out var item)
+                || RegionalMarketRules.IsPlayerSuppliedIndustryInput(id, (InventoryCategory)item.CategoryId, item.GroupId)
+                || !TestingMarketRules.IsEligible(new(id, published, group))
+            )
+            {
+                return;
+            }
+            // Preserve existing order IDs, including those referenced by market executions.
+            var order = existing.GetValueOrDefault((id, false)) ?? AddOrder(id, false);
+            order.PriceCents = world.Settings.DevelopmentSupply.TestingPriceCents;
+            order.Remaining = world.Settings.DevelopmentSupply.TestingStock;
+            order.Entered = world.Settings.DevelopmentSupply.TestingStock;
+            if (typeId is null || order.Issued <= cutoff || order.Issued == 0)
+            {
+                order.Issued = now;
+            }
+            seeded = true;
+        }
 
         NpcMarketOrder AddOrder(int typeId, bool bid) =>
             world
@@ -132,7 +161,7 @@ internal sealed partial class PilotMarketStore
                         OwnerId = station.OwnerId,
                         TypeId = typeId,
                         Bid = bid,
-                        Issued = Now,
+                        Issued = now,
                     }
                 )
                 .Entity;
@@ -183,7 +212,9 @@ internal sealed partial class PilotMarketStore
             .Where(o => o.Kind == NpcMarketKind.Development && !o.Bid && o.Issued > 0 && !Enumerable.Contains(retiredSkills, o.TypeId))
             .Where(o => o.Remaining != supply.TestingStock || o.PriceCents != supply.TestingPriceCents || o.Issued <= cutoff)
             .AsEnumerable()
-            .Where(o => stations.Find(o.StationId)?.SeedVersion == TestingMarketRules.SeedVersion);
+            .Where(o =>
+                stations.Find(o.StationId)?.SeedVersion is TestingMarketRules.SeedVersion or TestingMarketRules.SelectedTypesSeedVersion
+            );
         foreach (var order in refreshedOrders)
         {
             order.Remaining = supply.TestingStock;
@@ -255,6 +286,13 @@ internal sealed partial class PilotMarketStore
                 types.Distinct().ToArray(),
                 includeDemand: false
             );
+        }
+        else if (MarketKind(world) == NpcMarketKind.Development)
+        {
+            foreach (int type in types.Distinct())
+            {
+                SeedDevelopment(world, catalog, station, type);
+            }
         }
         else
         {

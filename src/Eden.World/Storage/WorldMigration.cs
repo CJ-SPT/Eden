@@ -17,7 +17,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = CapsuleerCheckpointMigration.Version;
+    internal const int CurrentVersion = DevelopmentMarketOrderMigration.Version;
 
     public static void Open(
         WorldDbContext world,
@@ -226,11 +226,19 @@ internal static class WorldMigration
         if (version < CapsuleerCheckpointMigration.Version)
         {
             CapsuleerCheckpointMigration.RemoveEmbeddedCollision(world);
+        }
+        if (version < DevelopmentMarketOrderMigration.Version)
+        {
+            DevelopmentMarketOrderMigration.RemoveUnusedAsks(world);
             // Commit the schema and sanitized rows first. A restart retries reclamation if interrupted.
-            world.Database.ExecuteSqlRaw($"PRAGMA user_version={CapsuleerCheckpointMigration.Version - 1}");
+            world.Database.ExecuteSqlRaw($"PRAGMA user_version={CapsuleerCheckpointMigration.Version}");
             history.Commit();
             history.Dispose();
-            CapsuleerCheckpointMigration.ReclaimPages(world);
+            // The next startup step copies the file into RAM, including freelist pages.
+            if (world.Database.SqlQueryRaw<int>("PRAGMA freelist_count").AsEnumerable().Single() > 0)
+            {
+                world.Database.ExecuteSqlRaw("PRAGMA temp_store=FILE; VACUUM;");
+            }
             world.Database.ExecuteSqlRaw($"PRAGMA user_version={CurrentVersion}");
             return;
         }

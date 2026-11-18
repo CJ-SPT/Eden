@@ -17,6 +17,7 @@ using Eden.World.Docking;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
 using Eden.World.Storage;
+using Eden.World.Storage.Migrations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -50,7 +51,7 @@ public sealed class CapsuleerTrafficNavigationTests
         using (WorldDbContext world = new(f.Database.Path))
         {
             world.Database.ExecuteSql($"UPDATE WorldCapsuleerHauler SET Progress={legacy} WHERE PilotId={founder.PilotId}");
-            world.Database.ExecuteSqlRaw($"PRAGMA user_version={WorldMigration.CurrentVersion - 1}");
+            world.Database.ExecuteSqlRaw($"PRAGMA user_version={CapsuleerCheckpointMigration.Version - 1}");
         }
         long before = new FileInfo(f.Database.Path).Length;
         WorldInitialization.Initialize(f.Database, f.Clock);

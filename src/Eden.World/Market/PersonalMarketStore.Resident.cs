@@ -395,7 +395,13 @@ internal sealed partial class PilotMarketStore
         }
         foreach (int type in items.Select(i => i.TypeId))
         {
-            Seed(world, catalog, station, type);
+            Seed(
+                world,
+                catalog,
+                station,
+                type,
+                scopedDevelopmentSupply: pilot.AccountId == Capsuleers.CapsuleerCommunityStore.MinerAccountId
+            );
         }
         List<InventoryChange> changes = [];
         List<MarketExecution> trades = [];

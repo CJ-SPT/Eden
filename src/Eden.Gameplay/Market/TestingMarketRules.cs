@@ -5,6 +5,7 @@ public sealed record MarketSeedType(int TypeId, bool Published, int? MarketGroup
 public static class TestingMarketRules
 {
     public const int SeedVersion = 1;
+    public const int SelectedTypesSeedVersion = 2;
     public const long PriceCents = MarketDefinitions.CentsPerIsk;
     public const int Stock = 1_000_000;
     public const long GrantCents = 1_000_000L * MarketDefinitions.CentsPerIsk;

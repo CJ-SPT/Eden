@@ -20,13 +20,4 @@ internal static class CapsuleerCheckpointMigration
             """
         );
     }
-
-    internal static void ReclaimPages(WorldDbContext world)
-    {
-        // The next startup step copies the file into RAM, including freelist pages.
-        if (world.Database.SqlQueryRaw<int>("PRAGMA freelist_count").AsEnumerable().Single() > 0)
-        {
-            world.Database.ExecuteSqlRaw("PRAGMA temp_store=FILE; VACUUM;");
-        }
-    }
 }

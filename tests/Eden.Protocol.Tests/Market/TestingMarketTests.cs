@@ -6,9 +6,13 @@ using Eden.Protocol.Characters;
 using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Tests.Capsuleers;
+using Eden.Server;
 using Eden.World.Catalog;
 using Eden.World.Market;
+using Eden.World.Runtime;
 using Eden.World.Storage;
+using Eden.World.Storage.Migrations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -18,6 +22,69 @@ public sealed class TestingMarketTests
 {
     private const long PilotId = 90000001;
     private const int StationId = 60003760;
+
+    [Fact]
+    public async Task BotSupplySeedsOnlyRequestedTypesAndRestartPrunesUnusedOffers()
+    {
+        const int quotedType = 10001;
+        const int unrelatedType = 10002;
+        const int purchasedType = 10003;
+        using CapsuleerHaulerTests.Fixture fixture = new();
+        var database = fixture.Database;
+        using (CatalogDbContext catalog = new(database.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSqlRaw(
+                """
+                INSERT INTO ItemType(Id,Name,GroupId) VALUES (10001,'Quoted',54),(10002,'Unrelated',54),(10003,'Purchased',54);
+                INSERT INTO SourceRecord VALUES
+                    ('client/types','10001','{{"published":1,"marketGroupID":2,"volume":5}}'),
+                    ('client/types','10002','{{"published":1,"marketGroupID":2,"volume":5}}'),
+                    ('client/types','10003','{{"published":1,"marketGroupID":2,"volume":5}}');
+                """
+            );
+        }
+        long pilot = fixture.Founder().PilotId;
+        int station;
+        using (WorldDbContext saved = new(database.Path))
+        {
+            saved.Set<SavedWorldEconomy>().Single().TestingMarket = true;
+            long ship = saved.Pilots.Find(pilot)!.ActiveShipId;
+            if (saved.Positions.Find(ship) is { } position)
+            {
+                saved.Positions.Remove(position);
+            }
+            station = saved.Ships.Find(ship)!.StationId;
+            saved.SaveChanges();
+        }
+        long orderId;
+        using (var host = ServerServices.Build(database, fixture.Clock, liveWorld: true))
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            var market = host.GetRequiredService<PilotMarketStore>();
+            using (var world = live.Economy.Begin())
+            using (CatalogDbContext catalog = new(database.CatalogPath))
+            {
+                var quote = Assert.Single(market.SupplyOrders(world, catalog, station, [quotedType]));
+                Assert.Equal(quotedType, quote.TypeId);
+                var buy = market.ExecuteBuy(world, catalog, pilot, station, [new(purchasedType, quote.PriceCents, 1)], 0);
+                orderId = Assert.Single(buy.Trades).OrderId;
+                var restocked = Assert.Single(market.SupplyOrders(world, catalog, station, [purchasedType]));
+                Assert.Equal(restocked.Entered, restocked.Remaining);
+                Assert.DoesNotContain(world.Set<NpcMarketOrder>(), order => order.StationId == station && order.TypeId == unrelatedType);
+                Assert.Equal(2, world.Set<NpcMarketOrder>().Count(order => order.StationId == station && !order.Bid));
+                world.Commit();
+            }
+            await live.FlushAsync();
+        }
+        using (WorldDbContext saved = new(database.Path))
+        {
+            saved.Database.ExecuteSqlRaw($"PRAGMA user_version={DevelopmentMarketOrderMigration.Version - 1}");
+        }
+        WorldInitialization.Initialize(database, fixture.Clock);
+        using WorldDbContext reopened = new(database.Path);
+        Assert.Equal(orderId, Assert.Single(reopened.Set<NpcMarketOrder>().Where(order => order.StationId == station && !order.Bid)).Id);
+        Assert.Equal(orderId, Assert.Single(reopened.Set<MarketExecution>().Where(trade => trade.PilotId == pilot)).OrderId);
+    }
 
     [Fact]
     public void PublishedMarketTypesAreSeededExactlyOnceAndUnsupportedTypesCanBePurchased()
