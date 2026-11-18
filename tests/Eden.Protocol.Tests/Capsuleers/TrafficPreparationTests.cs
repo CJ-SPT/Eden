@@ -1,5 +1,7 @@
+using Eden.Data.World.Market;
 using Eden.Data.World.Mining;
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Market;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Server;
 using Eden.World.Capsuleers;
@@ -71,16 +73,25 @@ public sealed class TrafficPreparationTests
         Assert.Equal(activity.Read(11, Frequency).ElapsedTicks, resumed.ElapsedAt(11));
     }
 
-    [Fact]
-    public void CompletedJobCannotUseItsEarlierPreparationAgain()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void CompletedJobCannotUseItsEarlierPreparationAgain(bool testingMarket)
     {
         using CapsuleerHaulerTests.Fixture fixture = new();
+        using (WorldDbContext world = new(fixture.Database.Path))
+        {
+            world.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId)!.TestingMarket = testingMarket;
+            world.SaveChanges();
+        }
         using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
         using var human = host.GetRequiredService<IHumanPresence>().Select(90000001, SourceSystem);
         var scheduler = host.GetRequiredService<CapsuleerScheduler>();
         var live = host.GetRequiredService<LiveWorld>();
         fixture.Clock.Seconds += 1;
         var input = Assert.IsType<CapsuleerScheduler.PreparationInput>(scheduler.CapturePreparation());
+        Assert.NotEqual(0, input.StationId);
+        Assert.Equal(!testingMarket, input.PrepareInstitutionalOffers);
         using (live.EnterShared())
         {
             Assert.True(scheduler.PreparationCurrent(input));

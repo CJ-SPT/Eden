@@ -22,6 +22,11 @@ internal sealed partial class EconomyTransaction
     internal void ImportCombat(TransactionParticipants? participants)
     {
         var live = owner ?? throw new InvalidOperationException("Combat import requires a live world.");
+        if (participants is { Pilots.Count: 0, Ships.Count: 0, Resources.Count: 0 })
+        {
+            // Systems can be held for coordination. Only named roles and resources are imported.
+            return;
+        }
         // Capture named participants and resources, without copying every NPC in their systems.
         var ships = participants is null
             ? null

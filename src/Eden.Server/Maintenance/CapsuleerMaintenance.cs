@@ -22,6 +22,7 @@ internal sealed class CapsuleerMaintenance(
 {
     // System.Threading.Timer bounds one wait to uint.MaxValue - 1 milliseconds.
     private static readonly TimeSpan MaximumTimerDelay = TimeSpan.FromMilliseconds(uint.MaxValue - 1);
+    private static readonly TimeSpan CatchUpBudget = CapsuleerJobQueue.WakeInterval / 2;
     private CancellationTokenSource? _cancellation;
     private Task _loop = Task.CompletedTask;
     private volatile bool _stopping;
@@ -57,15 +58,21 @@ internal sealed class CapsuleerMaintenance(
             {
                 await Wait(wake, cancellationToken).ConfigureAwait(false);
                 var changedDuringTurn = scheduler.NextWake().Changed;
+                var budget = CapsuleerJobQueue.ExecutionBudget;
                 bool backlogged;
                 do
                 {
-                    Tick(out backlogged);
+                    long started = clock.GetTimestamp();
+                    Tick(budget, out backlogged, out bool advanced);
                     if (backlogged)
                     {
-                        // Yield alone immediately reschedules a permanent backlog. Keep
-                        // catch-up turns within the same cadence as ordinary maintenance.
-                        await Task.Delay(CapsuleerJobQueue.WakeInterval, clock, cancellationToken).ConfigureAwait(false);
+                        // Spend up to half the next interval catching up while jobs advance.
+                        // A stale plan or a slow job still gets an asynchronous cooldown.
+                        var interval = CapsuleerJobQueue.WakeInterval;
+                        var remaining = advanced ? interval - clock.GetElapsedTime(started) : interval;
+                        var delay = remaining > CapsuleerJobQueue.ExecutionBudget ? remaining : CapsuleerJobQueue.ExecutionBudget;
+                        budget = advanced ? CatchUpBudget : CapsuleerJobQueue.ExecutionBudget;
+                        await Task.Delay(delay, clock, cancellationToken).ConfigureAwait(false);
                     }
                 } while (backlogged && !_stopping);
                 wake = scheduler.NextWake();
@@ -133,9 +140,9 @@ internal sealed class CapsuleerMaintenance(
         }
     }
 
-    internal MinerObservation? Tick() => Tick(out _);
+    internal MinerObservation? Tick() => Tick(CapsuleerJobQueue.ExecutionBudget, out _, out _);
 
-    private MinerObservation? Tick(out bool backlogged)
+    private MinerObservation? Tick(TimeSpan budget, out bool backlogged, out bool advanced)
     {
         using var operation = operations?.Begin();
         using var performance = SessionPerformance.IsActive
@@ -152,13 +159,10 @@ internal sealed class CapsuleerMaintenance(
                 // Let waiting sessions enter before the next job or scene capture.
                 var batch = scheduler.Run(scene.Stamp, maximumActions: 1);
                 backlogged = batch.Turn.OldestDueTicks is not null;
+                advanced = batch.Turn.Completed > 0;
                 completed += batch.Turn.Completed;
                 lastMiner = batch.Miners.LastOrDefault() ?? lastMiner;
-            } while (
-                backlogged
-                && completed < CapsuleerJobQueue.ActionsPerTurn
-                && clock.GetElapsedTime(started) < CapsuleerJobQueue.ExecutionBudget
-            );
+            } while (backlogged && advanced && completed < CapsuleerJobQueue.ActionsPerTurn && clock.GetElapsedTime(started) < budget);
             return lastMiner;
         }
         finally

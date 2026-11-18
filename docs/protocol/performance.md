@@ -5347,3 +5347,57 @@ Cold roster construction, traffic actions and the long tick remain separate obse
 ### Optional maintainer checks
 
 After deployment, compare agent-action holds and checkpoint-time docked RPC latency with several sessions online.
+
+## Bot backlog and market contention
+
+On November 18, the dedicated server logged a 734.85 ms session frame, with 688.62 ms spent inside world
+ownership and 37.44 ms waiting. During a later sample with 2,785 scheduled bots, peak frame processing was
+58.26 ms, but 987 jobs were due and the oldest was 34.57 seconds late. Detached checkpoint projection took
+22.28 seconds in that sample, with 29.53 ms for capture under ownership. These measurements describe
+separate parts of the workload.
+
+Warm expiry and notification polls now use scoped resident reads, and an acknowledged notification cursor returns
+without acquiring ownership. Disabled regional demand skips the full economic action. Busy systems and
+their combat state no longer participate in these polls. Traffic preparation skips the institutional catalog
+when the active market rules use development or standard stock, and a discarded plan checks the earliest
+deadline without counting the entire overdue prefix.
+
+When overdue jobs keep advancing, the maintenance loop uses a 25 ms catch-up budget and counts processing
+and presentation toward its 50 ms cadence. It keeps a minimum 10 ms asynchronous pause after long passes and
+uses the full 50 ms cooldown after an attempt makes no progress. Ownership still releases between individual
+jobs, and each job keeps its saved deadline and ordering. Due counts continue to report the scheduler's sampled
+backlog.
+
+### Automated validation
+
+The exact development filters selected
+`ResidentEconomyTests.ExpiryAndAcknowledgedMarketChangesReadResidentIndexesWithoutMaterializingHistory`,
+`TrafficPreparationTests.CompletedJobCannotUseItsEarlierPreparationAgain` and
+`CapsuleerMaintenanceTests.BackloggedTurnsWaitForCadenceWithoutDroppingDueJobs`. The market test timed out
+while an unrelated system was held on `4ada2843`. The updated test completes while that system remains held,
+with zero SQL commands, connection opens or fitting calculations. The traffic cases cover development and
+progressive market inputs, and the clock-controlled catch-up cases cover continued progress and a stalled
+attempt. The first runs on the corrected code took 6.58, 8.00 and 6.92 seconds, respectively.
+
+The affected selection passed 122 of 133 cases in 93 seconds. All 11 failures reproduced on unchanged
+`4ada2843`. Ten were paused-checkpoint ownership cases and one was the NPC settlement rollback fixture's
+SQLite trigger during teardown. The selection used `FullyQualifiedName~.<Class>.` for:
+
+```text
+PersonalMarketTests, ResidentEconomyTests, NpcRestingOrderTests, EconomicProjectionTests,
+MarketSummaryPerformanceTests, TrafficPreparationTests, CapsuleerMaintenanceTests, CapsuleerDeadlineTests,
+CapsuleerDeadlinePerformanceTests, CapsuleerGlobalPopulationTests, CapsuleerLockOrderTests, CheckpointOwnershipTests
+```
+
+Tool and solution restores passed. The final build took 7.89 seconds with zero warnings or errors. Both Python
+policy suites passed all eight catalog and nine formatting checks. Style, CSharpier, line width and Git
+whitespace checks passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled. The server logs describe behavior before the change.
+
+### Optional maintainer checks
+
+After deployment, compare completed actions per second, oldest queue delay and peak frame processing at about
+3,000 scheduled pilots.

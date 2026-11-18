@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Globalization;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
@@ -83,8 +84,7 @@ internal sealed partial class ResidentEconomy
 
     private readonly Dictionary<int, InstitutionalPreparation> _prepared = [];
     private readonly SortedSet<(long Expires, long Id)> _openOrders = [];
-    private readonly Dictionary<long, long> _marketHeads = [];
-    private readonly HashSet<long> _staleHeads = [];
+    private readonly ConcurrentDictionary<long, long> _marketHeads = [];
     internal long NextExpiry => _openOrders.Count == 0 ? long.MaxValue : _openOrders.Min.Expires;
 
     internal IReadOnlyCollection<EconomyKey> NpcMarketOrders(NpcMarketAssortment assortment) =>
@@ -109,33 +109,13 @@ internal sealed partial class ResidentEconomy
         }
     }
 
-    private void MarketChangeChanged(EconomySavedMarketChange? before, EconomySavedMarketChange? after)
-    {
-        if (
-            before is not null
-            && (after is null || after.PilotId != before.PilotId)
-            && _marketHeads.GetValueOrDefault(before.PilotId) == before.Id
-        )
-        {
-            _staleHeads.Add(before.PilotId);
-        }
-        if (after is not null)
-        {
-            _marketHeads[after.PilotId] = Math.Max(_marketHeads.GetValueOrDefault(after.PilotId), after.Id);
-        }
-    }
+    private void MarketChangeChanged(EconomySavedMarketChange? before, EconomySavedMarketChange? after) =>
+        UpdateFeedHead<SavedMarketChange, EconomySavedMarketChange>(_marketHeads, before?.PilotId, before?.Id, after?.PilotId, after?.Id);
 
-    internal long MarketHead(long pilot)
-    {
-        if (_staleHeads.Remove(pilot))
-        {
-            var table =
-                (EconomyTable<Eden.Data.World.Market.SavedMarketChange, EconomySavedMarketChange>)
-                    _tables[typeof(Eden.Data.World.Market.SavedMarketChange)];
-            _marketHeads[pilot] = table.Matching(c => c.PilotId == pilot).Select(key => key.Id).DefaultIfEmpty().Max();
-        }
-        return _marketHeads.GetValueOrDefault(pilot);
-    }
+    internal long MarketHead(long pilot) => _marketHeads.GetValueOrDefault(pilot);
+
+    internal bool HasMarketChanges(long pilot, long cursor) =>
+        !_loaded || _active is not null || _owner.HasUnpublishedSqlChanges || cursor < MarketHead(pilot);
 
     internal int StructureSystemId(long id) =>
         _structures.TryGetValue(id, out var structure) ? structure.SystemId : throw new InvalidDataException("Unknown structure.");
@@ -304,7 +284,6 @@ internal sealed partial class ResidentEconomy
         _marketHeads.Clear();
         _mailHeads.Clear();
         _listHeads.Clear();
-        _staleHeads.Clear();
         foreach (var table in _tables.Values)
         {
             using var phase = SessionPerformance.Phase($"resident.load.{table.Name}");

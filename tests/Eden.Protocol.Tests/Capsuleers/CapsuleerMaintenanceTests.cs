@@ -208,13 +208,15 @@ public sealed class CapsuleerMaintenanceTests
         Assert.Equal(timing.LastPresentation, scheduler.Read().LastPresentation);
     }
 
-    [Fact]
-    public async Task BackloggedTurnsWaitForCadenceWithoutDroppingDueJobs()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task BackloggedTurnsWaitForCadenceWithoutDroppingDueJobs(bool stalled)
     {
         using CapsuleerHaulerTests.Fixture f = new();
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         ManualWakeClock clock = new();
-        BackloggedScheduler scheduler = new(clock);
+        BackloggedScheduler scheduler = new(clock, stalled);
         using CapsuleerMaintenance maintenance = new(
             scheduler,
             host.GetRequiredService<ICapsuleerHandoff>(),
@@ -227,32 +229,44 @@ public sealed class CapsuleerMaintenanceTests
         maintenance.Start();
         var initial = await clock.NextWake();
         initial.Fire();
-        for (int completed = 1; completed < 3; completed++)
+        (int Attempts, int Completed, int DelayMilliseconds)[] wakes = stalled
+            ? [(1, 1, 40), (2, 1, 50), (3, 2, 40)]
+            : [(1, 1, 40), (4, 4, 20)];
+        foreach (var wake in wakes)
         {
             var next = await clock.NextWake();
-            Assert.Equal(completed, scheduler.Calls);
-            Assert.Equal(CapsuleerJobQueue.WakeInterval, next.Delay);
+            Assert.Equal(wake.Attempts, scheduler.Calls);
+            Assert.Equal(wake.Completed, scheduler.Completed);
+            Assert.Equal(TimeSpan.FromMilliseconds(wake.DelayMilliseconds), next.Delay);
             Assert.False(scheduler.Current.Task.IsCompleted);
             next.Fire();
         }
         await scheduler.Current.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        Assert.Equal(3, scheduler.Calls);
+        Assert.Equal(5, scheduler.Completed);
+        Assert.Equal(stalled ? 6 : 5, scheduler.Calls);
     }
 
-    private sealed class BackloggedScheduler(ManualWakeClock clock) : ICapsuleerScheduler
+    private sealed class BackloggedScheduler(ManualWakeClock clock, bool stalled) : ICapsuleerScheduler
     {
         public TaskCompletionSource Current { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public int Calls { get; private set; }
+        public int Completed { get; private set; }
 
         public CapsuleerBatch Run(int destinyStamp, int maximumActions = CapsuleerJobQueue.ActionsPerTurn)
         {
+            Assert.Equal(1, maximumActions);
             Calls++;
             clock.Elapsed += CapsuleerJobQueue.ExecutionBudget;
-            if (Calls == 3)
+            if (stalled && Calls == 2)
+            {
+                return new(new(0, 200, 1, true), [], []);
+            }
+            Completed++;
+            if (Completed == 5)
             {
                 Current.SetResult();
             }
-            return new(new(1, 200, Calls < 3 ? 1 : null, true), [], []);
+            return new(new(1, 200, Completed < 5 ? 1 : null, true), [], []);
         }
 
         public IReadOnlyList<CapsuleerJob> Jobs() => [];

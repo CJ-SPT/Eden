@@ -71,6 +71,9 @@ internal sealed partial class PilotMarketStore
         SeedDevelopment(world, catalog, station, scopedDevelopmentSupply ? typeId : null);
     }
 
+    internal static bool UsesInstitutionalOffers(WorldAction world) =>
+        RegionalMarketStore.Enabled(world) || MarketKind(world) == NpcMarketKind.Institutional;
+
     private void SeedDevelopment(WorldAction world, CatalogDbContext catalog, CatalogStationDefinition station, int? typeId)
     {
         var stations = world.Set<MarketStation>();

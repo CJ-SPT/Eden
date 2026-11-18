@@ -60,8 +60,7 @@ internal sealed partial class PilotMarketStore
         {
             if (Eden.World.Runtime.LiveWorld.Find(database.Path) is { } live)
             {
-                using var resident = live.Economy.Begin();
-                return resident.NextExpiry;
+                return live.Economy.Inspect(static world => world.NextExpiry);
             }
             if (signal.Deadline != 0)
             {

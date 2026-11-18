@@ -663,7 +663,7 @@ public sealed class ResidentEconomyTests
     }
 
     [Fact]
-    public void ExpiryAndAcknowledgedMarketChangesReadResidentIndexesWithoutMaterializingHistory()
+    public async Task ExpiryAndAcknowledgedMarketChangesReadResidentIndexesWithoutMaterializingHistory()
     {
         using PersonalMarketTests.Fixture fixture = new(live: true);
         fixture.List();
@@ -686,16 +686,54 @@ public sealed class ResidentEconomyTests
             transaction.Commit();
         }
         Assert.Equal(expires + TimeSpan.TicksPerDay, market.NextExpiry);
-        using var metrics = SessionPerformance.Begin("idle resident market deadlines", _ => { }, force: true)!;
-        for (int i = 0; i < 20; i++)
+
+        const int RemoteSystem = 30000144;
+        var held = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using ManualResetEventSlim release = new();
+        var holder = Task.Run(() =>
         {
-            Assert.Equal(head, market.Observe(Human));
-            Assert.Empty(market.Changes(Human, head));
-            Assert.Equal(expires + TimeSpan.TicksPerDay, market.NextExpiry);
+            using var remote = live.Enter("unrelated simulation", RemoteSystem);
+            held.SetResult();
+            Assert.True(release.Wait(TimeSpan.FromSeconds(20)));
+        });
+        Task? polling = null;
+        try
+        {
+            await held.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            polling = Task.Run(() =>
+            {
+                using var metrics = SessionPerformance.Begin("idle resident market deadlines", _ => { }, force: true)!;
+                Assert.Equal(head, Assert.Single(market.Changes(Human, 0)).Id);
+                for (int i = 0; i < 20; i++)
+                {
+                    Assert.Equal(head, market.Observe(Human));
+                    Assert.Empty(market.Changes(Human, head));
+                    Assert.Equal(expires + TimeSpan.TicksPerDay, market.NextExpiry);
+                }
+                Assert.Equal(0, metrics.Commands);
+                Assert.Equal(0, metrics.Connections);
+                Assert.Equal(0, metrics.FittingCalculations);
+            });
+            await polling.WaitAsync(TimeSpan.FromSeconds(5));
         }
-        Assert.Equal(0, metrics.Commands);
-        Assert.Equal(0, metrics.Connections);
-        Assert.Equal(0, metrics.FittingCalculations);
+        finally
+        {
+            release.Set();
+            await Task.WhenAll(holder, polling ?? Task.CompletedTask);
+        }
+
+        using (var uncommitted = live.Economy.Begin(TransactionParticipants.None))
+        {
+            uncommitted.Remove(uncommitted.Set<SavedMarketChange>().Find(head)!);
+        }
+        Assert.Equal(head, Assert.Single(market.Changes(Human, 0)).Id);
+        using (var committed = live.Economy.Begin(TransactionParticipants.None))
+        {
+            committed.Remove(committed.Set<SavedMarketChange>().Find(head)!);
+            committed.Commit();
+        }
+        Assert.Equal(0, market.Observe(Human));
+        Assert.Empty(market.Changes(Human, 0));
     }
 
     [Fact]

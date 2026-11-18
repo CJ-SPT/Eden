@@ -2,6 +2,7 @@ using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Flight;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Catalog;
+using Eden.World.Market;
 using Eden.World.Mining;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -24,7 +25,8 @@ internal sealed partial class CapsuleerScheduler
         IReadOnlyList<int> MissingBelts,
         IReadOnlyList<CapsuleerGeometry.ResourcePreparation> Geometry,
         CapsuleerHauler.JourneyInput? Journey,
-        TrafficTemplateInput? Template
+        TrafficTemplateInput? Template,
+        bool PrepareInstitutionalOffers
     );
 
     internal PreparationInput? CapturePreparation()
@@ -122,7 +124,10 @@ internal sealed partial class CapsuleerScheduler
                     _registrations[job.PilotId].Community,
                     hauler?.PreparationRoute
                 )
-                : null
+                : null,
+            stationId != 0
+                && (job.Action is CapsuleerAction.Trade or CapsuleerAction.Prepare)
+                && PilotMarketStore.UsesInstitutionalOffers(world)
         );
     }
 
@@ -185,8 +190,9 @@ internal sealed partial class CapsuleerScheduler
                 {
                     belts[belt] = AsteroidFieldStore.Prepare(catalog, belt);
                 }
-                if (input.Job.Action is CapsuleerAction.Trade or CapsuleerAction.Prepare)
+                if (input.PrepareInstitutionalOffers)
                 {
+                    using var institutional = SessionPerformance.Phase("traffic.institutionalOffers");
                     market.PrepareInstitutional(catalog, input.StationId);
                 }
             }
@@ -213,8 +219,8 @@ internal sealed partial class CapsuleerScheduler
         using var owner = synchronization.Enter("traffic maintenance");
         if (input is not null && !PreparationCurrent(input))
         {
-            var status = _queue.Inspect(presence.Read().ElapsedTicks);
-            return new(new(0, Current.Count, status.OldestDueTicks, false), [], []);
+            long? oldest = _queue.NextDueTicks is { } due && due <= presence.Read().ElapsedTicks ? due : null;
+            return new(new(0, Current.Count, oldest, false), [], []);
         }
         if (input is not null && Live is { } live)
         {

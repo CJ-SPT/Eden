@@ -155,35 +155,32 @@ internal sealed partial class PilotMarketStore
         return expired;
     }
 
-    private WorldEconomySettings ResidentSettings(Eden.World.Runtime.LiveWorld live)
-    {
-        using var world = live.Economy.Begin();
-        var settings = world.Set<SavedWorldEconomy>().Single();
-        return new(settings.TestingMarket, settings.TestingGrants, settings.InstitutionalStock);
-    }
+    private static WorldEconomySettings ResidentSettings(LiveWorld live) =>
+        live.Economy.Inspect(static world =>
+        {
+            var settings = world.Set<SavedWorldEconomy>().Single();
+            return new WorldEconomySettings(settings.TestingMarket, settings.TestingGrants, settings.InstitutionalStock);
+        });
 
-    private long ResidentObserve(Eden.World.Runtime.LiveWorld live, long pilotId)
-    {
-        using var world = live.Economy.Begin();
-        return world.MarketHead(pilotId);
-    }
+    private static long ResidentObserve(LiveWorld live, long pilotId) => live.Economy.Inspect(world => world.MarketHead(pilotId));
 
-    private IReadOnlyList<PersonalMarketChange> ResidentChanges(Eden.World.Runtime.LiveWorld live, long pilotId, long after)
+    private static IReadOnlyList<PersonalMarketChange> ResidentChanges(LiveWorld live, long pilotId, long after)
     {
-        using var world = live.Economy.Begin();
-        if (after >= world.MarketHead(pilotId))
+        if (!live.Economy.HasMarketChanges(pilotId, after))
         {
             return [];
         }
-        return world
-            .Set<SavedMarketChange>()
-            .AsNoTracking()
-            .Where(c => c.PilotId == pilotId && c.Id > after)
-            .OrderBy(c => c.Id)
-            .Take(PersonalMarketRules.ChangeBatch)
-            .AsEnumerable()
-            .Select(c => JsonSerializer.Deserialize<PersonalMarketChange>(c.Payload)! with { Id = c.Id })
-            .ToArray();
+        return live.Economy.Inspect<IReadOnlyList<PersonalMarketChange>>(world =>
+            after >= world.MarketHead(pilotId)
+                ? []
+                : world
+                    .Filter<SavedMarketChange>(c => c.PilotId == pilotId && c.Id > after)
+                    .OrderBy(c => c.Id)
+                    .Take(PersonalMarketRules.ChangeBatch)
+                    .AsEnumerable()
+                    .Select(c => JsonSerializer.Deserialize<PersonalMarketChange>(c.Payload)! with { Id = c.Id })
+                    .ToArray()
+        );
     }
 
     private IReadOnlyList<MarketOrder> ResidentPersonalOrders(Eden.World.Runtime.LiveWorld live, long pilotId, bool history = false)
@@ -441,18 +438,22 @@ internal sealed partial class PilotMarketStore
         {
             throw new ArgumentOutOfRangeException(nameof(limit));
         }
+        if (database.Settings.Economy is { StandardMarket: true } or { ProgressiveMarkets: false })
+        {
+            return 0;
+        }
         var snapshot = activity?.Read();
         if (snapshot is not { Active: true } || snapshot.ElapsedTicks < signal.DemandDeadline)
         {
             return 0;
         }
-        using var world = live.Economy.Begin();
-        if (!RegionalMarketStore.Enabled(world))
+        using var owner = live.EnterShared("market demand");
+        if (!live.Economy.Inspect(RegionalMarketStore.Enabled))
         {
-            world.Commit();
             signal.ScheduleDemand(long.MaxValue, 0);
             return 0;
         }
+        using var world = live.Economy.Begin();
         using CatalogDbContext catalog = new(database.CatalogPath);
         long now = Now;
         long cursor = signal.DemandCursor;
