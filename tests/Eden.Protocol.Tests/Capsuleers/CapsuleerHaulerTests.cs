@@ -17,6 +17,7 @@ using Eden.Server;
 using Eden.Server.Chat;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
+using Eden.World.Characters;
 using Eden.World.Combat;
 using Eden.World.Docking;
 using Eden.World.Fittings;
@@ -177,6 +178,63 @@ public sealed class CapsuleerHaulerTests
         Assert.Equal((hauler, founderShip), (f.Founder().PilotId, f.Founder().FounderShipId));
         using WorldDbContext reopened = new(f.Database.Path);
         Assert.DoesNotContain(reopened.Ships.Where(s => s.OwnerId == hauler), s => s.TypeId == HaulingRules.BadgerType);
+    }
+
+    [Fact]
+    public async Task CapsuleEscapesOutsideItsHaulingRouteAndDocksAfterRestart()
+    {
+        const int LossSystem = 30000144;
+        using Fixture f = new();
+        var founder = f.Founder();
+        long capsule;
+        using (var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true))
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            using CatalogDbContext catalog = new(f.Database.CatalogPath);
+            Assert.DoesNotContain(LossSystem, CapsuleerTrafficFlight.Route(founder, catalog).Systems);
+            Assert.Empty(catalog.Definitions.StationsInSystem(LossSystem));
+            var gate = SystemObjects.Geometry(catalog, LossSystem).First(body => body.DestinationSystemId == DestinationSystem);
+            using (var action = live.Economy.Begin(new(systems: [SourceSystem, LossSystem], pilots: [founder.PilotId])))
+            {
+                var victim = action.Pilots.Find(founder.PilotId)!;
+                var attacker = action.Pilots.Find(90000001L)!;
+                var start = gate.Position + new SpacePosition(gate.Radius + 1000, 0, 0);
+                SqliteWorld.SetPosition(action, catalog, victim.ActiveShipId, start, LossSystem, f.Clock.Now);
+                ShipLossPersistence.Apply(
+                    action,
+                    catalog,
+                    victim,
+                    null,
+                    victim.ActiveShipId,
+                    LossSystem,
+                    victim.ActiveShip.Position!,
+                    f.Clock.Now,
+                    host.GetRequiredService<IShipLootRoll>(),
+                    PilotInteractionHistoryStore.Player(action, attacker, attacker.ActiveShipId)
+                );
+                capsule = victim.ActiveShipId;
+                action.Commit();
+            }
+            var escaping = Until(host, f.Clock, state => state.Work.Activity == HaulerActivity.Flying);
+            Assert.Equal(capsule, escaping.Pilot.ShipId);
+            Assert.Equal(LossSystem, escaping.Pilot.SystemId);
+            Assert.Equal(gate.Id, escaping.Work.TargetId);
+            Assert.Equal(Destination, escaping.Work.DestinationStationId);
+            await live.FlushAsync();
+        }
+        using (var reopened = ServerServices.Build(f.Database, f.Clock, liveWorld: true))
+        {
+            var docked = Until(reopened, f.Clock, state => state.Pilot.Position is null);
+            Assert.Equal(capsule, docked.Pilot.ShipId);
+            Assert.Equal(Destination, docked.Pilot.StationId);
+            var live = reopened.GetRequiredService<LiveWorld>();
+            live.Economy.Inspect(action =>
+            {
+                Assert.Single(action.Set<ShipLoss>().Where(loss => loss.PilotId == founder.PilotId));
+                Assert.Null(action.Ships.Find(founder.FounderShipId));
+                return true;
+            });
+        }
     }
 
     [Theory]

@@ -2789,3 +2789,40 @@ Not performed. Agent client testing is disabled.
 ### Optional maintainer checks
 
 None.
+
+## Capsule escape after ship loss
+
+The November 18 server checkpoint showed three stranded hauler capsules in KFIE-Z. Their jobs retried with
+the same saved-route error. After losing a ship on a regional sortie, the capsule could be outside the original
+hauling route, leaving its normal travel step without a valid destination. The live catalog has a local NPC
+station in KFIE-Z.
+
+An in-space hauler capsule now takes a route from its current system to the nearest reachable NPC station by
+gate count. It uses a local station when one is available. In a stationless system it uses the existing graph of
+reciprocal, usable gates. The retreat follows ordinary alignment, warp, gate transfer, and docking checks,
+including tackle and Crimewatch restrictions. The escape route is saved with the job's flight progress so it
+survives a checkpoint and restart. The pilot waits for a replacement after docking. Existing capsules with
+stranded hauling jobs can start the same escape on their next eligible action.
+
+The behavior follows the warp-out and docking guidance in [Pod saving](https://wiki.eveuniversity.org/Pod_saving).
+
+### Automated validation
+
+The exact filter `FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerHaulerTests.CapsuleEscapesOutsideItsHaulingRouteAndDocksAfterRestart`
+reproduced the saved-route error on `6d5c2c05` in 14.15 seconds. It passed in 13.22 seconds with the fix. The test
+settles a resident ship loss outside the original route, checkpoints the escaping pod, restarts, and checks
+that the original capsule takes the available gate and docks. The destroyed hull stays lost.
+
+The affected selection passed all 89 cases in 105 seconds. It included `CapsuleerHaulerTests`,
+`CapsuleerInboundRuntimeTests`, `RoamingGangTests`, `RegionalConflictWorldTests`, `CapsuleerTrafficRoutesTests`,
+and `CapsuleerMinerTests.LostVentureUsesNormalLossSettlementAndWaitsDockedForReplacement`. The solution built
+in 7.94 seconds with zero warnings or errors. Both Python policy suites and formatting verification passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled. Read-only checkpoint and catalog queries confirmed the
+stranded jobs and the local station before deployment.
+
+### Optional maintainer check
+
+After deployment, observe a previously stranded capsule in KFIE-Z and confirm it docks at the local station.

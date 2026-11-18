@@ -415,28 +415,30 @@ internal sealed partial class CapsuleerHauler(
         {
             EndSortie(sortie);
         }
-        var proactive = ProactiveTarget();
+        bool capsule = Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup;
+        var proactive = capsule ? null : ProactiveTarget();
         var combatRole = InActiveGang ? GangMember?.Role : null;
         if (combatRole == PvpRole.Scout && proactive is { Npc: false })
         {
             combatRole = PvpRole.Tackle;
         }
         var previousDefense = Work.Defense;
-        var defended = _background
-            ? new CapsuleerDefenseResult(Pilot, null, false, false, false)
-            : defense.Advance(
-                Pilot,
-                _navigation,
-                previousDefense,
-                Now,
-                destinyStamp,
-                _obstacles,
-                Work.Retreating,
-                Work.Activity is not (HaulerActivity.Jumping or HaulerActivity.Inbound) && Work.Stamp >= Work.ArrivalUntil,
-                proactive: proactive,
-                pvpRole: combatRole,
-                gang: InActiveGang ? Work.Gang : null
-            );
+        var defended =
+            _background || capsule
+                ? new CapsuleerDefenseResult(Pilot, null, false, false, false)
+                : defense.Advance(
+                    Pilot,
+                    _navigation,
+                    previousDefense,
+                    Now,
+                    destinyStamp,
+                    _obstacles,
+                    Work.Retreating,
+                    Work.Activity is not (HaulerActivity.Jumping or HaulerActivity.Inbound) && Work.Stamp >= Work.ArrivalUntil,
+                    proactive: proactive,
+                    pvpRole: combatRole,
+                    gang: InActiveGang ? Work.Gang : null
+                );
         _pilot = defended.Pilot;
         _warpBlocked = defended.WarpBlocked ?? _warpBlocked;
         _work = Work with { Defense = defended.State, LastMotionStamp = defended.HoldsNavigation ? destinyStamp : Work.LastMotionStamp };
@@ -479,8 +481,13 @@ internal sealed partial class CapsuleerHauler(
         _operation = new(database, job, marketSignal);
         try
         {
+            if (capsule && Pilot.Position is not null)
+            {
+                AdvanceCapsuleEscape();
+                return Commit(job);
+            }
             // Scouting can populate the system's public sites. Finish that work before opening the station transaction.
-            var scoutedAnomaly = ScoutDepartureAnomaly();
+            var scoutedAnomaly = capsule ? null : ScoutDepartureAnomaly();
             SynchronizeGang(reconcile: true);
             PublishRegionalReports();
             if (defended.NewThreat)
@@ -840,6 +847,41 @@ internal sealed partial class CapsuleerHauler(
                 }
                 break;
         }
+    }
+
+    private void AdvanceCapsuleEscape()
+    {
+        if (Work.Activity == HaulerActivity.Waiting && Work.ActiveTicks < Work.DueTicks)
+        {
+            return;
+        }
+        if (Work.Journey?.Kind == TrafficJourneyKind.CapsuleEscape)
+        {
+            Step(null);
+            return;
+        }
+        _route =
+            CapsuleerTrafficRoutes.EscapeRoute(_operation.Catalog, Pilot.SystemId)
+            ?? throw new InvalidDataException("The capsule has no reachable NPC station.");
+        _work = Work with
+        {
+            RouteIndex = _route.Systems.Length - 1,
+            RouteDirection = -1,
+            Retreating = true,
+            WaitingReason = null,
+            Ratting = null,
+            TrafficLane = null,
+            LaneDeparting = false,
+            Journey = new(
+                TrafficJourneyKind.CapsuleEscape,
+                Founder.SourceStationId,
+                _route.SourceStationId,
+                _route.DestinationStationId,
+                _route.Systems,
+                Work.DwellSequence
+            ),
+        };
+        BeginTravel();
     }
 
     private InventoryItem[] Ore(long location) =>
@@ -1206,7 +1248,7 @@ internal sealed partial class CapsuleerHauler(
             _navigation.Dock();
             _operation.TravelChanged = true;
             var routine = TravelerRoutineRules.Arrive(Work.Routine ?? TravelerRoutineRules.Create(pilotId), Pilot.StationId);
-            int dwell = Work.Journey is { } journey
+            int dwell = Work.Journey is { Kind: not TrafficJourneyKind.CapsuleEscape } journey
                 ? TravelerRoutineRules.LayoverSeconds(routine, journey.Kind, pilotId, Work.DwellSequence)
                 : HaulingRules.StationDwellSeconds(Pilot.PilotId, Work.DwellSequence);
             if (Work.Gang is { Phase: not RoamingGangPhase.Complete } || Work.RegionalEscort is not null)
@@ -1283,7 +1325,7 @@ internal sealed partial class CapsuleerHauler(
             DepartureAt = null,
         };
         RefreshObjects(loadResources: Live?.CapsuleerActivity.Read().ActiveSystems.Contains(Pilot.SystemId) != false);
-        if (!TryRegionalGrid())
+        if (Work.Journey?.Kind == TrafficJourneyKind.CapsuleEscape || !TryRegionalGrid())
         {
             BeginTravel();
         }

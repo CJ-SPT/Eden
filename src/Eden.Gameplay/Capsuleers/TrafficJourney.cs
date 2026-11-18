@@ -5,6 +5,7 @@ public enum TrafficJourneyKind
     Local,
     Regional,
     LongDistance,
+    CapsuleEscape,
 }
 
 public sealed record TrafficJourney(

@@ -29,6 +29,21 @@ internal static partial class CapsuleerTrafficRoutes
         LoadPlan,
         Estimate: plan => EntryEstimatedBytes + plan.Routes.Sum(r => EntryEstimatedBytes + r.Systems.Length * sizeof(int))
     );
+    private static readonly CatalogDefinition<CapsuleerTrafficRoute?> s_escapeRoutes = new(
+        "capsuleer-escape-routes",
+        (catalog, system) =>
+        {
+            var graph = catalog.Definitions.GlobalDefinition(s_graph);
+            if (FindStationPath(graph, system) is not { } refuge)
+            {
+                return null;
+            }
+            // A one-way return leg ends at index zero, where the refuge is located.
+            Array.Reverse(refuge.Systems);
+            return new(refuge.StationId, refuge.StationId, refuge.Systems);
+        },
+        Estimate: route => EntryEstimatedBytes + (route?.Systems.Length ?? 0) * sizeof(int)
+    );
 
     private sealed record TrafficGraph(FrozenDictionary<int, int[]> Links, FrozenDictionary<int, int[]> Stations);
 
@@ -37,6 +52,9 @@ internal static partial class CapsuleerTrafficRoutes
     private sealed record StationPath(int StationId, int[] Systems);
 
     internal static CapsuleerTrafficPlan Read(CatalogDbContext catalog, int systemId) => catalog.Definition(s_plans, systemId);
+
+    internal static CapsuleerTrafficRoute? EscapeRoute(CatalogDbContext catalog, int systemId) =>
+        catalog.Definition(s_escapeRoutes, systemId);
 
     internal static IReadOnlyList<int> Neighbours(CatalogDbContext catalog, int systemId) =>
         catalog.Definitions.GlobalDefinition(s_graph).Links.GetValueOrDefault(systemId) ?? [];
@@ -134,7 +152,7 @@ internal static partial class CapsuleerTrafficRoutes
         return new(anchor.StationId, destination.StationId, [.. anchor.Systems.Reverse(), .. destination.Systems]);
     }
 
-    private static StationPath? FindStationPath(TrafficGraph graph, int root, int blockedNeighbor)
+    private static StationPath? FindStationPath(TrafficGraph graph, int root, int? blockedNeighbor = null)
     {
         Queue<int> pending = new();
         Dictionary<int, int> parents = new() { [root] = root };
