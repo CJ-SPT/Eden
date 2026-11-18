@@ -6,12 +6,16 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.World.Catalog;
 using Eden.World.Docking;
+using Eden.World.Mining;
 
 namespace Eden.World.Capsuleers;
 
 internal sealed record CapsuleerOrigin(int RaceId, int BloodlineId, int SchoolId, int CorporationId);
 
-internal sealed record CapsuleerSite(int SystemId, CapsuleerEligibility Eligibility, int? HomeStationId, int? DestinationStationId);
+internal sealed record CapsuleerSite(int SystemId, CapsuleerEligibility Eligibility, int? HomeStationId, int? DestinationStationId)
+{
+    internal int OreBelts { get; init; }
+}
 
 internal static class CapsuleerProvisioningCatalog
 {
@@ -22,9 +26,39 @@ internal static class CapsuleerProvisioningCatalog
     private static readonly CatalogDefinition<CapsuleerOrigin[]> s_origins = new("capsuleer-origins", (catalog, _) => LoadOrigins(catalog));
     private static readonly CatalogDefinition<CapsuleerSite> s_miningSites = new("capsuleer-mining-site", MiningSite);
 
+    private sealed record MiningHulls(CapsuleerMiningHull[] Barges, CapsuleerMiningHull[] Exhumers);
+
+    private static readonly CatalogDefinition<MiningHulls> s_miningHulls = new("capsuleer-mining-hulls", ReadMiningHulls);
+
     internal static CapsuleerOrigin[] Origins(CatalogDbContext catalog) => catalog.Definition(s_origins, 0);
 
     internal static CapsuleerSite Mining(CatalogDbContext catalog, int systemId) => catalog.Definition(s_miningSites, systemId);
+
+    internal static bool HasMiningFleets(CatalogDbContext catalog) => catalog.Definition(s_miningHulls, 0).Barges.Length > 0;
+
+    internal static CapsuleerMiningHull[] MiningRoster(CatalogDbContext catalog, CapsuleerSite site, long seed)
+    {
+        var hulls = catalog.Definition(s_miningHulls, 0);
+        return CapsuleerMiningRules.Roster(
+            site.OreBelts,
+            CapsuleerProvisioningRules.Seed(seed, site.SystemId, CapsuleerCareer.Mining),
+            hulls.Barges,
+            hulls.Exhumers
+        );
+    }
+
+    private static MiningHulls ReadMiningHulls(CatalogDbContext catalog, int _)
+    {
+        if (!MiningLaserCatalog.Supported(catalog, (int)MiningLaserType.StripMinerI, InventoryDefinitions.StripMinerGroup))
+        {
+            return new([], []);
+        }
+        CapsuleerMiningHull[] barges = [CapsuleerMiningHull.Covetor, CapsuleerMiningHull.Retriever, CapsuleerMiningHull.Procurer];
+        CapsuleerMiningHull[] exhumers = [CapsuleerMiningHull.Hulk, CapsuleerMiningHull.Mackinaw, CapsuleerMiningHull.Skiff];
+        return new(barges.Where(Available).ToArray(), exhumers.Where(Available).ToArray());
+
+        bool Available(CapsuleerMiningHull hull) => catalog.FittingType((int)hull) is not null;
+    }
 
     private static CapsuleerOrigin[] LoadOrigins(CatalogDbContext catalog)
     {
@@ -65,7 +99,8 @@ internal static class CapsuleerProvisioningCatalog
             security >= CapsuleerProvisioningRules.MinimumSecurity && station is not null
                 ? catalog.CelestialsInSystem(system).Where(b => b.GroupId == AsteroidDefinitions.BeltGroup).ToArray()
                 : [];
-        bool ore = belts.Length > 0 && belts.All(b => ValidCounts(catalog, b.Id)) && belts.Any(b => UsableOre(catalog, b.Id));
+        int oreBelts = belts.All(b => ValidCounts(catalog, b.Id)) ? belts.Count(b => UsableOre(catalog, b.Id)) : 0;
+        bool ore = oreBelts > 0;
         bool equipment =
             catalog.FittingType(CapsuleerCommunityStore.VentureType) is not null
             && catalog.FittingType((int)MiningLaserType.MinerI) is not null;
@@ -86,7 +121,7 @@ internal static class CapsuleerProvisioningCatalog
         var eligibility = CapsuleerProvisioningRules.Eligibility(
             new(true, security, station is not null, belts.Length > 0, ore, exportRoute, true, equipment)
         );
-        return new(system, eligibility, station?.Id, null);
+        return new CapsuleerSite(system, eligibility, station?.Id, null) { OreBelts = oreBelts };
     }
 
     internal static bool UsableOre(CatalogDbContext catalog, int belt)

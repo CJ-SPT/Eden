@@ -311,7 +311,8 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
         WorldDatabase database,
         CatalogDbContext catalog,
         long seed,
-        Eden.Gameplay.Configuration.CapsuleerPopulationPolicy policy
+        Eden.Gameplay.Configuration.CapsuleerPopulationPolicy policy,
+        bool resident = false
     )
     {
         FileInfo file = new(database.CatalogPath);
@@ -319,8 +320,9 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
             $"{policy.Enabled}|{policy.Miners}|{policy.TrafficMultiplier}|{policy.GateVisitors}"
         );
         string trafficIdentity = database.Traffic.Manifest?.Identity ?? "fallback";
+        string miningIdentity = resident && policy.Miners && CapsuleerProvisioningCatalog.HasMiningFleets(catalog) ? "|mining-crews-1" : "";
         return $"{catalog.Definitions.Identity.SourceFingerprint}|{file.Length}|{file.LastWriteTimeUtc.Ticks}|{seed}|"
-            + $"{settingsIdentity}|{trafficIdentity}|{policy.Freight.VariedHulls}|{policy.Freight.CargoTypeIds}";
+            + $"{settingsIdentity}|{trafficIdentity}|{policy.Freight.VariedHulls}|{policy.Freight.CargoTypeIds}{miningIdentity}";
     }
 
     private static CapsuleerTrafficRoute SelectRoute(

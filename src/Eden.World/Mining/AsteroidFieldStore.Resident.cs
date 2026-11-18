@@ -108,6 +108,7 @@ internal sealed partial class AsteroidFieldStore
             {
                 Solid = definitions[a.TypeId].GroupId != MiningDefinitions.GasCloudGroup,
                 IsGlobal = false,
+                AsteroidBeltId = a.BeltId > 0 ? a.BeltId : null,
             })
             .ToArray();
     }

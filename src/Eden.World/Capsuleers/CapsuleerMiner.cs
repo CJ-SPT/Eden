@@ -43,9 +43,11 @@ internal sealed class CapsuleerMinerFactory(
     CapsuleerIndustry industry
 )
 {
-    internal CapsuleerMiner Create(long pilotId) =>
+    internal CapsuleerMiner Create(long pilotId, IReadOnlyCollection<long> crew, Func<long, bool> suspended) =>
         new(
             pilotId,
+            crew,
+            suspended,
             database,
             ships,
             systems,
@@ -64,8 +66,10 @@ internal sealed class CapsuleerMinerFactory(
         );
 }
 
-internal sealed class CapsuleerMiner(
+internal sealed partial class CapsuleerMiner(
     long pilotId,
+    IReadOnlyCollection<long> crew,
+    Func<long, bool> suspended,
     WorldDatabase database,
     SqliteWorld ships,
     CapsuleerGeometry systems,
@@ -136,6 +140,7 @@ internal sealed class CapsuleerMiner(
     private DockedPilot? _pilot;
     internal DockedPilot? PreparationPilot => _pilot;
     private InventoryItem? _laser;
+    private double _miningReach;
     private MinerProgress? _work;
     private NavigationState _navigation = new();
     private IReadOnlyList<StaticSpaceObject> _objects = [];
@@ -267,6 +272,16 @@ internal sealed class CapsuleerMiner(
             ObserveAggression(Pilot.ShipId);
         }
         if (
+            database.Settings.Capsuleers.SituationalAwareness
+            && Pilot.Position is not null
+            && _navigation.Warp is null
+            && CapsuleerMiningRules.WorkingField(Work)
+            && CrewDanger(job.DueTicks)
+        )
+        {
+            _work = Work with { Activity = MinerActivity.ReadyToReturn, LeaveAfterCycle = false };
+        }
+        if (
             Interlocked.Exchange(ref _threatenedShip, 0) == Pilot.ShipId
             && Pilot.Position is not null
             && Work.Activity != MinerActivity.Returning
@@ -285,6 +300,7 @@ internal sealed class CapsuleerMiner(
         var beforePilot = Pilot;
         var before = Work;
         var beforeLaser = _laser;
+        double beforeReach = _miningReach;
         var beforeTarget = _target;
         var beforeObjects = _objects;
         var beforeObstacles = _obstacles;
@@ -328,6 +344,7 @@ internal sealed class CapsuleerMiner(
             _obstacles = beforeObstacles;
             RestorePosition(beforePilot);
             _laser = beforeLaser;
+            _miningReach = beforeReach;
             _operation = new(database, job, marketSignal);
             _navigation.AdoptHull();
             _work = Work with
@@ -353,6 +370,7 @@ internal sealed class CapsuleerMiner(
                 _obstacles = beforeObstacles;
                 RestorePosition(beforePilot);
                 _laser = beforeLaser;
+                _miningReach = beforeReach;
                 throw;
             }
         }
@@ -366,6 +384,7 @@ internal sealed class CapsuleerMiner(
             _obstacles = beforeObstacles;
             RestorePosition(beforePilot);
             _laser = beforeLaser;
+            _miningReach = beforeReach;
             throw;
         }
         finally
@@ -523,6 +542,7 @@ internal sealed class CapsuleerMiner(
             _navigation = NavigationState.Restore(Work.Navigation, Pilot.Flight);
             using CatalogDbContext catalog = new(database.CatalogPath);
             _laser = PilotInventoryStore.List(world, catalog, id, Pilot.ShipId).FirstOrDefault(i => i.Id == Work.ModuleId);
+            _miningReach = _laser is null ? 0 : MiningReach(world, catalog, _laser);
             transaction.Commit();
             transaction.Dispose();
             RefreshObjects();
@@ -662,13 +682,14 @@ internal sealed class CapsuleerMiner(
             _operation.MarketChanged |= industry.Produce(supplyWorld, _operation.Catalog, Pilot, Now, out supply);
         }
         _work = Work with { FactorySupply = supply };
-        _laser = aboard.FirstOrDefault(i => i.TypeId == (int)MiningLaserType.MinerI && InventoryDefinitions.IsHighSlot(i.FlagId));
+        var laserType = CapsuleerMiningRules.Laser((CapsuleerMiningHull)Pilot.ShipTypeId);
+        _laser = aboard.FirstOrDefault(i => i.TypeId == (int)laserType && InventoryDefinitions.IsHighSlot(i.FlagId));
         if (_laser is null)
         {
             var kit =
                 PilotInventoryStore
                     .List(_operation.World, _operation.Catalog, Pilot.PilotId, Pilot.StationId)
-                    .FirstOrDefault(i => i.TypeId == (int)MiningLaserType.MinerI)
+                    .FirstOrDefault(i => i.TypeId == (int)laserType)
                 ?? throw new InvalidDataException("Waiting for a mining laser.");
             PilotFittingStore.Fit(
                 _operation.World,
@@ -688,6 +709,7 @@ internal sealed class CapsuleerMiner(
             PilotFittingStore.SetOnline(_operation.World, _operation.Catalog, Pilot.PilotId, Pilot.ShipId, _laser.Id, true, Now);
             _laser = _laser with { Online = true };
         }
+        _miningReach = MiningReach(_operation.World, _operation.Catalog, _laser);
         RefreshObjects();
         _work = Work with { StrippedBelts = Work.StrippedBelts.Where(b => b.Until > Work.ActiveTicks).ToArray() };
         var field = NextBelt(out long retryAt);
@@ -719,14 +741,25 @@ internal sealed class CapsuleerMiner(
             .Where(o => o.GroupId == AsteroidDefinitions.BeltGroup && database.Catalog.Definition(s_miningBelt, checked((int)o.Id)))
             .OrderBy(o => o.Id)
             .ToArray();
-        return PilotAwareness.NextMiningBelt(
-            fields,
-            unchecked(_seed + Work.Trips),
-            Work.StrippedBelts,
-            database.Settings.Capsuleers.SituationalAwareness ? Work.AvoidedBelts : [],
-            Work.ActiveTicks,
-            out retryAt
-        );
+        var peers = Crewmates().ToArray();
+        long elapsed = Work.ActiveTicks;
+        BeltMemory[] stripped = [.. Work.StrippedBelts, .. peers.SelectMany(work => work.StrippedBelts)];
+        BeltMemory[] avoided = database.Settings.Capsuleers.SituationalAwareness
+            ? [.. Work.AvoidedBelts, .. peers.SelectMany(work => work.AvoidedBelts)]
+            : [];
+        var occupied = peers
+            .Where(CapsuleerMiningRules.WorkingField)
+            .Select(work => (long?)work.WorkingBelt)
+            .Where(belt =>
+                !stripped.Any(b => b.BeltId == belt && b.Until > elapsed) && !avoided.Any(b => b.BeltId == belt && b.Until > elapsed)
+            )
+            .Min();
+        if (occupied is long belt && fields.FirstOrDefault(field => field.Id == belt) is { } shared)
+        {
+            retryAt = 0;
+            return shared;
+        }
+        return PilotAwareness.NextMiningBelt(fields, unchecked(_seed + Work.Trips), stripped, avoided, elapsed, out retryAt);
     }
 
     private void StartCourse(StaticSpaceObject target, MinerActivity activity)
@@ -854,9 +887,7 @@ internal sealed class CapsuleerMiner(
         var available = _operation.HasWorld
             ? AsteroidFieldStore.List(_operation.World, _operation.Catalog, Pilot.SystemId)
             : belts.List(Pilot.SystemId);
-        var rock = available
-            .Where(o => Distance(o) <= AsteroidDefinitions.VisibilityRange && Enum.IsDefined((MiningResourceGroup)o.GroupId))
-            .MinBy(Distance);
+        var rock = SelectRock(available);
         if (rock is null)
         {
             if (Work.WorkingBelt > 0)
@@ -882,7 +913,7 @@ internal sealed class CapsuleerMiner(
             return;
         }
         _target = rock;
-        Follow(rock);
+        _navigation.Follow(Pilot.ShipId, Work.Stamp, Pilot.Position!, Pilot.Flight.ShipRadius, rock, _miningReach, false, true);
         _work = Work with { Activity = MinerActivity.ApproachingOre, TargetId = rock.Id };
     }
 
@@ -898,10 +929,13 @@ internal sealed class CapsuleerMiner(
         {
             throw new InvalidDataException("Mining target or fitted laser unavailable.");
         }
-        Move();
-        if (Distance(target) > ApproachRange * 2)
+        if (Distance(target) > _miningReach)
         {
-            return;
+            Move();
+            if (Distance(target) > _miningReach)
+            {
+                return;
+            }
         }
         var attributes = _operation.HasWorld
             ? PilotFittingStore.ShipAttributes(_operation.World, _operation.Catalog, Pilot.PilotId)

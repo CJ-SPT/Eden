@@ -70,6 +70,7 @@ public enum MiningLaserType
     MinerII = 482,
     MinerI = 483,
     Civilian = 3651,
+    StripMinerI = 17482,
 }
 
 public sealed record MiningSkillModifier(MiningSkill Skill, DogmaAttributeId Attribute, double PerLevel);

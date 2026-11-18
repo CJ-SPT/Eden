@@ -43,7 +43,7 @@ internal sealed partial class CapsuleerProvisioner
         long seed = state.WorldSeed;
         var summary = world.Set<SavedCapsuleerSystem>().Find(systemId);
         var policy = world.Settings.Capsuleers;
-        string fingerprint = Fingerprint(database, catalog, seed, policy);
+        string fingerprint = Fingerprint(database, catalog, seed, policy, resident: world is EconomyTransaction);
         if (summary?.PolicyVersion == CapsuleerProvisioningRules.Version && summary.CatalogFingerprint == fingerprint)
         {
             return new(1, 0, 0);
@@ -60,27 +60,29 @@ internal sealed partial class CapsuleerProvisioner
             .Where(a => a.CommunitySystemId == systemId)
             .Select(a => new { a.Career, a.Slot })
             .ToArray();
-        bool addMiner =
-            policy.Enabled
-            && policy.Miners
-            && origins.Length > 0
-            && mining.Eligibility == CapsuleerEligibility.Eligible
-            && !agents.Any(a => a.Career == CapsuleerCareer.Mining);
+        var miningRoster =
+            policy.Enabled && policy.Miners && origins.Length > 0 && mining.Eligibility == CapsuleerEligibility.Eligible
+                ? CapsuleerProvisioningCatalog.MiningRoster(catalog, mining, seed)
+                : [];
+        var newMiners = Enumerable
+            .Range(0, miningRoster.Length)
+            .Where(slot => !agents.Any(a => a.Career == CapsuleerCareer.Mining && a.Slot == slot))
+            .ToArray();
         bool awaitingOre = false;
-        if (addMiner)
+        if (newMiners.Length > 0)
         {
             AsteroidFieldStore.Populate(world, catalog, systemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
             world.SaveChanges();
-            addMiner = world
+            awaitingOre = !world
                 .Set<WorldAsteroid>()
                 .Where(a => a.SystemId == systemId && a.BeltId > 0 && a.Quantity > 0)
                 .Select(a => a.TypeId)
                 .Distinct()
                 .AsEnumerable()
                 .Any(id => CapsuleerProvisioningCatalog.SupportedOre(catalog, id));
-            if (!addMiner)
+            if (awaitingOre)
             {
-                awaitingOre = true;
+                newMiners = [];
                 mining = mining with { Eligibility = CapsuleerEligibility.NoUsableOre };
             }
         }
@@ -106,7 +108,7 @@ internal sealed partial class CapsuleerProvisioner
             .Range(0, count)
             .Where(slot => !agents.Any(a => a.Career == CapsuleerCareer.Hauling && a.Slot == slot))
             .ToArray();
-        if (origins.Length == 0 || !addMiner && newSlots.Length == 0)
+        if (origins.Length == 0 || newMiners.Length + newSlots.Length == 0)
         {
             world.SaveChanges();
             return new(1, 0, awaitingOre ? 1 : 0);
@@ -129,10 +131,9 @@ internal sealed partial class CapsuleerProvisioner
         bool created = false;
         long? createdPilot = null;
         bool pending = awaitingOre;
-        int attempted = 0;
-        if (addMiner)
+        int attempted = Math.Min(newMiners.Length, maximumFounders);
+        foreach (int slot in newMiners.Take(attempted))
         {
-            attempted++;
             long? added = CreateFounder(
                 world,
                 catalog,
@@ -140,19 +141,20 @@ internal sealed partial class CapsuleerProvisioner
                 origins,
                 CapsuleerCareer.Mining,
                 seed,
-                0,
+                slot,
                 null,
                 HaulerEncounterOpening.Docked,
-                startDocked: maximumFounders != int.MaxValue
+                startDocked: maximumFounders != int.MaxValue || slot != 0,
+                miningHull: miningRoster[slot]
             );
             created |= added is not null;
             pending |= added is null;
-            createdPilot = added;
+            createdPilot = added ?? createdPilot;
         }
         int offset = (int)(
             CapsuleerProvisioningRules.Seed(seed, systemId, CapsuleerCareer.Hauling) % (ulong)Math.Max(1, traffic.Routes.Length)
         );
-        int remaining = Math.Max(0, newSlots.Length - (maximumFounders - attempted));
+        int remaining = Math.Max(0, newMiners.Length + newSlots.Length - maximumFounders);
         foreach (int slot in newSlots.Take(maximumFounders - attempted))
         {
             var plannedOpening = CapsuleerEncounterRules.TrafficOpening(seed, systemId, slot, count);
@@ -230,7 +232,8 @@ internal sealed partial class CapsuleerProvisioner
         bool sourceObserved = false,
         int visitor = 0,
         TrafficJourney? initialJourney = null,
-        bool startDocked = false
+        bool startDocked = false,
+        CapsuleerMiningHull miningHull = CapsuleerMiningHull.Venture
     )
     {
         // Project IDs before aggregating so the founder transaction never tracks the saved roster.
@@ -268,7 +271,7 @@ internal sealed partial class CapsuleerProvisioner
         }
         int hull =
             career == CapsuleerCareer.Mining
-                ? CapsuleerCommunityStore.VentureType
+                ? (int)miningHull
                 : fittedProfile?.HullTypeId
                     ?? CapsuleerFreight.Hull(catalog, seed, site.SystemId, slot, database.Settings.Capsuleers.Freight.VariedHulls);
         int station = site.HomeStationId!.Value;
@@ -335,13 +338,14 @@ internal sealed partial class CapsuleerProvisioner
             module = ship + 1;
             if (!blueprint)
             {
-                CapsuleerCommunityStore.GrantRequirements(world, catalog, pilot, (int)MiningLaserType.MinerI, []);
+                int laser = (int)CapsuleerMiningRules.Laser(miningHull);
+                CapsuleerCommunityStore.GrantRequirements(world, catalog, pilot, laser, []);
                 world.Add(
                     new OwnedItem
                     {
                         Id = module,
                         OwnerId = pilot,
-                        TypeId = (int)MiningLaserType.MinerI,
+                        TypeId = laser,
                         LocationId = station,
                         FlagId = (int)InventoryFlag.Hangar,
                         Quantity = 1,
@@ -351,7 +355,8 @@ internal sealed partial class CapsuleerProvisioner
             world.Add(
                 new SavedCapsuleerCommunity
                 {
-                    Id = site.SystemId,
+                    // Slot zero keeps its historic key. Additional rows use a disjoint range.
+                    Id = slot == 0 ? site.SystemId : -checked(site.SystemId * (CapsuleerMiningRules.MaximumCrew - 1) + slot),
                     PilotId = pilot,
                     Seed = (int)(CapsuleerProvisioningRules.Seed(seed, site.SystemId, career) % int.MaxValue),
                     SchoolId = origin.SchoolId,

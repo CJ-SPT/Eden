@@ -48,6 +48,17 @@ Deferred systems retain a pending-preparation label. Transient failures retry wh
 retain their existing deferral rules. Use **Refresh population** while pilots travel. Local shows the pilots currently in your system, rather than the entire saved population or each gate's reserved
 visitors. Ordinary Local receives complete membership batches; delayed Local keeps its normal privacy rules.
 
+## Mining fleets
+
+With simulated miners enabled, entering an eligible high-security system forms a local mining fleet. A Venture and a
+Covetor, Retriever or Procurer work the same belt. Systems with at least three usable ore belts also receive a Hulk,
+Mackinaw or Skiff when the catalog supports one. Saved Ventures keep their existing pilots and ships. New barges and
+exhumers train the prerequisite skills and use Strip Miner I. A catalog without the required kit supports a solo Venture.
+
+Fleet members join a belt already being worked, pick separate rocks where available, and start locking within their
+fitted range. They share reports of empty and threatened belts. Miners take their own ore home when their holds fill.
+Mining crews use the same population switch and local activity rules as solo miners.
+[Implementation and validation](protocol/capsuleers.md#capsuleer-mining-fleets)
 
 ## Bot-led player corporations
 

@@ -247,7 +247,13 @@ internal sealed partial class CapsuleerPopulationStore(WorldDatabase database) :
                 .ToHashSet();
             using CatalogDbContext catalog = new(database.CatalogPath);
             long seed = world.Set<SavedCapsuleerProvisioning>().Select(p => p.WorldSeed).SingleOrDefault();
-            string fingerprint = CapsuleerProvisioner.Fingerprint(database, catalog, seed, world.Settings.Capsuleers);
+            string fingerprint = CapsuleerProvisioner.Fingerprint(
+                database,
+                catalog,
+                seed,
+                world.Settings.Capsuleers,
+                resident: live is not null
+            );
             var systems = world
                 .Set<SavedCapsuleerSystem>()
                 .Where(s => !incremental || Enumerable.Contains(changedSystems, s.SystemId))

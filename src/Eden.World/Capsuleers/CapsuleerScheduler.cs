@@ -149,6 +149,7 @@ internal sealed partial class CapsuleerScheduler(
     private readonly Dictionary<long, long> _pilotShips = [];
     private readonly Dictionary<long, int> _locations = [];
     private readonly Dictionary<int, HashSet<long>> _systemAgents = [];
+    private readonly Dictionary<int, HashSet<long>> _miningCrews = [];
 
     private void IndexLocation(long pilot, int system)
     {
@@ -301,6 +302,7 @@ internal sealed partial class CapsuleerScheduler(
     private void Register(WorldAction world, IReadOnlyList<SavedCapsuleerAgent> agents, int? founderSystem = null)
     {
         PopulationRowsLoaded += agents.Count;
+        var live = Live;
         foreach (var agent in agents)
         {
             long pilot = agent.PilotId;
@@ -313,6 +315,29 @@ internal sealed partial class CapsuleerScheduler(
             }
             bool firstRegistration = !_registrations.ContainsKey(pilot);
             _registrations[pilot] = new(agent.CommunitySystemId, agent.Career);
+            if (firstRegistration && agent.Career == CapsuleerCareer.Mining)
+            {
+                if (!_miningCrews.TryGetValue(agent.CommunitySystemId, out var crew))
+                {
+                    crew = [];
+                    _miningCrews.Add(agent.CommunitySystemId, crew);
+                }
+                crew.Add(pilot);
+                if (live is not null && crew.Count > 1)
+                {
+                    foreach (long member in crew)
+                    {
+                        if (!live.MinerCheckpoints.ContainsKey(member) && !live.ProjectedMiners.ContainsKey(member))
+                        {
+                            var row = world.Filter<SavedCapsuleerCommunity>(value => value.PilotId == member).SingleOrDefault();
+                            if (MinerCheckpoint.Read(row?.Progress) is { } progress)
+                            {
+                                live.ProjectedMiners.Add(member, new(member, progress));
+                            }
+                        }
+                    }
+                }
+            }
             if (!Current.ContainsKey(pilot))
             {
                 var saved = world.Set<SavedCapsuleerJob>().Find(pilot)!;

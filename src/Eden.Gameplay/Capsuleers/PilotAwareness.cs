@@ -116,7 +116,7 @@ public static class PilotAwareness
         for (int index = 0; index < fields.Length; index++)
         {
             var field = fields[(start + index) % fields.Length];
-            var stripped = Array.Find(strippedBelts, b => b.BeltId == field.Id);
+            var stripped = Array.Find(strippedBelts, b => b.BeltId == field.Id && b.Until > elapsed);
             var danger = Array.Find(avoidedBelts, b => b.BeltId == field.Id && b.Until > elapsed);
             if (stripped is null && danger is null)
             {

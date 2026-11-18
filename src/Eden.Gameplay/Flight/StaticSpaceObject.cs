@@ -25,6 +25,7 @@ public sealed record StaticSpaceObject(
     public StaticCollisionGeometry? Collision { get; init; }
     public bool IsGlobal { get; init; } = true;
     public string? Name { get; init; }
+    public int? AsteroidBeltId { get; init; }
     public NpcStandingThresholds? StandingThresholds { get; init; }
     public long? AgentId { get; init; }
     public SpaceContainerState? Container { get; init; }

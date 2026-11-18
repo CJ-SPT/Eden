@@ -80,7 +80,7 @@ internal sealed partial class CapsuleerScheduler
         }
         if (!_miners.TryGetValue(pilot, out var worker))
         {
-            worker = miners.Create(pilot);
+            worker = miners.Create(pilot, _miningCrews[_registrations[pilot].Community], id => _suspended.Contains(id));
             _miners.Add(pilot, worker);
         }
         return worker;

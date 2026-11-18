@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Capsuleer mining fleets](protocol/capsuleers.md#capsuleer-mining-fleets) covers barge and exhumer fits, coordinated belt
+selection and targeting, and saved crew behavior.
+
 [Rival gang interception at gates](protocol/capsuleers.md#rival-gang-interception-at-gates) covers independently
 routed fleets, scout reports, and gate-cloak visibility during contact.
 

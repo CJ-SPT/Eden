@@ -6,6 +6,7 @@ using Eden.Data.World.Combat;
 using Eden.Data.World.Fittings;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Skills;
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Docking;
@@ -262,13 +263,14 @@ internal sealed partial class CapsuleerShipBlueprints : IDisposable
         if (mining)
         {
             long module = InventoryPersistence.NextId(world);
-            CapsuleerCommunityStore.GrantRequirements(world, catalog, TemplatePilot, (int)MiningLaserType.MinerI, []);
+            int laser = (int)CapsuleerMiningRules.Laser((CapsuleerMiningHull)hull);
+            CapsuleerCommunityStore.GrantRequirements(world, catalog, TemplatePilot, laser, []);
             world.Add(
                 new OwnedItem
                 {
                     Id = module,
                     OwnerId = TemplatePilot,
-                    TypeId = (int)MiningLaserType.MinerI,
+                    TypeId = laser,
                     LocationId = _station,
                     FlagId = (int)InventoryFlag.Hangar,
                     Quantity = 1,

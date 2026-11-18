@@ -2,6 +2,51 @@
 
 [Protocol index](../protocol.md)
 
+## Capsuleer mining fleets
+
+Resident population preparation keeps the saved Venture in slot zero. For a high-security system with supported
+ore and a market route, the local roster adds a seeded choice of Covetor, Retriever or Procurer. At three usable
+belts it adds a seeded Hulk, Mackinaw or Skiff, with a barge as the catalog fallback for that slot. Fits use the
+ordinary ship and Strip Miner I skill requirements, fitting checks, capacitor payment, extraction and hold limits.
+Crew membership uses the saved community roster and each miner's existing checkpoint. The first visit after
+upgrade prepares missing ships one founder at a time. The saved ship, job and assets of existing miners carry forward.
+
+Miners rendezvous at an occupied safe belt, prefer unclaimed deposits there, and target at 80% of the shorter of their
+effective laser reach and lock range. They avoid belts reported stripped or threatened by their crew and abort a paid
+cycle when a crew warning calls for retreat. The scheduler uses local roster lookups and committed work records.
+Ore stays in the pilot's hold until the pilot docks and unloads it. The operation uses existing ship, module and
+movement presentation. It creates an autonomous crew with individual jobs and ore holds.
+
+Build 3662168 supplies the hull and strip miner definitions. EVE University describes mixed crews and their mining
+hull roles. The local evejs NPC reference uses shared field state to coordinate mining and responses to depletion,
+in `server/src/services/mining/miningNpcOperations.js` (SHA-256 `5ce327785991ee6ffb18b523e4af1862cccc93e2be6e13e09bdefc2855aff4cd`).
+The crew sizes and threat sharing are Eden policy. [Mining](https://wiki.eveuniversity.org/Mining) ·
+[ORE ship and skill overview](https://wiki.eveuniversity.org/ORE_Basic_Ship_and_Skill_Overview)
+
+**Automated validation**
+
+The exact case was `CapsuleerMiningFleetTests.ExistingMinerGainsStripMiningCrewThatSharesABeltAndRespondsTogetherAcrossRestart`.
+It exercised saved Venture enrollment, barge and exhumer fits, ore collection from distinct rocks in the same belt,
+checkpoint reload, and retreat after one member reports aggression. The milestone filter used OR across the following
+class names with `FullyQualifiedName~`. It passed 162 cases in 71 seconds. The solution built in 8 seconds with zero
+warnings. Catalog policy passed 8 checks, formatting policy passed 9, and formatting verification passed.
+The exact case passed again in 9 seconds after its upgrade fixture switched to resident setup.
+
+```text
+CapsuleerMiningFleetTests, CapsuleerMinerTests, PilotAwarenessTests, CapsuleerProvisioningTests,
+CapsuleerBackgroundPreparationTests, CapsuleerShipBlueprintTests, CapsuleerProvisioningScaleTests,
+CapsuleerDeadlineTests, CapsuleerDeadlinePerformanceTests, CapsuleerEncounterTests, CapsuleerTierTests,
+CapsuleerDefenseLifecycleTests, Eden.Protocol.Tests.Mining.MiningTests, Eden.Protocol.Tests.Mining.MiningRulesTests
+```
+
+**Live acceptance**
+
+Not performed. Agent client testing is disabled.
+
+**Optional maintainer checks**
+
+Watch a Venture and barge work separate rocks in the same belt and verify their beams render on the correct targets.
+
 ## Rival gang interception at gates
 
 In the build 3662168 replay, the first raider scouted the right gate while its damage wing was still
