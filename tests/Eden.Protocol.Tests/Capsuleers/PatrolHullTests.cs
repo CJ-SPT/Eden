@@ -5,6 +5,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Propulsion;
+using Eden.Gameplay.Ships;
 using Eden.Protocol.Flight;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
@@ -36,12 +37,20 @@ public sealed class PatrolHullTests
             CapsuleerPatrolFit.Moa,
             CapsuleerPatrolFit.Thorax,
         ],
+        [RoamingGangTests.Fixture.HeavySeed] =
+        [
+            CapsuleerPatrolFit.Drake,
+            CapsuleerPatrolFit.Hurricane,
+            CapsuleerPatrolFit.Raven,
+            CapsuleerPatrolFit.Megathron,
+        ],
     };
 
     [Theory]
     [InlineData(RoamingGangTests.Fixture.FrigateSeed)]
     [InlineData(RoamingGangTests.Fixture.DestroyerSeed)]
     [InlineData(RoamingGangTests.Fixture.CruiserSeed)]
+    [InlineData(RoamingGangTests.Fixture.HeavySeed)]
     public async Task SnapshotAndSpecialistGangCoexistAndKeepTheirOriginalHullsOnReopen(int seed)
     {
         using var fixture = new RoamingGangTests.Fixture(regional: true, patrolSeed: seed);
@@ -172,9 +181,7 @@ public sealed class PatrolHullTests
         Assert.Equal(PatrolKind.Roam, arrival.Work.Ratting?.Patrol?.Kind);
         Assert.Equal(RattingPhase.Searching, arrival.Work.Ratting?.Phase);
         Assert.Equal(hull, arrival.Pilot.ShipTypeId);
-        // A crossing frigate at 1 km can outrun medium rail tracking. Present a target inside tackle and weapon range.
-        int separation = seed == RoamingGangTests.Fixture.CruiserSeed ? 5_000 : 1_000;
-        var victim = PlaceTarget(fixture, arrival.Pilot, rival, arrival.Work.Ratting!.StationId, separation);
+        var victim = PlaceTarget(fixture, arrival.Pilot, rival, arrival.Work.Ratting!.StationId, solo: true);
         var tackle = fixture.Host.GetRequiredService<IPilotTackle>();
         var health = fixture.Host.GetRequiredService<IPilotHealth>();
         double Remaining()
@@ -203,7 +210,7 @@ public sealed class PatrolHullTests
         DockedPilot attacker,
         bool rival,
         int station,
-        int separation = 1_000
+        bool solo = false
     )
     {
         DockedPilot victim;
@@ -219,11 +226,15 @@ public sealed class PatrolHullTests
                     .PilotId
                 : Human;
             var target = action.Pilots.Find(victimId)!;
-            target.ActiveShip.TypeId = 603;
+            var hullClass = (HullClass)attacker.ShipGroupId;
+            bool heavy = hullClass is HullClass.CombatBattlecruiser or HullClass.Battleship;
+            target.ActiveShip.TypeId = heavy ? CapsuleerPatrolFit.Moa : (int)TechOneHullType.Merlin;
             if (rival)
             {
                 action.Remove(action.Set<SavedCapsuleerSuspension>().Find(victimId)!);
             }
+            // Medium and large turrets need room to track a crossing target on arrival.
+            int separation = heavy || solo && hullClass == HullClass.Cruiser ? 5_000 : 1_000;
             var position = attacker.Position! + new SpacePosition(separation, 0, 0);
             SqliteWorld.SetPosition(action, catalog, target.ActiveShipId, position, attacker.SystemId, fixture.Clock.Now);
             victim = fixture.Host.GetRequiredService<SqliteWorld>().FindPilot(action, target.AccountId, victimId)!;
@@ -232,7 +243,7 @@ public sealed class PatrolHullTests
         if (rival)
         {
             fixture.Scheduler.PopulationPrepared(Away);
-            // Let the rival finish its normal wait on grid so that a cruiser has time to lock before it starts its trip.
+            // Let the rival finish its normal wait on grid so that larger hulls have time to lock before it starts its trip.
             fixture.Live.HaulerCheckpoints[victim.PilotId] = new(
                 victim.PilotId,
                 new(

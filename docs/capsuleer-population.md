@@ -78,9 +78,15 @@ Cruisers carry 10MN afterburners and medium local repair modules. The Caracal us
 the Moa uses dual 150mm rails, both with warp disruptors. The Stabber uses autocannons and the Thorax uses
 blasters, both with scramblers.
 
-With a complete catalog, eligible non-interdictor combat draws split evenly among four choices. A new pilot can fly a Tech II frigate
-(Stiletto, Crow, Wolf or Harpy), a destroyer, a cruiser, or a ship from the snapshot. The Merlin is the fallback for the snapshot draw.
-The saved seed determines the hull for each new pilot, including when a traffic snapshot is installed.
+The Drake uses heavy missiles and the Raven uses cruise missiles, both with warp disruptors and large shield
+boosters. The Hurricane uses medium autocannons and the Megathron uses large blasters, both with scramblers
+and armor repairers. Battlecruisers carry 10MN afterburners and battleships carry 100MN afterburners.
+
+With a complete catalog, each of the sixteen fitted hulls gets one of twenty eligible non-interdictor combat
+draws. Battlecruisers account for 10% and battleships for another 10%. Frigates, destroyers, cruisers and
+snapshot selection each account for 20%. The snapshot draw falls back to a Merlin when no imported fit is
+available. The saved seed determines the draw for each new pilot.
+[Battlecruiser and battleship fits and combat checks](protocol/capsuleers.md#battlecruisers-and-battleships-for-solo-patrols-and-gangs),
 [Patrol cruiser fits and combat checks](protocol/capsuleers.md#cruisers-for-solo-patrols-and-gangs),
 [destroyer fits](protocol/capsuleers.md#destroyers-for-solo-patrols-and-gangs) and
 [Tech II frigate fits](protocol/capsuleers.md#tech-ii-frigates-in-bot-gangs).

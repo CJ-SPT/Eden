@@ -2,6 +2,50 @@
 
 [Protocol index](../protocol.md)
 
+## Battlecruisers and battleships for solo patrols and gangs
+
+On November 18, 2026, two Tech I battlecruisers and two Tech I battleships joined the generated PvP fits for
+build 3662168. The four carry Damage Control I. The battlecruisers use 10MN Afterburner I and the battleships
+use 100MN Afterburner I.
+
+| Hull | Weapons and initial load per weapon | Tackle | Local repair |
+| --- | --- | --- | --- |
+| Drake | 6 heavy missile launchers, 30 Scourge Heavy Missiles each | Warp disruptor | Large shield booster |
+| Hurricane | 6 220mm Vulcan autocannons, 40 EMP M each | Scrambler | Medium armor repairer |
+| Raven | 6 cruise missile launchers, 20 Scourge Cruise Missiles each | Warp disruptor | Large shield booster |
+| Megathron | 7 electron blaster cannons, 40 Antimatter Charge L each | Scrambler | Large armor repairer |
+
+New eligible non-interdictor combat pilots draw from sixteen fitted hulls and four snapshot or Merlin outcomes.
+Each new hull receives 5% of those draws. A missing hull or fitting component takes the existing fallback.
+These odds and fits are Eden population choices. Weapon sizes, hardpoints, fitting costs and magazine capacities
+come from the pinned catalog. The weapon families follow the hulls' combat roles. [Drake](https://wiki.eveuniversity.org/Drake),
+[Hurricane](https://wiki.eveuniversity.org/Hurricane), [Raven](https://wiki.eveuniversity.org/Raven) and
+[Megathron](https://wiki.eveuniversity.org/Megathron). The evejs NPC behavior reference is recorded in the
+[roaming gang notes](#smarter-pilots-and-persistent-roaming-gangs--november-17-2026).
+
+A read-only sample used default settings, seed 45 and the installed 27,947-profile snapshot in 1DQ1-A. Its
+first 512 slots contained three of the four generated hulls. Across 1,024 slots it selected 17 Drakes,
+22 Hurricanes, 14 Ravens, two Megathrons and imported pilots. All four generated fits passed the traffic fit
+validator against the installed catalog in an isolated world.
+
+With a snapshot of imported haulers, the resident population scheduler recruited all four heavy hulls into one
+gang. It retained their ships and roles after a checkpoint restart. Each hull applied its own tackle, spent
+loaded ammunition and dealt damage against a simulated player and a rival bot at 5 km in a Moa. With gangs
+disabled, each hull also undocked, acquired and tackled both targets on solo patrol and dealt damage. Two
+regional raid replays exercised scout reporting and gang tackle, ammunition use and damage against both targets.
+
+**Automated validation.** All 218 focused tests passed in 2 minutes 54 seconds. The solution built in
+7.53 seconds with zero warnings or errors. Tool and solution restore and both Python policy suites
+(8 catalog cases and 9 formatting cases) passed. The first exact development filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.PatrolHullTests.SnapshotAndSpecialistGangCoexistAndKeepTheirOriginalHullsOnReopen`.
+The wider run used the fourteen capsuleer test classes listed in the [destroyer validation record](#destroyers-for-solo-patrols-and-gangs)
+and excluded the documented baseline failure `RivalDefenseEngagesAVisibleRaidWithOwnedWeaponsAndRealDamage`.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Observe a newly populated nullsec gang to check battlecruiser and battleship
+visuals in the overview.
+
 ## Cruisers for solo patrols and gangs
 
 On November 18, 2026, Eden added four fitted Tech I cruisers to solo patrols and roaming gangs.

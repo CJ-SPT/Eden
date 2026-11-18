@@ -220,6 +220,8 @@ public sealed class RegionalConflictWorldTests
     [InlineData(true, RoamingGangTests.Fixture.DestroyerSeed)]
     [InlineData(false, RoamingGangTests.Fixture.CruiserSeed)]
     [InlineData(true, RoamingGangTests.Fixture.CruiserSeed)]
+    [InlineData(false, RoamingGangTests.Fixture.HeavySeed)]
+    [InlineData(true, RoamingGangTests.Fixture.HeavySeed)]
     public void GangActsOnItsScoutsSightingToTackleAndDamageAPlayerOrRival(bool rivalBot, int patrolSeed) =>
         VerifyRaid(rivalBot, patrolSeed, requireScoutPoint: false);
 
@@ -260,7 +262,7 @@ public sealed class RegionalConflictWorldTests
             {
                 action.Remove(action.Set<SavedCapsuleerSuspension>().Find(victimId)!);
             }
-            pilot.ActiveShip.TypeId = 603;
+            pilot.ActiveShip.TypeId = patrolSeed == RoamingGangTests.Fixture.HeavySeed ? CapsuleerPatrolFit.Moa : 603;
             victimShip = pilot.ActiveShipId;
             SqliteWorld.SetPosition(
                 action,

@@ -478,9 +478,10 @@ public sealed class RoamingGangTests
         internal CapsuleerScheduler Scheduler => Host.GetRequiredService<CapsuleerScheduler>();
 
         // These world seeds select one of each fitted hull in the first four home slots.
-        internal const int FrigateSeed = 45257;
-        internal const int DestroyerSeed = 8629;
-        internal const int CruiserSeed = 8083;
+        internal const int FrigateSeed = 242885;
+        internal const int DestroyerSeed = 34481;
+        internal const int CruiserSeed = 50193;
+        internal const int HeavySeed = 20355;
 
         internal Fixture(
             bool regional = false,
@@ -499,15 +500,39 @@ public sealed class RoamingGangTests
             if (patrolSeed is { } seed)
             {
                 PassiveCatalogFixture.LoadTechTwoHulls(Database.CatalogPath);
-                PassiveCatalogFixture.LoadProjectileTiers(Database.CatalogPath, new HashSet<int> { 484, 185, 489, 193 });
-                PassiveCatalogFixture.LoadWeaponTiers(Database.CatalogPath, new HashSet<int> { 10678, 562, 222, 566, 230 });
-                PassiveCatalogFixture.LoadMissileTiers(Database.CatalogPath, new HashSet<int> { 499, 210 });
+                PassiveCatalogFixture.LoadProjectileTiers(Database.CatalogPath, new HashSet<int> { 484, 185, 489, 193, 490 });
+                PassiveCatalogFixture.LoadWeaponTiers(Database.CatalogPath, new HashSet<int> { 10678, 562, 222, 566, 230, 571, 238 });
+                PassiveCatalogFixture.LoadMissileTiers(Database.CatalogPath, new HashSet<int> { 499, 210, 501, 209, 13320, 203 });
                 PassiveCatalogFixture.LoadSmallHulls(Database.CatalogPath);
                 PassiveCatalogFixture.LoadCombatHulls(
                     Database.CatalogPath,
-                    new HashSet<int> { 621, 622, 623, 627, 1875, 567, 223, 3304, 3305 }
+                    new HashSet<int>
+                    {
+                        CapsuleerPatrolFit.Caracal,
+                        CapsuleerPatrolFit.Stabber,
+                        CapsuleerPatrolFit.Moa,
+                        CapsuleerPatrolFit.Thorax,
+                        CapsuleerPatrolFit.Drake,
+                        CapsuleerPatrolFit.Hurricane,
+                        CapsuleerPatrolFit.Raven,
+                        CapsuleerPatrolFit.Megathron,
+                        // Rapid light launcher, dual 150mm railgun and its medium charge.
+                        1875,
+                        567,
+                        223,
+                        // Medium and large weapons, racial battlecruisers and battleships.
+                        3304,
+                        3305,
+                        3307,
+                        3324,
+                        3326,
+                        3336,
+                        3338,
+                        33096,
+                        33098,
+                    }
                 );
-                PassiveCatalogFixture.LoadActiveTiers(Database.CatalogPath, new HashSet<int> { 12056, 3528, 10836 });
+                PassiveCatalogFixture.LoadActiveTiers(Database.CatalogPath, new HashSet<int> { 12056, 3528, 10836, 12066, 3538, 10838 });
                 using var setup = new WorldDbContext(Database.Path);
                 setup.Database.ExecuteSql($"UPDATE WorldCapsuleerProvisioning SET WorldSeed={seed}");
                 var imported = Enumerable

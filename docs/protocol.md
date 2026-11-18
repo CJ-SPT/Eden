@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Battlecruisers and battleships for solo patrols and gangs](protocol/capsuleers.md#battlecruisers-and-battleships-for-solo-patrols-and-gangs)
+covers fitted heavy hulls, traffic snapshot selection and combat against players and rival bots.
+
 [Cruisers for solo patrols and gangs](protocol/capsuleers.md#cruisers-for-solo-patrols-and-gangs) covers cruiser
 fits, snapshot recruitment and engagements against players and rival bots.
 
