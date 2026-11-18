@@ -32,7 +32,7 @@ Changes affect future operations. Balances, installed jobs and paid costs, quote
 
 ### Market presets
 
-The **World & economy → Economy & market** section combines the former Economy and Development supply cards.
+Open **Economy & market** to choose a preset, configure custom supply sources, or set service fees.
 Existing settings are preserved; combinations that do not match a preset appear as **Custom**. Choosing a preset
 changes market supply switches only. Wallet grants, balances, owned goods, player orders, service costs and
 reference-history choices retain their settings.
@@ -84,7 +84,9 @@ incompatible manifests; regional checksums and order validation reject corrupt d
 
 Native protocol and automated evidence: [Standard market implementation](protocol/industry.md#standard-live-order-market-and-unified-economy-settings-november-16-2026).
 
-The Settings page groups controls into **Gathering**, **Rewards**, **Progression**, **Structures**, **Industry**, **Planetary industry**, **Travel**, **World & economy** and **Advanced**.
+The Settings page groups controls by pilot activity, industry and trade, and world simulation. **Economy & market**,
+**NPCs & exploration**, and **Player bots** each have their own section. Open a **?** beside a setting for units,
+limits, dependencies or examples. Category changes retain the shared draft.
 
 **Structures → Minimum corporation age for anchoring (days)** sets `settings.structures.minimumCorporationAgeDays`.
 Set it to **0** to remove the age wait, or keep the default **7** days. Values must be nonnegative whole days;
@@ -153,12 +155,12 @@ Use **Save for restart** to stage edits and restart the server to activate them.
 
 | Admin control | Exported setting | Effect when disabled |
 | --- | --- | --- |
-| World & economy → Economy → Empire LP-store datacores | `settings.economy.empireLpDatacores` | Ordinary empire stores offer their original assortment. Militia stores retain their own datacores. |
-| World & economy → Economy → Simulated market history | `settings.economy.simulatedMarketHistory` | History contains actual local trades only. Sparse history can leave native tickers and charts empty. |
-| World & economy → Economy → Regional hub supply | `settings.economy.regionalHubSupply` | Hubs use their corporation's institutional assortment. Added global NPC sell offers retire on market preparation. |
-| World & economy → Economy → Beginner market supply | `settings.economy.beginnerMarketSupply` | Starting stations and hubs require ordinary production unlocks for generated product sell offers. Original corporation offers still apply. |
+| Economy & market → Empire LP-store datacores | `settings.economy.empireLpDatacores` | Ordinary empire stores offer their original assortment. Militia stores retain their own datacores. |
+| Economy & market → Simulated market history | `settings.economy.simulatedMarketHistory` | History contains actual local trades only. Sparse history can leave native tickers and charts empty. |
+| Economy & market → Regional hub supply | `settings.economy.regionalHubSupply` | Hubs use their corporation's institutional assortment. Added global NPC sell offers retire on market preparation. |
+| Economy & market → Beginner market supply | `settings.economy.beginnerMarketSupply` | Starting stations and hubs require ordinary production unlocks for generated product sell offers. Original corporation offers still apply. |
 | Progression → Grant civilian starting equipment to new pilots | `settings.progression.grantStartingEquipment` | Newly created pilots receive their starting hull and configured skills/wallet grants without the additional civilian miner and weapon. |
-| World & economy → Player bots → Enable player bots | `settings.capsuleers.enabled` | All simulated capsuleers pause and disappear from space, Local, station guests and scans after restart. |
+| Player bots → Enable player bots | `settings.capsuleers.enabled` | All simulated capsuleers pause and disappear from space, Local, station guests and scans after restart. |
 
 The player-bot control uses the existing capsuleer master switch and covers travelers, miners, haulers and ratters.
 Re-enabling resumes eligible saved bots with their possessions and progress. Miner, traffic-density and gate-visitor
@@ -172,7 +174,7 @@ history and export/import. See the [implementation record](protocol/world-config
 
 ## Exploration
 
-Open **Settings → World & economy → Exploration** and enable **Always resolve cosmic signatures**,
+Open **Settings → NPCs & exploration → Probe scanning** and enable **Always resolve cosmic signatures**,
 then choose **Save for restart**. After the next server start, current-system signatures appear at 100%
 with their exact positions and available site details for every pilot. Warping and bookmarking require no probes.
 This includes combat/DED, data, relic, gas and wormhole signatures supported by the world.
@@ -329,7 +331,11 @@ dotnet run --project src/Eden.Server -- --world 'C:\Eden\world.sqlite' --set-adm
 
 Start the server normally, then open **http://127.0.0.1:26003**. The listener starts only after an administrator has been provisioned. Use `--admin-port <port>` for a different dedicated port or `--disable-admin` to disable it. By default it binds IPv4 loopback and requires a local peer and Host. Setting `EDEN_ADMIN_ORIGIN` opts into HTTPS administration using the configured server listen address and certificate, with requests restricted to the configured browser origin. Game accounts receive no administration access. [Docker setup for remote administration](docker.md#remote-administration)
 
-Settings contains seven activity categories and supported economic overrides. It displays original, active and pending values, sources, compatibility and validation errors. Reset changes only the draft. **Save for restart** validates and durably stages it; activation requires restart. Revisions provides comparison, restore, JSON export and validated file import. Restoring also creates a pending revision.
+**Changed values** compares the draft with the last saved configuration, including edits made in other categories.
+Expand **Original, active and pending values** to review revision values. **Reset draft to original** copies the
+original configuration into the draft. **Save for restart** validates and durably stages the draft. The server
+activates the saved revision at restart. Revisions provides comparison, restore, JSON export and validated file import.
+Restoring also creates a pending revision.
 
 Catalog provides searchable pages across all 442 generated datasets, typed fields, explicit missing/null distinctions, exact source numbers and relationship navigation. Nested collections have their own display pages. Native fields remain read-only in original, active and pending views. Generated types validate records before the browser displays their original payloads; dynamic JSON stays inside this administration/storage boundary.
 
@@ -458,11 +464,21 @@ Published custom skillbooks with a market group and positive base price become N
 
 Back up the stopped world together with `<world>.skills.sqlite`, `<world>.skills-active` and `<world>.skill-packages/`, plus its original catalog. Definitions/history live in the independent authoring database and do not enter resident checkpoint replacement. Packages retain their base catalog fingerprint for configuration compatibility and have their own content identity. A changed original catalog, stale generation, incomplete package or damaged archive is rejected. No game restart or installed-client update is performed by the editor itself.
 
-**Performance** shows live diagnostics for the Eden server process: uptime, CPU usage, working set and private memory, managed memory and allocation rate, authenticated game connections, process/thread-pool threads, queued work and cumulative garbage collections. Connected accounts include character selection; they exclude pending logins and web administrator sessions. CPU usage is normalized across the processors available to the process. CPU and allocation rates need two samples and cover the actual elapsed interval between samples. These are server-process measurements rather than total machine usage or simulation-frame latency.
+**Performance** shows session frame latency alongside CPU, memory, authenticated game connections and runtime activity.
+**Frame processing time** measures each completed scheduled update for a selected pilot, including server-side
+output and mod observation. **Frame start delay** measures how far past its scheduled start the frame began.
+These metrics measure individual sessions. For example, a single two-second interval can include frames from several
+pilots. The charts show average and peak processing time and peak start delay for each completed interval over
+the last two minutes. Time spent idle without scheduled updates is excluded from start delay. An interval without completed frames appears as a gap. Hover over a bar to read its values.
+The window is shared across administrators, fills even while the page is closed and resets with the process.
+
+Process CPU usage is normalized across the processors available to Eden. CPU and allocation rates need two samples
+and cover the actual elapsed interval between samples. The connection count includes authenticated players at
+character selection. Pending logins and web administrator sessions are excluded.
 
 The page refreshes every two seconds while open. A shared, demand-driven cache limits resource sampling to once per two seconds across all administrator viewers. Navigating away disposes that page's refresh loop. The first sample displays collecting indicators for rates. Each refresh checks the current administrator credentials; password rotation stops existing interactive access. The same read-only snapshot is available at authenticated `GET /api/admin/performance` on the administration listener.
 
-Resident hosts also report the last successful checkpoint's generation, completion time, file size and separate owner wait, capture, projection and file-write durations. Failed saves display an alert while retaining the previous successful report. Before the first save, the page says no checkpoint has completed; hosts without a resident world show diagnostics as unavailable. Reading these reports does not acquire world ownership, open SQLite connections, project simulation state, trigger saves or force garbage collection. No historical samples are stored.
+Resident hosts also report the last successful checkpoint's generation, completion time, file size and separate owner wait, capture, projection and file-write durations. Failed saves display an alert while retaining the previous successful report. Before the first save, the page says no checkpoint has completed; hosts without a resident world show diagnostics as unavailable. Reading these reports does not acquire world ownership, open SQLite connections, project simulation state, trigger saves or force garbage collection. Frame history is held in memory only.
 
 Authentication uses a separate ASP.NET Core cookie scheme and administrator role. HTTP and interactive operations enforce authorization and the current credential stamp. Forms and writes require antiforgery validation. Password rotation revokes existing HTTP sessions and interactive operation access. Passwords are hashed in a separate `<world>.administrators.json` credential file. Authentication keys live in `<world>.admin-keys` and use the current Windows user's key protection on Windows. These runtime files are excluded from version control. The local password command can rotate credentials while the server runs.
 
@@ -503,7 +519,7 @@ Catalog facts stay in generated models/shared definitions. Native service IDs, e
 
 ## Autonomous population
 
-In **World & economy → Player bots**, configure the saved world's population:
+In **Player bots**, configure the saved world's population:
 
 - **Hauler freight** controls regional hull variety, ordinary/courier budget ranges in ISK, courier frequency, empty return trips,
   cargo type IDs and freight stack survival. These settings live under `settings.capsuleers.freight`.

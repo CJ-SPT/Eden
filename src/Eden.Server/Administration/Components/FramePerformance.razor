@@ -1,0 +1,41 @@
+@using System.Collections.Immutable
+@using Eden.Infrastructure.Diagnostics
+
+<section class="frame-performance" aria-labelledby="frame-performance-title">
+    <div class="frame-performance-heading">
+        <h2 id="frame-performance-title">Session frame latency</h2>
+        <p class="muted">Last two minutes in two-second intervals. Each frame is one scheduled update for a selected pilot.</p>
+    </div>
+    @if (History.IsDefaultOrEmpty)
+    {
+        <p class="card muted">Frame diagnostics are unavailable for this host.</p>
+    }
+    else if (FrameCount == 0)
+    {
+        <p class="card muted">No completed pilot frames in the last two minutes. The graphs appear when a pilot session runs scheduled updates.</p>
+    }
+    else
+    {
+        <dl class="card readings frame-readings">
+            <div><dt>Frames observed</dt><dd>@FrameCount.ToString("N0")</dd></div>
+            <div><dt>Mean processing</dt><dd>@($"{MeanProcessing:N2} ms")</dd></div>
+            <div><dt>Peak processing</dt><dd>@($"{PeakProcessing:N2} ms")</dd></div>
+            <div><dt>Peak start delay</dt><dd>@($"{PeakStartDelay:N2} ms")</dd></div>
+        </dl>
+        <div class="frame-charts">
+            <FrameLatencyChart Title="Frame processing time" Description="Time spent updating the session and writing its outbound messages."
+                               History="History" ShowProcessing="true" />
+            <FrameLatencyChart Title="Frame start delay" Description="Time a frame waited past its scheduled start."
+                               History="History" />
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public ImmutableArray<SessionFrameInterval> History { get; set; }
+
+    private long FrameCount => History.Sum(interval => interval.Count);
+    private double MeanProcessing => History.Sum(interval => interval.AverageMilliseconds * interval.Count) / FrameCount;
+    private double PeakProcessing => History.Max(interval => interval.MaximumMilliseconds);
+    private double PeakStartDelay => History.Max(interval => interval.MaximumStartDelayMilliseconds);
+}

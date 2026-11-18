@@ -1,10 +1,12 @@
 @inherits LayoutComponentBase
-<header>
-    <img src="eden-server.svg" width="48" height="48" alt="" />
-    <div><strong>EDEN</strong><br /><small>Local administration</small></div>
+<header class="admin-header">
+    <div class="admin-brand">
+        <img src="eden-server.svg" width="40" height="40" alt="" />
+        <div><strong>EDEN</strong><small>Server administration</small></div>
+    </div>
     <AuthorizeView>
         <Authorized>
-            <nav>
+            <nav class="admin-nav" aria-label="Administration">
                 <NavLink href="/" Match="NavLinkMatch.All">Settings</NavLink>
                 <NavLink href="/catalog">Catalog</NavLink>
                 <NavLink href="/mods">Mods</NavLink>

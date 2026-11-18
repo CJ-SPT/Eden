@@ -11,7 +11,9 @@ internal enum SettingsActivity
     PlanetaryIndustry,
     Structures,
     Travel,
-    World,
+    Economy,
+    Environment,
+    PlayerBots,
     Advanced,
 }
 

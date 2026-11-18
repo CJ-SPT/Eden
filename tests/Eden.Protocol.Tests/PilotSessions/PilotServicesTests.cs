@@ -5,6 +5,7 @@ using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Market;
@@ -900,6 +901,44 @@ public sealed class PilotServicesTests
     {
         var state = BlueRead.Tuple(packet.State, 14);
         return BlueMarshal.Decode(BlueRead.Bytes(BlueRead.Tuple(state[4], 1)[0]));
+    }
+
+    [Fact]
+    public async Task SelectedPilotPublishesScheduledFrameTimingThroughTheConnectionLoop()
+    {
+        using TestWorld world = new(liveWorld: true, simulationObjects: false);
+        using var scope = world.Services.CreateScope();
+        using CancellationTokenSource deadline = new(TimeSpan.FromSeconds(15));
+        TaskCompletionSource<object?> disconnect = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        var frames = world.Services.GetRequiredService<SessionFrameMonitor>();
+        Queue<object?> input = new([
+            Request("charUnboundMgr", "SelectCharacterID", [90000001L]),
+            Request("ship", "Undock", [1000000000001L]),
+            Request("beyonce", "MachoBindObject", [30000142L, null]),
+        ]);
+        var session = scope.ServiceProvider.GetRequiredService<IPilotSession>();
+        var running = session.RunAsync(
+            () => input.TryDequeue(out var packet) ? Task.FromResult(packet) : disconnect.Task,
+            _ => Task.CompletedTask,
+            _ => { },
+            1000001,
+            42,
+            SignedSettings.Empty,
+            deadline.Token
+        );
+        try
+        {
+            while (!frames.Read().Any(interval => interval.Count > 0))
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(50), deadline.Token);
+            }
+            Assert.Contains(frames.Read(), interval => interval.Count > 0 && interval.MaximumMilliseconds > 0);
+        }
+        finally
+        {
+            disconnect.SetException(new EndOfStreamException());
+            await Assert.ThrowsAsync<EndOfStreamException>(() => running);
+        }
     }
 
     [Fact]

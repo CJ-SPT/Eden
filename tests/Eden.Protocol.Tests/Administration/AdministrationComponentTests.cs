@@ -54,14 +54,14 @@ public sealed class AdministrationComponentTests
                     ParameterView.FromDictionary(new Dictionary<string, object?> { [nameof(EconomySettings.Form)] = form })
                 );
                 string html = component.ToHtmlString();
-                Assert.Contains("Economy &amp; market", html);
+                Assert.Contains("Market supply", html);
                 Assert.Contains("Standard", html);
                 Assert.DoesNotContain("Development supply", html);
                 Assert.Equal(
                     form.TestingMarket && !form.ProgressiveMarkets && !form.StandardMarket,
                     html.Contains("Testing price (ISK)", StringComparison.Ordinal)
                 );
-                Assert.Equal(preset == MarketPreset.Custom, html.Contains("Custom market supply", StringComparison.Ordinal));
+                Assert.Equal(preset == MarketPreset.Custom, html.Contains("Custom supply sources", StringComparison.Ordinal));
                 if (preset == MarketPreset.Standard)
                 {
                     Assert.Contains("No live order snapshot is installed", html);
@@ -158,7 +158,7 @@ public sealed class AdministrationComponentTests
             }
             string warmup = await Render(initial);
             Assert.Contains("Collecting", warmup);
-            Assert.Contains("unavailable for this host", warmup);
+            Assert.Contains("Resident checkpoint diagnostics are unavailable for this host", warmup);
             Assert.DoesNotContain("No checkpoint has completed", warmup);
             string waiting = await Render(initial with { ResidentWorld = true });
             Assert.Contains("No checkpoint has completed", waiting);
@@ -189,7 +189,7 @@ public sealed class AdministrationComponentTests
             Assert.Contains("3.00 ms", failed);
             Assert.Contains("File write", failed);
             Assert.Contains("4.00 ms", failed);
-            Assert.DoesNotContain("unavailable for this host", failed);
+            Assert.DoesNotContain("Resident checkpoint diagnostics are unavailable for this host", failed);
         });
     }
 

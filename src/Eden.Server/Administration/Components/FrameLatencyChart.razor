@@ -1,0 +1,74 @@
+@using System.Collections.Immutable
+@using System.Globalization
+@using Eden.Infrastructure.Diagnostics
+
+<figure class="card frame-chart @(ShowProcessing ? "frame-processing" : "frame-delay")">
+    <figcaption>
+        <h3>@Title</h3>
+        <p class="muted">@Description</p>
+    </figcaption>
+    <div class="frame-chart-plot" aria-hidden="true">
+        <div class="frame-chart-y">
+            <span>@Milliseconds(Scale) ms</span>
+            <span>@Milliseconds(Scale / 2) ms</span>
+            <span>0 ms</span>
+        </div>
+        <div class="frame-chart-columns" style="@($"--columns: {History.Length}")">
+            @foreach (var interval in History)
+            {
+                @if (interval.Count > 0)
+                {
+                    <div class="frame-chart-bar" title="@IntervalLabel(interval)" style="@Height(Maximum(interval))">
+                        @if (ShowProcessing)
+                        {
+                            <span class="frame-chart-mean" style="@Height(interval.AverageMilliseconds, interval.MaximumMilliseconds)"></span>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div></div>
+                }
+            }
+        </div>
+        <div class="frame-chart-x"><span>2 min ago</span><span>1 min ago</span><span>Latest</span></div>
+    </div>
+    <div class="frame-chart-legend muted">
+        @if (ShowProcessing)
+        {
+            <span class="frame-legend-mean">Average</span>
+        }
+        <span class="frame-legend-peak">Peak</span>
+    </div>
+</figure>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter, EditorRequired] public string Description { get; set; } = "";
+    [Parameter, EditorRequired] public ImmutableArray<SessionFrameInterval> History { get; set; }
+    [Parameter] public bool ShowProcessing { get; set; }
+
+    private double Scale { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        double peak = Math.Max(1, History.Max(Maximum));
+        double step = Math.Pow(10, Math.Floor(Math.Log10(peak)));
+        Scale = Math.Ceiling(peak / step) * step;
+    }
+
+    private double Maximum(SessionFrameInterval interval) =>
+        ShowProcessing ? interval.MaximumMilliseconds : interval.MaximumStartDelayMilliseconds;
+
+    private string Height(double value) => Height(value, Scale);
+
+    private static string Height(double value, double scale) =>
+        FormattableString.Invariant($"height: {(scale > 0 ? value / scale * 100 : 0):0.###}%");
+
+    private string IntervalLabel(SessionFrameInterval interval) =>
+        ShowProcessing
+            ? $"{interval.Count:N0} frames · Average {Milliseconds(interval.AverageMilliseconds)} ms · Peak {Milliseconds(Maximum(interval))} ms"
+            : $"{interval.Count:N0} frames · Peak start delay {Milliseconds(Maximum(interval))} ms";
+
+    private static string Milliseconds(double value) => value.ToString("N2", CultureInfo.CurrentCulture);
+}

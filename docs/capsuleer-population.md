@@ -4,7 +4,7 @@
 
 ## Population controls
 
-Open **World & economy → Simulated pilots** in the local config editor. Enable/pause the whole simulated population,
+Open **Player bots → Population & traffic** in the local config editor. Enable/pause the whole simulated population,
 allow simulated miners, choose station traffic density (**0–10×**, default **1×**), and set visitors per watched gate
 (**0–16**, default **4**). Save for restart, then restart the server separately to apply the revision.
 These are simulated capsuleer controls; the adjacent NPC switches manage pirates, empire forces and mining fleets.
@@ -201,7 +201,7 @@ Cargo is finite and can survive in the wreck. An empty return leg is possible.
 Untouched legacy Badgers with the original 100 units of ore convert at their next safe dock.
 [Implementation and old-save coverage](protocol/capsuleers.md#generated-hauler-hulls-and-freight).
 
-In **World & economy / Player bots**, set the ordinary and courier budget ranges in ISK. Ordinary trips default to
+In **Player bots → Hauler freight**, set the ordinary and courier budget ranges in ISK. Ordinary trips default to
 150,000-750,000 ISK and eligible courier trips to 800,000-4,000,000 ISK. Defaults are 8% courier selection among
 eligible hulls, 14% empty subsequent trips and 50% wreck survival per freight stack. Actual loads can fall below
 budget due to hold capacity, unit volume or indivisible items. Valuation uses the bundled sell-price snapshot,

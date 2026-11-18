@@ -136,7 +136,9 @@ public sealed class SessionPerformanceTests
         TestClock clock = new();
         SessionTickSchedule schedule = new(clock);
         Assert.Equal(TimeSpan.FromSeconds(1), schedule.Remaining);
+        Assert.Equal(TimeSpan.Zero, schedule.StartDelay(clock.GetTimestamp()));
         clock.Milliseconds = 1300;
+        Assert.Equal(TimeSpan.FromMilliseconds(300), schedule.StartDelay(clock.GetTimestamp()));
         schedule.Complete();
         Assert.Equal(TimeSpan.FromMilliseconds(700), schedule.Remaining);
         clock.Milliseconds = 4500;
@@ -144,6 +146,14 @@ public sealed class SessionPerformanceTests
         Assert.Equal(TimeSpan.FromMilliseconds(500), schedule.Remaining);
         clock.Milliseconds = 5000;
         Assert.Equal(TimeSpan.Zero, schedule.Remaining);
+
+        schedule.PauseMeasurement();
+        clock.Seconds = 20;
+        schedule.ResumeMeasurement();
+        clock.Milliseconds = 20010;
+        Assert.Equal(TimeSpan.FromMilliseconds(10), schedule.StartDelay(clock.GetTimestamp()));
+        schedule.Complete();
+        Assert.Equal(TimeSpan.FromMilliseconds(990), schedule.Remaining);
     }
 
     [Fact]

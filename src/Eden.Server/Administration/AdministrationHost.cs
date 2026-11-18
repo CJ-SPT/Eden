@@ -108,7 +108,8 @@ internal static class AdministrationHost
                     new(
                         worldServices.GetRequiredService<ICapsuleerDiagnostics>().Read(),
                         worldServices.GetRequiredService<ICapsuleerScene>().MaterializedPilots
-                    )
+                    ),
+                frames: worldServices.GetService<Eden.Infrastructure.Diagnostics.SessionFrameMonitor>()
             )
         );
         var protection = builder

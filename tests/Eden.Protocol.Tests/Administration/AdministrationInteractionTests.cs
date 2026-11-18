@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Eden.Gameplay.Configuration;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Server.Administration;
 using Eden.Server.Administration.Components;
 using Microsoft.AspNetCore.Components;
@@ -18,6 +19,9 @@ public sealed partial class AdministrationTests
         foreach (string browser in new[] { "firefox", "chromium" })
         {
             await using var fixture = await Fixture.Start(liveWorld: true);
+            var frames = fixture.World.Services.GetRequiredService<SessionFrameMonitor>();
+            frames.Record(TimeSpan.FromMilliseconds(4), TimeSpan.FromMilliseconds(1));
+            frames.Record(TimeSpan.FromMilliseconds(12), TimeSpan.FromMilliseconds(3));
             System.Diagnostics.ProcessStartInfo start = new("python")
             {
                 CreateNoWindow = true,

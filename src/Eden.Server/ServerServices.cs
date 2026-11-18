@@ -74,6 +74,7 @@ internal static class ServerServices
         }
         services.AddSingleton(new NpcProfileCatalog(cache: population is null));
         services.AddSingleton(clock ?? TimeProvider.System);
+        services.AddSingleton<SessionFrameMonitor>();
         services.AddSingleton(options ?? new LauncherOptions());
         foreach (Assembly assembly in ImplementationAssemblies)
         {

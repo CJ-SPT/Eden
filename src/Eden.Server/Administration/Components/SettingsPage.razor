@@ -3,328 +3,510 @@
 @inject AdministrationOperations Operations
 @inject AuthenticationStateProvider Authentication
 <PageTitle>Settings · Eden</PageTitle>
-<h1>World settings</h1>
-<p class="muted">Stage changes for this saved world. Existing jobs, balances and saved deadlines keep their terms.</p>
-@if (Error is not null)
-{
-    <p class="error" role="alert">@Error</p>
-}
+<div class="settings-hero">
+    <div>
+        <h1>World settings</h1>
+        <p class="muted">Edit the draft, then save it for the next server restart.</p>
+    </div>
+    <ConfigurationStatus State="State" />
+</div>
 @if (State is null)
 {
-    <p>Loading settings…</p>
+    @if (Error is not null)
+    {
+        <p class="error" role="alert">@Error</p>
+    }
+    else
+    {
+        <p>Loading settings…</p>
+    }
 }
 else
 {
-    <ConfigurationStatus State="State" />
-    <div class="toolbar">
-        <button type="button" class="secondary" @onclick="Load" disabled="@Busy">Reload saved values</button>
-        <button type="button" class="secondary" @onclick="Reset" disabled="@Busy">Reset draft to original</button>
-    </div>
-    @if (Message is not null)
-    {
-        <p class="notice" role="status">@Message</p>
-    }
-    <nav class="settings-tabs" aria-label="World settings categories">
-        @foreach (var activity in Enum.GetValues<SettingsActivity>())
-        {
-            <button type="button" class="secondary" aria-pressed="@(Workspace.Activity == activity ? "true" : "false")"
-                    aria-controls="@($"settings-{activity}")" @onclick="() => Workspace.Activity = activity">@ActivityLabel(activity)</button>
-        }
-    </nav>
-    <EditForm @key="Context" EditContext="Context" OnValidSubmit="Save" OnInvalidSubmit="Invalid"
-              FormName="world-settings" id="world-settings" novalidate>
-        <DataAnnotationsValidator /><ValidationSummary />
-        <fieldset disabled="@Busy">
-            <section id="settings-Gathering" class="card" hidden="@(Workspace.Activity != SettingsActivity.Gathering)">
-                <h2>Gathering</h2>
-                <MultiplierControl Label="Ore mining yield" @bind-Value="Form.OreYieldMultiplier"
-                    Description="Scales extraction after normal bonuses."
-                    ExampleAmount="100" ExampleUnit="m³ per cycle" Reward="false"
-                    Speed="false" Efficiency="false" />
-                <MultiplierControl Label="Ice harvesting yield" @bind-Value="Form.IceYieldMultiplier"
-                    Description="Scales blocks per completed cycle; interrupted cycles produce nothing."
-                    ExampleAmount="1" ExampleUnit="blocks per cycle" Reward="false"
-                    Speed="false" Efficiency="false" />
-                <MultiplierControl Label="Gas harvesting yield" @bind-Value="Form.GasYieldMultiplier"
-                    Description="Scales extraction after normal bonuses."
-                    ExampleAmount="100" ExampleUnit="m³ per cycle" Reward="false"
-                    Speed="false" Efficiency="false" />
-                <p class="muted">Player harvesting only. Cargo limits, finite deposits, critical yield and residue still apply.</p>
-                <label><InputCheckbox @bind-Value="Form.RenewBelts" />Renew asteroid belts</label>
-                <label>Renewal hour (UTC)<InputNumber @bind-Value="Form.RenewalHourUtc" min="0" max="23" /></label>
-                <p class="muted">Already saved renewal deadlines remain unchanged.</p>
-                <h3>Mining hold capacity</h3>
-                <p class="muted">Scales each existing hold after ship and skill bonuses. If a hold shrinks below its current load, unload it to free space.</p>
-                <MultiplierControl Label="General mining hold capacity" @bind-Value="Form.GeneralMiningHoldMultiplier"
-                    Description="Applies to the general mining hold, including when it carries ice or gas."
-                    ExampleAmount="5000" ExampleUnit="m³" />
-                <MultiplierControl Label="Ice hold capacity" @bind-Value="Form.IceHoldMultiplier"
-                    Description="Applies to dedicated ice holds."
-                    ExampleAmount="10000" ExampleUnit="m³" />
-                <MultiplierControl Label="Gas hold capacity" @bind-Value="Form.GasHoldMultiplier"
-                    Description="Applies to dedicated gas holds."
-                    ExampleAmount="10000" ExampleUnit="m³" />
-            </section>
-            <section id="settings-Rewards" class="card" hidden="@(Workspace.Activity != SettingsActivity.Rewards)">
-                <h2>Rewards</h2>
-                <MultiplierControl Label="NPC bounty ISK" @bind-Value="Form.BountyMultiplier"
-                    Description="Applies before corporation tax and also scales NPC kill SP."
-                    ExampleAmount="100000" ExampleUnit="ISK" Reward="true"
-                    Speed="false" Efficiency="false" />
-                <MultiplierControl Label="Mission ISK" @bind-Value="Form.MissionIskMultiplier"
-                    Description="New mission offers only; saved rewards retain their terms."
-                    ExampleAmount="100000" ExampleUnit="ISK" Reward="true"
-                    Speed="false" Efficiency="false" />
-                <MultiplierControl Label="Mission loyalty points" @bind-Value="Form.MissionLpMultiplier"
-                    Description="New mission offers only; fractional points are rounded down."
-                    ExampleAmount="1000" ExampleUnit="LP" Reward="true"
-                    Speed="false" Efficiency="false" />
-                <MultiplierControl Label="Positive mission standings" @bind-Value="Form.MissionStandingMultiplier"
-                    Description="Scales positive gain fractions, capped at 100%; penalties are unchanged."
-                    ExampleAmount="1" ExampleUnit="% gain fraction" Reward="true"
-                    Speed="false" Efficiency="true" />
-            </section>
-            <section id="settings-Progression" class="card" hidden="@(Workspace.Activity != SettingsActivity.Progression)">
-                <h2>Progression</h2>
-                <ProgressionControls Form="Form" ActiveSettings="State.Active.Draft.Settings" Changed="StateHasChanged"
-                    EditRewards="() => Workspace.Activity = SettingsActivity.Rewards"
-                    EditGathering="() => Workspace.Activity = SettingsActivity.Gathering" />
-                <label><InputCheckbox @bind-Value="Form.StartingSkills" />Grant catalog starting skills to new pilots</label>
-                <label><InputCheckbox @bind-Value="Form.StartingEquipment" />Grant civilian starting equipment to new pilots</label>
-                <p class="muted">Grants a civilian miner and weapon when creating a pilot after restart.</p>
-                <label><InputCheckbox @bind-Value="Form.TestingGrants" />Initial wallet grants for new pilots</label>
-                <label>Initial wallet grant (ISK)<InputNumber @bind-Value="Form.GrantIsk" min="0" step="0.01" /></label>
-                <p class="muted">Training speed and skill requirements are unchanged.</p>
-            </section>
-            <section id="settings-Structures" class="card" hidden="@(Workspace.Activity != SettingsActivity.Structures)">
-                <h2>Player structures</h2>
-                <label>Minimum corporation age for anchoring (days)
-                    <InputNumber @bind-Value="Form.StructureMinimumCorporationAgeDays" min="0" step="1" />
-                </label>
-                <p class="muted">Default: 7 days. Set to 0 to remove the age wait. Structure management authority is required.</p>
-                <MultiplierControl Label="Anchoring speed" @bind-Value="Form.StructureAnchoringSpeed"
-                    Description="Applies to newly deployed Upwell structures, including navigation structures."
-                    ExampleAmount="24" ExampleUnit="hours" Reward="false" Speed="true" Efficiency="false" />
-                <MultiplierControl Label="Core onlining speed" @bind-Value="Form.StructureOnliningSpeed"
-                    Description="Scales the onlining timer started after installing a quantum core."
-                    ExampleAmount="15" ExampleUnit="minutes" Reward="false" Speed="true" Efficiency="false" />
-                <MultiplierControl Label="Decommissioning speed" @bind-Value="Form.StructureUnanchoringSpeed"
-                    Description="Applies when beginning a new decommissioning timer."
-                    ExampleAmount="7" ExampleUnit="days" Reward="false" Speed="true" Efficiency="false" />
-                <p class="muted">2× speed halves duration. Saved deadlines retain their original terms after changing these values.</p>
-            </section>
-            <section id="settings-Industry" class="card" hidden="@(Workspace.Activity != SettingsActivity.Industry)">
-                <h2>Industry</h2>
-                <MultiplierControl Label="Manufacturing speed" @bind-Value="Form.ManufacturingSpeed"
-                    Description="2× speed halves duration; installed jobs keep their deadlines."
-                    ExampleAmount="100" ExampleUnit="seconds" Reward="false"
-                    Speed="true" Efficiency="false" />
-                <MultiplierControl Label="Research speed" @bind-Value="Form.ResearchSpeed"
-                    Description="Applies to material and time research; installed jobs keep their deadlines."
-                    ExampleAmount="100" ExampleUnit="seconds" Reward="false"
-                    Speed="true" Efficiency="false" />
-                <MultiplierControl Label="Copying speed" @bind-Value="Form.CopyingSpeed"
-                    Description="Scales new copy jobs; licensed runs are unchanged."
-                    ExampleAmount="100" ExampleUnit="seconds" Reward="false"
-                    Speed="true" Efficiency="false" />
-                <MultiplierControl Label="Invention speed" @bind-Value="Form.InventionSpeed"
-                    Description="Scales new invention jobs; success chance and outputs are unchanged."
-                    ExampleAmount="100" ExampleUnit="seconds" Reward="false"
-                    Speed="true" Efficiency="false" />
-                <MultiplierControl Label="Reprocessing efficiency" @bind-Value="Form.ReprocessingEfficiency"
-                    Description="Scales recovery after skills, capped at 100% of available materials."
-                    ExampleAmount="50" ExampleUnit="% recovery" Reward="false"
-                    Speed="false" Efficiency="true" />
-            </section>
-            <section id="settings-PlanetaryIndustry" class="card" hidden="@(Workspace.Activity != SettingsActivity.PlanetaryIndustry)">
-                <h2>Planetary industry</h2>
-                <label>Maximum planets (0 = skill-based)
-                    <InputNumber @bind-Value="Form.PlanetaryMaximumPlanets" min="0"
-                        max="@Eden.Gameplay.Planetary.PlanetaryRules.MaximumConfiguredPlanets" step="1" />
-                </label>
-                <p class="muted">0 uses one planet plus Interplanetary Consolidation level. 1–100 sets the total per pilot,
-                    replacing that skill limit. Existing colonies remain usable when the limit is lowered.
-                    Save for restart, restart the server and reconnect to apply.</p>
-                <MultiplierControl Label="Extraction yield" @bind-Value="Form.PlanetaryExtractionYieldMultiplier"
-                    Description="Scales newly installed extractor programs; existing programs keep their yield."
-                    ExampleAmount="100" ExampleUnit="units" Reward="false" Speed="false" Efficiency="false" />
-                <MultiplierControl Label="Factory output" @bind-Value="Form.PlanetaryFactoryOutputMultiplier"
-                    Description="Scales completed factory batch quantities; ingredients per batch stay the same."
-                    ExampleAmount="20" ExampleUnit="units" Reward="false" Speed="false" Efficiency="false" />
-                <MultiplierControl Label="Factory speed" @bind-Value="Form.PlanetaryFactorySpeedMultiplier"
-                    Description="Shortens factory cycles after restart, including running cycles. Extractor timing stays the same."
-                    ExampleAmount="1800" ExampleUnit="seconds per cycle" Reward="false" Speed="true" Efficiency="false" />
-                <MultiplierControl Label="Planetary storage capacity" @bind-Value="Form.PlanetaryStorageCapacityMultiplier"
-                    Description="Scales launchpads, storage facilities, command centers and customs offices. Factory buffers retain one batch."
-                    ExampleAmount="10000" ExampleUnit="m³ per launchpad" Reward="false" Speed="false" Efficiency="false" />
-                <label>Customs tax (%)
-                    <InputNumber @bind-Value="Form.PlanetaryCustomsTaxPercent" min="0" max="100" step="0.1" />
-                </label>
-                <p class="muted">0–100%; default 17%. Exports pay this rate on taxable commodity value;
-                    imports pay half. Command-center launches keep their separate 15% fee. Save for restart to apply.</p>
-                <MultiplierControl Label="Command center CPU" @bind-Value="Form.PlanetaryCpuMultiplier"
-                    Description="Scales CPU supplied at every command center upgrade level."
-                    ExampleAmount="1675" ExampleUnit="tf" Reward="false" Speed="false" Efficiency="false" />
-                <MultiplierControl Label="Command center powergrid" @bind-Value="Form.PlanetaryPowergridMultiplier"
-                    Description="Scales powergrid supplied at every command center upgrade level."
-                    ExampleAmount="6000" ExampleUnit="MW" Reward="false" Speed="false" Efficiency="false" />
-                <p class="muted">Output rounds down to whole units, with a minimum of one per positive batch.
-                    Resize output routes and upgrade links to collect increased production. Faster factories need more
-                    ingredients per hour and may need higher link upgrades. Cycles have a one-second minimum.</p>
-                <p class="muted">After reducing storage capacity, existing goods remain; collect them before adding more.</p>
-                <p class="muted">After reducing CPU or powergrid, remove buildings or upgrade the command center
-                    until the colony fits before submitting edits.</p>
-            </section>
-            <div id="settings-World" hidden="@(Workspace.Activity != SettingsActivity.World)">
-            <EconomySettings Form="Form" Snapshot="MarketSnapshot" />
-            <section class="card"><h2>Exploration</h2>
-                <label><InputCheckbox @bind-Value="Form.AlwaysResolvedSignatures" />Always resolve cosmic signatures</label>
-                <p class="muted">Show all current-system signatures at 100% and allow warping and bookmarking without probes.
-                    Applies to every pilot after restart.</p>
-            </section>
-            <section class="card"><h2>NPC population</h2>
-                <p class="muted">These switches control new spawns. Living residents remain in the world.</p>
-                <label><InputCheckbox @bind-Value="Form.Pirates" />Pirates</label>
-                <label><InputCheckbox @bind-Value="Form.Guards" />Empire guards</label>
-                <label><InputCheckbox @bind-Value="Form.Convoys" />Station convoys</label>
-                <label><InputCheckbox @bind-Value="Form.Mining" />Mining fleets</label>
-                <label><InputCheckbox @bind-Value="Form.MajorThreatAnomalies" />Allow Major Threat anomaly tiers in nullsec</label>
-            </section>
-            <section class="card"><h2>Player bots</h2>
-                <label><InputCheckbox @bind-Value="Form.SimulatedPilots" />Enable player bots</label>
-                <p class="muted">Controls all simulated capsuleers, including travelers, miners, haulers and ratters. Off pauses and hides them after restart.</p>
-                <label><InputCheckbox @bind-Value="Form.SimulatedMiners" />Simulated miners</label>
-                <label>Station traffic density (×)
-                    <InputNumber @bind-Value="Form.TrafficMultiplier" min="0" max="10" step="0.1" />
-                </label>
-                <p class="muted">1× keeps the usual traffic, 0 pauses station traffic, and 10× is the maximum.
-                    Simulated miners add up to one pilot per eligible system.</p>
-                <label>Visitors per watched gate
-                    <InputNumber @bind-Value="Form.GateVisitors" min="0" max="16" step="1" />
-                </label>
-                <label><InputCheckbox @bind-Value="Form.SituationalAwareness" />React to ships and remember dangerous belts</label>
-                <label><InputCheckbox @bind-Value="Form.BeltRatting" />Run belt-ratting sorties</label>
-                <label><InputCheckbox @bind-Value="Form.AnomalyRatting" />Run ordinary combat anomalies</label>
-                <label><InputCheckbox @bind-Value="Form.GateCamps" />Temporary gate camps</label>
-                <label><InputCheckbox @bind-Value="Form.LowsecGateCamps" />Lowsec camps against legal targets</label>
-                <label><InputCheckbox @bind-Value="Form.CampBubbles" />Launch fitted interdiction probes</label>
-                <label>Camp chance per departure (%)
-                    <InputNumber @bind-Value="Form.CampPercent" />
-                </label>
-                <label>Gate camp shift length (seconds)
-                    <InputNumber @bind-Value="Form.CampSeconds" />
-                </label>
-                <label>Interdictors among generated nullsec combat fits (%)
-                    <InputNumber @bind-Value="Form.InterdictorPercent" />
-                </label>
-                <label><InputCheckbox @bind-Value="Form.RoamingPvp" />Nullsec PvP roams</label>
-                <label><InputCheckbox @bind-Value="Form.RoamingGangs" />Persistent roaming gangs</label>
-                <label>Roaming gang size (3–6)<InputNumber @bind-Value="Form.RoamingGangSize" /></label>
-                <label><InputCheckbox @bind-Value="Form.RegionalConflicts" />Regional conflicts</label>
-                <label>Simultaneous regional operations per group (1–3)<InputNumber @bind-Value="Form.RegionalOperationsPerGroup" /></label>
-                <label>Roam chance per departure (%)
-                    <InputNumber @bind-Value="Form.RoamPercent" />
-                </label>
-                <label>Combat fits among generated nullsec pilots (%)
-                    <InputNumber @bind-Value="Form.GeneratedCombatPercent" />
-                </label>
-                <label><InputCheckbox @bind-Value="Form.FreightVariedHulls" />Use regional hauler hulls</label>
-                <label>Ordinary freight minimum budget (ISK)
-                    <InputNumber @bind-Value="Form.FreightOrdinaryMinimumIsk" />
-                </label>
-                <label>Ordinary freight maximum budget (ISK)
-                    <InputNumber @bind-Value="Form.FreightOrdinaryMaximumIsk" />
-                </label>
-                <label>Courier minimum budget (ISK)
-                    <InputNumber @bind-Value="Form.FreightCourierMinimumIsk" />
-                </label>
-                <label>Courier maximum budget (ISK)
-                    <InputNumber @bind-Value="Form.FreightCourierMaximumIsk" />
-                </label>
-                <label>Valuable trips among eligible couriers (%)
-                    <InputNumber @bind-Value="Form.FreightCourierPercent" />
-                </label>
-                <label>Empty subsequent freight trips (%)
-                    <InputNumber @bind-Value="Form.FreightEmptyReturnPercent" />
-                </label>
-                <label>Freight stacks surviving destruction (%)
-                    <InputNumber @bind-Value="Form.FreightWreckSurvivalPercent" />
-                </label>
-                <label>Freight cargo type IDs (comma-separated, blank for standard goods)
-                    <InputText @bind-Value="Form.FreightCargoTypeIds" />
-                </label>
-                <p class="muted">Changes apply after restart. Lower populations despawn and pause excess pilots without deleting them.
-                    Higher populations reuse saved pilots before creating new ones. Ships, possessions, losses and progress are retained.</p>
-                <p class="muted">Station traffic and miners are prepared globally on restart, before logins. Gate visitors are prepared
-                    when gates are watched. Traffic density and gate visitors are separate limits. These controls do not change NPC pirates or mining fleets.</p>
-            </section>
-            </div>
-            <section id="settings-Travel" class="card" hidden="@(Workspace.Activity != SettingsActivity.Travel)">
-                <h2>Travel</h2>
-                <MultiplierControl Label="Warp speed" @bind-Value="Form.WarpSpeedMultiplier"
-                    Description="Scales fitted warp speed after skills and modules, including normal warp acceleration and braking."
-                    ExampleAmount="3" ExampleUnit="AU/s" />
-                <MultiplierControl Label="Align speed" @bind-Value="Form.AlignSpeedMultiplier"
-                    Description="2× halves inertia time. Also improves turning and acceleration; top subwarp speed is unchanged."
-                    ExampleAmount="10" ExampleUnit="seconds to align from rest" Speed="true" />
-                <label>Autopilot gate landing distance (metres)
-                    <InputNumber @bind-Value="Form.AutopilotGateLandingMeters" min="0" max="100000" step="1" />
-                </label>
-                <p class="muted">Default: 15000 metres. Choose 0 to warp close to gates; normal hull clearance still applies.</p>
-                <p class="muted">Suggested solo settings: 2× warp speed, 1.25× align speed and 0 metres autopilot gate landing.
-                    Defaults preserve current travel. Changes apply to player ships after restart.
-                    Warp disruption, gate range checks and travel timers still apply.</p>
-            </section>
-            <div id="settings-Advanced" hidden="@(Workspace.Activity != SettingsActivity.Advanced)">
-            <section class="card"><h2>Simulation</h2>
-                <label>Checkpoint interval (seconds)<InputNumber @bind-Value="Form.CheckpointSeconds" min="1" max="300" /></label>
-                <label>Market polling interval (milliseconds)<InputNumber @bind-Value="Form.MarketPollMilliseconds" min="100" max="60000" /></label>
-                <label>Resource check interval (seconds)<InputNumber @bind-Value="Form.ResourceCheckSeconds" min="1" max="3600" /></label>
-            </section>
-            </div>
-        </fieldset>
-    </EditForm>
-    <div hidden="@(Workspace.Activity != SettingsActivity.Advanced)">
-        <fieldset disabled="@Busy">
-            <OverrideEditor Draft="Workspace.Draft" DraftChanged="Workspace.ChangeOverrides" Active="State.Active.Draft"
-                            Original="Original" Pending="State.Pending?.Draft" />
-        </fieldset>
-    </div>
-    <section class="card" aria-label="Changed values">
-        <h2>Changed values</h2>
-        @if (Unsaved)
-        {
-            @if (DraftChanges is { } changes)
+    <div class="settings-workspace">
+        <nav class="settings-nav" aria-label="World settings categories">
+            @foreach (var (group, categories) in Categories)
             {
-                <ul>@foreach (var change in changes)
+                <div class="settings-nav-group" role="group" aria-label="@group">
+                    <p aria-hidden="true">@group</p>
+                    @foreach (var (activity, label) in categories)
+                    {
+                        <button type="button" class="secondary" aria-pressed="@(Workspace.Activity == activity ? "true" : "false")"
+                                aria-controls="@($"settings-{activity}")" @onclick="() => Workspace.Activity = activity">@label</button>
+                    }
+                </div>
+            }
+        </nav>
+        <div class="settings-content">
+            <EditForm @key="Context" EditContext="Context" OnValidSubmit="Save" OnInvalidSubmit="Invalid"
+                      FormName="world-settings" id="world-settings" novalidate>
+                <DataAnnotationsValidator />
+                <fieldset disabled="@Busy">
+                    <section id="settings-Gathering" class="settings-panel" aria-labelledby="heading-Gathering"
+                             hidden="@(Workspace.Activity != SettingsActivity.Gathering)">
+                        <div class="settings-panel-heading">
+                            <h2 id="heading-Gathering">Gathering</h2>
+                            <p class="muted">Tune player harvesting, mining holds and asteroid belt renewal.</p>
+                        </div>
+                        <section class="card settings-group">
+                            <h3>Harvesting yield</h3>
+                            <p class="muted">Cargo limits, finite deposits, critical yield and residue still apply.</p>
+                            <div class="settings-multipliers">
+                                <MultiplierControl Label="Ore mining yield" @bind-Value="Form.OreYieldMultiplier"
+                                    Description="Scales extraction after normal bonuses."
+                                    ExampleAmount="100" ExampleUnit="m³ per cycle" Reward="false"
+                                    Speed="false" Efficiency="false" />
+                                <MultiplierControl Label="Ice harvesting yield" @bind-Value="Form.IceYieldMultiplier"
+                                    Description="Scales blocks per completed cycle; interrupted cycles produce nothing."
+                                    ExampleAmount="1" ExampleUnit="blocks per cycle" Reward="false"
+                                    Speed="false" Efficiency="false" />
+                                <MultiplierControl Label="Gas harvesting yield" @bind-Value="Form.GasYieldMultiplier"
+                                    Description="Scales extraction after normal bonuses."
+                                    ExampleAmount="100" ExampleUnit="m³ per cycle" Reward="false"
+                                    Speed="false" Efficiency="false" />
+                            </div>
+                        </section>
+                        <section class="card settings-group">
+                            <h3>Mining hold capacity</h3>
+                            <p class="muted">Capacity scales after ship and skill bonuses. If a hold is over capacity, unload it to free space.</p>
+                            <div class="settings-multipliers">
+                                <MultiplierControl Label="General mining hold capacity" @bind-Value="Form.GeneralMiningHoldMultiplier"
+                                    Description="Applies to the general mining hold, including when it carries ice or gas."
+                                    ExampleAmount="5000" ExampleUnit="m³" />
+                                <MultiplierControl Label="Ice hold capacity" @bind-Value="Form.IceHoldMultiplier"
+                                    Description="Applies to dedicated ice holds."
+                                    ExampleAmount="10000" ExampleUnit="m³" />
+                                <MultiplierControl Label="Gas hold capacity" @bind-Value="Form.GasHoldMultiplier"
+                                    Description="Applies to dedicated gas holds."
+                                    ExampleAmount="10000" ExampleUnit="m³" />
+                            </div>
+                        </section>
+                        <section class="card settings-group">
+                            <h3>Asteroid belt renewal</h3>
+                            <div class="settings-fields">
+                                <SettingField Label="Renew asteroid belts"
+                                              Help="Allow depleted asteroid belts to renew on the configured schedule.">
+                                    <Control Context="field">
+                                        <InputCheckbox id="@field.Input" @bind-Value="Form.RenewBelts" aria-describedby="@field.Help" />
+                                    </Control>
+                                </SettingField>
+                                <SettingField Label="Renewal hour (UTC)"
+                                              Help="Hour of the day for new belt renewal deadlines. Enter 0 for midnight UTC. Saved deadlines keep their scheduled time.">
+                                    <Control Context="field">
+                                        <InputNumber id="@field.Input" @bind-Value="Form.RenewalHourUtc" min="0" max="23" aria-describedby="@field.Help" />
+                                    </Control>
+                                </SettingField>
+                            </div>
+                        </section>
+                    </section>
+                    <section id="settings-Rewards" class="settings-panel" aria-labelledby="heading-Rewards"
+                             hidden="@(Workspace.Activity != SettingsActivity.Rewards)">
+                        <div class="settings-panel-heading">
+                            <h2 id="heading-Rewards">Rewards</h2>
+                            <p class="muted">Set the ISK, loyalty points and standings pilots earn from NPC combat and missions.</p>
+                        </div>
+                        <section class="card settings-group">
+                            <h3>NPC bounties</h3>
+                            <div class="settings-multipliers">
+                                <MultiplierControl Label="NPC bounty ISK" @bind-Value="Form.BountyMultiplier"
+                                    Description="Applies before corporation tax and also scales NPC kill SP."
+                                    ExampleAmount="100000" ExampleUnit="ISK" Reward="true"
+                                    Speed="false" Efficiency="false" />
+                            </div>
+                        </section>
+                        <section class="card settings-group">
+                            <h3>Mission rewards</h3>
+                            <div class="settings-multipliers">
+                                <MultiplierControl Label="Mission ISK" @bind-Value="Form.MissionIskMultiplier"
+                                    Description="New mission offers only; saved rewards retain their terms."
+                                    ExampleAmount="100000" ExampleUnit="ISK" Reward="true"
+                                    Speed="false" Efficiency="false" />
+                                <MultiplierControl Label="Mission loyalty points" @bind-Value="Form.MissionLpMultiplier"
+                                    Description="New mission offers only; fractional points are rounded down."
+                                    ExampleAmount="1000" ExampleUnit="LP" Reward="true"
+                                    Speed="false" Efficiency="false" />
+                                <MultiplierControl Label="Positive mission standings" @bind-Value="Form.MissionStandingMultiplier"
+                                    Description="Scales positive gain fractions, capped at 100%; penalties are unchanged."
+                                    ExampleAmount="1" ExampleUnit="% gain fraction" Reward="true"
+                                    Speed="false" Efficiency="true" />
+                            </div>
+                        </section>
+                    </section>
+                    <section id="settings-Progression" class="settings-panel" aria-labelledby="heading-Progression"
+                             hidden="@(Workspace.Activity != SettingsActivity.Progression)">
+                        <div class="settings-panel-heading">
+                            <h2 id="heading-Progression">Progression</h2>
+                            <p class="muted">Set activity-based skill point rates and what newly created pilots receive.</p>
+                        </div>
+                        <section class="settings-group">
+                            <h3>Activity skill points</h3>
+                            <ProgressionControls Form="Form" ActiveSettings="State.Active.Draft.Settings" Changed="StateHasChanged"
+                                EditRewards="() => Workspace.Activity = SettingsActivity.Rewards"
+                                EditGathering="() => Workspace.Activity = SettingsActivity.Gathering" />
+                        </section>
+                        <section class="card settings-group">
+                            <h3>New pilot grants</h3>
+                            <p class="muted">Training speed and skill requirements are unchanged.</p>
+                            <div class="settings-fields">
+                                <SettingField Label="Grant catalog starting skills to new pilots"
+                                              Help="Gives newly created pilots the starting skills defined in the catalog.">
+                                    <Control Context="field">
+                                        <InputCheckbox id="@field.Input" @bind-Value="Form.StartingSkills" aria-describedby="@field.Help" />
+                                    </Control>
+                                </SettingField>
+                                <SettingField Label="Grant civilian starting equipment to new pilots"
+                                              Help="Gives newly created pilots a civilian miner and weapon.">
+                                    <Control Context="field">
+                                        <InputCheckbox id="@field.Input" @bind-Value="Form.StartingEquipment" aria-describedby="@field.Help" />
+                                    </Control>
+                                </SettingField>
+                                <SettingField Label="Initial wallet grants for new pilots"
+                                              Help="Pays the configured starting ISK amount to pilots when they are created.">
+                                    <Control Context="field">
+                                        <InputCheckbox id="@field.Input" @bind-Value="Form.TestingGrants" aria-describedby="@field.Help" />
+                                    </Control>
+                                </SettingField>
+                                <SettingField Label="Initial wallet grant (ISK)"
+                                              Help="ISK paid at character creation when initial wallet grants are enabled.">
+                                    <Control Context="field">
+                                        <InputNumber id="@field.Input" @bind-Value="Form.GrantIsk" min="0" step="0.01" aria-describedby="@field.Help" />
+                                    </Control>
+                                </SettingField>
+                            </div>
+                        </section>
+                    </section>
+                    <section id="settings-Travel" class="settings-panel" aria-labelledby="heading-Travel"
+                             hidden="@(Workspace.Activity != SettingsActivity.Travel)">
+                        <div class="settings-panel-heading">
+                            <h2 id="heading-Travel">Travel</h2>
+                            <p class="muted">Set player ship handling and autopilot behavior.</p>
+                        </div>
+                        <section class="card settings-group">
+                            <h3>Ship handling</h3>
+                            <div class="settings-multipliers">
+                                <MultiplierControl Label="Warp speed" @bind-Value="Form.WarpSpeedMultiplier"
+                                    Description="Scales fitted warp speed after skills and modules, including normal warp acceleration and braking."
+                                    ExampleAmount="3" ExampleUnit="AU/s" />
+                                <MultiplierControl Label="Align speed" @bind-Value="Form.AlignSpeedMultiplier"
+                                    Description="2× halves inertia time. Also improves turning and acceleration; top subwarp speed is unchanged."
+                                    ExampleAmount="10" ExampleUnit="seconds to align from rest" Speed="true" />
+                            </div>
+                        </section>
+                        <section class="card settings-group">
+                            <h3>Autopilot</h3>
+                            <p class="muted">For solo play, try 2× warp, 1.25× align and 0 metres for autopilot landings.</p>
+                            <div class="settings-fields">
+                                <SettingField Label="Autopilot gate landing distance (metres)"
+                                              Help="Eden defaults to 15,000 metres. Set 0 to warp close to gates. Normal hull clearance still applies.">
+                                    <Control Context="field">
+                                        <InputNumber id="@field.Input" @bind-Value="Form.AutopilotGateLandingMeters" min="0" max="100000" step="1" aria-describedby="@field.Help" />
+                                    </Control>
+                                </SettingField>
+                            </div>
+                        </section>
+                    </section>
+                    <section id="settings-Industry" class="settings-panel" aria-labelledby="heading-Industry"
+                             hidden="@(Workspace.Activity != SettingsActivity.Industry)">
+                        <div class="settings-panel-heading">
+                            <h2 id="heading-Industry">Industry</h2>
+                            <p class="muted">Set job speed and material recovery. Installed jobs retain their deadlines.</p>
+                        </div>
+                        <section class="card settings-group">
+                            <h3>Production &amp; blueprint jobs</h3>
+                            <p class="muted">2× speed halves a new job’s duration.</p>
+                            <div class="settings-multipliers">
+                                <MultiplierControl Label="Manufacturing speed" @bind-Value="Form.ManufacturingSpeed"
+                                    Description="2× speed halves duration; installed jobs keep their deadlines."
+                                    ExampleAmount="100" ExampleUnit="seconds" Reward="false"
+                                    Speed="true" Efficiency="false" />
+                                <MultiplierControl Label="Research speed" @bind-Value="Form.ResearchSpeed"
+                                    Description="Applies to material and time research; installed jobs keep their deadlines."
+                                    ExampleAmount="100" ExampleUnit="seconds" Reward="false"
+                                    Speed="true" Efficiency="false" />
+                                <MultiplierControl Label="Copying speed" @bind-Value="Form.CopyingSpeed"
+                                    Description="Scales new copy jobs; licensed runs are unchanged."
+                                    ExampleAmount="100" ExampleUnit="seconds" Reward="false"
+                                    Speed="true" Efficiency="false" />
+                                <MultiplierControl Label="Invention speed" @bind-Value="Form.InventionSpeed"
+                                    Description="Scales new invention jobs; success chance and outputs are unchanged."
+                                    ExampleAmount="100" ExampleUnit="seconds" Reward="false"
+                                    Speed="true" Efficiency="false" />
+                            </div>
+                        </section>
+                        <section class="card settings-group">
+                            <h3>Reprocessing</h3>
+                            <div class="settings-multipliers">
+                                <MultiplierControl Label="Reprocessing efficiency" @bind-Value="Form.ReprocessingEfficiency"
+                                    Description="Scales recovery after skills, capped at 100% of available materials."
+                                    ExampleAmount="50" ExampleUnit="% recovery" Reward="false"
+                                    Speed="false" Efficiency="true" />
+                            </div>
+                        </section>
+                    </section>
+                    <section id="settings-PlanetaryIndustry" class="settings-panel" aria-labelledby="heading-PlanetaryIndustry"
+                             hidden="@(Workspace.Activity != SettingsActivity.PlanetaryIndustry)">
+                        <div class="settings-panel-heading">
+                            <h2 id="heading-PlanetaryIndustry">Planetary industry</h2>
+                            <p class="muted">Manage colony limits, production, storage and customs.</p>
+                        </div>
+                        <section class="card settings-group">
+                            <h3>Colony limits</h3>
+                            <div class="settings-fields">
+                                <SettingField Label="Maximum planets (0 = skill-based)"
+                                              Help="0 uses one planet plus Interplanetary Consolidation level. 1–100 sets the total per pilot. Existing colonies remain usable if the cap is lowered. Reconnect after the server restarts.">
+                                    <Control Context="field">
+                                        <InputNumber id="@field.Input" @bind-Value="Form.PlanetaryMaximumPlanets" min="0"
+                                            max="@Eden.Gameplay.Planetary.PlanetaryRules.MaximumConfiguredPlanets" step="1" aria-describedby="@field.Help" />
+                                    </Control>
+                                </SettingField>
+                            </div>
+                        </section>
+                        <section class="card settings-group">
+                            <h3>Extraction &amp; processing</h3>
+                            <p class="muted">Factory output rounds down to whole units, with a minimum of one unit per positive batch. Resize output routes and upgrade links to collect more production. Factory cycles have a one-second minimum.</p>
+                            <div class="settings-multipliers">
+                                <MultiplierControl Label="Extraction yield" @bind-Value="Form.PlanetaryExtractionYieldMultiplier"
+                                    Description="Scales newly installed extractor programs; existing programs keep their yield."
+                                    ExampleAmount="100" ExampleUnit="units" Reward="false" Speed="false" Efficiency="false" />
+                                <MultiplierControl Label="Factory output" @bind-Value="Form.PlanetaryFactoryOutputMultiplier"
+                                    Description="Scales completed factory batch quantities; ingredients per batch stay the same."
+                                    ExampleAmount="20" ExampleUnit="units" Reward="false" Speed="false" Efficiency="false" />
+                                <MultiplierControl Label="Factory speed" @bind-Value="Form.PlanetaryFactorySpeedMultiplier"
+                                    Description="Shortens factory cycles after restart, including running cycles. Extractor timing stays the same."
+                                    ExampleAmount="1800" ExampleUnit="seconds per cycle" Reward="false" Speed="true" Efficiency="false" />
+                            </div>
+                        </section>
+                        <section class="card settings-group">
+                            <h3>Storage &amp; customs</h3>
+                            <p class="muted">After lowering storage capacity, collect any excess goods before adding more.</p>
+                            <div class="settings-multipliers">
+                                <MultiplierControl Label="Planetary storage capacity" @bind-Value="Form.PlanetaryStorageCapacityMultiplier"
+                                    Description="Scales launchpads, storage facilities, command centers and customs offices. Factory buffers retain one batch."
+                                    ExampleAmount="10000" ExampleUnit="m³ per launchpad" Reward="false" Speed="false" Efficiency="false" />
+
+                                <SettingField Label="Customs tax (%)"
+                                              Help="Exports pay the configured rate on taxable commodity value and imports pay half. Command-center launches have a separate 15% fee. Eden defaults to 17%.">
+                                    <Control Context="field">
+                                        <InputNumber id="@field.Input" @bind-Value="Form.PlanetaryCustomsTaxPercent" min="0" max="100" step="0.1" aria-describedby="@field.Help" />
+                                    </Control>
+                                </SettingField>
+                            </div>
+                        </section>
+                        <section class="card settings-group">
+                            <h3>Command center resources</h3>
+                            <p class="muted">After lowering CPU or powergrid, bring over-budget colonies within the new limit before submitting edits.</p>
+                            <div class="settings-multipliers">
+                                <MultiplierControl Label="Command center CPU" @bind-Value="Form.PlanetaryCpuMultiplier"
+                                    Description="Scales CPU supplied at every command center upgrade level."
+                                    ExampleAmount="1675" ExampleUnit="tf" Reward="false" Speed="false" Efficiency="false" />
+                                <MultiplierControl Label="Command center powergrid" @bind-Value="Form.PlanetaryPowergridMultiplier"
+                                    Description="Scales powergrid supplied at every command center upgrade level."
+                                    ExampleAmount="6000" ExampleUnit="MW" Reward="false" Speed="false" Efficiency="false" />
+                            </div>
+                        </section>
+                    </section>
+                    <section id="settings-Structures" class="settings-panel" aria-labelledby="heading-Structures"
+                             hidden="@(Workspace.Activity != SettingsActivity.Structures)">
+                        <div class="settings-panel-heading">
+                            <h2 id="heading-Structures">Player structures</h2>
+                            <p class="muted">Adjust Upwell deployment requirements and lifecycle timers.</p>
+                        </div>
+                        <section class="card settings-group">
+                            <h3>Anchoring requirements</h3>
+                            <div class="settings-fields">
+                                <SettingField Label="Minimum corporation age for anchoring (days)"
+                                              Help="Eden defaults to 7 days. 0 removes the waiting period. Corporation structure management authority is still required.">
+                                    <Control Context="field">
+                                        <InputNumber id="@field.Input" @bind-Value="Form.StructureMinimumCorporationAgeDays" min="0" step="1" aria-describedby="@field.Help" />
+                                    </Control>
+                                </SettingField>
+                            </div>
+                        </section>
+                        <section class="card settings-group">
+                            <h3>Structure timers</h3>
+                            <p class="muted">2× speed halves a new timer’s duration. Saved deadlines retain their original terms.</p>
+                            <div class="settings-multipliers">
+                                <MultiplierControl Label="Anchoring speed" @bind-Value="Form.StructureAnchoringSpeed"
+                                    Description="Applies to newly deployed Upwell structures, including navigation structures."
+                                    ExampleAmount="24" ExampleUnit="hours" Reward="false" Speed="true" Efficiency="false" />
+                                <MultiplierControl Label="Core onlining speed" @bind-Value="Form.StructureOnliningSpeed"
+                                    Description="Scales the onlining timer started after installing a quantum core."
+                                    ExampleAmount="15" ExampleUnit="minutes" Reward="false" Speed="true" Efficiency="false" />
+                                <MultiplierControl Label="Decommissioning speed" @bind-Value="Form.StructureUnanchoringSpeed"
+                                    Description="Applies when beginning a new decommissioning timer."
+                                    ExampleAmount="7" ExampleUnit="days" Reward="false" Speed="true" Efficiency="false" />
+                            </div>
+                        </section>
+                    </section>
+                    <section id="settings-Economy" class="settings-panel" aria-labelledby="heading-Economy"
+                             hidden="@(Workspace.Activity != SettingsActivity.Economy)">
+                        <div class="settings-panel-heading">
+                            <h2 id="heading-Economy">Economy &amp; market</h2>
+                            <p class="muted">Choose how markets are stocked and which services charge fees.</p>
+                        </div>
+                        <EconomySettings Form="Form" Snapshot="MarketSnapshot" />
+                    </section>
+                    <section id="settings-Environment" class="settings-panel" aria-labelledby="heading-Environment"
+                             hidden="@(Workspace.Activity != SettingsActivity.Environment)">
+                        <div class="settings-panel-heading">
+                            <h2 id="heading-Environment">NPCs &amp; exploration</h2>
+                            <p class="muted">Manage ordinary NPC spawns and probe scanning.</p>
+                        </div>
+                        <section class="card settings-group">
+                            <h3>NPC populations</h3>
+                            <p class="muted">These switches control new spawns. Living residents remain in the world.</p>
+                            <div class="settings-fields">
+                                <SettingField Label="Pirates"
+                                              Help="Allows new pirate encounters. Living pirates remain when spawning is disabled.">
+                                    <Control Context="field">
+                                        <InputCheckbox id="@field.Input" @bind-Value="Form.Pirates" aria-describedby="@field.Help" />
+                                    </Control>
+                                </SettingField>
+                                <SettingField Label="Empire guards"
+                                              Help="Allows new empire security patrols to spawn.">
+                                    <Control Context="field">
+                                        <InputCheckbox id="@field.Input" @bind-Value="Form.Guards" aria-describedby="@field.Help" />
+                                    </Control>
+                                </SettingField>
+                                <SettingField Label="Station convoys"
+                                              Help="Allows new NPC freight convoys to spawn around stations.">
+                                    <Control Context="field">
+                                        <InputCheckbox id="@field.Input" @bind-Value="Form.Convoys" aria-describedby="@field.Help" />
+                                    </Control>
+                                </SettingField>
+                                <SettingField Label="Mining fleets"
+                                              Help="Allows new NPC mining fleets to spawn. Simulated miners are controlled under Player bots.">
+                                    <Control Context="field">
+                                        <InputCheckbox id="@field.Input" @bind-Value="Form.Mining" aria-describedby="@field.Help" />
+                                    </Control>
+                                </SettingField>
+                                <SettingField Label="Allow Major Threat anomaly tiers in nullsec"
+                                              Help="Allows the six advanced nullsec anomaly families to appear without sovereignty upgrades.">
+                                    <Control Context="field">
+                                        <InputCheckbox id="@field.Input" @bind-Value="Form.MajorThreatAnomalies" aria-describedby="@field.Help" />
+                                    </Control>
+                                </SettingField>
+                            </div>
+                        </section>
+                        <section class="card settings-group">
+                            <h3>Probe scanning</h3>
+                            <div class="settings-fields">
+                                <SettingField Label="Always resolve cosmic signatures"
+                                              Help="Shows current-system signatures at 100% so pilots can warp to them and bookmark them without probes.">
+                                    <Control Context="field">
+                                        <InputCheckbox id="@field.Input" @bind-Value="Form.AlwaysResolvedSignatures" aria-describedby="@field.Help" />
+                                    </Control>
+                                </SettingField>
+                            </div>
+                        </section>
+                    </section>
+                    <section id="settings-PlayerBots" class="settings-panel" aria-labelledby="heading-PlayerBots"
+                             hidden="@(Workspace.Activity != SettingsActivity.PlayerBots)">
+                        <div class="settings-panel-heading">
+                            <h2 id="heading-PlayerBots">Player bots</h2>
+                            <p class="muted">Manage simulated capsuleers, traffic, combat and hauling.</p>
+                        </div>
+                        <PlayerBotSettings Form="Form" />
+                    </section>
+                    <section id="settings-Advanced" class="settings-panel" aria-labelledby="heading-Advanced"
+                             hidden="@(Workspace.Activity != SettingsActivity.Advanced)">
+                        <div class="settings-panel-heading">
+                            <h2 id="heading-Advanced">Advanced</h2>
+                            <p class="muted">Tune maintenance intervals and override selected prices and manufacturing indices.</p>
+                        </div>
+                        <section class="card settings-group">
+                            <h3>Server maintenance</h3>
+                            <div class="settings-fields">
+                                <SettingField Label="Checkpoint interval (seconds)"
+                                              Help="Time between scheduled world saves. Shorter intervals save progress more often.">
+                                    <Control Context="field">
+                                        <InputNumber id="@field.Input" @bind-Value="Form.CheckpointSeconds" min="1" max="300" aria-describedby="@field.Help" />
+                                    </Control>
+                                </SettingField>
+                                <SettingField Label="Market polling interval (milliseconds)"
+                                              Help="How often market maintenance checks for due work, including expiring orders.">
+                                    <Control Context="field">
+                                        <InputNumber id="@field.Input" @bind-Value="Form.MarketPollMilliseconds" min="100" max="60000" aria-describedby="@field.Help" />
+                                    </Control>
+                                </SettingField>
+                                <SettingField Label="Resource check interval (seconds)"
+                                              Help="How often resource maintenance checks for scheduled belt renewals.">
+                                    <Control Context="field">
+                                        <InputNumber id="@field.Input" @bind-Value="Form.ResourceCheckSeconds" min="1" max="3600" aria-describedby="@field.Help" />
+                                    </Control>
+                                </SettingField>
+                            </div>
+                        </section>
+                        <OverrideEditor Draft="Workspace.Draft" DraftChanged="Workspace.ChangeOverrides" Active="State.Active.Draft"
+                                        Original="Original" Pending="State.Pending?.Draft" />
+                    </section>
+                </fieldset>
+                <ValidationSummary />
+            </EditForm>
+            <section class="card settings-review" aria-labelledby="settings-changes">
+                <h2 id="settings-changes">Changed values</h2>
+                @if (Unsaved)
                 {
-                    <li>@change.Field: @change.Before → @change.After</li>
-                }</ul>
-            }
-            else
-            {
-                <p class="error">Correct invalid values to preview all changes.</p>
-            }
-        }
-        else
-        {
-            <p class="muted">No unsaved changes. Saved changes activate after restart.</p>
-        }
-    </section>
-    <details class="card">
-        <summary>Original, active and pending values</summary>
-        <p class="muted">Original values were captured when this saved world was upgraded.</p>
-        <div class="scroll"><table><thead><tr><th>Policy</th><th>Original</th><th>Active</th><th>Pending restart</th></tr></thead>
-            <tbody>@foreach (var row in ConfigurationDisplay.Settings(Original.Settings, State.Active.Draft.Settings, State.Pending?.Draft.Settings))
-            {
-                <tr><td>@row.Label</td><td>@row.Original</td><td>@row.Active</td><td>@row.Pending</td></tr>
-            }</tbody>
-        </table></div>
-    </details>
-    <div class="toolbar settings-save-bar">
-        <span role="status">@(Unsaved ? "Unsaved changes" : State.Pending is not null ? "Saved · pending restart" : "Active settings")</span>
-        <button type="submit" form="world-settings" disabled="@(Busy || !Unsaved)">Save for restart</button>
-        <button type="button" class="secondary" @onclick="Discard" disabled="@(Busy || !Unsaved)">Discard unsaved changes</button>
-        <button type="button" class="secondary" @onclick="Validate" disabled="@Busy">Validate draft</button>
+                    @if (DraftChanges is { } changes)
+                    {
+                        <div class="scroll">
+                            <table>
+                                <thead><tr><th scope="col">Setting</th><th scope="col">Saved</th><th scope="col">Draft</th></tr></thead>
+                                <tbody>
+                                    @foreach (var change in changes)
+                                    {
+                                        <tr><th scope="row">@change.Field</th><td>@change.Before</td><td>@change.After</td></tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="error">Correct invalid values to preview all changes.</p>
+                    }
+                }
+                else
+                {
+                    <p class="muted">No unsaved changes.</p>
+                }
+            </section>
+            <details class="card settings-review">
+                <summary>Original, active and pending values</summary>
+                <p class="muted">Original values were captured when this saved world was upgraded.</p>
+                <div class="scroll">
+                    <table>
+                        <thead><tr><th>Setting</th><th>Original</th><th>Active</th><th>Pending restart</th></tr></thead>
+                        <tbody>
+                            @foreach (var row in ConfigurationDisplay.Settings(
+                                Original.Settings, State.Active.Draft.Settings, State.Pending?.Draft.Settings))
+                            {
+                                <tr><td>@row.Label</td><td>@row.Original</td><td>@row.Active</td><td>@row.Pending</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </details>
+            <div class="toolbar settings-draft-tools">
+                <button type="button" class="secondary" @onclick="Load" disabled="@Busy">Reload saved values</button>
+                <button type="button" class="secondary" @onclick="Reset" disabled="@Busy">Reset draft to original</button>
+            </div>
+            <div class="settings-save-bar">
+                @if (Error is not null)
+                {
+                    <p class="error" role="alert">@Error</p>
+                }
+                @if (Message is not null)
+                {
+                    <p class="notice" role="status">@Message</p>
+                }
+                <div class="toolbar">
+                    <span role="status">@(Unsaved ? "Unsaved changes" : State.Pending is not null ? "Saved · pending restart" : "Active settings")</span>
+                    <button type="button" class="secondary" @onclick="Validate" disabled="@Busy">Validate draft</button>
+                    <button type="button" class="secondary" @onclick="Discard" disabled="@(Busy || !Unsaved)">Discard unsaved changes</button>
+                    <button type="submit" form="world-settings" disabled="@(Busy || !Unsaved)">Save for restart</button>
+                </div>
+            </div>
+        </div>
     </div>
 }

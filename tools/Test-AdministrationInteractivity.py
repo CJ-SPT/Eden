@@ -58,6 +58,16 @@ def main():
         edit("Warp speed (×)", "2")
         edit("Align speed (×)", "1.25")
         edit("Autopilot gate landing distance (metres)", "0")
+        distance = page.get_by_label("Autopilot gate landing distance (metres)", exact=True)
+        explanation = page.locator("#" + distance.get_attribute("aria-describedby"))
+        expect(explanation).not_to_be_visible()
+        help_button = page.locator('summary[aria-label="Help for Autopilot gate landing distance (metres)"]')
+        help_button.focus()
+        help_button.press("Enter")
+        expect(explanation).to_be_visible()
+        expect(explanation).to_contain_text("15,000 metres")
+        help_button.press("Enter")
+        expect(explanation).not_to_be_visible()
         check_tabs()
         click("Travel")
         expect(page.get_by_label("Warp speed (×)", exact=True)).to_have_value("2")
@@ -68,21 +78,25 @@ def main():
         click("Save for restart")
         expect(page.get_by_text("Revision 2 saved · pending restart.", exact=True)).to_be_visible()
         expect(page.get_by_role("button", name="Save for restart", exact=True)).to_be_disabled()
-        click("World & economy")
+        click("Economy & market")
+        page.get_by_label("Market preset", exact=True).select_option("Custom")
         for label in ("Empire LP-store datacores", "Simulated market history", "Regional hub supply",
-                      "Beginner market supply", "Enable player bots"):
+                      "Beginner market supply"):
             page.get_by_label(label, exact=True).uncheck()
+        click("Player bots")
+        page.get_by_label("Enable player bots", exact=True).uncheck()
         page.get_by_label("Simulated miners", exact=True).uncheck()
         click("Progression")
         page.get_by_label("Grant civilian starting equipment to new pilots", exact=True).uncheck()
-        click("World & economy")
+        click("Player bots")
         edit("Station traffic density (×)", "0.5")
         click("Rewards")
         edit("NPC bounty ISK (×)", "3")
         click("Save for restart")
         expect(page.get_by_text("Revision 3 saved · pending restart.", exact=True)).to_be_visible()
         check_tabs()
-        click("World & economy")
+        click("Player bots")
+        expect(page.get_by_label("Enable player bots", exact=True)).not_to_be_checked()
         expect(page.get_by_label("Simulated miners", exact=True)).not_to_be_checked()
         expect(page.get_by_label("Station traffic density (×)", exact=True)).to_have_value("0.5")
         click("Gathering")
@@ -100,12 +114,32 @@ def main():
         click("Reload saved values")
         expect(page.get_by_label("Ore mining yield (×)", exact=True)).to_have_value("2")
         expect(page.get_by_text("Saved · pending restart", exact=True)).to_be_visible()
-        click("World & economy")
+        click("Economy & market")
+        page.get_by_label("Market preset", exact=True).select_option("Custom")
         for label in ("Empire LP-store datacores", "Simulated market history", "Regional hub supply",
-                      "Beginner market supply", "Enable player bots"):
+                      "Beginner market supply"):
             expect(page.get_by_label(label, exact=True)).not_to_be_checked()
         click("Progression")
         expect(page.get_by_label("Grant civilian starting equipment to new pilots", exact=True)).not_to_be_checked()
+        page.set_viewport_size({"width": 390, "height": 844})
+        click("Player bots")
+        assert page.evaluate("document.documentElement.scrollWidth === innerWidth"), "Settings overflow the mobile viewport"
+        expect(page.get_by_role("heading", name="Hauler freight")).to_be_visible()
+        page.get_by_role("link", name="Performance", exact=True).click()
+        expect(page.get_by_role("heading", name="Session frame latency")).to_be_visible()
+        expect(page.get_by_role("heading", name="Frame processing time")).to_be_visible()
+        expect(page.get_by_role("heading", name="Frame start delay")).to_be_visible()
+        expect(page.get_by_text("8.00 ms", exact=True)).to_be_visible()
+        expect(page.get_by_text("12.00 ms", exact=True)).to_be_visible()
+        expect(page.locator(".frame-readings").get_by_text("3.00 ms", exact=True)).to_be_visible()
+        bars = page.locator(".frame-chart-bar").all()
+        assert len(bars) >= 2
+        for bar in bars:
+            assert bar.bounding_box()["height"] > 1, "Frame graph bar did not scale with its measurements"
+        assert page.evaluate("document.documentElement.scrollWidth === innerWidth"), "Performance overflows the mobile viewport"
+        sampled = page.get_by_text("Sampled ", exact=False)
+        first_sample = sampled.inner_text()
+        expect(sampled).not_to_have_text(first_sample)
         assert not errors, errors
         browser.close()
 

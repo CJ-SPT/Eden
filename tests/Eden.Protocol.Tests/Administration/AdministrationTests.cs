@@ -83,10 +83,23 @@ public sealed partial class AdministrationTests
         await using var fixture = await Fixture.Start();
         await fixture.SignIn();
         string html = WebUtility.HtmlDecode(await fixture.Client.GetStringAsync("/"));
-        foreach (string label in new[] { "Gathering", "Rewards", "Progression", "Industry", "World & economy", "Advanced" })
+        foreach (
+            string label in new[]
+            {
+                "Gathering",
+                "Rewards",
+                "Progression",
+                "Industry",
+                "Economy & market",
+                "NPCs & exploration",
+                "Player bots",
+                "Advanced",
+            }
+        )
         {
             Assert.Contains(label, html);
         }
+        Assert.Contains("Help for Renewal hour (UTC)", html);
         Assert.Contains("Save for restart", html);
         Assert.Contains("Discard unsaved changes", html);
         Assert.Contains("Changed values", html);
@@ -357,12 +370,16 @@ public sealed partial class AdministrationTests
         Assert.True(snapshot.Resources.Uptime > TimeSpan.Zero);
         Assert.True(snapshot.Resources.ProcessThreads > 0);
         Assert.Equal(0, snapshot.ActiveSessions);
+        Assert.Equal(Eden.Infrastructure.Diagnostics.SessionFrameMonitor.HistoryLength, snapshot.FrameHistory.Length);
+        Assert.All(snapshot.FrameHistory, interval => Assert.Equal(0, interval.Count));
         Assert.False(snapshot.ResidentWorld);
         Assert.Null(snapshot.LastCheckpoint);
         Assert.Equal(TimeSpan.FromMilliseconds(11), snapshot.Capsuleers!.Runtime.LastSimulation);
         string html = await fixture.Client.GetStringAsync("/performance");
         Assert.Contains("Server performance", html);
         Assert.Contains("Memory in RAM", html);
+        Assert.Contains("Session frame latency", html);
+        Assert.Contains("No completed pilot frames", html);
         Assert.Contains("Last traffic maintenance pass", html);
         Assert.Contains("Saved communities / pilots", html);
         Assert.Contains("Scheduled pilots", html);
