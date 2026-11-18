@@ -34,7 +34,7 @@ internal static partial class CapsuleerSupplyStore
         if (
             ship.OwnerId != pilotId
             || ship.Position is not null
-            || !CapsuleerDefenseRules.CombatShip((HullClass)hull.GroupId, tech, true)
+            || !CapsuleerDefenseRules.CombatShip((HullClass)hull.GroupId, tech, true, ship.TypeId)
             || rank <= 0
         )
         {

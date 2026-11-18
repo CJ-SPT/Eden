@@ -236,26 +236,28 @@ internal sealed partial class CapsuleerProvisioner
         // Project IDs before aggregating so the founder transaction never tracks the saved roster.
         long pilot = (world.Pilots.Select(p => (long?)p.Id).Max() ?? 90000000) + 1;
         long ship = InventoryPersistence.NextId(world);
-        var trafficProfile =
+        var fittedProfile =
             career == CapsuleerCareer.Hauling
-                ? TrafficProvisioning.Select(
-                    database,
-                    world,
+                ? CapsuleerPatrolFit.Select(
                     catalog,
+                    database.Settings.Capsuleers,
                     seed,
                     site.SystemId,
                     slot,
-                    route!,
-                    reservations: _startupReservations
+                    () =>
+                        TrafficProvisioning.Select(
+                            database,
+                            world,
+                            catalog,
+                            seed,
+                            site.SystemId,
+                            slot,
+                            route!,
+                            reservations: _startupReservations
+                        )
                 )
                 : null;
-        var fittedProfile =
-            trafficProfile
-            ?? (
-                career == CapsuleerCareer.Hauling
-                    ? CapsuleerPatrolFit.Select(catalog, database.Settings.Capsuleers, seed, site.SystemId, slot)
-                    : null
-            );
+        var trafficProfile = fittedProfile is { CharacterId: > 0 } ? fittedProfile : null;
         if (
             career == CapsuleerCareer.Hauling
             && fittedProfile is null

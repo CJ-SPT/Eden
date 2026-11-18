@@ -9,6 +9,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Ships;
 using Eden.Infrastructure.Diagnostics;
+using Eden.Infrastructure.Operations;
 using Eden.Protocol.Flight;
 using Eden.Server;
 using Eden.Server.Maintenance;
@@ -482,12 +483,28 @@ public sealed class RoamingGangTests
             bool supportCatalog = false,
             int? targetLimit = null,
             bool thermalCatalog = false,
-            int gangSize = 4
+            int gangSize = 4,
+            bool gangFrigates = false
         )
         {
             PassiveCatalogFixture.LoadFrigateHulls(Database.CatalogPath);
             PassiveCatalogFixture.Load(Database.CatalogPath);
             PassiveCatalogFixture.LoadTackleTiers(Database.CatalogPath);
+            if (gangFrigates)
+            {
+                PassiveCatalogFixture.LoadTechTwoHulls(Database.CatalogPath);
+                PassiveCatalogFixture.LoadProjectileTiers(Database.CatalogPath, new HashSet<int> { 484, 185 });
+                PassiveCatalogFixture.LoadWeaponTiers(Database.CatalogPath, new HashSet<int> { 10678 });
+                PassiveCatalogFixture.LoadMissileTiers(Database.CatalogPath, new HashSet<int> { 499, 210 });
+                // This saved seed selects one of each specialist in the first four home slots.
+                using var setup = new WorldDbContext(Database.Path);
+                setup.Database.ExecuteSqlRaw("UPDATE WorldCapsuleerProvisioning SET WorldSeed=45");
+                var imported = Enumerable
+                    .Range(1, 32)
+                    .Select(index => TrafficSnapshotTests.Profile(900000100 + index, $"Snapshot Pilot {index}") with { KillId = index })
+                    .ToArray();
+                TrafficSnapshotTests.Install(Database, imported);
+            }
             if (supportCatalog)
             {
                 PassiveCatalogFixture.LoadPlayerEwar(Database.CatalogPath);
@@ -565,16 +582,40 @@ public sealed class RoamingGangTests
             WorldInitialization.Initialize(Database, _world.Clock);
             using (var provisioner = new CapsuleerProvisioner(Database, _world.Clock))
             {
-                provisioner.EnsureSystem(Home);
-                if (regional)
+                if (gangFrigates)
                 {
-                    // Both one-gate branches need a nonempty cast for this conflict scenario.
-                    using var setup = new WorldDbContext(Database.Path);
-                    setup.Database.ExecuteSqlRaw("UPDATE WorldCapsuleerProvisioning SET WorldSeed=2");
-                    provisioner.EnsureSystem(Away);
+                    Host = ServerServices.Build(Database, _world.Clock, liveWorld: true);
+                    var synchronization = Host.GetRequiredService<IWorldSynchronization>();
+                    CapsuleerProvisioningTurn? turn = null;
+                    for (int batch = 0; batch < 32 && turn?.HasMoreWork != false; batch++)
+                    {
+                        turn = provisioner.PrepareBackgroundSystem(Home, synchronization, () => true, CancellationToken.None);
+                        Assert.NotNull(turn);
+                    }
+                    Assert.False(turn!.HasMoreWork);
+                    if (regional)
+                    {
+                        using (var action = Live.Economy.Begin())
+                        {
+                            action.Set<SavedCapsuleerProvisioning>().Single().WorldSeed = 2;
+                            action.Commit();
+                        }
+                        provisioner.EnsureSystem(Away);
+                    }
+                }
+                else
+                {
+                    provisioner.EnsureSystem(Home);
+                    if (regional)
+                    {
+                        // Both one-gate branches need a nonempty cast for this conflict scenario.
+                        using var setup = new WorldDbContext(Database.Path);
+                        setup.Database.ExecuteSqlRaw("UPDATE WorldCapsuleerProvisioning SET WorldSeed=2");
+                        provisioner.EnsureSystem(Away);
+                    }
+                    Host = ServerServices.Build(Database, _world.Clock, liveWorld: true);
                 }
             }
-            Host = ServerServices.Build(Database, _world.Clock, liveWorld: true);
             using (var action = Live.Economy.Begin())
             {
                 var roster = action

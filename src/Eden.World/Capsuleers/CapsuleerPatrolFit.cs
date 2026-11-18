@@ -95,21 +95,81 @@ internal static class CapsuleerPatrolFit
         }
     );
 
-    internal static TrafficProfile? Select(CatalogDbContext catalog, CapsuleerPopulationPolicy policy, long seed, int system, int slot)
+    private const int LightMissileLauncher = 499;
+    private const int ScourgeLightMissile = 210;
+    private const int Railgun125 = 10678;
+    private const int WarpDisruptor = 3242;
+    private const int TurretRounds = 40;
+    private const int LauncherRounds = 30;
+    private static readonly GangFrigate[] s_frigates = Enum.GetValues<GangFrigate>();
+    private static readonly CatalogDefinition<TrafficProfile?> s_frigate = new(
+        "gang-frigate",
+        (catalog, hull) =>
+        {
+            var frigate = (GangFrigate)hull;
+            var (weapon, ammo, count, rounds) = frigate switch
+            {
+                GangFrigate.Stiletto => (GatlingAutocannon, EmpSmall, 2, TurretRounds),
+                GangFrigate.Crow => (LightMissileLauncher, ScourgeLightMissile, 3, LauncherRounds),
+                GangFrigate.Wolf => (GatlingAutocannon, EmpSmall, 4, TurretRounds),
+                GangFrigate.Harpy => (Railgun125, IronCharge, 4, TurretRounds),
+                _ => throw new ArgumentOutOfRangeException(nameof(hull)),
+            };
+            int point = frigate is GangFrigate.Stiletto or GangFrigate.Crow ? WarpDisruptor : Scrambler;
+            List<TrafficEquipment> equipment =
+            [
+                new(point, (int)InventoryFlag.MediumSlot0, 1),
+                new((int)StarterMarketType.Afterburner, (int)InventoryFlag.MediumSlot0 + 1, 1),
+                new((int)StarterMarketType.DamageControl, (int)InventoryFlag.LowSlot0, 1),
+            ];
+            equipment.Add(
+                frigate == GangFrigate.Wolf
+                    ? new((int)StarterMarketType.SmallArmorRepairer, (int)InventoryFlag.LowSlot0 + 1, 1)
+                    : new((int)StarterMarketType.SmallShieldBooster, (int)InventoryFlag.MediumSlot0 + 2, 1)
+            );
+            for (int slot = 0; slot < count; slot++)
+            {
+                int flag = (int)InventoryFlag.HighSlot0 + slot;
+                equipment.Add(new(weapon, flag, 1));
+                equipment.Add(new(ammo, flag, rounds));
+            }
+            if (catalog.FittingType(hull) is null || equipment.Any(item => catalog.FittingType(item.TypeId) is null))
+            {
+                return null;
+            }
+            return new(0, "", 0, DateTimeOffset.UnixEpoch, 0, 0, TrafficSecurityBand.Null, hull, equipment.ToArray());
+        }
+    );
+
+    internal static TrafficProfile? Select(
+        CatalogDbContext catalog,
+        CapsuleerPopulationPolicy policy,
+        long seed,
+        int system,
+        int slot,
+        Func<TrafficProfile?>? imported = null
+    )
     {
         if ((!policy.RoamingPvp && !policy.GateCamps) || !PatrolRules.Choose(seed ^ system, slot, policy.GeneratedCombatPercent))
         {
-            return null;
+            return imported?.Invoke();
         }
         double security = catalog.Definition(CapsuleerProvisioningCatalog.Security, system);
         if (security > 0 && !(policy.GateCamps && policy.LowsecGateCamps && TrafficRules.SecurityBand(security) == TrafficSecurityBand.Low))
         {
-            return null;
+            return imported?.Invoke();
         }
         var interdictor =
             policy.GateCamps && policy.CampBubbles && security <= 0 && PatrolRules.Choose(seed ^ system, ~slot, policy.InterdictorPercent)
                 ? catalog.Definition(s_interdictor, 0)
                 : null;
-        return interdictor ?? catalog.Definition(s_fit, 0);
+        // Half the non-bubble combat draws get a purpose-fitted frigate even when imported identities are available.
+        // The other half use the existing imported pilot or generated Merlin fallback.
+        int draw = TrafficRules.Start(seed, system, slot, s_frigates.Length * 2);
+        if (interdictor is null && draw < s_frigates.Length && catalog.Definition(s_frigate, (int)s_frigates[draw]) is { } frigate)
+        {
+            return frigate;
+        }
+        return imported?.Invoke() ?? interdictor ?? catalog.Definition(s_fit, 0);
     }
 }

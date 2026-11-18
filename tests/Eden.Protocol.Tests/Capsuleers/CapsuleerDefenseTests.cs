@@ -392,6 +392,10 @@ public sealed class CapsuleerDefenseTests
         Assert.True(CapsuleerDefenseRules.CombatShip(HullClass.Corvette, 1, true));
         Assert.False(CapsuleerDefenseRules.CombatShip(HullClass.Hauler, 1, true));
         Assert.False(CapsuleerDefenseRules.CombatShip(HullClass.Frigate, 1, false));
+        Assert.False(CapsuleerDefenseRules.CombatShip(HullClass.Interceptor, 2, true));
+        Assert.False(CapsuleerDefenseRules.CombatShip(HullClass.Interceptor, 2, true, (int)GangFrigate.Wolf));
+        Assert.True(CapsuleerDefenseRules.CombatShip(HullClass.Interceptor, 2, true, (int)GangFrigate.Crow));
+        Assert.False(CapsuleerDefenseRules.CombatShip(HullClass.AssaultFrigate, 2, false, (int)GangFrigate.Harpy));
         Assert.True(CapsuleerDefenseRules.Offensive(false, true, true));
         Assert.False(CapsuleerDefenseRules.Offensive(false, true, false));
         Assert.True(CapsuleerDefenseRules.Offensive(true, true, true));

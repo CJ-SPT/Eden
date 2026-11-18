@@ -9,6 +9,15 @@ using Eden.Gameplay.Ships;
 
 namespace Eden.Gameplay.Capsuleers;
 
+// Build 3662168 combat hull type IDs for generated interceptor and assault frigate patrols.
+public enum GangFrigate
+{
+    Stiletto = 11198,
+    Crow = 11176,
+    Wolf = 11371,
+    Harpy = 11381,
+}
+
 public sealed record CapsuleerAttacker(
     long PilotId,
     long ShipId,
@@ -78,13 +87,20 @@ public static class CapsuleerDefenseRules
             .ThenBy(attacker => attacker.ShipId)
             .FirstOrDefault();
 
-    public static bool CombatShip(HullClass hull, int tech, bool hasDamage) =>
+    public static bool CombatShip(HullClass hull, int tech, bool hasDamage) => CombatShip(hull, tech, hasDamage, 0);
+
+    public static bool CombatShip(HullClass hull, int tech, bool hasDamage, int typeId) =>
         hasDamage
         && hull != HullClass.Shuttle
         && (
             HullSupportRules.IsClass(hull, HullCohort.Combat, tech)
             || HullSupportRules.IsClass(hull, HullCohort.Small, tech)
-            || tech == 2 && hull == HullClass.Interdictor
+            || tech == 2
+                && (
+                    hull == HullClass.Interdictor
+                    || hull == HullClass.Interceptor && (GangFrigate)typeId is GangFrigate.Stiletto or GangFrigate.Crow
+                    || hull == HullClass.AssaultFrigate && (GangFrigate)typeId is GangFrigate.Wolf or GangFrigate.Harpy
+                )
         );
 
     public static bool Retreat(ShipHealth health, bool hasDamage)

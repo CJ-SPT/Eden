@@ -70,6 +70,12 @@ Armed travelers also use the roam chance at outbound nullsec gates, including in
 to hunt waits 18–40 seconds for a visible target, can stay longer in a fight, then continues the original trip.
 Pilots delivering freight, shopping for supplies or retreating continue through the gate.
 
+New eligible roaming and camp pilots can fly four Tech II frigates. Stilettos and Crows carry warp disruptors.
+Wolves and Harpies carry scramblers. The Stiletto and Wolf use autocannons, the Crow uses light missiles, and
+the Harpy uses railguns. With a complete catalog, half of eligible non-interdictor combat draws choose among
+these four, including when a traffic snapshot is installed. The saved seed determines the hull per slot.
+Existing pilots retain their ships and fits. [Selection and combat evidence](protocol/capsuleers.md#tech-ii-frigates-in-bot-gangs)
+
 New miner and traveler warp orders wait four to eight active seconds before issuing warp alignment. Ships continue
 ordinary subwarp movement during preparation and can be locked and tackled. The saved deadline survives checkpoints
 and pauses with the pilot's active clock; repeated reads do not extend it. A warp already in progress completes normally.

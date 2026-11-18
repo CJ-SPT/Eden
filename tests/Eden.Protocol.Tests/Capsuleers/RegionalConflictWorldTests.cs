@@ -210,9 +210,11 @@ public sealed class RegionalConflictWorldTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void OffensiveScoutTacklesAVisiblePlayerOrRivalWithItsGang(bool rivalBot)
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public void OffensiveScoutTacklesAVisiblePlayerOrRivalWithItsGang(bool rivalBot, bool gangFrigates = false)
     {
-        using var fixture = new RoamingGangTests.Fixture(regional: true);
+        using var fixture = new RoamingGangTests.Fixture(regional: true, gangFrigates: gangFrigates);
         var gang = fixture.Form();
         var order = gang.Regional!;
         var scout = Assert.Single(gang.Members, member => member.Role == PvpRole.Scout);

@@ -97,17 +97,24 @@ internal sealed partial class CapsuleerProvisioner
                 }
                 var opening = CapsuleerEncounterRules.TrafficOpening(seed, system, slot, count);
                 var route = SelectRoute(catalog, traffic, system, slot, opening, offset);
-                var profile = TrafficProvisioning.SelectPrepared(
-                    database,
+                var profile = CapsuleerPatrolFit.Select(
                     catalog,
+                    database.Settings.Capsuleers,
                     seed,
                     system,
                     slot,
-                    route,
-                    reservations: planning!,
-                    roster: roster
+                    () =>
+                        TrafficProvisioning.SelectPrepared(
+                            database,
+                            catalog,
+                            seed,
+                            system,
+                            slot,
+                            route,
+                            reservations: planning!,
+                            roster: roster
+                        )
                 );
-                profile ??= CapsuleerPatrolFit.Select(catalog, database.Settings.Capsuleers, seed, system, slot);
                 if (profile is null && !CapsuleerFreight.Available(catalog, database.Settings.Capsuleers.Freight))
                 {
                     continue;

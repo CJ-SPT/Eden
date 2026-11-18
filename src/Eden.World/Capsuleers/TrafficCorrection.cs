@@ -126,7 +126,8 @@ internal static partial class TrafficCorrection
                     && CapsuleerDefenseRules.CombatShip(
                         (HullClass)hull.GroupId,
                         (int)fit.GetValueOrDefault(DogmaAttributeId.TechLevel, 1),
-                        true
+                        true,
+                        profile.HullTypeId
                     )
                     && TrafficRules.RouteAllows((HullClass)hull.GroupId, true)
                     && (hull.Capacity ?? 0) >= cargo

@@ -2,6 +2,54 @@
 
 [Protocol index](../protocol.md)
 
+## Tech II frigates in bot gangs
+
+On November 18, 2026, Eden gained four generated PvP fits for client build 3662168. All use an afterburner and
+damage control. The Stiletto has two 125mm autocannons, the Crow three light missile launchers, the Wolf four
+125mm autocannons and the Harpy four 125mm railguns. Both interceptors have a warp disruptor. Both assault
+frigates have a scrambler. The Wolf uses a small armor repairer and the other three use small shield boosters.
+The weapons load EMP S, Scourge Light Missiles and Iron Charge S as appropriate. Type IDs, slots, hardpoints
+and magazine sizes were checked against the pinned catalog. [EVE University PvP hull bonuses](https://wiki.eveuniversity.org/List_of_PvP_Ships_by_Bonus)
+
+The existing security, roam/camp and generated-combat percentage rules select eligible slots. When the
+interdictor draw does not select an available Sabre, four of eight seeded outcomes prefer one of these fits.
+Other outcomes and incomplete catalog fits use the existing snapshot selection and generated fallback.
+Imported character and kill identities are reserved only for pilots that use the imported fit.
+Residents, background fit preparation and gate visitors use the same decision. Founders, owned equipment,
+skills and checkpoints use the existing population and fitting operations. The four hull IDs are admitted
+by the combat rule used by gang selection, sorties and resident supply preparation.
+
+A read-only check loaded the installed 27,947-profile snapshot with the pinned catalog and sampled 128
+new-pilot slots in 1DQ1-A with default settings. It selected all four specialist fits and retained imported
+draws. Each generated fit passed the normal traffic fit validator in an isolated world.
+The local evejs NPC behavior loop and the Carbon movement reference are recorded in the
+[roaming gang record](#smarter-pilots-and-persistent-roaming-gangs--november-17-2026).
+
+The first exact development filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.GangFrigateTests.SnapshotAndSpecialistGangCoexistAndKeepTheirOriginalHullsOnReopen`.
+The resident fixture prepares home-system founders in bounded background batches. It verifies that all four hulls
+enter one gang while imported profiles remain available, that other slots consume snapshot identities, and that
+the same pilots, ships and roles reopen. Eight cases of `FittedGangMemberLocksPointsAndDamagesAPlayerOrRival`
+verify that each hull applies its own point, expends loaded ammunition and damages both target types. Two
+additional scheduler replays exercise the mixed gang on a regional raid against a visible player and a rival bot.
+
+**Automated validation.** The wider run passed 161 tests in 1 minute 49 seconds. Its filter joined
+`FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.` with each of `GangFrigateTests`, `RoamingGangTests`,
+`RegionalConflictWorldTests`, `PatrolTests`, `PvpTacticsTests`, `CapsuleerDefenseTests`, `CapsuleerSupplyTests`,
+`CapsuleerShipBlueprintTests`, `TrafficSnapshotTests`, `TrafficPreparationTests`, `CapsuleerBackgroundPreparationTests`,
+`CapsuleerProvisioningTests`, `CapsuleerInboundProvisioningTests` and `CapsuleerFitRetentionTests` using OR.
+It excluded `RivalDefenseEngagesAVisibleRaidWithOwnedWeaponsAndRealDamage`, the independently routed encounter
+with a documented baseline failure in the November 18 gang formation record below.
+After retaining the original public combat-eligibility overload, 14 final cases passed in 19 seconds with filter
+`FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.GangFrigateTests|FullyQualifiedName~OffensiveScoutTacklesAVisiblePlayerOrRivalWithItsGang|FullyQualifiedName~TacticalRulesPrioritizeTackleAndRetreatAtTheDefinedBoundaries`.
+The final solution build took 9.68 seconds with zero warnings and errors. Both Python suites passed (8 catalog
+and 9 formatting cases), along with formatting and diff verification. Final validation took 62.38 seconds.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Observe a newly populated nullsec gang and inspect the interceptor points
+and assault-frigate weapons on grid.
+
 ## Roaming gang formation and scout tackle — November 18, 2026
 
 Station recruitment scans up to 32 other home-station roster entries in pilot order. It stops as soon as it can

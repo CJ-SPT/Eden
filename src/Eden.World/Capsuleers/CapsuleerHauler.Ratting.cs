@@ -145,7 +145,7 @@ internal sealed partial class CapsuleerHauler
         if (
             _background
             || TrafficRules.LightHull((HullClass)Pilot.ShipGroupId)
-            || !CapsuleerDefenseRules.CombatShip((HullClass)Pilot.ShipGroupId, tech, true)
+            || !CapsuleerDefenseRules.CombatShip((HullClass)Pilot.ShipGroupId, tech, true, Pilot.ShipTypeId)
         )
         {
             return false;

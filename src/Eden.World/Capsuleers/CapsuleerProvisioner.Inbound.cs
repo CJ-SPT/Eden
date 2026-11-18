@@ -82,17 +82,24 @@ internal sealed partial class CapsuleerProvisioner
         }
         PrepareMovementCatalog(catalog, route.Systems);
         {
-            var profile = TrafficProvisioning.SelectPrepared(
-                database,
+            var profile = CapsuleerPatrolFit.Select(
                 catalog,
+                database.Settings.Capsuleers,
                 seed,
                 community,
                 slot,
-                route,
-                reservations: reservations,
-                roster: roster
+                () =>
+                    TrafficProvisioning.SelectPrepared(
+                        database,
+                        catalog,
+                        seed,
+                        community,
+                        slot,
+                        route,
+                        reservations: reservations,
+                        roster: roster
+                    )
             );
-            profile ??= CapsuleerPatrolFit.Select(catalog, database.Settings.Capsuleers, seed, community, slot);
             if (profile is null && !CapsuleerFreight.Available(catalog, database.Settings.Capsuleers.Freight))
             {
                 return null;

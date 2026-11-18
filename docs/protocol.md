@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Tech II frigates in bot gangs](protocol/capsuleers.md#tech-ii-frigates-in-bot-gangs) covers snapshot-enabled
+recruitment and fitted Stiletto, Crow, Wolf and Harpy engagements against players and rival bots.
+
 [Roaming gang formation and scout tackle](protocol/capsuleers.md#roaming-gang-formation-and-scout-tackle--november-18-2026)
 covers role selection and scout engagements against players and rival pilots with nearby gang support.
 
