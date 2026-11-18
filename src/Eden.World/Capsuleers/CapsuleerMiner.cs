@@ -651,7 +651,8 @@ internal sealed partial class CapsuleerMiner(
     {
         if (Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup)
         {
-            throw new InvalidDataException("Waiting for a replacement mining ship.");
+            AttemptShipReplacement();
+            return;
         }
         JoinCorporationAtDock();
         CapsuleerSupplyStore.Ensure(

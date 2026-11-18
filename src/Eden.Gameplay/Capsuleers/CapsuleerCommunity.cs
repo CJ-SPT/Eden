@@ -55,6 +55,7 @@ public sealed record MinerProgress(
     public bool LeaveAfterCycle { get; init; }
     public CapsuleerDefenseState? Defense { get; init; }
     public bool EscapingBubble { get; init; }
+    public long? ReplacementOrderDeadline { get; init; }
     public long WarpReadyAt { get; init; }
     public int LastMotionStamp { get; init; } = int.MinValue;
 }

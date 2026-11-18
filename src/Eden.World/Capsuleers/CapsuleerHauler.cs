@@ -1036,12 +1036,12 @@ internal sealed partial class CapsuleerHauler(
         BeginTravel();
     }
 
-    private void Wait(string reason) =>
+    private void Wait(string reason, int seconds = HaulingRules.PollSeconds) =>
         _work = Work with
         {
             Activity = HaulerActivity.Waiting,
-            DueStamp = Work.Stamp + HaulingRules.PollSeconds,
-            DueTicks = Work.ActiveTicks + TimeSpan.FromSeconds(HaulingRules.PollSeconds).Ticks,
+            DueStamp = Work.Stamp + seconds,
+            DueTicks = Work.ActiveTicks + TimeSpan.FromSeconds(seconds).Ticks,
             WaitingReason = reason,
         };
 

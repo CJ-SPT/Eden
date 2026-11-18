@@ -209,6 +209,8 @@ internal static partial class CapsuleerPatrolFit
         }
     );
 
+    internal static TrafficProfile? Starter(CatalogDbContext catalog) => catalog.Definition(s_fit, 0);
+
     internal static TrafficProfile? Select(
         CatalogDbContext catalog,
         CapsuleerPopulationPolicy policy,
@@ -251,6 +253,6 @@ internal static partial class CapsuleerPatrolFit
                 return patrol;
             }
         }
-        return imported?.Invoke() ?? interdictor ?? catalog.Definition(s_fit, 0);
+        return imported?.Invoke() ?? interdictor ?? Starter(catalog);
     }
 }

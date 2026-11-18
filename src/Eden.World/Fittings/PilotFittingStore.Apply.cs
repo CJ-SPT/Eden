@@ -35,7 +35,14 @@ internal sealed partial class PilotFittingStore
         return result;
     }
 
-    internal AppliedFitting Apply(WorldAction world, CatalogDbContext catalog, Pilot pilot, Ship ship, ApplyFittingRequest request)
+    internal AppliedFitting Apply(
+        WorldAction world,
+        CatalogDbContext catalog,
+        Pilot pilot,
+        Ship ship,
+        ApplyFittingRequest request,
+        IReadOnlySet<int>? initiallyOnline = null
+    )
     {
         long pilotId = pilot.Id;
         CheckFittingService(world, ship, pilotId);
@@ -122,8 +129,11 @@ internal sealed partial class PilotFittingStore
             foreach (var module in fitted)
             {
                 if (
-                    world.Set<SavedModuleCondition>().Find(module.Id) is null
-                    || !ModuleConditionPersistence.Read(world, catalog, module).BurnedOut
+                    (initiallyOnline is null || initiallyOnline.Contains(module.FlagId))
+                    && (
+                        world.Set<SavedModuleCondition>().Find(module.Id) is null
+                        || !ModuleConditionPersistence.Read(world, catalog, module).BurnedOut
+                    )
                 )
                 {
                     module.Online = true;

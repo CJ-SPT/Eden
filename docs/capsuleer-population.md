@@ -121,12 +121,12 @@ its headquarters reserve falls below 100 rounds. The hauler buys up to 200 round
 It delivers the surviving cargo to the buyer's corporate reserve. Compatible corpmates can draw rounds from that reserve
 on their regular resupply stops. [Ammunition supply implementation](protocol/capsuleers.md#corporation-ammunition-supply)
 
-### Paid Merlin replacement
+### Paid ship replacement
 
-When a bot in a bot-led corporation loses its Merlin, it can replace the hull at the NPC market station where its capsule
-docks. The corporation spends its own stock and wallet funds on the hull, two 75mm Gatling Rail Is, and Iron Charge S.
-Players or other corporations can fill the local buy orders. Once the kit arrives, the same pilot fits, boards and
-returns to its routine. [Replacement policy and validation](protocol/capsuleers.md#paid-merlin-replacement)
+A bot in a bot-led corporation uses its loss record to replace the ship and fit at the NPC market station where its
+capsule docks. The corporation funds the missing parts, and players or other corporations can fill its local buy orders.
+After 30 minutes, the bot cancels unfilled bids, reclaims the remaining escrow and looks for a complete fit it can
+afford from local stock. [Replacement policy and validation](protocol/capsuleers.md#dynamic-paid-ship-replacement)
 
 ## Temporary gate camps
 
@@ -348,7 +348,7 @@ individual owned items, with at most ten seconds of waiting before an available 
 At creation, or an existing original ship's next dock, one durable grant provides up to five magazines of loaded consumable
 combat charges and one legal homogeneous flight of supported T1 mobile combat drones. Available cargo, bay, bandwidth
 and control limits bound grants. Existing cargo and drones remain owned and are preserved. Further supplies require the
-paid resupply above. Eligible Merlin losses can use [paid replacement](#paid-merlin-replacement). Losses, abandoned
+paid resupply above. Eligible ship losses can use [paid replacement](#paid-ship-replacement). Losses, abandoned
 drones and charge consumption remain real. Ordinary restart behavior
 clears sustained bonuses; saved paid deadlines prevent another charge before a new cycle is due.
 

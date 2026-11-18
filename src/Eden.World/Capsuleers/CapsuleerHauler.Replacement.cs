@@ -10,9 +10,18 @@ internal sealed partial class CapsuleerHauler
     {
         if (_operation.World is EconomyTransaction world)
         {
-            bool boarded = ammunitionSupply.ReplaceMerlin(world, _operation.Catalog, Pilot, Now, out bool marketChanged);
-            _operation.MarketChanged |= marketChanged;
-            if (boarded)
+            long now = Now;
+            var result = ammunitionSupply.ReplaceShip(
+                world,
+                _operation.Catalog,
+                Pilot,
+                CapsuleerCareer.Hauling,
+                now,
+                Work.ReplacementOrderDeadline
+            );
+            _operation.MarketChanged |= result.MarketChanged;
+            _work = Work with { ReplacementOrderDeadline = result.OrderDeadline };
+            if (result.Boarded)
             {
                 _pilot = ReadPilot(world, CapsuleerCommunityStore.MinerAccountId);
                 _navigation = new NavigationState();
@@ -29,6 +38,11 @@ internal sealed partial class CapsuleerHauler
                     WaitingReason = null,
                     Resupply = null,
                 };
+                return;
+            }
+            if (result.OrderDeadline <= now)
+            {
+                Wait("Waiting for an affordable replacement in stock.", CapsuleerReplacementRules.StockRetrySeconds);
                 return;
             }
         }

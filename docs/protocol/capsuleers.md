@@ -2,6 +2,58 @@
 
 [Protocol index](../protocol.md)
 
+## Dynamic paid ship replacement
+
+After a loss, a miner or traffic pilot in a bot-led corporation uses the loss manifest to plan its replacement at the
+NPC market station where its capsule docks. The plan uses the catalog hull, fitted slots and rigs, online state, drones
+remaining in the bay, and the observed charge types. Known magazines are refilled to catalog capacity. Cargo and stored
+ships are separate possessions. Ordinary assembly, fitting, skill, and market checks apply.
+
+The pilot fills shortfalls from local corporate deliveries and funded buy orders. The capsule's routine checkpoint
+holds a 30-minute wall-clock deadline. An older save with an open replacement bid uses its earliest issue time as the
+start of that window. At the first recovery action after the deadline, the bot cancels outstanding bids and releases
+the remaining escrow. Ordinary broker fees are spent when the orders are placed.
+
+After the refund, the pilot takes a complete kit it can cover with station inventory, corporate deliveries and live sell
+orders. It considers the original fit, the original hull with high-slot modules and drones, and a basic role fit
+(Venture with a mining laser, Badger, or Merlin with railguns). The current pilot must have the required skills.
+Purchases and boarding for a complete in-stock kit commit together. If a complete fit is unavailable or unaffordable
+at that station, the pilot checks again after five simulated minutes. That loss stays on the stock-check path.
+
+UniWiki describes recovering a fitting from a loss record. For the EVE.js build 3396210 reference, the ship destruction
+snapshot also distinguishes fitted flags from cargo (`server/src/space/shipDestruction.js`, SHA-256
+`23AA50F04175DA023DE9FB84B67E8E2E724AF1648F3AC23E14E07E9825CA4970`).
+[UniWiki Killmail](https://wiki.eveuniversity.org/Killmail) · [UniWiki Fitting ships](https://wiki.eveuniversity.org/Fitting_ships)
+
+### Automated validation
+
+The Merlin fixture recreates the recorded railgun fit, loads both magazines and returns the pilot to flight after
+reopening the paid kit without another charge. The Venture fixture restarts with two outstanding bids, checks the
+saved deadline, verifies both escrow refunds, and restores a mining pilot with the one-laser fit that can be
+purchased locally. The corporate wallet ends at the starting amount minus the original fees and actual fallback
+purchases. The canceled bids stay closed.
+
+The exact `LostMerlinBuysOneReplacementAndReturnsToDutyAcrossRestart` and
+`StalledVentureBidsRefundAfterRestartAndMinerUndocksWithAnInStockFit` filters passed during development.
+The solution built with zero warnings and errors in 7.69 seconds. The final focused run passed 138 tests in 61.75
+seconds. It selected the following classes using `FullyQualifiedName~.<Class>.`:
+
+```text
+CapsuleerAmmunitionSupplyTests, CapsuleerHaulerTests, CapsuleerMinerTests, CapsuleerMiningFleetTests,
+CapsuleerSupplyTests, CapsuleerFitRetentionTests, CapsuleerSchedulingTests, CapsuleerResidentRoutineTests,
+PersonalMarketTests, StarterMarketTests, ApplyFittingTests, MultifitTests, PilotFleetTests, CorvetteRecoveryTests
+```
+
+The two Python policy suites passed all 17 cases. Style, CSharpier and line-width verification passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer check
+
+Observe a miner undock with a basic Venture after its original kit's bids are canceled.
+
 ## Paid Merlin replacement
 
 A bot pilot in a bot-led corporation can replace a lost Merlin after its capsule reaches an NPC market station.

@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Dynamic paid ship replacement](protocol/capsuleers.md#dynamic-paid-ship-replacement) covers saved loadouts,
+bounded buy orders and in-stock replacements for miners and patrol pilots.
+
 [Paid Merlin replacement](protocol/capsuleers.md#paid-merlin-replacement) covers public buy orders, corporate spending
 and a patrol pilot returning to duty across a restart.
 

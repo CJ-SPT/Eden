@@ -6,11 +6,14 @@ using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
+using Eden.Gameplay.Mining;
+using Eden.Gameplay.Ships;
 using Eden.Protocol.Market;
 using Eden.Protocol.Tests.Combat;
 using Eden.Protocol.Tests.Industry;
@@ -700,8 +703,10 @@ public sealed class CapsuleerAmmunitionSupplyTests
         const int merlinBlueprint = 950;
         const long buyerFunds = 100_000_000L * MarketDefinitions.CentsPerIsk;
         const int factorySystem = 30000142;
-        int railgun = Replacement.Slots[0].TypeId;
-        int rounds = Replacement.Supplies[0].Quantity;
+        const int railgun = (int)CombatWeaponType.GatlingRailgun75mm;
+        const int hull = (int)TechOneHullType.Merlin;
+        const int rounds = 400;
+        const int secondTurretSlot = (int)InventoryFlag.HighSlot0 + 2;
         var recipe = StarterProductionTests.ReadAudit().Recipes.Single(recipe => recipe.BlueprintId == merlinBlueprint);
         using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
         CapsuleerCorporationTests.PrepareExistingSave(fixture);
@@ -769,8 +774,14 @@ public sealed class CapsuleerAmmunitionSupplyTests
                     lostShip,
                     TrafficSnapshotTests.Profile() with
                     {
-                        HullTypeId = Replacement.HullType,
-                        Equipment = [new(railgun, (int)InventoryFlag.HighSlot0, 1)],
+                        HullTypeId = hull,
+                        Equipment =
+                        [
+                            new(railgun, (int)InventoryFlag.HighSlot0, 1),
+                            new(Rules.ChargeType, (int)InventoryFlag.HighSlot0, 20),
+                            new(railgun, secondTurretSlot, 1),
+                            new(Rules.ChargeType, secondTurretSlot, 20),
+                        ],
                     },
                     fixture.Clock.Now
                 );
@@ -841,7 +852,7 @@ public sealed class CapsuleerAmmunitionSupplyTests
             {
                 industry.Produce(install, catalog, ships.FindPilot(install, -1, producer)!, fixture.Clock.Now);
                 var job = Assert.Single(install.Set<IndustryJob>());
-                Assert.Equal(Replacement.HullType, job.ProductTypeId);
+                Assert.Equal(hull, job.ProductTypeId);
                 Assert.Equal(seller, job.OutputCorporationId);
                 install.Commit();
             }
@@ -850,7 +861,7 @@ public sealed class CapsuleerAmmunitionSupplyTests
             {
                 Assert.True(industry.Produce(finish, catalog, ships.FindPilot(finish, -1, producer)!, fixture.Clock.Now));
                 Assert.Equal(capsule, finish.Pilots.Find(patrol)!.ActiveShipId);
-                Assert.Equal(1, Stock(finish, patrol, FactoryStation, Replacement.HullType));
+                Assert.Equal(1, Stock(finish, patrol, FactoryStation, hull));
                 Assert.Equal(2, Stock(finish, patrol, FactoryStation, railgun));
                 Assert.Equal(rounds, Stock(finish, patrol, FactoryStation, Rules.ChargeType));
                 var orders = BuyerOrders(finish);
@@ -881,7 +892,7 @@ public sealed class CapsuleerAmmunitionSupplyTests
         var backOnDuty = Advance(
             reopened.GetRequiredService<CapsuleerMaintenance>(),
             resumed,
-            progress => progress.Pilot.ShipTypeId == Replacement.HullType && progress.Pilot.Position is not null
+            progress => progress.Pilot.ShipTypeId == hull && progress.Pilot.Position is not null
         );
         Assert.NotEqual(lostShip, backOnDuty.Pilot.ShipId);
         Assert.Equal(backOnDuty.Pilot.ShipId, backOnDuty.Work.ShipId);
@@ -889,12 +900,12 @@ public sealed class CapsuleerAmmunitionSupplyTests
         {
             Assert.Null(world.Ships.Find(lostShip));
             Assert.Null(world.Ships.Find(capsule));
-            Assert.Single(world.Ships.Where(ship => ship.OwnerId == patrol && ship.TypeId == Replacement.HullType));
+            Assert.Single(world.Ships.Where(ship => ship.OwnerId == patrol && ship.TypeId == hull));
             var fitted = world
                 .Filter<OwnedItem>(item => item.LocationId == backOnDuty.Pilot.ShipId)
                 .Where(item => item.TypeId == railgun && item.Online)
                 .ToArray();
-            Assert.Equal(2, fitted.Length);
+            Assert.Equal([(int)InventoryFlag.HighSlot0, secondTurretSlot], fitted.Select(module => module.FlagId).Order());
             foreach (var module in fitted)
             {
                 var magazine = Assert.Single(world.Filter<OwnedItem>(item => item.LocationId == module.Id));
@@ -930,6 +941,183 @@ public sealed class CapsuleerAmmunitionSupplyTests
                 }
             }
             throw new InvalidOperationException($"Patrol did not reach the expected state. Last progress was {last?.Work}.");
+        }
+    }
+
+    [Fact]
+    public async Task StalledVentureBidsRefundAfterRestartAndMinerUndocksWithAnInStockFit()
+    {
+        const int hull = (int)CapsuleerMiningHull.Venture;
+        const int laser = (int)MiningLaserType.MinerI;
+        const long funds = 100_000_000L * MarketDefinitions.CentsPerIsk;
+        const long ask = 10_000;
+        using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
+        CapsuleerCorporationTests.PrepareExistingSave(fixture);
+        PassiveCatalogFixture.LoadStarterProduction(fixture.Database.CatalogPath);
+        PrepareCatalog(fixture);
+        UseLocalOrders(fixture);
+        WorldInitialization.Initialize(fixture.Database, fixture.Clock);
+        long miner;
+        long capsule;
+        long lostHull;
+        long deadline;
+        int employer;
+        long[] bids;
+        long totalFees;
+        using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+            using (var setup = live.Economy.Begin())
+            {
+                setup.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId)!.TestingMarket = false;
+                setup.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId)!.TestingGrants = false;
+                miner = setup.Set<SavedCapsuleerAgent>().Single(agent => agent.Career == CapsuleerCareer.Mining).PilotId;
+                var pilot = setup.Pilots.Find(miner)!;
+                var player = setup.Pilots.Find(Customer)!;
+                player.ActiveShip.StationId = Depot;
+                setup.Add(new PilotWallet { PilotId = Customer, Cents = 10 * PersonalMarketRules.MinimumBrokerFeeCents });
+                employer = Charter(setup, catalog, miner, "Venture Recovery", "VREC", fixture.Clock.Now);
+                setup.Set<SavedCorporation>().Find(employer)!.BalanceCents = funds;
+                foreach (var agent in setup.Set<SavedCapsuleerAgent>().Where(agent => agent.PilotId != miner).ToArray())
+                {
+                    setup.Add(new SavedCapsuleerSuspension { PilotId = agent.PilotId });
+                }
+                setup.RemoveRange(setup.Filter<OwnedItem>(item => item.OwnerId == miner).ToArray());
+                lostHull = pilot.ActiveShipId;
+                TrafficFitting.Apply(
+                    setup,
+                    catalog,
+                    miner,
+                    lostHull,
+                    TrafficSnapshotTests.Profile() with
+                    {
+                        HullTypeId = hull,
+                        Equipment = [new(laser, (int)InventoryFlag.HighSlot0, 1), new(laser, (int)InventoryFlag.HighSlot1, 1)],
+                    },
+                    fixture.Clock.Now
+                );
+                var station = SystemObjects.Geometry(catalog, Home).Single(body => body.Id == Depot);
+                SqliteWorld.SetPosition(setup, catalog, lostHull, station.Position, Home, fixture.Clock.Now);
+                ShipLossPersistence.Apply(
+                    setup,
+                    catalog,
+                    pilot,
+                    null,
+                    lostHull,
+                    Home,
+                    pilot.ActiveShip.Position!,
+                    fixture.Clock.Now,
+                    host.GetRequiredService<IShipLootRoll>(),
+                    PilotInteractionHistoryStore.Player(setup, player, player.ActiveShipId)
+                );
+                capsule = pilot.ActiveShipId;
+                setup.Commit();
+            }
+            using var occupied = host.GetRequiredService<IHumanPresence>().Select(Customer, Home);
+            var state = Advance(host, observation => observation.Work.ReplacementOrderDeadline.HasValue);
+            deadline = state.Work.ReplacementOrderDeadline!.Value;
+            var placed = live.Economy.Read(Orders);
+            Assert.Equal(capsule, state.Pilot.ShipId);
+            Assert.Equal(2, placed.Length);
+            Assert.Equal(2, Assert.Single(placed, order => order.TypeId == laser).Remaining);
+            Assert.All(placed, order => Assert.True(order.EscrowCents > 0));
+            bids = placed.Select(order => order.Id).Order().ToArray();
+            totalFees = live.Economy.Read(world =>
+                -world
+                    .Filter<SavedWalletLedger>(payment => payment.OwnerId == employer)
+                    .Where(payment => payment.EntryType == WalletEntryType.BrokersFee)
+                    .Sum(payment => payment.AmountCents)
+            );
+            await live.FlushAsync();
+        }
+
+        fixture.Clock.AdvanceWallTime(Replacement.BidWindow + TimeSpan.FromSeconds(1));
+        using var reopened = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var restored = reopened.GetRequiredService<LiveWorld>();
+        Assert.Equal(
+            deadline,
+            restored.Economy.Read(world =>
+                MinerCheckpoint
+                    .Read(world.Set<SavedCapsuleerCommunity>().Single(row => row.PilotId == miner).Progress)
+                    ?.ReplacementOrderDeadline
+            )
+        );
+        using var human = reopened.GetRequiredService<IHumanPresence>().Select(Customer, Home);
+        var refunded = Advance(
+            reopened,
+            observation => observation.Work.WaitingReason == "Waiting for an affordable mining replacement in stock."
+        );
+        Assert.Equal(capsule, refunded.Pilot.ShipId);
+        var stockRetry = Advance(
+            reopened,
+            observation =>
+                observation.Work.WaitingReason == refunded.Work.WaitingReason && observation.Work.DueTicks > refunded.Work.DueTicks
+        );
+        Assert.Equal(capsule, stockRetry.Pilot.ShipId);
+        restored.Economy.Inspect(world =>
+        {
+            Assert.All(
+                Orders(world),
+                order =>
+                {
+                    Assert.Equal(PersonalOrderStatus.Cancelled, order.Status);
+                    Assert.Equal(0, order.EscrowCents);
+                }
+            );
+            Assert.Equal(funds - totalFees, world.Set<SavedCorporation>().Find(employer)!.BalanceCents);
+            return true;
+        });
+        MarketSale[] supplies;
+        using (var stock = restored.Economy.Begin())
+        {
+            AddStock(stock, Customer, Depot, hull, 1);
+            AddStock(stock, Customer, Depot, laser, 1);
+            supplies = stock
+                .Filter<OwnedItem>(item => item.OwnerId == Customer)
+                .Where(item => item.TypeId == hull || item.TypeId == laser)
+                .AsEnumerable()
+                .Select(item => new MarketSale(item.Id, Depot, item.TypeId, ask, 1))
+                .ToArray();
+            stock.Commit();
+        }
+        reopened.GetRequiredService<IPersonalMarket>().PlaceSell(Customer, supplies, 7);
+        var working = Advance(reopened, observation => observation.Pilot.ShipTypeId == hull && observation.Pilot.Position is not null);
+        Assert.NotEqual(lostHull, working.Pilot.ShipId);
+        Assert.Equal(laser, working.Laser?.TypeId);
+        Assert.Null(working.Work.ReplacementOrderDeadline);
+        restored.Economy.Inspect(world =>
+        {
+            Assert.Null(world.Ships.Find(capsule));
+            Assert.Single(
+                world.Filter<OwnedItem>(item => item.LocationId == working.Pilot.ShipId),
+                item => item.TypeId == laser && item.Online
+            );
+            Assert.Equal(bids, Orders(world).Select(order => order.Id).Order());
+            Assert.Equal(funds - totalFees - 2 * ask, world.Set<SavedCorporation>().Find(employer)!.BalanceCents);
+            return true;
+        });
+
+        SavedPersonalOrder[] Orders(WorldAction world) =>
+            world.Filter<SavedPersonalOrder>(order => order.PilotId == miner).Where(order => order.CorporationId == employer).ToArray();
+
+        MinerObservation Advance(ServiceProvider host, Func<MinerObservation, bool> ready)
+        {
+            var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+            scheduler.PopulationPrepared(Home);
+            var worker = host.GetRequiredService<CapsuleerMaintenance>();
+            MinerObservation? last = null;
+            for (int turn = 0; turn < 900; turn++)
+            {
+                fixture.Clock.Seconds++;
+                worker.Tick();
+                last = scheduler.Miner(miner);
+                if (last is not null && ready(last))
+                {
+                    return last;
+                }
+            }
+            throw new InvalidOperationException($"Miner did not reach the expected state. Last progress was {last?.Work}.");
         }
     }
 
