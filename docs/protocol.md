@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Autonomous bot alliances](protocol/alliances.md#autonomous-bot-alliances) covers neighboring bot corporations forming,
+recruiting and maintaining an alliance through the ordinary corporation services.
+
 [Corporation ammunition supply](protocol/capsuleers.md#corporation-ammunition-supply) covers manufacturing, public sales,
 paid courier trips and reserve resupply by simulated corporations.
 

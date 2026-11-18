@@ -1,4 +1,5 @@
 using Eden.Gameplay.Alliances;
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Corporations;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Registration;
@@ -10,7 +11,8 @@ internal sealed class CorporationMaintenance(
     ICorporationVoting voting,
     ICorporationMemberRemovals removals,
     TimeProvider clock,
-    IAllianceMembership alliances
+    IAllianceMembership alliances,
+    ICapsuleerAlliancePlanning capsuleerAlliances
 ) : IDisposable
 {
     private Task _loop = Task.CompletedTask;
@@ -20,9 +22,7 @@ internal sealed class CorporationMaintenance(
     {
         if (_timer is null)
         {
-            voting.Advance();
-            removals.Advance();
-            alliances.Advance();
+            Tick();
             _timer = new PeriodicTimer(TimeSpan.FromSeconds(1), clock);
             _loop = Run(_timer);
         }
@@ -34,15 +34,21 @@ internal sealed class CorporationMaintenance(
         {
             try
             {
-                voting.Advance();
-                removals.Advance();
-                alliances.Advance();
+                Tick();
             }
             catch (Exception error)
             {
                 ServerLog.Console.Error($"Corporation maintenance failed; retrying next interval: {error.Message}");
             }
         }
+    }
+
+    internal void Tick()
+    {
+        voting.Advance();
+        removals.Advance();
+        alliances.Advance();
+        capsuleerAlliances.Advance();
     }
 
     public void Dispose()

@@ -114,9 +114,14 @@ internal sealed partial class CorporationWalletStore(WorldDatabase database, Tim
 
     public void Transfer(long actorId, WalletTransferRequest request)
     {
-        CorporationWalletRules.CheckTransfer(request);
         using WorldActionScope transaction = new(database, TransactionParticipants.None);
-        var world = transaction.World;
+        Transfer(transaction.World, actorId, request, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+        transaction.Commit();
+    }
+
+    internal static void Transfer(WorldAction world, long actorId, WalletTransferRequest request, long now)
+    {
+        CorporationWalletRules.CheckTransfer(request);
         var actor = world.Pilots.Find(actorId) ?? throw new InvalidDataException("Unknown pilot.");
         var sourceCorporation = request.FromCorporation ? CorporationRoleStore.Current(world, actorId) : null;
         if (
@@ -176,7 +181,6 @@ internal sealed partial class CorporationWalletStore(WorldDatabase database, Tim
         {
             WriteBalance(world, targetCorporation, request.ToKey, destinationAfter);
         }
-        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var type = request.FromCorporation ? CorporationWalletRules.CorporationWithdrawalEntry : CorporationWalletRules.PlayerDonationEntry;
         AddEntry(
             world,
@@ -202,7 +206,6 @@ internal sealed partial class CorporationWalletStore(WorldDatabase database, Tim
             actor.Id,
             request.Reason
         );
-        transaction.Commit();
     }
 
     internal static int SelectedKey(WorldDbContext world, long actorId, SavedCorporation? corporation)

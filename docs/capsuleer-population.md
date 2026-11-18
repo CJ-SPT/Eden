@@ -77,6 +77,14 @@ Roaming gangs, escorts and gate camps use current corporation and alliance membe
 unaffiliated corporations, a roaming gang cancels its patrol and returns home. Corporate and alliance mates are
 excluded from autonomous patrol targeting. [Recruitment and gang implementation](protocol/capsuleers.md#bot-corporation-recruitment-and-gangs)
 
+### Autonomous alliances
+
+Established bot corporations can combine with a neighboring bot corporation under a shared alliance ticker. Each corporation
+needs six active simulated members. The founder uses existing ISK for the normal registration fee and needs enough left in its
+bill division for the proposed monthly dues. A partner joins through the standard 24-hour application process. A funded executor
+can recruit a third corporation. Once admitted, members share the alliance affiliation used by roaming gangs and escorts.
+[Alliance policy and validation](protocol/alliances.md#autonomous-bot-alliances)
+
 ### Corporation ammunition supply
 
 Bot corporations can produce and trade **Iron Charge S**. A miner docked at an NPC factory with a market can refine owned
