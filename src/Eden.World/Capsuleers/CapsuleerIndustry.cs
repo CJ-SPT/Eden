@@ -118,8 +118,18 @@ internal sealed partial class CapsuleerIndustry(PilotIndustryStore industry, Pil
 
     private static long ReferencePrice(CatalogDbContext catalog, int type) => catalog.Definition(s_referencePrice, type);
 
-    internal bool Produce(EconomyTransaction world, CatalogDbContext catalog, DockedPilot operatorPilot, long now)
+    internal bool Produce(EconomyTransaction world, CatalogDbContext catalog, DockedPilot operatorPilot, long now) =>
+        Produce(world, catalog, operatorPilot, now, out _);
+
+    internal bool Produce(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        DockedPilot operatorPilot,
+        long now,
+        out FactorySupplyRequest? supply
+    )
     {
+        supply = null;
         long pilot = operatorPilot.PilotId;
         int location = operatorPilot.StationId;
         if (
@@ -181,11 +191,17 @@ internal sealed partial class CapsuleerIndustry(PilotIndustryStore industry, Pil
 
         var hangar = Hangar(world, pilot, location);
         listed.UnionWith(depot.Select(item => item.TypeId));
-        if (TryProduceForDemand(world, catalog, operatorPilot, corporation, hangar, bids, listed, now) is bool changed)
+        if (TryProduceForDemand(world, catalog, operatorPilot, corporation, hangar, bids, listed, now, out supply) is bool changed)
         {
             return changed;
         }
-        return !listed.Contains(Rules.ChargeType) && ProduceIron(world, catalog, operatorPilot, corporation, hangar, now);
+        if (listed.Contains(Rules.ChargeType))
+        {
+            return false;
+        }
+        bool boughtIronInputs = ProduceIron(world, catalog, operatorPilot, corporation, hangar, now, out var ironSupply);
+        supply ??= ironSupply;
+        return boughtIronInputs;
     }
 
     private bool ProduceIron(
@@ -194,9 +210,11 @@ internal sealed partial class CapsuleerIndustry(PilotIndustryStore industry, Pil
         DockedPilot operatorPilot,
         SavedCorporation corporation,
         OwnedItem[] hangar,
-        long now
+        long now,
+        out FactorySupplyRequest? supply
     )
     {
+        supply = null;
         if (
             ManufacturingCatalog.Recipes(catalog).GetValueOrDefault(Rules.BlueprintType) is not { } recipe
             || recipe.ProductTypeId != Rules.ChargeType
@@ -226,7 +244,20 @@ internal sealed partial class CapsuleerIndustry(PilotIndustryStore industry, Pil
                 return false;
             }
             var material = missing.OrderBy(row => row.Key).First();
-            return BuyInput(world, catalog, pilot, location, material.Key, material.Value);
+            if (BuyInput(world, catalog, pilot, location, material.Key, material.Value))
+            {
+                return true;
+            }
+            if (blueprint is not null && ReferencePrice(catalog, material.Key) is > 0 and long reference && corporation.BalanceCents > 0)
+            {
+                long maximum = Math.Min(reference * 2, corporation.BalanceCents / material.Value);
+                if (maximum > 0)
+                {
+                    int required = materials[material.Key];
+                    supply = new(corporation.Id, location, null, [new(material.Key, required, required, material.Value, maximum)]);
+                }
+            }
+            return false;
         }
         if (blueprint is null)
         {

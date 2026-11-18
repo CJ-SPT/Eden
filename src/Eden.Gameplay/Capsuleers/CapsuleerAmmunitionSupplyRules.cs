@@ -12,4 +12,7 @@ public static class CapsuleerAmmunitionSupplyRules
     public const int ListingDays = 7;
 }
 
-public sealed record CorporationSupplyRun(int CorporationId, long OrderId);
+public sealed record CorporationSupplyRun(int CorporationId, long OrderId)
+{
+    public FactorySupplyShipment? FactorySupply { get; init; }
+}

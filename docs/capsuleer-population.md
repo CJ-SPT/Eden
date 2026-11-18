@@ -93,6 +93,11 @@ funds purchases and factory charges from its wallet and receives the proceeds fr
 the recipe's skills, facility restrictions, expected proceeds and available funds before installing a job.
 [Manufacturing policy and validation](protocol/capsuleers.md#demand-driven-bot-manufacturing)
 
+When local stock and offers cannot cover the batch, a corpmate can collect the remainder from another station within
+three jumps. The hauler purchases at the supplier, carries what fits, and unloads into the manufacturer's factory
+hangar. Cargo and the return trip survive a restart.
+[Nearby procurement](protocol/capsuleers.md#nearby-procurement-for-bot-factories)
+
 #### Corporation ammunition supply
 
 Bot corporations can produce and trade **Iron Charge S**. A miner docked at an NPC factory with a market can refine owned

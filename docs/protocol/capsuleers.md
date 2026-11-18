@@ -2,6 +2,53 @@
 
 [Protocol index](../protocol.md)
 
+## Nearby procurement for bot factories
+
+A factory turns a material shortage into a supply request once it has checked its own hangar, suitable ore and local sell
+offers. Demand-driven jobs still require an owned blueprint or a local original listing. Their remote purchase ceilings
+account for projected proceeds, local expenses and corporate funds. The existing Iron Charge S stocking run can also
+request nearby materials when it has an original at the factory.
+
+A hauling corpmate searches open player and NPC orders at stations reachable within three gate jumps of both the hauler
+and the factory. It checks the known threat systems and prefers the supplier that fills the most of one shortage, then
+the shorter route and lower price. Before purchasing, the courier rechecks the factory's stock, local offers and any
+supporting buy order. It then buys from the current supplier book, using the corporation wallet and the ship's free cargo
+space.
+
+The factory request is stored in the existing miner checkpoint and the assignment, cargo and route are stored in the
+hauler checkpoint. Each corporation sends one supply courier at a time. The hauler deposits surviving cargo into the
+manufacturer's factory hangar, or corporate Market Deliveries if that manufacturer has left the corporation. After
+delivery, the next factory check combines the shipment with local inputs and installs an ordinary industry job when the
+batch is ready. The existing market and flight services handle order matching, gate travel and docking.
+
+The hauling policy uses ordinary station trading and physical cargo described by EVE University. The existing industry
+and market custody references are listed in the manufacturing and ammunition records below.
+[EVE University Hauling](https://wiki.eveuniversity.org/Hauling)
+
+### Automated validation
+
+The integration fixture uses the pinned 150mm Railgun I recipe with a partial sell order at the factory and the balance
+one gate away. It verifies local restock precedence, route avoidance, spending from the treasury, actual cargo custody,
+checkpoint recovery, duplicate delivery protection and installation using the delivered and local materials. The final exact
+filter passed in 6 seconds:
+
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerAmmunitionSupplyTests.HaulsOnlyTheRemoteShortfallAndResumesDeliveryAfterRestart`
+
+The final isolated run passed 85 tests in 45 seconds with `FullyQualifiedName~` filters for
+`CapsuleerAmmunitionSupplyTests`, `CapsuleerHaulerTests`, `CapsuleerInboundRuntimeTests`, `CapsuleerMinerTests`,
+`PersonalMarketTests` and `Eden.Protocol.Tests.Industry.IndustryTests`. The solution build completed in 12 seconds with
+zero warnings or errors. Tool and solution restore, 17 Python policy tests, formatting, documentation links and diff
+whitespace checks passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+List a missing input at a neighboring station, place a buy order for the finished item at the factory and verify the
+supplier sale and subsequent finished-item delivery.
+
 ## Demand-driven bot manufacturing
 
 At an NPC station with factory and market services, a miner in a bot-led corporation considers open local buy orders from
@@ -20,7 +67,8 @@ a time and skips products it already has in local deliveries or on the market.
 The regular docked routine delivers finished jobs into Market Deliveries. It lists finished stock at a current bid price
 when available or at a catalog-backed reference price. The ordinary market handles escrow, matching, taxes and fees. Iron
 Charge S also keeps its established supply route and can be produced for stocking while local demand offers no eligible job.
-Blueprint research, invention, reactions and broader procurement routes remain future industry activities.
+Blueprint research, invention and reactions remain future industry activities. Nearby procurement extends this workflow.
+[Nearby procurement for bot factories](#nearby-procurement-for-bot-factories)
 
 EVE University describes the blueprint, material and skill prerequisites. The feature reuses Eden's station manufacturing
 lifecycle. The EVE.js reference for industry install and wallet settlement is `industryInstallSettlementState.js` at SHA-256

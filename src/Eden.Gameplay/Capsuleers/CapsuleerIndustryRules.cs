@@ -5,6 +5,7 @@ namespace Eden.Gameplay.Capsuleers;
 public static class CapsuleerIndustryRules
 {
     private const int MaximumDemandRuns = 5;
+    public const int MaximumFactorySupplyJumps = 3;
 
     public static int DemandRuns(int demand, int unitsPerRun, long secondsPerRun, int? licensedRuns)
     {
@@ -14,3 +15,17 @@ public static class CapsuleerIndustryRules
         return Math.Min(runLimit, demand / unitsPerRun);
     }
 }
+
+public sealed record FactorySupplyNeed(int TypeId, long HangarTarget, int RequiredQuantity, int PlannedUnits, long MaximumUnitPriceCents);
+
+public sealed record FactorySupplyDemand(long OrderId, long MinimumUnitPriceCents, int Quantity);
+
+public sealed record FactorySupplyRequest(int CorporationId, int StationId, FactorySupplyDemand? Demand, FactorySupplyNeed[] Materials);
+
+public sealed record FactorySupplyShipment(
+    long ManufacturerId,
+    int FactoryStationId,
+    int SupplierStationId,
+    int TypeId,
+    long? DemandOrderId
+);

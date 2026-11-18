@@ -1,5 +1,6 @@
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Characters;
+using Eden.Data.World.Corporations;
 using Eden.Data.World.Industry;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
@@ -53,12 +54,7 @@ internal sealed partial class CapsuleerIndustry
             return null;
         }
         long available = employer.BalanceCents + (world.Set<PilotWallet>().Find(courier.PilotId)?.Cents ?? 0) / RattingRules.BudgetDivisor;
-        HashSet<int> local = [courier.SystemId];
-        int[] frontier = [courier.SystemId];
-        for (int jump = 0; jump < Rules.MaximumSupplierJumps && frontier.Length > 0; jump++)
-        {
-            frontier = frontier.SelectMany(system => CapsuleerTrafficRoutes.Neighbours(catalog, system)).Where(local.Add).ToArray();
-        }
+        var local = NearbySystems(catalog, courier.SystemId, Rules.MaximumSupplierJumps);
         var offers = world
             .Filter<SavedPersonalOrder>(row => row.TypeId == Rules.ChargeType)
             .Where(row =>
@@ -127,11 +123,8 @@ internal sealed partial class CapsuleerIndustry
         {
             return null;
         }
-        int flag = (int)InventoryFlag.Cargo;
         double volume = PilotInventoryStore.Volume(catalog, Rules.ChargeType);
-        double free =
-            PilotInventoryStore.HoldCapacity(world, catalog, courier.PilotId, courier.ShipId, flag)
-            - InventoryPersistence.UsedVolume(world, catalog, courier.PilotId, courier.ShipId, flag);
+        double free = FreeFreightVolume(world, catalog, courier);
         if (volume <= 0)
         {
             return null;
@@ -147,9 +140,25 @@ internal sealed partial class CapsuleerIndustry
             return null;
         }
         var purchase = market.BuyCorporationSupply(world, catalog, courier.PilotId, buyer, listing, units);
+        return StowPurchased(world, courier, home, purchase.TypeId, purchase.Quantity, run.OrderId);
+    }
+
+    private static double FreeFreightVolume(WorldAction world, CatalogDbContext catalog, DockedPilot courier) =>
+        PilotInventoryStore.HoldCapacity(world, catalog, courier.PilotId, courier.ShipId, (int)InventoryFlag.Cargo)
+        - InventoryPersistence.UsedVolume(world, catalog, courier.PilotId, courier.ShipId, (int)InventoryFlag.Cargo);
+
+    private static FreightManifest StowPurchased(
+        EconomyTransaction world,
+        DockedPilot courier,
+        int destination,
+        int type,
+        int quantity,
+        long sequence
+    )
+    {
         // Move only the newly purchased units. Keep them in a distinct ordinary ship cargo stack for loss and checkpoint handling.
-        var stock = Hangar(world, courier.PilotId, listing.StationId).First(item => item.TypeId == Rules.ChargeType && !item.Singleton);
-        stock.Quantity -= purchase.Quantity;
+        var stock = Hangar(world, courier.PilotId, courier.StationId).First(item => item.TypeId == type && !item.Singleton);
+        stock.Quantity -= quantity;
         if (stock.Quantity == 0)
         {
             world.Remove(stock);
@@ -161,13 +170,13 @@ internal sealed partial class CapsuleerIndustry
                     Id = world.NextItemId(),
                     OwnerId = courier.PilotId,
                     LocationId = courier.ShipId,
-                    FlagId = flag,
-                    TypeId = Rules.ChargeType,
-                    Quantity = purchase.Quantity,
+                    FlagId = (int)InventoryFlag.Cargo,
+                    TypeId = type,
+                    Quantity = quantity,
                 }
             )
             .Entity;
-        return new(run.OrderId, home, [new(cargo.Id, cargo.TypeId, purchase.Quantity)]);
+        return new(sequence, destination, [new(cargo.Id, cargo.TypeId, quantity)]);
     }
 
     internal static void Deliver(
@@ -182,27 +191,37 @@ internal sealed partial class CapsuleerIndustry
         {
             return;
         }
+        long owner = run.CorporationId;
+        int flag = CorporationStorageRules.MarketDeliveriesFlag;
+        if (run.FactorySupply is { } factory)
+        {
+            if (
+                freight.Destination != factory.FactoryStationId
+                || world.Set<SavedCorporation>().Find(run.CorporationId) is not { ClosedAt: null }
+            )
+            {
+                return;
+            }
+            if (Employer(world, factory.ManufacturerId, run.CorporationId) is not null)
+            {
+                owner = factory.ManufacturerId;
+                flag = (int)InventoryFlag.Hangar;
+            }
+        }
         foreach (var stack in freight.Stacks)
         {
             if (
                 world.Set<OwnedItem>().Find(stack.ItemId) is not { } item
                 || item.OwnerId != courier.PilotId
                 || item.LocationId != courier.ShipId
+                || item.FlagId != (int)InventoryFlag.Cargo
                 || item.TypeId != stack.TypeId
             )
             {
                 continue;
             }
             int delivered = checked((int)Math.Min(item.Quantity, stack.Quantity));
-            InventoryPersistence.MergeOutput(
-                world,
-                catalog,
-                run.CorporationId,
-                courier.StationId,
-                CorporationStorageRules.MarketDeliveriesFlag,
-                item.TypeId,
-                delivered
-            );
+            InventoryPersistence.MergeOutput(world, catalog, owner, courier.StationId, flag, item.TypeId, delivered);
             item.Quantity -= delivered;
             if (item.Quantity == 0)
             {

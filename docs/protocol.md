@@ -3,6 +3,9 @@
 [Autonomous bot alliances](protocol/alliances.md#autonomous-bot-alliances) covers neighboring bot corporations forming,
 recruiting and maintaining an alliance through the ordinary corporation services.
 
+[Nearby procurement for bot factories](protocol/capsuleers.md#nearby-procurement-for-bot-factories) records local shortfalls,
+corporate purchases at nearby stations and checkpointed factory deliveries.
+
 [Demand-driven bot manufacturing](protocol/capsuleers.md#demand-driven-bot-manufacturing) covers the catalog recipes,
 local purchase orders, corporate procurement and jobs that supply the public market.
 

@@ -58,9 +58,11 @@ internal sealed partial class CapsuleerIndustry
         OwnedItem[] hangar,
         ILookup<int, SavedPersonalOrder> bids,
         IReadOnlySet<int> stocked,
-        long now
+        long now,
+        out FactorySupplyRequest? supply
     )
     {
+        supply = null;
         if (bids.Count == 0)
         {
             return null;
@@ -123,9 +125,9 @@ internal sealed partial class CapsuleerIndustry
                     recipe.Seconds,
                     blueprint?.BlueprintRuns
                 );
-                if (
-                    maxRuns > 0
-                    && TryStartDemandJob(
+                if (maxRuns > 0)
+                {
+                    var changed = TryStartDemandJob(
                         world,
                         catalog,
                         operatorPilot,
@@ -137,12 +139,15 @@ internal sealed partial class CapsuleerIndustry
                         blueprint,
                         maxRuns,
                         security ?? 0,
-                        now
-                    )
-                        is bool changed
-                )
-                {
-                    return changed;
+                        now,
+                        out var request
+                    );
+                    if (changed.HasValue)
+                    {
+                        supply = null;
+                        return changed;
+                    }
+                    supply ??= request;
                 }
             }
         }
@@ -161,9 +166,11 @@ internal sealed partial class CapsuleerIndustry
         OwnedItem? blueprint,
         int maxRuns,
         double security,
-        long now
+        long now,
+        out FactorySupplyRequest? supply
     )
     {
+        supply = null;
         long pilot = operatorPilot.PilotId;
         int station = operatorPilot.StationId;
         var maximumMaterials = IndustryMaterials.Calculate(recipe.Materials, maxRuns, blueprint?.MaterialEfficiency ?? 0);
@@ -175,7 +182,8 @@ internal sealed partial class CapsuleerIndustry
             .ToArray();
         var offers = shoppingTypes.Length == 0 ? [] : market.SupplyOrders(world, catalog, station, shoppingTypes, pilot, corporation.Id);
         var asks = offers.ToLookup(order => order.TypeId);
-        if (blueprint is null && !asks.Contains(recipe.BlueprintTypeId))
+        var blueprintPurchase = blueprint is null ? QuoteInput(asks[recipe.BlueprintTypeId], recipe.BlueprintTypeId, 1) : null;
+        if (blueprint is null && blueprintPurchase is null)
         {
             return null;
         }
@@ -201,9 +209,21 @@ internal sealed partial class CapsuleerIndustry
             var missing = materials
                 .Where(material => material.Value > inventory.GetValueOrDefault(material.Key))
                 .ToDictionary(material => material.Key, material => material.Value - (int)inventory.GetValueOrDefault(material.Key));
-            var shopping = blueprint is null ? missing.Append(new KeyValuePair<int, int>(recipe.BlueprintTypeId, 1)) : missing;
-            var purchases = QuoteInputs(asks, shopping);
-            decimal inputBudget = purchases?.Sum(purchase => (decimal)purchase.LimitPriceCents * purchase.Quantity) ?? 0;
+            List<MarketPurchase> purchases = blueprintPurchase is null ? [] : [blueprintPurchase];
+            Dictionary<int, int> shortages = [];
+            foreach (var (type, required) in missing)
+            {
+                var purchase = QuoteInput(asks[type], type, required);
+                if (purchase is not null)
+                {
+                    purchases.Add(purchase);
+                }
+                if (required > (purchase?.Quantity ?? 0))
+                {
+                    shortages.Add(type, required - (purchase?.Quantity ?? 0));
+                }
+            }
+            decimal inputBudget = purchases.Sum(purchase => (decimal)purchase.LimitPriceCents * purchase.Quantity);
             decimal ownedValue = materials.Sum(material =>
                 (decimal)Math.Min(material.Value, inventory.GetValueOrDefault(material.Key)) * ReferencePrice(catalog, material.Key)
             );
@@ -223,7 +243,15 @@ internal sealed partial class CapsuleerIndustry
                 return false;
             }
             long broker = PilotMarketStore.SupplyBrokerFee(world, catalog, pilot, station, price, quantity);
-            if (purchases is null || !Fund(world, corporation, pilot, (long)inputBudget + charge.TotalCents + broker, now))
+            long localCost = (long)inputBudget + charge.TotalCents + broker;
+            if (shortages.Count != 0)
+            {
+                decimal available = Math.Min(net - charge.TotalCents - inputBudget - ownedValue - 1, corporation.BalanceCents - localCost);
+                var demand = new FactorySupplyDemand(bid.Id, bid.PriceCents, quantity);
+                supply = FactoryRequest(catalog, corporation.Id, station, demand, shortages, inventory, materials, available) ?? supply;
+                continue;
+            }
+            if (!Fund(world, corporation, pilot, localCost, now))
             {
                 continue;
             }
@@ -252,32 +280,61 @@ internal sealed partial class CapsuleerIndustry
         return null;
     }
 
-    private static List<MarketPurchase>? QuoteInputs(ILookup<int, MarketOrder> asks, IEnumerable<KeyValuePair<int, int>> shopping)
+    private static FactorySupplyRequest? FactoryRequest(
+        CatalogDbContext catalog,
+        int corporation,
+        int station,
+        FactorySupplyDemand demand,
+        IReadOnlyDictionary<int, int> shortages,
+        IReadOnlyDictionary<int, long> inventory,
+        IReadOnlyDictionary<int, int> materials,
+        decimal available
+    )
     {
-        List<MarketPurchase> purchases = [];
-        foreach (var (type, quantity) in shopping)
+        if (available <= 0)
         {
-            int remaining = quantity;
-            long price = 0;
-            foreach (var order in asks[type])
-            {
-                if (!StandardMarketRules.CanFill(remaining, order.Remaining, order.MinimumVolume))
-                {
-                    continue;
-                }
-                remaining -= Math.Min(remaining, order.Remaining);
-                if (remaining == 0)
-                {
-                    price = order.PriceCents;
-                    break;
-                }
-            }
-            if (price == 0)
-            {
-                return null;
-            }
-            purchases.Add(new(type, price, quantity));
+            return null;
         }
-        return purchases;
+        // Apportion the batch's spending ceiling by each shortage's catalog value.
+        // Unpriced inputs receive equal shares of the budget as a reference.
+        var weights = shortages.ToDictionary(
+            item => item.Key,
+            item => ReferencePrice(catalog, item.Key) is > 0 and long price ? (decimal)price * item.Value : available / shortages.Count
+        );
+        decimal scale = available / weights.Values.Sum();
+        var needs = shortages
+            .Select(item => new FactorySupplyNeed(
+                item.Key,
+                inventory.GetValueOrDefault(item.Key) + item.Value,
+                materials[item.Key],
+                item.Value,
+                (long)
+                    Math.Min(
+                        MarketDefinitions.MaximumOrderPrice * MarketDefinitions.CentsPerIsk,
+                        decimal.Floor(weights[item.Key] * scale / item.Value)
+                    )
+            ))
+            .ToArray();
+        return needs.All(need => need.MaximumUnitPriceCents > 0) ? new(corporation, station, demand, needs) : null;
+    }
+
+    private static MarketPurchase? QuoteInput(IEnumerable<MarketOrder> asks, int type, int quantity)
+    {
+        int remaining = quantity;
+        long price = 0;
+        foreach (var order in asks)
+        {
+            if (!StandardMarketRules.CanFill(remaining, order.Remaining, order.MinimumVolume))
+            {
+                continue;
+            }
+            remaining -= Math.Min(remaining, order.Remaining);
+            price = order.PriceCents;
+            if (remaining == 0)
+            {
+                break;
+            }
+        }
+        return remaining < quantity ? new(type, price, quantity - remaining) : null;
     }
 }
