@@ -97,6 +97,46 @@ public sealed class RoamingGangTests
     }
 
     [Fact]
+    public void CorporateAffiliationChangesReturnAnActiveGang()
+    {
+        using Fixture fixture = new(gangSize: 3);
+        const int employer = Eden.Gameplay.Corporations.CorporationRules.FirstCorporationId;
+        long rival;
+        using (var action = fixture.Live.Economy.Begin())
+        {
+            foreach (var agent in action.Set<SavedCapsuleerAgent>())
+            {
+                action.Pilots.Find(agent.PilotId)!.CorporationId = employer;
+            }
+            rival = action.Set<SavedCapsuleerAgent>().OrderBy(agent => agent.PilotId).First().PilotId;
+            action.Pilots.Find(rival)!.CorporationId = employer + 1;
+            action.Commit();
+        }
+        var gang = fixture.Form();
+        Assert.DoesNotContain(gang.Members, member => member.PilotId == rival);
+        var changed = gang.Members.First(member => member.PilotId != gang.LeaderId);
+        using (var action = fixture.Live.Economy.Begin())
+        {
+            action.Pilots.Find(changed.PilotId)!.CorporationId = employer + 1;
+            action.Commit();
+        }
+        for (int turn = 0; turn < 120; turn++)
+        {
+            fixture.Tick();
+            if (fixture.Live.HaulerCheckpoints[gang.LeaderId].Work.Gang!.Phase == RoamingGangPhase.Returning)
+            {
+                break;
+            }
+        }
+        var returned = fixture.Live.HaulerCheckpoints[gang.LeaderId].Work.Gang!;
+        Assert.Equal(gang.Sequence, returned.Sequence);
+        Assert.Equal(RoamingGangPhase.Returning, returned.Phase);
+        Assert.Contains("affiliations changed", returned.Reason);
+        Assert.Equal(returned, fixture.Live.HaulerCheckpoints[changed.PilotId].Work.Gang);
+        Assert.Equal(employer + 1, fixture.Scheduler.Hauler(changed.PilotId)!.Pilot.CorpId);
+    }
+
+    [Fact]
     public void ScoutCommitsOnlyWithVisibleActiveDamageSupportWithinReachOfTheOpponent()
     {
         var scout = new RoamingGangMember(1, 11, PvpRole.Scout) { Hull = HullClass.Frigate };

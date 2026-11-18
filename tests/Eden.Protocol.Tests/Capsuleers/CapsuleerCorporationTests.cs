@@ -6,9 +6,14 @@ using Eden.Data.World.Skills;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Chat;
 using Eden.Gameplay.Corporations;
+using Eden.Gameplay.Docking;
+using Eden.Gameplay.Flight;
 using Eden.Protocol.Corporations;
 using Eden.Protocol.Docking;
+using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Serialization;
+using Eden.Protocol.Tests.PilotSessions;
 using Eden.Server;
 using Eden.Server.Chat;
 using Eden.Server.Maintenance;
@@ -230,6 +235,140 @@ public sealed class CapsuleerCorporationTests
         Assert.Equal(0, wallet.Cents);
         Assert.Equal(2, world.Set<SavedCorporationPayment>().Count());
         Assert.Single(world.Set<SavedWalletLedger>());
+    }
+
+    [Fact]
+    public async Task NativeApplicationAndDeferredInvitationUseOrdinaryMembershipHistory()
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
+        PrepareExistingSave(fixture);
+        const long recruiter = 90000002;
+        int hiringCorporation;
+        int botCorporation;
+        long recruit;
+        long recruitShip;
+        long invitation;
+        using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            var membership = host.GetRequiredService<ICorporationMembership>();
+            var corporations = host.GetRequiredService<IPlayerCorporations>();
+            using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+            using (var world = live.Economy.Begin(TransactionParticipants.None))
+            {
+                var agents = world.Filter<SavedCapsuleerAgent>(a => a.CommunitySystemId == Home).OrderBy(a => a.PilotId).ToArray();
+                Assert.True(CapsuleerCorporations.Place(world, catalog, fixture.Database, agents[0].PilotId, fixture.Clock.Now));
+                recruit = agents[1].PilotId;
+                Assert.True(CapsuleerCorporations.Place(world, catalog, fixture.Database, recruit, fixture.Clock.Now));
+                botCorporation = world.Pilots.Find(recruit)!.CorporationId;
+                recruitShip = world.Pilots.Find(recruit)!.ActiveShipId;
+                world.Add(
+                    new FlightPosition
+                    {
+                        ShipId = recruitShip,
+                        SystemId = Home,
+                        X = 1000,
+                    }
+                );
+                world.Add(
+                    new PilotSkill
+                    {
+                        PilotId = recruiter,
+                        TypeId = CorporationRules.ManagementSkill,
+                        Points = 250,
+                    }
+                );
+                world.Add(new PilotWallet { PilotId = recruiter, Cents = CorporationRules.CreationFeeCents });
+                world.Ships.Find(world.Pilots.Find(recruiter)!.ActiveShipId)!.StationId = 60015157;
+                world.Commit();
+            }
+            using var applicant = host.CreateScope();
+            var pilot = host.GetRequiredService<SqliteWorld>().FindPilot(1000001, Human)!;
+            using PilotCallContext context = new(
+                1000001,
+                pilot.Account,
+                [pilot],
+                applicant.ServiceProvider.GetRequiredService<FlightSessionFactory>().Create,
+                42,
+                SignedSettings.Empty
+            );
+            context.Select(pilot);
+            applicant.ServiceProvider.GetRequiredService<PilotUpdateCoordinator>().Enter(context);
+            var router = applicant.ServiceProvider.GetRequiredService<PilotCallRouter>();
+            PilotCallResult Call(string method, object?[] args) =>
+                router.Call(context, "corpRegistry", method, BlueMarshal.Decode(BlueMarshal.Encode(args)), _ => { });
+            Assert.IsType<PilotCallResult.Success>(Call("InsertApplication", [(long)botCorporation, "I'd like to join."]));
+            var offer = Assert.Single(membership.Applications(Human, false));
+            Assert.Equal(CorporationApplicationStatus.Offered, offer.Status);
+            Assert.Contains(context.Notifications, message => message.Name == "OnCorporationApplicationChanged");
+            Assert.NotEqual(botCorporation, corporations.Identity(Human).Id);
+            Assert.IsType<PilotCallResult.Success>(
+                Call("UpdateApplicationOffer", CorporationMembershipTests.UpdateArgs(offer, CorporationApplicationStatus.Joined))
+            );
+            Assert.Equal(botCorporation, corporations.Identity(Human).Id);
+
+            hiringCorporation = corporations
+                .Create(recruiter, PlayerCorporationTests.Details() with { ApplicationsEnabled = false })
+                .Corporation.Id;
+            var invited = membership.Invite(recruiter, recruit);
+            invitation = invited.Id;
+            Assert.Equal(CorporationApplicationStatus.Invited, invited.Status);
+            Assert.Equal(botCorporation, corporations.Identity(recruit).Id);
+            await live.FlushAsync();
+        }
+
+        using (WorldDbContext saved = new(fixture.Database.Path))
+        {
+            saved.Database.ExecuteSql(
+                $"""
+                UPDATE WorldCorporation SET DetailsJson=json_set(DetailsJson,'$.ApplicationsEnabled',json('false'))
+                WHERE Id={botCorporation};
+                """
+            );
+            saved.Database.ExecuteSqlRaw("PRAGMA user_version=187;");
+        }
+        WorldInitialization.Initialize(fixture.Database, fixture.Clock);
+        using var reopened = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var persisted = reopened.GetRequiredService<ICorporationMembership>();
+        Assert.Equal(invitation, Assert.Single(persisted.Applications(recruit, false)).Id);
+        var restored = reopened.GetRequiredService<LiveWorld>();
+        using (var dock = restored.Economy.Begin(TransactionParticipants.None))
+        {
+            dock.Remove(dock.Positions.Find(recruitShip)!);
+            const int deliveryStation = 60015157;
+            HaulerProgress stopped = new(HaulerActivity.Docked, 0, 0, recruitShip, deliveryStation, 0, new NavigationState().Capture())
+            {
+                Freight = new(1, deliveryStation, [new(1, 34, 1)]),
+            };
+            new HaulerCheckpoint(recruit, stopped).Apply(dock);
+            var ship = dock.Ships.Find(recruitShip)!;
+            ship.StationId = 60003760;
+            using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+            Assert.False(CapsuleerCorporations.Place(dock, catalog, fixture.Database, recruit, fixture.Clock.Now));
+            Assert.Equal(CorporationApplicationStatus.Invited, dock.Set<SavedCorporationApplication>().Find(invitation)!.Status);
+            ship.StationId = deliveryStation;
+            dock.Commit();
+        }
+        using var human = reopened.GetRequiredService<IHumanPresence>().Select(Human, Home);
+        var preparation = reopened.GetRequiredService<ICapsuleerBackgroundPreparation>();
+        for (int batch = 0; batch < 32; batch++)
+        {
+            var turn = preparation.PrepareNext();
+            Assert.Null(turn.Failure);
+            if (turn.Complete)
+            {
+                break;
+            }
+        }
+        var after = reopened.GetRequiredService<IPlayerCorporations>();
+        Assert.True(after.Read(botCorporation)!.Details.ApplicationsEnabled);
+        Assert.False(after.Read(hiringCorporation)!.Details.ApplicationsEnabled);
+        Assert.Equal(CorporationApplicationStatus.Joined, Assert.Single(persisted.Applications(recruit, false)).Status);
+        Assert.Equal(hiringCorporation, after.Identity(recruit).Id);
+        Assert.Equal(botCorporation, after.Employment(recruit)[1].CorporationId);
+        Assert.Equal(recruitShip, reopened.GetRequiredService<SqliteWorld>().FindPilot(-1, recruit)!.ShipId);
+        Assert.Contains(persisted.Changes(recruiter, 0), change => change.Membership?.PilotId == recruit);
+        await restored.FlushAsync();
     }
 
     private static void PrepareExistingSave(CapsuleerHaulerTests.Fixture fixture)

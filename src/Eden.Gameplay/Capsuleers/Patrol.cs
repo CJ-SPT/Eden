@@ -49,8 +49,13 @@ public static class PatrolRules
             && other.Position.DistanceTo(pilot.Position!) <= PursuitMeters
         );
 
+    public static bool CorporateAllies(int left, int? leftAlliance, int right, int? rightAlliance) =>
+        left >= CorporationRules.FirstCorporationId && left == right || leftAlliance is not null && leftAlliance == rightAlliance;
+
+    public static bool Unaffiliated(int left, int right) =>
+        left < CorporationRules.FirstCorporationId && right < CorporationRules.FirstCorporationId;
+
     public static bool Friendly(DockedPilot pilot, PilotSighting other, int? regionalGroup = null) =>
-        pilot.CorpId >= CorporationRules.FirstCorporationId && pilot.CorpId == other.CorporationId
-        || pilot.Identity.AllianceId is not null && pilot.Identity.AllianceId == other.AllianceId
-        || regionalGroup is not null && regionalGroup == other.RegionalGroupId;
+        CorporateAllies(pilot.CorpId, pilot.Identity.AllianceId, other.CorporationId, other.AllianceId)
+        || Unaffiliated(pilot.CorpId, other.CorporationId) && regionalGroup is not null && regionalGroup == other.RegionalGroupId;
 }

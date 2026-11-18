@@ -17,6 +17,8 @@ internal sealed class CapsuleerGateCamps
 
         internal bool Member(long pilot) => Array.IndexOf(_members, pilot) >= 0;
 
+        internal bool Compatible(Func<long, bool> canFlyWith) => _members.All(member => member == 0 || canFlyWith(member));
+
         internal CampRole? Position(long pilot, bool tackle, CampRole? saved = null)
         {
             int slot = Array.IndexOf(_members, pilot);

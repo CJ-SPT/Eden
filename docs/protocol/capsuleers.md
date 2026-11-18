@@ -2,6 +2,51 @@
 
 [Protocol index](../protocol.md)
 
+## Bot corporation recruitment and gangs
+
+Schema 188 opens applications for existing active bot-led charters. New bot charters start open. The bot CEO uses the existing
+Personnel Manager authority and member limit to issue an offer after a valid player application. Application and offer events
+share a transaction. The player accepts separately through `UpdateApplicationOffer`. After a human takes over as CEO,
+the corporation follows its ordinary application settings and the human reviews new requests.
+
+Native `InsertInvitation` checks the selected recruiter as usual. Bots settle invites in ID order when docked at an NPC station,
+using their saved home system and neighboring gate destinations to decide whether the destination headquarters is suitable.
+Suspension, active gang duties, regional escorts and freight still in transit defer the decision. An ordinary member can leave a bot-led
+charter under existing role and CEO restrictions. A human-led employer keeps its bot members. Acceptance uses the normal
+application transition, preserving the member's ship and property and publishing membership, employment and recruitment events.
+A pending invitation survives a checkpoint and gets another evaluation during community preparation or docked pilot work.
+
+Gangs and escorts use corporation and alliance affiliation for recruitment. Constellation grouping still guides regional
+objectives and cooperation between bots in NPC corporations. Gate camps verify that participants can fly together.
+Active gangs recheck surviving members and the escorted pilot, clear shared scouting reports when affiliations split,
+and publish a return-home order through their saved command. Cached patrol targets are rechecked against committed
+affiliations before the next attack decision. Existing ship and crimewatch checks still apply.
+
+The recruitment flow follows [EVE University recruiting](https://wiki.eveuniversity.org/Recruiting_corporation_members),
+the [pinned build 3662168 invitation record](corporations.md#direct-invitations-and-corporation-window-reads-november-14-2026)
+and the local EVE.js `corpApplicationNotifications.js` reference
+(SHA-256 `452c8bd61246b728c76ec8bdb50c2912da3c1059933dd12aee706eb2825b6599`).
+The one-jump recruitment area and assignment checks are Eden policy.
+
+**Automated validation.** The first exact filter was `FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerCorporationTests.NativeApplicationAndDeferredInvitationUseOrdinaryMembershipHistory`.
+The native application test checked the player-controlled acceptance step and observed recruitment notifications. It also checked
+schema-187 migration, checkpoint reopen, a pending invite in flight and at the wrong station, and acceptance at the delivery
+station. The active-gang test excluded a rival at formation, changed a gang member's corporation and verified the shared
+return order on both pilots' saved commands.
+
+The broader filter `FullyQualifiedName~CapsuleerCorporationTests|FullyQualifiedName~CapsuleerBackgroundPreparationTests|FullyQualifiedName~CapsuleerPopulationRetryTests|FullyQualifiedName~PlayerCorporationTests|FullyQualifiedName~CorporationMembershipTests|FullyQualifiedName~CorporationLeadershipTests|FullyQualifiedName~CorporationRoleTests|FullyQualifiedName~CorporationClosureTests|FullyQualifiedName~RoamingGangTests|FullyQualifiedName~RegionalConflict|FullyQualifiedName~GateCampTests|FullyQualifiedName~PatrolTests|FullyQualifiedName~CapsuleerDefenseTests|FullyQualifiedName~CapsuleerDefenseLifecycleTests|FullyQualifiedName~CapsuleerDefensePerformanceTests|FullyQualifiedName~StationGuestTests|FullyQualifiedName~WorldMigrationTests` passed 164 of 165 cases in 139.13 seconds before the final freight and gang-return adjustments.
+`RegionalConflictWorldTests.RivalDefenseEngagesAVisibleRaidWithOwnedWeaponsAndRealDamage` failed on its targeting assertion.
+The exact same assertion failed on unmodified milestone 1 commit `50d73b0a` in 9.99 seconds.
+
+The final filter `FullyQualifiedName~CapsuleerCorporationTests|FullyQualifiedName~CorporationMembershipTests|FullyQualifiedName~RoamingGangTests|FullyQualifiedName~GateCampTests|FullyQualifiedName~PatrolTests` passed **45 of 45** in **21.92 seconds**. Tool and solution restore passed, and the
+solution built with zero warnings and errors in **7.61 seconds**. Both Python policy suites and formatting verification passed.
+The full .NET suite and dedicated server deployment were outside this validation.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Apply to a bot corporation and accept the offer in the native corporation window.
+Invite a docked bot near your corporation headquarters and verify the status and member list refresh.
+
 ## Bot-led player corporations
 
 On November 18, 2026, Eden added automatic founding and enrollment to existing and newly provisioned capsuleer communities.

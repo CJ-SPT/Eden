@@ -6,11 +6,13 @@ using Eden.Data.World.Market;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Corporations;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Skills;
 using Eden.World.Catalog;
 using Eden.World.Corporations;
+using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
@@ -18,13 +20,33 @@ namespace Eden.World.Capsuleers;
 
 internal static class CapsuleerCorporations
 {
+    internal static bool CanFlyTogether(LiveWorld live, long pilot, long other) =>
+        CanFlyTogether(live, live.Economy.CorporationAffiliation(pilot), other);
+
+    internal static bool CanFlyTogether(LiveWorld live, DockedPilot pilot, long other) =>
+        CanFlyTogether(live, (pilot.CorpId, pilot.Identity.AllianceId), other);
+
+    private static bool CanFlyTogether(LiveWorld live, (int Corporation, int? Alliance) left, long other)
+    {
+        var right = live.Economy.CorporationAffiliation(other);
+        return PatrolRules.Unaffiliated(left.Corporation, right.Corporation)
+            || PatrolRules.CorporateAllies(left.Corporation, left.Alliance, right.Corporation, right.Alliance);
+    }
+
     internal static bool Place(EconomyTransaction world, CatalogDbContext catalog, WorldDatabase database, long pilotId, long now)
     {
+        if (!world.Settings.Capsuleers.Enabled || world.Pilots.Find(pilotId) is not { } pilot)
+        {
+            return false;
+        }
+        var review = CorporationMembershipStore.SettleBotInvitations(world, database, pilot, now);
+        if (review != CorporationMembershipStore.BotInvitationReview.None)
+        {
+            return review == CorporationMembershipStore.BotInvitationReview.Changed;
+        }
         if (
-            !world.Settings.Capsuleers.Enabled
-            || world.Set<SavedCapsuleerAgent>().Find(pilotId) is not { } agent
+            world.Set<SavedCapsuleerAgent>().Find(pilotId) is not { } agent
             || !Eligible(world, catalog, pilotId)
-            || world.Pilots.Find(pilotId) is not { } pilot
             || world.Positions.Find(pilot.ActiveShipId) is not null
             || pilot.ActiveShip.StructureId.HasValue
         )
@@ -40,11 +62,7 @@ internal static class CapsuleerCorporations
             .ToArray();
         var corporations = homes
             .SelectMany(home => world.Filter<SavedCorporation>(row => row.SystemId == home).AsEnumerable())
-            .Where(row =>
-                row.CapsuleerFoundingSystemId.HasValue
-                && row.ClosedAt is null
-                && world.Set<SavedCapsuleerAgent>().Find(row.CeoId) is not null
-            )
+            .Where(row => row.ClosedAt is null && CorporationMembershipStore.BotLed(world, row))
             .OrderByDescending(row => row.SystemId == agent.CommunitySystemId)
             .ThenBy(row => row.Id);
         var employer = corporations.FirstOrDefault(row =>

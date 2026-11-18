@@ -3,7 +3,6 @@ using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
-using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Exploration;
@@ -172,6 +171,7 @@ internal sealed partial class CapsuleerHauler(
         {
             SynchronizeGang();
         }
+        RefreshCorporation();
         return _pilot is null ? null : Observation(includeHealth);
     }
 
@@ -380,6 +380,7 @@ internal sealed partial class CapsuleerHauler(
                 Load();
             }
         }
+        RefreshCorporation();
         SynchronizeGang(reconcile: true);
         _background = background && !RequiresDetail;
         if (!_background && Work.Activity != HaulerActivity.Inbound)
@@ -834,7 +835,11 @@ internal sealed partial class CapsuleerHauler(
 
     internal void RefreshCorporation()
     {
-        if (_pilot is not null)
+        if (
+            _pilot is not null
+            && Live is { } live
+            && live.Economy.CorporationAffiliation(pilotId) != (_pilot.CorpId, _pilot.Identity.AllianceId)
+        )
         {
             var current = ships.FindPilot(CapsuleerCommunityStore.MinerAccountId, pilotId)!;
             _pilot = _pilot with { Identity = current.Identity };
@@ -844,8 +849,7 @@ internal sealed partial class CapsuleerHauler(
     private void JoinCorporationAtDock()
     {
         if (
-            Pilot.CorpId < CorporationRules.FirstCorporationId
-            && Live is not null
+            Live is not null
             && _operation.World is EconomyTransaction world
             && CapsuleerCorporations.Place(world, _operation.Catalog, database, pilotId, Now)
         )

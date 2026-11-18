@@ -1,6 +1,6 @@
+using Eden.Data.World.Alliances;
 using Eden.Data.World.Capsuleers;
 using Eden.Gameplay.Capsuleers;
-using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Ships;
@@ -48,6 +48,21 @@ internal sealed partial class CapsuleerHauler
             .Select(member => member.ShipId)
             .ToHashSet();
         gang = RoamingGangRules.Reconcile(gang, surviving, Work.ActiveTicks);
+        if (
+            gang.Phase is RoamingGangPhase.Forming or RoamingGangPhase.Hunting
+            && (
+                gang.Members.Any(member =>
+                    member.Status == RoamingGangMemberStatus.Active
+                    && !CapsuleerCorporations.CanFlyTogether(live, gang.LeaderId, member.PilotId)
+                )
+                || gang.Regional is { Objective: RegionalObjective.Escort } escort
+                    && !CapsuleerCorporations.CanFlyTogether(live, gang.LeaderId, escort.TargetPilotId)
+            )
+        )
+        {
+            gang = ReturnGang(gang with { Sighting = null }, "Corporation affiliations changed. Returning home.");
+            _work = Work with { Ratting = null };
+        }
         if (
             !database.Settings.Capsuleers.RoamingGangs
             || !database.Settings.Capsuleers.RoamingPvp
@@ -226,7 +241,17 @@ internal sealed partial class CapsuleerHauler
                 || saved.ActiveShip.Position is not null
                 || saved.ActiveShip.StationId != Pilot.StationId
                 || world.Set<SavedCapsuleerSuspension>().Find(row.PilotId) is not null
-                || regionalGroup is not null && RegionalConflictStore.GroupForPilot(Live!, database.Catalog, row.PilotId) != regionalGroup
+                || regionalGroup is not null
+                    && PatrolRules.Unaffiliated(Pilot.CorpId, saved.CorporationId)
+                    && RegionalConflictStore.GroupForPilot(Live!, database.Catalog, row.PilotId) != regionalGroup
+            )
+            {
+                continue;
+            }
+            int? alliance = world.Set<SavedAllianceMember>().Find(saved.CorporationId)?.AllianceId;
+            if (
+                !PatrolRules.Unaffiliated(Pilot.CorpId, saved.CorporationId)
+                && !PatrolRules.CorporateAllies(Pilot.CorpId, Pilot.Identity.AllianceId, saved.CorporationId, alliance)
             )
             {
                 continue;
@@ -247,12 +272,7 @@ internal sealed partial class CapsuleerHauler
                 continue;
             }
             var other = ships.FindPilot(world, saved.AccountId, saved.Id)!;
-            if (
-                CapsuleerDefenseRules.Retreat(health.Read(other.PilotId, Now), true)
-                || (other.CorpId >= CorporationRules.FirstCorporationId || Pilot.CorpId >= CorporationRules.FirstCorporationId)
-                    && other.CorpId != Pilot.CorpId
-                    && (Pilot.Identity.AllianceId is null || Pilot.Identity.AllianceId != other.Identity.AllianceId)
-            )
+            if (CapsuleerDefenseRules.Retreat(health.Read(other.PilotId, Now), true))
             {
                 continue;
             }

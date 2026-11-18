@@ -83,8 +83,10 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
             .Entity;
         world.SaveChanges();
         NotifyApplication(world, application);
+        var submitted = application.Snapshot();
+        OfferToPlayer(world, corporation, pilot, application, now);
         transaction.Commit();
-        return application.Snapshot();
+        return submitted;
     }
 
     public CorporationApplication Invite(long actorId, long pilotId)
@@ -133,6 +135,7 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
         }
         world.SaveChanges();
         NotifyApplication(world, application);
+        SettleBotInvitations(world, pilot, now);
         world.Commit();
         return application.Snapshot();
     }
@@ -156,36 +159,17 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
         }
         var corporation = Corporation(world, application.CorporationId);
         bool applicant = actorId == application.PilotId;
-        bool ceo = CorporationRoleStore.Has(world, actorId, corporation, CorporationRole.PersonnelManager);
-        CorporationMembershipRules.CheckTransition(application.Status, update.Status, applicant, ceo);
         var pilot = Pilot(world, application.PilotId);
-        if (update.Status is CorporationApplicationStatus.Joined or CorporationApplicationStatus.Offered)
-        {
-            CheckJoin(world, pilot, corporation);
-        }
-        if (update.Status == CorporationApplicationStatus.Joined)
-        {
-            Move(world, pilot, corporation.Id, Now);
-            DeliverWelcomeMail(world, pilot.Id, corporation, Now);
-        }
-        application.Status = update.Status;
-        // A recruiter cannot replace the applicant's statement while sending an offer or rejection.
         if (applicant)
         {
             application.Text = update.Text;
         }
-        application.Response = update.Response;
-        application.UpdatedAt = Now;
-        NotifyApplication(world, application);
-        if (update.Status == CorporationApplicationStatus.Joined)
+        long now = Now;
+        ChangeApplication(world, applicant ? pilot.Id : actor.Id, pilot, corporation, application, update.Status, update.Response, now);
+        OfferToPlayer(world, corporation, pilot, application, now);
+        if (world is EconomyTransaction resident && application.Status == CorporationApplicationStatus.Offered)
         {
-            WithdrawOtherApplications(world, pilot.Id, application.Id, Now);
-        }
-        world.SaveChanges();
-        if (update.Status == CorporationApplicationStatus.Joined)
-        {
-            Eden.World.Bookmarks.PilotBookmarksStore.PruneUnavailableConnections(world, pilot.Id);
-            world.SaveChanges();
+            SettleBotInvitations(resident, pilot, now);
         }
         transaction.Commit();
         if (update.Status == CorporationApplicationStatus.Joined)
@@ -193,6 +177,48 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
             database.NotifyAccessGroupsChanged();
         }
         return application.Snapshot();
+    }
+
+    private static void ChangeApplication(
+        WorldAction world,
+        long actor,
+        Pilot pilot,
+        SavedCorporation corporation,
+        SavedCorporationApplication application,
+        CorporationApplicationStatus status,
+        string response,
+        long now
+    )
+    {
+        CorporationMembershipRules.CheckTransition(
+            application.Status,
+            status,
+            actor == pilot.Id,
+            CorporationRoleStore.Has(world, actor, corporation, CorporationRole.PersonnelManager)
+        );
+        if (status is CorporationApplicationStatus.Joined or CorporationApplicationStatus.Offered)
+        {
+            CheckJoin(world, pilot, corporation);
+        }
+        if (status == CorporationApplicationStatus.Joined)
+        {
+            Move(world, pilot, corporation.Id, now);
+            DeliverWelcomeMail(world, pilot.Id, corporation, now);
+        }
+        application.Status = status;
+        application.UpdatedAt = now;
+        application.Response = response;
+        NotifyApplication(world, application);
+        if (status == CorporationApplicationStatus.Joined)
+        {
+            WithdrawOtherApplications(world, pilot.Id, application.Id, now);
+        }
+        world.SaveChanges();
+        if (status == CorporationApplicationStatus.Joined)
+        {
+            Eden.World.Bookmarks.PilotBookmarksStore.PruneUnavailableConnections(world, pilot.Id);
+            world.SaveChanges();
+        }
     }
 
     public CorporationLeavePermission CanRemove(long actorId, long pilotId)

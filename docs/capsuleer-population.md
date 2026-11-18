@@ -63,6 +63,20 @@ keep their employment choices. The first bot founder in each headquarters system
 and a one-time allowance for the normal 1,599,800 ISK fee. Later founders there need the skill and pay from their
 own wallets. See the [implementation and validation record](protocol/capsuleers.md#bot-led-player-corporations).
 
+### Recruiting and joining
+
+Open a bot corporation in Show Info and use **Apply to Join**. If applications are open and the corporation has room,
+the bot CEO sends a normal offer. Accept it in the corporation application window to join. A human CEO handles
+applications manually after taking over the corporation.
+
+A CEO, Director or Personnel Manager can invite a bot through the normal character invitation menu. A bot evaluates
+invitations within one jump of its home system once docked at an NPC station, after an active gang or escort assignment ends. A loaded hauler waits until the shipment reaches its destination. A bot already employed by a human-led corporation stays with that corporation.
+Normal CEO and role restrictions apply to departures.
+
+Roaming gangs, escorts and gate camps use current corporation and alliance membership. When a roster splits across
+unaffiliated corporations, a roaming gang cancels its patrol and returns home. Corporate and alliance mates are
+excluded from autonomous patrol targeting. [Recruitment and gang implementation](protocol/capsuleers.md#bot-corporation-recruitment-and-gangs)
+
 ## Temporary gate camps
 
 Eligible combat pilots can form a three-ship camp at a local gate. A scout reports visible ships, a fitted tackler can

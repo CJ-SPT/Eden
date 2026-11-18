@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Bot corporation recruitment and gangs](protocol/capsuleers.md#bot-corporation-recruitment-and-gangs) covers player applications,
+autonomous invite acceptance, and live affiliation checks during patrols.
+
 [Bot-led player corporations](protocol/capsuleers.md#bot-led-player-corporations) covers local founding, existing-save enrollment and checkpoint validation.
 
 [Cruisers for solo patrols and gangs](protocol/capsuleers.md#cruisers-for-solo-patrols-and-gangs) covers cruiser

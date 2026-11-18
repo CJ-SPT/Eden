@@ -51,7 +51,7 @@ internal sealed partial class CapsuleerHauler
         {
             return null;
         }
-        var operation = RegionalConflictStore.Plan(_operation.World, _operation.Catalog, live, Pilot.StationId, Work.ActiveTicks);
+        var operation = RegionalConflictStore.Plan(_operation.World, _operation.Catalog, live, Pilot.StationId, Work.ActiveTicks, Pilot);
         if (operation is not null)
         {
             route = new(Pilot.StationId, operation.DestinationStationId, operation.Systems);
@@ -228,7 +228,9 @@ internal sealed partial class CapsuleerHauler
         }
         foreach (
             var contact in sightings
-                .Where(contact => contact.RegionalGroupId is not null && contact.RegionalGroupId != home.GroupId)
+                .Where(contact =>
+                    contact.RegionalGroupId is not null && contact.RegionalGroupId != home.GroupId && !PatrolRules.Friendly(Pilot, contact)
+                )
                 .Take(RoamingGangRules.MaximumMembers)
         )
         {
@@ -277,6 +279,21 @@ internal sealed partial class CapsuleerHauler
     {
         if (Work.RegionalEscort is not { } escort || Work.Retreating)
         {
+            return false;
+        }
+        if (
+            escort.Guards.Any(guard =>
+                Live!.Economy.ActiveShip(guard.PilotId, guard.ShipId) && !CapsuleerCorporations.CanFlyTogether(Live, pilotId, guard.PilotId)
+            )
+        )
+        {
+            RegionalConflictStore.Finish(
+                _operation.World,
+                escort.Operation.Key,
+                false,
+                "Escorted pilots changed corporation affiliations."
+            );
+            _work = Work with { RegionalEscort = null };
             return false;
         }
         var seen = defense.Observe(Pilot, Work.ActiveTicks).Select(contact => contact.PilotId).ToHashSet();

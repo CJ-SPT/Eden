@@ -17,7 +17,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 187;
+    internal const int CurrentVersion = 188;
 
     public static void Open(
         WorldDbContext world,
@@ -209,6 +209,17 @@ internal static class WorldMigration
                 """
                 DROP INDEX IF EXISTS IX_WorldNpcBounty_NpcId;
                 CREATE UNIQUE INDEX IF NOT EXISTS IX_WorldNpcBounty_NpcId_PilotId ON WorldNpcBounty(NpcId,PilotId);
+                """
+            );
+        }
+        if (version < 188)
+        {
+            world.Database.ExecuteSqlRaw(
+                """
+                UPDATE WorldCorporation
+                SET DetailsJson = json_set(DetailsJson, '$.ApplicationsEnabled', json('true'))
+                WHERE CapsuleerFoundingSystemId IS NOT NULL AND ClosedAt IS NULL
+                    AND EXISTS (SELECT 1 FROM WorldCapsuleerAgent WHERE PilotId = WorldCorporation.CeoId);
                 """
             );
         }

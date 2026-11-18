@@ -48,6 +48,6 @@ public static class CapsuleerCorporationRules
             mining ? $"Local miners and freight pilots based in {system}."
             : frontier ? $"Frontier freight routes serving {system}."
             : $"Station and gate traffic serving {system}.";
-        return new(name, ticker, description, "", 0, 0, logo, false, false);
+        return new(name, ticker, description, "", 0, 0, logo, true, false);
     }
 }

@@ -3,7 +3,6 @@ using Eden.Data.World.Combat;
 using Eden.Data.World.Mining;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
-using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
@@ -163,6 +162,7 @@ internal sealed class CapsuleerMiner(
         {
             Load();
         }
+        RefreshCorporation();
         return _pilot is null ? null : Observation(includeHealth);
     }
 
@@ -249,6 +249,7 @@ internal sealed class CapsuleerMiner(
                 Load();
             }
         }
+        RefreshCorporation();
         ObserveDanger(destinyStamp);
         if (Pilot.Position is not null)
         {
@@ -600,7 +601,11 @@ internal sealed class CapsuleerMiner(
 
     internal void RefreshCorporation()
     {
-        if (_pilot is not null)
+        if (
+            _pilot is not null
+            && Live is { } live
+            && live.Economy.CorporationAffiliation(pilotId) != (_pilot.CorpId, _pilot.Identity.AllianceId)
+        )
         {
             var current = ships.FindPilot(CapsuleerCommunityStore.MinerAccountId, pilotId)!;
             _pilot = _pilot with { Identity = current.Identity };
@@ -610,8 +615,7 @@ internal sealed class CapsuleerMiner(
     private void JoinCorporationAtDock()
     {
         if (
-            Pilot.CorpId < CorporationRules.FirstCorporationId
-            && Live is not null
+            Live is not null
             && _operation.World is EconomyTransaction world
             && CapsuleerCorporations.Place(world, _operation.Catalog, database, pilotId, Now)
         )

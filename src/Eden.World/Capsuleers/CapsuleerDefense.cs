@@ -246,6 +246,7 @@ internal sealed partial class CapsuleerDefense(
         var jams = npcWarfare.Incoming(pilot.ShipId);
         var npcAttackers = runtime?.DefenseNpcAttackers(pilot.PilotId, now, jams) ?? [];
         var candidates = attackers
+            .Where(attacker => runtime?.IsCapsuleerCorporationAlly(pilot.PilotId, attacker.PilotId) != true)
             .Concat(npcAttackers)
             .Select(attacker =>
                 attacker with

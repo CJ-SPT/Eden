@@ -335,6 +335,13 @@ internal sealed partial class ResidentEconomy
         return table.Matching(p => p.ActiveShipId == ship).Select(key => (long?)key.Id).SingleOrDefault();
     }
 
+    internal (int Corporation, int? Alliance) CorporationAffiliation(long pilot)
+    {
+        var table = (EconomyTable<Eden.Data.World.Characters.Pilot, EconomyPilot>)_tables[typeof(Eden.Data.World.Characters.Pilot)];
+        int corporation = table.Snapshot(new(pilot))?.CorporationId ?? 0;
+        return (corporation, Peek<Eden.Data.World.Alliances.SavedAllianceMember>(corporation)?.AllianceId);
+    }
+
     internal bool IsPilot(long id) => _pilotIdentities.ContainsKey(id);
 
     internal void TrackPilot(long id)
