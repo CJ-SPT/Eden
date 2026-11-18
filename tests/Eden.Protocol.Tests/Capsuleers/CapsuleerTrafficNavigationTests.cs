@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Capsuleers;
@@ -28,6 +29,49 @@ public sealed class CapsuleerTrafficNavigationTests
     private const int Remote = 30000144;
     private const int SourceStation = 60015157;
     private const int DestinationStation = 60003760;
+
+    [Fact]
+    public void RestartReclaimsEmbeddedCollisionAndResumesTheSameApproach()
+    {
+        using CapsuleerHaulerTests.Fixture f = new();
+        var founder = f.Founder();
+        var pilot = new SqliteWorld(f.Database, f.Clock).FindPilot(-1, founder.PilotId)!;
+        var position = new SpacePosition(10_000, 0, 0);
+        var center = new SpacePosition(0, 0, 0);
+        StaticSpaceObject target = new(SourceStation, 0, 0, 0, 0, center, 500)
+        {
+            Collision = new(Enumerable.Repeat(new StaticCollisionPrimitive(center, center, 500), 2048).ToArray()),
+        };
+        NavigationState navigation = new();
+        navigation.Follow(pilot.ShipId, 0, position, pilot.Flight.ShipRadius, target, 0, orbit: false, inBallpark: true);
+        HaulerProgress work = new(HaulerActivity.Flying, 0, 0, pilot.ShipId, SourceStation, target.Id, navigation.Capture());
+        string legacy = JsonSerializer.Serialize(work, new JsonSerializerOptions { IgnoreReadOnlyProperties = true });
+        Assert.Contains("\"Collision\":{\"Primitives\":", legacy);
+        using (WorldDbContext world = new(f.Database.Path))
+        {
+            world.Database.ExecuteSql($"UPDATE WorldCapsuleerHauler SET Progress={legacy} WHERE PilotId={founder.PilotId}");
+            world.Database.ExecuteSqlRaw($"PRAGMA user_version={WorldMigration.CurrentVersion - 1}");
+        }
+        long before = new FileInfo(f.Database.Path).Length;
+        WorldInitialization.Initialize(f.Database, f.Clock);
+        Assert.True(new FileInfo(f.Database.Path).Length < before);
+        var migrated = f.Founder().Progress;
+        Assert.DoesNotContain("\"Collision\"", migrated);
+        var restored = Assert.IsType<HaulerProgress>(HaulerCheckpoint.Read(migrated));
+        Assert.Equal(target.Id, restored.Navigation.FollowTarget?.Id);
+        Assert.Equal(target.Position, restored.Navigation.FollowTarget?.Position);
+        Assert.Equal(target.Radius, restored.Navigation.FollowTarget?.Radius);
+        var next = NavigationState.Restore(restored.Navigation, pilot.Flight);
+        Assert.Equal(
+            navigation.Advance(pilot.ShipId, 1, pilot.Flight, position, _ => target, [target]).Position,
+            next.Advance(pilot.ShipId, 1, pilot.Flight, position, _ => target, [target]).Position
+        );
+        using (WorldDbContext world = new(f.Database.Path))
+        {
+            new HaulerCheckpoint(founder.PilotId, work).Apply(world);
+        }
+        Assert.DoesNotContain("\"Collision\"", f.Founder().Progress);
+    }
 
     [Fact]
     public void PendingWarpGivesAHunterTimeAndTackleStillBlocksRelease()

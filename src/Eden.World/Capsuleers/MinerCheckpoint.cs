@@ -8,7 +8,7 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial record MinerCheckpoint(long PilotId, MinerProgress Work)
 {
-    private static readonly JsonSerializerOptions Options = new() { IgnoreReadOnlyProperties = true };
+    private static JsonSerializerOptions Options => CapsuleerCheckpointJson.Options;
 
     internal static MinerProgress? Read(string? json) =>
         json is null

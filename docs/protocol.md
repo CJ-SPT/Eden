@@ -58,6 +58,7 @@ and [returning traffic](protocol/capsuleers.md#traffic-returning-to-occupied-sys
 [Traffic through unobserved systems](protocol/capsuleers.md#traffic-through-unobserved-systems) records resident
 traveler admission, checkpoint recovery and the shared playtime pause. [Paced offscreen starts](protocol/capsuleers.md#paced-offscreen-starts)
 records how the scheduler limits the login backlog.
+[Compact navigation checkpoints](protocol/capsuleers.md#compact-navigation-checkpoints) cover the saved-world startup migration.
 
 [Civilian danger and stripped belts](protocol/capsuleers.md#civilian-danger-and-stripped-belts--november-17-2026) covers visible threats at belts and gates, paid mining cycles and direct travel between belts.
 

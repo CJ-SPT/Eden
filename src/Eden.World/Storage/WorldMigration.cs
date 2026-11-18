@@ -17,7 +17,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 189;
+    internal const int CurrentVersion = CapsuleerCheckpointMigration.Version;
 
     public static void Open(
         WorldDbContext world,
@@ -222,6 +222,17 @@ internal static class WorldMigration
                     AND EXISTS (SELECT 1 FROM WorldCapsuleerAgent WHERE PilotId = WorldCorporation.CeoId);
                 """
             );
+        }
+        if (version < CapsuleerCheckpointMigration.Version)
+        {
+            CapsuleerCheckpointMigration.RemoveEmbeddedCollision(world);
+            // Commit the schema and sanitized rows first. A restart retries reclamation if interrupted.
+            world.Database.ExecuteSqlRaw($"PRAGMA user_version={CapsuleerCheckpointMigration.Version - 1}");
+            history.Commit();
+            history.Dispose();
+            CapsuleerCheckpointMigration.ReclaimPages(world);
+            world.Database.ExecuteSqlRaw($"PRAGMA user_version={CurrentVersion}");
+            return;
         }
         world.Database.ExecuteSqlRaw($"PRAGMA user_version={CurrentVersion}");
         history.Commit();

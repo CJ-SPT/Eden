@@ -2680,3 +2680,41 @@ FullyQualifiedName~CapsuleerGlobalPopulationTests|FullyQualifiedName~CapsuleerBa
 
 **Optional maintainer checks.** On the first login after deployment, watch the offscreen waiting count and oldest queue
 delay on the performance page as the roster starts.
+
+## Compact navigation checkpoints
+
+Saved miner and hauler navigation retains the follow target's identity and approach data. The checkpoint writer
+omits collision meshes. Navigation resolves targets by identity and gets collision obstacles from the system view.
+The schema 190 migration strips existing embedded meshes and reclaims free pages on disk before the host copies
+the world into memory. The migration commits the payload changes before reclamation and retries the latter if
+startup is interrupted. SQLite can require temporary disk space for this one-time compaction.
+[SQLite VACUUM documentation](https://www.sqlite.org/lang_vacuum.html)
+
+On a copied save containing 23,323 bots, a pre-fix headless replay saved 729 embedded meshes. Removing their
+collision fields from a disposable copy reduced the compacted file from 529.34 MiB to 324.50 MiB.
+On the dedicated Linux host, the saved hauler progress alone contained 991.2 MiB of text. Kernel logs confirmed
+multiple out-of-memory kills near startup. The host recovered on the previous build before this change was deployed.
+
+### Automated validation
+
+The navigation regression writes a legacy follow target with a compound collider, restarts through the normal
+world initialization path, checks the file shrinks, and compares the next movement step using the system's
+collision obstacles. A subsequent checkpoint write also omits the mesh.
+
+The solution build passed with zero warnings. This affected filter passed 74 tests in 65 seconds.
+Both Python policy suites and formatting verification passed.
+The Release startup probe used the copied 23,323-bot save, a 0.5 traffic multiplier and 729 seeded legacy
+meshes. The production migration reduced the image from 618.05 MiB to 321.68 MiB. The headless host
+then hydrated resident state and warmed the startup catalogs at a 2,158 MiB post-collection working set.
+
+```text
+FullyQualifiedName~CapsuleerTrafficNavigationTests|FullyQualifiedName~CapsuleerPopulationSettingsTests|FullyQualifiedName~CapsuleerHandoffTests|FullyQualifiedName~CapsuleerResidentRoutineTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~WorldInitializationTests|FullyQualifiedName~DetachedCheckpointTests
+```
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+Record startup RAM on the dedicated host with its current population setting after the normal update.
