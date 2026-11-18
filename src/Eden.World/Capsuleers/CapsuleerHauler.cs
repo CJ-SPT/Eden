@@ -44,7 +44,7 @@ internal sealed class CapsuleerHaulerFactory(
     CapsuleerDefense defense,
     CapsuleerResupply resupply,
     CapsuleerRatting ratting,
-    CapsuleerAmmunitionSupply ammunitionSupply
+    CapsuleerIndustry ammunitionSupply
 )
 {
     internal CapsuleerHauler Create(long pilotId) =>
@@ -84,7 +84,7 @@ internal sealed partial class CapsuleerHauler(
     CapsuleerDefense defense,
     CapsuleerResupply resupply,
     CapsuleerRatting ratting,
-    CapsuleerAmmunitionSupply ammunitionSupply
+    CapsuleerIndustry ammunitionSupply
 )
 {
     private SavedCapsuleerHauler? _founder;

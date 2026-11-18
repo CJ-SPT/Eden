@@ -38,7 +38,14 @@ internal sealed partial class PilotMarketStore
         );
     }
 
-    private void Payment(WorldAction world, SavedPersonalOrder order, WalletEntryType kind, long amount, long counterparty = 0)
+    private void Payment(
+        WorldAction world,
+        SavedPersonalOrder order,
+        WalletEntryType kind,
+        long amount,
+        long counterparty = 0,
+        long? contextId = null
+    )
     {
         if (amount == 0)
         {
@@ -46,7 +53,7 @@ internal sealed partial class PilotMarketStore
         }
         if (order.CorporationId is int corporation)
         {
-            CorporationWalletStore.Pay(world, corporation, counterparty, order.Id, kind, amount, Now);
+            CorporationWalletStore.Pay(world, corporation, counterparty, contextId ?? order.Id, kind, amount, Now);
             return;
         }
         var wallet = Wallet(world, order.PilotId);
@@ -79,6 +86,18 @@ internal sealed partial class PilotMarketStore
             Standing(station.OwnerId),
             Standing(faction)
         );
+    }
+
+    private static bool HasListingSlot(WorldAction world, CatalogDbContext catalog, long pilotId)
+    {
+        int Level(MarketSkill skill) => PilotSkillReader.Level(world, catalog, pilotId, (int)skill);
+        int limit = PersonalMarketRules.OrderLimit(
+            Level(MarketSkill.Trade),
+            Level(MarketSkill.Retail),
+            Level(MarketSkill.Wholesale),
+            Level(MarketSkill.Tycoon)
+        );
+        return world.Filter<SavedPersonalOrder>(o => o.PilotId == pilotId).Count(o => o.Status == PersonalOrderStatus.Open) < limit;
     }
 
     private SavedPersonalOrder Incoming(
@@ -119,14 +138,7 @@ internal sealed partial class PilotMarketStore
         };
         if (days > 0)
         {
-            int Level(MarketSkill skill) => PilotSkillReader.Level(world, catalog, pilot.Id, (int)skill);
-            int limit = PersonalMarketRules.OrderLimit(
-                Level(MarketSkill.Trade),
-                Level(MarketSkill.Retail),
-                Level(MarketSkill.Wholesale),
-                Level(MarketSkill.Tycoon)
-            );
-            if (world.Set<SavedPersonalOrder>().Count(o => o.PilotId == pilot.Id && o.Status == PersonalOrderStatus.Open) >= limit)
+            if (!HasListingSlot(world, catalog, pilot.Id))
             {
                 throw new InvalidDataException("Train trading skills or close an existing market order first.");
             }
@@ -248,7 +260,14 @@ internal sealed partial class PilotMarketStore
                 }
                 else if (buyerOrder.CorporationId.HasValue)
                 {
-                    Payment(world, buyerOrder, WalletEntryType.MarketTransaction, -gross, sellerOrder?.CorporationId ?? sellerId);
+                    Payment(
+                        world,
+                        buyerOrder,
+                        WalletEntryType.MarketTransaction,
+                        -gross,
+                        sellerOrder?.CorporationId ?? sellerId,
+                        buyerOrder.Id == 0 ? candidate.Id : buyerOrder.Id
+                    );
                 }
                 else
                 {
@@ -363,7 +382,8 @@ internal sealed partial class PilotMarketStore
         long pilotId,
         int stationId,
         IReadOnlyList<MarketPurchase> items,
-        int days
+        int days,
+        int? corporationId = null
     )
     {
         var pilot = Pilot(world, pilotId);
@@ -381,7 +401,18 @@ internal sealed partial class PilotMarketStore
         List<MarketExecution> trades = [];
         foreach (var request in items)
         {
-            var order = Incoming(world, catalog, pilot, station, request.TypeId, true, request.LimitPriceCents, request.Quantity, days);
+            var order = Incoming(
+                world,
+                catalog,
+                pilot,
+                station,
+                request.TypeId,
+                true,
+                request.LimitPriceCents,
+                request.Quantity,
+                days,
+                corporationId
+            );
             int start = changes.Count;
             var fills = MatchOrders(world, catalog, order, changes);
             if (days == 0 && fills.Count == 0)

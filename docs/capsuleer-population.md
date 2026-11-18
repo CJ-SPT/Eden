@@ -85,7 +85,20 @@ bill division for the proposed monthly dues. A partner joins through the standar
 can recruit a third corporation. Once admitted, members share the alliance affiliation used by roaming gangs and escorts.
 [Alliance policy and validation](protocol/alliances.md#autonomous-bot-alliances)
 
-### Corporation ammunition supply
+### Corporation industry
+
+Miners in bot-led corporations can manufacture catalog products to fill local buy orders. They can use an original or a
+licensed copy from their hangar, refine suitable ore, and buy missing ingredients or an original locally. The corporation
+funds purchases and factory charges from its wallet and receives the proceeds from the completed goods. The bot checks
+the recipe's skills, facility restrictions, expected proceeds and available funds before installing a job.
+[Manufacturing policy and validation](protocol/capsuleers.md#demand-driven-bot-manufacturing)
+
+When local stock and offers cannot cover the batch, a corpmate can collect the remainder from another station within
+three jumps. The hauler combines needed materials sold at the same station, carries what fits, and unloads into the
+manufacturer's factory hangar. Cargo and the return trip survive a restart.
+[Nearby procurement](protocol/capsuleers.md#nearby-procurement-for-bot-factories)
+
+#### Corporation ammunition supply
 
 Bot corporations can produce and trade **Iron Charge S**. A miner docked at an NPC factory with a market can refine owned
 ore or buy missing minerals. It can also buy a blueprint original from the local market. The factory uses the catalog recipe

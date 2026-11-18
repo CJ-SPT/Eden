@@ -59,8 +59,8 @@ internal sealed partial class CapsuleerResupply
                     ?.TypeId
                 ?? (
                     pilot.CorporationId >= CorporationRules.FirstCorporationId
-                    && CapsuleerAmmunitionSupply.CanUseIron(catalog, module.TypeId)
-                    && CapsuleerAmmunitionSupply.Employer(world, pilotId, pilot.CorporationId) is not null
+                    && CapsuleerIndustry.CanUseIron(catalog, module.TypeId)
+                    && CapsuleerIndustry.Employer(world, pilotId, pilot.CorporationId) is not null
                         ? CapsuleerAmmunitionSupplyRules.ChargeType
                         : 0
                 );
@@ -232,10 +232,7 @@ internal sealed partial class CapsuleerResupply
             if (!need.Drone && need.TypeId == CapsuleerAmmunitionSupplyRules.ChargeType)
             {
                 int capacity = Capacity(world, catalog, pilotId, ship.Id, need, remaining);
-                if (
-                    CapsuleerAmmunitionSupply.IssueReserve(world, catalog, pilotId, pilot.CorporationId, ship.StationId, capacity) is
-                    { } reserve
-                )
+                if (CapsuleerIndustry.IssueReserve(world, catalog, pilotId, pilot.CorporationId, ship.StationId, capacity) is { } reserve)
                 {
                     Load(world, catalog, pilotId, ship.Id, ship.StationId, reserve.ItemId, reserve.Quantity, need.Drone, now);
                     inventoryChanged = true;
@@ -342,8 +339,8 @@ internal sealed partial class CapsuleerResupply
                     ?.TypeId
                 ?? (
                     pilot.CorporationId >= CorporationRules.FirstCorporationId
-                    && CapsuleerAmmunitionSupply.CanUseIron(catalog, module.TypeId)
-                    && CapsuleerAmmunitionSupply.Employer(world, pilotId, pilot.CorporationId) is not null
+                    && CapsuleerIndustry.CanUseIron(catalog, module.TypeId)
+                    && CapsuleerIndustry.Employer(world, pilotId, pilot.CorporationId) is not null
                         ? CapsuleerAmmunitionSupplyRules.ChargeType
                         : 0
                 );

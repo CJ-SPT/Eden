@@ -49,6 +49,7 @@ public sealed record MinerProgress(
 )
 {
     public long WorkingBelt { get; init; }
+    public FactorySupplyRequest? FactorySupply { get; init; }
     public BeltMemory[] AvoidedBelts { get; init; } = [];
     public BeltMemory[] StrippedBelts { get; init; } = [];
     public bool LeaveAfterCycle { get; init; }

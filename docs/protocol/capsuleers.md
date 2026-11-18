@@ -54,6 +54,145 @@ both Python policy suites passed (8 catalog and 9 formatting checks), and format
 **Optional maintainer checks.** From a nullsec gate, watch a newly arrived gang member appear in the overview
 as it moves and confirm its hull renders when it engages.
 
+## Combined factory pickups
+
+A hauler can collect several missing materials from the same supplier station. Supplier selection favors the station
+that can fill the most distinct shortages in one load. Ties favor more units, fewer jumps, then a lower quoted cost.
+The buyer rechecks factory stock, local offers, supplier orders, corporate funds and cargo on arrival. It fills smaller
+loads first and uses any remaining space and budget for the rest. A shortage can be partially filled.
+
+The hauler checks the whole purchase against one cargo allowance and one corporate balance. The resident market action
+pays for the materials and puts them into real cargo in the same transaction, with one manifest stack per material
+even when several orders supply it. Delivery uses the checkpointed manifest. Existing saved routes still identify the
+supplier and factory, and paid shipments preserve their saved cargo.
+
+Packing follows the existing cargo capacity rules. EVE University describes the role of hold space and station-to-station
+travel in hauling. The existing market custody reference is recorded below. [EVE University Hauling](https://wiki.eveuniversity.org/Hauling)
+
+### Automated validation
+
+The factory supply integration test covers a single material, two materials on one trip, and a hold where either material
+fits on its own and the combined load requires a partial purchase. It checks corporate spending, seller order quantities,
+multiple fills for the same material, restart recovery, and the remaining factory shortage.
+
+The exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerAmmunitionSupplyTests.HaulsOnlyTheRemoteShortfallAndResumesDeliveryAfterRestart`
+passed all three cases in 14 seconds. The final isolated run on top of `249446e6` passed 87 tests in 42 seconds with
+`FullyQualifiedName~` filters for `CapsuleerAmmunitionSupplyTests`, `CapsuleerHaulerTests`, `CapsuleerInboundRuntimeTests`, `CapsuleerMinerTests`,
+`PersonalMarketTests` and `Eden.Protocol.Tests.Industry.IndustryTests`. The build completed with zero warnings or errors.
+Tool and solution restore, 17 Python policy tests, formatting, documentation links and diff whitespace checks passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+List two missing ingredients at the same nearby station and verify both sale transactions come from one pickup.
+
+## Nearby procurement for bot factories
+
+A factory turns a material shortage into a supply request once it has checked its own hangar, suitable ore and local sell
+offers. Demand-driven jobs still require an owned blueprint or a local original listing. Their remote purchase ceilings
+account for projected proceeds, local expenses and corporate funds. The existing Iron Charge S stocking run can also
+request nearby materials when it has an original at the factory.
+
+A hauling corpmate searches open player and NPC orders at stations reachable within three gate jumps of both the hauler
+and the factory. It checks the known threat systems. Before purchasing, the courier rechecks the factory's stock, local
+offers and any supporting buy order. It then buys from the current supplier book using the corporation wallet and the
+ship's free cargo space. Subsequent work extended the original single-material dispatch policy.
+[Combined factory pickups](#combined-factory-pickups)
+
+The factory request is stored in the existing miner checkpoint and the assignment, cargo and route are stored in the
+hauler checkpoint. Each corporation sends one supply courier at a time. The hauler deposits surviving cargo into the
+manufacturer's factory hangar, or corporate Market Deliveries if that manufacturer has left the corporation. After
+delivery, the next factory check combines the shipment with local inputs and installs an ordinary industry job when the
+batch is ready. The existing market and flight services handle order matching, gate travel and docking.
+
+The hauling policy uses ordinary station trading and physical cargo described by EVE University. The existing industry
+and market custody references are listed in the manufacturing and ammunition records below.
+[EVE University Hauling](https://wiki.eveuniversity.org/Hauling)
+
+### Automated validation
+
+The integration fixture uses the pinned 150mm Railgun I recipe with a partial sell order at the factory and the balance
+one gate away. It verifies local restock precedence, route avoidance, spending from the treasury, actual cargo custody,
+checkpoint recovery, duplicate delivery protection and installation using the delivered and local materials. The final exact
+filter passed in 6 seconds:
+
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerAmmunitionSupplyTests.HaulsOnlyTheRemoteShortfallAndResumesDeliveryAfterRestart`
+
+The final isolated run passed 85 tests in 45 seconds with `FullyQualifiedName~` filters for
+`CapsuleerAmmunitionSupplyTests`, `CapsuleerHaulerTests`, `CapsuleerInboundRuntimeTests`, `CapsuleerMinerTests`,
+`PersonalMarketTests` and `Eden.Protocol.Tests.Industry.IndustryTests`. The solution build completed in 12 seconds with
+zero warnings or errors. Tool and solution restore, 17 Python policy tests, formatting, documentation links and diff
+whitespace checks passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+List a missing input at a neighboring station, place a buy order for the finished item at the factory and verify the
+supplier sale and subsequent finished-item delivery.
+
+## Demand-driven bot manufacturing
+
+At an NPC station with factory and market services, a miner in a bot-led corporation considers open local buy orders from
+other pilots. The product-to-recipe lookup comes from the published build 3662168 manufacturing catalog. It uses the same
+facility restrictions and required skills as player jobs. The miner can qualify at Industry I, use an owned original or
+licensed copy, buy an original locally, and source missing inputs from ordinary local sell orders. It can also refine
+owned ore that yields a missing ingredient while working from an owned blueprint.
+
+The planner tries up to five runs per job, capped by the buy order's quantity, recipe timing and any copy license. It
+checks that projected proceeds after broker fees and tax exceed the estimated cost of the job, owned inputs and purchases,
+including the cost of any blueprint it needs to buy. The corporation pays for purchases and installation. An operator can
+cover a treasury shortfall from its own ISK, using the existing contribution cap. The resident transaction settles purchases,
+moves goods into the operator's manufacturing hangar, and consumes job inputs together. A corporation runs one supply job at
+a time and skips products it already has in local deliveries or on the market.
+
+The regular docked routine delivers finished jobs into Market Deliveries. It lists finished stock at a current bid price
+when available or at a catalog-backed reference price. The ordinary market handles escrow, matching, taxes and fees. Iron
+Charge S also keeps its established supply route and can be produced for stocking while local demand offers no eligible job.
+Blueprint research, invention and reactions remain future industry activities. Nearby procurement extends this workflow.
+[Nearby procurement for bot factories](#nearby-procurement-for-bot-factories)
+
+EVE University describes the blueprint, material and skill prerequisites. The feature reuses Eden's station manufacturing
+lifecycle. The EVE.js reference for industry install and wallet settlement is `industryInstallSettlementState.js` at SHA-256
+`8bfe741f7afce165241becc22549118cf95633bc36cb58099968193d1d2ee3dd`. The existing market and industry wire records cover
+the client calls used here. [EVE University manufacturing](https://wiki.eveuniversity.org/Manufacturing) ·
+[Eden station manufacturing](industry.md)
+
+### Automated validation
+
+The exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerAmmunitionSupplyTests.LocalDemandFundsCatalogManufacturingAndDeliveryAfterRestart`
+passed both cases in 10 seconds. The tests use the pinned 150mm Railgun I and Merlin recipes, exercise local blueprint
+and materials purchases, enforce limited copy runs, and reopen jobs before delivery. They verify the buyer's order
+and inventory, corporate ledger and retained blueprint.
+
+The broader development run passed 140 tests in 6 minutes 11 seconds before the final blueprint run-limit adjustment and
+funding regression assertions. It used `FullyQualifiedName~` filters for `CapsuleerAmmunitionSupplyTests`, `CapsuleerMinerTests`,
+`CapsuleerHaulerTests`, `CapsuleerInboundRuntimeTests`, `Eden.Protocol.Tests.Industry.IndustryTests`,
+`StarterProductionTests`, `ReprocessingTests`, `PersonalMarketTests`, `StandardMarketTests`,
+`MarketReadCompatibilityTests` and `CorporationWalletTests`.
+
+The final focused run passed 107 tests in 5 minutes 18 seconds with the same class filters apart from
+`CapsuleerMinerTests`, `CapsuleerHaulerTests` and `CapsuleerInboundRuntimeTests`. It verifies that a corporation with
+insufficient funds leaves the input orders untouched. Tool and solution restore passed, and the build completed in 14
+seconds with zero warnings or errors. Both Python policy suites passed all 17 cases. Formatting, documentation links and
+diff whitespace checks passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+Place a buy order at a station where a funded bot corporation has factory access and local inputs. Verify the resulting
+purchase in the wallet and inventory after the job time has elapsed.
+
 ## Corporation ammunition supply
 
 World schema 189 adds optional corporation ownership to industry output and sell orders. Existing personal records retain

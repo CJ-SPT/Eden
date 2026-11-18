@@ -14,11 +14,15 @@ internal sealed partial class CapsuleerHauler
         var catalog = _operation.Catalog;
         if (Work.CorporationSupply is { } assigned)
         {
+            if (assigned.FactorySupply is { } factory)
+            {
+                return HandleFactorySupply(world, live, assigned, factory);
+            }
             if (Pilot.StationId == _route.SourceStationId)
             {
                 if (Work.Freight is { } delivered)
                 {
-                    CapsuleerAmmunitionSupply.Deliver(world, catalog, Pilot, assigned, delivered);
+                    CapsuleerIndustry.Deliver(world, catalog, Pilot, assigned, delivered);
                 }
                 _work = Work with
                 {
@@ -52,11 +56,11 @@ internal sealed partial class CapsuleerHauler
             return false;
         }
 
-        var avoided = (Work.Routine?.Threats ?? [])
-            .Where(observed => observed.ExpiresAt > Work.ActiveTicks)
-            .Select(observed => observed.SystemId)
-            .ToHashSet();
-        if (CapsuleerAmmunitionSupply.PlanCollection(world, catalog, live, Pilot, avoided, Now) is not { } collection)
+        var avoided = AvoidedSupplierSystems();
+        var collection =
+            ammunitionSupply.PlanFactoryCollection(world, catalog, live, Pilot, avoided, Now)
+            ?? CapsuleerIndustry.PlanCollection(world, catalog, live, Pilot, avoided, Now);
+        if (collection is null)
         {
             return false;
         }
@@ -64,11 +68,26 @@ internal sealed partial class CapsuleerHauler
         {
             CapsuleerFreight.Deliver(world, pilotId, Pilot.ShipId, arrived);
         }
-        _route = collection.Route;
+        _work = Work with { CorporationSupply = collection.Run, Freight = null, Resupply = null };
+        if (collection.Run.FactorySupply is { } factoryRun && Pilot.StationId == factoryRun.SupplierStationId)
+        {
+            return HandleFactorySupply(world, live, collection.Run, factoryRun);
+        }
+        BeginSupplyJourney(collection.Route);
+        return true;
+    }
+
+    private HashSet<int> AvoidedSupplierSystems() =>
+        (Work.Routine?.Threats ?? [])
+            .Where(observed => observed.ExpiresAt > Work.ActiveTicks)
+            .Select(observed => observed.SystemId)
+            .ToHashSet();
+
+    private void BeginSupplyJourney(CapsuleerTrafficRoute route)
+    {
+        _route = route;
         _work = Work with
         {
-            CorporationSupply = collection.Run,
-            Freight = null,
             Journey = new(
                 TrafficJourneyKind.Regional,
                 Pilot.StationId,
@@ -77,12 +96,10 @@ internal sealed partial class CapsuleerHauler
                 _route.Systems,
                 Work.Journey?.Sequence ?? 0
             ),
-            Resupply = null,
             RouteDirection = 1,
             TrafficLane = null,
         };
         LaunchActivity();
         BeginTravel();
-        return true;
     }
 }

@@ -224,7 +224,14 @@ internal sealed partial class PilotMarketStore
         return MarketRules.SalesTax(level);
     }
 
-    internal IReadOnlyList<MarketOrder> SupplyOrders(WorldAction world, CatalogDbContext catalog, int stationId, IReadOnlyList<int> types)
+    internal IReadOnlyList<MarketOrder> SupplyOrders(
+        WorldAction world,
+        CatalogDbContext catalog,
+        int stationId,
+        IReadOnlyList<int> types,
+        long? buyerId = null,
+        int? buyerCorporationId = null
+    )
     {
         var station = Station(catalog, stationId);
         if (!HasMarket(catalog, station))
@@ -293,6 +300,8 @@ internal sealed partial class PilotMarketStore
                 && Enumerable.Contains(types, o.TypeId)
                 && o.Status == PersonalOrderStatus.Open
                 && o.Expires > Now
+                && (buyerId == null || o.PilotId != buyerId)
+                && (buyerCorporationId == null || o.CorporationId != buyerCorporationId)
             )
             .AsEnumerable()
             .Select(o => o.Snapshot());

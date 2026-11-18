@@ -55,12 +55,45 @@ internal sealed partial class PilotMarketStore
         int quantity
     ) => PersonalMarketRules.BrokerFee(price, quantity, BrokerRate(world, catalog, pilotId, Station(catalog, station)));
 
+    internal static bool HasSupplyListingSlot(WorldAction world, CatalogDbContext catalog, long pilotId) =>
+        HasListingSlot(world, catalog, pilotId);
+
+    internal static long EstimatedSupplyProceeds(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        int station,
+        long price,
+        int quantity
+    )
+    {
+        var fill = MarketRules.Fill(quantity, quantity, price, TaxRate(world, catalog, pilotId));
+        return fill.GrossCents - fill.TaxCents - SupplyBrokerFee(world, catalog, pilotId, station, price, quantity);
+    }
+
+    internal MarketResult BuyManufacturingInputs(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        int station,
+        SavedCorporation corporation,
+        IReadOnlyList<MarketPurchase> inputs
+    )
+    {
+        if (Pilot(world, pilotId).CorporationId != corporation.Id || corporation.ClosedAt is not null)
+        {
+            throw new InvalidDataException("Corporate manufacturing inputs require an active employer.");
+        }
+        return ExecuteBuy(world, catalog, pilotId, station, inputs, 0, corporation.Id);
+    }
+
     internal void ListCorporationSupply(
         EconomyTransaction world,
         CatalogDbContext catalog,
         long operatorId,
         SavedCorporation corporation,
         OwnedItem stock,
+        int quantity,
         long price,
         int days
     )
@@ -74,15 +107,20 @@ internal sealed partial class PilotMarketStore
             || stock.LocationId != station.Id
             || stock.FlagId != CorporationStorageRules.MarketDeliveriesFlag
             || stock.Singleton
+            || quantity <= 0
+            || quantity > stock.Quantity
         )
         {
             throw new InvalidDataException("Corporate supply must be listed from owned station deliveries.");
         }
-        int quantity = checked((int)stock.Quantity);
         var order = Incoming(world, catalog, pilot, station, stock.TypeId, false, price, quantity, days, corporation.Id);
         List<InventoryChange> changes = [];
         MatchOrders(world, catalog, order, changes);
-        world.Remove(stock);
+        stock.Quantity -= quantity;
+        if (stock.Quantity == 0)
+        {
+            world.Remove(stock);
+        }
         Event(world, order, MarketOrderChangeKind.Placed);
     }
 
