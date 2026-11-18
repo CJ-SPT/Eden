@@ -2718,3 +2718,33 @@ Not performed. Agent client testing is disabled.
 ### Optional maintainer checks
 
 Record startup RAM on the dedicated host with its current population setting after the normal update.
+
+## Shared resident skill profiles
+
+The resident skill table loads skills by pilot and type. Pilots with identical ordered skill IDs and 64-bit
+point balances reference one immutable profile. A committed edit updates a private copy of the pilot's profile.
+The store releases a profile after the last pilot stops using it. Skill lookups, checkpoint rows and the
+SQLite update-hook identity map retain the same pilot and type keys.
+
+### Automated validation
+
+Matched Release startup probes used the same 23,323-bot save and 0.5 traffic multiplier. After catalog warmup,
+the managed heap after collection fell from 1,227.2 MiB to 1,133.3 MiB. Process working set varied between the
+two runs. Host hydration was 6.33 seconds for the control and 6.78 seconds with shared profiles. These are single
+headless samples on the local workstation. The regression exercises equal starting profiles, rollback,
+independent point edits, a SQL notification, a detached checkpoint, and reopening.
+
+The solution build passed with zero warnings. The affected filter passed 220 tests in 88 seconds.
+Both Python policy suites and formatting verification passed.
+
+```text
+FullyQualifiedName~ResidentEconomyTests|FullyQualifiedName~ResidentFitTests|FullyQualifiedName~PilotSkillBookTests|FullyQualifiedName~FreeSkillPoint|FullyQualifiedName~SkillExtraction|FullyQualifiedName~SkillInjector|FullyQualifiedName~CapsuleerProvisioningTests|FullyQualifiedName~CapsuleerGlobalPopulationTests
+```
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.

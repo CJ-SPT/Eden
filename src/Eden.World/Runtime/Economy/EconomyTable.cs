@@ -68,10 +68,12 @@ internal interface IEconomyTable
 internal interface IEconomyRows<TState>
     where TState : class
 {
+    string LoadOrder { get; }
     IEnumerable<EconomyKey> Keys { get; }
     TState? Read(EconomyKey key);
     IReadOnlyCollection<EconomyKey>? Candidates(string column, object? value);
     void Set(EconomyKey key, TState? row);
+    void CompleteWrites();
     void Clear();
 }
 
@@ -255,6 +257,8 @@ internal sealed partial class EconomyTable<TRow, TState>(
         }
     }
 
+    internal void CompleteWrites() => groupedRows?.CompleteWrites();
+
     public void Load(WorldDbContext world)
     {
         groupedRows?.Clear();
@@ -281,6 +285,10 @@ internal sealed partial class EconomyTable<TRow, TState>(
             parameter.Value = JsonSerializer.Serialize(rowIds);
             command.Parameters.Add(parameter);
         }
+        if (groupedRows is not null)
+        {
+            command.CommandText += $" ORDER BY {groupedRows.LoadOrder}";
+        }
         SessionPerformance.DatabaseCommand(command.CommandText);
         long started = Stopwatch.GetTimestamp();
         using var reader = command.ExecuteReader();
@@ -298,6 +306,7 @@ internal sealed partial class EconomyTable<TRow, TState>(
                 _sqlBaselines.Remove(id);
             }
         }
+        CompleteWrites();
         SessionPerformance.DatabaseElapsed(Stopwatch.GetElapsedTime(started));
     }
 
@@ -623,5 +632,6 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
         {
             table.Publish(change.Key, change.Value);
         }
+        table.CompleteWrites();
     }
 }

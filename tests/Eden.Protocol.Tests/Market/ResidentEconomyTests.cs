@@ -95,13 +95,14 @@ public sealed class ResidentEconomyTests
                 {
                     PilotId = otherPilot,
                     TypeId = firstSkill,
-                    Points = 30,
+                    Points = 10,
                 }
             );
             world.SaveChanges();
         }
 
         Assert.Equal(new[] { 10L }, Balances(Human));
+        Assert.Equal(new[] { 10L }, Balances(otherPilot));
         using (var action = live.Economy.Begin(TransactionParticipants.None))
         {
             var skills = action.Set<PilotSkill>();
@@ -131,6 +132,8 @@ public sealed class ResidentEconomyTests
             );
             action.Commit();
         }
+        Assert.Equal(new[] { largeBalance }, Balances(Human));
+        Assert.Equal(new[] { 10L }, Balances(otherPilot));
         using var snapshot = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
         using (WorldDbContext world = new(fixture.Path))
         {
@@ -152,7 +155,7 @@ public sealed class ResidentEconomyTests
         {
             Assert.Null(earlier.Set<PilotSkill>().Find(Human, firstSkill));
             Assert.Equal(largeBalance, earlier.Set<PilotSkill>().Find(Human, secondSkill)!.Points);
-            Assert.Equal(30, earlier.Set<PilotSkill>().Find(otherPilot, firstSkill)!.Points);
+            Assert.Equal(10, earlier.Set<PilotSkill>().Find(otherPilot, firstSkill)!.Points);
         }
         await live.FlushAsync();
         using SqliteConnection disk = new($"Data Source={fixture.Path};Mode=ReadOnly;Pooling=False");
