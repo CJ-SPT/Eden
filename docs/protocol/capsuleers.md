@@ -2,6 +2,63 @@
 
 [Protocol index](../protocol.md)
 
+## Corporation ammunition supply
+
+World schema 189 adds optional corporation ownership to industry output and sell orders. Existing personal records retain
+their owner and behavior. The first chain uses **Iron Charge S (215)** and **Iron Charge S Blueprint (1130)**. A five-run
+batch follows the pinned catalog, using 135 Tritanium and 105 Pyerite at base material efficiency and producing 500 rounds.
+Industry I is granted as the bot's manufacturing qualification. The miner provides actual refined or market-bought materials
+and a purchased original through its personal hangar. The corporation pays manufacturing and broker costs, owns the output
+and receives net sale proceeds. Treasury shortfalls can be funded from the assigned pilot's existing wallet, capped at
+a quarter of the available personal balance per expense. Both sides record the contribution.
+
+A manufacturer with stock can list one outstanding seven-day ask. Public buyers use the existing order book and matching
+rules. Authorized corporate financial staff can read the open corporate offers through `GetCorporationOrders`. Its order rows
+send the corporation owner in `charID` with `isCorp` set. On expiration, unsold escrow returns to corporate Market Deliveries. Shared market execution, industry delivery and
+station service checks remain in their owning World features.
+
+A separate purchasing corporation with a compatible ship and fewer than 100 reserve rounds seeks a supplier within three
+gate jumps. One courier at a time travels from the headquarters to the supplier. It purchases at most 200 rounds from the
+specified finite sell order at the supplier station. Billing and cargo loading share a resident action. The rounds travel
+in real cargo, and only surviving units are credited to the buyer's headquarters deliveries. The saved route, order ID and
+cargo manifest resume after a checkpoint. Purchased ammunition uses separate custody from generated traffic manifests.
+The courier can finish through unobserved systems while anyone is playing. Compatible combat bots draw from local stock
+at their normal docked resupply step, and existing fitting and ammunition operations handle cargo and magazine loading.
+
+Sources include [EVE University manufacturing](https://wiki.eveuniversity.org/Production), the pinned build 3662168 recipe and
+[station manufacturing record](industry.md), and the local EVE.js industry and market custody references.
+`industryInstallSettlementState.js` SHA-256 is `8bfe741f7afce165241becc22549118cf95633bc36cb58099968193d1d2ee3dd`.
+`marketItemCustody.js` SHA-256 is `3f3ce4dfd28289f8a08b078ea55799435d86608408507331b74632ec426d72a6`.
+`marketProxyService.js` SHA-256 is `f457cb1b181ceb570a5fa346c718d71a7ce7b84b8734c88cee7f2546a8ce175b`.
+Batch size, the reserve threshold, route length, the first recipe and corporate spending are Eden policy.
+
+### Automated validation
+
+The supply-chain fixture opens a schema 188 save, buys a blueprint through the public market, reprocesses Scordite and
+delivers a timed manufacturing job. It checks the public offer and corporate order visibility, sells to a player and a
+corporation, verifies the treasury entries, and checkpoints the pilot with paid cargo aboard. A reopened scheduler
+returns the cargo through a gate, rejects duplicate delivery, and feeds the reserve into an empty compatible railgun.
+
+- Exact method filter `FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerAmmunitionSupplyTests.MinedInputsBecomePublicOrdersAndPaidCourierStockSurvivesRestart`
+  passed in 9 seconds before the final corporate order wire change.
+- The final solution build passed in 9 seconds. The exact method plus the `StandardMarketTests`, `PersonalMarketTests`
+  and `MarketReadCompatibilityTests` class filters passed all 47 tests in 18 seconds, including the corporate order row.
+- The broader run took 7 minutes 51 seconds before the wire change and passed 429 of 431 tests. It used
+  `FullyQualifiedName~` filters for `CapsuleerAmmunitionSupplyTests`, `CapsuleerCorporationTests`, `CapsuleerHaulerTests`,
+  `CapsuleerInboundRuntimeTests`, `CapsuleerDefenseLifecycleTests`, `StarterProductionTests`, `IndustryTests`,
+  `ReprocessingTests`, `Eden.Protocol.Tests.Market`, `CorporationWalletTests`, `CorporationFinancialPanelTests`
+  and `WorldMigrationTests`. The existing rollback failures in `RegionalMarketTests` and `NpcRestingOrderTests`
+  reproduced on both the final code and baseline `53a2b94b`.
+- The catalog and formatting policy suites passed all 17 Python tests. Formatting and the diff whitespace check passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer check
+
+In the client, find a bot-made Iron Charge S ask and verify the resulting trade in the corporation wallet.
+
 ## Bot corporation recruitment and gangs
 
 Schema 188 opens applications for existing active bot-led charters. New bot charters start open. The bot CEO uses the existing

@@ -2,6 +2,7 @@ using System.Globalization;
 using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Inventory;
+using Eden.Data.World.Market;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Economy;
@@ -223,6 +224,42 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         return new((double)tax, station.Efficiency, quotes);
     }
 
+    internal bool RefineForProduction(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        int stationId,
+        OwnedItem item,
+        IReadOnlyDictionary<int, int> missing
+    )
+    {
+        var source = catalog.Definitions.Find(CatalogData.Sde.NpcStations, (long)stationId);
+        if (
+            source?.ReprocessingEfficiency is not > 0 or > 1
+            || source.ReprocessingStationsTake is not >= 0 or > 1
+            || source.OperationID is not long operation
+            || !StationCapabilities.Has(catalog, operation, StationService.Reprocessing)
+            || catalog.Read(CatalogData.Client.Typematerials, (long)item.TypeId)?.Materials is not { } materials
+            || !materials.Any(material => material.MaterialTypeID is long id && missing.ContainsKey((int)id))
+        )
+        {
+            return false;
+        }
+        var pilot = ReadPilot(world, pilotId);
+        var station = Station(world, catalog, pilot, stationId);
+        var quote = Quote(world, catalog, pilot, item, station.Efficiency, Tax(world, pilot, station));
+        if (
+            quote.Portions == 0
+            || !quote.Recoverables.Any(row => row.Quantity > 0 && missing.ContainsKey(row.TypeId))
+            || quote.CostCents > (world.Set<PilotWallet>().Find(pilotId)?.Cents ?? 0)
+        )
+        {
+            return false;
+        }
+        Reprocess(world, catalog, pilotId, stationId, [item.Id], stationId, null, stationId, (int)InventoryFlag.Hangar);
+        return true;
+    }
+
     public ReprocessingResult Reprocess(
         long pilotId,
         long stationId,
@@ -236,6 +273,23 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         using var scope = new WorldActionScope(database, new(pilots: [pilotId]));
         var world = scope.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var result = Reprocess(world, catalog, pilotId, stationId, itemIds, sourceId, ownerId, outputLocationId, outputFlagId);
+        scope.Commit();
+        return result;
+    }
+
+    internal ReprocessingResult Reprocess(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long stationId,
+        IReadOnlyList<long> itemIds,
+        long sourceId,
+        long? ownerId,
+        long outputLocationId,
+        int outputFlagId
+    )
+    {
         var pilot = ReadPilot(world, pilotId);
         var station = Station(world, catalog, pilot, stationId);
         var ship = pilot.ActiveShip;
@@ -305,7 +359,6 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
             (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc(),
             TaskEvents.Reprocessed
         );
-        scope.Commit();
         return new(items.Select(i => i.Id).ToArray(), output, changes, balance);
     }
 }

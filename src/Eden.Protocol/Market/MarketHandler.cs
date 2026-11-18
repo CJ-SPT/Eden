@@ -136,7 +136,7 @@ internal sealed class MarketHandler(
                     var escrow = personal.Escrow(context.Pilot.PilotId);
                     return new EscrowInfo(Isk(escrow.IskCents), Isk(escrow.ItemsValueCents));
                 case "GetCorporationOrders":
-                    return Rows([]);
+                    return Rows(personal.CorporationOrders(context.Pilot.PilotId));
                 case "CancelCharOrder" when args is [long cancelId, long cancelRegion]:
                     personal.Cancel(context.Pilot.PilotId, cancelId, checked((int)cancelRegion));
                     monitor.Advance(context);

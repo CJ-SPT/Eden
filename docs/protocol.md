@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Corporation ammunition supply](protocol/capsuleers.md#corporation-ammunition-supply) covers manufacturing, public sales,
+paid courier trips and reserve resupply by simulated corporations.
+
 [Bot corporation recruitment and gangs](protocol/capsuleers.md#bot-corporation-recruitment-and-gangs) covers player applications,
 autonomous invite acceptance, and live affiliation checks during patrols.
 

@@ -39,7 +39,8 @@ internal sealed class CapsuleerMinerFactory(
     IPilotTackle tackle,
     IPilotHealth health,
     MarketChangeSignal marketSignal,
-    CapsuleerDefense defense
+    CapsuleerDefense defense,
+    CapsuleerAmmunitionSupply ammunitionSupply
 )
 {
     internal CapsuleerMiner Create(long pilotId) =>
@@ -58,7 +59,8 @@ internal sealed class CapsuleerMinerFactory(
             tackle,
             health,
             marketSignal,
-            defense
+            defense,
+            ammunitionSupply
         );
 }
 
@@ -77,7 +79,8 @@ internal sealed class CapsuleerMiner(
     IPilotTackle tackle,
     IPilotHealth health,
     MarketChangeSignal marketSignal,
-    CapsuleerDefense defense
+    CapsuleerDefense defense,
+    CapsuleerAmmunitionSupply ammunitionSupply
 )
 {
     private static readonly CatalogDefinition<bool> s_miningBelt = new(
@@ -649,6 +652,13 @@ internal sealed class CapsuleerMiner(
                 new(ore.Select(i => i.Id).ToArray(), Pilot.ShipId, (int)InventoryFlag.Hangar, null),
                 Now
             );
+        }
+        if (
+            Pilot.CorpId >= Eden.Gameplay.Corporations.CorporationRules.FirstCorporationId
+            && _operation.World is EconomyTransaction supplyWorld
+        )
+        {
+            _operation.MarketChanged |= ammunitionSupply.Produce(supplyWorld, _operation.Catalog, Pilot, Now);
         }
         _laser = aboard.FirstOrDefault(i => i.TypeId == (int)MiningLaserType.MinerI && InventoryDefinitions.IsHighSlot(i.FlagId));
         if (_laser is null)

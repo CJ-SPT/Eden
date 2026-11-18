@@ -77,6 +77,18 @@ Roaming gangs, escorts and gate camps use current corporation and alliance membe
 unaffiliated corporations, a roaming gang cancels its patrol and returns home. Corporate and alliance mates are
 excluded from autonomous patrol targeting. [Recruitment and gang implementation](protocol/capsuleers.md#bot-corporation-recruitment-and-gangs)
 
+### Corporation ammunition supply
+
+Bot corporations can produce and trade **Iron Charge S**. A miner docked at an NPC factory with a market can refine owned
+ore or buy missing minerals. It can also buy a blueprint original from the local market. The factory uses the catalog recipe
+and normal job time. Delivered ammunition enters corporate Market Deliveries, and the corporation pays to list it on the usual
+public market. Player orders participate at the normal price priority.
+
+A separate bot corporation with a compatible patrol fit can send a hauler up to three jumps to collect an available order when
+its headquarters reserve falls below 100 rounds. The hauler buys up to 200 rounds, subject to funds and actual cargo capacity.
+It delivers the surviving cargo to the buyer's corporate reserve. Compatible corpmates can draw rounds from that reserve
+on their regular resupply stops. [Ammunition supply implementation](protocol/capsuleers.md#corporation-ammunition-supply)
+
 ## Temporary gate camps
 
 Eligible combat pilots can form a three-ship camp at a local gate. A scout reports visible ships, a fitted tackler can

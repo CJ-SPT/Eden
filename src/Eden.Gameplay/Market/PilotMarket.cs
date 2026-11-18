@@ -17,7 +17,8 @@ public sealed record MarketOrder(
     int DurationDays = MarketDefinitions.NpcOrderDays,
     long EscrowCents = 0,
     int Range = MarketDefinitions.StationRange,
-    int MinimumVolume = 1
+    int MinimumVolume = 1,
+    bool IsCorporation = false
 );
 
 public sealed record MarketSale(long ItemId, int StationId, int TypeId, long LimitPriceCents, int Quantity);

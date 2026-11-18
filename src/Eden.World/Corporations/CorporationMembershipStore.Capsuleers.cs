@@ -1,8 +1,10 @@
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Corporations;
+using Eden.Data.World.Industry;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Corporations;
+using Eden.Gameplay.Industry;
 using Eden.World.Capsuleers;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
@@ -85,6 +87,10 @@ internal sealed partial class CorporationMembershipStore
             || pilot.ActiveShip.StructureId.HasValue
             || work?.Gang is { Phase: not RoamingGangPhase.Complete }
             || work?.RegionalEscort is not null
+            || work?.CorporationSupply is not null
+            || world
+                .Filter<IndustryJob>(job => job.PilotId == pilot.Id)
+                .Any(job => job.OutputCorporationId != null && job.Status == IndustryJobStatus.Installed)
             // A loaded hauler can settle at its destination dock before loading the next shipment.
             || work?.Freight is { Stacks.Length: > 0 } freight && freight.Destination != pilot.ActiveShip.StationId
         )

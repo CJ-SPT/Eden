@@ -371,7 +371,7 @@ public sealed class CapsuleerCorporationTests
         await restored.FlushAsync();
     }
 
-    private static void PrepareExistingSave(CapsuleerHaulerTests.Fixture fixture)
+    internal static void PrepareExistingSave(CapsuleerHaulerTests.Fixture fixture)
     {
         using (CatalogDbContext catalog = new(fixture.Database.CatalogPath, writable: true))
         {

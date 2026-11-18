@@ -42,6 +42,7 @@ public sealed record HaulerProgress(
 {
     public BeltMemory[] VisitedBelts { get; init; } = [];
     public FreightManifest? Freight { get; init; }
+    public CorporationSupplyRun? CorporationSupply { get; init; }
     public long[] RattingLoot { get; init; } = [];
     public RattingProgress? Ratting { get; init; }
     public ResupplyProgress? Resupply { get; init; }

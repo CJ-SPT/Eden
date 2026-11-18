@@ -8,6 +8,10 @@ internal static class IndustryContainerSchema
     internal static void Upgrade(WorldDbContext world)
     {
         var columns = world.Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldIndustryJob')").ToHashSet();
+        if (!columns.Contains("OutputCorporationId"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldIndustryJob ADD COLUMN OutputCorporationId INTEGER");
+        }
         if (!columns.Contains("OutputLocationId"))
         {
             world.Database.ExecuteSqlRaw("ALTER TABLE WorldIndustryJob ADD COLUMN OutputLocationId INTEGER");

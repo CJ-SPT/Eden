@@ -89,6 +89,14 @@ internal static class PersonalMarketSchema
         );
         if (
             !world
+                .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldPersonalOrder')")
+                .Contains("CorporationId")
+        )
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldPersonalOrder ADD COLUMN CorporationId INTEGER");
+        }
+        if (
+            !world
                 .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldEconomy')")
                 .AsEnumerable()
                 .Contains("InstitutionalStock")

@@ -41,7 +41,8 @@ internal sealed class CapsuleerHaulerFactory(
     MarketChangeSignal marketSignal,
     CapsuleerDefense defense,
     CapsuleerResupply resupply,
-    CapsuleerRatting ratting
+    CapsuleerRatting ratting,
+    CapsuleerAmmunitionSupply ammunitionSupply
 )
 {
     internal CapsuleerHauler Create(long pilotId) =>
@@ -60,7 +61,8 @@ internal sealed class CapsuleerHaulerFactory(
             marketSignal,
             defense,
             resupply,
-            ratting
+            ratting,
+            ammunitionSupply
         );
 }
 
@@ -79,7 +81,8 @@ internal sealed partial class CapsuleerHauler(
     MarketChangeSignal marketSignal,
     CapsuleerDefense defense,
     CapsuleerResupply resupply,
-    CapsuleerRatting ratting
+    CapsuleerRatting ratting,
+    CapsuleerAmmunitionSupply ammunitionSupply
 )
 {
     private SavedCapsuleerHauler? _founder;
@@ -116,6 +119,7 @@ internal sealed partial class CapsuleerHauler(
                 or { Ratting: not null }
                 or { Gang.Phase: RoamingGangPhase.Forming or RoamingGangPhase.Hunting or RoamingGangPhase.Returning }
                 or { RegionalEscort: not null }
+                or { CorporationSupply: not null }
         || _incoming.Length != 0
         || _warpBlocked
         || Volatile.Read(ref _threatenedShip) != 0;
@@ -866,6 +870,10 @@ internal sealed partial class CapsuleerHauler(
             throw new InvalidDataException("Waiting for a replacement hauling ship.");
         }
         JoinCorporationAtDock();
+        if (TryCorporationSupply())
+        {
+            return;
+        }
         bool upgraded =
             Work.Freight is null
             && Pilot.ShipTypeId == HaulingRules.BadgerType

@@ -51,7 +51,7 @@ internal static class MarketWire
                     duration ?? order.DurationDays,
                     0,
                     Isk(order.EscrowCents),
-                    false,
+                    order.IsCorporation,
                 },
             ]
         );
