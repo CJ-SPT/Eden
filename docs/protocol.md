@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Autonomous Miner II production](protocol/capsuleers.md#autonomous-miner-ii-production) covers paid procurement,
+saved copying and invention jobs, and public sales of the finished modules.
+
 [Paid Merlin replacement](protocol/capsuleers.md#paid-merlin-replacement) covers public buy orders, corporate spending
 and a patrol pilot returning to duty across a restart.
 

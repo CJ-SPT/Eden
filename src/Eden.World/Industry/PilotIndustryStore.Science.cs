@@ -3,12 +3,14 @@ using System.Text.Json;
 using Eden.Data.Catalog;
 using Eden.Data.World.Industry;
 using Eden.Data.World.Inventory;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Economy;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.World.Catalog;
+using Eden.World.Corporations;
 using Eden.World.Economy;
 using Eden.World.Inventory;
 using Eden.World.Runtime.Economy;
@@ -27,10 +29,22 @@ internal sealed partial class PilotIndustryStore
 
     private IndustryResult InstallScience(long pilotId, IndustryRequest request)
     {
-        _ = ScienceRules.TimeAttribute(request.Activity);
         using var scope = new WorldActionScope(database, new(pilots: [pilotId]));
-        var world = scope.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var result = InstallScience(scope.World, catalog, pilotId, request);
+        scope.Commit();
+        return result;
+    }
+
+    internal IndustryResult InstallScience(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        IndustryRequest request,
+        int? supplyCorporation = null
+    )
+    {
+        _ = ScienceRules.TimeAttribute(request.Activity);
         AdvanceFacility(world, catalog, request.FacilityId, Now);
         var station = CurrentStation(world, catalog, pilotId, request.FacilityId, StationService.Laboratory);
         Eden.World.Structures.StructureIndustry.RequireService(world, catalog, pilotId, request.FacilityId, request.Activity);
@@ -154,7 +168,8 @@ internal sealed partial class PilotIndustryStore
                 checked((int)(product?.Quantity ?? 1)),
                 decryptor,
                 FacilityMultiplier(catalog, station, 2602)
-            )
+            ),
+            checkQuote: !supplyCorporation.HasValue
         );
         List<InventoryChange> changes = [];
         ConsumeMaterials(world, catalog, pilotId, Storage(world, catalog, pilotId, station.Id, request.Input), plan.Materials, changes);
@@ -194,18 +209,20 @@ internal sealed partial class PilotIndustryStore
             )
             .Entity;
         SetJobOutput(world, catalog, job, request);
-        double value = EconomicStore.Enabled(world)
-            ? BlueprintValue(catalog, EconomicStore.Prices(world), job.ProductTypeId) * plan.CostMultiplier
-            : 0;
-        double security = catalog.Definitions.Find(CatalogData.Client.Systems, (long)station.SolarSystemId)?.SecurityStatus ?? 0;
-        var charge = EconomicStore.IndustryCharge(
+        if (supplyCorporation is int owner)
+        {
+            job.OutputCorporationId = owner;
+            job.OutputFlagId = CorporationStorageRules.MarketDeliveriesFlag;
+        }
+        var charge = ScienceCharge(
             world,
+            catalog,
             pilotId,
             station.SolarSystemId,
-            value,
+            item.TypeId,
+            job.ProductTypeId,
             request.Activity,
-            security,
-            Attributes(catalog, item.TypeId).GetValueOrDefault(DogmaAttributeId.IndustryJobCostMultiplier, 1)
+            plan.CostMultiplier
         );
         if (request.QuotedCharge is { } quoted && (quoted.CostCents != charge.CostCents || quoted.TaxCents != charge.TaxCents))
         {
@@ -213,23 +230,57 @@ internal sealed partial class PilotIndustryStore
         }
         job.CostCents = charge.TotalCents;
         world.SaveChanges();
-        long? balance =
-            charge.TotalCents > 0
-                ? EconomicStore.Pay(world, pilotId, station.OwnerId, job.Id, EntryType(job.Activity), charge.TotalCents, now)
-                : null;
-        var result = new IndustryResult(ReadJob(world, catalog, job), changes, balance);
-        scope.Commit();
-        return result;
+        long? balance = null;
+        if (charge.TotalCents > 0)
+        {
+            if (supplyCorporation is int corporation)
+            {
+                CorporationWalletStore.Pay(world, corporation, station.OwnerId, job.Id, EntryType(job.Activity), -charge.TotalCents, now);
+            }
+            else
+            {
+                balance = EconomicStore.Pay(world, pilotId, station.OwnerId, job.Id, EntryType(job.Activity), charge.TotalCents, now);
+            }
+        }
+        return new(ReadJob(world, catalog, job), changes, balance);
     }
 
-    private static double BlueprintValue(CatalogDbContext catalog, IReadOnlyDictionary<int, decimal> prices, int typeId)
+    internal static ManufacturingCharge ScienceCharge(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilot,
+        int system,
+        int sourceBlueprint,
+        int outputBlueprint,
+        IndustryActivity activity,
+        double multiplier
+    )
+    {
+        double value = EconomicStore.Enabled(world) ? BlueprintValue(world, catalog, outputBlueprint) * multiplier : 0;
+        double security = catalog.Definitions.Find(CatalogData.Client.Systems, (long)system)?.SecurityStatus ?? 0;
+        return EconomicStore.IndustryCharge(
+            world,
+            pilot,
+            system,
+            value,
+            activity,
+            security,
+            Attributes(catalog, sourceBlueprint).GetValueOrDefault(DogmaAttributeId.IndustryJobCostMultiplier, 1)
+        );
+    }
+
+    private static double BlueprintValue(WorldAction world, CatalogDbContext catalog, int typeId)
     {
         var recipe =
             BlueprintDefinition(catalog, typeId).Activities?.Manufacturing
             ?? throw new InvalidDataException("The blueprint has no manufacturing valuation.");
+        var materials = IndustryMaterials.Calculate(
+            (recipe.Materials ?? []).Select(m => new ManufacturingMaterial(m.TypeID, m.Quantity)).ToArray(),
+            1
+        );
         return EconomicRules.ClientValue(
-            IndustryMaterials.Calculate((recipe.Materials ?? []).Select(m => new ManufacturingMaterial(m.TypeID, m.Quantity)).ToArray(), 1),
-            prices
+            materials,
+            materials.Keys.ToDictionary(type => type, type => EconomicStore.AdjustedPrice(world, type))
         );
     }
 
@@ -329,7 +380,7 @@ internal sealed partial class PilotIndustryStore
                     new OwnedItem
                     {
                         Id = checked(next + i),
-                        OwnerId = job.PilotId,
+                        OwnerId = job.OutputCorporationId ?? job.PilotId,
                         TypeId = job.ProductTypeId,
                         LocationId = job.OutputLocationId ?? job.StationId,
                         FlagId = job.OutputFlagId,

@@ -1,6 +1,7 @@
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Corporations;
+using Eden.Data.World.Economy;
 using Eden.Data.World.Industry;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
@@ -11,6 +12,8 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
+using Eden.Gameplay.Mining;
+using Eden.Gameplay.Skills;
 using Eden.Protocol.Market;
 using Eden.Protocol.Tests.Combat;
 using Eden.Protocol.Tests.Industry;
@@ -24,7 +27,11 @@ using Eden.World.Combat;
 using Eden.World.Configuration;
 using Eden.World.Corporations;
 using Eden.World.Docking;
+using Eden.World.Fittings;
+using Eden.World.Industry;
 using Eden.World.Inventory;
+using Eden.World.Market;
+using Eden.World.Reprocessing;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -931,6 +938,306 @@ public sealed class CapsuleerAmmunitionSupplyTests
             }
             throw new InvalidOperationException($"Patrol did not reach the expected state. Last progress was {last?.Work}.");
         }
+    }
+
+    [Fact]
+    public async Task MinerTwoFactoryBuysCopiesInventsManufacturesAndSellsAcrossRestarts()
+    {
+        const int factorySystem = 30000142;
+        const int MinerTwo = CapsuleerMinerTwoRules.Module;
+        const int MinerOneBlueprint = CapsuleerMinerTwoRules.Original;
+        const int MinerTwoBlueprint = CapsuleerMinerTwoRules.InventedBlueprint;
+        const int MechanicalDatacore = 20424;
+        const int LaserDatacore = 20413;
+        const long capital = 100_000_000L * MarketDefinitions.CentsPerIsk;
+        const long inputAsk = 100 * MarketDefinitions.CentsPerIsk;
+        const long moduleBid = 60_000_000;
+        using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
+        CapsuleerCorporationTests.PrepareExistingSave(fixture);
+        PassiveCatalogFixture.LoadStarterProduction(fixture.Database.CatalogPath);
+        PrepareCatalog(fixture);
+        PrepareMinerTwoCatalog(fixture);
+        UseLocalOrders(fixture);
+        WorldInitialization.Initialize(fixture.Database, fixture.Clock);
+
+        var random = new MinerTwoRandom();
+        long producer;
+        int corporation;
+        HashSet<int> inputTypes = [MinerOneBlueprint, MechanicalDatacore, LaserDatacore];
+        using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+            using (var setup = live.Economy.Begin())
+            {
+                setup.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId)!.TestingMarket = false;
+                setup.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId)!.TestingGrants = false;
+                setup.Set<SavedEconomicPolicy>().Single().ChargeServiceCosts = true;
+                producer = setup.Set<SavedCapsuleerAgent>().Single(agent => agent.Career == CapsuleerCareer.Mining).PilotId;
+                foreach (var agent in setup.Set<SavedCapsuleerAgent>().Where(agent => agent.PilotId != producer).ToArray())
+                {
+                    setup.Add(new SavedCapsuleerSuspension { PilotId = agent.PilotId });
+                }
+                setup.Pilots.Find(producer)!.ActiveShip.StationId = FactoryStation;
+                setup.Pilots.Find(Customer)!.ActiveShip.StationId = FactoryStation;
+                corporation = Charter(setup, catalog, producer, "Miner Two Works", "MINR", fixture.Clock.Now);
+                setup.Add(new PilotWallet { PilotId = Customer, Cents = capital });
+                var trade =
+                    setup.Set<PilotSkill>().Find(Customer, (int)MarketSkill.Trade)
+                    ?? setup.Add(new PilotSkill { PilotId = Customer, TypeId = (int)MarketSkill.Trade }).Entity;
+                trade.Points = TrainedSkill.PointsForLevel(1, 2);
+                var recipe = ManufacturingCatalog.Recipes(catalog)[MinerTwoBlueprint];
+                foreach (
+                    int type in ManufacturingCatalog
+                        .Recipes(catalog)[MinerOneBlueprint]
+                        .Materials.Concat(recipe.Materials)
+                        .Select(material => (int)material.TypeId!.Value)
+                        .Distinct()
+                )
+                {
+                    if (setup.Set<SavedAdjustedPrice>().Find(type) is null)
+                    {
+                        setup.Add(new SavedAdjustedPrice { TypeId = type, PriceIsk = 1000 });
+                    }
+                }
+                var materials = IndustryMaterials.Calculate(
+                    recipe.Materials,
+                    CapsuleerMinerTwoRules.BatchSize,
+                    IndustryDefinitions.InventionMaterialEfficiency
+                );
+                foreach (var (type, quantity) in materials)
+                {
+                    AddStock(setup, Customer, FactoryStation, type, quantity);
+                    inputTypes.Add(type);
+                }
+                AddStock(setup, Customer, FactoryStation, MinerOneBlueprint, 1);
+                AddStock(setup, Customer, FactoryStation, MechanicalDatacore, 4);
+                AddStock(setup, Customer, FactoryStation, LaserDatacore, 4);
+                setup.Commit();
+            }
+            MarketSale[] listings = live.Economy.Read(world =>
+                world
+                    .Filter<OwnedItem>(item => item.OwnerId == Customer)
+                    .Where(item => item.LocationId == FactoryStation)
+                    .AsEnumerable()
+                    .Where(item => inputTypes.Contains(item.TypeId))
+                    .Select(item => new MarketSale(item.Id, FactoryStation, item.TypeId, inputAsk, item.Quantity))
+                    .ToArray()
+            );
+            Assert.All(
+                listings,
+                listing =>
+                    Assert.True(
+                        catalog.Read(CatalogData.Client.Types, (long)listing.TypeId) is { Published: 1, MarketGroupID: > 0 }
+                            && catalog.FittingType(listing.TypeId) is not null,
+                        $"Missing market metadata for input {listing.TypeId}."
+                    )
+            );
+            host.GetRequiredService<IPersonalMarket>().PlaceSell(Customer, listings, 7);
+            Assert.False(Produce(host));
+            live.Economy.Inspect(world =>
+            {
+                Assert.Empty(Jobs(world));
+                Assert.Equal(0, Stock(world, producer, FactoryStation, MinerOneBlueprint));
+                return true;
+            });
+            using (var funded = live.Economy.Begin())
+            {
+                funded.Set<SavedCorporation>().Find(corporation)!.BalanceCents = capital;
+                funded.Commit();
+            }
+            await live.FlushAsync();
+        }
+
+        IndustryActivity[] stages =
+        [
+            IndustryActivity.Copying,
+            IndustryActivity.Invention,
+            IndustryActivity.Copying,
+            IndustryActivity.Invention,
+            IndustryActivity.Manufacturing,
+        ];
+        IndustryJob? previous = null;
+        for (int index = 0; index < stages.Length; index++)
+        {
+            using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+            var live = host.GetRequiredService<LiveWorld>();
+            if (previous is { } saved)
+            {
+                live.Economy.Inspect(world =>
+                {
+                    var reopened = world.Set<IndustryJob>().Find(saved.Id)!;
+                    Assert.Equal(IndustryJobStatus.Installed, reopened.Status);
+                    Assert.Equal(saved.EndTime, reopened.EndTime);
+                    Assert.Equal(saved.SuccessfulRuns, reopened.SuccessfulRuns);
+                    Assert.Equal(corporation, reopened.OutputCorporationId);
+                    return true;
+                });
+            }
+            if (index == 2)
+            {
+                // The first invention roll failed. Delivery after reopening must honor the saved roll.
+                Assert.False(Produce(host));
+                Assert.False(Produce(host));
+                live.Economy.Inspect(world =>
+                {
+                    Assert.Equal(2, Jobs(world).Length);
+                    Assert.Equal(0, Jobs(world)[1].SuccessfulRuns);
+                    Assert.Equal(IndustryJobStatus.Delivered, Jobs(world)[1].Status);
+                    Assert.Equal(0, Stock(world, corporation, FactoryStation, MinerTwoBlueprint));
+                    Assert.Equal(0, Stock(world, producer, FactoryStation, MechanicalDatacore));
+                    Assert.Equal(0, Stock(world, producer, FactoryStation, LaserDatacore));
+                    return true;
+                });
+                fixture.Clock.AdvanceWallTime(CapsuleerMinerTwoRules.FailureRetry);
+            }
+            if (index == 0)
+            {
+                using var human = host.GetRequiredService<IHumanPresence>().Select(Customer, factorySystem);
+                host.GetRequiredService<CapsuleerScheduler>().PopulationPrepared(factorySystem);
+                MinerObservation? observed = null;
+                for (int step = 0; step < 12 && live.Economy.Read(world => Jobs(world).Length) == 0; step++)
+                {
+                    observed = CapsuleerTestDriver.Miner(host, fixture.Clock);
+                }
+                Assert.True(
+                    live.Economy.Read(world => Jobs(world).Length) > 0,
+                    $"Factory miner did not install copying. {observed?.Work.Activity}, {observed?.WaitingReason}"
+                );
+            }
+            else
+            {
+                Produce(host);
+            }
+            previous = live.Economy.Read(world =>
+            {
+                var jobs = Jobs(world);
+                Assert.Equal(index + 1, jobs.Length);
+                var running = Assert.Single(jobs, job => job.Status == IndustryJobStatus.Installed);
+                Assert.Equal(stages[index], running.Activity);
+                Assert.Equal(corporation, running.OutputCorporationId);
+                return running;
+            });
+            Assert.False(Produce(host));
+            Assert.Equal(
+                previous.Id,
+                live.Economy.Read(world => Assert.Single(Jobs(world), job => job.Status == IndustryJobStatus.Installed).Id)
+            );
+            await live.FlushAsync();
+            fixture.Clock.AdvanceWallTime(TimeSpan.FromTicks(previous.EndTime - fixture.Clock.Now));
+        }
+
+        using var finalHost = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var final = finalHost.GetRequiredService<LiveWorld>();
+        Assert.Equal(IndustryJobStatus.Installed, final.Economy.Read(world => world.Set<IndustryJob>().Find(previous!.Id)!.Status));
+        var book = finalHost.GetRequiredService<IPersonalMarket>();
+        book.PlaceBuy(Customer, new(FactoryStation, MinerTwo, moduleBid, CapsuleerMinerTwoRules.BatchSize, 7));
+        Assert.True(Produce(finalHost));
+        Assert.False(Produce(finalHost));
+        final.Economy.Inspect(world =>
+        {
+            var jobs = Jobs(world);
+            Assert.Equal(stages, jobs.Select(job => job.Activity));
+            Assert.All(jobs, job => Assert.Equal(IndustryJobStatus.Delivered, job.Status));
+            Assert.Equal(0, jobs[1].SuccessfulRuns);
+            Assert.Equal(1, jobs[3].SuccessfulRuns);
+            Assert.Equal(2, random.Calls);
+            Assert.Equal(CapsuleerMinerTwoRules.BatchSize, Stock(world, Customer, FactoryStation, MinerTwo));
+            Assert.Equal(0, Stock(world, corporation, FactoryStation, MinerTwo));
+            var original = Assert.Single(
+                world.Filter<OwnedItem>(item => item.OwnerId == producer),
+                item => item.TypeId == MinerOneBlueprint
+            );
+            Assert.Equal(-1, original.BlueprintRuns);
+            var copy = Assert.Single(world.Filter<OwnedItem>(item => item.OwnerId == producer), item => item.TypeId == MinerTwoBlueprint);
+            Assert.Equal(10 - CapsuleerMinerTwoRules.BatchSize, copy.BlueprintRuns);
+            var ledger = world.Filter<SavedWalletLedger>(entry => entry.OwnerId == corporation).ToArray();
+            Assert.Single(ledger, entry => entry.EntryType == WalletEntryType.MarketTransaction && entry.AmountCents > 0);
+            Assert.Equal(capital + ledger.Sum(entry => entry.AmountCents), world.Set<SavedCorporation>().Find(corporation)!.BalanceCents);
+            foreach (var job in jobs)
+            {
+                Assert.True(job.CostCents > 0);
+                var kind = job.Activity switch
+                {
+                    IndustryActivity.Copying => WalletEntryType.Copying,
+                    IndustryActivity.Invention => WalletEntryType.Invention,
+                    _ => WalletEntryType.Manufacturing,
+                };
+                Assert.Single(
+                    ledger,
+                    entry => entry.EntryType == kind && entry.AmountCents == -job.CostCents && entry.ReferenceId == job.Id
+                );
+            }
+            return true;
+        });
+
+        bool Produce(ServiceProvider host)
+        {
+            var factory = new CapsuleerIndustry(
+                new(fixture.Database, fixture.Clock, random),
+                host.GetRequiredService<PilotReprocessingStore>(),
+                host.GetRequiredService<PilotMarketStore>(),
+                host.GetRequiredService<PilotFittingStore>()
+            );
+            using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+            using var world = host.GetRequiredService<LiveWorld>().Economy.Begin();
+            var pilot = host.GetRequiredService<SqliteWorld>().FindPilot(world, -1, producer)!;
+            bool changed = factory.Produce(world, catalog, pilot, fixture.Clock.Now);
+            world.Commit();
+            return changed;
+        }
+
+        IndustryJob[] Jobs(WorldAction world) =>
+            world.Filter<IndustryJob>(job => job.OutputCorporationId == corporation).OrderBy(job => job.Id).ToArray();
+    }
+
+    private sealed class MinerTwoRandom : IIndustryRandom
+    {
+        public int Calls { get; private set; }
+
+        public IReadOnlyList<double> Rolls(int count)
+        {
+            Assert.Equal(1, count);
+            return Calls++ == 0 ? [0.99] : [0];
+        }
+    }
+
+    private static void PrepareMinerTwoCatalog(CapsuleerHaulerTests.Fixture fixture)
+    {
+        using CatalogDbContext catalog = new(fixture.Database.CatalogPath, writable: true);
+        // The test factory can keep its regular operator docked while the lab jobs mature.
+        catalog.Database.ExecuteSql($"DELETE FROM Celestial WHERE SolarSystemId={30000142} AND GroupId={AsteroidDefinitions.BeltGroup}");
+        // Pinned Miner II recipe matches the build 3662168 production audit.
+        catalog.Database.ExecuteSqlRaw(
+            """
+            INSERT OR IGNORE INTO ItemGroup VALUES (134,'Mining Laser Blueprint',9);
+            INSERT OR IGNORE INTO ItemType(Id,Name,GroupId) VALUES (482,'Miner II',54),(784,'Miner II Blueprint',134),
+                (20424,'Mechanical Engineering Datacore',18),(20413,'Laser Physics Datacore',18),
+                (11399,'Morphite',18),(3689,'Mechanical Parts',18),(11541,'Photon Microprocessor',18),
+                (11689,'Laser Focusing Crystals',18),(11482,'R.A.M. Energy Tech',18),
+                (11447,'Laser Physics',257),(11452,'Mechanical Engineering',257),
+                (23121,'Gallente Encryption Methods',257),(3443,'Trade',257);
+            INSERT OR IGNORE INTO TypeAttribute VALUES (11447,275,5),(11452,275,5),(23121,275,5),(3443,275,1);
+            INSERT OR REPLACE INTO SourceRecord VALUES
+                ('client/stationoperations','14','{{"services":[5,7,14,15,17]}}'),
+                ('client/systems','30000142','{{"securityStatus":0.9}}'),
+                ('client/typelist','799','{{"includedTypeIDs":[23121]}}'),
+                ('client/types','482','{{"published":1,"marketGroupID":1039,"volume":5}}'),
+                ('client/types','784','{{"published":1,"volume":0.01}}'),
+                ('client/types','20424','{{"published":1,"marketGroupID":1,"volume":0.1}}'),
+                ('client/types','20413','{{"published":1,"marketGroupID":1,"volume":0.1}}'),
+                ('client/types','11399','{{"published":1,"marketGroupID":1,"volume":0.01}}'),
+                ('client/types','3689','{{"published":1,"marketGroupID":1,"volume":0.01}}'),
+                ('client/types','11541','{{"published":1,"marketGroupID":1,"volume":0.01}}'),
+                ('client/types','11689','{{"published":1,"marketGroupID":1,"volume":0.01}}'),
+                ('client/types','11482','{{"published":1,"marketGroupID":1,"volume":0.01}}'),
+                ('client/blueprints','"784"','{{"blueprintTypeID":784,"activities":{{"manufacturing":{{"time":2340,
+                    "skills":[{{"typeID":3380,"level":5}},{{"typeID":11447,"level":1}},{{"typeID":11452,"level":1}}],
+                    "materials":[{{"typeID":11399,"quantity":1}},{{"typeID":3689,"quantity":8}},{{"typeID":483,"quantity":1}},
+                        {{"typeID":11541,"quantity":5}},{{"typeID":11689,"quantity":3}},{{"typeID":11482,"quantity":1}}],
+                    "products":[{{"typeID":482,"quantity":1}}]}}}}}}');
+            """
+        );
     }
 
     private static void UseLocalOrders(CapsuleerHaulerTests.Fixture fixture)

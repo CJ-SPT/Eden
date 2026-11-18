@@ -2,6 +2,62 @@
 
 [Protocol index](../protocol.md)
 
+## Autonomous Miner II production
+
+At an NPC station with market, laboratory and manufacturing services, a miner in a bot-led corporation can buy the
+Miner I original, the required datacores and the materials for up to five Miner II modules. It can reuse available
+inventory. The planner checks the corporation's funds, market quantities and projected proceeds before starting.
+The starting estimate includes the cost of failed invention attempts. The existing bot skill provisioning
+qualifies the operator for the catalog recipe when the funded plan starts.
+
+The bot installs an ordinary one-run copy job, then runs invention for a licensed Miner II copy with the normal chance roll.
+It takes the completed copies from corporate Market Deliveries and uses the invented copy for manufacturing. The
+original and unused licensed runs stay available to the operator. Market purchases and job installation settle in
+the same resident action, with the master wallet paying the market and industry charges. The corporation stocks
+one batch at a time and lists the resulting modules on the public station market. It can plan a batch from the
+reference sell price even without an open buy order.
+
+Industry jobs already checkpoint the reserved blueprint, completion time and invention outcome. The factory
+advances the saved job on its docked routine, including at a factory with no usable asteroid belt. A failed
+invention spends its inputs and starts a one-hour wall-clock retry delay, recorded by the delivered job's
+timestamp.
+
+The fixed product, batch size and retry delay are Eden policy. The pinned build 3662168 catalog supplies the input
+quantities, skills, licensed runs and success chance. The local build 3396210 EVE.js
+`server/src/services/industry/industryRuntimeState.js` snapshot distinguishes copying from invention and records the
+successful runs before delivery (SHA-256 `BF6AB290BD622ED029FD8ED6E2214B4604FF874F6BECD585842FFE4EAC01D63C`).
+[CCP Invention](https://support.eveonline.com/hc/en-us/articles/203210642-Invention) ·
+[CCP Copying](https://support.eveonline.com/hc/en-us/articles/203210602-Copying) ·
+[UniWiki Invention](https://wiki.eveuniversity.org/Invention)
+
+### Automated validation
+
+The factory fixture starts with player sell orders and no corporate funding, then funds the bot and exercises
+procurement, copying, a failed invention, the paid retry, manufacturing and a public sale. It reopens the world
+with each job installed and compares the job ID, deadline, outcome and owner before continuing. It checks the
+remaining licensed runs, the unique wallet entry for each paid job and delivery of all five modules to the buyer.
+
+The exact `MinerTwoFactoryBuysCopiesInventsManufacturesAndSellsAcrossRestarts` filter passed in 8.38 seconds.
+The solution built with zero warnings and errors in 7.43 seconds. The affected run passed 202 tests in 91.90 seconds
+with these class filters using `FullyQualifiedName~.<Class>.`:
+
+```text
+CapsuleerAmmunitionSupplyTests, CapsuleerMinerTests, CapsuleerHaulerTests, CapsuleerMiningFleetTests,
+PilotAwarenessTests, IndustryTests, ScienceRulesTests, ScienceJobTests, BulkIndustryDeliveryTests,
+IndustryContainerTests, IndustryFacilityLookupTests, ProductionCatalogTests, ReactionJobTests,
+PersonalMarketTests, CorporationWalletTests, ResidentBotEconomyTests
+```
+
+Both Python policy suites passed all 17 cases. Style, CSharpier, line-width and diff checks passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer check
+
+Stock the required inputs at a bot factory with laboratory service and buy its finished Miner II modules.
+
 ## Paid Merlin replacement
 
 A bot pilot in a bot-led corporation can replace a lost Merlin after its capsule reaches an NPC market station.
@@ -251,7 +307,8 @@ a time and skips products it already has in local deliveries or on the market.
 The regular docked routine delivers finished jobs into Market Deliveries. It lists finished stock at a current bid price
 when available or at a catalog-backed reference price. The ordinary market handles escrow, matching, taxes and fees. Iron
 Charge S also keeps its established supply route and can be produced for stocking while local demand offers no eligible job.
-Blueprint research, invention and reactions remain future industry activities. Nearby procurement extends this workflow.
+[Autonomous Miner II production](#autonomous-miner-ii-production) adds copying and invention for that chain. Nearby
+procurement extends the general manufacturing workflow.
 [Nearby procurement for bot factories](#nearby-procurement-for-bot-factories)
 
 EVE University describes the blueprint, material and skill prerequisites. The feature reuses Eden's station manufacturing

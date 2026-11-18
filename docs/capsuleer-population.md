@@ -109,6 +109,10 @@ three jumps. The hauler combines needed materials sold at the same station, carr
 manufacturer's factory hangar. Cargo and the return trip survive a restart.
 [Nearby procurement](protocol/capsuleers.md#nearby-procurement-for-bot-factories)
 
+At stations with a laboratory, a funded corporation can buy the inputs for Miner II, copy the Miner I original,
+invent a licensed copy and manufacture up to five modules for public sale. The ordinary job deadlines and invention
+outcomes survive restart. [Miner II production](protocol/capsuleers.md#autonomous-miner-ii-production)
+
 #### Corporation ammunition supply
 
 Bot corporations can produce and trade **Iron Charge S**. A miner docked at an NPC factory with a market can refine owned

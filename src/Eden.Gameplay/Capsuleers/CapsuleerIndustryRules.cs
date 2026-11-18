@@ -23,3 +23,13 @@ public sealed record FactorySupplyDemand(long OrderId, long MinimumUnitPriceCent
 public sealed record FactorySupplyRequest(int CorporationId, int StationId, FactorySupplyDemand? Demand, FactorySupplyNeed[] Materials);
 
 public sealed record FactorySupplyShipment(long ManufacturerId, int FactoryStationId, int SupplierStationId, long? DemandOrderId);
+
+public static class CapsuleerMinerTwoRules
+{
+    // Build 3662168 blueprint activity chain from Miner I to Miner II.
+    public const int Original = 785;
+    public const int InventedBlueprint = 784;
+    public const int Module = 482;
+    public const int BatchSize = 5;
+    public static readonly TimeSpan FailureRetry = TimeSpan.FromHours(1);
+}

@@ -712,7 +712,7 @@ internal sealed partial class CapsuleerMiner(
         _miningReach = MiningReach(_operation.World, _operation.Catalog, _laser);
         RefreshObjects();
         _work = Work with { StrippedBelts = Work.StrippedBelts.Where(b => b.Until > Work.ActiveTicks).ToArray() };
-        var field = NextBelt(out long retryAt);
+        var field = NextBelt(out long retryAt, out bool knownBelts);
         if (field is null)
         {
             _work = Work with
@@ -721,7 +721,9 @@ internal sealed partial class CapsuleerMiner(
                 DueTicks = retryAt,
                 DueStamp = CapsuleerScheduleRules.Stamp(retryAt, Work.ClockOffsetTicks),
                 WaitingReason =
-                    Work.StrippedBelts.Length == 0 ? "Sheltering until the belt is clear." : "Waiting to revisit stripped belts.",
+                    !knownBelts ? "Waiting for a known asteroid belt."
+                    : Work.StrippedBelts.Length == 0 ? "Sheltering until the belt is clear."
+                    : "Waiting to revisit stripped belts.",
             };
             return;
         }
@@ -735,12 +737,19 @@ internal sealed partial class CapsuleerMiner(
         StartCourse(field, MinerActivity.FlyingToBelt);
     }
 
-    private StaticSpaceObject? NextBelt(out long retryAt)
+    private StaticSpaceObject? NextBelt(out long retryAt, out bool knownBelts)
     {
         var fields = _objects
             .Where(o => o.GroupId == AsteroidDefinitions.BeltGroup && database.Catalog.Definition(s_miningBelt, checked((int)o.Id)))
             .OrderBy(o => o.Id)
             .ToArray();
+        knownBelts = fields.Length > 0;
+        if (!knownBelts)
+        {
+            // The docked industry action can commit while there is no mining trip available.
+            retryAt = checked(Work.ActiveTicks + TimeSpan.FromSeconds(RetrySeconds).Ticks);
+            return null;
+        }
         var peers = Crewmates().ToArray();
         long elapsed = Work.ActiveTicks;
         BeltMemory[] stripped = [.. Work.StrippedBelts, .. peers.SelectMany(work => work.StrippedBelts)];
@@ -902,7 +911,7 @@ internal sealed partial class CapsuleerMiner(
                     ],
                 };
             }
-            var next = NextBelt(out _);
+            var next = NextBelt(out _, out _);
             if (next is null)
             {
                 ReturnHome();

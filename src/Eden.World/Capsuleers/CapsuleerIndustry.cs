@@ -150,7 +150,14 @@ internal sealed partial class CapsuleerIndustry(
 
         var running = world
             .Filter<IndustryJob>(job => job.PilotId == pilot)
-            .Where(job => job.Status == IndustryJobStatus.Installed && job.Activity == IndustryActivity.Manufacturing)
+            .Where(job =>
+                job.Status == IndustryJobStatus.Installed
+                && (
+                    job.Activity == IndustryActivity.Manufacturing
+                    || job.OutputCorporationId.HasValue
+                        && (job.Activity == IndustryActivity.Copying || job.Activity == IndustryActivity.Invention)
+                )
+            )
             .ToArray();
         foreach (
             var job in running.Where(job =>
@@ -181,6 +188,10 @@ internal sealed partial class CapsuleerIndustry(
         foreach (var stock in depot.Where(item => !listed.Contains(item.TypeId)))
         {
             var demand = bids[stock.TypeId];
+            if (stock.TypeId == CapsuleerMinerTwoRules.Module)
+            {
+                demand = demand.Where(order => order.PriceCents >= ReferencePrice(catalog, stock.TypeId));
+            }
             var bid = demand.FirstOrDefault(order => order.Remaining >= stock.Quantity) ?? demand.FirstOrDefault();
             if (
                 jobs.Any(job => job.StationId == location && job.ProductTypeId == stock.TypeId && job.Status == IndustryJobStatus.Delivered)
@@ -197,6 +208,14 @@ internal sealed partial class CapsuleerIndustry(
 
         var hangar = Hangar(world, pilot, location);
         listed.UnionWith(depot.Select(item => item.TypeId));
+        if (
+            !listed.Contains(CapsuleerMinerTwoRules.Module)
+            && ProduceMinerTwo(world, catalog, operatorPilot, corporation, hangar, bids[CapsuleerMinerTwoRules.Module], now)
+                is bool minerTwo
+        )
+        {
+            return minerTwo;
+        }
         if (TryProduceForDemand(world, catalog, operatorPilot, corporation, hangar, bids, listed, now, out supply) is bool changed)
         {
             return changed;
