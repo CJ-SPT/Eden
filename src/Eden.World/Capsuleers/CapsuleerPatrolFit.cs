@@ -101,43 +101,57 @@ internal static class CapsuleerPatrolFit
     private const int WarpDisruptor = 3242;
     private const int TurretRounds = 40;
     private const int LauncherRounds = 30;
-    private static readonly GangFrigate[] s_frigates = Enum.GetValues<GangFrigate>();
-    private static readonly CatalogDefinition<TrafficProfile?> s_frigate = new(
-        "gang-frigate",
-        (catalog, hull) =>
+    internal const int Cormorant = 16238;
+    internal const int Catalyst = 16240;
+    internal const int Thrasher = 16242;
+    internal const int Corax = 32876;
+    private const int ElectronBlaster = 562;
+    private const int AntimatterSmall = 222;
+
+    private const int PatrolDrawCount = 16;
+    private const int FittedPatrolDraws = 12;
+
+    private sealed record PatrolLoadout(int Hull, int Weapon, int Ammo, int WeaponCount, int Rounds, int Point, bool Armor = false);
+
+    // Keep the original seeded frigate order. Positions 4 through 7 introduce the destroyers.
+    private static readonly PatrolLoadout[] s_patrols =
+    [
+        new((int)GangFrigate.Crow, LightMissileLauncher, ScourgeLightMissile, 3, LauncherRounds, WarpDisruptor),
+        new((int)GangFrigate.Stiletto, GatlingAutocannon, EmpSmall, 2, TurretRounds, WarpDisruptor),
+        new((int)GangFrigate.Wolf, GatlingAutocannon, EmpSmall, 4, TurretRounds, Scrambler, Armor: true),
+        new((int)GangFrigate.Harpy, Railgun125, IronCharge, 4, TurretRounds, Scrambler),
+        new(Cormorant, Railgun125, IronCharge, 6, TurretRounds, WarpDisruptor),
+        new(Catalyst, ElectronBlaster, AntimatterSmall, 8, TurretRounds, Scrambler, Armor: true),
+        new(Thrasher, GatlingAutocannon, EmpSmall, 7, TurretRounds, Scrambler),
+        new(Corax, LightMissileLauncher, ScourgeLightMissile, 5, LauncherRounds, WarpDisruptor),
+    ];
+    private static readonly CatalogDefinition<TrafficProfile?> s_patrol = new(
+        "armed-patrol",
+        (catalog, index) =>
         {
-            var frigate = (GangFrigate)hull;
-            var (weapon, ammo, count, rounds) = frigate switch
-            {
-                GangFrigate.Stiletto => (GatlingAutocannon, EmpSmall, 2, TurretRounds),
-                GangFrigate.Crow => (LightMissileLauncher, ScourgeLightMissile, 3, LauncherRounds),
-                GangFrigate.Wolf => (GatlingAutocannon, EmpSmall, 4, TurretRounds),
-                GangFrigate.Harpy => (Railgun125, IronCharge, 4, TurretRounds),
-                _ => throw new ArgumentOutOfRangeException(nameof(hull)),
-            };
-            int point = frigate is GangFrigate.Stiletto or GangFrigate.Crow ? WarpDisruptor : Scrambler;
+            var fit = s_patrols[index];
             List<TrafficEquipment> equipment =
             [
-                new(point, (int)InventoryFlag.MediumSlot0, 1),
+                new(fit.Point, (int)InventoryFlag.MediumSlot0, 1),
                 new((int)StarterMarketType.Afterburner, (int)InventoryFlag.MediumSlot0 + 1, 1),
                 new((int)StarterMarketType.DamageControl, (int)InventoryFlag.LowSlot0, 1),
             ];
             equipment.Add(
-                frigate == GangFrigate.Wolf
+                fit.Armor
                     ? new((int)StarterMarketType.SmallArmorRepairer, (int)InventoryFlag.LowSlot0 + 1, 1)
                     : new((int)StarterMarketType.SmallShieldBooster, (int)InventoryFlag.MediumSlot0 + 2, 1)
             );
-            for (int slot = 0; slot < count; slot++)
+            for (int slot = 0; slot < fit.WeaponCount; slot++)
             {
                 int flag = (int)InventoryFlag.HighSlot0 + slot;
-                equipment.Add(new(weapon, flag, 1));
-                equipment.Add(new(ammo, flag, rounds));
+                equipment.Add(new(fit.Weapon, flag, 1));
+                equipment.Add(new(fit.Ammo, flag, fit.Rounds));
             }
-            if (catalog.FittingType(hull) is null || equipment.Any(item => catalog.FittingType(item.TypeId) is null))
+            if (catalog.FittingType(fit.Hull) is null || equipment.Any(item => catalog.FittingType(item.TypeId) is null))
             {
                 return null;
             }
-            return new(0, "", 0, DateTimeOffset.UnixEpoch, 0, 0, TrafficSecurityBand.Null, hull, equipment.ToArray());
+            return new(0, "", 0, DateTimeOffset.UnixEpoch, 0, 0, TrafficSecurityBand.Null, fit.Hull, equipment.ToArray());
         }
     );
 
@@ -163,12 +177,11 @@ internal static class CapsuleerPatrolFit
             policy.GateCamps && policy.CampBubbles && security <= 0 && PatrolRules.Choose(seed ^ system, ~slot, policy.InterdictorPercent)
                 ? catalog.Definition(s_interdictor, 0)
                 : null;
-        // Half the non-bubble combat draws get a purpose-fitted frigate even when imported identities are available.
-        // The other half use the existing imported pilot or generated Merlin fallback.
-        int draw = TrafficRules.Start(seed, system, slot, s_frigates.Length * 2);
-        if (interdictor is null && draw < s_frigates.Length && catalog.Definition(s_frigate, (int)s_frigates[draw]) is { } frigate)
+        // Across sixteen slots: 0-3 and 8-11 retain frigates, 4-7 add destroyers, 12-15 retain the snapshot/fallback.
+        int draw = TrafficRules.Start(seed, system, slot, PatrolDrawCount);
+        if (interdictor is null && draw < FittedPatrolDraws && catalog.Definition(s_patrol, draw % s_patrols.Length) is { } patrol)
         {
-            return frigate;
+            return patrol;
         }
         return imported?.Invoke() ?? interdictor ?? catalog.Definition(s_fit, 0);
     }

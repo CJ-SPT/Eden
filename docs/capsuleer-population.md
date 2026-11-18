@@ -70,11 +70,15 @@ Armed travelers also use the roam chance at outbound nullsec gates, including in
 to hunt waits 18–40 seconds for a visible target, can stay longer in a fight, then continues the original trip.
 Pilots delivering freight, shopping for supplies or retreating continue through the gate.
 
-New eligible roaming and camp pilots can fly four Tech II frigates. Stilettos and Crows carry warp disruptors.
-Wolves and Harpies carry scramblers. The Stiletto and Wolf use autocannons, the Crow uses light missiles, and
-the Harpy uses railguns. With a complete catalog, half of eligible non-interdictor combat draws choose among
-these four, including when a traffic snapshot is installed. The saved seed determines the hull per slot.
-Existing pilots retain their ships and fits. [Selection and combat evidence](protocol/capsuleers.md#tech-ii-frigates-in-bot-gangs)
+Solo patrols and roaming gangs draw from the same combat fits. The Catalyst carries blasters, the Thrasher
+autocannons, the Cormorant railguns and the Corax light missiles. Catalysts and Thrashers use scramblers.
+The Cormorant and Corax carry warp disruptors. All four destroyers carry an afterburner, damage control and local repair.
+
+With a complete catalog, half of eligible non-interdictor combat draws select a Stiletto, Crow, Wolf or Harpy,
+one quarter select a destroyer, and one quarter use an imported pilot or the generated Merlin fallback.
+The saved seed determines the hull for each new pilot, including with a traffic snapshot installed.
+[Destroyer selection and combat evidence](protocol/capsuleers.md#destroyers-for-solo-patrols-and-gangs) and
+[Tech II frigate fits](protocol/capsuleers.md#tech-ii-frigates-in-bot-gangs).
 
 New miner and traveler warp orders wait four to eight active seconds before issuing warp alignment. Ships continue
 ordinary subwarp movement during preparation and can be locked and tackled. The saved deadline survives checkpoints

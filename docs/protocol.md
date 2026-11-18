@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Destroyers for solo patrols and gangs](protocol/capsuleers.md#destroyers-for-solo-patrols-and-gangs) covers
+snapshot recruitment, fitted weapons and engagements with players and rival bots.
+
 [Tech II frigates in bot gangs](protocol/capsuleers.md#tech-ii-frigates-in-bot-gangs) covers snapshot-enabled
 recruitment and fitted Stiletto, Crow, Wolf and Harpy engagements against players and rival bots.
 

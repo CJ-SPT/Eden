@@ -210,11 +210,20 @@ public sealed class RegionalConflictWorldTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    [InlineData(false, true)]
-    [InlineData(true, true)]
-    public void OffensiveScoutTacklesAVisiblePlayerOrRivalWithItsGang(bool rivalBot, bool gangFrigates = false)
+    [InlineData(false, RoamingGangTests.Fixture.FrigateSeed)]
+    [InlineData(true, RoamingGangTests.Fixture.FrigateSeed)]
+    public void OffensiveScoutTacklesAVisiblePlayerOrRivalWithItsGang(bool rivalBot, int? patrolSeed = null) =>
+        VerifyRaid(rivalBot, patrolSeed, requireScoutPoint: true);
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DestroyerGangActsOnItsScoutsSightingToTackleAndDamageAPlayerOrRival(bool rivalBot) =>
+        VerifyRaid(rivalBot, RoamingGangTests.Fixture.DestroyerSeed, requireScoutPoint: false);
+
+    private static void VerifyRaid(bool rivalBot, int? patrolSeed, bool requireScoutPoint)
     {
-        using var fixture = new RoamingGangTests.Fixture(regional: true, gangFrigates: gangFrigates);
+        using var fixture = new RoamingGangTests.Fixture(regional: true, patrolSeed: patrolSeed);
         var gang = fixture.Form();
         var order = gang.Regional!;
         var scout = Assert.Single(gang.Members, member => member.Role == PvpRole.Scout);
@@ -283,7 +292,8 @@ public sealed class RegionalConflictWorldTests
             Assert.Null(RegionalConflictStore.GroupForPilot(fixture.Live, fixture.Database.Catalog, victimId));
         }
         var tackle = fixture.Host.GetRequiredService<IPilotTackle>();
-        bool scoutTackled = false;
+        var tacklers = gang.Members.Where(member => !requireScoutPoint || member.PilotId == scout.PilotId).ToArray();
+        bool tackled = false;
         bool reportedBeforeTackle = false;
         var health = fixture.Host.GetRequiredService<IPilotHealth>();
         double Remaining()
@@ -297,18 +307,20 @@ public sealed class RegionalConflictWorldTests
         Dictionary<long, long> magazines = [];
         bool targeted = false;
         bool paid = false;
-        for (int turn = 0; turn < 600 && (!scoutTackled || Remaining() >= before || !paid); turn++)
+        for (int turn = 0; turn < 600 && (!tackled || Remaining() >= before || !paid); turn++)
         {
             fixture.Tick();
             var scoutWork = fixture.Live.HaulerCheckpoints[scout.PilotId].Work;
-            if (!scoutTackled && scoutWork.Gang?.Sighting?.ShipId == victimShip && scoutWork.Ratting?.TargetId == 0)
+            if (!tackled && scoutWork.Gang?.Sighting?.ShipId == victimShip && scoutWork.Ratting?.TargetId == 0)
             {
                 Assert.DoesNotContain(tackle.Incoming(victimShip), effect => effect.SourceShipId == scout.ShipId);
                 reportedBeforeTackle = true;
             }
-            scoutTackled |=
-                scoutWork.Ratting?.TargetId == victimShip
-                && tackle.Incoming(victimShip).Any(effect => effect.SourceShipId == scout.ShipId && effect.Module.Strength > 0);
+            var points = tackle.Incoming(victimShip);
+            tackled |= tacklers.Any(member =>
+                fixture.Live.HaulerCheckpoints[member.PilotId].Work.Ratting?.TargetId == victimShip
+                && points.Any(effect => effect.SourceShipId == member.ShipId && effect.Module.Strength > 0)
+            );
             foreach (var member in gang.Members)
             {
                 if (fixture.Live.HaulerCheckpoints[member.PilotId].Work.Defense?.TargetId != victimShip)
@@ -335,7 +347,7 @@ public sealed class RegionalConflictWorldTests
             )
         );
         Assert.True(reportedBeforeTackle);
-        Assert.True(scoutTackled);
+        Assert.True(tackled);
         Assert.True(Remaining() < before);
         Assert.True(paid);
         if (!rivalBot)

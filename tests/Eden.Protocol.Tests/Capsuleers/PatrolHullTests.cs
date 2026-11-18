@@ -1,0 +1,231 @@
+using Eden.Data.World.Capsuleers;
+using Eden.Data.World.Inventory;
+using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Combat;
+using Eden.Gameplay.Docking;
+using Eden.Gameplay.Flight;
+using Eden.Gameplay.Propulsion;
+using Eden.Protocol.Flight;
+using Eden.World.Capsuleers;
+using Eden.World.Catalog;
+using Eden.World.Docking;
+using Eden.World.Storage;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Eden.Protocol.Tests.Capsuleers;
+
+public sealed class PatrolHullTests
+{
+    private const int Away = 30000142;
+    private const long Human = 90000002;
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SnapshotAndSpecialistGangCoexistAndKeepTheirOriginalHullsOnReopen(bool destroyers)
+    {
+        int seed = destroyers ? RoamingGangTests.Fixture.DestroyerSeed : RoamingGangTests.Fixture.FrigateSeed;
+        using var fixture = new RoamingGangTests.Fixture(regional: true, patrolSeed: seed);
+        var gang = fixture.Form();
+        int[] hulls = destroyers
+            ? [CapsuleerPatrolFit.Cormorant, CapsuleerPatrolFit.Catalyst, CapsuleerPatrolFit.Thrasher, CapsuleerPatrolFit.Corax]
+            : Enum.GetValues<GangFrigate>().Select(hull => (int)hull).ToArray();
+        var expected = hulls.Order();
+        int[] Hulls() => gang.Members.Select(member => fixture.Live.Economy.Peek<Ship>(member.ShipId)!.TypeId).Order().ToArray();
+        Assert.Equal(expected, Hulls());
+        Assert.NotEmpty(fixture.Database.Traffic.Profiles);
+        var identities = fixture.Live.Economy.Read(world => world.Set<SavedTrafficIdentity>().ToArray());
+        Assert.NotEmpty(identities);
+        Assert.True(identities.Length < fixture.Database.Traffic.Profiles.Count);
+        Assert.DoesNotContain(identities, identity => gang.Members.Any(member => member.PilotId == identity.PilotId));
+        foreach (var member in gang.Members)
+        {
+            var fit = fixture.Host.GetRequiredService<CapsuleerDefense>().Profile(member.PilotId);
+            Assert.True(fit is { Combat: true, HasDamage: true, TackleRange: > 0 });
+            Assert.All(fit.Modules, module => Assert.True(module.Item.Online));
+        }
+        await fixture.Live.FlushAsync();
+        fixture.Restart();
+        _ = fixture.Scheduler.Jobs();
+        Assert.Equal(expected, Hulls());
+        Assert.Equal(gang.Members, fixture.Live.HaulerCheckpoints[gang.Id].Work.Gang!.Members);
+    }
+
+    [Theory]
+    [InlineData((int)GangFrigate.Stiletto, false)]
+    [InlineData((int)GangFrigate.Stiletto, true)]
+    [InlineData((int)GangFrigate.Crow, false)]
+    [InlineData((int)GangFrigate.Crow, true)]
+    [InlineData((int)GangFrigate.Wolf, false)]
+    [InlineData((int)GangFrigate.Wolf, true)]
+    [InlineData((int)GangFrigate.Harpy, false)]
+    [InlineData((int)GangFrigate.Harpy, true)]
+    [InlineData(CapsuleerPatrolFit.Cormorant, false)]
+    [InlineData(CapsuleerPatrolFit.Cormorant, true)]
+    [InlineData(CapsuleerPatrolFit.Catalyst, false)]
+    [InlineData(CapsuleerPatrolFit.Catalyst, true)]
+    [InlineData(CapsuleerPatrolFit.Thrasher, false)]
+    [InlineData(CapsuleerPatrolFit.Thrasher, true)]
+    [InlineData(CapsuleerPatrolFit.Corax, false)]
+    [InlineData(CapsuleerPatrolFit.Corax, true)]
+    public void FittedGangMemberLocksPointsAndDamagesAPlayerOrRival(int hull, bool rival)
+    {
+        int seed = Enum.IsDefined((GangFrigate)hull) ? RoamingGangTests.Fixture.FrigateSeed : RoamingGangTests.Fixture.DestroyerSeed;
+        using var fixture = new RoamingGangTests.Fixture(regional: true, patrolSeed: seed);
+        var gang = fixture.Form();
+        var member = Assert.Single(gang.Members, ship => fixture.Live.Economy.Peek<Ship>(ship.ShipId)!.TypeId == hull);
+        var ships = fixture.Host.GetRequiredService<SqliteWorld>();
+        DockedPilot attacker;
+        using (var catalog = new CatalogDbContext(fixture.Database.CatalogPath))
+        using (var action = fixture.Live.Economy.Begin())
+        {
+            var gate = SystemObjects.Geometry(catalog, Away).First(body => body.DestinationGateId is not null);
+            SqliteWorld.SetPosition(action, catalog, member.ShipId, gate.Position, Away, fixture.Clock.Now);
+            attacker = ships.FindPilot(action, action.Pilots.Find(member.PilotId)!.AccountId, member.PilotId)!;
+            action.Commit();
+        }
+        var victim = PlaceTarget(fixture, attacker, rival, gang.DestinationStationId);
+        var defense = fixture.Host.GetRequiredService<CapsuleerDefense>();
+        var tackle = fixture.Host.GetRequiredService<IPilotTackle>();
+        var health = fixture.Host.GetRequiredService<IPilotHealth>();
+        var contact = Assert.Single(defense.Observe(attacker, 0), sight => sight.ShipId == victim.ShipId);
+        Assert.Equal(rival ? gang.Regional!.OpponentGroupId : null, contact.RegionalGroupId);
+        Assert.True(RegionalConflictStore.CanTarget(fixture.Database, gang.Regional!, contact, 0));
+        double Remaining()
+        {
+            var status = health.Read(victim.PilotId, fixture.Clock.Now).Remaining;
+            return status.Shield + status.Armor + status.Structure;
+        }
+        var guns = defense.Profile(member.PilotId).RattingWeapons.Select(weapon => weapon.Weapon.ItemId).ToArray();
+        Assert.NotEmpty(guns);
+        long Loaded() =>
+            fixture.Live.Economy.Read(world =>
+                world.Set<OwnedItem>().Where(item => Enumerable.Contains(guns, item.LocationId)).Sum(item => (long)item.Quantity)
+            );
+        double before = Remaining();
+        long loaded = Loaded();
+        var course = new NavigationState();
+        CapsuleerDefenseState? state = null;
+        bool pointed = false;
+        for (int turn = 0; turn < 45 && (!pointed || Remaining() >= before || Loaded() >= loaded); turn++)
+        {
+            fixture.Clock.Seconds++;
+            var target = Assert.IsType<CapsuleerAttacker>(
+                defense.PatrolTarget(attacker, victim.ShipId, attacker.Position!, fixture.Clock.Now)
+            );
+            var result = defense.Advance(
+                attacker,
+                course,
+                state,
+                fixture.Clock.Now,
+                turn,
+                [],
+                proactive: target,
+                pvpRole: member.Role,
+                gang: gang
+            );
+            attacker = result.Pilot;
+            state = result.State;
+            pointed |= tackle.Incoming(victim.ShipId).Any(effect => effect.SourceShipId == member.ShipId && effect.Module.Strength > 0);
+        }
+        Assert.True(pointed);
+        Assert.True(Loaded() < loaded);
+        Assert.True(Remaining() < before);
+    }
+
+    [Theory]
+    [InlineData(CapsuleerPatrolFit.Cormorant, false)]
+    [InlineData(CapsuleerPatrolFit.Cormorant, true)]
+    [InlineData(CapsuleerPatrolFit.Catalyst, false)]
+    [InlineData(CapsuleerPatrolFit.Catalyst, true)]
+    [InlineData(CapsuleerPatrolFit.Thrasher, false)]
+    [InlineData(CapsuleerPatrolFit.Thrasher, true)]
+    [InlineData(CapsuleerPatrolFit.Corax, false)]
+    [InlineData(CapsuleerPatrolFit.Corax, true)]
+    public void SoloDestroyerUndocksAndEngagesAVisiblePlayerOrRival(int hull, bool rival)
+    {
+        using var fixture = new RoamingGangTests.Fixture(
+            regional: true,
+            patrolSeed: RoamingGangTests.Fixture.DestroyerSeed,
+            soloHull: hull
+        );
+        long pilot = fixture.Live.Economy.Read(world =>
+            world
+                .Set<SavedCapsuleerHauler>()
+                .AsEnumerable()
+                .Single(row => world.Set<SavedCapsuleerSuspension>().Find(row.PilotId) is null)
+                .PilotId
+        );
+        for (int turn = 0; turn < 300 && fixture.Scheduler.Hauler(pilot)?.Work.Ratting?.Phase != RattingPhase.Searching; turn++)
+        {
+            fixture.Tick();
+        }
+        var arrival = fixture.Scheduler.Hauler(pilot)!;
+        Assert.Null(arrival.Work.Gang);
+        Assert.Equal(PatrolKind.Roam, arrival.Work.Ratting?.Patrol?.Kind);
+        Assert.Equal(RattingPhase.Searching, arrival.Work.Ratting?.Phase);
+        Assert.Equal(hull, arrival.Pilot.ShipTypeId);
+        var victim = PlaceTarget(fixture, arrival.Pilot, rival, arrival.Work.Ratting!.StationId);
+        var tackle = fixture.Host.GetRequiredService<IPilotTackle>();
+        var health = fixture.Host.GetRequiredService<IPilotHealth>();
+        double Remaining()
+        {
+            var status = health.Read(victim.PilotId, fixture.Clock.Now).Remaining;
+            return status.Shield + status.Armor + status.Structure;
+        }
+        double before = Remaining();
+        bool pointed = false;
+        for (int turn = 0; turn < 45 && (!pointed || Remaining() >= before); turn++)
+        {
+            fixture.Tick();
+            var work = fixture.Live.HaulerCheckpoints[pilot].Work;
+            Assert.Null(work.Gang);
+            pointed |=
+                work.Ratting?.TargetId == victim.ShipId
+                && tackle.Incoming(victim.ShipId).Any(effect => effect.SourceShipId == arrival.Pilot.ShipId && effect.Module.Strength > 0);
+        }
+        Assert.True(pointed);
+        Assert.True(Remaining() < before);
+        Assert.Equal(0, fixture.Scheduler.Read().Failures);
+    }
+
+    private static DockedPilot PlaceTarget(RoamingGangTests.Fixture fixture, DockedPilot attacker, bool rival, int station)
+    {
+        DockedPilot victim;
+        using (var catalog = new CatalogDbContext(fixture.Database.CatalogPath))
+        using (var action = fixture.Live.Economy.Begin())
+        {
+            long victimId = rival
+                ? action
+                    .Set<SavedCapsuleerAgent>()
+                    .Where(agent => agent.CommunitySystemId == Away)
+                    .AsEnumerable()
+                    .First(agent => action.Set<SavedCapsuleerSuspension>().Find(agent.PilotId) is not null)
+                    .PilotId
+                : Human;
+            var target = action.Pilots.Find(victimId)!;
+            target.ActiveShip.TypeId = 603;
+            if (rival)
+            {
+                action.Remove(action.Set<SavedCapsuleerSuspension>().Find(victimId)!);
+            }
+            var position = attacker.Position! + new SpacePosition(1_000, 0, 0);
+            SqliteWorld.SetPosition(action, catalog, target.ActiveShipId, position, attacker.SystemId, fixture.Clock.Now);
+            victim = fixture.Host.GetRequiredService<SqliteWorld>().FindPilot(action, target.AccountId, victimId)!;
+            action.Commit();
+        }
+        if (rival)
+        {
+            fixture.Scheduler.PopulationPrepared(Away);
+            fixture.Live.HaulerCheckpoints[victim.PilotId] = new(
+                victim.PilotId,
+                new(HaulerActivity.Waiting, 0, 0, victim.ShipId, station, 0, new NavigationState().Capture())
+            );
+        }
+        else
+        {
+            fixture.Host.GetRequiredService<SharedSpace>().Publish(new(PilotContact.From(victim), SpacePosition.Zero, null, 0, null));
+        }
+        return victim;
+    }
+}

@@ -2,6 +2,55 @@
 
 [Protocol index](../protocol.md)
 
+## Destroyers for solo patrols and gangs
+
+On November 18, 2026, four Tech I destroyers joined the generated PvP fits for build 3662168.
+Each has a 1MN afterburner and damage control. Weapon count, magazine contents, tackle and tank vary by hull.
+
+| Hull | Weapons and loaded charge | Tackle | Local repair |
+| --- | --- | --- | --- |
+| Catalyst | 8 light electron blasters with Antimatter Charge S | Scrambler | Small armor repairer |
+| Cormorant | 6 125mm railguns with Iron Charge S | Warp disruptor | Small shield booster |
+| Thrasher | 7 125mm gatling autocannons with EMP S | Scrambler | Small shield booster |
+| Corax | 5 light missile launchers with Scourge Light Missiles | Warp disruptor | Small shield booster |
+
+Eligible non-interdictor combat slots have sixteen seeded outcomes. Eight retain their previous Tech II frigate
+assignments, four select a destroyer, and four use snapshot selection or the generated Merlin fallback. Missing
+catalog equipment takes the same fallback. These weights are Eden population policy. The weapon choices follow
+the pinned catalog and the hulls' combat roles. [EVE University destroyers](https://wiki.eveuniversity.org/Destroyers).
+The local evejs NPC behavior loop revision is recorded in the [roaming gang notes](#smarter-pilots-and-persistent-roaming-gangs--november-17-2026).
+
+With default population settings and seed 45, a 512-slot sample in 1DQ1-A using the installed 27,947-profile
+snapshot selected all four generated destroyers and imported profiles. Each of the four fits passed the pinned
+catalog traffic fit validator in its isolated world. The resident fixture uses a snapshot of haulers to show that
+generated combat pilots can coexist with imported identities. All four destroyers formed a gang and kept their
+hulls and membership across a checkpoint restart. Each used its own tackle, consumed ammunition and dealt damage
+against both a player and a rival bot. With gangs disabled, each destroyer also launched alone, acquired each
+target type on patrol, applied tackle and dealt damage through ordinary scheduler ticks.
+
+Two regional raid replays also verify the destroyer gang reports a sighting, points the target and spends
+ammunition to deal damage. In the simulated player encounter, another member held the target while the scout
+continued reporting. The four earlier scout-specific cases still require the scout's own point.
+
+**Automated validation.** The wider run passed 178 tests in 2 minutes 7 seconds. The class filter joined
+`FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.` with each of `PatrolHullTests`, `RoamingGangTests`,
+`RegionalConflictWorldTests`, `PatrolTests`, `PvpTacticsTests`, `CapsuleerDefenseTests`, `CapsuleerSupplyTests`,
+`CapsuleerShipBlueprintTests`, `TrafficSnapshotTests`, `TrafficPreparationTests`, `CapsuleerBackgroundPreparationTests`,
+`CapsuleerProvisioningTests`, `CapsuleerInboundProvisioningTests` and `CapsuleerFitRetentionTests` using OR.
+It excluded the documented baseline failure `RivalDefenseEngagesAVisibleRaidWithOwnedWeaponsAndRealDamage`.
+The first exact filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.GangFrigateTests.SnapshotAndSpecialistGangCoexistAndKeepTheirOriginalHullsOnReopen`
+before the test class was renamed to `PatrolHullTests`. The final raid filter combined exact method names
+`OffensiveScoutTacklesAVisiblePlayerOrRivalWithItsGang` and `DestroyerGangActsOnItsScoutsSightingToTackleAndDamageAPlayerOrRival`
+in `RegionalConflictWorldTests`. All six passed in 18 seconds. The final solution build took 4.72 seconds with
+zero warnings or errors. Both Python policy suites passed (8 catalog checks and 9 formatting checks), as did
+format verification and the Git diff check.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Observe a newly populated nullsec patrol or gang in the overview to check native
+hull and weapon presentation.
+
 ## Tech II frigates in bot gangs
 
 On November 18, 2026, Eden gained four generated PvP fits for client build 3662168. All use an afterburner and

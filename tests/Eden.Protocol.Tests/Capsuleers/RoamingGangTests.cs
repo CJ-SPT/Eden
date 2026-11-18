@@ -477,6 +477,10 @@ public sealed class RoamingGangTests
         internal LiveWorld Live => Host.GetRequiredService<LiveWorld>();
         internal CapsuleerScheduler Scheduler => Host.GetRequiredService<CapsuleerScheduler>();
 
+        // These world seeds select one of each fitted hull in the first four home slots.
+        internal const int FrigateSeed = 45;
+        internal const int DestroyerSeed = 8629;
+
         internal Fixture(
             bool regional = false,
             bool splitRegions = false,
@@ -484,21 +488,22 @@ public sealed class RoamingGangTests
             int? targetLimit = null,
             bool thermalCatalog = false,
             int gangSize = 4,
-            bool gangFrigates = false
+            int? patrolSeed = null,
+            int? soloHull = null
         )
         {
             PassiveCatalogFixture.LoadFrigateHulls(Database.CatalogPath);
             PassiveCatalogFixture.Load(Database.CatalogPath);
             PassiveCatalogFixture.LoadTackleTiers(Database.CatalogPath);
-            if (gangFrigates)
+            if (patrolSeed is { } seed)
             {
                 PassiveCatalogFixture.LoadTechTwoHulls(Database.CatalogPath);
                 PassiveCatalogFixture.LoadProjectileTiers(Database.CatalogPath, new HashSet<int> { 484, 185 });
-                PassiveCatalogFixture.LoadWeaponTiers(Database.CatalogPath, new HashSet<int> { 10678 });
+                PassiveCatalogFixture.LoadWeaponTiers(Database.CatalogPath, new HashSet<int> { 10678, 562, 222 });
                 PassiveCatalogFixture.LoadMissileTiers(Database.CatalogPath, new HashSet<int> { 499, 210 });
-                // This saved seed selects one of each specialist in the first four home slots.
+                PassiveCatalogFixture.LoadSmallHulls(Database.CatalogPath);
                 using var setup = new WorldDbContext(Database.Path);
-                setup.Database.ExecuteSqlRaw("UPDATE WorldCapsuleerProvisioning SET WorldSeed=45");
+                setup.Database.ExecuteSql($"UPDATE WorldCapsuleerProvisioning SET WorldSeed={seed}");
                 var imported = Enumerable
                     .Range(1, 32)
                     .Select(index => TrafficSnapshotTests.Profile(900000100 + index, $"Snapshot Pilot {index}") with { KillId = index })
@@ -568,6 +573,7 @@ public sealed class RoamingGangTests
                 {
                     TrafficMultiplier = 10,
                     RoamingGangSize = gangSize,
+                    RoamingGangs = soloHull is null,
                     GateVisitors = 0,
                     Miners = false,
                     GeneratedCombatPercent = 100,
@@ -582,7 +588,7 @@ public sealed class RoamingGangTests
             WorldInitialization.Initialize(Database, _world.Clock);
             using (var provisioner = new CapsuleerProvisioner(Database, _world.Clock))
             {
-                if (gangFrigates)
+                if (patrolSeed.HasValue)
                 {
                     Host = ServerServices.Build(Database, _world.Clock, liveWorld: true);
                     var synchronization = Host.GetRequiredService<IWorldSynchronization>();
@@ -641,7 +647,11 @@ public sealed class RoamingGangTests
                     row.RouteSystems = [Home, Away];
                     row.Progress = null;
                 }
-                foreach (var row in roster.Skip(4))
+                foreach (
+                    var row in roster.Where(
+                        (row, index) => index >= 4 || soloHull is { } hull && action.Ships.Find(row.FounderShipId)!.TypeId != hull
+                    )
+                )
                 {
                     action.Add(new SavedCapsuleerSuspension { PilotId = row.PilotId });
                 }
