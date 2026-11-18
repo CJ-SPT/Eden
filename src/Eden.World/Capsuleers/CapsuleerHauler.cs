@@ -924,7 +924,8 @@ internal sealed partial class CapsuleerHauler(
         using var phase = SessionPerformance.Phase("traffic.tradeAndLaunch");
         if (Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup)
         {
-            throw new InvalidDataException("Waiting for a replacement hauling ship.");
+            AttemptShipReplacement();
+            return;
         }
         JoinCorporationAtDock();
         if (TryCorporationSupply())

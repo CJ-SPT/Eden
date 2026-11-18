@@ -163,7 +163,7 @@ internal sealed partial class CapsuleerIndustry
         {
             return null;
         }
-        var result = market.BuyManufacturingInputs(world, catalog, courier.PilotId, courier.StationId, employer, purchases);
+        var result = market.BuyCorporationStock(world, catalog, courier.PilotId, courier.StationId, employer, purchases);
         var cargo = result
             .Trades.GroupBy(trade => trade.TypeId)
             .Select(trades => StowPurchased(world, courier, trades.Key, trades.Sum(trade => trade.Quantity)))

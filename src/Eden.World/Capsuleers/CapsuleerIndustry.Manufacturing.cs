@@ -257,7 +257,7 @@ internal sealed partial class CapsuleerIndustry
             }
             if (purchases.Count != 0)
             {
-                var purchase = market.BuyManufacturingInputs(world, catalog, pilot, station, corporation, purchases);
+                var purchase = market.BuyCorporationStock(world, catalog, pilot, station, corporation, purchases);
                 if (purchase.Trades.Sum(trade => (long)trade.Quantity) != purchases.Sum(request => (long)request.Quantity))
                 {
                     throw new InvalidDataException("The quoted manufacturing input quantities are no longer available.");

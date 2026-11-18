@@ -20,6 +20,7 @@ using Eden.World.Catalog;
 using Eden.World.Corporations;
 using Eden.World.Docking;
 using Eden.World.Economy;
+using Eden.World.Fittings;
 using Eden.World.Industry;
 using Eden.World.Inventory;
 using Eden.World.Market;
@@ -31,7 +32,12 @@ using Rules = Eden.Gameplay.Capsuleers.CapsuleerAmmunitionSupplyRules;
 namespace Eden.World.Capsuleers;
 
 [Injectable]
-internal sealed partial class CapsuleerIndustry(PilotIndustryStore industry, PilotReprocessingStore refinery, PilotMarketStore market)
+internal sealed partial class CapsuleerIndustry(
+    PilotIndustryStore industry,
+    PilotReprocessingStore refinery,
+    PilotMarketStore market,
+    PilotFittingStore fitting
+)
 {
     private static readonly CatalogDefinition<bool> s_ironCompatible = new(
         "capsuleer-iron-ammunition-compatibility",

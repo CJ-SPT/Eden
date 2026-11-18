@@ -271,6 +271,28 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
         using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [shipId, previousShipId]));
         var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var changes = Board(
+            world,
+            catalog,
+            pilotId,
+            shipId,
+            previousShipId,
+            (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc()
+        );
+        var activePilot = lookup.FindPilot(world, world.Pilots.Find(pilotId)!.AccountId, pilotId)!;
+        transaction.Commit();
+        return new(activePilot, changes);
+    }
+
+    internal static IReadOnlyList<InventoryChange> Board(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long shipId,
+        long previousShipId,
+        long now
+    )
+    {
         var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
         var ship = world.Filter<Ship>(s => s.Id == shipId && s.OwnerId == pilotId).SingleOrDefault();
         if (
@@ -287,19 +309,11 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, ship.TypeId);
         if (pilot.ActiveShipId != shipId)
         {
-            PilotTaskTrackingStore.Record(
-                world,
-                catalog,
-                pilotId,
-                (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc(),
-                TaskEvents.Boarded
-            );
+            PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.Boarded);
         }
         List<InventoryChange> changes = [];
         AdoptShip(world, catalog, pilot, ship, changes);
-        var activePilot = lookup.FindPilot(world, pilot.AccountId, pilotId)!;
-        transaction.Commit();
-        return new(activePilot, changes);
+        return changes;
     }
 
     public ShipBoarding RecoverCorvette(long pilotId, long previousShipId, long stationId)

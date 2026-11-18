@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Paid Merlin replacement](protocol/capsuleers.md#paid-merlin-replacement) covers public buy orders, corporate spending
+and a patrol pilot returning to duty across a restart.
+
 [Capsuleer mining fleets](protocol/capsuleers.md#capsuleer-mining-fleets) covers barge and exhumer fits, coordinated belt
 selection and targeting, and saved crew behavior.
 

@@ -2,6 +2,57 @@
 
 [Protocol index](../protocol.md)
 
+## Paid Merlin replacement
+
+A bot pilot in a bot-led corporation can replace a lost Merlin after its capsule reaches an NPC market station.
+The loss record must identify the docked capsule and the destroyed Merlin. The replacement uses two 75mm Gatling
+Rail Is and a load of Iron Charge S for each. The buyer uses its own station inventory and corporate Market Deliveries
+first. For any shortfall, it places a station buy order for up to seven days, at a limit of twice the reference sell
+price. The master wallet must cover the escrow and broker fee. The ordinary market lets players and other corporations
+fill these orders, and a local factory can act on the Merlin demand through its existing manufacturing checks.
+
+The docked job leaves an open bid in place while waiting for a fill. When the kit is ready, it refunds any remaining
+open bid, assembles the owned hull, fits the modules, boards and loads ammo. Purchases commit on an earlier docked job
+or in the seller's market action. On restart, the same capsule, open orders and delivered hangar items establish what
+is still needed. Boarding consumes the kit, removes the capsule and commits the new active ship with the bot's routine
+under the resident owner. Orders and inventory transfers are local to the recovery station.
+
+The kit, bid limit and seven-day duration are Eden policy. Market custody and fitting follow the usual station rules
+in [UniWiki Trading](https://wiki.eveuniversity.org/Trading) and
+[UniWiki Fitting ships](https://wiki.eveuniversity.org/Fitting_ships). The local EVE.js build 3396210 snapshot
+`server/src/services/ship/shipService.js` was checked for assembly and boarding
+(SHA-256 `C34C3573C11CBAECA041D2CDC4791E19DB7DB6759A94F73125AD71E6B62848F1`).
+The implementation reuses Eden's resident market, assembly and fitting operations.
+
+### Automated validation
+
+The integration fixture settles a real Merlin loss, docks the capsule, and verifies that an empty wallet leaves
+the buyer waiting. After funding, it uses one corporate spare turret and creates one bid for each shortfall. A player
+fills the turret and ammunition bids and a separate bot corporation manufactures and sells the hull. It checkpoints
+the paid kit before boarding. After restart, the patrol pilot boards and undocks with two loaded turrets. The buyer's
+order IDs, wallet entry IDs and balance agree across the restart.
+
+The exact `LostMerlinBuysOneReplacementAndReturnsToDutyAcrossRestart` filter passed. The final isolated solution
+build passed with zero warnings and errors in 10.42 seconds. The combined filter passed 122 tests in 49.47 seconds.
+It selected the following classes using `FullyQualifiedName~.<Class>.`:
+
+```text
+CapsuleerAmmunitionSupplyTests, CapsuleerHaulerTests, CapsuleerSupplyTests, CapsuleerFitRetentionTests,
+CapsuleerSchedulingTests, CapsuleerResidentRoutineTests, PersonalMarketTests, StarterMarketTests,
+MultifitTests, PilotFleetTests, CorvetteRecoveryTests
+```
+
+Both Python policy suites passed all 17 cases. Style, CSharpier and line-width checks passed. An earlier build stopped at a Windows test-host
+DLL lock before running tests. The final build and tests used a separate artifacts directory.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer check
+
+Fill a replacement bid at the recovery station and observe the patrol pilot undock in the fitted Merlin.
+
 ## Capsuleer mining fleets
 
 Resident population preparation keeps the saved Venture in slot zero. For a high-security system with supported

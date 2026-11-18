@@ -71,21 +71,25 @@ internal sealed partial class PilotMarketStore
         return fill.GrossCents - fill.TaxCents - SupplyBrokerFee(world, catalog, pilotId, station, price, quantity);
     }
 
-    internal MarketResult BuyManufacturingInputs(
+    internal MarketResult BuyCorporationStock(
         EconomyTransaction world,
         CatalogDbContext catalog,
         long pilotId,
         int station,
         SavedCorporation corporation,
-        IReadOnlyList<MarketPurchase> inputs
+        IReadOnlyList<MarketPurchase> inputs,
+        int days = 0
     )
     {
         if (Pilot(world, pilotId).CorporationId != corporation.Id || corporation.ClosedAt is not null)
         {
-            throw new InvalidDataException("Corporate manufacturing inputs require an active employer.");
+            throw new InvalidDataException("Corporate purchases require an active employer.");
         }
-        return ExecuteBuy(world, catalog, pilotId, station, inputs, 0, corporation.Id);
+        return ExecuteBuy(world, catalog, pilotId, station, inputs, days, corporation.Id);
     }
+
+    internal void CancelCorporationBid(EconomyTransaction world, CatalogDbContext catalog, SavedPersonalOrder bid) =>
+        Close(world, catalog, bid, PersonalOrderStatus.Cancelled);
 
     internal void ListCorporationSupply(
         EconomyTransaction world,

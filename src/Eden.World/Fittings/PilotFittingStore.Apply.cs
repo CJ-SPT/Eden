@@ -35,7 +35,7 @@ internal sealed partial class PilotFittingStore
         return result;
     }
 
-    private AppliedFitting Apply(WorldAction world, CatalogDbContext catalog, Pilot pilot, Ship ship, ApplyFittingRequest request)
+    internal AppliedFitting Apply(WorldAction world, CatalogDbContext catalog, Pilot pilot, Ship ship, ApplyFittingRequest request)
     {
         long pilotId = pilot.Id;
         CheckFittingService(world, ship, pilotId);
