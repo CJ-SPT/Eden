@@ -2,12 +2,14 @@ using System.Text.Json;
 using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
+using Eden.Data.World.Drones;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.World.Catalog;
 using Eden.World.Characters;
+using Eden.World.Drones;
 using Eden.World.Fittings;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -69,6 +71,40 @@ internal sealed partial class PilotMissileStore
         {
             return null;
         }
+    }
+
+    private static void ApplyDroneImpact(
+        WorldAction world,
+        CatalogDbContext catalog,
+        WorldMissile row,
+        MissilePayload payload,
+        WorldDrone drone,
+        long time
+    )
+    {
+        var contact = PilotDroneStore.Contact(world, catalog, drone);
+        double signature = PilotFittingStore.SignatureRadius(world, catalog, drone.ItemId, contact.Profile.TypeId);
+        double application = MissileRules.Application(payload.Warhead, signature, payload.Target!.Velocity.Length);
+        var damage = payload.Warhead.Damage.Scale(application);
+        var hit = SmartbombStore.DamageDrone(world, drone, contact, damage, time);
+        if (contact.ShipId != 0)
+        {
+            CrimewatchPersistence.PlayerImpact(world, row.PilotId, contact.PilotId, row.SystemId, time);
+        }
+        MissileImpact outcome = new(
+            row.Id,
+            row.PilotId,
+            row.SourceShipId,
+            row.TargetId,
+            row.LauncherTypeId,
+            row.ChargeTypeId,
+            hit.Health,
+            damage,
+            hit.Applied,
+            hit.Health.Remaining.Destroyed,
+            null
+        );
+        row.Outcome = JsonSerializer.Serialize(outcome, MissileJson.Default.MissileImpact);
     }
 
     private PilotDamage ApplyPilotImpact(

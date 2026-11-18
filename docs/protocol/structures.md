@@ -13,8 +13,52 @@ Historical foundation limitations below describe their original milestones; this
 | Asset safety | Personal/corporate collection, timed delivery, paid recovery, native inventory and public loot | Implemented; validation below |
 | Incoming combat and loss | Paid weapons against structures, legal targeting, destruction settlement and automatic custody transitions | Implemented; validation below |
 | Tethering | Resident protection, native effects, access and timer checks, saved repair settlement | Implemented; validation below |
-| Defense | Combat fitting/control, supported defensive weapons and target updates | In progress; resident control, fitting, targeting, ammunition and defensive missile firing implemented; EWAR/area defenses remain |
+| Defense | Combat fitting/control, supported defensive weapons and target updates | In progress; resident control, fitting, targeting, ammunition and defensive missiles against ships, NPCs, structures and drones implemented; EWAR/area defenses remain |
 | Service completion | Remaining native structure profiles/access, economic/clone services, ownership and specialized structure consumers | Planned |
+
+### Defensive missiles against drones
+
+Standup anticapital and multirole launchers can fire on a locked, deployed drone. A controlled drone inherits its
+controller's eligibility under the structure's green safety. A ship that attacks the structure can have its drones
+engaged in retaliation, and a ship whose drone is attacked can return fire against that structure. Uncontrolled drones
+use Eden's neutral-target safety check and grant no retaliation through their former controller.
+
+The paid missile follows the drone's physical movement. On contact, the resident world applies missile damage using
+the drone's signature radius and speed, then updates its shield, armor, hull and inventory through the same path used
+by smartbombs. If two missiles reach a drone together, destruction by the first causes the second to lose its target.
+Returning a drone to bay or scooping it clears pending and completed locks and sends incoming missiles along their
+last direction. Even an immediate relaunch with the same item ID requires a new lock. The saved target kind and flight
+snapshot carry these outcomes across checkpoints using the existing missile schema.
+
+The original build-3662168 archive identified below contains the existing ship and target identifiers in
+`eve/client/script/parklife/targetMgr.pyj`. The missile activation and impact wire shapes carry the drone item ID.
+The older EVE.js reference resolves physical targets by item ID in `server/src/space/runtime/missileEntity.js`
+(SHA-256 `7b27b19c4725272cd51b6d08f930755afc6934037d9c11d1c74deee8da7eda12`).
+Carbon's `Ballpark::StopAllFollowers` supplies the lost-target motion. Gameplay references cover structure launchers
+and drone recovery. [Carbon Destiny source at the referenced revision](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Ballpark.cpp),
+[structure fitting](https://wiki.eveuniversity.org/Fitting_upwell_structures), [drone mechanics](https://wiki.eveuniversity.org/Drones).
+
+**Automated validation**
+
+All 437 affected .NET cases passed in 4m 7s. The four drone cases cover neutral rejection before payment, controller
+retaliation, saved launches, surviving and fatal hits after reopen, same-frame destruction, and recall or scoop
+followed by immediate relaunch. Tool and solution restore, the zero-warning build (7.69s), both Python suites
+(8 + 9), formatting (2,621 files), line width and diff verification passed. The root validation took 4m 49s.
+The three edited Markdown files had 778 valid local link destinations.
+
+The final filter joined `FullyQualifiedName~Eden.Protocol.Tests.` predicates with `|` for `Structures.StructureWeaponTests`,
+`Structures.StructureTarget`, `Structures.StructureAttackTests`, `Combat.MissileFlightTests`, `Combat.MissileRulesTests`,
+`Combat.MissileCombatTests`, `Combat.PilotMissileTests`, `Combat.NpcMissileTests`, `Combat.NpcMissileTimingTests`,
+`Combat.ResidentNpcMissileTests`, `Combat.DroneRecoveryTests`, `Combat.CombatDroneTests`, `Combat.DroneSynchronizationTests`,
+`Combat.ResidentDroneTests`, `Combat.SmartbombTests` and `Flight.MissileBallparkTests`.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer check**
+
+Fire at a hostile drone from a controlled structure and verify the impact or recall in the gunner's overview.
 
 ### Resident defensive missile firing
 

@@ -2,6 +2,7 @@ using System.Text.Json;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
+using Eden.Data.World.Drones;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Structures;
 using Eden.Gameplay.Ammunition;
@@ -196,7 +197,7 @@ internal sealed class PilotStructureWeaponStore(
         var target =
             targeting.Find(world, catalog, source.SystemId, targetId, now)
             ?? throw new InvalidDataException("The defensive weapon target is unavailable.");
-        CheckTarget(world, catalog, source, target, now);
+        var victim = CheckTarget(world, catalog, source, target, now);
         var charge = fit.Charges[moduleId];
         var drive = MissileChargeCatalog.Drive(catalog, loaded.TypeId, charge);
         int level = PilotSkillReader.Level(world, catalog, token.PilotId, StructureWeaponRules.MissileSystemsSkill);
@@ -236,7 +237,9 @@ internal sealed class PilotStructureWeaponStore(
                     {
                         StructureTargetKind.Npc => MissileTargetKind.Npc,
                         StructureTargetKind.Pilot => MissileTargetKind.Pilot,
-                        _ => MissileTargetKind.Structure,
+                        StructureTargetKind.Structure => MissileTargetKind.Structure,
+                        StructureTargetKind.Drone => MissileTargetKind.Drone,
+                        _ => throw new InvalidDataException("Unknown structure missile target."),
                     },
                     TargetRadius = (float)target.Radius,
                     LaunchStamp = stamp,
@@ -268,9 +271,12 @@ internal sealed class PilotStructureWeaponStore(
             var timers = CrimewatchPersistence.State(world, token.PilotId);
             timers.SystemId = source.SystemId;
             timers.Apply(CrimewatchRules.Player(timers.Timers(), ready, CrimewatchFlag.None, true, now));
-            var victim = world.Filter<Pilot>(pilot => pilot.ActiveShipId == targetId).SingleOrDefault();
             if (victim is not null)
             {
+                if (target.Kind == StructureTargetKind.Drone)
+                {
+                    StructureCombatTargets.Record(world, source.Id, victim.ActiveShipId, now, ready);
+                }
                 CrimewatchPersistence.PlayerImpact(world, token.PilotId, victim.Id, source.SystemId, now);
             }
         }
@@ -281,7 +287,7 @@ internal sealed class PilotStructureWeaponStore(
         );
     }
 
-    private static void CheckTarget(WorldAction world, CatalogDbContext catalog, SavedStructure source, StructureTarget target, long now)
+    private static Pilot? CheckTarget(WorldAction world, CatalogDbContext catalog, SavedStructure source, StructureTarget target, long now)
     {
         double security = CrimewatchPersistence.Security(catalog, source.SystemId);
         bool retaliation = StructureCombatTargets.Hostile(world, target.Id, source.Id, now);
@@ -291,15 +297,28 @@ internal sealed class PilotStructureWeaponStore(
             {
                 throw new InvalidDataException("Structure green safety prevents attacking CONCORD.");
             }
-            return;
+            return null;
         }
-        if (target.Kind == StructureTargetKind.Pilot)
+        if (target.Kind is StructureTargetKind.Pilot or StructureTargetKind.Drone)
         {
-            var victim = world.Filter<Pilot>(pilot => pilot.ActiveShipId == target.Id).Single();
+            var drone = target.Kind == StructureTargetKind.Drone ? world.Set<WorldDrone>().Find(target.Id) : null;
+            var victim = drone is null
+                ? world.Filter<Pilot>(pilot => pilot.ActiveShipId == target.Id).Single()
+                : world.Pilots.Find(drone.PilotId);
+            if (victim is null || drone is not null && drone.ControllerShipId != victim.ActiveShipId)
+            {
+                // Uncontrolled drones carry no active controller's retaliation rights or combat timers.
+                StructureWeaponRules.CheckPlayer(security, CrimewatchFlag.None, false, false);
+                return null;
+            }
+            if (drone is not null)
+            {
+                retaliation = StructureCombatTargets.Hostile(world, drone.ControllerShipId, source.Id, now);
+            }
             var flag = world.Set<SavedCrimewatch>().Find(victim.Id)?.Timers().Flag(now) ?? CrimewatchFlag.None;
             bool outlaw = (world.Set<SavedSecurityStatus>().Find(victim.Id)?.Value ?? 0) <= CrimewatchRules.OutlawSecurity;
             StructureWeaponRules.CheckPlayer(security, flag, outlaw, retaliation);
-            return;
+            return victim;
         }
         if (target.Kind != StructureTargetKind.Structure)
         {
@@ -313,5 +332,6 @@ internal sealed class PilotStructureWeaponStore(
             retaliation
         );
         StructureWeaponRules.CheckPlayer(security, CrimewatchFlag.None, false, retaliation);
+        return null;
     }
 }

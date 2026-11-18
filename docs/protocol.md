@@ -13,6 +13,8 @@ five-/twenty-day delivery, paid personal/corporate recovery and public structure
 
 [Resident defensive missiles](protocol/structures.md#resident-defensive-missile-firing) records paid structure launches,
 lease-owned repeat cycles, physical impacts, green safety and saved retaliation rights.
+[Defensive missiles against drones](protocol/structures.md#defensive-missiles-against-drones) covers controller rights,
+drone damage, and missile behavior on recall and relaunch.
 
 [Resident structure ammunition](protocol/structures.md#resident-structure-ammunition-and-reloads) records bay custody,
 magazine transfers, loaded-charge dogma, native priming and saved reload deadlines.

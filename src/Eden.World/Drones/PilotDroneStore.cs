@@ -865,8 +865,7 @@ internal sealed partial class PilotDroneStore(
                     var previous = PilotInventoryStore.Read(catalog, item);
                     item.LocationId = ship.Id;
                     item.FlagId = (int)InventoryFlag.DroneBay;
-                    drone.SystemId = null;
-                    Release(drone);
+                    Stow(world, drone);
                     changes.Add(new(PilotInventoryStore.Read(catalog, item), previous));
                     continue;
                 }
@@ -972,6 +971,31 @@ internal sealed partial class PilotDroneStore(
             security.Publish();
         }
         return new(changes, hits, released);
+    }
+
+    private static void Stow(WorldAction world, WorldDrone drone)
+    {
+        drone.SystemId = null;
+        Release(drone);
+        if (world is not EconomyTransaction resident)
+        {
+            return;
+        }
+        world.AfterCommit(() => world.TargetLocks?.RemoveShip(drone.ItemId));
+        if (resident.MissileHistory(drone.ItemId) is null)
+        {
+            return;
+        }
+        // A singleton can leave the bay with the same item ID before the next flight tick.
+        foreach (
+            var row in world.Filter<WorldMissile>(m =>
+                m.TargetId == drone.ItemId && m.TargetKind == MissileTargetKind.Drone && m.Status == MissileFlightStatus.Flying
+            )
+        )
+        {
+            var payload = row.Payload();
+            row.Save(payload with { Flight = MissileFlightRules.LoseTarget(payload.Flight), Target = null });
+        }
     }
 
     private static void Release(WorldDrone drone)

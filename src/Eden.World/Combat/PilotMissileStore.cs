@@ -3,6 +3,7 @@ using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
+using Eden.Data.World.Drones;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Structures;
 using Eden.Gameplay.Ammunition;
@@ -438,6 +439,15 @@ internal sealed partial class PilotMissileStore(
             {
                 target = new(contact.Position, contact.Velocity, row.TargetRadius);
             }
+            if (
+                row.TargetKind == MissileTargetKind.Drone
+                && world.Set<WorldDrone>().Find(row.TargetId) is { } drone
+                && drone.SystemId == systemId
+            )
+            {
+                observedAt = drone.UpdatedAt;
+                target = new(new(drone.X, drone.Y, drone.Z), new(drone.VelocityX, drone.VelocityY, drone.VelocityZ), row.TargetRadius);
+            }
             return MissileMotionHistory.Step(world, row, payload, target, observedAt);
         }
 
@@ -447,6 +457,12 @@ internal sealed partial class PilotMissileStore(
             {
                 row.Status = MissileFlightStatus.Expired;
                 row.EndedAt = time;
+                continue;
+            }
+            var droneTarget = row.TargetKind == MissileTargetKind.Drone ? world.Set<WorldDrone>().Find(row.TargetId) : null;
+            if (row.TargetKind == MissileTargetKind.Drone && !payload.Flight.Orphaned && droneTarget?.SystemId != systemId)
+            {
+                // An earlier impact in this queue destroyed the drone. Reschedule from the last paid flight boundary.
                 continue;
             }
             row.Save(payload);
@@ -462,6 +478,10 @@ internal sealed partial class PilotMissileStore(
                 destroyed |= AdvanceBreacher(world, catalog, rows, systemId, time, pilotImpacts);
                 AttachBreacher(row, payload, time, rows);
                 continue;
+            }
+            if (row.Status == MissileFlightStatus.Impact && droneTarget is not null)
+            {
+                ApplyDroneImpact(world, catalog, row, payload, droneTarget, time);
             }
             if (row.Status == MissileFlightStatus.Impact && row.TargetKind == MissileTargetKind.Pilot)
             {

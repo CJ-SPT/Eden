@@ -1,5 +1,6 @@
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
+using Eden.Data.World.Drones;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Skills;
 using Eden.Data.World.Structures;
@@ -7,7 +8,9 @@ using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Diagnostics;
@@ -33,6 +36,7 @@ namespace Eden.Protocol.Tests.Structures;
 public sealed class StructureWeaponTests
 {
     private const long TargetId = 59000001;
+    private const int WarriorII = 2488;
 
     [Fact]
     public async Task PaidMissilesSurviveControlReleaseAndReportPhysicalDamageOnce()
@@ -414,6 +418,167 @@ public sealed class StructureWeaponTests
         Assert.Empty(missiles.TakeImpacts(f.PilotId));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task StructureMissilesAgainstDronesRespectOwnerRightsAndPersistDamage(bool fragile)
+    {
+        using var f = StructureAttackTests.Prepare();
+        var (structure, launcher) = Prepare(f);
+        var other = f.Db.Store.FindPilot(1000002)!;
+        long id = LaunchDrone(f, structure, other);
+        long secondLauncher = 0;
+        if (fragile)
+        {
+            secondLauncher = f.Item(35922);
+            f.Db.Services.GetRequiredService<IPilotStructureFitting>().Fit(f.PilotId, structure.Id, [new(secondLauncher)]);
+            var ammo = f.Db.Services.GetRequiredService<IPilotStructureAmmunition>();
+            var loaded = ammo.Load(f.PilotId, structure.Id, [secondLauncher], [f.Item(37846, 50)], f.ShipId);
+            f.Clock.AdvanceWallTime(TimeSpan.FromMilliseconds(loaded.ReloadMilliseconds + 1));
+        }
+        using var lease = f.Db.Services.GetRequiredService<IPilotStructureControl>().Acquire(structure.Id, f.PilotId, 101);
+        var targeting = f.Db.Services.GetRequiredService<IPilotStructureTargeting>();
+        Lock(f, targeting, lease.Token, id);
+        var weapons = f.Db.Services.GetRequiredService<IPilotStructureWeapons>();
+        Assert.Throws<InvalidDataException>(() => weapons.Activate(lease.Token, launcher, id, 0, 1));
+        var defense = Assert.Single(f.Db.Services.GetRequiredService<IPilotDrones>().List(Fixture.SystemId, f.Clock.Now)).Profile.Defense;
+        using (var action = StructureAttackTests.Scope(f))
+        {
+            Assert.Equal(50, action.World.Set<OwnedItem>().Single(item => item.LocationId == launcher).Quantity);
+            Assert.Empty(action.World.Set<WorldMissile>());
+            StructureCombatTargets.Record(action.World, other.ShipId, structure.Id, f.Clock.Now, f.Clock.Now);
+            if (fragile)
+            {
+                var drone = action.World.Set<WorldDrone>().Find(id)!;
+                drone.Shield = 0;
+                drone.ArmorDamage = defense.Armor;
+                drone.StructureDamage = defense.Structure - 0.01;
+            }
+            action.Commit();
+        }
+        var paid = weapons.Activate(lease.Token, launcher, id, 0, 1);
+        Assert.Equal(49, paid.Launch!.Magazine.Quantity);
+        long? secondProjectile = fragile ? weapons.Activate(lease.Token, secondLauncher, id, 0, 1).Launch!.Projectile.Id : null;
+        using (var read = StructureAttackTests.Scope(f))
+        {
+            Assert.True(StructureCombatTargets.Hostile(read.World, structure.Id, other.ShipId, f.Clock.Now));
+            Assert.Equal(MissileTargetKind.Drone, read.World.Set<WorldMissile>().Find(paid.Launch.Projectile.Id)!.TargetKind);
+        }
+        await LiveWorld.Find(f.Db.Path)!.FlushAsync();
+        string copy = Path.Combine(Path.GetDirectoryName(f.Db.Path)!, "structure-drone-flight.sqlite");
+        File.Copy(f.Db.Path, copy);
+        var resumedClock = new TestClock(f.Clock.UtcNow);
+        using var reopened = ServerServices.Build(new(copy), resumedClock, population: new TestNpcPopulationSeeder(), liveWorld: true);
+        var missiles = reopened.GetRequiredService<IPilotMissiles>();
+        var resumedDrones = reopened.GetRequiredService<IPilotDrones>();
+        var before = Assert.Single(resumedDrones.List(Fixture.SystemId, resumedClock.Now));
+        List<MissileImpact> hits = [];
+        for (int index = 0; index < 120 && hits.Count == 0; index++)
+        {
+            resumedClock.AdvanceWallTime(TimeSpan.FromSeconds(1));
+            missiles.Advance(Fixture.SystemId, resumedClock.Now);
+            hits.AddRange(missiles.TakeImpacts(f.PilotId));
+        }
+        var hit = Assert.Single(hits);
+        Assert.Equal(id, hit.TargetId);
+        Assert.Equal(structure.Id, hit.SourceShipId);
+        Assert.Equal(fragile, hit.Destroyed);
+        Assert.True(hit.Applied > 0);
+        Assert.Null(hit.Reward);
+        Assert.Equal(fragile, resumedDrones.WasDestroyed(id));
+        var contacts = resumedDrones.List(Fixture.SystemId, resumedClock.Now);
+        if (fragile)
+        {
+            Assert.Empty(contacts);
+            var survivingFlight = Assert.Single(missiles.List(Fixture.SystemId));
+            Assert.Equal(secondProjectile, survivingFlight.Id);
+            Assert.True(survivingFlight.Flight.Orphaned);
+        }
+        else
+        {
+            Assert.True(hit.Health.Remaining.Shield < before.Health.Remaining.Shield);
+            Assert.Equal(hit.Health.Remaining, Assert.Single(contacts).Health.Remaining);
+        }
+        missiles.Advance(Fixture.SystemId, resumedClock.Now);
+        Assert.Empty(missiles.TakeImpacts(f.PilotId));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void StowingAndRelaunchingADroneBreaksTheLockAndPaidMissile(bool scoop)
+    {
+        using var f = StructureAttackTests.Prepare();
+        var (structure, launcher) = Prepare(f);
+        var other = f.Db.Store.FindPilot(1000002)!;
+        long id = LaunchDrone(f, structure, other);
+        using var lease = f.Db.Services.GetRequiredService<IPilotStructureControl>().Acquire(structure.Id, f.PilotId, 101);
+        var targeting = f.Db.Services.GetRequiredService<IPilotStructureTargeting>();
+        Lock(f, targeting, lease.Token, id);
+        using (var action = StructureAttackTests.Scope(f))
+        {
+            StructureCombatTargets.Record(action.World, other.ShipId, structure.Id, f.Clock.Now, f.Clock.Now);
+            action.Commit();
+        }
+        var weapons = f.Db.Services.GetRequiredService<IPilotStructureWeapons>();
+        var paid = weapons.Activate(lease.Token, launcher, id, 1, 1);
+        var drones = f.Db.Services.GetRequiredService<IPilotDrones>();
+        if (scoop)
+        {
+            drones.Order(other.PilotId, [id], DroneOrder.Abandon, null, new HashSet<long>(), f.Clock.Now);
+            Assert.Single(drones.Scoop(other.PilotId, [id], InventoryFlag.DroneBay, f.Clock.Now));
+        }
+        else
+        {
+            drones.Order(other.PilotId, [id], DroneOrder.ReturnToBay, null, new HashSet<long>(), f.Clock.Now);
+            f.Clock.AdvanceWallTime(TimeSpan.FromSeconds(1));
+            Assert.Single(drones.Advance(other.PilotId, f.Clock.Now, 2).Changes);
+        }
+        var relaunched = drones.Launch(other.PilotId, [new(id, 1)], f.Clock.Now);
+        Assert.Equal(id, Assert.Single(Assert.Single(relaunched.Launches).DroneIds));
+        Assert.Empty(targeting.Read(lease.Token).Targets);
+        Assert.Single(weapons.Advance(lease.Token, 3).Stopped);
+        var missiles = f.Db.Services.GetRequiredService<IPilotMissiles>();
+        for (int step = 0; step < 120 && missiles.List(Fixture.SystemId).Count > 0; step++)
+        {
+            f.Clock.AdvanceWallTime(TimeSpan.FromSeconds(1));
+            missiles.Advance(Fixture.SystemId, f.Clock.Now);
+        }
+        Assert.Empty(missiles.List(Fixture.SystemId));
+        Assert.False(missiles.Impacted(paid.Launch!.Projectile.Id));
+        Assert.Empty(missiles.TakeImpacts(f.PilotId));
+        var contact = Assert.Single(drones.List(Fixture.SystemId, f.Clock.Now));
+        Assert.Equal(contact.Profile.Defense.Undamaged, contact.Health.Remaining);
+    }
+
+    private static long LaunchDrone(Fixture f, StructureSnapshot structure, DockedPilot owner)
+    {
+        PassiveCatalogFixture.LoadCombatDrones(new WorldDatabase(f.Db.Path).CatalogPath);
+        f.Db.Store.SetPosition(
+            owner.ShipId,
+            structure.Position + new SpacePosition(structure.Profile.Radius + 10000, 0, 0),
+            Fixture.SystemId
+        );
+        long stack = f.Item(WarriorII);
+        using (var action = StructureAttackTests.Scope(f))
+        {
+            var item = action.World.Set<OwnedItem>().Find(stack)!;
+            item.OwnerId = owner.PilotId;
+            item.LocationId = owner.ShipId;
+            item.FlagId = (int)InventoryFlag.DroneBay;
+            foreach (int type in Enum.GetValues<DroneSkill>().Select(skill => (int)skill))
+            {
+                var skill =
+                    action.World.Set<PilotSkill>().Find(owner.PilotId, type)
+                    ?? action.World.Add(new PilotSkill { PilotId = owner.PilotId, TypeId = type }).Entity;
+                skill.Points = 256_000_000;
+            }
+            action.Commit();
+        }
+        var drones = f.Db.Services.GetRequiredService<IPilotDrones>();
+        return Assert.Single(Assert.Single(drones.Launch(owner.PilotId, [new(stack, 1)], f.Clock.Now).Launches).DroneIds);
+    }
+
     [Fact]
     public void FatalNpcImpactKeepsStructureAttributionAndPaysOneBounty()
     {
@@ -523,14 +688,14 @@ public sealed class StructureWeaponTests
         }
     }
 
-    private static void Lock(Fixture f, IPilotStructureTargeting targeting, StructureControlToken token)
+    private static void Lock(Fixture f, IPilotStructureTargeting targeting, StructureControlToken token, long target = TargetId)
     {
-        var scan = Assert.Single(targeting.Add(token, TargetId).Targets);
+        var scan = Assert.Single(targeting.Add(token, target).Targets);
         if (scan.ReadyAt > f.Clock.Now)
         {
             f.Clock.AdvanceWallTime(TimeSpan.FromTicks(scan.ReadyAt - f.Clock.Now));
         }
-        targeting.RequireLocked(token, TargetId);
+        targeting.RequireLocked(token, target);
     }
 
     private static (StructureSnapshot Structure, long Launcher) Prepare(Fixture f, int launcherType = 35922, int chargeType = 37846)

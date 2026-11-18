@@ -1990,6 +1990,14 @@ internal sealed partial class ResidentEconomy
                         reader.IsDBNull(31) ? null : reader.GetString(31)
                     ),
                 state => new(state.ItemId),
+                changed: (_, row) =>
+                {
+                    if (row?.SystemId is not null)
+                    {
+                        MissileHistory(row.ItemId)
+                            ?.Observe(row.UpdatedAt, new(row.X, row.Y, row.Z), new(row.VelocityX, row.VelocityY, row.VelocityZ));
+                    }
+                },
                 indexes:
                 [
                     new("ItemId", row => row.ItemId),

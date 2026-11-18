@@ -61,6 +61,10 @@ public static class MissileFlightRules
         return new(drive, source.Position, velocity, velocity.Unit * LaunchGotoDistance);
     }
 
+    // Carbon StopAllFollowers changes a lost missile to GotoDirection until its lifetime expires.
+    public static MissileFlight LoseTarget(MissileFlight flight) =>
+        flight.Orphaned ? flight : flight with { Orphaned = true, Goto = flight.Position + flight.Velocity.Unit * OrphanGotoDistance };
+
     public static MissileFlight Tick(MissileFlight flight, MissileTarget? target) => Tick(flight, target, [], out _);
 
     public static MissileFlight Tick(
@@ -76,19 +80,17 @@ public static class MissileFlightRules
             return flight;
         }
         Validate(flight);
-        bool orphaned = flight.Orphaned || target is null;
+        if (target is null)
+        {
+            flight = LoseTarget(flight);
+        }
+        bool orphaned = flight.Orphaned;
         if (!orphaned)
         {
             Validate(target!);
         }
         var destination = flight.Goto;
-        if (orphaned && !flight.Orphaned)
-        {
-            // Carbon StopAllFollowers changes a lost missile to GotoDirection;
-            // it keeps flying without reacquiring until its lifetime expires.
-            destination = flight.Position + flight.Velocity.Unit * OrphanGotoDistance;
-        }
-        else if (!orphaned && flight.ElapsedSeconds > LaunchPhaseSeconds)
+        if (!orphaned && flight.ElapsedSeconds > LaunchPhaseSeconds)
         {
             double intercept = flight.Position.DistanceTo(target!.Position) / flight.Drive.MaxVelocity;
             destination = target.Position + target.Velocity * intercept;

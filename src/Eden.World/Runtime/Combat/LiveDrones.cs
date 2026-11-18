@@ -394,6 +394,7 @@ internal sealed partial class LiveCombatRuntime
         {
             if (_liveDrones[drone.Contact.Id] != drone)
             {
+                owner.Economy.MissileHistory(drone.Contact.Id)?.Observe(now, drone.Contact.Position, drone.Contact.Velocity);
                 _liveDrones[drone.Contact.Id] = drone;
                 _dirtyDrones.Add(drone.Contact.Id);
             }

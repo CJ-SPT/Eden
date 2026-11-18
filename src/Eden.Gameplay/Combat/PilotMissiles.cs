@@ -10,6 +10,7 @@ public enum MissileTargetKind
     Npc,
     Pilot,
     Structure,
+    Drone,
 }
 
 public sealed record MissileAggressor(long Id, SpacePosition Position);
