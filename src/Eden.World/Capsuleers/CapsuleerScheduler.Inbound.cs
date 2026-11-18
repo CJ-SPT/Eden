@@ -10,15 +10,6 @@ internal sealed partial class CapsuleerScheduler
     private readonly WorldConfigurationSlot _populationSettings = WorldConfigurationSlot.For(database.Path);
     private readonly HashSet<long> _preparedInbound = [];
     private readonly Dictionary<long, InboundPreparation> _inboundPreparation = [];
-    private readonly Dictionary<long, int> _visitorDestinations = [];
-
-    private bool ServesOccupiedSystem(long pilot, IReadOnlyList<int> occupied) =>
-        ActiveOperation(pilot)
-        || _haulers.ContainsKey(pilot)
-            && (
-                occupied.Contains(_communities[pilot])
-                || _visitorDestinations.TryGetValue(pilot, out int destination) && occupied.Contains(destination)
-            );
 
     private void RegisterVisitor(long pilot)
     {
@@ -50,6 +41,10 @@ internal sealed partial class CapsuleerScheduler
         {
             // Losing an observer during planning is not an unsupported lane. Retain
             // the cursor so a later observation can reuse any committed founder.
+            if (pilot is not null)
+            {
+                presence.Wake();
+            }
             return;
         }
         if (pilot is long committed)

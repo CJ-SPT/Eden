@@ -15,6 +15,7 @@ using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Configuration;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -308,33 +309,62 @@ public sealed class CapsuleerGlobalPopulationTests
     }
 
     [Fact]
-    public void SavedGlobalTrafficRunsOnlyWhileItsSystemIsOccupied()
+    public async Task SavedTrafficCrossesUnobservedSystemsAndResumesAfterRestart()
     {
         const int home = 30000141;
+        const int destination = 30000142;
         const int elsewhere = 30000144;
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
         Restart(f, new(Miners: false, TrafficMultiplier: 2, GateVisitors: 0));
-        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
-        using var observer = host.GetRequiredService<IHumanPresence>().Select(90000001, elsewhere);
-        host.PrepareActivatedPopulations();
-        var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
-        Assert.Empty(scheduler.Jobs());
-
-        observer.Transfer(home);
-        var initial = scheduler.Jobs().ToDictionary(job => job.PilotId);
-        Assert.NotEmpty(initial);
-        for (int i = 0; i < 35; i++)
+        long pilot;
+        long ship;
+        using (WorldDbContext saved = new(f.Database.Path))
+        {
+            pilot = saved.Set<SavedCapsuleerAgent>().First(agent => agent.CommunitySystemId == home && agent.Slot == 0).PilotId;
+            ship = saved.Pilots.Find(pilot)!.ActiveShipId;
+        }
+        CapsuleerJob checkpoint;
+        using (var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true))
+        {
+            using var observer = host.GetRequiredService<IHumanPresence>().Select(90000001, elsewhere);
+            var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
+            var initial = scheduler.Jobs().Single(job => job.PilotId == pilot);
+            var maintenance = host.GetRequiredService<CapsuleerMaintenance>();
+            for (int i = 0; i < 3000 && scheduler.Hauler(pilot)!.Pilot.SystemId == home; i++)
+            {
+                f.Clock.Seconds++;
+                maintenance.Tick();
+            }
+            var arrived = Assert.IsType<HaulerObservation>(scheduler.Hauler(pilot));
+            Assert.Equal(destination, arrived.Pilot.SystemId);
+            Assert.Equal(ship, arrived.Pilot.ShipId);
+            Assert.Equal(0, host.GetRequiredService<ICapsuleerScene>().MaterializedPilots);
+            checkpoint = scheduler.Jobs().Single(job => job.PilotId == pilot);
+            Assert.True(checkpoint.Sequence > initial.Sequence);
+            await host.GetRequiredService<LiveWorld>().FlushAsync();
+        }
+        f.Clock.Seconds += 3600;
+        WorldInitialization.Initialize(f.Database, f.Clock);
+        using var reopened = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        var restored = reopened.GetRequiredService<ICapsuleerScheduler>();
+        Assert.Equal(0, restored.Run(0).Turn.Completed);
+        using var selected = reopened.GetRequiredService<IHumanPresence>().Select(90000001, elsewhere);
+        Assert.Contains(checkpoint, restored.Jobs());
+        var worker = reopened.GetRequiredService<CapsuleerMaintenance>();
+        for (int i = 0; i < 3000 && restored.Hauler(pilot)!.Pilot.SystemId != home; i++)
         {
             f.Clock.Seconds++;
-            host.GetRequiredService<CapsuleerMaintenance>().Tick();
+            worker.Tick();
         }
-        var paused = scheduler.Jobs().ToArray();
-        Assert.Contains(paused, job => job.Sequence > initial[job.PilotId].Sequence);
-        observer.Transfer(elsewhere);
-        f.Clock.Seconds += 70;
-        host.GetRequiredService<CapsuleerMaintenance>().Tick();
-        Assert.Equal(paused, scheduler.Jobs());
-        Assert.Equal(0, host.GetRequiredService<CapsuleerScene>().MaterializedPilots);
+        var returned = Assert.IsType<HaulerObservation>(restored.Hauler(pilot));
+        Assert.Equal(home, returned.Pilot.SystemId);
+        Assert.Equal(ship, returned.Pilot.ShipId);
+        Assert.Equal(0, reopened.GetRequiredService<ICapsuleerScene>().MaterializedPilots);
+        selected.Dispose();
+        var paused = restored.Jobs().ToArray();
+        f.Clock.Seconds += 3600;
+        worker.Tick();
+        Assert.Equal(paused, restored.Jobs());
     }
 
     [Theory]

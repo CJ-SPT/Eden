@@ -1,4 +1,5 @@
 using Eden.Data.World.Capsuleers;
+using Eden.Gameplay.Capsuleers;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 
@@ -17,17 +18,23 @@ internal sealed partial class CapsuleerScheduler
                 Load(system);
             }
         }
-        var pilots = live
-            .CapsuleerAgentRevisions.Where(change => change.Value > previous && _locations.ContainsKey(change.Key))
-            .Select(change => change.Key)
-            .ToArray();
+        var pilots = live.CapsuleerAgentRevisions.Where(change => change.Value > previous).Select(change => change.Key).ToArray();
         if (pilots.Length > 0)
         {
             WorldActionScope.Inspect(
                 database,
                 world =>
                 {
-                    Register(world, world.Set<SavedCapsuleerAgent>().Where(agent => Enumerable.Contains(pilots, agent.PilotId)).ToArray());
+                    Register(
+                        world,
+                        pilots
+                            .Select(pilot => world.Set<SavedCapsuleerAgent>().Find(pilot))
+                            .OfType<SavedCapsuleerAgent>()
+                            .Where(agent =>
+                                _locations.ContainsKey(agent.PilotId) || _backgroundHaulersLoaded && agent.Career == CapsuleerCareer.Hauling
+                            )
+                            .ToArray()
+                    );
                     _suspended = world.Set<SavedCapsuleerSuspension>().Select(s => s.PilotId).ToHashSet();
                 }
             );

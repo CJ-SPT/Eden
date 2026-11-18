@@ -190,7 +190,7 @@ public sealed class CapsuleerHandoffTests(ITestOutputHelper output)
         using var selected = reopened.GetRequiredService<IHumanPresence>().Select(Human, Source);
         reopened.GetRequiredService<CapsuleerMaintenance>().Tick();
         reopened.GetRequiredService<ICapsuleerPresentation>().Refresh();
-        Assert.Equal(paid.Pilot.PilotId, Assert.Single(scheduler.Jobs()).PilotId);
+        Assert.Equal(jobs.Select(job => job.PilotId).Order(), scheduler.Jobs().Select(job => job.PilotId).Order());
         long elapsed = reopened.GetRequiredService<IHumanPresence>().Read().ElapsedTicks;
         Assert.True(scheduler.Jobs().Single(j => j.PilotId == paid.Pilot.PilotId).DueTicks > elapsed);
         var peer = Assert.Single(Peers(reopened, paid.Pilot), p => p.Pilot.PilotId == paid.Pilot.PilotId);

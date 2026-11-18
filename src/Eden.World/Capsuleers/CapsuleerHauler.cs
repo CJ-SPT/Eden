@@ -92,6 +92,7 @@ internal sealed partial class CapsuleerHauler(
     private HaulerProgress? _work;
     private NavigationState _navigation = new();
     private IReadOnlyList<StaticSpaceObject> _objects = [];
+    private bool _resourceGeometry;
     private IReadOnlyList<StaticSpaceObject> Objects
     {
         get
@@ -396,6 +397,10 @@ internal sealed partial class CapsuleerHauler(
             RefreshTackle();
             _background = _background && !RequiresDetail;
         }
+        if (!_background && !_resourceGeometry)
+        {
+            RefreshObjects();
+        }
         AdvanceRattingClock(job.DueTicks);
         if (
             Work.Ratting is { } sortie
@@ -465,6 +470,7 @@ internal sealed partial class CapsuleerHauler(
         var beforeRoute = _route;
         var beforeTarget = _target;
         var beforeObjects = _objects;
+        bool beforeResourceGeometry = _resourceGeometry;
         var beforeObstacles = _obstacles;
         long stepTicks = job.DueTicks;
         _work = Work with { ActiveTicks = stepTicks, Stamp = CapsuleerScheduleRules.Stamp(stepTicks, Work.ClockOffsetTicks) };
@@ -524,6 +530,7 @@ internal sealed partial class CapsuleerHauler(
             _navigation = NavigationState.Restore(before.Navigation, beforePilot.Flight);
             _target = beforeTarget;
             _objects = beforeObjects;
+            _resourceGeometry = beforeResourceGeometry;
             _obstacles = beforeObstacles;
             RestorePosition(beforePilot);
             _operation = new(database, job, marketSignal);
@@ -549,6 +556,7 @@ internal sealed partial class CapsuleerHauler(
                 _navigation = NavigationState.Restore(before.Navigation, beforePilot.Flight);
                 _target = beforeTarget;
                 _objects = beforeObjects;
+                _resourceGeometry = beforeResourceGeometry;
                 _obstacles = beforeObstacles;
                 RestorePosition(beforePilot);
                 throw;
@@ -563,6 +571,7 @@ internal sealed partial class CapsuleerHauler(
             _navigation = NavigationState.Restore(before.Navigation, beforePilot.Flight);
             _target = beforeTarget;
             _objects = beforeObjects;
+            _resourceGeometry = beforeResourceGeometry;
             _obstacles = beforeObstacles;
             RestorePosition(beforePilot);
             throw;
@@ -743,16 +752,20 @@ internal sealed partial class CapsuleerHauler(
         LoadInboundDwells(catalog);
         transaction.Commit();
         transaction.Dispose();
-        RefreshObjects();
+        var activity = Live?.CapsuleerActivity.Read();
+        RefreshObjects(
+            loadResources: activity is not { Active: true } || activity.ActiveSystems.Contains(Pilot.SystemId) || RequiresDetail
+        );
         _target = _objects.FirstOrDefault(o => o.Id == Work.TargetId) ?? SiteTarget(Work.Ratting);
     }
 
-    private void RefreshObjects(bool loadResources = true)
+    private void RefreshObjects(bool? loadResources = null)
     {
         using var phase = SessionPerformance.Phase("traffic.geometry");
-        if (!loadResources)
+        _resourceGeometry = loadResources ?? !_background;
+        if (!_resourceGeometry)
         {
-            // A transfer into an empty system only needs its next station or gate.
+            // Background travel only needs the static route geometry until detailed work begins.
             using CatalogDbContext catalog = new(database.CatalogPath);
             _objects = SystemObjects.Geometry(catalog, Pilot.SystemId);
             _obstacles = [];

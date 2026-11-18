@@ -159,10 +159,11 @@ internal sealed partial class CapsuleerScheduler(
         {
             return;
         }
-        _membershipDirty = true;
         int? previousRuntime = _locations.TryGetValue(pilot, out int savedSystem) ? savedSystem : null;
+        _membershipDirty |=
+            previousRuntime is null || _reconciledSystems.Contains(previousRuntime.Value) || _reconciledSystems.Contains(system);
         Live?.AssignCapsuleer(pilot, previousRuntime, system, _miners.GetValueOrDefault(pilot), _haulers.GetValueOrDefault(pilot));
-        if (_locations.TryGetValue(pilot, out int previous))
+        if (previousRuntime is int previous)
         {
             _systemAgents.GetValueOrDefault(previous)?.Remove(pilot);
         }
@@ -177,6 +178,7 @@ internal sealed partial class CapsuleerScheduler(
 
     private HashSet<long> _suspended = [];
     private bool _loaded;
+    private bool _backgroundHaulersLoaded;
     private long _populationRevision;
     private readonly Dictionary<long, int> _communities = [];
 
@@ -200,8 +202,8 @@ internal sealed partial class CapsuleerScheduler(
         if (pilot is null || presence.Read().ActiveSystems.Contains(system))
         {
             Load(system, pilot);
-            presence.Wake();
         }
+        presence.Wake();
     }
 
     private void Load(int? preparedSystem = null, long? preparedPilot = null)
@@ -305,14 +307,6 @@ internal sealed partial class CapsuleerScheduler(
                 continue;
             }
             _communities[pilot] = agent.CommunitySystemId;
-            if (
-                agent.Career == CapsuleerCareer.Hauling
-                && agent.Slot >= CapsuleerPopulationRules.MaximumHomeRosterSlots
-                && database.Catalog.Gates.TryGetValue(agent.Slot % TrafficJourneyRules.VisitorSlotStride, out var lane)
-            )
-            {
-                _visitorDestinations[pilot] = lane.DestinationSystemId;
-            }
             if (!Current.ContainsKey(pilot))
             {
                 var saved = world.Set<SavedCapsuleerJob>().Find(pilot)!;
@@ -337,6 +331,11 @@ internal sealed partial class CapsuleerScheduler(
             else if (agent.Career == CapsuleerCareer.Hauling && !_haulers.ContainsKey(pilot))
             {
                 _haulers.Add(pilot, haulers.Create(pilot));
+                string? progress = world.Set<SavedCapsuleerHauler>().Find(pilot)?.Progress;
+                if (progress?.Contains("\"Ratting\":{", StringComparison.Ordinal) == true && LocalSortie(HaulerCheckpoint.Read(progress)))
+                {
+                    _savedLocalSorties.Add(pilot);
+                }
             }
             IndexLocation(pilot, system);
             RegisterShip(pilot, ship);
@@ -379,7 +378,7 @@ internal sealed partial class CapsuleerScheduler(
                         executing = job;
                         long pilot = job.PilotId;
                         int system = _locations[pilot];
-                        if (!activity.ActiveSystems.Contains(system) && !ServesOccupiedSystem(pilot, activity.ActiveSystems))
+                        if (!activity.ActiveSystems.Contains(system) && !CanRunUnobserved(pilot))
                         {
                             throw new InvalidOperationException("The capsuleer job has no active system or travel assignment.");
                         }
@@ -444,6 +443,17 @@ internal sealed partial class CapsuleerScheduler(
                             using var observationContext = Live?.UseSystem(hauler.SystemId);
                             var observation = hauler.Read(includeHealth: activity.ActiveSystems.Contains(hauler.SystemId))!;
                             hauling[job.PilotId] = observation;
+                            if (Live is null)
+                            {
+                                if (LocalSortie(observation.Work))
+                                {
+                                    _savedLocalSorties.Add(pilot);
+                                }
+                                else
+                                {
+                                    _savedLocalSorties.Remove(pilot);
+                                }
+                            }
                             Blocking(job.PilotId, observation.Work.WaitingReason);
                             _pendingHaulers[job.PilotId] = observation;
                             RegisterShip(job.PilotId, observation.Pilot.ShipId);
@@ -452,7 +462,7 @@ internal sealed partial class CapsuleerScheduler(
                         {
                             throw new InvalidDataException("The capsuleer job has no supported role.");
                         }
-                        if (!activity.ActiveSystems.Contains(_locations[pilot]) && !ServesOccupiedSystem(pilot, activity.ActiveSystems))
+                        if (!activity.ActiveSystems.Contains(_locations[pilot]) && !CanRunUnobserved(pilot))
                         {
                             PausePilot(pilot, throughTicks);
                             _running.Remove(pilot);
@@ -530,6 +540,15 @@ internal sealed partial class CapsuleerScheduler(
         }
         using var phase = SessionPerformance.Phase("traffic.membership");
         Reconciliations++;
+        if (activity.Active && Live is not null && !_backgroundHaulersLoaded)
+        {
+            // Read compact resident membership once. The role loads its fit and navigation when due.
+            WorldActionScope.Inspect(
+                database,
+                world => Register(world, world.Set<SavedCapsuleerAgent>().Where(agent => agent.Career == CapsuleerCareer.Hauling).ToArray())
+            );
+            _backgroundHaulersLoaded = true;
+        }
         foreach (int system in activity.ActiveSystems)
         {
             if (!_visited.Contains(system))
@@ -567,9 +586,9 @@ internal sealed partial class CapsuleerScheduler(
         }
         if (activity.Active)
         {
-            foreach (long pilot in _haulers.Keys.Where(pilot => ServesOccupiedSystem(pilot, activity.ActiveSystems)))
+            foreach (long pilot in _haulers.Keys)
             {
-                if (!_suspended.Contains(pilot))
+                if (!_suspended.Contains(pilot) && CanRunUnobserved(pilot))
                 {
                     running.Add(pilot);
                 }

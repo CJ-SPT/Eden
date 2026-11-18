@@ -5,6 +5,23 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerScheduler
 {
+    private readonly HashSet<long> _savedLocalSorties = [];
+
+    private bool CanRunUnobserved(long pilot)
+    {
+        if (!_haulers.ContainsKey(pilot))
+        {
+            return false;
+        }
+        if (Live?.HaulerCheckpoints.TryGetValue(pilot, out var checkpoint) == true)
+        {
+            return !LocalSortie(checkpoint.Work) || ActiveOperation(pilot);
+        }
+        return !_savedLocalSorties.Contains(pilot);
+    }
+
+    private static bool LocalSortie(HaulerProgress? work) => work?.Ratting is { Patrol: null };
+
     private void SettleReadySystems(HumanActivitySnapshot activity)
     {
         foreach (var state in _systems.Observed())
@@ -50,7 +67,8 @@ internal sealed partial class CapsuleerScheduler
 
     private void UpdateDetailRetention(HumanActivitySnapshot activity, IReadOnlyList<SystemSimulationState> transitions)
     {
-        ResidentFitCache.Find(database.Path)?.Pin(activity.Pilots.Select(p => p.PilotId).Concat(_running));
+        var observed = activity.ActiveSystems.SelectMany(system => _systemAgents.GetValueOrDefault(system) ?? []);
+        ResidentFitCache.Find(database.Path)?.Pin(activity.Pilots.Select(p => p.PilotId).Concat(observed.Where(_running.Contains)));
         if (Live is not { } live)
         {
             return;

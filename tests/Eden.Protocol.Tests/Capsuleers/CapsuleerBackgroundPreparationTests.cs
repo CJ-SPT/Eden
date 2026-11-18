@@ -323,7 +323,7 @@ public sealed class CapsuleerBackgroundPreparationTests
     }
 
     [Fact]
-    public void SavedPilotsRemainDormantUntilTheirSystemIsEntered()
+    public void SavedPilotsAdvanceInUnvisitedRegionsWithoutReprovisioning()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
         AddOtherRegion(f.Database);
@@ -346,13 +346,17 @@ public sealed class CapsuleerBackgroundPreparationTests
         Assert.NotEmpty(scheduler.Jobs());
         var preparation = host.GetRequiredService<ICapsuleerBackgroundPreparation>();
         while (!preparation.PrepareNext().Complete) { }
-        Assert.DoesNotContain(scheduler.Jobs(), job => distant.Contains(job.PilotId));
-        f.Clock.Seconds += 120;
+        var initial = scheduler.Jobs().Where(job => distant.Contains(job.PilotId)).ToDictionary(job => job.PilotId);
+        Assert.Equal(distant.Order(), initial.Keys.Order());
+        for (int i = 0; i < 120; i++)
+        {
+            f.Clock.Seconds++;
+            scheduler.Run(i);
+        }
+        var advanced = scheduler.Jobs().Where(job => distant.Contains(job.PilotId)).ToArray();
+        Assert.All(advanced, job => Assert.True(job.Sequence > initial[job.PilotId].Sequence));
         human.Transfer(Third);
-        Assert.Contains(scheduler.Jobs(), job => distant.Contains(job.PilotId));
-        long elapsed = host.GetRequiredService<IHumanPresence>().Read().ElapsedTicks;
-        scheduler.Run(0);
-        Assert.All(scheduler.Jobs().Where(job => distant.Contains(job.PilotId)), job => Assert.True(job.DueTicks > elapsed));
+        Assert.All(advanced, job => Assert.Contains(job, scheduler.Jobs()));
         using WorldDbContext retained = new(f.Database.Path);
         Assert.All(distant, pilot => Assert.Single(retained.Set<SavedCapsuleerAgent>().Where(agent => agent.PilotId == pilot)));
     }

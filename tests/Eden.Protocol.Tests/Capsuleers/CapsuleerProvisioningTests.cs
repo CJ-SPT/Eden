@@ -373,13 +373,16 @@ public sealed class CapsuleerProvisioningTests(ITestOutputHelper output)
             f.Clock.Seconds++;
             host.GetRequiredService<CapsuleerMaintenance>().Tick();
         }
-        Assert.All(scheduler.Jobs(), j => Assert.Equal(0, j.Sequence));
+        var jobs = scheduler.Jobs().ToDictionary(job => job.PilotId);
         Assert.Equal(0, host.GetRequiredService<CapsuleerScene>().MaterializedPilots);
         foreach (var source in new[] { Source, Destination })
         {
             var agents = host.GetRequiredService<ICapsuleerPopulation>().Agents(source);
             long miner = agents.Single(a => a.Career == CapsuleerCareer.Mining).PilotId;
             Assert.Equal(source, scheduler.Miner(miner)!.Pilot.SystemId);
+            Assert.Equal(0, jobs[miner].Sequence);
+            long hauler = agents.Single(a => a.Career == CapsuleerCareer.Hauling).PilotId;
+            Assert.True(jobs[hauler].Sequence > 0);
         }
         Assert.Throws<InvalidOperationException>(() => host.GetRequiredService<ICapsuleerProvisioning>().Reconcile());
     }
