@@ -28,15 +28,8 @@ internal static partial class CapsuleerSupplyStore
         const int combatThermodynamicsLevel = 3;
         var pilot = world.Pilots.Find(pilotId)!;
         var ship = pilot.ActiveShip;
-        var hull = catalog.RequireItem(ship.TypeId);
-        int tech = (int)catalog.FittingAttributes(ship.TypeId).GetValueOrDefault(DogmaAttributeId.TechLevel, 1);
         double rank = catalog.FittingAttributes(OverloadRules.ThermodynamicsSkill).GetValueOrDefault(DogmaAttributeId.SkillTimeConstant);
-        if (
-            ship.OwnerId != pilotId
-            || ship.Position is not null
-            || !CapsuleerDefenseRules.CombatShip((HullClass)hull.GroupId, tech, true, ship.TypeId)
-            || rank <= 0
-        )
+        if (ship.OwnerId != pilotId || ship.Position is not null || !CapsuleerPatrolFit.CombatHull(catalog, ship.TypeId) || rank <= 0)
         {
             return;
         }

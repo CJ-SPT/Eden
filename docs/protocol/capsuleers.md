@@ -2,6 +2,61 @@
 
 [Protocol index](../protocol.md)
 
+## Catalog-wide frigate through battleship patrols
+
+Build 3662168 has 312 published hulls across the frigate, destroyer, cruiser, battlecruiser and battleship
+classes and their specialist variants. Solo patrols and roaming gangs can draw 296 of them, including
+faction, pirate, tournament and armed utility hulls. The pool contains 101 frigates, 34 destroyers,
+79 cruisers, 36 battlecruisers and 46 battleships. This selection applies when a new combat pilot is
+provisioned. Saved pilots keep their ships. A Venture with combat weapons can patrol, while mining lasers
+keep a working Venture in its mining role.
+
+Of the eligible non-interdictor combat draws, 40% use the sixteen authored fits, 40% draw evenly from the
+280 additional hulls, and 20% take the imported traffic fit or the Merlin fallback. The saved seed makes
+each draw repeatable. The expanded fits use the catalog's hardpoints, slots, CPU and powergrid. They load
+a weapon and ammunition first, then fit tackle, propulsion, local repair and damage control as space and
+resources permit. Attack battlecruisers can use large weapons with medium propulsion. These are Eden patrol
+fits. Specialist hulls can fly with ordinary weapons even when their signature modules have no bot behavior.
+
+| Exceptions | Hulls | Reason |
+| --- | --- | --- |
+| Tactical destroyers (5) | Confessor, Hecate, Jackdaw, Skua, Svipul | Eden's assembly policy excludes these Tech III hulls. |
+| Strategic cruisers (4) | Legion, Loki, Proteus, Tengu | Eden's assembly policy excludes these Tech III hulls. Their fittings depend on subsystems. |
+| No patrol-supported damage source (7) | Echelon, Zephyr, Monitor, Victorieux Luxury Yacht, Moreau YC128 Campaign Bus, Roden YC128 Campaign Bus, Tenzin YC128 Campaign Bus | The pinned hulls lack both weapon hardpoints and a combat-drone bay. |
+
+Yacht utility high slots do not give these bots a targeted weapon. The patrol controller can fire turrets,
+launchers and combat drones. Smartbomb area attacks are handled separately for players.
+
+EVE University's ship and strategic cruiser guides describe the hull classes and subsystem fittings.
+Selection and assembly coverage above come from Eden's pinned catalog. The evejs behavior reference is
+recorded in the [roaming gang notes](#smarter-pilots-and-persistent-roaming-gangs--november-17-2026).
+[Ships](https://wiki.eveuniversity.org/Ships), [Strategic cruisers](https://wiki.eveuniversity.org/Strategic_Cruiser).
+
+With the installed 27,947-profile traffic snapshot available, 32,768 provisioning draws in 1DQ1-A with
+default settings and seed 45 yielded all 296 generated hull types alongside imported traffic. The audit
+built every fit in an isolated resident world and checked its combat profile, damage source and module
+online state. Snapshot-enabled scheduler tests formed a gang of a Venture, Bifrost, Silver Magnate and
+Deacon and recovered the same ships and pilots after reopening its checkpoint. Each of the four also
+tackled and damaged a simulated player and a rival bot, both as a gang member and on a solo patrol.
+Two regional raids also verified that the gang acted on its scout's sighting, tackled each target and
+dealt damage.
+
+**Automated validation.** The 250 focused tests passed in 4 minutes 44 seconds including runner setup.
+The solution built with zero warnings and errors in 3.25 seconds. Tool and solution restore, both Python
+policy suites (8 catalog and 9 formatting cases), formatting verification and diff checks passed.
+The wider filter added `PatrolCatalogTests`, `CapsuleerDefenseLifecycleTests` and `TrafficActivityTests`
+to the fourteen classes in the [destroyer validation record](#destroyers-for-solo-patrols-and-gangs).
+Set `EDEN_ENCOUNTER_CATALOG` to the installed catalog path with a matching sibling `traffic.sqlite` to
+exercise the catalog-wide check. The exact reduced-catalog regression filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.RoamingGangTests.StationFormsAndLaunchesThreeShipsWithOneFittedTackler`.
+The separate `RivalDefenseEngagesAVisibleRaidWithOwnedWeaponsAndRealDamage` case failed on both the task
+branch and unchanged main `c2d8ae2c`. The independently routed fleets acquired no target within 350 ticks.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Observe a newly provisioned nullsec patrol in the overview to confirm
+native hull appearance.
+
 ## Battlecruisers and battleships for solo patrols and gangs
 
 On November 18, 2026, two Tech I battlecruisers and two Tech I battleships joined the generated PvP fits for

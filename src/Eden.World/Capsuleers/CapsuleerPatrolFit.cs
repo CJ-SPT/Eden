@@ -7,7 +7,7 @@ using Eden.World.Catalog;
 
 namespace Eden.World.Capsuleers;
 
-internal static class CapsuleerPatrolFit
+internal static partial class CapsuleerPatrolFit
 {
     // Build 3662168. Skills, fitting resources and the loaded magazine go through the normal blueprint owner.
     private const int Merlin = 603;
@@ -151,7 +151,7 @@ internal static class CapsuleerPatrolFit
         int Afterburner = (int)StarterMarketType.Afterburner
     );
 
-    // Each fitted hull has one seeded draw. Four further draws use an imported pilot or the generated fallback.
+    // Authored draws share the selection with additional catalog hulls. Four draws preserve the snapshot fallback.
     private static readonly PatrolLoadout[] s_patrols =
     [
         new((int)GangFrigate.Crow, LightMissileLauncher, ScourgeLightMissile, 3, LauncherRounds, WarpDisruptor),
@@ -231,10 +231,25 @@ internal static class CapsuleerPatrolFit
             policy.GateCamps && policy.CampBubbles && security <= 0 && PatrolRules.Choose(seed ^ system, ~slot, policy.InterdictorPercent)
                 ? catalog.Definition(s_interdictor, 0)
                 : null;
-        int draw = TrafficRules.Start(seed, system, slot, s_patrols.Length + SnapshotDraws);
-        if (interdictor is null && draw < s_patrols.Length && catalog.Definition(s_patrol, draw) is { } patrol)
+        int draws = s_patrols.Length + SnapshotDraws;
+        ulong roll = CapsuleerProvisioningRules.Seed(seed, system, CapsuleerCareer.Hauling, slot);
+        int draw = (int)(roll % (uint)draws);
+        if (interdictor is null && draw < s_patrols.Length)
         {
-            return patrol;
+            // Independent digits of the saved slot seed keep the full catalog reachable at any pool size.
+            ulong variety = roll / (uint)draws;
+            if (variety % 2 != 0 && catalog.Definition(s_catalogHulls, 0) is { Length: > 0 } hulls)
+            {
+                int hull = hulls[(int)(variety / 2 % (uint)hulls.Length)];
+                if (catalog.Definition(s_catalogFit, hull) is { } fit)
+                {
+                    return fit;
+                }
+            }
+            if (catalog.Definition(s_patrol, draw) is { } patrol)
+            {
+                return patrol;
+            }
         }
         return imported?.Invoke() ?? interdictor ?? catalog.Definition(s_fit, 0);
     }

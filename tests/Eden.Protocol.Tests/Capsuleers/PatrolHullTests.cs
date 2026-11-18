@@ -37,6 +37,8 @@ public sealed class PatrolHullTests
             CapsuleerPatrolFit.Moa,
             CapsuleerPatrolFit.Thorax,
         ],
+        // The catalog draw selects a combat Venture, Bifrost, Silver Magnate and Deacon.
+        [RoamingGangTests.Fixture.CatalogSeed] = [(int)TechOneHullType.Venture, 37480, 11942, 37457],
         [RoamingGangTests.Fixture.HeavySeed] =
         [
             CapsuleerPatrolFit.Drake,
@@ -51,6 +53,7 @@ public sealed class PatrolHullTests
     [InlineData(RoamingGangTests.Fixture.DestroyerSeed)]
     [InlineData(RoamingGangTests.Fixture.CruiserSeed)]
     [InlineData(RoamingGangTests.Fixture.HeavySeed)]
+    [InlineData(RoamingGangTests.Fixture.CatalogSeed)]
     public async Task SnapshotAndSpecialistGangCoexistAndKeepTheirOriginalHullsOnReopen(int seed)
     {
         using var fixture = new RoamingGangTests.Fixture(regional: true, patrolSeed: seed);
@@ -123,7 +126,9 @@ public sealed class PatrolHullTests
             var status = health.Read(victim.PilotId, fixture.Clock.Now).Remaining;
             return status.Shield + status.Armor + status.Structure;
         }
-        var guns = defense.Profile(member.PilotId).RattingWeapons.Select(weapon => weapon.Weapon.ItemId).ToArray();
+        var weapons = defense.Profile(member.PilotId).RattingWeapons;
+        var guns = weapons.Where(weapon => weapon.DroneControlRange == 0).Select(weapon => weapon.Weapon.ItemId).ToArray();
+        bool crystals = weapons.Any(weapon => weapon.DroneControlRange == 0 && weapon.AvailableShots == int.MaxValue);
         Assert.NotEmpty(guns);
         long Loaded() =>
             fixture.Live.Economy.Read(world =>
@@ -134,7 +139,7 @@ public sealed class PatrolHullTests
         var course = new NavigationState();
         CapsuleerDefenseState? state = null;
         bool pointed = false;
-        for (int turn = 0; turn < 45 && (!pointed || Remaining() >= before || Loaded() >= loaded); turn++)
+        for (int turn = 0; turn < 45 && (!pointed || Remaining() >= before || !crystals && Loaded() >= loaded); turn++)
         {
             fixture.Clock.Seconds++;
             var target = Assert.IsType<CapsuleerAttacker>(
@@ -156,7 +161,15 @@ public sealed class PatrolHullTests
             pointed |= tackle.Incoming(victim.ShipId).Any(effect => effect.SourceShipId == member.ShipId && effect.Module.Strength > 0);
         }
         Assert.True(pointed);
-        Assert.True(Loaded() < loaded);
+        if (crystals)
+        {
+            Assert.Equal(loaded, Loaded());
+            Assert.Contains(state!.Cycles, cycle => guns.Contains(cycle.ModuleId) && cycle.TargetId == victim.ShipId && !cycle.Unavailable);
+        }
+        else
+        {
+            Assert.True(Loaded() < loaded);
+        }
         Assert.True(Remaining() < before);
     }
 

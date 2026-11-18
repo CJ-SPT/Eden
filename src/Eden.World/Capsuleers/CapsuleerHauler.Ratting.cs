@@ -141,11 +141,10 @@ internal sealed partial class CapsuleerHauler
         {
             return false;
         }
-        int tech = (int)_operation.Catalog.FittingAttributes(Pilot.ShipTypeId).GetValueOrDefault(DogmaAttributeId.TechLevel, 1);
         if (
             _background
             || TrafficRules.LightHull((HullClass)Pilot.ShipGroupId)
-            || !CapsuleerDefenseRules.CombatShip((HullClass)Pilot.ShipGroupId, tech, true, Pilot.ShipTypeId)
+            || !CapsuleerPatrolFit.CombatHull(_operation.Catalog, Pilot.ShipTypeId)
         )
         {
             return false;

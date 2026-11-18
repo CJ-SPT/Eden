@@ -222,6 +222,8 @@ public sealed class RegionalConflictWorldTests
     [InlineData(true, RoamingGangTests.Fixture.CruiserSeed)]
     [InlineData(false, RoamingGangTests.Fixture.HeavySeed)]
     [InlineData(true, RoamingGangTests.Fixture.HeavySeed)]
+    [InlineData(false, RoamingGangTests.Fixture.CatalogSeed)]
+    [InlineData(true, RoamingGangTests.Fixture.CatalogSeed)]
     public void GangActsOnItsScoutsSightingToTackleAndDamageAPlayerOrRival(bool rivalBot, int patrolSeed) =>
         VerifyRaid(rivalBot, patrolSeed, requireScoutPoint: false);
 

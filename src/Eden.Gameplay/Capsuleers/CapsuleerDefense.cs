@@ -1,3 +1,4 @@
+using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Dogma;
@@ -86,6 +87,42 @@ public static class CapsuleerDefenseRules
             .ThenByDescending(attacker => attacker.AttackedAt)
             .ThenBy(attacker => attacker.ShipId)
             .FirstOrDefault();
+
+    public static ChargeSize? PatrolWeaponSize(HullClass hull) =>
+        hull switch
+        {
+            HullClass.Frigate
+            or HullClass.AssaultFrigate
+            or HullClass.CovertOps
+            or HullClass.Interceptor
+            or HullClass.StealthBomber
+            or HullClass.ElectronicAttack
+            or HullClass.ExpeditionFrigate
+            or HullClass.LogisticsFrigate
+            or HullClass.PrototypeExploration
+            or HullClass.Destroyer
+            or HullClass.Interdictor
+            or HullClass.CommandDestroyer
+            or HullClass.TacticalDestroyer => ChargeSize.Small,
+            HullClass.Cruiser
+            or HullClass.HeavyAssaultCruiser
+            or HullClass.Logistics
+            or HullClass.ForceRecon
+            or HullClass.CombatReconShip
+            or HullClass.HeavyInterdictionCruiser
+            or HullClass.StrategicCruiser
+            or HullClass.FlagCruiser
+            or HullClass.Yacht
+            or HullClass.CombatBattlecruiser
+            or HullClass.CommandShip
+            or HullClass.ExpeditionCommand => ChargeSize.Medium,
+            HullClass.AttackBattlecruiser
+            or HullClass.Battleship
+            or HullClass.EliteBattleship
+            or HullClass.BlackOps
+            or HullClass.Marauder => ChargeSize.Large,
+            _ => null,
+        };
 
     public static bool CombatShip(HullClass hull, int tech, bool hasDamage) => CombatShip(hull, tech, hasDamage, 0);
 

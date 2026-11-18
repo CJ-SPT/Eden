@@ -82,10 +82,11 @@ The Drake uses heavy missiles and the Raven uses cruise missiles, both with warp
 boosters. The Hurricane uses medium autocannons and the Megathron uses large blasters, both with scramblers
 and armor repairers. Battlecruisers carry 10MN afterburners and battleships carry 100MN afterburners.
 
-With a complete catalog, each of the sixteen fitted hulls gets one of twenty eligible non-interdictor combat
-draws. Battlecruisers account for 10% and battleships for another 10%. Frigates, destroyers, cruisers and
-snapshot selection each account for 20%. The snapshot draw falls back to a Merlin when no imported fit is
-available. The saved seed determines the draw for each new pilot.
+New combat pilots can fly all 296 combat-capable frigate through battleship hulls supported by the pinned
+build. Of eligible non-interdictor combat draws, 40% use the sixteen authored fits and 40% choose among the
+280 additional hulls. The remaining 20% use the traffic snapshot, with a Merlin fallback if no imported fit
+is available. Pilots keep the ships assigned to them. See the
+[catalog coverage and sixteen exceptions](protocol/capsuleers.md#catalog-wide-frigate-through-battleship-patrols).
 [Battlecruiser and battleship fits and combat checks](protocol/capsuleers.md#battlecruisers-and-battleships-for-solo-patrols-and-gangs),
 [Patrol cruiser fits and combat checks](protocol/capsuleers.md#cruisers-for-solo-patrols-and-gangs),
 [destroyer fits](protocol/capsuleers.md#destroyers-for-solo-patrols-and-gangs) and

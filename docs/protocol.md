@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Catalog-wide frigate through battleship patrols](protocol/capsuleers.md#catalog-wide-frigate-through-battleship-patrols)
+records coverage of 296 eligible hulls, the sixteen exceptions, and the snapshot and combat checks.
+
 [Battlecruisers and battleships for solo patrols and gangs](protocol/capsuleers.md#battlecruisers-and-battleships-for-solo-patrols-and-gangs)
 covers fitted heavy hulls, traffic snapshot selection and combat against players and rival bots.
 

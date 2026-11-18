@@ -478,10 +478,11 @@ public sealed class RoamingGangTests
         internal CapsuleerScheduler Scheduler => Host.GetRequiredService<CapsuleerScheduler>();
 
         // These world seeds select one of each fitted hull in the first four home slots.
-        internal const int FrigateSeed = 242885;
-        internal const int DestroyerSeed = 34481;
-        internal const int CruiserSeed = 50193;
-        internal const int HeavySeed = 20355;
+        internal const int FrigateSeed = 5401985;
+        internal const int DestroyerSeed = 558797;
+        internal const int CruiserSeed = 14909981;
+        internal const int HeavySeed = 1913549;
+        internal const int CatalogSeed = 3437;
 
         internal Fixture(
             bool regional = false,
@@ -503,6 +504,10 @@ public sealed class RoamingGangTests
                 PassiveCatalogFixture.LoadProjectileTiers(Database.CatalogPath, new HashSet<int> { 484, 185, 489, 193, 490 });
                 PassiveCatalogFixture.LoadWeaponTiers(Database.CatalogPath, new HashSet<int> { 10678, 562, 222, 566, 230, 571, 238 });
                 PassiveCatalogFixture.LoadMissileTiers(Database.CatalogPath, new HashSet<int> { 499, 210, 501, 209, 13320, 203 });
+                PassiveCatalogFixture.LoadEnergyTiers(
+                    Database.CatalogPath,
+                    new HashSet<int> { 450, 246, 456, 254, 460, 262, 3303, 3306, 3309 }
+                );
                 PassiveCatalogFixture.LoadSmallHulls(Database.CatalogPath);
                 PassiveCatalogFixture.LoadCombatHulls(
                     Database.CatalogPath,

@@ -201,11 +201,8 @@ internal sealed partial record CapsuleerDefenseProfile
                 Overload = HeatProfile(catalog, fit, module.Item.TypeId),
             })
             .ToArray();
-        int tech = (int)catalog.FittingAttributes(pilot.ActiveShip.TypeId).GetValueOrDefault(DogmaAttributeId.TechLevel, 1);
-        var hull = catalog.RequireItem(pilot.ActiveShip.TypeId);
         return new CapsuleerDefenseProfile(
-            CapsuleerDefenseRules.CombatShip((HullClass)hull.GroupId, tech, true, pilot.ActiveShip.TypeId)
-                && pilot.ActiveShip.TypeId != CapsuleerCommunityStore.VentureType
+            CapsuleerPatrolFit.CombatHull(catalog, pilot.ActiveShip.TypeId)
                 && modules.All(module => module.Effect != DogmaEffect.MiningLaser),
             modules
         )

@@ -123,12 +123,7 @@ internal static partial class TrafficCorrection
                 var hull = catalog.RequireItem(profile.HullTypeId);
                 var fit = catalog.FittingAttributes(profile.HullTypeId);
                 return !TrafficRules.LightHull((HullClass)hull.GroupId)
-                    && CapsuleerDefenseRules.CombatShip(
-                        (HullClass)hull.GroupId,
-                        (int)fit.GetValueOrDefault(DogmaAttributeId.TechLevel, 1),
-                        true,
-                        profile.HullTypeId
-                    )
+                    && CapsuleerPatrolFit.CombatHull(catalog, profile.HullTypeId)
                     && TrafficRules.RouteAllows((HullClass)hull.GroupId, true)
                     && (hull.Capacity ?? 0) >= cargo
                     && fit.GetValueOrDefault(DogmaAttributeId.DroneCapacity) >= drones
