@@ -49,6 +49,20 @@ retain their existing deferral rules. Use **Refresh population** while pilots tr
 visitors. Ordinary Local receives complete membership batches; delayed Local keeps its normal privacy rules.
 
 
+## Bot-led player corporations
+
+When a player enters a prepared community, docked school-corporation bots can found or join a local player corporation.
+A founder needs six eligible simulated pilots whose home systems are at most one jump from its station.
+Miners, haulers and gate visitors in space can join at a later NPC station dock. The corporation's headquarters must
+be within one jump of the recruit's home system. The scheduler favors a corporation in that system and fills it to
+12 members or the corporation's member limit, whichever comes first. A sparse community can supply recruits to a neighbor.
+
+Look up a member in Local or station guests and open its corporation in Show Info to see the CEO, ticker and headquarters.
+Membership persists across restarts, density changes and ship loss. Pilots with prior player-corporation employment
+keep their employment choices. The first bot founder in each headquarters system receives Corporation Management I
+and a one-time allowance for the normal 1,599,800 ISK fee. Later founders there need the skill and pay from their
+own wallets. See the [implementation and validation record](protocol/capsuleers.md#bot-led-player-corporations).
+
 ## Temporary gate camps
 
 Eligible combat pilots can form a three-ship camp at a local gate. A scout reports visible ships, a fitted tackler can

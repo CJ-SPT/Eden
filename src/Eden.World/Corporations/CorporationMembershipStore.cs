@@ -267,6 +267,15 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
         return new(true, "");
     }
 
+    internal static void Enroll(WorldAction world, Pilot pilot, SavedCorporation corporation, long now)
+    {
+        CheckJoin(world, pilot, corporation);
+        Move(world, pilot, corporation.Id, now);
+        DeliverWelcomeMail(world, pilot.Id, corporation, now);
+        WithdrawOtherApplications(world, pilot.Id, null, now);
+        Eden.World.Bookmarks.PilotBookmarksStore.PruneUnavailableConnections(world, pilot.Id);
+    }
+
     internal static void Move(WorldAction world, Pilot pilot, int corporationId, long now)
     {
         if (world.Set<SavedCorporationWalletSelection>().Find(pilot.Id) is { } selection)
@@ -280,8 +289,10 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
         int previous = pilot.CorporationId;
         int oldCount = world.Pilots.Count(p => p.CorporationId == previous);
         int newCount = world.Pilots.Count(p => p.CorporationId == corporationId);
+        // Simulated pilots never consume client notification feeds.
         var recipients = world
             .Pilots.Where(p => p.CorporationId == previous || p.CorporationId == corporationId)
+            .Where(p => p.AccountId > 0)
             .Select(p => p.Id)
             .ToArray();
         if (!world.Set<SavedCorporationEmployment>().Any(e => e.PilotId == pilot.Id))

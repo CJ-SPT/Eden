@@ -3,6 +3,7 @@ using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Exploration;
@@ -810,6 +811,7 @@ internal sealed partial class CapsuleerHauler(
                 _work = Work with { WaitingReason = null };
                 if (Pilot.Position is null)
                 {
+                    JoinCorporationAtDock();
                     _work = Work with { Activity = HaulerActivity.Docked };
                 }
                 else
@@ -830,6 +832,28 @@ internal sealed partial class CapsuleerHauler(
             .OrderBy(i => i.Id)
             .ToArray();
 
+    internal void RefreshCorporation()
+    {
+        if (_pilot is not null)
+        {
+            var current = ships.FindPilot(CapsuleerCommunityStore.MinerAccountId, pilotId)!;
+            _pilot = _pilot with { Identity = current.Identity };
+        }
+    }
+
+    private void JoinCorporationAtDock()
+    {
+        if (
+            Pilot.CorpId < CorporationRules.FirstCorporationId
+            && Live is not null
+            && _operation.World is EconomyTransaction world
+            && CapsuleerCorporations.Place(world, _operation.Catalog, database, pilotId, Now)
+        )
+        {
+            _pilot = ReadPilot(world, CapsuleerCommunityStore.MinerAccountId);
+        }
+    }
+
     private void TradeAndLaunch(CombatAnomaly? scoutedAnomaly)
     {
         using var phase = SessionPerformance.Phase("traffic.tradeAndLaunch");
@@ -837,6 +861,7 @@ internal sealed partial class CapsuleerHauler(
         {
             throw new InvalidDataException("Waiting for a replacement hauling ship.");
         }
+        JoinCorporationAtDock();
         bool upgraded =
             Work.Freight is null
             && Pilot.ShipTypeId == HaulingRules.BadgerType
@@ -1139,6 +1164,7 @@ internal sealed partial class CapsuleerHauler(
         else if (Pilot.Position!.DistanceTo(_target.Position) - Pilot.Flight.ShipRadius - _target.Radius <= DockingDefinitions.MaximumRange)
         {
             _pilot = ships.Dock(_operation.World, _operation.Catalog, Pilot.PilotId, Pilot.ShipId, Work.DestinationStationId);
+            JoinCorporationAtDock();
             Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, _operation.Catalog, Pilot.ShipId);
             _navigation.Dock();
             _operation.TravelChanged = true;

@@ -2,6 +2,55 @@
 
 [Protocol index](../protocol.md)
 
+## Bot-led player corporations
+
+On November 18, 2026, Eden added automatic founding and enrollment to existing and newly provisioned capsuleer communities.
+World schema 187 adds a nullable founding-system ID to the resident corporation record and its checkpoint projection.
+Ordinary player corporations retain a null marker. Headquarters moves preserve the original system's allowance history.
+Closure retains the archived charter. The population worker visits six saved agent IDs per page even when the provisioning
+fingerprint is current. A miner or hauler can also enroll during a dock, departure or docked retry.
+
+Only unsuspended simulated pilots still in their school corporation with no previous player-corporation employment qualify.
+Home communities within one gate jump share available bot-led corporations. A founder docks at a local NPC station
+with six qualifying pilots based in range. Recruitment prefers the pilot's home system, then the oldest eligible corporation
+by ID, and respects both the 12-member target and the normal member limit. Corporate assets start at zero.
+New corporations have a seeded local name, ticker, logo and description. Recruitment applications and friendly fire start disabled.
+
+The initial setup credit, normal fee, trained skill, CEO appointment, shares, inventory owner, employment history and founding
+marker share a resident transaction. Later founders in the same system need their own ISK and qualification. A human CEO
+takes the corporation out of automatic enrollment. Workers refresh loaded pilot identities and republish the
+usual Local and station-guest records after placement. The existing regional operation and sovereignty rules still apply.
+
+Gameplay references include [EVE University corporation formation](https://wiki.eveuniversity.org/Forming_a_corporation)
+and the local evejs reference's `server/src/services/corporation/corporationFoundingState.js`
+(SHA-256 `0f785493ccbb397c8ced8f5c3bde32c732c6588a70405772fc295023871dc58b`), which records founding and
+payment against duplicate requests. Eden reuses its own transaction and the pinned build 3662168 corporation service
+contracts documented under [corporations](corporations.md). The roster thresholds and initial funding are Eden population policy.
+
+**Automated validation.** A schema-186 fixture migrated with its existing pilots, ships and jobs. Observers with a cached
+school corporation saw the new membership in Local and station guests. Corporation Show Info, directory, member and employment
+reads agreed. A checkpoint flush, reopen and repeat placement preserved the same charter and single fee. Focused rejection checks
+covered in-space pilots, paused pilots, sparse rosters, a full corporation, a human CEO, insufficient funds or skill, rollback
+and a second, self-funded charter with a conflicting ticker. A development case exposed a stale in-space navigation property
+inside a transaction. Placement and founding now check the authoritative position row.
+
+The initial exact filter was `FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerCorporationTests.ExistingSchoolPilotsFoundAndJoinOnceAcrossCheckpointAndRestart`.
+The broader filter was `FullyQualifiedName~CapsuleerCorporationTests|FullyQualifiedName~CapsuleerBackgroundPreparationTests|FullyQualifiedName~CapsuleerPopulationRetryTests|FullyQualifiedName~CapsuleerProvisioningTests|FullyQualifiedName~ResidentPopulationTests|FullyQualifiedName~CapsuleerPresentationTests|FullyQualifiedName~CapsuleerMinerTests|FullyQualifiedName~CapsuleerHaulerTests|FullyQualifiedName~RoamingGangTests|FullyQualifiedName~PlayerCorporationTests|FullyQualifiedName~CorporationMembershipTests|FullyQualifiedName~CorporationClosureTests|FullyQualifiedName~CorporationShowInfoTests|FullyQualifiedName~CorporationWalletTests|FullyQualifiedName~StationGuestTests|FullyQualifiedName~ChatWorldTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~WorldInitializationTests`. It passed **194 of 196** in **135.48 seconds**.
+Two one-observer variants of `UnchangedPresentationSharesObservationsAcrossAdvancingFrames` exceeded their 6 MiB
+allocation budget. Both also failed on the unmodified parent `b91f2b32`. The empty and occupied cases allocated
+6,968,248 and 6,796,136 bytes on the branch and 6,866,208 and 6,865,728 bytes on the parent. They recorded zero
+SQL commands, connections, fitting calculations and additional presentation reads. The four-observer case passed on both.
+
+After retaining preparation backoff through corporation placement and adding the cached-observer assertions, the final filter
+`FullyQualifiedName~CapsuleerCorporationTests|FullyQualifiedName~CapsuleerBackgroundPreparationTests|FullyQualifiedName~CapsuleerPopulationRetryTests` passed **21 of 21** in **17.54 seconds**. Tool and solution restore succeeded and the solution
+built with zero warnings and errors in **8.04 seconds**. Both Python policy suites and formatting verification passed.
+Validation used disposable saves. The dedicated server was not deployed or benchmarked.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer check.** In an established populated system, open a bot from Local or station guests and inspect
+its corporation logo, CEO and employment history in the native client.
+
 ## Cruisers for solo patrols and gangs
 
 On November 18, 2026, Eden added four fitted Tech I cruisers to solo patrols and roaming gangs.

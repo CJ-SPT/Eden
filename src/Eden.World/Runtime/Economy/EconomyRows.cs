@@ -1004,6 +1004,7 @@ internal sealed partial class ResidentEconomy
                 [
                     new("Id", row => row.Id),
                     new("AccountId", row => row.AccountId),
+                    new("CorporationId", row => row.CorporationId),
                     new("Name", row => row.Name, new EconomyNameComparer()),
                     new("ActiveShipId", row => row.ActiveShipId),
                 ],

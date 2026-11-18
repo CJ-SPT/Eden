@@ -3,6 +3,7 @@ using Eden.Data.World.Combat;
 using Eden.Data.World.Mining;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
@@ -586,6 +587,7 @@ internal sealed class CapsuleerMiner(
                 _work = Work with { WaitingReason = null };
                 if (Pilot.Position is null)
                 {
+                    JoinCorporationAtDock();
                     _work = Work with { Activity = MinerActivity.Docked };
                 }
                 else
@@ -596,12 +598,35 @@ internal sealed class CapsuleerMiner(
         }
     }
 
+    internal void RefreshCorporation()
+    {
+        if (_pilot is not null)
+        {
+            var current = ships.FindPilot(CapsuleerCommunityStore.MinerAccountId, pilotId)!;
+            _pilot = _pilot with { Identity = current.Identity };
+        }
+    }
+
+    private void JoinCorporationAtDock()
+    {
+        if (
+            Pilot.CorpId < CorporationRules.FirstCorporationId
+            && Live is not null
+            && _operation.World is EconomyTransaction world
+            && CapsuleerCorporations.Place(world, _operation.Catalog, database, pilotId, Now)
+        )
+        {
+            _pilot = ships.FindPilot(world, CapsuleerCommunityStore.MinerAccountId, pilotId)!;
+        }
+    }
+
     private void PrepareTrip()
     {
         if (Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup)
         {
             throw new InvalidDataException("Waiting for a replacement mining ship.");
         }
+        JoinCorporationAtDock();
         CapsuleerSupplyStore.Ensure(
             _operation.World,
             _operation.Catalog,
@@ -787,6 +812,7 @@ internal sealed class CapsuleerMiner(
             if (Distance(_target!) <= DockingDefinitions.MaximumRange)
             {
                 _pilot = ships.Dock(_operation.World, _operation.Catalog, Pilot.PilotId, Pilot.ShipId, Pilot.StationId);
+                JoinCorporationAtDock();
                 Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, _operation.Catalog, Pilot.ShipId);
                 _navigation.Dock();
                 _operation.TravelChanged = true;
