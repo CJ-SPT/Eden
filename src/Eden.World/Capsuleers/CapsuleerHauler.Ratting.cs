@@ -324,7 +324,13 @@ internal sealed partial class CapsuleerHauler
                     long leaveAt = patrol.WatchingForGang
                         ? checked(patrol.LeaveGridAt + RoamingGangRules.RendezvousTicks)
                         : patrol.LeaveGridAt;
-                    if (patrol.LeaveGridAt > 0 && Work.ActiveTicks >= leaveAt)
+                    if (
+                        patrol.LeaveGridAt > 0 && Work.ActiveTicks >= leaveAt
+                        || patrol.Kind == PatrolKind.Transit
+                            && activity.Phase == RattingPhase.Searching
+                            && _target is not null
+                            && GangContactBeyondGate(_target)
+                    )
                     {
                         NextBelt();
                     }

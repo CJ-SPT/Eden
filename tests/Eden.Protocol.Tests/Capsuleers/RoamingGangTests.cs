@@ -1,3 +1,4 @@
+using Eden.Data.Catalog.Capsuleers;
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Inventory;
@@ -20,6 +21,7 @@ using Eden.World.Combat;
 using Eden.World.Configuration;
 using Eden.World.Docking;
 using Eden.World.Market;
+using Eden.World.Propulsion;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -346,6 +348,7 @@ public sealed class RoamingGangTests
             SqliteWorld.SetPosition(action, catalog, attackerRow.ActiveShipId, anchor, Away, fixture.Clock.Now);
             SqliteWorld.SetPosition(action, catalog, victimShip, anchor + new SpacePosition(1_000, 0, 0), Away, fixture.Clock.Now);
             attacker = ships.FindPilot(action, attackerRow.AccountId, attackerId)!;
+            GateCloakPersistence.Start(action, attacker.ShipId, fixture.Clock.Now);
             action.Commit();
         }
         fixture.Scheduler.PopulationPrepared(Away);
@@ -398,7 +401,12 @@ public sealed class RoamingGangTests
             attacker = result.Pilot;
             state = result.State;
         }
-        for (int turn = 0; turn < 8; turn++)
+        var space = fixture.Host.GetRequiredService<SharedSpace>();
+        Assert.True(space.IsGateCloaked(attacker.ShipId));
+        Fire(0);
+        Assert.NotEmpty(state!.Locks);
+        Assert.False(space.IsGateCloaked(attacker.ShipId));
+        for (int turn = 1; turn < 8; turn++)
         {
             Fire(turn);
         }
@@ -532,7 +540,8 @@ public sealed class RoamingGangTests
             bool thermalCatalog = false,
             int gangSize = 4,
             int? patrolSeed = null,
-            int? soloHull = null
+            int? soloHull = null,
+            TrafficProfile[]? snapshot = null
         )
         {
             PassiveCatalogFixture.LoadFrigateHulls(Database.CatalogPath);
@@ -639,6 +648,10 @@ public sealed class RoamingGangTests
                         $"INSERT OR REPLACE INTO SourceRecord VALUES('client/systems',{key},'{{\"securityStatus\":-0.2}}')"
                     );
                 }
+            }
+            if (snapshot is not null)
+            {
+                TrafficSnapshotTests.Install(Database, snapshot);
             }
             var store = new WorldConfigurationStore(Database, _world.Clock);
             var saved = store.Read();

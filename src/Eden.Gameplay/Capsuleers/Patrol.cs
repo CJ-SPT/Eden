@@ -39,6 +39,20 @@ public static class PatrolRules
 
     public static int DwellSeconds(long pilot, long grid) => 18 + (int)(TravelerRoutineRules.Mix((ulong)(pilot ^ grid)) % 23);
 
+    public static long GridDeparture(long pilot, int system, long grid, long elapsed, RoamingGang? gang)
+    {
+        // Defenders hold the reported grid long enough for ships on both routes to arrive.
+        if (
+            gang is { Phase: RoamingGangPhase.Hunting, Regional: { Objective: RegionalObjective.Defend } order }
+            && order.TargetSystemId == system
+            && order.TargetGridId == grid
+        )
+        {
+            return Math.Min(order.ExpiresAt, checked(elapsed + RoamingGangRules.RendezvousTicks));
+        }
+        return checked(elapsed + TimeSpan.FromSeconds(DwellSeconds(pilot, grid)).Ticks);
+    }
+
     public static IEnumerable<PilotSighting> Candidates(DockedPilot pilot, SpacePosition anchor, PilotSighting[] visible) =>
         visible.Where(other =>
             other.ShipId != pilot.ShipId

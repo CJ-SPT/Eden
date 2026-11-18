@@ -324,12 +324,30 @@ public sealed class RegionalConflictWorldTests
         {
             fixture.Tick();
             var scoutWork = fixture.Live.HaulerCheckpoints[scout.PilotId].Work;
-            if (!tackled && scoutWork.Gang?.Sighting?.ShipId == victimShip && scoutWork.Ratting?.TargetId == 0)
+            var points = tackle.Incoming(victimShip);
+            if (
+                !reportedBeforeTackle
+                && !tackled
+                && scoutWork.Gang?.Sighting?.ShipId == victimShip
+                && !points.Any(effect => gang.Members.Any(member => member.ShipId == effect.SourceShipId))
+            )
             {
-                Assert.DoesNotContain(tackle.Incoming(victimShip), effect => effect.SourceShipId == scout.ShipId);
+                if (scoutWork.Ratting?.TargetId == victimShip)
+                {
+                    // An exposed wingmate can already be in support range while the scout is still locking.
+                    var seen = profiles.Observe(fixture.Scheduler.Hauler(scout.PilotId)!.Pilot, scoutWork.ActiveTicks);
+                    var contact = Assert.Single(seen, sight => sight.ShipId == victimShip);
+                    Assert.Contains(
+                        seen,
+                        sight =>
+                            sight.Position.DistanceTo(contact.Position) <= RoamingGangRules.ScoutBackupMeters
+                            && gang.Members.Any(member =>
+                                member.ShipId == sight.ShipId && member.ShipId != scout.ShipId && member.DamageCapable
+                            )
+                    );
+                }
                 reportedBeforeTackle = true;
             }
-            var points = tackle.Incoming(victimShip);
             tackled |= tacklers.Any(member =>
                 fixture.Live.HaulerCheckpoints[member.PilotId].Work.Ratting?.TargetId == victimShip
                 && points.Any(effect => effect.SourceShipId == member.ShipId && effect.Module.Strength > 0)
@@ -747,10 +765,30 @@ public sealed class RegionalConflictWorldTests
         Assert.Equal(0, fixture.Scheduler.Read().Failures);
     }
 
-    [Fact]
-    public void RivalDefenseEngagesAVisibleRaidWithOwnedWeaponsAndRealDamage()
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    [InlineData(false, true)]
+    public void RivalDefenseEngagesAVisibleRaidWithOwnedWeaponsAndRealDamage(bool reportedIncursion, bool snapshotEnabled)
     {
-        using var fixture = new RoamingGangTests.Fixture(regional: true);
+        var snapshot = Enumerable
+            .Range(0, 32)
+            .Select(index =>
+                TrafficSnapshotTests.Profile(900000100 + index, $"Rival pilot {index}") with
+                {
+                    KillId = index + 1,
+                    HullTypeId = (int)TechOneHullType.Merlin,
+                    SecurityBand = TrafficSecurityBand.Null,
+                    Equipment =
+                    [
+                        new(561, (int)InventoryFlag.HighSlot0, 1), // 75mm Gatling Rail I with Iron Charge S
+                        new(215, (int)InventoryFlag.HighSlot0, 50),
+                        new(447, (int)InventoryFlag.MediumSlot0, 1), // Warp Scrambler I
+                    ],
+                }
+            )
+            .ToArray();
+        using var fixture = new RoamingGangTests.Fixture(regional: true, snapshot: snapshotEnabled ? snapshot : null);
         var raid = fixture.Form();
         int defenderGroup = fixture.Database.Catalog.Systems[Away].ConstellationId;
         long[] defenders;
@@ -772,34 +810,37 @@ public sealed class RegionalConflictWorldTests
                 {
                     action.Remove(position);
                 }
-                pilot.ActiveShip.StationId = 60003760;
+                pilot.ActiveShip.StationId = AwayStation;
                 if (action.Set<SavedCapsuleerSuspension>().Find(pilotId) is { } suspended)
                 {
                     action.Remove(suspended);
                 }
                 var row = action.Set<SavedCapsuleerHauler>().Single(row => row.PilotId == pilotId);
-                row.SourceStationId = 60003760;
+                row.SourceStationId = AwayStation;
                 row.DestinationStationId = HomeStation;
                 row.RouteSystems = [Away, Home];
                 row.Progress = null;
             }
-            // Seed the defender's witnessed-incursion input; subsequent targets require real visible ships.
-            RegionalConflictStore.Report(
-                action,
-                catalog,
-                60003760,
-                new(
-                    defenderGroup,
-                    raid.Regional!.Key.GroupId,
-                    raid.LeaderId,
-                    raid.Members.Single(member => member.PilotId == raid.LeaderId).ShipId,
-                    Away,
-                    raid.Regional.TargetGridId,
-                    RegionalReportKind.CombatShip,
-                    0,
-                    RegionalConflictRules.ReportTicks
-                )
-            );
+            // Only the defensive sortie starts with a report. Both fleets acquire targets from real contacts.
+            if (reportedIncursion)
+            {
+                RegionalConflictStore.Report(
+                    action,
+                    catalog,
+                    AwayStation,
+                    new(
+                        defenderGroup,
+                        raid.Regional!.Key.GroupId,
+                        raid.LeaderId,
+                        raid.Members.Single(member => member.PilotId == raid.LeaderId).ShipId,
+                        Away,
+                        raid.Regional.TargetGridId,
+                        RegionalReportKind.CombatShip,
+                        0,
+                        RegionalConflictRules.ReportTicks
+                    )
+                );
+            }
             action.Commit();
         }
         using var defenderObserver = fixture.Host.GetRequiredService<IHumanPresence>().Select(Human + 1, Away);
@@ -813,44 +854,37 @@ public sealed class RegionalConflictWorldTests
                 .FirstOrDefault(gang => gang is not null);
         }
         Assert.NotNull(response);
-        Assert.Equal(RegionalObjective.Defend, response.Regional!.Objective);
+        Assert.Equal(reportedIncursion ? RegionalObjective.Defend : RegionalObjective.Raid, response.Regional!.Objective);
+        if (snapshotEnabled)
+        {
+            var identities = fixture.Live.Economy.Read(world =>
+                world.Set<SavedTrafficIdentity>().Select(identity => identity.PilotId).ToArray()
+            );
+            Assert.Contains(raid.Members.Concat(response.Members), member => identities.Contains(member.PilotId));
+        }
         defenderObserver.Dispose();
-        var health = fixture.Host.GetRequiredService<Eden.Gameplay.Combat.IPilotHealth>();
-        double Remaining() =>
-            defenders.Sum(pilot =>
-            {
-                var current = health.Read(pilot, fixture.Clock.Now).Remaining;
-                return current.Shield + current.Armor + current.Structure;
-            });
-        double before = Remaining();
-        long Ammo(long pilot) =>
-            fixture.Live.Combat!.DefenseShip(pilot, fixture.Clock.Now)!.Turrets.Values.Sum(turret => (long)turret.Quantity);
-        Dictionary<long, long> magazines = [];
-        bool targeted = false;
-        bool paid = false;
-        for (int turn = 0; turn < 350 && (Remaining() >= before || !paid); turn++)
+        var combat = fixture.Live.Combat!;
+        long Ammo(long pilot) => combat.DefenseShip(pilot, fixture.Clock.Now)!.Turrets.Values.Sum(turret => (long)turret.Quantity);
+        var magazines = raid.Members.Concat(response.Members).ToDictionary(member => member.PilotId, member => Ammo(member.PilotId));
+        bool Hit(RoamingGang attackers, RoamingGang victims) =>
+            victims.Members.Any(victim =>
+                combat.DefenseShip(victim.PilotId, fixture.Clock.Now) is { } ship
+                && ship.ShipId == victim.ShipId
+                && attackers.Members.Any(attacker =>
+                    ship.Contributions.GetValueOrDefault(attacker.ShipId) is { Damage: > 0 }
+                    && Ammo(attacker.PilotId) < magazines[attacker.PilotId]
+                )
+            );
+        bool raidHit = false;
+        bool responseHit = false;
+        for (int turn = 0; turn < 350 && !(raidHit && responseHit); turn++)
         {
             fixture.Tick();
-            foreach (var member in raid.Members)
-            {
-                if (
-                    fixture.Live.HaulerCheckpoints[member.PilotId].Work.Defense is not { } state
-                    || !response.Members.Any(enemy => enemy.ShipId == state.TargetId)
-                )
-                {
-                    continue;
-                }
-                targeted = true;
-                long loaded = Ammo(member.PilotId);
-                if (!magazines.TryAdd(member.PilotId, loaded))
-                {
-                    paid |= loaded < magazines[member.PilotId];
-                }
-            }
+            raidHit |= Hit(raid, response);
+            responseHit |= Hit(response, raid);
         }
-        Assert.True(targeted);
-        Assert.True(Remaining() < before);
-        Assert.True(paid);
+        Assert.True(raidHit, "The raiders did not deal paid weapon damage to the other gang.");
+        Assert.True(responseHit, "The other gang did not deal paid weapon damage to the raiders.");
         Assert.Contains(
             Assert.Single(fixture.Host.GetRequiredService<IRegionalConflictDiagnostics>().ReadConflicts()).Reports,
             report =>

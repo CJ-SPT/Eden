@@ -175,6 +175,10 @@ nearby rival communities in their region. Gangs use existing ships for raids at 
 transport corridors, escorts for real loaded freight, and responses to witnessed attacks or rival incursions. Reports
 expire; pilots still need visible, legal targets. Regional groups do not confer sovereignty or faction-warfare membership.
 
+Defenders watch the reported grid for up to two minutes while both fleets arrive. When a scout reports a rival at the
+far end of a gate, its wing can cross after regrouping. A bot that moves or starts a target lock after jumping drops
+its gate cloak. [Fleet interception and visibility checks](protocol/capsuleers.md#rival-gang-interception-at-gates).
+
 An operation needs available crew and a public objective within three nullsec jumps. **Regional operations per group**
 accepts 1–3, default 1, with a two-minute launch interval. Losses delay further offensive launches for five active minutes;
 defense and escort work remain available. Pressure, rivalries, losses, kills, objectives and deadlines survive restart.

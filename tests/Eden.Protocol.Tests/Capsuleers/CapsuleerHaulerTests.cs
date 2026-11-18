@@ -86,6 +86,14 @@ public sealed class CapsuleerHaulerTests
             peer => peer.Pilot.PilotId == hauler
         );
         Assert.DoesNotContain(space.Peers(human with { Position = arrival.Position }), peer => peer.Pilot.PilotId == hauler);
+        var atExitGate = human with { Position = arrival.Position, CurrentSystem = arrival.CurrentSystem };
+        for (int turn = 0; turn < 20 && space.Peers(atExitGate).All(peer => peer.Pilot.ShipId != arrival.ShipId); turn++)
+        {
+            f.Clock.Seconds++;
+            worker.Tick();
+        }
+        Assert.False(space.IsGateCloaked(arrival.ShipId));
+        Assert.Contains(space.Peers(atExitGate), peer => peer.Pilot.ShipId == arrival.ShipId);
         destinationObserver.Dispose();
         CapsuleerMinerTests.UpdateSelection(host, session, null);
         var presence = host.GetRequiredService<IHumanPresence>();

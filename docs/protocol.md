@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Rival gang interception at gates](protocol/capsuleers.md#rival-gang-interception-at-gates) covers independently
+routed fleets, scout reports, and gate-cloak visibility during contact.
+
 [Autonomous bot alliances](protocol/alliances.md#autonomous-bot-alliances) covers neighboring bot corporations forming,
 recruiting and maintaining an alliance through the ordinary corporation services.
 

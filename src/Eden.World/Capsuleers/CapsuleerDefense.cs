@@ -1,5 +1,6 @@
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
+using Eden.Data.World.Propulsion;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Characters;
@@ -46,6 +47,7 @@ internal sealed partial class CapsuleerDefense(
     IPilotCombatPresence presence,
     IPilotInterdiction interdiction,
     IPilotTargetLocks locks,
+    IPilotGateCloak gateCloaks,
     IPilotTackle tackle,
     IPilotElectronicWarfare warfare,
     INpcElectronicWarfare npcWarfare,
@@ -208,7 +210,8 @@ internal sealed partial class CapsuleerDefense(
         RoamingGang? gang = null
     )
     {
-        using var ownership = LiveWorld.Find(database.Path)?.Enter();
+        var world = LiveWorld.Find(database.Path);
+        using var ownership = world?.Enter();
         var runtime = LiveCombatRuntime.Find(database.Path);
         var state = saved?.ShipId == pilot.ShipId ? saved : new CapsuleerDefenseState { ShipId = pilot.ShipId };
         if (saved is not null && saved.ShipId != pilot.ShipId)
@@ -381,6 +384,11 @@ internal sealed partial class CapsuleerDefense(
             .Where(CanLock)
             .Take(Math.Max(0, checked((int)attributes.GetValueOrDefault(DogmaAttributeId.MaxLockedTargets))))
             .ToArray();
+        // A stationary arrival can watch under gate cloak until it chooses to acquire a target.
+        if (planned.Length > 0 && world?.Economy.Peek<SpatialNavigationState>(pilot.ShipId)?.GateCloakUntil > now)
+        {
+            gateCloaks.Cancel(pilot.PilotId, pilot.ShipId);
+        }
         foreach (var previous in state.Locks.Where(scan => !planned.Any(contact => contact.ShipId == scan.TargetId)))
         {
             locks.Remove(pilot.ShipId, previous.TargetId);

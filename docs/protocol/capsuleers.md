@@ -2,6 +2,58 @@
 
 [Protocol index](../protocol.md)
 
+## Rival gang interception at gates
+
+In the build 3662168 replay, the first raider scouted the right gate while its damage wing was still
+patrolling the other side. Defenders already on the reported grid used the ordinary 18–40 second stop
+and started leaving before that wing could engage. A separate replay sent two roaming gangs through
+opposite ends of the same gate. Raiders moving under their arrival cloak could see rivals who could
+not see them.
+
+Defenders now hold their assigned grid for the two-minute gang rendezvous window, subject to the
+operation deadline. A hunting wing skips or ends an idle outbound gate patrol when its gang has a
+fresh sighting at that gate's paired exit. The pilots still travel through the gate, acquire a visible
+target and spend their own ammunition. A newly arrived ship loses its gate cloak when it executes
+a movement order or begins acquiring a target. An idle arrival can remain cloaked.
+
+The encounter tests start the two fleets at different stations. One scenario supplies a witnessed
+incursion to the defenders. In the other, each side launches its own raid and discovers its opponent
+in flight. The snapshot-enabled cases use imported Merlin pilots with railguns, Iron Charge S and
+warp scramblers. Each replay checks both damage attribution and magazine consumption for each side,
+with no human observer in the engagement system. A separate server-side observer test sees a hauler
+hidden on arrival and present in the gate observer's peer list within 20 simulated seconds.
+The movement check also covers a bot resuming a journey after an unwitnessed gate transfer.
+
+The sighting and support model follows [EVE University scouting](https://wiki.eveuniversity.org/Scouting).
+The local evejs NPC reference checks grid visibility in `server/src/space/npc/npcBehaviorLoop.js`
+(SHA-256 `21ad46ab54d10507b6811c2ff14a49b0e0181d5aa38a1cccfcee0b97f6da843b`).
+Gang rendezvous timing is an Eden gameplay choice.
+
+**Automated validation.** The initial reproduction used
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.RegionalConflictWorldTests.RivalDefenseEngagesAVisibleRaidWithOwnedWeaponsAndRealDamage`.
+The wider filter joined the following class names using `FullyQualifiedName~` and OR:
+
+```text
+RegionalConflictWorldTests, RegionalConflictTests, RoamingGangTests, PatrolHullTests, PatrolCatalogTests,
+PatrolTests, PvpTacticsTests, GateCampTests, CapsuleerHaulerTests, CapsuleerInboundRuntimeTests,
+CapsuleerDefenseTests, CapsuleerDefenseLifecycleTests, CapsuleerDefensePerformanceTests, CapsuleerDefenseModuleTests,
+CapsuleerDefenseFrameTests, TrafficSnapshotTests, CapsuleerAllianceTests, GateCloakTests, GateTravelRulesTests,
+CapsuleerTrafficNavigationTests, CapsuleerHandoffTests
+```
+
+It also included both cases of `ReceivingOnlyObserversSeeRealInboundTransfersAndRepeatedArrivalAtTheWatchedGate`.
+The installed catalog and matching traffic snapshot were supplied to the catalog-wide fit audit.
+The final run passed 310 of 311 cases in 297.96 seconds including runner startup. All three interception
+cases passed. The remaining failure, `RestartRetainsPaidWorkAndJobsButRebuildsObserverModesFromSelections`,
+also failed in isolation on unchanged main `89c1f625` (7.65 seconds). On both revisions the expected
+miner job resumed alongside a hauler arrival job. The solution built with zero warnings or errors,
+both Python policy suites passed (8 catalog and 9 formatting checks), and formatting verification passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** From a nullsec gate, watch a newly arrived gang member appear in the overview
+as it moves and confirm its hull renders when it engages.
+
 ## Corporation ammunition supply
 
 World schema 189 adds optional corporation ownership to industry output and sell orders. Existing personal records retain

@@ -1,6 +1,7 @@
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
+using Eden.Data.World.Propulsion;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
@@ -19,6 +20,7 @@ using Eden.World.Docking;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Market;
+using Eden.World.Propulsion;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -1041,6 +1043,16 @@ internal sealed partial class CapsuleerHauler(
             return;
         }
         _work = Work with { LastMotionStamp = Work.Stamp };
+        // The transfer publishes a cloaked arrival. Executing its next movement order breaks that cloak,
+        // including when subsequent coordinates are published directly to resident combat.
+        if (
+            Work.ArrivalUntil > 0
+            && (_navigation.FollowTarget is not null || _navigation.WarpDestination is not null || _navigation.Direction is not null)
+            && Live?.Economy.Peek<SpatialNavigationState>(Pilot.ShipId)?.GateCloakUntil > Now
+        )
+        {
+            GateCloakPersistence.Cancel(_operation.World, Pilot.ShipId);
+        }
         if (_target is not null)
         {
             _work = Work with

@@ -5,6 +5,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Ships;
 using Eden.Protocol.Flight;
 using Eden.Server;
@@ -596,12 +597,20 @@ public sealed class CapsuleerTrafficNavigationTests
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true).WithPreparedCommunities(f.Database);
         var hauler = host.GetRequiredService<CapsuleerHaulerFactory>().Create(founder.PilotId);
         var job = host.GetRequiredService<ICapsuleerScheduler>().Jobs().Single(j => j.PilotId == founder.PilotId);
-        hauler.Reappear(job, TimeSpan.FromHours(1).Ticks, Corridor);
+        job = hauler.Reappear(job, TimeSpan.FromHours(1).Ticks, Corridor);
         var appearance = hauler.Read()!;
         Assert.Equal(Corridor, appearance.Pilot.SystemId);
         Assert.Null(appearance.Work.ArrivalGateId);
         Assert.Null(appearance.Work.ArrivalAt);
         Assert.Null(appearance.Work.DepartureAt);
+        var spatial = host.GetRequiredService<IPilotSpatialModules>();
+        Assert.True(spatial.Status(founder.FounderShipId).GateCloaked(f.Clock.Now));
+        for (int tick = 1; tick <= 20 && spatial.Status(founder.FounderShipId).GateCloaked(f.Clock.Now); tick++)
+        {
+            f.Clock.Seconds++;
+            job = hauler.Execute(job, tick);
+        }
+        Assert.False(spatial.Status(founder.FounderShipId).GateCloaked(f.Clock.Now));
     }
 
     [Theory]

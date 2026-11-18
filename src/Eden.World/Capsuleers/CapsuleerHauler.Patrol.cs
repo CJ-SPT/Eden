@@ -28,6 +28,11 @@ internal sealed partial class CapsuleerHauler
         return true;
     }
 
+    private bool GangContactBeyondGate(StaticSpaceObject gate) =>
+        Work.Gang is { Phase: RoamingGangPhase.Hunting } gang
+        && gate is { DestinationSystemId: { } system, DestinationGateId: { } destination }
+        && RoamingGangRules.Reported(gang, system, destination, Work.ActiveTicks) != 0;
+
     private bool TryPatrolTransitGate(StaticSpaceObject gate)
     {
         var policy = database.Settings.Capsuleers;
@@ -38,6 +43,7 @@ internal sealed partial class CapsuleerHauler
             || Work.Freight?.Stacks.Length > 0
             || Work.Resupply?.DestinationStationId is not null
             || Work.LastPatrolledGateId == gate.Id
+            || GangContactBeyondGate(gate)
             || !InActiveGang && !PatrolRules.Choose(pilotId, gate.Id ^ (Work.Journey?.Sequence ?? Work.DwellSequence), policy.RoamPercent)
         )
         {
@@ -115,7 +121,7 @@ internal sealed partial class CapsuleerHauler
             LeaveGridAt =
                 patrol.LeaveGridAt > 0
                     ? patrol.LeaveGridAt
-                    : Work.ActiveTicks + TimeSpan.FromSeconds(PatrolRules.DwellSeconds(pilotId, _target.Id)).Ticks,
+                    : PatrolRules.GridDeparture(pilotId, Pilot.SystemId, _target.Id, Work.ActiveTicks, Work.Gang),
         };
         var seen = defense.Observe(Pilot, Work.ActiveTicks);
         ObserveRegional(seen, _target.Id);
