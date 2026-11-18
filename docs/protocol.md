@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Cruisers for solo patrols and gangs](protocol/capsuleers.md#cruisers-for-solo-patrols-and-gangs) covers cruiser
+fits, snapshot recruitment and engagements against players and rival bots.
+
 [Destroyers for solo patrols and gangs](protocol/capsuleers.md#destroyers-for-solo-patrols-and-gangs) covers
 snapshot recruitment, fitted weapons and engagements with players and rival bots.
 

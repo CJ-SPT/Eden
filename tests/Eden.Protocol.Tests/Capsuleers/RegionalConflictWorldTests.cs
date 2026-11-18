@@ -216,10 +216,12 @@ public sealed class RegionalConflictWorldTests
         VerifyRaid(rivalBot, patrolSeed, requireScoutPoint: true);
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void DestroyerGangActsOnItsScoutsSightingToTackleAndDamageAPlayerOrRival(bool rivalBot) =>
-        VerifyRaid(rivalBot, RoamingGangTests.Fixture.DestroyerSeed, requireScoutPoint: false);
+    [InlineData(false, RoamingGangTests.Fixture.DestroyerSeed)]
+    [InlineData(true, RoamingGangTests.Fixture.DestroyerSeed)]
+    [InlineData(false, RoamingGangTests.Fixture.CruiserSeed)]
+    [InlineData(true, RoamingGangTests.Fixture.CruiserSeed)]
+    public void GangActsOnItsScoutsSightingToTackleAndDamageAPlayerOrRival(bool rivalBot, int patrolSeed) =>
+        VerifyRaid(rivalBot, patrolSeed, requireScoutPoint: false);
 
     private static void VerifyRaid(bool rivalBot, int? patrolSeed, bool requireScoutPoint)
     {
@@ -302,9 +304,16 @@ public sealed class RegionalConflictWorldTests
             return current.Shield + current.Armor + current.Structure;
         }
         double before = Remaining();
+        var profiles = fixture.Host.GetRequiredService<CapsuleerDefense>();
+        var weapons = gang.Members.ToDictionary(
+            member => member.PilotId,
+            member => profiles.Profile(member.PilotId).RattingWeapons.Select(weapon => weapon.Weapon.ItemId).ToArray()
+        );
         long Charges(long pilot) =>
-            fixture.Live.Combat!.DefenseShip(pilot, fixture.Clock.Now)!.Turrets.Values.Sum(turret => (long)turret.Quantity);
-        Dictionary<long, long> magazines = [];
+            fixture.Live.Economy.Read(world =>
+                world.Set<OwnedItem>().Where(item => Enumerable.Contains(weapons[pilot], item.LocationId)).Sum(item => (long)item.Quantity)
+            );
+        var magazines = gang.Members.ToDictionary(member => member.PilotId, member => Charges(member.PilotId));
         bool targeted = false;
         bool paid = false;
         for (int turn = 0; turn < 600 && (!tackled || Remaining() >= before || !paid); turn++)
@@ -328,11 +337,7 @@ public sealed class RegionalConflictWorldTests
                     continue;
                 }
                 targeted = true;
-                long loaded = Charges(member.PilotId);
-                if (!magazines.TryAdd(member.PilotId, loaded))
-                {
-                    paid |= loaded < magazines[member.PilotId];
-                }
+                paid |= Charges(member.PilotId) < magazines[member.PilotId];
             }
         }
         Assert.True(

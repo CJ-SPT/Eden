@@ -19,18 +19,34 @@ public sealed class PatrolHullTests
     private const int Away = 30000142;
     private const long Human = 90000002;
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task SnapshotAndSpecialistGangCoexistAndKeepTheirOriginalHullsOnReopen(bool destroyers)
+    private static readonly Dictionary<int, int[]> s_patrolHulls = new()
     {
-        int seed = destroyers ? RoamingGangTests.Fixture.DestroyerSeed : RoamingGangTests.Fixture.FrigateSeed;
+        [RoamingGangTests.Fixture.FrigateSeed] = Enum.GetValues<GangFrigate>().Select(hull => (int)hull).ToArray(),
+        [RoamingGangTests.Fixture.DestroyerSeed] =
+        [
+            CapsuleerPatrolFit.Cormorant,
+            CapsuleerPatrolFit.Catalyst,
+            CapsuleerPatrolFit.Thrasher,
+            CapsuleerPatrolFit.Corax,
+        ],
+        [RoamingGangTests.Fixture.CruiserSeed] =
+        [
+            CapsuleerPatrolFit.Caracal,
+            CapsuleerPatrolFit.Stabber,
+            CapsuleerPatrolFit.Moa,
+            CapsuleerPatrolFit.Thorax,
+        ],
+    };
+
+    [Theory]
+    [InlineData(RoamingGangTests.Fixture.FrigateSeed)]
+    [InlineData(RoamingGangTests.Fixture.DestroyerSeed)]
+    [InlineData(RoamingGangTests.Fixture.CruiserSeed)]
+    public async Task SnapshotAndSpecialistGangCoexistAndKeepTheirOriginalHullsOnReopen(int seed)
+    {
         using var fixture = new RoamingGangTests.Fixture(regional: true, patrolSeed: seed);
         var gang = fixture.Form();
-        int[] hulls = destroyers
-            ? [CapsuleerPatrolFit.Cormorant, CapsuleerPatrolFit.Catalyst, CapsuleerPatrolFit.Thrasher, CapsuleerPatrolFit.Corax]
-            : Enum.GetValues<GangFrigate>().Select(hull => (int)hull).ToArray();
-        var expected = hulls.Order();
+        var expected = s_patrolHulls[seed].Order();
         int[] Hulls() => gang.Members.Select(member => fixture.Live.Economy.Peek<Ship>(member.ShipId)!.TypeId).Order().ToArray();
         Assert.Equal(expected, Hulls());
         Assert.NotEmpty(fixture.Database.Traffic.Profiles);
@@ -51,26 +67,28 @@ public sealed class PatrolHullTests
         Assert.Equal(gang.Members, fixture.Live.HaulerCheckpoints[gang.Id].Work.Gang!.Members);
     }
 
-    [Theory]
-    [InlineData((int)GangFrigate.Stiletto, false)]
-    [InlineData((int)GangFrigate.Stiletto, true)]
-    [InlineData((int)GangFrigate.Crow, false)]
-    [InlineData((int)GangFrigate.Crow, true)]
-    [InlineData((int)GangFrigate.Wolf, false)]
-    [InlineData((int)GangFrigate.Wolf, true)]
-    [InlineData((int)GangFrigate.Harpy, false)]
-    [InlineData((int)GangFrigate.Harpy, true)]
-    [InlineData(CapsuleerPatrolFit.Cormorant, false)]
-    [InlineData(CapsuleerPatrolFit.Cormorant, true)]
-    [InlineData(CapsuleerPatrolFit.Catalyst, false)]
-    [InlineData(CapsuleerPatrolFit.Catalyst, true)]
-    [InlineData(CapsuleerPatrolFit.Thrasher, false)]
-    [InlineData(CapsuleerPatrolFit.Thrasher, true)]
-    [InlineData(CapsuleerPatrolFit.Corax, false)]
-    [InlineData(CapsuleerPatrolFit.Corax, true)]
-    public void FittedGangMemberLocksPointsAndDamagesAPlayerOrRival(int hull, bool rival)
+    public static TheoryData<int, int, bool> PatrolEncounters(bool includeFrigates)
     {
-        int seed = Enum.IsDefined((GangFrigate)hull) ? RoamingGangTests.Fixture.FrigateSeed : RoamingGangTests.Fixture.DestroyerSeed;
+        var encounters = new TheoryData<int, int, bool>();
+        foreach (var (seed, hulls) in s_patrolHulls)
+        {
+            if (!includeFrigates && seed == RoamingGangTests.Fixture.FrigateSeed)
+            {
+                continue;
+            }
+            foreach (int hull in hulls)
+            {
+                encounters.Add(seed, hull, false);
+                encounters.Add(seed, hull, true);
+            }
+        }
+        return encounters;
+    }
+
+    [Theory]
+    [MemberData(nameof(PatrolEncounters), true)]
+    public void FittedGangMemberLocksPointsAndDamagesAPlayerOrRival(int seed, int hull, bool rival)
+    {
         using var fixture = new RoamingGangTests.Fixture(regional: true, patrolSeed: seed);
         var gang = fixture.Form();
         var member = Assert.Single(gang.Members, ship => fixture.Live.Economy.Peek<Ship>(ship.ShipId)!.TypeId == hull);
@@ -134,21 +152,10 @@ public sealed class PatrolHullTests
     }
 
     [Theory]
-    [InlineData(CapsuleerPatrolFit.Cormorant, false)]
-    [InlineData(CapsuleerPatrolFit.Cormorant, true)]
-    [InlineData(CapsuleerPatrolFit.Catalyst, false)]
-    [InlineData(CapsuleerPatrolFit.Catalyst, true)]
-    [InlineData(CapsuleerPatrolFit.Thrasher, false)]
-    [InlineData(CapsuleerPatrolFit.Thrasher, true)]
-    [InlineData(CapsuleerPatrolFit.Corax, false)]
-    [InlineData(CapsuleerPatrolFit.Corax, true)]
-    public void SoloDestroyerUndocksAndEngagesAVisiblePlayerOrRival(int hull, bool rival)
+    [MemberData(nameof(PatrolEncounters), false)]
+    public void SoloPatrolUndocksAndEngagesAVisiblePlayerOrRival(int seed, int hull, bool rival)
     {
-        using var fixture = new RoamingGangTests.Fixture(
-            regional: true,
-            patrolSeed: RoamingGangTests.Fixture.DestroyerSeed,
-            soloHull: hull
-        );
+        using var fixture = new RoamingGangTests.Fixture(regional: true, patrolSeed: seed, soloHull: hull);
         long pilot = fixture.Live.Economy.Read(world =>
             world
                 .Set<SavedCapsuleerHauler>()
@@ -165,7 +172,9 @@ public sealed class PatrolHullTests
         Assert.Equal(PatrolKind.Roam, arrival.Work.Ratting?.Patrol?.Kind);
         Assert.Equal(RattingPhase.Searching, arrival.Work.Ratting?.Phase);
         Assert.Equal(hull, arrival.Pilot.ShipTypeId);
-        var victim = PlaceTarget(fixture, arrival.Pilot, rival, arrival.Work.Ratting!.StationId);
+        // A crossing frigate at 1 km can outrun medium rail tracking. Present a target inside tackle and weapon range.
+        int separation = seed == RoamingGangTests.Fixture.CruiserSeed ? 5_000 : 1_000;
+        var victim = PlaceTarget(fixture, arrival.Pilot, rival, arrival.Work.Ratting!.StationId, separation);
         var tackle = fixture.Host.GetRequiredService<IPilotTackle>();
         var health = fixture.Host.GetRequiredService<IPilotHealth>();
         double Remaining()
@@ -189,7 +198,13 @@ public sealed class PatrolHullTests
         Assert.Equal(0, fixture.Scheduler.Read().Failures);
     }
 
-    private static DockedPilot PlaceTarget(RoamingGangTests.Fixture fixture, DockedPilot attacker, bool rival, int station)
+    private static DockedPilot PlaceTarget(
+        RoamingGangTests.Fixture fixture,
+        DockedPilot attacker,
+        bool rival,
+        int station,
+        int separation = 1_000
+    )
     {
         DockedPilot victim;
         using (var catalog = new CatalogDbContext(fixture.Database.CatalogPath))
@@ -209,7 +224,7 @@ public sealed class PatrolHullTests
             {
                 action.Remove(action.Set<SavedCapsuleerSuspension>().Find(victimId)!);
             }
-            var position = attacker.Position! + new SpacePosition(1_000, 0, 0);
+            var position = attacker.Position! + new SpacePosition(separation, 0, 0);
             SqliteWorld.SetPosition(action, catalog, target.ActiveShipId, position, attacker.SystemId, fixture.Clock.Now);
             victim = fixture.Host.GetRequiredService<SqliteWorld>().FindPilot(action, target.AccountId, victimId)!;
             action.Commit();
@@ -217,9 +232,19 @@ public sealed class PatrolHullTests
         if (rival)
         {
             fixture.Scheduler.PopulationPrepared(Away);
+            // Let the rival finish its normal wait on grid so that a cruiser has time to lock before it starts its trip.
             fixture.Live.HaulerCheckpoints[victim.PilotId] = new(
                 victim.PilotId,
-                new(HaulerActivity.Waiting, 0, 0, victim.ShipId, station, 0, new NavigationState().Capture())
+                new(
+                    HaulerActivity.Waiting,
+                    0,
+                    0,
+                    victim.ShipId,
+                    station,
+                    0,
+                    new NavigationState().Capture(),
+                    DueTicks: TimeSpan.FromSeconds(fixture.Clock.Seconds + 60).Ticks
+                )
             );
         }
         else

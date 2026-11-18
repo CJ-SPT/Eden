@@ -2,6 +2,51 @@
 
 [Protocol index](../protocol.md)
 
+## Cruisers for solo patrols and gangs
+
+On November 18, 2026, Eden added four fitted Tech I cruisers to solo patrols and roaming gangs.
+Each carries a 10MN Afterburner I and Damage Control I. The pinned build 3662168 catalog supplies the fitting
+requirements, skills, magazine capacities and module attributes.
+
+| Hull | Fitted weapons and ammunition | Tackle | Local repair |
+| --- | --- | --- | --- |
+| Caracal | 5 rapid light missile launchers, 19 Scourge Light Missiles each | Warp disruptor | Medium shield booster |
+| Stabber | 4 dual 180mm autocannons, 40 EMP M each | Scrambler | Medium shield booster |
+| Moa | 5 dual 150mm railguns, 40 Iron Charge M each | Warp disruptor | Medium shield booster |
+| Thorax | 5 heavy electron blasters, 40 Antimatter Charge M each | Scrambler | Medium armor repairer |
+
+The four previously repeated frigate draws now yield cruisers. The sixteen seeded outcomes allocate four
+each to Tech II frigates, destroyers, cruisers, and snapshot selection or the generated Merlin fallback.
+This split applies to new combat slots after the security, generated-combat and interdictor checks.
+A missing fit component uses the existing fallback. The roles follow the weapon families described by
+EVE University. [Caracal](https://wiki.eveuniversity.org/Caracal), [Stabber](https://wiki.eveuniversity.org/Stabber),
+[Moa](https://wiki.eveuniversity.org/Moa) and [Thorax](https://wiki.eveuniversity.org/Thorax).
+The evejs NPC behavior loop reference is recorded in the [roaming gang notes](#smarter-pilots-and-persistent-roaming-gangs--november-17-2026).
+
+A read-only sample of 512 slots in 1DQ1-A used seed 45, default settings, the pinned catalog and the installed
+27,947-profile traffic snapshot. It selected each generated cruiser and imported pilots. All four cruiser fits
+passed the traffic fit validator in an isolated world. In the resident population tests, four cruisers formed
+a gang alongside imported traffic and retained their ships and roles after a checkpoint restart.
+
+Each hull tackled a simulated player and a rival bot and dealt damage in both solo and gang tests. The solo
+encounters used a frigate 5 km away and gave the rival time on grid for a cruiser lock. At 1 km the rail Moa had
+declined a crossing frigate on tracking grounds. In the regional raid tests, a scout reported the target and
+the gang applied tackle, consumed ammunition from fitted weapons and damaged the target.
+
+**Automated validation.** All 199 focused tests passed in 2 minutes 35 seconds. The solution built in
+4.88 seconds with zero warnings or errors. Tool and solution restore and both Python policy suites
+(8 catalog cases and 9 formatting cases) passed. The first exact development filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.PatrolHullTests.SnapshotAndSpecialistGangCoexistAndKeepTheirOriginalHullsOnReopen`.
+The wider run used the fourteen capsuleer test classes and the exclusion listed in the
+[destroyer validation record](#destroyers-for-solo-patrols-and-gangs).
+`RivalDefenseEngagesAVisibleRaidWithOwnedWeaponsAndRealDamage` remains a documented baseline failure for an
+independently routed encounter.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Observe a newly populated nullsec patrol in the overview to check cruiser hull
+and weapon visuals.
+
 ## Destroyers for solo patrols and gangs
 
 On November 18, 2026, four Tech I destroyers joined the generated PvP fits for build 3662168.

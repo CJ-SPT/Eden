@@ -108,22 +108,49 @@ internal static class CapsuleerPatrolFit
     private const int ElectronBlaster = 562;
     private const int AntimatterSmall = 222;
 
+    internal const int Caracal = 621;
+    internal const int Stabber = 622;
+    internal const int Moa = 623;
+    internal const int Thorax = 627;
+    private const int RapidLightLauncher = 1875;
+    private const int RapidLightRounds = 19;
+    private const int Dual180Autocannon = 489;
+    private const int EmpMedium = 193;
+    private const int Dual150Railgun = 567;
+    private const int IronMedium = 223;
+    private const int HeavyElectronBlaster = 566;
+    private const int AntimatterMedium = 230;
+    private const int CruiserAfterburner = 12056;
+    private const int MediumArmorRepairer = 3528;
+    private const int MediumShieldBooster = 10836;
     private const int PatrolDrawCount = 16;
-    private const int FittedPatrolDraws = 12;
 
-    private sealed record PatrolLoadout(int Hull, int Weapon, int Ammo, int WeaponCount, int Rounds, int Point, bool Armor = false);
+    private sealed record PatrolLoadout(
+        int Hull,
+        int Weapon,
+        int Ammo,
+        int WeaponCount,
+        int Rounds,
+        int Point,
+        int Repair = (int)StarterMarketType.SmallShieldBooster,
+        int Afterburner = (int)StarterMarketType.Afterburner
+    );
 
-    // Keep the original seeded frigate order. Positions 4 through 7 introduce the destroyers.
+    // Seeded slots 0-3 select frigates, 4-7 destroyers, 8-11 cruisers and 12-15 the snapshot or fallback.
     private static readonly PatrolLoadout[] s_patrols =
     [
         new((int)GangFrigate.Crow, LightMissileLauncher, ScourgeLightMissile, 3, LauncherRounds, WarpDisruptor),
         new((int)GangFrigate.Stiletto, GatlingAutocannon, EmpSmall, 2, TurretRounds, WarpDisruptor),
-        new((int)GangFrigate.Wolf, GatlingAutocannon, EmpSmall, 4, TurretRounds, Scrambler, Armor: true),
+        new((int)GangFrigate.Wolf, GatlingAutocannon, EmpSmall, 4, TurretRounds, Scrambler, (int)StarterMarketType.SmallArmorRepairer),
         new((int)GangFrigate.Harpy, Railgun125, IronCharge, 4, TurretRounds, Scrambler),
         new(Cormorant, Railgun125, IronCharge, 6, TurretRounds, WarpDisruptor),
-        new(Catalyst, ElectronBlaster, AntimatterSmall, 8, TurretRounds, Scrambler, Armor: true),
+        new(Catalyst, ElectronBlaster, AntimatterSmall, 8, TurretRounds, Scrambler, (int)StarterMarketType.SmallArmorRepairer),
         new(Thrasher, GatlingAutocannon, EmpSmall, 7, TurretRounds, Scrambler),
         new(Corax, LightMissileLauncher, ScourgeLightMissile, 5, LauncherRounds, WarpDisruptor),
+        new(Caracal, RapidLightLauncher, ScourgeLightMissile, 5, RapidLightRounds, WarpDisruptor, MediumShieldBooster, CruiserAfterburner),
+        new(Stabber, Dual180Autocannon, EmpMedium, 4, TurretRounds, Scrambler, MediumShieldBooster, CruiserAfterburner),
+        new(Moa, Dual150Railgun, IronMedium, 5, TurretRounds, WarpDisruptor, MediumShieldBooster, CruiserAfterburner),
+        new(Thorax, HeavyElectronBlaster, AntimatterMedium, 5, TurretRounds, Scrambler, MediumArmorRepairer, CruiserAfterburner),
     ];
     private static readonly CatalogDefinition<TrafficProfile?> s_patrol = new(
         "armed-patrol",
@@ -133,14 +160,13 @@ internal static class CapsuleerPatrolFit
             List<TrafficEquipment> equipment =
             [
                 new(fit.Point, (int)InventoryFlag.MediumSlot0, 1),
-                new((int)StarterMarketType.Afterburner, (int)InventoryFlag.MediumSlot0 + 1, 1),
+                new(fit.Afterburner, (int)InventoryFlag.MediumSlot0 + 1, 1),
                 new((int)StarterMarketType.DamageControl, (int)InventoryFlag.LowSlot0, 1),
             ];
-            equipment.Add(
-                fit.Armor
-                    ? new((int)StarterMarketType.SmallArmorRepairer, (int)InventoryFlag.LowSlot0 + 1, 1)
-                    : new((int)StarterMarketType.SmallShieldBooster, (int)InventoryFlag.MediumSlot0 + 2, 1)
-            );
+            int repairSlot = fit.Repair is MediumArmorRepairer or (int)StarterMarketType.SmallArmorRepairer
+                ? (int)InventoryFlag.LowSlot0 + 1
+                : (int)InventoryFlag.MediumSlot0 + 2;
+            equipment.Add(new(fit.Repair, repairSlot, 1));
             for (int slot = 0; slot < fit.WeaponCount; slot++)
             {
                 int flag = (int)InventoryFlag.HighSlot0 + slot;
@@ -177,9 +203,8 @@ internal static class CapsuleerPatrolFit
             policy.GateCamps && policy.CampBubbles && security <= 0 && PatrolRules.Choose(seed ^ system, ~slot, policy.InterdictorPercent)
                 ? catalog.Definition(s_interdictor, 0)
                 : null;
-        // Across sixteen slots: 0-3 and 8-11 retain frigates, 4-7 add destroyers, 12-15 retain the snapshot/fallback.
         int draw = TrafficRules.Start(seed, system, slot, PatrolDrawCount);
-        if (interdictor is null && draw < FittedPatrolDraws && catalog.Definition(s_patrol, draw % s_patrols.Length) is { } patrol)
+        if (interdictor is null && draw < s_patrols.Length && catalog.Definition(s_patrol, draw) is { } patrol)
         {
             return patrol;
         }

@@ -478,8 +478,9 @@ public sealed class RoamingGangTests
         internal CapsuleerScheduler Scheduler => Host.GetRequiredService<CapsuleerScheduler>();
 
         // These world seeds select one of each fitted hull in the first four home slots.
-        internal const int FrigateSeed = 45;
+        internal const int FrigateSeed = 45257;
         internal const int DestroyerSeed = 8629;
+        internal const int CruiserSeed = 8083;
 
         internal Fixture(
             bool regional = false,
@@ -498,10 +499,15 @@ public sealed class RoamingGangTests
             if (patrolSeed is { } seed)
             {
                 PassiveCatalogFixture.LoadTechTwoHulls(Database.CatalogPath);
-                PassiveCatalogFixture.LoadProjectileTiers(Database.CatalogPath, new HashSet<int> { 484, 185 });
-                PassiveCatalogFixture.LoadWeaponTiers(Database.CatalogPath, new HashSet<int> { 10678, 562, 222 });
+                PassiveCatalogFixture.LoadProjectileTiers(Database.CatalogPath, new HashSet<int> { 484, 185, 489, 193 });
+                PassiveCatalogFixture.LoadWeaponTiers(Database.CatalogPath, new HashSet<int> { 10678, 562, 222, 566, 230 });
                 PassiveCatalogFixture.LoadMissileTiers(Database.CatalogPath, new HashSet<int> { 499, 210 });
                 PassiveCatalogFixture.LoadSmallHulls(Database.CatalogPath);
+                PassiveCatalogFixture.LoadCombatHulls(
+                    Database.CatalogPath,
+                    new HashSet<int> { 621, 622, 623, 627, 1875, 567, 223, 3304, 3305 }
+                );
+                PassiveCatalogFixture.LoadActiveTiers(Database.CatalogPath, new HashSet<int> { 12056, 3528, 10836 });
                 using var setup = new WorldDbContext(Database.Path);
                 setup.Database.ExecuteSql($"UPDATE WorldCapsuleerProvisioning SET WorldSeed={seed}");
                 var imported = Enumerable

@@ -74,10 +74,15 @@ Solo patrols and roaming gangs draw from the same combat fits. The Catalyst carr
 autocannons, the Cormorant railguns and the Corax light missiles. Catalysts and Thrashers use scramblers.
 The Cormorant and Corax carry warp disruptors. All four destroyers carry an afterburner, damage control and local repair.
 
-With a complete catalog, half of eligible non-interdictor combat draws select a Stiletto, Crow, Wolf or Harpy,
-one quarter select a destroyer, and one quarter use an imported pilot or the generated Merlin fallback.
-The saved seed determines the hull for each new pilot, including with a traffic snapshot installed.
-[Destroyer selection and combat evidence](protocol/capsuleers.md#destroyers-for-solo-patrols-and-gangs) and
+Cruisers carry 10MN afterburners and medium local repair modules. The Caracal uses rapid light missiles and
+the Moa uses dual 150mm rails, both with warp disruptors. The Stabber uses autocannons and the Thorax uses
+blasters, both with scramblers.
+
+With a complete catalog, eligible non-interdictor combat draws split evenly among four choices. A new pilot can fly a Tech II frigate
+(Stiletto, Crow, Wolf or Harpy), a destroyer, a cruiser, or a ship from the snapshot. The Merlin is the fallback for the snapshot draw.
+The saved seed determines the hull for each new pilot, including when a traffic snapshot is installed.
+[Patrol cruiser fits and combat checks](protocol/capsuleers.md#cruisers-for-solo-patrols-and-gangs),
+[destroyer fits](protocol/capsuleers.md#destroyers-for-solo-patrols-and-gangs) and
 [Tech II frigate fits](protocol/capsuleers.md#tech-ii-frigates-in-bot-gangs).
 
 New miner and traveler warp orders wait four to eight active seconds before issuing warp alignment. Ships continue
