@@ -26,16 +26,25 @@ using Eden.World.Storage;
 namespace Eden.World.Structures;
 
 [Injectable]
-internal sealed class PilotStructureWeaponStore(
+internal sealed partial class PilotStructureWeaponStore(
     WorldDatabase database,
     TimeProvider clock,
     IPilotStructureControl control,
-    PilotStructureTargetStore targeting
+    PilotStructureTargetStore targeting,
+    NpcProfileCatalog npcProfiles,
+    ICapacitorEvents capacitorEvents
 ) : IPilotStructureWeapons
 {
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
-    public StructureWeaponActivation Activate(StructureControlToken token, long moduleId, long targetId, int repeats, int stamp) =>
+    public StructureWeaponActivation Activate(
+        StructureControlToken token,
+        long moduleId,
+        long targetId,
+        int repeats,
+        int stamp,
+        DogmaEffect effect
+    ) =>
         Execute(
             token,
             lease =>
@@ -46,25 +55,29 @@ internal sealed class PilotStructureWeaponStore(
                 }
                 if (lease.Weapons.TryGetValue(moduleId, out var current))
                 {
-                    if (current.TargetId != targetId)
+                    if (current.TargetId != targetId || current.Effect != effect)
                     {
                         throw new InvalidDataException("Stop the current defensive weapon cycle before changing targets.");
                     }
                     return new(current, null);
                 }
-                var result = Fire(token, moduleId, targetId, repeats, stamp);
+                var result = Fire(token, moduleId, targetId, repeats, stamp, effect);
                 lease.Weapons = lease.Weapons.Add(moduleId, result.Cycle);
                 return result;
             }
         );
 
-    public void Deactivate(StructureControlToken token, long moduleId) =>
+    public void Deactivate(StructureControlToken token, long moduleId, DogmaEffect? effect) =>
         Execute(
             token,
             lease =>
             {
                 if (lease.Weapons.TryGetValue(moduleId, out var cycle))
                 {
+                    if (effect.HasValue && effect != cycle.Effect)
+                    {
+                        throw new InvalidDataException("The requested effect does not belong to this active module.");
+                    }
                     lease.Weapons = lease.Weapons.SetItem(moduleId, cycle with { Stopping = true });
                 }
                 return true;
@@ -95,7 +108,7 @@ internal sealed class PilotStructureWeaponStore(
                         try
                         {
                             // One paid cycle at the current boundary. Delayed callbacks never replay missed launches.
-                            var next = Fire(token, cycle.ModuleId, cycle.TargetId, cycle.Repeats - 1, stamp);
+                            var next = Fire(token, cycle.ModuleId, cycle.TargetId, cycle.Repeats - 1, stamp, cycle.Effect);
                             lease.Weapons = lease.Weapons.SetItem(cycle.ModuleId, next.Cycle);
                             started.Add(next);
                             continue;
@@ -121,7 +134,14 @@ internal sealed class PilotStructureWeaponStore(
         return lease.WithActive(() => action(lease));
     }
 
-    private StructureWeaponActivation Fire(StructureControlToken token, long moduleId, long targetId, int repeats, int stamp)
+    private StructureWeaponActivation Fire(
+        StructureControlToken token,
+        long moduleId,
+        long targetId,
+        int repeats,
+        int stamp,
+        DogmaEffect effect
+    )
     {
         // Acquisition revalidates motion and shared lock breaks before opening the paid transaction.
         targeting.RequireLocked(token, targetId);
@@ -155,21 +175,86 @@ internal sealed class PilotStructureWeaponStore(
             || module.FlagId > (int)InventoryFlag.HighSlot7
         )
         {
-            throw new InvalidDataException("Choose an online launcher fitted to this structure.");
+            throw new InvalidDataException("Choose an online high-slot defense fitted to this structure.");
         }
         var profile = StructureEquipmentCatalog.Require(catalog, module.TypeId);
-        if (
-            !StructureWeaponRules.MissileLauncher(profile.GroupId)
-            || FittingCatalog.DefaultEffect(catalog, module.TypeId) != DogmaEffect.UseMissiles
-        )
+        if (FittingCatalog.DefaultEffect(catalog, module.TypeId) != effect)
         {
-            throw new InvalidDataException("This equipment is not a supported defensive missile launcher.");
+            throw new InvalidDataException("The requested effect does not belong to this module.");
         }
         var cooldown = world.Set<ModuleCooldown>().Find(moduleId);
         if (cooldown?.ReadyAt > now)
         {
-            throw new InvalidDataException("The defensive launcher is still cycling or reloading.");
+            throw new InvalidDataException("The structure module is still cycling or reloading.");
         }
+        var fit = StructureEquipmentPersistence.Read(world, catalog, source);
+        var target =
+            targeting.Find(world, catalog, source.SystemId, targetId, now)
+            ?? throw new InvalidDataException("The defensive weapon target is unavailable.");
+        var victim = CheckTarget(world, catalog, source, target, now);
+        StructureWeaponActivation result;
+        if (effect == DogmaEffect.StructureEnergyNeutralizer && profile.GroupId == StructureWeaponRules.NeutralizerGroup)
+        {
+            result = Neutralize(world, catalog, token, source, module, target, victim, fit, repeats, now);
+        }
+        else if (effect == DogmaEffect.UseMissiles && StructureWeaponRules.MissileLauncher(profile.GroupId))
+        {
+            result = Launch(world, catalog, token, source, module, target, profile, fit, repeats, stamp, now);
+        }
+        else
+        {
+            throw new InvalidDataException("This defensive module effect is unsupported.");
+        }
+        long ready = result.Cycle.ReadyAt;
+        cooldown ??= world.Add(new ModuleCooldown { ModuleId = moduleId }).Entity;
+        cooldown.Kind = ModuleCooldownKind.Cycle;
+        cooldown.ReadyAt = ready;
+        StructureCombatTargets.Record(world, source.Id, targetId, now, ready);
+        if (target.Kind == StructureTargetKind.Npc)
+        {
+            // Ordinary NPC retaliation currently owns ship targets; do not create a fake ship or corrupt that ledger.
+            Eden.World.Exploration.CombatAnomalyStore.SleeperAggressed(world, catalog, world.Set<WorldNpc>().Find(targetId)!, now);
+            CrimewatchPersistence.Npc(world, token.PilotId, source.SystemId, ready);
+        }
+        else
+        {
+            var timers = CrimewatchPersistence.State(world, token.PilotId);
+            timers.SystemId = source.SystemId;
+            timers.Apply(CrimewatchRules.Player(timers.Timers(), ready, CrimewatchFlag.None, true, now));
+            if (victim is not null)
+            {
+                if (target.Kind == StructureTargetKind.Drone)
+                {
+                    StructureCombatTargets.Record(world, source.Id, victim.ActiveShipId, now, ready);
+                }
+                CrimewatchPersistence.PlayerImpact(world, token.PilotId, victim.Id, source.SystemId, now);
+            }
+        }
+        transaction.Commit();
+        if (result.Neutralization is not null && victim is not null)
+        {
+            capacitorEvents.Publish(new(victim.Id, targetId));
+        }
+        return result;
+    }
+
+    private static StructureWeaponActivation Launch(
+        WorldAction world,
+        CatalogDbContext catalog,
+        StructureControlToken token,
+        SavedStructure source,
+        OwnedItem module,
+        StructureTarget target,
+        StructureEquipmentProfile profile,
+        StructureFittingState fit,
+        int repeats,
+        int stamp,
+        long now
+    )
+    {
+        long moduleId = module.Id;
+        long targetId = target.Id;
+        var attributes = fit.Equipment[moduleId];
         var loaded = world.Filter<OwnedItem>(item => item.LocationId == moduleId).SingleOrDefault();
         if (loaded is null || loaded.OwnerId != source.CorporationId || loaded.Quantity <= 0)
         {
@@ -180,8 +265,6 @@ internal sealed class PilotStructureWeaponStore(
         {
             throw new InvalidDataException("The defensive launcher contains incompatible ammunition.");
         }
-        var fit = StructureEquipmentPersistence.Read(world, catalog, source);
-        var attributes = fit.Equipment[moduleId];
         // These pinned launcher families consume ammunition only. Capacitor-using defenses have a separate resource authority.
         if (attributes.GetValueOrDefault(DogmaAttributeId.CapacitorNeed) != 0)
         {
@@ -194,10 +277,6 @@ internal sealed class PilotStructureWeaponStore(
         }
         double duration = attributes.GetValueOrDefault(DogmaAttributeId.WeaponCycleTime);
         long ready = StructureWeaponRules.ReadyAt(duration, now);
-        var target =
-            targeting.Find(world, catalog, source.SystemId, targetId, now)
-            ?? throw new InvalidDataException("The defensive weapon target is unavailable.");
-        var victim = CheckTarget(world, catalog, source, target, now);
         var charge = fit.Charges[moduleId];
         var drive = MissileChargeCatalog.Drive(catalog, loaded.TypeId, charge);
         int level = PilotSkillReader.Level(world, catalog, token.PilotId, StructureWeaponRules.MissileSystemsSkill);
@@ -256,31 +335,6 @@ internal sealed class PilotStructureWeaponStore(
         {
             world.Remove(loaded);
         }
-        cooldown ??= world.Add(new ModuleCooldown { ModuleId = moduleId }).Entity;
-        cooldown.Kind = ModuleCooldownKind.Cycle;
-        cooldown.ReadyAt = ready;
-        StructureCombatTargets.Record(world, source.Id, targetId, now, ready);
-        if (target.Kind == StructureTargetKind.Npc)
-        {
-            // Ordinary NPC retaliation currently owns ship targets; do not create a fake ship or corrupt that ledger.
-            Eden.World.Exploration.CombatAnomalyStore.SleeperAggressed(world, catalog, world.Set<WorldNpc>().Find(targetId)!, now);
-            CrimewatchPersistence.Npc(world, token.PilotId, source.SystemId, ready);
-        }
-        else
-        {
-            var timers = CrimewatchPersistence.State(world, token.PilotId);
-            timers.SystemId = source.SystemId;
-            timers.Apply(CrimewatchRules.Player(timers.Timers(), ready, CrimewatchFlag.None, true, now));
-            if (victim is not null)
-            {
-                if (target.Kind == StructureTargetKind.Drone)
-                {
-                    StructureCombatTargets.Record(world, source.Id, victim.ActiveShipId, now, ready);
-                }
-                CrimewatchPersistence.PlayerImpact(world, token.PilotId, victim.Id, source.SystemId, now);
-            }
-        }
-        transaction.Commit();
         return new(
             new(moduleId, targetId, module.TypeId, now, ready, duration, repeats),
             new(new(moduleId, module.TypeId, loaded.TypeId, duration, false), projectile.Contact(payload), magazine)

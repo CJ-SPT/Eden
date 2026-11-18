@@ -186,7 +186,8 @@ internal sealed partial class PilotStructureStore : IPilotStructureFitting
                 {
                     throw new InvalidDataException("Dock in the structure before changing its defensive fitting.");
                 }
-                var before = ShipHealth.DefenseFrom(StructureEquipmentPersistence.Read(world, catalog, structure).Attributes);
+                var attributes = StructureEquipmentPersistence.Read(world, catalog, structure).Attributes;
+                var before = ShipHealth.DefenseFrom(attributes);
                 var battle = StructureBattlePersistence.Read(world, catalog, structure);
                 if (
                     !structure.HasCore
@@ -201,7 +202,8 @@ internal sealed partial class PilotStructureStore : IPilotStructureFitting
                     );
                 }
                 change(world, catalog, structure, pilot, now);
-                StructureEquipmentPersistence.Check(world, catalog, structure);
+                var after = StructureEquipmentPersistence.Check(world, catalog, structure);
+                StructureEnergy.Resize(world, structure.Id, attributes, after.Attributes, now);
             }
         );
     }

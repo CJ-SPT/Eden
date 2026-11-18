@@ -104,10 +104,10 @@ internal static class StructureEquipmentPersistence
         return result;
     }
 
-    internal static void Check(WorldAction world, CatalogDbContext catalog, SavedStructure structure) =>
-        StructureFittingRules.Check(
-            StructureCatalog.Require(catalog, structure.TypeId),
-            Read(world, catalog, structure),
-            Equipment(world, catalog, structure)
-        );
+    internal static StructureFittingState Check(WorldAction world, CatalogDbContext catalog, SavedStructure structure)
+    {
+        var state = Read(world, catalog, structure);
+        StructureFittingRules.Check(StructureCatalog.Require(catalog, structure.TypeId), state, Equipment(world, catalog, structure));
+        return state;
+    }
 }

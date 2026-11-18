@@ -1,5 +1,6 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Inventory;
 
 namespace Eden.Gameplay.Structures;
 
@@ -11,17 +12,29 @@ public sealed record StructureWeaponCycle(
     long ReadyAt,
     double DurationMilliseconds,
     int Repeats,
-    bool Stopping = false
+    bool Stopping = false,
+    DogmaEffect Effect = DogmaEffect.UseMissiles
 );
 
-public sealed record StructureWeaponActivation(StructureWeaponCycle Cycle, MissileLaunch? Launch);
+public sealed record StructureWeaponActivation(
+    StructureWeaponCycle Cycle,
+    MissileLaunch? Launch,
+    CapacitorActivation? Neutralization = null
+);
 
 public sealed record StructureWeaponFrame(IReadOnlyList<StructureWeaponActivation> Started, IReadOnlyList<StructureWeaponCycle> Stopped);
 
 public interface IPilotStructureWeapons
 {
-    StructureWeaponActivation Activate(StructureControlToken token, long moduleId, long targetId, int repeats, int stamp);
-    void Deactivate(StructureControlToken token, long moduleId);
+    StructureWeaponActivation Activate(
+        StructureControlToken token,
+        long moduleId,
+        long targetId,
+        int repeats,
+        int stamp,
+        DogmaEffect effect = DogmaEffect.UseMissiles
+    );
+    void Deactivate(StructureControlToken token, long moduleId, DogmaEffect? effect = null);
     StructureWeaponFrame Advance(StructureControlToken token, int stamp);
     IReadOnlyList<StructureWeaponCycle> Read(StructureControlToken token);
 }
@@ -31,6 +44,8 @@ public static class StructureWeaponRules
     // Build 3662168: Standup anticapital and multirole launchers use the standard useMissiles effect.
     public const int AnticapitalLauncherGroup = 1327;
     public const int MultiroleLauncherGroup = 1562;
+    public const int NeutralizerGroup = 1329;
+    public const int EngineeringSystemsSkill = 37799;
     public const int MissileSystemsSkill = 37796;
     public const DogmaAttributeId MissileSkillBonus = (DogmaAttributeId)292;
 
@@ -43,6 +58,15 @@ public static class StructureWeaponRules
             throw new InvalidDataException("Invalid structure missile operating skill.");
         }
         return 1 + level * bonusPercent / 100;
+    }
+
+    public static double CapacitorCostMultiplier(int level, double bonusPercent)
+    {
+        if (level is < 0 or > 5 || !double.IsFinite(bonusPercent) || bonusPercent > 0)
+        {
+            throw new InvalidDataException("Invalid structure engineering capacitor cost.");
+        }
+        return Math.Max(0, 1 + level * bonusPercent / 100);
     }
 
     public static long ReadyAt(double milliseconds, long now)

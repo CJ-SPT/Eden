@@ -193,10 +193,10 @@ internal sealed class CapacitorWarfareStore(WorldDatabase database, ICapacitorEv
                 1
             )
         );
-        SaveEnergy(source.ActiveShipId, applied.Source);
+        ShipResources.SetCapacitor(world, source.ActiveShipId, applied.Source, now);
         if (target.Pilot is { } recipient)
         {
-            SaveEnergy(targetId, applied.Target);
+            ShipResources.SetCapacitor(world, targetId, applied.Target, now);
             if (!transfer)
             {
                 CrimewatchPersistence.Player(world, catalog, source.Id, recipient.Id, system, decision!, now, end);
@@ -249,12 +249,6 @@ internal sealed class CapacitorWarfareStore(WorldDatabase database, ICapacitorEv
             {
                 throw new InvalidDataException("A destroyed ship cannot send or receive capacitor effects.");
             }
-        }
-        void SaveEnergy(long ship, double charge)
-        {
-            var saved = world.Set<ShipEnergy>().Find(ship) ?? world.Add(new ShipEnergy { ShipId = ship }).Entity;
-            saved.Charge = charge;
-            saved.UpdatedAt = Math.Max(saved.UpdatedAt, now);
         }
     }
 

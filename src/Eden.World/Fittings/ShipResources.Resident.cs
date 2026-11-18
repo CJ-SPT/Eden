@@ -68,6 +68,13 @@ internal static partial class ShipResources
         }
     }
 
+    internal static void SetCapacitor(WorldAction world, long ship, double charge, long now)
+    {
+        var saved = world.Set<ShipEnergy>().Find(ship) ?? world.Add(new ShipEnergy { ShipId = ship }).Entity;
+        saved.Charge = charge;
+        saved.UpdatedAt = Math.Max(now, saved.UpdatedAt);
+    }
+
     internal static double SpendCapacitor(
         WorldAction world,
         long shipId,
@@ -85,9 +92,8 @@ internal static partial class ShipResources
         {
             throw new InvalidDataException("Insufficient capacitor to activate the module.");
         }
-        var saved = world.Set<ShipEnergy>().Find(shipId) ?? world.Set<ShipEnergy>().Add(new() { ShipId = shipId }).Entity;
-        saved.Charge = Math.Max(0, charge - cost);
-        saved.UpdatedAt = Math.Max(now, saved.UpdatedAt);
-        return saved.Charge;
+        double remaining = Math.Max(0, charge - cost);
+        SetCapacitor(world, shipId, remaining, now);
+        return remaining;
     }
 }

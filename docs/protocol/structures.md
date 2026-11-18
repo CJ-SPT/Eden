@@ -13,8 +13,63 @@ Historical foundation limitations below describe their original milestones; this
 | Asset safety | Personal/corporate collection, timed delivery, paid recovery, native inventory and public loot | Implemented; validation below |
 | Incoming combat and loss | Paid weapons against structures, legal targeting, destruction settlement and automatic custody transitions | Implemented; validation below |
 | Tethering | Resident protection, native effects, access and timer checks, saved repair settlement | Implemented; validation below |
-| Defense | Combat fitting/control, supported defensive weapons and target updates | In progress; resident control, fitting, targeting, ammunition and defensive missiles against ships, NPCs, structures and drones implemented; EWAR/area defenses remain |
+| Defense | Combat fitting/control, supported defensive weapons and target updates | In progress; resident control, fitting, targeting, ammunition and defensive missiles and targeted energy neutralizers implemented; other EWAR, tackle and area defenses remain |
 | Service completion | Remaining native structure profiles/access, economic/clone services, ownership and specialized structure consumers | Planned |
+
+### Standup energy neutralizers and structure capacitor
+
+A gunner can activate a fitted, online Standup neutralizer against a locked ship or NPC. Each cycle checks the control
+lease, structure state, target, green safety, module cooldown and available capacitor. A paid cycle immediately drains
+the target and charges the structure. A duplicate activation keeps the current cycle. A late repeat pays once at the
+current time, and a replacement gunner inherits the paid cooldown.
+
+| Standup variant (type) | Base cost (GJ) | Base drain (GJ) | Cycle | Optimal / falloff |
+| --- | ---: | ---: | ---: | ---: |
+| Heavy I (35925) | 1,000 | 1,500 | 15 s | 100 / 100 km |
+| Heavy II (47332) | 1,000 | 1,800 | 15 s | 120 / 120 km |
+| Dark Blood Heavy (46575) | 1,000 | 1,900 | 15 s | 150 / 150 km |
+| XL I (35924) | 6,000 | 10,000 | 30 s | 150 / 100 km |
+| XL II (47330) | 6,000 | 12,000 | 30 s | 180 / 120 km |
+
+The pinned group 1329 uses effect 6216 (`structureEnergyNeutralizerFalloff`). Structure Engineering Systems (37799)
+reduces the fitted activation cost by 2% per trained level through effect 6401. Neutralization uses surface distance,
+falloff and the target's energy warfare resistance. The XL variants also use 15,000 m signature resolution.
+The target can only lose its remaining charge. A gunner's docked ship has its own capacitor.
+
+Saved-world schema **189** adds a structure capacitor balance and timestamp. Existing structures start fully charged.
+Reads calculate recharge at the supplied wall time. Changing capacitor capacity or recharge through a defensive refit
+settles the old curve first and preserves the charged fraction. Dogma priming includes the current charge, the gunner's
+activation cost, the active effect and the paid deadline. The target receives capacitor and EWAR updates, and nearby
+observers receive timed effects for visible endpoints. Other electronic warfare, tackle and area defenses remain open.
+
+The values above come from the build-3662168 type and effect records in the checked-in structure catalog. Inert inspection
+of the original archive recorded below found the structure neutralizer group in `shipModuleButton/moduleButtonTooltip.pyj`.
+The older EVE.js reference maps this effect to its hostile neutralizer family in `space/modules/hostileModuleRuntime.js`
+(SHA-256 `db747aa99975012526f576e6042ba2c1c6d7d664c58cc50e0dc31fc5e550d93f`).
+[CCP structure fitting and skills](https://www.eveonline.com/news/view/structure-fitting-in-the-citadel-expansion),
+[UniWiki structure fitting](https://wiki.eveuniversity.org/Fitting_upwell_structures).
+
+**Automated validation**
+
+The focused flows cover all five variants, XL signature application, operator skill, insufficient capacitor rollback,
+green safety, late repeats, native charge and effect updates, battery refits, and checkpoint reopen after lease release.
+All 495 affected .NET cases passed in 4m 26s. Tool and solution restore, the zero-warning build (9.90s), both Python
+policy suites (8 + 9), formatting (2,625 files), line width and diff verification passed. Root validation took 5m 9s.
+The three edited Markdown files had 780 valid local link destinations.
+
+The final filter joined `FullyQualifiedName~Eden.Protocol.Tests.` predicates with `|` for `Structures`,
+`Docking.StructureServiceTests`, `Combat.CapacitorWarfare`, `Combat.NpcCapacitorRuleTests`, `Combat.PilotMissileTests`,
+`Combat.CrimewatchTests`, `Combat.SessionPerformanceTests`, `Flight.WarpCapacitorTests`, `Persistence.WorldMigrationTests`,
+`Persistence.DetachedCheckpointTests` and `PilotSessions.TypedSessionTests`.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer check**
+
+Activate a Standup neutralizer against a legal ship target and inspect the gunner's capacitor gauge, target EWAR icon,
+and beam on a nearby observer.
 
 ### Defensive missiles against drones
 

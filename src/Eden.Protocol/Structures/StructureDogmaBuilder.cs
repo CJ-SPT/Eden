@@ -63,6 +63,10 @@ internal sealed class StructureDogmaBuilder(
             attributes[DogmaAttributeId.CpuLoad] = modules.Sum(module => module.GetValueOrDefault(DogmaAttributeId.Cpu));
             attributes[DogmaAttributeId.PowerLoad] = modules.Sum(module => module.GetValueOrDefault(DogmaAttributeId.Power));
         }
+        if (structure.Capacitor is double charge)
+        {
+            attributes[DogmaAttributeId.CapacitorCharge] = charge;
+        }
         if (structure.Battle is { } battle)
         {
             attributes[DogmaAttributeId.ShieldCharge] = battle.Health.Shield;
@@ -89,8 +93,17 @@ internal sealed class StructureDogmaBuilder(
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var attributes = (structure.Fitting?.Equipment.GetValueOrDefault(module.Id) ?? fitting.Attributes(module.TypeId)).ToDictionary();
         attributes[DogmaAttributeId.IsOnline] = module.Online ? 1d : 0d;
+        if (
+            module.GroupId == StructureWeaponRules.NeutralizerGroup
+            && attributes.TryGetValue(DogmaAttributeId.CapacitorNeed, out double cost)
+        )
+        {
+            attributes[DogmaAttributeId.CapacitorNeed] = cost * structure.EngineeringCostMultiplier;
+        }
         attributes[DogmaAttributeId.NextActivationTime] =
-            structure.Magazines.SingleOrDefault(item => item.ModuleId == module.Id)?.ReadyAt ?? 0;
+            structure.Equipment.SingleOrDefault(item => item.ItemId == module.Id)?.ReadyAt
+            ?? structure.Magazines.SingleOrDefault(item => item.ModuleId == module.Id)?.ReadyAt
+            ?? 0;
         if (structure.Modules.SingleOrDefault(m => m.ItemId == module.Id)?.HourlyFuel is int fuel)
         {
             attributes[DogmaAttributeId.ServiceModuleFuelAmount] = fuel;
@@ -102,12 +115,12 @@ internal sealed class StructureDogmaBuilder(
         }
         if (structure.Weapons.SingleOrDefault(cycle => cycle.ModuleId == module.Id) is { } cycle)
         {
-            effects[DogmaEffect.UseMissiles] = new(
+            effects[cycle.Effect] = new(
                 module.Id,
                 pilot.PilotId,
                 structure.Id,
                 cycle.TargetId,
-                DogmaEffect.UseMissiles,
+                cycle.Effect,
                 cycle.StartedAt,
                 cycle.DurationMilliseconds,
                 cycle.Repeats
@@ -125,7 +138,7 @@ internal sealed class StructureDogmaBuilder(
         Dictionary<long, DogmaItemInfo<double>> info = new() { [structure.Id] = Prime(structure) };
         Dictionary<long, DogmaInstanceState> instances = new()
         {
-            [structure.Id] = new(structure.Id, true),
+            [structure.Id] = new(structure.Id, true, Capacitor: structure.Capacitor),
             [pilot.PilotId] = new(pilot.PilotId),
         };
         Dictionary<long, IReadOnlyDictionary<int, MagazineQuantity>> quantities = [];

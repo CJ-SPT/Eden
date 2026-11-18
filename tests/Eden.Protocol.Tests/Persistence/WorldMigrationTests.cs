@@ -32,6 +32,7 @@ public sealed class WorldMigrationTests
             world.SaveChanges();
             world.Database.ExecuteSqlRaw(
                 """
+                DROP TABLE WorldStructureEnergy;
                 ALTER TABLE WorldStructureBattle DROP COLUMN ShieldCapacity;
                 ALTER TABLE WorldStructureBattle DROP COLUMN ArmorCapacity;
                 ALTER TABLE WorldStructureBattle DROP COLUMN HullCapacity;
@@ -44,6 +45,7 @@ public sealed class WorldMigrationTests
             WorldInitialization.Initialize(new(fixture.Db.Path));
             using WorldDbContext world = new(fixture.Db.Path);
             var battle = world.Set<SavedStructureBattle>().Find(structure.Id)!;
+            Assert.Null(world.Set<SavedStructureEnergy>().Find(structure.Id));
             Assert.Equal(123, battle.Shield);
             Assert.Equal(456, battle.Armor);
             Assert.Equal(789, battle.Hull);

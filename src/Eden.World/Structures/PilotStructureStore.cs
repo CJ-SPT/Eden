@@ -249,6 +249,7 @@ internal sealed partial class PilotStructureStore(
             services.UnionWith([StructureService.Reactions, StructureService.Industry]);
         }
         var battle = world is EconomyTransaction ? StructureBattlePersistence.Read(world, catalog, structure) : null;
+        var controller = Eden.World.Runtime.LiveWorld.Find(world.WorldPath)?.StructureControllers.GetValueOrDefault(structure.Id);
         return new(
             structure.Id,
             profile,
@@ -272,20 +273,22 @@ internal sealed partial class PilotStructureStore(
             structure.ReinforceHour
         )
         {
+            Capacitor = fitting is null ? null : StructureEnergy.Read(world, structure.Id, fitting.Attributes, now).Charge,
             Fitting = fitting,
             Magazines = world is EconomyTransaction ? Magazines(world, structure) : [],
-            Weapons =
-                Eden.World.Runtime.LiveWorld.Find(world.WorldPath)
-                    ?.StructureControllers.GetValueOrDefault(structure.Id)
-                    ?.Weapons.Values.OrderBy(cycle => cycle.ModuleId)
-                    .ToArray()
-                ?? [],
+            EngineeringCostMultiplier = controller is null
+                ? 1
+                : StructureEnergy.EngineeringMultiplier(world, catalog, controller.Token.PilotId),
+            Weapons = controller?.Weapons.Values.OrderBy(cycle => cycle.ModuleId).ToArray() ?? [],
             Equipment =
                 world is EconomyTransaction
                     ? StructureEquipmentPersistence
                         .Equipment(world, catalog, structure)
                         .Where(item => !item.Profile.Service)
-                        .Select(item => new StructureModule(item.ItemId, item.Profile.TypeId, item.FlagId, item.Online, null))
+                        .Select(item => new StructureModule(item.ItemId, item.Profile.TypeId, item.FlagId, item.Online, null)
+                        {
+                            ReadyAt = world.Set<Eden.Data.World.Combat.ModuleCooldown>().Find(item.ItemId)?.ReadyAt ?? 0,
+                        })
                         .ToArray()
                     : [],
             Battle = battle,

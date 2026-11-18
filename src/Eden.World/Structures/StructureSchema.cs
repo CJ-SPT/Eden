@@ -13,6 +13,8 @@ internal static class StructureSchema
         model.Entity<SavedStructure>().HasIndex(s => s.SystemId);
         model.Entity<SavedStructure>().HasIndex(s => s.CorporationId);
         model.Entity<SavedStructureBattle>().ToTable("WorldStructureBattle").HasKey(s => s.StructureId);
+        model.Entity<SavedStructureEnergy>().ToTable("WorldStructureEnergy").HasKey(e => e.StructureId);
+        model.Entity<SavedStructureEnergy>().HasOne<SavedStructure>().WithMany().HasForeignKey(e => e.StructureId);
         model.Entity<SavedPilotTether>().ToTable("WorldPilotTether").HasKey(s => s.ShipId);
         model.Entity<SavedStructureBattle>().HasOne<SavedStructure>().WithMany().HasForeignKey(s => s.StructureId);
         model.Entity<SavedAssetSafety>().ToTable("WorldAssetSafety").HasKey(s => s.Id);
@@ -44,6 +46,9 @@ internal static class StructureSchema
                 DamageWindowAt INTEGER NOT NULL, ShieldWindow REAL NOT NULL, ArmorWindow REAL NOT NULL,
                 HullWindow REAL NOT NULL, PausedUntil INTEGER NOT NULL,
                 ShieldCapacity REAL NOT NULL DEFAULT 0, ArmorCapacity REAL NOT NULL DEFAULT 0, HullCapacity REAL NOT NULL DEFAULT 0);
+            CREATE TABLE IF NOT EXISTS WorldStructureEnergy (
+                StructureId INTEGER PRIMARY KEY REFERENCES WorldStructure(Id) ON DELETE CASCADE,
+                Charge REAL NOT NULL CHECK (Charge >= 0), UpdatedAt INTEGER NOT NULL);
             CREATE TABLE IF NOT EXISTS WorldPilotTether (
                 ShipId INTEGER PRIMARY KEY, PilotId INTEGER NOT NULL, StructureId INTEGER NOT NULL,
                 EngagedAt INTEGER NOT NULL, RepairAt INTEGER NOT NULL, RepairCompleted INTEGER NOT NULL);

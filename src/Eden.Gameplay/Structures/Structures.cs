@@ -120,6 +120,7 @@ public sealed record StructureServiceProfile(
 public sealed record StructureModule(long ItemId, int TypeId, int Slot, bool Online, long? NextFuelAt)
 {
     public int? HourlyFuel { get; init; }
+    public long ReadyAt { get; init; }
 }
 
 public sealed record StructureAccess(long MemberId, bool Allowed);
@@ -167,6 +168,8 @@ public sealed record StructureSnapshot(
 )
 {
     public IReadOnlyList<StructureModule> Equipment { get; init; } = [];
+    public double? Capacitor { get; init; }
+    public double EngineeringCostMultiplier { get; init; } = 1;
     public StructureFittingState? Fitting { get; init; }
     public IReadOnlyList<StructureWeaponCycle> Weapons { get; init; } = [];
     public IReadOnlyList<Ammunition.Magazine> Magazines { get; init; } = [];

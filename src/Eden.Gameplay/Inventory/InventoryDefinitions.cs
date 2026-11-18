@@ -173,6 +173,7 @@ public enum DogmaEffect
     MutadaptiveRemoteArmorRepair = 7166,
     AssaultDamageControl = 7012,
     EnergyNeutralizer = 6187,
+    StructureEnergyNeutralizer = 6216,
     EnergyNosferatu = 6197,
     ShieldBoosting = 4,
     AncillaryShieldBoosting = 4936,

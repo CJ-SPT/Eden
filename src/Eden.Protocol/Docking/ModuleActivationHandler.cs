@@ -67,8 +67,8 @@ internal sealed class ModuleActivationHandler(
         }
         if (context.ControlledStructureId is not null && effectName != InventoryWireDefinitions.OnlineEffectName)
         {
-            return effectName == MissileHandler.EffectName
-                ? structureWeapons?.Call(context, method, args, keywords)
+            return Eden.Protocol.Structures.StructureWeaponHandler.Effect(effectName) is { } structureEffect
+                ? structureWeapons?.Call(context, method, structureEffect, args, keywords)
                     ?? new PilotCallResult.Failure("Structure defensive weapons are unavailable.")
                 : new PilotCallResult.Failure("This structure defensive effect is not supported yet.");
         }
