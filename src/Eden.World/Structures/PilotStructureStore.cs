@@ -278,8 +278,11 @@ internal sealed partial class PilotStructureStore(
             Magazines = world is EconomyTransaction ? Magazines(world, structure) : [],
             EngineeringCostMultiplier = controller is null
                 ? 1
-                : StructureEnergy.EngineeringMultiplier(world, catalog, controller.Token.PilotId),
-            Weapons = controller?.Weapons.Values.OrderBy(cycle => cycle.ModuleId).ToArray() ?? [],
+                : StructureEnergy.CostMultiplier(world, catalog, controller.Token.PilotId, StructureWeaponRules.EngineeringSystemsSkill),
+            ElectronicCostMultiplier = controller is null
+                ? 1
+                : StructureEnergy.CostMultiplier(world, catalog, controller.Token.PilotId, StructureWeaponRules.ElectronicSystemsSkill),
+            Weapons = controller?.Weapons.Values.Where(cycle => cycle.Active(now)).OrderBy(cycle => cycle.ModuleId).ToArray() ?? [],
             Equipment =
                 world is EconomyTransaction
                     ? StructureEquipmentPersistence

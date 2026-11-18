@@ -95,8 +95,26 @@ internal sealed class ResidentStructureControl(StructureControlToken token, Live
         {
             return;
         }
+        using var ownership = owner.EnterPersistence(nameof(Dispose));
         lock (_gate)
         {
+            if (!owner.StructureControllers.TryGetValue(Token.StructureId, out var lease) || !ReferenceEquals(lease, this))
+            {
+                return;
+            }
+            var webs = Weapons.Values.Where(cycle => cycle.Effect == Eden.Gameplay.Inventory.DogmaEffect.StructureStasisWebifier).ToArray();
+            if (webs.Length > 0)
+            {
+                using var action = owner.Economy.Begin(new(ships: webs.Select(cycle => cycle.TargetId)));
+                foreach (var cycle in webs)
+                {
+                    if (action.Set<Eden.Data.World.Propulsion.WorldTackle>().Find(cycle.ModuleId) is { } row)
+                    {
+                        action.Remove(row);
+                    }
+                }
+                action.Commit();
+            }
             if (owner.StructureControllers.TryRemove(KeyValuePair.Create(Token.StructureId, this)))
             {
                 if (owner.TargetLocks is IPilotLockBreaks breaks)

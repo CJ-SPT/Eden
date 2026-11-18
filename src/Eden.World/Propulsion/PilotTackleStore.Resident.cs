@@ -12,7 +12,7 @@ namespace Eden.World.Propulsion;
 
 internal sealed partial class PilotTackleStore
 {
-    private sealed record TackleEndpoint(long Pilot, long Source, long Target, int System, TackleTargetKind Kind);
+    private sealed record TackleEndpoint(long Pilot, long? Source, long Target, int System, TackleTargetKind Kind);
 
     private sealed record ActiveEndpoint(long Module, long Ship);
 
@@ -60,7 +60,10 @@ internal sealed partial class PilotTackleStore
         foreach (var endpoint in endpoints)
         {
             pilots.Add(endpoint.Pilot);
-            ships.Add(endpoint.Source);
+            if (endpoint.Source is long sourceShip)
+            {
+                ships.Add(sourceShip);
+            }
             systems.Add(endpoint.System);
             Target(endpoint.Target, endpoint.Kind);
         }

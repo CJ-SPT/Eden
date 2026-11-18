@@ -55,6 +55,10 @@ internal sealed partial class PilotStructureWeaponStore(
                 }
                 if (lease.Weapons.TryGetValue(moduleId, out var current))
                 {
+                    if (!current.Active(Now))
+                    {
+                        throw new InvalidDataException("The structure module is waiting for reactivation.");
+                    }
                     if (current.TargetId != targetId || current.Effect != effect)
                     {
                         throw new InvalidDataException("Stop the current defensive weapon cycle before changing targets.");
@@ -85,7 +89,7 @@ internal sealed partial class PilotStructureWeaponStore(
         );
 
     public IReadOnlyList<StructureWeaponCycle> Read(StructureControlToken token) =>
-        Execute(token, lease => lease.Weapons.Values.OrderBy(cycle => cycle.ModuleId).ToArray());
+        Execute(token, lease => lease.Weapons.Values.Where(cycle => cycle.Active(Now)).OrderBy(cycle => cycle.ModuleId).ToArray());
 
     public StructureWeaponFrame Advance(StructureControlToken token, int stamp) =>
         Execute<StructureWeaponFrame>(
@@ -103,6 +107,16 @@ internal sealed partial class PilotStructureWeaponStore(
                     {
                         continue;
                     }
+                    if (cycle.ReactivationAt > 0 && !cycle.Waiting)
+                    {
+                        EndWeb(cycle);
+                        stopped.Add(cycle);
+                    }
+                    if (!targetLost && !cycle.Stopping && cycle.Repeats > 0 && now < cycle.ReactivationAt)
+                    {
+                        lease.Weapons = lease.Weapons.SetItem(cycle.ModuleId, cycle with { Waiting = true });
+                        continue;
+                    }
                     if (!targetLost && !cycle.Stopping && cycle.Repeats > 0)
                     {
                         try
@@ -116,7 +130,10 @@ internal sealed partial class PilotStructureWeaponStore(
                         catch (Exception error) when (error is InvalidDataException or OverflowException) { }
                     }
                     lease.Weapons = lease.Weapons.Remove(cycle.ModuleId);
-                    stopped.Add(cycle);
+                    if (cycle.ReactivationAt == 0)
+                    {
+                        stopped.Add(cycle);
+                    }
                 }
                 return new(started, stopped);
             }
@@ -171,11 +188,14 @@ internal sealed partial class PilotStructureWeaponStore(
             || module.LocationId != source.Id
             || module.OwnerId != source.CorporationId
             || !module.Online
-            || module.FlagId < (int)InventoryFlag.HighSlot0
-            || module.FlagId > (int)InventoryFlag.HighSlot7
+            || !(
+                effect == DogmaEffect.StructureStasisWebifier
+                    ? InventoryDefinitions.IsMediumSlot(module.FlagId)
+                    : InventoryDefinitions.IsHighSlot(module.FlagId)
+            )
         )
         {
-            throw new InvalidDataException("Choose an online high-slot defense fitted to this structure.");
+            throw new InvalidDataException("Choose an online defense in the appropriate rack fitted to this structure.");
         }
         var profile = StructureEquipmentCatalog.Require(catalog, module.TypeId);
         if (FittingCatalog.DefaultEffect(catalog, module.TypeId) != effect)
@@ -197,6 +217,10 @@ internal sealed partial class PilotStructureWeaponStore(
         {
             result = Neutralize(world, catalog, token, source, module, target, victim, fit, repeats, now);
         }
+        else if (effect == DogmaEffect.StructureStasisWebifier && profile.GroupId == StructureWeaponRules.WebifierGroup)
+        {
+            result = Web(world, catalog, token, source, module, target, victim, fit, repeats, now);
+        }
         else if (effect == DogmaEffect.UseMissiles && StructureWeaponRules.MissileLauncher(profile.GroupId))
         {
             result = Launch(world, catalog, token, source, module, target, profile, fit, repeats, stamp, now);
@@ -208,7 +232,7 @@ internal sealed partial class PilotStructureWeaponStore(
         long ready = result.Cycle.ReadyAt;
         cooldown ??= world.Add(new ModuleCooldown { ModuleId = moduleId }).Entity;
         cooldown.Kind = ModuleCooldownKind.Cycle;
-        cooldown.ReadyAt = ready;
+        cooldown.ReadyAt = Math.Max(ready, result.Cycle.ReactivationAt);
         StructureCombatTargets.Record(world, source.Id, targetId, now, ready);
         if (target.Kind == StructureTargetKind.Npc)
         {
@@ -237,6 +261,42 @@ internal sealed partial class PilotStructureWeaponStore(
         }
         return result;
     }
+
+    private IReadOnlyDictionary<DogmaAttributeId, double> TargetAttributes(
+        WorldAction world,
+        CatalogDbContext catalog,
+        StructureTarget target,
+        Pilot? victim,
+        long now
+    )
+    {
+        var profile = victim is null ? npcProfiles.Read(catalog, target.TypeId) : null;
+        var attributes = profile is not null
+            ? PlayerEwarStore.NpcAttributes(world, target.Id, profile.Attributes)
+            : PilotFittingStore.ShipAttributes(world, catalog, victim!);
+        if (
+            profile is not null
+                ? world.Set<WorldNpc>().Find(target.Id)!.StructureDamage >= profile.Defense.Structure
+                : PilotHealthStore.Read(world, target.Id, ShipHealth.DefenseFrom(attributes), now).Remaining.Destroyed
+                    || world.Set<ShipLoss>().Any(loss => loss.ShipId == target.Id)
+        )
+        {
+            throw new InvalidDataException("A destroyed target cannot receive hostile effects.");
+        }
+        if (attributes.GetValueOrDefault(DogmaAttributeId.DisallowOffensiveModifiers) != 0)
+        {
+            throw new InvalidDataException("This target is immune to offensive modifiers.");
+        }
+        return attributes;
+    }
+
+    private static double SurfaceDistance(CatalogDbContext catalog, SavedStructure source, StructureTarget target) =>
+        Math.Max(
+            0,
+            StructureCombatTargets.Position(source).DistanceTo(target.Position)
+                - StructureCatalog.Require(catalog, source.TypeId).Radius
+                - target.Radius
+        );
 
     private static StructureWeaponActivation Launch(
         WorldAction world,

@@ -13,8 +13,62 @@ Historical foundation limitations below describe their original milestones; this
 | Asset safety | Personal/corporate collection, timed delivery, paid recovery, native inventory and public loot | Implemented; validation below |
 | Incoming combat and loss | Paid weapons against structures, legal targeting, destruction settlement and automatic custody transitions | Implemented; validation below |
 | Tethering | Resident protection, native effects, access and timer checks, saved repair settlement | Implemented; validation below |
-| Defense | Combat fitting/control, supported defensive weapons and target updates | In progress; resident control, fitting, targeting, ammunition and defensive missiles and targeted energy neutralizers implemented; other EWAR, tackle and area defenses remain |
+| Defense | Combat fitting/control, supported defensive weapons and target updates | In progress; resident control, fitting, targeting, ammunition, defensive missiles, energy neutralizers and targeted stasis webifiers implemented. Other EWAR, warp tackle and area defenses remain |
 | Service completion | Remaining native structure profiles/access, economic/clone services, ownership and specialized structure consumers | Planned |
+
+### Standup stasis webifiers
+
+A gunner can slow a locked pilot ship or NPC with a fitted, online Standup Stasis Webifier. The module uses the structure's
+capacitor and green safety. The operator's Structure Electronic Systems skill reduces activation cost by 3% per level.
+Existing tackle rules apply the target's web resistance and combine incoming speed modifiers.
+
+| Standup variant | Base cost | Range from hull surfaces | Base speed reduction |
+| --- | ---: | ---: | ---: |
+| Stasis Webifier I (35943) | 3,000 GJ | 200 km | 70% |
+| Stasis Webifier II (47351) | 3,600 GJ | 300 km | 75% |
+
+Both have a 30-second active cycle followed by 60 seconds of reactivation delay. A queued repeat checks the target,
+range, safety and capacitor again when it can fire. A late callback starts at most one new cycle.
+The target regains speed when the web expires, even if the gunner's connection has not advanced.
+Releasing control ends the web. The next gunner inherits the cooldown. Restart clears active tackle and preserves
+the capacitor payment and reactivation deadline. Schema 190 allows a tackle row to reference its source ship or structure.
+
+Build 3662168 gives group 1441 default effect 6682 (`structureModuleEffectStasisWebifier`), graphic `effects.Laser`,
+and reactivation attribute 669. Skill effect 6400 applies the capacitor modifier to the fitted group. Inert reads of
+the signed client archive identified below found the structure webifier group in `moduleButtonTooltip.pyj`, the
+`webify` slot in `buffBarConst.pyj`, and EWAR start/end callbacks in `tactical.pyj`. The older EVE.js reference maps the
+same effect name to its web family in `space/modules/hostileModuleRuntime.js`
+(SHA-256 `db747aa99975012526f576e6042ba2c1c6d7d664c58cc50e0dc31fc5e550d93f`).
+[CCP Upwell 2.0 defense changes](https://www.eveonline.com/news/view/upwell-2.0-structures-changes-coming-on-february-13th),
+[UniWiki structure fitting](https://wiki.eveuniversity.org/Fitting_upwell_structures).
+
+**Automated validation**
+
+The focused tests exercise both range boundaries, rejected payments, NPC movement, delayed repeats, lease release,
+checkpoint reopen, and migration of an existing ship tackle row. Two simulated sessions exercise safety, the gunner's
+paid cooldown and skill-adjusted capacitor cost, the victim's speed and EWAR notifications, and observer beam start/stop.
+
+Initial development filtered `StructureWebifierTests.WebSlowsNpcForPaidCycleAndCooldownSurvivesRelease` and
+`StructureWebifierTests.NativeWebShowsGunnerAndVictimThePaidEffectAndRestoresSpeedAtExpiry` individually.
+The first migration-fixture run accessed the pilot's fit while the fixture still had the old schema. Capturing the pilot and
+ship IDs before installing the old schema corrected the fixture. The exact migration case then passed.
+
+The final filter joined `FullyQualifiedName~Eden.Protocol.Tests.` predicates with `|` for `Structures`,
+`Docking.StructureServiceTests`, `Propulsion.TackleTests`, `Propulsion.HicInterdictionTests`, `Thermal.MobilityHeatTests`,
+`Combat.CapacitorWarfare`, `Combat.ResidentFitTests`, `Combat.LiveSimulationTests`, `Combat.SessionPerformanceTests`,
+`Combat.AreaWeaponInteractionTests`, `Combat.CrimewatchTests`, `Persistence.WorldMigrationTests`,
+`Persistence.DetachedCheckpointTests` and `PilotSessions.TypedSessionTests`.
+All 563 affected .NET cases passed in 4m 55s. Root validation took 5m 37s including tool and solution restore, the
+zero-warning build, both Python policy suites (8 + 9), formatting (2,630 files), line width and diff checks.
+All 782 local link destinations in the three edited Markdown files exist.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer check**
+
+Fire a Standup web against a legal ship target and inspect its speed and EWAR icon as the gunner's cooldown begins.
 
 ### Standup energy neutralizers and structure capacitor
 

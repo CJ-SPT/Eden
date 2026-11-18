@@ -1,6 +1,7 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Propulsion;
 
 namespace Eden.Gameplay.Structures;
 
@@ -13,13 +14,19 @@ public sealed record StructureWeaponCycle(
     double DurationMilliseconds,
     int Repeats,
     bool Stopping = false,
-    DogmaEffect Effect = DogmaEffect.UseMissiles
-);
+    DogmaEffect Effect = DogmaEffect.UseMissiles,
+    long ReactivationAt = 0,
+    bool Waiting = false
+)
+{
+    public bool Active(long now) => ReactivationAt == 0 || !Waiting && ReadyAt > now;
+}
 
 public sealed record StructureWeaponActivation(
     StructureWeaponCycle Cycle,
     MissileLaunch? Launch,
-    CapacitorActivation? Neutralization = null
+    CapacitorActivation? Neutralization = null,
+    TackleActivation? Web = null
 );
 
 public sealed record StructureWeaponFrame(IReadOnlyList<StructureWeaponActivation> Started, IReadOnlyList<StructureWeaponCycle> Stopped);
@@ -44,6 +51,8 @@ public static class StructureWeaponRules
     // Build 3662168: Standup anticapital and multirole launchers use the standard useMissiles effect.
     public const int AnticapitalLauncherGroup = 1327;
     public const int MultiroleLauncherGroup = 1562;
+    public const int WebifierGroup = 1441;
+    public const int ElectronicSystemsSkill = 37798;
     public const int NeutralizerGroup = 1329;
     public const int EngineeringSystemsSkill = 37799;
     public const int MissileSystemsSkill = 37796;

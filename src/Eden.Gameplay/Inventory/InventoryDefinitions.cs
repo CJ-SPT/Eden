@@ -174,6 +174,7 @@ public enum DogmaEffect
     AssaultDamageControl = 7012,
     EnergyNeutralizer = 6187,
     StructureEnergyNeutralizer = 6216,
+    StructureStasisWebifier = 6682,
     EnergyNosferatu = 6197,
     ShieldBoosting = 4,
     AncillaryShieldBoosting = 4936,

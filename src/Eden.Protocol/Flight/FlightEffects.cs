@@ -133,6 +133,8 @@ internal sealed class FlightEffects(Action<DestinyCommand> emit)
             )
         );
 
+    internal void StructureBeam(Eden.Protocol.Structures.StructureBeam beam, bool active) => emit(beam.Command(active));
+
     internal void CapacitorEffect(CapacitorCycle effect, bool active) => emit(CapacitorWire.Graphic(effect, active));
 
     internal void ElectronicWarfareEffect(long shipId, ElectronicWarfareSpaceContact effect, bool active) =>

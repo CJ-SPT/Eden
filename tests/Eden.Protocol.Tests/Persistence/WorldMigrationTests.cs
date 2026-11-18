@@ -1,3 +1,4 @@
+using Eden.Data.World.Propulsion;
 using Eden.Data.World.Structures;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
@@ -11,6 +12,49 @@ namespace Eden.Protocol.Tests.Persistence;
 
 public sealed class WorldMigrationTests
 {
+    [Fact]
+    public void Version189TackleUpgradePreservesShipSourceAndRevisionTriggers()
+    {
+        using StructureTests.Fixture fixture = new();
+        long ship = fixture.ShipId;
+        long pilot = fixture.PilotId;
+        long module = fixture.Item(35943);
+        using WorldDbContext world = new(fixture.Db.Path);
+        world.Database.ExecuteSqlRaw(
+            """
+            DROP TABLE WorldTackle;
+            CREATE TABLE WorldTackle(
+                ModuleId INTEGER PRIMARY KEY REFERENCES WorldItem(Id), PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id),
+                SourceShipId INTEGER NOT NULL REFERENCES WorldShip(Id), TypeId INTEGER NOT NULL, SystemId INTEGER NOT NULL,
+                TargetId INTEGER NOT NULL, TargetKind INTEGER NOT NULL, Effect INTEGER NOT NULL, DurationMilliseconds REAL NOT NULL,
+                CapacitorNeed REAL NOT NULL, Range REAL NOT NULL, Strength REAL NOT NULL, WebPercent REAL NOT NULL,
+                MwdBlock REAL NOT NULL, StartedAt INTEGER NOT NULL, ExpiresAt INTEGER NOT NULL);
+            PRAGMA user_version=189;
+            """
+        );
+        ResidentFitSchema.Create(world);
+        world.Database.ExecuteSql(
+            $"""
+            INSERT INTO WorldTackle VALUES({module},{pilot},{ship},526,30001392,{ship},0,6426,
+                10000,5,10000,0,-50,0,100,200)
+            """
+        );
+        using Eden.World.Catalog.CatalogDbContext catalog = new(new WorldDatabase(fixture.Db.Path).CatalogPath);
+        WorldMigration.Open(world, catalog, fixture.Clock);
+        var upgraded = world.Set<WorldTackle>().Single();
+        Assert.Equal(fixture.ShipId, upgraded.SourceShipId);
+        Assert.Null(upgraded.SourceStructureId);
+        Assert.Equal(-50, upgraded.WebPercent);
+        Assert.Equal(200, upgraded.ExpiresAt);
+        Assert.True(
+            world
+                .Database.SqlQueryRaw<int>(
+                    "SELECT COUNT(*) AS Value FROM sqlite_schema WHERE tbl_name='WorldTackle' AND name LIKE 'Fit_WorldTackle_%'"
+                )
+                .Single() > 0
+        );
+    }
+
     [Fact]
     public void Version187StructureBattleUpgradePreservesDamageAndSavedDeadlines()
     {

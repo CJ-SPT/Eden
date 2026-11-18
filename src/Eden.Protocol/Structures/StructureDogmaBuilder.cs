@@ -94,11 +94,17 @@ internal sealed class StructureDogmaBuilder(
         var attributes = (structure.Fitting?.Equipment.GetValueOrDefault(module.Id) ?? fitting.Attributes(module.TypeId)).ToDictionary();
         attributes[DogmaAttributeId.IsOnline] = module.Online ? 1d : 0d;
         if (
-            module.GroupId == StructureWeaponRules.NeutralizerGroup
+            module.GroupId is StructureWeaponRules.NeutralizerGroup or StructureWeaponRules.WebifierGroup
             && attributes.TryGetValue(DogmaAttributeId.CapacitorNeed, out double cost)
         )
         {
-            attributes[DogmaAttributeId.CapacitorNeed] = cost * structure.EngineeringCostMultiplier;
+            attributes[DogmaAttributeId.CapacitorNeed] =
+                cost
+                * (
+                    module.GroupId == StructureWeaponRules.WebifierGroup
+                        ? structure.ElectronicCostMultiplier
+                        : structure.EngineeringCostMultiplier
+                );
         }
         attributes[DogmaAttributeId.NextActivationTime] =
             structure.Equipment.SingleOrDefault(item => item.ItemId == module.Id)?.ReadyAt

@@ -13,6 +13,7 @@ five-/twenty-day delivery, paid personal/corporate recovery and public structure
 
 [Resident defensive missiles](protocol/structures.md#resident-defensive-missile-firing) records paid structure launches,
 lease-owned repeat cycles, physical impacts, green safety and saved retaliation rights.
+[Standup stasis webifiers](protocol/structures.md#standup-stasis-webifiers) covers target speed, active duration and reactivation.
 [Standup energy neutralizers](protocol/structures.md#standup-energy-neutralizers-and-structure-capacitor) covers structure capacitor, target draining and gunner skill.
 [Defensive missiles against drones](protocol/structures.md#defensive-missiles-against-drones) covers controller rights,
 drone damage, and missile behavior on recall and relaunch.

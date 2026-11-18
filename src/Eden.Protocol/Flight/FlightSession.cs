@@ -743,17 +743,13 @@ internal sealed partial class FlightSession(
         PublishContact();
     }
 
-    internal bool SeesStructureEffect(CapacitorCycle cycle) =>
+    internal bool SeesStructureEffect(long sourceId, long targetId) =>
         SceneContext.Position is { } observer
-        && LocalObject(cycle.SourceShipId) is { } source
+        && LocalObject(sourceId) is { } source
         && observer.DistanceTo(source.Position) <= NpcEncounterDefinitions.VisibilityRange
-        && (
-            cycle.TargetId == Pilot.ShipId
-            || VisiblePeers.Any(p => p.Pilot.ShipId == cycle.TargetId)
-            || VisibleNpcs.Any(n => n.Id == cycle.TargetId)
-        );
+        && (targetId == Pilot.ShipId || VisiblePeers.Any(p => p.Pilot.ShipId == targetId) || VisibleNpcs.Any(n => n.Id == targetId));
 
-    internal void StructureCapacitorEffect(CapacitorCycle effect, bool active) => Effects.CapacitorEffect(effect, active);
+    internal void StructureBeamEffect(Eden.Protocol.Structures.StructureBeam beam, bool active) => Effects.StructureBeam(beam, active);
 
     public void SetCapacitorEffect(CapacitorCycle effect, bool active)
     {

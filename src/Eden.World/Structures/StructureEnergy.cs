@@ -11,12 +11,10 @@ namespace Eden.World.Structures;
 
 internal static class StructureEnergy
 {
-    internal static double EngineeringMultiplier(WorldAction world, CatalogDbContext catalog, long pilot)
+    internal static double CostMultiplier(WorldAction world, CatalogDbContext catalog, long pilot, int skill)
     {
-        int level = PilotSkillReader.Level(world, catalog, pilot, StructureWeaponRules.EngineeringSystemsSkill);
-        double bonus = catalog
-            .FittingAttributes(StructureWeaponRules.EngineeringSystemsSkill)
-            .GetValueOrDefault(DogmaAttributeId.CapacitorNeedBonus);
+        int level = PilotSkillReader.Level(world, catalog, pilot, skill);
+        double bonus = catalog.FittingAttributes(skill).GetValueOrDefault(DogmaAttributeId.CapacitorNeedBonus);
         return StructureWeaponRules.CapacitorCostMultiplier(level, bonus);
     }
 

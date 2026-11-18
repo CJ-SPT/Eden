@@ -169,6 +169,7 @@ public sealed record StructureSnapshot(
 {
     public IReadOnlyList<StructureModule> Equipment { get; init; } = [];
     public double? Capacitor { get; init; }
+    public double ElectronicCostMultiplier { get; init; } = 1;
     public double EngineeringCostMultiplier { get; init; } = 1;
     public StructureFittingState? Fitting { get; init; }
     public IReadOnlyList<StructureWeaponCycle> Weapons { get; init; } = [];

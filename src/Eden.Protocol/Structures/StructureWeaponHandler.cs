@@ -12,20 +12,27 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Structures;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class StructureWeaponHandler(IPilotStructureWeapons weapons, TimeProvider clock, CapacitorSignal capacitor) : IDisposable
+internal sealed class StructureWeaponHandler(
+    IPilotStructureWeapons weapons,
+    TimeProvider clock,
+    CapacitorSignal capacitor,
+    StructureWeaponEffects beams
+) : IDisposable
 {
     private StructureControlToken? _token;
     private readonly Dictionary<long, StructureWeaponCycle> _observed = [];
 
     private readonly Dictionary<long, CapacitorCycle> _neutralizers = [];
-    private Dictionary<long, CapacitorCycle> _visibleNeutralizers = [];
-    private Dictionary<long, CapacitorCycle> _nextVisible = [];
+    private readonly Dictionary<long, StructureBeam> _beams = [];
+    private Dictionary<long, StructureBeam> _visible = [];
+    private Dictionary<long, StructureBeam> _nextVisible = [];
     private int _sourceSystem;
 
     internal static DogmaEffect? Effect(string name) =>
         name switch
         {
             MissileHandler.EffectName => DogmaEffect.UseMissiles,
+            "structureModuleEffectStasisWebifier" => DogmaEffect.StructureStasisWebifier,
             "structureEnergyNeutralizerFalloff" => DogmaEffect.StructureEnergyNeutralizer,
             _ => null,
         };
@@ -47,8 +54,12 @@ internal sealed class StructureWeaponHandler(IPilotStructureWeapons weapons, Tim
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         if (!active && _neutralizers.Remove(cycle.ModuleId, out var ended))
         {
-            capacitor.Structure(_sourceSystem, ended, false);
-            context.Flight.StructureCapacitorEffect(ended, false);
+            capacitor.Set(ended, false);
+        }
+        if (!active && _beams.Remove(cycle.ModuleId, out var beam))
+        {
+            beams.Set(_sourceSystem, beam, false);
+            context.Flight.StructureBeamEffect(beam, false);
         }
         context.Notifications.Add(new ShipEffectChanged(Effect(token, cycle), now, active, active, active ? null : now));
     }
@@ -68,7 +79,7 @@ internal sealed class StructureWeaponHandler(IPilotStructureWeapons weapons, Tim
             _observed.Clear();
             _token = token;
         }
-        RefreshNeutralizerGraphics(context);
+        RefreshBeams(context);
         if (token is null)
         {
             return;
@@ -92,42 +103,46 @@ internal sealed class StructureWeaponHandler(IPilotStructureWeapons weapons, Tim
         }
     }
 
-    private void RefreshNeutralizerGraphics(PilotCallContext context)
+    private void RefreshBeams(PilotCallContext context)
     {
-        var active = capacitor.Structures(context.Pilot.SystemId);
-        if (active.Count == 0 && _visibleNeutralizers.Count == 0)
+        var active = beams.Read(context.Pilot.SystemId);
+        if (active.Count == 0 && _visible.Count == 0)
         {
             return;
         }
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         _nextVisible.Clear();
-        foreach (var cycle in active)
+        foreach (var beam in active)
         {
-            if (cycle.ExpiresAt > now && cycle.SourceShipId != context.ControlledStructureId && context.Flight.SeesStructureEffect(cycle))
+            if (
+                beam.Cycle.ReadyAt > now
+                && beam.SourceId != context.ControlledStructureId
+                && context.Flight.SeesStructureEffect(beam.SourceId, beam.Cycle.TargetId)
+            )
             {
-                _nextVisible.Add(cycle.Module.ItemId, cycle);
+                _nextVisible.Add(beam.Cycle.ModuleId, beam);
             }
         }
-        foreach (var old in _visibleNeutralizers.Values)
+        foreach (var old in _visible.Values)
         {
-            if (_nextVisible.GetValueOrDefault(old.Module.ItemId) != old)
+            if (_nextVisible.GetValueOrDefault(old.Cycle.ModuleId) != old)
             {
-                context.Flight.StructureCapacitorEffect(old, false);
+                context.Flight.StructureBeamEffect(old, false);
             }
         }
-        foreach (var cycle in _nextVisible.Values)
+        foreach (var beam in _nextVisible.Values)
         {
-            if (_visibleNeutralizers.GetValueOrDefault(cycle.Module.ItemId) != cycle)
+            if (_visible.GetValueOrDefault(beam.Cycle.ModuleId) != beam)
             {
-                context.Flight.StructureCapacitorEffect(cycle, true);
+                context.Flight.StructureBeamEffect(beam, true);
             }
         }
-        (_visibleNeutralizers, _nextVisible) = (_nextVisible, _visibleNeutralizers);
+        (_visible, _nextVisible) = (_nextVisible, _visible);
     }
 
     private void Started(PilotCallContext context, StructureControlToken token, StructureWeaponActivation result)
     {
-        if (result.Launch is null && result.Neutralization is null)
+        if (result.Launch is null && result.Neutralization is null && result.Web is null)
         {
             return;
         }
@@ -138,12 +153,32 @@ internal sealed class StructureWeaponHandler(IPilotStructureWeapons weapons, Tim
             MagazineWire.NotifyState(context, launch.Magazine, result.Cycle.StartedAt);
             context.Flight.RefreshMissiles();
         }
+        if (result.Cycle.ReactivationAt > 0)
+        {
+            context.Notifications.Add(
+                new ModuleAttributesChanged([
+                    new(
+                        token.PilotId,
+                        new DogmaItemKey.Item(result.Cycle.ModuleId),
+                        DogmaAttributeId.NextActivationTime,
+                        result.Cycle.StartedAt,
+                        result.Cycle.ReactivationAt
+                    ),
+                ])
+            );
+        }
         if (result.Neutralization is { } drain)
         {
             _neutralizers[result.Cycle.ModuleId] = drain.Cycle;
+            capacitor.Set(drain.Cycle, true);
+        }
+        if ((result.Web?.Capacitor ?? result.Neutralization?.Capacitor) is double charge)
+        {
             _sourceSystem = context.Pilot.SystemId;
-            capacitor.Structure(_sourceSystem, drain.Cycle, true);
-            context.Flight.StructureCapacitorEffect(drain.Cycle, true);
+            var beam = new StructureBeam(token.StructureId, result.Cycle);
+            _beams[result.Cycle.ModuleId] = beam;
+            beams.Set(_sourceSystem, beam, true);
+            context.Flight.StructureBeamEffect(beam, true);
             context.Notifications.Add(
                 new ModuleAttributesChanged([
                     new(
@@ -151,7 +186,7 @@ internal sealed class StructureWeaponHandler(IPilotStructureWeapons weapons, Tim
                         new DogmaItemKey.Item(token.StructureId),
                         DogmaAttributeId.CapacitorCharge,
                         result.Cycle.StartedAt,
-                        drain.Capacitor
+                        charge
                     ),
                 ])
             );
@@ -200,8 +235,13 @@ internal sealed class StructureWeaponHandler(IPilotStructureWeapons weapons, Tim
     {
         foreach (var cycle in _neutralizers.Values)
         {
-            capacitor.Structure(_sourceSystem, cycle, false);
+            capacitor.Set(cycle, false);
         }
+        foreach (var beam in _beams.Values)
+        {
+            beams.Set(_sourceSystem, beam, false);
+        }
+        _beams.Clear();
         _neutralizers.Clear();
     }
 }

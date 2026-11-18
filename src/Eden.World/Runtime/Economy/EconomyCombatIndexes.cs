@@ -46,6 +46,7 @@ internal sealed partial class ResidentEconomy
         _tackleTargets.Clear();
         _playerEwarTargets.Clear();
         _areaContactEnds.Clear();
+        _structureWebEnds.Clear();
         _effectRevision = 0;
         _tackleRows = 0;
         _playerEwarRows = 0;
@@ -278,6 +279,14 @@ internal sealed partial class ResidentEconomy
         {
             return;
         }
+        if (before?.SourceStructureId is not null)
+        {
+            _structureWebEnds.Remove((before.ExpiresAt, before.ModuleId, before.SystemId));
+        }
+        if (after?.SourceStructureId is not null)
+        {
+            _structureWebEnds.Add((after.ExpiresAt, after.ModuleId, after.SystemId));
+        }
         if (before is null)
         {
             Interlocked.Increment(ref _tackleRows);
@@ -307,6 +316,17 @@ internal sealed partial class ResidentEconomy
             Target(after.TargetId);
         }
     }
+
+    private readonly SortedSet<(long End, long Module, int System)> _structureWebEnds = [];
+
+    internal long[] DueStructureWebs(int? system, long now) =>
+        _structureWebEnds.Count == 0 || _structureWebEnds.Min.End > now
+            ? []
+            : _structureWebEnds
+                .TakeWhile(row => row.End <= now)
+                .Where(row => system is null || row.System == system)
+                .Select(row => row.Module)
+                .ToArray();
 
     private readonly SortedSet<(long End, long Module, long Target, int System)> _areaContactEnds = [];
 

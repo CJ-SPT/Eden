@@ -17,7 +17,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 189;
+    internal const int CurrentVersion = 190;
 
     public static void Open(
         WorldDbContext world,
@@ -67,6 +67,10 @@ internal static class WorldMigration
         Eden.World.Exploration.CombatAnomalySchema.Upgrade(world);
         InventoryLookupSchema.Upgrade(world);
         Eden.World.Structures.StructureSchema.Upgrade(world);
+        if (version < 190)
+        {
+            Eden.World.Propulsion.StructureTackleSchema.Upgrade(world);
+        }
         SavedWorldValidation.ReconcileAndCheck(world, catalog);
         WorldVersions69To84.Apply(world, version);
         transaction.Commit();

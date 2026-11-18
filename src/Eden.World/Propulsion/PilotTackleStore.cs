@@ -275,30 +275,38 @@ internal sealed partial class PilotTackleStore(WorldDatabase database, TimeProvi
             // renews the paid row or stops it. Another connection must not
             // expire that row before the owner has made its repeat decision.
             bool droneEffect = item is not null && catalog.FittingType(item.TypeId)?.CategoryId == (int)InventoryCategory.Drone;
-            bool valid =
-                source.ActiveShipId == row.SourceShipId
-                && source.ActiveShip.Position is not null
-                && System(catalog, source.ActiveShip) == row.SystemId
-                && (
-                    droneEffect
-                        ? Eden.World.Drones.PilotDroneStore.ActiveEffect(
-                            world,
-                            row.ModuleId,
-                            row.SourceShipId,
-                            row.TargetId,
-                            row.SystemId,
-                            row.ExpiresAt,
-                            now
-                        )
-                        : item is { Online: true }
-                            && item.OwnerId == row.PilotId
-                            && item.LocationId == row.SourceShipId
-                            && (
-                                InventoryDefinitions.IsMediumSlot(item.FlagId)
-                                || InterdictionRules.Focused(row.Effect) && InventoryDefinitions.IsHighSlot(item.FlagId)
+            bool valid = row.SourceStructureId is long structure
+                ? row.ExpiresAt > now
+                    && world.TargetLocks?.Contains(structure, row.TargetId) == true
+                    && world.Set<Eden.Data.World.Structures.SavedStructure>().Find(structure) is { } deployed
+                    && Eden.Gameplay.Structures.StructureTargetingRules.Active(deployed.HasCore, deployed.State)
+                    && item is { Online: true }
+                    && item.LocationId == structure
+                    && item.OwnerId == deployed.CorporationId
+                : row.SourceShipId is long sourceShip
+                    && source.ActiveShipId == sourceShip
+                    && source.ActiveShip.Position is not null
+                    && System(catalog, source.ActiveShip) == row.SystemId
+                    && (
+                        droneEffect
+                            ? Eden.World.Drones.PilotDroneStore.ActiveEffect(
+                                world,
+                                row.ModuleId,
+                                sourceShip,
+                                row.TargetId,
+                                row.SystemId,
+                                row.ExpiresAt,
+                                now
                             )
-                )
-                && !world.Set<ShipLoss>().Any(l => l.ShipId == row.SourceShipId);
+                            : item is { Online: true }
+                                && item.OwnerId == row.PilotId
+                                && item.LocationId == row.SourceShipId
+                                && (
+                                    InventoryDefinitions.IsMediumSlot(item.FlagId)
+                                    || InterdictionRules.Focused(row.Effect) && InventoryDefinitions.IsHighSlot(item.FlagId)
+                                )
+                    )
+                    && !world.Set<ShipLoss>().Any(l => l.ShipId == row.SourceShipId);
             if (valid && row.TargetKind == TackleTargetKind.Npc)
             {
                 valid = world
@@ -438,13 +446,10 @@ internal sealed partial class PilotTackleStore(WorldDatabase database, TimeProvi
 
     private static void Remove(WorldAction world, WorldTackle row, long now)
     {
-        ShipHeatPersistence.CancelSource(
-            world,
-            row.PilotId,
-            row.SourceShipId,
-            new HeatCycleKey(row.ModuleId, row.StartedAt, row.ExpiresAt),
-            now
-        );
+        if (row.SourceShipId is long ship)
+        {
+            ShipHeatPersistence.CancelSource(world, row.PilotId, ship, new HeatCycleKey(row.ModuleId, row.StartedAt, row.ExpiresAt), now);
+        }
         world.Remove(row);
     }
 

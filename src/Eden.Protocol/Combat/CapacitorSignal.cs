@@ -8,7 +8,6 @@ namespace Eden.Protocol.Combat;
 internal sealed class CapacitorSignal : ICapacitorEvents
 {
     private readonly Dictionary<long, CapacitorCycle[]> _incoming = [];
-    private readonly Dictionary<int, CapacitorCycle[]> _structures = [];
     internal event Action<CapacitorChanged>? Changed;
 
     public void Publish(CapacitorChanged change) => Changed?.Invoke(change);
@@ -22,26 +21,6 @@ internal sealed class CapacitorSignal : ICapacitorEvents
         lock (_incoming)
         {
             Set(_incoming, cycle.TargetId, cycle, active);
-        }
-    }
-
-    internal void Structure(int system, CapacitorCycle cycle, bool active)
-    {
-        lock (_incoming)
-        {
-            Set(_structures, system, cycle, active);
-            if (cycle.TargetKind == TackleTargetKind.Ship)
-            {
-                Set(_incoming, cycle.TargetId, cycle, active);
-            }
-        }
-    }
-
-    internal IReadOnlyList<CapacitorCycle> Structures(int system)
-    {
-        lock (_incoming)
-        {
-            return _structures.GetValueOrDefault(system) ?? Array.Empty<CapacitorCycle>();
         }
     }
 
