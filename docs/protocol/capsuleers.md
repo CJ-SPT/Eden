@@ -2748,3 +2748,44 @@ Not performed. Agent client testing is disabled.
 ### Optional maintainer checks
 
 None.
+
+## Offscreen bot residency
+
+Registration keeps a pilot's role, home community, ship, location and job. Waiting pilots allocate their role worker
+when the scheduler prepares or runs a job or when an observation needs it. Pausing releases the worker and retains
+the committed checkpoint and pause clock. A failed job likewise releases the worker and retries from resident state.
+
+The resident owner tracks bot membership by system for transaction projection. Registration can update that index
+without creating the system's flight, combat and observer state. A gate transfer moves membership to the next system
+when its location commits.
+
+### Automated validation
+
+A matched Release login replay used the same copied save with a 0.5 traffic multiplier. The first scheduler turn
+retained 1,174.0 MiB on the control and 1,109.3 MiB with lazy role workers and compact membership, after collection.
+It created flight or combat state for 2,714 systems on the control and 25 with the change. Both runs left 7 scheduled
+pilots and 3,697 waiting starts with the same completed-action count. Working set varied between the two runs.
+The paced-start regression bounds retained workers while offscreen jobs are waiting and observes their promotion
+on system entry.
+
+The initial affected run passed 163 of 175 cases. The unchanged `f254c044` baseline reproduced all twelve failures.
+Nine transaction participant cases counted four SQL commands against a budget of two. Two one-observer presentation
+cases exceeded their 6 MiB allocation ceiling with zero observation reads. The retry test had kept a presence lease
+alive past host disposal. Releasing the lease before the final flush and restart corrected the fixture, and the
+exact method passed. The final filter excludes the two methods with pre-existing budget failures. The third
+presentation case passed in the original run.
+
+The solution build passed with zero warnings. The final filter passed 163 cases in 105 seconds. Both Python
+policy suites and formatting verification passed.
+
+```text
+(FullyQualifiedName~CapsuleerGlobalPopulationTests|FullyQualifiedName~CapsuleerBackgroundPreparationTests|FullyQualifiedName~OccupiedCapsuleerSimulationTests|FullyQualifiedName~CapsuleerHandoffTests|FullyQualifiedName~ResidentPopulationTests|FullyQualifiedName~CapsuleerTrafficPerformanceTests|FullyQualifiedName~CapsuleerSchedulingTests|FullyQualifiedName~CapsuleerRuntimeTests|FullyQualifiedName~CapsuleerMaintenanceTests|FullyQualifiedName~CapsuleerPresentationTests|FullyQualifiedName~CapsuleerFailureTests|FullyQualifiedName~CapsuleerInboundRuntimeTests|FullyQualifiedName~CapsuleerLockOrderTests|FullyQualifiedName~RoamingGangTests|FullyQualifiedName~RegionalConflictWorldTests|FullyQualifiedName~ResidentBotEconomyTests|FullyQualifiedName~TransactionParticipantTests|FullyQualifiedName~DetachedCheckpointTests)&FullyQualifiedName!~ClassifiedProjectionDoesNotGrowWithRemotePopulationOrObserverCount&FullyQualifiedName!~UnchangedPresentationSharesObservationsAcrossAdvancingFrames
+```
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.

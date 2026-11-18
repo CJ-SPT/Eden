@@ -185,9 +185,12 @@ internal sealed partial class LiveWorld
                 pilots.Add(pilot);
             }
         }
-        foreach (var entry in _systems.Existing(participants.Systems))
+        foreach (int system in participants.Systems)
         {
-            pilots.UnionWith(entry.State.Capsuleers);
+            if (_capsuleersBySystem.TryGetValue(system, out var capsuleers))
+            {
+                pilots.UnionWith(capsuleers);
+            }
         }
         return pilots;
     }
@@ -255,39 +258,28 @@ internal sealed partial class LiveWorld
     internal int? CurrentSystem => _currentSystem.Value;
     private LiveSystemState Current => CurrentSystem is int system ? _systems.Get(system).State : _shared;
 
-    internal void AssignCapsuleer(
-        long pilot,
-        int? previous,
-        int system,
-        Eden.World.Capsuleers.CapsuleerMiner? miner,
-        Eden.World.Capsuleers.CapsuleerHauler? hauler
-    )
+    private readonly Dictionary<int, HashSet<long>> _capsuleersBySystem = [];
+
+    internal void TrackCapsuleer(long pilot, int? previous, int system)
     {
         if (!_ownershipMonitor.IsEntered)
         {
-            throw new InvalidOperationException("Moving a capsuleer runtime requires persistence coordination.");
+            throw new InvalidOperationException("Moving a capsuleer requires persistence coordination.");
         }
-        if (previous is int old && old != system)
+        if (previous is int old && old != system && _capsuleersBySystem.TryGetValue(old, out var prior))
         {
-            var prior = _systems.Get(old);
-            using var ownership = prior.Enter("capsuleer departure");
-            prior.State.Capsuleers.Remove(pilot);
-            prior.State.Miners.Remove(pilot);
-            prior.State.Haulers.Remove(pilot);
+            prior.Remove(pilot);
+            if (prior.Count == 0)
+            {
+                _capsuleersBySystem.Remove(old);
+            }
         }
-        var entry = _systems.Get(system);
-        using var arrival = entry.Enter("capsuleer admission");
-        entry.State.Capsuleers.Add(pilot);
-        entry.State.Miners.Remove(pilot);
-        entry.State.Haulers.Remove(pilot);
-        if (miner is not null)
+        if (!_capsuleersBySystem.TryGetValue(system, out var capsuleers))
         {
-            entry.State.Miners[pilot] = miner;
+            capsuleers = [];
+            _capsuleersBySystem.Add(system, capsuleers);
         }
-        if (hauler is not null)
-        {
-            entry.State.Haulers[pilot] = hauler;
-        }
+        capsuleers.Add(pilot);
     }
 
     internal IDisposable UseSystem(int system)

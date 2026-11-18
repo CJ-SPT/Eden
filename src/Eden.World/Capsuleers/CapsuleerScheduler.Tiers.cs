@@ -54,13 +54,12 @@ internal sealed partial class CapsuleerScheduler
         {
             _resuming[pilot] = elapsedTicks;
         }
-        Live?.AssignCapsuleer(pilot, null, _locations[pilot], _miners.GetValueOrDefault(pilot), _haulers.GetValueOrDefault(pilot));
         _queue.Publish(ScheduledJob(pilot));
     }
 
     private bool CanRunUnobserved(long pilot)
     {
-        if (!_haulers.ContainsKey(pilot))
+        if (_registrations.GetValueOrDefault(pilot).Career != CapsuleerCareer.Hauling)
         {
             return false;
         }
@@ -72,6 +71,40 @@ internal sealed partial class CapsuleerScheduler
     }
 
     private static bool LocalSortie(HaulerProgress? work) => work?.Ratting is { Patrol: null };
+
+    private CapsuleerMiner? MinerWorker(long pilot)
+    {
+        if (_registrations.GetValueOrDefault(pilot).Career != CapsuleerCareer.Mining)
+        {
+            return null;
+        }
+        if (!_miners.TryGetValue(pilot, out var worker))
+        {
+            worker = miners.Create(pilot);
+            _miners.Add(pilot, worker);
+        }
+        return worker;
+    }
+
+    private CapsuleerHauler? HaulerWorker(long pilot)
+    {
+        if (_registrations.GetValueOrDefault(pilot).Career != CapsuleerCareer.Hauling)
+        {
+            return null;
+        }
+        if (!_haulers.TryGetValue(pilot, out var worker))
+        {
+            worker = haulers.Create(pilot);
+            _haulers.Add(pilot, worker);
+        }
+        return worker;
+    }
+
+    private void ReleaseWorker(long pilot)
+    {
+        _miners.Remove(pilot);
+        _haulers.Remove(pilot);
+    }
 
     private void SettleReadySystems(HumanActivitySnapshot activity)
     {

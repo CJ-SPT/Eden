@@ -63,8 +63,8 @@ internal sealed partial class CapsuleerScheduler
     private PreparationInput CapturePreparation(WorldAction world, CapsuleerJob job, IReadOnlyList<int> occupied)
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var resident =
-            _haulers.GetValueOrDefault(job.PilotId)?.PreparationPilot ?? _miners.GetValueOrDefault(job.PilotId)?.PreparationPilot;
+        var hauler = HaulerWorker(job.PilotId);
+        var resident = hauler?.PreparationPilot ?? _miners.GetValueOrDefault(job.PilotId)?.PreparationPilot;
         long shipId;
         int stationId;
         if (resident is not null)
@@ -103,7 +103,7 @@ internal sealed partial class CapsuleerScheduler
             job,
             system,
             stationId,
-            _communities.GetValueOrDefault(job.PilotId, system),
+            _registrations[job.PilotId].Community,
             shipId,
             Live?.PreparationRevision ?? 0,
             Live?.TrafficGeometry.Revision ?? 0,
@@ -111,7 +111,7 @@ internal sealed partial class CapsuleerScheduler
             Array.AsReadOnly(systems.Order().ToArray()),
             Array.AsReadOnly(missing),
             Array.AsReadOnly(geometry),
-            _haulers.GetValueOrDefault(job.PilotId)?.CaptureJourney(world, job),
+            hauler?.CaptureJourney(world, job),
             job.Action == CapsuleerAction.Trade && stationId != 0
                 ? TrafficTemplatePreparation.Capture(
                     database,
@@ -119,8 +119,8 @@ internal sealed partial class CapsuleerScheduler
                     catalog,
                     job.PilotId,
                     shipId,
-                    _communities.GetValueOrDefault(job.PilotId, system),
-                    _haulers.GetValueOrDefault(job.PilotId)?.PreparationRoute
+                    _registrations[job.PilotId].Community,
+                    hauler?.PreparationRoute
                 )
                 : null
         );

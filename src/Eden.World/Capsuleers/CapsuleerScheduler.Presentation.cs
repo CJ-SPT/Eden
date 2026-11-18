@@ -50,12 +50,12 @@ internal sealed partial class CapsuleerScheduler
             {
                 continue;
             }
-            if (_miners.TryGetValue(pilot, out var miner))
+            if (MinerWorker(pilot) is { } miner)
             {
                 PresentationReads++;
                 mining.Add(miner.Read()!);
             }
-            if (_haulers.TryGetValue(pilot, out var hauler))
+            if (HaulerWorker(pilot) is { } hauler)
             {
                 PresentationReads++;
                 hauling.Add(hauler.Read()!);

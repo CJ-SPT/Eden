@@ -334,6 +334,7 @@ public sealed class CapsuleerGlobalPopulationTests
         var savedJobs = scheduler.Jobs().ToDictionary(job => job.PilotId);
         int waiting = scheduler.Read().WaitingBackgroundStarts;
         Assert.True(waiting >= remote.Length);
+        Assert.InRange(scheduler.RetainedRoleWorkers, 0, scheduler.Read().ScheduledAgents);
 
         Assert.Equal(1, scheduler.Run(0, maximumActions: 1).Turn.Completed);
         Assert.Equal(waiting, scheduler.Read().WaitingBackgroundStarts);

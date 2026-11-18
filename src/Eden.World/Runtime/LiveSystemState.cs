@@ -1,4 +1,3 @@
-using Eden.World.Capsuleers;
 using Eden.World.Runtime.Combat;
 using Eden.World.Storage;
 
@@ -16,9 +15,6 @@ internal sealed class LiveSystemState
     internal LiveTimedModules TimedModules { get; }
     internal bool Expiring { get; set; }
     internal bool SimulationEntered { get; set; }
-    internal HashSet<long> Capsuleers { get; } = [];
-    internal Dictionary<long, CapsuleerMiner> Miners { get; } = [];
-    internal Dictionary<long, CapsuleerHauler> Haulers { get; } = [];
 
     internal LiveSystemState(
         LiveWorld owner,
