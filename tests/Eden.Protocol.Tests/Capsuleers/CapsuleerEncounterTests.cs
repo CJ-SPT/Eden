@@ -201,7 +201,7 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public async Task EntrySharesMiningAndTrafficAndBothPauseOffscreen()
+    public async Task EntrySharesMiningAndTrafficAndOnlyMiningPausesOffscreen()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
         new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(Source);
@@ -232,7 +232,9 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
             f.Clock.Seconds++;
             worker.Tick();
         }
-        Assert.Equal(before, scheduler.Jobs());
+        Assert.Contains(before.Single(job => job.PilotId == miner), scheduler.Jobs());
+        var initialTraveler = before.Single(job => job.PilotId != miner);
+        Assert.True(scheduler.Jobs().Single(job => job.PilotId == initialTraveler.PilotId).Sequence > initialTraveler.Sequence);
         int calls = 0;
         await host.GetRequiredService<ICapsuleerHandoff>().SynchronizeAsync(Source, () => calls++);
         Assert.Equal(1, calls);
@@ -299,7 +301,8 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
         Assert.Equal(ship, encountered.Pilot.ShipId);
         Assert.Equal(30000142, encountered.Pilot.SystemId);
         Assert.Equal(HaulerActivity.Flying, encountered.Work.Activity);
-        Assert.NotNull(encountered.Work.Navigation.WarpDestination);
+        Assert.Equal(60003760, encountered.Work.TargetId);
+        Assert.True(encountered.Work.WarpReadyAt > encountered.Work.ActiveTicks || encountered.Work.Navigation.WarpDestination is not null);
         using WorldDbContext saved = new(f.Database.Path);
         Assert.Equal(
             encountered.Work.Freight!.Stacks.Sum(i => i.Quantity),
@@ -309,7 +312,7 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public void PendingGateTransferWaitsForItsSourceAndPausesInAnEmptyDestination()
+    public void PendingGateTransferWaitsForHumanActivityThenContinuesThroughAnEmptyDestination()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
         new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(Source);
@@ -329,13 +332,13 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
         }
         Assert.Equal(HaulerActivity.Jumping, scheduler.Hauler(pilot)!.Work.Activity);
         var pending = scheduler.Jobs().Single(job => job.PilotId == pilot);
-        human.Transfer(Remote);
+        human.Dispose();
         f.Clock.Seconds += 3600;
         Assert.Equal(0, scheduler.Run(0).Turn.Completed);
         Assert.Contains(pending, scheduler.Jobs());
         Assert.Equal(Source, scheduler.Hauler(pilot)!.Pilot.SystemId);
 
-        human.Transfer(Source);
+        using var remote = presence.Select(Human, Remote);
         scheduler.Run(0);
         for (int turn = 0; turn < 30 && scheduler.Hauler(pilot)!.Pilot.SystemId == Source; turn++)
         {
@@ -345,11 +348,11 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
         var arrived = scheduler.Hauler(pilot)!;
         Assert.Equal(30000142, arrived.Pilot.SystemId);
         Assert.NotNull(arrived.Work.Journey);
-        var paused = scheduler.Jobs().Single(job => job.PilotId == pilot);
-        f.Clock.Seconds += 3600;
+        var arrival = scheduler.Jobs().Single(job => job.PilotId == pilot);
+        f.Clock.Seconds += 30;
         scheduler.Run(0);
-        Assert.Contains(paused, scheduler.Jobs());
-        human.Dispose();
+        Assert.True(scheduler.Jobs().Single(job => job.PilotId == pilot).Sequence > arrival.Sequence);
+        remote.Dispose();
         var elapsed = presence.Read().ElapsedTicks;
         f.Clock.Seconds += 3600;
         Assert.Equal(elapsed, presence.Read().ElapsedTicks);
@@ -411,7 +414,7 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public void EmptySystemFramesHaveNoSqlFittingOrNativeScenesWhileTravelIsPaused()
+    public void FramesWithNoSelectedHumansHaveNoSqlFittingOrNativeScenes()
     {
         using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
         new CapsuleerProvisioner(f.Database, f.Clock).EnsureSystem(Source);
@@ -421,7 +424,6 @@ public sealed class CapsuleerEncounterTests(ITestOutputHelper output)
         {
             host.GetRequiredService<CapsuleerMaintenance>().Tick();
         }
-        using var elsewhere = presence.Select(Human, Remote);
         var worker = host.GetRequiredService<CapsuleerMaintenance>();
         worker.Tick();
         var scheduler = host.GetRequiredService<ICapsuleerScheduler>();

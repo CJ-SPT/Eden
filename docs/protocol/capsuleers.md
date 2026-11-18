@@ -2466,3 +2466,44 @@ fitting and supply operations as gameplay. Preparation takes place outside world
 values. The live provisioning action reserves identities and applies equipment, skills, timers and ship resources together.
 Catalog reads are permitted during preparation. The founder regression checks that blueprint creation issues zero saved-world
 SQL commands and runs outside world ownership. The offline traffic-import validator remains a separate tool.
+
+## Traffic through unobserved systems
+
+The first selected player admits saved, enabled travelers from resident membership across the map. A traveler can launch,
+jump, dock and start the return leg while the player stays in an unrelated system. Inbound visitors use their saved
+reciprocal gates and routes. Existing patrols and corporate supply trips continue on the same queue. Local mining and
+solo NPC ratting use local observation, and the last player leaving pauses the shared activity clock.
+
+Gate transfers commit the same ship, location and next job together. A checkpoint taken after arrival restores the ship to
+that system and resumes the next leg on shared playtime. Peaceful offscreen travel uses static route geometry and the
+existing travel deadlines. A player's entry enables detailed presentation from the current state. The reference evejs
+snapshot (package 261108.1) tracks scene occupancy and always-on systems separately. Eden uses the bounded traveler queue
+for offscreen progress. The gameplay reference describes jumps through gates to adjacent systems.
+[EVE University Stargates](https://wiki.eveuniversity.org/Stargates)
+
+**Automated validation.** The regression reproduced missing scheduler admission before the fix. It now checks a round
+trip through unobserved systems with a restart after the outbound jump, the same ship and no native scenes in either
+system. Existing coverage checks departure during a pending transfer, newly admitted traffic, the local mining and
+ratting pause, and idle world frames with zero world SQL, connections or fitting calculations.
+
+Tool and solution restore and the zero-warning solution build took 10.33 seconds. The final focused selection passed
+180 cases in 107.99 seconds including startup. Both Python suites passed (eight catalog and nine formatting-policy cases),
+and formatting and diff verification passed. Policy and format checks took 47.69 seconds. The full .NET suite was outside
+the validation scope.
+
+```text
+(FullyQualifiedName~CapsuleerGlobalPopulationTests|FullyQualifiedName~CapsuleerEncounterTests|FullyQualifiedName~CapsuleerBackgroundPreparationTests|FullyQualifiedName~CapsuleerHandoffTests|FullyQualifiedName~CapsuleerProvisioningTests|FullyQualifiedName~OccupiedCapsuleerSimulationTests|FullyQualifiedName~ResidentPopulationTests|FullyQualifiedName~CapsuleerTrafficPerformanceTests|FullyQualifiedName~CapsuleerTrafficAcceptanceTests|FullyQualifiedName~CapsuleerInbound|FullyQualifiedName~RoamingGangTests|FullyQualifiedName~GateCampTests|FullyQualifiedName~PilotSpaceActivitiesTests|FullyQualifiedName~CapsuleerSchedulingTests|FullyQualifiedName~CapsuleerDeadline|FullyQualifiedName~CapsuleerMaintenanceTests|FullyQualifiedName~TenfoldTrafficCompletesGateTransfersAndStationVisits)&FullyQualifiedName!~ShoppingChoosesRealAffordableStockAndHonorsThreatMemory
+```
+
+The tenfold fixture completed gate transfers and station visits on both the patch and baseline `763a3118`. The separate
+targeted runs both recorded 11 SQL commands, four connections and 22 fitting calculations over 180 simulated seconds for
+one roster of 11 pilots. The final combined run of the same fixture recorded 87 commands, six connections and 22 fitting
+calculations. Dedicated-server capacity remains unmeasured.
+
+A wider development run was stopped after 358 reported cases. Separate checks on `763a3118` reproduced four of that
+run's failures in overpriced shopping, rival-raid targeting and two disconnect-time founder projection variants.
+
+**Live acceptance.** Not performed. Agent client testing is disabled.
+
+**Optional maintainer checks.** Keep one player online outside a busy route and enter that route later to observe its
+traffic after the server is updated.

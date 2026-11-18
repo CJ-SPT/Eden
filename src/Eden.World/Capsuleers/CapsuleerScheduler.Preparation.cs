@@ -79,7 +79,7 @@ internal sealed partial class CapsuleerScheduler
         if (
             work?.TargetId is > 0 and <= int.MaxValue
             && catalog.Definitions.Gates.TryGetValue((int)work.TargetId, out var gate)
-            && (occupied.Contains(gate.DestinationSystemId) || ServesOccupiedSystem(job.PilotId, occupied))
+            && (occupied.Contains(gate.DestinationSystemId) || CanRunUnobserved(job.PilotId))
         )
         {
             systems.Add(gate.DestinationSystemId);
@@ -88,7 +88,9 @@ internal sealed partial class CapsuleerScheduler
         {
             systems.Add(lane.ObserverSystemId);
         }
+        bool detailed = ActiveOperation(job.PilotId);
         var geometry = systems
+            .Where(id => detailed || occupied.Contains(id))
             .Select(id => CapsuleerGeometry.CaptureResources(database, world, catalog, id))
             .OfType<CapsuleerGeometry.ResourcePreparation>()
             .ToArray();
@@ -120,18 +122,19 @@ internal sealed partial class CapsuleerScheduler
         );
     }
 
-    internal bool PreparationCurrent(PreparationInput input) =>
-        Current.GetValueOrDefault(input.Job.PilotId) == input.Job
-        && _queue.NextJob == input.Job
-        && (
-            ServesOccupiedSystem(input.Job.PilotId, presence.Read().ActiveSystems)
-            || input.Systems.All(presence.Read().ActiveSystems.Contains)
-        )
-        && _locations.GetValueOrDefault(input.Job.PilotId) == input.SystemId
-        && (Live?.PreparationRevision ?? 0) == input.Revision
-        && (Live?.TrafficGeometry.Revision ?? 0) == input.Resources
-        && (input.Template is null || input.Template.Revision == (Live?.TrafficTemplateRevision ?? 0))
-        && database.Catalog.Identity.Generation == input.Catalog;
+    internal bool PreparationCurrent(PreparationInput input)
+    {
+        var activity = presence.Read();
+        return activity.Active
+            && Current.GetValueOrDefault(input.Job.PilotId) == input.Job
+            && _queue.NextJob == input.Job
+            && (CanRunUnobserved(input.Job.PilotId) || input.Systems.All(activity.ActiveSystems.Contains))
+            && _locations.GetValueOrDefault(input.Job.PilotId) == input.SystemId
+            && (Live?.PreparationRevision ?? 0) == input.Revision
+            && (Live?.TrafficGeometry.Revision ?? 0) == input.Resources
+            && (input.Template is null || input.Template.Revision == (Live?.TrafficTemplateRevision ?? 0))
+            && database.Catalog.Identity.Generation == input.Catalog;
+    }
 
     private CapsuleerBatch RunPrepared(int destinyStamp, int maximumActions)
     {
