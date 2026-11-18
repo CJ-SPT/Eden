@@ -31,6 +31,58 @@ The evejs `allianceViewState.js` snapshot SHA-256 is
 All new wire models use the existing codec. Its reference remains
 [Carbon Blue Marshal.cpp, af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp).
 
+## Autonomous bot alliances
+
+An established bot-led corporation and a willing independent neighbor can form an ordinary alliance. Each corporation needs
+six unsuspended simulated members and an active bot CEO with director authority. Headquarters can share a system or connect
+through one reciprocal gate. The founder pays the native one-billion-ISK registration fee. If its CEO's wallet needs a top-up,
+the shortfall comes from its existing master wallet through a recorded corporation withdrawal. The designated bill division
+must be able to cover a month at the proposed membership after paying the registration shortfall. Eden qualifies the selected
+founder with Empire Control V and its catalog prerequisites once the funding and a second corporation are in place.
+
+The founder becomes the executor. Its partner submits a standard application and waits the native 24 hours after acceptance
+to become a member. The executor can recruit up to a target of three corporations, counting accepted applications as reserved
+places. An existing open application, previous application to that alliance, or earlier membership takes precedence over
+automated recruitment. Bot planning selects only bot-created alliances whose current executor is led by an active bot CEO.
+Player corporations and directors continue to use the existing alliance services.
+
+The bot founder defaults its maintenance bill to automatic payment in the existing corporation bill preferences. An explicit
+setting takes precedence. Native bill settlement, membership history, approval deadlines, owner caches and affiliation updates
+carry forward across checkpoints. Alliance membership feeds the existing gang, escort and patrol ally checks. The feature
+uses the existing save schema.
+
+The server's corporation maintenance timer reviews up to 32 station systems per 15 seconds, with at most one formation or
+accepted application per review. It rotates past unobserved headquarters while any player is in the world. The native scheduler
+continues to settle already accepted applications and bills on their saved wall-clock deadlines.
+
+The fee, skill and admission delay follow [EVE University](https://wiki.eveuniversity.org/Alliances) and Eden's existing
+[formation](#formation-and-public-identity--november-16-2026) and
+[membership](#membership-governance-and-session-affiliation--november-16-2026) contracts. The inspected local EVE.js
+`allianceApplicationEligibility.js` snapshot SHA-256 is `e0504a59e4648b6c8b6ebf29cb30e5a6f4ae00e9b927cca854b0c516037b241c`.
+
+### Automated validation
+
+The resident integration fixture begins with independent corporations on an existing save. It exercises the funding threshold,
+the empty-world pause, exact fee settlement, the accepted application across a restart, effective gang affiliation, manual
+application priority, the reserved third slot and recurring maintenance.
+
+- The exact filter
+  `FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerAllianceTests.FundedNeighborsFormAndGrowAnAllianceThroughDueApplicationsAcrossRestart`
+  passed in 10.80 seconds. The solution restored and built in 9.02 seconds with zero warnings and errors.
+- All 126 focused tests passed in 57.03 seconds. The combined `FullyQualifiedName~` filter covered
+  `Eden.Protocol.Tests.Alliances`, `CapsuleerAllianceTests`, `CapsuleerCorporationTests`, `CapsuleerMaintenanceTests`,
+  `CapsuleerAmmunitionSupplyTests`, `RoamingGangTests`, `CorporationWalletTests`, `CorporationFinancialPanelTests`,
+  `CorporationMembershipTests`, `CorporationRoleTests` and `CorporationPublicInfoTests`.
+- The two Python policy suites passed all 17 cases. Formatting and diff whitespace checks passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer check
+
+Open a formed alliance in Show Info after admission and confirm both corporations appear in its member list.
+
 ## Foundation — November 16, 2026
 
 Schema 174 adds saved alliance identity and one membership row per corporation. Membership uses the corporation ID as its

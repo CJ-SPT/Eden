@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Eden.Data.World.Alliances;
 using Eden.Data.World.Corporations;
 using Eden.Data.World.Mail;
@@ -166,8 +165,7 @@ internal sealed partial class AllianceStore
         {
             return false;
         }
-        var row = world.Set<SavedCorporationBillPaymentSettings>().Find(id);
-        var settings = row is null ? null : JsonSerializer.Deserialize<CorporationBillPaymentSettings>(row.DataJson);
+        var settings = CorporationBillingStore.Saved(world, id);
         return settings is not null
             && settings.CorporationId == id
             && settings.Rules.Any(r => r.BillTypeId == AllianceBillingRules.MaintenanceBillType && r.Enabled)

@@ -1,5 +1,16 @@
 # Protocol findings and milestone records
 
+[Autonomous bot alliances](protocol/alliances.md#autonomous-bot-alliances) covers neighboring bot corporations forming,
+recruiting and maintaining an alliance through the ordinary corporation services.
+
+[Corporation ammunition supply](protocol/capsuleers.md#corporation-ammunition-supply) covers manufacturing, public sales,
+paid courier trips and reserve resupply by simulated corporations.
+
+[Bot corporation recruitment and gangs](protocol/capsuleers.md#bot-corporation-recruitment-and-gangs) covers player applications,
+autonomous invite acceptance, and live affiliation checks during patrols.
+
+[Bot-led player corporations](protocol/capsuleers.md#bot-led-player-corporations) covers local founding, existing-save enrollment and checkpoint validation.
+
 [Catalog-wide frigate through battleship patrols](protocol/capsuleers.md#catalog-wide-frigate-through-battleship-patrols)
 records coverage of 296 eligible hulls, the sixteen exceptions, and the snapshot and combat checks.
 

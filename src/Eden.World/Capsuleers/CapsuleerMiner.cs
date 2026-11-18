@@ -39,7 +39,8 @@ internal sealed class CapsuleerMinerFactory(
     IPilotTackle tackle,
     IPilotHealth health,
     MarketChangeSignal marketSignal,
-    CapsuleerDefense defense
+    CapsuleerDefense defense,
+    CapsuleerAmmunitionSupply ammunitionSupply
 )
 {
     internal CapsuleerMiner Create(long pilotId) =>
@@ -58,7 +59,8 @@ internal sealed class CapsuleerMinerFactory(
             tackle,
             health,
             marketSignal,
-            defense
+            defense,
+            ammunitionSupply
         );
 }
 
@@ -77,7 +79,8 @@ internal sealed class CapsuleerMiner(
     IPilotTackle tackle,
     IPilotHealth health,
     MarketChangeSignal marketSignal,
-    CapsuleerDefense defense
+    CapsuleerDefense defense,
+    CapsuleerAmmunitionSupply ammunitionSupply
 )
 {
     private static readonly CatalogDefinition<bool> s_miningBelt = new(
@@ -162,6 +165,7 @@ internal sealed class CapsuleerMiner(
         {
             Load();
         }
+        RefreshCorporation();
         return _pilot is null ? null : Observation(includeHealth);
     }
 
@@ -248,6 +252,7 @@ internal sealed class CapsuleerMiner(
                 Load();
             }
         }
+        RefreshCorporation();
         ObserveDanger(destinyStamp);
         if (Pilot.Position is not null)
         {
@@ -586,6 +591,7 @@ internal sealed class CapsuleerMiner(
                 _work = Work with { WaitingReason = null };
                 if (Pilot.Position is null)
                 {
+                    JoinCorporationAtDock();
                     _work = Work with { Activity = MinerActivity.Docked };
                 }
                 else
@@ -596,12 +602,38 @@ internal sealed class CapsuleerMiner(
         }
     }
 
+    internal void RefreshCorporation()
+    {
+        if (
+            _pilot is not null
+            && Live is { } live
+            && live.Economy.CorporationAffiliation(pilotId) != (_pilot.CorpId, _pilot.Identity.AllianceId)
+        )
+        {
+            var current = ships.FindPilot(CapsuleerCommunityStore.MinerAccountId, pilotId)!;
+            _pilot = _pilot with { Identity = current.Identity };
+        }
+    }
+
+    private void JoinCorporationAtDock()
+    {
+        if (
+            Live is not null
+            && _operation.World is EconomyTransaction world
+            && CapsuleerCorporations.Place(world, _operation.Catalog, database, pilotId, Now)
+        )
+        {
+            _pilot = ships.FindPilot(world, CapsuleerCommunityStore.MinerAccountId, pilotId)!;
+        }
+    }
+
     private void PrepareTrip()
     {
         if (Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup)
         {
             throw new InvalidDataException("Waiting for a replacement mining ship.");
         }
+        JoinCorporationAtDock();
         CapsuleerSupplyStore.Ensure(
             _operation.World,
             _operation.Catalog,
@@ -620,6 +652,13 @@ internal sealed class CapsuleerMiner(
                 new(ore.Select(i => i.Id).ToArray(), Pilot.ShipId, (int)InventoryFlag.Hangar, null),
                 Now
             );
+        }
+        if (
+            Pilot.CorpId >= Eden.Gameplay.Corporations.CorporationRules.FirstCorporationId
+            && _operation.World is EconomyTransaction supplyWorld
+        )
+        {
+            _operation.MarketChanged |= ammunitionSupply.Produce(supplyWorld, _operation.Catalog, Pilot, Now);
         }
         _laser = aboard.FirstOrDefault(i => i.TypeId == (int)MiningLaserType.MinerI && InventoryDefinitions.IsHighSlot(i.FlagId));
         if (_laser is null)
@@ -787,6 +826,7 @@ internal sealed class CapsuleerMiner(
             if (Distance(_target!) <= DockingDefinitions.MaximumRange)
             {
                 _pilot = ships.Dock(_operation.World, _operation.Catalog, Pilot.PilotId, Pilot.ShipId, Pilot.StationId);
+                JoinCorporationAtDock();
                 Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, _operation.Catalog, Pilot.ShipId);
                 _navigation.Dock();
                 _operation.TravelChanged = true;

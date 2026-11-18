@@ -24,7 +24,18 @@ public static class ManufacturingRules
 {
     public static ManufacturingPlan Plan(IndustryRequest request, ManufacturingInputs inputs)
     {
-        if (request.Runs <= 0)
+        var plan = Plan(request.Runs, inputs);
+        if (!double.IsFinite(request.QuotedSeconds) || request.QuotedSeconds != plan.DurationSeconds)
+        {
+            throw new InvalidDataException("Manufacturing time changed; reopen the blueprint to refresh the quote.");
+        }
+        IndustryMaterials.CheckQuote(plan.Materials, request.QuotedMaterials);
+        return plan;
+    }
+
+    public static ManufacturingPlan Plan(int runs, ManufacturingInputs inputs)
+    {
+        if (runs <= 0)
         {
             throw new InvalidDataException("Choose an available blueprint and positive run count at this station.");
         }
@@ -40,12 +51,12 @@ public static class ManufacturingRules
         var blueprint = inputs.Blueprint ?? new BlueprintResearch();
         if (
             blueprint.TimeEfficiency is < 0 or > IndustryDefinitions.MaximumTimeEfficiency
-            || blueprint.Copy && request.Runs > blueprint.RunsRemaining
+            || blueprint.Copy && runs > blueprint.RunsRemaining
         )
         {
             throw new InvalidDataException("Invalid blueprint efficiency or insufficient licensed copy runs.");
         }
-        double seconds = inputs.BaseSeconds * request.Runs * (1 - blueprint.TimeEfficiency / 100d) * inputs.FacilityTimeMultiplier;
+        double seconds = inputs.BaseSeconds * runs * (1 - blueprint.TimeEfficiency / 100d) * inputs.FacilityTimeMultiplier;
         foreach (var bonus in bonuses.Where(b => !b.Additive && b.Attribute == DogmaAttributeId.ManufactureTimeMultiplier))
         {
             seconds *= 1 + bonus.Value / 100;
@@ -60,12 +71,12 @@ public static class ManufacturingRules
         if (
             !double.IsFinite(seconds)
             || seconds <= 0
-            || request.Runs
+            || runs
                 > Math.Min(
                     IndustryDefinitions.MaximumJobRuns,
                     blueprint.Copy
                         ? IndustryDefinitions.MaximumJobRuns
-                        : Math.Ceiling(IndustryDefinitions.MaximumJobSeconds / (seconds / request.Runs))
+                        : Math.Ceiling(IndustryDefinitions.MaximumJobSeconds / (seconds / runs))
                 )
         )
         {
@@ -75,13 +86,9 @@ public static class ManufacturingRules
             IndustryDefinitions.MinimumJobSeconds,
             EconomicRules.ClientRound(seconds, IndustryDefinitions.ManufacturingTimePrecision)
         );
-        if (duration <= 0 || !double.IsFinite(request.QuotedSeconds) || request.QuotedSeconds != duration)
-        {
-            throw new InvalidDataException("Manufacturing time changed; reopen the blueprint to refresh the quote.");
-        }
         var materials = IndustryMaterials.Calculate(
             inputs.Materials,
-            request.Runs,
+            runs,
             blueprint.MaterialEfficiency,
             inputs.FacilityMaterialMultiplier
         );
@@ -89,7 +96,6 @@ public static class ManufacturingRules
         {
             throw new InvalidDataException("Missing manufacturing materials.");
         }
-        IndustryMaterials.CheckQuote(materials, request.QuotedMaterials);
         return new(duration, materials);
     }
 }

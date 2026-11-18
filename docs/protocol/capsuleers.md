@@ -2,6 +2,157 @@
 
 [Protocol index](../protocol.md)
 
+## Corporation ammunition supply
+
+World schema 189 adds optional corporation ownership to industry output and sell orders. Existing personal records retain
+their owner and behavior. The first chain uses **Iron Charge S (215)** and **Iron Charge S Blueprint (1130)**. A five-run
+batch follows the pinned catalog, using 135 Tritanium and 105 Pyerite at base material efficiency and producing 500 rounds.
+Industry I is granted as the bot's manufacturing qualification. The miner provides actual refined or market-bought materials
+and a purchased original through its personal hangar. The corporation pays manufacturing and broker costs, owns the output
+and receives net sale proceeds. Treasury shortfalls can be funded from the assigned pilot's existing wallet, capped at
+a quarter of the available personal balance per expense. Both sides record the contribution.
+
+A manufacturer with stock can list one outstanding seven-day ask. Public buyers use the existing order book and matching
+rules. Authorized corporate financial staff can read the open corporate offers through `GetCorporationOrders`. Its order rows
+send the corporation owner in `charID` with `isCorp` set. On expiration, unsold escrow returns to corporate Market Deliveries. Shared market execution, industry delivery and
+station service checks remain in their owning World features.
+
+A separate purchasing corporation with a compatible ship and fewer than 100 reserve rounds seeks a supplier within three
+gate jumps. One courier at a time travels from the headquarters to the supplier. It purchases at most 200 rounds from the
+specified finite sell order at the supplier station. Billing and cargo loading share a resident action. The rounds travel
+in real cargo, and only surviving units are credited to the buyer's headquarters deliveries. The saved route, order ID and
+cargo manifest resume after a checkpoint. Purchased ammunition uses separate custody from generated traffic manifests.
+The courier can finish through unobserved systems while anyone is playing. Compatible combat bots draw from local stock
+at their normal docked resupply step, and existing fitting and ammunition operations handle cargo and magazine loading.
+
+Sources include [EVE University manufacturing](https://wiki.eveuniversity.org/Production), the pinned build 3662168 recipe and
+[station manufacturing record](industry.md), and the local EVE.js industry and market custody references.
+`industryInstallSettlementState.js` SHA-256 is `8bfe741f7afce165241becc22549118cf95633bc36cb58099968193d1d2ee3dd`.
+`marketItemCustody.js` SHA-256 is `3f3ce4dfd28289f8a08b078ea55799435d86608408507331b74632ec426d72a6`.
+`marketProxyService.js` SHA-256 is `f457cb1b181ceb570a5fa346c718d71a7ce7b84b8734c88cee7f2546a8ce175b`.
+Batch size, the reserve threshold, route length, the first recipe and corporate spending are Eden policy.
+
+### Automated validation
+
+The supply-chain fixture opens a schema 188 save, buys a blueprint through the public market, reprocesses Scordite and
+delivers a timed manufacturing job. It checks the public offer and corporate order visibility, sells to a player and a
+corporation, verifies the treasury entries, and checkpoints the pilot with paid cargo aboard. A reopened scheduler
+returns the cargo through a gate, rejects duplicate delivery, and feeds the reserve into an empty compatible railgun.
+
+- Exact method filter `FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerAmmunitionSupplyTests.MinedInputsBecomePublicOrdersAndPaidCourierStockSurvivesRestart`
+  passed in 9 seconds before the final corporate order wire change.
+- The final solution build passed in 9 seconds. The exact method plus the `StandardMarketTests`, `PersonalMarketTests`
+  and `MarketReadCompatibilityTests` class filters passed all 47 tests in 18 seconds, including the corporate order row.
+- The broader run took 7 minutes 51 seconds before the wire change and passed 429 of 431 tests. It used
+  `FullyQualifiedName~` filters for `CapsuleerAmmunitionSupplyTests`, `CapsuleerCorporationTests`, `CapsuleerHaulerTests`,
+  `CapsuleerInboundRuntimeTests`, `CapsuleerDefenseLifecycleTests`, `StarterProductionTests`, `IndustryTests`,
+  `ReprocessingTests`, `Eden.Protocol.Tests.Market`, `CorporationWalletTests`, `CorporationFinancialPanelTests`
+  and `WorldMigrationTests`. The existing rollback failures in `RegionalMarketTests` and `NpcRestingOrderTests`
+  reproduced on both the final code and baseline `53a2b94b`.
+- The catalog and formatting policy suites passed all 17 Python tests. Formatting and the diff whitespace check passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer check
+
+In the client, find a bot-made Iron Charge S ask and verify the resulting trade in the corporation wallet.
+
+## Bot corporation recruitment and gangs
+
+Schema 188 opens applications for existing active bot-led charters. New bot charters start open. The bot CEO uses the existing
+Personnel Manager authority and member limit to issue an offer after a valid player application. Application and offer events
+share a transaction. The player accepts separately through `UpdateApplicationOffer`. After a human takes over as CEO,
+the corporation follows its ordinary application settings and the human reviews new requests.
+
+Native `InsertInvitation` checks the selected recruiter as usual. Bots settle invites in ID order when docked at an NPC station,
+using their saved home system and neighboring gate destinations to decide whether the destination headquarters is suitable.
+Suspension, active gang duties, regional escorts and freight still in transit defer the decision. An ordinary member can leave a bot-led
+charter under existing role and CEO restrictions. A human-led employer keeps its bot members. Acceptance uses the normal
+application transition, preserving the member's ship and property and publishing membership, employment and recruitment events.
+A pending invitation survives a checkpoint and gets another evaluation during community preparation or docked pilot work.
+
+Gangs and escorts use corporation and alliance affiliation for recruitment. Constellation grouping still guides regional
+objectives and cooperation between bots in NPC corporations. Gate camps verify that participants can fly together.
+Active gangs recheck surviving members and the escorted pilot, clear shared scouting reports when affiliations split,
+and publish a return-home order through their saved command. Cached patrol targets are rechecked against committed
+affiliations before the next attack decision. Existing ship and crimewatch checks still apply.
+
+The recruitment flow follows [EVE University recruiting](https://wiki.eveuniversity.org/Recruiting_corporation_members),
+the [pinned build 3662168 invitation record](corporations.md#direct-invitations-and-corporation-window-reads-november-14-2026)
+and the local EVE.js `corpApplicationNotifications.js` reference
+(SHA-256 `452c8bd61246b728c76ec8bdb50c2912da3c1059933dd12aee706eb2825b6599`).
+The one-jump recruitment area and assignment checks are Eden policy.
+
+**Automated validation.** The first exact filter was `FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerCorporationTests.NativeApplicationAndDeferredInvitationUseOrdinaryMembershipHistory`.
+The native application test checked the player-controlled acceptance step and observed recruitment notifications. It also checked
+schema-187 migration, checkpoint reopen, a pending invite in flight and at the wrong station, and acceptance at the delivery
+station. The active-gang test excluded a rival at formation, changed a gang member's corporation and verified the shared
+return order on both pilots' saved commands.
+
+The broader filter `FullyQualifiedName~CapsuleerCorporationTests|FullyQualifiedName~CapsuleerBackgroundPreparationTests|FullyQualifiedName~CapsuleerPopulationRetryTests|FullyQualifiedName~PlayerCorporationTests|FullyQualifiedName~CorporationMembershipTests|FullyQualifiedName~CorporationLeadershipTests|FullyQualifiedName~CorporationRoleTests|FullyQualifiedName~CorporationClosureTests|FullyQualifiedName~RoamingGangTests|FullyQualifiedName~RegionalConflict|FullyQualifiedName~GateCampTests|FullyQualifiedName~PatrolTests|FullyQualifiedName~CapsuleerDefenseTests|FullyQualifiedName~CapsuleerDefenseLifecycleTests|FullyQualifiedName~CapsuleerDefensePerformanceTests|FullyQualifiedName~StationGuestTests|FullyQualifiedName~WorldMigrationTests` passed 164 of 165 cases in 139.13 seconds before the final freight and gang-return adjustments.
+`RegionalConflictWorldTests.RivalDefenseEngagesAVisibleRaidWithOwnedWeaponsAndRealDamage` failed on its targeting assertion.
+The exact same assertion failed on unmodified milestone 1 commit `50d73b0a` in 9.99 seconds.
+
+The final filter `FullyQualifiedName~CapsuleerCorporationTests|FullyQualifiedName~CorporationMembershipTests|FullyQualifiedName~RoamingGangTests|FullyQualifiedName~GateCampTests|FullyQualifiedName~PatrolTests` passed **45 of 45** in **21.92 seconds**. Tool and solution restore passed, and the
+solution built with zero warnings and errors in **7.61 seconds**. Both Python policy suites and formatting verification passed.
+The full .NET suite and dedicated server deployment were outside this validation.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Apply to a bot corporation and accept the offer in the native corporation window.
+Invite a docked bot near your corporation headquarters and verify the status and member list refresh.
+
+## Bot-led player corporations
+
+On November 18, 2026, Eden added automatic founding and enrollment to existing and newly provisioned capsuleer communities.
+World schema 187 adds a nullable founding-system ID to the resident corporation record and its checkpoint projection.
+Ordinary player corporations retain a null marker. Headquarters moves preserve the original system's allowance history.
+Closure retains the archived charter. The population worker visits six saved agent IDs per page even when the provisioning
+fingerprint is current. A miner or hauler can also enroll during a dock, departure or docked retry.
+
+Only unsuspended simulated pilots still in their school corporation with no previous player-corporation employment qualify.
+Home communities within one gate jump share available bot-led corporations. A founder docks at a local NPC station
+with six qualifying pilots based in range. Recruitment prefers the pilot's home system, then the oldest eligible corporation
+by ID, and respects both the 12-member target and the normal member limit. Corporate assets start at zero.
+New corporations have a seeded local name, ticker, logo and description. Recruitment applications and friendly fire start disabled.
+
+The initial setup credit, normal fee, trained skill, CEO appointment, shares, inventory owner, employment history and founding
+marker share a resident transaction. Later founders in the same system need their own ISK and qualification. A human CEO
+takes the corporation out of automatic enrollment. Workers refresh loaded pilot identities and republish the
+usual Local and station-guest records after placement. The existing regional operation and sovereignty rules still apply.
+
+Gameplay references include [EVE University corporation formation](https://wiki.eveuniversity.org/Forming_a_corporation)
+and the local evejs reference's `server/src/services/corporation/corporationFoundingState.js`
+(SHA-256 `0f785493ccbb397c8ced8f5c3bde32c732c6588a70405772fc295023871dc58b`), which records founding and
+payment against duplicate requests. Eden reuses its own transaction and the pinned build 3662168 corporation service
+contracts documented under [corporations](corporations.md). The roster thresholds and initial funding are Eden population policy.
+
+**Automated validation.** A schema-186 fixture migrated with its existing pilots, ships and jobs. Observers with a cached
+school corporation saw the new membership in Local and station guests. Corporation Show Info, directory, member and employment
+reads agreed. A checkpoint flush, reopen and repeat placement preserved the same charter and single fee. Focused rejection checks
+covered in-space pilots, paused pilots, sparse rosters, a full corporation, a human CEO, insufficient funds or skill, rollback
+and a second, self-funded charter with a conflicting ticker. A development case exposed a stale in-space navigation property
+inside a transaction. Placement and founding now check the authoritative position row.
+
+The initial exact filter was `FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerCorporationTests.ExistingSchoolPilotsFoundAndJoinOnceAcrossCheckpointAndRestart`.
+The broader filter was `FullyQualifiedName~CapsuleerCorporationTests|FullyQualifiedName~CapsuleerBackgroundPreparationTests|FullyQualifiedName~CapsuleerPopulationRetryTests|FullyQualifiedName~CapsuleerProvisioningTests|FullyQualifiedName~ResidentPopulationTests|FullyQualifiedName~CapsuleerPresentationTests|FullyQualifiedName~CapsuleerMinerTests|FullyQualifiedName~CapsuleerHaulerTests|FullyQualifiedName~RoamingGangTests|FullyQualifiedName~PlayerCorporationTests|FullyQualifiedName~CorporationMembershipTests|FullyQualifiedName~CorporationClosureTests|FullyQualifiedName~CorporationShowInfoTests|FullyQualifiedName~CorporationWalletTests|FullyQualifiedName~StationGuestTests|FullyQualifiedName~ChatWorldTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~WorldInitializationTests`. It passed **194 of 196** in **135.48 seconds**.
+Two one-observer variants of `UnchangedPresentationSharesObservationsAcrossAdvancingFrames` exceeded their 6 MiB
+allocation budget. Both also failed on the unmodified parent `b91f2b32`. The empty and occupied cases allocated
+6,968,248 and 6,796,136 bytes on the branch and 6,866,208 and 6,865,728 bytes on the parent. They recorded zero
+SQL commands, connections, fitting calculations and additional presentation reads. The four-observer case passed on both.
+
+After retaining preparation backoff through corporation placement and adding the cached-observer assertions, the final filter
+`FullyQualifiedName~CapsuleerCorporationTests|FullyQualifiedName~CapsuleerBackgroundPreparationTests|FullyQualifiedName~CapsuleerPopulationRetryTests` passed **21 of 21** in **17.54 seconds**. Tool and solution restore succeeded and the solution
+built with zero warnings and errors in **8.04 seconds**. Both Python policy suites and formatting verification passed.
+Validation used disposable saves. The dedicated server was not deployed or benchmarked.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer check.** In an established populated system, open a bot from Local or station guests and inspect
+its corporation logo, CEO and employment history in the native client.
+
 ## Catalog-wide frigate through battleship patrols
 
 Build 3662168 has 312 published hulls across the frigate, destroyer, cruiser, battlecruiser and battleship

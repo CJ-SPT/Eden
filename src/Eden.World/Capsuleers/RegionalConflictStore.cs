@@ -117,7 +117,14 @@ internal static class RegionalConflictStore
         return region;
     }
 
-    internal static RegionalOperation? Plan(WorldAction world, CatalogDbContext catalog, LiveWorld live, int station, long elapsed)
+    internal static RegionalOperation? Plan(
+        WorldAction world,
+        CatalogDbContext catalog,
+        LiveWorld live,
+        int station,
+        long elapsed,
+        DockedPilot? leader = null
+    )
     {
         var source = catalog.RequireSystem(catalog.RequireStation(station).SolarSystemId);
         var region = Ensure(world, catalog, station, elapsed);
@@ -182,7 +189,10 @@ internal static class RegionalConflictStore
                 && trip.Systems.Length is > 1 and <= RoamingGangRules.MaximumJumps + 1
                 && trip.Systems.All(system => catalog.Definitions.SystemSecurity.GetValueOrDefault(system, 1) <= 0)
             )
-            .Where(checkpoint => GroupForPilot(live, catalog.Definitions, checkpoint.PilotId) == source.ConstellationId)
+            .Where(checkpoint =>
+                GroupForPilot(live, catalog.Definitions, checkpoint.PilotId) == source.ConstellationId
+                && (leader is null || CapsuleerCorporations.CanFlyTogether(live, leader, checkpoint.PilotId))
+            )
             .OrderBy(checkpoint => checkpoint.PilotId)
             .Take(RegionalConflictRules.MaximumReports)
             .Select(checkpoint => new RegionalEscortCandidate(

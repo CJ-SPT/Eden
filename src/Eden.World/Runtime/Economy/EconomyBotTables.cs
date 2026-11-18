@@ -1718,7 +1718,8 @@ internal sealed partial class ResidentEconomy
                         row.StationId,
                         row.SystemId,
                         row.Ticker,
-                        row.ClosedAt
+                        row.ClosedAt,
+                        row.CapsuleerFoundingSystemId
                     ),
                 state => new Eden.Data.World.Corporations.SavedCorporation
                 {
@@ -1733,10 +1734,12 @@ internal sealed partial class ResidentEconomy
                     StationId = state.StationId,
                     SystemId = state.SystemId,
                     Ticker = state.Ticker,
+                    CapsuleerFoundingSystemId = state.CapsuleerFoundingSystemId,
                     ClosedAt = state.ClosedAt,
                 },
                 ProjectSavedCorporation,
-                "Id,BalanceCents,CeoId,CreatedAt,CreatorId,DetailsJson,MemberLimit,Name,StationId,SystemId,Ticker,ClosedAt",
+                "Id,BalanceCents,CeoId,CreatedAt,CreatorId,DetailsJson,MemberLimit,Name,StationId,SystemId,Ticker,ClosedAt,"
+                    + "CapsuleerFoundingSystemId",
                 reader =>
                     new(
                         reader.GetInt32(1),
@@ -1750,7 +1753,8 @@ internal sealed partial class ResidentEconomy
                         reader.GetInt32(9),
                         reader.GetInt32(10),
                         reader.GetString(11),
-                        reader.IsDBNull(12) ? null : reader.GetInt64(12)
+                        reader.IsDBNull(12) ? null : reader.GetInt64(12),
+                        reader.IsDBNull(13) ? null : reader.GetInt32(13)
                     ),
                 state => new(state.Id),
                 indexes:

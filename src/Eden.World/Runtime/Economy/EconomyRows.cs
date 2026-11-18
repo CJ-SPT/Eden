@@ -415,7 +415,8 @@ internal sealed record EconomySavedPersonalOrder(
     long Modified,
     int DurationDays,
     long EscrowCents,
-    PersonalOrderStatus Status
+    PersonalOrderStatus Status,
+    int? CorporationId
 );
 
 internal sealed partial class ResidentEconomy
@@ -442,18 +443,20 @@ internal sealed partial class ResidentEconomy
                 world.Database.ExecuteSql(
                     $"""
                     INSERT INTO WorldPersonalOrder(Id,PilotId,StationId,SystemId,RegionId,TypeId,Bid,PriceCents,Remaining,
-                        Entered,Issued,Expires,Modified,DurationDays,EscrowCents,Status)
+                        Entered,Issued,Expires,Modified,DurationDays,EscrowCents,Status,CorporationId)
                     SELECT json_extract(value,'$.Id'),json_extract(value,'$.PilotId'),json_extract(value,'$.StationId'),
                         json_extract(value,'$.SystemId'),json_extract(value,'$.RegionId'),json_extract(value,'$.TypeId'),
                         json_extract(value,'$.Bid'),json_extract(value,'$.PriceCents'),json_extract(value,'$.Remaining'),
                         json_extract(value,'$.Entered'),json_extract(value,'$.Issued'),json_extract(value,'$.Expires'),
                         json_extract(value,'$.Modified'),json_extract(value,'$.DurationDays'),json_extract(value,
-                        '$.EscrowCents'),json_extract(value,'$.Status') FROM json_each({values}) WHERE 1
+                        '$.EscrowCents'),json_extract(value,'$.Status'),json_extract(value,'$.CorporationId')
+                    FROM json_each({values}) WHERE 1
                     ON CONFLICT(Id) DO UPDATE SET PilotId=excluded.PilotId,StationId=excluded.StationId,
                         SystemId=excluded.SystemId,RegionId=excluded.RegionId,TypeId=excluded.TypeId,Bid=excluded.Bid,
                         PriceCents=excluded.PriceCents,Remaining=excluded.Remaining,Entered=excluded.Entered,
                         Issued=excluded.Issued,Expires=excluded.Expires,Modified=excluded.Modified,
-                        DurationDays=excluded.DurationDays,EscrowCents=excluded.EscrowCents,Status=excluded.Status
+                        DurationDays=excluded.DurationDays,EscrowCents=excluded.EscrowCents,Status=excluded.Status,
+                        CorporationId=excluded.CorporationId
                     """
                 );
             }
@@ -810,7 +813,8 @@ internal sealed record EconomyIndustryJob(
     IndustryJobStatus Status,
     long? CompletedAt,
     string MaterialsJson,
-    long CostCents
+    long CostCents,
+    int? OutputCorporationId
 );
 
 internal sealed record EconomySavedContractEscrow(long ItemId, long ContractId);
@@ -1004,6 +1008,7 @@ internal sealed partial class ResidentEconomy
                 [
                     new("Id", row => row.Id),
                     new("AccountId", row => row.AccountId),
+                    new("CorporationId", row => row.CorporationId),
                     new("Name", row => row.Name, new EconomyNameComparer()),
                     new("ActiveShipId", row => row.ActiveShipId),
                 ],
@@ -1288,7 +1293,8 @@ internal sealed partial class ResidentEconomy
                         row.Modified,
                         row.DurationDays,
                         row.EscrowCents,
-                        row.Status
+                        row.Status,
+                        row.CorporationId
                     ),
                 state => new SavedPersonalOrder
                 {
@@ -1308,10 +1314,11 @@ internal sealed partial class ResidentEconomy
                     DurationDays = state.DurationDays,
                     EscrowCents = state.EscrowCents,
                     Status = state.Status,
+                    CorporationId = state.CorporationId,
                 },
                 ProjectSavedPersonalOrder,
                 "Id,PilotId,StationId,SystemId,RegionId,TypeId,Bid,PriceCents,Remaining,Entered,Issued,Expires,Modified,DurationDays,"
-                    + "EscrowCents,Status",
+                    + "EscrowCents,Status,CorporationId",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -1329,13 +1336,15 @@ internal sealed partial class ResidentEconomy
                         reader.GetInt64(13),
                         reader.GetInt32(14),
                         reader.GetInt64(15),
-                        (PersonalOrderStatus)reader.GetInt32(16)
+                        (PersonalOrderStatus)reader.GetInt32(16),
+                        reader.IsDBNull(17) ? null : reader.GetInt32(17)
                     ),
                 state => new(state.Id),
                 readOnly: false,
                 indexes:
                 [
                     new("PilotId", row => row.PilotId),
+                    new("CorporationId", row => row.CorporationId),
                     new("StationId", row => row.StationId),
                     new("RegionId", row => row.RegionId),
                     new("TypeId", row => row.TypeId),
@@ -1641,12 +1650,14 @@ internal sealed partial class ResidentEconomy
                         row.Status,
                         row.CompletedAt,
                         row.MaterialsJson,
-                        row.CostCents
+                        row.CostCents,
+                        row.OutputCorporationId
                     ),
                 state => new IndustryJob
                 {
                     OutputLocationId = state.OutputLocationId,
                     OutputFlagId = state.OutputFlagId,
+                    OutputCorporationId = state.OutputCorporationId,
                     SuspendedAt = state.SuspendedAt,
                     Activity = state.Activity,
                     LicensedRuns = state.LicensedRuns,
@@ -1676,7 +1687,8 @@ internal sealed partial class ResidentEconomy
                 ProjectIndustryJob,
                 "SuspendedAt,Activity,LicensedRuns,BlueprintCopy,MaterialEfficiency,TimeEfficiency,OutputRuns,Probability,"
                     + "SuccessfulRuns,OptionalTypeId,Id,PilotId,BlueprintId,BlueprintTypeId,StationId,ProductTypeId,Runs,OutputQuantity,"
-                    + "StartTime,EndTime,DurationSeconds,Status,CompletedAt,MaterialsJson,CostCents,OutputLocationId,OutputFlagId",
+                    + "StartTime,EndTime,DurationSeconds,Status,CompletedAt,MaterialsJson,CostCents,OutputLocationId,OutputFlagId,"
+                    + "OutputCorporationId",
                 reader =>
                     new(
                         reader.IsDBNull(26) ? null : reader.GetInt64(26),
@@ -1705,12 +1717,14 @@ internal sealed partial class ResidentEconomy
                         (IndustryJobStatus)reader.GetInt32(22),
                         reader.IsDBNull(23) ? null : reader.GetInt64(23),
                         reader.GetString(24),
-                        reader.GetInt64(25)
+                        reader.GetInt64(25),
+                        reader.IsDBNull(28) ? null : reader.GetInt32(28)
                     ),
                 state => new(state.Id),
                 indexes:
                 [
                     new("PilotId", row => row.PilotId),
+                    new("OutputCorporationId", row => row.OutputCorporationId),
                     new("BlueprintId", row => row.BlueprintId),
                     new("StationId", row => row.StationId),
                     new("Status", row => row.Status),

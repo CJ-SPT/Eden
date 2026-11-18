@@ -165,10 +165,24 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
 
     public CorporationCreation Create(long pilotId, CorporationDetails details)
     {
-        details = CorporationRules.Validate(details);
         using WorldActionScope transaction = new(database, TransactionParticipants.None);
         var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var result = Create(world, catalog, pilotId, details, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+        transaction.Commit();
+        database.NotifyAccessGroupsChanged();
+        return result;
+    }
+
+    internal static CorporationCreation Create(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        CorporationDetails details,
+        long now
+    )
+    {
+        details = CorporationRules.Validate(details);
         var pilot = world.Pilots.SingleOrDefault(p => p.Id == pilotId) ?? throw new InvalidDataException("Unknown pilot.");
         double rank = catalog
             .FittingAttributes(CorporationRules.ManagementSkill)
@@ -180,22 +194,11 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
         var wallet = world.Set<PilotWallet>().Find(pilotId);
         long balance = CorporationRules.Pay(
             wallet?.Cents ?? 0,
-            pilot.ActiveShip.Position is null,
+            world.Positions.Find(pilot.ActiveShipId) is null,
             world.Set<SavedCorporation>().Any(c => c.CeoId == pilotId && c.ClosedAt == null),
             level
         );
-        if (
-            world
-                .Set<SavedCorporation>()
-                .Any(c =>
-                    c.ClosedAt == null && string.Equals(c.Name, details.Name, StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(c.Ticker, details.Ticker, StringComparison.OrdinalIgnoreCase)
-                )
-            || catalog.NpcCorporationNameExists(details.Name)
-            || catalog
-                .Records(CatalogData.Client.Npccorporations)
-                .Values.Any(corporation => string.Equals(corporation.TickerName, details.Ticker, StringComparison.OrdinalIgnoreCase))
-        )
+        if (IdentityTaken(world, catalog, details))
         {
             throw new InvalidDataException("That corporation name or ticker is already taken.");
         }
@@ -204,7 +207,6 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
             throw new InvalidDataException("Establish a new corporation's headquarters from an NPC station.");
         }
         var station = catalog.RequireStation(pilot.ActiveShip.StationId);
-        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         int id = checked((world.Set<SavedCorporation>().Max(c => (int?)c.Id) ?? CorporationRules.FirstCorporationId - 1) + 1);
         var corporation = world
             .Add(
@@ -243,10 +245,20 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
         world.SaveChanges();
         Eden.World.Bookmarks.SharedBookmarkSchema.EnsureCorporation(world, corporation.Id, corporation.Name);
         Eden.World.Bookmarks.PilotBookmarksStore.PruneUnavailableConnections(world, pilotId);
-        transaction.Commit();
-        database.NotifyAccessGroupsChanged();
         return new(corporation.Snapshot(1), balance);
     }
+
+    internal static bool IdentityTaken(WorldAction world, CatalogDbContext catalog, CorporationDetails details) =>
+        world
+            .Set<SavedCorporation>()
+            .Any(c =>
+                c.ClosedAt == null && string.Equals(c.Name, details.Name, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(c.Ticker, details.Ticker, StringComparison.OrdinalIgnoreCase)
+            )
+        || catalog.NpcCorporationNameExists(details.Name)
+        || catalog
+            .Records(CatalogData.Client.Npccorporations)
+            .Values.Any(corporation => string.Equals(corporation.TickerName, details.Ticker, StringComparison.OrdinalIgnoreCase));
 
     public IReadOnlyList<string> SuggestTickers(string name)
     {

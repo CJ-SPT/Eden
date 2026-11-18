@@ -107,6 +107,7 @@ internal sealed partial class LiveCombatRuntime
                     target == pilot.ShipId
                     || pilot.Position is null
                     || DronePlayerFor(target) is not { Capsule: false } victim
+                    || IsCapsuleerCorporationAlly(pilot.PilotId, victim.PilotId)
                     || DronePresence(victim, presence, pilot.SystemId, now) is not { } contact
                     || contact.Position.DistanceTo(anchor) > PatrolRules.PursuitMeters
                     || contact.Position.DistanceTo(pilot.Position) > PatrolRules.PursuitMeters
@@ -134,6 +135,13 @@ internal sealed partial class LiveCombatRuntime
             },
             nameof(PatrolTarget)
         );
+
+    internal bool IsCapsuleerCorporationAlly(long pilot, long other)
+    {
+        var left = owner.Economy.CorporationAffiliation(pilot);
+        var right = owner.Economy.CorporationAffiliation(other);
+        return PatrolRules.CorporateAllies(left.Corporation, left.Alliance, right.Corporation, right.Alliance);
+    }
 
     internal CapsuleerAttacker[] DefenseAttackers(long pilot, IPilotCombatPresence presence, long now)
     {

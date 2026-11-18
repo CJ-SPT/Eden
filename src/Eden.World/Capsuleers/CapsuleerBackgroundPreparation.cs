@@ -17,6 +17,7 @@ internal sealed class CapsuleerBackgroundPreparation(
     private readonly Lock _gate = new();
     private readonly CapsuleerProvisioner _provisioner = new(database, clock);
     private readonly Dictionary<int, int> _completed = [];
+    private readonly Dictionary<int, long> _corporationCursors = [];
     private readonly Dictionary<int, CapsuleerRetry> _systemRetries = [];
     private readonly Dictionary<CapsuleerScheduler.InboundPreparation, CapsuleerRetry> _inboundRetries = [];
     private readonly long _started = clock.GetTimestamp();
@@ -97,11 +98,17 @@ internal sealed class CapsuleerBackgroundPreparation(
                 {
                     scheduler.PopulationPrepared(target, pilot);
                 }
-                _systemRetries.Remove(target);
                 if (!turn.HasMoreWork)
                 {
+                    if (!scheduler.PrepareCorporations(target, _corporationCursors.GetValueOrDefault(target), out long cursor))
+                    {
+                        _corporationCursors[target] = cursor;
+                        return new(progress, target, false) { RetryLater = true };
+                    }
+                    _corporationCursors.Remove(target);
                     _completed[target] = turn.PendingCommunities;
                 }
+                _systemRetries.Remove(target);
                 var updated = ReadProgress(occupied);
                 return new(
                     updated,

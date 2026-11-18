@@ -3,6 +3,7 @@ using Eden.Data.World.Combat;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Inventory;
@@ -56,7 +57,13 @@ internal sealed partial class CapsuleerResupply
                         e.Flag == module.FlagId && catalog.RequireItem(e.TypeId).CategoryId == (int)InventoryCategory.Charge
                     )
                     ?.TypeId
-                ?? 0;
+                ?? (
+                    pilot.CorporationId >= CorporationRules.FirstCorporationId
+                    && CapsuleerAmmunitionSupply.CanUseIron(catalog, module.TypeId)
+                    && CapsuleerAmmunitionSupply.Employer(world, pilotId, pilot.CorporationId) is not null
+                        ? CapsuleerAmmunitionSupplyRules.ChargeType
+                        : 0
+                );
             if (type == 0)
             {
                 continue;
@@ -222,6 +229,19 @@ internal sealed partial class CapsuleerResupply
                     remaining -= quantity;
                 }
             }
+            if (!need.Drone && need.TypeId == CapsuleerAmmunitionSupplyRules.ChargeType)
+            {
+                int capacity = Capacity(world, catalog, pilotId, ship.Id, need, remaining);
+                if (
+                    CapsuleerAmmunitionSupply.IssueReserve(world, catalog, pilotId, pilot.CorporationId, ship.StationId, capacity) is
+                    { } reserve
+                )
+                {
+                    Load(world, catalog, pilotId, ship.Id, ship.StationId, reserve.ItemId, reserve.Quantity, need.Drone, now);
+                    inventoryChanged = true;
+                    remaining -= reserve.Quantity;
+                }
+            }
             long limit = Limit(need.TypeId);
             if (remaining <= 0 || limit <= 0)
             {
@@ -320,7 +340,13 @@ internal sealed partial class CapsuleerResupply
                         e.Flag == module.FlagId && catalog.RequireItem(e.TypeId).CategoryId == (int)InventoryCategory.Charge
                     )
                     ?.TypeId
-                ?? 0;
+                ?? (
+                    pilot.CorporationId >= CorporationRules.FirstCorporationId
+                    && CapsuleerAmmunitionSupply.CanUseIron(catalog, module.TypeId)
+                    && CapsuleerAmmunitionSupply.Employer(world, pilotId, pilot.CorporationId) is not null
+                        ? CapsuleerAmmunitionSupplyRules.ChargeType
+                        : 0
+                );
             var effect = FittingCatalog.DefaultEffect(catalog, module.TypeId);
             if (
                 type == 0

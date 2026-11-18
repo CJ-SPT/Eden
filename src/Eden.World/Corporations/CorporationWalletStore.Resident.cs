@@ -53,6 +53,27 @@ internal sealed partial class CorporationWalletStore
         return tax;
     }
 
+    internal static long Pay(
+        WorldAction world,
+        int corporation,
+        long counterparty,
+        long reference,
+        WalletEntryType type,
+        long amount,
+        long now
+    )
+    {
+        var owner = world.Set<SavedCorporation>().Find(corporation) ?? throw new InvalidDataException("Unknown corporation wallet.");
+        long balance = checked(owner.BalanceCents + amount);
+        if (balance < 0)
+        {
+            throw new InvalidDataException("The corporation wallet cannot cover this payment.");
+        }
+        owner.BalanceCents = balance;
+        AddEntry(world, corporation, CorporationWalletRules.MasterKey, now, counterparty, amount, balance, type, reference, "");
+        return balance;
+    }
+
     internal static void AddEntry(
         WorldAction world,
         long owner,

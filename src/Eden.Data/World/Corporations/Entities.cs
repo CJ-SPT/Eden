@@ -24,6 +24,7 @@ public sealed class SavedCorporation
     public long CreatedAt { get; set; }
     public int MemberLimit { get; set; }
     public long BalanceCents { get; set; }
+    public int? CapsuleerFoundingSystemId { get; set; }
     public long? ClosedAt { get; set; }
 
     public PlayerCorporation Snapshot(int members) =>
