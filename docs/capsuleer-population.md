@@ -86,7 +86,9 @@ connected nullsec station route within three jumps, or a witnessed local defensi
 continue using individual roams.
 
 Gangs retain their home, roster, leader, roles and route across checkpoints and restarts. The scout departs first;
-the main body regroups at gates, shares short-lived target reports, and returns after reaching its endpoint, suffering
+the main body regroups at gates and shares short-lived target reports. A fitted scout can hold a player or rival bot
+when a damage-capable wingmate is visible within 30 km of the target and the local matchup is favorable.
+A lone scout reports the contact and can wait briefly for backup. The gang returns after reaching its endpoint, suffering
 losses, or exhausting its sortie time. Individual pilots use their own fits, damage application, health, ammunition and
 capacitor to decide how to engage. Kiting ships preserve range while tacklers close. Lost hulls remain lost.
 

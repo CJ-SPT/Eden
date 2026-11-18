@@ -18,6 +18,7 @@ public sealed record PatrolProgress(PatrolKind Kind, int SystemId)
     public GateCamp? Camp { get; init; }
     public long NextLook { get; init; }
     public long LeaveGridAt { get; init; }
+    public bool WatchingForGang { get; init; }
     public long CommittedAt { get; init; }
     public string? DecisionReason { get; init; }
 }

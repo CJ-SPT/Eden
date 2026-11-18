@@ -11,7 +11,12 @@ internal sealed partial class CapsuleerHauler
 {
     private const int MaximumFormationCandidates = 32;
 
-    private sealed record GangCandidate(DockedPilot Pilot, HaulerProgress Work, CapsuleerDefenseProfile Fit);
+    private static RoamingGangRecruit Recruit(DockedPilot pilot, CapsuleerDefenseProfile fit) =>
+        new(
+            new(pilot.PilotId, pilot.ShipId, fit.PvpRole) { Hull = (HullClass)pilot.ShipGroupId, DamageCapable = fit.HasDamage },
+            pilot.Flight.MaxSpeed,
+            fit.TackleRange > 0
+        );
 
     private RoamingGangMember? GangMember => Work.Gang?.Members.FirstOrDefault(member => member.PilotId == pilotId);
     private bool InActiveGang =>
@@ -202,7 +207,9 @@ internal sealed partial class CapsuleerHauler
         var route =
             CapsuleerTrafficRoutes.Roam(_operation.Catalog, Pilot.StationId, pilotId ^ Work.ActivitySequence)
             ?? new CapsuleerTrafficRoute(Pilot.StationId, Pilot.StationId, [Pilot.SystemId]);
-        List<GangCandidate> candidates = [new(Pilot, Work, own)];
+        List<RoamingGangRecruit> candidates = [Recruit(Pilot, own)];
+        Dictionary<long, HaulerProgress> schedules = [];
+        RoamingGangMember[] members = [];
         int? regionalGroup = policy.RegionalConflicts ? RegionalConflictStore.GroupForPilot(Live!, database.Catalog, pilotId) : null;
         var world = _operation.World;
         var roster = world
@@ -213,10 +220,6 @@ internal sealed partial class CapsuleerHauler
             .ToArray();
         foreach (var row in roster)
         {
-            if (candidates.Count >= policy.RoamingGangSize)
-            {
-                break;
-            }
             var saved = world.Pilots.SingleOrDefault(other => other.Id == row.PilotId);
             if (
                 saved is null
@@ -264,31 +267,22 @@ internal sealed partial class CapsuleerHauler
                 ActiveTicks: Work.ActiveTicks,
                 ClockOffsetTicks: Work.ActiveTicks
             );
-            candidates.Add(new(other, work, fit));
+            candidates.Add(Recruit(other, fit));
+            schedules.Add(other.PilotId, work);
+            if (candidates.Count >= policy.RoamingGangSize)
+            {
+                members = RoamingGangRules.SelectRoster(candidates, policy.RoamingGangSize);
+                if (members.Length > 0)
+                {
+                    break;
+                }
+            }
         }
-        if (
-            candidates.Count < RoamingGangRules.MinimumMembers
-            || !candidates.Any(candidate => candidate.Fit.TackleRange > 0)
-            || !candidates.Any(candidate => candidate.Fit.HasDamage)
-        )
+        if (candidates.Count < policy.RoamingGangSize)
         {
-            return false;
+            members = RoamingGangRules.SelectRoster(candidates, policy.RoamingGangSize);
         }
-        var scout = candidates
-            .OrderBy(candidate => candidate.Fit.PvpRole == PvpRole.ElectronicWarfare)
-            .ThenByDescending(candidate => candidate.Pilot.Flight.MaxSpeed)
-            .ThenBy(candidate => candidate.Pilot.PilotId)
-            .First();
-        var tackler = candidates
-            .Where(candidate => candidate != scout && candidate.Fit.TackleRange > 0)
-            .OrderBy(candidate => candidate.Fit.PvpRole == PvpRole.ElectronicWarfare)
-            .ThenByDescending(candidate => candidate.Pilot.Flight.MaxSpeed)
-            .FirstOrDefault();
-        if (tackler is null)
-        {
-            return false;
-        }
-        if (!candidates.Any(candidate => candidate != scout && candidate.Fit.HasDamage))
+        if (members.Length == 0)
         {
             return false;
         }
@@ -297,20 +291,6 @@ internal sealed partial class CapsuleerHauler
         {
             return false;
         }
-        var members = candidates
-            .Select(candidate => new RoamingGangMember(
-                candidate.Pilot.PilotId,
-                candidate.Pilot.ShipId,
-                candidate == scout ? PvpRole.Scout
-                    : candidate == tackler ? PvpRole.Tackle
-                    : candidate.Fit.PvpRole == PvpRole.Tackle ? PvpRole.Brawler
-                    : candidate.Fit.PvpRole
-            )
-            {
-                Hull = (HullClass)candidate.Pilot.ShipGroupId,
-                DamageCapable = candidate.Fit.HasDamage,
-            })
-            .ToArray();
         long sequence = checked(Work.ActivitySequence + 1);
         var gang = new RoamingGang(
             pilotId,
@@ -329,10 +309,10 @@ internal sealed partial class CapsuleerHauler
             Reason = regional?.Reason ?? "Hunting along a connected nullsec route.",
         };
         LaunchRegional(gang);
-        foreach (var candidate in candidates.Where(candidate => candidate.Pilot.PilotId != pilotId))
+        foreach (var member in members.Where(member => member.PilotId != pilotId))
         {
             _operation.GangEnrollments.Add(
-                new(candidate.Pilot.PilotId, candidate.Work with { Gang = gang, GangReturning = false, RegionalObjectiveVisited = false })
+                new(member.PilotId, schedules[member.PilotId] with { Gang = gang, GangReturning = false, RegionalObjectiveVisited = false })
             );
         }
         _work = Work with { Gang = gang, GangReturning = false, ActivitySequence = sequence, RegionalObjectiveVisited = false };

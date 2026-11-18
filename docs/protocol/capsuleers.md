@@ -2,6 +2,52 @@
 
 [Protocol index](../protocol.md)
 
+## Roaming gang formation and scout tackle — November 18, 2026
+
+Station recruitment scans up to 32 other home-station roster entries in pilot order. It stops as soon as it can
+fill the configured size with the initiator, a scout, a distinct fitted tackler and damage outside the scout role.
+A smaller viable crew of at least three can depart when the scan is exhausted. Scout and tackler selection prefer
+speed and preserve electronic warfare specialists when alternatives exist. Only selected pilots receive the saved command.
+
+An offensive scout reports visible contacts under the existing patrol, friendship and regional engagement rules.
+It can initiate tackle when its fitted point and lock range are within the existing bounded pursuit estimate and
+at least one active, damage-capable wingmate is visible within 30 km of the target. The visible opposition must
+fit the combined hull strength of the scout and those nearby wingmates. The scout uses tackle movement and the
+ordinary targeting, capacitor and module-cycle owners. A point-equipped scout watching a contact can stay up to
+the existing two-minute rendezvous interval beyond its original grid dwell. Repeated sightings do not extend
+that limit. Loss of contact restores the ordinary dwell at the next observation.
+
+These distances and timing are Eden policies. [EVE University scouting](https://wiki.eveuniversity.org/Scouting)
+describes first tackle and calling in the main fleet. The pinned client remains build 3662168. The Carbon
+movement reference and local evejs source revision are recorded in the
+[roaming gang implementation](#smarter-pilots-and-persistent-roaming-gangs--november-17-2026).
+The new decisions use existing movement and protocol operations.
+
+The first development filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.RoamingGangTests.FormationReservesTheOnlyTacklerAndDamageDealerWithinTheConfiguredSize`.
+The integration filter
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.RegionalConflictWorldTests.OffensiveScoutTacklesAVisiblePlayerOrRivalWithItsGang`
+covers the separately sourced player and autonomous rival contacts. The scout reports first and later applies its
+own fitted point. The player moves beyond range, clears warp disruption and leaves the grid. Station replays also
+launch a three-ship roster with its only scrambler on the first or fourth available pilot.
+
+**Automated validation.** Tool and solution restore passed. The solution built with zero warnings and errors in
+10.02 seconds. The wider filter joined `FullyQualifiedName~Eden.Protocol.Tests.Capsuleers.` with each of
+`RoamingGangTests`, `RegionalConflictWorldTests`, `RegionalConflictTests`, `PatrolTests`, `PvpTacticsTests`,
+`PvpResourceTests`, `GateCampTests`, `CapsuleerDefenseTests`, `CapsuleerDefenseLifecycleTests`,
+`CapsuleerDefenseModuleTests`, `CapsuleerDefenseFrameTests`, `CapsuleerSchedulingTests` and `CapsuleerHandoffTests`
+using OR. Of 128 cases, 126 passed and two failed in 61.63 seconds including runner setup.
+Both failures reproduced at the same assertions on unchanged main `498d0590` in an isolated two-test run
+(8.59 seconds). `RestartRetainsPaidWorkAndJobsButRebuildsObserverModesFromSelections` also admitted a hauler
+on restart. `RivalDefenseEngagesAVisibleRaidWithOwnedWeaponsAndRealDamage` observed no raider target in its
+350-tick window. That independently routed fleet encounter remains unverified. Both policy suites passed
+(8 catalog and 9 formatting tests), as did formatting and diff verification. No full regression suite ran.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** In nullsec, observe a scout report while alone and attempt to hold a target
+when a damage ship joins it on grid.
+
 ## Civilian danger and stripped belts — November 17, 2026
 
 With situational awareness enabled, miners at belts and freight pilots approaching gates in lowsec and nullsec use

@@ -1,3 +1,5 @@
+using Eden.Gameplay.Flight;
+
 namespace Eden.Gameplay.Capsuleers;
 
 public enum PvpRole
@@ -32,6 +34,8 @@ public sealed record RoamingGangMember(long PilotId, long ShipId, PvpRole Role)
     public bool DamageCapable { get; init; } = true;
 }
 
+public sealed record RoamingGangRecruit(RoamingGangMember Member, double Speed, bool HasTackle);
+
 public sealed record GangSighting(long ShipId, int SystemId, long GridId, long SeenAt, long ExpiresAt);
 
 // One immutable command revision is shared by the members' resident checkpoints.
@@ -65,6 +69,106 @@ public static class RoamingGangRules
     public static readonly long SortieTicks = TimeSpan.FromMinutes(10).Ticks;
     public static readonly long RecoveryTicks = TimeSpan.FromMinutes(2).Ticks;
     public static readonly long RendezvousTicks = TimeSpan.FromMinutes(2).Ticks;
+
+    // Eden small-gang policy: damage support must be on grid and within 30 km of the intended opponent.
+    public const double ScoutBackupMeters = 30_000;
+
+    public static RoamingGangMember[] SelectRoster(IReadOnlyList<RoamingGangRecruit> available, int size)
+    {
+        if (
+            available.Count < MinimumMembers
+            || !available.Any(recruit => recruit.HasTackle)
+            || !available.Any(recruit => recruit.Member.DamageCapable)
+        )
+        {
+            return [];
+        }
+        var ranked = available
+            .OrderBy(recruit => recruit.Member.Role == PvpRole.ElectronicWarfare)
+            .ThenByDescending(recruit => recruit.Speed)
+            .ThenBy(recruit => recruit.Member.PilotId)
+            .ToArray();
+        var tacklers = ranked.Where(recruit => recruit.HasTackle).ToArray();
+        foreach (var scout in ranked)
+        {
+            foreach (var tackler in tacklers.Where(recruit => recruit != scout))
+            {
+                // Keep the initiating pilot and reserve a damage dealer outside the scout role.
+                var required = new HashSet<RoamingGangRecruit> { available[0], scout, tackler };
+                if (!required.Any(recruit => recruit != scout && recruit.Member.DamageCapable))
+                {
+                    var damage = available.FirstOrDefault(recruit => recruit != scout && recruit.Member.DamageCapable);
+                    if (damage is null)
+                    {
+                        continue;
+                    }
+                    required.Add(damage);
+                }
+                if (required.Count > size)
+                {
+                    continue;
+                }
+                foreach (var recruit in available)
+                {
+                    if (required.Count == size)
+                    {
+                        break;
+                    }
+                    required.Add(recruit);
+                }
+                return available
+                    .Where(required.Contains)
+                    .Select(recruit =>
+                        recruit.Member with
+                        {
+                            Role =
+                                recruit == scout ? PvpRole.Scout
+                                : recruit == tackler ? PvpRole.Tackle
+                                : recruit.Member.Role == PvpRole.Tackle ? PvpRole.Brawler
+                                : recruit.Member.Role,
+                        }
+                    )
+                    .ToArray();
+            }
+        }
+        return [];
+    }
+
+    public static bool CanScoutTackle(
+        RoamingGang gang,
+        RoamingGangMember scout,
+        SpacePosition position,
+        double radius,
+        double speed,
+        double tackleRange,
+        PilotSighting target,
+        IReadOnlyList<PilotSighting> visible,
+        double opposition
+    )
+    {
+        if (
+            gang.Phase != RoamingGangPhase.Hunting
+            || tackleRange <= 0
+            || PvpTactics.PursuitDistance(target.Position - position, target.Velocity, speed) > tackleRange + radius + target.Radius
+        )
+        {
+            return false;
+        }
+        double backup = 0;
+        foreach (var member in gang.Members)
+        {
+            if (member.Status != RoamingGangMemberStatus.Active || member.ShipId == scout.ShipId || !member.DamageCapable)
+            {
+                continue;
+            }
+            var contact = visible.FirstOrDefault(ship => ship.ShipId == member.ShipId && ship.PilotId == member.PilotId);
+            if (contact is not null && contact.Position.DistanceTo(target.Position) <= ScoutBackupMeters)
+            {
+                backup += PvpTactics.Threat(contact.Hull);
+            }
+        }
+        return backup > 0 && opposition <= backup + PvpTactics.Threat(scout.Hull);
+    }
 
     public static RoamingGang Reconcile(RoamingGang gang, IReadOnlySet<long> survivingShips, long elapsed)
     {

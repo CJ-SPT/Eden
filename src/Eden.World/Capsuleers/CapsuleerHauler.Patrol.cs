@@ -143,33 +143,54 @@ internal sealed partial class CapsuleerHauler
                 )
                 .Sum(contact => PvpTactics.Threat(contact.Hull));
         long reported = gang is null ? 0 : RoamingGangRules.Reported(gang, Pilot.SystemId, _target.Id, Work.ActiveTicks);
-        var decision = PvpTactics.Select(
-            Pilot.Position!,
-            _navigation.Velocity,
-            profile.RattingWeapons,
-            candidates,
-            friendly,
-            activity.TargetId,
-            patrol.CommittedAt,
-            Work.ActiveTicks,
-            reported,
-            PilotAwareness.Cautious(pilotId),
-            Pilot.Flight.MaxSpeed,
-            Pilot.Flight.ShipRadius,
-            profile.HasSupport ? profile.SupportRange : 0
-        );
-        bool scout = gang is not null && GangMember?.Role == PvpRole.Scout;
+        double opposition = candidates.Sum(contact => PvpTactics.Threat(contact.Hull));
+        bool reportingOnly = false;
+        var member = gang is null ? null : GangMember;
+        bool scout = member?.Role == PvpRole.Scout;
+        PvpDecision decision;
         if (scout && candidates.Length > 0)
         {
+            var contacts = candidates
+                .OrderByDescending(contact => contact.ShipId == reported)
+                .ThenByDescending(contact => PvpTactics.Threat(contact.Hull))
+                .ThenBy(contact => contact.ShipId)
+                .ToArray();
+            var engage = contacts.FirstOrDefault(contact =>
+                RoamingGangRules.CanScoutTackle(
+                    gang!,
+                    member!,
+                    Pilot.Position!,
+                    Pilot.Flight.ShipRadius,
+                    Pilot.Flight.MaxSpeed,
+                    Math.Min(profile.TackleRange, profile.TargetRange),
+                    contact,
+                    seen,
+                    opposition
+                )
+            );
+            reportingOnly = engage is null;
             decision = new(
-                candidates
-                    .OrderByDescending(contact => contact.ShipId == reported)
-                    .ThenByDescending(contact => PvpTactics.Threat(contact.Hull))
-                    .ThenBy(contact => contact.ShipId)
-                    .First()
-                    .ShipId,
+                (engage ?? contacts[0]).ShipId,
                 0,
-                "Scouting a visible contact for the gang."
+                reportingOnly ? "Scouting a visible contact for the gang." : "Tackling with nearby gang support."
+            );
+        }
+        else
+        {
+            decision = PvpTactics.Select(
+                Pilot.Position!,
+                _navigation.Velocity,
+                profile.RattingWeapons,
+                candidates,
+                friendly,
+                activity.TargetId,
+                patrol.CommittedAt,
+                Work.ActiveTicks,
+                reported,
+                PilotAwareness.Cautious(pilotId),
+                Pilot.Flight.MaxSpeed,
+                Pilot.Flight.ShipRadius,
+                profile.HasSupport ? profile.SupportRange : 0
             );
         }
         var target = decision.TargetId == 0 ? null : defense.PatrolTarget(Pilot, decision.TargetId, _target.Position, Now);
@@ -177,6 +198,7 @@ internal sealed partial class CapsuleerHauler
         {
             CommittedAt = decision.TargetId != activity.TargetId ? Work.ActiveTicks : patrol.CommittedAt,
             DecisionReason = decision.Reason,
+            WatchingForGang = scout && profile.TackleRange > 0 && target is not null,
         };
         if (gang is not null && target is not null)
         {
@@ -184,7 +206,7 @@ internal sealed partial class CapsuleerHauler
             {
                 _work = Work with { Gang = RoamingGangRules.Report(gang, target.ShipId, Pilot.SystemId, _target.Id, Work.ActiveTicks) };
             }
-            if (scout)
+            if (reportingOnly)
             {
                 target = null;
             }
@@ -192,7 +214,7 @@ internal sealed partial class CapsuleerHauler
         double gangStrength =
             gang?.Members.Where(member => member.Status == RoamingGangMemberStatus.Active).Sum(member => PvpTactics.Threat(member.Hull))
             ?? friendly;
-        if (gang is not null && candidates.Sum(contact => PvpTactics.Threat(contact.Hull)) > gangStrength * 2)
+        if (gang is not null && opposition > gangStrength * 2)
         {
             _work = Work with { Gang = ReturnGang(Work.Gang!, decision.Reason) };
         }

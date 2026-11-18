@@ -7,6 +7,7 @@ using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Ships;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Flight;
 using Eden.Server;
@@ -32,6 +33,92 @@ public sealed class RoamingGangTests
     private const int HomeStation = 60015157;
     private const int AwayStation = 60003760;
     private const long Human = 90000001;
+
+    [Fact]
+    public void FormationReservesTheOnlyTacklerAndDamageDealerWithinTheConfiguredSize()
+    {
+        static RoamingGangRecruit Recruit(long id, bool tackle = false, bool damage = true) =>
+            new(new(id, id, PvpRole.Brawler) { DamageCapable = damage }, id, tackle);
+
+        // The leader and first two recruits have no point. The fourth is the fastest and the only tackler.
+        RoamingGangRecruit[] available = [Recruit(1), Recruit(2), Recruit(3), Recruit(4, tackle: true)];
+        Assert.Empty(RoamingGangRules.SelectRoster(available[..3], 3));
+        var roster = RoamingGangRules.SelectRoster(available, 3);
+        Assert.Equal([1L, 3L, 4L], roster.Select(member => member.PilotId));
+        Assert.Equal(4, Assert.Single(roster, member => member.Role == PvpRole.Tackle).PilotId);
+        Assert.Equal(3, Assert.Single(roster, member => member.Role == PvpRole.Scout).PilotId);
+
+        available = [Recruit(1, damage: false), Recruit(2, tackle: true, damage: false), Recruit(3)];
+        roster = RoamingGangRules.SelectRoster(available, 3);
+        Assert.Equal(1, Assert.Single(roster, member => member.Role == PvpRole.Scout).PilotId);
+        Assert.Equal(3, Assert.Single(roster, member => member.DamageCapable).PilotId);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(3)]
+    public void StationFormsAndLaunchesThreeShipsWithOneFittedTackler(int tackleSlot)
+    {
+        using var fixture = new Fixture(gangSize: 3);
+        long tackler;
+        using (var action = fixture.Live.Economy.Begin())
+        {
+            var crew = action
+                .Set<SavedCapsuleerHauler>()
+                .Where(row => row.SourceStationId == HomeStation)
+                .AsEnumerable()
+                .Where(row => action.Set<SavedCapsuleerSuspension>().Find(row.PilotId) is null)
+                .OrderBy(row => row.PilotId)
+                .ToArray();
+            Assert.Equal(4, crew.Length);
+            tackler = crew[tackleSlot].PilotId;
+            foreach (var row in crew.Where(row => row.PilotId != tackler))
+            {
+                var point = action.Set<OwnedItem>().Single(item => item.OwnerId == row.PilotId && item.Online && item.TypeId == 447);
+                point.Online = false;
+            }
+            action.Commit();
+        }
+        var gang = fixture.Form();
+        Assert.Equal(3, gang.Members.Length);
+        Assert.Equal(tackler, Assert.Single(gang.Members, member => member.Role == PvpRole.Tackle).PilotId);
+        Assert.NotEqual(tackler, Assert.Single(gang.Members, member => member.Role == PvpRole.Scout).PilotId);
+        var launched = new HashSet<long>();
+        for (int turn = 0; turn < 120 && launched.Count < gang.Members.Length; turn++)
+        {
+            fixture.Tick();
+            foreach (var member in gang.Members.Where(member => fixture.Scheduler.Hauler(member.PilotId)!.Pilot.Position is not null))
+            {
+                launched.Add(member.PilotId);
+            }
+        }
+        Assert.Equal(gang.Members.Length, launched.Count);
+    }
+
+    [Fact]
+    public void ScoutCommitsOnlyWithVisibleActiveDamageSupportWithinReachOfTheOpponent()
+    {
+        var scout = new RoamingGangMember(1, 11, PvpRole.Scout) { Hull = HullClass.Frigate };
+        var wing = new RoamingGangMember(2, 22, PvpRole.Tackle) { Hull = HullClass.Frigate };
+        PilotSighting At(long pilot, long ship, double x) =>
+            new(pilot, ship, 603, HullClass.Frigate, 0, null, new(x, 0, 0), SpacePosition.Zero, 0);
+        var target = At(3, 33, 1_000);
+        var nearby = At(2, 22, target.Position.X + RoamingGangRules.ScoutBackupMeters);
+        var gang = new RoamingGang(1, 1, 1, 1, 2, [Home, Away], 1, [scout, wing], 0, 10) { Phase = RoamingGangPhase.Hunting };
+        bool Commit(RoamingGang command, PilotSighting[] seen, double range = 2_000, double threat = 1) =>
+            RoamingGangRules.CanScoutTackle(command, scout, SpacePosition.Zero, 0, 0, range, target, seen, threat);
+
+        Assert.True(Commit(gang, [nearby]));
+        Assert.False(Commit(gang, []));
+        Assert.False(Commit(gang, [nearby with { Position = nearby.Position + new SpacePosition(1, 0, 0) }]));
+        Assert.False(Commit(gang, [nearby with { ShipId = 99 }]));
+        Assert.False(Commit(gang, [nearby], range: 0));
+        Assert.False(Commit(gang, [nearby], range: 999));
+        Assert.False(Commit(gang, [nearby], threat: PvpTactics.Threat(HullClass.Battleship)));
+        Assert.False(Commit(gang with { Members = [scout, wing with { DamageCapable = false }] }, [nearby]));
+        Assert.False(Commit(gang with { Members = [scout, wing with { Status = RoamingGangMemberStatus.Lost }] }, [nearby]));
+        Assert.False(Commit(gang with { Phase = RoamingGangPhase.Returning }, [nearby]));
+    }
 
     [Fact]
     public async Task GangFormsTravelsWithoutAnObserverAndReturnsAfterRestart()
@@ -394,7 +481,8 @@ public sealed class RoamingGangTests
             bool splitRegions = false,
             bool supportCatalog = false,
             int? targetLimit = null,
-            bool thermalCatalog = false
+            bool thermalCatalog = false,
+            int gangSize = 4
         )
         {
             PassiveCatalogFixture.LoadFrigateHulls(Database.CatalogPath);
@@ -462,6 +550,7 @@ public sealed class RoamingGangTests
                 Capsuleers = settings.Capsuleers with
                 {
                     TrafficMultiplier = 10,
+                    RoamingGangSize = gangSize,
                     GateVisitors = 0,
                     Miners = false,
                     GeneratedCombatPercent = 100,

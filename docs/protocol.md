@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Roaming gang formation and scout tackle](protocol/capsuleers.md#roaming-gang-formation-and-scout-tackle--november-18-2026)
+covers role selection and scout engagements against players and rival pilots with nearby gang support.
+
 [Distant warping ships](protocol/navigation.md#distant-warping-ships-in-the-overview-november-17-2026)
 leave the observer grid when their timed warp moves beyond visibility, even between position publications.
 

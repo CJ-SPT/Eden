@@ -403,6 +403,11 @@ internal sealed partial class CapsuleerHauler(
             EndSortie(sortie);
         }
         var proactive = ProactiveTarget();
+        var combatRole = InActiveGang ? GangMember?.Role : null;
+        if (combatRole == PvpRole.Scout && proactive is { Npc: false })
+        {
+            combatRole = PvpRole.Tackle;
+        }
         var previousDefense = Work.Defense;
         var defended = _background
             ? new CapsuleerDefenseResult(Pilot, null, false, false, false)
@@ -416,7 +421,7 @@ internal sealed partial class CapsuleerHauler(
                 Work.Retreating,
                 Work.Activity is not (HaulerActivity.Jumping or HaulerActivity.Inbound) && Work.Stamp >= Work.ArrivalUntil,
                 proactive: proactive,
-                pvpRole: InActiveGang ? GangMember?.Role : null,
+                pvpRole: combatRole,
                 gang: InActiveGang ? Work.Gang : null
             );
         _pilot = defended.Pilot;

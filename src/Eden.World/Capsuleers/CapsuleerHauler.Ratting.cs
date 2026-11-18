@@ -322,7 +322,10 @@ internal sealed partial class CapsuleerHauler
             case RattingPhase.Fighting:
                 if (activity.Patrol is { } patrol)
                 {
-                    if (patrol.LeaveGridAt > 0 && Work.ActiveTicks >= patrol.LeaveGridAt)
+                    long leaveAt = patrol.WatchingForGang
+                        ? checked(patrol.LeaveGridAt + RoamingGangRules.RendezvousTicks)
+                        : patrol.LeaveGridAt;
+                    if (patrol.LeaveGridAt > 0 && Work.ActiveTicks >= leaveAt)
                     {
                         NextBelt();
                     }
@@ -380,7 +383,7 @@ internal sealed partial class CapsuleerHauler
                 Ratting = activity with
                 {
                     BeltIndex = activity.BeltIndex + 1,
-                    Patrol = activity.Patrol is { } patrol ? patrol with { LeaveGridAt = 0, NextLook = 0 } : null,
+                    Patrol = activity.Patrol is { } patrol ? patrol with { LeaveGridAt = 0, NextLook = 0, WatchingForGang = false } : null,
                 },
             };
             FlyToBelt();
