@@ -2,6 +2,42 @@
 
 [Protocol index](../protocol.md)
 
+## Combined factory pickups
+
+A hauler can collect several missing materials from the same supplier station. Supplier selection favors the station
+that can fill the most distinct shortages in one load. Ties favor more units, fewer jumps, then a lower quoted cost.
+The buyer rechecks factory stock, local offers, supplier orders, corporate funds and cargo on arrival. It fills smaller
+loads first and uses any remaining space and budget for the rest. A shortage can be partially filled.
+
+The hauler checks the whole purchase against one cargo allowance and one corporate balance. The resident market action
+pays for the materials and puts them into real cargo in the same transaction, with one manifest stack per material
+even when several orders supply it. Delivery uses the checkpointed manifest. Existing saved routes still identify the
+supplier and factory, and paid shipments preserve their saved cargo.
+
+Packing follows the existing cargo capacity rules. EVE University describes the role of hold space and station-to-station
+travel in hauling. The existing market custody reference is recorded below. [EVE University Hauling](https://wiki.eveuniversity.org/Hauling)
+
+### Automated validation
+
+The factory supply integration test covers a single material, two materials on one trip, and a hold where either material
+fits on its own and the combined load requires a partial purchase. It checks corporate spending, seller order quantities,
+multiple fills for the same material, restart recovery, and the remaining factory shortage.
+
+The exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerAmmunitionSupplyTests.HaulsOnlyTheRemoteShortfallAndResumesDeliveryAfterRestart`
+passed all three cases in 14 seconds. The final isolated run on top of `249446e6` passed 87 tests in 42 seconds with
+`FullyQualifiedName~` filters for `CapsuleerAmmunitionSupplyTests`, `CapsuleerHaulerTests`, `CapsuleerInboundRuntimeTests`, `CapsuleerMinerTests`,
+`PersonalMarketTests` and `Eden.Protocol.Tests.Industry.IndustryTests`. The build completed with zero warnings or errors.
+Tool and solution restore, 17 Python policy tests, formatting, documentation links and diff whitespace checks passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+List two missing ingredients at the same nearby station and verify both sale transactions come from one pickup.
+
 ## Nearby procurement for bot factories
 
 A factory turns a material shortage into a supply request once it has checked its own hangar, suitable ore and local sell
@@ -10,10 +46,10 @@ account for projected proceeds, local expenses and corporate funds. The existing
 request nearby materials when it has an original at the factory.
 
 A hauling corpmate searches open player and NPC orders at stations reachable within three gate jumps of both the hauler
-and the factory. It checks the known threat systems and prefers the supplier that fills the most of one shortage, then
-the shorter route and lower price. Before purchasing, the courier rechecks the factory's stock, local offers and any
-supporting buy order. It then buys from the current supplier book, using the corporation wallet and the ship's free cargo
-space.
+and the factory. It checks the known threat systems. Before purchasing, the courier rechecks the factory's stock, local
+offers and any supporting buy order. It then buys from the current supplier book using the corporation wallet and the
+ship's free cargo space. Subsequent work extended the original single-material dispatch policy.
+[Combined factory pickups](#combined-factory-pickups)
 
 The factory request is stored in the existing miner checkpoint and the assignment, cargo and route are stored in the
 hauler checkpoint. Each corporation sends one supply courier at a time. The hauler deposits surviving cargo into the

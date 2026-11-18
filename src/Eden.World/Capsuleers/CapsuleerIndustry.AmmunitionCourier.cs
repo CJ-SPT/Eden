@@ -140,21 +140,15 @@ internal sealed partial class CapsuleerIndustry
             return null;
         }
         var purchase = market.BuyCorporationSupply(world, catalog, courier.PilotId, buyer, listing, units);
-        return StowPurchased(world, courier, home, purchase.TypeId, purchase.Quantity, run.OrderId);
+        var cargo = StowPurchased(world, courier, purchase.TypeId, purchase.Quantity);
+        return new(run.OrderId, home, [cargo]);
     }
 
     private static double FreeFreightVolume(WorldAction world, CatalogDbContext catalog, DockedPilot courier) =>
         PilotInventoryStore.HoldCapacity(world, catalog, courier.PilotId, courier.ShipId, (int)InventoryFlag.Cargo)
         - InventoryPersistence.UsedVolume(world, catalog, courier.PilotId, courier.ShipId, (int)InventoryFlag.Cargo);
 
-    private static FreightManifest StowPurchased(
-        EconomyTransaction world,
-        DockedPilot courier,
-        int destination,
-        int type,
-        int quantity,
-        long sequence
-    )
+    private static FreightStack StowPurchased(EconomyTransaction world, DockedPilot courier, int type, int quantity)
     {
         // Move only the newly purchased units. Keep them in a distinct ordinary ship cargo stack for loss and checkpoint handling.
         var stock = Hangar(world, courier.PilotId, courier.StationId).First(item => item.TypeId == type && !item.Singleton);
@@ -176,7 +170,7 @@ internal sealed partial class CapsuleerIndustry
                 }
             )
             .Entity;
-        return new(sequence, destination, [new(cargo.Id, cargo.TypeId, quantity)]);
+        return new(cargo.Id, cargo.TypeId, quantity);
     }
 
     internal static void Deliver(

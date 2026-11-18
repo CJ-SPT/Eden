@@ -94,8 +94,8 @@ the recipe's skills, facility restrictions, expected proceeds and available fund
 [Manufacturing policy and validation](protocol/capsuleers.md#demand-driven-bot-manufacturing)
 
 When local stock and offers cannot cover the batch, a corpmate can collect the remainder from another station within
-three jumps. The hauler purchases at the supplier, carries what fits, and unloads into the manufacturer's factory
-hangar. Cargo and the return trip survive a restart.
+three jumps. The hauler combines needed materials sold at the same station, carries what fits, and unloads into the
+manufacturer's factory hangar. Cargo and the return trip survive a restart.
 [Nearby procurement](protocol/capsuleers.md#nearby-procurement-for-bot-factories)
 
 #### Corporation ammunition supply

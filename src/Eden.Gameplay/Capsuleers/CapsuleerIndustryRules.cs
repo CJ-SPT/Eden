@@ -22,10 +22,4 @@ public sealed record FactorySupplyDemand(long OrderId, long MinimumUnitPriceCent
 
 public sealed record FactorySupplyRequest(int CorporationId, int StationId, FactorySupplyDemand? Demand, FactorySupplyNeed[] Materials);
 
-public sealed record FactorySupplyShipment(
-    long ManufacturerId,
-    int FactoryStationId,
-    int SupplierStationId,
-    int TypeId,
-    long? DemandOrderId
-);
+public sealed record FactorySupplyShipment(long ManufacturerId, int FactoryStationId, int SupplierStationId, long? DemandOrderId);

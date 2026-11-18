@@ -1,7 +1,6 @@
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Corporations;
-using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Docking;
@@ -17,6 +16,10 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerIndustry
 {
+    private sealed record FactoryShortage(FactorySupplyNeed Need, int Quantity, double UnitVolume);
+
+    private sealed record FactoryPickup(CapsuleerTrafficRoute Outbound, int RouteLength, IReadOnlyList<MarketPurchase> Purchases);
+
     internal Collection? PlanFactoryCollection(
         EconomyTransaction world,
         CatalogDbContext catalog,
@@ -59,79 +62,68 @@ internal sealed partial class CapsuleerIndustry
             int factorySystem = catalog.RequireStation(request.StationId).SolarSystemId;
             var nearby = NearbySystems(catalog, factorySystem, maximumJumps);
             nearby.IntersectWith(nearbyCourier);
-            foreach (var need in request.Materials)
+            var suppliers = request
+                .Materials.SelectMany(need =>
+                    SupplierStations(world, nearby, request.StationId, need, now).Select(station => (station, need.TypeId))
+                )
+                .ToLookup(offer => offer.station, offer => offer.TypeId);
+            if (suppliers.Count == 0)
             {
-                int[] suppliers = SupplierStations(world, nearby, request.StationId, need, now).ToArray();
-                if (suppliers.Length == 0)
+                continue;
+            }
+            var shortages = FactoryShortages(world, catalog, manufacturer, request);
+            List<FactoryPickup> pickups = [];
+            foreach (var offers in suppliers)
+            {
+                int supplier = offers.Key;
+                var available = shortages.Where(shortage => offers.Contains(shortage.Need.TypeId)).ToArray();
+                if (available.Length == 0 || !catalog.Definitions.Stations.ContainsKey(supplier))
                 {
                     continue;
                 }
-                int quantity = FactoryShortfall(world, catalog, manufacturer, request, need);
-                int capacity = FreightUnits(catalog, need, free, quantity);
-                if (capacity <= 0)
+                var outbound = CapsuleerTrafficRoutes.ToStation(
+                    catalog,
+                    courier.StationId,
+                    supplier,
+                    HullClass.Hauler,
+                    avoided,
+                    maximumJumps
+                );
+                var inbound = CapsuleerTrafficRoutes.ToStation(
+                    catalog,
+                    supplier,
+                    request.StationId,
+                    HullClass.Hauler,
+                    avoided,
+                    maximumJumps
+                );
+                if (outbound is null || inbound is null)
                 {
                     continue;
                 }
-                Collection? best = null;
-                int bestQuantity = 0;
-                int bestJumps = int.MaxValue;
-                long bestPrice = long.MaxValue;
-                foreach (int supplier in suppliers)
+                var purchases = ShopForFactory(world, catalog, courier.PilotId, employer, supplier, available, free);
+                if (purchases.Count > 0)
                 {
-                    if (!catalog.Definitions.Stations.ContainsKey(supplier))
-                    {
-                        continue;
-                    }
-                    var outbound = CapsuleerTrafficRoutes.ToStation(
-                        catalog,
-                        courier.StationId,
-                        supplier,
-                        HullClass.Hauler,
-                        avoided,
-                        maximumJumps
-                    );
-                    var inbound = CapsuleerTrafficRoutes.ToStation(
-                        catalog,
-                        supplier,
-                        request.StationId,
-                        HullClass.Hauler,
-                        avoided,
-                        maximumJumps
-                    );
-                    if (outbound is null || inbound is null)
-                    {
-                        continue;
-                    }
-                    if (ShopForFactory(world, catalog, courier, employer, supplier, need, capacity) is not { } purchase)
-                    {
-                        continue;
-                    }
-                    int jumps = outbound.Systems.Length + inbound.Systems.Length;
-                    if (
-                        purchase.Quantity < bestQuantity
-                        || purchase.Quantity == bestQuantity
-                            && (jumps > bestJumps || jumps == bestJumps && purchase.LimitPriceCents >= bestPrice)
-                    )
-                    {
-                        continue;
-                    }
-                    bestQuantity = purchase.Quantity;
-                    bestJumps = jumps;
-                    bestPrice = purchase.LimitPriceCents;
-                    var shipment = new FactorySupplyShipment(
-                        manufacturer,
-                        request.StationId,
-                        supplier,
-                        need.TypeId,
-                        request.Demand?.OrderId
-                    );
-                    // Factory trips quote the station's book on arrival, so they have no fixed supplier order ID.
-                    best = new(new(employer.Id, 0) { FactorySupply = shipment }, outbound);
+                    pickups.Add(new(outbound, outbound.Systems.Length + inbound.Systems.Length, purchases));
                 }
-                if (best is not null)
-                {
-                    return best;
-                }
+            }
+            var pickup = pickups
+                .OrderByDescending(candidate => candidate.Purchases.Count)
+                .ThenByDescending(candidate => candidate.Purchases.Sum(purchase => (long)purchase.Quantity))
+                .ThenBy(candidate => candidate.RouteLength)
+                .ThenBy(candidate => candidate.Purchases.Sum(purchase => purchase.Quantity * purchase.LimitPriceCents))
+                .ThenBy(candidate => candidate.Outbound.DestinationStationId)
+                .FirstOrDefault();
+            if (pickup is not null)
+            {
+                var shipment = new FactorySupplyShipment(
+                    manufacturer,
+                    request.StationId,
+                    pickup.Outbound.DestinationStationId,
+                    request.Demand?.OrderId
+                );
+                // Factory trips quote the station's book on arrival, so they have no fixed supplier order ID.
+                return new(new(employer.Id, 0) { FactorySupply = shipment }, pickup.Outbound);
             }
         }
         return null;
@@ -153,20 +145,30 @@ internal sealed partial class CapsuleerIndustry
             || CurrentFactoryRequest(world, live, shipment.ManufacturerId, employer.Id, now) is not { } request
             || request.StationId != shipment.FactoryStationId
             || request.Demand?.OrderId != shipment.DemandOrderId
-            || request.Materials.FirstOrDefault(material => material.TypeId == shipment.TypeId) is not { } need
         )
         {
             return null;
         }
-        int quantity = FactoryShortfall(world, catalog, shipment.ManufacturerId, request, need);
-        int capacity = FreightUnits(catalog, need, FreeFreightVolume(world, catalog, courier), quantity);
-        if (capacity <= 0 || ShopForFactory(world, catalog, courier, employer, courier.StationId, need, capacity) is not { } purchase)
+        var shortages = FactoryShortages(world, catalog, shipment.ManufacturerId, request);
+        var purchases = ShopForFactory(
+            world,
+            catalog,
+            courier.PilotId,
+            employer,
+            courier.StationId,
+            shortages,
+            FreeFreightVolume(world, catalog, courier)
+        );
+        if (purchases.Count == 0)
         {
             return null;
         }
-        var result = market.BuyManufacturingInputs(world, catalog, courier.PilotId, courier.StationId, employer, [purchase]);
-        int bought = result.Trades.Sum(trade => trade.Quantity);
-        return StowPurchased(world, courier, shipment.FactoryStationId, need.TypeId, bought, result.Trades[0].OrderId);
+        var result = market.BuyManufacturingInputs(world, catalog, courier.PilotId, courier.StationId, employer, purchases);
+        var cargo = result
+            .Trades.GroupBy(trade => trade.TypeId)
+            .Select(trades => StowPurchased(world, courier, trades.Key, trades.Sum(trade => trade.Quantity)))
+            .ToArray();
+        return new(result.Trades[0].OrderId, shipment.FactoryStationId, cargo);
     }
 
     private static FactorySupplyRequest? CurrentFactoryRequest(
@@ -207,56 +209,102 @@ internal sealed partial class CapsuleerIndustry
         return request;
     }
 
-    private int FactoryShortfall(
+    private FactoryShortage[] FactoryShortages(
         EconomyTransaction world,
         CatalogDbContext catalog,
         long manufacturer,
-        FactorySupplyRequest request,
-        FactorySupplyNeed need
+        FactorySupplyRequest request
     )
     {
-        long held = world
-            .Filter<OwnedItem>(item => item.OwnerId == manufacturer)
-            .Where(item => item.LocationId == request.StationId && item.TypeId == need.TypeId && item.FlagId == (int)InventoryFlag.Hangar)
-            .Sum(item => (long)item.Quantity);
-        int target = (int)Math.Clamp(need.HangarTarget - held, 0, need.PlannedUnits);
-        if (target == 0)
+        var inventory = Hangar(world, manufacturer, request.StationId)
+            .GroupBy(item => item.TypeId)
+            .ToDictionary(items => items.Key, items => items.Sum(item => (long)item.Quantity));
+        var shortages = request
+            .Materials.Select(need =>
+                (Need: need, Quantity: (int)Math.Clamp(need.HangarTarget - inventory.GetValueOrDefault(need.TypeId), 0, need.PlannedUnits))
+            )
+            .Where(shortage => shortage.Quantity > 0)
+            .ToArray();
+        if (shortages.Length == 0)
         {
-            return 0;
+            return [];
         }
+        int[] types = shortages.Select(shortage => shortage.Need.TypeId).ToArray();
         var local = market
-            .SupplyOrders(world, catalog, request.StationId, [need.TypeId], manufacturer, request.CorporationId)
-            .Where(order => order.PriceCents <= need.MaximumUnitPriceCents);
-        int outstanding = (int)Math.Max(0, need.RequiredQuantity - held);
-        int localUnits = QuoteInput(local, need.TypeId, outstanding)?.Quantity ?? 0;
-        return Math.Min(target, outstanding - localUnits);
+            .SupplyOrders(world, catalog, request.StationId, types, manufacturer, request.CorporationId)
+            .ToLookup(order => order.TypeId);
+        List<FactoryShortage> remaining = [];
+        foreach (var shortage in shortages)
+        {
+            var need = shortage.Need;
+            int outstanding = (int)Math.Max(0, need.RequiredQuantity - inventory.GetValueOrDefault(need.TypeId));
+            var offers = local[need.TypeId].TakeWhile(order => order.PriceCents <= need.MaximumUnitPriceCents);
+            int localUnits = QuoteInput(offers, need.TypeId, outstanding)?.Quantity ?? 0;
+            int quantity = Math.Min(shortage.Quantity, outstanding - localUnits);
+            if (quantity > 0)
+            {
+                double volume = PilotInventoryStore.Volume(catalog, need.TypeId);
+                if (volume > 0)
+                {
+                    remaining.Add(new(need, quantity, volume));
+                }
+            }
+        }
+        return remaining.ToArray();
     }
 
-    private static int FreightUnits(CatalogDbContext catalog, FactorySupplyNeed need, double free, int quantity)
-    {
-        double volume = PilotInventoryStore.Volume(catalog, need.TypeId);
-        return volume > 0 ? (int)Math.Clamp(Math.Floor(free / volume), 0, quantity) : 0;
-    }
-
-    private MarketPurchase? ShopForFactory(
+    private IReadOnlyList<MarketPurchase> ShopForFactory(
         EconomyTransaction world,
         CatalogDbContext catalog,
-        DockedPilot courier,
+        long courierId,
         SavedCorporation employer,
         int station,
-        FactorySupplyNeed need,
-        int capacity
+        IReadOnlyList<FactoryShortage> shortages,
+        double free
     )
     {
-        var offers = market
-            .SupplyOrders(world, catalog, station, [need.TypeId], courier.PilotId, employer.Id)
-            .TakeWhile(offer => offer.PriceCents <= Math.Min(need.MaximumUnitPriceCents, employer.BalanceCents));
+        if (shortages.Count == 0 || free <= 0)
+        {
+            return [];
+        }
+        int[] types = shortages.Select(shortage => shortage.Need.TypeId).ToArray();
+        var offers = market.SupplyOrders(world, catalog, station, types, courierId, employer.Id).ToLookup(offer => offer.TypeId);
+        List<MarketPurchase> purchases = [];
+        long funds = employer.BalanceCents;
+        // Smaller loads go first so a large shortage leaves room for other materials.
+        foreach (var shortage in shortages.OrderBy(line => line.Quantity * line.UnitVolume).ThenBy(line => line.Need.TypeId))
+        {
+            double units = (free + InventoryDefinitions.ResourceTolerance) / shortage.UnitVolume;
+            int capacity = (int)Math.Clamp(Math.Floor(units), 0, shortage.Quantity);
+            if (capacity == 0 || funds <= 0)
+            {
+                continue;
+            }
+            var need = shortage.Need;
+            if (QuoteFactoryInput(offers[need.TypeId], need, capacity, funds) is { } purchase)
+            {
+                purchases.Add(purchase);
+                free -= purchase.Quantity * shortage.UnitVolume;
+                funds -= purchase.Quantity * purchase.LimitPriceCents;
+            }
+        }
+        return purchases;
+    }
+
+    private static MarketPurchase? QuoteFactoryInput(
+        IEnumerable<MarketOrder> marketOffers,
+        FactorySupplyNeed need,
+        int capacity,
+        long funds
+    )
+    {
+        var offers = marketOffers.TakeWhile(offer => offer.PriceCents <= Math.Min(need.MaximumUnitPriceCents, funds));
         var purchase = QuoteInput(offers, need.TypeId, capacity);
-        if (purchase is null || purchase.Quantity <= employer.BalanceCents / purchase.LimitPriceCents)
+        if (purchase is null || purchase.Quantity <= funds / purchase.LimitPriceCents)
         {
             return purchase;
         }
-        int affordable = (int)(employer.BalanceCents / purchase.LimitPriceCents);
+        int affordable = (int)(funds / purchase.LimitPriceCents);
         return QuoteInput(offers.TakeWhile(offer => offer.PriceCents <= purchase.LimitPriceCents), need.TypeId, affordable);
     }
 
