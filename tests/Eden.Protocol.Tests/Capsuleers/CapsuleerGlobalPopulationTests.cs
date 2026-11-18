@@ -309,6 +309,58 @@ public sealed class CapsuleerGlobalPopulationTests
     }
 
     [Fact]
+    public void LoginDrainsLocalJobsBeforeStartingBoundedBatchesOfOffscreenTravelers()
+    {
+        const int startsPerInterval = 4;
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        CapsuleerProvisioningTests.AddSystem(f.Database, Third);
+        Restart(f, new(Miners: false, TrafficMultiplier: 10, GateVisitors: 0));
+        long[] remote;
+        using (WorldDbContext saved = new(f.Database.Path))
+        {
+            remote = saved
+                .Set<SavedCapsuleerAgent>()
+                .Where(agent => agent.CommunitySystemId == Third)
+                .Select(agent => agent.PilotId)
+                .ToArray();
+            saved.Set<SavedCapsuleerClock>().Single().ElapsedTicks = TimeSpan.FromMinutes(5).Ticks;
+            saved.SaveChanges();
+        }
+        Assert.True(remote.Length > startsPerInterval * 2);
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        var presence = host.GetRequiredService<IHumanPresence>();
+        var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+        using var observer = presence.Select(90000001, Source);
+        var savedJobs = scheduler.Jobs().ToDictionary(job => job.PilotId);
+        int waiting = scheduler.Read().WaitingBackgroundStarts;
+        Assert.True(waiting >= remote.Length);
+
+        Assert.Equal(1, scheduler.Run(0, maximumActions: 1).Turn.Completed);
+        Assert.Equal(waiting, scheduler.Read().WaitingBackgroundStarts);
+        Assert.InRange(scheduler.Read().DueJobs, 1, scheduler.Read().ScheduledAgents);
+        Assert.NotNull(scheduler.Run(0).Turn.OldestDueTicks);
+        var localProgress = scheduler.Jobs().ToDictionary(job => job.PilotId);
+        Assert.Contains(localProgress.Values, job => job.Revision > savedJobs[job.PilotId].Revision);
+        Assert.All(remote, pilot => Assert.Equal(savedJobs[pilot], localProgress[pilot]));
+
+        Assert.Equal(startsPerInterval, scheduler.Run(0).Turn.Completed);
+        Assert.Equal(waiting - startsPerInterval, scheduler.Read().WaitingBackgroundStarts);
+        Assert.Equal(0, scheduler.Run(0).Turn.Completed);
+        Assert.Equal(CapsuleerJobQueue.WakeInterval, scheduler.NextWake().Delay);
+
+        f.Clock.Milliseconds += (long)CapsuleerJobQueue.WakeInterval.TotalMilliseconds * 4;
+        Assert.Equal(startsPerInterval, scheduler.Run(0).Turn.Completed);
+        Assert.Equal(waiting - 2 * startsPerInterval, scheduler.Read().WaitingBackgroundStarts);
+        var beforeEntry = scheduler.Jobs().ToDictionary(job => job.PilotId);
+        long[] waitingAtDestination = remote.Where(pilot => savedJobs[pilot] == beforeEntry[pilot]).ToArray();
+        Assert.NotEmpty(waitingAtDestination);
+        observer.Transfer(Third);
+        scheduler.Run(0);
+        var afterEntry = scheduler.Jobs().ToDictionary(job => job.PilotId);
+        Assert.All(waitingAtDestination, pilot => Assert.Equal(beforeEntry[pilot].Revision + 1, afterEntry[pilot].Revision));
+    }
+
+    [Fact]
     public async Task SavedTrafficCrossesUnobservedSystemsAndResumesAfterRestart()
     {
         const int home = 30000141;

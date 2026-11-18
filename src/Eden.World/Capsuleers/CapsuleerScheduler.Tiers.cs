@@ -6,6 +6,57 @@ namespace Eden.World.Capsuleers;
 internal sealed partial class CapsuleerScheduler
 {
     private readonly HashSet<long> _savedLocalSorties = [];
+    private const int BackgroundStartsPerInterval = 4;
+    private readonly SortedSet<(long DueTicks, long Pilot)> _waitingBackground = [];
+    private long _nextBackgroundStartTicks;
+
+    private bool WaitingForBackgroundStart(long pilot) => _waitingBackground.Contains((Current[pilot].DueTicks, pilot));
+
+    private bool RemoveBackgroundStart(long pilot) => _waitingBackground.Remove((Current[pilot].DueTicks, pilot));
+
+    private long? NextWorkTicks() =>
+        _waitingBackground.Count == 0 ? _queue.NextDueTicks : Math.Min(_queue.NextDueTicks ?? long.MaxValue, _nextBackgroundStartTicks);
+
+    private int StartBackgroundPilots(long elapsedTicks)
+    {
+        // Let already eligible jobs drain before adding more work. An overloaded turn
+        // or a period with no humans must never accumulate a credit for future starts.
+        if (_waitingBackground.Count == 0 || elapsedTicks < _nextBackgroundStartTicks || _queue.NextDueTicks <= elapsedTicks)
+        {
+            return 0;
+        }
+        _nextBackgroundStartTicks = checked(elapsedTicks + CapsuleerJobQueue.WakeInterval.Ticks);
+        int count = 0;
+        for (; count < BackgroundStartsPerInterval && _waitingBackground.Count > 0; count++)
+        {
+            var start = _waitingBackground.Min;
+            StartPilot(start.Pilot, elapsedTicks);
+            _waitingBackground.Remove(start);
+        }
+        return count;
+    }
+
+    private void StartPilot(long pilot, long elapsedTicks)
+    {
+        bool firstEntry = _newPilots.Remove(pilot);
+        if (_paused.TryGetValue(pilot, out var pause))
+        {
+            if (pause.ElapsedTicks < elapsedTicks || pause.Timestamp != clock.GetTimestamp())
+            {
+                _resuming[pilot] = elapsedTicks;
+            }
+            else
+            {
+                _paused.Remove(pilot);
+            }
+        }
+        else if (firstEntry && elapsedTicks > 0)
+        {
+            _resuming[pilot] = elapsedTicks;
+        }
+        Live?.AssignCapsuleer(pilot, null, _locations[pilot], _miners.GetValueOrDefault(pilot), _haulers.GetValueOrDefault(pilot));
+        _queue.Publish(ScheduledJob(pilot));
+    }
 
     private bool CanRunUnobserved(long pilot)
     {

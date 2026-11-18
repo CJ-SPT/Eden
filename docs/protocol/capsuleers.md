@@ -2646,3 +2646,37 @@ run's failures in overpriced shopping, rival-raid targeting and two disconnect-t
 
 **Optional maintainer checks.** Keep one player online outside a busy route and enter that route later to observe its
 traffic after the server is updated.
+
+## Paced offscreen starts
+
+The previous login path made the entire offscreen roster's resume jobs due together when the playtime clock was already
+running or restored from a save. Resuming a pilot does not increment the completed gameplay action count.
+
+On the first login, the scheduler reads saved traveler membership from the resident world. Eligible pilots in occupied
+systems enter the job queue immediately. Eligible offscreen pilots wait in order of saved deadline and pilot ID. The
+scheduler starts up to four per existing 50 ms maintenance interval when the job queue has caught up. Missed intervals
+give no additional start credit. Entering a system brings its waiting pilots into the queue immediately.
+
+When a waiting pilot starts, the existing pause logic resumes from its saved job and checkpoint. The shared playtime
+clock freezes with no players online. The performance page counts pilots waiting to start separately from scheduled
+pilots and due jobs.
+
+**Automated validation.** The regression `LoginDrainsLocalJobsBeforeStartingBoundedBatchesOfOffscreenTravelers` starts
+from a save with five minutes of playtime. It checks local progress, the offscreen batch limit, repeated turns at the same
+time, missed intervals and direct entry into a system with waiting pilots. An initial affected run exposed starvation
+between coarse simulated wakes. The scheduler now stages the next batch as soon as due work drains, and the existing
+unvisited-region progress test passes with that change.
+
+The solution built with zero warnings. The affected selection passed 82 cases in 59.24 seconds including startup.
+The checks include checkpoint/restart and warmed maintenance with zero SQL commands, connections or fitting calculations.
+Both Python policy suites passed with eight catalog and nine formatting cases. Formatting verification passed in
+52.96 seconds, and the diff check passed. Dedicated-server throughput remains unmeasured.
+
+```text
+FullyQualifiedName~CapsuleerGlobalPopulationTests|FullyQualifiedName~CapsuleerBackgroundPreparationTests|FullyQualifiedName~OccupiedCapsuleerSimulationTests|FullyQualifiedName~CapsuleerHandoffTests|FullyQualifiedName~ResidentPopulationTests|FullyQualifiedName~CapsuleerTrafficPerformanceTests|FullyQualifiedName~CapsuleerSchedulingTests|FullyQualifiedName~CapsuleerRuntimeTests|FullyQualifiedName~CapsuleerMaintenanceTests
+```
+
+**Live acceptance.** Not performed. Agent client testing is disabled.
+
+**Optional maintainer checks.** On the first login after deployment, watch the offscreen waiting count and oldest queue
+delay on the performance page as the roster starts.

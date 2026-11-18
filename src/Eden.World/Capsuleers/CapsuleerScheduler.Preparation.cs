@@ -34,6 +34,10 @@ internal sealed partial class CapsuleerScheduler
         Load();
         var activity = presence.Read();
         Reconcile(activity);
+        if (activity.Active)
+        {
+            StartBackgroundPilots(activity.ElapsedTicks);
+        }
         var job = _queue.NextJob;
         if (
             job is null

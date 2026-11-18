@@ -17,6 +17,7 @@ public sealed record CapsuleerRuntimeSummary(
 )
 {
     public int ScheduledAgents { get; init; }
+    public int WaitingBackgroundStarts { get; init; }
     public TimeSpan LastUpdate { get; init; }
     public TimeSpan LastPresentation { get; init; }
     public TimeSpan LastSimulation => LastUpdate > LastPresentation ? LastUpdate - LastPresentation : TimeSpan.Zero;

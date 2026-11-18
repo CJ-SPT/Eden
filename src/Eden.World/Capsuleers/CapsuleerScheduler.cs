@@ -130,7 +130,8 @@ internal sealed partial class CapsuleerScheduler(
                 _lastFailure
             )
             {
-                ScheduledAgents = _running.Count,
+                ScheduledAgents = _running.Count - _waitingBackground.Count,
+                WaitingBackgroundStarts = _waitingBackground.Count,
                 LastUpdate = _diagnostics.LastUpdate,
                 LastPresentation = _diagnostics.LastPresentation,
                 BudgetOverruns = _diagnostics.BudgetOverruns + (overrun > TimeSpan.Zero ? 1 : 0),
@@ -370,6 +371,7 @@ internal sealed partial class CapsuleerScheduler(
                 {
                     return new(new(0, Current.Count, null, false), [], []);
                 }
+                StartBackgroundPilots(throughTicks);
                 using var queuePhase = SessionPerformance.Phase("traffic.queueExecution");
                 var turn = _queue.Run(
                     throughTicks,
@@ -479,6 +481,16 @@ internal sealed partial class CapsuleerScheduler(
                 if (turn.OldestDueTicks is null)
                 {
                     Settle(Math.Max(_settledTicks, throughTicks));
+                    // Use the capacity freed by this turn before another deadline comes due.
+                    int starts = StartBackgroundPilots(throughTicks);
+                    if (starts > 0)
+                    {
+                        turn = turn with
+                        {
+                            Pending = turn.Pending + starts,
+                            OldestDueTicks = _queue.NextDueTicks is { } due && due <= throughTicks ? due : null,
+                        };
+                    }
                 }
                 return new(turn, mining.Values.ToArray(), hauling.Values.ToArray());
             }
@@ -500,7 +512,7 @@ internal sealed partial class CapsuleerScheduler(
         _lastFailure = job is null ? error.Message : $"Pilot {job.PilotId}, {job.Action}: {error.GetType().Name}: {error.Message}";
         // Observation can fail after settlement. Restore canonical revisions before
         // delaying this pilot so committed inventory, payments and travel cannot replay.
-        _queue.Restore(_running.Select(ScheduledJob));
+        _queue.Restore(_running.Where(pilot => !WaitingForBackgroundStart(pilot)).Select(ScheduledJob));
         if (job is not null && _running.Contains(job.PilotId))
         {
             _queue.Defer(ScheduledJob(job.PilotId), elapsed);
@@ -581,6 +593,10 @@ internal sealed partial class CapsuleerScheduler(
                 if (!_suspended.Contains(pilot))
                 {
                     running.Add(pilot);
+                    if (RemoveBackgroundStart(pilot))
+                    {
+                        StartPilot(pilot, activity.ElapsedTicks);
+                    }
                 }
             }
         }
@@ -596,29 +612,22 @@ internal sealed partial class CapsuleerScheduler(
         }
         foreach (long pilot in _running.Except(running))
         {
-            PausePilot(pilot, activity.ElapsedTicks);
-            _queue.Remove(pilot);
+            if (!RemoveBackgroundStart(pilot))
+            {
+                PausePilot(pilot, activity.ElapsedTicks);
+                _queue.Remove(pilot);
+            }
         }
         foreach (long pilot in running.Except(_running))
         {
-            bool firstEntry = _newPilots.Remove(pilot);
-            if (_paused.TryGetValue(pilot, out var pause))
+            if (activity.ActiveSystems.Contains(_locations[pilot]))
             {
-                if (pause.ElapsedTicks < activity.ElapsedTicks || pause.Timestamp != clock.GetTimestamp())
-                {
-                    _resuming[pilot] = activity.ElapsedTicks;
-                }
-                else
-                {
-                    _paused.Remove(pilot);
-                }
+                StartPilot(pilot, activity.ElapsedTicks);
             }
-            else if (firstEntry && activity.ElapsedTicks > 0)
+            else
             {
-                _resuming[pilot] = activity.ElapsedTicks;
+                _waitingBackground.Add((Current[pilot].DueTicks, pilot));
             }
-            Live?.AssignCapsuleer(pilot, null, _locations[pilot], _miners.GetValueOrDefault(pilot), _haulers.GetValueOrDefault(pilot));
-            _queue.Publish(ScheduledJob(pilot));
         }
         _nextRunning = _running;
         _running = running;
@@ -628,10 +637,14 @@ internal sealed partial class CapsuleerScheduler(
         _reconciledPilots = activity.Pilots;
         _reconciledResumes = activity.Resumes;
         _reconciledGates = gates.ToArray();
-        if (_diagnostics.ScheduledAgents != running.Count)
-        {
-            Volatile.Write(ref _diagnostics, _diagnostics with { ScheduledAgents = running.Count });
-        }
+        Volatile.Write(
+            ref _diagnostics,
+            _diagnostics with
+            {
+                ScheduledAgents = running.Count - _waitingBackground.Count,
+                WaitingBackgroundStarts = _waitingBackground.Count,
+            }
+        );
     }
 
     private CapsuleerJob ScheduledJob(long pilot) =>
@@ -688,7 +701,7 @@ internal sealed partial class CapsuleerScheduler(
         using var owner = Live?.EnterShared("traffic handoff");
         using (synchronization.Enter("CapsuleerScheduler"))
         {
-            long? previousDue = _queue.NextDueTicks;
+            long? previousDue = NextWorkTicks();
             action();
             using var reconciliation = SessionLatency.Measure(SessionLatencyPhase.TrafficReconcile);
             Load();
@@ -697,7 +710,7 @@ internal sealed partial class CapsuleerScheduler(
             // Publish newly prepared metadata before observer frames begin.
             Load();
             SettleReadySystems(activity);
-            if (_queue.NextDueTicks != previousDue)
+            if (NextWorkTicks() != previousDue)
             {
                 presence.Wake();
             }
@@ -746,7 +759,7 @@ internal sealed partial class CapsuleerScheduler(
         {
             var activity = presence.Read();
             return new(
-                activity.Active ? CapsuleerScheduleRules.WakeDelay(_queue.NextDueTicks, activity.ElapsedTicks, true) : null,
+                activity.Active ? CapsuleerScheduleRules.WakeDelay(NextWorkTicks(), activity.ElapsedTicks, true) : null,
                 presence.Changed
             );
         }
@@ -805,7 +818,12 @@ internal sealed partial class CapsuleerScheduler(
 
     private void WakePilot(long pilot, long elapsedTicks)
     {
-        if (_resuming.ContainsKey(pilot) || !Current.TryGetValue(pilot, out var job) || job.DueTicks <= elapsedTicks)
+        if (
+            _resuming.ContainsKey(pilot)
+            || !Current.TryGetValue(pilot, out var job)
+            || job.DueTicks <= elapsedTicks
+            || WaitingForBackgroundStart(pilot)
+        )
         {
             return;
         }
