@@ -3606,6 +3606,63 @@ Not performed. Agent client testing is disabled.
 
 None required for the earned-SP allocation and Omega checks.
 
+## First bot career ships
+
+New pilots work toward a standard Tech I hull first. The pinned catalog supplies the Venture for mining, the
+Badger for hauling, and the Merlin for combat. Later targets require the pilot to have boarded an earlier
+career hull, and the saved plan retains the highest stage reached across checkpoints and ship losses. A saved
+goal from an earlier release is checked against the pilot's current stage. Earned skill points fund both the
+hull prerequisites and the skills required by its working fit. Career and Magic 14 training continue.
+
+At the station, a qualified pilot checks personal inventory and shops for the missing hull, modules and charges.
+The bot pays with its own ISK through the resident market and uses a funded station buy order where it cannot
+make the missing part locally. A fresh-world miner completes its opening Miner I trade first. At the starter
+factory it can then use a paid institutional blueprint and local ore to manufacture the kit, including a Venture
+and Miner I. The factory sells blueprints and skills. Finished ships and equipment come from actual jobs or
+market counterparties. The fleet and fitting stores assemble the packaged hull, online the required modules,
+load combat magazines, and board the owned ship. The docked worker keeps its old hull and uses the same
+undock and activity code for the new one.
+
+Mining goals cover belt ships with a laser fit. Hauling goals use a travel fit where the hull supports it,
+and combat goals use a catalog weapon and matching charges. Specialized hulls without a supported bot fit,
+such as drone-only mining command ships and strategic cruisers that need subsystems, are outside the goal pool.
+
+The Venture's opening role follows [EVE University's ORE hull guide](https://wiki.eveuniversity.org/ORE_Basic_Ship_and_Skill_Overview).
+The local evejs reference checks ship ownership and skills in `_activateShipById` before activation
+(`shipService.js` SHA-256 `C34C3573C11CBAECA041D2CDC4791E19DB7DB6759A94F73125AD71E6B62848F1`).
+
+### Automated validation
+
+`FreshUniverseTests.ZeroIskCorvetteEarnsBuildsFitsAndFliesItsVenture` creates a scratch resident world with the
+installed build 3662168 catalog and an uncontested starter belt. The buyer starts in a corvette with zero ISK,
+gets the first manufactured Miner I through a funded order, and earns the cost of a Venture blueprint by
+selling ore. It mines and refines the inputs, pays the manufacturing bill, delivers and boards the Venture,
+fits the traded Miner I, and reaches a belt. Reopening the checkpoint confirms the same active hull, fitted
+module, prior corvette ownership, completed job and paid blueprint trade. The fresh-world skill test also
+submits a saved Hulk goal for a corvette pilot and confirms the goal becomes a Venture.
+
+The final run funded the first order in 11 minutes 20 seconds, settled it after 1 hour 13 minutes, and reached a
+belt in the fitted Venture after 29 hours 30 minutes of simulated time. The solution built with zero warnings or
+errors. All 174 focused .NET tests passed in 6 minutes 59 seconds, and both Python policy suites passed.
+
+The `Test-Feature.ps1` filter matched these classes and methods by fully qualified name.
+
+```text
+FreshUniverseTests | CapsuleerMinerTests | CapsuleerHaulerTests | CapsuleerMiningFleetTests
+CapsuleerInboundRuntimeTests | StarterProductionTests | NpcSupplyTests | PilotFleetTests | ApplyFittingTests
+PilotSkillBookTests | PilotTrainingTests | MiningSkillPointRewardTests | NpcSkillPointRewardTests
+ActualCombatFitCanClearAnOrdinaryPirateAndCannotCollectItsBountyTwice
+DockedTravelerScoutsAColdCombatAnomalyAndUndocksOnTheSameTradeJob
+```
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
 ## Offscreen mining, belt ratting, and industry
 
 The scheduler registers established mining and hauling pilots on the first human selection and admits distant jobs in its

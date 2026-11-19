@@ -37,6 +37,7 @@ public sealed class FreshUniverseTests(ITestOutputHelper output)
     private const int StarterSystem = 30015042;
     private const int Factory = 60015017;
     private const int Miner = (int)MiningLaserType.MinerI;
+    private const int Venture = (int)TechOneHullType.Venture;
     private const string CatalogEnvironmentVariable = "EDEN_FRESH_UNIVERSE_CATALOG";
 
     private sealed class InstalledCatalogFactAttribute : FactAttribute
@@ -81,12 +82,18 @@ public sealed class FreshUniverseTests(ITestOutputHelper output)
     }
 
     [InstalledCatalogFact]
-    public void NewCorvettesEarnAndTradeTheFirstManufacturedMinerThroughFundedEscrow()
+    public void NewCorvettesEarnAndTradeTheFirstManufacturedMinerThroughFundedEscrow() =>
+        RunFreshWorldInScratchDirectory(proveCareerShip: false);
+
+    [InstalledCatalogFact]
+    public void ZeroIskCorvetteEarnsBuildsFitsAndFliesItsVenture() => RunFreshWorldInScratchDirectory(proveCareerShip: true);
+
+    private void RunFreshWorldInScratchDirectory(bool proveCareerShip)
     {
         var directory = TestDirectory.Create("eden-fresh-universe-");
         try
         {
-            RunFreshWorld(directory.FullName);
+            RunFreshWorld(directory.FullName, proveCareerShip);
         }
         finally
         {
@@ -94,7 +101,7 @@ public sealed class FreshUniverseTests(ITestOutputHelper output)
         }
     }
 
-    private void RunFreshWorld(string directory)
+    private void RunFreshWorld(string directory, bool proveCareerShip)
     {
         WorldDatabase database = new(Path.Combine(directory, "world.sqlite"));
         File.Copy(Environment.GetEnvironmentVariable(CatalogEnvironmentVariable)!, database.OriginalCatalogPath);
@@ -106,6 +113,7 @@ public sealed class FreshUniverseTests(ITestOutputHelper output)
         long orderId;
         long price;
         int shipGoal;
+        long corvette;
         using (var host = Open())
         {
             var live = host.GetRequiredService<LiveWorld>();
@@ -128,6 +136,7 @@ public sealed class FreshUniverseTests(ITestOutputHelper output)
             Assert.Equal(2, founders.Length);
             producer = founders.Single(row => row.Slot == StarterIndustryRules.ProducerSlot).PilotId;
             buyer = founders.Single(row => row.Slot == StarterIndustryRules.BuyerSlot).PilotId;
+            corvette = live.Economy.Inspect(world => world.Pilots.Find(buyer)!.ActiveShipId);
             CompareWithNewCharacters(host, live, founders);
             using (CatalogDbContext catalog = new(database.CatalogPath))
             {
@@ -142,6 +151,7 @@ public sealed class FreshUniverseTests(ITestOutputHelper output)
             var market = host.GetRequiredService<IPilotMarket>();
             var points = host.GetRequiredService<IPilotFreeSkillPoints>();
             Assert.Empty(market.Orders(buyer, Miner));
+            Assert.Empty(market.Orders(buyer, Venture));
             Assert.Throws<InvalidDataException>(() =>
                 host.GetRequiredService<IPersonalMarket>().PlaceBuy(buyer, new(Factory, Miner, 1000, 1, 90))
             );
@@ -164,7 +174,7 @@ public sealed class FreshUniverseTests(ITestOutputHelper output)
             shipGoal = Assert
                 .IsType<CapsuleerCareerPlan>(host.GetRequiredService<ICapsuleerScheduler>().Miner(buyer)!.Work.CareerPlan)
                 .ShipTypeId;
-            Assert.True(shipGoal > 0);
+            Assert.Equal(Venture, shipGoal);
             output.WriteLine($"First funded order after {TimeSpan.FromSeconds(clock.Seconds)}, escrow {price} cents.");
         }
 
@@ -190,11 +200,62 @@ public sealed class FreshUniverseTests(ITestOutputHelper output)
         using (var host = Open())
         {
             AssertSale(host);
-            SpendFreshPirateBountyPoints(host, database, clock);
-            BuyAndTrainRefiningAfterFirstSale(host, database, clock, producer);
+            if (proveCareerShip)
+            {
+                var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
+                Advance(
+                    host,
+                    clock,
+                    () => scheduler.Miner(buyer) is { Pilot.ShipTypeId: Venture, Work.Activity: MinerActivity.Mining },
+                    maximumTurns: 750_000
+                );
+                AssertCareerShip(host);
+                output.WriteLine($"Built and flew the first Venture after {TimeSpan.FromSeconds(clock.Seconds)}.");
+            }
+            else
+            {
+                SpendFreshPirateBountyPoints(host, database, clock);
+                BuyAndTrainRefiningAfterFirstSale(host, database, clock, producer);
+            }
+        }
+        if (proveCareerShip)
+        {
+            WorldInitialization.Initialize(database, clock);
+            using var host = Open();
+            AssertCareerShip(host);
         }
 
         ServiceProvider Open() => ServerServices.Build(database, clock, population: new TestNpcPopulationSeeder(), liveWorld: true);
+
+        void AssertCareerShip(ServiceProvider host)
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            var market = host.GetRequiredService<IPilotMarket>();
+            var pilot = host.GetRequiredService<SqliteWorld>().FindPilot(CapsuleerCommunityStore.MinerAccountId, buyer)!;
+            Assert.Equal(Venture, pilot.ShipTypeId);
+            Assert.NotNull(pilot.Position);
+            var inventory = host.GetRequiredService<IPilotInventory>();
+            Assert.Contains(
+                inventory.List(buyer, pilot.ShipId),
+                item => item.TypeId == Miner && item.Online && InventoryDefinitions.IsHighSlot(item.FlagId)
+            );
+            var job = live.Economy.Inspect(world =>
+            {
+                Assert.Equal(buyer, world.Ships.Find(corvette)!.OwnerId);
+                Assert.Empty(world.Set<TestingWalletGrant>());
+                return world.Filter<IndustryJob>(row => row.PilotId == buyer).Single(row => row.ProductTypeId == Venture);
+            });
+            Assert.Equal(
+                (IndustryJobStatus.Delivered, StarterIndustryRules.VentureBlueprint, 1),
+                (job.Status, job.BlueprintTypeId, job.OutputQuantity)
+            );
+            Assert.True(job.CostCents > 0);
+            var trades = market.Transactions(buyer);
+            var blueprint = Assert.Single(trades, trade => trade.IsBuy && trade.TypeId == StarterIndustryRules.VentureBlueprint);
+            Assert.True(blueprint.PriceCents > 0);
+            Assert.True(trades.Where(trade => !trade.IsBuy).Sum(trade => trade.PriceCents * trade.Quantity) > blueprint.PriceCents);
+            Assert.DoesNotContain(trades, trade => trade.TypeId == Venture);
+        }
 
         void AssertSale(ServiceProvider host)
         {
@@ -212,7 +273,9 @@ public sealed class FreshUniverseTests(ITestOutputHelper output)
             Assert.Equal(1, Assert.Single(inventory.List(buyer, Factory), item => item.TypeId == Miner).Quantity);
             Assert.DoesNotContain(inventory.List(producer, Factory), item => item.TypeId == Miner);
             Assert.DoesNotContain(market.Orders(buyer, Miner), order => !order.Bid);
-            var job = live.Economy.Inspect(world => world.Set<IndustryJob>().Single(row => row.PilotId == producer));
+            var job = live.Economy.Inspect(world =>
+                world.Filter<IndustryJob>(row => row.PilotId == producer).Where(row => row.ProductTypeId == Miner).MinBy(row => row.Id)!
+            );
             Assert.Equal(
                 (IndustryJobStatus.Delivered, StarterIndustryRules.MinerBlueprint, Miner, 1),
                 (job.Status, job.BlueprintTypeId, job.ProductTypeId, job.OutputQuantity)
@@ -262,11 +325,12 @@ public sealed class FreshUniverseTests(ITestOutputHelper output)
         using (var action = live.Economy.Begin(new(pilots: [id])))
         {
             var pilot = host.GetRequiredService<SqliteWorld>().FindPilot(action, CapsuleerCommunityStore.MinerAccountId, id)!;
-            var plan = new CapsuleerCareerPlan(CapsuleerProfession.Mining, (int)CapsuleerMiningHull.Covetor, CapsuleerTrainingFocus.Ship);
+            var plan = new CapsuleerCareerPlan(CapsuleerProfession.Mining, (int)CapsuleerMiningHull.Hulk, CapsuleerTrainingFocus.Ship);
             var advanced = host.GetRequiredService<CapsuleerCareerTraining>()
                 .Advance(action, catalog, pilot, plan.Profession, plan, clock.Now);
             Assert.False(advanced.MarketChanged);
-            Assert.Equal(plan with { NextFocus = CapsuleerTrainingFocus.Foundation }, advanced.Plan);
+            Assert.Equal(Venture, advanced.Plan!.ShipTypeId);
+            Assert.Equal(0, advanced.Plan.HighestHullStage);
             action.Commit();
         }
         Assert.Equal(0, points.Balance(id));
@@ -390,7 +454,7 @@ public sealed class FreshUniverseTests(ITestOutputHelper output)
             );
     }
 
-    private void Advance(ServiceProvider host, TestClock clock, Func<bool> completed)
+    private void Advance(ServiceProvider host, TestClock clock, Func<bool> completed, int maximumTurns = 100_000)
     {
         var presence = host.GetRequiredService<IHumanPresence>();
         if (!presence.Read().ActiveSystems.Contains(StarterSystem))
@@ -399,7 +463,7 @@ public sealed class FreshUniverseTests(ITestOutputHelper output)
         }
         var scheduler = host.GetRequiredService<CapsuleerScheduler>();
         scheduler.PopulationPrepared(StarterSystem);
-        for (int turn = 0; turn < 100_000; turn++)
+        for (int turn = 0; turn < maximumTurns; turn++)
         {
             if (turn % 10 == 0 && completed())
             {
@@ -414,7 +478,8 @@ public sealed class FreshUniverseTests(ITestOutputHelper output)
         {
             var pilot = scheduler.Miner(job.PilotId);
             output.WriteLine(
-                $"{job.PilotId} {pilot?.Work.Activity} {pilot?.Work.Trips} trips {pilot?.Work.WaitingReason} at {clock.Seconds}s."
+                $"{job.PilotId} {pilot?.Work.Activity} {pilot?.Work.Trips} trips {pilot?.Work.WaitingReason} at {clock.Seconds}s, "
+                    + $"{host.GetRequiredService<IPilotMarket>().Balance(job.PilotId)} cents."
             );
         }
         Assert.Fail("The starter industry loop exceeded its simulated work budget.");

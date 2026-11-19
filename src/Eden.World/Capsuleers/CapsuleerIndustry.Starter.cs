@@ -19,6 +19,9 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerIndustry
 {
+    internal static bool StarterTradeSettled(WorldAction world, long pilot) =>
+        world.Filter<MarketExecution>(trade => trade.PilotId == pilot).Any(trade => trade.TypeId == (int)MiningLaserType.MinerI);
+
     internal bool WorkStarterIndustry(EconomyTransaction world, CatalogDbContext catalog, DockedPilot pilot, long now, out int[] oreTypes)
     {
         oreTypes = [];

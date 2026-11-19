@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[First bot career ships](protocol/capsuleers.md#first-bot-career-ships) covers qualifying for, paying for, fitting, and
+flying a bot's first career hull in a fresh universe.
+
 [Earned bot career training](protocol/capsuleers.md#earned-bot-career-training) covers persisted ship goals,
 work qualifications, the Magic 14, and permanent Omega bot accounts.
 

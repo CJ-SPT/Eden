@@ -86,7 +86,7 @@ internal sealed partial class PilotMarketStore
         // Hubs share the full catalog NPC sell assortment. Restricting this to
         // blueprints strands NPC-only inputs, skills and other seeded goods.
         int[] suppliedTypes =
-            supplier.StarterIndustry ? [StarterIndustryRules.MinerBlueprint]
+            supplier.StarterIndustry ? [StarterIndustryRules.MinerBlueprint, StarterIndustryRules.VentureBlueprint]
             : supplier.Hub && supplier.RegionalHubSupply ? HubInstitutionalSupplies(catalog)
             : [];
         var offered = trades

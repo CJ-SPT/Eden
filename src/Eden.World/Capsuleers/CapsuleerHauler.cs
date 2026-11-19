@@ -988,6 +988,22 @@ internal sealed partial class CapsuleerHauler(
             {
                 _pilot = ReadPilot(resident, CapsuleerCommunityStore.MinerAccountId);
             }
+            if (
+                Work.Freight is null
+                && resident.Set<SavedTrafficIdentity>().Find(pilotId) is null
+                && !PilotInventoryStore
+                    .List(resident, _operation.Catalog, pilotId, Pilot.ShipId)
+                    .Any(item => ShipHoldRules.IsHold(item.FlagId) && item.CategoryId != (int)InventoryCategory.Charge)
+            )
+            {
+                var acquisition = ammunitionSupply.AdvanceCareerShip(resident, _operation.Catalog, Pilot, training.Plan, Now);
+                _operation.MarketChanged |= acquisition.MarketChanged;
+                if (acquisition.Boarded)
+                {
+                    _pilot = ReadPilot(resident, CapsuleerCommunityStore.MinerAccountId);
+                    ResetTradeHull();
+                }
+            }
         }
         JoinCorporationAtDock();
         if (TrySovereigntyExpedition())

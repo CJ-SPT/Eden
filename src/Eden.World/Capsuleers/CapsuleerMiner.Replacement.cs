@@ -27,9 +27,7 @@ internal sealed partial class CapsuleerMiner
             if (result.Boarded)
             {
                 _pilot = ships.FindPilot(world, CapsuleerCommunityStore.MinerAccountId, pilotId)!;
-                _navigation = new NavigationState();
-                _operation.TravelChanged = true;
-                _work = Work with { ShipId = Pilot.ShipId, TargetId = 0, DueTicks = 0, DueStamp = 0, WaitingReason = null };
+                ResetMiningHull();
                 return;
             }
             if (result.OrderDeadline <= now)
@@ -44,6 +42,23 @@ internal sealed partial class CapsuleerMiner
             DueTicks = Work.ActiveTicks + TimeSpan.FromSeconds(seconds).Ticks,
             DueStamp = Work.Stamp + seconds,
             WaitingReason = waiting,
+        };
+    }
+
+    private void ResetMiningHull()
+    {
+        _navigation = new NavigationState();
+        _operation.TravelChanged = true;
+        _work = Work with
+        {
+            ShipId = Pilot.ShipId,
+            TargetId = 0,
+            Navigation = _navigation.Capture(),
+            DueTicks = 0,
+            DueStamp = 0,
+            WaitingReason = null,
+            PaidUntil = 0,
+            ModuleId = 0,
         };
     }
 }

@@ -27,13 +27,42 @@ public enum CapsuleerTrainingFocus
     Foundation,
 }
 
-public sealed record CapsuleerCareerPlan(CapsuleerProfession Profession, int ShipTypeId, CapsuleerTrainingFocus NextFocus);
+public sealed record CapsuleerCareerPlan(CapsuleerProfession Profession, int ShipTypeId, CapsuleerTrainingFocus NextFocus)
+{
+    public int HighestHullStage { get; init; }
+}
 
 public static class CapsuleerCareerTrainingRules
 {
     private const int FoundationLevel = 4;
     private const int SpaceshipCommand = 3327;
     private const int EvasiveManeuvering = 3453;
+    private const int TechOne = 1;
+
+    public static int HullStage(CapsuleerProfession profession, HullClass hull, int techLevel, bool standardVariant) =>
+        (profession, hull, techLevel, standardVariant) switch
+        {
+            (CapsuleerProfession.Mining, HullClass.Frigate, TechOne, true) => 1,
+            (CapsuleerProfession.Mining, HullClass.MiningBarge, TechOne, true) => 2,
+            (CapsuleerProfession.Mining, HullClass.ExpeditionFrigate or HullClass.Exhumer or HullClass.Frigate, _, _) => 3,
+            (CapsuleerProfession.Mining, HullClass.IndustrialCommand or HullClass.CapitalIndustrial or HullClass.ExpeditionCommand, _, _) =>
+                4,
+            (CapsuleerProfession.Hauling, HullClass.Hauler, TechOne, true) => 1,
+            (CapsuleerProfession.Hauling, HullClass.DeepSpaceTransport or HullClass.BlockadeRunner or HullClass.Freighter, _, _) => 2,
+            (CapsuleerProfession.Hauling, HullClass.JumpFreighter, _, _) => 3,
+            (CapsuleerProfession.Combat, HullClass.Frigate, TechOne, true) => 1,
+            (CapsuleerProfession.Combat, HullClass.Destroyer or HullClass.Cruiser, TechOne, true) => 2,
+            (
+                CapsuleerProfession.Combat,
+                HullClass.CombatBattlecruiser
+                    or HullClass.AttackBattlecruiser
+                    or HullClass.Battleship,
+                TechOne,
+                true
+            ) => 3,
+            (CapsuleerProfession.Combat, _, > 0, _) when Profession(hull) == CapsuleerProfession.Combat => 4,
+            _ => 0,
+        };
 
     public static CapsuleerProfession? Profession(HullClass hull) =>
         hull switch

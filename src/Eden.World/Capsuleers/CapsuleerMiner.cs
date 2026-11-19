@@ -9,6 +9,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
+using Eden.Gameplay.Ships;
 using Eden.Gameplay.Targeting;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
@@ -703,7 +704,8 @@ internal sealed partial class CapsuleerMiner(
             );
         }
         FactorySupplyRequest? supply = null;
-        if (fresh && _operation.World is EconomyTransaction starterWorld)
+        bool starterTradeSettled = fresh && CapsuleerIndustry.StarterTradeSettled(_operation.World, pilotId);
+        if (fresh && !starterTradeSettled && _operation.World is EconomyTransaction starterWorld)
         {
             _operation.MarketChanged |= industry.WorkStarterIndustry(starterWorld, _operation.Catalog, Pilot, Now, out var oreTypes);
             _work = Work with { StarterOreTypes = oreTypes };
@@ -726,10 +728,27 @@ internal sealed partial class CapsuleerMiner(
             {
                 _pilot = ships.FindPilot(resident, CapsuleerCommunityStore.MinerAccountId, pilotId)!;
             }
+            bool starterWorkshop =
+                fresh && CapsuleerProvisioningCatalog.StarterIndustry(_operation.Catalog, Pilot.SystemId).HomeStationId == Pilot.StationId;
+            if (!fresh || starterTradeSettled)
+            {
+                var acquisition = industry.AdvanceCareerShip(resident, _operation.Catalog, Pilot, training.Plan, Now, starterWorkshop);
+                _operation.MarketChanged |= acquisition.MarketChanged;
+                if (starterWorkshop)
+                {
+                    _work = Work with { StarterOreTypes = acquisition.OreTypes ?? [] };
+                }
+                if (acquisition.Boarded)
+                {
+                    _pilot = ships.FindPilot(resident, CapsuleerCommunityStore.MinerAccountId, pilotId)!;
+                    ResetMiningHull();
+                    aboard = PilotInventoryStore.List(resident, _operation.Catalog, pilotId, Pilot.ShipId);
+                }
+            }
         }
         var expedition = fresh ? null : PrepareMercoxitExpedition(aboard);
         var laserType =
-            fresh ? MiningLaserType.Civilian
+            fresh && Pilot.ShipGroupId == (int)HullClass.Corvette ? MiningLaserType.Civilian
             : expedition is null ? CapsuleerMiningRules.Laser((CapsuleerMiningHull)Pilot.ShipTypeId)
             : MiningLaserType.DeepCoreMiningLaserI;
         _laser = aboard.FirstOrDefault(i => i.TypeId == (int)laserType && InventoryDefinitions.IsHighSlot(i.FlagId));

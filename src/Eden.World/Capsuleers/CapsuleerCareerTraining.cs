@@ -70,11 +70,7 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
             return new(saved);
         }
         long id = pilot.PilotId;
-        var ships = Ships(catalog, profession);
-        var plan =
-            saved?.Profession == profession && (saved.ShipTypeId == 0 || ships.Contains(saved.ShipTypeId))
-                ? saved
-                : Choose(world, pilot, profession, ships);
+        var plan = Choose(world, catalog, pilot, profession, saved?.Profession == profession ? saved : null);
         if (PilotTrainingStore.ReadFreePoints(world, id) == 0)
         {
             return new(plan);
@@ -98,7 +94,7 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
             var targets = focus switch
             {
                 CapsuleerTrainingFocus.Work => catalog.Definition(s_work, 0)[(profession, factory, manager)],
-                CapsuleerTrainingFocus.Ship when plan.ShipTypeId > 0 => catalog.Definition(s_shipPlans, plan.ShipTypeId),
+                CapsuleerTrainingFocus.Ship when plan.ShipTypeId > 0 => catalog.Definition(s_careerFitPlans, plan.ShipTypeId),
                 CapsuleerTrainingFocus.Ship => null,
                 _ => catalog.Definition(s_foundation, 0),
             };
@@ -172,7 +168,7 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
         if (
             world.Settings.FreshUniverse
             && world.Set<SavedCapsuleerAgent>().Find(id)?.Career == CapsuleerCareer.Mining
-            && !world.Filter<MarketExecution>(trade => trade.PilotId == id).Any(trade => trade.TypeId == (int)MiningLaserType.MinerI)
+            && !CapsuleerIndustry.StarterTradeSettled(world, id)
         )
         {
             return false;
@@ -199,20 +195,75 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
 
     private static CapsuleerCareerPlan Choose(
         EconomyTransaction world,
+        CatalogDbContext catalog,
         DockedPilot pilot,
         CapsuleerProfession profession,
-        IReadOnlyList<int> ships
+        CapsuleerCareerPlan? saved
     )
     {
-        var choices = ships.Where(type => type != pilot.ShipTypeId).ToArray();
-        if (choices.Length == 0)
+        var flown = catalog.Definition(s_careerHullStages, pilot.ShipTypeId);
+        int stage = Math.Max(saved?.HighestHullStage ?? 0, flown.Profession == profession ? flown.Stage : 0);
+        var focus = saved?.NextFocus ?? CapsuleerTrainingFocus.Work;
+        var choices = catalog.Definition(s_careerChoices, (int)profession);
+        var next = choices[stage + 1];
+        if (saved is { ShipTypeId: > 0 } && next.Contains(saved.ShipTypeId))
         {
-            return new(profession, ships.FirstOrDefault(), CapsuleerTrainingFocus.Work);
+            return saved with { HighestHullStage = stage };
         }
+        var available = next.ToArray();
+        if (available.Length == 0)
+        {
+            return new(profession, 0, focus) { HighestHullStage = stage };
+        }
+        var rookie = stage == 0 ? available.FirstOrDefault(type => type == EntryHull(profession)) : 0;
         long seed = world.Set<SavedCapsuleerProvisioning>().Find(1)?.WorldSeed ?? 0;
         ulong draw = CapsuleerProvisioningRules.Seed(seed ^ pilot.PilotId, pilot.SystemId, CapsuleerCareer.Mining);
-        return new(profession, choices[(int)(draw % (ulong)choices.Length)], CapsuleerTrainingFocus.Work);
+        return new(profession, rookie == 0 ? available[(int)(draw % (ulong)available.Length)] : rookie, focus) { HighestHullStage = stage };
     }
+
+    private static int EntryHull(CapsuleerProfession profession) =>
+        profession switch
+        {
+            CapsuleerProfession.Mining => (int)TechOneHullType.Venture,
+            CapsuleerProfession.Hauling => HaulingRules.BadgerType,
+            _ => (int)TechOneHullType.Merlin,
+        };
+
+    private static readonly CatalogDefinition<(CapsuleerProfession? Profession, int Stage)> s_careerHullStages = new(
+        "career-hull-stage",
+        (catalog, type) =>
+        {
+            var group = (HullClass)(catalog.FittingType(type)?.GroupId ?? 0);
+            var profession = Profession(catalog, type, group);
+            var definition = catalog.Read(CatalogData.Client.Types, (long)type);
+            int tech = (int)(definition?.TechLevel ?? (type == (int)TechOneHullType.Venture ? 1 : 0));
+            return (
+                profession,
+                profession is { } role ? CapsuleerCareerTrainingRules.HullStage(role, group, tech, definition?.MetaGroupID is null or 1) : 0
+            );
+        }
+    );
+
+    private static readonly CatalogDefinition<TrainingTarget[]?> s_careerFitPlans = new(
+        "career-fit-prerequisites",
+        (catalog, type) =>
+        {
+            if (CapsuleerIndustry.CareerKit(catalog, type) is not { } kit)
+            {
+                return null;
+            }
+            return Expand(catalog, kit.Parts().SelectMany(part => RequiredSkills(catalog, part.TypeId)));
+        }
+    );
+
+    private static readonly CatalogDefinition<ILookup<int, int>> s_careerChoices = new(
+        "career-goal-stages",
+        (catalog, profession) =>
+            Ships(catalog, (CapsuleerProfession)profession)
+                .Select(type => (Type: type, Stage: catalog.Definition(s_careerHullStages, type).Stage))
+                .Where(ship => ship.Stage > 0 && catalog.Definition(s_careerFitPlans, ship.Type) is not null)
+                .ToLookup(ship => ship.Stage, ship => ship.Type)
+    );
 
     private static int[] LoadShips(CatalogDbContext catalog, int profession) =>
         catalog
@@ -234,18 +285,17 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
             ? CapsuleerProfession.Mining
             : CapsuleerCareerTrainingRules.Profession(hull);
 
-    private static TrainingTarget[]? LoadShipPlan(CatalogDbContext catalog, int ship)
+    private static TrainingTarget[]? LoadShipPlan(CatalogDbContext catalog, int ship) => Expand(catalog, RequiredSkills(catalog, ship));
+
+    private static IEnumerable<TrainingTarget> RequiredSkills(CatalogDbContext catalog, int type)
     {
-        var dogma = catalog.FittingAttributes(ship);
-        return Expand(
-            catalog,
-            InventoryDefinitions
-                .RequiredSkills.Select(pair => new TrainingTarget(
-                    (int)dogma.GetValueOrDefault(pair.Skill),
-                    (int)dogma.GetValueOrDefault(pair.Level)
-                ))
-                .Where(requirement => requirement.TypeId > 0 && requirement.Level > 0)
-        );
+        var dogma = catalog.FittingAttributes(type);
+        return InventoryDefinitions
+            .RequiredSkills.Select(pair => new TrainingTarget(
+                (int)dogma.GetValueOrDefault(pair.Skill),
+                (int)dogma.GetValueOrDefault(pair.Level)
+            ))
+            .Where(requirement => requirement.TypeId > 0 && requirement.Level > 0);
     }
 
     private static TrainingTarget[]? LoadQualification(CatalogDbContext catalog, int id)
