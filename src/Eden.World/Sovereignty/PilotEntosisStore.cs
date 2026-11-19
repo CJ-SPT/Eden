@@ -38,7 +38,7 @@ internal sealed partial class PilotEntosisStore(
 ) : IPilotEntosis
 {
     // Paid reservations survive checkpoints; scoring leases deliberately do not.
-    private readonly HashSet<long> _scoringLeases = [];
+    private readonly Dictionary<long, long?> _scoringLeases = [];
     private long _viewRevision;
     public long ViewRevision => Volatile.Read(ref _viewRevision);
     public bool Available => LiveWorld.Find(database.Path) is not null;
@@ -54,6 +54,13 @@ internal sealed partial class PilotEntosisStore(
     {
         using var action = Live.Economy.Begin(new(pilots: [pilotId]));
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var result = Deploy(action, catalog, pilotId, itemId, Now);
+        action.Commit();
+        return result;
+    }
+
+    internal StructureResult Deploy(WorldAction action, CatalogDbContext catalog, long pilotId, long itemId, long now)
+    {
         var pilot = action.Pilots.Find(pilotId) ?? throw new InvalidDataException("Choose your selected pilot.");
         var ship = pilot.ActiveShip;
         var position = ship.Position ?? throw new InvalidDataException("Deploy a sovereignty hub from your active ship in space.");
@@ -113,7 +120,6 @@ internal sealed partial class PilotEntosisStore(
         {
             throw new InvalidDataException("The sovereignty hub placement is too close to an existing structure.");
         }
-        long now = Now;
         var structure = new SavedStructure
         {
             Id = Math.Max(InventoryPersistence.NextId(action), StructureRules.FirstStructureId + 1),
@@ -144,12 +150,10 @@ internal sealed partial class PilotEntosisStore(
                 UpdatedAt = now,
             }
         );
-        var result = new StructureResult(
+        return new StructureResult(
             PilotStructureStore.Snapshot(action, catalog, structure),
             [new(before with { Quantity = item.Quantity }, before)]
         );
-        action.Commit();
-        return result;
     }
 
     internal static bool HasHub(WorldAction world, int system) =>

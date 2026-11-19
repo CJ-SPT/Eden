@@ -23,6 +23,7 @@ using Eden.World.Market;
 using Eden.World.Propulsion;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
+using Eden.World.Sovereignty;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -44,7 +45,8 @@ internal sealed class CapsuleerHaulerFactory(
     CapsuleerDefense defense,
     CapsuleerResupply resupply,
     CapsuleerRatting ratting,
-    CapsuleerIndustry ammunitionSupply
+    CapsuleerIndustry ammunitionSupply,
+    PilotEntosisStore entosis
 )
 {
     internal CapsuleerHauler Create(long pilotId) =>
@@ -64,7 +66,8 @@ internal sealed class CapsuleerHaulerFactory(
             defense,
             resupply,
             ratting,
-            ammunitionSupply
+            ammunitionSupply,
+            entosis
         );
 }
 
@@ -84,7 +87,8 @@ internal sealed partial class CapsuleerHauler(
     CapsuleerDefense defense,
     CapsuleerResupply resupply,
     CapsuleerRatting ratting,
-    CapsuleerIndustry ammunitionSupply
+    CapsuleerIndustry ammunitionSupply,
+    PilotEntosisStore entosis
 )
 {
     private SavedCapsuleerHauler? _founder;
@@ -123,6 +127,7 @@ internal sealed partial class CapsuleerHauler(
                 or { Gang.Phase: RoamingGangPhase.Forming or RoamingGangPhase.Hunting or RoamingGangPhase.Returning }
                 or { RegionalEscort: not null }
                 or { CorporationSupply: not null }
+                or { SovereigntyExpedition: not null }
         || _incoming.Length != 0
         || _warpBlocked
         || Volatile.Read(ref _threatenedShip) != 0;
@@ -483,6 +488,7 @@ internal sealed partial class CapsuleerHauler(
         {
             if (capsule && Pilot.Position is not null)
             {
+                _work = Work with { SovereigntyExpedition = null };
                 AdvanceCapsuleEscape();
                 return Commit(job);
             }
@@ -771,13 +777,15 @@ internal sealed partial class CapsuleerHauler(
             && Work.TargetId == (build.Task.StructureId ?? Eden.World.Structures.MoonMiningCatalog.BeaconId(build.Task.MoonId))
                 ? CapsuleerIndustry.RefineryTarget(world, catalog, build.Task)
                 : null;
+        var hub =
+            Work.SovereigntyExpedition is { HubId: long hubId } && Work.TargetId == hubId ? SovereigntyTarget(world, catalog, hubId) : null;
         transaction.Commit();
         transaction.Dispose();
         var activity = Live?.CapsuleerActivity.Read();
         RefreshObjects(
             loadResources: activity is not { Active: true } || activity.ActiveSystems.Contains(Pilot.SystemId) || RequiresDetail
         );
-        _target = refinery ?? office ?? _objects.FirstOrDefault(o => o.Id == Work.TargetId) ?? SiteTarget(Work.Ratting);
+        _target = hub ?? refinery ?? office ?? _objects.FirstOrDefault(o => o.Id == Work.TargetId) ?? SiteTarget(Work.Ratting);
     }
 
     private void RefreshObjects(bool? loadResources = null)
@@ -848,7 +856,19 @@ internal sealed partial class CapsuleerHauler(
                 break;
             case HaulerActivity.Waiting when Work.ActiveTicks >= Work.DueTicks:
                 _work = Work with { WaitingReason = null };
-                if (Pilot.Position is null)
+                if (Pilot.Position is not null && Work.SovereigntyExpedition is { Returning: true } returning)
+                {
+                    ContinueSovereigntyReturn(returning);
+                }
+                else if (
+                    Pilot.Position is not null
+                    && Work.SovereigntyExpedition is { Returning: false, HubId: not null } claiming
+                    && Pilot.SystemId == claiming.TargetSystemId
+                )
+                {
+                    AdvanceSovereignty(claiming);
+                }
+                else if (Pilot.Position is null)
                 {
                     JoinCorporationAtDock();
                     _work = Work with { Activity = HaulerActivity.Docked };
@@ -944,10 +964,15 @@ internal sealed partial class CapsuleerHauler(
         using var phase = SessionPerformance.Phase("traffic.tradeAndLaunch");
         if (Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup)
         {
+            _work = Work with { SovereigntyExpedition = null };
             AttemptShipReplacement();
             return;
         }
         JoinCorporationAtDock();
+        if (TrySovereigntyExpedition())
+        {
+            return;
+        }
         if (TryCorporationSupply())
         {
             return;
@@ -1067,6 +1092,11 @@ internal sealed partial class CapsuleerHauler(
 
     private void BeginTravel()
     {
+        if (Work.SovereigntyExpedition is { Returning: false } expedition && Pilot.SystemId == expedition.TargetSystemId)
+        {
+            BeginSovereigntyGrid(expedition);
+            return;
+        }
         var leg = CapsuleerTrafficFlight.Leg(_route, Work, Pilot.SystemId);
         _work = Work with
         {
@@ -1097,7 +1127,9 @@ internal sealed partial class CapsuleerHauler(
             target,
             Work.Stamp,
             CapsuleerTrafficFlight.ApproachRange,
-            Work.Ratting is { Phase: RattingPhase.TravellingToBelt, Patrol.Camp: { } camp } ? GateCampRules.StandOff(camp.Role) : 0
+            Work.SovereigntyExpedition?.HubId == target.Id ? HubWarpStandOff
+                : Work.Ratting is { Phase: RattingPhase.TravellingToBelt, Patrol.Camp: { } camp } ? GateCampRules.StandOff(camp.Role)
+                : 0
         );
 
     private void Follow() =>
@@ -1207,6 +1239,11 @@ internal sealed partial class CapsuleerHauler(
         }
         if (_target is null)
         {
+            if (Work.SovereigntyExpedition is { Returning: false, HubId: not null } displaced)
+            {
+                ReturnFromSovereignty(displaced);
+                return;
+            }
             throw new InvalidOperationException(
                 $"Missing hauling target {Work.TargetId} in system {Pilot.SystemId}, activity {Work.Activity}, "
                     + $"route index {Work.RouteIndex}, available {string.Join(',', Objects.Select(o => o.Id))}."
@@ -1226,6 +1263,11 @@ internal sealed partial class CapsuleerHauler(
         )
         {
             ArriveAtRefinery(build);
+            return;
+        }
+        if (Work.SovereigntyExpedition is { Returning: false, HubId: long hubId } expedition && _target.Id == hubId)
+        {
+            AdvanceSovereignty(expedition);
             return;
         }
         if (_target.DestinationGateId is not null)
@@ -1291,6 +1333,7 @@ internal sealed partial class CapsuleerHauler(
             if (
                 Work.Gang is { Phase: not RoamingGangPhase.Complete }
                 || Work.RegionalEscort is not null
+                || Work.SovereigntyExpedition is not null
                 || Work.CorporationSupply?.FactorySupply is { Mercoxit: true } or { Planetary: not null } or { Refinery: not null }
             )
             {
@@ -1366,7 +1409,7 @@ internal sealed partial class CapsuleerHauler(
             DepartureAt = null,
         };
         RefreshObjects(loadResources: Live?.CapsuleerActivity.Read().ActiveSystems.Contains(Pilot.SystemId) != false);
-        if (Work.Journey?.Kind == TrafficJourneyKind.CapsuleEscape || !TryRegionalGrid())
+        if (Work.Journey?.Kind is TrafficJourneyKind.CapsuleEscape or TrafficJourneyKind.SovereigntyExpedition || !TryRegionalGrid())
         {
             BeginTravel();
         }
@@ -1376,6 +1419,11 @@ internal sealed partial class CapsuleerHauler(
 
     private void BeginRetreat()
     {
+        if (Work.SovereigntyExpedition is { Returning: false } expedition)
+        {
+            ReturnFromSovereignty(expedition);
+            return;
+        }
         var leg = CapsuleerTrafficFlight.Leg(_route, Work, Pilot.SystemId);
         int direction =
             _route.SourceStationId == _route.DestinationStationId || leg.Index == 0 ? -1

@@ -5,6 +5,7 @@ using Eden.Data.World.Economy;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Data.World.Skills;
+using Eden.Data.World.Sovereignty;
 using Eden.Data.World.Structures;
 using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Capsuleers;
@@ -23,6 +24,7 @@ using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Configuration;
 using Eden.World.Corporations;
+using Eden.World.Inventory;
 using Eden.World.Market;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
@@ -42,8 +44,10 @@ public sealed class CapsuleerAllianceTests
     private const long Observer = 90000001;
     private const long PersonalContribution = 10000;
 
-    [Fact]
-    public async Task FundedAllianceStagesOneHubAcrossRestartForAnUnobservedClaimableSystem()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task FundedAllianceStagesOneHubAcrossRestartForAnUnobservedClaimableSystem(bool expedition)
     {
         const int station = 60015157;
         const int hubType = EntosisRules.HubTypeId;
@@ -77,6 +81,10 @@ public sealed class CapsuleerAllianceTests
             provisioner.EnsureSystem(WingSystem);
         }
         PassiveCatalogFixture.LoadSovereignty(fixture.Database.CatalogPath);
+        if (expedition)
+        {
+            PassiveCatalogFixture.LoadUtilityHull(fixture.Database.CatalogPath, 81008);
+        }
         using (CatalogDbContext catalog = new(fixture.Database.CatalogPath, writable: true))
         {
             catalog.Database.ExecuteSql(
@@ -85,8 +93,8 @@ public sealed class CapsuleerAllianceTests
                 INSERT OR REPLACE INTO TypeAttribute(ItemTypeId,AttributeId,Value) VALUES (3732,275,5);
                 DELETE FROM Stargate WHERE SolarSystemId={target};
                 INSERT INTO Celestial(Id,SolarSystemId,TypeId,GroupId,Radius,X,Y,Z) VALUES
-                    (55000001,{HeadquartersSystem},16,10,3500,100000000,0,0),
-                    (55000002,{target},16,10,3500,200000000,0,0);
+                    (55000001,{HeadquartersSystem},16,10,3500,100000000000,0,0),
+                    (55000002,{target},16,10,3500,200000000000,0,0);
                 INSERT INTO Stargate(Id,SolarSystemId,DestinationId) VALUES
                     (55000001,{HeadquartersSystem},55000002),(55000002,{target},55000001);
                 """
@@ -229,6 +237,139 @@ public sealed class CapsuleerAllianceTests
                 Assert.Equal(budget, world.Set<SavedCorporation>().Find(corporation)!.BalanceCents);
                 return true;
             });
+        if (expedition)
+        {
+            await ExerciseExpedition(fixture, corporation, station, delivered, present);
+        }
+    }
+
+    private static async Task ExerciseExpedition(
+        CapsuleerHaulerTests.Fixture fixture,
+        int corporation,
+        int station,
+        ServiceProvider delivered,
+        IHumanPresenceLease present
+    )
+    {
+        const int squall = CapsuleerAllianceRules.ExpeditionSquall;
+        const int strontium = SovereigntyCaptureFixture.Strontium;
+        const int link = CapsuleerAllianceRules.ExpeditionLink;
+        const int fuel = 4;
+        const int target = SovereigntyCaptureFixture.SystemId;
+        const long unitPrice = 1_000;
+        long courier = 0;
+        var deliveryWorld = delivered.GetRequiredService<LiveWorld>();
+        List<MarketSale> sales = [];
+        long budget;
+        using (var setup = deliveryWorld.Economy.Begin(TransactionParticipants.None))
+        using (CatalogDbContext catalog = new(fixture.Database.CatalogPath))
+        {
+            setup.Set<PilotWallet>().Find(Observer)!.Cents = 1_000_000;
+            budget = setup.Set<SavedCorporation>().Find(corporation)!.BalanceCents;
+            foreach (var (type, quantity) in new[] { (squall, 1), (link, 1), (strontium, fuel) })
+            {
+                var stock = InventoryPersistence.MergeOutput(setup, catalog, Observer, station, (int)InventoryFlag.Hangar, type, quantity);
+                sales.Add(new(stock.Item.Id, station, type, unitPrice, quantity));
+            }
+            setup.Commit();
+        }
+        delivered.GetRequiredService<IPersonalMarket>().PlaceSell(Observer, sales, 7);
+        Advance(
+            delivered,
+            () => deliveryWorld.HaulerCheckpoints.Values.Any(checkpoint => checkpoint.Work.SovereigntyExpedition is { HubId: null }),
+            300
+        );
+        var checkpoint = Assert.Single(deliveryWorld.HaulerCheckpoints.Values, item => item.Work.SovereigntyExpedition is not null);
+        courier = checkpoint.PilotId;
+        var underway = checkpoint.Work;
+        long shipId = underway.ShipId;
+        Assert.Equal(new[] { HeadquartersSystem, target }, underway.Journey!.Systems);
+        deliveryWorld.Economy.Read(world =>
+        {
+            var cargo = Assert.IsType<OwnedItem>(world.Set<OwnedItem>().Find(underway.SovereigntyExpedition!.CargoId));
+            Assert.Equal(
+                (courier, shipId, EntosisRules.HubTypeId, (int)InventoryFlag.InfrastructureHold),
+                (cargo.OwnerId, cargo.LocationId, cargo.TypeId, cargo.FlagId)
+            );
+            Assert.Null(world.Set<SavedSovereigntyHub>().Find(target));
+            Assert.Equal(squall, world.Pilots.Find(courier)!.ActiveShip.TypeId);
+            Assert.Equal(budget - unitPrice * (fuel + 2), world.Set<SavedCorporation>().Find(corporation)!.BalanceCents);
+            Assert.Equal(
+                3,
+                world
+                    .Filter<MarketExecution>(execution => execution.PilotId == courier)
+                    .Count(execution => execution.IsBuy && execution.TypeId != EntosisRules.HubTypeId)
+            );
+            return true;
+        });
+
+        await deliveryWorld.FlushAsync();
+        present.Dispose();
+        delivered.Dispose();
+        using var claiming = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        using var observer = claiming.GetRequiredService<IHumanPresence>().Select(Observer, ObserverSystem);
+        var claimWorld = claiming.GetRequiredService<LiveWorld>();
+        var claims = claiming.GetRequiredService<ISovereignty>();
+        bool Paid() => claimWorld.Economy.Read(world => world.Filter<SavedEntosisCycle>(cycle => cycle.PilotId == courier).Any());
+        Advance(claiming, Paid, 500);
+        Assert.Null(claims.Read(target));
+        claimWorld.Economy.Read(world =>
+        {
+            var hub = Assert.IsType<SavedSovereigntyHub>(world.Set<SavedSovereigntyHub>().Find(target));
+            var structure = world.Set<SavedStructure>().Find(hub.HubId)!;
+            Assert.Equal(EntosisRules.NeutralCorporationId, structure.CorporationId);
+            Assert.Null(world.Set<OwnedItem>().Find(underway.SovereigntyExpedition!.CargoId));
+            Assert.Equal(
+                fuel - 1,
+                world.Filter<OwnedItem>(item => item.OwnerId == courier).Single(item => item.TypeId == strontium).Quantity
+            );
+            return true;
+        });
+        observer.Dispose();
+        fixture.Clock.AdvanceWallTime(TimeSpan.FromMinutes(30));
+        var neutral = claiming.GetRequiredService<IPilotEntosis>().Hub(target)!;
+        Assert.Null(neutral.Claim);
+        Assert.Equal(0, neutral.Capture.ProgressTicks);
+        using var resumed = claiming.GetRequiredService<IHumanPresence>().Select(Observer, ObserverSystem);
+        Advance(claiming, () => claims.Read(target) is not null, 1600);
+        Assert.Equal(corporation, claims.Read(target)!.CorporationId);
+        claimWorld.Economy.Read(world =>
+        {
+            Assert.Empty(world.Filter<OwnedItem>(item => item.OwnerId == courier).Where(item => item.TypeId == strontium));
+            return true;
+        });
+        Advance(claiming, () => claimWorld.HaulerCheckpoints.GetValueOrDefault(courier)?.Work.SovereigntyExpedition is null, 500);
+        await claimWorld.FlushAsync();
+
+        void Advance(ServiceProvider host, Func<bool> ready, int seconds)
+        {
+            var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+            scheduler.PopulationPrepared(HeadquartersSystem);
+            var maintenance = host.GetRequiredService<CapsuleerMaintenance>();
+            for (int step = 0; step < seconds && !ready(); step++)
+            {
+                fixture.Clock.Seconds++;
+                maintenance.Tick();
+            }
+            var observation = scheduler.Hauler(courier);
+            var position = observation?.Pilot.Position;
+            if (ready())
+            {
+                return;
+            }
+            using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+            var waypoint = observation is null
+                ? null
+                : SystemObjects.Geometry(catalog, observation.Pilot.SystemId).FirstOrDefault(body => body.Id == observation.Work.TargetId);
+            Assert.Fail(
+                $"{observation?.Pilot.SystemId} {observation?.Work.SovereigntyExpedition} "
+                    + $"{observation?.Work.Activity} to {observation?.Work.TargetId} at ({position?.X},{position?.Y},{position?.Z}) "
+                    + $"waypoint ({waypoint?.Position.X},{waypoint?.Position.Y},{waypoint?.Position.Z}) "
+                    + $"due {observation?.Work.DueTicks} through {observation?.Work.ActiveTicks} "
+                    + $"speed {observation?.Pilot.Flight.MaxSpeed}, warp ready {observation?.Work.WarpReadyAt}, "
+                    + $"retreating {observation?.Work.Retreating} {observation?.Work.WaitingReason} {scheduler.Read().LastFailure}"
+            );
+        }
     }
 
     [Fact]

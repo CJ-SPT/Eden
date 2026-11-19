@@ -44,6 +44,7 @@ public sealed record HaulerProgress(
     public FreightManifest? Freight { get; init; }
     public CorporationSupplyRun? CorporationSupply { get; init; }
     public FactoryPlanetaryProduction? PlanetaryProduction { get; init; }
+    public SovereigntyExpedition? SovereigntyExpedition { get; init; }
     public long PlanetaryRetryAt { get; init; }
     public long[] RattingLoot { get; init; } = [];
     public RattingProgress? Ratting { get; init; }
@@ -61,6 +62,17 @@ public sealed record HaulerProgress(
     public long WarpReadyAt { get; init; }
     public int LastMotionStamp { get; init; } = int.MinValue;
 }
+
+public sealed record SovereigntyExpedition(
+    int AllianceId,
+    int CorporationId,
+    int TargetSystemId,
+    long CargoId,
+    long ModuleId,
+    long? HubId = null,
+    long LockReadyAt = 0,
+    bool Returning = false
+);
 
 public sealed record HaulerObservation(DockedPilot Pilot, HaulerProgress Work, ShipHealth? Health);
 

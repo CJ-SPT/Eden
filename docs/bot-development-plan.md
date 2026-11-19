@@ -17,10 +17,11 @@ publish the same owned ships, goods, orders and sovereignty state a player would
 | **8. Dedicated-server capacity** | Establish a paired baseline early and repeat it after offscreen and industry milestones on the existing dedicated Eden server. Measure complete session frames, due backlog age, starvation, work completed by distant systems, memory and checkpoint phases under a sustained mix of peaceful traffic, industry, and combat. Record the configuration and workload, and fix measurable bottlenecks until the target population sustains progress without starving distant jobs or regressing session latency. |
 
 The initial procurement radius, price cap, and order duration are Eden policy. The buy order creates a native
-market signal that players and other factories can fill. The next milestone assigns the purchased hub to an expedition
-and persists the chosen target with that assignment. Build 3662168 gives the packaged hub a volume of 60,000 m³.
-The assigned hauler needs that much usable space in an eligible hold. The expedition settles the claim through native
-neutral deployment and Entosis. [Sovereignty mechanics](https://wiki.eveuniversity.org/Sovereignty) ·
+market signal that players and other factories can fill. The first-claim expedition persists the chosen target and
+route with the courier's assignment. Build 3662168 gives the packaged hub a volume of 60,000 m³. A fitted Squall can
+carry it and run the link on its own. This implementation covers the first claim. Defense and upkeep remain in
+milestone 2. [Autonomous first claims](protocol/sovereignty.md#autonomous-first-claims) ·
+[Sovereignty mechanics](https://wiki.eveuniversity.org/Sovereignty) ·
 [CCP sovereignty deployment and capture](https://www.eveonline.com/news/view/sovereignty-structures-and-transition)
 
 The replacement branch's merge preview against `1e9ee33c` found conflicts in the protocol index, capsuleer protocol

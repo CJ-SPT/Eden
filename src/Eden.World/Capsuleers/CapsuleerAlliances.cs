@@ -213,7 +213,7 @@ internal sealed partial class CapsuleerAlliances(
         return false;
     }
 
-    private static bool CanFund(WorldAction world, SavedCorporation corporation, int count, long registration)
+    internal static bool CanFund(WorldAction world, SavedCorporation corporation, int count, long registration)
     {
         const int master = CorporationWalletRules.MasterKey;
         int division = CorporationBillingStore.Saved(world, corporation.Id)?.DivisionKey ?? master;

@@ -1,5 +1,56 @@
 # Sovereignty
 
+## Autonomous first claims
+
+After a Sovereignty Hub reaches the executor's headquarters, a free docked corporate hauler can use its existing
+qualified ship, fitted Entosis Link and fuel. If it needs equipment, it can buy the shortfall for a Squall,
+Entosis Link I and Strontium Clathrates from local sell orders, preserving a month of alliance dues. The normal fitting
+and boarding operations fit the link and leave the old hull in the station. The standard Squall plan qualifies the
+pilot in Upwell Hauler V under Eden's existing bot skill policy. Its infrastructure hold can carry the 60,000 m³ package.
+The equipment and minimum outbound fuel are prerequisites for leaving the station. This first expedition uses one ship
+for hauling and capture.
+
+The executor assigns Station Manager through the corporation role store. Cargo loading, the gate route and the
+expedition assignment settle together. The pilot takes ordinary gates to the first available site within three jumps,
+including stationless systems. Arrival rechecks current claim state, then uses ordinary neutral deployment. The pilot
+warps to the actual deployed hub, waits for a target lock, and pays capacitor and fuel for normal Entosis cycles. A
+rival can still contest the neutral hub through the existing capture rules. Completion publishes the normal claim,
+and the courier returns to headquarters after any paid travel restriction ends.
+
+The route, cargo and deployed hub ID are checkpointed. A lost ship, unavailable hub or lost expedition authority clears
+or ends the assignment. Normal paid cycle reservations and capture progress survive a checkpoint, and an active scoring
+lease has to be acquired again. Bot scoring uses the human-activity generation so an empty server cannot finish a claim
+from a stale lease. The scope covers the first claim and return, with local equipment availability and funds determining
+admission. Defense and upkeep are tracked in the [bot development plan](../bot-development-plan.md).
+
+Pinned build 3662168 supplies the Squall hull (81008), Entosis Link I (34593), hold rules and the hub's catalog capture
+duration. The existing EVE.js snapshot's neutral-versus-owned capture contract is recorded in
+[first-claim procurement](alliances.md#first-claim-hub-procurement). [CCP Entosis Link](https://support.eveonline.com/hc/en-us/articles/203729281-Entosis-Link) ·
+[UniWiki Sovereignty](https://wiki.eveuniversity.org/Sovereignty)
+
+### Automated validation
+
+The exact `CapsuleerAllianceTests.FundedAllianceStagesOneHubAcrossRestartForAnUnobservedClaimableSystem` filter passed two
+cases in 11.86 seconds including runner startup. It covers a real sell order for the hub, paid acquisition and fitting of
+the Squall kit, infrastructure cargo across checkpoint reopen, reciprocal gate travel, neutral deployment, fuel payment,
+an empty-server interruption, ordinary claim settlement and the trip back to headquarters. Development corrected an
+artificial gate placed inside the fixture star and gave the return an operational dock stop for immediate settlement.
+
+Tool and solution restore and the solution build passed with zero warnings and errors. The affected .NET selection
+passed 339 cases in 2 minutes 10 seconds. The `FullyQualifiedName~` filter combined `Eden.Protocol.Tests.Sovereignty`,
+`Eden.Protocol.Tests.Alliances`, `CapsuleerAllianceTests`, `CapsuleerInboundRuntimeTests`, `CapsuleerTrafficRoutesTests`,
+`CapsuleerTrafficNavigationTests`, `CapsuleerDeadlineTests`, `CapsuleerAmmunitionSupplyTests`, `CapsuleerFailureTests`,
+`PersonalMarketTests` and `Eden.Protocol.Tests.Market.ResidentEconomyTests`. Both Python policy suites passed (8 and 9 cases).
+Formatting and diff checks passed. The complete validation sequence took 165.24 seconds and used isolated worlds.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+Follow a funded bot expedition through deployment and confirm the owner changes on the in-game sovereignty map.
+
 ## Scope and implementation plan
 
 Target the Sovereignty Hub system supported by Windows build **3662168**, using resident authority and checkpoint

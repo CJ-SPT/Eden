@@ -12,6 +12,7 @@ internal sealed partial class CapsuleerScheduler
         return work?.Gang is { Phase: not RoamingGangPhase.Complete } gang
                 && gang.Members.Any(member => member.PilotId == pilot && member.Status == RoamingGangMemberStatus.Active)
             || work?.CorporationSupply is not null
+            || work?.SovereigntyExpedition is not null
             || work?.RegionalEscort is { } escort && work.ShipId == escort.ShipId && work.ActiveTicks < escort.Operation.ExpiresAt;
     }
 

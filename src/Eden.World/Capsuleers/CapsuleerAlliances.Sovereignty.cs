@@ -14,6 +14,7 @@ using Eden.Gameplay.Sovereignty;
 using Eden.World.Catalog;
 using Eden.World.Docking;
 using Eden.World.Market;
+using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Sovereignty;
 
@@ -46,7 +47,7 @@ internal sealed partial class CapsuleerAlliances
             return false;
         }
 
-        if (HasHubSupply(world, corporation, now))
+        if (ExpeditionActive(world, corporation) || HasHubSupply(world, corporation, now))
         {
             return false;
         }
@@ -91,6 +92,19 @@ internal sealed partial class CapsuleerAlliances
         return false;
     }
 
+    internal static bool ExpeditionActive(WorldAction world, SavedCorporation corporation) =>
+        LiveWorld.Find(world.WorldPath) is { } live
+        && world
+            .Filter<Pilot>(pilot => pilot.CorporationId == corporation.Id)
+            .AsEnumerable()
+            .Any(pilot =>
+                live.HaulerCheckpoints.GetValueOrDefault(pilot.Id)?.Work is { SovereigntyExpedition: not null } work
+                && work.ShipId == pilot.ActiveShipId
+            );
+
+    internal static IEnumerable<int> UnclaimedSites(WorldAction world, CatalogDbContext catalog, int headquarters) =>
+        catalog.Definition(s_firstClaimSystems, headquarters).Where(system => !PilotEntosisStore.HasHub(world, system));
+
     private static bool HasHubSupply(WorldAction world, SavedCorporation corporation, long now)
     {
         const int hubType = EntosisRules.HubTypeId;
@@ -110,25 +124,30 @@ internal sealed partial class CapsuleerAlliances
         {
             return true;
         }
-        foreach (var bid in bids.Where(order => order.Status == PersonalOrderStatus.Filled))
-        {
-            if (
-                world.Pilots.Find(bid.PilotId)?.CorporationId == corporation.Id
-                && world
-                    .Filter<OwnedItem>(item => item.OwnerId == bid.PilotId)
-                    .Any(item =>
-                        item.LocationId == bid.StationId
-                        && item.FlagId == (int)InventoryFlag.Hangar
-                        && item.TypeId == hubType
-                        && !item.Singleton
-                        && item.Quantity > 0
-                    )
+        return HeadquartersHub(world, corporation) is not null;
+    }
+
+    internal static OwnedItem? HeadquartersHub(WorldAction world, SavedCorporation corporation)
+    {
+        const int hubType = EntosisRules.HubTypeId;
+        var owners = world
+            .Filter<Pilot>(pilot => pilot.CorporationId == corporation.Id)
+            .AsEnumerable()
+            .Where(pilot => world.Set<SavedCapsuleerAgent>().Find(pilot.Id) is not null)
+            .Select(pilot => pilot.Id)
+            .Order()
+            .Prepend(corporation.Id);
+        return owners
+            .SelectMany(owner => world.Filter<OwnedItem>(item => item.OwnerId == owner).AsEnumerable())
+            .Where(item =>
+                item.LocationId == corporation.StationId
+                && item.TypeId == hubType
+                && !item.Singleton
+                && item.Quantity > 0
+                && (item.FlagId == (int)InventoryFlag.Hangar || item.FlagId == CorporationStorageRules.MarketDeliveriesFlag)
             )
-            {
-                return true;
-            }
-        }
-        return false;
+            .OrderBy(item => item.Id)
+            .FirstOrDefault();
     }
 
     private static int[] FirstClaimSystems(CatalogDbContext catalog, int headquarters)

@@ -15,6 +15,11 @@ public static class CapsuleerAllianceRules
     public const int FirstClaimMaximumJumps = 3;
     public const int FirstHubOrderDays = 7;
 
+    // Build 3662168 cargo and module profiles for the first claim's standard outfitting plan.
+    public const int ExpeditionSquall = 81008;
+    public const int ExpeditionLink = 34593;
+    public const int ExpeditionHaulingSkillLevel = 5;
+
     public static AllianceDetails Identity(string system, long seed, int systemId, int attempt)
     {
         string suffix = attempt == 0 ? " Compact" : " Compact " + (attempt + 1).ToString(CultureInfo.InvariantCulture);

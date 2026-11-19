@@ -216,7 +216,7 @@ internal sealed partial class PilotEntosisStore
         var cycles = world.Filter<SavedEntosisCycle>(row => row.SystemId == target.SystemId && row.HubId == target.Id).ToArray();
         foreach (var cycle in cycles)
         {
-            if (cycle.Contributing && (!_scoringLeases.Contains(cycle.ModuleId) || !Valid(world, catalog, cycle, target)))
+            if (cycle.Contributing && (!CanScore(cycle.ModuleId) || !Valid(world, catalog, cycle, target)))
             {
                 cycle.Contributing = false;
                 cycle.Stopping = true;

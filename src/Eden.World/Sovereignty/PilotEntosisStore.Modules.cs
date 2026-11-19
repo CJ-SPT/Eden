@@ -25,9 +25,25 @@ internal sealed partial class PilotEntosisStore
     {
         using var action = Live.Economy.Begin(new(pilots: [pilotId], ships: [shipId]));
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var result = Start(action, catalog, pilotId, shipId, moduleId, hubId, repeats, now, warm: false);
-        action.AfterCommit(() => _scoringLeases.Add(moduleId));
+        var result = Activate(action, catalog, pilotId, shipId, moduleId, hubId, repeats, now);
         action.Commit();
+        return result;
+    }
+
+    internal EntosisActivation Activate(
+        WorldAction action,
+        CatalogDbContext catalog,
+        long pilotId,
+        long shipId,
+        long moduleId,
+        long hubId,
+        long repeats,
+        long now,
+        long? activityGeneration = null
+    )
+    {
+        var result = Start(action, catalog, pilotId, shipId, moduleId, hubId, repeats, now, warm: false);
+        action.AfterCommit(() => _scoringLeases[moduleId] = activityGeneration);
         return result;
     }
 
@@ -35,6 +51,13 @@ internal sealed partial class PilotEntosisStore
     {
         using var action = Live.Economy.Begin(new(pilots: [pilotId]));
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var result = Renew(action, catalog, pilotId, moduleId, now);
+        action.Commit();
+        return result;
+    }
+
+    internal EntosisActivation? Renew(WorldAction action, CatalogDbContext catalog, long pilotId, long moduleId, long now)
+    {
         var cycle = action.Set<SavedEntosisCycle>().Find(moduleId);
         if (cycle is null || cycle.PilotId != pilotId)
         {
@@ -47,7 +70,6 @@ internal sealed partial class PilotEntosisStore
         Advance(action, catalog, cycle.SystemId, now);
         if (action.Set<SavedEntosisCycle>().Find(moduleId) is null)
         {
-            action.Commit();
             return null;
         }
         bool repeat =
@@ -61,11 +83,21 @@ internal sealed partial class PilotEntosisStore
         if (repeat)
         {
             result = Start(action, catalog, pilotId, cycle.ShipId, moduleId, cycle.HubId, cycle.Repeats - 1, now, cycle.Contributing);
-            action.AfterCommit(() => _scoringLeases.Add(moduleId));
+            long? generation = _scoringLeases.GetValueOrDefault(moduleId);
+            action.AfterCommit(() => _scoringLeases[moduleId] = generation);
         }
-        action.Commit();
         return result;
     }
+
+    internal bool HasLock(long shipId, long target) => locks.Contains(shipId, target);
+
+    internal void LockAfterCommit(WorldAction action, long shipId, long target) => action.AfterCommit(() => locks.Add(shipId, target));
+
+    internal void UnlockAfterCommit(WorldAction action, long shipId, long target) => action.AfterCommit(() => locks.Remove(shipId, target));
+
+    private bool CanScore(long moduleId) =>
+        _scoringLeases.TryGetValue(moduleId, out long? generation)
+        && (generation is null || Live.CapsuleerActivity.Read() is { Active: true } activity && activity.Resumes == generation);
 
     private EntosisActivation Start(
         WorldAction world,
