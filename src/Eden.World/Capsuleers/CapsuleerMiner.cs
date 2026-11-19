@@ -42,7 +42,8 @@ internal sealed class CapsuleerMinerFactory(
     MarketChangeSignal marketSignal,
     CapsuleerDefense defense,
     CapsuleerIndustry industry,
-    PilotFleetStore fleet
+    PilotFleetStore fleet,
+    CapsuleerCareerTraining careerTraining
 )
 {
     internal CapsuleerMiner Create(long pilotId, IReadOnlyCollection<long> crew, Func<long, bool> suspended) =>
@@ -65,7 +66,8 @@ internal sealed class CapsuleerMinerFactory(
             marketSignal,
             defense,
             industry,
-            fleet
+            fleet,
+            careerTraining
         );
 }
 
@@ -88,7 +90,8 @@ internal sealed partial class CapsuleerMiner(
     MarketChangeSignal marketSignal,
     CapsuleerDefense defense,
     CapsuleerIndustry industry,
-    PilotFleetStore fleet
+    PilotFleetStore fleet,
+    CapsuleerCareerTraining careerTraining
 )
 {
     private static readonly CatalogDefinition<bool> s_miningBelt = new(
@@ -534,6 +537,7 @@ internal sealed partial class CapsuleerMiner(
             {
                 _work = Work with
                 {
+                    CareerPlan = previous?.CareerPlan,
                     DeepCoreProvisioned = previous?.DeepCoreProvisioned == true,
                     Mercoxit = Pilot.Position is null ? null : previous?.Mercoxit,
                     ActiveTicks = anchor,
@@ -713,6 +717,16 @@ internal sealed partial class CapsuleerMiner(
             _operation.MarketChanged |= industry.Produce(supplyWorld, _operation.Catalog, Pilot, Now, out supply);
         }
         _work = Work with { FactorySupply = supply };
+        if (_operation.World is EconomyTransaction resident)
+        {
+            var training = careerTraining.Advance(resident, _operation.Catalog, Pilot, CapsuleerProfession.Mining, Work.CareerPlan, Now);
+            _work = Work with { CareerPlan = training.Plan };
+            _operation.MarketChanged |= training.MarketChanged;
+            if (training.LevelChanged)
+            {
+                _pilot = ships.FindPilot(resident, CapsuleerCommunityStore.MinerAccountId, pilotId)!;
+            }
+        }
         var expedition = fresh ? null : PrepareMercoxitExpedition(aboard);
         var laserType =
             fresh ? MiningLaserType.Civilian

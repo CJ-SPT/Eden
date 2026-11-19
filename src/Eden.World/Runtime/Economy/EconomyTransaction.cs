@@ -7,9 +7,11 @@ using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
+using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Configuration;
 using Eden.World.Market;
@@ -264,8 +266,8 @@ internal sealed partial class EconomyTransaction(
         {
             if (
                 string.IsNullOrWhiteSpace(account.UserName)
-                || account.CloneGrade
-                    is not (Eden.Gameplay.Docking.AccountCloneGrade.Alpha or Eden.Gameplay.Docking.AccountCloneGrade.Omega)
+                || account.CloneGrade is not (AccountCloneGrade.Alpha or AccountCloneGrade.Omega)
+                || account.Id == CapsuleerCommunityStore.MinerAccountId && account.CloneGrade != AccountCloneGrade.Omega
                 || Set<Account>()
                     .Any(other =>
                         other.Id != account.Id && string.Equals(other.UserName, account.UserName, StringComparison.OrdinalIgnoreCase)

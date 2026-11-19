@@ -49,8 +49,9 @@ native client acceptance separately. [Contributor guide](../AGENTS.md#testing)
 ## Fresh-universe progression
 
 The first implementation covers a matched human and bot baseline and the autonomous sale of a manufactured
-Miner I. The broader career and regional economy milestones below follow that opening loop.
-[Implementation and replay](protocol/capsuleers.md#fresh-universe-starter-industry)
+Miner I. Bots now spend activity SP on their ship goal, work qualifications, and the Magic 14. The broader
+career and regional economy milestones below follow that opening loop.
+[Opening replay](protocol/capsuleers.md#fresh-universe-starter-industry) · [Earned training](protocol/capsuleers.md#earned-bot-career-training)
 
 Every human and simulated capsuleer starts as a new character. The first miners, couriers and mission runners
 earn working capital in their corvettes. Their first trades fund local production. Finished ships and fittings reach
@@ -111,7 +112,7 @@ finance that chain and get its first real listing onto the market.
 
 Give each bot a near-term task and a longer-term goal. Evaluate goals against owned gear, skill prerequisites,
 wallet reserves, local demand and the routes the pilot can fly. Buy and inject skillbooks through the existing
-operations and train missing levels through the skill queue. When a task stalls, the pilot can earn money, post a
+operations and apply earned SP to missing levels. When a task stalls, the pilot can earn money, post a
 bid, train, take a different route, or switch work. Let humans pursue the same opportunities through existing
 gameplay. Both can work in multiple careers and change direction.
 [CCP's AIR career paths](https://support.eveonline.com/hc/en-us/articles/5194673685148-AIR-Career-Program) ·

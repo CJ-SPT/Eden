@@ -3448,8 +3448,8 @@ industrial cohort. The later milestones cover more careers, interregional sourci
 
 Mining and paid NPC kill settlement both credit unallocated skill points through the existing rules. A qualifying
 mining cycle pays based on the pinned reference value of the collected ore. A qualifying kill pays based on its
-configured bounty and credits the pilot who scored the kill. Bots currently accumulate those points in their pool.
-Automatic allocation and career-specific training decisions are future work.
+configured bounty and credits the pilot who scored the kill. This milestone established the pool and its sources.
+The subsequent [career training milestone](#earned-bot-career-training) allocates those points.
 
 ### Automated validation
 
@@ -3493,3 +3493,63 @@ Not performed; agent client testing is disabled.
 ### Optional maintainer checks
 
 In a fresh world, watch the starter factory's market for the first Miner I bid and its eventual fill.
+
+## Earned bot career training
+
+Resident miners, haulers and combat pilots spend their unallocated skill points when they dock. They rotate
+between work qualifications, a saved ship goal, and the Magic 14 at level IV. Work qualifications cover mining,
+hauling and combat skills, Industry and Reprocessing for producers, and Corporation Management for prospective
+founders and CEOs. Existing prerequisites determine what a bot can train next. A blocked skill leaves room for
+another actionable goal. [EVE University skills and learning](https://wiki.eveuniversity.org/Skills_and_learning) ·
+[The Magic 14](https://wiki.eveuniversity.org/The_Magic_14)
+
+Ship goals draw from published build-3662168 hulls that Eden can assemble in the pilot's career. The catalog supplies the
+hull requirements and the transitive requirements of its skills. A miner can draw a Venture, a barge or an
+exhumer, among other eligible hulls. Haulers and combat pilots draw from their own hull classes. The ship goal and
+next training focus follow the pilot through checkpoint reopen and ship loss. A goal establishes skill priorities.
+The existing fitting and procurement systems govern ownership and boarding.
+
+Bots apply points through the same allocation, prerequisite and history rules as human pilots. They inject owned
+books or pay for missing skills using the normal direct purchase or station market. The starter factory crew keeps
+its operating money available through the first finished-goods trade. Later skillbook purchases use up to one quarter
+of the pilot's current wallet. The simulated capsuleer account is permanently Omega. Startup repairs older Alpha
+records for that account, and the resident write boundary rejects a downgrade. Human accounts keep their saved clone
+grades. The local evejs reference `skillMgrService.js` was checked for separate free-pool and skill-application
+operations. Its SHA-256 is `64D7E60FC25C835CBB87C535BC10758AFADE4D17B23CE163BB8DED3C37451B5F`.
+Existing protocol calls serve both kinds of pilot.
+
+### Automated validation
+
+The fresh build-3662168 replay started with two rookie corvettes and zero ISK. The scheduled miners spent
+mining SP on Mining, Industry and the Magic 14 while completing the first manufactured sale. The chosen
+ship, actual allocations, and journal survived reopen. A second fresh rookie's only SP came from a controlled
+pirate kill settlement. The bot spent it on a Covetor prerequisite. The producer used a second controlled
+bounty to pay 97,500 ISK for Reprocessing and then spent earned SP on the skill. Another test starts from a
+saved Alpha bot account, reopens it as Omega, rejects a resident downgrade, and checks a human Alpha account.
+
+The exact fresh-world filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Industry.FreshUniverseTests.NewCorvettesEarnAndTradeTheFirstManufacturedMinerThroughFundedEscrow`.
+The earlier 196-case run passed 195 cases. The fresh-world refining assertion exposed a priority error that
+promoted a later goal's Industry target ahead of an already qualified Reprocessing goal. Retaining each
+goal's minimum prerequisite fixed the issue, and the exact replay passed in 29.60 seconds.
+
+Final tool restore, solution restore, and build passed with zero warnings or errors. All 161 affected
+.NET cases passed in 1m 06s. Both Python suites passed, with eight catalog and nine formatting-policy
+cases. Formatting and documentation link checks passed. The build and verification sequence took
+102.02 seconds. The final filter combined these names through
+`FullyQualifiedName~`.
+
+```text
+FreshUniverseTests | CloneGradeTests | FreeSkillPointTests | FreeSkillPointServiceTests | SkillPurchaseTests
+PilotSkillBookTests | PilotTrainingTests | MiningSkillPointRewardTests | NpcSkillPointRewardTests
+CapsuleerMiningFleetTests | CapsuleerInboundRuntimeTests
+ActualCombatFitCanClearAnOrdinaryPirateAndCannotCollectItsBountyTwice
+```
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None required for the earned-SP allocation and Omega checks.

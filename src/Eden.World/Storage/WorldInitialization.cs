@@ -82,6 +82,7 @@ public static class WorldInitialization
         }
         database.LoadTraffic();
         WorldConfigurationStore.Activate(database);
+        Eden.World.Capsuleers.CapsuleerCommunityStore.ReconcileCloneGrade(world);
         Eden.World.Capsuleers.CapsuleerPopulationActivation.Apply(database, clock ?? TimeProvider.System);
         world.ChangeTracker.Clear();
         using (var reconciliation = world.Database.BeginTransaction())

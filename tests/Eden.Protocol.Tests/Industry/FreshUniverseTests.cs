@@ -1,20 +1,29 @@
 using Eden.Data.World.Capsuleers;
+using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Economy;
 using Eden.Data.World.Industry;
 using Eden.Data.World.Market;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Characters;
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
+using Eden.Gameplay.Corporations;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Mining;
+using Eden.Gameplay.Reprocessing;
+using Eden.Gameplay.Ships;
 using Eden.Gameplay.Skills;
 using Eden.Infrastructure.Operations;
 using Eden.Server;
 using Eden.Server.Launcher;
 using Eden.World.Capsuleers;
+using Eden.World.Catalog;
+using Eden.World.Combat.Npcs;
+using Eden.World.Docking;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
@@ -96,6 +105,7 @@ public sealed class FreshUniverseTests(ITestOutputHelper output)
         long buyer;
         long orderId;
         long price;
+        int shipGoal;
         using (var host = Open())
         {
             var live = host.GetRequiredService<LiveWorld>();
@@ -119,6 +129,16 @@ public sealed class FreshUniverseTests(ITestOutputHelper output)
             producer = founders.Single(row => row.Slot == StarterIndustryRules.ProducerSlot).PilotId;
             buyer = founders.Single(row => row.Slot == StarterIndustryRules.BuyerSlot).PilotId;
             CompareWithNewCharacters(host, live, founders);
+            using (CatalogDbContext catalog = new(database.CatalogPath))
+            {
+                var mining = CapsuleerCareerTraining.Ships(catalog, CapsuleerProfession.Mining);
+                Assert.Contains((int)TechOneHullType.Venture, mining);
+                Assert.Contains((int)CapsuleerMiningHull.Covetor, mining);
+                Assert.Contains((int)CapsuleerMiningHull.Hulk, mining);
+                Assert.Contains((int)FreightHull.Badger, CapsuleerCareerTraining.Ships(catalog, CapsuleerProfession.Hauling));
+                Assert.Contains((int)TechOneHullType.Rifter, CapsuleerCareerTraining.Ships(catalog, CapsuleerProfession.Combat));
+                Assert.DoesNotContain((int)TechOneHullType.Venture, CapsuleerCareerTraining.Ships(catalog, CapsuleerProfession.Combat));
+            }
             var market = host.GetRequiredService<IPilotMarket>();
             var points = host.GetRequiredService<IPilotFreeSkillPoints>();
             Assert.Empty(market.Orders(buyer, Miner));
@@ -140,13 +160,20 @@ public sealed class FreshUniverseTests(ITestOutputHelper output)
             Assert.Equal(price, order.EscrowCents);
             Assert.DoesNotContain(host.GetRequiredService<IPilotInventory>().List(buyer, Factory), item => item.TypeId == Miner);
             Assert.Contains(market.Transactions(buyer), trade => !trade.IsBuy && trade.CounterpartyId != producer && trade.PriceCents > 0);
-            Assert.True(points.Balance(buyer) > 0);
+            Assert.Contains(Allocations(live, buyer), entry => entry.TypeId == (int)MiningSkill.Mining && entry.Points > 8000);
+            shipGoal = Assert
+                .IsType<CapsuleerCareerPlan>(host.GetRequiredService<ICapsuleerScheduler>().Miner(buyer)!.Work.CareerPlan)
+                .ShipTypeId;
+            Assert.True(shipGoal > 0);
             output.WriteLine($"First funded order after {TimeSpan.FromSeconds(clock.Seconds)}, escrow {price} cents.");
         }
 
         WorldInitialization.Initialize(database, clock);
         using (var host = Open())
         {
+            var savedWork = host.GetRequiredService<LiveWorld>()
+                .Economy.Inspect(world => world.Filter<SavedCapsuleerCommunity>(row => row.PilotId == buyer).Single().Progress);
+            Assert.Equal(shipGoal, MinerCheckpoint.Read(savedWork)?.CareerPlan?.ShipTypeId);
             var personal = host.GetRequiredService<IPersonalMarket>();
             Assert.Contains(personal.PersonalOrders(buyer), order => order.Id == orderId && order.EscrowCents == price);
             var market = host.GetRequiredService<IPilotMarket>();
@@ -163,6 +190,8 @@ public sealed class FreshUniverseTests(ITestOutputHelper output)
         using (var host = Open())
         {
             AssertSale(host);
+            SpendFreshPirateBountyPoints(host, database, clock);
+            BuyAndTrainRefiningAfterFirstSale(host, database, clock, producer);
         }
 
         ServiceProvider Open() => ServerServices.Build(database, clock, population: new TestNpcPopulationSeeder(), liveWorld: true);
@@ -199,11 +228,119 @@ public sealed class FreshUniverseTests(ITestOutputHelper output)
                 payment =>
                     payment.Kind == WalletEntryType.Manufacturing && payment.ContextId == job.Id && payment.AmountCents == -job.CostCents
             );
-            var points = host.GetRequiredService<IPilotFreeSkillPoints>();
-            Assert.True(points.Balance(producer) > 0);
-            Assert.True(points.Balance(buyer) > 0);
+            var producerTraining = Allocations(live, producer);
+            Assert.Contains(producerTraining, entry => entry.TypeId == (int)IndustrySkill.Industry && entry.Points > 250);
+            Assert.Contains(producerTraining, entry => CapsuleerCareerTrainingRules.Foundation.Any(skill => skill.TypeId == entry.TypeId));
+            Assert.NotEmpty(Allocations(live, buyer));
         }
     }
+
+    private static void SpendFreshPirateBountyPoints(ServiceProvider host, WorldDatabase database, TestClock clock)
+    {
+        // Open a second native factory cohort in the same universe. This rookie has never mined or received SP.
+        const int secondSystem = 30001401;
+        var live = host.GetRequiredService<LiveWorld>();
+        host.GetRequiredService<CapsuleerProvisioner>().EnsureSystem(secondSystem);
+        long id = live.Economy.Inspect(world =>
+            world
+                .Filter<SavedCapsuleerAgent>(agent => agent.CommunitySystemId == secondSystem)
+                .Single(agent => agent.Slot == StarterIndustryRules.BuyerSlot)
+                .PilotId
+        );
+        var points = host.GetRequiredService<IPilotFreeSkillPoints>();
+        Assert.Equal(0, points.Balance(id));
+        Assert.Empty(Allocations(live, id));
+
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        long earned;
+        using (var action = live.Economy.Begin(new(pilots: [id], systems: [secondSystem])))
+        {
+            earned = SettlePirateKill(action, catalog, id, secondSystem, NpcEncounterDefinitions.GuristasRookieType, clock.Now);
+            action.Commit();
+        }
+        Assert.Equal(earned, points.Balance(id));
+        using (var action = live.Economy.Begin(new(pilots: [id])))
+        {
+            var pilot = host.GetRequiredService<SqliteWorld>().FindPilot(action, CapsuleerCommunityStore.MinerAccountId, id)!;
+            var plan = new CapsuleerCareerPlan(CapsuleerProfession.Mining, (int)CapsuleerMiningHull.Covetor, CapsuleerTrainingFocus.Ship);
+            var advanced = host.GetRequiredService<CapsuleerCareerTraining>()
+                .Advance(action, catalog, pilot, plan.Profession, plan, clock.Now);
+            Assert.False(advanced.MarketChanged);
+            Assert.Equal(plan with { NextFocus = CapsuleerTrainingFocus.Foundation }, advanced.Plan);
+            action.Commit();
+        }
+        Assert.Equal(0, points.Balance(id));
+        Assert.Single(Allocations(live, id));
+    }
+
+    private static void BuyAndTrainRefiningAfterFirstSale(ServiceProvider host, WorldDatabase database, TestClock clock, long id)
+    {
+        // Pinned Pith Eliminator payout funds a real skillbook purchase on the existing fresh-world wallet.
+        const int pithEliminator = 24145;
+        int refining = (int)ReprocessingSkill.Reprocessing;
+        var live = host.GetRequiredService<LiveWorld>();
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var work = CapsuleerCareerTrainingRules.Work(CapsuleerProfession.Mining, factory: true, management: true);
+        Assert.Contains(new(CorporationRules.ManagementSkill, 1), work);
+        Assert.Equal(14, CapsuleerCareerTrainingRules.Foundation.Select(target => target.TypeId).Distinct().Count());
+        using (var action = live.Economy.Begin(new(pilots: [id], systems: [StarterSystem])))
+        {
+            Assert.Null(action.Set<PilotSkill>().Find(id, refining));
+            SettlePirateKill(action, catalog, id, StarterSystem, pithEliminator, clock.Now);
+            SqliteWorld.SetPosition(action, catalog, action.Pilots.Find(id)!.ActiveShipId, null, null, clock.Now);
+            var producer = host.GetRequiredService<SqliteWorld>().FindPilot(action, CapsuleerCommunityStore.MinerAccountId, id)!;
+            var plan = new CapsuleerCareerPlan(CapsuleerProfession.Mining, (int)TechOneHullType.Venture, CapsuleerTrainingFocus.Work);
+            var turn = host.GetRequiredService<CapsuleerCareerTraining>()
+                .Advance(action, catalog, producer, plan.Profession, plan, clock.Now);
+            Assert.Equal(CapsuleerTrainingFocus.Ship, turn.Plan!.NextFocus);
+            Assert.True(turn.LevelChanged);
+            action.Commit();
+        }
+        var purchase = live.Economy.Inspect(world =>
+            world
+                .Filter<SavedServicePayment>(payment => payment.PilotId == id)
+                .Single(payment => payment.Kind == WalletEntryType.SkillPurchase && payment.ContextId == refining)
+        );
+        Assert.Equal(-9_750_000, purchase.AmountCents);
+        Assert.Contains(Allocations(live, id), entry => entry.TypeId == refining && entry.Points > 0);
+    }
+
+    private static long SettlePirateKill(
+        Eden.World.Runtime.Economy.WorldAction action,
+        CatalogDbContext catalog,
+        long id,
+        int system,
+        int type,
+        long now
+    )
+    {
+        new TestNpcPopulationSeeder(system, type).Seed(action, catalog, system, now);
+        action.SaveChanges();
+        var npc = action.Filter<WorldNpc>(entry => entry.SystemId == system && entry.TypeId == type).OrderBy(entry => entry.Id).First();
+        var pilot = action.Pilots.Find(id)!;
+        var attributes = catalog.FittingAttributes(type);
+        var settlement = NpcDamagePersistence.Apply(
+            action,
+            catalog,
+            npc,
+            pilot,
+            pilot.ActiveShipId,
+            attributes,
+            new(100000, 0, 0, 0),
+            now,
+            (int)CombatWeaponType.CivilianGatlingRailgun
+        );
+        Assert.True(settlement.Destroyed);
+        Assert.NotNull(settlement.Reward);
+        long earned = NpcSkillPointRewards.FromBounty(NpcBountyRules.BaseCents(npc.Role, attributes));
+        Assert.True(earned > 0);
+        return earned;
+    }
+
+    private static TrainingLog[] Allocations(LiveWorld live, long id) =>
+        live.Economy.Inspect(world =>
+            world.Filter<TrainingLog>(entry => entry.PilotId == id).Where(entry => entry.EventId == FreeSkillPointRules.UsedEvent).ToArray()
+        );
 
     private static void CompareWithNewCharacters(ServiceProvider host, LiveWorld live, IReadOnlyList<SavedCapsuleerAgent> founders)
     {
@@ -230,6 +367,7 @@ public sealed class FreshUniverseTests(ITestOutputHelper output)
             );
             var player = live.Economy.Inspect(world => world.Pilots.Find(human)!);
             Assert.Equal(player.ActiveShip.TypeId, bot.ActiveShip.TypeId);
+            Assert.Equal(AccountCloneGrade.Omega, bot.Account.CloneGrade);
             Assert.Equal(0, market.Balance(human));
             Assert.Equal(0, market.Balance(bot.Id));
             Assert.Equal(Factory, bot.ActiveShip.StationId);

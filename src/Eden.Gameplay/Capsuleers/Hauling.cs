@@ -41,6 +41,7 @@ public sealed record HaulerProgress(
 )
 {
     public BeltMemory[] VisitedBelts { get; init; } = [];
+    public CapsuleerCareerPlan? CareerPlan { get; init; }
     public FreightManifest? Freight { get; init; }
     public CorporationSupplyRun? CorporationSupply { get; init; }
     public FactoryPlanetaryProduction? PlanetaryProduction { get; init; }
