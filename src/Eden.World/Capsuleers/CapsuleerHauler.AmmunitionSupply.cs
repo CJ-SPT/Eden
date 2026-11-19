@@ -18,6 +18,10 @@ internal sealed partial class CapsuleerHauler
         }
         if (Work.CorporationSupply is { } assigned)
         {
+            if (assigned.RegionalStock is { } regional)
+            {
+                return HandleRegionalStock(world, assigned, regional);
+            }
             if (assigned.FactorySupply is { } factory)
             {
                 return HandleFactorySupply(world, live, assigned, factory);
@@ -63,7 +67,8 @@ internal sealed partial class CapsuleerHauler
         var avoided = AvoidedSupplierSystems();
         var collection =
             ammunitionSupply.PlanFactoryCollection(world, catalog, live, Pilot, avoided, Now, Work)
-            ?? CapsuleerIndustry.PlanCollection(world, catalog, live, Pilot, avoided, Now);
+            ?? CapsuleerIndustry.PlanCollection(world, catalog, live, Pilot, avoided, Now)
+            ?? PlanRegionalStock(world, live, avoided);
         if (collection is null)
         {
             return false;

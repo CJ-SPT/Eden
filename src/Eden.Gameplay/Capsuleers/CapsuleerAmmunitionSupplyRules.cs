@@ -15,4 +15,5 @@ public static class CapsuleerAmmunitionSupplyRules
 public sealed record CorporationSupplyRun(int CorporationId, long OrderId)
 {
     public FactorySupplyShipment? FactorySupply { get; init; }
+    public RegionalStockTrip? RegionalStock { get; init; }
 }

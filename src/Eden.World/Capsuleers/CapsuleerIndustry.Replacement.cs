@@ -59,7 +59,7 @@ internal sealed partial class CapsuleerIndustry
         // Older recovery checkpoints lack order IDs. Match the saved fit or the previous fixed Merlin kit.
         IReadOnlyList<ReplacementPart> legacyParts =
             orderDeadline.HasValue ? parts
-            : loss.TypeId == (int)TechOneHullType.Merlin ? Rules.LegacyMerlinParts
+            : loss.TypeId == (int)TechOneHullType.Merlin ? Rules.MerlinParts
             : [];
         var bids = world
             .Filter<SavedPersonalOrder>(order => order.PilotId == pilotId)

@@ -33,6 +33,12 @@ package survives only as wreck loot if it passes the freight survival roll. The 
 the courier can buy a replacement Tayra and resume deliveries. Each purchase, job, loss and cargo transfer has a
 durable record. [Replacement protocol and acceptance](protocol/capsuleers.md#dynamic-paid-ship-replacement)
 
+Milestone 4 starts with regional replenishment for ammunition and the starter Merlin kit. A buyer visits the
+supplier's region, posts funded station bids, and brings back the stock that fills. The first checks exercise both
+full and partial deliveries across restart. Sustained trade under recurring attrition, broader stock targets, and
+route margin and operating costs remain part of milestone 4.
+[Regional procurement](protocol/capsuleers.md#regional-procurement-for-bot-corporations)
+
 Apply the focused validation and publishing policy at each milestone. Collect capacity evidence at the baseline and
 each workload increase. Use the same world, server settings and action mix for before-and-after comparisons, and report
 native client acceptance separately. [Contributor guide](../AGENTS.md#testing)
