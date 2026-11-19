@@ -118,6 +118,10 @@ points and pay the ordinary redemption fees from the corporation's wallet. They 
 advances. The research projects and paid deliveries survive restart.
 [Miner II datacore supply](protocol/capsuleers.md#miner-ii-datacores-from-rd-agents)
 
+Factories can also refine ore already in the operator's hangar and manufacture missing Miner II components from owned
+materials and an available blueprint. The component job delivers back to the operator for assembly.
+[Miner II component production](protocol/capsuleers.md#miner-ii-components-from-owned-materials)
+
 #### Corporation ammunition supply
 
 Bot corporations can produce and trade **Iron Charge S**. A miner docked at an NPC factory with a market can refine owned

@@ -78,10 +78,10 @@ them at the research agent (SHA-256 `D6E8E398BB3FF9BA1F0711BA86BA1DCCA4707CD935D
 [UniWiki Datacore farming](https://wiki.eveuniversity.org/Datacore_Farming)
 
 The wider [build 3662168 supply audit](../tech-two-supply-audit.json) identifies the remaining market dependencies.
-Independent Miner II production still needs bot-supplied deep-core ore and reprocessing for Morphite, planetary
-production for Mechanical Parts and reactor fuel ingredients, moon and ice mining with fuel and reaction jobs for
-the advanced components, and manufacturing of Miner I, R.A.M. Energy Tech, Photon Microprocessors and Laser Focusing
-Crystals. Reusable originals and reaction formulae also need a reliable initial source.
+Independent Miner II production still needs bots to extract and haul deep-core ore, run colonies for Mechanical Parts
+and reactor fuel ingredients, and supply moon and ice mining and reaction jobs for the advanced components. Reusable
+originals and reaction formulae also need a reliable initial source. [Component and refinery jobs](#miner-ii-components-from-owned-materials)
+cover processing the materials once they reach a factory.
 [UniWiki Minerals](https://wiki.eveuniversity.org/Minerals) · [UniWiki Reactions](https://wiki.eveuniversity.org/Reactions)
 
 ### Automated validation
@@ -97,6 +97,45 @@ affected run passed all 121 tests in 83.40 seconds with these class filters usin
 ```text
 ResearchAgentTests, AgentShowInfoTests, CapsuleerAmmunitionSupplyTests, CapsuleerHaulerTests, CapsuleerMinerTests,
 ScienceJobTests, ResidentBotEconomyTests, PersonalMarketTests, CorporationWalletTests
+```
+
+Both Python policy suites passed all 17 cases. Style, CSharpier, line-width and diff checks passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
+## Miner II components from owned materials
+
+When station offers cannot fill a Miner II material shortfall, the factory checks its own ore first and can reprocess
+it through the station service. It can also make a missing component with a catalog manufacturing blueprint and
+the inputs already in its hangar. The factory can buy a blueprint locally when one is available. The corporation
+pays the manufacturing fee and the job delivers to the operator's hangar for the next step in the chain. Finished
+Miner II modules still enter Market Deliveries for public sale.
+
+The build 3662168 catalog gives Mercoxit 140 units of base Morphite per 100 ore, before applying reprocessing yield
+and taxes. The component planner uses the same material calculations and restrictions as normal manufacturing. The
+shared resident checkpoint records the manufacturing job and its output location. See the
+[existing industry protocol notes](industry.md) for the pinned-client and EVE.js evidence on manufacturing jobs.
+
+### Automated validation
+
+`MinerTwoFactoryRefinesOreAndMakesItsOwnMinerOneInputsAcrossRestart` starts without Morphite or Miner I sell orders.
+It verifies the factory reprocesses Mercoxit into Morphite, reserves minerals for a Miner I job, reopens the running
+job and consumes the privately delivered Miner I in Miner II assembly. It checks the corporate charges and confirms
+the intermediate product stays off the public market.
+
+The exact filter passed in 8.44 seconds. The solution built in 7.89 seconds with zero warnings and errors. The
+affected run passed all 153 tests in 82.05 seconds with these class filters using `FullyQualifiedName~.<Class>.`:
+
+```text
+CapsuleerAmmunitionSupplyTests, CapsuleerMinerTests, CapsuleerHaulerTests, ResidentBotEconomyTests,
+IndustryTests, ScienceJobTests, IndustryContainerTests, BulkIndustryDeliveryTests, ReactionJobTests,
+ReprocessingTests, CorporationWalletTests, ResearchAgentTests
 ```
 
 Both Python policy suites passed all 17 cases. Style, CSharpier, line-width and diff checks passed.

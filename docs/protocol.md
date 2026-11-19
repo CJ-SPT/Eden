@@ -6,6 +6,9 @@ saved copying and invention jobs, and public sales of the finished modules.
 [Miner II datacores from R&D agents](protocol/capsuleers.md#miner-ii-datacores-from-rd-agents) covers research projects,
 paid redemptions and checkpointed courier deliveries when local sell orders are unavailable.
 
+[Miner II components from owned materials](protocol/capsuleers.md#miner-ii-components-from-owned-materials) covers
+reprocessing stockpiled ore and paid component jobs that feed assembly.
+
 [Paid Merlin replacement](protocol/capsuleers.md#paid-merlin-replacement) covers public buy orders, corporate spending
 and a patrol pilot returning to duty across a restart.
 

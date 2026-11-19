@@ -194,8 +194,12 @@ internal sealed partial class CapsuleerIndustry(
             }
             var bid = demand.FirstOrDefault(order => order.Remaining >= stock.Quantity) ?? demand.FirstOrDefault();
             if (
-                jobs.Any(job => job.StationId == location && job.ProductTypeId == stock.TypeId && job.Status == IndustryJobStatus.Delivered)
-                && ListStock(world, catalog, corporation, pilot, stock, bid, now)
+                jobs.Any(job =>
+                    job.StationId == location
+                    && job.ProductTypeId == stock.TypeId
+                    && job.OutputFlagId == CorporationStorageRules.MarketDeliveriesFlag
+                    && job.Status == IndustryJobStatus.Delivered
+                ) && ListStock(world, catalog, corporation, pilot, stock, bid, now)
             )
             {
                 return true;
@@ -223,6 +227,7 @@ internal sealed partial class CapsuleerIndustry(
             );
             if (minerTwo.HasValue)
             {
+                supply = research;
                 return minerTwo.Value;
             }
         }

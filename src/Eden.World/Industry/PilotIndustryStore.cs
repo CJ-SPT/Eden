@@ -621,7 +621,8 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         CatalogDbContext catalog,
         long pilotId,
         IndustryRequest request,
-        int? supplyCorporation = null
+        int? supplyCorporation = null,
+        bool stockOperatorHangar = false
     )
     {
         AdvanceFacility(world, catalog, request.FacilityId, Now);
@@ -710,8 +711,12 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         SetJobOutput(world, catalog, job, request);
         if (supplyCorporation is int owner)
         {
+            // Group internal component jobs with their sponsoring factory while keeping the output in the operator's hangar.
             job.OutputCorporationId = owner;
-            job.OutputFlagId = CorporationStorageRules.MarketDeliveriesFlag;
+            if (!stockOperatorHangar)
+            {
+                job.OutputFlagId = CorporationStorageRules.MarketDeliveriesFlag;
+            }
         }
         double? security = catalog.Definitions.Find(CatalogData.Client.Systems, (long)station.SolarSystemId)?.SecurityStatus;
         if (EconomicStore.Enabled(world) && security is null)
@@ -816,7 +821,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
                 InventoryPersistence.MergeOutput(
                     world,
                     catalog,
-                    job.OutputCorporationId ?? pilotId,
+                    job.OutputFlagId == CorporationStorageRules.MarketDeliveriesFlag ? job.OutputCorporationId ?? pilotId : pilotId,
                     job.OutputLocationId ?? job.StationId,
                     job.OutputFlagId,
                     job.ProductTypeId,

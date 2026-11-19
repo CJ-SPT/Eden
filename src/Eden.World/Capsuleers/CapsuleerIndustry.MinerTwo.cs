@@ -194,8 +194,8 @@ internal sealed partial class CapsuleerIndustry
             .SupplyOrders(world, catalog, station, shortages.Select(part => (int)part.TypeId!.Value).ToArray(), pilot, corporation.Id)
             .ToLookup(order => order.TypeId);
         List<MarketPurchase> purchases = [];
+        Dictionary<int, int> missing = [];
         List<FactorySupplyNeed> datacores = [];
-        bool unavailable = false;
         foreach (var part in shortages)
         {
             int type = (int)part.TypeId!.Value;
@@ -206,17 +206,28 @@ internal sealed partial class CapsuleerIndustry
                 purchases.Add(quote);
                 continue;
             }
-            unavailable = true;
+            missing.Add(type, needed - (quote?.Quantity ?? 0));
             if (inventionMaterials.ContainsKey(type) && catalog.FittingType(type)?.GroupId == ResearchRules.DatacoreGroup)
             {
                 datacores.Add(new(type, required[type], required[type], needed, ResearchRules.CentsPerDatacore));
             }
         }
-        if (unavailable)
+        if (missing.Count > 0)
         {
             if (datacores.Count > 0)
             {
                 research = new(corporation.Id, station, null, datacores.ToArray()) { ResearchDatacores = true };
+            }
+            if (RefineFactoryOre(world, catalog, operatorPilot, hangar, missing))
+            {
+                return false;
+            }
+            foreach (var (type, quantityMissing) in missing.Where(part => manufacturingMaterials.ContainsKey(part.Key)))
+            {
+                if (ProduceFactoryComponent(world, catalog, operatorPilot, corporation, hangar, type, quantityMissing) is bool changed)
+                {
+                    return changed;
+                }
             }
             return null;
         }
