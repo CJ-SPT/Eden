@@ -311,9 +311,10 @@ human-active clock still stops when the last player leaves. See the
 
 ### Belt ratting, ship variety and paid resupply
 
-Existing combat-fit travelers can choose a local belt-ratting sortie on one third of eligible observed dock departures.
+Existing combat-fit travelers can choose a local belt-ratting sortie on one third of eligible dock departures while
+any human pilot is selected, including when the traveler's system has no human observer.
 The saved pilot/sequence draw survives restarts. Rookie ships, shuttles, mining fits and transports do not initiate ratting.
-A sortie visits at most three distinct real belts or lasts ten observed minutes, then returns to its departure station.
+A sortie visits at most three distinct real belts or lasts ten human-active minutes, then returns to its departure station.
 Ordinary destination journeys finish at a dock before adopting an activity.
 
 Pilots discover pirates on their current grid. Only ordinary belt pirates are candidates; mission/anomaly NPCs, civilians,
@@ -328,10 +329,9 @@ After a clear, pilots approach owned NPC wrecks, take only cargo that fits using
 and unload the collected items into their own hangar when docking. They leave other pilots' wrecks alone. Loot sales,
 salvage modules, missions and anomaly running are not autonomous activities in this milestone.
 
-Ratting jobs pause when the last human leaves their system. Remaining activity, lock and controller-cycle timing survives
-absence, empty-world pauses and checkpoints. Already committed effects retain their normal exactly-once settlement;
-absence does not start additional attacks or award simulated farming income. Other encounters are not globally frozen.
-Ordinary destination and shopping travel keep the established background navigation policy.
+Belt ratting pauses when the last human logs out or deselects their pilot. Remaining activity, lock and controller-cycle
+timing survives empty-world pauses and checkpoints. Already committed effects retain their normal settlement rules.
+Offscreen launches use the belt policy. Anomaly scouting, roaming patrols and gate camps keep their existing launch rules.
 
 At a dock, travelers use owned station stock before buying fitted consumables toward five reserve magazines and supported
 missing drones toward one legal flight. Empty magazines reload through the normal ammunition owner, respecting paid cooldowns.
@@ -455,7 +455,11 @@ Build a persistent population of autonomous economic pilots across New Eden. Sta
 
 Eligibility requires supported high-security mining, a market station and a reciprocal route to another supported market. Unsupported systems receive explicit deferral reasons rather than fabricated jobs. The eventual system registry covers every catalog system.
 
-Any selected human pilot activates their system, including while docked. Multiple human pilots keep a system active until the last one leaves. Other systems use background events with the same ownership, resources, costs, navigation and NPC danger rules. The universe advances economic activity only while at least one human pilot is selected; installed industry and training retain their existing deadline rules.
+Any selected human pilot activates their system, including while docked. Multiple human pilots keep a system active until the last one leaves.
+While anyone is selected, established miners and haulers can work in unobserved systems. Existing bounded batches admit background roles.
+Mining and belt sorties use their normal resource, navigation and combat rules. Factories run at eligible NPC stations and newly
+scheduled bot factory jobs count time on the shared human-active clock. Ordinary player industry and training use their existing deadlines.
+[Offscreen operations](protocol/capsuleers.md#offscreen-mining-belt-ratting-and-industry)
 
 ## Implementation increments
 

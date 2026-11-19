@@ -714,7 +714,7 @@ internal sealed partial class CapsuleerMiner(
             && _operation.World is EconomyTransaction supplyWorld
         )
         {
-            _operation.MarketChanged |= industry.Produce(supplyWorld, _operation.Catalog, Pilot, Now, out supply);
+            _operation.MarketChanged |= industry.ProduceScheduled(supplyWorld, _operation.Catalog, Pilot, Now, out supply);
         }
         _work = Work with { FactorySupply = supply };
         if (_operation.World is EconomyTransaction resident)

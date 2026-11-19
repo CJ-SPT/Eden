@@ -814,7 +814,8 @@ internal sealed record EconomyIndustryJob(
     long? CompletedAt,
     string MaterialsJson,
     long CostCents,
-    int? OutputCorporationId
+    int? OutputCorporationId,
+    long? CapsuleerEndTicks
 );
 
 internal sealed record EconomySavedContractEscrow(long ItemId, long ContractId);
@@ -1651,7 +1652,8 @@ internal sealed partial class ResidentEconomy
                         row.CompletedAt,
                         row.MaterialsJson,
                         row.CostCents,
-                        row.OutputCorporationId
+                        row.OutputCorporationId,
+                        row.CapsuleerEndTicks
                     ),
                 state => new IndustryJob
                 {
@@ -1678,6 +1680,7 @@ internal sealed partial class ResidentEconomy
                     OutputQuantity = state.OutputQuantity,
                     StartTime = state.StartTime,
                     EndTime = state.EndTime,
+                    CapsuleerEndTicks = state.CapsuleerEndTicks,
                     DurationSeconds = state.DurationSeconds,
                     Status = state.Status,
                     CompletedAt = state.CompletedAt,
@@ -1688,7 +1691,7 @@ internal sealed partial class ResidentEconomy
                 "SuspendedAt,Activity,LicensedRuns,BlueprintCopy,MaterialEfficiency,TimeEfficiency,OutputRuns,Probability,"
                     + "SuccessfulRuns,OptionalTypeId,Id,PilotId,BlueprintId,BlueprintTypeId,StationId,ProductTypeId,Runs,OutputQuantity,"
                     + "StartTime,EndTime,DurationSeconds,Status,CompletedAt,MaterialsJson,CostCents,OutputLocationId,OutputFlagId,"
-                    + "OutputCorporationId",
+                    + "OutputCorporationId,CapsuleerEndTicks",
                 reader =>
                     new(
                         reader.IsDBNull(26) ? null : reader.GetInt64(26),
@@ -1718,7 +1721,8 @@ internal sealed partial class ResidentEconomy
                         reader.IsDBNull(23) ? null : reader.GetInt64(23),
                         reader.GetString(24),
                         reader.GetInt64(25),
-                        reader.IsDBNull(28) ? null : reader.GetInt32(28)
+                        reader.IsDBNull(28) ? null : reader.GetInt32(28),
+                        reader.IsDBNull(29) ? null : reader.GetInt64(29)
                     ),
                 state => new(state.Id),
                 indexes:

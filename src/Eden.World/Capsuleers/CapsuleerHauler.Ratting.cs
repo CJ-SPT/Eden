@@ -137,23 +137,17 @@ internal sealed partial class CapsuleerHauler
     private bool TryLaunchSortie(ResupplyProgress supplies, CombatAnomaly? site)
     {
         var policy = database.Settings.Capsuleers;
-        if (!policy.BeltRatting && !policy.AnomalyRatting && !policy.RoamingPvp && !policy.GateCamps)
+        if (!policy.BeltRatting && (_background || !policy.AnomalyRatting && !policy.RoamingPvp && !policy.GateCamps))
         {
             return false;
         }
-        if (
-            _background
-            || TrafficRules.LightHull((HullClass)Pilot.ShipGroupId)
-            || !CapsuleerPatrolFit.CombatHull(_operation.Catalog, Pilot.ShipTypeId)
-        )
+        if (TrafficRules.LightHull((HullClass)Pilot.ShipGroupId) || !CapsuleerPatrolFit.CombatHull(_operation.Catalog, Pilot.ShipTypeId))
         {
             return false;
         }
         var profile = CapsuleerDefenseProfile.Read(_operation.World, _operation.Catalog, pilotId);
         if (
-            _background
-            || !profile.Combat
-            || TrafficRules.LightHull((HullClass)Pilot.ShipGroupId)
+            !profile.Combat
             || profile.RattingWeapons.Length == 0
             || !profile.RattingWeapons.Any(w => w.AvailableShots > 0)
             || CapsuleerDefenseRules.Retreat(
@@ -174,7 +168,7 @@ internal sealed partial class CapsuleerHauler
         }
         long sequence = checked(Work.ActivitySequence + 1);
         _work = Work with { ActivitySequence = sequence };
-        if (TryLaunchCamp(sequence, profile) || TryLaunchPatrol(sequence))
+        if (!_background && (TryLaunchCamp(sequence, profile) || TryLaunchPatrol(sequence)))
         {
             return true;
         }
@@ -199,6 +193,7 @@ internal sealed partial class CapsuleerHauler
         {
             return false;
         }
+        _background = false;
         _work = Work with
         {
             Ratting = new(Pilot.StationId, belts, 0, TimeSpan.FromMinutes(RattingRules.MaximumMinutes).Ticks)

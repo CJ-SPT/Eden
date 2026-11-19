@@ -36,11 +36,17 @@ package survives only as wreck loot if it passes the freight survival roll. The 
 the courier can buy a replacement Tayra and resume deliveries. Each purchase, job, loss and cargo transfer has a
 durable record. [Replacement protocol and acceptance](protocol/capsuleers.md#dynamic-paid-ship-replacement)
 
-Milestone 4 starts with regional replenishment for ammunition and the starter Merlin kit. A buyer visits the
-supplier's region, posts funded station bids, and brings back the stock that fills. The first checks exercise both
-full and partial deliveries across restart. Sustained trade under recurring attrition, broader stock targets, and
-route margin and operating costs remain part of milestone 4.
+Milestone 4 adds regional replenishment for ammunition and the starter Merlin kit. A buyer visits the supplier's
+region, posts funded station bids, and brings home the stock that fills. In the two-loss replay, bounty taxes pay
+for both purchases and the supplier's sales cover paid inputs, manufacturing and market costs. Both treasuries
+grow after each cycle. The stock planner covers the last Merlin's loss, and two factory pilots work different
+funded orders at the same station. Full and partial deliveries also survive reopen.
 [Regional procurement](protocol/capsuleers.md#regional-procurement-for-bot-corporations)
+
+Milestone 5 starts with established miners and belt ratters working while the only humans are in other systems.
+Bot factories use the same clock for paid jobs at NPC stations and keep their deadlines across restart.
+Player-structure industry and staging remain part of the next slice.
+[Offscreen operations](protocol/capsuleers.md#offscreen-mining-belt-ratting-and-industry)
 
 Apply the focused validation and publishing policy at each milestone. Collect capacity evidence at the baseline and
 each workload increase. Use the same world, server settings and action mix for before-and-after comparisons, and report

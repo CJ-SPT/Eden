@@ -96,7 +96,8 @@ internal sealed partial class CapsuleerScheduler
         {
             systems.Add(lane.ObserverSystemId);
         }
-        bool detailed = ActiveOperation(job.PilotId) || expedition?.Mercoxit is not null;
+        bool detailed =
+            ActiveOperation(job.PilotId) || _registrations[job.PilotId].Career == CapsuleerCareer.Mining || work?.Ratting is not null;
         var geometry = systems
             .Where(id => detailed || occupied.Contains(id))
             .Select(id => CapsuleerGeometry.CaptureResources(database, world, catalog, id))

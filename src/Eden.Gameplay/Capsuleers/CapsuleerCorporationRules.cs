@@ -6,6 +6,7 @@ public static class CapsuleerCorporationRules
 {
     public const int FoundingRoster = 6;
     public const int TargetMembers = 12;
+    public const double BountyTaxRate = 0.10;
 
     private static readonly string[] s_names = ["Meridian", "Parallax", "Waypoint", "Horizon", "Relay", "Vanguard", "Pioneer", "Arc"];
 
@@ -48,6 +49,6 @@ public static class CapsuleerCorporationRules
             mining ? $"Local miners and freight pilots based in {system}."
             : frontier ? $"Frontier freight routes serving {system}."
             : $"Station and gate traffic serving {system}.";
-        return new(name, ticker, description, "", 0, 0, logo, true, false);
+        return new(name, ticker, description, "", BountyTaxRate, 0, logo, true, false);
     }
 }

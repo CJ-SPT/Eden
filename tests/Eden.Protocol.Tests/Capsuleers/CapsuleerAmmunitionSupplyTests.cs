@@ -1395,10 +1395,17 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                     var reopened = world.Set<IndustryJob>().Find(saved.Id)!;
                     Assert.Equal(IndustryJobStatus.Installed, reopened.Status);
                     Assert.Equal(saved.EndTime, reopened.EndTime);
+                    Assert.Equal(saved.CapsuleerEndTicks, reopened.CapsuleerEndTicks);
                     Assert.Equal(saved.SuccessfulRuns, reopened.SuccessfulRuns);
                     Assert.Equal(corporation, reopened.OutputCorporationId);
                     return true;
                 });
+                if (saved.CapsuleerEndTicks is long due)
+                {
+                    using var human = host.GetRequiredService<IHumanPresence>().Select(Customer, factorySystem);
+                    long remaining = due - live.CapsuleerActivity.Read().ElapsedTicks;
+                    fixture.Clock.Seconds += (remaining + TimeSpan.TicksPerSecond - 1) / TimeSpan.TicksPerSecond;
+                }
             }
             if (index == 2)
             {
@@ -1450,7 +1457,10 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 live.Economy.Read(world => Assert.Single(Jobs(world), job => job.Status == IndustryJobStatus.Installed).Id)
             );
             await live.FlushAsync();
-            fixture.Clock.AdvanceWallTime(TimeSpan.FromTicks(previous.EndTime - fixture.Clock.Now));
+            if (previous.CapsuleerEndTicks is null)
+            {
+                fixture.Clock.AdvanceWallTime(TimeSpan.FromTicks(previous.EndTime - fixture.Clock.Now));
+            }
         }
 
         using var finalHost = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);

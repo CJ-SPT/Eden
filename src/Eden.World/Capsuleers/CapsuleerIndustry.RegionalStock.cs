@@ -1,6 +1,7 @@
 using Eden.Data.Catalog;
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Characters;
+using Eden.Data.World.Combat;
 using Eden.Data.World.Corporations;
 using Eden.Data.World.Industry;
 using Eden.Data.World.Market;
@@ -52,7 +53,7 @@ internal sealed partial class CapsuleerIndustry
                 world.Set<SavedCapsuleerAgent>().Find(pilot.Id) is not null && world.Set<SavedCapsuleerSuspension>().Find(pilot.Id) is null
             )
             .ToArray();
-        bool merlin = patrols.Any(pilot => pilot.ActiveShip.TypeId == (int)TechOneHullType.Merlin);
+        bool merlin = patrols.Any(pilot => NeedsMerlinReserve(world, pilot));
         IReadOnlyList<ReplacementPart> targets =
             merlin ? Replacement.MerlinParts
             : patrols.Any(pilot => UsesCharge(world, catalog, pilot)) ? [new(Ammo.ChargeType, Ammo.ShipmentQuantity)]
@@ -120,6 +121,13 @@ internal sealed partial class CapsuleerIndustry
             ))
             .FirstOrDefault();
     }
+
+    private static bool NeedsMerlinReserve(WorldAction world, Pilot pilot) =>
+        pilot.ActiveShip.TypeId == (int)TechOneHullType.Merlin
+        || pilot.ActiveShip.TypeId == FleetDefinitions.CapsuleType
+            && world
+                .Filter<ShipLoss>(loss => loss.CapsuleId == pilot.ActiveShipId)
+                .Any(loss => loss.PilotId == pilot.Id && loss.TypeId == (int)TechOneHullType.Merlin);
 
     private static Dictionary<int, HashSet<int>> RegionalStockSources(
         WorldAction world,

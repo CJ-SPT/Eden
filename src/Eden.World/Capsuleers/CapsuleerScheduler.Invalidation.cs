@@ -31,7 +31,7 @@ internal sealed partial class CapsuleerScheduler
                             .Select(pilot => world.Set<SavedCapsuleerAgent>().Find(pilot))
                             .OfType<SavedCapsuleerAgent>()
                             .Where(agent =>
-                                _locations.ContainsKey(agent.PilotId) || _backgroundHaulersLoaded && agent.Career == CapsuleerCareer.Hauling
+                                _locations.ContainsKey(agent.PilotId) || _backgroundPilotsLoaded && SupportsBackground(agent.Career)
                             )
                             .ToArray()
                     );
