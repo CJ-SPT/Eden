@@ -134,6 +134,7 @@ configure planetary storage and processing duration with matching native preview
 align the panel's units per cycle with its already modified products and output volume.
 
 [Alliances](protocol/alliances.md) records corporation associations, resident checkpoints and implementation milestones.
+[First-claim hub procurement](protocol/alliances.md#first-claim-hub-procurement) creates a paid market bid for a bot alliance's first hub.
 
 [One-way PI customs transfers](protocol/planetary.md#one-way-customs-transfer-dictionaries--november-16-2026)
 accept the empty opposite-side dictionary sent by native import-only and export-only requests.

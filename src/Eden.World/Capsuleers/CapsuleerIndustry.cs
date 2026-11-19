@@ -124,7 +124,7 @@ internal sealed partial class CapsuleerIndustry(
             )
     );
 
-    private static long ReferencePrice(CatalogDbContext catalog, int type) => catalog.Definition(s_referencePrice, type);
+    internal static long ReferencePrice(CatalogDbContext catalog, int type) => catalog.Definition(s_referencePrice, type);
 
     internal bool Produce(EconomyTransaction world, CatalogDbContext catalog, DockedPilot operatorPilot, long now) =>
         Produce(world, catalog, operatorPilot, now, out _);

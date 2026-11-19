@@ -83,6 +83,50 @@ Not performed. Agent client testing is disabled.
 
 Open a formed alliance in Show Info after admission and confirm both corporations appear in its member list.
 
+## First-claim hub procurement
+
+The alliance review can fund a single Sovereignty Hub order at the executor corporation's NPC headquarters market.
+The alliance must be bot-founded, have an active bot-led executor, have two admitted corporations and hold no claims.
+The planner checks the existing reciprocal, traversable gate graph out to three jumps and shares the sovereignty
+owner's claimability and occupancy rules. The candidate system also needs a catalog star. An open corporation hub bid
+or an owned packaged hub covers procurement. The selected system becomes a durable route assignment when an expedition
+can take custody of that hub.
+
+A docked, active bot submits one seven-day order at the catalog reference sell price. Normal corporate escrow and
+broker fees apply. The order may spend only the balance above a month's alliance bill reserve. The existing market
+settles any seller and places the package in the ordering pilot's station hangar. The review runs while anyone is online,
+including when headquarters and the potential claim are unobserved. The buy order and owned inventory checkpoint
+through the resident economy. They require no new save fields.
+
+Build 3662168 type 32458 is published and trades under market group 1275. Its packaged volume is 60,000 cubic meters.
+EVE.js package 261108.1 `server/src/space/modules/entosisLinkRuntime.js` distinguishes neutral hub capture from
+owned hubs and command nodes (SHA-256 `AFE03A1E9E0FA1525AA56A4D3782EF4E91BA06E509A49CE15803E3D1732E1D1D`).
+The procurement radius, threshold, price cap and duration are Eden policy. The next [development milestone](../bot-development-plan.md)
+handles ship capacity, travel, deployment and paid Entosis. [CCP sovereignty deployment and capture](https://www.eveonline.com/news/view/sovereignty-structures-and-transition)
+
+### Automated validation
+
+The exact `CapsuleerAllianceTests.FundedAllianceStagesOneHubAcrossRestartForAnUnobservedClaimableSystem` case passed in
+8.74 seconds including runner startup. It tests zero human activity, an occupied reachable system, an insufficient budget,
+and a funded order with only a neighboring system observed. A player fills the order through the resident market. Two
+reopens verify the open escrow and the delivered hub with enough money available for a duplicate bid. Earlier development
+runs caught fixture configuration and funding errors, and reproduced a duplicate bid before the planner recognized the
+market's existing delivery into the placing pilot's hangar.
+
+Tool and solution restore and the solution build passed with zero warnings and errors. The affected .NET selection
+passed 256 cases in 1 minute 33 seconds. The `FullyQualifiedName~` filter combined `Eden.Protocol.Tests.Alliances`,
+`Eden.Protocol.Tests.Sovereignty`, `CapsuleerAllianceTests`, `CapsuleerCorporationTests`, `CapsuleerAmmunitionSupplyTests`,
+`PersonalMarketTests` and `Eden.Protocol.Tests.Market.ResidentEconomyTests`. Both Python policy suites passed (8 and 9 cases).
+Formatting and diff checks passed. The full sequence took 129.10 seconds and used isolated resident worlds.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
 ## Foundation — November 16, 2026
 
 Schema 174 adds saved alliance identity and one membership row per corporation. Membership uses the corporation ID as its

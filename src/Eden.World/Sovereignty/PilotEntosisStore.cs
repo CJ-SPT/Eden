@@ -84,13 +84,7 @@ internal sealed partial class PilotEntosisStore(
         {
             throw new InvalidDataException("Sovereignty hubs require claimable null security space.");
         }
-        if (
-            action.Set<SavedSovereigntyHub>().Find(system) is not null
-            || action.Set<SavedSovereigntyClaim>().Find(system) is not null
-            || action
-                .Filter<SavedStructure>(s => s.SystemId == system && s.TypeId == EntosisRules.HubTypeId)
-                .Any(s => s.State != StructureState.Destroyed && s.State != StructureState.Unanchored)
-        )
+        if (HasHub(action, system))
         {
             throw new InvalidDataException("This system already contains a sovereignty hub.");
         }
@@ -157,6 +151,13 @@ internal sealed partial class PilotEntosisStore(
         action.Commit();
         return result;
     }
+
+    internal static bool HasHub(WorldAction world, int system) =>
+        world.Set<SavedSovereigntyHub>().Find(system) is not null
+        || world.Set<SavedSovereigntyClaim>().Find(system) is not null
+        || world
+            .Filter<SavedStructure>(structure => structure.SystemId == system && structure.TypeId == EntosisRules.HubTypeId)
+            .Any(structure => structure.State != StructureState.Destroyed && structure.State != StructureState.Unanchored);
 
     public SovereigntyHub? Hub(int systemId)
     {

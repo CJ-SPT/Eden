@@ -12,6 +12,8 @@ public static class CapsuleerAllianceRules
 {
     public const int FoundingCorporations = 2;
     public const int TargetCorporations = 3;
+    public const int FirstClaimMaximumJumps = 3;
+    public const int FirstHubOrderDays = 7;
 
     public static AllianceDetails Identity(string system, long seed, int systemId, int attempt)
     {

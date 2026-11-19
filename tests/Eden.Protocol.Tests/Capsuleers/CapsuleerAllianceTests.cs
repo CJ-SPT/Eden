@@ -2,20 +2,28 @@ using Eden.Data.World.Alliances;
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Corporations;
 using Eden.Data.World.Economy;
+using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Data.World.Skills;
+using Eden.Data.World.Structures;
 using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Corporations;
+using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Skills;
+using Eden.Gameplay.Sovereignty;
+using Eden.Gameplay.Structures;
 using Eden.Protocol.Tests.PilotSessions;
+using Eden.Protocol.Tests.Sovereignty;
 using Eden.Server;
 using Eden.Server.Maintenance;
+using Eden.World.Alliances;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Configuration;
 using Eden.World.Corporations;
+using Eden.World.Market;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -33,6 +41,195 @@ public sealed class CapsuleerAllianceTests
     private const int FourthSystem = 31000003;
     private const long Observer = 90000001;
     private const long PersonalContribution = 10000;
+
+    [Fact]
+    public async Task FundedAllianceStagesOneHubAcrossRestartForAnUnobservedClaimableSystem()
+    {
+        const int station = 60015157;
+        const int hubType = EntosisRules.HubTypeId;
+        const int target = SovereigntyCaptureFixture.SystemId;
+        const long neutralHub = StructureRules.FirstStructureId + 1;
+        using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
+        CapsuleerCorporationTests.PrepareExistingSave(fixture);
+        var configuration = new WorldConfigurationStore(fixture.Database, fixture.Clock);
+        var startup = configuration.Read();
+        var draft = startup.Active.Draft;
+        configuration.Save(
+            startup.Generation,
+            draft with
+            {
+                Settings = draft.Settings with
+                {
+                    Economy = draft.Settings.Economy with
+                    {
+                        ProgressiveMarkets = false,
+                        StandardMarket = false,
+                        ChargeServiceCosts = false,
+                    },
+                    Capsuleers = draft.Settings.Capsuleers with { TrafficMultiplier = 6 },
+                },
+            },
+            "First claim fixture"
+        );
+        WorldInitialization.Initialize(fixture.Database, fixture.Clock);
+        using (CapsuleerProvisioner provisioner = new(fixture.Database, fixture.Clock))
+        {
+            provisioner.EnsureSystem(WingSystem);
+        }
+        PassiveCatalogFixture.LoadSovereignty(fixture.Database.CatalogPath);
+        using (CatalogDbContext catalog = new(fixture.Database.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSql(
+                $"""
+                INSERT OR IGNORE INTO ItemType(Id,Name,GroupId) VALUES (3732,'Empire Control',257);
+                INSERT OR REPLACE INTO TypeAttribute(ItemTypeId,AttributeId,Value) VALUES (3732,275,5);
+                DELETE FROM Stargate WHERE SolarSystemId={target};
+                INSERT INTO Celestial(Id,SolarSystemId,TypeId,GroupId,Radius,X,Y,Z) VALUES
+                    (55000001,{HeadquartersSystem},16,10,3500,100000000,0,0),
+                    (55000002,{target},16,10,3500,200000000,0,0);
+                INSERT INTO Stargate(Id,SolarSystemId,DestinationId) VALUES
+                    (55000001,{HeadquartersSystem},55000002),(55000002,{target},55000001);
+                """
+            );
+        }
+        int corporation;
+        long sellerPackage;
+        long bidId;
+        long price;
+        long budget;
+        long reserve = AllianceBillingRules.Amount(CapsuleerAllianceRules.FoundingCorporations);
+        using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            var maintenance = host.GetRequiredService<CorporationMaintenance>();
+            using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+            price = CapsuleerIndustry.ReferencePrice(catalog, hubType);
+            using (var setup = live.Economy.Begin(TransactionParticipants.None))
+            {
+                long ceo;
+                (corporation, ceo) = Charter(setup, catalog, HeadquartersSystem, "First Claim Works", "FCWK", fixture.Clock.Now);
+                setup.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId)!.TestingMarket = false;
+                setup.Set<PilotWallet>().Find(ceo)!.Cents = AllianceRules.CreationFeeCents;
+                setup.Add(
+                    new PilotSkill
+                    {
+                        PilotId = ceo,
+                        TypeId = AllianceRules.EmpireControlSkill,
+                        Points = TrainedSkill.PointsForLevel(5, AllianceRules.RequiredEmpireControlLevel),
+                    }
+                );
+                var alliance = host.GetRequiredService<AllianceStore>()
+                    .Create(setup, catalog, ceo, new("Claim Coalition", "CLMC", "", ""), fixture.Clock.Now)
+                    .Alliance;
+                var partner = Charter(setup, catalog, WingSystem, "Neighbor Works", "NWBK", fixture.Clock.Now);
+                setup.Add(
+                    new SavedAllianceMember
+                    {
+                        CorporationId = partner.Id,
+                        AllianceId = alliance.Id,
+                        JoinedAt = fixture.Clock.Now,
+                    }
+                );
+                setup.Pilots.Find(Observer)!.ActiveShip.StationId = station;
+                sellerPackage = setup.NextItemId();
+                setup.Add(
+                    new OwnedItem
+                    {
+                        Id = sellerPackage,
+                        OwnerId = Observer,
+                        TypeId = hubType,
+                        Quantity = 1,
+                        LocationId = station,
+                        FlagId = (int)InventoryFlag.Hangar,
+                    }
+                );
+                budget = price + PilotMarketStore.SupplyBrokerFee(setup, catalog, ceo, station, price, 1) + reserve;
+                setup.Set<SavedCorporation>().Find(corporation)!.BalanceCents = budget;
+                setup.Add(
+                    new SavedStructure
+                    {
+                        Id = neutralHub,
+                        TypeId = hubType,
+                        Name = "Neutral Sovereignty Hub",
+                        CorporationId = EntosisRules.NeutralCorporationId,
+                        SystemId = target,
+                        State = StructureState.ShieldVulnerable,
+                    }
+                );
+                setup.Commit();
+            }
+            maintenance.Tick();
+            Assert.Empty(live.Economy.Read(world => world.Set<SavedPersonalOrder>().ToArray()));
+
+            using var occupied = host.GetRequiredService<IHumanPresence>().Select(Observer, ObserverSystem);
+            maintenance.Tick();
+            Assert.Empty(live.Economy.Read(world => world.Set<SavedPersonalOrder>().ToArray()));
+            using (var unfund = live.Economy.Begin(TransactionParticipants.None))
+            {
+                Assert.Equal(budget, unfund.Set<SavedCorporation>().Find(corporation)!.BalanceCents);
+                unfund.Remove(unfund.Set<SavedStructure>().Find(neutralHub)!);
+                unfund.Set<SavedCorporation>().Find(corporation)!.BalanceCents = price + reserve - 1;
+                unfund.Commit();
+            }
+            fixture.Clock.Seconds += 16;
+            maintenance.Tick();
+            Assert.Empty(live.Economy.Read(world => world.Set<SavedPersonalOrder>().ToArray()));
+            using (var fund = live.Economy.Begin(TransactionParticipants.None))
+            {
+                Assert.Equal(price + reserve - 1, fund.Set<SavedCorporation>().Find(corporation)!.BalanceCents);
+                fund.Set<SavedCorporation>().Find(corporation)!.BalanceCents = budget;
+                fund.Commit();
+            }
+
+            fixture.Clock.Seconds += 16;
+            maintenance.Tick();
+            var order = Assert.Single(live.Economy.Read(world => world.Set<SavedPersonalOrder>().ToArray()));
+            Assert.Equal(
+                (corporation, station, hubType, true, 1, price),
+                (order.CorporationId, order.StationId, order.TypeId, order.Bid, order.Remaining, order.EscrowCents)
+            );
+            bidId = order.Id;
+            Assert.Equal(reserve, live.Economy.Read(world => world.Set<SavedCorporation>().Find(corporation)!.BalanceCents));
+            await live.FlushAsync();
+        }
+
+        using (var reopened = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
+        {
+            using var observing = reopened.GetRequiredService<IHumanPresence>().Select(Observer, ObserverSystem);
+            LiveWorld restored = reopened.GetRequiredService<LiveWorld>();
+            using (var deposit = restored.Economy.Begin(TransactionParticipants.None))
+            {
+                Assert.Equal(reserve, deposit.Set<SavedCorporation>().Find(corporation)!.BalanceCents);
+                // Fund a second hub to prove the open order prevents another purchase.
+                deposit.Set<SavedCorporation>().Find(corporation)!.BalanceCents = budget;
+                deposit.Commit();
+            }
+            reopened.GetRequiredService<CorporationMaintenance>().Tick();
+            Assert.Equal(bidId, Assert.Single(restored.Economy.Read(world => world.Set<SavedPersonalOrder>().ToArray())).Id);
+            reopened.GetRequiredService<IPilotMarket>().Sell(Observer, [new(sellerPackage, station, hubType, price, 1)]);
+            await restored.FlushAsync();
+        }
+
+        using var delivered = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        using var present = delivered.GetRequiredService<IHumanPresence>().Select(Observer, ObserverSystem);
+        delivered.GetRequiredService<CorporationMaintenance>().Tick();
+        delivered
+            .GetRequiredService<LiveWorld>()
+            .Economy.Read(world =>
+            {
+                var bid = Assert.Single(world.Filter<SavedPersonalOrder>(order => order.CorporationId == corporation));
+                Assert.Equal(bidId, bid.Id);
+                Assert.Equal(0, bid.Remaining);
+                Assert.Equal(0, bid.EscrowCents);
+                var hub = Assert.Single(world.Filter<OwnedItem>(item => item.OwnerId == bid.PilotId && item.TypeId == hubType));
+                Assert.Equal(
+                    (hubType, (long)station, (int)InventoryFlag.Hangar, 1),
+                    (hub.TypeId, hub.LocationId, hub.FlagId, hub.Quantity)
+                );
+                Assert.Equal(budget, world.Set<SavedCorporation>().Find(corporation)!.BalanceCents);
+                return true;
+            });
+    }
 
     [Fact]
     public async Task FundedNeighborsFormAndGrowAnAllianceThroughDueApplicationsAcrossRestart()
