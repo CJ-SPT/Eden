@@ -14,7 +14,6 @@ using Eden.World.Industry;
 using Eden.World.Market;
 using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
-using Rules = Eden.Gameplay.Capsuleers.CapsuleerAmmunitionSupplyRules;
 
 namespace Eden.World.Capsuleers;
 
@@ -100,8 +99,7 @@ internal sealed partial class CapsuleerIndustry
         {
             int product = group.Key;
             if (
-                product == Rules.ChargeType
-                || stocked.Contains(product)
+                stocked.Contains(product)
                 || !recipes.Contains(product)
                 || !ManufacturingCatalog.Allowed(
                     catalog,

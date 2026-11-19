@@ -184,13 +184,12 @@ internal sealed partial class CapsuleerIndustry(
         var jobs = world.Filter<IndustryJob>(job => job.OutputCorporationId == corporation.Id);
         var listed = world
             .Filter<SavedPersonalOrder>(order => order.CorporationId == corporation.Id)
-            .Where(order => !order.Bid && order.Status == PersonalOrderStatus.Open && order.Expires > now)
+            .Where(order => order.StationId == location && !order.Bid && order.Status == PersonalOrderStatus.Open && order.Expires > now)
             .Select(order => order.TypeId)
             .ToHashSet();
         var depot = DepotStacks(world, corporation.Id, location).OrderBy(item => item.Id).ToArray();
-        bool busy =
-            running.Any(job => job.Status == IndustryJobStatus.Installed) || jobs.Any(job => job.Status == IndustryJobStatus.Installed);
-        if ((busy && depot.Length == 0) || !PilotMarketStore.HasSupplyListingSlot(world, catalog, pilot))
+        bool pilotBusy = running.Any(job => job.Status == IndustryJobStatus.Installed);
+        if ((pilotBusy && depot.Length == 0) || !PilotMarketStore.HasSupplyListingSlot(world, catalog, pilot))
         {
             return false;
         }
@@ -215,15 +214,18 @@ internal sealed partial class CapsuleerIndustry(
                 return true;
             }
         }
-        if (busy)
+        if (pilotBusy)
         {
             return false;
         }
 
         var hangar = Hangar(world, pilot, location);
         listed.UnionWith(depot.Select(item => item.TypeId));
+        var installed = jobs.Where(job => job.Status == IndustryJobStatus.Installed).ToArray();
+        // Each station's pending output covers the same demand while other pilots work on different orders.
+        listed.UnionWith(installed.Where(job => job.StationId == location).Select(job => job.ProductTypeId));
         FactorySupplyRequest? minerTwoSupply = null;
-        if (!listed.Contains(CapsuleerMinerTwoRules.Module))
+        if (installed.Length == 0 && !listed.Contains(CapsuleerMinerTwoRules.Module))
         {
             var minerTwo = ProduceMinerTwo(
                 world,
@@ -247,7 +249,11 @@ internal sealed partial class CapsuleerIndustry(
             return changed;
         }
         supply ??= minerTwoSupply;
-        if (listed.Contains(Rules.ChargeType))
+        if (
+            installed.Length > 0
+            || listed.Contains(Rules.ChargeType)
+            || CapsuleerReplacementRules.MerlinParts.Any(part => bids.Contains(part.TypeId))
+        )
         {
             return false;
         }
@@ -355,14 +361,8 @@ internal sealed partial class CapsuleerIndustry(
     )
     {
         int quantity = stock.Quantity;
-        long reference =
-            stock.TypeId == Rules.ChargeType
-                ? ReferencePrice(catalog, stock.TypeId)
-                : bid?.PriceCents ?? ReferencePrice(catalog, stock.TypeId);
-        long minimum =
-            stock.TypeId != Rules.ChargeType && bid is not null
-                ? 1
-                : (PersonalMarketRules.MinimumBrokerFeeCents * 2 + quantity - 1) / quantity;
+        long reference = bid?.PriceCents ?? ReferencePrice(catalog, stock.TypeId);
+        long minimum = bid is not null ? 1 : (PersonalMarketRules.MinimumBrokerFeeCents * 2 + quantity - 1) / quantity;
         long price = Math.Clamp(reference, minimum, (long)(MarketDefinitions.MaximumOrderPrice * MarketDefinitions.CentsPerIsk));
         quantity = (int)Math.Min(quantity, long.MaxValue / price);
         int location = checked((int)stock.LocationId);

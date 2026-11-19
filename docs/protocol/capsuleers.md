@@ -4,8 +4,9 @@
 
 ## Regional procurement for bot corporations
 
-An eligible corporate hauler checks its headquarters reserve while docked. A corporation flying a Merlin targets one
-packaged hull, two 75mm Gatling Rail Is and 400 Iron Charge S. Other fleets with compatible guns target 200 charges.
+An eligible corporate hauler checks its headquarters reserve while docked. A corporation flying a Merlin or
+recovering one from its current capsule's loss record targets one packaged hull, two 75mm Gatling Rail Is and
+400 Iron Charge S. Other fleets with compatible guns target 200 charges.
 Existing corporate stock, open headquarters bids and the corporation's own production reduce demand. A corporation
 dispatches one supply trip at a time. Established factory and direct ammunition supply runs keep priority.
 
@@ -23,12 +24,29 @@ from the station hangar into its hold. That cargo uses the usual freight loss an
 corporation's headquarters Market Deliveries only when the courier arrives. Existing resupply and ship recovery can
 draw from that reserve. The courier waits ten minutes after the trip before reviewing the reserve again.
 
+A funded ammunition bid uses the same production margin check as a hull or module bid. The factory compares net
+sales proceeds with purchased or owned inputs and the manufacturing charge. Different operators can install jobs for
+different products while pending output covers its product at that station. Stock and sell listings are counted at
+the current station. While a Merlin kit bid is open, factories defer speculative ammo batches and prioritize paid
+orders for the hull, modules and charges.
+
+New bot-founded corporations use a 10% bounty tax in their charter. Eligible bounty payments credit the master
+wallet through the existing corporation tax settlement. Saved corporations use the tax rate in their charter. The
+buyer commits only ISK it already holds and can repeat the trip while its income covers restocking. The supplier
+earns the net proceeds when its products sell, after native taxes and broker charges.
+
 CCP's market rules describe funded bids with station range and local delivery. Eden reuses its resident corporate
 market purchases for this bot workflow. The EVE.js build 3396210 reference records wallet-owner transactions in
 `server/src/services/market/marketProxyService.js` (SHA-256
 `F457CB1B181CEB570A5FA346C718D71A7CE7B84B8734C88CEE7F2546A8CE175B`).
 [CCP Buy and Sell Orders](https://support.eveonline.com/hc/en-us/articles/203218932-Buy-and-Sell-Orders) ·
 [UniWiki Trading](https://wiki.eveuniversity.org/Trading)
+
+The EVE.js build 3396210 reference locks in corporate tax at NPC bounty settlement in
+`server/src/services/bounty/bountyRuntime.js` (SHA-256
+`978BB72212F51718AB43D4DDF786F4A00EF3B961BA6A5A693A0C8C8F73E678D0`).
+[CCP Corporation Wallet and Corporation Taxes](https://support.eveonline.com/hc/en-us/articles/203209582-Corporation-Wallet-and-Corporation-Taxes) ·
+[CCP Broker Fee and Sales Tax](https://support.eveonline.com/hc/en-us/articles/203218962-Broker-Fee-and-Sales-Tax)
 
 ### Automated validation
 
@@ -55,6 +73,41 @@ with `world.sqlite.owner` still locked. The exact method reproduced the same fai
 
 The solution built with zero warnings and errors in 1.02 seconds. Both Python policy suites passed all 17 cases.
 Style, CSharpier, line-width and diff checks passed.
+
+#### Recurring paid trade after attrition
+
+`RegionalTradePaysForTwoLossesWithBountyTaxAndProductionMargin` exercises two complete trips from the same saved
+corporations. The buyer begins with an empty treasury. The fixture settles a controlled NPC bounty through the native
+combat payout, then destroys the patrol's only Merlin. A Tayra posts three corporate bids at the supplier's regional
+market. Two operators install the hull and ammunition jobs concurrently, and the factory uses paid mineral purchases
+and delivers the railgun job as well. The courier returns the package, modules and charges across the regional gate.
+The patrol uses that depot stock to board a newly fitted Merlin. The replay reopens the world between the losses and
+again after the second replacement.
+
+The buyer's only ledger credits are bounty taxes. The supplier starts with working capital and buys finite raw inputs
+from ordinary sell orders. Sales receipts cover those inputs, manufacturing charges, broker fees and sales tax each
+cycle. The test verifies two native losses and bounties, six distinct filled corporate bids with zero remaining
+escrow, six paid manufacturing deliveries, and a positive balance increase for each corporation in each cycle.
+The fixture sets the bounty amount and input prices to exercise viable economics. Earnings and margins in play
+depend on combat income and the local market.
+
+The exact `FullyQualifiedName=` selection passed four cases in 20.21 seconds. It included the recurring trade method,
+both cases of `BotFundsRegionalKitOrdersAndHaulsManufacturedStockAcrossRestarts`, and
+`LostMerlinBuysPaidReplacementsAndReturnsToDutyAcrossRestarts` in `Eden.Protocol.Tests.Capsuleers.CapsuleerAmmunitionSupplyTests`.
+The separate exact `CapsuleerCorporationTests.ExistingSchoolPilotsFoundAndJoinOnceAcrossCheckpointAndRestart`
+case passed in 8 seconds and verified the new charter's tax rate after reopen.
+
+The restored solution built with zero warnings and errors in 1.00 second. The focused run passed 146 tests in
+129.27 seconds using `FullyQualifiedName~.<Class>.` for these classes:
+
+```text
+CapsuleerAmmunitionSupplyTests, CapsuleerCorporationTests, CapsuleerAllianceTests, CapsuleerHaulerTests,
+CapsuleerMinerTests, CapsuleerSupplyTests, CorporationWalletTests, FreightTests, PersonalMarketTests,
+ResidentEconomyTests, ApplyFittingTests, MoonExtractionTests, CapsuleerResidentRoutineTests, PilotFleetTests,
+CapsuleerShipBlueprintTests
+```
+
+Both Python policy suites passed all 17 cases. Style, CSharpier, line-width and diff checks passed.
 
 ### Live acceptance
 

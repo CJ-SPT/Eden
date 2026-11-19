@@ -43,20 +43,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
         const int personalCharges = 7;
         var expected = Replacement.MerlinParts.Where(part => !partialFill || part.TypeId == merlin).ToArray();
         using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
-        CapsuleerCorporationTests.PrepareExistingSave(fixture);
-        PassiveCatalogFixture.LoadStarterProduction(fixture.Database.CatalogPath);
-        PrepareCatalog(fixture);
-        PassiveCatalogFixture.LoadUtilityHulls(fixture.Database.CatalogPath, new HashSet<int> { (int)FreightHull.Tayra });
-        using (CatalogDbContext catalog = new(fixture.Database.CatalogPath, writable: true))
-        {
-            catalog.Database.ExecuteSqlRaw(
-                """
-                INSERT INTO Region(Id,Name) VALUES(10000043,'Supplier region');
-                INSERT INTO Constellation(Id,RegionId,Name) VALUES(20000099,10000043,'Supplier constellation');
-                UPDATE SolarSystem SET ConstellationId=20000099 WHERE Id=30000142;
-                """
-            );
-        }
+        PrepareRegionalTrade(fixture);
         UseLocalOrders(fixture);
         WorldInitialization.Initialize(fixture.Database, fixture.Clock);
         long producer;
@@ -341,5 +328,21 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                     + $"cargo stacks {last?.Work.Freight?.Stacks.Length}. {last?.Work.WaitingReason} {scheduler.Read().LastFailure}"
             );
         }
+    }
+
+    private static void PrepareRegionalTrade(CapsuleerHaulerTests.Fixture fixture)
+    {
+        CapsuleerCorporationTests.PrepareExistingSave(fixture);
+        PassiveCatalogFixture.LoadStarterProduction(fixture.Database.CatalogPath);
+        PrepareCatalog(fixture);
+        PassiveCatalogFixture.LoadUtilityHulls(fixture.Database.CatalogPath, new HashSet<int> { (int)FreightHull.Tayra });
+        using CatalogDbContext catalog = new(fixture.Database.CatalogPath, writable: true);
+        catalog.Database.ExecuteSqlRaw(
+            """
+            INSERT INTO Region(Id,Name) VALUES(10000043,'Supplier region');
+            INSERT INTO Constellation(Id,RegionId,Name) VALUES(20000099,10000043,'Supplier constellation');
+            UPDATE SolarSystem SET ConstellationId=20000099 WHERE Id=30000142;
+            """
+        );
     }
 }

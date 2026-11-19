@@ -99,6 +99,7 @@ public sealed class CapsuleerCorporationTests
             Assert.Contains(chat.Members(connection.Id, local), pilot => pilot.CorporationId == corporation && members.Contains(pilot.Id));
             Assert.Equal(Home, row.CapsuleerFoundingSystemId);
             Assert.Equal(0, row.BalanceCents);
+            Assert.Equal(CapsuleerCorporationRules.BountyTaxRate, row.Snapshot(members.Length).Details.TaxRate);
             var result = host.GetRequiredService<CorporationPublicInfoHandler>()
                 .Call(null!, "corpmgr", "GetPublicInfo", [(long)corporation]);
             var info = Assert.IsType<CorporationPublicInfoReply>(Assert.IsType<PilotCallResult.Success>(result).Reply);
@@ -121,6 +122,7 @@ public sealed class CapsuleerCorporationTests
         var restored = reopened.GetRequiredService<IPlayerCorporations>();
         Assert.Equal(members, restored.MemberNames(ceo).Select(member => member.PilotId));
         Assert.Equal(ticker, restored.Read(corporation)!.Details.Ticker);
+        Assert.Equal(CapsuleerCorporationRules.BountyTaxRate, restored.Read(corporation)!.Details.TaxRate);
         var economy = reopened.GetRequiredService<LiveWorld>().Economy;
         using var retry = economy.Begin(TransactionParticipants.None);
         using CatalogDbContext source = new(fixture.Database.CatalogPath);
