@@ -1252,9 +1252,13 @@ internal sealed partial class CapsuleerHauler(
             int dwell = Work.Journey is { Kind: not TrafficJourneyKind.CapsuleEscape } journey
                 ? TravelerRoutineRules.LayoverSeconds(routine, journey.Kind, pilotId, Work.DwellSequence)
                 : HaulingRules.StationDwellSeconds(Pilot.PilotId, Work.DwellSequence);
-            if (Work.Gang is { Phase: not RoamingGangPhase.Complete } || Work.RegionalEscort is not null)
+            if (
+                Work.Gang is { Phase: not RoamingGangPhase.Complete }
+                || Work.RegionalEscort is not null
+                || Work.CorporationSupply?.FactorySupply is { Mercoxit: true }
+            )
             {
-                // A gang's endpoint is an operational turn-around, not a civilian layover.
+                // An operational stop loads or unloads before the next ordinary layover.
                 dwell = 1;
             }
             if (routine.ShelterPending)

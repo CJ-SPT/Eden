@@ -122,6 +122,10 @@ Factories can also refine ore already in the operator's hangar and manufacture m
 materials and an available blueprint. The component job delivers back to the operator for assembly.
 [Miner II component production](protocol/capsuleers.md#miner-ii-components-from-owned-materials)
 
+Venture specialists stage from market stations, reach nearby nullsec Mercoxit belts and sell their mined ore.
+A factory short of Morphite can send a corporate hauler to collect the ore in enough trips to run a refining portion.
+[Mercoxit mining and factory freight](protocol/capsuleers.md#mercoxit-mining-and-factory-freight)
+
 #### Corporation ammunition supply
 
 Bot corporations can produce and trade **Iron Charge S**. A miner docked at an NPC factory with a market can refine owned

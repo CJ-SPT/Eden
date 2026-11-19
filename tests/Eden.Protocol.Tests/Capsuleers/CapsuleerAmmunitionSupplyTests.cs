@@ -8,6 +8,7 @@ using Eden.Data.World.Economy;
 using Eden.Data.World.Industry;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
+using Eden.Data.World.Mining;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Capsuleers;
@@ -1493,6 +1494,244 @@ public sealed class CapsuleerAmmunitionSupplyTests
             host.GetRequiredService<CapsuleerIndustry>().Produce(world, catalog, pilot, fixture.Clock.Now);
             world.Commit();
         }
+    }
+
+    [Fact]
+    public async Task BotsMineAndHaulMercoxitToTheMinerTwoFactoryAcrossRestarts()
+    {
+        const int factorySystem = 30000142;
+        const int beltSystem = 30000144;
+        const int mercoxit = 11396;
+        const int morphite = CapsuleerIndustryRules.Morphite;
+        const int portion = 100;
+        using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
+        CapsuleerCorporationTests.PrepareExistingSave(fixture);
+        PassiveCatalogFixture.LoadMining(fixture.Database.CatalogPath);
+        PrepareCatalog(fixture);
+        PrepareMinerTwoCatalog(fixture);
+        PrepareMercoxitRoute(fixture);
+        UseLocalOrders(fixture);
+        WorldInitialization.Initialize(fixture.Database, fixture.Clock);
+        using (var provisioner = new CapsuleerProvisioner(fixture.Database, fixture.Clock))
+        {
+            provisioner.EnsureSystem(factorySystem);
+        }
+        using (CatalogDbContext writable = new(fixture.Database.CatalogPath, writable: true))
+        {
+            // Keep the factory operator docked to process shipments as soon as they arrive.
+            writable.Database.ExecuteSql(
+                $"DELETE FROM Celestial WHERE SolarSystemId={factorySystem} AND GroupId={AsteroidDefinitions.BeltGroup}"
+            );
+        }
+        long extractor;
+        long manufacturer;
+        long courier;
+        int corporation;
+        long cargoId;
+        long orePrice;
+        long asteroidId;
+        long startingOre;
+        using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+            using (var setup = live.Economy.Begin())
+            {
+                var economy = setup.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId)!;
+                economy.TestingMarket = false;
+                economy.TestingGrants = false;
+                var agents = setup.Set<SavedCapsuleerAgent>().OrderBy(agent => agent.PilotId).ToArray();
+                var worker = agents.Single(agent =>
+                    agent.Career == CapsuleerCareer.Mining && agent.CommunitySystemId == Home && agent.Slot == 0
+                );
+                extractor = worker.PilotId;
+                var factory = agents.First(agent => agent.Career == CapsuleerCareer.Mining && agent.CommunitySystemId == factorySystem);
+                factory.Slot = 10;
+                manufacturer = factory.PilotId;
+                courier = agents.First(agent => agent.Career == CapsuleerCareer.Hauling).PilotId;
+                foreach (
+                    var agent in agents.Where(agent =>
+                        agent.PilotId != extractor && agent.PilotId != manufacturer && agent.PilotId != courier
+                    )
+                )
+                {
+                    setup.Add(new SavedCapsuleerSuspension { PilotId = agent.PilotId });
+                }
+                var hauler = setup.Pilots.Find(courier)!;
+                hauler.ActiveShip.StationId = Depot;
+                hauler.ActiveShip.TypeId = HaulingRules.BadgerType;
+                var operatorPilot = setup.Pilots.Find(manufacturer)!;
+                operatorPilot.ActiveShip.StationId = FactoryStation;
+                if (setup.Positions.Find(operatorPilot.ActiveShipId) is { } inSpace)
+                {
+                    setup.Remove(inSpace);
+                }
+                setup.Filter<SavedCapsuleerCommunity>(row => row.PilotId == manufacturer).Single().Progress = null;
+                corporation = Charter(setup, catalog, manufacturer, "Mercoxit Manufacturing", "MERX", fixture.Clock.Now);
+                CorporationMembershipStore.Move(setup, hauler, corporation, fixture.Clock.Now);
+                setup.Set<SavedCorporation>().Find(corporation)!.BalanceCents = 100_000_000;
+                setup.Set<PilotWallet>().Find(manufacturer)!.Cents = 100_000_000;
+                SetMinerTwoAdjustedPrices(setup, catalog);
+                setup.Commit();
+            }
+            Assert.Equal(new[] { Home, beltSystem }, CapsuleerTrafficRoutes.MercoxitRoutes(catalog.Definitions)[Home]);
+            using (var presence = host.GetRequiredService<IHumanPresence>().Select(Customer, factorySystem))
+            {
+                Advance(
+                    host,
+                    () =>
+                        live.MinerCheckpoints.GetValueOrDefault(extractor)?.Work is { Mercoxit: not null, Activity: MinerActivity.Mining },
+                    600
+                );
+                asteroidId = live.MinerCheckpoints[extractor].Work.TargetId;
+                startingOre = live.Economy.Read(world => world.Set<WorldAsteroid>().Find(asteroidId)!.Quantity);
+                live.Economy.Inspect(world =>
+                {
+                    Assert.Equal(beltSystem, world.Positions.Find(world.Pilots.Find(extractor)!.ActiveShipId)!.SystemId);
+                    Assert.Empty(world.Set<NpcMarketOrder>().Where(order => order.TypeId == mercoxit || order.TypeId == morphite));
+                    Assert.Empty(world.Set<SavedPersonalOrder>().Where(order => order.TypeId == mercoxit || order.TypeId == morphite));
+                    return true;
+                });
+            }
+            await live.FlushAsync();
+        }
+
+        using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            using (var presence = host.GetRequiredService<IHumanPresence>().Select(Customer, factorySystem))
+            {
+                Advance(
+                    host,
+                    () =>
+                        live.HaulerCheckpoints.GetValueOrDefault(courier)?.Work
+                            is { CorporationSupply.FactorySupply.Mercoxit: true, Freight.Stacks.Length: > 0 },
+                    6500
+                );
+                var freight = live.HaulerCheckpoints[courier].Work.Freight!;
+                var cargo = Assert.Single(freight.Stacks);
+                Assert.Equal(mercoxit, cargo.TypeId);
+                Assert.Equal(portion / 2, cargo.Quantity);
+                Assert.Equal(FactoryStation, freight.Destination);
+                cargoId = cargo.ItemId;
+                orePrice = live.Economy.Read(world =>
+                {
+                    var ownSale = Assert.Single(world.Set<SavedPersonalOrder>().Where(order => order.TypeId == mercoxit));
+                    Assert.Equal(extractor, ownSale.PilotId);
+                    Assert.Equal(portion - cargo.Quantity, ownSale.Remaining);
+                    Assert.True((world.Set<WorldAsteroid>().Find(asteroidId)?.Quantity ?? 0) < startingOre);
+                    Assert.Single(
+                        world
+                            .Filter<OwnedItem>(item => item.OwnerId == extractor)
+                            .Where(item => item.TypeId == (int)MiningLaserType.DeepCoreMiningLaserI)
+                    );
+                    Assert.Equal((int)InventoryFlag.Cargo, world.Set<OwnedItem>().Find(cargoId)!.FlagId);
+                    return ownSale.PriceCents;
+                });
+            }
+            await live.FlushAsync();
+        }
+
+        using var reopened = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var restored = reopened.GetRequiredService<LiveWorld>();
+        using (var presence = reopened.GetRequiredService<IHumanPresence>().Select(Customer, factorySystem))
+        {
+            Assert.NotNull(restored.Economy.Read(world => world.Set<OwnedItem>().Find(cargoId)));
+            Advance(reopened, () => restored.Economy.Read(world => Stock(world, manufacturer, FactoryStation, morphite) > 0), 2000);
+            restored.Economy.Inspect(world =>
+            {
+                Assert.Null(world.Set<OwnedItem>().Find(cargoId));
+                Assert.Equal(0, Stock(world, manufacturer, FactoryStation, mercoxit));
+                var payments = world
+                    .Filter<SavedWalletLedger>(entry => entry.OwnerId == corporation)
+                    .Where(entry => entry.EntryType == WalletEntryType.MarketTransaction && entry.AmountCents < 0)
+                    .ToArray();
+                Assert.Equal(2, payments.Length);
+                Assert.Equal(-portion * orePrice, payments.Sum(payment => payment.AmountCents));
+                return true;
+            });
+        }
+        await restored.FlushAsync();
+
+        void Advance(ServiceProvider host, Func<bool> ready, int seconds)
+        {
+            var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+            scheduler.PopulationPrepared(factorySystem);
+            scheduler.PopulationPrepared(Home);
+            var worker = host.GetRequiredService<CapsuleerMaintenance>();
+            for (int step = 0; step < seconds && !ready(); step++)
+            {
+                fixture.Clock.Seconds++;
+                worker.Tick();
+            }
+            if (!ready())
+            {
+                var mining = scheduler.Miner(extractor);
+                var hauling = scheduler.Hauler(courier);
+                var factory = scheduler.Miner(manufacturer);
+                var status = host.GetRequiredService<LiveWorld>()
+                    .Economy.Read(world =>
+                    {
+                        long raw = Stock(world, manufacturer, FactoryStation, mercoxit);
+                        long refined = Stock(world, manufacturer, FactoryStation, morphite);
+                        string orders = string.Join(
+                            ',',
+                            world
+                                .Set<SavedPersonalOrder>()
+                                .Where(order => order.TypeId == mercoxit)
+                                .Select(order => order.Remaining)
+                                .ToArray()
+                        );
+                        string items = string.Join(
+                            ',',
+                            world
+                                .Set<OwnedItem>()
+                                .Where(item => item.TypeId == mercoxit)
+                                .AsEnumerable()
+                                .Select(item => $"{item.Id}/{item.OwnerId}/{item.LocationId}/{item.FlagId}/{item.Quantity}")
+                        );
+                        string payments = string.Join(
+                            ',',
+                            world
+                                .Filter<SavedWalletLedger>(entry => entry.OwnerId == corporation)
+                                .Where(entry => entry.EntryType == WalletEntryType.MarketTransaction)
+                                .Select(entry => entry.AmountCents)
+                                .ToArray()
+                        );
+                        return $"Raw {raw}, refined {refined}, listed {orders}, items {items}, payments {payments}";
+                    });
+                Assert.Fail(
+                    $"Miner {mining?.Work.Activity} in {mining?.Pilot.SystemId}: {mining?.WaitingReason}. "
+                        + $"Hauler {hauling?.Work.Activity} in {hauling?.Pilot.SystemId}. Factory {factory?.Work.Activity} "
+                        + $"request {factory?.Work.FactorySupply?.Mercoxit}: {factory?.WaitingReason}. "
+                        + $"{status}. {scheduler.Read().LastFailure}"
+                );
+            }
+        }
+    }
+
+    private static void PrepareMercoxitRoute(CapsuleerHaulerTests.Fixture fixture)
+    {
+        using CatalogDbContext catalog = new(fixture.Database.CatalogPath, writable: true);
+        catalog.Database.ExecuteSqlRaw(
+            """
+            INSERT OR REPLACE INTO SourceRecord VALUES
+                ('client/stationoperations','99','{{"services":[7]}}'),
+                ('client/systems','30000144','{{"securityStatus":-0.8}}'),
+                ('client/solarsystemcontent','30000144','{{"security":-0.8}}'),
+                ('client/types','11396','{{"published":1,"marketGroupID":530,"volume":40,"portionSize":100,"basePrice":17367040}}'),
+                ('client/asteroidcountbytypeidbeltid','40009981','{{"11396":8}}'),
+                ('client/asteroidcountbytypeidbeltid','40009982','{{"1230":12}}');
+            UPDATE Station SET OperationId=99 WHERE Id=60015157;
+            INSERT INTO Celestial(Id,SolarSystemId,TypeId,GroupId,Radius,X,Y,Z) VALUES
+                (50009993,30000141,16,10,3532,800000000000,-120000000000,-900000000000),
+                (50009994,30000144,16,10,3532,800000000000,-120000000000,-900000000000),
+                (40009981,30000144,15,9,0,620000000000,-40000000000,-800000000000),
+                (40009982,30000142,15,9,0,620000000000,-40000000000,-800000000000);
+            INSERT INTO Stargate(Id,SolarSystemId,DestinationId) VALUES
+                (50009993,30000141,50009994),(50009994,30000144,50009993);
+            """
+        );
     }
 
     private static void SetMinerTwoAdjustedPrices(WorldAction world, CatalogDbContext catalog)

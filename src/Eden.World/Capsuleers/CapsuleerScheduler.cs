@@ -184,7 +184,7 @@ internal sealed partial class CapsuleerScheduler(
     private bool _backgroundHaulersLoaded;
     private long _populationRevision;
 
-    private readonly record struct Registration(int Community, CapsuleerCareer Career);
+    private readonly record struct Registration(int Community, CapsuleerCareer Career, bool DeepCore);
 
     private readonly Dictionary<long, Registration> _registrations = [];
 
@@ -251,6 +251,7 @@ internal sealed partial class CapsuleerScheduler(
             if (!_loaded)
             {
                 RestoreRoamingGangs(world);
+                RestoreDeepCoreMiners(world);
             }
             foreach (int observed in presence.Read().ActiveSystems)
             {
@@ -314,7 +315,12 @@ internal sealed partial class CapsuleerScheduler(
                 continue;
             }
             bool firstRegistration = !_registrations.ContainsKey(pilot);
-            _registrations[pilot] = new(agent.CommunitySystemId, agent.Career);
+            bool deepCore =
+                world.Settings.Capsuleers.Miners
+                && agent.Career == CapsuleerCareer.Mining
+                && agent.Slot == 0
+                && CapsuleerTrafficRoutes.MercoxitRoutes(database.Catalog).ContainsKey(agent.CommunitySystemId);
+            _registrations[pilot] = new(agent.CommunitySystemId, agent.Career, deepCore);
             if (firstRegistration && agent.Career == CapsuleerCareer.Mining)
             {
                 if (!_miningCrews.TryGetValue(agent.CommunitySystemId, out var crew))
@@ -445,7 +451,7 @@ internal sealed partial class CapsuleerScheduler(
                             _completed++;
                             IndexLocation(job.PilotId, miner.SystemId);
                             _systems.Register(miner.SystemId);
-                            var observation = miner.Read()!;
+                            var observation = miner.Read(includeHealth: activity.ActiveSystems.Contains(miner.SystemId))!;
                             mining[job.PilotId] = observation;
                             Blocking(job.PilotId, observation.WaitingReason);
                             _pendingMiners[job.PilotId] = observation;

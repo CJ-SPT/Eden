@@ -78,10 +78,10 @@ them at the research agent (SHA-256 `D6E8E398BB3FF9BA1F0711BA86BA1DCCA4707CD935D
 [UniWiki Datacore farming](https://wiki.eveuniversity.org/Datacore_Farming)
 
 The wider [build 3662168 supply audit](../tech-two-supply-audit.json) identifies the remaining market dependencies.
-Independent Miner II production still needs bots to extract and haul deep-core ore, run colonies for Mechanical Parts
-and reactor fuel ingredients, and supply moon and ice mining and reaction jobs for the advanced components. Reusable
-originals and reaction formulae also need a reliable initial source. [Component and refinery jobs](#miner-ii-components-from-owned-materials)
-cover processing the materials once they reach a factory.
+Independent Miner II production still needs bots to run colonies for Mechanical Parts and reactor fuel ingredients,
+and supply moon and ice mining and reaction jobs for the advanced components. Reusable originals and reaction formulae
+also need a reliable initial source. [Mercoxit expeditions](#mercoxit-mining-and-factory-freight) supply the ore for Morphite,
+and [component and refinery jobs](#miner-ii-components-from-owned-materials) process materials at the factory.
 [UniWiki Minerals](https://wiki.eveuniversity.org/Minerals) · [UniWiki Reactions](https://wiki.eveuniversity.org/Reactions)
 
 ### Automated validation
@@ -139,6 +139,58 @@ ReprocessingTests, CorporationWalletTests, ResearchAgentTests
 ```
 
 Both Python policy suites passed all 17 cases. Style, CSharpier, line-width and diff checks passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
+## Mercoxit mining and factory freight
+
+The build 3662168 catalog has Mercoxit belts in 368 systems. Those systems have no NPC stations, so an eligible
+founder Venture stages at a market station and takes reciprocal gates to and from a nullsec belt within eight jumps.
+The specialist uses a Deep Core Mining Laser I and the ordinary mining cycle, fittings, ore hold and defenses. Existing
+and new founder Ventures can receive a single starter laser while on their original hull. Subsequent trips use the owned
+fit. As with other mining in Eden, deep-core pollution clouds are outside the native simulation's current support.
+
+The miner unloads at the staging station and lists one reprocessing portion from its mined inventory. The miner pays
+the normal broker fee and can post a lower ask if its wallet cannot fund the reference price. While that listing is
+open it can resume ordinary mining. A Miner II factory's Morphite shortfall can trigger a normal corporate purchase
+of raw Mercoxit at a nearby station, or a courier trip to a supplier within 20 gates. The hauler loads what fits, delivers
+to the factory's hangar and can make repeat trips when one load cannot cover a whole portion. It turns around promptly
+at supply stops and retains the existing threat logic. The factory uses the normal reprocessing service.
+
+The miner's route, paid cycle and current system are checkpointed with resident ship and asteroid state. Courier cargo
+and market wallet entries use the same resident checkpoint as the shipment. The pinned catalog supplies belt composition,
+the launch module and the reprocessing portion. The local EVE.js build 3396210 `server/src/space/asteroids/asteroidService.js`
+reference identifies the same three grades (SHA-256 `8CA75BC0E2CA005F2E719D7ED9CEC1C0051460E1F1C6BC06110E645C699CF6B6`).
+[UniWiki Mining](https://wiki.eveuniversity.org/Mining#Mercoxit_mining) ·
+[CCP Introduction to Mining](https://support.eveonline.com/hc/en-us/articles/23655785488668-Introduction-to-Mining)
+
+### Automated validation
+
+`BotsMineAndHaulMercoxitToTheMinerTwoFactoryAcrossRestarts` starts with no Mercoxit or Morphite sellers, reopens the
+world with the miner operating in a stationless system and again after a hauler buys the first half of a refining
+portion. It checks the native asteroid loses ore, the miner uses a single deep-core tool, the only seller is the bot,
+and the two partial shipments are paid for once each and refined into Morphite at the factory.
+
+The exact filter passed in 11.36 seconds. The final solution built in 11.45 seconds with zero warnings and errors.
+The final affected run passed all 127 selected tests in 82.14 seconds with these class filters using
+`FullyQualifiedName~.<Class>.`:
+
+```text
+CapsuleerAmmunitionSupplyTests, CapsuleerMinerTests, CapsuleerMiningFleetTests, CapsuleerHaulerTests,
+CapsuleerProvisioningTests, CapsuleerGatePerformanceTests, CapsuleerDeadlinePerformanceTests,
+ResidentBotEconomyTests, MiningTierTests, ReprocessingTests, ResearchAgentTests
+```
+
+The initial run included both cases of `ResupplyStopsInspectingHangarAfterStockFillsTheRequirement`. Each counted
+61 SQL commands against an expectation of 60. Both cases reproduced on main at `017dab25` and were excluded by
+method name from the final affected run. Both Python policy suites passed all 17 cases. Style, line-width and diff
+checks passed.
 
 ### Live acceptance
 

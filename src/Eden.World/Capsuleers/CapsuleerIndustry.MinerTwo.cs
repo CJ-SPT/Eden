@@ -81,10 +81,10 @@ internal sealed partial class CapsuleerIndustry
         OwnedItem[] hangar,
         IEnumerable<SavedPersonalOrder> bids,
         long now,
-        out FactorySupplyRequest? research
+        out FactorySupplyRequest? supply
     )
     {
-        research = null;
+        supply = null;
         if (
             corporation.BalanceCents < PersonalMarketRules.MinimumBrokerFeeCents
             || !StationCapabilities.Has(catalog, operatorPilot.OperationId, StationService.Laboratory)
@@ -216,11 +216,25 @@ internal sealed partial class CapsuleerIndustry
         {
             if (datacores.Count > 0)
             {
-                research = new(corporation.Id, station, null, datacores.ToArray()) { ResearchDatacores = true };
+                supply = new(corporation.Id, station, null, datacores.ToArray()) { ResearchDatacores = true };
             }
             if (RefineFactoryOre(world, catalog, operatorPilot, hangar, missing))
             {
                 return false;
+            }
+            bool needsMorphite = missing.ContainsKey(CapsuleerIndustryRules.Morphite);
+            var ore = needsMorphite ? MercoxitNeeds(catalog, operatorPilot, corporation, hangar) : [];
+            if (ore.Length > 0)
+            {
+                if (BuyLocalMercoxit(world, catalog, operatorPilot, corporation, ore))
+                {
+                    return true;
+                }
+                supply = new(corporation.Id, station, null, [.. datacores, .. ore])
+                {
+                    ResearchDatacores = datacores.Count > 0,
+                    Mercoxit = true,
+                };
             }
             foreach (var (type, quantityMissing) in missing.Where(part => manufacturingMaterials.ContainsKey(part.Key)))
             {

@@ -9,6 +9,9 @@ paid redemptions and checkpointed courier deliveries when local sell orders are 
 [Miner II components from owned materials](protocol/capsuleers.md#miner-ii-components-from-owned-materials) covers
 reprocessing stockpiled ore and paid component jobs that feed assembly.
 
+[Mercoxit mining and factory freight](protocol/capsuleers.md#mercoxit-mining-and-factory-freight) covers the nullsec
+mining expedition, bot-originated ore orders and checkpointed partial shipments to the refinery.
+
 [Paid Merlin replacement](protocol/capsuleers.md#paid-merlin-replacement) covers public buy orders, corporate spending
 and a patrol pilot returning to duty across a restart.
 

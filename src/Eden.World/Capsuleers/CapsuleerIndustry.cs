@@ -212,7 +212,7 @@ internal sealed partial class CapsuleerIndustry(
 
         var hangar = Hangar(world, pilot, location);
         listed.UnionWith(depot.Select(item => item.TypeId));
-        FactorySupplyRequest? research = null;
+        FactorySupplyRequest? minerTwoSupply = null;
         if (!listed.Contains(CapsuleerMinerTwoRules.Module))
         {
             var minerTwo = ProduceMinerTwo(
@@ -223,20 +223,20 @@ internal sealed partial class CapsuleerIndustry(
                 hangar,
                 bids[CapsuleerMinerTwoRules.Module],
                 now,
-                out research
+                out minerTwoSupply
             );
             if (minerTwo.HasValue)
             {
-                supply = research;
+                supply = minerTwoSupply;
                 return minerTwo.Value;
             }
         }
         if (TryProduceForDemand(world, catalog, operatorPilot, corporation, hangar, bids, listed, now, out supply) is bool changed)
         {
-            supply ??= research;
+            supply ??= minerTwoSupply;
             return changed;
         }
-        supply ??= research;
+        supply ??= minerTwoSupply;
         if (listed.Contains(Rules.ChargeType))
         {
             return false;

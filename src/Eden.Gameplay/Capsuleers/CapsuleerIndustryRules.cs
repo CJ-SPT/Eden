@@ -9,6 +9,8 @@ public static class CapsuleerIndustryRules
     public const int MaximumResearchSupplyJumps = 12;
     public const int ResearchCourierFieldLevel = 4;
     public const int ResearchCourierProjects = 2;
+    public const int MaximumMercoxitSupplyJumps = TrafficJourneyRules.MaximumJumps;
+    public const int Morphite = 11399;
 
     public static int DemandRuns(int demand, int unitsPerRun, long secondsPerRun, int? licensedRuns)
     {
@@ -26,11 +28,19 @@ public sealed record FactorySupplyDemand(long OrderId, long MinimumUnitPriceCent
 public sealed record FactorySupplyRequest(int CorporationId, int StationId, FactorySupplyDemand? Demand, FactorySupplyNeed[] Materials)
 {
     public bool ResearchDatacores { get; init; }
+    public bool Mercoxit { get; init; }
+    public int MaximumJumps =>
+        Mercoxit ? CapsuleerIndustryRules.MaximumMercoxitSupplyJumps : CapsuleerIndustryRules.MaximumFactorySupplyJumps;
 }
 
 public sealed record FactorySupplyShipment(long ManufacturerId, int FactoryStationId, int SupplierStationId, long? DemandOrderId)
 {
     public FactoryResearchSource? Research { get; init; }
+    public bool Mercoxit { get; init; }
+    public int MaximumJumps =>
+        Research is not null ? CapsuleerIndustryRules.MaximumResearchSupplyJumps
+        : Mercoxit ? CapsuleerIndustryRules.MaximumMercoxitSupplyJumps
+        : CapsuleerIndustryRules.MaximumFactorySupplyJumps;
 }
 
 public sealed record FactoryResearchSource(long AgentId, int SkillId, int DatacoreTypeId);

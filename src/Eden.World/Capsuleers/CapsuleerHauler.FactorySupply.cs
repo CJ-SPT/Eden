@@ -28,7 +28,7 @@ internal sealed partial class CapsuleerHauler
             shipment.FactoryStationId,
             (HullClass)Pilot.ShipGroupId,
             AvoidedSupplierSystems(),
-            shipment.Research is null ? CapsuleerIndustryRules.MaximumFactorySupplyJumps : CapsuleerIndustryRules.MaximumResearchSupplyJumps
+            shipment.MaximumJumps
         );
         if (delivery is null)
         {
