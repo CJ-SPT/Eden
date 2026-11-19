@@ -35,6 +35,18 @@ internal static class PlanetaryCatalogReader
 
     internal static PlanetaryCatalog Read(CatalogDbContext catalog) => catalog.Definition(s_catalog, 0);
 
+    internal static IEnumerable<PlanetaryPlanet> ProductionSites(CatalogDbContext catalog, int system) =>
+        catalog
+            .CelestialsInSystem(system)
+            .Where(body =>
+                body.GroupId == PlanetGroup
+                && body.Radius is > 0
+                && PlanetaryResources.Types(body.TypeId).Count > 0
+                && catalog.Read(CatalogData.Sde.MapPlanets, (long)body.Id) is not null
+            )
+            .Select(body => Planet(catalog, body.Id))
+            .Where(planet => planet.Colonizable);
+
     internal static PlanetaryPlanet Planet(CatalogDbContext catalog, int planetId)
     {
         var celestial = catalog.FindCelestial(planetId);

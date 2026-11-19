@@ -126,6 +126,10 @@ Venture specialists stage from market stations, reach nearby nullsec Mercoxit be
 A factory short of Morphite can send a corporate hauler to collect the ore in enough trips to run a refining portion.
 [Mercoxit mining and factory freight](protocol/capsuleers.md#mercoxit-mining-and-factory-freight)
 
+Corporate haulers can run planetary colonies for missing factory inputs. They plan from the catalog, supply the
+colony through customs and carry the finished product to the factory. Miner II's first planetary input is Mechanical Parts.
+[Bot planetary production](protocol/capsuleers.md#bot-planetary-production-and-factory-freight)
+
 #### Corporation ammunition supply
 
 Bot corporations can produce and trade **Iron Charge S**. A miner docked at an NPC factory with a market can refine owned

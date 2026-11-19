@@ -1,4 +1,5 @@
 using Eden.Gameplay.Industry;
+using Eden.Gameplay.Planetary;
 
 namespace Eden.Gameplay.Capsuleers;
 
@@ -11,6 +12,7 @@ public static class CapsuleerIndustryRules
     public const int ResearchCourierProjects = 2;
     public const int MaximumMercoxitSupplyJumps = TrafficJourneyRules.MaximumJumps;
     public const int Morphite = 11399;
+    public const int MaximumPlanetarySupplyJumps = 8;
 
     public static int DemandRuns(int demand, int unitsPerRun, long secondsPerRun, int? licensedRuns)
     {
@@ -36,6 +38,7 @@ public sealed record FactorySupplyRequest(int CorporationId, int StationId, Fact
 public sealed record FactorySupplyShipment(long ManufacturerId, int FactoryStationId, int SupplierStationId, long? DemandOrderId)
 {
     public FactoryResearchSource? Research { get; init; }
+    public FactoryPlanetaryVisit? Planetary { get; init; }
     public bool Mercoxit { get; init; }
     public int MaximumJumps =>
         Research is not null ? CapsuleerIndustryRules.MaximumResearchSupplyJumps
@@ -44,6 +47,31 @@ public sealed record FactorySupplyShipment(long ManufacturerId, int FactoryStati
 }
 
 public sealed record FactoryResearchSource(long AgentId, int SkillId, int DatacoreTypeId);
+
+public enum PlanetaryVisitPhase
+{
+    Warehouse,
+    Approach,
+    Orbit,
+    Return,
+    DeliverStock,
+}
+
+public sealed record FactoryPlanetaryProduction(
+    int CorporationId,
+    long ManufacturerId,
+    int FactoryStationId,
+    int StagingStationId,
+    int PlanetId,
+    int RootProduct,
+    int RootQuantity,
+    PlanetaryProductionStep Step,
+    int CenterType,
+    int MachineType,
+    long ReadyAt = 0
+);
+
+public sealed record FactoryPlanetaryVisit(FactoryPlanetaryProduction Production, PlanetaryVisitPhase Phase, FreightStack[]? Inputs = null);
 
 public static class CapsuleerMinerTwoRules
 {

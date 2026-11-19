@@ -9,6 +9,10 @@ internal sealed partial class CapsuleerHauler
 {
     private bool HandleFactorySupply(EconomyTransaction world, LiveWorld live, CorporationSupplyRun run, FactorySupplyShipment shipment)
     {
+        if (shipment.Planetary is { } visit)
+        {
+            return HandlePlanetarySupply(world, run, shipment, visit);
+        }
         var catalog = _operation.Catalog;
         var freight = Work.Freight;
         if (Pilot.StationId == shipment.FactoryStationId && freight is not null)

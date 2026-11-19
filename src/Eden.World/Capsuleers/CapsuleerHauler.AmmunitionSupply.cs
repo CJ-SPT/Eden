@@ -12,6 +12,10 @@ internal sealed partial class CapsuleerHauler
             return false;
         }
         var catalog = _operation.Catalog;
+        if (Work.CorporationSupply is null && Work.PlanetaryProduction is { } pending && pending.CorporationId != Pilot.CorpId)
+        {
+            _work = Work with { PlanetaryProduction = null, PlanetaryRetryAt = 0 };
+        }
         if (Work.CorporationSupply is { } assigned)
         {
             if (assigned.FactorySupply is { } factory)
@@ -58,7 +62,7 @@ internal sealed partial class CapsuleerHauler
 
         var avoided = AvoidedSupplierSystems();
         var collection =
-            ammunitionSupply.PlanFactoryCollection(world, catalog, live, Pilot, avoided, Now)
+            ammunitionSupply.PlanFactoryCollection(world, catalog, live, Pilot, avoided, Now, Work)
             ?? CapsuleerIndustry.PlanCollection(world, catalog, live, Pilot, avoided, Now);
         if (collection is null)
         {
@@ -69,7 +73,7 @@ internal sealed partial class CapsuleerHauler
             CapsuleerFreight.Deliver(world, pilotId, Pilot.ShipId, arrived);
         }
         _work = Work with { CorporationSupply = collection.Run, Freight = null, Resupply = null };
-        if (collection.Run.FactorySupply is { } factoryRun && Pilot.StationId == factoryRun.SupplierStationId)
+        if (collection.Run.FactorySupply is { } factoryRun && Pilot.StationId == collection.Route.DestinationStationId)
         {
             return HandleFactorySupply(world, live, collection.Run, factoryRun);
         }

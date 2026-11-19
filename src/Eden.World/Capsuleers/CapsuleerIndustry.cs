@@ -24,6 +24,7 @@ using Eden.World.Fittings;
 using Eden.World.Industry;
 using Eden.World.Inventory;
 using Eden.World.Market;
+using Eden.World.Planetary;
 using Eden.World.Reprocessing;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
@@ -36,7 +37,8 @@ internal sealed partial class CapsuleerIndustry(
     PilotIndustryStore industry,
     PilotReprocessingStore refinery,
     PilotMarketStore market,
-    PilotFittingStore fitting
+    PilotFittingStore fitting,
+    PilotPlanetaryIndustryStore planetary
 )
 {
     private static readonly CatalogDefinition<bool> s_ironCompatible = new(

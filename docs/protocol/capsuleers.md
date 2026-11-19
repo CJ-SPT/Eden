@@ -78,9 +78,9 @@ them at the research agent (SHA-256 `D6E8E398BB3FF9BA1F0711BA86BA1DCCA4707CD935D
 [UniWiki Datacore farming](https://wiki.eveuniversity.org/Datacore_Farming)
 
 The wider [build 3662168 supply audit](../tech-two-supply-audit.json) identifies the remaining market dependencies.
-Independent Miner II production still needs bots to run colonies for Mechanical Parts and reactor fuel ingredients,
-and supply moon and ice mining and reaction jobs for the advanced components. Reusable originals and reaction formulae
-also need a reliable initial source. [Mercoxit expeditions](#mercoxit-mining-and-factory-freight) supply the ore for Morphite,
+Independent Miner II production still needs bots to supply moon and ice mining and reaction jobs for the advanced
+components. Reusable originals and reaction formulae also need a reliable initial source. [Mercoxit expeditions](#mercoxit-mining-and-factory-freight)
+supply the ore for Morphite, [planetary colonies](#bot-planetary-production-and-factory-freight) supply Mechanical Parts,
 and [component and refinery jobs](#miner-ii-components-from-owned-materials) process materials at the factory.
 [UniWiki Minerals](https://wiki.eveuniversity.org/Minerals) · [UniWiki Reactions](https://wiki.eveuniversity.org/Reactions)
 
@@ -191,6 +191,60 @@ The initial run included both cases of `ResupplyStopsInspectingHangarAfterStockF
 61 SQL commands against an expectation of 60. Both cases reproduced on main at `017dab25` and were excluded by
 method name from the final affected run. Both Python policy suites passed all 17 cases. Style, line-width and diff
 checks passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
+## Bot planetary production and factory freight
+
+When a bot factory is short of a planetary commodity, a corporate hauler can make it from the catalog's extraction
+and processing dependencies. The planner works backward from the requested quantity and consumes stock already
+held at the factory's station before scheduling more extraction. It uses the native schematics up through P4, the
+current world multipliers and the processor types allowed on each planet. A raw leaf must be native to the selected
+planet. Sites can be up to eight jumps from the factory and must have an NPC market station in their system. The
+planner can reuse a compatible owned colony or open another within the pilot's normal colony limit.
+
+The pilot carries the correct command center and deploys it using ordinary planetary edits. The corporation pays
+for the infrastructure, upgrades and customs. A published command center can be purchased from the staging station
+at its reference price when an order cannot fill it. The pilot creates or reuses a launchpad, an extractor or compatible
+processor and the links and routes for the selected step. It flies to the customs office to import intermediates and
+export products. The native colony simulation advances during the resulting wall-clock wait, and the hauler can do
+other work between visits. The sale book remains an alternative source. Raw and intermediate stock comes back to the
+hauler's hangar in the factory station, and finished materials go into the manufacturer's hangar.
+
+Mechanical Parts first applies this path to Miner II. Its two raw inputs come from Base Metals and Noble Metals.
+The catalog schedules Reactive Metals, Precious Metals and finally schematic 73 for Mechanical Parts. The local
+EVE.js build 3396210 `server/src/services/planet/planetRuntimeStore.js` reference models installed extractor programs,
+schematic cycles, route delivery and customs transfers (SHA-256 `CB74256D55A9ADD0FA5FEDD022362118A1FE0D67B27CAAFF302F30A7A8CE45DA`).
+[UniWiki Planetary Commodities](https://wiki.eveuniversity.org/Planetary_Commodities) ·
+[CCP Planetary Interaction](https://support.eveonline.com/hc/en-us/articles/203269871-Planetary-Interaction)
+
+### Automated validation
+
+`BotProductionPlansEveryCatalogCommodityFromExtraction` walks all 68 production schematics and 15 raw resources
+from empty inventories and checks every simulated step consumes available ingredients. The runtime check
+`BotsProduceAndHaulPlanetaryInputsAcrossRestarts` covers two factory shortfalls. Mechanical Parts starts without any
+planetary stock or sell offers and verifies the full chain from extraction to Miner II assembly. Broadcast Node verifies
+P4 processing from supplied P3 intermediates using a high-tech production plant. Both cases reopen the world during
+production and with exported cargo in flight. They check the saved pin and deadline, one command center purchase,
+customs charges and consumption of the delivered input by the factory.
+
+The exact filters passed all three cases in 14.15 seconds. The solution built with zero warnings and errors in
+4.79 seconds. The affected run passed all 190 tests in 99.67 seconds using `FullyQualifiedName~.<Class>.` for:
+
+```text
+CapsuleerAmmunitionSupplyTests, CapsuleerHaulerTests, CapsuleerMinerTests, ResidentBotEconomyTests,
+PlanetaryRulesTests, PlanetaryIndustryTests, PlanetaryProtocolTests, PlanetaryConfigurationTests,
+CustomsConfigurationTests, PlanetaryMarketTests, PlanetarySkillExtractionTests, CorporationWalletTests,
+ResearchAgentTests
+```
+
+Both Python policy suites passed all 17 cases. Style, CSharpier, line-width and diff checks passed.
 
 ### Live acceptance
 

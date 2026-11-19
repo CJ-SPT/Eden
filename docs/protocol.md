@@ -12,6 +12,9 @@ reprocessing stockpiled ore and paid component jobs that feed assembly.
 [Mercoxit mining and factory freight](protocol/capsuleers.md#mercoxit-mining-and-factory-freight) covers the nullsec
 mining expedition, bot-originated ore orders and checkpointed partial shipments to the refinery.
 
+[Bot planetary production and factory freight](protocol/capsuleers.md#bot-planetary-production-and-factory-freight)
+covers catalog-driven PI planning, bot-owned colonies and customs freight for factory inputs.
+
 [Paid Merlin replacement](protocol/capsuleers.md#paid-merlin-replacement) covers public buy orders, corporate spending
 and a patrol pilot returning to duty across a restart.
 

@@ -214,9 +214,19 @@ internal sealed partial class CapsuleerIndustry
         }
         if (missing.Count > 0)
         {
-            if (datacores.Count > 0)
+            var planetaryNeeds = missing
+                .Where(part => PlanetaryCommodity(catalog, part.Key))
+                .Select(part => new FactorySupplyNeed(
+                    part.Key,
+                    required[part.Key],
+                    required[part.Key],
+                    part.Value,
+                    ReferencePrice(catalog, part.Key)
+                ))
+                .ToArray();
+            if (datacores.Count > 0 || planetaryNeeds.Length > 0)
             {
-                supply = new(corporation.Id, station, null, datacores.ToArray()) { ResearchDatacores = true };
+                supply = new(corporation.Id, station, null, [.. datacores, .. planetaryNeeds]) { ResearchDatacores = datacores.Count > 0 };
             }
             if (RefineFactoryOre(world, catalog, operatorPilot, hangar, missing))
             {
@@ -230,7 +240,7 @@ internal sealed partial class CapsuleerIndustry
                 {
                     return true;
                 }
-                supply = new(corporation.Id, station, null, [.. datacores, .. ore])
+                supply = new(corporation.Id, station, null, [.. datacores, .. planetaryNeeds, .. ore])
                 {
                     ResearchDatacores = datacores.Count > 0,
                     Mercoxit = true,

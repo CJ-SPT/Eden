@@ -9,6 +9,7 @@ using Eden.Data.World.Industry;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Data.World.Mining;
+using Eden.Data.World.Planetary;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Capsuleers;
@@ -18,6 +19,7 @@ using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Mining;
+using Eden.Gameplay.Planetary;
 using Eden.Gameplay.Skills;
 using Eden.Protocol.Market;
 using Eden.Protocol.Tests.Combat;
@@ -36,6 +38,7 @@ using Eden.World.Fittings;
 using Eden.World.Industry;
 using Eden.World.Inventory;
 using Eden.World.Market;
+using Eden.World.Planetary;
 using Eden.World.Reprocessing;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
@@ -1170,7 +1173,8 @@ public sealed class CapsuleerAmmunitionSupplyTests
                 new(fixture.Database, fixture.Clock, random),
                 host.GetRequiredService<PilotReprocessingStore>(),
                 host.GetRequiredService<PilotMarketStore>(),
-                host.GetRequiredService<PilotFittingStore>()
+                host.GetRequiredService<PilotFittingStore>(),
+                host.GetRequiredService<PilotPlanetaryIndustryStore>()
             );
             using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
             using var world = host.GetRequiredService<LiveWorld>().Economy.Begin();
@@ -1732,6 +1736,234 @@ public sealed class CapsuleerAmmunitionSupplyTests
                 (50009993,30000141,50009994),(50009994,30000144,50009993);
             """
         );
+    }
+
+    [Theory]
+    [InlineData(3689, true)] // Mechanical Parts from raw extraction.
+    [InlineData(2867, false)] // Broadcast Node from supplied P3 intermediates.
+    public async Task BotsProduceAndHaulPlanetaryInputsAcrossRestarts(int parts, bool extract)
+    {
+        const int factorySystem = 30000142;
+        const int planet = 45000997;
+        const long funds = 10_000_000_000;
+        int batchParts = CapsuleerMinerTwoRules.BatchSize * (extract ? 8 : 1);
+        using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
+        CapsuleerCorporationTests.PrepareExistingSave(fixture);
+        PassiveCatalogFixture.LoadPlanetary(fixture.Database.CatalogPath);
+        PrepareCatalog(fixture);
+        PrepareMinerTwoCatalog(fixture);
+        using (CatalogDbContext edit = new(fixture.Database.CatalogPath, writable: true))
+        {
+            edit.Database.ExecuteSqlRaw(
+                """
+                INSERT OR IGNORE INTO ItemGroup VALUES(7,'Planet',2);
+                INSERT INTO Celestial(Id,SolarSystemId,TypeId,GroupId,Radius,X,Y,Z)
+                    VALUES(45000997,30000141,2016,7,6000000,620000000000,-40000000000,-800000000000);
+                INSERT INTO SourceRecord VALUES('sde/mapPlanets','45000997','{{"celestialIndex":1,"radius":6000000,"typeID":2016}}');
+                """
+            );
+            if (!extract)
+            {
+                // Exercise the same manufacturing shortfall with a P4 colony product as its input.
+                edit.Database.ExecuteSql(
+                    $"""
+                    UPDATE SourceRecord SET Data=replace(Data, {"\"typeID\":3689,\"quantity\":8"}, {$"\"typeID\":{parts},\"quantity\":1"})
+                    WHERE Dataset='client/blueprints' AND Key='"784"'
+                    """
+                );
+            }
+        }
+        UseLocalOrders(fixture);
+        WorldInitialization.Initialize(fixture.Database, fixture.Clock);
+        long manufacturer;
+        long courier;
+        int corporation;
+        long firstPin;
+        long firstDeadline;
+        long firstCycle;
+        long cargoId;
+        long paidBeforeDelivery;
+        int schematicId;
+        using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+            var schematic = PlanetaryCatalogReader.Read(catalog).Schematics.Values.Single(recipe => recipe.Output.TypeId == parts);
+            schematicId = schematic.Id;
+            using (var setup = live.Economy.Begin())
+            {
+                var economy = setup.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId)!;
+                economy.TestingMarket = false;
+                economy.TestingGrants = false;
+                var agents = setup.Set<SavedCapsuleerAgent>().OrderBy(agent => agent.PilotId).ToArray();
+                manufacturer = agents.Single(agent => agent.Career == CapsuleerCareer.Mining).PilotId;
+                courier = agents.First(agent => agent.Career == CapsuleerCareer.Hauling).PilotId;
+                foreach (var agent in agents.Where(agent => agent.PilotId != manufacturer && agent.PilotId != courier))
+                {
+                    setup.Add(new SavedCapsuleerSuspension { PilotId = agent.PilotId });
+                }
+                var hauler = setup.Pilots.Find(courier)!;
+                hauler.ActiveShip.StationId = FactoryStation;
+                hauler.ActiveShip.TypeId = HaulingRules.BadgerType;
+                setup.Pilots.Find(manufacturer)!.ActiveShip.StationId = FactoryStation;
+                corporation = Charter(setup, catalog, manufacturer, "Colony Manufacturing", "COLY", fixture.Clock.Now);
+                CorporationMembershipStore.Move(setup, hauler, corporation, fixture.Clock.Now);
+                setup.Set<SavedCorporation>().Find(corporation)!.BalanceCents = funds;
+                SetMinerTwoAdjustedPrices(setup, catalog);
+                setup.Add(
+                    new OwnedItem
+                    {
+                        Id = setup.NextItemId(),
+                        OwnerId = manufacturer,
+                        LocationId = FactoryStation,
+                        TypeId = CapsuleerMinerTwoRules.InventedBlueprint,
+                        Quantity = 1,
+                        Singleton = true,
+                        BlueprintRuns = CapsuleerMinerTwoRules.BatchSize,
+                        FlagId = (int)InventoryFlag.Hangar,
+                    }
+                );
+                var recipe = ManufacturingCatalog.Recipes(catalog)[CapsuleerMinerTwoRules.InventedBlueprint];
+                foreach (
+                    var (type, amount) in IndustryMaterials
+                        .Calculate(recipe.Materials, CapsuleerMinerTwoRules.BatchSize)
+                        .Where(part => part.Key != parts)
+                )
+                {
+                    AddStock(setup, manufacturer, FactoryStation, type, amount);
+                }
+                if (!extract)
+                {
+                    foreach (var input in schematic.Inputs)
+                    {
+                        AddStock(setup, courier, FactoryStation, input.TypeId, input.Quantity * batchParts);
+                    }
+                }
+                setup.Commit();
+            }
+            using (var presence = host.GetRequiredService<IHumanPresence>().Select(Customer, factorySystem))
+            {
+                Advance(host, () => live.HaulerCheckpoints.GetValueOrDefault(courier)?.Work.PlanetaryProduction is not null, false, 1800);
+                var job = live.HaulerCheckpoints[courier].Work.PlanetaryProduction!;
+                if (extract)
+                {
+                    Assert.Contains(job.Step.TypeId, new[] { PlanetaryResources.BaseMetals, PlanetaryResources.NobleMetals });
+                }
+                else
+                {
+                    Assert.Equal(parts, job.Step.TypeId);
+                    Assert.Equal(schematicId, job.Step.SchematicId);
+                }
+                Assert.Equal(planet, job.PlanetId);
+                firstDeadline = job.ReadyAt;
+                (firstPin, firstCycle) = live.Economy.Read(world =>
+                {
+                    var machine = Colony(world).Pins.Single(pin => pin.TypeId == job.MachineType);
+                    return (machine.Id, machine.NextRunAt!.Value);
+                });
+                live.Economy.Inspect(world =>
+                {
+                    Assert.Single(Payments(world), entry => entry.EntryType == WalletEntryType.PlanetaryConstruction);
+                    Assert.Empty(world.Set<NpcMarketOrder>().Where(order => order.TypeId == parts));
+                    Assert.Empty(world.Set<SavedPersonalOrder>().Where(order => order.TypeId == parts));
+                    return true;
+                });
+            }
+            await live.FlushAsync();
+        }
+
+        using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            using (var presence = host.GetRequiredService<IHumanPresence>().Select(Customer, factorySystem))
+            {
+                Assert.Equal(firstCycle, live.Economy.Read(world => Colony(world).Pins.Single(pin => pin.Id == firstPin).NextRunAt));
+                var saved = live.Economy.Read(world =>
+                    world.Filter<SavedCapsuleerHauler>(hauler => hauler.PilotId == courier).Single().Progress
+                );
+                Assert.Equal(firstDeadline, HaulerCheckpoint.Read(saved)?.PlanetaryProduction?.ReadyAt);
+                Advance(
+                    host,
+                    () =>
+                        live.HaulerCheckpoints.GetValueOrDefault(courier)?.Work.Freight?.Stacks.Any(stack => stack.TypeId == parts) == true,
+                    true,
+                    12000
+                );
+                var freight = live.HaulerCheckpoints[courier].Work.Freight!;
+                var cargo = Assert.Single(freight.Stacks);
+                Assert.True(cargo.Quantity >= batchParts);
+                cargoId = cargo.ItemId;
+                paidBeforeDelivery = live.Economy.Read(world =>
+                    Payments(world).Where(entry => entry.EntryType == WalletEntryType.PlanetaryExportTax).Sum(entry => entry.AmountCents)
+                );
+                Assert.True(paidBeforeDelivery < 0);
+            }
+            await live.FlushAsync();
+        }
+
+        using var reopened = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var restored = reopened.GetRequiredService<LiveWorld>();
+        using (var presence = reopened.GetRequiredService<IHumanPresence>().Select(Customer, factorySystem))
+        {
+            Assert.NotNull(restored.Economy.Read(world => world.Set<OwnedItem>().Find(cargoId)));
+            Advance(
+                reopened,
+                () =>
+                    restored.Economy.Read(world =>
+                        world
+                            .Set<IndustryJob>()
+                            .Any(job => job.ProductTypeId == CapsuleerMinerTwoRules.Module && job.OutputCorporationId == corporation)
+                    ),
+                false,
+                2000
+            );
+            restored.Economy.Inspect(world =>
+            {
+                Assert.Null(world.Set<OwnedItem>().Find(cargoId));
+                Assert.Equal(
+                    paidBeforeDelivery,
+                    Payments(world).Where(entry => entry.EntryType == WalletEntryType.PlanetaryExportTax).Sum(entry => entry.AmountCents)
+                );
+                Assert.Single(Payments(world), entry => entry.EntryType == WalletEntryType.MarketTransaction);
+                Assert.Contains(Payments(world), entry => entry.EntryType == WalletEntryType.PlanetaryImportTax);
+                var colony = Colony(world);
+                Assert.Contains(colony.Pins, pin => pin.SchematicId == schematicId);
+                Assert.Contains(colony.Pins, pin => pin.Id == firstPin);
+                return true;
+            });
+        }
+        await restored.FlushAsync();
+
+        PlanetaryColony Colony(WorldAction world) =>
+            PilotPlanetaryIndustryStore.ReadState(world.Set<SavedPlanetaryColony>().Find(courier, planet)!);
+
+        SavedWalletLedger[] Payments(WorldAction world) => world.Filter<SavedWalletLedger>(entry => entry.OwnerId == corporation).ToArray();
+
+        void Advance(ServiceProvider host, Func<bool> ready, bool advanceCycles, int seconds)
+        {
+            var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+            scheduler.PopulationPrepared(factorySystem);
+            scheduler.PopulationPrepared(Home);
+            var live = host.GetRequiredService<LiveWorld>();
+            var worker = host.GetRequiredService<CapsuleerMaintenance>();
+            for (int step = 0; step < seconds && !ready(); step++)
+            {
+                var work = live.HaulerCheckpoints.GetValueOrDefault(courier)?.Work;
+                if (advanceCycles && work?.PlanetaryProduction is { } job && job.ReadyAt > fixture.Clock.Now)
+                {
+                    fixture.Clock.AdvanceWallTime(TimeSpan.FromTicks(job.ReadyAt - fixture.Clock.Now));
+                }
+                fixture.Clock.Seconds++;
+                worker.Tick();
+            }
+            var last = scheduler.Hauler(courier);
+            var visit = last?.Work.CorporationSupply?.FactorySupply?.Planetary;
+            Assert.True(
+                ready(),
+                $"Planetary work stopped at {last?.Work.Activity} in {last?.Pilot.SystemId}, "
+                    + $"{visit?.Phase}, product {visit?.Production.Step.TypeId}: {last?.Work.WaitingReason}. {scheduler.Read().LastFailure}"
+            );
+        }
     }
 
     private static void SetMinerTwoAdjustedPrices(WorldAction world, CatalogDbContext catalog)

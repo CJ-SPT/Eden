@@ -733,6 +733,8 @@ internal sealed partial class CapsuleerHauler(
                 Gang = previous?.Gang,
                 GangReturning = previous?.GangReturning ?? false,
                 RegionalEscort = previous?.RegionalEscort,
+                PlanetaryProduction = previous?.PlanetaryProduction,
+                PlanetaryRetryAt = previous?.PlanetaryRetryAt ?? 0,
             };
         }
         if (previous is null || previous.ShipId != Pilot.ShipId)
@@ -759,13 +761,18 @@ internal sealed partial class CapsuleerHauler(
         _work = CapsuleerPauseRules.ExpireArrival(Work, Now);
         _navigation = NavigationState.Restore(Work.Navigation, Pilot.Flight);
         LoadInboundDwells(catalog);
+        var office =
+            Work.CorporationSupply?.FactorySupply?.Planetary is { Phase: PlanetaryVisitPhase.Orbit } visit
+            && Work.TargetId == Eden.Gameplay.Planetary.PlanetaryRules.OfficeId(visit.Production.PlanetId)
+                ? CapsuleerIndustry.PlanetaryOffice(world, catalog, visit.Production.PlanetId)
+                : null;
         transaction.Commit();
         transaction.Dispose();
         var activity = Live?.CapsuleerActivity.Read();
         RefreshObjects(
             loadResources: activity is not { Active: true } || activity.ActiveSystems.Contains(Pilot.SystemId) || RequiresDetail
         );
-        _target = _objects.FirstOrDefault(o => o.Id == Work.TargetId) ?? SiteTarget(Work.Ratting);
+        _target = office ?? _objects.FirstOrDefault(o => o.Id == Work.TargetId) ?? SiteTarget(Work.Ratting);
     }
 
     private void RefreshObjects(bool? loadResources = null)
@@ -840,6 +847,10 @@ internal sealed partial class CapsuleerHauler(
                 {
                     JoinCorporationAtDock();
                     _work = Work with { Activity = HaulerActivity.Docked };
+                }
+                else if (Work.CorporationSupply?.FactorySupply?.Planetary is { Phase: PlanetaryVisitPhase.Orbit } visit)
+                {
+                    BeginPlanetaryOrbit(visit);
                 }
                 else
                 {
@@ -1192,6 +1203,14 @@ internal sealed partial class CapsuleerHauler(
                     + $"route index {Work.RouteIndex}, available {string.Join(',', Objects.Select(o => o.Id))}."
             );
         }
+        if (
+            Work.CorporationSupply?.FactorySupply?.Planetary is { Phase: PlanetaryVisitPhase.Orbit } visit
+            && _target.Id == Eden.Gameplay.Planetary.PlanetaryRules.OfficeId(visit.Production.PlanetId)
+        )
+        {
+            ArriveAtPlanetaryOffice(visit);
+            return;
+        }
         if (_target.DestinationGateId is not null)
         {
             if (!_background && GateIsDangerous())
@@ -1255,7 +1274,7 @@ internal sealed partial class CapsuleerHauler(
             if (
                 Work.Gang is { Phase: not RoamingGangPhase.Complete }
                 || Work.RegionalEscort is not null
-                || Work.CorporationSupply?.FactorySupply is { Mercoxit: true }
+                || Work.CorporationSupply?.FactorySupply is { Mercoxit: true } or { Planetary: not null }
             )
             {
                 // An operational stop loads or unloads before the next ordinary layover.

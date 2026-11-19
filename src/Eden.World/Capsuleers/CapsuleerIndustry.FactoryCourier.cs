@@ -26,7 +26,8 @@ internal sealed partial class CapsuleerIndustry
         LiveWorld live,
         DockedPilot courier,
         IReadOnlySet<int> avoided,
-        long now
+        long now,
+        HaulerProgress? work = null
     )
     {
         if (
@@ -45,6 +46,10 @@ internal sealed partial class CapsuleerIndustry
             .Select(member => (member.Id, Request: CurrentFactoryRequest(world, live, member.Id, employer.Id, now)))
             .Where(entry => entry.Request is not null)
             .ToArray();
+        if (work is not null && PlanPlanetaryCollection(world, catalog, courier, employer, work, requests, avoided, now) is { } planetary)
+        {
+            return planetary;
+        }
         if (requests.Length == 0)
         {
             return null;
