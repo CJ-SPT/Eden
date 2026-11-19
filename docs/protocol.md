@@ -667,6 +667,8 @@ reuse, exact health deadlines, scoped invalidation and matched frame/checkpoint 
 and paid NPC-station production on the human-active clock.
 [Player-structure bot factories](protocol/capsuleers.md#player-structure-bot-factories) records fitted facility and docking access,
 resident factory cargo, and manufacturing pauses across logout and restart.
+[Fractured moon ore and paid reactions](protocol/capsuleers.md#fractured-moon-ore-and-paid-reactions) records the
+mining, refining, and hauling cycle after Athanor commissioning.
 
 | Topic | Coverage |
 | --- | --- |

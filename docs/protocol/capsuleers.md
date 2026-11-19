@@ -3762,3 +3762,48 @@ Not performed. Agent client testing is disabled.
 ### Optional maintainer checks
 
 None.
+
+## Fractured moon ore and paid reactions
+
+A miner based at a same-system NPC reprocessing station can work an unexpired fracture from its corporation's Athanor.
+The saved extraction ID and native rock IDs limit the trip to that field. The miner uses a fitted laser and the regular
+capacitor, ore hold, and collection rules. It returns with a whole reprocessing portion or a full hold, and the native
+mining ledger credits the Athanor. The NPC station quotes yield and tax and reprocesses the owned ore into usable feed.
+
+A bot with the required formula, skills, and a complete batch of ingredients can stage at its corporation's low- or
+null-security Athanor with an online composite reactor. The pilot carries the refined feed and any other needed stacks
+and formula in its own cargo hold. After normal docking, the resident industry operation reserves the formula, consumes
+the inputs and recipe fuel, and debits the corporation once. The reaction uses the human-active deadline and structure
+service pause rules. Output is delivered to the operator's Item Hangar at the Athanor.
+
+This slice uses already-commissioned refineries, same-system logistics, and existing stocks of complementary inputs
+and fuel. The remaining milestone includes fuel and ice sourcing, broader facility logistics, and the Miner II chain.
+
+The local evejs reference uses ordinary persistent asteroid rows for fractured moon rocks in
+`server/src/services/structure/moonMiningSpaceRuntime.js` (SHA-256
+`F880203C91160399B1333D6F5BBA1C8A7D691E5FF9E727B8852C497BCD8FB17D`). Eden uses its own pinned catalog and
+native mining, reprocessing, and industry operations.
+[Moon mining](https://wiki.eveuniversity.org/Moon_mining) · [Reprocessing](https://wiki.eveuniversity.org/Reprocessing) ·
+[Reactions](https://wiki.eveuniversity.org/Reactions)
+
+### Automated validation
+
+`BotMinesAnOwnedFractureAndHaulsReprocessedFeedForOnePaidReaction` exercises native auto-fracture, the moon mining ledger,
+ore reprocessing, cobalt cargo across restart, native reaction inputs and fees, and delivery after a second restart.
+The isolated catalog credits the selected ore grades with cobalt. The scenario stages cadmium, a formula, and fuel
+as complementary stock and obtains all of the cobalt from mining and reprocessing.
+
+The exact filter `FullyQualifiedName~BotMinesAnOwnedFractureAndHaulsReprocessedFeedForOnePaidReaction`
+passed in 13.95 seconds. The final focused run passed 90 cases in 109.45 seconds, covering
+`CapsuleerAmmunitionSupplyTests`, `CapsuleerMinerTests`, `CapsuleerHaulerTests`, `MoonExtractionTests`,
+`MoonMiningRulesTests`, `MoonMiningWarpTests`, `ReactionJobTests`, `ReprocessingTests`, and
+`WorldMigrationTests`. The solution built in 10.84 seconds with zero warnings or errors. Both Python policy
+suites, formatting verification, and the whitespace check passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.

@@ -716,6 +716,7 @@ internal sealed partial class CapsuleerMiner(
             );
         }
         FactorySupplyRequest? supply = null;
+        CapsuleerIndustry.MoonMiningTrip? moon = null;
         bool starterTradeSettled = fresh && CapsuleerIndustry.StarterTradeSettled(_operation.World, pilotId);
         if (fresh && !starterTradeSettled && _operation.World is EconomyTransaction starterWorld)
         {
@@ -728,11 +729,13 @@ internal sealed partial class CapsuleerMiner(
             && _operation.World is EconomyTransaction supplyWorld
         )
         {
+            industry.RefineMoonFeed(supplyWorld, _operation.Catalog, Pilot);
             if (TryStageFactory(supplyWorld))
             {
                 return;
             }
             _operation.MarketChanged |= industry.ProduceScheduled(supplyWorld, _operation.Catalog, Pilot, Now, out supply);
+            moon = CapsuleerIndustry.PlanMoonMining(supplyWorld, _operation.Catalog, Pilot, Now);
         }
         _work = Work with { FactorySupply = supply };
         if (_operation.World is EconomyTransaction resident)
@@ -762,7 +765,7 @@ internal sealed partial class CapsuleerMiner(
                 }
             }
         }
-        var expedition = fresh ? null : PrepareMercoxitExpedition(aboard);
+        var expedition = !fresh && moon is null ? PrepareMercoxitExpedition(aboard) : null;
         var laserType =
             fresh && Pilot.ShipGroupId == (int)HullClass.Corvette ? MiningLaserType.Civilian
             : expedition is null ? CapsuleerMiningRules.Laser((CapsuleerMiningHull)Pilot.ShipTypeId)
@@ -796,6 +799,13 @@ internal sealed partial class CapsuleerMiner(
         _miningReach = MiningReach(_operation.World, _operation.Catalog, _laser);
         RefreshObjects();
         _work = Work with { StrippedBelts = Work.StrippedBelts.Where(b => b.Until > Work.ActiveTicks).ToArray() };
+        if (moon is not null)
+        {
+            _work = Work with { MoonExtractionId = moon.ExtractionId, Mercoxit = null };
+            LaunchMiningShip(moon.MoonId);
+            StartCourse(moon.Target, MinerActivity.FlyingToBelt);
+            return;
+        }
         if (expedition is not null && expedition.Systems.Length > 1)
         {
             LaunchMiningShip(0);
@@ -1005,7 +1015,7 @@ internal sealed partial class CapsuleerMiner(
                 Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, _operation.Catalog, Pilot.ShipId);
                 _navigation.Dock();
                 _operation.TravelChanged = true;
-                _work = Work with { Activity = MinerActivity.Docked, TargetId = 0, Mercoxit = null };
+                _work = Work with { Activity = MinerActivity.Docked, TargetId = 0, Mercoxit = null, MoonExtractionId = null };
             }
             else
             {
@@ -1030,6 +1040,11 @@ internal sealed partial class CapsuleerMiner(
         var rock = SelectRock(available);
         if (rock is null)
         {
+            if (Work.MoonExtractionId.HasValue)
+            {
+                ReturnHome();
+                return;
+            }
             if (Work.WorkingBelt > 0)
             {
                 // Keep the whole outbound circuit, including systems with more than six belts.
@@ -1156,6 +1171,7 @@ internal sealed partial class CapsuleerMiner(
         }
         else if (
             result.CargoFull
+            || Work.MoonExtractionId.HasValue && MoonOreReadyToRefine(world, catalog)
             || Work.FactoryStage is { StructureId: > 0 } stage
                 && CapsuleerIndustry.FactoryDeliveryReady(world, catalog, Pilot, stage.StructureId, Now)
         )

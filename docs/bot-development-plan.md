@@ -50,6 +50,11 @@ restart. Manufacturing pauses when the last player logs off and while the fitted
 [Offscreen operations](protocol/capsuleers.md#offscreen-mining-belt-ratting-and-industry) ·
 [Player-structure bot factories](protocol/capsuleers.md#player-structure-bot-factories)
 
+Milestone 6 starts with a local production loop from an owned Athanor's fractured field. A miner brings its ore to an
+NPC reprocessing station, then hauls the refined feed and the remaining owned inputs to the fitted reactor. The
+first replay completes a paid Crystallite Alloy reaction across separate cargo and job restarts.
+[Fractured moon ore and paid reactions](protocol/capsuleers.md#fractured-moon-ore-and-paid-reactions)
+
 Apply the focused validation and publishing policy at each milestone. Collect capacity evidence at the baseline and
 each workload increase. Use the same world, server settings and action mix for before-and-after comparisons, and report
 native client acceptance separately. [Contributor guide](../AGENTS.md#testing)
