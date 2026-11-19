@@ -9,6 +9,14 @@ internal sealed partial class CapsuleerHauler
 {
     private bool HandleFactorySupply(EconomyTransaction world, LiveWorld live, CorporationSupplyRun run, FactorySupplyShipment shipment)
     {
+        if (shipment.Refinery is { } refinery)
+        {
+            return HandleRefinerySupply(world, run, shipment, refinery);
+        }
+        if (shipment.Planetary is { } visit)
+        {
+            return HandlePlanetarySupply(world, run, shipment, visit);
+        }
         var catalog = _operation.Catalog;
         var freight = Work.Freight;
         if (Pilot.StationId == shipment.FactoryStationId && freight is not null)
@@ -28,7 +36,7 @@ internal sealed partial class CapsuleerHauler
             shipment.FactoryStationId,
             (HullClass)Pilot.ShipGroupId,
             AvoidedSupplierSystems(),
-            CapsuleerIndustryRules.MaximumFactorySupplyJumps
+            shipment.MaximumJumps
         );
         if (delivery is null)
         {
@@ -50,7 +58,7 @@ internal sealed partial class CapsuleerHauler
             {
                 return CompleteFactorySupply();
             }
-            _operation.MarketChanged = true;
+            _operation.MarketChanged |= shipment.Research is null;
             _work = Work with { Freight = freight };
         }
         BeginSupplyJourney(delivery);

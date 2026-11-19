@@ -13,9 +13,17 @@ internal sealed partial class CapsuleerMiner
         if (_operation.World is EconomyTransaction world)
         {
             long now = Now;
-            var result = industry.ReplaceShip(world, _operation.Catalog, Pilot, CapsuleerCareer.Mining, now, Work.ReplacementOrderDeadline);
+            var result = industry.ReplaceShip(
+                world,
+                _operation.Catalog,
+                Pilot,
+                CapsuleerCareer.Mining,
+                now,
+                Work.ReplacementOrderDeadline,
+                Work.ReplacementOrderIds
+            );
             _operation.MarketChanged |= result.MarketChanged;
-            _work = Work with { ReplacementOrderDeadline = result.OrderDeadline };
+            _work = Work with { ReplacementOrderDeadline = result.OrderDeadline, ReplacementOrderIds = result.OrderIds };
             if (result.Boarded)
             {
                 _pilot = ships.FindPilot(world, CapsuleerCommunityStore.MinerAccountId, pilotId)!;

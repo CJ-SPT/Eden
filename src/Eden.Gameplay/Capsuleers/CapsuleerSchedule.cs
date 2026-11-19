@@ -53,6 +53,7 @@ public static class CapsuleerScheduleRules
             MinerActivity.Docked => CapsuleerAction.Prepare,
             MinerActivity.Locking => CapsuleerAction.Lock,
             MinerActivity.Mining => CapsuleerAction.Collect,
+            MinerActivity.Jumping => CapsuleerAction.GateTransfer,
             MinerActivity.Waiting => CapsuleerAction.Retry,
             _ => CapsuleerAction.Arrival,
         };
@@ -65,7 +66,12 @@ public static class CapsuleerScheduleRules
         {
             return new(work.DueTicks, action);
         }
-        return Next(work.ActiveTicks, work.DueTicks, action, !inSpace && work.Activity == MinerActivity.Waiting);
+        return Next(
+            work.ActiveTicks,
+            work.DueTicks,
+            action,
+            work.Activity == MinerActivity.Jumping || !inSpace && work.Activity == MinerActivity.Waiting
+        );
     }
 
     public static CapsuleerSchedule Next(HaulerProgress work, bool inSpace) => Next(work, inSpace, false);

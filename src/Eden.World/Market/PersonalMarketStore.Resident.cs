@@ -383,7 +383,8 @@ internal sealed partial class PilotMarketStore
         int stationId,
         IReadOnlyList<MarketPurchase> items,
         int days,
-        int? corporationId = null
+        int? corporationId = null,
+        List<long>? placedOrders = null
     )
     {
         var pilot = Pilot(world, pilotId);
@@ -428,6 +429,7 @@ internal sealed partial class PilotMarketStore
             trades.AddRange(fills);
             if (days > 0)
             {
+                placedOrders?.Add(order.Id);
                 Event(world, order, MarketOrderChangeKind.Placed, changes.Skip(start).ToArray());
             }
         }

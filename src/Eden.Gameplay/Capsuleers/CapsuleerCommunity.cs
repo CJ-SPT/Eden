@@ -28,6 +28,8 @@ public enum MinerActivity
     Returning,
     Waiting,
     ReadyToReturn,
+    FlyingToGate,
+    Jumping,
 }
 
 public sealed record MinerProgress(
@@ -56,9 +58,14 @@ public sealed record MinerProgress(
     public CapsuleerDefenseState? Defense { get; init; }
     public bool EscapingBubble { get; init; }
     public long? ReplacementOrderDeadline { get; init; }
+    public long[]? ReplacementOrderIds { get; init; }
     public long WarpReadyAt { get; init; }
     public int LastMotionStamp { get; init; } = int.MinValue;
+    public bool DeepCoreProvisioned { get; init; }
+    public MercoxitExpedition? Mercoxit { get; init; }
 }
+
+public sealed record MercoxitExpedition(int StationId, int[] Systems, bool Returning = false);
 
 public sealed record MinerObservation(DockedPilot Pilot, MinerProgress Work, InventoryItem? Laser, string? WaitingReason)
 {

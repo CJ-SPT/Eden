@@ -78,14 +78,15 @@ internal sealed partial class PilotMarketStore
         int station,
         SavedCorporation corporation,
         IReadOnlyList<MarketPurchase> inputs,
-        int days = 0
+        int days = 0,
+        List<long>? placedOrders = null
     )
     {
         if (Pilot(world, pilotId).CorporationId != corporation.Id || corporation.ClosedAt is not null)
         {
             throw new InvalidDataException("Corporate purchases require an active employer.");
         }
-        return ExecuteBuy(world, catalog, pilotId, station, inputs, days, corporation.Id);
+        return ExecuteBuy(world, catalog, pilotId, station, inputs, days, corporation.Id, placedOrders);
     }
 
     internal void CancelCorporationBid(EconomyTransaction world, CatalogDbContext catalog, SavedPersonalOrder bid) =>

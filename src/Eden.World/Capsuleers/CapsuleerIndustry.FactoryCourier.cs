@@ -26,7 +26,8 @@ internal sealed partial class CapsuleerIndustry
         LiveWorld live,
         DockedPilot courier,
         IReadOnlySet<int> avoided,
-        long now
+        long now,
+        HaulerProgress? work = null
     )
     {
         if (
@@ -45,39 +46,57 @@ internal sealed partial class CapsuleerIndustry
             .Select(member => (member.Id, Request: CurrentFactoryRequest(world, live, member.Id, employer.Id, now)))
             .Where(entry => entry.Request is not null)
             .ToArray();
+        if (work is not null && PlanPlanetaryCollection(world, catalog, courier, employer, work, requests, avoided, now) is { } planetary)
+        {
+            return planetary;
+        }
         if (requests.Length == 0)
         {
             return null;
         }
         double free = FreeFreightVolume(world, catalog, courier);
-        if (free <= 0)
-        {
-            return null;
-        }
-        int maximumJumps = CapsuleerIndustryRules.MaximumFactorySupplyJumps;
-        var nearbyCourier = NearbySystems(catalog, courier.SystemId, maximumJumps);
         foreach (var (manufacturer, pending) in requests)
         {
             var request = pending!;
+            if (PlanRefineryCollection(world, catalog, courier, employer, request, avoided) is { } refinery)
+            {
+                return refinery;
+            }
+            if (free <= 0)
+            {
+                continue;
+            }
+            if (
+                request.ResearchDatacores
+                && PlanResearchCollection(world, catalog, courier, employer, manufacturer, request, avoided, now) is { } research
+            )
+            {
+                return research;
+            }
+            int maximumJumps = request.MaximumJumps;
             int factorySystem = catalog.RequireStation(request.StationId).SolarSystemId;
-            var nearby = NearbySystems(catalog, factorySystem, maximumJumps);
-            nearby.IntersectWith(nearbyCourier);
             var suppliers = request
                 .Materials.SelectMany(need =>
-                    SupplierStations(world, nearby, request.StationId, need, now).Select(station => (station, need.TypeId))
+                    SupplierStations(world, request.StationId, need, now).Select(station => (station, need.TypeId))
                 )
                 .ToLookup(offer => offer.station, offer => offer.TypeId);
             if (suppliers.Count == 0)
             {
                 continue;
             }
+            var nearby = NearbySystems(catalog, factorySystem, maximumJumps);
+            nearby.IntersectWith(NearbySystems(catalog, courier.SystemId, maximumJumps));
             var shortages = FactoryShortages(world, catalog, manufacturer, request);
             List<FactoryPickup> pickups = [];
             foreach (var offers in suppliers)
             {
                 int supplier = offers.Key;
                 var available = shortages.Where(shortage => offers.Contains(shortage.Need.TypeId)).ToArray();
-                if (available.Length == 0 || !catalog.Definitions.Stations.ContainsKey(supplier))
+                if (
+                    available.Length == 0
+                    || !catalog.Definitions.Stations.TryGetValue(supplier, out var station)
+                    || !nearby.Contains(station.SolarSystemId)
+                )
                 {
                     continue;
                 }
@@ -121,7 +140,10 @@ internal sealed partial class CapsuleerIndustry
                     request.StationId,
                     pickup.Outbound.DestinationStationId,
                     request.Demand?.OrderId
-                );
+                )
+                {
+                    Mercoxit = request.Mercoxit,
+                };
                 // Factory trips quote the station's book on arrival, so they have no fixed supplier order ID.
                 return new(new(employer.Id, 0) { FactorySupply = shipment }, pickup.Outbound);
             }
@@ -150,6 +172,10 @@ internal sealed partial class CapsuleerIndustry
             return null;
         }
         var shortages = FactoryShortages(world, catalog, shipment.ManufacturerId, request);
+        if (shipment.Research is { } research)
+        {
+            return request.ResearchDatacores ? ResearchPickup(world, catalog, courier, employer, shipment, research, shortages, now) : null;
+        }
         var purchases = ShopForFactory(
             world,
             catalog,
@@ -159,6 +185,11 @@ internal sealed partial class CapsuleerIndustry
             shortages,
             FreeFreightVolume(world, catalog, courier)
         );
+        if (request.Mercoxit)
+        {
+            var ore = purchases.FirstOrDefault(purchase => s_rawMercoxit.Contains(purchase.TypeId));
+            purchases = purchases.Where(purchase => !s_rawMercoxit.Contains(purchase.TypeId) || purchase == ore).ToArray();
+        }
         if (purchases.Count == 0)
         {
             return null;
@@ -308,13 +339,7 @@ internal sealed partial class CapsuleerIndustry
         return QuoteInput(offers.TakeWhile(offer => offer.PriceCents <= purchase.LimitPriceCents), need.TypeId, affordable);
     }
 
-    private static IEnumerable<int> SupplierStations(
-        EconomyTransaction world,
-        IReadOnlySet<int> nearby,
-        int factory,
-        FactorySupplyNeed need,
-        long now
-    ) =>
+    private static IEnumerable<int> SupplierStations(EconomyTransaction world, int factory, FactorySupplyNeed need, long now) =>
         world
             .Filter<SavedPersonalOrder>(order => order.TypeId == need.TypeId)
             .Where(order =>
@@ -325,9 +350,8 @@ internal sealed partial class CapsuleerIndustry
                 && order.Expires > now
                 && order.PriceCents <= need.MaximumUnitPriceCents
             )
-            .AsEnumerable()
-            .Where(order => nearby.Contains(order.SystemId))
             .Select(order => order.StationId)
+            .AsEnumerable()
             .Concat(
                 world
                     .Filter<NpcMarketOrder>(order => order.TypeId == need.TypeId)
@@ -338,9 +362,8 @@ internal sealed partial class CapsuleerIndustry
                         && order.Issued + (long)order.DurationDays * TimeSpan.TicksPerDay > now
                         && order.PriceCents <= need.MaximumUnitPriceCents
                     )
-                    .AsEnumerable()
-                    .Where(order => nearby.Contains(order.SystemId))
                     .Select(order => order.StationId)
+                    .AsEnumerable()
             )
             .Distinct()
             .Order();

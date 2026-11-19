@@ -114,7 +114,7 @@ internal sealed partial class PilotStructureStore(
             ? structure
             : throw new InvalidDataException("The structure is unavailable.");
 
-    private static Pilot Manage(WorldAction world, SavedStructure structure, long pilotId)
+    internal static Pilot Manage(WorldAction world, SavedStructure structure, long pilotId)
     {
         if (
             (
@@ -325,186 +325,186 @@ internal sealed partial class PilotStructureStore(
         );
 
     public StructureResult Deploy(long pilotId, StructureDeployment deployment) =>
-        Mutate(
-            pilotId,
-            null,
-            deployment.ItemId,
-            (world, catalog, now) =>
+        Mutate(pilotId, null, deployment.ItemId, (world, catalog, now) => Deploy(world, catalog, pilotId, deployment, now));
+
+    internal static StructureSnapshot Deploy(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        StructureDeployment deployment,
+        long now
+    )
+    {
+        var pilot = Pilot(world, pilotId);
+        var corporation =
+            world.Set<SavedCorporation>().Find(pilot.CorporationId)
+            ?? throw new InvalidDataException("Only a player corporation may deploy Upwell structures.");
+        var authority = CorporationRoleStore.Effective(world, pilotId, corporation).Roles;
+        if (!authority.Has(CorporationRole.StationManager))
+        {
+            throw new InvalidDataException("Structure management authority is required.");
+        }
+        if (!StructureRules.CorporationIsOldEnough(corporation.CreatedAt, now, world.Settings.Structures))
+        {
+            int days = world.Settings.Structures.MinimumCorporationAgeDays;
+            throw new InvalidDataException($"Minimum corporation age for anchoring is {days} days.");
+        }
+        var ship = pilot.ActiveShip;
+        var position = ship.Position ?? throw new InvalidDataException("Deploy from a ship in space.");
+        var item = world.Set<OwnedItem>().Find(deployment.ItemId);
+        if (
+            item is null
+            || item.OwnerId != pilotId
+            || item.LocationId != ship.Id
+            || item.FlagId != (int)InventoryFlag.Cargo
+            || item.Quantity < 1
+            || item.Singleton
+        )
+        {
+            throw new InvalidDataException("The packaged structure must be in your active ship's cargo.");
+        }
+        var profile = StructureCatalog.Require(catalog, item.TypeId);
+        if (profile.Family is StructureFamily.SovereigntyHub or StructureFamily.Skyhook)
+        {
+            throw new InvalidDataException("Launch sovereignty hubs and Orbital Skyhooks through their dedicated Deploy action.");
+        }
+        int system = position.SystemId ?? catalog.RequireStation(ship.StationId).SolarSystemId;
+        double security = catalog.Definitions.SystemSecurity.GetValueOrDefault(system);
+        if (
+            (profile.DisallowHighSecurity || !profile.Dockable) && security >= StructureRules.HighSecurityBoundary
+            || system is 30000142 or 30002187 or 30002659 or 30002510 or 30002053
+        )
+        {
+            throw new InvalidDataException("This structure cannot be deployed in this system.");
+        }
+        var point = deployment.Position;
+        if (
+            !double.IsFinite(point.X)
+            || !double.IsFinite(point.Y)
+            || !double.IsFinite(point.Z)
+            || !double.IsFinite(deployment.Yaw)
+            || point.DistanceTo(new(position.X, position.Y, position.Z)) > StructureRules.PlacementRange
+        )
+        {
+            throw new InvalidDataException("Choose a finite deployment position within range of your ship.");
+        }
+        int? moonId = profile.Family is StructureFamily.Refinery or StructureFamily.MoonDrill
+            ? MoonMiningRules.FindPoint(point, MoonMiningCatalog.Points(catalog, system))
+            : null;
+        if (deployment.MoonId is int requestedMoon && requestedMoon != moonId)
+        {
+            throw new InvalidDataException("The selected moon does not match the structure's deployment position.");
+        }
+        if (
+            moonId.HasValue
+            && world
+                .Set<SavedStructure>()
+                .Any(s =>
+                    s.SystemId == system
+                    && s.MoonId == moonId
+                    && s.State != StructureState.Destroyed
+                    && s.State != StructureState.Unanchored
+                )
+        )
+        {
+            throw new InvalidDataException("This moon mining point is already occupied.");
+        }
+        foreach (var obstacle in SystemObjects.Geometry(catalog, system))
+        {
+            if (obstacle.Solid && point.DistanceTo(obstacle.Position) < obstacle.Radius + profile.Radius + StructureRules.Separation)
             {
-                var pilot = Pilot(world, pilotId);
-                var corporation =
-                    world.Set<SavedCorporation>().Find(pilot.CorporationId)
-                    ?? throw new InvalidDataException("Only a player corporation may deploy Upwell structures.");
-                var authority = CorporationRoleStore.Effective(world, pilotId, corporation).Roles;
-                if (!authority.Has(CorporationRole.StationManager))
-                {
-                    throw new InvalidDataException("Structure management authority is required.");
-                }
-                if (!StructureRules.CorporationIsOldEnough(corporation.CreatedAt, now, world.Settings.Structures))
-                {
-                    int days = world.Settings.Structures.MinimumCorporationAgeDays;
-                    throw new InvalidDataException($"Minimum corporation age for anchoring is {days} days.");
-                }
-                var ship = pilot.ActiveShip;
-                var position = ship.Position ?? throw new InvalidDataException("Deploy from a ship in space.");
-                var item = world.Set<OwnedItem>().Find(deployment.ItemId);
-                if (
-                    item is null
-                    || item.OwnerId != pilotId
-                    || item.LocationId != ship.Id
-                    || item.FlagId != (int)InventoryFlag.Cargo
-                    || item.Quantity < 1
-                    || item.Singleton
-                )
-                {
-                    throw new InvalidDataException("The packaged structure must be in your active ship's cargo.");
-                }
-                var profile = StructureCatalog.Require(catalog, item.TypeId);
-                if (profile.Family is StructureFamily.SovereigntyHub or StructureFamily.Skyhook)
-                {
-                    throw new InvalidDataException("Launch sovereignty hubs and Orbital Skyhooks through their dedicated Deploy action.");
-                }
-                int system = position.SystemId ?? catalog.RequireStation(ship.StationId).SolarSystemId;
-                double security = catalog.Definitions.SystemSecurity.GetValueOrDefault(system);
-                if (
-                    (profile.DisallowHighSecurity || !profile.Dockable) && security >= StructureRules.HighSecurityBoundary
-                    || system is 30000142 or 30002187 or 30002659 or 30002510 or 30002053
-                )
-                {
-                    throw new InvalidDataException("This structure cannot be deployed in this system.");
-                }
-                var point = deployment.Position;
-                if (
-                    !double.IsFinite(point.X)
-                    || !double.IsFinite(point.Y)
-                    || !double.IsFinite(point.Z)
-                    || !double.IsFinite(deployment.Yaw)
-                    || point.DistanceTo(new(position.X, position.Y, position.Z)) > StructureRules.PlacementRange
-                )
-                {
-                    throw new InvalidDataException("Choose a finite deployment position within range of your ship.");
-                }
-                int? moonId = profile.Family is StructureFamily.Refinery or StructureFamily.MoonDrill
-                    ? MoonMiningRules.FindPoint(point, MoonMiningCatalog.Points(catalog, system))
-                    : null;
-                if (deployment.MoonId is int requestedMoon && requestedMoon != moonId)
-                {
-                    throw new InvalidDataException("The selected moon does not match the structure's deployment position.");
-                }
-                if (
-                    moonId.HasValue
-                    && world
-                        .Set<SavedStructure>()
-                        .Any(s =>
-                            s.SystemId == system
-                            && s.MoonId == moonId
-                            && s.State != StructureState.Destroyed
-                            && s.State != StructureState.Unanchored
-                        )
-                )
-                {
-                    throw new InvalidDataException("This moon mining point is already occupied.");
-                }
-                foreach (var obstacle in SystemObjects.Geometry(catalog, system))
-                {
-                    if (
-                        obstacle.Solid
-                        && point.DistanceTo(obstacle.Position) < obstacle.Radius + profile.Radius + StructureRules.Separation
-                    )
-                    {
-                        throw new InvalidDataException("The deployment position is too close to a celestial, gate or station.");
-                    }
-                }
-                if (
-                    world
-                        .Filter<SavedStructure>(s => s.SystemId == system && s.State != StructureState.Destroyed)
-                        .AsEnumerable()
-                        .Any(s =>
-                            point.DistanceTo(new(s.X, s.Y, s.Z))
-                            < StructureRules.Separation + profile.Radius + StructureCatalog.Require(catalog, s.TypeId).Radius
-                        )
-                )
-                {
-                    throw new InvalidDataException("The deployment position is too close to another structure.");
-                }
-                string name = StructureRules.Name(deployment.Name);
-                if (
-                    deployment.ReinforceWeekday != StructureRules.NoReinforcementWeekday && deployment.ReinforceWeekday is < 0 or > 6
-                    || deployment.ReinforceHour is < 0 or > 23
-                )
-                {
-                    throw new InvalidDataException("Choose a valid reinforcement day and UTC hour.");
-                }
-                if (deployment.Description.Length > StructureRules.MaximumDescriptionLength)
-                {
-                    throw new InvalidDataException("The structure description is too long.");
-                }
-                SavedStructure structure = new()
-                {
-                    Id = Math.Max(InventoryPersistence.NextId(world), StructureRules.FirstStructureId + 1),
-                    TypeId = item.TypeId,
-                    Name = name,
-                    Description = deployment.Description,
-                    CorporationId = corporation.Id,
-                    SystemId = system,
-                    MoonId = moonId,
-                    ReinforceWeekday = deployment.ReinforceWeekday,
-                    ReinforceHour = deployment.ReinforceHour,
-                    X = point.X,
-                    Y = point.Y,
-                    Z = point.Z,
-                    Yaw = deployment.Yaw,
-                    State = StructureState.Anchoring,
-                    StateEndsAt = checked(
-                        now + StructureRules.Duration(StructureRules.AnchorDuration(profile), world.Settings.Structures.AnchoringSpeed)
-                    ),
-                    DeployedAt = now,
-                    LowPowerAt = now,
-                    StateStartedAt = now,
-                    HasCore = profile.BuiltinCoreTypeId.HasValue,
-                };
-                world.Add(structure);
-                Consume(world, item, 1);
-                world.SaveChanges();
-                if (profile.BuiltinCoreTypeId is int builtinCore)
-                {
-                    InventoryPersistence.MergeOutput(
-                        world,
-                        catalog,
-                        structure.CorporationId,
-                        structure.Id,
-                        StructureRules.CoreRoomFlag,
-                        builtinCore,
-                        1
-                    );
-                    world.SaveChanges();
-                }
-                if (profile.BuiltinModuleTypeId is int builtin)
-                {
-                    var module = new OwnedItem
-                    {
-                        Id = InventoryPersistence.NextId(world),
-                        TypeId = builtin,
-                        OwnerId = corporation.Id,
-                        LocationId = structure.Id,
-                        FlagId = StructureRules.FirstServiceSlot,
-                        Quantity = 1,
-                        Singleton = true,
-                    };
-                    world.Add(module);
-                    world.Add(
-                        new SavedStructureService
-                        {
-                            ItemId = module.Id,
-                            StructureId = structure.Id,
-                            Slot = module.FlagId,
-                        }
-                    );
-                    world.SaveChanges();
-                }
-                return Snapshot(world, catalog, structure);
+                throw new InvalidDataException("The deployment position is too close to a celestial, gate or station.");
             }
-        );
+        }
+        if (
+            world
+                .Filter<SavedStructure>(s => s.SystemId == system && s.State != StructureState.Destroyed)
+                .AsEnumerable()
+                .Any(s =>
+                    point.DistanceTo(new(s.X, s.Y, s.Z))
+                    < StructureRules.Separation + profile.Radius + StructureCatalog.Require(catalog, s.TypeId).Radius
+                )
+        )
+        {
+            throw new InvalidDataException("The deployment position is too close to another structure.");
+        }
+        string name = StructureRules.Name(deployment.Name);
+        if (
+            deployment.ReinforceWeekday != StructureRules.NoReinforcementWeekday && deployment.ReinforceWeekday is < 0 or > 6
+            || deployment.ReinforceHour is < 0 or > 23
+        )
+        {
+            throw new InvalidDataException("Choose a valid reinforcement day and UTC hour.");
+        }
+        if (deployment.Description.Length > StructureRules.MaximumDescriptionLength)
+        {
+            throw new InvalidDataException("The structure description is too long.");
+        }
+        SavedStructure structure = new()
+        {
+            Id = Math.Max(InventoryPersistence.NextId(world), StructureRules.FirstStructureId + 1),
+            TypeId = item.TypeId,
+            Name = name,
+            Description = deployment.Description,
+            CorporationId = corporation.Id,
+            SystemId = system,
+            MoonId = moonId,
+            ReinforceWeekday = deployment.ReinforceWeekday,
+            ReinforceHour = deployment.ReinforceHour,
+            X = point.X,
+            Y = point.Y,
+            Z = point.Z,
+            Yaw = deployment.Yaw,
+            State = StructureState.Anchoring,
+            StateEndsAt = checked(
+                now + StructureRules.Duration(StructureRules.AnchorDuration(profile), world.Settings.Structures.AnchoringSpeed)
+            ),
+            DeployedAt = now,
+            LowPowerAt = now,
+            StateStartedAt = now,
+            HasCore = profile.BuiltinCoreTypeId.HasValue,
+        };
+        world.Add(structure);
+        Consume(world, item, 1);
+        world.SaveChanges();
+        if (profile.BuiltinCoreTypeId is int builtinCore)
+        {
+            InventoryPersistence.MergeOutput(
+                world,
+                catalog,
+                structure.CorporationId,
+                structure.Id,
+                StructureRules.CoreRoomFlag,
+                builtinCore,
+                1
+            );
+            world.SaveChanges();
+        }
+        if (profile.BuiltinModuleTypeId is int builtin)
+        {
+            var module = new OwnedItem
+            {
+                Id = InventoryPersistence.NextId(world),
+                TypeId = builtin,
+                OwnerId = corporation.Id,
+                LocationId = structure.Id,
+                FlagId = StructureRules.FirstServiceSlot,
+                Quantity = 1,
+                Singleton = true,
+            };
+            world.Add(module);
+            world.Add(
+                new SavedStructureService
+                {
+                    ItemId = module.Id,
+                    StructureId = structure.Id,
+                    Slot = module.FlagId,
+                }
+            );
+            world.SaveChanges();
+        }
+        return Snapshot(world, catalog, structure);
+    }
 
     private StructureResult Update(
         long pilotId,
@@ -613,37 +613,42 @@ internal sealed partial class PilotStructureStore(
     }
 
     public StructureResult InstallCore(long pilotId, long structureId, long itemId) =>
-        Update(
-            pilotId,
-            structureId,
-            (world, catalog, structure, pilot, now) =>
-            {
-                var item = AccessibleItem(world, pilot, structure, itemId);
-                if (
-                    structure.HasCore
-                    || structure.State != StructureState.Onlining
-                    || StructureCatalog.Require(catalog, structure.TypeId).CoreTypeId != item.TypeId
-                )
-                {
-                    throw new InvalidDataException("This structure is not awaiting this quantum core.");
-                }
-                Consume(world, item, 1);
-                InventoryPersistence.MergeOutput(
-                    world,
-                    catalog,
-                    structure.CorporationId,
-                    structure.Id,
-                    StructureRules.CoreRoomFlag,
-                    item.TypeId,
-                    1
-                );
-                structure.HasCore = true;
-                structure.StateStartedAt = now;
-                structure.StateEndsAt = checked(
-                    now + StructureRules.Duration(StructureRules.RepairDuration, world.Settings.Structures.OnliningSpeed)
-                );
-            }
+        Update(pilotId, structureId, (world, catalog, structure, pilot, now) => InstallCore(world, catalog, structure, pilot, itemId, now));
+
+    internal static void InstallCore(
+        WorldAction world,
+        CatalogDbContext catalog,
+        SavedStructure structure,
+        Pilot pilot,
+        long itemId,
+        long now
+    )
+    {
+        var item = AccessibleItem(world, pilot, structure, itemId);
+        if (
+            structure.HasCore
+            || structure.State != StructureState.Onlining
+            || StructureCatalog.Require(catalog, structure.TypeId).CoreTypeId != item.TypeId
+        )
+        {
+            throw new InvalidDataException("This structure is not awaiting this quantum core.");
+        }
+        Consume(world, item, 1);
+        InventoryPersistence.MergeOutput(
+            world,
+            catalog,
+            structure.CorporationId,
+            structure.Id,
+            StructureRules.CoreRoomFlag,
+            item.TypeId,
+            1
         );
+        structure.HasCore = true;
+        structure.StateStartedAt = now;
+        structure.StateEndsAt = checked(
+            now + StructureRules.Duration(StructureRules.RepairDuration, world.Settings.Structures.OnliningSpeed)
+        );
+    }
 
     public StructureResult Unanchor(long pilotId, long structureId, bool cancel = false) =>
         Update(

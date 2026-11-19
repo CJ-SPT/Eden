@@ -9,6 +9,7 @@ using Eden.Gameplay.Fittings;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Mining;
+using Eden.Gameplay.Ships;
 using Eden.World.Ammunition;
 using Eden.World.Catalog;
 using Eden.World.Corporations;
@@ -29,7 +30,8 @@ internal sealed partial class CapsuleerIndustry
         DockedPilot docked,
         CapsuleerCareer career,
         long now,
-        long? orderDeadline
+        long? orderDeadline,
+        long[]? orderIds
     )
     {
         long pilotId = docked.PilotId;
@@ -44,24 +46,40 @@ internal sealed partial class CapsuleerIndustry
                 is not { } loss
         )
         {
-            return new(false, false, orderDeadline);
+            return new(false, false, orderDeadline, orderIds);
         }
         var pilot = world.Pilots.Find(pilotId)!;
         if (pilot.ActiveShipId != docked.ShipId || pilot.ActiveShip.Position is not null || pilot.ActiveShip.DockedLocationId != station)
         {
-            return new(false, false, orderDeadline);
+            return new(false, false, orderDeadline, orderIds);
         }
 
+        var kit = LostKit(catalog, loss);
+        var parts = kit?.Parts() ?? [];
+        // Older recovery checkpoints lack order IDs. Match the saved fit or the previous fixed Merlin kit.
+        IReadOnlyList<ReplacementPart> legacyParts =
+            orderDeadline.HasValue ? parts
+            : loss.TypeId == (int)TechOneHullType.Merlin ? Rules.LegacyMerlinParts
+            : [];
         var bids = world
             .Filter<SavedPersonalOrder>(order => order.PilotId == pilotId)
             .Where(order =>
                 order.CorporationId == corporation.Id && order.StationId == station && order.Bid && order.Status == PersonalOrderStatus.Open
             )
+            .AsEnumerable()
+            .Where(order =>
+                orderIds?.Contains(order.Id)
+                ?? (
+                    order.DurationDays == Rules.OrderDays
+                    && order.Issued >= loss.Time
+                    && order.Issued <= (orderDeadline ?? now)
+                    && legacyParts.Any(part => part.TypeId == order.TypeId && order.Entered <= part.Quantity)
+                    && order.PriceCents == Rules.LimitPrice(ReferencePrice(catalog, order.TypeId))
+                )
+            )
             .OrderBy(order => order.Id)
             .ToArray();
         orderDeadline ??= checked(bids.Select(bid => bid.Issued).DefaultIfEmpty(now).Min() + Rules.BidWindow.Ticks);
-        var kit = LostKit(catalog, loss);
-        var parts = kit?.Parts() ?? [];
         bool usable = kit is not null && CanReplaceKit(world, catalog, pilotId, career, kit, parts);
         var hangar = Hangar(world, pilotId, station).ToLookup(item => item.TypeId);
         var missing = MissingParts(parts, hangar);
@@ -77,7 +95,7 @@ internal sealed partial class CapsuleerIndustry
             {
                 // Commit the refunds separately so even a failed alternative leaves the old bids closed.
                 CancelReplacementBids(world, catalog, bids);
-                return new(false, true, now);
+                return new(false, true, now, []);
             }
             return ShopReplacement(world, catalog, docked, career, now, orderDeadline.Value, loss, kit, corporation, hangar);
         }
@@ -85,20 +103,32 @@ internal sealed partial class CapsuleerIndustry
         bool marketChanged = false;
         var depot = DepotStacks(world, corporation.Id, station).OrderBy(item => item.Id).ToLookup(item => item.TypeId);
         HashSet<int> covered = [];
+        List<long> recoveryOrders = [];
         foreach (var bid in bids)
         {
             if (!missing.Any(part => part.TypeId == bid.TypeId && part.Quantity == bid.Remaining) || !covered.Add(bid.TypeId))
             {
                 market.CancelCorporationBid(world, catalog, bid);
                 marketChanged = true;
+                continue;
             }
+            recoveryOrders.Add(bid.Id);
         }
         foreach (var part in missing.Where(part => !covered.Contains(part.TypeId)))
         {
-            marketChanged |= BidForReplacementPart(world, catalog, corporation, pilotId, station, part, depot[part.TypeId]);
+            marketChanged |= ProcureReplacementPart(
+                world,
+                catalog,
+                corporation,
+                pilotId,
+                station,
+                part,
+                depot[part.TypeId],
+                recoveryOrders
+            );
         }
         // Purchases and escrow commit on the docked job. The next job works from owned hangar stock.
-        return new(false, marketChanged, orderDeadline);
+        return new(false, marketChanged, orderDeadline, recoveryOrders.ToArray());
     }
 
     private void CancelReplacementBids(EconomyTransaction world, CatalogDbContext catalog, IEnumerable<SavedPersonalOrder> bids)
@@ -197,7 +227,7 @@ internal sealed partial class CapsuleerIndustry
             BoardReplacement(world, catalog, docked, kit, now);
             return new(true, purchases.Count > 0, null);
         }
-        return new(false, false, Math.Min(now, orderDeadline));
+        return new(false, false, Math.Min(now, orderDeadline), []);
     }
 
     private void BoardReplacement(EconomyTransaction world, CatalogDbContext catalog, DockedPilot docked, ReplacementKit kit, long now)
@@ -229,24 +259,37 @@ internal sealed partial class CapsuleerIndustry
         }
     }
 
-    private bool BidForReplacementPart(
+    private bool ProcureReplacementPart(
         EconomyTransaction world,
         CatalogDbContext catalog,
         SavedCorporation corporation,
         long pilot,
         int station,
         ReplacementPart part,
-        IEnumerable<OwnedItem> depot
+        IEnumerable<OwnedItem> depot,
+        List<long> recoveryOrders
     )
     {
         int remaining = TransferReplacementStock(world, catalog, pilot, station, part, depot);
         long price = Rules.LimitPrice(ReferencePrice(catalog, part.TypeId));
-        if (
-            remaining == 0
-            || price <= 0
-            || price > corporation.BalanceCents / remaining
-            || !PilotMarketStore.HasSupplyListingSlot(world, catalog, pilot)
-        )
+        if (remaining == 0 || price <= 0)
+        {
+            return false;
+        }
+
+        long affordable = corporation.BalanceCents / remaining;
+        var asks = market.SupplyOrders(world, catalog, station, [part.TypeId], pilot, corporation.Id);
+        if (QuoteInput(asks.Where(order => order.PriceCents <= Math.Min(price, affordable)), part.TypeId, remaining) is { } quote)
+        {
+            var bought = market.BuyCorporationStock(world, catalog, pilot, station, corporation, [quote]);
+            if (bought.Trades.Sum(trade => (long)trade.Quantity) != remaining)
+            {
+                throw new InvalidDataException("Replacement offers changed before purchase.");
+            }
+            return true;
+        }
+
+        if (price > affordable || !PilotMarketStore.HasSupplyListingSlot(world, catalog, pilot))
         {
             return false;
         }
@@ -255,7 +298,16 @@ internal sealed partial class CapsuleerIndustry
         {
             return false;
         }
-        market.BuyCorporationStock(world, catalog, pilot, station, corporation, [new(part.TypeId, price, remaining)], Rules.OrderDays);
+        market.BuyCorporationStock(
+            world,
+            catalog,
+            pilot,
+            station,
+            corporation,
+            [new(part.TypeId, price, remaining)],
+            Rules.OrderDays,
+            recoveryOrders
+        );
         return true;
     }
 

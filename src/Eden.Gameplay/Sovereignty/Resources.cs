@@ -50,6 +50,8 @@ public sealed record SovereigntyUpgrade(
 
 public sealed record SovereigntyFuel(int TypeId, long Amount, long Remainder = 0);
 
+public sealed record SovereigntyReagentDelivery(int TypeId, int Quantity);
+
 public sealed record SovereigntyAllocation(
     IReadOnlyList<SovereigntyUpgrade> Upgrades,
     IReadOnlyList<SovereigntyFuel> Fuels,
@@ -146,6 +148,39 @@ public static class SovereigntyResourceRules
     public const int ReagentSecuredPercent = 50;
     public const double InteractionRange = 10000;
     public static readonly long FuelPeriod = TimeSpan.TicksPerHour;
+
+    public static IReadOnlyList<SovereigntyReagentDelivery> ReagentShortfalls(
+        IReadOnlyList<SovereigntyUpgradeDefinition> definitions,
+        SovereigntyAllocation allocation
+    )
+    {
+        const int ReorderHours = 2;
+        const int RefillHours = 4;
+        var configured = definitions.Join(
+            allocation.Upgrades.Where(upgrade => upgrade.ConfiguredOnline),
+            definition => definition.TypeId,
+            upgrade => upgrade.TypeId,
+            (definition, upgrade) => (definition, upgrade.StartupPaid)
+        );
+        List<SovereigntyReagentDelivery> shortfalls = [];
+        foreach (var group in configured.Where(entry => entry.definition.FuelTypeId > 0).GroupBy(entry => entry.definition.FuelTypeId))
+        {
+            BigInteger startup = 0;
+            BigInteger hourly = 0;
+            foreach (var entry in group)
+            {
+                startup += entry.StartupPaid ? 0 : entry.definition.StartupFuel;
+                hourly += entry.definition.HourlyFuel;
+            }
+            long stock = allocation.Fuels.FirstOrDefault(fuel => fuel.TypeId == group.Key)?.Amount ?? 0;
+            if (stock < BigInteger.Min(uint.MaxValue, startup + hourly * ReorderHours))
+            {
+                var target = BigInteger.Min(uint.MaxValue, startup + hourly * RefillHours);
+                shortfalls.Add(new(group.Key, (int)BigInteger.Min(int.MaxValue, target - stock)));
+            }
+        }
+        return shortfalls.OrderBy(shortfall => shortfall.TypeId).ToArray();
+    }
 
     public static SovereigntyAllocation Advance(
         IReadOnlyList<SovereigntyUpgradeDefinition> definitions,

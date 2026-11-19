@@ -106,7 +106,7 @@ internal static partial class CapsuleerTrafficFlight
             systemId,
             work.RouteIndex,
             work.RouteDirection,
-            route.SourceStationId == route.DestinationStationId
+            route.SourceStationId == route.DestinationStationId && work.SovereigntyExpedition is null
         );
 
     internal static StaticSpaceObject Target(

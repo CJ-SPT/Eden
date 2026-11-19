@@ -44,7 +44,11 @@ internal sealed partial class CapsuleerMiner
             .Where(rock =>
                 (!useBelt || rock.AsteroidBeltId == Work.WorkingBelt)
                 && Distance(rock) <= AsteroidDefinitions.VisibilityRange
-                && Enum.IsDefined((MiningResourceGroup)rock.GroupId)
+                && (
+                    Work.Mercoxit is null
+                        ? Enum.IsDefined((MiningResourceGroup)rock.GroupId)
+                        : rock.GroupId == MiningDefinitions.MercoxitGroup
+                )
             )
             .MinBy(rock => (claimed.Contains(rock.Id), Distance(rock), rock.Id));
     }

@@ -35,7 +35,7 @@ internal sealed partial class PilotEntosisStore
         action.Commit();
     }
 
-    private void Advance(WorldAction world, CatalogDbContext catalog, int system, long now)
+    internal void Advance(WorldAction world, CatalogDbContext catalog, int system, long now)
     {
         AdvanceWarfare(world, catalog, system, now);
         var hub = world.Set<SavedSovereigntyHub>().Find(system);
@@ -56,10 +56,7 @@ internal sealed partial class PilotEntosisStore
         }
         foreach (var cycle in cycles)
         {
-            if (
-                cycle.Contributing
-                && (!_scoringLeases.Contains(cycle.ModuleId) || !Valid(world, catalog, cycle, Target(world, system, structure.Id)!))
-            )
+            if (cycle.Contributing && (!CanScore(cycle.ModuleId) || !Valid(world, catalog, cycle, Target(world, system, structure.Id)!)))
             {
                 cycle.Contributing = false;
                 cycle.Stopping = true;

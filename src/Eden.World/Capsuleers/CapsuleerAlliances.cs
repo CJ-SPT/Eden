@@ -13,6 +13,7 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Alliances;
 using Eden.World.Catalog;
 using Eden.World.Corporations;
+using Eden.World.Market;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -20,8 +21,14 @@ using Eden.World.Storage;
 namespace Eden.World.Capsuleers;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class CapsuleerAlliances(WorldDatabase database, TimeProvider clock, IHumanPresence presence, AllianceStore alliances)
-    : ICapsuleerAlliancePlanning
+internal sealed partial class CapsuleerAlliances(
+    WorldDatabase database,
+    TimeProvider clock,
+    IHumanPresence presence,
+    AllianceStore alliances,
+    PilotMarketStore market,
+    MarketChangeSignal marketSignal
+) : ICapsuleerAlliancePlanning
 {
     private const int SystemsPerReview = 32;
     private const int MaximumIdentityAttempts = 32;
@@ -84,22 +91,26 @@ internal sealed class CapsuleerAlliances(WorldDatabase database, TimeProvider cl
         var local = world
             .Filter<SavedCorporation>(row => row.SystemId == system)
             .AsEnumerable()
-            .Where(row => IsIndependent(world, row) && Viable(world, row))
+            .Where(row => Viable(world, row))
             .OrderBy(row => row.Id)
             .ToArray();
         if (local.Length == 0)
         {
             return false;
         }
-        var neighbors = CapsuleerTrafficRoutes
-            .Neighbours(catalog, system)
-            .Prepend(system)
-            .SelectMany(home => world.Filter<SavedCorporation>(row => row.SystemId == home).AsEnumerable())
-            .Where(row => Viable(world, row))
-            .OrderByDescending(row => row.SystemId == system)
-            .ThenBy(row => row.Id)
-            .ToArray();
-        foreach (var corporation in local)
+        var independent = local.Where(row => IsIndependent(world, row)).ToArray();
+        var neighbors =
+            independent.Length == 0
+                ? []
+                : CapsuleerTrafficRoutes
+                    .Neighbours(catalog, system)
+                    .Prepend(system)
+                    .SelectMany(home => world.Filter<SavedCorporation>(row => row.SystemId == home).AsEnumerable())
+                    .Where(row => Viable(world, row))
+                    .OrderByDescending(row => row.SystemId == system)
+                    .ThenBy(row => row.Id)
+                    .ToArray();
+        foreach (var corporation in independent)
         {
             var existingExecutor = neighbors.FirstOrDefault(row => CanRecruit(world, row, corporation.Id));
             if (existingExecutor is not null)
@@ -115,7 +126,9 @@ internal sealed class CapsuleerAlliances(WorldDatabase database, TimeProvider cl
                 return true;
             }
         }
-        return false;
+        return local.Any(corporation =>
+            TryMaintainAllianceDues(world, corporation) || TryProcureFirstHub(world, catalog, corporation, now)
+        );
     }
 
     private static bool Viable(WorldAction world, SavedCorporation corporation) =>
@@ -202,7 +215,7 @@ internal sealed class CapsuleerAlliances(WorldDatabase database, TimeProvider cl
         return false;
     }
 
-    private static bool CanFund(WorldAction world, SavedCorporation corporation, int count, long registration)
+    internal static bool CanFund(WorldAction world, SavedCorporation corporation, int count, long registration)
     {
         const int master = CorporationWalletRules.MasterKey;
         int division = CorporationBillingStore.Saved(world, corporation.Id)?.DivisionKey ?? master;

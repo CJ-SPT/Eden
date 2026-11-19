@@ -82,9 +82,11 @@ internal sealed partial class CapsuleerScheduler
         int system = _locations[job.PilotId];
         HashSet<int> systems = [system];
         var work = Live?.HaulerCheckpoints.GetValueOrDefault(job.PilotId)?.Work;
+        var expedition = Live?.MinerCheckpoints.GetValueOrDefault(job.PilotId)?.Work;
+        long? gateTarget = work?.TargetId ?? (expedition?.Activity == MinerActivity.Jumping ? expedition.TargetId : null);
         if (
-            work?.TargetId is > 0 and <= int.MaxValue
-            && catalog.Definitions.Gates.TryGetValue((int)work.TargetId, out var gate)
+            gateTarget is > 0 and <= int.MaxValue
+            && catalog.Definitions.Gates.TryGetValue((int)gateTarget, out var gate)
             && (occupied.Contains(gate.DestinationSystemId) || CanRunUnobserved(job.PilotId))
         )
         {
@@ -94,7 +96,7 @@ internal sealed partial class CapsuleerScheduler
         {
             systems.Add(lane.ObserverSystemId);
         }
-        bool detailed = ActiveOperation(job.PilotId);
+        bool detailed = ActiveOperation(job.PilotId) || expedition?.Mercoxit is not null;
         var geometry = systems
             .Where(id => detailed || occupied.Contains(id))
             .Select(id => CapsuleerGeometry.CaptureResources(database, world, catalog, id))

@@ -15,6 +15,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Ships;
+using Eden.Gameplay.Sovereignty;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
@@ -73,6 +74,11 @@ internal sealed partial class PilotFittingStore
             double npcSignature = PlayerEwarStore
                 .NpcAttributes(world, itemId, ReadAttributes(catalog, typeId))
                 .GetValueOrDefault(DogmaAttributeId.SignatureRadius);
+            if (npcSignature <= 0 && typeId == SovereigntyWarfareRules.CommandNodeTypeId)
+            {
+                // Build 3662168 command nodes omit the dogma signature attribute.
+                return Math.Max(1, catalog.FittingType(typeId)?.Radius ?? 0);
+            }
             if (npcSignature <= 0 && catalog.FittingType(typeId) is { GroupId: MiningDefinitions.GasCloudGroup } cloud)
             {
                 // Gas types have no dogma signature. Use their physical catalog radius for locking.

@@ -1,5 +1,7 @@
+using Eden.Data.World.Capsuleers;
 using Eden.Gameplay.Capsuleers;
 using Eden.World.Fittings;
+using Eden.World.Runtime.Economy;
 
 namespace Eden.World.Capsuleers;
 
@@ -59,7 +61,12 @@ internal sealed partial class CapsuleerScheduler
 
     private bool CanRunUnobserved(long pilot)
     {
-        if (_registrations.GetValueOrDefault(pilot).Career != CapsuleerCareer.Hauling)
+        var registration = _registrations.GetValueOrDefault(pilot);
+        if (registration.Career == CapsuleerCareer.Mining)
+        {
+            return registration.DeepCore;
+        }
+        if (registration.Career != CapsuleerCareer.Hauling)
         {
             return false;
         }
@@ -68,6 +75,22 @@ internal sealed partial class CapsuleerScheduler
             return !LocalSortie(checkpoint.Work) || ActiveOperation(pilot);
         }
         return !_savedLocalSorties.Contains(pilot);
+    }
+
+    private void RestoreDeepCoreMiners(WorldAction world)
+    {
+        if (!world.Settings.Capsuleers.Miners)
+        {
+            return;
+        }
+        foreach (int system in CapsuleerTrafficRoutes.MercoxitRoutes(database.Catalog).Keys)
+        {
+            var miners = world
+                .Filter<SavedCapsuleerAgent>(agent => agent.CommunitySystemId == system)
+                .Where(agent => agent.Career == CapsuleerCareer.Mining && agent.Slot == 0)
+                .ToArray();
+            Register(world, miners);
+        }
     }
 
     private static bool LocalSortie(HaulerProgress? work) => work?.Ratting is { Patrol: null };

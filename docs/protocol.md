@@ -1,7 +1,25 @@
 # Protocol findings and milestone records
 
 [Dynamic paid ship replacement](protocol/capsuleers.md#dynamic-paid-ship-replacement) covers saved loadouts,
-bounded buy orders and in-stock replacements for miners and patrol pilots.
+bounded buy orders and in-stock replacements for miners, patrol pilots and haulers.
+
+[Autonomous Miner II production](protocol/capsuleers.md#autonomous-miner-ii-production) covers paid procurement,
+saved copying and invention jobs, and public sales of the finished modules.
+
+[Miner II datacores from R&D agents](protocol/capsuleers.md#miner-ii-datacores-from-rd-agents) covers research projects,
+paid redemptions and checkpointed courier deliveries when local sell orders are unavailable.
+
+[Miner II components from owned materials](protocol/capsuleers.md#miner-ii-components-from-owned-materials) covers
+reprocessing stockpiled ore and paid component jobs that feed assembly.
+
+[Mercoxit mining and factory freight](protocol/capsuleers.md#mercoxit-mining-and-factory-freight) covers the nullsec
+mining expedition, bot-originated ore orders and checkpointed partial shipments to the refinery.
+
+[Bot planetary production and factory freight](protocol/capsuleers.md#bot-planetary-production-and-factory-freight)
+covers catalog-driven PI planning, bot-owned colonies and customs freight for factory inputs.
+
+[Bot moon refineries](protocol/capsuleers.md#bot-moon-refineries) covers paid Athanor construction, corporate courier
+deliveries, native anchoring and commissioning, and the first moon extraction.
 
 [Paid Merlin replacement](protocol/capsuleers.md#paid-merlin-replacement) covers public buy orders, corporate spending
 and a patrol pilot returning to duty across a restart.
@@ -119,6 +137,9 @@ configure planetary storage and processing duration with matching native preview
 align the panel's units per cycle with its already modified products and output volume.
 
 [Alliances](protocol/alliances.md) records corporation associations, resident checkpoints and implementation milestones.
+[First-claim hub procurement](protocol/alliances.md#first-claim-hub-procurement) creates a paid market bid for a bot alliance's first hub.
+[Autonomous first claims](protocol/sovereignty.md#autonomous-first-claims) sends a fitted hauler to deploy the hub and capture it with paid Entosis.
+[Bot home defense and upkeep](protocol/sovereignty.md#bot-home-defense-and-upkeep) funds defensive links, alliance dues and configured upgrade reagents.
 
 [One-way PI customs transfers](protocol/planetary.md#one-way-customs-transfer-dictionaries--november-16-2026)
 accept the empty opposite-side dictionary sent by native import-only and export-only requests.

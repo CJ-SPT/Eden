@@ -444,8 +444,11 @@ internal sealed partial class CapsuleerMiner(
         return true;
     }
 
-    private MinerObservation Observation(bool includeHealth) =>
-        new(Pilot, Work, _laser, Work.WaitingReason) { Health = includeHealth ? health.Read(pilotId, Now) : null };
+    private MinerObservation Observation(bool includeHealth)
+    {
+        using var system = includeHealth ? Live?.UseSystem(Pilot.SystemId) : null;
+        return new(Pilot, Work, _laser, Work.WaitingReason) { Health = includeHealth ? health.Read(pilotId, Now) : null };
+    }
 
     private void ObserveDanger(int destinyStamp)
     {
@@ -527,6 +530,8 @@ internal sealed partial class CapsuleerMiner(
             {
                 _work = Work with
                 {
+                    DeepCoreProvisioned = previous?.DeepCoreProvisioned == true,
+                    Mercoxit = Pilot.Position is null ? null : previous?.Mercoxit,
                     ActiveTicks = anchor,
                     ClockOffsetTicks = previous?.ClockOffsetTicks ?? anchor,
                     Stamp = previous?.Stamp ?? 0,
@@ -592,8 +597,12 @@ internal sealed partial class CapsuleerMiner(
                 PrepareTrip();
                 break;
             case MinerActivity.FlyingToBelt:
+            case MinerActivity.FlyingToGate:
             case MinerActivity.Returning:
                 Travel();
+                break;
+            case MinerActivity.Jumping when Work.ActiveTicks >= Work.DueTicks:
+                CompleteExpeditionJump();
                 break;
             case MinerActivity.ApproachingOre:
                 Approach();
@@ -683,7 +692,10 @@ internal sealed partial class CapsuleerMiner(
             _operation.MarketChanged |= industry.Produce(supplyWorld, _operation.Catalog, Pilot, Now, out supply);
         }
         _work = Work with { FactorySupply = supply };
-        var laserType = CapsuleerMiningRules.Laser((CapsuleerMiningHull)Pilot.ShipTypeId);
+        var expedition = PrepareMercoxitExpedition(aboard);
+        var laserType = expedition is null
+            ? CapsuleerMiningRules.Laser((CapsuleerMiningHull)Pilot.ShipTypeId)
+            : MiningLaserType.DeepCoreMiningLaserI;
         _laser = aboard.FirstOrDefault(i => i.TypeId == (int)laserType && InventoryDefinitions.IsHighSlot(i.FlagId));
         if (_laser is null)
         {
@@ -713,7 +725,14 @@ internal sealed partial class CapsuleerMiner(
         _miningReach = MiningReach(_operation.World, _operation.Catalog, _laser);
         RefreshObjects();
         _work = Work with { StrippedBelts = Work.StrippedBelts.Where(b => b.Until > Work.ActiveTicks).ToArray() };
-        var field = NextBelt(out long retryAt);
+        if (expedition is not null && expedition.Systems.Length > 1)
+        {
+            LaunchMiningShip(0);
+            ContinueExpedition(expedition);
+            return;
+        }
+        _work = Work with { Mercoxit = expedition };
+        var field = NextBelt(out long retryAt, out bool knownBelts);
         if (field is null)
         {
             _work = Work with
@@ -722,26 +741,47 @@ internal sealed partial class CapsuleerMiner(
                 DueTicks = retryAt,
                 DueStamp = CapsuleerScheduleRules.Stamp(retryAt, Work.ClockOffsetTicks),
                 WaitingReason =
-                    Work.StrippedBelts.Length == 0 ? "Sheltering until the belt is clear." : "Waiting to revisit stripped belts.",
+                    !knownBelts ? "Waiting for a known asteroid belt."
+                    : Work.StrippedBelts.Length == 0 ? "Sheltering until the belt is clear."
+                    : "Waiting to revisit stripped belts.",
             };
             return;
         }
+        LaunchMiningShip(field.Id);
+        StartCourse(field, MinerActivity.FlyingToBelt);
+    }
+
+    private void LaunchMiningShip(long belt)
+    {
         var launch = StationUndocking.Launch(Pilot.ShipId, Pilot.Home, Pilot.Flight);
         SqliteWorld.SetPosition(_operation.World, _operation.Catalog, Pilot.ShipId, launch.Position, Pilot.SystemId, Now);
         _operation.TravelChanged = true;
         _pilot = Pilot with { Position = launch.Position };
         _navigation.AdoptHull();
         _navigation.SetVelocity(launch.Velocity);
-        _work = Work with { ModuleId = _laser.Id, Cycles = 0, Trips = Work.Trips + 1, WorkingBelt = field.Id, LeaveAfterCycle = false };
-        StartCourse(field, MinerActivity.FlyingToBelt);
+        _work = Work with { ModuleId = _laser!.Id, Cycles = 0, Trips = Work.Trips + 1, WorkingBelt = belt, LeaveAfterCycle = false };
     }
 
-    private StaticSpaceObject? NextBelt(out long retryAt)
+    private StaticSpaceObject? NextBelt(out long retryAt, out bool knownBelts)
     {
         var fields = _objects
-            .Where(o => o.GroupId == AsteroidDefinitions.BeltGroup && database.Catalog.Definition(s_miningBelt, checked((int)o.Id)))
+            .Where(o =>
+                o.GroupId == AsteroidDefinitions.BeltGroup
+                && (
+                    Work.Mercoxit is null
+                        ? database.Catalog.Definition(s_miningBelt, checked((int)o.Id))
+                        : CapsuleerTrafficRoutes.MercoxitBelt(_operation.Catalog, o.Id)
+                )
+            )
             .OrderBy(o => o.Id)
             .ToArray();
+        knownBelts = fields.Length > 0;
+        if (!knownBelts)
+        {
+            // The docked industry action can commit while there is no mining trip available.
+            retryAt = checked(Work.ActiveTicks + TimeSpan.FromSeconds(RetrySeconds).Ticks);
+            return null;
+        }
         var peers = Crewmates().ToArray();
         long elapsed = Work.ActiveTicks;
         BeltMemory[] stripped = [.. Work.StrippedBelts, .. peers.SelectMany(work => work.StrippedBelts)];
@@ -857,16 +897,27 @@ internal sealed partial class CapsuleerMiner(
         {
             return;
         }
+        if (Work.Activity == MinerActivity.FlyingToGate)
+        {
+            ArriveAtExpeditionGate();
+            return;
+        }
         if (Work.Activity == MinerActivity.Returning)
         {
             if (Distance(_target!) <= DockingDefinitions.MaximumRange)
             {
-                _pilot = ships.Dock(_operation.World, _operation.Catalog, Pilot.PilotId, Pilot.ShipId, Pilot.StationId);
+                _pilot = ships.Dock(
+                    _operation.World,
+                    _operation.Catalog,
+                    Pilot.PilotId,
+                    Pilot.ShipId,
+                    Work.Mercoxit?.StationId ?? Pilot.StationId
+                );
                 JoinCorporationAtDock();
                 Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, _operation.Catalog, Pilot.ShipId);
                 _navigation.Dock();
                 _operation.TravelChanged = true;
-                _work = Work with { Activity = MinerActivity.Docked, TargetId = 0 };
+                _work = Work with { Activity = MinerActivity.Docked, TargetId = 0, Mercoxit = null };
             }
             else
             {
@@ -903,7 +954,7 @@ internal sealed partial class CapsuleerMiner(
                     ],
                 };
             }
-            var next = NextBelt(out _);
+            var next = NextBelt(out _, out _);
             if (next is null)
             {
                 ReturnHome();
@@ -1048,6 +1099,11 @@ internal sealed partial class CapsuleerMiner(
         if (_objects.Count == 0)
         {
             RefreshObjects();
+        }
+        if (Work.Mercoxit is { } expedition)
+        {
+            ContinueExpedition(expedition with { Returning = true });
+            return;
         }
         StartCourse(_objects.Single(o => o.Id == Pilot.StationId), MinerActivity.Returning);
     }

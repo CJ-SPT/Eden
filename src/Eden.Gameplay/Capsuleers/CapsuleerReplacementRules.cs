@@ -1,5 +1,7 @@
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Fittings;
 using Eden.Gameplay.Market;
+using Eden.Gameplay.Ships;
 
 namespace Eden.Gameplay.Capsuleers;
 
@@ -9,6 +11,14 @@ public static class CapsuleerReplacementRules
     public const int StockRetrySeconds = 300;
     public static readonly TimeSpan BidWindow = TimeSpan.FromMinutes(30);
     private const decimal ReferencePriceMultiplier = 2m;
+
+    public static IReadOnlyList<ReplacementPart> LegacyMerlinParts { get; } =
+        Array.AsReadOnly<ReplacementPart>([
+            new((int)TechOneHullType.Merlin, 1),
+            new((int)CombatWeaponType.GatlingRailgun75mm, 2),
+            // The previous fixed fit bought two full 200-round magazines of Iron Charge S.
+            new(CapsuleerAmmunitionSupplyRules.ChargeType, 400),
+        ]);
 
     public static long LimitPrice(long referenceCents) =>
         (long)Math.Clamp(referenceCents * ReferencePriceMultiplier, 0, MarketDefinitions.MaximumOrderPrice * MarketDefinitions.CentsPerIsk);
@@ -36,4 +46,4 @@ public sealed record ReplacementKit(
             .ToArray();
 }
 
-public sealed record ReplacementResult(bool Boarded, bool MarketChanged, long? OrderDeadline);
+public sealed record ReplacementResult(bool Boarded, bool MarketChanged, long? OrderDeadline, long[]? OrderIds = null);

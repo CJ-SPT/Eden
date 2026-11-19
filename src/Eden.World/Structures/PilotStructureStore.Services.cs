@@ -1,3 +1,4 @@
+using Eden.Data.World.Characters;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Structures;
 using Eden.Gameplay.Dogma;
@@ -16,138 +17,150 @@ internal sealed partial class PilotStructureStore
         FitServices(pilotId, structureId, [new(itemId, slot)]);
 
     public StructureResult FitServices(long pilotId, long structureId, IReadOnlyList<StructureServiceFit> modules) =>
-        Update(
-            pilotId,
-            structureId,
-            (world, catalog, structure, pilot, _) =>
+        Update(pilotId, structureId, (world, catalog, structure, pilot, _) => FitServices(world, catalog, structure, pilot, modules));
+
+    internal static void FitServices(
+        WorldAction world,
+        CatalogDbContext catalog,
+        SavedStructure structure,
+        Pilot pilot,
+        IReadOnlyList<StructureServiceFit> modules
+    )
+    {
+        long structureId = structure.Id;
+        if (!StructureRules.Operational(structure.State) || !structure.HasCore)
+        {
+            throw new InvalidDataException("Core and online the structure before fitting services.");
+        }
+        var profile = StructureCatalog.Require(catalog, structure.TypeId);
+        var installed = world.Filter<SavedStructureService>(m => m.StructureId == structureId).ToList();
+        if (modules.Count == 0 || modules.Select(m => m.ItemId).Distinct().Count() != modules.Count)
+        {
+            throw new InvalidDataException("Choose distinct service modules to fit.");
+        }
+        foreach (var fit in modules)
+        {
+            var item = AccessibleItem(world, pilot, structure, fit.ItemId);
+            var module = StructureCatalog.Service(catalog, item.TypeId);
+            int slot =
+                fit.Slot
+                ?? Enumerable
+                    .Range(StructureRules.FirstServiceSlot, profile.ServiceSlots)
+                    .FirstOrDefault(candidate => installed.All(m => m.Slot != candidate));
+            StructureRules.CheckServiceFit(profile, module, slot);
+            if (
+                installed.Any(m => m.Slot == slot)
+                || module.MaximumFitted > 0
+                    && installed.Count(m => world.Set<OwnedItem>().Find(m.ItemId)!.TypeId == item.TypeId) >= module.MaximumFitted
+            )
             {
-                if (!StructureRules.Operational(structure.State) || !structure.HasCore)
-                {
-                    throw new InvalidDataException("Core and online the structure before fitting services.");
-                }
-                var profile = StructureCatalog.Require(catalog, structure.TypeId);
-                var installed = world.Filter<SavedStructureService>(m => m.StructureId == structureId).ToList();
-                if (modules.Count == 0 || modules.Select(m => m.ItemId).Distinct().Count() != modules.Count)
-                {
-                    throw new InvalidDataException("Choose distinct service modules to fit.");
-                }
-                foreach (var fit in modules)
-                {
-                    var item = AccessibleItem(world, pilot, structure, fit.ItemId);
-                    var module = StructureCatalog.Service(catalog, item.TypeId);
-                    int slot =
-                        fit.Slot
-                        ?? Enumerable
-                            .Range(StructureRules.FirstServiceSlot, profile.ServiceSlots)
-                            .FirstOrDefault(candidate => installed.All(m => m.Slot != candidate));
-                    StructureRules.CheckServiceFit(profile, module, slot);
-                    if (
-                        installed.Any(m => m.Slot == slot)
-                        || module.MaximumFitted > 0
-                            && installed.Count(m => world.Set<OwnedItem>().Find(m.ItemId)!.TypeId == item.TypeId) >= module.MaximumFitted
-                    )
-                    {
-                        throw new InvalidDataException("The service slot or module limit is already occupied.");
-                    }
-                    if (item.Quantity > 1)
-                    {
-                        item.Quantity--;
-                        item = new OwnedItem
-                        {
-                            Id = InventoryPersistence.NextId(world),
-                            OwnerId = pilotId,
-                            TypeId = item.TypeId,
-                            Quantity = 1,
-                        };
-                        world.Add(item);
-                    }
-                    item.Singleton = true;
-                    item.OwnerId = structure.CorporationId;
-                    item.LocationId = structureId;
-                    item.FlagId = slot;
-                    var service = new SavedStructureService
-                    {
-                        ItemId = item.Id,
-                        StructureId = structureId,
-                        Slot = slot,
-                    };
-                    world.Add(service);
-                    installed.Add(service);
-                }
+                throw new InvalidDataException("The service slot or module limit is already occupied.");
             }
-        );
+            if (item.Quantity > 1)
+            {
+                item.Quantity--;
+                item = new OwnedItem
+                {
+                    Id = InventoryPersistence.NextId(world),
+                    OwnerId = pilot.Id,
+                    TypeId = item.TypeId,
+                    Quantity = 1,
+                };
+                world.Add(item);
+            }
+            item.Singleton = true;
+            item.OwnerId = structure.CorporationId;
+            item.LocationId = structureId;
+            item.FlagId = slot;
+            var service = new SavedStructureService
+            {
+                ItemId = item.Id,
+                StructureId = structureId,
+                Slot = slot,
+            };
+            world.Add(service);
+            installed.Add(service);
+        }
+    }
 
     public StructureResult SetServiceOnline(long pilotId, long structureId, long moduleId, bool online) =>
         Update(
             pilotId,
             structureId,
-            (world, catalog, structure, _, now) =>
-            {
-                var module = world.Set<SavedStructureService>().Find(moduleId);
-                if (module?.StructureId != structureId)
-                {
-                    throw new InvalidDataException("This service is not fitted to this structure.");
-                }
-                var item = world.Set<OwnedItem>().Find(moduleId)!;
-                if (module.Online == online)
-                {
-                    return;
-                }
-                if (online)
-                {
-                    if (!StructureRules.Operational(structure.State) || !structure.HasCore || structure.UnanchorAt <= now)
-                    {
-                        throw new InvalidDataException("The structure must be operational and have its core installed.");
-                    }
-                    var profile = StructureCatalog.Require(catalog, structure.TypeId);
-                    var service = StructureCatalog.Service(catalog, item.TypeId);
-                    if (service.Services.Any(s => !StructureRules.ServiceImplemented(s)))
-                    {
-                        throw new InvalidDataException("This structure service requires gameplay systems that are not implemented yet.");
-                    }
-                    var active = world
-                        .Filter<SavedStructureService>(m => m.StructureId == structureId && m.Online)
-                        .ToArray()
-                        .Select(m => StructureCatalog.Service(catalog, world.Set<OwnedItem>().Find(m.ItemId)!.TypeId))
-                        .ToArray();
-                    if (active.Sum(m => m.Cpu) + service.Cpu > profile.Cpu || active.Sum(m => m.Power) + service.Power > profile.Power)
-                    {
-                        throw new InvalidDataException("The structure does not have enough available CPU or powergrid.");
-                    }
-                    double security = catalog.Definitions.SystemSecurity.GetValueOrDefault(structure.SystemId);
-                    if (
-                        service.Services.Any(s =>
-                            s
-                                is StructureService.CompositeReactions
-                                    or StructureService.BiochemicalReactions
-                                    or StructureService.HybridReactions
-                        )
-                        && security >= StructureRules.HighSecurityBoundary
-                    )
-                    {
-                        throw new InvalidDataException("Reaction services require low or null security.");
-                    }
-                    if (service.Services.Contains(StructureService.MoonMining) && structure.MoonId is null)
-                    {
-                        throw new InvalidDataException("Moon mining services require a refinery bound to a moon mining point.");
-                    }
-                    Fuel(world, catalog, structure, service, AdjustedFuel(catalog, profile, service, service.OnlineFuel));
-                    module.NextFuelAt = checked(now + StructureRules.FuelInterval);
-                }
-                else
-                {
-                    module.NextFuelAt = null;
-                }
-                item.Online = online;
-                module.Online = online;
-                world.SaveChanges();
-                structure.LowPowerAt = world.Filter<SavedStructureService>(m => m.StructureId == structureId && m.Online).Any()
-                    ? null
-                    : structure.LowPowerAt ?? now;
-                StructureIndustry.Synchronize(world, catalog, structure, now);
-                InterruptMoonExtraction(world, catalog, structure, now);
-            }
+            (world, catalog, structure, _, now) => SetServiceOnline(world, catalog, structure, moduleId, online, now)
         );
+
+    internal static void SetServiceOnline(
+        WorldAction world,
+        CatalogDbContext catalog,
+        SavedStructure structure,
+        long moduleId,
+        bool online,
+        long now
+    )
+    {
+        long structureId = structure.Id;
+        var module = world.Set<SavedStructureService>().Find(moduleId);
+        if (module?.StructureId != structureId)
+        {
+            throw new InvalidDataException("This service is not fitted to this structure.");
+        }
+        var item = world.Set<OwnedItem>().Find(moduleId)!;
+        if (module.Online == online)
+        {
+            return;
+        }
+        if (online)
+        {
+            if (!StructureRules.Operational(structure.State) || !structure.HasCore || structure.UnanchorAt <= now)
+            {
+                throw new InvalidDataException("The structure must be operational and have its core installed.");
+            }
+            var profile = StructureCatalog.Require(catalog, structure.TypeId);
+            var service = StructureCatalog.Service(catalog, item.TypeId);
+            if (service.Services.Any(s => !StructureRules.ServiceImplemented(s)))
+            {
+                throw new InvalidDataException("This structure service requires gameplay systems that are not implemented yet.");
+            }
+            var active = world
+                .Filter<SavedStructureService>(m => m.StructureId == structureId && m.Online)
+                .ToArray()
+                .Select(m => StructureCatalog.Service(catalog, world.Set<OwnedItem>().Find(m.ItemId)!.TypeId))
+                .ToArray();
+            if (active.Sum(m => m.Cpu) + service.Cpu > profile.Cpu || active.Sum(m => m.Power) + service.Power > profile.Power)
+            {
+                throw new InvalidDataException("The structure does not have enough available CPU or powergrid.");
+            }
+            double security = catalog.Definitions.SystemSecurity.GetValueOrDefault(structure.SystemId);
+            if (
+                service.Services.Any(s =>
+                    s is StructureService.CompositeReactions or StructureService.BiochemicalReactions or StructureService.HybridReactions
+                )
+                && security >= StructureRules.HighSecurityBoundary
+            )
+            {
+                throw new InvalidDataException("Reaction services require low or null security.");
+            }
+            if (service.Services.Contains(StructureService.MoonMining) && structure.MoonId is null)
+            {
+                throw new InvalidDataException("Moon mining services require a refinery bound to a moon mining point.");
+            }
+            Fuel(world, catalog, structure, service, AdjustedFuel(catalog, profile, service, service.OnlineFuel));
+            module.NextFuelAt = checked(now + StructureRules.FuelInterval);
+        }
+        else
+        {
+            module.NextFuelAt = null;
+        }
+        item.Online = online;
+        module.Online = online;
+        world.SaveChanges();
+        structure.LowPowerAt = world.Filter<SavedStructureService>(m => m.StructureId == structureId && m.Online).Any()
+            ? null
+            : structure.LowPowerAt ?? now;
+        StructureIndustry.Synchronize(world, catalog, structure, now);
+        InterruptMoonExtraction(world, catalog, structure, now);
+    }
 
     public StructureResult RemoveService(long pilotId, long structureId, long moduleId) =>
         Update(
@@ -181,42 +194,44 @@ internal sealed partial class PilotStructureStore
         Update(
             pilotId,
             structureId,
-            (world, catalog, structure, pilot, _) =>
-            {
-                var item = AccessibleItem(world, pilot, structure, itemId);
-                var type = catalog.RequireItem(item.TypeId);
-                int amount = quantity ?? item.Quantity;
-                const int FuelBlockGroup = 1136;
-                if (type.GroupId != FuelBlockGroup)
-                {
-                    throw new InvalidDataException("The structure fuel bay accepts fuel blocks.");
-                }
-                double used = world
-                    .Filter<OwnedItem>(i => i.LocationId == structureId && i.FlagId == StructureRules.FuelBayFlag)
-                    .AsEnumerable()
-                    .Sum(i => PilotInventoryStore.Volume(catalog, i.TypeId) * i.Quantity);
-                if (
-                    used + PilotInventoryStore.Volume(catalog, item.TypeId) * amount
-                    > StructureCatalog.Require(catalog, structure.TypeId).FuelCapacity
-                )
-                {
-                    throw new InvalidDataException("The structure fuel bay does not have enough space.");
-                }
-                int typeId = item.TypeId;
-                Consume(world, item, amount);
-                InventoryPersistence.MergeOutput(
-                    world,
-                    catalog,
-                    structure.CorporationId,
-                    structureId,
-                    StructureRules.FuelBayFlag,
-                    typeId,
-                    amount
-                );
-            }
+            (world, catalog, structure, pilot, _) => DepositFuel(world, catalog, structure, pilot, itemId, quantity)
         );
 
-    private static int AdjustedFuel(CatalogDbContext catalog, StructureProfile structure, StructureServiceProfile module, int amount)
+    internal static void DepositFuel(
+        WorldAction world,
+        CatalogDbContext catalog,
+        SavedStructure structure,
+        Pilot pilot,
+        long itemId,
+        int? quantity
+    )
+    {
+        long structureId = structure.Id;
+        var item = AccessibleItem(world, pilot, structure, itemId);
+        var type = catalog.RequireItem(item.TypeId);
+        int amount = quantity ?? item.Quantity;
+        const int FuelBlockGroup = 1136;
+        if (type.GroupId != FuelBlockGroup)
+        {
+            throw new InvalidDataException("The structure fuel bay accepts fuel blocks.");
+        }
+        double used = world
+            .Filter<OwnedItem>(i => i.LocationId == structureId && i.FlagId == StructureRules.FuelBayFlag)
+            .AsEnumerable()
+            .Sum(i => PilotInventoryStore.Volume(catalog, i.TypeId) * i.Quantity);
+        if (
+            used + PilotInventoryStore.Volume(catalog, item.TypeId) * amount
+            > StructureCatalog.Require(catalog, structure.TypeId).FuelCapacity
+        )
+        {
+            throw new InvalidDataException("The structure fuel bay does not have enough space.");
+        }
+        int typeId = item.TypeId;
+        Consume(world, item, amount);
+        InventoryPersistence.MergeOutput(world, catalog, structure.CorporationId, structureId, StructureRules.FuelBayFlag, typeId, amount);
+    }
+
+    internal static int AdjustedFuel(CatalogDbContext catalog, StructureProfile structure, StructureServiceProfile module, int amount)
     {
         const int ServiceRoleBonus = 2339;
         return StructureRules.FuelAmount(

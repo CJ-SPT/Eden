@@ -22,6 +22,9 @@ public sealed partial class CatalogDbContext
             select new { body.Id, body.SolarSystemId }
         ).ToDictionary(body => body.Id, body => body.SolarSystemId);
 
+    internal IReadOnlyDictionary<int, int> StaticCelestialSystems(int group) =>
+        Set<Celestial>().Where(body => body.GroupId == group).ToDictionary(body => body.Id, body => body.SolarSystemId);
+
     internal IEnumerable<CatalogGateDefinition> GatesInSystem(int id) =>
         writable
             ? Set<Stargate>()

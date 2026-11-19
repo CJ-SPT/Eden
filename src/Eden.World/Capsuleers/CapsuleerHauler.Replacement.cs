@@ -17,10 +17,11 @@ internal sealed partial class CapsuleerHauler
                 Pilot,
                 CapsuleerCareer.Hauling,
                 now,
-                Work.ReplacementOrderDeadline
+                Work.ReplacementOrderDeadline,
+                Work.ReplacementOrderIds
             );
             _operation.MarketChanged |= result.MarketChanged;
-            _work = Work with { ReplacementOrderDeadline = result.OrderDeadline };
+            _work = Work with { ReplacementOrderDeadline = result.OrderDeadline, ReplacementOrderIds = result.OrderIds };
             if (result.Boarded)
             {
                 _pilot = ReadPilot(world, CapsuleerCommunityStore.MinerAccountId);

@@ -43,6 +43,10 @@ public sealed record HaulerProgress(
     public BeltMemory[] VisitedBelts { get; init; } = [];
     public FreightManifest? Freight { get; init; }
     public CorporationSupplyRun? CorporationSupply { get; init; }
+    public FactoryPlanetaryProduction? PlanetaryProduction { get; init; }
+    public SovereigntyExpedition? SovereigntyExpedition { get; init; }
+    public int? HomeDefenseAllianceId { get; init; }
+    public long PlanetaryRetryAt { get; init; }
     public long[] RattingLoot { get; init; } = [];
     public RattingProgress? Ratting { get; init; }
     public ResupplyProgress? Resupply { get; init; }
@@ -57,8 +61,30 @@ public sealed record HaulerProgress(
     public bool RegionalObjectiveVisited { get; init; }
     public bool EscapingBubble { get; init; }
     public long? ReplacementOrderDeadline { get; init; }
+    public long[]? ReplacementOrderIds { get; init; }
     public long WarpReadyAt { get; init; }
     public int LastMotionStamp { get; init; } = int.MinValue;
+}
+
+public sealed record SovereigntyExpedition(
+    int AllianceId,
+    int CorporationId,
+    int TargetSystemId,
+    long CargoId,
+    long ModuleId,
+    long? HubId = null,
+    long LockReadyAt = 0,
+    bool Returning = false,
+    SovereigntyDuty Duty = SovereigntyDuty.Claim,
+    int? HomeSystemId = null,
+    int CargoQuantity = 0
+);
+
+public enum SovereigntyDuty
+{
+    Claim,
+    Defend,
+    ReagentDelivery,
 }
 
 public sealed record HaulerObservation(DockedPilot Pilot, HaulerProgress Work, ShipHealth? Health);

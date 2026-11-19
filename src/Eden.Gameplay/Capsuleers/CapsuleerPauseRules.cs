@@ -47,6 +47,12 @@ public static class CapsuleerPauseRules
         {
             Defense = defense,
             WarpReadyAt = work.WarpReadyAt == 0 ? 0 : checked(work.WarpReadyAt + delay),
+            SovereigntyExpedition = work.SovereigntyExpedition is { LockReadyAt: > 0 } expedition
+                ? expedition with
+                {
+                    LockReadyAt = checked(expedition.LockReadyAt + delay),
+                }
+                : work.SovereigntyExpedition,
             Ratting = work.Ratting is { } ratting
                 ? ratting with
                 {

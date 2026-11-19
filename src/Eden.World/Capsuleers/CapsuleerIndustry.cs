@@ -24,6 +24,7 @@ using Eden.World.Fittings;
 using Eden.World.Industry;
 using Eden.World.Inventory;
 using Eden.World.Market;
+using Eden.World.Planetary;
 using Eden.World.Reprocessing;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
@@ -36,7 +37,8 @@ internal sealed partial class CapsuleerIndustry(
     PilotIndustryStore industry,
     PilotReprocessingStore refinery,
     PilotMarketStore market,
-    PilotFittingStore fitting
+    PilotFittingStore fitting,
+    PilotPlanetaryIndustryStore planetary
 )
 {
     private static readonly CatalogDefinition<bool> s_ironCompatible = new(
@@ -122,7 +124,7 @@ internal sealed partial class CapsuleerIndustry(
             )
     );
 
-    private static long ReferencePrice(CatalogDbContext catalog, int type) => catalog.Definition(s_referencePrice, type);
+    internal static long ReferencePrice(CatalogDbContext catalog, int type) => catalog.Definition(s_referencePrice, type);
 
     internal bool Produce(EconomyTransaction world, CatalogDbContext catalog, DockedPilot operatorPilot, long now) =>
         Produce(world, catalog, operatorPilot, now, out _);
@@ -150,7 +152,14 @@ internal sealed partial class CapsuleerIndustry(
 
         var running = world
             .Filter<IndustryJob>(job => job.PilotId == pilot)
-            .Where(job => job.Status == IndustryJobStatus.Installed && job.Activity == IndustryActivity.Manufacturing)
+            .Where(job =>
+                job.Status == IndustryJobStatus.Installed
+                && (
+                    job.Activity == IndustryActivity.Manufacturing
+                    || job.OutputCorporationId.HasValue
+                        && (job.Activity == IndustryActivity.Copying || job.Activity == IndustryActivity.Invention)
+                )
+            )
             .ToArray();
         foreach (
             var job in running.Where(job =>
@@ -181,10 +190,18 @@ internal sealed partial class CapsuleerIndustry(
         foreach (var stock in depot.Where(item => !listed.Contains(item.TypeId)))
         {
             var demand = bids[stock.TypeId];
+            if (stock.TypeId == CapsuleerMinerTwoRules.Module)
+            {
+                demand = demand.Where(order => order.PriceCents >= ReferencePrice(catalog, stock.TypeId));
+            }
             var bid = demand.FirstOrDefault(order => order.Remaining >= stock.Quantity) ?? demand.FirstOrDefault();
             if (
-                jobs.Any(job => job.StationId == location && job.ProductTypeId == stock.TypeId && job.Status == IndustryJobStatus.Delivered)
-                && ListStock(world, catalog, corporation, pilot, stock, bid, now)
+                jobs.Any(job =>
+                    job.StationId == location
+                    && job.ProductTypeId == stock.TypeId
+                    && job.OutputFlagId == CorporationStorageRules.MarketDeliveriesFlag
+                    && job.Status == IndustryJobStatus.Delivered
+                ) && ListStock(world, catalog, corporation, pilot, stock, bid, now)
             )
             {
                 return true;
@@ -197,10 +214,31 @@ internal sealed partial class CapsuleerIndustry(
 
         var hangar = Hangar(world, pilot, location);
         listed.UnionWith(depot.Select(item => item.TypeId));
+        FactorySupplyRequest? minerTwoSupply = null;
+        if (!listed.Contains(CapsuleerMinerTwoRules.Module))
+        {
+            var minerTwo = ProduceMinerTwo(
+                world,
+                catalog,
+                operatorPilot,
+                corporation,
+                hangar,
+                bids[CapsuleerMinerTwoRules.Module],
+                now,
+                out minerTwoSupply
+            );
+            if (minerTwo.HasValue)
+            {
+                supply = minerTwoSupply;
+                return minerTwo.Value;
+            }
+        }
         if (TryProduceForDemand(world, catalog, operatorPilot, corporation, hangar, bids, listed, now, out supply) is bool changed)
         {
+            supply ??= minerTwoSupply;
             return changed;
         }
+        supply ??= minerTwoSupply;
         if (listed.Contains(Rules.ChargeType))
         {
             return false;

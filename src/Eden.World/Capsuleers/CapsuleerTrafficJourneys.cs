@@ -122,6 +122,25 @@ internal static partial class CapsuleerTrafficRoutes
         HullClass hull,
         IReadOnlySet<int>? avoided = null,
         int maximumJumps = TrafficJourneyRules.MaximumJumps
+    ) => ToSystem(catalog, sourceStation, destinationStation, hull, avoided, maximumJumps);
+
+    internal static CapsuleerTrafficRoute? ToClaimSystem(
+        CatalogDbContext catalog,
+        int headquarters,
+        int system,
+        HullClass hull,
+        IReadOnlySet<int> avoided,
+        int maximumJumps = CapsuleerAllianceRules.FirstClaimMaximumJumps
+    ) => ToSystem(catalog, headquarters, headquarters, hull, avoided, maximumJumps, system);
+
+    private static CapsuleerTrafficRoute? ToSystem(
+        CatalogDbContext catalog,
+        int sourceStation,
+        int destinationStation,
+        HullClass hull,
+        IReadOnlySet<int>? avoided,
+        int maximumJumps,
+        int? destinationSystem = null
     )
     {
         if (!TrafficRules.RouteAllows(hull, false))
@@ -130,7 +149,7 @@ internal static partial class CapsuleerTrafficRoutes
         }
         var graph = catalog.Definitions.GlobalDefinition(s_graph);
         int source = catalog.RequireStation(sourceStation).SolarSystemId;
-        int destination = catalog.RequireStation(destinationStation).SolarSystemId;
+        int destination = destinationSystem ?? catalog.RequireStation(destinationStation).SolarSystemId;
         var security = catalog.Definitions.SystemSecurity;
         bool unrestricted = TrafficRules.RouteAllows(hull, true);
         bool Allows(int system) =>

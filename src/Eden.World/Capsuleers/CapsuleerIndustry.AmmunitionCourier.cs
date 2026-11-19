@@ -178,7 +178,8 @@ internal sealed partial class CapsuleerIndustry
         CatalogDbContext catalog,
         DockedPilot courier,
         CorporationSupplyRun run,
-        FreightManifest freight
+        FreightManifest freight,
+        bool personalWarehouse = false
     )
     {
         if (freight.Destination != courier.StationId)
@@ -191,7 +192,7 @@ internal sealed partial class CapsuleerIndustry
         {
             if (
                 freight.Destination != factory.FactoryStationId
-                || world.Set<SavedCorporation>().Find(run.CorporationId) is not { ClosedAt: null }
+                || !personalWarehouse && world.Set<SavedCorporation>().Find(run.CorporationId) is not { ClosedAt: null }
             )
             {
                 return;
@@ -201,6 +202,11 @@ internal sealed partial class CapsuleerIndustry
                 owner = factory.ManufacturerId;
                 flag = (int)InventoryFlag.Hangar;
             }
+        }
+        if (personalWarehouse)
+        {
+            owner = courier.PilotId;
+            flag = (int)InventoryFlag.Hangar;
         }
         foreach (var stack in freight.Stacks)
         {

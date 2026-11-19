@@ -9,10 +9,13 @@ NPC market station where its capsule docks. The plan uses the catalog hull, fitt
 remaining in the bay, and the observed charge types. Known magazines are refilled to catalog capacity. Cargo and stored
 ships are separate possessions. Ordinary assembly, fitting, skill, and market checks apply.
 
-The pilot fills shortfalls from local corporate deliveries and funded buy orders. The capsule's routine checkpoint
-holds a 30-minute wall-clock deadline. An older save with an open replacement bid uses its earliest issue time as the
-start of that window. At the first recovery action after the deadline, the bot cancels outstanding bids and releases
-the remaining escrow. Ordinary broker fees are spent when the orders are placed.
+The pilot fills shortfalls from local corporate deliveries, affordable local sell quotes and funded buy orders. It
+uses an immediate buy when a local quote covers the full missing quantity of a part. The capsule's routine checkpoint
+holds a 30-minute wall-clock deadline and the order IDs for that recovery. Older checkpoints can recover matching bids
+for the saved fit or the previous fixed Merlin kit. An older save without a deadline uses the earliest recovered bid's
+issue time as the start of the window. At the first recovery action after the deadline, the bot cancels its outstanding
+replacement bids and releases their remaining escrow. Orders for other work stay open. Ordinary broker fees are spent
+when the orders are placed.
 
 After the refund, the pilot takes a complete kit it can cover with station inventory, corporate deliveries and live sell
 orders. It considers the original fit, the original hull with high-slot modules and drones, and a basic role fit
@@ -33,7 +36,7 @@ saved deadline, verifies both escrow refunds, and restores a mining pilot with t
 purchased locally. The corporate wallet ends at the starting amount minus the original fees and actual fallback
 purchases. The canceled bids stay closed.
 
-The exact `LostMerlinBuysOneReplacementAndReturnsToDutyAcrossRestart` and
+Before reconciliation, the exact `LostMerlinBuysOneReplacementAndReturnsToDutyAcrossRestart` and
 `StalledVentureBidsRefundAfterRestartAndMinerUndocksWithAnInStockFit` filters passed during development.
 The solution built with zero warnings and errors in 7.69 seconds. The final focused run passed 138 tests in 61.75
 seconds. It selected the following classes using `FullyQualifiedName~.<Class>.`:
@@ -46,6 +49,31 @@ PersonalMarketTests, StarterMarketTests, ApplyFittingTests, MultifitTests, Pilot
 
 The two Python policy suites passed all 17 cases. Style, CSharpier and line-width verification passed.
 
+#### Milestone 3 reconciliation
+
+The exact filter selected the two recovery methods above, `BotsBuildAndCommissionTheirMoonRefineryAcrossRestarts`, and
+both cases of `FundedAllianceStagesOneHubAcrossRestartForAnUnobservedClaimableSystem`. All five passed in 19.21 seconds.
+The Venture fixture verified that the persisted recovery bids refunded their escrow while the same pilot's hub bid
+stayed open and fully funded. After claiming its first system, the alliance lost its Squall, bought the hull and
+Entosis Link at the local sell quotes, and fitted and boarded the replacement. The test checked the exact wallet debit,
+absence of duplicated hub or fuel, then exercised paid hub and command-node defense, reagent delivery and alliance dues
+through reopen. The refinery fixture exercised freight, deployment, service and fuel commissioning through reopen.
+
+The restored solution built with zero warnings and errors in 0.75 seconds. The final focused run passed **351 tests**
+in 176.87 seconds. The filter used `FullyQualifiedName~Eden.Protocol.Tests.Sovereignty.` and
+`FullyQualifiedName~.<Class>.` for these classes:
+
+```text
+CapsuleerAmmunitionSupplyTests, CapsuleerAllianceTests, CapsuleerHaulerTests, CapsuleerMinerTests,
+CapsuleerMiningFleetTests, CapsuleerInboundRuntimeTests, CapsuleerSupplyTests, CapsuleerFitRetentionTests,
+CapsuleerSchedulingTests, CapsuleerResidentRoutineTests, PersonalMarketTests, ResidentEconomyTests,
+StarterMarketTests, ApplyFittingTests, MultifitTests, PilotFleetTests, CorvetteRecoveryTests,
+MoonExtractionTests, MoonMiningRulesTests, AllianceBillingTests
+```
+
+Both Python policy suites passed all 17 cases. Style, CSharpier and line-width verification passed. The .NET run was
+scoped to affected features and immediate dependencies.
+
 ### Live acceptance
 
 Not performed. Agent client testing is disabled.
@@ -53,6 +81,312 @@ Not performed. Agent client testing is disabled.
 ### Optional maintainer check
 
 Observe a miner undock with a basic Venture after its original kit's bids are canceled.
+
+## Autonomous Miner II production
+
+At an NPC station with market, laboratory and manufacturing services, a miner in a bot-led corporation can buy the
+Miner I original, the required datacores and the materials for up to five Miner II modules. It can reuse available
+inventory. The planner checks the corporation's funds, market quantities and projected proceeds before starting.
+The starting estimate includes the cost of failed invention attempts. The existing bot skill provisioning
+qualifies the operator for the catalog recipe when the funded plan starts.
+
+The bot installs an ordinary one-run copy job, then runs invention for a licensed Miner II copy with the normal chance roll.
+It takes the completed copies from corporate Market Deliveries and uses the invented copy for manufacturing. The
+original and unused licensed runs stay available to the operator. Market purchases and job installation settle in
+the same resident action, with the master wallet paying the market and industry charges. The corporation stocks
+one batch at a time and lists the resulting modules on the public station market. It can plan a batch from the
+reference sell price even without an open buy order.
+
+Industry jobs already checkpoint the reserved blueprint, completion time and invention outcome. The factory
+advances the saved job on its docked routine, including at a factory with no usable asteroid belt. A failed
+invention spends its inputs and starts a one-hour wall-clock retry delay, recorded by the delivered job's
+timestamp.
+
+The fixed product, batch size and retry delay are Eden policy. The pinned build 3662168 catalog supplies the input
+quantities, skills, licensed runs and success chance. The local build 3396210 EVE.js
+`server/src/services/industry/industryRuntimeState.js` snapshot distinguishes copying from invention and records the
+successful runs before delivery (SHA-256 `BF6AB290BD622ED029FD8ED6E2214B4604FF874F6BECD585842FFE4EAC01D63C`).
+[CCP Invention](https://support.eveonline.com/hc/en-us/articles/203210642-Invention) ·
+[CCP Copying](https://support.eveonline.com/hc/en-us/articles/203210602-Copying) ·
+[UniWiki Invention](https://wiki.eveuniversity.org/Invention)
+
+### Automated validation
+
+The factory fixture starts with player sell orders and no corporate funding, then funds the bot and exercises
+procurement, copying, a failed invention, the paid retry, manufacturing and a public sale. It reopens the world
+with each job installed and compares the job ID, deadline, outcome and owner before continuing. It checks the
+remaining licensed runs, the unique wallet entry for each paid job and delivery of all five modules to the buyer.
+
+The exact `MinerTwoFactoryBuysCopiesInventsManufacturesAndSellsAcrossRestarts` filter passed in 8.38 seconds.
+The solution built with zero warnings and errors in 7.43 seconds. The affected run passed 202 tests in 91.90 seconds
+with these class filters using `FullyQualifiedName~.<Class>.`:
+
+```text
+CapsuleerAmmunitionSupplyTests, CapsuleerMinerTests, CapsuleerHaulerTests, CapsuleerMiningFleetTests,
+PilotAwarenessTests, IndustryTests, ScienceRulesTests, ScienceJobTests, BulkIndustryDeliveryTests,
+IndustryContainerTests, IndustryFacilityLookupTests, ProductionCatalogTests, ReactionJobTests,
+PersonalMarketTests, CorporationWalletTests, ResidentBotEconomyTests
+```
+
+Both Python policy suites passed all 17 cases. Style, CSharpier, line-width and diff checks passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer check
+
+Stock the required inputs at a bot factory with laboratory service and buy its finished Miner II modules.
+
+## Miner II datacores from R&D agents
+
+A Miner II factory requests datacore deliveries when station offers cannot cover the invention recipe. A corporate
+hauler checks the catalog for accessible R&D agents who offer the requested research fields. It visits the agents,
+qualifies for the fields through the existing bot skill provisioning and starts up to two ordinary research projects.
+The hauler can take other work while points accrue by wall-clock time. Eden limits research supply routes to twelve
+gates per leg and uses the normal Omega, standings and docking checks.
+
+Once an agent has enough points, the hauler returns and redeems only the outstanding amount it can afford and carry.
+Each datacore consumes 100 points and costs 10,000 ISK from the corporate wallet. The loaded cargo, wallet entries,
+project balances and delivery route use the same resident checkpoint. Normal local and remote market supply still
+works when offers appear. The pinned catalog maps Laser Physics and Mechanical Engineering to the corresponding
+datacore types and supplies both invention quantities.
+
+The local EVE.js build 3396210 `server/src/services/agent/researchRuntime.js` reference accrues points and redeems
+them at the research agent (SHA-256 `D6E8E398BB3FF9BA1F0711BA86BA1DCCA4707CD935D287C9760A8A8BDD0C6EE8`).
+[CCP Datacores](https://support.eveonline.com/hc/en-us/articles/203210652-Datacores) ·
+[UniWiki Datacore farming](https://wiki.eveuniversity.org/Datacore_Farming)
+
+The wider [build 3662168 supply audit](../tech-two-supply-audit.json) identifies the remaining market dependencies.
+Independent Miner II production still needs bots to harvest fractured moon ore and ice, refine them and run reaction
+jobs for the advanced components. [Bot moon refineries](#bot-moon-refineries) build and start the extraction facility.
+Reusable originals and reaction formulae also need a reliable initial source. [Mercoxit expeditions](#mercoxit-mining-and-factory-freight)
+supply the ore for Morphite, [planetary colonies](#bot-planetary-production-and-factory-freight) supply Mechanical Parts,
+and [component and refinery jobs](#miner-ii-components-from-owned-materials) process materials at the factory.
+[UniWiki Minerals](https://wiki.eveuniversity.org/Minerals) · [UniWiki Reactions](https://wiki.eveuniversity.org/Reactions)
+
+### Automated validation
+
+`MissingMinerTwoDatacoresComeFromPaidResearchAndSurviveCargoRestart` covers the real factory shortage, courier
+dispatch and arrival, and both research projects without market offers or testing grants. It reopens the world
+before redemption and again with paid cargo in the hold, then checks both types and quantities in the factory
+hangar and verifies one corporate charge per redemption.
+
+The exact filter passed in 9.92 seconds. The solution built in 7.29 seconds with zero warnings and errors. The
+affected run passed all 121 tests in 83.40 seconds with these class filters using `FullyQualifiedName~.<Class>.`:
+
+```text
+ResearchAgentTests, AgentShowInfoTests, CapsuleerAmmunitionSupplyTests, CapsuleerHaulerTests, CapsuleerMinerTests,
+ScienceJobTests, ResidentBotEconomyTests, PersonalMarketTests, CorporationWalletTests
+```
+
+Both Python policy suites passed all 17 cases. Style, CSharpier, line-width and diff checks passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
+## Miner II components from owned materials
+
+When station offers cannot fill a Miner II material shortfall, the factory checks its own ore first and can reprocess
+it through the station service. It can also make a missing component with a catalog manufacturing blueprint and
+the inputs already in its hangar. The factory can buy a blueprint locally when one is available. The corporation
+pays the manufacturing fee and the job delivers to the operator's hangar for the next step in the chain. Finished
+Miner II modules still enter Market Deliveries for public sale.
+
+The build 3662168 catalog gives Mercoxit 140 units of base Morphite per 100 ore, before applying reprocessing yield
+and taxes. The component planner uses the same material calculations and restrictions as normal manufacturing. The
+shared resident checkpoint records the manufacturing job and its output location. See the
+[existing industry protocol notes](industry.md) for the pinned-client and EVE.js evidence on manufacturing jobs.
+
+### Automated validation
+
+`MinerTwoFactoryRefinesOreAndMakesItsOwnMinerOneInputsAcrossRestart` starts without Morphite or Miner I sell orders.
+It verifies the factory reprocesses Mercoxit into Morphite, reserves minerals for a Miner I job, reopens the running
+job and consumes the privately delivered Miner I in Miner II assembly. It checks the corporate charges and confirms
+the intermediate product stays off the public market.
+
+The exact filter passed in 8.44 seconds. The solution built in 7.89 seconds with zero warnings and errors. The
+affected run passed all 153 tests in 82.05 seconds with these class filters using `FullyQualifiedName~.<Class>.`:
+
+```text
+CapsuleerAmmunitionSupplyTests, CapsuleerMinerTests, CapsuleerHaulerTests, ResidentBotEconomyTests,
+IndustryTests, ScienceJobTests, IndustryContainerTests, BulkIndustryDeliveryTests, ReactionJobTests,
+ReprocessingTests, CorporationWalletTests, ResearchAgentTests
+```
+
+Both Python policy suites passed all 17 cases. Style, CSharpier, line-width and diff checks passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
+## Mercoxit mining and factory freight
+
+The build 3662168 catalog has Mercoxit belts in 368 systems. Those systems have no NPC stations, so an eligible
+founder Venture stages at a market station and takes reciprocal gates to and from a nullsec belt within eight jumps.
+The specialist uses a Deep Core Mining Laser I and the ordinary mining cycle, fittings, ore hold and defenses. Existing
+and new founder Ventures can receive a single starter laser while on their original hull. Subsequent trips use the owned
+fit. As with other mining in Eden, deep-core pollution clouds are outside the native simulation's current support.
+
+The miner unloads at the staging station and lists one reprocessing portion from its mined inventory. The miner pays
+the normal broker fee and can post a lower ask if its wallet cannot fund the reference price. While that listing is
+open it can resume ordinary mining. A Miner II factory's Morphite shortfall can trigger a normal corporate purchase
+of raw Mercoxit at a nearby station, or a courier trip to a supplier within 20 gates. The hauler loads what fits, delivers
+to the factory's hangar and can make repeat trips when one load cannot cover a whole portion. It turns around promptly
+at supply stops and retains the existing threat logic. The factory uses the normal reprocessing service.
+
+The miner's route, paid cycle and current system are checkpointed with resident ship and asteroid state. Courier cargo
+and market wallet entries use the same resident checkpoint as the shipment. The pinned catalog supplies belt composition,
+the launch module and the reprocessing portion. The local EVE.js build 3396210 `server/src/space/asteroids/asteroidService.js`
+reference identifies the same three grades (SHA-256 `8CA75BC0E2CA005F2E719D7ED9CEC1C0051460E1F1C6BC06110E645C699CF6B6`).
+[UniWiki Mining](https://wiki.eveuniversity.org/Mining#Mercoxit_mining) ·
+[CCP Introduction to Mining](https://support.eveonline.com/hc/en-us/articles/23655785488668-Introduction-to-Mining)
+
+### Automated validation
+
+`BotsMineAndHaulMercoxitToTheMinerTwoFactoryAcrossRestarts` starts with no Mercoxit or Morphite sellers, reopens the
+world with the miner operating in a stationless system and again after a hauler buys the first half of a refining
+portion. It checks the native asteroid loses ore, the miner uses a single deep-core tool, the only seller is the bot,
+and the two partial shipments are paid for once each and refined into Morphite at the factory.
+
+The exact filter passed in 11.36 seconds. The final solution built in 11.45 seconds with zero warnings and errors.
+The final affected run passed all 127 selected tests in 82.14 seconds with these class filters using
+`FullyQualifiedName~.<Class>.`:
+
+```text
+CapsuleerAmmunitionSupplyTests, CapsuleerMinerTests, CapsuleerMiningFleetTests, CapsuleerHaulerTests,
+CapsuleerProvisioningTests, CapsuleerGatePerformanceTests, CapsuleerDeadlinePerformanceTests,
+ResidentBotEconomyTests, MiningTierTests, ReprocessingTests, ResearchAgentTests
+```
+
+The initial run included both cases of `ResupplyStopsInspectingHangarAfterStockFillsTheRequirement`. Each counted
+61 SQL commands against an expectation of 60. Both cases reproduced on main at `017dab25` and were excluded by
+method name from the final affected run. Both Python policy suites passed all 17 cases. Style, line-width and diff
+checks passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
+## Bot planetary production and factory freight
+
+When a bot factory is short of a planetary commodity, a corporate hauler can make it from the catalog's extraction
+and processing dependencies. The planner works backward from the requested quantity and consumes stock already
+held at the factory's station before scheduling more extraction. It uses the native schematics up through P4, the
+current world multipliers and the processor types allowed on each planet. A raw leaf must be native to the selected
+planet. Sites can be up to eight jumps from the factory and must have an NPC market station in their system. The
+planner can reuse a compatible owned colony or open another within the pilot's normal colony limit.
+
+The pilot carries the correct command center and deploys it using ordinary planetary edits. The corporation pays
+for the infrastructure, upgrades and customs. A published command center can be purchased from the staging station
+at its reference price when an order cannot fill it. The pilot creates or reuses a launchpad, an extractor or compatible
+processor and the links and routes for the selected step. It flies to the customs office to import intermediates and
+export products. The native colony simulation advances during the resulting wall-clock wait, and the hauler can do
+other work between visits. The sale book remains an alternative source. Raw and intermediate stock comes back to the
+hauler's hangar in the factory station, and finished materials go into the manufacturer's hangar.
+
+Mechanical Parts first applies this path to Miner II. Its two raw inputs come from Base Metals and Noble Metals.
+The catalog schedules Reactive Metals, Precious Metals and finally schematic 73 for Mechanical Parts. The local
+EVE.js build 3396210 `server/src/services/planet/planetRuntimeStore.js` reference models installed extractor programs,
+schematic cycles, route delivery and customs transfers (SHA-256 `CB74256D55A9ADD0FA5FEDD022362118A1FE0D67B27CAAFF302F30A7A8CE45DA`).
+[UniWiki Planetary Commodities](https://wiki.eveuniversity.org/Planetary_Commodities) ·
+[CCP Planetary Interaction](https://support.eveonline.com/hc/en-us/articles/203269871-Planetary-Interaction)
+
+### Automated validation
+
+`BotProductionPlansEveryCatalogCommodityFromExtraction` walks all 68 production schematics and 15 raw resources
+from empty inventories and checks every simulated step consumes available ingredients. The runtime check
+`BotsProduceAndHaulPlanetaryInputsAcrossRestarts` covers two factory shortfalls. Mechanical Parts starts without any
+planetary stock or sell offers and verifies the full chain from extraction to Miner II assembly. Broadcast Node verifies
+P4 processing from supplied P3 intermediates using a high-tech production plant. Both cases reopen the world during
+production and with exported cargo in flight. They check the saved pin and deadline, one command center purchase,
+customs charges and consumption of the delivered input by the factory.
+
+The exact filters passed all three cases in 14.15 seconds. The solution built with zero warnings and errors in
+4.79 seconds. The affected run passed all 190 tests in 99.67 seconds using `FullyQualifiedName~.<Class>.` for:
+
+```text
+CapsuleerAmmunitionSupplyTests, CapsuleerHaulerTests, CapsuleerMinerTests, ResidentBotEconomyTests,
+PlanetaryRulesTests, PlanetaryIndustryTests, PlanetaryProtocolTests, PlanetaryConfigurationTests,
+CustomsConfigurationTests, PlanetaryMarketTests, PlanetarySkillExtractionTests, CorporationWalletTests,
+ResearchAgentTests
+```
+
+Both Python policy suites passed all 17 cases. Style, CSharpier, line-width and diff checks passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
+## Bot moon refineries
+
+When a Miner II factory runs short of Photon Microprocessors or Laser Focusing Crystals, it can build an Athanor.
+The planner traces the pinned component and reaction recipes back to moon ores. It prefers free moons whose composition
+contains more of the needed ores, then shorter routes and stable moon IDs. The staging system must have an NPC station.
+The route can run up to eight gates from the factory and the site must permit the composite reactor.
+
+The factory installs paid manufacturing jobs for the Athanor, Standup Moon Drill I, Standup Reprocessing Facility I
+and Standup Composite Reactor I. It uses owned stock and blueprints, and can request any missing originals, raw
+materials and manufactured parts through existing corporate freight. It can buy the quantum core and bootstrap fuel
+from sell orders, and use a fuel blueprint when it has the inputs. A corporate courier that can fit the cargo carries
+the equipment to the site. A Tayra courier can qualify for the Caldari Hauler cargo bonus and stows existing cargo
+in its own station hangar when needed. The bot-led corporation assigns Station Manager authority through its ordinary role store.
+The courier uses the native deployment, anchoring, core, fitting and fuel rules. It stocks fuel through the automatic
+fracture deadline before starting a six-day pull. The saved job, structure and courier shipment each retain their
+existing ownership and deadlines across restart.
+
+The planner maintains one refinery per corporation. It needs a suitable unoccupied moon, an available hauler with
+enough cargo space, construction originals and materials, a quantum core, and starter fuel. Mining the fractured field
+and ice belts, making fuel from mined ice, and running reaction jobs for the factory remain separate work.
+
+The local EVE.js build 3396210 `server/src/services/structure/structureAutoState.js` reference preserves the anchoring
+state and its deadline (SHA-256 `6F40FB6650BA30F70CF837C822A9DE18CD822295EABA94C95F37DBFF716EDED6`).
+[CCP Moon Mining](https://support.eveonline.com/hc/en-us/articles/115005404229-Moon-Mining) ·
+[CCP Reactions](https://support.eveonline.com/hc/en-us/articles/115005405785-Reactions) ·
+[UniWiki Reactions](https://wiki.eveuniversity.org/Reactions)
+
+### Automated validation
+
+`BotsBuildAndCommissionTheirMoonRefineryAcrossRestarts` passed in 14.79 seconds. It uses the pinned structure and Tayra
+definitions with short fixture manufacturing recipes. It starts with construction materials, blueprint originals, a
+core and fuel, and reopens the world once during hull manufacturing and again while the courier is in flight. It
+checks five delivered jobs and their individual corporate charges, one deployed refinery with three online services,
+one extraction, and one automatically fractured asteroid field. The solution built with zero warnings and errors in
+10.36 seconds. All 145 affected tests passed in 91.27 seconds using `FullyQualifiedName~.<Class>.` for:
+
+```text
+CapsuleerAmmunitionSupplyTests, CapsuleerHaulerTests, CapsuleerMinerTests, CapsuleerCorporationTests,
+ResidentBotEconomyTests, MoonExtractionTests, MoonMiningRulesTests, MoonMiningWarpTests, StructureTests,
+StructureControlTests, StructureFuelRulesTests, ReactionJobTests, CorporationRoleTests, CorporationWalletTests,
+PlanetaryIndustryTests
+```
+
+Both Python policy suites passed all 17 cases. Style, CSharpier, line-width and diff checks passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
 
 ## Paid Merlin replacement
 
@@ -303,7 +637,8 @@ a time and skips products it already has in local deliveries or on the market.
 The regular docked routine delivers finished jobs into Market Deliveries. It lists finished stock at a current bid price
 when available or at a catalog-backed reference price. The ordinary market handles escrow, matching, taxes and fees. Iron
 Charge S also keeps its established supply route and can be produced for stocking while local demand offers no eligible job.
-Blueprint research, invention and reactions remain future industry activities. Nearby procurement extends this workflow.
+[Autonomous Miner II production](#autonomous-miner-ii-production) adds copying and invention for that chain. Nearby
+procurement extends the general manufacturing workflow.
 [Nearby procurement for bot factories](#nearby-procurement-for-bot-factories)
 
 EVE University describes the blueprint, material and skill prerequisites. The feature reuses Eden's station manufacturing

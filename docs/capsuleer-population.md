@@ -109,6 +109,31 @@ three jumps. The hauler combines needed materials sold at the same station, carr
 manufacturer's factory hangar. Cargo and the return trip survive a restart.
 [Nearby procurement](protocol/capsuleers.md#nearby-procurement-for-bot-factories)
 
+At stations with a laboratory, a funded corporation can buy the inputs for Miner II, copy the Miner I original,
+invent a licensed copy and manufacture up to five modules for public sale. The ordinary job deadlines and invention
+outcomes survive restart. [Miner II production](protocol/capsuleers.md#autonomous-miner-ii-production)
+
+When local sellers cannot supply the invention datacores, corporate haulers visit reachable R&D agents, earn research
+points and pay the ordinary redemption fees from the corporation's wallet. They can take other jobs while research
+advances. The research projects and paid deliveries survive restart.
+[Miner II datacore supply](protocol/capsuleers.md#miner-ii-datacores-from-rd-agents)
+
+Factories can also refine ore already in the operator's hangar and manufacture missing Miner II components from owned
+materials and an available blueprint. The component job delivers back to the operator for assembly.
+[Miner II component production](protocol/capsuleers.md#miner-ii-components-from-owned-materials)
+
+Venture specialists stage from market stations, reach nearby nullsec Mercoxit belts and sell their mined ore.
+A factory short of Morphite can send a corporate hauler to collect the ore in enough trips to run a refining portion.
+[Mercoxit mining and factory freight](protocol/capsuleers.md#mercoxit-mining-and-factory-freight)
+
+Corporate haulers can run planetary colonies for missing factory inputs. They plan from the catalog, supply the
+colony through customs and carry the finished product to the factory. Miner II's first planetary input is Mechanical Parts.
+[Bot planetary production](protocol/capsuleers.md#bot-planetary-production-and-factory-freight)
+
+A Miner II factory short of reaction-based components can build a corporate Athanor. A hauler deploys it at a reachable
+moon, delivers the core, service modules and fuel, and starts a native extraction once the refinery is ready.
+[Bot moon refineries](protocol/capsuleers.md#bot-moon-refineries)
+
 #### Corporation ammunition supply
 
 Bot corporations can produce and trade **Iron Charge S**. A miner docked at an NPC factory with a market can refine owned
@@ -120,6 +145,8 @@ A separate bot corporation with a compatible patrol fit can send a hauler up to 
 its headquarters reserve falls below 100 rounds. The hauler buys up to 200 rounds, subject to funds and actual cargo capacity.
 It delivers the surviving cargo to the buyer's corporate reserve. Compatible corpmates can draw rounds from that reserve
 on their regular resupply stops. [Ammunition supply implementation](protocol/capsuleers.md#corporation-ammunition-supply)
+
+<a id="paid-merlin-replacement"></a>
 
 ### Paid ship replacement
 
