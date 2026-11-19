@@ -59,26 +59,29 @@ internal sealed partial class CapsuleerIndustry
         {
             if (pending.Length > 0)
             {
-                if (pending.Any(job => job.StationId == structure.Id && CanMake(world, catalog, pilot, structure, job.ProductTypeId)))
+                if (pending.Any(job => job.StationId == structure.Id && CanCompleteFactoryJob(world, catalog, pilot, structure, job)))
                 {
                     return new(structure, []);
                 }
                 continue;
             }
-            if (PlanStructureProduction(world, catalog, pilot, structure, origin) is not { } batch)
+            var cargo =
+                PlanMoonReaction(world, catalog, pilot, structure, origin)?.Load
+                ?? PlanStructureProduction(world, catalog, pilot, structure, origin)?.Load;
+            if (cargo is null)
             {
                 continue;
             }
             double capacity = PilotInventoryStore.HoldCapacity(world, catalog, pilot.PilotId, pilot.ShipId, (int)InventoryFlag.Cargo);
             double used = InventoryPersistence.UsedVolume(world, catalog, pilot.PilotId, pilot.ShipId, (int)InventoryFlag.Cargo);
-            double load = batch.Load.Sum(stack =>
+            double load = cargo.Sum(stack =>
             {
                 var item = origin.Single(item => item.Id == stack.ItemId);
                 return (item.VolumeOverride ?? PilotInventoryStore.Volume(catalog, item.TypeId, item.Singleton)) * stack.Quantity;
             });
             if (load <= capacity - used)
             {
-                return new(structure, batch.Load);
+                return new(structure, cargo);
             }
         }
         return null;
@@ -86,6 +89,18 @@ internal sealed partial class CapsuleerIndustry
 
     private static bool CanMake(WorldAction world, CatalogDbContext catalog, DockedPilot pilot, SavedStructure structure, int product) =>
         StructureIndustry.CanUse(world, catalog, structure, pilot.PilotId, IndustryActivity.Manufacturing, product);
+
+    private static bool CanCompleteFactoryJob(
+        WorldAction world,
+        CatalogDbContext catalog,
+        DockedPilot pilot,
+        SavedStructure structure,
+        IndustryJob job
+    ) =>
+        job.Activity == IndustryActivity.Manufacturing && CanMake(world, catalog, pilot, structure, job.ProductTypeId)
+        || job.Activity == IndustryActivity.Reaction
+            && ReactionCatalog.Recipes(catalog).TryGetValue(job.BlueprintTypeId, out var recipe)
+            && CanRunComposite(world, catalog, pilot, structure, recipe.Service);
 
     internal static bool FactoryDeliveryReady(WorldAction world, CatalogDbContext catalog, DockedPilot pilot, long id, long now) =>
         world.Set<SavedStructure>().Find(id) is { } structure
@@ -96,10 +111,9 @@ internal sealed partial class CapsuleerIndustry
                 job.StationId == id
                 && job.OutputCorporationId.HasValue
                 && job.Status == IndustryJobStatus.Installed
-                && job.Activity == IndustryActivity.Manufacturing
                 && PilotIndustryStore.Ready(world, job, now)
                 && CanDockAtFactory(world, catalog, pilot, structure)
-                && CanMake(world, catalog, pilot, structure, job.ProductTypeId)
+                && CanCompleteFactoryJob(world, catalog, pilot, structure, job)
             );
 
     private static StructureProduction? PlanStructureProduction(
@@ -142,37 +156,46 @@ internal sealed partial class CapsuleerIndustry
                 continue;
             }
             var materials = IndustryMaterials.Calculate(recipe.Materials, runs, blueprint.MaterialEfficiency, multiplier);
-            List<CapsuleerFactoryCargo> load = [];
-            if (blueprint.LocationId != structure.Id)
+            if (FactoryCargo(structure.Id, blueprint, materials, local, origin) is { } load)
             {
-                load.Add(new(blueprint.Id, 1));
-            }
-            bool stocked = true;
-            foreach (var material in materials)
-            {
-                long missing = material.Value - local.Where(item => item.TypeId == material.Key).Sum(item => (long)item.Quantity);
-                foreach (var item in origin.Where(item => item.TypeId == material.Key && !item.Singleton))
-                {
-                    if (missing <= 0)
-                    {
-                        break;
-                    }
-                    int quantity = (int)Math.Min(item.Quantity, missing);
-                    load.Add(new(item.Id, quantity));
-                    missing -= quantity;
-                }
-                if (missing > 0)
-                {
-                    stocked = false;
-                    break;
-                }
-            }
-            if (stocked)
-            {
-                return new(recipe, blueprint, runs, materials, load.ToArray());
+                return new(recipe, blueprint, runs, materials, load);
             }
         }
         return null;
+    }
+
+    private static CapsuleerFactoryCargo[]? FactoryCargo(
+        long facility,
+        OwnedItem blueprint,
+        IReadOnlyDictionary<int, int> materials,
+        OwnedItem[] local,
+        OwnedItem[] origin
+    )
+    {
+        List<CapsuleerFactoryCargo> load = [];
+        if (blueprint.LocationId != facility)
+        {
+            load.Add(new(blueprint.Id, 1));
+        }
+        foreach (var material in materials)
+        {
+            long missing = material.Value - local.Where(item => item.TypeId == material.Key).Sum(item => (long)item.Quantity);
+            foreach (var item in origin.Where(item => item.TypeId == material.Key && !item.Singleton))
+            {
+                if (missing <= 0)
+                {
+                    break;
+                }
+                int quantity = (int)Math.Min(item.Quantity, missing);
+                load.Add(new(item.Id, quantity));
+                missing -= quantity;
+            }
+            if (missing > 0)
+            {
+                return null;
+            }
+        }
+        return load.ToArray();
     }
 
     private static int FactoryRuns(int product) =>
@@ -193,15 +216,16 @@ internal sealed partial class CapsuleerIndustry
             return;
         }
         var running = InstalledFactoryJobs(world, pilot.PilotId).ToArray();
-        foreach (var job in running.Where(job => job.StationId == structure.Id && job.Activity == IndustryActivity.Manufacturing))
+        foreach (var job in running.Where(job => job.StationId == structure.Id))
         {
-            if (PilotIndustryStore.Ready(world, job, now) && CanMake(world, catalog, pilot, structure, job.ProductTypeId))
+            if (PilotIndustryStore.Ready(world, job, now) && CanCompleteFactoryJob(world, catalog, pilot, structure, job))
             {
                 industry.Finish(world, catalog, pilot.PilotId, job.Id, pilot.SystemId, cancel: false);
             }
         }
         if (
             running.Any(job => job.Status == IndustryJobStatus.Installed)
+            || TryRunMoonReaction(world, catalog, pilot, corporation, structure, now)
             || PlanStructureProduction(world, catalog, pilot, structure, []) is not { } batch
         )
         {

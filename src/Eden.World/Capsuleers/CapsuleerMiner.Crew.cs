@@ -43,6 +43,11 @@ internal sealed partial class CapsuleerMiner
         return available
             .Where(rock =>
                 (!useBelt || rock.AsteroidBeltId == Work.WorkingBelt)
+                && (
+                    Work.MoonExtractionId is not long extraction
+                    || Eden.Gameplay.Structures.MoonMiningRules.IsMoonRock(rock.Id)
+                        && Eden.Gameplay.Structures.MoonMiningRules.ExtractionId(rock.Id) == extraction
+                )
                 && Distance(rock) <= AsteroidDefinitions.VisibilityRange
                 && (
                     Work.Mercoxit is null

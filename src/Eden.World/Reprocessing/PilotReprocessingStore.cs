@@ -233,12 +233,8 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         IReadOnlyDictionary<int, int> missing
     )
     {
-        var source = catalog.Definitions.Find(CatalogData.Sde.NpcStations, (long)stationId);
         if (
-            source?.ReprocessingEfficiency is not > 0 or > 1
-            || source.ReprocessingStationsTake is not >= 0 or > 1
-            || source.OperationID is not long operation
-            || !StationCapabilities.Has(catalog, operation, StationService.Reprocessing)
+            !SupportsNpcReprocessing(catalog, stationId)
             || catalog.Read(CatalogData.Client.Typematerials, (long)item.TypeId)?.Materials is not { } materials
             || !materials.Any(material => material.MaterialTypeID is long id && missing.ContainsKey((int)id))
         )
@@ -259,6 +255,11 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
         Reprocess(world, catalog, pilotId, stationId, [item.Id], stationId, null, stationId, (int)InventoryFlag.Hangar);
         return true;
     }
+
+    internal static bool SupportsNpcReprocessing(CatalogDbContext catalog, int stationId) =>
+        catalog.Definitions.Find(CatalogData.Sde.NpcStations, (long)stationId)
+            is { ReprocessingEfficiency: > 0 and <= 1, ReprocessingStationsTake: >= 0 and <= 1, OperationID: long operation }
+        && StationCapabilities.Has(catalog, operation, StationService.Reprocessing);
 
     public ReprocessingResult Reprocess(
         long pilotId,

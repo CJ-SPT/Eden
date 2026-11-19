@@ -2,11 +2,13 @@ using System.Text.Json;
 using Eden.Data.World.Industry;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Economy;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Structures;
 using Eden.World.Catalog;
+using Eden.World.Corporations;
 using Eden.World.Economy;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -21,6 +23,29 @@ internal sealed partial class PilotIndustryStore
         using var scope = new WorldActionScope(database, new(pilots: [pilotId]));
         var world = scope.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var result = InstallReaction(world, catalog, pilotId, request);
+        scope.Commit();
+        return result;
+    }
+
+    internal static ManufacturingCharge ReactionCharge(WorldAction world, long pilot, int system, int formula, int runs, double security) =>
+        EconomicStore.IndustryCharge(
+            world,
+            pilot,
+            system,
+            (double)EconomicStore.AdjustedPrice(world, formula) * runs,
+            IndustryActivity.Reaction,
+            security
+        );
+
+    internal IndustryResult InstallReaction(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        IndustryRequest request,
+        int? supplyCorporation = null
+    )
+    {
         long now = Now;
         AdvanceFacility(world, catalog, request.FacilityId, now);
         var station = CurrentStation(world, catalog, pilotId, request.FacilityId, null);
@@ -63,16 +88,12 @@ internal sealed partial class PilotIndustryStore
                 j.PilotId == pilotId && j.Status == IndustryJobStatus.Installed && j.Activity == IndustryActivity.Reaction
             )
             .Count();
-        var plan = ReactionRules.Plan(
-            request,
-            recipe.Seconds,
-            activeJobs,
-            Bonuses(world, catalog, pilotId),
-            recipe.Materials,
-            FacilityMultiplier(catalog, station, (int)DogmaAttributeId.RefineryReactionTimeMultiplier)
-        );
-        double value = (double)EconomicStore.AdjustedPrice(world, item.TypeId) * request.Runs;
-        var charge = EconomicStore.IndustryCharge(world, pilotId, station.SolarSystemId, value, request.Activity, security);
+        var bonuses = Bonuses(world, catalog, pilotId);
+        double facilityTime = FacilityMultiplier(catalog, station, (int)DogmaAttributeId.RefineryReactionTimeMultiplier);
+        var plan = supplyCorporation.HasValue
+            ? ReactionRules.Plan(request.Runs, recipe.Seconds, activeJobs, bonuses, recipe.Materials, facilityTime)
+            : ReactionRules.Plan(request, recipe.Seconds, activeJobs, bonuses, recipe.Materials, facilityTime);
+        var charge = ReactionCharge(world, pilotId, station.SolarSystemId, item.TypeId, request.Runs, security);
         if (request.QuotedCharge is { } quote && (quote.CostCents != charge.CostCents || quote.TaxCents != charge.TaxCents))
         {
             throw new InvalidDataException("Reaction price changed; reopen the formula to refresh the quote.");
@@ -87,6 +108,7 @@ internal sealed partial class PilotIndustryStore
             BlueprintId = item.Id,
             BlueprintTypeId = item.TypeId,
             StationId = station.Id,
+            OutputCorporationId = supplyCorporation,
             Activity = IndustryActivity.Reaction,
             ProductTypeId = recipe.Output,
             Runs = request.Runs,
@@ -101,12 +123,26 @@ internal sealed partial class PilotIndustryStore
         SetJobOutput(world, catalog, job, request);
         world.Add(job);
         world.SaveChanges();
-        long? balance =
-            charge.TotalCents > 0
-                ? EconomicStore.Pay(world, pilotId, station.OwnerId, job.Id, WalletEntryType.Manufacturing, charge.TotalCents, now)
-                : null;
-        var result = new IndustryResult(ReadJob(world, catalog, job), changes, balance);
-        scope.Commit();
-        return result;
+        long? balance = null;
+        if (charge.TotalCents > 0)
+        {
+            if (supplyCorporation is int corporation)
+            {
+                CorporationWalletStore.Pay(
+                    world,
+                    corporation,
+                    station.OwnerId,
+                    job.Id,
+                    WalletEntryType.Manufacturing,
+                    -charge.TotalCents,
+                    now
+                );
+            }
+            else
+            {
+                balance = EconomicStore.Pay(world, pilotId, station.OwnerId, job.Id, WalletEntryType.Manufacturing, charge.TotalCents, now);
+            }
+        }
+        return new(ReadJob(world, catalog, job), changes, balance);
     }
 }
