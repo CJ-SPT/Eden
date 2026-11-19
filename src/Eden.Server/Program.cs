@@ -103,7 +103,8 @@ internal static class Program
         {
             return;
         }
-        bool economyWorld = args.Contains("--economy-world");
+        bool freshUniverse = args.Contains("--fresh-universe");
+        bool economyWorld = freshUniverse || args.Contains("--economy-world");
         bool testingMarket = args.Contains("--testing-market");
         if (testingMarket && (economyWorld || File.Exists(worldPath)))
         {
@@ -174,7 +175,7 @@ internal static class Program
             long reconciliationStarted = Stopwatch.GetTimestamp();
             Eden.Gameplay.Market.WorldEconomySettings? startingEconomy = File.Exists(worldPath)
                 ? null
-                : new(testingMarket, !economyWorld, npcStock);
+                : new(testingMarket, !economyWorld, npcStock, freshUniverse);
             bool preparePopulation = Value("--grant-redeem") is null && Value("--set-account-password") is null;
             if (preparePopulation)
             {

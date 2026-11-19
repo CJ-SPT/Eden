@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Fresh-universe starter industry](protocol/capsuleers.md#fresh-universe-starter-industry) follows two corvettes
+from zero ISK through mining, refining, paid manufacturing, and a funded market fill.
+
 [Dynamic paid ship replacement](protocol/capsuleers.md#dynamic-paid-ship-replacement) covers saved loadouts,
 bounded buy orders and in-stock replacements for miners, patrol pilots and haulers.
 

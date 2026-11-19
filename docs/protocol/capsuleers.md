@@ -3358,3 +3358,76 @@ stranded jobs and the local station before deployment.
 ### Optional maintainer check
 
 After deployment, observe a previously stranded capsule in KFIE-Z and confirm it docks at the local station.
+
+## Fresh-universe starter industry
+
+`--fresh-universe` saves an opt-in policy when creating a world. Humans and simulated capsuleers receive their
+racial corvette, the same civilian equipment and racial skills, and zero ISK. The profile starts without the
+development demo characters. New launcher accounts and the bot account have the same default clone grade.
+Bots can board a free recovery corvette through the same docked operation humans use.
+[Creation command](../development-client.md#creating-an-economy-world-without-testing-supply) ·
+[Corvette gameplay reference](https://wiki.eveuniversity.org/Corvettes)
+
+The resident market provides bounded, replenishing NPC ore bids and institutional skillbooks and blueprint originals.
+An eligible starter factory also sells the pinned Miner I blueprint original. The catalog's corporation sellers for
+that blueprint have no high-security station offering all three required services together. This added blueprint
+offer solves that local supply gap. Market orders for manufactured goods hold actual pilot inventory or funds, and
+delivering a job leaves the NPC finished-goods book empty. Build 3662168 supplies the Miner I blueprint (785),
+product (483), materials, Industry I prerequisite, and job duration. The profile uses existing market, industry,
+and fitting wire forms. [Manufacturing reference](https://wiki.eveuniversity.org/Manufacturing) ·
+[Trading reference](https://wiki.eveuniversity.org/Market)
+
+Two rookie pilots take complementary goals at an eligible station with a market, manufacturing, reprocessing,
+and ore for every recipe input. One mines and sells ore until it can post a funded Miner I buy order. The other
+follows that demand, buys the blueprint, mines the needed ore, pays to refine and manufacture, and sells the actual
+output through the same market that human pilots use. Inventory, market escrow, journal entries and job deadlines
+stay with the resident world and its checkpoint. Fresh-universe bot progression currently covers this local
+industrial cohort. The later milestones cover more careers, interregional sourcing and corporate development.
+
+Mining and paid NPC kill settlement both credit unallocated skill points through the existing rules. A qualifying
+mining cycle pays based on the pinned reference value of the collected ore. A qualifying kill pays based on its
+configured bounty and credits the pilot who scored the kill. Bots currently accumulate those points in their pool.
+Automatic allocation and career-specific training decisions are future work.
+
+### Automated validation
+
+The native catalog replay starts from an empty world at an eligible factory in system 30015042. It compares
+new human and bot packages, rejects an unfunded order, verifies the buyer earns the escrow by mining and selling,
+reopens with the bid still funded, and checks an actual Miner I job, refining and installation charges, tax,
+delivery and zero remaining escrow after another reopen. It also checks earned mining skill points across reopen.
+The combat-controller check verifies that a 1,000 ISK NPC kill credits two unallocated skill points once at
+the default rate.
+
+In the final run, the buyer funded a 14,178.17 ISK bid after 10m 04s of simulated active play. The first sale
+settled after 1h 12m 28s. These times describe one run with the pinned catalog and its local ore layout.
+
+```powershell
+$env:EDEN_FRESH_UNIVERSE_CATALOG = Join-Path $env:LOCALAPPDATA 'Eden/catalog.sqlite'
+.\tools\Test-Feature.ps1 -Filter 'FullyQualifiedName=Eden.Protocol.Tests.Industry.FreshUniverseTests.NewCorvettesEarnAndTradeTheFirstManufacturedMinerThroughFundedEscrow'
+```
+
+Tool restore, solution restore, and build passed with zero warnings or errors (8.45 seconds for the build).
+The affected .NET run finished in 3m 04s with 316 passes, two failures, and one skipped opt-in browser test.
+Both failures reproduced on unchanged base commit `4794edc0` in a 14.28-second focused rerun.
+`FailedPaymentRollsBackStockGoodsAndHistoryAndRetrySettlesOnce` failed while deleting the owned fixture world,
+and the overpriced case of `ShoppingChoosesRealAffordableStockAndHonorsThreatMemory` returned a route.
+The fresh profile, native economy loop, and bot kill SP checks passed. The catalog and formatting policy
+suites passed eight and nine Python tests respectively. Policy and formatting verification took 41.75 seconds.
+Diff checks and all 15 edited local Markdown links passed.
+
+The affected selection combined the following class filters via `FullyQualifiedName~`.
+
+```text
+FreshUniverseTests | CapsuleerProvisioningTests | CapsuleerBackgroundPreparationTests | CapsuleerInboundRuntimeTests
+CapsuleerMiningFleetTests | PilotSpaceActivitiesTests | CharacterCreationTests | WorldConfigurationTests
+WorldInitializationTests | AdministrationTests | PilotFleetTests | StarterMarketTests | RegionalMarketTests
+IndustrialDemandTests | IndustryTests | ReprocessingTests | MiningSkillPointRewardTests | NpcSkillPointRewardTests
+```
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+In a fresh world, watch the starter factory's market for the first Miner I bid and its eventual fill.

@@ -32,7 +32,7 @@ internal sealed partial class CapsuleerProvisioner
             return existing;
         }
         var policy = world.Settings.Capsuleers;
-        if (!policy.Enabled || visitor >= policy.GateVisitors)
+        if (world.Settings.FreshUniverse || !policy.Enabled || visitor >= policy.GateVisitors)
         {
             return null;
         }

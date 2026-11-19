@@ -12,6 +12,7 @@ using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Targeting;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
+using Eden.World.Corporations;
 using Eden.World.Docking;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
@@ -40,7 +41,8 @@ internal sealed class CapsuleerMinerFactory(
     IPilotHealth health,
     MarketChangeSignal marketSignal,
     CapsuleerDefense defense,
-    CapsuleerIndustry industry
+    CapsuleerIndustry industry,
+    PilotFleetStore fleet
 )
 {
     internal CapsuleerMiner Create(long pilotId, IReadOnlyCollection<long> crew, Func<long, bool> suspended) =>
@@ -62,7 +64,8 @@ internal sealed class CapsuleerMinerFactory(
             health,
             marketSignal,
             defense,
-            industry
+            industry,
+            fleet
         );
 }
 
@@ -84,7 +87,8 @@ internal sealed partial class CapsuleerMiner(
     IPilotHealth health,
     MarketChangeSignal marketSignal,
     CapsuleerDefense defense,
-    CapsuleerIndustry industry
+    CapsuleerIndustry industry,
+    PilotFleetStore fleet
 )
 {
     private static readonly CatalogDefinition<bool> s_miningBelt = new(
@@ -648,6 +652,7 @@ internal sealed partial class CapsuleerMiner(
     {
         if (
             Live is not null
+            && !database.Settings.FreshUniverse
             && _operation.World is EconomyTransaction world
             && CapsuleerCorporations.Place(world, _operation.Catalog, database, pilotId, Now)
         )
@@ -658,18 +663,28 @@ internal sealed partial class CapsuleerMiner(
 
     private void PrepareTrip()
     {
+        bool fresh = database.Settings.FreshUniverse;
         if (Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup)
         {
-            AttemptShipReplacement();
-            return;
+            if (!fresh)
+            {
+                AttemptShipReplacement();
+                return;
+            }
+            _pilot = fleet.RecoverCorvette(_operation.World, _operation.Catalog, pilotId, Pilot.ShipId, Pilot.StationId).Pilot;
+            _navigation = new();
+            _work = Work with { ShipId = Pilot.ShipId, Navigation = _navigation.Capture(), PaidUntil = 0, ModuleId = 0 };
         }
         JoinCorporationAtDock();
-        CapsuleerSupplyStore.Ensure(
-            _operation.World,
-            _operation.Catalog,
-            pilotId,
-            _operation.World.Set<SavedCapsuleerAgent>().Find(pilotId)!.FounderShipId
-        );
+        if (!fresh)
+        {
+            CapsuleerSupplyStore.Ensure(
+                _operation.World,
+                _operation.Catalog,
+                pilotId,
+                _operation.World.Set<SavedCapsuleerAgent>().Find(pilotId)!.FounderShipId
+            );
+        }
         var aboard = PilotInventoryStore.List(_operation.World, _operation.Catalog, Pilot.PilotId, Pilot.ShipId);
         var ore = aboard.Where(i => i.CategoryId == AsteroidDefinitions.Category && ShipHoldRules.IsHold(i.FlagId)).ToArray();
         if (ore.Length > 0)
@@ -684,17 +699,24 @@ internal sealed partial class CapsuleerMiner(
             );
         }
         FactorySupplyRequest? supply = null;
+        if (fresh && _operation.World is EconomyTransaction starterWorld)
+        {
+            _operation.MarketChanged |= industry.WorkStarterIndustry(starterWorld, _operation.Catalog, Pilot, Now, out var oreTypes);
+            _work = Work with { StarterOreTypes = oreTypes };
+        }
         if (
-            Pilot.CorpId >= Eden.Gameplay.Corporations.CorporationRules.FirstCorporationId
+            !fresh
+            && Pilot.CorpId >= Eden.Gameplay.Corporations.CorporationRules.FirstCorporationId
             && _operation.World is EconomyTransaction supplyWorld
         )
         {
             _operation.MarketChanged |= industry.Produce(supplyWorld, _operation.Catalog, Pilot, Now, out supply);
         }
         _work = Work with { FactorySupply = supply };
-        var expedition = PrepareMercoxitExpedition(aboard);
-        var laserType = expedition is null
-            ? CapsuleerMiningRules.Laser((CapsuleerMiningHull)Pilot.ShipTypeId)
+        var expedition = fresh ? null : PrepareMercoxitExpedition(aboard);
+        var laserType =
+            fresh ? MiningLaserType.Civilian
+            : expedition is null ? CapsuleerMiningRules.Laser((CapsuleerMiningHull)Pilot.ShipTypeId)
             : MiningLaserType.DeepCoreMiningLaserI;
         _laser = aboard.FirstOrDefault(i => i.TypeId == (int)laserType && InventoryDefinitions.IsHighSlot(i.FlagId));
         if (_laser is null)
@@ -770,6 +792,10 @@ internal sealed partial class CapsuleerMiner(
                 && (
                     Work.Mercoxit is null
                         ? database.Catalog.Definition(s_miningBelt, checked((int)o.Id))
+                            && (
+                                Work.StarterOreTypes.Length == 0
+                                || CapsuleerProvisioningCatalog.BeltHasOre(_operation.Catalog, o.Id, Work.StarterOreTypes)
+                            )
                         : CapsuleerTrafficRoutes.MercoxitBelt(_operation.Catalog, o.Id)
                 )
             )

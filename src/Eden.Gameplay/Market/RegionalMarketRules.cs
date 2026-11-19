@@ -31,6 +31,7 @@ public static class RegionalMarketRules
     public const int RecoveryIntervals = 6;
     public const decimal MaximumPriceResponse = 0.15m;
     public const long InitialDemandCents = 150_000_000L * MarketDefinitions.CentsPerIsk;
+    private const long StarterOreDemandCents = 250_000L * MarketDefinitions.CentsPerIsk;
 
     // Build 3662168 inventory groups: regular capitals deliberately remain eligible.
     private const int TitanGroup = 30;
@@ -136,6 +137,8 @@ public static class RegionalMarketRules
         }
         return (int)Math.Clamp(budget / referenceCents, 1, int.MaxValue);
     }
+
+    public static int StarterOreDemand(long priceCents) => (int)Math.Max(1, StarterOreDemandCents / priceCents);
 
     public static long SnapshotAnchor(long cents, RegionalMarketRole role, bool bid) =>
         Math.Max(

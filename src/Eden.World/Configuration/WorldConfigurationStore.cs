@@ -81,6 +81,11 @@ public sealed class WorldConfigurationStore(WorldDatabase database, TimeProvider
         world.Database.OpenConnection();
         using var transaction = world.Database.BeginTransaction();
         var state = world.Set<SavedConfigurationState>().Single();
+        var active = Revision(world.Set<SavedConfigurationRevision>().Find(state.ActiveRevisionId)!);
+        if (active.Draft.Settings.FreshUniverse != draft.Settings.FreshUniverse)
+        {
+            throw new InvalidDataException("Fresh-universe progression is selected when creating a world.");
+        }
         if (state.Generation != expectedGeneration)
         {
             throw new InvalidOperationException("Configuration changed. Reload the current revision before saving.");
@@ -124,7 +129,7 @@ public sealed class WorldConfigurationStore(WorldDatabase database, TimeProvider
         );
     }
 
-    internal static void Seed(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock)
+    internal static void Seed(WorldDbContext world, CatalogDbContext catalog, TimeProvider clock, bool freshUniverse)
     {
         if (world.Set<SavedConfigurationState>().Any())
         {
@@ -137,7 +142,14 @@ public sealed class WorldConfigurationStore(WorldDatabase database, TimeProvider
             CatalogFingerprint = catalog.Definitions.Identity.SourceFingerprint,
             Settings = new()
             {
-                Economy = new(economy.ChargeServiceCosts, economy.DefaultManufacturingIndex),
+                FreshUniverse = freshUniverse,
+                Economy = new(economy.ChargeServiceCosts, economy.DefaultManufacturingIndex)
+                {
+                    ProgressiveMarkets = freshUniverse ? true : null,
+                    RegionalHubSupply = !freshUniverse,
+                    BeginnerMarketSupply = !freshUniverse,
+                    SimulatedMarketHistory = !freshUniverse,
+                },
                 DevelopmentSupply = new(supply.TestingMarket, supply.TestingGrants, supply.InstitutionalStock),
                 Resources = new(economy.RenewBelts, economy.RenewalHourUtc),
             },

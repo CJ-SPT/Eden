@@ -71,7 +71,7 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
             int total = catalog.Definitions.Systems.Count;
             int cached = total - systems.Length;
             progress?.Invoke(new(cached, total, 0));
-            if (systems.Length == 0 || maximumCommunities == 0)
+            if (systems.Length == 0 || maximumCommunities == 0 || database.Settings.FreshUniverse)
             {
                 return new(catalog.Definitions.Systems.Count, 0, systems.Length);
             }
@@ -127,6 +127,10 @@ internal sealed partial class CapsuleerProvisioner(WorldDatabase database, TimeP
             var result = Provision(systemId, catalog, action.World);
             action.Commit();
             return result;
+        }
+        if (database.Settings.FreshUniverse)
+        {
+            return new(0, 0, 0);
         }
         using WorldDbContext world = new(database.Path);
         return Provision(systemId, catalog, world);

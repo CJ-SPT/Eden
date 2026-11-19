@@ -1,4 +1,5 @@
 using Eden.Data.World.Market;
+using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
@@ -44,9 +45,11 @@ internal sealed partial class RegionalMarketStore
         {
             return;
         }
+        bool freshUniverse = world.Settings.FreshUniverse;
         var unlocks = world.Set<SavedMarketUnlock>();
-        var unlocked = types is null
-            ? unlocks.Select(u => u.TypeId).ToHashSet()
+        HashSet<int> unlocked =
+            freshUniverse ? []
+            : types is null ? unlocks.Select(u => u.TypeId).ToHashSet()
             : types.Where(type => unlocks.Find(type) is not null).ToHashSet();
         var products = unlocked
             .Select(type => RegionalMarketCatalog.Product(catalog, type))
@@ -75,7 +78,11 @@ internal sealed partial class RegionalMarketStore
             : profiles.Demand.Values;
         var demand = candidates
             .Where(d => !d.RequiresUnlock || Enumerable.Contains(unlocked, d.TypeId))
-            .Where(d => RegionalMarketRules.Buys(d.TypeId, d.Category, d.RawResource, d.Material, profile.Role))
+            .Where(d =>
+                freshUniverse
+                    ? d is { Category: InventoryCategory.Asteroid, RawResource: true }
+                    : RegionalMarketRules.Buys(d.TypeId, d.Category, d.RawResource, d.Material, profile.Role)
+            )
             .ToDictionary(d => d.TypeId);
         foreach (
             var retired in orders.Values.Where(o =>
@@ -101,7 +108,9 @@ internal sealed partial class RegionalMarketStore
             int capacity;
             if (bid)
             {
-                capacity = RegionalMarketRules.DemandCapacity(reference.Value, profile.Role, elapsed);
+                capacity = freshUniverse
+                    ? RegionalMarketRules.StarterOreDemand(anchor)
+                    : RegionalMarketRules.DemandCapacity(reference.Value, profile.Role, elapsed);
             }
             else
             {

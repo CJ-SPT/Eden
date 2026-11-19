@@ -43,6 +43,7 @@ internal sealed partial class CapsuleerMiner
         return available
             .Where(rock =>
                 (!useBelt || rock.AsteroidBeltId == Work.WorkingBelt)
+                && (Work.StarterOreTypes.Length == 0 || Work.StarterOreTypes.Contains(rock.TypeId))
                 && Distance(rock) <= AsteroidDefinitions.VisibilityRange
                 && (
                     Work.Mercoxit is null

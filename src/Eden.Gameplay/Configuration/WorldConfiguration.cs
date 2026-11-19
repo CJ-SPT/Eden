@@ -126,6 +126,7 @@ public sealed record ExplorationPolicy(bool AlwaysResolvedSignatures = false);
 
 public sealed record WorldSettings
 {
+    public bool FreshUniverse { get; init; }
     public EconomicPolicy Economy { get; init; } = new();
     public DevelopmentSupplyPolicy DevelopmentSupply { get; init; } = new();
     public ResourcePolicy Resources { get; init; } = new();

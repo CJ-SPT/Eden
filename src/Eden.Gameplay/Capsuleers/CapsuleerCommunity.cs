@@ -51,6 +51,7 @@ public sealed record MinerProgress(
 )
 {
     public long WorkingBelt { get; init; }
+    public int[] StarterOreTypes { get; init; } = [];
     public FactorySupplyRequest? FactorySupply { get; init; }
     public BeltMemory[] AvoidedBelts { get; init; } = [];
     public BeltMemory[] StrippedBelts { get; init; } = [];

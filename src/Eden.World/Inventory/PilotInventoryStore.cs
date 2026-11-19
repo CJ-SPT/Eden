@@ -10,6 +10,7 @@ using Eden.World.Catalog;
 using Eden.World.Corporations;
 using Eden.World.Fittings;
 using Eden.World.Industry;
+using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -357,6 +358,27 @@ internal sealed partial class PilotInventoryStore(WorldDatabase database, TimePr
         return type.CategoryId == (int)InventoryCategory.Ship
             ? ShipVolumeRules.Packaged(typeId, (HullClass)type.GroupId, volume)
             : CargoContainerAssemblyRules.PackagedVolume(typeId, volume);
+    }
+
+    internal static long GrantStarterEquipment(WorldAction world, long pilotId, int stationId)
+    {
+        var equipment = Eden.Gameplay.Content.BuildContentPolicy.Current.StartingEquipment;
+        long miner = world.NextItemId();
+        foreach (var (item, type) in new[] { (miner, equipment.MinerType), (world.NextItemId(), equipment.WeaponType) })
+        {
+            world.Add(
+                new OwnedItem
+                {
+                    Id = item,
+                    OwnerId = pilotId,
+                    TypeId = type,
+                    LocationId = stationId,
+                    FlagId = (int)InventoryFlag.Hangar,
+                    Quantity = 1,
+                }
+            );
+        }
+        return miner;
     }
 
     internal static void GrantStarterEquipment(WorldDbContext world, long pilotId, int stationId)

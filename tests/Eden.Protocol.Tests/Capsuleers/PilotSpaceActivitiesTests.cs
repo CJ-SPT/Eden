@@ -11,6 +11,7 @@ using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
+using Eden.Gameplay.Skills;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Tests.Combat;
 using Eden.Server;
@@ -325,6 +326,8 @@ public sealed class PilotSpaceActivitiesTests
         );
         CapsuleerDefenseState? defense = null;
         var pilot = f.Pilot;
+        var points = f.Db.Services.GetRequiredService<IPilotFreeSkillPoints>();
+        Assert.Equal(0, points.Balance(pilot.PilotId));
         NavigationState navigation = new();
         bool destroyed = false;
         for (int i = 0; i < 180; i++)
@@ -341,10 +344,12 @@ public sealed class PilotSpaceActivitiesTests
             }
         }
         Assert.True(destroyed);
+        Assert.Equal(2, points.Balance(pilot.PilotId));
         using WorldDbContext saved = new(f.Db.Path);
         var reward = Assert.Single(saved.Set<NpcBounty>().Where(b => b.NpcId == enemy.Id));
         long balance = saved.Set<PilotWallet>().Find(pilot.PilotId)!.Cents;
         controller.Advance(pilot, navigation, defense, f.Clock.Now, 200, []);
+        Assert.Equal(2, points.Balance(pilot.PilotId));
         using WorldDbContext reread = new(f.Db.Path);
         Assert.Equal(reward.Id, Assert.Single(reread.Set<NpcBounty>().Where(b => b.NpcId == enemy.Id)).Id);
         Assert.Equal(balance, reread.Set<PilotWallet>().Find(pilot.PilotId)!.Cents);
