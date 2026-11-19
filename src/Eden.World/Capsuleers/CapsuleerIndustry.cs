@@ -1,5 +1,6 @@
 using Eden.Data.Catalog;
 using Eden.Data.World.Capsuleers;
+using Eden.Data.World.Characters;
 using Eden.Data.World.Corporations;
 using Eden.Data.World.Industry;
 using Eden.Data.World.Inventory;
@@ -69,6 +70,13 @@ internal sealed partial class CapsuleerIndustry(
 
     internal static OwnedItem[] DepotStock(WorldAction world, int corporation, long station) =>
         DepotStacks(world, corporation, station).Where(item => item.TypeId == Rules.ChargeType).OrderBy(item => item.Id).ToArray();
+
+    private static CorporationSupplyRun? ActiveSupplyRun(LiveWorld live, Pilot pilot) =>
+        live.HaulerCheckpoints.GetValueOrDefault(pilot.Id)?.Work is { CorporationSupply: { } run } work
+        && work.ShipId == pilot.ActiveShipId
+        && run.CorporationId == pilot.CorporationId
+            ? run
+            : null;
 
     private static IEnumerable<OwnedItem> DepotStacks(WorldAction world, int corporation, long station) =>
         world

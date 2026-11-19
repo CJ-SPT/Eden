@@ -55,12 +55,19 @@ internal static partial class ShipLossPersistence
         string manifest = JsonSerializer.Serialize(items);
         var chance = world.Settings.Capsuleers.Freight.WreckSurvivalPercent;
         HashSet<long>? freight = null;
-        if (chance != 50 && world.Set<SavedCapsuleerAgent>().Find(pilotId)?.FounderShipId == shipId)
+        if (chance != 50 && world.Set<SavedCapsuleerAgent>().Find(pilotId) is not null)
         {
             var work =
                 LiveWorld.Find(world.WorldPath)?.HaulerCheckpoints.GetValueOrDefault(pilotId)?.Work
                 ?? HaulerCheckpoint.Read(world.Filter<SavedCapsuleerHauler>(h => h.PilotId == pilotId).SingleOrDefault()?.Progress);
-            freight = work?.Freight?.Stacks.Select(stack => stack.ItemId).ToHashSet();
+            if (work?.ShipId == shipId)
+            {
+                freight = work.Freight?.Stacks.Select(stack => stack.ItemId).ToHashSet();
+                if (work.CorporationSupply?.FactorySupply?.Refinery?.Cargo is { } refineryCargo)
+                {
+                    (freight ??= []).Add(refineryCargo.ItemId);
+                }
+            }
         }
         var survivors = items
             .Where(i =>

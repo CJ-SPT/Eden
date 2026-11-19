@@ -38,7 +38,7 @@ internal sealed partial class CapsuleerIndustry
             return null;
         }
         var members = world.Filter<Pilot>(pilot => pilot.CorporationId == employer.Id).OrderBy(pilot => pilot.Id).ToArray();
-        if (members.Any(pilot => live.HaulerCheckpoints.GetValueOrDefault(pilot.Id)?.Work.CorporationSupply is not null))
+        if (members.Any(pilot => ActiveSupplyRun(live, pilot) is not null))
         {
             return null;
         }

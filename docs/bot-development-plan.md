@@ -26,11 +26,12 @@ restocks reagent-consuming upgrades that are configured online. [Autonomous firs
 [Sovereignty mechanics](https://wiki.eveuniversity.org/Sovereignty) ·
 [CCP sovereignty deployment and capture](https://www.eveonline.com/news/view/sovereignty-structures-and-transition)
 
-Milestone 2 landed on `main` in `28fd1a84`. Milestone 3 starts on `codex/dynamic-ship-replacement` with the merged
-refinery and sovereignty routines. Recovery tracks its own escrow and can use local sell quotes for stocked parts.
-The first compatibility checks cover combat and mining recovery, a paid Squall replacement before home defense and
-upkeep, and the refinery freight and commissioning flow. Repeated losses and specialist fit and cargo cases remain
-part of milestone 3. [Replacement protocol and acceptance](protocol/capsuleers.md#dynamic-paid-ship-replacement)
+Milestone 2 landed on `main` in `28fd1a84`. The reconciled replacement branch landed in `ba4e8ee4`. Milestone 3
+verifies two paid replacements for one patrol pilot across restarts, a mining fallback with an escrow refund, and a
+fitted Squall replacement that can defend its alliance's first claim. When a refinery courier is destroyed, the original
+package survives only as wreck loot if it passes the freight survival roll. The factory can finance a new package and
+the courier can buy a replacement Tayra and resume deliveries. Each purchase, job, loss and cargo transfer has a
+durable record. [Replacement protocol and acceptance](protocol/capsuleers.md#dynamic-paid-ship-replacement)
 
 Apply the focused validation and publishing policy at each milestone. Collect capacity evidence at the baseline and
 each workload increase. Use the same world, server settings and action mix for before-and-after comparisons, and report

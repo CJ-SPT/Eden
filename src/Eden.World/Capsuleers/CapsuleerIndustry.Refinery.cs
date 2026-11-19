@@ -95,12 +95,10 @@ internal sealed partial class CapsuleerIndustry
             && world
                 .Filter<Pilot>(pilot => pilot.CorporationId == corporation.Id)
                 .AsEnumerable()
-                .Any(pilot =>
-                    live.HaulerCheckpoints.GetValueOrDefault(pilot.Id)?.Work.CorporationSupply?.FactorySupply?.Refinery is not null
-                )
+                .Any(pilot => ActiveSupplyRun(live, pilot)?.FactorySupply?.Refinery is not null)
         )
         {
-            // The package has left the factory hangar. Wait for that shipment to settle before ordering more.
+            // A courier assigned to its active hull can still deliver the package.
             return null;
         }
         var refinery = world

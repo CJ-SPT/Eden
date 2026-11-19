@@ -74,6 +74,48 @@ MoonExtractionTests, MoonMiningRulesTests, AllianceBillingTests
 Both Python policy suites passed all 17 cases. Style, CSharpier and line-width verification passed. The .NET run was
 scoped to affected features and immediate dependencies.
 
+#### Repeated losses and refinery freight
+
+Each loss starts recovery from the newly destroyed hull's fit and a fresh set of market orders. The Merlin fixture
+fills the first replacement from paid manufacturing, station stock and market orders. It then destroys the first
+replacement, reopens the world with the second escrow still active, fills fresh orders and verifies the second ready
+ship after another reopen. It checks both fit and magazine loads, two loss reports, six filled bids with zero escrow,
+and the exact wallet debits and broker fees.
+
+The refinery fixture exercises an uninterrupted deployment and two courier losses with freight survival set to 0% and
+100%. After reopen it checks the lost Athanor's original stack, drop status and wreck custody. The factory starts a
+new paid job while the old courier checkpoint still describes the destroyed hull. The courier buys a Tayra, loads a
+newly manufactured package with a different item ID, and commissions one refinery. The original package is accounted
+for once in the loss. Surviving freight stays in the wreck until it is looted or expires.
+
+The exact selection passed eight cases in 28.65 seconds. It used `FullyQualifiedName=` for these methods under
+`Eden.Protocol.Tests.Capsuleers`:
+
+```text
+CapsuleerAmmunitionSupplyTests.LostMerlinBuysPaidReplacementsAndReturnsToDutyAcrossRestarts
+CapsuleerAmmunitionSupplyTests.BotsBuildAndCommissionTheirMoonRefineryAcrossRestarts
+CapsuleerAmmunitionSupplyTests.StalledVentureBidsRefundAfterRestartAndMinerUndocksWithAnInStockFit
+FreightTests.HaulerWreckRetainsTheScannableStacksAcrossCheckpoint
+```
+
+The solution built with zero warnings and errors in 0.70 seconds. The broader run had 331 passes and one failure in
+3 minutes 50 seconds. It selected `FullyQualifiedName~Eden.Protocol.Tests.Loot.` and `FullyQualifiedName~.<Class>.` for:
+
+```text
+CapsuleerAmmunitionSupplyTests, CapsuleerAllianceTests, CapsuleerHaulerTests, CapsuleerMinerTests,
+CapsuleerSupplyTests, CapsuleerCorporationTests, FreightTests, MoonExtractionTests, EntosisCaptureTests,
+SovereigntyDeploymentTests, PersonalMarketTests, ResidentEconomyTests, ApplyFittingTests, PilotFleetTests,
+NpcCombatTests, PilotTurretTests, CapsuleCombatTests, InsuranceLossTests, ShipStorageTests, ShipRigTests,
+CourierContractTests
+```
+
+`CapsuleCombatTests.FailedCapsuleSettlementRollsBackBodyTrainingHealthPaymentAndNotifications` failed at the saved
+training-queue assertion in its resident case. An isolated run of that method on `main` at `ba4e8ee4` reproduced the
+same failure. The file-backed case passed on both revisions. Capsule respawn takes a separate loss path from hull and
+freight destruction.
+
+Both Python policy suites passed all 17 cases. Style, CSharpier, line-width and diff checks passed.
+
 ### Live acceptance
 
 Not performed. Agent client testing is disabled.
@@ -351,6 +393,13 @@ in its own station hangar when needed. The bot-led corporation assigns Station M
 The courier uses the native deployment, anchoring, core, fitting and fuel rules. It stocks fuel through the automatic
 fracture deadline before starting a six-day pull. The saved job, structure and courier shipment each retain their
 existing ownership and deadlines across restart.
+
+If a courier is destroyed, the loss manifest records the original cargo. Tracked refinery cargo uses the configured
+freight survival rate for the active hull, including replacement hulls. Surviving cargo keeps its item ID and is left
+in the pilot's wreck under the native loot rules. A destroyed stack leaves the inventory. A factory or dispatcher
+counts a saved shipment only while its hull and corporation still match the courier. The factory can procure a new
+shipment without waiting for the capsule to dock. [Repeated-loss validation](#repeated-losses-and-refinery-freight) ·
+[CCP container and wreck ownership](https://support.eveonline.com/hc/en-us/articles/115000597345-Container-and-Wreck-Ownership)
 
 The planner maintains one refinery per corporation. It needs a suitable unoccupied moon, an available hauler with
 enough cargo space, construction originals and materials, a quantum core, and starter fuel. Mining the fractured field
