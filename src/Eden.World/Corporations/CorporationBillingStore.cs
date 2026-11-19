@@ -57,7 +57,7 @@ internal sealed class CorporationBillingStore(WorldDatabase database) : ICorpora
             ? JsonSerializer.Deserialize<CorporationBillPaymentSettings>(row.DataJson)
             : null;
 
-    internal static void DefaultAllianceMaintenance(WorldAction world, long actorId)
+    internal static bool DefaultAllianceMaintenance(WorldAction world, long actorId)
     {
         var corporation = Authorize(world, actorId, true);
         var settings = Saved(world, corporation.Id) ?? new(corporation.Id, CorporationWalletRules.MasterKey, []);
@@ -67,7 +67,9 @@ internal sealed class CorporationBillingStore(WorldDatabase database) : ICorpora
         )
         {
             Store(world, settings with { Rules = [.. settings.Rules, new(AllianceBillingRules.MaintenanceBillType, true)] });
+            return true;
         }
+        return false;
     }
 
     private static void Store(WorldAction world, CorporationBillPaymentSettings settings)

@@ -270,8 +270,23 @@ internal sealed partial class SovereigntyResourceStore(WorldDatabase database, T
     {
         using var action = Live.Economy.Begin(new(pilots: [pilotId]));
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var result = AddFuel(action, catalog, pilotId, hubId, itemId, quantity, Now);
+        action.Commit();
+        return result;
+    }
+
+    internal static SovereigntyResourceResult AddFuel(
+        WorldAction action,
+        CatalogDbContext catalog,
+        long pilotId,
+        long hubId,
+        long itemId,
+        int quantity,
+        long now
+    )
+    {
         var claim = Require(action, pilotId, hubId, true);
-        SovereigntyResourcePersistence.Advance(action, catalog, Now);
+        SovereigntyResourcePersistence.Advance(action, catalog, now);
         InRange(action, catalog, pilotId, action.Set<SavedStructure>().Find(hubId)!);
         var item = Source(action, pilotId, itemId);
         if (!SovereigntyResourceCatalog.Upgrades(catalog).Any(row => row.FuelTypeId == item.TypeId))
@@ -296,9 +311,8 @@ internal sealed partial class SovereigntyResourceStore(WorldDatabase database, T
         {
             throw new InvalidDataException("The sovereignty fuel ledger is full.");
         }
-        SovereigntyResourcePersistence.Refresh(action, catalog, Now);
-        var result = SovereigntyResourcePersistence.View(action, catalog, claim, Now);
-        action.Commit();
+        SovereigntyResourcePersistence.Refresh(action, catalog, now);
+        var result = SovereigntyResourcePersistence.View(action, catalog, claim, now);
         return new(result, [change]);
     }
 

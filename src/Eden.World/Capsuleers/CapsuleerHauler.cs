@@ -488,7 +488,7 @@ internal sealed partial class CapsuleerHauler(
         {
             if (capsule && Pilot.Position is not null)
             {
-                _work = Work with { SovereigntyExpedition = null };
+                _work = Work with { SovereigntyExpedition = null, HomeDefenseAllianceId = null };
                 AdvanceCapsuleEscape();
                 return Commit(job);
             }
@@ -778,7 +778,9 @@ internal sealed partial class CapsuleerHauler(
                 ? CapsuleerIndustry.RefineryTarget(world, catalog, build.Task)
                 : null;
         var hub =
-            Work.SovereigntyExpedition is { HubId: long hubId } && Work.TargetId == hubId ? SovereigntyTarget(world, catalog, hubId) : null;
+            Work.SovereigntyExpedition is { HubId: long hubId } && Work.TargetId == hubId
+                ? PilotEntosisStore.ExpeditionTarget(world, catalog, Pilot.SystemId, hubId)
+                : null;
         transaction.Commit();
         transaction.Dispose();
         var activity = Live?.CapsuleerActivity.Read();
@@ -964,7 +966,7 @@ internal sealed partial class CapsuleerHauler(
         using var phase = SessionPerformance.Phase("traffic.tradeAndLaunch");
         if (Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup)
         {
-            _work = Work with { SovereigntyExpedition = null };
+            _work = Work with { SovereigntyExpedition = null, HomeDefenseAllianceId = null };
             AttemptShipReplacement();
             return;
         }

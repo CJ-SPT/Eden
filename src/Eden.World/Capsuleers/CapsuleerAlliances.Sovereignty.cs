@@ -12,6 +12,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Sovereignty;
 using Eden.World.Catalog;
+using Eden.World.Corporations;
 using Eden.World.Docking;
 using Eden.World.Market;
 using Eden.World.Runtime;
@@ -92,13 +93,14 @@ internal sealed partial class CapsuleerAlliances
         return false;
     }
 
-    internal static bool ExpeditionActive(WorldAction world, SavedCorporation corporation) =>
+    internal static bool ExpeditionActive(WorldAction world, SavedCorporation corporation, long? exceptPilot = null) =>
         LiveWorld.Find(world.WorldPath) is { } live
         && world
             .Filter<Pilot>(pilot => pilot.CorporationId == corporation.Id)
             .AsEnumerable()
             .Any(pilot =>
-                live.HaulerCheckpoints.GetValueOrDefault(pilot.Id)?.Work is { SovereigntyExpedition: not null } work
+                pilot.Id != exceptPilot
+                && live.HaulerCheckpoints.GetValueOrDefault(pilot.Id)?.Work is { SovereigntyExpedition: not null } work
                 && work.ShipId == pilot.ActiveShipId
             );
 
@@ -180,4 +182,12 @@ internal sealed partial class CapsuleerAlliances
         }
         return candidates.ToArray();
     }
+
+    private static bool TryMaintainAllianceDues(WorldAction world, SavedCorporation corporation) =>
+        world.Set<SavedAllianceMember>().Find(corporation.Id) is { } member
+        && world.Set<SavedAlliance>().Find(member.AllianceId) is { ClosedAt: null } alliance
+        && alliance.ExecutorCorporationId == corporation.Id
+        && world.Set<SavedCapsuleerAgent>().Find(alliance.CreatorId) is not null
+        && world.Filter<SavedSovereigntyClaim>(claim => claim.AllianceId == alliance.Id).Any()
+        && CorporationBillingStore.DefaultAllianceMaintenance(world, corporation.CeoId);
 }

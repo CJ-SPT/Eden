@@ -41,6 +41,7 @@ passed 339 cases in 2 minutes 10 seconds. The `FullyQualifiedName~` filter combi
 `Eden.Protocol.Tests.Alliances`, `CapsuleerAllianceTests`, `CapsuleerInboundRuntimeTests`, `CapsuleerTrafficRoutesTests`,
 `CapsuleerTrafficNavigationTests`, `CapsuleerDeadlineTests`, `CapsuleerAmmunitionSupplyTests`, `CapsuleerFailureTests`,
 `PersonalMarketTests` and `Eden.Protocol.Tests.Market.ResidentEconomyTests`. Both Python policy suites passed (8 and 9 cases).
+Formatting and diff checks passed. The complete sequence took 167.60 seconds and used isolated worlds.
 Formatting and diff checks passed. The complete validation sequence took 165.24 seconds and used isolated worlds.
 
 ### Live acceptance
@@ -50,6 +51,55 @@ Not performed. Agent client testing is disabled.
 ### Optional maintainer checks
 
 Follow a funded bot expedition through deployment and confirm the owner changes on the in-game sovereignty map.
+
+## Bot home defense and upkeep
+
+A bot alliance treats its earliest current claim as home. One fitted capsuleer can stay docked at the executor's
+headquarters between assignments. On a docked review, a funded pilot can respond to a live hostile link or remaining
+disruption at the home hub. During a campaign it can take a reachable command node associated with that hub, prioritizing
+nodes nearest to attacker control. The pilot uses ordinary travel, target locks, fuel, capacitor and Entosis cycles.
+Departure and each on-grid action verify the current owner and target. Paid travel restrictions still apply on retreat.
+The owning alliance's defense updates the existing hub or campaign score, including normal contention and reinforcement rules.
+
+The executor uses the existing recurring alliance invoice and designated wallet division. The bot review enables the
+native maintenance default for existing bot alliances with a claim and respects any explicit billing preference.
+Defensive outfitting and local reagent purchases retain one monthly alliance reserve. When a configured home upgrade's
+reagents run below its remaining startup cost plus two hours of consumption, a courier can purchase and carry stock toward
+startup plus four hours. The home corporation's Station Manager deposits real cargo through the native fuel ledger, and
+existing power, workforce, startup and hourly rules govern runtime. A bare hub has no reagent budget. Upgrade installation
+and Skyhook deployment remain ordinary corporation actions. The response covers the home claim. Additional claims and
+offensive campaigns remain in the [bot development plan](../bot-development-plan.md).
+
+Build 3662168's command node (34832) has a catalog radius of 243 m and omits a dogma signature. The resident signature
+read falls back to the physical radius for this type, so both player and bot targeting can use the ordinary lock timer.
+The EVE.js 261108.1 snapshot also uses physical radius as a targeting fallback in `server/src/space/runtime/targeting.js`
+(SHA-256 `C8FB927B47CDE92FB582ADC75FB8A34A6ABF697DE890ABA25E3EC9500BF37C14`). Its neutral, owned and command node
+Entosis contracts are recorded in [first-claim procurement](alliances.md#first-claim-hub-procurement).
+[CCP sovereignty resources](https://www.eveonline.com/news/view/sovereignty-updates-transition-and-upgrades) ·
+[UniWiki Sovereignty](https://wiki.eveuniversity.org/Sovereignty)
+
+### Automated validation
+
+The exact `CapsuleerAllianceTests.FundedAllianceStagesOneHubAcrossRestartForAnUnobservedClaimableSystem` selection passed
+two cases in 14.11 seconds including runner startup. The extended case creates and captures the first hub, stages a
+disrupted hub and an active campaign node, and verifies that the actual guard's paid cycles restore each defense score.
+A supplier fills the reagent order and the courier deposits the cargo, paying startup and leaving the projected reserve.
+The native invoice settles once from the executor wallet. Reopening preserves the claim, fuel ledger and paid wallet state.
+Development surfaced the need for a docked standby between operations and the absent command-node signature attribute.
+
+Tool and solution restore and the solution build passed with zero warnings and errors. The affected .NET selection
+passed 331 cases in 2 minutes 12 seconds. The `FullyQualifiedName~` filter combined `Eden.Protocol.Tests.Sovereignty`,
+`Eden.Protocol.Tests.Alliances`, `CapsuleerAllianceTests`, `CapsuleerInboundRuntimeTests`, `CapsuleerTrafficNavigationTests`,
+`CapsuleerAmmunitionSupplyTests`, `TargetingTests`, `CorporationFinancialPanelTests`, `CorporationWalletTests`,
+`PersonalMarketTests` and `Eden.Protocol.Tests.Market.ResidentEconomyTests`. Both Python policy suites passed (8 and 9 cases).
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+Observe a funded guard dispatch during a home-system disruption and check the defense score in the sovereignty UI.
 
 ## Scope and implementation plan
 

@@ -51,18 +51,22 @@ internal sealed partial class CapsuleerHauler
                     catalog,
                     pilotId,
                     Pilot.StationId,
-                    new([remaining.Id], Pilot.ShipId, (int)InventoryFlag.Hangar, null),
+                    new(
+                        [remaining.Id],
+                        Pilot.ShipId,
+                        (int)InventoryFlag.Hangar,
+                        returned.CargoQuantity > 0 ? Math.Min(remaining.Quantity, returned.CargoQuantity) : null
+                    ),
                     Now
                 );
             }
             _work = Work with { SovereigntyExpedition = null, Journey = null, Retreating = false };
-            return false;
         }
         if (
             InActiveGang
             || Work.RegionalEscort is not null
             || Work.CorporationSupply is not null
-            || Work.Freight is not null
+            || Work.Freight is { Stacks.Length: > 0 } incoming && incoming.Destination != Pilot.StationId
             || Work.Ratting is not null
             || Work.Retreating
             || CapsuleerIndustry.Employer(world, pilotId, Pilot.CorpId) is not { } corporation
@@ -71,15 +75,34 @@ internal sealed partial class CapsuleerHauler
             || world.Set<SavedAlliance>().Find(membership.AllianceId) is not { ClosedAt: null } alliance
             || alliance.ExecutorCorporationId != corporation.Id
             || world.Set<SavedCapsuleerAgent>().Find(alliance.CreatorId) is null
+            || Work.SovereigntyExpedition is not null
+        )
+        {
+            return false;
+        }
+        var home = world
+            .Filter<SavedSovereigntyClaim>(claim => claim.AllianceId == alliance.Id)
+            .OrderBy(claim => claim.ClaimedAt)
+            .ThenBy(claim => claim.SystemId)
+            .FirstOrDefault();
+        if (home is not null)
+        {
+            SettleSovereigntyDockFreight(world);
+            return (
+                    !CapsuleerAlliances.ExpeditionActive(world, corporation, pilotId)
+                    && TryProtectSovereignty(world, catalog, corporation, home, prepare)
+                ) || StandByAtSovereignty(world, catalog, corporation, home);
+        }
+        if (
+            CapsuleerAlliances.ExpeditionActive(world, corporation, pilotId)
             || world.Filter<SavedAllianceMember>(member => member.AllianceId == alliance.Id).Count()
                 < CapsuleerAllianceRules.FoundingCorporations
-            || world.Filter<SavedSovereigntyClaim>(claim => claim.AllianceId == alliance.Id).Any()
-            || CapsuleerAlliances.ExpeditionActive(world, corporation)
             || CapsuleerAlliances.HeadquartersHub(world, corporation) is not { } package
         )
         {
             return false;
         }
+        SettleSovereigntyDockFreight(world);
 
         var pilot = world.Pilots.Find(pilotId)!;
         var ownedHub = PilotInventoryStore.Read(catalog, package);
@@ -89,22 +112,9 @@ internal sealed partial class CapsuleerHauler
                 - InventoryPersistence.UsedVolume(world, catalog, pilotId, Pilot.ShipId, flag)
                 >= ownedHub.Volume
         );
-        var module = world
-            .Filter<OwnedItem>(row => row.LocationId == Pilot.ShipId)
-            .AsEnumerable()
-            .FirstOrDefault(row =>
-                row.OwnerId == pilotId
-                && row.Online
-                && row.Singleton
-                && InventoryDefinitions.IsHighSlot(row.FlagId)
-                && EntosisCatalog.Supported(catalog, row.TypeId)
-            );
-        bool qualified = ownedHub.Volume > 0 && hold != 0 && module is not null && (HullClass)Pilot.ShipGroupId != HullClass.Interceptor;
-        if (qualified)
-        {
-            var profile = ExpeditionProfile(world, catalog, module!.Id);
-            qualified = ExpeditionFuel(world, profile) >= RequiredExpeditionCycles(catalog, profile);
-        }
+        long duration = EntosisCatalog.Hub(catalog).CaptureDuration;
+        long? module = ReadyEntosisModule(world, catalog, duration);
+        bool qualified = ownedHub.Volume > 0 && hold != 0 && module.HasValue;
 
         var avoided = AvoidedSupplierSystems();
         var route = CapsuleerAlliances
@@ -125,17 +135,7 @@ internal sealed partial class CapsuleerHauler
         }
         if (!qualified)
         {
-            if (!prepare || !ammunitionSupply.OutfitExpedition(world, catalog, Pilot, corporation, alliance.Id, Now))
-            {
-                return false;
-            }
-            _pilot = ReadPilot(world, CapsuleerCommunityStore.MinerAccountId);
-            _navigation.AdoptHull();
-            _work = Work with { ShipId = Pilot.ShipId };
-            _operation.MarketChanged = true;
-            _operation.TravelChanged = true;
-            _ = TrySovereigntyExpedition(prepare: false);
-            return true;
+            return prepare && PrepareSovereigntyFit(world, catalog, corporation, alliance.Id, duration);
         }
         if (!CorporationRoleStore.AssignBotStationManager(world, corporation, pilotId, Now))
         {
@@ -148,6 +148,21 @@ internal sealed partial class CapsuleerHauler
             world.Remove(package);
         }
         var cargo = InventoryPersistence.MergeOutput(world, catalog, pilotId, pilot.ActiveShipId, hold, EntosisRules.HubTypeId, 1);
+        LaunchSovereignty(route, new(alliance.Id, corporation.Id, route.Systems[^1], cargo.Item.Id, module!.Value));
+        return true;
+    }
+
+    private void SettleSovereigntyDockFreight(WorldAction world)
+    {
+        if (Work.Freight is { } arrived)
+        {
+            CapsuleerFreight.Deliver(world, pilotId, Pilot.ShipId, arrived);
+            _work = Work with { Freight = null };
+        }
+    }
+
+    private void LaunchSovereignty(CapsuleerTrafficRoute route, SovereigntyExpedition expedition)
+    {
         _route = route;
         _work = Work with
         {
@@ -155,24 +170,20 @@ internal sealed partial class CapsuleerHauler
             RouteIndex = 0,
             RouteDirection = 1,
             TrafficLane = null,
-            SovereigntyExpedition = new(alliance.Id, corporation.Id, route.Systems[^1], cargo.Item.Id, module!.Id),
+            SovereigntyExpedition = expedition,
         };
         LaunchActivity();
         BeginTravel();
-        return true;
     }
 
-    internal static int RequiredExpeditionCycles(CatalogDbContext catalog, EntosisProfile profile) =>
-        checked(1 + (int)Math.Ceiling(EntosisCatalog.Hub(catalog).CaptureDuration / (profile.Duration * TimeSpan.TicksPerMillisecond)));
+    internal static int RequiredExpeditionCycles(long duration, EntosisProfile profile) =>
+        checked(1 + (int)Math.Ceiling(duration / (profile.Duration * TimeSpan.TicksPerMillisecond)));
 
     private void BeginSovereigntyGrid(SovereigntyExpedition expedition)
     {
         var world = _operation.World;
         var catalog = _operation.Catalog;
-        if (
-            !HasExpeditionAuthority(world, expedition)
-            || expedition.HubId is null && PilotEntosisStore.HasHub(world, expedition.TargetSystemId)
-        )
+        if (!CanContinueSovereignty(world, expedition))
         {
             ReturnFromSovereignty(expedition);
             return;
@@ -189,7 +200,7 @@ internal sealed partial class CapsuleerHauler
             expedition = expedition with { HubId = deployed.Structure.Id };
         }
         long hubId = expedition.HubId.Value;
-        _target = SovereigntyTarget(world, catalog, hubId);
+        _target = PilotEntosisStore.ExpeditionTarget(world, catalog, expedition.TargetSystemId, hubId);
         if (_target is null)
         {
             ReturnFromSovereignty(expedition);
@@ -209,14 +220,21 @@ internal sealed partial class CapsuleerHauler
         var world = _operation.World;
         var catalog = _operation.Catalog;
         long hubId = expedition.HubId!.Value;
-        entosis.Advance(world, catalog, expedition.TargetSystemId, Now);
+        if (expedition.Duty != SovereigntyDuty.ReagentDelivery)
+        {
+            entosis.Advance(world, catalog, expedition.TargetSystemId, Now);
+        }
         if (
-            !HasExpeditionAuthority(world, expedition)
-            || world.Set<SavedSovereigntyClaim>().Find(expedition.TargetSystemId) is not null
-            || SovereigntyTarget(world, catalog, hubId) is not { } target
+            !CanContinueSovereignty(world, expedition)
+            || PilotEntosisStore.ExpeditionTarget(world, catalog, expedition.TargetSystemId, hubId) is not { } target
         )
         {
             ReturnFromSovereignty(expedition);
+            return;
+        }
+        if (expedition.Duty == SovereigntyDuty.ReagentDelivery)
+        {
+            DeliverSovereigntyReagent(expedition, target);
             return;
         }
 
@@ -249,7 +267,7 @@ internal sealed partial class CapsuleerHauler
         {
             if (expedition.LockReadyAt == 0)
             {
-                double signature = catalog.FittingAttributes(target.TypeId).GetValueOrDefault(DogmaAttributeId.SignatureRadius);
+                double signature = PilotFittingStore.SignatureRadius(world, catalog, hubId, target.TypeId);
                 double seconds = TargetingDefinitions.LockSeconds(attributes.GetValueOrDefault(DogmaAttributeId.ScanResolution), signature);
                 if (!double.IsFinite(seconds) || seconds < 0)
                 {
@@ -346,10 +364,4 @@ internal sealed partial class CapsuleerHauler
                 && row.Quantity > 0
             )
             .Sum(row => (long)row.Quantity) / profile.FuelQuantity;
-
-    private static StaticSpaceObject? SovereigntyTarget(WorldAction world, CatalogDbContext catalog, long hubId) =>
-        world.Set<SavedStructure>().Find(hubId) is { State: not StructureState.Destroyed } hub
-        && catalog.FittingType(hub.TypeId) is { } type
-            ? new(hub.Id, hub.TypeId, type.GroupId, type.CategoryId, hub.CorporationId, new(hub.X, hub.Y, hub.Z), (float)(type.Radius ?? 0))
-            : null;
 }

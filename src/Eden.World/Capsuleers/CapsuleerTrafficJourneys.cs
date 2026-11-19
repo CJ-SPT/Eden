@@ -129,8 +129,9 @@ internal static partial class CapsuleerTrafficRoutes
         int headquarters,
         int system,
         HullClass hull,
-        IReadOnlySet<int> avoided
-    ) => ToSystem(catalog, headquarters, headquarters, hull, avoided, CapsuleerAllianceRules.FirstClaimMaximumJumps, system);
+        IReadOnlySet<int> avoided,
+        int maximumJumps = CapsuleerAllianceRules.FirstClaimMaximumJumps
+    ) => ToSystem(catalog, headquarters, headquarters, hull, avoided, maximumJumps, system);
 
     private static CapsuleerTrafficRoute? ToSystem(
         CatalogDbContext catalog,

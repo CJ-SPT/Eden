@@ -28,6 +28,7 @@ using Eden.World.Inventory;
 using Eden.World.Market;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
+using Eden.World.Sovereignty;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -339,7 +340,30 @@ public sealed class CapsuleerAllianceTests
             return true;
         });
         Advance(claiming, () => claimWorld.HaulerCheckpoints.GetValueOrDefault(courier)?.Work.SovereigntyExpedition is null, 500);
+        ExerciseHomeOperations(fixture, claiming, station, courier, Advance);
+        var home = claims.Read(target)!;
+        var paid = claimWorld.Economy.Read(world =>
+            world.Filter<SavedAllianceBill>(bill => bill.AllianceId == home.AllianceId).Single(bill => bill.PaidAt != null)
+        );
+        long treasury = claimWorld.Economy.Read(world => world.Set<SavedCorporation>().Find(corporation)!.BalanceCents);
+        long reagentStock = claimWorld.Economy.Read(world =>
+            world.Filter<SavedSovereigntyFuel>(fuel => fuel.HubId == home.HubId).Single().Amount
+        );
         await claimWorld.FlushAsync();
+        resumed.Dispose();
+        claiming.Dispose();
+        using var finished = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        finished.GetRequiredService<CorporationMaintenance>().Tick();
+        Assert.Equal(home, finished.GetRequiredService<ISovereignty>().Read(target));
+        finished
+            .GetRequiredService<LiveWorld>()
+            .Economy.Read(world =>
+            {
+                Assert.Equal(treasury, world.Set<SavedCorporation>().Find(corporation)!.BalanceCents);
+                Assert.Equal(paid.PaidAt, world.Set<SavedAllianceBill>().Find(paid.Id)!.PaidAt);
+                Assert.Equal(reagentStock, world.Filter<SavedSovereigntyFuel>(fuel => fuel.HubId == home.HubId).Single().Amount);
+                return true;
+            });
 
         void Advance(ServiceProvider host, Func<bool> ready, int seconds)
         {
@@ -370,6 +394,164 @@ public sealed class CapsuleerAllianceTests
                     + $"retreating {observation?.Work.Retreating} {observation?.Work.WaitingReason} {scheduler.Read().LastFailure}"
             );
         }
+    }
+
+    private static void ExerciseHomeOperations(
+        CapsuleerHaulerTests.Fixture fixture,
+        ServiceProvider host,
+        int station,
+        long courier,
+        Action<ServiceProvider, Func<bool>, int> advance
+    )
+    {
+        const int target = SovereigntyCaptureFixture.SystemId;
+        const int strontium = SovereigntyCaptureFixture.Strontium;
+        const int upgradeType = 81615;
+        const long price = 100;
+        var live = host.GetRequiredService<LiveWorld>();
+        var claims = host.GetRequiredService<ISovereignty>();
+        var claim = claims.Read(target)!;
+        var entosis = host.GetRequiredService<IPilotEntosis>();
+        var resources = host.GetRequiredService<ISovereigntyResources>();
+        var maintenance = host.GetRequiredService<CorporationMaintenance>();
+        var upgrade = resources.Definitions().Single(item => item.TypeId == upgradeType);
+        int delivery = checked((int)(upgrade.StartupFuel + 4 * upgrade.HourlyFuel));
+        int reagent = upgrade.FuelTypeId;
+        List<MarketSale> sales = [];
+        using (var setup = live.Economy.Begin(TransactionParticipants.None))
+        using (CatalogDbContext catalog = new(fixture.Database.CatalogPath))
+        {
+            var conflict = setup.Set<SavedSovereigntyConflict>().Find(target)!;
+            conflict.Value = 0.2;
+            conflict.UpdatedAt = fixture.Clock.Now;
+            foreach (var (type, quantity) in new[] { (strontium, 12), (reagent, delivery) })
+            {
+                var stock = InventoryPersistence.MergeOutput(setup, catalog, Observer, station, (int)InventoryFlag.Hangar, type, quantity);
+                sales.Add(new(stock.Item.Id, station, type, price, quantity));
+            }
+            setup.Commit();
+        }
+        host.GetRequiredService<IPersonalMarket>().PlaceSell(Observer, sales, 7);
+        bool PaidDefense(long id) =>
+            live.Economy.Read(world =>
+                world
+                    .Filter<SavedEntosisCycle>(cycle => cycle.HubId == id)
+                    .Any(cycle => cycle.AllianceId == claim.AllianceId && cycle.EndsAt > fixture.Clock.Now)
+            );
+        advance(host, () => PaidDefense(claim.HubId), 1400);
+        advance(host, () => entosis.Hub(target)!.Conflict!.Capture.Value == 1, 1200);
+        advance(host, () => live.HaulerCheckpoints.GetValueOrDefault(courier)?.Work.SovereigntyExpedition is null, 600);
+        Assert.Equal(claim, claims.Read(target));
+
+        long node;
+        using (var campaign = live.Economy.Begin(TransactionParticipants.None))
+        {
+            var conflict = campaign.Set<SavedSovereigntyConflict>().Find(target)!;
+            conflict.Phase = SovereigntyPhase.Campaign;
+            conflict.CampaignAt = fixture.Clock.Now;
+            conflict.UpdatedAt = fixture.Clock.Now;
+            conflict.DefenderPoints = 100 - SovereigntyWarfareRules.NodePoints;
+            conflict.NextSpawnAt = fixture.Clock.Now + TimeSpan.TicksPerHour;
+            node = campaign.NextItemId();
+            campaign.Add(
+                new SavedSovereigntyNode
+                {
+                    Id = node,
+                    SystemId = target,
+                    SourceSystemId = target,
+                    HubId = claim.HubId,
+                    CorporationId = claim.CorporationId,
+                    AllianceId = claim.AllianceId,
+                    Value = -0.8,
+                    X = 300_000_000_000,
+                    UpdatedAt = fixture.Clock.Now,
+                }
+            );
+            campaign.Commit();
+        }
+        advance(host, () => PaidDefense(node), 1600);
+        advance(host, () => entosis.Hub(target)!.Conflict!.DefenderPoints == 100, 1500);
+        advance(host, () => live.HaulerCheckpoints.GetValueOrDefault(courier)?.Work.SovereigntyExpedition is null, 600);
+        Assert.Empty(entosis.CommandNodes(target));
+        Assert.Equal(claim, claims.Read(target));
+
+        long beforeFuel;
+        using (var setup = live.Economy.Begin(TransactionParticipants.None))
+        using (CatalogDbContext catalog = new(fixture.Database.CatalogPath))
+        {
+            var planet = SovereigntyResourceCatalog.System(catalog, target).Planets.First(planet => planet.Workforce >= upgrade.Workforce);
+            long hook = setup.NextItemId();
+            setup.Add(
+                new SavedStructure
+                {
+                    Id = hook,
+                    TypeId = SovereigntyResourceRules.SkyhookTypeId,
+                    Name = "Fixture workforce skyhook",
+                    CorporationId = claim.CorporationId,
+                    SystemId = target,
+                    State = StructureState.ShieldVulnerable,
+                }
+            );
+            setup.Add(
+                new SavedSovereigntySkyhook
+                {
+                    Id = hook,
+                    SystemId = target,
+                    PlanetId = planet.PlanetId,
+                    CorporationId = claim.CorporationId,
+                    Active = true,
+                    OnlineAt = fixture.Clock.Now,
+                    UpdatedAt = fixture.Clock.Now,
+                }
+            );
+            setup.Add(
+                new SavedSovereigntyUpgrade
+                {
+                    Id = setup.Next("WorldSovereigntyUpgrade"),
+                    HubId = claim.HubId,
+                    SystemId = target,
+                    TypeId = upgradeType,
+                    ConfiguredOnline = true,
+                    PowerState = SovereigntyUpgradePower.Pending,
+                }
+            );
+            SovereigntyResourcePersistence.Refresh(setup, catalog, fixture.Clock.Now);
+            beforeFuel = setup.Set<SavedCorporation>().Find(claim.CorporationId)!.BalanceCents;
+            setup.Commit();
+        }
+        advance(
+            host,
+            () =>
+                live.Economy.Read(world =>
+                    world
+                        .Filter<SavedSovereigntyFuel>(fuel => fuel.HubId == claim.HubId)
+                        .Any(fuel => fuel.TypeId == reagent && fuel.Amount > 0)
+                ),
+            1600
+        );
+        live.Economy.Read(world =>
+        {
+            Assert.Equal(beforeFuel - price * delivery, world.Set<SavedCorporation>().Find(claim.CorporationId)!.BalanceCents);
+            var fuel = Assert.Single(world.Filter<SavedSovereigntyFuel>(fuel => fuel.HubId == claim.HubId));
+            Assert.Equal(4 * upgrade.HourlyFuel, fuel.Amount);
+            Assert.True(Assert.Single(world.Filter<SavedSovereigntyUpgrade>(row => row.HubId == claim.HubId)).StartupPaid);
+            return true;
+        });
+
+        maintenance.Tick();
+        var bill = live.Economy.Read(world => world.Filter<SavedAllianceBill>(bill => bill.AllianceId == claim.AllianceId).Single());
+        long beforeBill = beforeFuel - price * delivery;
+        fixture.Clock.AdvanceWallTime(TimeSpan.FromTicks(bill.DueAt - fixture.Clock.Now));
+        maintenance.Tick();
+        maintenance.Tick();
+        live.Economy.Read(world =>
+        {
+            Assert.Equal(beforeBill - bill.AmountCents, world.Set<SavedCorporation>().Find(claim.CorporationId)!.BalanceCents);
+            var paid = world.Set<SavedAllianceBill>().Find(bill.Id)!;
+            Assert.Equal(claim.CorporationId, paid.PaidByCorporationId);
+            Assert.Equal(bill.DueAt, paid.PaidAt);
+            return true;
+        });
     }
 
     [Fact]

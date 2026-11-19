@@ -19,8 +19,10 @@ publish the same owned ships, goods, orders and sovereignty state a player would
 The initial procurement radius, price cap, and order duration are Eden policy. The buy order creates a native
 market signal that players and other factories can fill. The first-claim expedition persists the chosen target and
 route with the courier's assignment. Build 3662168 gives the packaged hub a volume of 60,000 m³. A fitted Squall can
-carry it and run the link on its own. This implementation covers the first claim. Defense and upkeep remain in
-milestone 2. [Autonomous first claims](protocol/sovereignty.md#autonomous-first-claims) ·
+carry it and run the link on its own. Once the first system is claimed, a fitted guard stands by at headquarters and
+can defend the hub or associated command nodes with paid Entosis. The home operation pays normal alliance dues and
+restocks reagent-consuming upgrades that are configured online. [Autonomous first claims](protocol/sovereignty.md#autonomous-first-claims) ·
+[Home defense and upkeep](protocol/sovereignty.md#bot-home-defense-and-upkeep) ·
 [Sovereignty mechanics](https://wiki.eveuniversity.org/Sovereignty) ·
 [CCP sovereignty deployment and capture](https://www.eveonline.com/news/view/sovereignty-structures-and-transition)
 

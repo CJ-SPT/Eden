@@ -45,6 +45,7 @@ public sealed record HaulerProgress(
     public CorporationSupplyRun? CorporationSupply { get; init; }
     public FactoryPlanetaryProduction? PlanetaryProduction { get; init; }
     public SovereigntyExpedition? SovereigntyExpedition { get; init; }
+    public int? HomeDefenseAllianceId { get; init; }
     public long PlanetaryRetryAt { get; init; }
     public long[] RattingLoot { get; init; } = [];
     public RattingProgress? Ratting { get; init; }
@@ -71,8 +72,18 @@ public sealed record SovereigntyExpedition(
     long ModuleId,
     long? HubId = null,
     long LockReadyAt = 0,
-    bool Returning = false
+    bool Returning = false,
+    SovereigntyDuty Duty = SovereigntyDuty.Claim,
+    int? HomeSystemId = null,
+    int CargoQuantity = 0
 );
+
+public enum SovereigntyDuty
+{
+    Claim,
+    Defend,
+    ReagentDelivery,
+}
 
 public sealed record HaulerObservation(DockedPilot Pilot, HaulerProgress Work, ShipHealth? Health);
 

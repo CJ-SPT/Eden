@@ -136,6 +136,7 @@ align the panel's units per cycle with its already modified products and output 
 [Alliances](protocol/alliances.md) records corporation associations, resident checkpoints and implementation milestones.
 [First-claim hub procurement](protocol/alliances.md#first-claim-hub-procurement) creates a paid market bid for a bot alliance's first hub.
 [Autonomous first claims](protocol/sovereignty.md#autonomous-first-claims) sends a fitted hauler to deploy the hub and capture it with paid Entosis.
+[Bot home defense and upkeep](protocol/sovereignty.md#bot-home-defense-and-upkeep) funds defensive links, alliance dues and configured upgrade reagents.
 
 [One-way PI customs transfers](protocol/planetary.md#one-way-customs-transfer-dictionaries--november-16-2026)
 accept the empty opposite-side dictionary sent by native import-only and export-only requests.
