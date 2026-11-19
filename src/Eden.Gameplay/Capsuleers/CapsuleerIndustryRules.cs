@@ -13,6 +13,7 @@ public static class CapsuleerIndustryRules
     public const int MaximumMercoxitSupplyJumps = TrafficJourneyRules.MaximumJumps;
     public const int Morphite = 11399;
     public const int MaximumPlanetarySupplyJumps = 8;
+    public const int MaximumRefinerySupplyJumps = 8;
 
     public static int DemandRuns(int demand, int unitsPerRun, long secondsPerRun, int? licensedRuns)
     {
@@ -31,6 +32,7 @@ public sealed record FactorySupplyRequest(int CorporationId, int StationId, Fact
 {
     public bool ResearchDatacores { get; init; }
     public bool Mercoxit { get; init; }
+    public FactoryRefineryTask? Refinery { get; init; }
     public int MaximumJumps =>
         Mercoxit ? CapsuleerIndustryRules.MaximumMercoxitSupplyJumps : CapsuleerIndustryRules.MaximumFactorySupplyJumps;
 }
@@ -39,6 +41,7 @@ public sealed record FactorySupplyShipment(long ManufacturerId, int FactoryStati
 {
     public FactoryResearchSource? Research { get; init; }
     public FactoryPlanetaryVisit? Planetary { get; init; }
+    public FactoryRefineryVisit? Refinery { get; init; }
     public bool Mercoxit { get; init; }
     public int MaximumJumps =>
         Research is not null ? CapsuleerIndustryRules.MaximumResearchSupplyJumps
@@ -72,6 +75,36 @@ public sealed record FactoryPlanetaryProduction(
 );
 
 public sealed record FactoryPlanetaryVisit(FactoryPlanetaryProduction Production, PlanetaryVisitPhase Phase, FreightStack[]? Inputs = null);
+
+public enum RefineryWork
+{
+    Deploy,
+    Core,
+    FitService,
+    Fuel,
+    StartExtraction,
+}
+
+public enum RefineryVisitPhase
+{
+    Warehouse,
+    Approach,
+    OnGrid,
+    Return,
+}
+
+public sealed record FactoryRefineryTask(
+    long ManufacturerId,
+    int FactoryStationId,
+    int StagingStationId,
+    int MoonId,
+    long? StructureId,
+    RefineryWork Work,
+    int ItemTypeId = 0,
+    int Quantity = 0
+);
+
+public sealed record FactoryRefineryVisit(FactoryRefineryTask Task, RefineryVisitPhase Phase, FreightStack? Cargo = null);
 
 public static class CapsuleerMinerTwoRules
 {

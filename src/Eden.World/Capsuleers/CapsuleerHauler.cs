@@ -766,13 +766,18 @@ internal sealed partial class CapsuleerHauler(
             && Work.TargetId == Eden.Gameplay.Planetary.PlanetaryRules.OfficeId(visit.Production.PlanetId)
                 ? CapsuleerIndustry.PlanetaryOffice(world, catalog, visit.Production.PlanetId)
                 : null;
+        var refinery =
+            Work.CorporationSupply?.FactorySupply?.Refinery is { Phase: RefineryVisitPhase.OnGrid } build
+            && Work.TargetId == (build.Task.StructureId ?? Eden.World.Structures.MoonMiningCatalog.BeaconId(build.Task.MoonId))
+                ? CapsuleerIndustry.RefineryTarget(world, catalog, build.Task)
+                : null;
         transaction.Commit();
         transaction.Dispose();
         var activity = Live?.CapsuleerActivity.Read();
         RefreshObjects(
             loadResources: activity is not { Active: true } || activity.ActiveSystems.Contains(Pilot.SystemId) || RequiresDetail
         );
-        _target = office ?? _objects.FirstOrDefault(o => o.Id == Work.TargetId) ?? SiteTarget(Work.Ratting);
+        _target = refinery ?? office ?? _objects.FirstOrDefault(o => o.Id == Work.TargetId) ?? SiteTarget(Work.Ratting);
     }
 
     private void RefreshObjects(bool? loadResources = null)
@@ -851,6 +856,10 @@ internal sealed partial class CapsuleerHauler(
                 else if (Work.CorporationSupply?.FactorySupply?.Planetary is { Phase: PlanetaryVisitPhase.Orbit } visit)
                 {
                     BeginPlanetaryOrbit(visit);
+                }
+                else if (Work.CorporationSupply?.FactorySupply?.Refinery is { Phase: RefineryVisitPhase.OnGrid } build)
+                {
+                    BeginRefineryApproach(build);
                 }
                 else
                 {
@@ -1211,6 +1220,14 @@ internal sealed partial class CapsuleerHauler(
             ArriveAtPlanetaryOffice(visit);
             return;
         }
+        if (
+            Work.CorporationSupply?.FactorySupply?.Refinery is { Phase: RefineryVisitPhase.OnGrid } build
+            && _target.Id == (build.Task.StructureId ?? Eden.World.Structures.MoonMiningCatalog.BeaconId(build.Task.MoonId))
+        )
+        {
+            ArriveAtRefinery(build);
+            return;
+        }
         if (_target.DestinationGateId is not null)
         {
             if (!_background && GateIsDangerous())
@@ -1274,7 +1291,7 @@ internal sealed partial class CapsuleerHauler(
             if (
                 Work.Gang is { Phase: not RoamingGangPhase.Complete }
                 || Work.RegionalEscort is not null
-                || Work.CorporationSupply?.FactorySupply is { Mercoxit: true } or { Planetary: not null }
+                || Work.CorporationSupply?.FactorySupply is { Mercoxit: true } or { Planetary: not null } or { Refinery: not null }
             )
             {
                 // An operational stop loads or unloads before the next ordinary layover.

@@ -253,6 +253,24 @@ internal sealed partial class CapsuleerIndustry
                     return changed;
                 }
             }
+            if (s_minerTwoReactionComponents.Any(missing.ContainsKey))
+            {
+                var construction = BuildMoonRefinery(world, catalog, operatorPilot, corporation, hangar, now, out var equipment);
+                if (equipment is not null)
+                {
+                    supply = supply is null
+                        ? equipment
+                        : supply with
+                        {
+                            Materials = supply.Materials.Concat(equipment.Materials).DistinctBy(need => need.TypeId).ToArray(),
+                            Refinery = equipment.Refinery,
+                        };
+                }
+                if (construction.HasValue)
+                {
+                    return construction;
+                }
+            }
             return null;
         }
         decimal purchasesCost = purchases.Sum(quote => (decimal)quote.Quantity * quote.LimitPriceCents);

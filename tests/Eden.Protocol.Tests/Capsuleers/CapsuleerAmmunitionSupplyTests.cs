@@ -11,6 +11,7 @@ using Eden.Data.World.Market;
 using Eden.Data.World.Mining;
 using Eden.Data.World.Planetary;
 using Eden.Data.World.Skills;
+using Eden.Data.World.Structures;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Corporations;
@@ -21,6 +22,7 @@ using Eden.Gameplay.Market;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Planetary;
 using Eden.Gameplay.Skills;
+using Eden.Gameplay.Structures;
 using Eden.Protocol.Market;
 using Eden.Protocol.Tests.Combat;
 using Eden.Protocol.Tests.Industry;
@@ -43,6 +45,7 @@ using Eden.World.Reprocessing;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
+using Eden.World.Structures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Replacement = Eden.Gameplay.Capsuleers.CapsuleerReplacementRules;
@@ -1963,6 +1966,302 @@ public sealed class CapsuleerAmmunitionSupplyTests
                 $"Planetary work stopped at {last?.Work.Activity} in {last?.Pilot.SystemId}, "
                     + $"{visit?.Phase}, product {visit?.Production.Step.TypeId}: {last?.Work.WaitingReason}. {scheduler.Read().LastFailure}"
             );
+        }
+    }
+
+    [Fact]
+    public async Task BotsBuildAndCommissionTheirMoonRefineryAcrossRestarts()
+    {
+        const int factorySystem = 30000142;
+        const int caldariHauler = 3342;
+        const int spaceshipCommand = 3327;
+        const int moon = 40000991;
+        const int athanor = CapsuleerIndustry.AthanorType;
+        const int core = 56202;
+        const int constructionPart = 21947;
+        const int fuel = 4051;
+        using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
+        CapsuleerCorporationTests.PrepareExistingSave(fixture);
+        PrepareCatalog(fixture);
+        PrepareMinerTwoCatalog(fixture);
+        PassiveCatalogFixture.LoadStructures(fixture.Database.CatalogPath);
+        PassiveCatalogFixture.LoadUtilityHulls(
+            fixture.Database.CatalogPath,
+            new HashSet<int> { (int)FreightHull.Tayra, caldariHauler, spaceshipCommand }
+        );
+        PrepareRefineryCatalog(fixture);
+        UseLocalOrders(fixture);
+        WorldInitialization.Initialize(fixture.Database, fixture.Clock);
+        long factory;
+        long hauler;
+        int corporation;
+        long hullJob;
+        long hullMaturity;
+        long cargoId;
+        using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+            using (var setup = live.Economy.Begin())
+            {
+                var economy = setup.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId)!;
+                economy.TestingMarket = false;
+                economy.TestingGrants = false;
+                var agents = setup.Set<SavedCapsuleerAgent>().OrderBy(agent => agent.PilotId).ToArray();
+                factory = agents.Single(agent => agent.Career == CapsuleerCareer.Mining).PilotId;
+                hauler = agents.First(agent => agent.Career == CapsuleerCareer.Hauling).PilotId;
+                foreach (var agent in agents.Where(agent => agent.PilotId != factory && agent.PilotId != hauler))
+                {
+                    setup.Add(new SavedCapsuleerSuspension { PilotId = agent.PilotId });
+                }
+                var courier = setup.Pilots.Find(hauler)!;
+                courier.ActiveShip.StationId = FactoryStation;
+                courier.ActiveShip.TypeId = (int)FreightHull.Tayra;
+                setup.Pilots.Find(factory)!.ActiveShip.StationId = FactoryStation;
+                corporation = Charter(setup, catalog, factory, "Refinery Works", "REFW", fixture.Clock.Now);
+                CorporationMembershipStore.Move(setup, courier, corporation, fixture.Clock.Now);
+                var employer = setup.Set<SavedCorporation>().Find(corporation)!;
+                employer.CreatedAt = fixture.Clock.Now - TimeSpan.FromDays(60).Ticks;
+                employer.BalanceCents = 100_000_000_000;
+                SetMinerTwoAdjustedPrices(setup, catalog);
+                if (setup.Set<SavedAdjustedPrice>().Find(constructionPart) is null)
+                {
+                    setup.Add(new SavedAdjustedPrice { TypeId = constructionPart, PriceIsk = 1000 });
+                }
+                AddStock(setup, factory, FactoryStation, 34, 500);
+                AddStock(setup, factory, FactoryStation, core, 1);
+                AddStock(setup, factory, FactoryStation, fuel, 6000);
+                foreach (int blueprint in new[] { 21948, 36977, 37034, 37032, 45540 })
+                {
+                    setup.Add(
+                        new OwnedItem
+                        {
+                            Id = setup.NextItemId(),
+                            OwnerId = factory,
+                            LocationId = FactoryStation,
+                            TypeId = blueprint,
+                            Quantity = 1,
+                            BlueprintRuns = -1,
+                            Singleton = true,
+                            FlagId = (int)InventoryFlag.Hangar,
+                        }
+                    );
+                }
+                setup.Commit();
+            }
+            using (var presence = host.GetRequiredService<IHumanPresence>().Select(Customer, factorySystem))
+            {
+                Advance(host, () => live.Economy.Read(world => world.Set<IndustryJob>().Any(job => job.ProductTypeId == athanor)), 1400);
+                (hullJob, hullMaturity) = live.Economy.Read(world =>
+                {
+                    var job = Assert.Single(world.Set<IndustryJob>(), job => job.ProductTypeId == athanor);
+                    Assert.Equal(IndustryJobStatus.Installed, job.Status);
+                    Assert.Single(
+                        world.Set<IndustryJob>(),
+                        job => job.ProductTypeId == constructionPart && job.Status == IndustryJobStatus.Delivered
+                    );
+                    Assert.Empty(world.Set<SavedStructure>());
+                    Assert.Empty(world.Set<NpcMarketOrder>().Where(order => order.TypeId == athanor));
+                    return (job.Id, job.EndTime);
+                });
+            }
+            await live.FlushAsync();
+        }
+
+        fixture.Clock.AdvanceWallTime(TimeSpan.FromTicks(hullMaturity - fixture.Clock.Now + TimeSpan.TicksPerSecond));
+        using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            Assert.Equal(hullMaturity, live.Economy.Read(world => world.Set<IndustryJob>().Find(hullJob)!.EndTime));
+            using (var presence = host.GetRequiredService<IHumanPresence>().Select(Customer, factorySystem))
+            {
+                Advance(
+                    host,
+                    () =>
+                        live.HaulerCheckpoints.GetValueOrDefault(hauler)?.Work.CorporationSupply?.FactorySupply?.Refinery
+                            is { Task.Work: RefineryWork.Deploy, Phase: RefineryVisitPhase.OnGrid, Cargo: not null },
+                    1600
+                );
+                cargoId = live.HaulerCheckpoints[hauler].Work.CorporationSupply!.FactorySupply!.Refinery!.Cargo!.ItemId;
+                Assert.True(live.Economy.Read(world => world.Set<OwnedItem>().Find(cargoId) is { TypeId: athanor, Quantity: 1 }));
+            }
+            await live.FlushAsync();
+        }
+
+        using var reopened = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var restored = reopened.GetRequiredService<LiveWorld>();
+        long structureId;
+        using (var presence = reopened.GetRequiredService<IHumanPresence>().Select(Customer, factorySystem))
+        {
+            Advance(reopened, () => restored.Economy.Read(world => world.Set<SavedStructure>().Any()), 500);
+            structureId = restored.Economy.Read(world =>
+            {
+                var structure = Assert.Single(world.Set<SavedStructure>());
+                Assert.Equal(StructureState.Anchoring, structure.State);
+                Assert.Equal(moon, structure.MoonId);
+                Assert.Equal(corporation, structure.CorporationId);
+                Assert.Null(world.Set<OwnedItem>().Find(cargoId));
+                return structure.Id;
+            });
+            Advance(reopened, () => restored.Economy.Read(world => world.Set<SavedMoonExtraction>().Any()), 12000, advanceAnchoring: true);
+            restored.Economy.Inspect(world =>
+            {
+                var structure = Assert.Single(world.Set<SavedStructure>());
+                Assert.Equal(structureId, structure.Id);
+                Assert.True(structure.HasCore);
+                var modules = world.Filter<SavedStructureService>(module => module.StructureId == structure.Id).ToArray();
+                Assert.Equal(3, modules.Length);
+                Assert.All(modules, module => Assert.True(module.Online));
+                var extraction = Assert.Single(world.Filter<SavedMoonExtraction>(job => job.StructureId == structure.Id));
+                Assert.Equal(MoonMiningRules.MinimumExtractionSeconds * TimeSpan.TicksPerSecond, extraction.ReadyAt - extraction.StartedAt);
+                var jobs = world.Set<IndustryJob>().ToArray();
+                Assert.Equal(5, jobs.Length);
+                var payments = world
+                    .Filter<SavedWalletLedger>(entry => entry.OwnerId == corporation && entry.EntryType == WalletEntryType.Manufacturing)
+                    .ToArray();
+                Assert.Single(payments, entry => entry.ReferenceId == hullJob);
+                Assert.All(
+                    jobs,
+                    job =>
+                    {
+                        Assert.Equal(IndustryJobStatus.Delivered, job.Status);
+                        Assert.Single(payments, entry => entry.ReferenceId == job.Id);
+                    }
+                );
+                Assert.Empty(world.Set<SavedPersonalOrder>().Where(order => order.TypeId == athanor));
+                return true;
+            });
+        }
+        await restored.FlushAsync();
+        long fractureAt = restored.Economy.Read(world => world.Set<SavedMoonExtraction>().Single().AutoFractureAt);
+        fixture.Clock.AdvanceWallTime(TimeSpan.FromTicks(fractureAt - fixture.Clock.Now));
+        var structures = reopened.GetRequiredService<IPilotStructures>();
+        structures.Advance();
+        var rocks = restored.Economy.Read(world => world.Filter<WorldAsteroid>(rock => rock.BeltId == moon).Count());
+        Assert.True(rocks > 0);
+        structures.Advance();
+        Assert.Equal(rocks, restored.Economy.Read(world => world.Filter<WorldAsteroid>(rock => rock.BeltId == moon).Count()));
+
+        void Advance(ServiceProvider host, Func<bool> ready, int seconds, bool advanceAnchoring = false)
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+            scheduler.PopulationPrepared(factorySystem);
+            scheduler.PopulationPrepared(Home);
+            var worker = host.GetRequiredService<CapsuleerMaintenance>();
+            for (int step = 0; step < seconds && !ready(); step++)
+            {
+                if (advanceAnchoring)
+                {
+                    long? deadline = live.Economy.Read(world => world.Set<SavedStructure>().Single().StateEndsAt);
+                    if (deadline > fixture.Clock.Now)
+                    {
+                        fixture.Clock.AdvanceWallTime(TimeSpan.FromTicks(deadline.Value - fixture.Clock.Now));
+                    }
+                }
+                fixture.Clock.Seconds++;
+                worker.Tick();
+            }
+            var courier = scheduler.Hauler(hauler);
+            var task = courier?.Work.CorporationSupply?.FactorySupply?.Refinery;
+            var factoryWork = scheduler.Miner(factory)?.Work;
+            Assert.True(
+                ready(),
+                $"Refinery shipment {task?.Phase} {task?.Task.Work}, system {courier?.Pilot.SystemId}. "
+                    + $"{courier?.Work.WaitingReason} {scheduler.Read().LastFailure}; factory {factoryWork?.Activity} "
+                    + $"{factoryWork?.FactorySupply?.Refinery}; courier {courier?.Work.Activity}"
+            );
+        }
+    }
+
+    private static void PrepareRefineryCatalog(CapsuleerHaulerTests.Fixture fixture)
+    {
+        var configuration = new WorldConfigurationStore(fixture.Database, fixture.Clock).Read().Active.Draft;
+        var prices = configuration.AdjustedPrices.Select(price => price.TypeId).ToHashSet();
+        // This fixture adds the refinery types to a save with a smaller active price schedule.
+        using CatalogDbContext lookup = new(fixture.Database.CatalogPath);
+        int[] unpriced = lookup
+            .Definitions.Items.Values.Where(item =>
+                item.CategoryId == (int)InventoryCategory.Material
+                && !prices.Contains(item.Id)
+                && lookup.Read(CatalogData.Client.Types, (long)item.Id)?.BasePrice is > 0
+            )
+            .Select(item => item.Id)
+            .ToArray();
+        using CatalogDbContext catalog = new(fixture.Database.CatalogPath, writable: true);
+        foreach (int type in unpriced)
+        {
+            string key = type.ToString(CultureInfo.InvariantCulture);
+            catalog.Database.ExecuteSql(
+                $"""
+                UPDATE SourceRecord SET Data=json_remove(Data,'$.basePrice') WHERE Dataset='client/types' AND Key={key}
+                """
+            );
+        }
+        catalog.Database.ExecuteSqlRaw(
+            """
+            INSERT OR IGNORE INTO ItemCategory VALUES (17,'Commodity');
+            INSERT OR IGNORE INTO ItemGroup VALUES (1884,'Ubiquitous Moon Asteroids',25),(1915,'Upwell Moon Mining Beacon',2),
+                (1888,'Composite Reaction Formulas',9),(429,'Advanced Moon Materials',4),(536,'Structure Components',17);
+            INSERT OR IGNORE INTO ItemType(Id,Name,GroupId) VALUES (46329,'Upwell Moon Mining Beacon',1915),
+                (21947,'Structure Construction Parts',536),(16670,'Crystalline Carbonide',429),(46205,'Crystalline Carbonide Formula',1888),
+                (17357,'Photon Microprocessor Blueprint',134),(21948,'Structure Construction Parts Blueprint',134),
+                (36977,'Athanor Blueprint',134),(37034,'Moon Drill Blueprint',134),(37032,'Reprocessing Facility Blueprint',134),
+                (45540,'Composite Reactor Blueprint',134);
+            INSERT OR REPLACE INTO SourceRecord VALUES
+                ('client/systems','30000141','{{"securityStatus":0.4}}'),
+                ('client/types','16670','{{"published":1,"marketGroupID":1,"volume":0.1}}'),
+                ('client/types','46205','{{"published":1,"marketGroupID":1,"volume":0.01}}'),
+                ('client/types','21947','{{"published":1,"marketGroupID":1,"volume":10}}');
+            """
+        );
+        const string moon = """
+            {"miningBeacon":{"position":{"x":500000000000,"y":-20000000000,"z":-850000000000}}}
+            """;
+        string system = "{\"security\":0.4,\"planets\":{\"40000990\":{\"moons\":{\"40000991\":" + moon + "}}}}";
+        catalog.Database.ExecuteSql($"INSERT OR REPLACE INTO SourceRecord VALUES('client/solarsystemcontent','30000141',{system})");
+        foreach (
+            var (blueprint, output, input) in new[]
+            {
+                (17357, 11541, 16670),
+                (21948, 21947, 34),
+                (36977, CapsuleerIndustry.AthanorType, 21947),
+                (37034, CapsuleerIndustry.MoonDrillType, 34),
+                (37032, 35899, 34),
+                (45540, 45537, 34),
+            }
+        )
+        {
+            string key = blueprint.ToString(CultureInfo.InvariantCulture);
+            string blueprintKey = JsonSerializer.Serialize(key);
+            string recipe = JsonSerializer.Serialize(
+                new
+                {
+                    blueprintTypeID = blueprint,
+                    activities = new
+                    {
+                        manufacturing = new
+                        {
+                            time = 20,
+                            products = new[] { new { typeID = output, quantity = 1 } },
+                            materials = new[] { new { typeID = input, quantity = input == 34 ? 50 : 1 } },
+                            skills = new[] { new { typeID = 3380, level = 1 } },
+                        },
+                    },
+                }
+            );
+            const string item = """{"published":1,"volume":0.01}""";
+            catalog.Database.ExecuteSql($"INSERT OR REPLACE INTO SourceRecord VALUES('client/types',{key},{item})");
+            catalog.Database.ExecuteSql($"INSERT OR REPLACE INTO SourceRecord VALUES('client/blueprints',{blueprintKey},{recipe})");
+        }
+        foreach (var grade in MoonMiningRules.Composition(40000991, 0.4))
+        {
+            string key = grade.TypeId.ToString(CultureInfo.InvariantCulture);
+            catalog.Database.ExecuteSql($"INSERT OR IGNORE INTO ItemType(Id,Name,GroupId) VALUES({grade.TypeId},'Moon ore',1884)");
+            const string item = """{"published":1,"volume":10}""";
+            catalog.Database.ExecuteSql($"INSERT OR REPLACE INTO SourceRecord VALUES('client/types',{key},{item})");
+            string materials = "{\"materials\":[{\"materialTypeID\":16670,\"quantity\":10}]}";
+            catalog.Database.ExecuteSql($"INSERT OR REPLACE INTO SourceRecord VALUES('client/typematerials',{key},{materials})");
         }
     }
 

@@ -78,8 +78,9 @@ them at the research agent (SHA-256 `D6E8E398BB3FF9BA1F0711BA86BA1DCCA4707CD935D
 [UniWiki Datacore farming](https://wiki.eveuniversity.org/Datacore_Farming)
 
 The wider [build 3662168 supply audit](../tech-two-supply-audit.json) identifies the remaining market dependencies.
-Independent Miner II production still needs bots to supply moon and ice mining and reaction jobs for the advanced
-components. Reusable originals and reaction formulae also need a reliable initial source. [Mercoxit expeditions](#mercoxit-mining-and-factory-freight)
+Independent Miner II production still needs bots to harvest fractured moon ore and ice, refine them and run reaction
+jobs for the advanced components. [Bot moon refineries](#bot-moon-refineries) build and start the extraction facility.
+Reusable originals and reaction formulae also need a reliable initial source. [Mercoxit expeditions](#mercoxit-mining-and-factory-freight)
 supply the ore for Morphite, [planetary colonies](#bot-planetary-production-and-factory-freight) supply Mechanical Parts,
 and [component and refinery jobs](#miner-ii-components-from-owned-materials) process materials at the factory.
 [UniWiki Minerals](https://wiki.eveuniversity.org/Minerals) · [UniWiki Reactions](https://wiki.eveuniversity.org/Reactions)
@@ -242,6 +243,59 @@ CapsuleerAmmunitionSupplyTests, CapsuleerHaulerTests, CapsuleerMinerTests, Resid
 PlanetaryRulesTests, PlanetaryIndustryTests, PlanetaryProtocolTests, PlanetaryConfigurationTests,
 CustomsConfigurationTests, PlanetaryMarketTests, PlanetarySkillExtractionTests, CorporationWalletTests,
 ResearchAgentTests
+```
+
+Both Python policy suites passed all 17 cases. Style, CSharpier, line-width and diff checks passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
+## Bot moon refineries
+
+When a Miner II factory runs short of Photon Microprocessors or Laser Focusing Crystals, it can build an Athanor.
+The planner traces the pinned component and reaction recipes back to moon ores. It prefers free moons whose composition
+contains more of the needed ores, then shorter routes and stable moon IDs. The staging system must have an NPC station.
+The route can run up to eight gates from the factory and the site must permit the composite reactor.
+
+The factory installs paid manufacturing jobs for the Athanor, Standup Moon Drill I, Standup Reprocessing Facility I
+and Standup Composite Reactor I. It uses owned stock and blueprints, and can request any missing originals, raw
+materials and manufactured parts through existing corporate freight. It can buy the quantum core and bootstrap fuel
+from sell orders, and use a fuel blueprint when it has the inputs. A corporate courier that can fit the cargo carries
+the equipment to the site. A Tayra courier can qualify for the Caldari Hauler cargo bonus and stows existing cargo
+in its own station hangar when needed. The bot-led corporation assigns Station Manager authority through its ordinary role store.
+The courier uses the native deployment, anchoring, core, fitting and fuel rules. It stocks fuel through the automatic
+fracture deadline before starting a six-day pull. The saved job, structure and courier shipment each retain their
+existing ownership and deadlines across restart.
+
+The planner maintains one refinery per corporation. It needs a suitable unoccupied moon, an available hauler with
+enough cargo space, construction originals and materials, a quantum core, and starter fuel. Mining the fractured field
+and ice belts, making fuel from mined ice, and running reaction jobs for the factory remain separate work.
+
+The local EVE.js build 3396210 `server/src/services/structure/structureAutoState.js` reference preserves the anchoring
+state and its deadline (SHA-256 `6F40FB6650BA30F70CF837C822A9DE18CD822295EABA94C95F37DBFF716EDED6`).
+[CCP Moon Mining](https://support.eveonline.com/hc/en-us/articles/115005404229-Moon-Mining) ·
+[CCP Reactions](https://support.eveonline.com/hc/en-us/articles/115005405785-Reactions) ·
+[UniWiki Reactions](https://wiki.eveuniversity.org/Reactions)
+
+### Automated validation
+
+`BotsBuildAndCommissionTheirMoonRefineryAcrossRestarts` passed in 14.79 seconds. It uses the pinned structure and Tayra
+definitions with short fixture manufacturing recipes. It starts with construction materials, blueprint originals, a
+core and fuel, and reopens the world once during hull manufacturing and again while the courier is in flight. It
+checks five delivered jobs and their individual corporate charges, one deployed refinery with three online services,
+one extraction, and one automatically fractured asteroid field. The solution built with zero warnings and errors in
+10.36 seconds. All 145 affected tests passed in 91.27 seconds using `FullyQualifiedName~.<Class>.` for:
+
+```text
+CapsuleerAmmunitionSupplyTests, CapsuleerHaulerTests, CapsuleerMinerTests, CapsuleerCorporationTests,
+ResidentBotEconomyTests, MoonExtractionTests, MoonMiningRulesTests, MoonMiningWarpTests, StructureTests,
+StructureControlTests, StructureFuelRulesTests, ReactionJobTests, CorporationRoleTests, CorporationWalletTests,
+PlanetaryIndustryTests
 ```
 
 Both Python policy suites passed all 17 cases. Style, CSharpier, line-width and diff checks passed.

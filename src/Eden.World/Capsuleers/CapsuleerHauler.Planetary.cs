@@ -144,7 +144,10 @@ internal sealed partial class CapsuleerHauler
         }
     }
 
-    private bool ContinuePlanetaryFreight(int destination)
+    private bool ContinuePlanetaryFreight(int destination) =>
+        ContinueFactoryFreight(destination, CapsuleerIndustryRules.MaximumPlanetarySupplyJumps);
+
+    private bool ContinueFactoryFreight(int destination, int maximumJumps)
     {
         var route = CapsuleerTrafficRoutes.ToStation(
             _operation.Catalog,
@@ -152,7 +155,7 @@ internal sealed partial class CapsuleerHauler
             destination,
             (HullClass)Pilot.ShipGroupId,
             AvoidedSupplierSystems(),
-            CapsuleerIndustryRules.MaximumPlanetarySupplyJumps
+            maximumJumps
         );
         if (route is null && Pilot.Position is not null)
         {

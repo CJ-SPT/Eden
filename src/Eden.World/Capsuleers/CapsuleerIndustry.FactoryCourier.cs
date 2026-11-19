@@ -55,13 +55,17 @@ internal sealed partial class CapsuleerIndustry
             return null;
         }
         double free = FreeFreightVolume(world, catalog, courier);
-        if (free <= 0)
-        {
-            return null;
-        }
         foreach (var (manufacturer, pending) in requests)
         {
             var request = pending!;
+            if (PlanRefineryCollection(world, catalog, courier, employer, request, avoided) is { } refinery)
+            {
+                return refinery;
+            }
+            if (free <= 0)
+            {
+                continue;
+            }
             if (
                 request.ResearchDatacores
                 && PlanResearchCollection(world, catalog, courier, employer, manufacturer, request, avoided, now) is { } research

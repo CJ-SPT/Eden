@@ -130,6 +130,10 @@ Corporate haulers can run planetary colonies for missing factory inputs. They pl
 colony through customs and carry the finished product to the factory. Miner II's first planetary input is Mechanical Parts.
 [Bot planetary production](protocol/capsuleers.md#bot-planetary-production-and-factory-freight)
 
+A Miner II factory short of reaction-based components can build a corporate Athanor. A hauler deploys it at a reachable
+moon, delivers the core, service modules and fuel, and starts a native extraction once the refinery is ready.
+[Bot moon refineries](protocol/capsuleers.md#bot-moon-refineries)
+
 #### Corporation ammunition supply
 
 Bot corporations can produce and trade **Iron Charge S**. A miner docked at an NPC factory with a market can refine owned

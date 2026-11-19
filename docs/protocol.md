@@ -15,6 +15,9 @@ mining expedition, bot-originated ore orders and checkpointed partial shipments 
 [Bot planetary production and factory freight](protocol/capsuleers.md#bot-planetary-production-and-factory-freight)
 covers catalog-driven PI planning, bot-owned colonies and customs freight for factory inputs.
 
+[Bot moon refineries](protocol/capsuleers.md#bot-moon-refineries) covers paid Athanor construction, corporate courier
+deliveries, native anchoring and commissioning, and the first moon extraction.
+
 [Paid Merlin replacement](protocol/capsuleers.md#paid-merlin-replacement) covers public buy orders, corporate spending
 and a patrol pilot returning to duty across a restart.
 

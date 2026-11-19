@@ -65,42 +65,51 @@ internal sealed partial class PilotStructureStore
 
     public MoonExtraction Start(long pilotId, long structureId, long seconds) =>
         Execute(
-            (world, catalog, now) =>
-            {
-                var structure = Require(world, structureId);
-                Manage(world, structure, pilotId);
-                if (ActiveExtraction(world, structureId) is not null)
-                {
-                    throw new InvalidDataException("This refinery already has a moon extraction.");
-                }
-                var composition = Composition(catalog, structure);
-                if (
-                    seconds is < MoonMiningRules.MinimumExtractionSeconds or > MoonMiningRules.MaximumExtractionSeconds
-                    || composition.Count == 0
-                    || !Snapshot(world, catalog, structure).Services.Contains(StructureService.MoonMining)
-                )
-                {
-                    throw new InvalidDataException("Choose a valid duration and an online moon drill at an eligible mining point.");
-                }
-                long ready = checked(now + seconds * TimeSpan.TicksPerSecond);
-                var extraction = new SavedMoonExtraction
-                {
-                    StructureId = structureId,
-                    MoonId = structure.MoonId!.Value,
-                    SystemId = structure.SystemId,
-                    CorporationId = structure.CorporationId,
-                    StartedAt = now,
-                    ReadyAt = ready,
-                    AutoFractureAt = checked(ready + MoonMiningRules.AutoFractureDelay),
-                    Composition = JsonSerializer.Serialize(composition),
-                };
-                world.Add(extraction);
-                world.SaveChanges();
-                return ReadExtraction(extraction);
-            },
+            (world, catalog, now) => Start(world, catalog, pilotId, structureId, seconds, now),
             pilotId: pilotId,
             structureId: structureId
         );
+
+    internal static MoonExtraction Start(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long structureId,
+        long seconds,
+        long now
+    )
+    {
+        var structure = Require(world, structureId);
+        Manage(world, structure, pilotId);
+        if (ActiveExtraction(world, structureId) is not null)
+        {
+            throw new InvalidDataException("This refinery already has a moon extraction.");
+        }
+        var composition = Composition(catalog, structure);
+        if (
+            seconds is < MoonMiningRules.MinimumExtractionSeconds or > MoonMiningRules.MaximumExtractionSeconds
+            || composition.Count == 0
+            || !Snapshot(world, catalog, structure).Services.Contains(StructureService.MoonMining)
+        )
+        {
+            throw new InvalidDataException("Choose a valid duration and an online moon drill at an eligible mining point.");
+        }
+        long ready = checked(now + seconds * TimeSpan.TicksPerSecond);
+        var extraction = new SavedMoonExtraction
+        {
+            StructureId = structureId,
+            MoonId = structure.MoonId!.Value,
+            SystemId = structure.SystemId,
+            CorporationId = structure.CorporationId,
+            StartedAt = now,
+            ReadyAt = ready,
+            AutoFractureAt = checked(ready + MoonMiningRules.AutoFractureDelay),
+            Composition = JsonSerializer.Serialize(composition),
+        };
+        world.Add(extraction);
+        world.SaveChanges();
+        return ReadExtraction(extraction);
+    }
 
     public void Cancel(long pilotId, long structureId) =>
         Execute(
@@ -182,7 +191,7 @@ internal sealed partial class PilotStructureStore
         return WorldActionScope.Inspect(database, world => read(world, catalog));
     }
 
-    private static SavedMoonExtraction? ActiveExtraction(WorldAction world, long structureId) =>
+    internal static SavedMoonExtraction? ActiveExtraction(WorldAction world, long structureId) =>
         world.Filter<SavedMoonExtraction>(e => e.StructureId == structureId && e.Ended == false).SingleOrDefault();
 
     private static IReadOnlyList<MoonOreShare> Composition(CatalogDbContext catalog, SavedStructure structure) =>

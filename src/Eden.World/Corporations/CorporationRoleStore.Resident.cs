@@ -11,6 +11,34 @@ namespace Eden.World.Corporations;
 
 internal sealed partial class CorporationRoleStore
 {
+    internal static bool AssignBotStationManager(WorldAction world, SavedCorporation corporation, long member, long now)
+    {
+        var effective = Effective(world, member, corporation);
+        if (effective.Roles.Has(CorporationRole.StationManager))
+        {
+            return true;
+        }
+        var stored = Read(world, member, corporation.Id);
+        var director = Effective(world, corporation.CeoId, corporation);
+        if (
+            !CorporationMembershipStore.BotLed(world, corporation)
+            || world.Pilots.Find(member)?.CorporationId != corporation.Id
+            || world.Set<Eden.Data.World.Capsuleers.SavedCapsuleerAgent>().Find(member) is null
+            || stored.BlockRoles
+            || stored.AuthorityHoldVoteId.HasValue
+            || !director.Roles.Has(CorporationRole.Director)
+        )
+        {
+            return false;
+        }
+        var updated = stored with { Roles = stored.Roles with { Roles = stored.Roles.Roles | (long)CorporationRole.StationManager } };
+        Save(world, member, corporation.Id, updated);
+        var after = Effective(world, member, corporation);
+        CorporationRoleRules.Authorize(true, director.Roles, effective.Roles, after.Roles);
+        Notify(world, corporation.Id, new(corporation.Id, member, effective, after, corporation.CeoId, now), null);
+        return true;
+    }
+
     internal static CorporationMemberAccess Effective(WorldAction world, long pilotId, SavedCorporation? corporation)
     {
         if (corporation is null)
