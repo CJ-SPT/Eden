@@ -137,6 +137,29 @@ internal sealed partial class CapsuleerIndustry(
     internal bool Produce(EconomyTransaction world, CatalogDbContext catalog, DockedPilot operatorPilot, long now) =>
         Produce(world, catalog, operatorPilot, now, out _);
 
+    internal bool ProduceScheduled(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        DockedPilot operatorPilot,
+        long now,
+        out FactorySupplyRequest? supply
+    )
+    {
+        var installed = InstalledFactoryJobs(world, operatorPilot.PilotId).Select(job => job.Id).ToHashSet();
+        long elapsed = world.ActiveTicks;
+        bool changed = Produce(world, catalog, operatorPilot, now, out supply);
+        foreach (var job in InstalledFactoryJobs(world, operatorPilot.PilotId).Where(job => !installed.Contains(job.Id)))
+        {
+            job.CapsuleerEndTicks = checked(elapsed + (job.EndTime - job.StartTime));
+        }
+        return changed;
+    }
+
+    private static IEnumerable<IndustryJob> InstalledFactoryJobs(EconomyTransaction world, long pilot) =>
+        world
+            .Filter<IndustryJob>(job => job.PilotId == pilot)
+            .Where(job => job.Status == IndustryJobStatus.Installed && job.OutputCorporationId.HasValue);
+
     internal bool Produce(
         EconomyTransaction world,
         CatalogDbContext catalog,
@@ -169,13 +192,12 @@ internal sealed partial class CapsuleerIndustry(
                 )
             )
             .ToArray();
-        foreach (
-            var job in running.Where(job =>
-                job.OutputCorporationId.HasValue && job.StationId == location && job.EndTime <= now && job.SuspendedAt == null
-            )
-        )
+        foreach (var job in running.Where(job => job.OutputCorporationId.HasValue && job.StationId == location))
         {
-            industry.Finish(world, catalog, pilot, job.Id, operatorPilot.SystemId, cancel: false);
+            if (PilotIndustryStore.Ready(world, job, now))
+            {
+                industry.Finish(world, catalog, pilot, job.Id, operatorPilot.SystemId, cancel: false);
+            }
         }
         if (Employer(world, pilot, operatorPilot.CorpId) is not { } corporation)
         {

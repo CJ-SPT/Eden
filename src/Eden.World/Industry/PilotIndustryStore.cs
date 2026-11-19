@@ -311,6 +311,12 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
 
     private static bool Active(IndustryJob job) => job.Status == IndustryJobStatus.Installed;
 
+    internal static bool Ready(WorldAction world, IndustryJob job, long now) =>
+        job.SuspendedAt is null && (job.CapsuleerEndTicks is long due ? world.ActiveTicks >= due : now >= job.EndTime);
+
+    private static long EndTime(WorldAction world, IndustryJob job, long now) =>
+        Active(job) && job.CapsuleerEndTicks is long due ? Math.Max(job.EndTime, checked(now + (due - world.ActiveTicks))) : job.EndTime;
+
     internal static bool IsInstalled(WorldDbContext world, long itemId) => IsInstalled(new SqlWorldAction(world), itemId);
 
     internal static bool IsInstalled(WorldAction world, long itemId) =>
@@ -516,10 +522,10 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             job.Runs,
             job.OutputQuantity,
             job.StartTime,
-            job.EndTime,
+            EndTime(world, job, Now),
             job.DurationSeconds,
             job.SuspendedAt.HasValue ? IndustryJobStatus.Paused
-                : Active(job) && Now >= job.EndTime ? IndustryJobStatus.Ready
+                : Active(job) && Ready(world, job, Now) ? IndustryJobStatus.Ready
                 : job.Status,
             job.CompletedAt,
             job.CostCents,
@@ -802,7 +808,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         {
             return new(ReadJob(world, catalog, job), []);
         }
-        if (!Active(job) || !cancel && (Now < job.EndTime || job.SuspendedAt.HasValue))
+        if (!Active(job) || !cancel && !Ready(world, job, Now))
         {
             throw new InvalidDataException("This industry job cannot be completed yet.");
         }
@@ -861,6 +867,10 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         }
         // Cancellation releases the blueprint and slot, but consumes the paid
         // materials. A completed job delivers once, even after reconnect/retry.
+        if (!cancel)
+        {
+            job.EndTime = EndTime(world, job, Now);
+        }
         job.Status = status;
         job.CompletedAt = Now;
         if (!cancel && job.Activity == IndustryActivity.Manufacturing)

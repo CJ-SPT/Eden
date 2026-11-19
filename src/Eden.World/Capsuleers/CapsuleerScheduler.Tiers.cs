@@ -1,4 +1,3 @@
-using Eden.Data.World.Capsuleers;
 using Eden.Gameplay.Capsuleers;
 using Eden.World.Fittings;
 using Eden.World.Runtime.Economy;
@@ -7,7 +6,6 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerScheduler
 {
-    private readonly HashSet<long> _savedLocalSorties = [];
     private const int BackgroundStartsPerInterval = 4;
     private readonly SortedSet<(long DueTicks, long Pilot)> _waitingBackground = [];
     private long _nextBackgroundStartTicks;
@@ -59,41 +57,9 @@ internal sealed partial class CapsuleerScheduler
         _queue.Publish(ScheduledJob(pilot));
     }
 
-    private bool CanRunUnobserved(long pilot)
-    {
-        var registration = _registrations.GetValueOrDefault(pilot);
-        if (registration.Career == CapsuleerCareer.Mining)
-        {
-            return registration.DeepCore;
-        }
-        if (registration.Career != CapsuleerCareer.Hauling)
-        {
-            return false;
-        }
-        if (Live?.HaulerCheckpoints.TryGetValue(pilot, out var checkpoint) == true)
-        {
-            return !LocalSortie(checkpoint.Work) || ActiveOperation(pilot);
-        }
-        return !_savedLocalSorties.Contains(pilot);
-    }
+    private static bool SupportsBackground(CapsuleerCareer career) => career is CapsuleerCareer.Mining or CapsuleerCareer.Hauling;
 
-    private void RestoreDeepCoreMiners(WorldAction world)
-    {
-        if (!world.Settings.Capsuleers.Miners)
-        {
-            return;
-        }
-        foreach (int system in CapsuleerTrafficRoutes.MercoxitRoutes(database.Catalog).Keys)
-        {
-            var miners = world
-                .Filter<SavedCapsuleerAgent>(agent => agent.CommunitySystemId == system)
-                .Where(agent => agent.Career == CapsuleerCareer.Mining && agent.Slot == 0)
-                .ToArray();
-            Register(world, miners);
-        }
-    }
-
-    private static bool LocalSortie(HaulerProgress? work) => work?.Ratting is { Patrol: null };
+    private bool CanRunUnobserved(long pilot) => SupportsBackground(_registrations.GetValueOrDefault(pilot).Career);
 
     private CapsuleerMiner? MinerWorker(long pilot)
     {

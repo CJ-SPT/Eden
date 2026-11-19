@@ -105,14 +105,15 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
                 UpdateSelection(host, First, null);
                 UpdateSelection(host, Second, new(b.PilotId, b.Name, b.CorpId, emptySystem, 0));
                 clock.Seconds++;
-                using (var metrics = SessionPerformance.Begin("paid miner waiting", output.WriteLine, force: true)!)
+                using (var metrics = SessionPerformance.Begin("unobserved paid miner", output.WriteLine, force: true)!)
                 {
-                    Assert.Null(worker.Tick());
-                    var remote = host.GetRequiredService<LiveWorld>().MinerCheckpoints[actor].Work;
+                    var remote = Assert.IsType<MinerObservation>(worker.Tick()).Work;
                     Assert.Equal(work.Work.Cycles, remote.Cycles);
                     Assert.Equal(deposit, remote.TargetId);
+                    Assert.True(remote.Stamp > stamp);
                     stamp = remote.Stamp;
-                    Assert.Equal(0, metrics.FittingCalculations);
+                    Assert.Equal(0, metrics.Commands);
+                    Assert.Equal(0, metrics.Connections);
                 }
                 UpdateSelection(host, Second, null);
                 clock.Seconds += 3600;

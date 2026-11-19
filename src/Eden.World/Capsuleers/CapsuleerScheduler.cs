@@ -181,10 +181,10 @@ internal sealed partial class CapsuleerScheduler(
 
     private HashSet<long> _suspended = [];
     private bool _loaded;
-    private bool _backgroundHaulersLoaded;
+    private bool _backgroundPilotsLoaded;
     private long _populationRevision;
 
-    private readonly record struct Registration(int Community, CapsuleerCareer Career, bool DeepCore);
+    private readonly record struct Registration(int Community, CapsuleerCareer Career);
 
     private readonly Dictionary<long, Registration> _registrations = [];
 
@@ -251,7 +251,6 @@ internal sealed partial class CapsuleerScheduler(
             if (!_loaded)
             {
                 RestoreRoamingGangs(world);
-                RestoreDeepCoreMiners(world);
             }
             foreach (int observed in presence.Read().ActiveSystems)
             {
@@ -315,12 +314,7 @@ internal sealed partial class CapsuleerScheduler(
                 continue;
             }
             bool firstRegistration = !_registrations.ContainsKey(pilot);
-            bool deepCore =
-                world.Settings.Capsuleers.Miners
-                && agent.Career == CapsuleerCareer.Mining
-                && agent.Slot == 0
-                && CapsuleerTrafficRoutes.MercoxitRoutes(database.Catalog).ContainsKey(agent.CommunitySystemId);
-            _registrations[pilot] = new(agent.CommunitySystemId, agent.Career, deepCore);
+            _registrations[pilot] = new(agent.CommunitySystemId, agent.Career);
             if (firstRegistration && agent.Career == CapsuleerCareer.Mining)
             {
                 if (!_miningCrews.TryGetValue(agent.CommunitySystemId, out var crew))
@@ -359,14 +353,6 @@ internal sealed partial class CapsuleerScheduler(
                 if (founderSystem is null)
                 {
                     _newPilots.Add(pilot);
-                }
-            }
-            if (firstRegistration && agent.Career == CapsuleerCareer.Hauling)
-            {
-                string? progress = world.Set<SavedCapsuleerHauler>().Find(pilot)?.Progress;
-                if (progress?.Contains("\"Ratting\":{", StringComparison.Ordinal) == true && LocalSortie(HaulerCheckpoint.Read(progress)))
-                {
-                    _savedLocalSorties.Add(pilot);
                 }
             }
             IndexLocation(pilot, system);
@@ -475,17 +461,6 @@ internal sealed partial class CapsuleerScheduler(
                             using var observationContext = Live?.UseSystem(hauler.SystemId);
                             var observation = hauler.Read(includeHealth: activity.ActiveSystems.Contains(hauler.SystemId))!;
                             hauling[job.PilotId] = observation;
-                            if (Live is null)
-                            {
-                                if (LocalSortie(observation.Work))
-                                {
-                                    _savedLocalSorties.Add(pilot);
-                                }
-                                else
-                                {
-                                    _savedLocalSorties.Remove(pilot);
-                                }
-                            }
                             Blocking(job.PilotId, observation.Work.WaitingReason);
                             _pendingHaulers[job.PilotId] = observation;
                             RegisterShip(job.PilotId, observation.Pilot.ShipId);
@@ -568,14 +543,21 @@ internal sealed partial class CapsuleerScheduler(
         }
         using var phase = SessionPerformance.Phase("traffic.membership");
         Reconciliations++;
-        if (activity.Active && Live is not null && !_backgroundHaulersLoaded)
+        if (activity.Active && Live is not null && !_backgroundPilotsLoaded)
         {
             // Read compact resident membership once. The role loads its fit and navigation when due.
             WorldActionScope.Inspect(
                 database,
-                world => Register(world, world.Set<SavedCapsuleerAgent>().Where(agent => agent.Career == CapsuleerCareer.Hauling).ToArray())
+                world =>
+                    Register(
+                        world,
+                        world
+                            .Set<SavedCapsuleerAgent>()
+                            .Where(agent => agent.Career == CapsuleerCareer.Hauling || agent.Career == CapsuleerCareer.Mining)
+                            .ToArray()
+                    )
             );
-            _backgroundHaulersLoaded = true;
+            _backgroundPilotsLoaded = true;
         }
         foreach (int system in activity.ActiveSystems)
         {

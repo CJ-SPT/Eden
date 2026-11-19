@@ -3473,3 +3473,50 @@ stranded jobs and the local station before deployment.
 ### Optional maintainer check
 
 After deployment, observe a previously stranded capsule in KFIE-Z and confirm it docks at the local station.
+
+## Offscreen mining, belt ratting, and industry
+
+The scheduler registers established mining and hauling pilots on the first human selection and admits distant jobs in its
+existing four-pilot batches. Prioritization still gives due jobs a chance to drain before starting more pilots. Unobserved
+industrial settlements use the existing corporate wallets, reserved inputs, blueprint slots and public market listings at
+NPC stations. Eligible combat-fit travelers can start ordinary belt sorties and settle ammunition, wrecks and bounties
+through the same combat path they use in observed systems. Jobs load resources and native combat state without publishing
+an observer scene. Offscreen anomaly scouting and player-structure staging are outside this slice.
+
+When the last human deselects or disconnects, new bot actions stop. The same persisted human-active clock measures the
+remaining duration of jobs installed by the scheduled bot factory. The industry service checks that deadline when reading
+readiness or delivering a job after an offline gap. Older installed jobs retain their original deadlines. Committed effects
+retain their normal settlement rules. Ordinary player industry retains its wall-clock behavior.
+
+The mining and industry paths follow the existing catalog, fitted equipment and paid production model.
+[EVE University careers](https://wiki.eveuniversity.org/Careers) · [Manufacturing](https://wiki.eveuniversity.org/Production)
+
+The local evejs scene reference marks empty solar-system scenes after their final session leaves in
+`server/src/space/runtime/spaceRuntime/sceneRegistry.js` (`noteSolarSystemSceneEmpty`, local file SHA-256
+`2E0ABF2AB95F86D48F04BBFA805C758FA97888B5D7824680E6AFDCDD5B3C9B8C`). Eden continues to separate observer
+scene admission from resident ownership. This change uses Eden's existing gameplay owners and client messages.
+
+### Automated validation
+
+The exact filter `FullyQualifiedName~TravelerRatsUnobservedAndPausesWhenTheLastHumanLeaves` passed both cases in 10.32 seconds.
+It covers a pause during an ordinary pirate fight, the native bounty across reopen, and cargo recovered from owned NPC wrecks.
+`UnobservedMinerAndPaidFactoryPauseAndResumeAcrossRestart` verifies ore collection and paid ammunition delivery after
+a zero-player pause and restart, with the only player in another system. A 19-case rerun including both scenarios,
+the miner observer handoff, Miner II production through copying and invention, and world migrations passed in 14.18 seconds.
+
+The broader filter selected `PilotSpaceActivitiesTests`, `CapsuleerAmmunitionSupplyTests`, `CapsuleerMinerTests`,
+`CapsuleerHaulerTests`, `CapsuleerGlobalPopulationTests`, `CapsuleerBackgroundPreparationTests`,
+`CapsuleerPopulationSettingsTests`, `CapsuleerDeadlineTests`, `CapsuleerInboundRuntimeTests`, `IndustryTests`,
+and `IndustryContainerTests`. It passed 138 of 141 cases in 133.11 seconds before updating the miner handoff and Miner II
+fixtures to exercise the human-active clock. Both updated cases passed the subsequent rerun. The remaining failure,
+`ShoppingChoosesRealAffordableStockAndHonorsThreatMemory` with an overpriced offer and no avoided system, reproduced
+on milestone 4's `main` at `9e2e42bc`. The solution build passed with zero warnings and errors. Both Python policy
+suites and formatting verification passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.

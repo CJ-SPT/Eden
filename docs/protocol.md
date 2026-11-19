@@ -654,6 +654,8 @@ eligibility, continued healthy-job execution and committed-action replay protect
 and visitor recovery, bounded retry waits and continued progress in other occupied systems.
 [Shared bot presentation](protocol/capsuleers.md#shared-bot-presentation---november-16-2026) covers per-system observation
 reuse, exact health deadlines, scoped invalidation and matched frame/checkpoint measurements.
+[Offscreen operations](protocol/capsuleers.md#offscreen-mining-belt-ratting-and-industry) records unobserved mining, belt ratting,
+and paid NPC-station production on the human-active clock.
 
 | Topic | Coverage |
 | --- | --- |

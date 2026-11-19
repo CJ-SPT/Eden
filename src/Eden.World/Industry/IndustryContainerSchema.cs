@@ -21,5 +21,9 @@ internal static class IndustryContainerSchema
             // Build 3662168 flagHangar = 4; pre-container jobs always delivered to personal Item Hangar.
             world.Database.ExecuteSqlRaw("ALTER TABLE WorldIndustryJob ADD COLUMN OutputFlagId INTEGER NOT NULL DEFAULT 4");
         }
+        if (!columns.Contains("CapsuleerEndTicks"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldIndustryJob ADD COLUMN CapsuleerEndTicks INTEGER");
+        }
     }
 }
