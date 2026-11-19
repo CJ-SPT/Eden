@@ -2631,11 +2631,11 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
         }
     }
 
-    private static void PrepareRefineryCatalog(CapsuleerHaulerTests.Fixture fixture)
+    private static void RemoveUnpricedFixtureMaterials(CapsuleerHaulerTests.Fixture fixture)
     {
         var configuration = new WorldConfigurationStore(fixture.Database, fixture.Clock).Read().Active.Draft;
         var prices = configuration.AdjustedPrices.Select(price => price.TypeId).ToHashSet();
-        // This fixture adds the refinery types to a save with a smaller active price schedule.
+        // These fixtures extend an initialized save whose existing price schedule covers the materials they use.
         using CatalogDbContext lookup = new(fixture.Database.CatalogPath);
         int[] unpriced = lookup
             .Definitions.Items.Values.Where(item =>
@@ -2655,6 +2655,12 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 """
             );
         }
+    }
+
+    private static void PrepareRefineryCatalog(CapsuleerHaulerTests.Fixture fixture)
+    {
+        RemoveUnpricedFixtureMaterials(fixture);
+        using CatalogDbContext catalog = new(fixture.Database.CatalogPath, writable: true);
         catalog.Database.ExecuteSqlRaw(
             """
             INSERT OR IGNORE INTO ItemCategory VALUES (17,'Commodity');
@@ -2877,13 +2883,13 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
         public bool Survives() => false;
     }
 
-    private static long Stock(WorldAction world, long pilot, int station, int type) =>
+    private static long Stock(WorldAction world, long pilot, long station, int type) =>
         world
             .Filter<OwnedItem>(item => item.OwnerId == pilot)
             .Where(item => item.LocationId == station && item.TypeId == type)
             .Sum(item => item.Quantity);
 
-    private static void AddStock(EconomyTransaction world, long owner, int station, int type, int amount) =>
+    private static void AddStock(EconomyTransaction world, long owner, long station, int type, int amount) =>
         world.Add(
             new OwnedItem
             {

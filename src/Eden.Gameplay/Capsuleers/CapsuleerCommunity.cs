@@ -63,9 +63,14 @@ public sealed record MinerProgress(
     public int LastMotionStamp { get; init; } = int.MinValue;
     public bool DeepCoreProvisioned { get; init; }
     public MercoxitExpedition? Mercoxit { get; init; }
+    public CapsuleerFactoryStage? FactoryStage { get; init; }
 }
 
 public sealed record MercoxitExpedition(int StationId, int[] Systems, bool Returning = false);
+
+public sealed record CapsuleerFactoryStage(long StructureId, int StationId, CapsuleerFactoryCargo[] Cargo);
+
+public sealed record CapsuleerFactoryCargo(long ItemId, int Quantity);
 
 public sealed record MinerObservation(DockedPilot Pilot, MinerProgress Work, InventoryItem? Laser, string? WaitingReason)
 {

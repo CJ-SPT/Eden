@@ -32,6 +32,8 @@ namespace Eden.World.Industry;
 [Injectable]
 internal sealed partial class PilotIndustryStore(WorldDatabase database, TimeProvider clock, IIndustryRandom random) : IPilotIndustry
 {
+    internal const int FacilityMaterialFactorAttribute = 2600;
+
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
     private static Pilot Pilot(WorldAction world, long id) => world.Filter<Pilot>(p => p.Id == id).Single();
@@ -45,7 +47,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             Manufacturing: HasService(catalog, station),
             Laboratory: HasService(catalog, station, StationService.Laboratory),
             TimeMultiplier: FacilityMultiplier(catalog, station, 2602),
-            MaterialMultiplier: FacilityMultiplier(catalog, station, 2600),
+            MaterialMultiplier: FacilityMultiplier(catalog, station, FacilityMaterialFactorAttribute),
             ReactionProducts: ReactionProducts(catalog, station),
             ReactionTimeMultiplier: FacilityMultiplier(catalog, station, (int)DogmaAttributeId.RefineryReactionTimeMultiplier)
         );
@@ -63,7 +65,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             HasService(catalog, station),
             HasService(catalog, station, StationService.Laboratory),
             FacilityMultiplier(catalog, station, 2602),
-            FacilityMultiplier(catalog, station, 2600),
+            FacilityMultiplier(catalog, station, FacilityMaterialFactorAttribute),
             ReactionProducts(catalog, station),
             FacilityMultiplier(catalog, station, (int)DogmaAttributeId.RefineryReactionTimeMultiplier)
         );
@@ -315,7 +317,9 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         job.SuspendedAt is null && (job.CapsuleerEndTicks is long due ? world.ActiveTicks >= due : now >= job.EndTime);
 
     private static long EndTime(WorldAction world, IndustryJob job, long now) =>
-        Active(job) && job.CapsuleerEndTicks is long due ? Math.Max(job.EndTime, checked(now + (due - world.ActiveTicks))) : job.EndTime;
+        Active(job) && job.CapsuleerEndTicks is long due
+            ? Math.Max(job.EndTime, checked(now + (due - (job.CapsuleerSuspendedTicks ?? world.ActiveTicks))))
+            : job.EndTime;
 
     internal static bool IsInstalled(WorldDbContext world, long itemId) => IsInstalled(new SqlWorldAction(world), itemId);
 
@@ -682,7 +686,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             recipe.Materials,
             new(item.MaterialEfficiency, item.TimeEfficiency, item.BlueprintRuns),
             FacilityMultiplier(catalog, station, 2602),
-            FacilityMultiplier(catalog, station, 2600)
+            FacilityMultiplier(catalog, station, FacilityMaterialFactorAttribute)
         );
         var calculation = supplyCorporation.HasValue
             ? ManufacturingRules.Plan(request.Runs, inputs)

@@ -40,6 +40,7 @@ public sealed class IndustryJob
     public long StartTime { get; set; }
     public long EndTime { get; set; }
     public long? CapsuleerEndTicks { get; set; }
+    public long? CapsuleerSuspendedTicks { get; set; }
     public long DurationSeconds { get; set; }
     public IndustryJobStatus Status { get; set; }
     public long? CompletedAt { get; set; }

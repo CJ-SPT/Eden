@@ -84,7 +84,7 @@ internal sealed partial class CapsuleerIndustry(
             .Where(item => item.LocationId == station && item.FlagId == CorporationStorageRules.MarketDeliveriesFlag && !item.Singleton)
             .AsEnumerable();
 
-    private static OwnedItem[] Hangar(WorldAction world, long pilot, int station) =>
+    private static OwnedItem[] Hangar(WorldAction world, long pilot, long station) =>
         world
             .Filter<OwnedItem>(item => item.OwnerId == pilot)
             .Where(item => item.LocationId == station && item.FlagId == (int)InventoryFlag.Hangar)
@@ -147,7 +147,17 @@ internal sealed partial class CapsuleerIndustry(
     {
         var installed = InstalledFactoryJobs(world, operatorPilot.PilotId).Select(job => job.Id).ToHashSet();
         long elapsed = world.ActiveTicks;
-        bool changed = Produce(world, catalog, operatorPilot, now, out supply);
+        bool changed;
+        if (operatorPilot.InStructure)
+        {
+            supply = null;
+            changed = false;
+            ProduceAtStructure(world, catalog, operatorPilot, now);
+        }
+        else
+        {
+            changed = Produce(world, catalog, operatorPilot, now, out supply);
+        }
         foreach (var job in InstalledFactoryJobs(world, operatorPilot.PilotId).Where(job => !installed.Contains(job.Id)))
         {
             job.CapsuleerEndTicks = checked(elapsed + (job.EndTime - job.StartTime));

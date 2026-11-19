@@ -40,10 +40,12 @@ grow after each cycle. The stock planner covers the last Merlin's loss, and two 
 funded orders at the same station. Full and partial deliveries also survive reopen.
 [Regional procurement](protocol/capsuleers.md#regional-procurement-for-bot-corporations)
 
-Milestone 5 starts with established miners and belt ratters working while the only humans are in other systems.
-Bot factories use the same clock for paid jobs at NPC stations and keep their deadlines across restart.
-Player-structure industry and staging remain part of the next slice.
-[Offscreen operations](protocol/capsuleers.md#offscreen-mining-belt-ratting-and-industry)
+Milestone 5 lets established miners and belt ratters work while the only humans are in other systems.
+Bot factories run paid jobs at NPC stations and at accessible production structures. Operators can carry a batch's
+owned blueprint and inputs from a station to a fitted plant in the same system. The stage, cargo, and paid job survive
+restart. Manufacturing pauses when the last player logs off and while the fitted manufacturing service is unavailable.
+[Offscreen operations](protocol/capsuleers.md#offscreen-mining-belt-ratting-and-industry) ·
+[Player-structure bot factories](protocol/capsuleers.md#player-structure-bot-factories)
 
 Apply the focused validation and publishing policy at each milestone. Collect capacity evidence at the baseline and
 each workload increase. Use the same world, server settings and action mix for before-and-after comparisons, and report

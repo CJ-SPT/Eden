@@ -403,7 +403,7 @@ internal sealed partial class ResidentEconomy
                     Id,SuspendedAt,Activity,LicensedRuns,BlueprintCopy,MaterialEfficiency,TimeEfficiency,OutputRuns,
                     Probability,SuccessfulRuns,OptionalTypeId,PilotId,BlueprintId,BlueprintTypeId,StationId,ProductTypeId,
                     Runs,OutputQuantity,StartTime,EndTime,DurationSeconds,Status,CompletedAt,MaterialsJson,
-                    CostCents,OutputLocationId,OutputFlagId,OutputCorporationId,CapsuleerEndTicks
+                    CostCents,OutputLocationId,OutputFlagId,OutputCorporationId,CapsuleerEndTicks,CapsuleerSuspendedTicks
                 )
                 SELECT
                     json_extract(value,'$.Id'),json_extract(value,'$.SuspendedAt'),json_extract(value,'$.Activity'),
@@ -415,7 +415,8 @@ internal sealed partial class ResidentEconomy
                     json_extract(value,'$.StartTime'),json_extract(value,'$.EndTime'),json_extract(value,'$.DurationSeconds'),
                     json_extract(value,'$.Status'),json_extract(value,'$.CompletedAt'),json_extract(value,'$.MaterialsJson'),
                     json_extract(value,'$.CostCents'),json_extract(value,'$.OutputLocationId'),json_extract(value,'$.OutputFlagId'),
-                    json_extract(value,'$.OutputCorporationId'),json_extract(value,'$.CapsuleerEndTicks')
+                    json_extract(value,'$.OutputCorporationId'),json_extract(value,'$.CapsuleerEndTicks'),
+                    json_extract(value,'$.CapsuleerSuspendedTicks')
                 FROM json_each({values}) WHERE 1
                 ON CONFLICT(Id) DO UPDATE SET
                     SuspendedAt=excluded.SuspendedAt,Activity=excluded.Activity,LicensedRuns=excluded.LicensedRuns,
@@ -428,7 +429,8 @@ internal sealed partial class ResidentEconomy
                     EndTime=excluded.EndTime,DurationSeconds=excluded.DurationSeconds,Status=excluded.Status,
                     CompletedAt=excluded.CompletedAt,MaterialsJson=excluded.MaterialsJson,CostCents=excluded.CostCents,
                     OutputLocationId=excluded.OutputLocationId,OutputFlagId=excluded.OutputFlagId,
-                    OutputCorporationId=excluded.OutputCorporationId,CapsuleerEndTicks=excluded.CapsuleerEndTicks
+                    OutputCorporationId=excluded.OutputCorporationId,CapsuleerEndTicks=excluded.CapsuleerEndTicks,
+                    CapsuleerSuspendedTicks=excluded.CapsuleerSuspendedTicks
                 """
             );
         }

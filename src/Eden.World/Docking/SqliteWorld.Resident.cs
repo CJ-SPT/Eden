@@ -154,8 +154,17 @@ public sealed partial class SqliteWorld
         return transfer;
     }
 
-    internal DockedPilot Dock(WorldAction world, CatalogDbContext catalog, long pilotId, long shipId, int stationId)
+    internal DockedPilot Dock(WorldAction world, CatalogDbContext catalog, long pilotId, long shipId, long locationId)
     {
+        if (locationId >= Eden.Gameplay.Structures.StructureRules.FirstStructureId)
+        {
+            return DockStructure(world, catalog, pilotId, shipId, locationId);
+        }
+        if (locationId is <= 0 or > int.MaxValue)
+        {
+            throw new InvalidDataException("Dock your active ship at an available station.");
+        }
+        int stationId = (int)locationId;
         Eden.World.Sovereignty.EntosisPersistence.RequireTravel(world, shipId, _clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
         var pilot = world.Pilots.Single(p => p.Id == pilotId);
         var destination = catalog.FindStation(stationId);

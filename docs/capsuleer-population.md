@@ -457,9 +457,11 @@ Eligibility requires supported high-security mining, a market station and a reci
 
 Any selected human pilot activates their system, including while docked. Multiple human pilots keep a system active until the last one leaves.
 While anyone is selected, established miners and haulers can work in unobserved systems. Existing bounded batches admit background roles.
-Mining and belt sorties use their normal resource, navigation and combat rules. Factories run at eligible NPC stations and newly
-scheduled bot factory jobs count time on the shared human-active clock. Ordinary player industry and training use their existing deadlines.
-[Offscreen operations](protocol/capsuleers.md#offscreen-mining-belt-ratting-and-industry)
+Mining and belt sorties use their normal resource, navigation and combat rules. Factories run at eligible NPC stations and fitted player
+structures the operator can access. An industrial pilot can carry owned supplies to a local structure, mine from it between jobs, and
+deliver completed production to the structure's Item Hangar. Scheduled bot factory jobs count time on the shared human-active clock.
+[Offscreen operations](protocol/capsuleers.md#offscreen-mining-belt-ratting-and-industry) ·
+[Player-structure bot factories](protocol/capsuleers.md#player-structure-bot-factories)
 
 ## Implementation increments
 

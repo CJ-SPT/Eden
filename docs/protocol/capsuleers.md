@@ -3520,3 +3520,51 @@ Not performed. Agent client testing is disabled.
 ### Optional maintainer checks
 
 None.
+
+## Player-structure bot factories
+
+Bot-led corporations can stage an operator at a same-system Upwell facility with docking permission for the hull and an
+online manufacturing service for the product. Facility choice prefers corporate ownership and then stable structure ID.
+The operator uses an owned blueprint and available material stacks from the facility or the departure station. A move uses
+the normal cargo hold, applies volume and quantity limits, and commits cargo and the chosen destination in the same
+checkpoint generation. The approach and docking use normal flight, range, Crimewatch and access checks. If access is
+lost en route, the pilot returns to the departure station with the surviving cargo.
+
+The facility can manufacture ammunition, the supported starter Merlin kit parts, or Miner II modules when the applicable
+blueprint, materials, skills and service are available. Native manufacturing owns material consumption, blueprint
+reservation, structure bonuses and the corporate debit. Finished stock goes to the operator's Item Hangar in the structure.
+Regional orders and their fulfilment use NPC markets. A miner returning to deliver a finished job first settles its current
+paid mining cycle.
+
+The human-active deadline and the service suspension point both survive checkpoints. If the service goes offline,
+reopening it extends the bot deadline by the human-active time spent suspended. Time when the last player has logged off
+does not count toward the job or extend it twice during an overlapping service outage.
+
+Eden uses pinned build 3662168 profiles for docking envelopes, manufacturing modifiers and fitted service requirements.
+The local evejs reference checks docking service, character access and hull eligibility in `canCharacterDockAtStructure` in
+`server/src/services/structure/structureState.js` (SHA-256
+`E12D487E9E2E0E5486CE03A60B1178EAADC5A74C0BE39813B026F16206376C1C`).
+[Fitting Upwell structures](https://wiki.eveuniversity.org/Fitting_upwell_structures) ·
+[Structure permissions](https://wiki.eveuniversity.org/Structure_permissions)
+
+### Automated validation
+
+The exact filter `FullyQualifiedName~BotStagesAtAPlayerFactoryAndFinishesItsPaidJobAfterServicePauseAndRestart` passed
+in 10.93 seconds. It checks denied access and a fitted-but-offline plant, physical cargo and native docking across reopen,
+one paid corporate installation, logout while the service is online, a further service pause across restart, and single
+delivery to the structure's Item Hangar after the active deadline.
+
+The 172-case focused selection passed in 173.23 seconds. It covered `CapsuleerAmmunitionSupplyTests`,
+`CapsuleerMinerTests`, `CapsuleerHaulerTests`, `CapsuleerBackgroundPreparationTests`,
+`TravelerRatsUnobservedAndPausesWhenTheLastHumanLeaves`, `StructureTests`, `StructureControlTests`,
+`IndustryTests`, `IndustryContainerTests`, `IndustryFacilityLookupTests`, `ReactionJobTests`, `ScienceJobTests`,
+and `WorldMigrationTests`. The solution built in 7.84 seconds with zero warnings or errors. Both Python policy
+suites, formatting verification and the whitespace check passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.

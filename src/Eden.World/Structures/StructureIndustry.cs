@@ -25,15 +25,25 @@ internal static class StructureIndustry
             return;
         }
         var structure = PilotStructureStore.Require(world, structureId);
-        var type = catalog.FittingType(productTypeId);
-        var required = StructureIndustryRules.Required(activity, type?.CategoryId ?? 0, type?.GroupId ?? 0);
-        if (
-            !PilotStructureStore.Access(world, structure, pilotId)
-            || !PilotStructureStore.Snapshot(world, catalog, structure).Services.Contains(required)
-        )
+        if (!CanUse(world, catalog, structure, pilotId, activity, productTypeId))
         {
             throw new InvalidDataException("The required structure industry service is offline or access is denied.");
         }
+    }
+
+    internal static bool CanUse(
+        WorldAction world,
+        CatalogDbContext catalog,
+        SavedStructure structure,
+        long pilotId,
+        IndustryActivity activity,
+        int productTypeId
+    )
+    {
+        var type = catalog.FittingType(productTypeId);
+        var required = StructureIndustryRules.Required(activity, type?.CategoryId ?? 0, type?.GroupId ?? 0);
+        return PilotStructureStore.Access(world, structure, pilotId)
+            && PilotStructureStore.Snapshot(world, catalog, structure).Services.Contains(required);
     }
 
     internal static void Synchronize(WorldAction world, CatalogDbContext catalog, SavedStructure structure, long at)
@@ -47,13 +57,25 @@ internal static class StructureIndustry
                     ? ReactionCatalog.Service(job.BlueprintTypeId, catalog.RequireItem(job.BlueprintTypeId).GroupId)
                     : StructureIndustryRules.Required(job.Activity, type.CategoryId, type.GroupId);
             bool available = required is { } service && services.Contains(service);
-            if (!available && job.SuspendedAt is null && job.EndTime > at)
+            if (!available && job.SuspendedAt is null && !PilotIndustryStore.Ready(world, job, at))
             {
                 job.SuspendedAt = at;
+                if (job.CapsuleerEndTicks.HasValue)
+                {
+                    job.CapsuleerSuspendedTicks = world.ActiveTicks;
+                }
             }
             else if (available && job.SuspendedAt is long suspended)
             {
-                job.EndTime = checked(job.EndTime + Math.Max(0, at - suspended));
+                if (job.CapsuleerEndTicks is long due && job.CapsuleerSuspendedTicks is long activePause)
+                {
+                    job.CapsuleerEndTicks = checked(due + (world.ActiveTicks - activePause));
+                    job.CapsuleerSuspendedTicks = null;
+                }
+                else
+                {
+                    job.EndTime = checked(job.EndTime + Math.Max(0, at - suspended));
+                }
                 job.SuspendedAt = null;
             }
         }

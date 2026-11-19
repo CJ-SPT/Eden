@@ -25,5 +25,9 @@ internal static class IndustryContainerSchema
         {
             world.Database.ExecuteSqlRaw("ALTER TABLE WorldIndustryJob ADD COLUMN CapsuleerEndTicks INTEGER");
         }
+        if (!columns.Contains("CapsuleerSuspendedTicks"))
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldIndustryJob ADD COLUMN CapsuleerSuspendedTicks INTEGER");
+        }
     }
 }

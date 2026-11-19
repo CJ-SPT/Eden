@@ -548,10 +548,14 @@ internal sealed partial class CapsuleerMiner(
             using CatalogDbContext catalog = new(database.CatalogPath);
             _laser = PilotInventoryStore.List(world, catalog, id, Pilot.ShipId).FirstOrDefault(i => i.Id == Work.ModuleId);
             _miningReach = _laser is null ? 0 : MiningReach(world, catalog, _laser);
+            var stagedReturn =
+                Work.FactoryStage is { StructureId: > 0 } stage && Work.TargetId == stage.StructureId
+                    ? FactoryTarget(world, catalog, stage.StructureId)
+                    : null;
             transaction.Commit();
             transaction.Dispose();
             RefreshObjects();
-            _target = _objects.FirstOrDefault(o => o.Id == Work.TargetId);
+            _target = stagedReturn ?? _objects.FirstOrDefault(o => o.Id == Work.TargetId);
             if (Work.WorkingBelt == 0 && _target is { GroupId: AsteroidDefinitions.BeltGroup } belt)
             {
                 _work = Work with { WorkingBelt = belt.Id };
@@ -658,12 +662,20 @@ internal sealed partial class CapsuleerMiner(
 
     private void PrepareTrip()
     {
+        if (LeaveUnavailableFactory())
+        {
+            return;
+        }
         if (Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup)
         {
             AttemptShipReplacement();
             return;
         }
         JoinCorporationAtDock();
+        if (Work.FactoryStage is not null && _operation.World is EconomyTransaction stagedWorld)
+        {
+            UnloadFactoryCargo(stagedWorld);
+        }
         CapsuleerSupplyStore.Ensure(
             _operation.World,
             _operation.Catalog,
@@ -678,7 +690,7 @@ internal sealed partial class CapsuleerMiner(
                 _operation.World,
                 _operation.Catalog,
                 Pilot.PilotId,
-                Pilot.StationId,
+                Pilot.DockedLocationId,
                 new(ore.Select(i => i.Id).ToArray(), Pilot.ShipId, (int)InventoryFlag.Hangar, null),
                 Now
             );
@@ -689,6 +701,10 @@ internal sealed partial class CapsuleerMiner(
             && _operation.World is EconomyTransaction supplyWorld
         )
         {
+            if (TryStageFactory(supplyWorld))
+            {
+                return;
+            }
             _operation.MarketChanged |= industry.ProduceScheduled(supplyWorld, _operation.Catalog, Pilot, Now, out supply);
         }
         _work = Work with { FactorySupply = supply };
@@ -701,7 +717,7 @@ internal sealed partial class CapsuleerMiner(
         {
             var kit =
                 PilotInventoryStore
-                    .List(_operation.World, _operation.Catalog, Pilot.PilotId, Pilot.StationId)
+                    .List(_operation.World, _operation.Catalog, Pilot.PilotId, Pilot.DockedLocationId)
                     .FirstOrDefault(i => i.TypeId == (int)laserType)
                 ?? throw new InvalidDataException("Waiting for a mining laser.");
             PilotFittingStore.Fit(
@@ -709,7 +725,7 @@ internal sealed partial class CapsuleerMiner(
                 _operation.Catalog,
                 Pilot.PilotId,
                 [kit.Id],
-                Pilot.StationId,
+                Pilot.DockedLocationId,
                 (int)InventoryFlag.AutoFit,
                 Now
             );
@@ -753,13 +769,18 @@ internal sealed partial class CapsuleerMiner(
 
     private void LaunchMiningShip(long belt)
     {
+        UndockMiner();
+        _work = Work with { ModuleId = _laser!.Id, Cycles = 0, Trips = Work.Trips + 1, WorkingBelt = belt, LeaveAfterCycle = false };
+    }
+
+    private void UndockMiner()
+    {
         var launch = StationUndocking.Launch(Pilot.ShipId, Pilot.Home, Pilot.Flight);
         SqliteWorld.SetPosition(_operation.World, _operation.Catalog, Pilot.ShipId, launch.Position, Pilot.SystemId, Now);
         _operation.TravelChanged = true;
         _pilot = Pilot with { Position = launch.Position };
         _navigation.AdoptHull();
         _navigation.SetVelocity(launch.Velocity);
-        _work = Work with { ModuleId = _laser!.Id, Cycles = 0, Trips = Work.Trips + 1, WorkingBelt = belt, LeaveAfterCycle = false };
     }
 
     private StaticSpaceObject? NextBelt(out long retryAt, out bool knownBelts)
@@ -887,6 +908,11 @@ internal sealed partial class CapsuleerMiner(
 
     private void Travel()
     {
+        if (Work.Activity == MinerActivity.Returning && _target is null)
+        {
+            ReturnHome();
+            return;
+        }
         Move();
         if (
             _navigation.Warp is not null
@@ -906,13 +932,16 @@ internal sealed partial class CapsuleerMiner(
         {
             if (Distance(_target!) <= DockingDefinitions.MaximumRange)
             {
-                _pilot = ships.Dock(
-                    _operation.World,
-                    _operation.Catalog,
-                    Pilot.PilotId,
-                    Pilot.ShipId,
-                    Work.Mercoxit?.StationId ?? Pilot.StationId
-                );
+                if (
+                    Work.FactoryStage is { StructureId: > 0 } stage
+                    && _target!.Id == stage.StructureId
+                    && FactoryTarget(_operation.World, _operation.Catalog, stage.StructureId) is null
+                )
+                {
+                    ReturnHome();
+                    return;
+                }
+                _pilot = ships.Dock(_operation.World, _operation.Catalog, Pilot.PilotId, Pilot.ShipId, _target!.Id);
                 JoinCorporationAtDock();
                 Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, _operation.Catalog, Pilot.ShipId);
                 _navigation.Dock();
@@ -1066,7 +1095,11 @@ internal sealed partial class CapsuleerMiner(
         {
             LeaveThreatenedBelt();
         }
-        else if (result.CargoFull)
+        else if (
+            result.CargoFull
+            || Work.FactoryStage is { StructureId: > 0 } stage
+                && CapsuleerIndustry.FactoryDeliveryReady(world, catalog, Pilot, stage.StructureId, Now)
+        )
         {
             _work = Work with { Activity = MinerActivity.ReadyToReturn };
         }
@@ -1103,6 +1136,17 @@ internal sealed partial class CapsuleerMiner(
         if (Work.Mercoxit is { } expedition)
         {
             ContinueExpedition(expedition with { Returning = true });
+            return;
+        }
+        if (Work.FactoryStage is { } stage)
+        {
+            if (stage.StructureId > 0 && FactoryTarget(_operation.World, _operation.Catalog, stage.StructureId) is { } factory)
+            {
+                StartCourse(factory, MinerActivity.Returning);
+                return;
+            }
+            _work = Work with { FactoryStage = stage with { StructureId = 0 } };
+            StartCourse(_objects.Single(o => o.Id == stage.StationId), MinerActivity.Returning);
             return;
         }
         StartCourse(_objects.Single(o => o.Id == Pilot.StationId), MinerActivity.Returning);
