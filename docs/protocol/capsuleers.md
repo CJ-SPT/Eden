@@ -58,6 +58,57 @@ Not performed. Agent client testing is disabled.
 
 Stock the required inputs at a bot factory with laboratory service and buy its finished Miner II modules.
 
+## Miner II datacores from R&D agents
+
+A Miner II factory requests datacore deliveries when station offers cannot cover the invention recipe. A corporate
+hauler checks the catalog for accessible R&D agents who offer the requested research fields. It visits the agents,
+qualifies for the fields through the existing bot skill provisioning and starts up to two ordinary research projects.
+The hauler can take other work while points accrue by wall-clock time. Eden limits research supply routes to twelve
+gates per leg and uses the normal Omega, standings and docking checks.
+
+Once an agent has enough points, the hauler returns and redeems only the outstanding amount it can afford and carry.
+Each datacore consumes 100 points and costs 10,000 ISK from the corporate wallet. The loaded cargo, wallet entries,
+project balances and delivery route use the same resident checkpoint. Normal local and remote market supply still
+works when offers appear. The pinned catalog maps Laser Physics and Mechanical Engineering to the corresponding
+datacore types and supplies both invention quantities.
+
+The local EVE.js build 3396210 `server/src/services/agent/researchRuntime.js` reference accrues points and redeems
+them at the research agent (SHA-256 `D6E8E398BB3FF9BA1F0711BA86BA1DCCA4707CD935D287C9760A8A8BDD0C6EE8`).
+[CCP Datacores](https://support.eveonline.com/hc/en-us/articles/203210652-Datacores) ·
+[UniWiki Datacore farming](https://wiki.eveuniversity.org/Datacore_Farming)
+
+The wider [build 3662168 supply audit](../tech-two-supply-audit.json) identifies the remaining market dependencies.
+Independent Miner II production still needs bot-supplied deep-core ore and reprocessing for Morphite, planetary
+production for Mechanical Parts and reactor fuel ingredients, moon and ice mining with fuel and reaction jobs for
+the advanced components, and manufacturing of Miner I, R.A.M. Energy Tech, Photon Microprocessors and Laser Focusing
+Crystals. Reusable originals and reaction formulae also need a reliable initial source.
+[UniWiki Minerals](https://wiki.eveuniversity.org/Minerals) · [UniWiki Reactions](https://wiki.eveuniversity.org/Reactions)
+
+### Automated validation
+
+`MissingMinerTwoDatacoresComeFromPaidResearchAndSurviveCargoRestart` covers the real factory shortage, courier
+dispatch and arrival, and both research projects without market offers or testing grants. It reopens the world
+before redemption and again with paid cargo in the hold, then checks both types and quantities in the factory
+hangar and verifies one corporate charge per redemption.
+
+The exact filter passed in 9.92 seconds. The solution built in 7.29 seconds with zero warnings and errors. The
+affected run passed all 121 tests in 83.40 seconds with these class filters using `FullyQualifiedName~.<Class>.`:
+
+```text
+ResearchAgentTests, AgentShowInfoTests, CapsuleerAmmunitionSupplyTests, CapsuleerHaulerTests, CapsuleerMinerTests,
+ScienceJobTests, ResidentBotEconomyTests, PersonalMarketTests, CorporationWalletTests
+```
+
+Both Python policy suites passed all 17 cases. Style, CSharpier, line-width and diff checks passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
 ## Paid Merlin replacement
 
 A bot pilot in a bot-led corporation can replace a lost Merlin after its capsule reaches an NPC market station.

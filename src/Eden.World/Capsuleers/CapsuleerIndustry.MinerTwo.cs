@@ -4,6 +4,8 @@ using Eden.Data.World.Corporations;
 using Eden.Data.World.Industry;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
+using Eden.Gameplay.Agents;
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
@@ -78,9 +80,11 @@ internal sealed partial class CapsuleerIndustry
         SavedCorporation corporation,
         OwnedItem[] hangar,
         IEnumerable<SavedPersonalOrder> bids,
-        long now
+        long now,
+        out FactorySupplyRequest? research
     )
     {
+        research = null;
         if (
             corporation.BalanceCents < PersonalMarketRules.MinimumBrokerFeeCents
             || !StationCapabilities.Has(catalog, operatorPilot.OperationId, StationService.Laboratory)
@@ -190,15 +194,31 @@ internal sealed partial class CapsuleerIndustry
             .SupplyOrders(world, catalog, station, shortages.Select(part => (int)part.TypeId!.Value).ToArray(), pilot, corporation.Id)
             .ToLookup(order => order.TypeId);
         List<MarketPurchase> purchases = [];
+        List<FactorySupplyNeed> datacores = [];
+        bool unavailable = false;
         foreach (var part in shortages)
         {
             int type = (int)part.TypeId!.Value;
             int needed = checked((int)part.Quantity!.Value);
-            if (QuoteInput(offers[type], type, needed) is not { } quote || quote.Quantity != needed)
+            var quote = QuoteInput(offers[type], type, needed);
+            if (quote?.Quantity == needed)
             {
-                return null;
+                purchases.Add(quote);
+                continue;
             }
-            purchases.Add(quote);
+            unavailable = true;
+            if (inventionMaterials.ContainsKey(type) && catalog.FittingType(type)?.GroupId == ResearchRules.DatacoreGroup)
+            {
+                datacores.Add(new(type, required[type], required[type], needed, ResearchRules.CentsPerDatacore));
+            }
+        }
+        if (unavailable)
+        {
+            if (datacores.Count > 0)
+            {
+                research = new(corporation.Id, station, null, datacores.ToArray()) { ResearchDatacores = true };
+            }
+            return null;
         }
         decimal purchasesCost = purchases.Sum(quote => (decimal)quote.Quantity * quote.LimitPriceCents);
         long manufacturingFee = EconomicStore

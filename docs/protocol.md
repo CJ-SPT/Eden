@@ -3,6 +3,9 @@
 [Autonomous Miner II production](protocol/capsuleers.md#autonomous-miner-ii-production) covers paid procurement,
 saved copying and invention jobs, and public sales of the finished modules.
 
+[Miner II datacores from R&D agents](protocol/capsuleers.md#miner-ii-datacores-from-rd-agents) covers research projects,
+paid redemptions and checkpointed courier deliveries when local sell orders are unavailable.
+
 [Paid Merlin replacement](protocol/capsuleers.md#paid-merlin-replacement) covers public buy orders, corporate spending
 and a patrol pilot returning to duty across a restart.
 

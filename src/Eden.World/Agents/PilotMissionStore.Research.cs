@@ -4,10 +4,12 @@ using Eden.Data.World.Characters;
 using Eden.Data.World.Economy;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Agents;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.World.Catalog;
+using Eden.World.Corporations;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
@@ -21,6 +23,18 @@ internal sealed partial class PilotMissionStore
         "agents/research-fields",
         LoadResearchFields,
         Estimate: fields => 128 + fields.Count * 128L
+    );
+    private static readonly CatalogDefinition<IReadOnlyDictionary<int, int>> s_researchDatacores = new(
+        "agents/research-datacores",
+        (catalog, _) =>
+            catalog
+                .Definitions.Items.Values.Where(type =>
+                    type.GroupId == ResearchRules.DatacoreGroup && catalog.Read(CatalogData.Client.Types, (long)type.Id)?.Published == 1
+                )
+                .OrderBy(type => type.Id)
+                .GroupBy(type => (int)catalog.FittingAttributes(type.Id).GetValueOrDefault(DogmaAttributeId.RequiredSkill1))
+                .Where(group => group.Key > 0)
+                .ToDictionary(group => group.Key, group => group.First().Id)
     );
 
     private T ResearchOperation<T>(long pilotId, Func<WorldAction, CatalogDbContext, Pilot, long, T> action)
@@ -55,25 +69,16 @@ internal sealed partial class PilotMissionStore
         return agent;
     }
 
-    private static IReadOnlyList<ResearchField> ResearchFields(CatalogDbContext catalog, long agentId) =>
+    internal static IReadOnlyList<ResearchField> ResearchFields(CatalogDbContext catalog, long agentId) =>
         catalog.Definition(s_researchFields, checked((int)agentId));
+
+    internal static bool HasResearchAccess(WorldAction world, CatalogDbContext catalog, Pilot pilot, CatalogAgent agent) =>
+        Access(world, catalog, pilot, agent).Allowed;
 
     private static IReadOnlyList<ResearchField> LoadResearchFields(CatalogDbContext catalog, int agentId)
     {
         var fields = catalog.Read(CatalogData.Client.Npccharacters, agentId)?.Skills ?? [];
-        var datacores = catalog
-            .Definitions.Items.Values.Where(t =>
-                t.GroupId == ResearchRules.DatacoreGroup && catalog.Read(CatalogData.Client.Types, (long)t.Id)?.Published == 1
-            )
-            .OrderBy(t => t.Id)
-            .Select(t => new
-            {
-                Type = t.Id,
-                Skill = (int)catalog.FittingAttributes(t.Id).GetValueOrDefault(DogmaAttributeId.RequiredSkill1),
-            })
-            .Where(t => t.Skill > 0)
-            .GroupBy(t => t.Skill)
-            .ToDictionary(g => g.Key, g => g.First().Type);
+        var datacores = catalog.Definitions.GlobalDefinition(s_researchDatacores);
         return fields
             .Where(f => f.TypeID is > 0 and <= int.MaxValue)
             .Select(f => (int)f.TypeID!.Value)
@@ -100,9 +105,15 @@ internal sealed partial class PilotMissionStore
             }
         );
 
-    private ResearchProject SettleResearch(WorldAction world, CatalogDbContext catalog, Pilot pilot, SavedResearchProject row, long now)
+    private static ResearchProject SettleResearch(
+        WorldAction world,
+        CatalogDbContext catalog,
+        Pilot pilot,
+        CatalogAgent agent,
+        SavedResearchProject row,
+        long now
+    )
     {
-        var agent = ResearchAgent(row.AgentId);
         row.Points = ResearchRules.Accrue(row.Points, row.PointsPerDay, row.SettledAt, now);
         row.SettledAt = Math.Max(row.SettledAt, now);
         row.PointsPerDay = ResearchRules.PointsPerDay(
@@ -122,52 +133,56 @@ internal sealed partial class PilotMissionStore
                     .Filter<SavedResearchProject>(p => p.PilotId == pilotId && (agentId == null || p.AgentId == agentId))
                     .OrderBy(p => p.AgentId)
                     .ToArray()
-                    .Select(row => SettleResearch(world, catalog, pilot, row, now))
+                    .Select(row => SettleResearch(world, catalog, pilot, ResearchAgent(row.AgentId), row, now))
                     .ToArray()
         );
 
     public ResearchProject StartResearch(long pilotId, long agentId, int skillId) =>
         ResearchOperation(
             pilotId,
-            (world, catalog, pilot, now) =>
-            {
-                var agent = ResearchAgent(agentId);
-                RequireStation(pilot, agent.StationId);
-                RequireAgentAccess(world, catalog, pilot, agent);
-                if (
-                    Skill(world, catalog, pilot, ResearchRules.Science) < 5
-                    || Skill(world, catalog, pilot, skillId) < agent.Level
-                    || !ResearchFields(catalog, agentId).Any(f => f.SkillId == skillId)
-                )
-                {
-                    throw new InvalidDataException("Train Science V and an offered science field to the agent's level.");
-                }
-                int capacity = 1 + Skill(world, catalog, pilot, ResearchRules.ProjectManagement);
-                if (
-                    world.Filter<SavedResearchProject>(p => p.PilotId == pilotId && p.AgentId == agentId).Any()
-                    || world.Filter<SavedResearchProject>(p => p.PilotId == pilotId).Count() >= capacity
-                )
-                {
-                    throw new InvalidDataException(
-                        "This agent is already researching or your Research Project Management limit is reached."
-                    );
-                }
-                var row = world
-                    .Add(
-                        new SavedResearchProject
-                        {
-                            PilotId = pilotId,
-                            AgentId = agentId,
-                            SkillId = skillId,
-                            SettledAt = now,
-                        }
-                    )
-                    .Entity;
-                var snapshot = SettleResearch(world, catalog, pilot, row, now);
-                world.SaveChanges();
-                return snapshot with { Id = row.Id };
-            }
+            (world, catalog, pilot, now) => StartResearch(world, catalog, pilot, ResearchAgent(agentId), skillId, now)
         );
+
+    internal static ResearchProject StartResearch(
+        WorldAction world,
+        CatalogDbContext catalog,
+        Pilot pilot,
+        CatalogAgent agent,
+        int skill,
+        long now
+    )
+    {
+        RequireStation(pilot, agent.StationId);
+        RequireAgentAccess(world, catalog, pilot, agent);
+        if (
+            Skill(world, catalog, pilot, ResearchRules.Science) < 5
+            || Skill(world, catalog, pilot, skill) < agent.Level
+            || !ResearchFields(catalog, agent.Id).Any(field => field.SkillId == skill)
+        )
+        {
+            throw new InvalidDataException("Train Science V and an offered science field to the agent's level.");
+        }
+        int capacity = 1 + Skill(world, catalog, pilot, ResearchRules.ProjectManagement);
+        var projects = world.Filter<SavedResearchProject>(project => project.PilotId == pilot.Id);
+        if (projects.Any(project => project.AgentId == agent.Id) || projects.Count() >= capacity)
+        {
+            throw new InvalidDataException("This agent is already researching or your Research Project Management limit is reached.");
+        }
+        var row = world
+            .Add(
+                new SavedResearchProject
+                {
+                    PilotId = pilot.Id,
+                    AgentId = agent.Id,
+                    SkillId = skill,
+                    SettledAt = now,
+                }
+            )
+            .Entity;
+        var snapshot = SettleResearch(world, catalog, pilot, agent, row, now);
+        world.SaveChanges();
+        return snapshot with { Id = row.Id };
+    }
 
     private static SavedResearchProject ResearchRow(WorldAction world, long pilotId, long agentId, long projectId) =>
         world.Filter<SavedResearchProject>(p => p.PilotId == pilotId && p.AgentId == agentId && p.Id == projectId).SingleOrDefault()
@@ -187,45 +202,63 @@ internal sealed partial class PilotMissionStore
     public DatacorePurchase BuyDatacores(long pilotId, long agentId, long projectId, int quantity) =>
         ResearchOperation(
             pilotId,
-            (world, catalog, pilot, now) =>
-            {
-                var agent = ResearchAgent(agentId);
-                RequireStation(pilot, agent.StationId);
-                var row = ResearchRow(world, pilotId, agentId, projectId);
-                _ = SettleResearch(world, catalog, pilot, row, now);
-                long cost = ResearchRules.PurchaseCost(row.Points, quantity);
-                int type =
-                    ResearchFields(catalog, agentId).SingleOrDefault(f => f.SkillId == row.SkillId)?.DatacoreTypeId
-                    ?? throw new InvalidDataException("This research field has no catalog datacore.");
-                var wallet = world.Set<PilotWallet>().Find(pilotId);
-                if (wallet is null || wallet.Cents < cost)
-                {
-                    throw new InvalidDataException("Insufficient ISK to buy datacores.");
-                }
-                var item = InventoryPersistence.MergeOutput(
-                    world,
-                    catalog,
-                    pilotId,
-                    agent.StationId!.Value,
-                    (int)InventoryFlag.Hangar,
-                    type,
-                    quantity
-                );
-                wallet.Cents -= cost;
-                row.Points -= (double)quantity * ResearchRules.PointsPerDatacore;
-                world.Add(
-                    new SavedServicePayment
-                    {
-                        PilotId = pilotId,
-                        CounterpartyId = agentId,
-                        ContextId = projectId,
-                        Kind = WalletEntryType.DatacorePurchase,
-                        AmountCents = -cost,
-                        BalanceCents = wallet.Cents,
-                        Time = now,
-                    }
-                );
-                return new DatacorePurchase(wallet.Cents, item);
-            }
+            (world, catalog, pilot, now) => BuyDatacores(world, catalog, pilot, ResearchAgent(agentId), projectId, quantity, now)
         );
+
+    internal static DatacorePurchase BuyDatacores(
+        WorldAction world,
+        CatalogDbContext catalog,
+        Pilot pilot,
+        CatalogAgent agent,
+        long projectId,
+        int quantity,
+        long now,
+        int? sponsor = null
+    )
+    {
+        RequireStation(pilot, agent.StationId);
+        var row = ResearchRow(world, pilot.Id, agent.Id, projectId);
+        _ = SettleResearch(world, catalog, pilot, agent, row, now);
+        long cost = ResearchRules.PurchaseCost(row.Points, quantity);
+        int type =
+            ResearchFields(catalog, agent.Id).SingleOrDefault(field => field.SkillId == row.SkillId)?.DatacoreTypeId
+            ?? throw new InvalidDataException("This research field has no catalog datacore.");
+        long balance;
+        if (sponsor is int corporation)
+        {
+            balance = CorporationWalletStore.Pay(world, corporation, agent.Id, projectId, WalletEntryType.DatacorePurchase, -cost, now);
+        }
+        else
+        {
+            var wallet = world.Set<PilotWallet>().Find(pilot.Id);
+            if (wallet is null || wallet.Cents < cost)
+            {
+                throw new InvalidDataException("Insufficient ISK to buy datacores.");
+            }
+            balance = wallet.Cents -= cost;
+            world.Add(
+                new SavedServicePayment
+                {
+                    PilotId = pilot.Id,
+                    CounterpartyId = agent.Id,
+                    ContextId = projectId,
+                    Kind = WalletEntryType.DatacorePurchase,
+                    AmountCents = -cost,
+                    BalanceCents = balance,
+                    Time = now,
+                }
+            );
+        }
+        var item = InventoryPersistence.MergeOutput(
+            world,
+            catalog,
+            pilot.Id,
+            agent.StationId!.Value,
+            (int)InventoryFlag.Hangar,
+            type,
+            quantity
+        );
+        row.Points -= (double)quantity * ResearchRules.PointsPerDatacore;
+        return new(balance, item);
+    }
 }

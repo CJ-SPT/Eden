@@ -31,6 +31,8 @@ internal sealed class NpcDirectory(WorldDatabase database) : INpcDirectory
 
     public IReadOnlyList<CatalogAgent> Agents() => Read().Agents;
 
+    internal static IReadOnlyList<CatalogAgent> Agents(CatalogDbContext catalog) => catalog.Definition(s_snapshot, 0).Agents;
+
     public CatalogAgent? Agent(long id) => NpcCharacterIds.Contains(id) ? Read().AgentById.GetValueOrDefault(id) : null;
 
     public NpcCharacter? Character(long id) => NpcCharacterIds.Contains(id) ? Read().Characters.GetValueOrDefault(id) : null;

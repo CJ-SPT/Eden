@@ -113,6 +113,11 @@ At stations with a laboratory, a funded corporation can buy the inputs for Miner
 invent a licensed copy and manufacture up to five modules for public sale. The ordinary job deadlines and invention
 outcomes survive restart. [Miner II production](protocol/capsuleers.md#autonomous-miner-ii-production)
 
+When local sellers cannot supply the invention datacores, corporate haulers visit reachable R&D agents, earn research
+points and pay the ordinary redemption fees from the corporation's wallet. They can take other jobs while research
+advances. The research projects and paid deliveries survive restart.
+[Miner II datacore supply](protocol/capsuleers.md#miner-ii-datacores-from-rd-agents)
+
 #### Corporation ammunition supply
 
 Bot corporations can produce and trade **Iron Charge S**. A miner docked at an NPC factory with a market can refine owned

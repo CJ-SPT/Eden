@@ -6,6 +6,9 @@ public static class CapsuleerIndustryRules
 {
     private const int MaximumDemandRuns = 5;
     public const int MaximumFactorySupplyJumps = 3;
+    public const int MaximumResearchSupplyJumps = 12;
+    public const int ResearchCourierFieldLevel = 4;
+    public const int ResearchCourierProjects = 2;
 
     public static int DemandRuns(int demand, int unitsPerRun, long secondsPerRun, int? licensedRuns)
     {
@@ -20,9 +23,17 @@ public sealed record FactorySupplyNeed(int TypeId, long HangarTarget, int Requir
 
 public sealed record FactorySupplyDemand(long OrderId, long MinimumUnitPriceCents, int Quantity);
 
-public sealed record FactorySupplyRequest(int CorporationId, int StationId, FactorySupplyDemand? Demand, FactorySupplyNeed[] Materials);
+public sealed record FactorySupplyRequest(int CorporationId, int StationId, FactorySupplyDemand? Demand, FactorySupplyNeed[] Materials)
+{
+    public bool ResearchDatacores { get; init; }
+}
 
-public sealed record FactorySupplyShipment(long ManufacturerId, int FactoryStationId, int SupplierStationId, long? DemandOrderId);
+public sealed record FactorySupplyShipment(long ManufacturerId, int FactoryStationId, int SupplierStationId, long? DemandOrderId)
+{
+    public FactoryResearchSource? Research { get; init; }
+}
+
+public sealed record FactoryResearchSource(long AgentId, int SkillId, int DatacoreTypeId);
 
 public static class CapsuleerMinerTwoRules
 {

@@ -1,3 +1,6 @@
+using System.Globalization;
+using System.Text.Json;
+using Eden.Data.World.Agents;
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Corporations;
@@ -6,6 +9,7 @@ using Eden.Data.World.Industry;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Data.World.Skills;
+using Eden.Gameplay.Agents;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Flight;
@@ -987,19 +991,7 @@ public sealed class CapsuleerAmmunitionSupplyTests
                     ?? setup.Add(new PilotSkill { PilotId = Customer, TypeId = (int)MarketSkill.Trade }).Entity;
                 trade.Points = TrainedSkill.PointsForLevel(1, 2);
                 var recipe = ManufacturingCatalog.Recipes(catalog)[MinerTwoBlueprint];
-                foreach (
-                    int type in ManufacturingCatalog
-                        .Recipes(catalog)[MinerOneBlueprint]
-                        .Materials.Concat(recipe.Materials)
-                        .Select(material => (int)material.TypeId!.Value)
-                        .Distinct()
-                )
-                {
-                    if (setup.Set<SavedAdjustedPrice>().Find(type) is null)
-                    {
-                        setup.Add(new SavedAdjustedPrice { TypeId = type, PriceIsk = 1000 });
-                    }
-                }
+                SetMinerTwoAdjustedPrices(setup, catalog);
                 var materials = IndustryMaterials.Calculate(
                     recipe.Materials,
                     CapsuleerMinerTwoRules.BatchSize,
@@ -1191,6 +1183,233 @@ public sealed class CapsuleerAmmunitionSupplyTests
             world.Filter<IndustryJob>(job => job.OutputCorporationId == corporation).OrderBy(job => job.Id).ToArray();
     }
 
+    [Fact]
+    public async Task MissingMinerTwoDatacoresComeFromPaidResearchAndSurviveCargoRestart()
+    {
+        const int factorySystem = 30000142;
+        const int mechanical = 20424;
+        const int laser = 20413;
+        const long corporationFunds = 100_000_000;
+        const int perType = 2;
+        using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
+        CapsuleerCorporationTests.PrepareExistingSave(fixture);
+        PassiveCatalogFixture.LoadStarterProduction(fixture.Database.CatalogPath);
+        PrepareCatalog(fixture);
+        PrepareMinerTwoCatalog(fixture);
+        PrepareResearchSuppliers(fixture);
+        UseLocalOrders(fixture);
+        WorldInitialization.Initialize(fixture.Database, fixture.Clock);
+        long manufacturer;
+        long courier;
+        int corporation;
+        long[] projects;
+        using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+            using (var setup = live.Economy.Begin())
+            {
+                setup.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId)!.TestingMarket = false;
+                setup.Set<SavedWorldEconomy>().Find(WorldEconomySettings.SingletonId)!.TestingGrants = false;
+                var agents = setup.Set<SavedCapsuleerAgent>().OrderBy(agent => agent.PilotId).ToArray();
+                manufacturer = agents.Single(agent => agent.Career == CapsuleerCareer.Mining).PilotId;
+                courier = agents.First(agent => agent.Career == CapsuleerCareer.Hauling).PilotId;
+                setup.Pilots.Find(manufacturer)!.ActiveShip.StationId = FactoryStation;
+                var hauler = setup.Pilots.Find(courier)!;
+                hauler.ActiveShip.StationId = Depot;
+                hauler.ActiveShip.TypeId = HaulingRules.BadgerType;
+                corporation = Charter(setup, catalog, manufacturer, "Research Freight", "RFRT", fixture.Clock.Now);
+                CorporationMembershipStore.Move(setup, hauler, corporation, fixture.Clock.Now);
+                setup.Set<SavedCorporation>().Find(corporation)!.BalanceCents = corporationFunds;
+                SetMinerTwoAdjustedPrices(setup, catalog);
+                foreach (var agent in agents.Where(agent => agent.PilotId != manufacturer && agent.PilotId != courier))
+                {
+                    setup.Add(new SavedCapsuleerSuspension { PilotId = agent.PilotId });
+                }
+                // Let the factory publish a genuine shortage before the first courier action.
+                setup.Set<SavedCapsuleerJob>().Find(courier)!.DueTicks = TimeSpan.FromSeconds(20).Ticks;
+                setup.Commit();
+            }
+            using (var factory = live.Economy.Begin())
+            {
+                var miner = host.GetRequiredService<SqliteWorld>().FindPilot(factory, -1, manufacturer)!;
+                Assert.False(
+                    host.GetRequiredService<CapsuleerIndustry>().Produce(factory, catalog, miner, fixture.Clock.Now, out var request)
+                );
+                Assert.NotNull(request);
+                Assert.True(request.ResearchDatacores);
+                Assert.Equal(new[] { laser, mechanical }, request.Materials.Select(material => material.TypeId).Order());
+                new MinerCheckpoint(
+                    manufacturer,
+                    new(MinerActivity.Docked, 0, 0, 0, 0, 0, 0, new NavigationState().Capture(), miner.ShipId) { FactorySupply = request }
+                ).Apply(factory);
+                factory.Commit();
+            }
+            using var human = host.GetRequiredService<IHumanPresence>().Select(Customer, Home);
+            Advance(host, () => live.Economy.Read(world => Projects(world).Length == 2), 400);
+            live.Economy.Inspect(world =>
+            {
+                Assert.Equal(new[] { 11447, 11452 }, Projects(world).Select(project => project.SkillId).Order());
+                Assert.All(Projects(world), project => Assert.Equal(0, project.Points));
+                Assert.Empty(Payments(world));
+                Assert.Empty(world.Set<IndustryJob>());
+                Assert.Equal(0, Stock(world, manufacturer, FactoryStation, mechanical));
+                Assert.Equal(0, Stock(world, manufacturer, FactoryStation, laser));
+                return true;
+            });
+            projects = live.Economy.Read(world => Projects(world).Select(project => project.Id).Order().ToArray());
+            human.Dispose();
+            await live.FlushAsync();
+        }
+
+        fixture.Clock.AdvanceWallTime(TimeSpan.FromDays(7));
+        long firstCargo;
+        using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            Assert.Equal(projects, live.Economy.Read(world => Projects(world).Select(project => project.Id).Order()));
+            using var human = host.GetRequiredService<IHumanPresence>().Select(Customer, Home);
+            Advance(
+                host,
+                () =>
+                    live.HaulerCheckpoints.GetValueOrDefault(courier)?.Work
+                        is { CorporationSupply.FactorySupply.Research: not null, Freight.Stacks.Length: > 0 },
+                2600
+            );
+            var work = live.HaulerCheckpoints[courier].Work;
+            var cargo = Assert.Single(work.Freight!.Stacks);
+            Assert.Equal(perType, cargo.Quantity);
+            firstCargo = cargo.ItemId;
+            Assert.Equal(FactoryStation, work.Freight.Destination);
+            live.Economy.Inspect(world =>
+            {
+                Assert.Equal(-perType * ResearchRules.CentsPerDatacore, Assert.Single(Payments(world)).AmountCents);
+                Assert.Equal((int)InventoryFlag.Cargo, world.Set<OwnedItem>().Find(firstCargo)!.FlagId);
+                Assert.Empty(world.Set<SavedPersonalOrder>().Where(order => order.TypeId == laser || order.TypeId == mechanical));
+                Assert.Empty(
+                    world.Set<NpcMarketOrder>().Where(order => (order.TypeId == laser || order.TypeId == mechanical) && !order.Bid)
+                );
+                return true;
+            });
+            human.Dispose();
+            await live.FlushAsync();
+        }
+
+        using var reopened = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var restored = reopened.GetRequiredService<LiveWorld>();
+        Assert.NotNull(restored.Economy.Read(world => world.Set<OwnedItem>().Find(firstCargo)));
+        using var observer = reopened.GetRequiredService<IHumanPresence>().Select(Customer, Home);
+        Advance(
+            reopened,
+            () =>
+                restored.Economy.Read(world =>
+                    Stock(world, manufacturer, FactoryStation, mechanical) == perType
+                    && Stock(world, manufacturer, FactoryStation, laser) == perType
+                ),
+            4800
+        );
+        restored.Economy.Inspect(world =>
+        {
+            Assert.Equal(projects, Projects(world).Select(project => project.Id).Order());
+            Assert.Equal(projects, Payments(world).Select(payment => payment.ReferenceId).Order());
+            Assert.All(Payments(world), payment => Assert.Equal(-perType * ResearchRules.CentsPerDatacore, payment.AmountCents));
+            Assert.Equal(
+                corporationFunds - 2 * perType * ResearchRules.CentsPerDatacore,
+                world.Set<SavedCorporation>().Find(corporation)!.BalanceCents
+            );
+            Assert.Null(world.Set<OwnedItem>().Find(firstCargo));
+            return true;
+        });
+        observer.Dispose();
+        await restored.FlushAsync();
+
+        SavedResearchProject[] Projects(WorldAction world) =>
+            world.Filter<SavedResearchProject>(project => project.PilotId == courier).ToArray();
+
+        SavedWalletLedger[] Payments(WorldAction world) =>
+            world
+                .Filter<SavedWalletLedger>(payment => payment.OwnerId == corporation)
+                .Where(payment => payment.EntryType == WalletEntryType.DatacorePurchase)
+                .ToArray();
+
+        void Advance(ServiceProvider host, Func<bool> ready, int maximumSteps)
+        {
+            var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+            scheduler.PopulationPrepared(Home);
+            scheduler.PopulationPrepared(factorySystem);
+            var worker = host.GetRequiredService<CapsuleerMaintenance>();
+            for (int step = 0; step < maximumSteps; step++)
+            {
+                if (ready())
+                {
+                    return;
+                }
+                fixture.Clock.Seconds++;
+                worker.Tick();
+            }
+            var state = scheduler.Hauler(courier);
+            var miner = scheduler.Miner(manufacturer);
+            var researchRequested = miner?.Work.FactorySupply?.ResearchDatacores;
+            Assert.True(
+                ready(),
+                $"Research supply did not advance. Courier {state?.Work.Activity}, "
+                    + $"factory {miner?.Work.Activity}, request {researchRequested}, {scheduler.Read().LastFailure}"
+            );
+        }
+    }
+
+    private static void SetMinerTwoAdjustedPrices(WorldAction world, CatalogDbContext catalog)
+    {
+        var recipes = ManufacturingCatalog.Recipes(catalog);
+        var types = recipes[CapsuleerMinerTwoRules.Original]
+            .Materials.Concat(recipes[CapsuleerMinerTwoRules.InventedBlueprint].Materials)
+            .Select(material => (int)material.TypeId!.Value)
+            .Distinct();
+        foreach (int type in types)
+        {
+            if (world.Set<SavedAdjustedPrice>().Find(type) is null)
+            {
+                world.Add(new SavedAdjustedPrice { TypeId = type, PriceIsk = 1000 });
+            }
+        }
+    }
+
+    private static void PrepareResearchSuppliers(CapsuleerHaulerTests.Fixture fixture)
+    {
+        using CatalogDbContext catalog = new(fixture.Database.CatalogPath, writable: true);
+        catalog.Database.ExecuteSqlRaw(
+            """
+            INSERT OR IGNORE INTO ItemGroup VALUES (333,'Datacores',4);
+            UPDATE ItemType SET GroupId=333 WHERE Id IN (20424,20413);
+            INSERT OR IGNORE INTO ItemType(Id,Name,GroupId) VALUES (3402,'Science',257),(12179,'Research Project Management',257);
+            INSERT OR REPLACE INTO TypeAttribute VALUES (3402,275,1),(12179,275,8),(20424,182,11452),(20413,182,11447);
+            """
+        );
+        foreach (var (id, skill) in new[] { (3010612, 11452), (3012669, 11447) })
+        {
+            string key = id.ToString(CultureInfo.InvariantCulture);
+            string data = JsonSerializer.Serialize(
+                new
+                {
+                    deleted = 0,
+                    corporationID = 1000044,
+                    stationID = Depot,
+                    agent = new
+                    {
+                        agentType = (int)AgentType.Research,
+                        agentLevel = 1,
+                        agentDivisionID = 18,
+                        agentLocateCharacter = 0,
+                    },
+                    skills = new[] { new { typeID = skill } },
+                }
+            );
+            catalog.Database.ExecuteSql($"INSERT OR REPLACE INTO SourceRecord VALUES ('client/npccharacters',{key},{data})");
+            string name = JsonSerializer.Serialize(new { name = new { en = $"Research Agent {id}" } });
+            catalog.Database.ExecuteSql($"INSERT OR IGNORE INTO SourceRecord VALUES ('sde/npcCharacters',{key},{name})");
+        }
+    }
+
     private sealed class MinerTwoRandom : IIndustryRandom
     {
         public int Calls { get; private set; }
@@ -1222,7 +1441,7 @@ public sealed class CapsuleerAmmunitionSupplyTests
                 ('client/stationoperations','14','{{"services":[5,7,14,15,17]}}'),
                 ('client/systems','30000142','{{"securityStatus":0.9}}'),
                 ('client/typelist','799','{{"includedTypeIDs":[23121]}}'),
-                ('client/types','482','{{"published":1,"marketGroupID":1039,"volume":5}}'),
+                ('client/types','482','{{"published":1,"marketGroupID":1039,"volume":5,"basePrice":600000}}'),
                 ('client/types','784','{{"published":1,"volume":0.01}}'),
                 ('client/types','20424','{{"published":1,"marketGroupID":1,"volume":0.1}}'),
                 ('client/types','20413','{{"published":1,"marketGroupID":1,"volume":0.1}}'),

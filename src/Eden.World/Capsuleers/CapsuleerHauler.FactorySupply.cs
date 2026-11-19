@@ -28,7 +28,7 @@ internal sealed partial class CapsuleerHauler
             shipment.FactoryStationId,
             (HullClass)Pilot.ShipGroupId,
             AvoidedSupplierSystems(),
-            CapsuleerIndustryRules.MaximumFactorySupplyJumps
+            shipment.Research is null ? CapsuleerIndustryRules.MaximumFactorySupplyJumps : CapsuleerIndustryRules.MaximumResearchSupplyJumps
         );
         if (delivery is null)
         {
@@ -50,7 +50,7 @@ internal sealed partial class CapsuleerHauler
             {
                 return CompleteFactorySupply();
             }
-            _operation.MarketChanged = true;
+            _operation.MarketChanged |= shipment.Research is null;
             _work = Work with { Freight = freight };
         }
         BeginSupplyJourney(delivery);

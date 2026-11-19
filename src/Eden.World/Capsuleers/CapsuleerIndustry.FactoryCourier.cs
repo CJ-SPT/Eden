@@ -59,6 +59,13 @@ internal sealed partial class CapsuleerIndustry
         foreach (var (manufacturer, pending) in requests)
         {
             var request = pending!;
+            if (
+                request.ResearchDatacores
+                && PlanResearchCollection(world, catalog, courier, employer, manufacturer, request, avoided, now) is { } research
+            )
+            {
+                return research;
+            }
             int factorySystem = catalog.RequireStation(request.StationId).SolarSystemId;
             var nearby = NearbySystems(catalog, factorySystem, maximumJumps);
             nearby.IntersectWith(nearbyCourier);
@@ -150,6 +157,10 @@ internal sealed partial class CapsuleerIndustry
             return null;
         }
         var shortages = FactoryShortages(world, catalog, shipment.ManufacturerId, request);
+        if (shipment.Research is { } research)
+        {
+            return request.ResearchDatacores ? ResearchPickup(world, catalog, courier, employer, shipment, research, shortages, now) : null;
+        }
         var purchases = ShopForFactory(
             world,
             catalog,
