@@ -3,6 +3,9 @@
 [Fresh-universe starter industry](protocol/capsuleers.md#fresh-universe-starter-industry) follows two corvettes
 from zero ISK through mining, refining, paid manufacturing, and a funded market fill.
 
+[Regional procurement for bot corporations](protocol/capsuleers.md#regional-procurement-for-bot-corporations)
+covers station buy orders, tracked escrow, and cross-region delivery of fleet stock.
+
 [Dynamic paid ship replacement](protocol/capsuleers.md#dynamic-paid-ship-replacement) covers saved loadouts,
 bounded buy orders and in-stock replacements for miners, patrol pilots and haulers.
 

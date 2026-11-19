@@ -12,7 +12,7 @@ public static class CapsuleerReplacementRules
     public static readonly TimeSpan BidWindow = TimeSpan.FromMinutes(30);
     private const decimal ReferencePriceMultiplier = 2m;
 
-    public static IReadOnlyList<ReplacementPart> LegacyMerlinParts { get; } =
+    public static IReadOnlyList<ReplacementPart> MerlinParts { get; } =
         Array.AsReadOnly<ReplacementPart>([
             new((int)TechOneHullType.Merlin, 1),
             new((int)CombatWeaponType.GatlingRailgun75mm, 2),

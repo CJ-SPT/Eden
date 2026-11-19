@@ -2,6 +2,68 @@
 
 [Protocol index](../protocol.md)
 
+## Regional procurement for bot corporations
+
+An eligible corporate hauler checks its headquarters reserve while docked. A corporation flying a Merlin targets one
+packaged hull, two 75mm Gatling Rail Is and 400 Iron Charge S. Other fleets with compatible guns target 200 charges.
+Existing corporate stock, open headquarters bids and the corporation's own production reduce demand. A corporation
+dispatches one supply trip at a time. Established factory and direct ammunition supply runs keep priority.
+
+The hauler looks up to three jumps away for a market station in another region. An eligible station has a relevant
+sell listing or hosts a bot manufacturer with a usable blueprint type for the item. The planner considers the courier's
+available cargo volume and excludes avoided systems. It prefers the station that can supply the most requested types,
+then the shortest route. Each trip can spend up to half the available corporate treasury, including broker fees, at
+a limit of twice the reference price. The courier checks its budget and listing slots again on arrival and uses an
+affordable local quote when the full requested quantity is on the book.
+
+The courier posts ordinary seven-day station bids and waits up to six hours at the supplier station. Escrow and
+broker fees debit the buyer's corporation. The order IDs and cutoff checkpoint with the trip. When the orders fill
+or the cutoff passes, the courier cancels its unfilled bids, releases their escrow, and moves only the filled units
+from the station hangar into its hold. That cargo uses the usual freight loss and checkpoint rules. It enters the
+corporation's headquarters Market Deliveries only when the courier arrives. Existing resupply and ship recovery can
+draw from that reserve. The courier waits ten minutes after the trip before reviewing the reserve again.
+
+CCP's market rules describe funded bids with station range and local delivery. Eden reuses its resident corporate
+market purchases for this bot workflow. The EVE.js build 3396210 reference records wallet-owner transactions in
+`server/src/services/market/marketProxyService.js` (SHA-256
+`F457CB1B181CEB570A5FA346C718D71A7CE7B84B8734C88CEE7F2546A8CE175B`).
+[CCP Buy and Sell Orders](https://support.eveonline.com/hc/en-us/articles/203218932-Buy-and-Sell-Orders) ·
+[UniWiki Trading](https://wiki.eveuniversity.org/Trading)
+
+### Automated validation
+
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerAmmunitionSupplyTests.BotFundsRegionalKitOrdersAndHaulsManufacturedStockAcrossRestarts`
+passed two cases in 14.55 seconds. The fixture rejects an unaffordable trip and an avoided route. It starts with
+supplier blueprints and materials, and the courier posts all three buy orders through its normal docked routine.
+Docked manufacturing fulfills the orders without development stock. The full-fill case checks one complete kit.
+The partial case ships one Merlin and verifies the remaining escrow refunds at the persisted cutoff. Both cases
+reopen with the bids active and again with the cargo in flight. They verify the wallet balance, paid market fills,
+unrelated personal stock, and the final station and corporate owner of each delivered stack.
+
+The broader selection had 180 passes and one failure in 5 minutes 53 seconds. The filter used
+`FullyQualifiedName~.<Class>.` for these classes:
+
+```text
+CapsuleerAmmunitionSupplyTests, CapsuleerAllianceTests, CapsuleerHaulerTests, CapsuleerMinerTests,
+CapsuleerSupplyTests, FreightTests, RegionalMarketTests, PersonalMarketTests, RemoteMarketTests,
+StarterProductionTests, ResidentEconomyTests, ApplyFittingTests, MoonExtractionTests,
+CapsuleerInboundRuntimeTests, PilotFleetTests, CapsuleerResidentRoutineTests
+```
+
+`RegionalMarketTests.FailedPaymentRollsBackStockGoodsAndHistoryAndRetrySettlesOnce` failed during fixture cleanup
+with `world.sqlite.owner` still locked. The exact method reproduced the same failure on `main` at `4794edc0`.
+
+The solution built with zero warnings and errors in 1.02 seconds. Both Python policy suites passed all 17 cases.
+Style, CSharpier, line-width and diff checks passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
 ## Dynamic paid ship replacement
 
 After a loss, a miner or traffic pilot in a bot-led corporation uses the loss manifest to plan its replacement at the

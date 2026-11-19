@@ -57,7 +57,7 @@ using Rules = Eden.Gameplay.Capsuleers.CapsuleerAmmunitionSupplyRules;
 
 namespace Eden.Protocol.Tests.Capsuleers;
 
-public sealed class CapsuleerAmmunitionSupplyTests
+public sealed partial class CapsuleerAmmunitionSupplyTests
 {
     private const int Home = 30000141;
     private const int Depot = 60015157;
