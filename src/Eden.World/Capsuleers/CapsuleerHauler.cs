@@ -46,7 +46,8 @@ internal sealed class CapsuleerHaulerFactory(
     CapsuleerResupply resupply,
     CapsuleerRatting ratting,
     CapsuleerIndustry ammunitionSupply,
-    PilotEntosisStore entosis
+    PilotEntosisStore entosis,
+    CapsuleerCareerTraining careerTraining
 )
 {
     internal CapsuleerHauler Create(long pilotId) =>
@@ -67,7 +68,8 @@ internal sealed class CapsuleerHaulerFactory(
             resupply,
             ratting,
             ammunitionSupply,
-            entosis
+            entosis,
+            careerTraining
         );
 }
 
@@ -88,7 +90,8 @@ internal sealed partial class CapsuleerHauler(
     CapsuleerResupply resupply,
     CapsuleerRatting ratting,
     CapsuleerIndustry ammunitionSupply,
-    PilotEntosisStore entosis
+    PilotEntosisStore entosis,
+    CapsuleerCareerTraining careerTraining
 )
 {
     private SavedCapsuleerHauler? _founder;
@@ -734,6 +737,7 @@ internal sealed partial class CapsuleerHauler(
                 DwellSequence: previous?.DwellSequence ?? 0
             )
             {
+                CareerPlan = previous?.CareerPlan,
                 Routine = previous?.Routine,
                 Defense = previous?.Defense,
                 Gang = previous?.Gang,
@@ -970,6 +974,36 @@ internal sealed partial class CapsuleerHauler(
             _work = Work with { SovereigntyExpedition = null, HomeDefenseAllianceId = null };
             AttemptShipReplacement();
             return;
+        }
+        if (_operation.World is EconomyTransaction resident)
+        {
+            var profession =
+                CapsuleerCareerTraining.Profession(_operation.Catalog, Pilot.ShipTypeId, (HullClass)Pilot.ShipGroupId)
+                ?? Work.CareerPlan?.Profession
+                ?? CapsuleerProfession.Hauling;
+            var training = careerTraining.Advance(resident, _operation.Catalog, Pilot, profession, Work.CareerPlan, Now);
+            _work = Work with { CareerPlan = training.Plan };
+            _operation.MarketChanged |= training.MarketChanged;
+            if (training.LevelChanged)
+            {
+                _pilot = ReadPilot(resident, CapsuleerCommunityStore.MinerAccountId);
+            }
+            if (
+                Work.Freight is null
+                && resident.Set<SavedTrafficIdentity>().Find(pilotId) is null
+                && !PilotInventoryStore
+                    .List(resident, _operation.Catalog, pilotId, Pilot.ShipId)
+                    .Any(item => ShipHoldRules.IsHold(item.FlagId) && item.CategoryId != (int)InventoryCategory.Charge)
+            )
+            {
+                var acquisition = ammunitionSupply.AdvanceCareerShip(resident, _operation.Catalog, Pilot, training.Plan, Now);
+                _operation.MarketChanged |= acquisition.MarketChanged;
+                if (acquisition.Boarded)
+                {
+                    _pilot = ReadPilot(resident, CapsuleerCommunityStore.MinerAccountId);
+                    ResetTradeHull();
+                }
+            }
         }
         JoinCorporationAtDock();
         if (TrySovereigntyExpedition())

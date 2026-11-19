@@ -11,7 +11,7 @@ internal sealed partial class CapsuleerScheduler
         // Visit a bounded page even when the saved population fingerprint was already current on startup.
         const int batchSize = 6;
         cursor = afterPilot;
-        if (Live is not { } live || !database.Settings.Capsuleers.Enabled)
+        if (Live is not { } live || !database.Settings.Capsuleers.Enabled || database.Settings.FreshUniverse)
         {
             return true;
         }

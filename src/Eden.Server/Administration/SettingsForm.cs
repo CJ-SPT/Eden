@@ -66,6 +66,7 @@ public sealed class SettingsForm
     public bool AlwaysResolvedSignatures { get; set; }
     public bool StartingSkills { get; set; }
     public bool StartingEquipment { get; set; }
+    private bool FreshUniverse { get; init; }
     public bool FreightVariedHulls { get; set; }
     public long FreightOrdinaryMinimumIsk { get; set; }
     public long FreightOrdinaryMaximumIsk { get; set; }
@@ -308,6 +309,7 @@ public sealed class SettingsForm
             AlwaysResolvedSignatures = settings.Exploration.AlwaysResolvedSignatures,
             StartingSkills = settings.Progression.GrantStartingSkills,
             StartingEquipment = settings.Progression.GrantStartingEquipment,
+            FreshUniverse = settings.FreshUniverse,
             GlobalProvisioning = settings.Capsuleers.GlobalProvisioning,
             SimulatedPilots = settings.Capsuleers.Enabled,
             SimulatedMiners = settings.Capsuleers.Miners,
@@ -349,6 +351,7 @@ public sealed class SettingsForm
     internal WorldSettings Build() =>
         new()
         {
+            FreshUniverse = FreshUniverse,
             Economy = new(
                 ServiceCosts,
                 ManufacturingIndex,

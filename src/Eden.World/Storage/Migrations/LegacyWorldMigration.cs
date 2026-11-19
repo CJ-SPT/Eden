@@ -7,7 +7,7 @@ namespace Eden.World.Storage.Migrations;
 
 internal static class LegacyWorldMigration
 {
-    internal static void Initialize(WorldDbContext world, int version)
+    internal static void Initialize(WorldDbContext world, int version, bool freshUniverse)
     {
         if (version < 6)
         {
@@ -17,11 +17,11 @@ internal static class LegacyWorldMigration
             {
                 CopyLegacy(world, version);
             }
-            if (version == 0)
+            if (!freshUniverse && version == 0)
             {
                 Seed(world, 1000001, 90000001, 1000000000001, "Eden Pilot", "Ibis");
             }
-            if (version < 5)
+            if (!freshUniverse && version < 5)
             {
                 Seed(world, 1000002, 90000002, 1000000000002, "Eden Wing", "Wing Ibis");
             }

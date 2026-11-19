@@ -20,12 +20,25 @@ internal sealed class PilotSkillBookStore(WorldDatabase database, TimeProvider? 
 {
     public SkillInjection Inject(long pilotId, IReadOnlyList<long> itemIds)
     {
+        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var result = Inject(
+            transaction.World,
+            catalog,
+            pilotId,
+            itemIds,
+            (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc()
+        );
+        transaction.Commit();
+        return result;
+    }
+
+    internal static SkillInjection Inject(WorldAction world, CatalogDbContext catalog, long pilotId, IReadOnlyList<long> itemIds, long now)
+    {
         if (itemIds.Count == 0 || itemIds.Distinct().Count() != itemIds.Count)
         {
             throw new InvalidDataException("Select distinct skillbooks to inject.");
         }
-        using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
-        var world = transaction.World;
         var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
         var ship = pilot.ActiveShip;
         var items = world
@@ -43,7 +56,6 @@ internal sealed class PilotSkillBookStore(WorldDatabase database, TimeProvider? 
         {
             throw new InvalidDataException("The skillbooks must be in your current ship's cargo or docked station hangar.");
         }
-        using CatalogDbContext catalog = new(database.CatalogPath);
         List<InventoryChange> changes = [];
         foreach (var item in items)
         {
@@ -75,15 +87,8 @@ internal sealed class PilotSkillBookStore(WorldDatabase database, TimeProvider? 
                 world.Remove(item);
             }
         }
-        PilotTaskTrackingStore.Record(
-            world,
-            catalog,
-            pilotId,
-            (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc(),
-            TaskEvents.SkillInjected,
-            items.Length
-        );
-        transaction.Commit();
+        PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.SkillInjected, items.Length);
+        world.SaveChanges();
         return new(items.Select(i => i.TypeId).ToArray(), changes);
     }
 }

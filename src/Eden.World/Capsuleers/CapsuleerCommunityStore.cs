@@ -28,6 +28,12 @@ internal sealed partial class CapsuleerCommunityStore(WorldDatabase database) : 
     internal const int VentureType = 32880;
     internal const long StartingCents = 1000000;
 
+    internal static void ReconcileCloneGrade(WorldDbContext world) =>
+        world
+            .Set<Account>()
+            .Where(account => account.Id == MinerAccountId && account.CloneGrade != AccountCloneGrade.Omega)
+            .ExecuteUpdate(setters => setters.SetProperty(account => account.CloneGrade, AccountCloneGrade.Omega));
+
     internal static void Configure(ModelBuilder model)
     {
         CapsuleerProvisioningSchema.Configure(model);

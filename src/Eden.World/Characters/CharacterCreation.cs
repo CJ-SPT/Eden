@@ -2,8 +2,6 @@ using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Characters;
-using Eden.Gameplay.Content;
-using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
@@ -70,21 +68,7 @@ internal sealed class CharacterCreation(WorldDatabase database, TimeProvider clo
             }
             if (action.Settings.Progression.GrantStartingEquipment)
             {
-                var equipment = BuildContentPolicy.Current.StartingEquipment;
-                foreach (int typeId in new[] { equipment.MinerType, equipment.WeaponType })
-                {
-                    action.Add(
-                        new OwnedItem
-                        {
-                            Id = action.NextItemId(),
-                            OwnerId = pilotId,
-                            TypeId = typeId,
-                            LocationId = origin.Station,
-                            FlagId = (int)InventoryFlag.Hangar,
-                            Quantity = 1,
-                        }
-                    );
-                }
+                PilotInventoryStore.GrantStarterEquipment(action, pilotId, origin.Station);
             }
             TestingWalletFunding.Grant(action, pilotId, created);
             action.Add(new SavedHomeStation { PilotId = pilotId, StationId = origin.Station });

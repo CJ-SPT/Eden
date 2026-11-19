@@ -35,7 +35,7 @@ internal static class WorldMigration
             throw new InvalidDataException($"Unsupported Eden world version {version}.");
         }
         // Every step receives the original version, even after historical PRAGMA writes.
-        LegacyWorldMigration.Initialize(world, version);
+        LegacyWorldMigration.Initialize(world, version, economy?.FreshUniverse == true);
         InitialEconomyMigration.Initialize(world, version, economy, economics);
         Eden.World.Market.StandardMarketSchema.Upgrade(world);
         WorldVersions06To20.Apply(world, catalog, version);
@@ -97,7 +97,7 @@ internal static class WorldMigration
         CorporationStorageSchema.Upgrade(world);
         RemoteRepairSchema.Upgrade(world);
         WorldConfigurationSchema.Upgrade(world);
-        WorldConfigurationStore.Seed(world, catalog, clock);
+        WorldConfigurationStore.Seed(world, catalog, clock, economy?.FreshUniverse == true);
         if (
             !world
                 .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldPilotHostility')")

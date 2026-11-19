@@ -19,6 +19,10 @@ internal sealed partial class CapsuleerProvisioner
         CancellationToken cancellationToken
     )
     {
+        if (database.Settings.FreshUniverse)
+        {
+            return null;
+        }
         using CatalogDbContext catalog = new(database.CatalogPath);
         _startupBlueprints?.BeginPreparation();
         var gate = request.Gate;
@@ -148,6 +152,10 @@ internal sealed partial class CapsuleerProvisioner
     {
         ArgumentOutOfRangeException.ThrowIfNegative(visitor);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(visitor, CapsuleerPopulationRules.MaximumGateVisitors);
+        if (database.Settings.FreshUniverse)
+        {
+            return null;
+        }
         using (database.EnterMovement())
         {
             using CatalogDbContext catalog = new(database.CatalogPath);

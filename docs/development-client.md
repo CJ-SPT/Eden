@@ -841,6 +841,19 @@ Undock clearance includes the station and hull radii. A course pointing through 
 
 ## Creating an economy world without testing supply
 
+For a fresh-universe progression world, put the verified build-3662168 `catalog.sqlite` beside a new world path
+and select the profile on its first launch.
+
+```powershell
+dotnet run --no-build --project src/Eden.Server -- --world 'E:\EdenWorlds\Fresh\world.sqlite' --fresh-universe
+```
+
+Subsequent launches use the same `--world` path and the saved profile. Register and create your character through
+the launcher and client. Fresh humans and bots start at zero ISK with a racial corvette and civilian equipment.
+NPC ore buyers provide first earnings, and NPC blueprint and skillbook offers provide access to training and jobs.
+The first autonomous cohort develops a local Miner I supply chain at eligible high-security stations.
+[Fresh-universe implementation](protocol/capsuleers.md#fresh-universe-starter-industry)
+
 Personal station-local market orders work in existing development worlds. Their saved economic settings retain replenishing 1 ISK stock and one-time pilot grants.
 
 For an isolated economy world, put a copy of the verified build-3662168 `catalog.sqlite` beside a new world path and add `--economy-world` on its first server launch:

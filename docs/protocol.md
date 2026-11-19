@@ -1,5 +1,14 @@
 # Protocol findings and milestone records
 
+[First bot career ships](protocol/capsuleers.md#first-bot-career-ships) covers qualifying for, paying for, fitting, and
+flying a bot's first career hull in a fresh universe.
+
+[Earned bot career training](protocol/capsuleers.md#earned-bot-career-training) covers persisted ship goals,
+work qualifications, the Magic 14, and permanent Omega bot accounts.
+
+[Fresh-universe starter industry](protocol/capsuleers.md#fresh-universe-starter-industry) follows two corvettes
+from zero ISK through mining, refining, paid manufacturing, and a funded market fill.
+
 [Regional procurement for bot corporations](protocol/capsuleers.md#regional-procurement-for-bot-corporations)
 covers station buy orders, tracked escrow, and cross-region delivery of fleet stock.
 

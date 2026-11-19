@@ -319,8 +319,14 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
     public ShipBoarding RecoverCorvette(long pilotId, long previousShipId, long stationId)
     {
         using WorldActionScope transaction = new(database, new(pilots: [pilotId], ships: [previousShipId]));
-        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var result = RecoverCorvette(transaction.World, catalog, pilotId, previousShipId, stationId);
+        transaction.Commit();
+        return result;
+    }
+
+    internal ShipBoarding RecoverCorvette(WorldAction world, CatalogDbContext catalog, long pilotId, long previousShipId, long stationId)
+    {
         var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
         var active = pilot.ActiveShip;
         if (active.Position is not null || active.DockedLocationId != stationId)
@@ -457,9 +463,7 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
             TaskEvents.Boarded
         );
         AdoptShip(world, catalog, pilot, recovered, changes);
-        var activePilot = lookup.FindPilot(world, pilot.AccountId, pilotId)!;
-        transaction.Commit();
-        return new(activePilot, changes);
+        return new(lookup.FindPilot(world, pilot.AccountId, pilotId)!, changes);
     }
 
     private static void AdoptShip(WorldAction world, CatalogDbContext catalog, Pilot pilot, Ship ship, List<InventoryChange> changes)

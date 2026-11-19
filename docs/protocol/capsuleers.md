@@ -3474,6 +3474,200 @@ stranded jobs and the local station before deployment.
 
 After deployment, observe a previously stranded capsule in KFIE-Z and confirm it docks at the local station.
 
+## Fresh-universe starter industry
+
+`--fresh-universe` saves an opt-in policy when creating a world. Humans and simulated capsuleers receive their
+racial corvette, the same civilian equipment and racial skills, and zero ISK. The profile starts without the
+development demo characters. New launcher accounts and the bot account have the same default clone grade.
+Bots can board a free recovery corvette through the same docked operation humans use.
+[Creation command](../development-client.md#creating-an-economy-world-without-testing-supply) ·
+[Corvette gameplay reference](https://wiki.eveuniversity.org/Corvettes)
+
+The resident market provides bounded, replenishing NPC ore bids and institutional skillbooks and blueprint originals.
+An eligible starter factory also sells the pinned Miner I blueprint original. The catalog's corporation sellers for
+that blueprint have no high-security station offering all three required services together. This added blueprint
+offer solves that local supply gap. Market orders for manufactured goods hold actual pilot inventory or funds, and
+delivering a job leaves the NPC finished-goods book empty. Build 3662168 supplies the Miner I blueprint (785),
+product (483), materials, Industry I prerequisite, and job duration. The profile uses existing market, industry,
+and fitting wire forms. [Manufacturing reference](https://wiki.eveuniversity.org/Manufacturing) ·
+[Trading reference](https://wiki.eveuniversity.org/Market)
+
+Two rookie pilots take complementary goals at an eligible station with a market, manufacturing, reprocessing,
+and ore for every recipe input. One mines and sells ore until it can post a funded Miner I buy order. The other
+follows that demand, buys the blueprint, mines the needed ore, pays to refine and manufacture, and sells the actual
+output through the same market that human pilots use. Inventory, market escrow, journal entries and job deadlines
+stay with the resident world and its checkpoint. Fresh-universe bot progression currently covers this local
+industrial cohort. The later milestones cover more careers, interregional sourcing and corporate development.
+
+Mining and paid NPC kill settlement both credit unallocated skill points through the existing rules. A qualifying
+mining cycle pays based on the pinned reference value of the collected ore. A qualifying kill pays based on its
+configured bounty and credits the pilot who scored the kill. This milestone established the pool and its sources.
+The subsequent [career training milestone](#earned-bot-career-training) allocates those points.
+
+### Automated validation
+
+The native catalog replay starts from an empty world at an eligible factory in system 30015042. It compares
+new human and bot packages, rejects an unfunded order, verifies the buyer earns the escrow by mining and selling,
+reopens with the bid still funded, and checks an actual Miner I job, refining and installation charges, tax,
+delivery and zero remaining escrow after another reopen. It also checks earned mining skill points across reopen.
+The combat-controller check verifies that a 1,000 ISK NPC kill credits two unallocated skill points once at
+the default rate.
+
+In the final run, the buyer funded a 14,178.17 ISK bid after 10m 04s of simulated active play. The first sale
+settled after 1h 12m 28s. These times describe one run with the pinned catalog and its local ore layout.
+
+```powershell
+$env:EDEN_FRESH_UNIVERSE_CATALOG = Join-Path $env:LOCALAPPDATA 'Eden/catalog.sqlite'
+.\tools\Test-Feature.ps1 -Filter 'FullyQualifiedName=Eden.Protocol.Tests.Industry.FreshUniverseTests.NewCorvettesEarnAndTradeTheFirstManufacturedMinerThroughFundedEscrow'
+```
+
+Tool restore, solution restore, and build passed with zero warnings or errors (8.45 seconds for the build).
+The affected .NET run finished in 3m 04s with 316 passes, two failures, and one skipped opt-in browser test.
+Both failures reproduced on unchanged base commit `4794edc0` in a 14.28-second focused rerun.
+`FailedPaymentRollsBackStockGoodsAndHistoryAndRetrySettlesOnce` failed while deleting the owned fixture world,
+and the overpriced case of `ShoppingChoosesRealAffordableStockAndHonorsThreatMemory` returned a route.
+The fresh profile, native economy loop, and bot kill SP checks passed. The catalog and formatting policy
+suites passed eight and nine Python tests respectively. Policy and formatting verification took 41.75 seconds.
+Diff checks and all 15 edited local Markdown links passed.
+
+The affected selection combined the following class filters via `FullyQualifiedName~`.
+
+```text
+FreshUniverseTests | CapsuleerProvisioningTests | CapsuleerBackgroundPreparationTests | CapsuleerInboundRuntimeTests
+CapsuleerMiningFleetTests | PilotSpaceActivitiesTests | CharacterCreationTests | WorldConfigurationTests
+WorldInitializationTests | AdministrationTests | PilotFleetTests | StarterMarketTests | RegionalMarketTests
+IndustrialDemandTests | IndustryTests | ReprocessingTests | MiningSkillPointRewardTests | NpcSkillPointRewardTests
+```
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+In a fresh world, watch the starter factory's market for the first Miner I bid and its eventual fill.
+
+## Earned bot career training
+
+Resident miners, haulers and combat pilots spend their unallocated skill points when they dock. They rotate
+between work qualifications, a saved ship goal, and the Magic 14 at level IV. Work qualifications cover mining,
+hauling and combat skills, Industry and Reprocessing for producers, and Corporation Management for prospective
+founders and CEOs. Existing prerequisites determine what a bot can train next. A blocked skill leaves room for
+another actionable goal. [EVE University skills and learning](https://wiki.eveuniversity.org/Skills_and_learning) ·
+[The Magic 14](https://wiki.eveuniversity.org/The_Magic_14)
+
+Ship goals draw from published build-3662168 hulls that Eden can assemble in the pilot's career. The catalog supplies the
+hull requirements and the transitive requirements of its skills. A miner can draw a Venture, a barge or an
+exhumer, among other eligible hulls. Haulers and combat pilots draw from their own hull classes. The ship goal and
+next training focus follow the pilot through checkpoint reopen and ship loss. A goal establishes skill priorities.
+The existing fitting and procurement systems govern ownership and boarding.
+
+Bots apply points through the same allocation, prerequisite and history rules as human pilots. They inject owned
+books or pay for missing skills using the normal direct purchase or station market. The starter factory crew keeps
+its operating money available through the first finished-goods trade. Later skillbook purchases use up to one quarter
+of the pilot's current wallet. The simulated capsuleer account is permanently Omega. Startup repairs older Alpha
+records for that account, and the resident write boundary rejects a downgrade. Human accounts keep their saved clone
+grades. The local evejs reference `skillMgrService.js` was checked for separate free-pool and skill-application
+operations. Its SHA-256 is `64D7E60FC25C835CBB87C535BC10758AFADE4D17B23CE163BB8DED3C37451B5F`.
+Existing protocol calls serve both kinds of pilot.
+
+### Automated validation
+
+The fresh build-3662168 replay started with two rookie corvettes and zero ISK. The scheduled miners spent
+mining SP on Mining, Industry and the Magic 14 while completing the first manufactured sale. The chosen
+ship, actual allocations, and journal survived reopen. A second fresh rookie's only SP came from a controlled
+pirate kill settlement. The bot spent it on a Covetor prerequisite. The producer used a second controlled
+bounty to pay 97,500 ISK for Reprocessing and then spent earned SP on the skill. Another test starts from a
+saved Alpha bot account, reopens it as Omega, rejects a resident downgrade, and checks a human Alpha account.
+
+The exact fresh-world filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Industry.FreshUniverseTests.NewCorvettesEarnAndTradeTheFirstManufacturedMinerThroughFundedEscrow`.
+The earlier 196-case run passed 195 cases. The fresh-world refining assertion exposed a priority error that
+promoted a later goal's Industry target ahead of an already qualified Reprocessing goal. Retaining each
+goal's minimum prerequisite fixed the issue, and the exact replay passed in 29.60 seconds.
+
+Final tool restore, solution restore, and build passed with zero warnings or errors. All 161 affected
+.NET cases passed in 1m 06s. Both Python suites passed, with eight catalog and nine formatting-policy
+cases. Formatting and documentation link checks passed. The build and verification sequence took
+102.02 seconds. The final filter combined these names through
+`FullyQualifiedName~`.
+
+```text
+FreshUniverseTests | CloneGradeTests | FreeSkillPointTests | FreeSkillPointServiceTests | SkillPurchaseTests
+PilotSkillBookTests | PilotTrainingTests | MiningSkillPointRewardTests | NpcSkillPointRewardTests
+CapsuleerMiningFleetTests | CapsuleerInboundRuntimeTests
+ActualCombatFitCanClearAnOrdinaryPirateAndCannotCollectItsBountyTwice
+```
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None required for the earned-SP allocation and Omega checks.
+
+## First bot career ships
+
+New pilots work toward a standard Tech I hull first. The pinned catalog supplies the Venture for mining, the
+Badger for hauling, and the Merlin for combat. Later targets require the pilot to have boarded an earlier
+career hull, and the saved plan retains the highest stage reached across checkpoints and ship losses. A saved
+goal from an earlier release is checked against the pilot's current stage. Earned skill points fund both the
+hull prerequisites and the skills required by its working fit. Career and Magic 14 training continue.
+
+At the station, a qualified pilot checks personal inventory and shops for the missing hull, modules and charges.
+The bot pays with its own ISK through the resident market and uses a funded station buy order where it cannot
+make the missing part locally. A fresh-world miner completes its opening Miner I trade first. At the starter
+factory it can then use a paid institutional blueprint and local ore to manufacture the kit, including a Venture
+and Miner I. The factory sells blueprints and skills. Finished ships and equipment come from actual jobs or
+market counterparties. The fleet and fitting stores assemble the packaged hull, online the required modules,
+load combat magazines, and board the owned ship. The docked worker keeps its old hull and uses the same
+undock and activity code for the new one.
+
+Mining goals cover belt ships with a laser fit. Hauling goals use a travel fit where the hull supports it,
+and combat goals use a catalog weapon and matching charges. Specialized hulls without a supported bot fit,
+such as drone-only mining command ships and strategic cruisers that need subsystems, are outside the goal pool.
+
+The Venture's opening role follows [EVE University's ORE hull guide](https://wiki.eveuniversity.org/ORE_Basic_Ship_and_Skill_Overview).
+The local evejs reference checks ship ownership and skills in `_activateShipById` before activation
+(`shipService.js` SHA-256 `C34C3573C11CBAECA041D2CDC4791E19DB7DB6759A94F73125AD71E6B62848F1`).
+
+### Automated validation
+
+`FreshUniverseTests.ZeroIskCorvetteEarnsBuildsFitsAndFliesItsVenture` creates a scratch resident world with the
+installed build 3662168 catalog and an uncontested starter belt. The buyer starts in a corvette with zero ISK,
+gets the first manufactured Miner I through a funded order, and earns the cost of a Venture blueprint by
+selling ore. It mines and refines the inputs, pays the manufacturing bill, delivers and boards the Venture,
+fits the traded Miner I, and reaches a belt. Reopening the checkpoint confirms the same active hull, fitted
+module, prior corvette ownership, completed job and paid blueprint trade. The fresh-world skill test also
+submits a saved Hulk goal for a corvette pilot and confirms the goal becomes a Venture.
+
+The final run funded the first order in 11 minutes 20 seconds, settled it after 1 hour 13 minutes, and reached a
+belt in the fitted Venture after 29 hours 30 minutes of simulated time. The solution built with zero warnings or
+errors. All 174 focused .NET tests passed in 6 minutes 59 seconds, and both Python policy suites passed.
+
+The `Test-Feature.ps1` filter matched these classes and methods by fully qualified name.
+
+```text
+FreshUniverseTests | CapsuleerMinerTests | CapsuleerHaulerTests | CapsuleerMiningFleetTests
+CapsuleerInboundRuntimeTests | StarterProductionTests | NpcSupplyTests | PilotFleetTests | ApplyFittingTests
+PilotSkillBookTests | PilotTrainingTests | MiningSkillPointRewardTests | NpcSkillPointRewardTests
+ActualCombatFitCanClearAnOrdinaryPirateAndCannotCollectItsBountyTwice
+DockedTravelerScoutsAColdCombatAnomalyAndUndocksOnTheSameTradeJob
+```
+
+The merge with player-structure factories passed 17 focused tests in 2 minutes 50 seconds. The filter covered
+`FreshUniverseTests`, `CapsuleerMinerTests`, `CloneGradeTests`, and
+`BotStagesAtAPlayerFactoryAndFinishesItsPaidJobAfterServicePauseAndRestart`. The Venture reached a belt
+after 30 hours 27 minutes of simulated time. The solution build, both Python policy suites and formatting checks passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
 ## Offscreen mining, belt ratting, and industry
 
 The scheduler registers established mining and hauling pilots on the first human selection and admits distant jobs in its

@@ -48,6 +48,21 @@ internal static class ConfigurationValidation
             throw new InvalidDataException("Every typed settings group is required.");
         }
         WorldTuningRules.Validate(settings);
+        if (
+            settings.FreshUniverse
+            && (
+                settings.Economy
+                    is { StandardMarket: true }
+                        or { ProgressiveMarkets: not true }
+                        or { RegionalHubSupply: true }
+                        or { BeginnerMarketSupply: true }
+                || settings.DevelopmentSupply is { TestingMarket: true } or { TestingGrants: true }
+                || settings.Progression is { GrantStartingEquipment: false } or { GrantStartingSkills: false }
+            )
+        )
+        {
+            throw new InvalidDataException("Fresh-universe progression requires the starter package and the player-supplied market.");
+        }
         if (settings.Economy.StandardMarket && (settings.DevelopmentSupply.TestingMarket || settings.Economy.ProgressiveMarkets != false))
         {
             throw new InvalidDataException("Standard market requires testing and progressive markets to be disabled.");

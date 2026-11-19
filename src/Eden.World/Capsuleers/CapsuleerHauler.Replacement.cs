@@ -25,20 +25,7 @@ internal sealed partial class CapsuleerHauler
             if (result.Boarded)
             {
                 _pilot = ReadPilot(world, CapsuleerCommunityStore.MinerAccountId);
-                _navigation = new NavigationState();
-                _route = CapsuleerTrafficFlight.Route(Founder, _operation.Catalog);
-                _operation.TravelChanged = true;
-                _work = Work with
-                {
-                    ShipId = Pilot.ShipId,
-                    Journey = null,
-                    Retreating = false,
-                    TargetId = 0,
-                    DueTicks = 0,
-                    DueStamp = 0,
-                    WaitingReason = null,
-                    Resupply = null,
-                };
+                ResetTradeHull();
                 return;
             }
             if (result.OrderDeadline <= now)
@@ -48,5 +35,24 @@ internal sealed partial class CapsuleerHauler
             }
         }
         Wait("Waiting for a replacement ship.");
+    }
+
+    private void ResetTradeHull()
+    {
+        _navigation = new NavigationState();
+        _route = CapsuleerTrafficFlight.Route(Founder, _operation.Catalog);
+        _operation.TravelChanged = true;
+        _work = Work with
+        {
+            ShipId = Pilot.ShipId,
+            Navigation = _navigation.Capture(),
+            Journey = null,
+            Retreating = false,
+            TargetId = 0,
+            DueTicks = 0,
+            DueStamp = 0,
+            WaitingReason = null,
+            Resupply = null,
+        };
     }
 }

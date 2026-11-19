@@ -632,7 +632,8 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         long pilotId,
         IndustryRequest request,
         int? supplyCorporation = null,
-        bool stockOperatorHangar = false
+        bool stockOperatorHangar = false,
+        bool serverQuote = false
     )
     {
         AdvanceFacility(world, catalog, request.FacilityId, Now);
@@ -688,9 +689,10 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
             FacilityMultiplier(catalog, station, 2602),
             FacilityMultiplier(catalog, station, FacilityMaterialFactorAttribute)
         );
-        var calculation = supplyCorporation.HasValue
-            ? ManufacturingRules.Plan(request.Runs, inputs)
-            : ManufacturingRules.Plan(request, inputs);
+        var calculation =
+            supplyCorporation.HasValue || serverQuote
+                ? ManufacturingRules.Plan(request.Runs, inputs)
+                : ManufacturingRules.Plan(request, inputs);
         long duration = calculation.DurationSeconds;
         var materials = calculation.Materials;
         List<InventoryChange> changes = [];

@@ -99,6 +99,12 @@ internal static partial class CapsuleerPatrolFit
 
     private static readonly CatalogDefinition<TrafficProfile?> s_catalogFit = new("catalog-patrol-fit", BuildCatalogFit);
 
+    internal static TrafficProfile? CareerFit(CatalogDbContext catalog, int hull) =>
+        hull == Merlin ? Starter(catalog)
+        : CapsuleerDefenseRules.PatrolWeaponSize((HullClass)(catalog.FittingType(hull)?.GroupId ?? 0)) is not null
+            ? catalog.Definition(s_catalogFit, hull)
+        : null;
+
     private static TrafficProfile? BuildCatalogFit(CatalogDbContext catalog, int hull)
     {
         var type = catalog.RequireItem(hull);

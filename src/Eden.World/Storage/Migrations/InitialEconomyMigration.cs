@@ -28,8 +28,8 @@ internal static class InitialEconomyMigration
                 new SavedWorldEconomy
                 {
                     Id = Eden.Gameplay.Market.WorldEconomySettings.SingletonId,
-                    TestingMarket = economy?.TestingMarket ?? true,
-                    TestingGrants = economy?.TestingGrants ?? true,
+                    TestingMarket = economy is null || (!economy.FreshUniverse && economy.TestingMarket),
+                    TestingGrants = economy is null || (!economy.FreshUniverse && economy.TestingGrants),
                     InstitutionalStock = economy?.InstitutionalStock ?? Eden.Gameplay.Market.NpcSupplyRules.Stock,
                 }
             );

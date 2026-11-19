@@ -86,7 +86,7 @@ internal sealed partial class CapsuleerIndustry
         if (usable && missing.Length == 0)
         {
             CancelReplacementBids(world, catalog, bids);
-            BoardReplacement(world, catalog, docked, kit!, now);
+            BoardKit(world, catalog, docked, kit!, now);
             return new(true, bids.Length > 0, null);
         }
         if (!usable || now >= orderDeadline)
@@ -224,13 +224,13 @@ internal sealed partial class CapsuleerIndustry
                     throw new InvalidDataException("Replacement offers changed before purchase.");
                 }
             }
-            BoardReplacement(world, catalog, docked, kit, now);
+            BoardKit(world, catalog, docked, kit, now);
             return new(true, purchases.Count > 0, null);
         }
         return new(false, false, Math.Min(now, orderDeadline), []);
     }
 
-    private void BoardReplacement(EconomyTransaction world, CatalogDbContext catalog, DockedPilot docked, ReplacementKit kit, long now)
+    private void BoardKit(EconomyTransaction world, CatalogDbContext catalog, DockedPilot docked, ReplacementKit kit, long now)
     {
         long pilotId = docked.PilotId;
         int station = docked.StationId;
@@ -245,7 +245,7 @@ internal sealed partial class CapsuleerIndustry
         var pilot = world.Pilots.Find(pilotId)!;
         if (fitting.Apply(world, catalog, pilot, world.Ships.Find(shipId)!, request, kit.OnlineSlots).Missing.Count > 0)
         {
-            throw new InvalidDataException("Replacement inventory changed before fitting.");
+            throw new InvalidDataException("Ship kit inventory changed before fitting.");
         }
         PilotFleetStore.Board(world, catalog, pilotId, shipId, docked.ShipId, now);
         if (kit.Magazines.Length > 0)

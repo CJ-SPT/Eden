@@ -74,6 +74,17 @@ internal sealed partial class PilotMarketStore
     internal static bool UsesInstitutionalOffers(WorldAction world) =>
         RegionalMarketStore.Enabled(world) || MarketKind(world) == NpcMarketKind.Institutional;
 
+    internal EconomyNpcMarketOrder? StarterOreBid(EconomyTransaction world, CatalogDbContext catalog, int stationId, int typeId)
+    {
+        var station = Station(catalog, stationId);
+        new RegionalMarketStore(activity).Advance(world, catalog, station.RegionId, stationId, Now, typeId);
+        return world
+            .RegionalOrders(station.RegionId, typeId)
+            .SingleOrDefault(order =>
+                order.StationId == stationId && order.Kind == NpcMarketKind.Regional && order.Bid && order.Remaining > 0
+            );
+    }
+
     private void SeedDevelopment(WorldAction world, CatalogDbContext catalog, CatalogStationDefinition station, int? typeId)
     {
         var stations = world.Set<MarketStation>();
