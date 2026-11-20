@@ -62,7 +62,8 @@ public sealed record CorporationIdentity(
     CorporationMemberAccess? Access = null,
     int AccountKey = CorporationWalletRules.MasterKey,
     int? AllianceId = null,
-    MilitiaFaction? WarFaction = null
+    MilitiaFaction? WarFaction = null,
+    MilitiaAffiliation? Militia = null
 );
 
 public interface IPlayerCorporations

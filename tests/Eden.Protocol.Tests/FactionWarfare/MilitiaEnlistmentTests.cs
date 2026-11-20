@@ -26,8 +26,8 @@ public sealed class MilitiaEnlistmentTests
 {
     private const long First = 90000001;
     private const long Second = 90000002;
-    private const int CaldariStation = 60003760;
-    private const int GallenteStation = CaldariStation + 1;
+    internal const int CaldariStation = 60003760;
+    internal const int GallenteStation = CaldariStation + 1;
     private const int SystemId = 30000142;
     private const int EnemySystem = 30002806;
     private const int EnemyStation = CaldariStation + 2;
@@ -295,7 +295,7 @@ public sealed class MilitiaEnlistmentTests
         Assert.True(MilitiaRules.CanUseDocking(system with { Adjacency = WarzoneAdjacency.Frontline }, MilitiaFaction.Gallente, false));
     }
 
-    private static void AddMilitiaCatalog(TestWorld fixture)
+    internal static void AddMilitiaCatalog(TestWorld fixture)
     {
         using CatalogDbContext catalog = new(new WorldDatabase(fixture.Path).CatalogPath, writable: true);
         const int gallenteOwner = 1000120;

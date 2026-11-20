@@ -21,10 +21,11 @@ internal sealed partial class CorporationHandler(
     ICorporationShares shares,
     ICorporationStorage storage,
     IAllianceMembership allianceMembership,
-    AllianceSocialMonitor allianceSocial,
-    IMilitiaEnlistment militia
+    AllianceSocialMonitor allianceSocial
 ) : ISelectedPilotCallHandler
 {
+    private MilitiaAffiliation? _lastMilitia;
+
     public void Advance(PilotCallContext context)
     {
         if (!context.Selected)
@@ -35,6 +36,12 @@ internal sealed partial class CorporationHandler(
         DrainAllianceChanges(context);
         allianceSocial.Advance(context);
         var identity = corporations.Identity(context.Pilot.PilotId);
+        var militia = identity.Militia;
+        if (_lastMilitia is not null && _lastMilitia != militia || context.Pilot.Identity.WarFaction != identity.WarFaction)
+        {
+            context.Notifications.Add(new MilitiaEnlistmentUpdated(militia ?? new(null, null, 0)));
+        }
+        _lastMilitia = militia;
         if (
             context.Pilot.CorpId == identity.Id
             && context.Pilot.Identity.CorporationRoles == identity.Roles
@@ -54,12 +61,7 @@ internal sealed partial class CorporationHandler(
         {
             context.ReleaseReference("allianceRegistry");
         }
-        bool militiaChanged = context.Pilot.Identity.WarFaction != identity.WarFaction;
         context.Flight.UpdateCorporation(identity);
-        if (militiaChanged)
-        {
-            context.Notifications.Add(new MilitiaEnlistmentUpdated(militia.Read(context.Pilot.PilotId)));
-        }
         context.Roster = context.Roster.Select(p => p.PilotId == context.Pilot.PilotId ? context.Pilot : p).ToArray();
     }
 

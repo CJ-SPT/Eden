@@ -807,6 +807,7 @@ factory freight, and production after bootstrap fuel is exhausted.
 - [Faction Warfare warzone foundation, November 20, 2026](protocol/faction-warfare.md#resident-warzone-foundation--november-20-2026)
 - [Faction Warfare shared complexes and rewards, November 20, 2026](protocol/faction-warfare.md#shared-complexes-and-rewards--november-20-2026)
 - [Faction Warfare infrastructure hubs and conquest, November 20, 2026](protocol/faction-warfare.md#infrastructure-hubs-and-territorial-conquest--november-20-2026)
+- [Faction Warfare organization enlistment and militia communications, November 20, 2026](protocol/faction-warfare.md#organization-enlistment-and-militia-communications--november-20-2026)
 - [Individual enlistment and militia combat, November 20, 2026](protocol/faction-warfare.md#individual-enlistment-and-militia-combat--november-20-2026)
 - [Faction navy pursuit and service access, November 20, 2026](protocol/faction-warfare.md#faction-navy-pursuit-and-service-access--november-20-2026)
 - [Neutral hub deployment and Entosis capture, November 16, 2026](protocol/sovereignty.md#neutral-hub-deployment-and-entosis-capture--november-16-2026)

@@ -2,6 +2,7 @@ using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Corporations;
 using Eden.Gameplay.Corporations;
+using Eden.World.FactionWarfare;
 using Eden.World.Runtime.Economy;
 
 namespace Eden.World.Corporations;
@@ -37,5 +38,6 @@ internal sealed partial class CorporationMembershipStore
     internal static bool CanJoin(WorldAction world, Pilot pilot, SavedCorporation corporation) =>
         pilot.CorporationId != corporation.Id
         && !world.Filter<SavedCorporation>(row => row.CeoId == pilot.Id).Any(row => row.ClosedAt == null)
-        && world.Filter<Pilot>(row => row.CorporationId == corporation.Id).Count() < corporation.MemberLimit;
+        && world.Filter<Pilot>(row => row.CorporationId == corporation.Id).Count() < corporation.MemberLimit
+        && MilitiaOrganizationStore.CorporateAdmissionFailure(world, pilot, corporation.Id) is null;
 }

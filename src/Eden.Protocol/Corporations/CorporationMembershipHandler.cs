@@ -15,6 +15,7 @@ internal sealed partial class CorporationHandler
     {
         if (_observedPilot != context.Pilot.PilotId)
         {
+            _lastMilitia = null;
             _observedPilot = context.Pilot.PilotId;
             _cursor = membership.Head(context.Pilot.PilotId);
             _allianceCursor = allianceMembership.Head;
@@ -25,6 +26,7 @@ internal sealed partial class CorporationHandler
     public void Reset()
     {
         _observedPilot = null;
+        _lastMilitia = null;
         _cursor = 0;
         _allianceCursor = 0;
         allianceSocial.Reset();

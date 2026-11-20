@@ -95,12 +95,21 @@ public sealed partial class FleetWorld(long seed)
         {
             if (
                 resolve(pilot.Id) is not { } current
-                || pilot.CorporationId == current.CorporationId && pilot.AllianceId == current.AllianceId
+                || (
+                    pilot.CorporationId == current.CorporationId
+                    && pilot.AllianceId == current.AllianceId
+                    && pilot.WarFaction == current.WarFaction
+                )
             )
             {
                 continue;
             }
-            var updated = pilot with { CorporationId = current.CorporationId, AllianceId = current.AllianceId };
+            var updated = pilot with
+            {
+                CorporationId = current.CorporationId,
+                AllianceId = current.AllianceId,
+                WarFaction = current.WarFaction,
+            };
             _online[pilot.Id] = updated;
             foreach (var fleet in _fleets.Values)
             {
@@ -331,8 +340,8 @@ public sealed partial class FleetWorld(long seed)
         {
             throw new InvalidDataException("Invite an online pilot outside a fleet with an available position.");
         }
-        fleet.JoinRequests.Remove(target);
-        _invitations[target] = new(fleetId, actor, placement, checked(now + FleetRules.InvitationLifetime.Ticks));
+        bool militiaApplication = fleet.JoinRequests.Remove(target) && fleet.Advert?.Scope.HasFlag(FleetInviteScope.Militia) == true;
+        _invitations[target] = new(fleetId, actor, placement, checked(now + FleetRules.InvitationLifetime.Ticks), militiaApplication);
         Queue(target, fleetId, new FleetEvent.Invitation(fleetId, actor));
     }
 

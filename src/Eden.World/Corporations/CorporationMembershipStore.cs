@@ -7,6 +7,7 @@ using Eden.Gameplay.Mail;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
+using Eden.World.FactionWarfare;
 using Eden.World.Mail;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
@@ -318,6 +319,8 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
 
     internal static void Move(WorldAction world, Pilot pilot, int corporationId, long now)
     {
+        MilitiaOrganizationStore.RequireCorporateAdmission(world, pilot, corporationId);
+        MilitiaOrganizationStore.ClearMemberWarning(world, pilot.Id);
         if (world.Set<SavedCorporationWalletSelection>().Find(pilot.Id) is { } selection)
         {
             world.Remove(selection);
@@ -402,13 +405,16 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
         }
     }
 
-    private static void CheckJoin(WorldAction world, Pilot pilot, SavedCorporation corporation) =>
+    private static void CheckJoin(WorldAction world, Pilot pilot, SavedCorporation corporation)
+    {
         CorporationMembershipRules.CheckJoin(
             pilot.CorporationId == corporation.Id,
             world.Set<SavedCorporation>().Any(c => c.CeoId == pilot.Id && c.ClosedAt == null),
             world.Pilots.Count(p => p.CorporationId == corporation.Id),
             corporation.MemberLimit
         );
+        MilitiaOrganizationStore.RequireCorporateAdmission(world, pilot, corporation.Id);
+    }
 
     private static Pilot Pilot(WorldAction world, long id) => world.Pilots.Find(id) ?? throw new InvalidDataException("Unknown pilot.");
 

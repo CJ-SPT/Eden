@@ -1,5 +1,75 @@
 # Faction warfare
 
+## Organization enlistment and militia communications — November 20, 2026
+
+Player corporation CEOs and directors can apply for their independent corporation. The executor corporation’s
+CEO and directors act for an alliance and all its member corporations. Join and leave applications take effect
+at the next 11:00 UTC downtime and can be withdrawn before that boundary. Leaving organizations retain their
+faction until the scheduled withdrawal. Active affiliation is inherited immediately by new corporation and alliance
+members. Departure or dissolution removes inheritance. Compatible direct enlistment remains on record and resumes
+when inheritance ends. An independent corporation must finish or withdraw its own militia enrollment before joining
+or forming an alliance.
+
+Enrollment requires a nonnegative organization standing and each member’s unmodified faction standing at or
+above −5.0. The organization average uses recorded base standings of members with at least seven days in their
+corporation. Members without a standing record contribute no sample, and an empty average is zero. These are
+Eden’s aggregation rules. They apply across all member corporations for alliances. Existing direct enlistment with
+another militia blocks the application. Eden checks all members at filing and activation, including offline members.
+It checks the affected recruit or corporation for corporation admission and alliance application, acceptance and
+effective admission. An enrollment request that becomes ineligible during its wait returns to the neutral state.
+[UniWiki faction warfare](https://wiki.eveuniversity.org/Factional_Warfare) ·
+[CCP Cradle of War release notes](https://www.eveonline.com/news/view/cradle-of-war-expansion-notes) ·
+[CCP downtime schedule](https://support.eveonline.com/hc/en-us/articles/26205909113244-Downtime)
+
+The daily review gives members who fall below −5.0 a persisted 24-hour warning. A member who has recovered
+at the next review keeps their membership. An unresolved ordinary member returns to their original NPC
+corporation. An unresolved CEO causes their independent corporation or entire alliance to lose militia
+affiliation. Eden uses a separate 24-hour grace period if the organization standing drops below zero.
+The individual standing notifications use build 3662168’s types 298–303 and its formatter dictionaries.
+The warning duration uses FILETIME ticks. Aggregate warnings and removals use the legacy corporation and
+alliance faction-warfare types. World schema 198 saves the organization phase, deadlines and member warnings.
+The host runs scheduled reviews without connected pilots, and the first review after reopening resumes saved
+transitions and warnings. A missed review cannot remove a member who has never received a warning.
+
+Build 3662168’s `facWarSvc.pyj` sends a single faction ID to each of the eight corporation and alliance
+join, leave and withdraw methods addressed to `facWarMgr`. The `GetCorpFactionalWarStatus` reply is a
+`utillib.KeyVal` with `status` (joining 0, active 1, leaving 2), `factionID` and `startDate`. The date is
+the scheduled boundary for a pending change and the activation date while active.
+`fwEnlistmentSvc.pyj` consumes effective, direct and inherited faction in `OnEnlistmentStateUpdated`.
+Eden publishes these independently of changes to the effective `warfactionid`, so a direct enlistee still
+receives changes to the inherited component. The committed identity also supplies public profiles and existing
+combat, objectives and docking rules.
+
+Build 3662168’s fleet scope `INVITE_MILITIA` uses bit 4. Militia adverts add same-faction access with the existing
+member-group restrictions. The fleet leader and applicant wire records carry `warFactionID`. Militia chat uses
+`faction_<factionID>` and the `warfactionid` XMPP presence attribute. Join, member reads and message delivery use
+the committed affiliation, including a change that reaches the server before the client refreshes its session.
+The evejs comparison covered `facWarMgrService.js` (SHA-256
+`0deb401e43bea36d4f01e7125135e1e46b840b4f15488c3168874d6c54ac9422`) for corporation status and
+`sessionChatSync.js` (SHA-256 `c220168813e71b0ba1980877a32146b688af841332280b6cc6558830dffb1ce9`) and
+`xmppStubServer.js` for militia channel and presence conventions. The current client and released CCP
+rules supply the organization transitions.
+
+**Automated validation.** The exact downtime and checkpoint test passed in 7.31 seconds. The focused
+chat, advert and aggregate standing tests passed in 7.52 seconds. The existing corporation role/title reopen
+check passed in both configurations after normalizing neutral militia metadata. Final solution build took
+5.12 seconds with zero warnings. All 327 focused .NET cases passed in 131.05 seconds. Tool and solution
+restores and both Python policy suites passed (8 catalog setup and 9 formatting policy cases).
+Formatting verification passed in 32.61 seconds.
+
+The final filter joined these `FullyQualifiedName~` selectors with `|`:
+
+`Eden.Protocol.Tests.FactionWarfare`, `Eden.Protocol.Tests.Alliances`, `Eden.Protocol.Tests.Chat`,
+`Eden.Protocol.Tests.Fleets`, `CorporationMembershipTests`, `CorporationRecruitmentTests`,
+`CorporationClosureTests`, `CorporationRoleTests`, `CorporationPublicInfoTests`, `CharacterSheetServiceTests`,
+`CooperativeFleetTests`, `InboxTests`, `InboxServiceTests`, `CapsuleerAllianceTests`, `CapsuleerCorporationTests`,
+`CrimewatchTests`, `WorldMigrationTests`, `IncrementalCheckpointTests`, `DetachedCheckpointTests`
+
+**Live acceptance.** Agent client testing is disabled. The native client was used for static protocol inspection.
+
+**Optional maintainer checks.** Inspect pending and active enlistment in the native panel. After downtime,
+verify that the militia channel and Fleet Finder reflect the new affiliation and that the inbox renders standing warnings.
+
 ## Infrastructure hubs and territorial conquest — November 20, 2026
 
 Each capturable warzone system exposes a warpable empire infrastructure hub when its resident space scene loads.

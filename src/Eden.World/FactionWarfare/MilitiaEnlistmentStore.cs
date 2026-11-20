@@ -25,15 +25,22 @@ internal sealed class MilitiaEnlistmentStore(WorldDatabase database, TimeProvide
 
     public MilitiaAffiliation Read(long pilotId) => Resident.Economy.Inspect(world => Affiliation(world, RequirePilot(world, pilotId)));
 
+    public MilitiaFaction? EffectiveFaction(long pilotId) => LiveWorld.Find(database.Path)?.OwnerDirectory.Snapshot.PilotMilitia(pilotId);
+
     internal static MilitiaAffiliation Affiliation(WorldAction world, Pilot pilot)
     {
         var saved = world.Set<SavedMilitiaEnlistment>().Find(pilot.Id);
-        return new(saved?.DirectFaction, MilitiaRules.CorporationFaction(pilot.CorporationId), saved?.DirectCooldownUntil ?? 0);
+        return new(
+            saved?.DirectFaction,
+            MilitiaOrganizationStore.CorporationFaction(world, pilot.CorporationId),
+            saved?.DirectCooldownUntil ?? 0
+        );
     }
 
     internal static MilitiaFaction? Effective(WorldAction world, Pilot pilot) =>
         world is EconomyTransaction
-            ? MilitiaRules.CorporationFaction(pilot.CorporationId) ?? world.Set<SavedMilitiaEnlistment>().Find(pilot.Id)?.DirectFaction
+            ? MilitiaOrganizationStore.CorporationFaction(world, pilot.CorporationId)
+                ?? world.Set<SavedMilitiaEnlistment>().Find(pilot.Id)?.DirectFaction
             : null;
 
     internal static void RequireDocking(WorldAction world, Pilot pilot, int systemId, int shipGroupId)
@@ -90,6 +97,10 @@ internal sealed class MilitiaEnlistmentStore(WorldDatabase database, TimeProvide
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = RequirePilot(world, pilotId);
         CheckJoin(world, catalog, pilot, faction);
+        if (MilitiaOrganizationStore.Organization(world, pilot.CorporationId) is not null)
+        {
+            throw new InvalidDataException("Your corporation already has organization enlistment or a pending change.");
+        }
         if (PlayerCorporation(world, pilot) is not { } corporation || !Allowed(corporation).Contains(faction))
         {
             throw new InvalidDataException("Your player corporation must permit direct enlistment with this militia.");

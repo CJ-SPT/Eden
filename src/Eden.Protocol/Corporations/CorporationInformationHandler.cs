@@ -1,7 +1,6 @@
 using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Corporations;
-using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Alliances;
@@ -38,8 +37,6 @@ internal sealed class CorporationInformationHandler(
                 ("allianceRegistry", "GetEmploymentRecord")
                 or
                 ("warsInfoMgr", "GetWarsByOwnerID" or "GetWarsByOwners")
-                or
-                ("facWarMgr", "GetCorporationWarFactionID")
             )
         )
         {
@@ -76,9 +73,6 @@ internal sealed class CorporationInformationHandler(
                 "GetCorpInfo" => new CorporationMarketActivityReply(markets.Read((int)id)),
                 // The last history row is the founding event, not an alliance membership.
                 "GetEmploymentRecord" => new AllianceHistoryReply(player is null ? [] : History(player)),
-                "GetCorporationWarFactionID" => MilitiaRules.CorporationFaction((int)id) is { } faction
-                    ? (int)faction
-                    : PilotCallResult.None,
                 _ => BlueEmpty.List,
             };
         }

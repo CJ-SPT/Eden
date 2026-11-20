@@ -1,6 +1,7 @@
 using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Corporations;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Registration;
 
@@ -12,7 +13,8 @@ internal sealed class CorporationMaintenance(
     ICorporationMemberRemovals removals,
     TimeProvider clock,
     IAllianceMembership alliances,
-    ICapsuleerAlliancePlanning capsuleerAlliances
+    ICapsuleerAlliancePlanning capsuleerAlliances,
+    IMilitiaOrganizations militia
 ) : IDisposable
 {
     private Task _loop = Task.CompletedTask;
@@ -47,6 +49,7 @@ internal sealed class CorporationMaintenance(
     {
         voting.Advance();
         removals.Advance();
+        militia.Advance();
         alliances.Advance();
         capsuleerAlliances.Advance();
     }

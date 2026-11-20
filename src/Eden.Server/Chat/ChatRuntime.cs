@@ -4,6 +4,7 @@ using System.Threading.Channels;
 using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Chat;
 using Eden.Gameplay.Corporations;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Fleets;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Registration;
@@ -19,7 +20,8 @@ internal sealed class ChatRuntime(
     ICooperativeFleets fleets,
     ICorporationCommunications? communications = null,
     IAlliances? alliances = null,
-    IAllianceSocial? allianceSocial = null
+    IAllianceSocial? allianceSocial = null,
+    IMilitiaEnlistment? militia = null
 ) : IPilotChat, IXmppChat
 {
     private const int QueueCapacity = 256;
@@ -136,7 +138,7 @@ internal sealed class ChatRuntime(
             {
                 lock (_gate)
                 {
-                    RefreshAlliance(connection, room);
+                    RefreshAffiliation(connection, room);
                     _ = _world.RoomInfo(connection, room);
                 }
                 if (room.Kind == ChatRoomKind.Alliance)
@@ -157,6 +159,11 @@ internal sealed class ChatRuntime(
                 if (room.Kind == ChatRoomKind.Fleet && _world.ConnectedPilot(connection) is { } pilot)
                 {
                     Dispatch(_world.UpdateFleet(connection, fleets.Identity(pilot.Id)?.FleetId));
+                }
+                if (room.Kind == ChatRoomKind.Militia)
+                {
+                    RefreshAffiliation(connection, room);
+                    RevokeStaleMilitiaMembers(room);
                 }
                 Dispatch(_world.Join(connection, room, requestId, clock.GetElapsedTime(0, clock.GetTimestamp()).Ticks));
                 if (room.Kind is ChatRoomKind.Corporation or ChatRoomKind.Alliance)
@@ -179,7 +186,7 @@ internal sealed class ChatRuntime(
     {
         lock (_gate)
         {
-            RefreshAlliance(connection, room);
+            RefreshAffiliation(connection, room);
             if (room.Kind == ChatRoomKind.Fleet && _world.ConnectedPilot(connection) is { } pilot)
             {
                 Dispatch(_world.UpdateFleet(connection, fleets.Identity(pilot.Id)?.FleetId));
@@ -200,9 +207,18 @@ internal sealed class ChatRuntime(
     {
         lock (_gate)
         {
-            if (alliances is not null && _world.Pilot(session) is { } pilot)
+            if (_world.Pilot(session) is { } pilot)
             {
-                Dispatch(_world.Update(session, pilot with { AllianceId = alliances.PilotAffiliation(pilot.Id) }));
+                Dispatch(
+                    _world.Update(
+                        session,
+                        pilot with
+                        {
+                            AllianceId = alliances is null ? pilot.AllianceId : alliances.PilotAffiliation(pilot.Id),
+                            WarFaction = MilitiaFor(pilot),
+                        }
+                    )
+                );
             }
             return _world.SystemChannels(session);
         }
@@ -280,15 +296,18 @@ internal sealed class ChatRuntime(
     {
         lock (_gate)
         {
-            RefreshAlliance(connection, room);
+            RefreshAffiliation(connection, room);
             if (room.Kind == ChatRoomKind.Fleet && _world.ConnectedPilot(connection) is { } pilot)
             {
                 Dispatch(_world.UpdateFleet(connection, fleets.Identity(pilot.Id)?.FleetId));
             }
             var members = _world.Members(connection, room);
-            return room.Kind == ChatRoomKind.Alliance
-                ? members.Where(pilot => alliances?.PilotAffiliation(pilot.Id) == room.Id).ToArray()
-                : members;
+            return room.Kind switch
+            {
+                ChatRoomKind.Alliance => members.Where(pilot => alliances?.PilotAffiliation(pilot.Id) == room.Id).ToArray(),
+                ChatRoomKind.Militia => members.Where(pilot => (int?)MilitiaFor(pilot) == room.Id).ToArray(),
+                _ => members,
+            };
         }
     }
 
@@ -296,7 +315,7 @@ internal sealed class ChatRuntime(
     {
         lock (_gate)
         {
-            RefreshAlliance(connection, room);
+            RefreshAffiliation(connection, room);
             if (room.Kind == ChatRoomKind.Fleet && _world.ConnectedPilot(connection) is { } pilot)
             {
                 Dispatch(_world.UpdateFleet(connection, fleets.Identity(pilot.Id)?.FleetId));
@@ -356,6 +375,18 @@ internal sealed class ChatRuntime(
                 }
                 continue;
             }
+            if (
+                delivery.Event is ChatEvent.Message { Room.Kind: ChatRoomKind.Militia } militiaMessage
+                && _world.ConnectedPilot(delivery.Recipient) is { } militiaMember
+                && (int?)MilitiaFor(militiaMember) != militiaMessage.Room.Id
+            )
+            {
+                foreach (var revoked in _world.UpdateMilitia(delivery.Recipient, MilitiaFor(militiaMember)))
+                {
+                    pending.Enqueue(revoked);
+                }
+                continue;
+            }
             if (!_queues.TryGetValue(delivery.Recipient, out var queue))
             {
                 continue;
@@ -380,11 +411,30 @@ internal sealed class ChatRuntime(
     }
 
     // The published owner directory is immutable: these checks never enter the world owner while holding the chat gate.
-    private void RefreshAlliance(Guid connection, ChatRoom room)
+    private void RefreshAffiliation(Guid connection, ChatRoom room)
     {
-        if (room.Kind == ChatRoomKind.Alliance && _world.ConnectedPilot(connection) is { } pilot)
+        if (_world.ConnectedPilot(connection) is not { } pilot)
         {
-            Dispatch(_world.UpdateAlliance(connection, alliances?.PilotAffiliation(pilot.Id)));
+            return;
+        }
+        switch (room.Kind)
+        {
+            case ChatRoomKind.Alliance:
+                Dispatch(_world.UpdateAlliance(connection, alliances?.PilotAffiliation(pilot.Id)));
+                break;
+            case ChatRoomKind.Militia:
+                Dispatch(_world.UpdateMilitia(connection, MilitiaFor(pilot)));
+                break;
+        }
+    }
+
+    private MilitiaFaction? MilitiaFor(ChatPilot pilot) => militia is null ? pilot.WarFaction : militia.EffectiveFaction(pilot.Id);
+
+    private void RevokeStaleMilitiaMembers(ChatRoom room)
+    {
+        foreach (Guid connection in _world.RoomConnections(room))
+        {
+            RefreshAffiliation(connection, room);
         }
     }
 

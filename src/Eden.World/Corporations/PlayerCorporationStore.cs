@@ -11,6 +11,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Skills;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
+using Eden.World.FactionWarfare;
 using Eden.World.Market;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
@@ -84,6 +85,7 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
                     corporation?.StationId ?? 0,
                     access.BaseId
                 );
+                var militia = world is EconomyTransaction ? MilitiaEnlistmentStore.Affiliation(world, pilot) : null;
                 return new(
                     pilot.CorporationId,
                     ticker,
@@ -92,7 +94,8 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
                     access,
                     CorporationWalletStore.SelectedKey(world, pilotId, corporation),
                     world is EconomyTransaction ? world.Set<SavedAllianceMember>().Find(pilot.CorporationId)?.AllianceId : null,
-                    Eden.World.FactionWarfare.MilitiaEnlistmentStore.Effective(world, pilot)
+                    militia?.Effective,
+                    militia is { Effective: not null } or { DirectCooldownUntil: > 0 } ? militia : null
                 );
             }
         );

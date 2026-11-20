@@ -65,6 +65,14 @@ internal sealed class PilotInboxStore(WorldDatabase database, InboxChangeSignal 
                 n.Type == InboxNotificationType.ContactAdded || n.Type == InboxNotificationType.ContactEdited
             ),
             InboxGroup.Bills => rows.Where(n => n.Type == InboxNotificationType.AllianceMaintenanceBill),
+            InboxGroup.FactionWarfare => rows.Where(n =>
+                n.Type >= InboxNotificationType.MilitiaMemberStandingWarning
+                    && n.Type <= InboxNotificationType.MilitiaAllianceCeoStandingRemoval
+                || n.Type == InboxNotificationType.MilitiaCorporationStandingRemoval
+                || n.Type == InboxNotificationType.MilitiaCorporationStandingWarning
+                || n.Type == InboxNotificationType.MilitiaAllianceStandingWarning
+                || n.Type == InboxNotificationType.MilitiaAllianceStandingRemoval
+            ),
             // Other notification families have no server producers yet.
             _ => rows.Where(n => false),
         };

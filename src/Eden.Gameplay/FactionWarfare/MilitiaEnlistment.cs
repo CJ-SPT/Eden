@@ -8,6 +8,7 @@ public sealed record MilitiaAffiliation(MilitiaFaction? Direct, MilitiaFaction? 
 public interface IMilitiaEnlistment
 {
     MilitiaAffiliation Read(long pilotId);
+    MilitiaFaction? EffectiveFaction(long pilotId);
     IReadOnlyList<MilitiaFaction> AllowedFactions(int corporationId);
     IReadOnlyList<MilitiaFaction> SetAllowedFactions(long pilotId, IReadOnlyList<MilitiaFaction> factions);
     void EnlistDirectly(long pilotId, MilitiaFaction faction);

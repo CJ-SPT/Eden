@@ -3,6 +3,7 @@ using Eden.Data.World.Alliances;
 using Eden.Data.World.Corporations;
 using Eden.Gameplay.Alliances;
 using Eden.World.Corporations;
+using Eden.World.FactionWarfare;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -30,6 +31,10 @@ internal sealed partial class AllianceStore
         if (world.Set<SavedAllianceMember>().Find(corporation.Id) is not null)
         {
             throw new InvalidDataException("Leave your current alliance before applying.");
+        }
+        if (MilitiaOrganizationStore.AllianceAdmissionFailure(world, corporation.Id, allianceId, now) is { } failure)
+        {
+            throw new InvalidDataException(failure);
         }
         var applications = world.Filter<SavedAllianceApplication>(a => a.CorporationId == corporation.Id).ToArray();
         if (
@@ -111,6 +116,13 @@ internal sealed partial class AllianceStore
         )
         {
             throw new InvalidDataException("This application is no longer eligible.");
+        }
+        if (
+            status == AllianceApplicationStatus.Accepted
+            && MilitiaOrganizationStore.AllianceAdmissionFailure(world, corporationId, alliance.Id, now) is { } failure
+        )
+        {
+            throw new InvalidDataException(failure);
         }
         var before = Application(row);
         row.Text = text;
@@ -276,6 +288,7 @@ internal sealed partial class AllianceStore
     {
         var before = Snapshot(world, member.AllianceId)!;
         var previous = Member(member);
+        MilitiaOrganizationStore.CorporationDepartedAlliance(world, member.AllianceId, member.CorporationId);
         world.Remove(member);
         ScheduleEmpty(world, member.AllianceId, now);
         foreach (

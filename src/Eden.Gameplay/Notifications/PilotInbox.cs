@@ -1,10 +1,24 @@
+using Eden.Gameplay.FactionWarfare;
+
 namespace Eden.Gameplay.Notifications;
 
 public enum InboxNotificationType
 {
     AllianceMaintenanceBill = 4,
+    MilitiaCorporationStandingRemoval = 60,
+    MilitiaCorporationStandingWarning = 62,
     ContactAdded = 89,
     ContactEdited = 90,
+    MilitiaAllianceStandingWarning = 96,
+    MilitiaAllianceStandingRemoval = 97,
+
+    // Build 3662168 notifications.common.notificationconst.
+    MilitiaMemberStandingWarning = 298,
+    MilitiaCorporationCeoStandingWarning = 299,
+    MilitiaAllianceCeoStandingWarning = 300,
+    MilitiaMemberStandingRemoval = 301,
+    MilitiaCorporationCeoStandingRemoval = 302,
+    MilitiaAllianceCeoStandingRemoval = 303,
 }
 
 // Build 3662168 notificationconst group IDs; group 13 is not assigned.
@@ -31,6 +45,16 @@ public enum InboxGroup
 
 public sealed record ContactNotificationContent(double Level, string Message);
 
+public sealed record MilitiaStandingNotificationContent(
+    long CharacterId,
+    int CorporationId,
+    int? AllianceId,
+    MilitiaFaction Faction,
+    double RequiredStanding,
+    double Standing,
+    long? WarningDuration
+);
+
 public sealed record InboxNotification(
     long Id,
     InboxNotificationType Type,
@@ -40,7 +64,8 @@ public sealed record InboxNotification(
     bool Deleted,
     long Created,
     ContactNotificationContent Content,
-    int? AllianceId = null
+    int? AllianceId = null,
+    MilitiaStandingNotificationContent? MilitiaStanding = null
 );
 
 public sealed record InboxQuery(long AfterId = 0, InboxGroup? Group = null, bool UnreadOnly = false);

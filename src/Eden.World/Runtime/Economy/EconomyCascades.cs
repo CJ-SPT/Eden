@@ -79,6 +79,7 @@ internal sealed partial class EconomyTransaction
                     Remove(pursuit);
                 }
                 RemoveRange(Set<Eden.Data.World.FactionWarfare.SavedMilitiaEnlistment>().Where(child => child.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.FactionWarfare.SavedMilitiaStandingWarning>(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Characters.SavedPilotActivity>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Market.SavedRedeemedCurrency>(child => child.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Market.TestingWalletGrant>(child => child.PilotId == removed.Id));
