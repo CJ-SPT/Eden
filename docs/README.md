@@ -317,6 +317,7 @@ Native loyalty store behavior, offline offer provenance and exclusions are recor
 | [Single-player and cooperative sandbox vision](sandbox-vision.md) | Deferred design for simulated capsuleers, a developing economy, and local administration; includes a source-backed gameplay gap audit and prioritized prerequisites. Core gameplay systems come first. |
 | [Capsuleer encounters](capsuleer-population.md) | Galaxy-wide station and gate traffic, local mining, saved rosters, shared observation and historical simulation evidence. |
 | [Bot development milestones](bot-development-plan.md) | Fresh-universe progression, first claims, fleet replacement, regional trade, offscreen industry and dedicated-server capacity. |
+| [Bot corporation recruitment, relocation, and identity](bot-corporation-plan.md) | Proposed recruitment decisions, multi-system rosters, operating-base moves, and names for bot-led corporations. |
 
 ## Features and implementation records
 
