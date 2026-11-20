@@ -877,7 +877,6 @@ internal sealed partial class CapsuleerHauler(
                 }
                 else if (Pilot.Position is null)
                 {
-                    JoinCorporationAtDock();
                     _work = Work with { Activity = HaulerActivity.Docked };
                 }
                 else if (Work.CorporationSupply?.FactorySupply?.Planetary is { Phase: PlanetaryVisitPhase.Orbit } visit)
@@ -959,7 +958,7 @@ internal sealed partial class CapsuleerHauler(
         if (
             Live is not null
             && _operation.World is EconomyTransaction world
-            && CapsuleerCorporations.Place(world, _operation.Catalog, database, pilotId, Now)
+            && CapsuleerCorporations.Place(world, _operation.Catalog, database, pilotId, Now, Work.ActiveTicks)
         )
         {
             _pilot = ReadPilot(world, CapsuleerCommunityStore.MinerAccountId);
@@ -1006,6 +1005,10 @@ internal sealed partial class CapsuleerHauler(
             }
         }
         JoinCorporationAtDock();
+        if (TryCorporationRelocation())
+        {
+            return;
+        }
         if (TrySovereigntyExpedition())
         {
             return;
@@ -1359,7 +1362,6 @@ internal sealed partial class CapsuleerHauler(
         else if (Pilot.Position!.DistanceTo(_target.Position) - Pilot.Flight.ShipRadius - _target.Radius <= DockingDefinitions.MaximumRange)
         {
             _pilot = ships.Dock(_operation.World, _operation.Catalog, Pilot.PilotId, Pilot.ShipId, Work.DestinationStationId);
-            JoinCorporationAtDock();
             Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, _operation.Catalog, Pilot.ShipId);
             _navigation.Dock();
             _operation.TravelChanged = true;
@@ -1396,6 +1398,7 @@ internal sealed partial class CapsuleerHauler(
                     0
                 ),
             };
+            FinishCorporationRelocation();
             if (Work.Ratting is { } returning)
             {
                 _work = Work with { RattingLoot = returning.LootIds };
@@ -1446,7 +1449,13 @@ internal sealed partial class CapsuleerHauler(
             DepartureAt = null,
         };
         RefreshObjects(loadResources: Live?.CapsuleerActivity.Read().ActiveSystems.Contains(Pilot.SystemId) != false);
-        if (Work.Journey?.Kind is TrafficJourneyKind.CapsuleEscape or TrafficJourneyKind.SovereigntyExpedition || !TryRegionalGrid())
+        if (
+            Work.Journey?.Kind
+                is TrafficJourneyKind.CapsuleEscape
+                    or TrafficJourneyKind.SovereigntyExpedition
+                    or TrafficJourneyKind.CorporationRelocation
+            || !TryRegionalGrid()
+        )
         {
             BeginTravel();
         }

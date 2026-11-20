@@ -7,6 +7,7 @@ public enum TrafficJourneyKind
     LongDistance,
     CapsuleEscape,
     SovereigntyExpedition,
+    CorporationRelocation,
 }
 
 public sealed record TrafficJourney(

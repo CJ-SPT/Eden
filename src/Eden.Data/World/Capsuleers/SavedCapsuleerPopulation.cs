@@ -27,6 +27,12 @@ public sealed class SavedCapsuleerSuspension
     public long StartedTicks { get; set; }
 }
 
+public sealed class SavedCapsuleerOrganization
+{
+    public long PilotId { get; set; }
+    public string StateJson { get; set; } = "";
+}
+
 public sealed class SavedCapsuleerJob
 {
     public long PilotId { get; set; }

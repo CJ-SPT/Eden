@@ -23,8 +23,21 @@ internal sealed class CorporationRecruitmentStore(WorldDatabase database, TimePr
         using var transaction = Resident.Economy.Begin(TransactionParticipants.None);
         var corporation = Authorize(transaction, actorId);
         CheckRecruiters(transaction, corporation.Id, draft.Recruiters);
-        long now = Now;
-        var existing = transaction.Set<SavedCorporationRecruitmentAd>().Where(ad => ad.CorporationId == corporation.Id).ToArray();
+        long id = CreateAdvertisement(transaction, corporation, draft, days, fee, Now);
+        transaction.Commit();
+        return id;
+    }
+
+    internal static long CreateAdvertisement(
+        EconomyTransaction transaction,
+        SavedCorporation corporation,
+        CorporationRecruitmentDraft draft,
+        int days,
+        long fee,
+        long now
+    )
+    {
+        var existing = transaction.Filter<SavedCorporationRecruitmentAd>(ad => ad.CorporationId == corporation.Id).ToArray();
         if (existing.Count(ad => ad.ExpiresAt > now) >= CorporationRecruitmentRules.MaximumAds)
         {
             throw new InvalidDataException("A corporation can have at most three active recruitment ads.");
@@ -48,7 +61,6 @@ internal sealed class CorporationRecruitmentStore(WorldDatabase database, TimePr
             .Entity;
         Pay(transaction, corporation, row.Id, fee, now);
         Notify(transaction, corporation);
-        transaction.Commit();
         return row.Id;
     }
 

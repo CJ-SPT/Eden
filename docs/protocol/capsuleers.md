@@ -897,6 +897,136 @@ Not performed. Agent client testing is disabled.
 
 In the client, find a bot-made Iron Charge S ask and verify the resulting trade in the corporation wallet.
 
+## Bot corporation identities
+
+New charters generate a name and ticker from the saved seed and founder, with independent palette selection.
+The generator draws compound names, named companies, cooperatives, and two-word names. Role and system go in
+the description. Founding checks names and tickers against the existing resident and catalog owner namespaces.
+The charter stores the accepted candidate, so changing headquarters leaves the identity intact.
+
+Existing charters keep their names. A signed-in administrator can preview one charter with
+`GET /api/admin/population/corporations/{id}/name`. The preview requires an exact match against the legacy generator,
+a current bot CEO, and zero human members. To confirm, send the preview as JSON to
+`POST /api/admin/population/corporations/name` with the administrator antiforgery token. Eden rechecks eligibility,
+the old name, and the proposed name in the resident transaction. The corporation ID and ticker stay the same.
+The name update is published through the existing owner-directory revision and saved in the next world checkpoint.
+[Recruitment, relocation, and identity plan](../bot-corporation-plan.md#1-give-new-corporations-distinct-identities)
+
+**Automated validation.** The baseline founding checkpoint replay passed. The fixed-seed 500-founder sample produced
+500 distinct accepted names and tickers after collision retries. The legacy replay checked stale and successful
+confirmation, immediate directory reads, and checkpoint reopen. The focused filter
+`FullyQualifiedName~CapsuleerCorporationTests|FullyQualifiedName~PlayerCorporationTests|FullyQualifiedName~CorporationHeadquartersTests|FullyQualifiedName~AdministrationInteractionTests`
+passed 26 tests in 18 seconds. The solution built in 3.61 seconds. Both Python policy suites and format verification passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None.
+
+## Autonomous corporation recruitment
+
+World schema 192 checkpoints each pilot's recruitment deadline, profession and current autonomous application separately
+from its immutable provisioning identity. The due docked role owns the review. The existing resident scheduling queue
+admits miners and haulers when any human has selected a pilot, including work outside observed systems. Admission and
+ordinary service requests no longer recruit bots directly.
+
+The pilot checks reachable charters near the current dock and paid ads in the same region, with a bounded 64-system search
+and a seven-jump limit. Vacant profession slots, useful station services, tax, travel danger and a stable pilot preference
+produce the candidate score. The recruiter rechecks its authority and available role before offering. Acceptance separately
+checks capacity, departure permissions and current work, and uses the ordinary membership transition and notification path.
+Invitations from humans use that same review and departure logic. Bot CEOs buy ordinary ads from their treasury when there
+are roster openings and funds. Fresh worlds require the earned qualification and founding fee even for a system's first charter.
+[EVE University recruitment](https://wiki.eveuniversity.org/Recruiting_corporation_members) ·
+[Native invitation contract](corporations.md#direct-invitations-and-corporation-window-reads-november-14-2026)
+
+**Automated validation.** The paid-ad replay held applications from two different two-jump origins across a checkpoint.
+Two offers competed for the final berth and only one took it. The native invitation replay preserved a deferred offer
+and published the eventual employment change. The focused filter
+`FullyQualifiedName~CapsuleerCorporationTests|FullyQualifiedName~CorporationMembershipTests|FullyQualifiedName~CorporationRecruitmentTests|FullyQualifiedName~CapsuleerBackgroundPreparationTests|FullyQualifiedName~WorldMigrationTests`
+passed 64 tests in 30 seconds. The solution built in 3.77 seconds and both Python policy suites passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Check a bot corporation's recruitment history after several active-play reviews.
+
+## Bot corporation relocation
+
+Acceptance can commit a relocation to the headquarters or to a mining station in its system. A miner whose new
+corporation lacks a workable local belt stays where it can work. The existing pilot and fitted ship travel using the
+regular undock, warp, gate and dock operations. The pilot packs up to three compatible stacks of personal supplies into
+the existing hold. Capacity limits leave excess supplies at the source. The freight gate and existing assignment checks
+protect cargo and paid work from premature departures.
+
+The corporation assignment, ship, route and packed item quantities are checkpointed with the pilot. The operating station
+changes only at the destination dock. The miner starts work with the destination crew, and the hauler plans its regular
+journeys from the new base. The original system and provisioning slot still identify the same saved pilot. The medical
+home station and corporate property use their existing rules. [Relocation plan](../bot-corporation-plan.md#3-move-recruits-and-rebase-their-work) ·
+[Eden home-station mechanics](characters.md#persistent-home-stations-and-docked-clone-transfer)
+
+**Automated validation.** The miner and hauler replays each reloaded an unobserved departure from a checkpoint, kept
+the same ship and moved 13 rounds from the old hangar to the new one. The active clock paused with no selected human,
+and the same pilot started its next cycle from the new base. The focused filter
+`FullyQualifiedName~CapsuleerCorporationTests|FullyQualifiedName~CapsuleerHandoffTests|FullyQualifiedName~CapsuleerTrafficNavigationTests|FullyQualifiedName~CapsuleerMinerTests|FullyQualifiedName~CapsuleerHaulerTests`
+passed 65 tests in 32 seconds. The solution built in 0.74 seconds with warm build outputs. Both Python policy suites
+passed. The paid mining checkpoint test also failed on unmodified `3229a079`, where the helper compared the starter ore
+type array by reference. It now compares its contents and still checks the remaining saved state.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Follow a recruit through a gate, then observe its next work cycle at the new base.
+
+## Bot corporation retention
+
+Members of bot-led corporations need eight active-play hours of tenure and at least 30 active minutes of continued
+interest before pursuing a better employer. The new offer must improve on their existing work base and tax by at least
+eight points on the recruitment score. Ordinary role permissions, existing assignments, and last combat staffing in an
+alliance member corporation can defer autonomous departures. A human-led corporation continues to control its roster.
+
+An intact delivery through the regional escort operation can record a working contact with another corporation. The
+contact expires after 24 active hours. It can bring a charter into the search and lead to an ordinary invitation from
+its authorized recruiter. Autonomous applications and invitations expire after two active hours. A committed headquarters
+change reopens the work-base decision and schedules one member at a time. The usual movement and custody rules apply.
+
+An administrator can read `GET /api/admin/population/corporations/{id}/roster` for the charter's current member count,
+the number and proportion of bots by provisioning origin, pending applications, and the number of bots moving or based
+at a chosen work station. The repeat-move total counts relocations after each current member's first one. The report
+uses a resident roster snapshot. [Retention plan](../bot-corporation-plan.md#4-add-retention-later-moves-and-population-checks)
+
+**Automated validation.** One paid-ad fixture hired from three provisioning systems. The largest origin supplied two
+of four members, and two recruits were scheduled to move. The legacy one-jump policy excluded both two-jump hires in
+this topology. The retention replay checked the tenure threshold, a checkpoint during consideration, an escort-contact
+invitation, and a later headquarters move. Its warmed employer review opened no SQL connections, issued no SQL commands,
+and performed no fitting calculations. The initial integration filter passed 77 tests in 44 seconds, including paid trade,
+alliances, escorted freight, checkpoint migrations and the matched session-frame workload. Build took 21.27 seconds and
+both Python policy suites passed.
+
+The merge with the Athanor production work on `6f62966d` passed 75 focused tests in 73 seconds. The filter combined
+`CapsuleerCorporationTests`, `CapsuleerAllianceTests`, `CorporationMembershipTests`, `CorporationRecruitmentTests`,
+`AdministrationInteractionTests`, `CapsuleerHandoffTests`, `WorldMigrationTests` and `AreaWeaponPersistenceTests`
+with `EscortFollowsOwnedFreightAndCompletesOnlyAfterItsActualDelivery`, `RegionalTradePaysForTwoLossesWithBountyTaxAndProductionMargin`,
+`UnobservedMinerAndPaidFactoryPauseAndResumeAcrossRestart` and `BotsDeliverTwoMinerTwoBatchesAcrossRestartsAndReplaceBootstrapReactionFuel`.
+The solution built in 20.90 seconds. Both Python policy suites and format verification passed.
+
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerDeadlinePerformanceTests.MatchedMaintenanceFramesPreserveJobsAndAssetsWithFewerIdleTurns`
+passed three cases in nine seconds on the `3229a079` baseline and on the integrated tree. Both revisions ran ten due
+turns per case. SQL commands, connections and fitting calculations matched for each case. The table compares total
+measured session-frame time and checkpoint phases in local fixtures. Longer dedicated-server capacity and roster pacing
+remain unmeasured.
+
+| Observation | Session frames, ms | Allocation, bytes | SQL commands / connections / fits | Checkpoint capture / project / write, ms |
+| --- | --- | --- | --- | --- |
+| One distant observer | 57.79 → 65.43 | 17,956,328 → 18,151,648 | 31 / 2 / 8 | 0.50 / 0.94 / 16.08 → 0.52 / 0.98 / 16.01 |
+| One local observer | 27.61 → 21.66 | 10,210,200 → 10,040,816 | 1 / 1 / 0 | 0.76 / 0.89 / 16.57 → 0.67 / 0.84 / 18.77 |
+| Two local observers | 36.65 → 38.14 | 16,533,648 → 16,656,984 | 1 / 1 / 0 | 0.56 / 0.93 / 15.47 → 0.49 / 0.87 / 18.45 |
+
+The final integration with star-map statistics on `71af02a0` passed 58 tests in 48 seconds. The filter combined
+`CapsuleerCorporationTests`, `MapNavigationTests`, `WorldMigrationTests`, `CapsuleerHandoffTests`, and `CapsuleerHaulerTests`
+with the two-batch Athanor replay and the three matched session-frame cases. Build took 20.88 seconds. Both Python policy
+suites, format verification and the documentation link check passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Read a working corporation's roster report after a longer dedicated-server session.
+
 ## Bot corporation recruitment and gangs
 
 Schema 188 opens applications for existing active bot-led charters. New bot charters start open. The bot CEO uses the existing

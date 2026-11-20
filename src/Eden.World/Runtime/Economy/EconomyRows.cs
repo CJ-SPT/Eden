@@ -867,6 +867,7 @@ internal sealed partial class ResidentEconomy
         RegisterAbyssalRun();
         RegisterAbyssalParticipant();
         RegisterCorporationRecruitment();
+        RegisterCapsuleerOrganizations();
         RegisterCorporationVoting();
         RegisterCorporationBlueprintLocks();
         RegisterCorporationRemovals();

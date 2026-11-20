@@ -248,12 +248,15 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
         return new(corporation.Snapshot(1), balance);
     }
 
-    internal static bool IdentityTaken(WorldAction world, CatalogDbContext catalog, CorporationDetails details) =>
+    internal static bool IdentityTaken(WorldAction world, CatalogDbContext catalog, CorporationDetails details, int? exceptId = null) =>
         world
             .Set<SavedCorporation>()
             .Any(c =>
-                c.ClosedAt == null && string.Equals(c.Name, details.Name, StringComparison.OrdinalIgnoreCase)
-                || string.Equals(c.Ticker, details.Ticker, StringComparison.OrdinalIgnoreCase)
+                c.Id != exceptId
+                && (
+                    c.ClosedAt == null && string.Equals(c.Name, details.Name, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(c.Ticker, details.Ticker, StringComparison.OrdinalIgnoreCase)
+                )
             )
         || catalog.NpcCorporationNameExists(details.Name)
         || catalog

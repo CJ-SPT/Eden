@@ -184,7 +184,7 @@ internal sealed partial class CapsuleerScheduler(
     private bool _backgroundPilotsLoaded;
     private long _populationRevision;
 
-    private readonly record struct Registration(int Community, CapsuleerCareer Career);
+    private readonly record struct Registration(int Community, CapsuleerCareer Career, int CrewSystem);
 
     private readonly Dictionary<long, Registration> _registrations = [];
 
@@ -314,13 +314,22 @@ internal sealed partial class CapsuleerScheduler(
                 continue;
             }
             bool firstRegistration = !_registrations.ContainsKey(pilot);
-            _registrations[pilot] = new(agent.CommunitySystemId, agent.Career);
+            int crewSystem = firstRegistration ? agent.CommunitySystemId : _registrations[pilot].CrewSystem;
+            if (
+                firstRegistration
+                && agent.Career == CapsuleerCareer.Mining
+                && CapsuleerCorporations.Organization(world, pilot).OperatingStationId is int baseStation
+            )
+            {
+                crewSystem = database.Catalog.FindStation(baseStation)?.SolarSystemId ?? crewSystem;
+            }
+            _registrations[pilot] = new(agent.CommunitySystemId, agent.Career, crewSystem);
             if (firstRegistration && agent.Career == CapsuleerCareer.Mining)
             {
-                if (!_miningCrews.TryGetValue(agent.CommunitySystemId, out var crew))
+                if (!_miningCrews.TryGetValue(crewSystem, out var crew))
                 {
                     crew = [];
-                    _miningCrews.Add(agent.CommunitySystemId, crew);
+                    _miningCrews.Add(crewSystem, crew);
                 }
                 crew.Add(pilot);
                 if (live is not null && crew.Count > 1)
@@ -438,6 +447,14 @@ internal sealed partial class CapsuleerScheduler(
                             IndexLocation(job.PilotId, miner.SystemId);
                             _systems.Register(miner.SystemId);
                             var observation = miner.Read(includeHealth: activity.ActiveSystems.Contains(miner.SystemId))!;
+                            if (
+                                observation.Work.OperatingStationId is int baseStation
+                                && observation.Pilot.StationId == baseStation
+                                && observation.Pilot.Position is null
+                            )
+                            {
+                                RebaseMiningCrew(pilot, miner, observation.Pilot.SystemId);
+                            }
                             mining[job.PilotId] = observation;
                             Blocking(job.PilotId, observation.WaitingReason);
                             _pendingMiners[job.PilotId] = observation;

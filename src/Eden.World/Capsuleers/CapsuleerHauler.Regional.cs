@@ -1,6 +1,7 @@
 using Eden.Data.World.Capsuleers;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Flight;
+using Eden.World.Runtime.Economy;
 
 namespace Eden.World.Capsuleers;
 
@@ -212,6 +213,17 @@ internal sealed partial class CapsuleerHauler
                 intact,
                 intact ? "The escorted freight was delivered." : "The shipment arrived with missing cargo."
             );
+            if (intact && _operation.World is EconomyTransaction world)
+            {
+                foreach (var guard in escort.Guards.Where(guard => guard.Status == RoamingGangMemberStatus.Active))
+                {
+                    if (world.Pilots.Find(guard.PilotId) is { } teammate && teammate.CorporationId != Pilot.CorpId)
+                    {
+                        CapsuleerCorporations.RememberWorkingContact(world, pilotId, teammate.CorporationId, Work.ActiveTicks);
+                        CapsuleerCorporations.RememberWorkingContact(world, guard.PilotId, Pilot.CorpId, Work.ActiveTicks);
+                    }
+                }
+            }
             _work = Work with { RegionalEscort = null };
         }
     }

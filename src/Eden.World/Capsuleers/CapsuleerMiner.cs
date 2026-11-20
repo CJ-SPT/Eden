@@ -637,7 +637,6 @@ internal sealed partial class CapsuleerMiner(
                 _work = Work with { WaitingReason = null };
                 if (Pilot.Position is null)
                 {
-                    JoinCorporationAtDock();
                     _work = Work with { Activity = MinerActivity.Docked };
                 }
                 else
@@ -665,9 +664,8 @@ internal sealed partial class CapsuleerMiner(
     {
         if (
             Live is not null
-            && !database.Settings.FreshUniverse
             && _operation.World is EconomyTransaction world
-            && CapsuleerCorporations.Place(world, _operation.Catalog, database, pilotId, Now)
+            && CapsuleerCorporations.Place(world, _operation.Catalog, database, pilotId, Now, Work.ActiveTicks)
         )
         {
             _pilot = ships.FindPilot(world, CapsuleerCommunityStore.MinerAccountId, pilotId)!;
@@ -693,6 +691,10 @@ internal sealed partial class CapsuleerMiner(
             _work = Work with { ShipId = Pilot.ShipId, Navigation = _navigation.Capture(), PaidUntil = 0, ModuleId = 0 };
         }
         JoinCorporationAtDock();
+        if (TryCorporationRelocation())
+        {
+            return;
+        }
         if (Work.FactoryStage is not null && _operation.World is EconomyTransaction stagedWorld)
         {
             UnloadFactoryCargo(stagedWorld);
@@ -1065,7 +1067,6 @@ internal sealed partial class CapsuleerMiner(
                     return;
                 }
                 _pilot = ships.Dock(_operation.World, _operation.Catalog, Pilot.PilotId, Pilot.ShipId, _target!.Id);
-                JoinCorporationAtDock();
                 Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, _operation.Catalog, Pilot.ShipId);
                 _navigation.Dock();
                 _operation.TravelChanged = true;
@@ -1077,6 +1078,7 @@ internal sealed partial class CapsuleerMiner(
                     MoonExtractionId = null,
                     RefineryIceType = null,
                 };
+                FinishCorporationRelocation();
             }
             else
             {
@@ -1268,6 +1270,10 @@ internal sealed partial class CapsuleerMiner(
         if (_objects.Count == 0)
         {
             RefreshObjects();
+        }
+        if (Work.Mercoxit is null && _operation.World is EconomyTransaction world && ContinueCorporationRelocation(world))
+        {
+            return;
         }
         if (Work.Mercoxit is { } expedition)
         {

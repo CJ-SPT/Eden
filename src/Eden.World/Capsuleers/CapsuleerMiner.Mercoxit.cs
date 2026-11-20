@@ -112,7 +112,7 @@ internal sealed partial class CapsuleerMiner
 
     private void CompleteExpeditionJump()
     {
-        if (_target?.DestinationGateId is not int exit || Work.Mercoxit is not { } expedition)
+        if (_target?.DestinationGateId is not int exit)
         {
             throw new InvalidDataException("The miner's jump has no reciprocal gate.");
         }
@@ -124,6 +124,13 @@ internal sealed partial class CapsuleerMiner
         GateCloakPersistence.Cancel(world, Pilot.ShipId);
         _operation.TravelChanged = true;
         RefreshObjects();
-        ContinueExpedition(expedition);
+        if (Work.Mercoxit is { } expedition)
+        {
+            ContinueExpedition(expedition);
+        }
+        else if (!ContinueCorporationRelocation(world))
+        {
+            throw new InvalidDataException("The miner no longer has an active route.");
+        }
     }
 }
