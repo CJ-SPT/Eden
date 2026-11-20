@@ -86,6 +86,10 @@ those extra types are outside this station/structure runtime integration. Moving
 
 Start the server with `dotnet run --no-build --project src/Eden.Server`. The server uses `src/Eden.Server/data/world.sqlite` from source or `data/world.sqlite` beside the published executable. Set `EDEN_DATA_DIR` to choose a different data directory for the server and catalog setup. Relative values resolve from the server folder. An explicit `--world` path takes precedence and uses the catalog beside that save.
 
+If startup reports a missing `catalog.sqlite`, copy your matching catalog to the path in the error or run `Setup-Catalog.ps1`
+with `-Output` set to that path. If you double-click `Eden.Server.exe` on Windows, its console displays the error until you
+press a key. Set `EDEN_NO_PAUSE_ON_ERROR=1` for automation that starts Eden in a dedicated Windows console.
+
 The first startup initializes a new world with Eden Pilot and Eden Wing. Existing saves migrate to the current schema, preserving their assets and supported history. Normal startup loads the saved world into RAM and checkpoints committed gameplay changes every 15 seconds. Graceful shutdown flushes remaining changes. Authentication mutations also request a durable checkpoint before returning. Save failures remain visible by default. Set `EDEN_VERBOSE_LOGGING=1` for routine checkpoint diagnostics.
 
 Live turret combat and health use typed objects in memory. The saver includes outstanding payments and damage before copying a checkpoint, and graceful shutdown projects final combat changes. The on-disk save still represents only the last completed checkpoint. See [combat object behavior and benchmark evidence](protocol/performance.md#live-combat-objects-and-ten-brutix-replay-november-5-2026).
