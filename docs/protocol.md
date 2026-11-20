@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Administration settings with decimal-comma locales](protocol/world-configuration.md#administration-settings-with-decimal-comma-locales-november-20-2026)
+covers the reload banner while editing settings on servers that use a decimal comma.
+
 [First bot career ships](protocol/capsuleers.md#first-bot-career-ships) covers qualifying for, paying for, fitting, and
 flying a bot's first career hull in a fresh universe.
 

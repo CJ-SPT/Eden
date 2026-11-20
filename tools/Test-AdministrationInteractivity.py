@@ -11,13 +11,14 @@ from playwright.sync_api import expect, sync_playwright
 
 
 def main():
+    address, browser_name, culture = sys.argv[1:]
     with sync_playwright() as playwright:
-        browser = getattr(playwright, sys.argv[2]).launch(headless=True)
-        page = browser.new_page()
+        browser = getattr(playwright, browser_name).launch(headless=True)
+        page = browser.new_page(locale=culture)
         page.set_default_timeout(10000)
         page.on("console", lambda message: print(message.type, message.text))
         page.on("pageerror", lambda error: print("PAGE ERROR", error))
-        page.goto(sys.argv[1])
+        page.goto(address)
         page.get_by_label("Administrator name").fill("Corey")
         page.get_by_label("Password").fill("local administrator password")
         page.get_by_role("button", name="Sign in", exact=True).click()
@@ -56,6 +57,8 @@ def main():
         check_tabs()
         click("Travel")
         edit("Warp speed (×)", "2")
+        expect(page.get_by_text("Unsaved changes", exact=True)).to_be_visible()
+        expect(page.locator("#blazor-error-ui")).to_be_hidden()
         edit("Align speed (×)", "1.25")
         edit("Autopilot gate landing distance (metres)", "0")
         distance = page.get_by_label("Autopilot gate landing distance (metres)", exact=True)
@@ -74,6 +77,8 @@ def main():
         expect(page.get_by_label("Align speed (×)", exact=True)).to_have_value("1.25")
         expect(page.get_by_label("Autopilot gate landing distance (metres)", exact=True)).to_have_value("0")
         click("Gathering")
+        edit("Ore mining yield (×)", "0.05")
+        expect(page.locator(".validation-message").first).to_be_visible()
         edit("Ore mining yield (×)", "2")
         click("Save for restart")
         expect(page.get_by_text("Revision 2 saved · pending restart.", exact=True)).to_be_visible()
@@ -125,13 +130,15 @@ def main():
         click("Player bots")
         assert page.evaluate("document.documentElement.scrollWidth === innerWidth"), "Settings overflow the mobile viewport"
         expect(page.get_by_role("heading", name="Hauler freight")).to_be_visible()
+        expect(page.locator("#blazor-error-ui")).to_be_hidden()
         page.get_by_role("link", name="Performance", exact=True).click()
         expect(page.get_by_role("heading", name="Session frame latency")).to_be_visible()
         expect(page.get_by_role("heading", name="Frame processing time")).to_be_visible()
         expect(page.get_by_role("heading", name="Frame start delay")).to_be_visible()
-        expect(page.get_by_text("8.00 ms", exact=True)).to_be_visible()
-        expect(page.get_by_text("12.00 ms", exact=True)).to_be_visible()
-        expect(page.locator(".frame-readings").get_by_text("3.00 ms", exact=True)).to_be_visible()
+        separator = "," if culture == "fr-FR" else "."
+        expect(page.get_by_text(f"8{separator}00 ms", exact=True)).to_be_visible()
+        expect(page.get_by_text(f"12{separator}00 ms", exact=True)).to_be_visible()
+        expect(page.locator(".frame-readings").get_by_text(f"3{separator}00 ms", exact=True)).to_be_visible()
         bars = page.locator(".frame-chart-bar").all()
         assert len(bars) >= 2
         for bar in bars:

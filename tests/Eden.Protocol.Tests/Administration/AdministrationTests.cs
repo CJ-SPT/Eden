@@ -202,9 +202,18 @@ public sealed partial class AdministrationTests
             Client = new(handler);
         }
 
-        internal static async Task<Fixture> Start(bool liveWorld = false)
+        internal static async Task<Fixture> Start(bool liveWorld = false, string? culture = null)
         {
             Fixture fixture = new(liveWorld);
+            if (culture is not null)
+            {
+                fixture.App.UseRequestLocalization(
+                    new RequestLocalizationOptions()
+                        .SetDefaultCulture(culture)
+                        .AddSupportedCultures(culture)
+                        .AddSupportedUICultures(culture)
+                );
+            }
             await fixture.App.StartAsync();
             fixture.Client.BaseAddress = new Uri(Assert.Single(fixture.App.Urls));
             return fixture;

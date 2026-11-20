@@ -1,6 +1,8 @@
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Linq.Expressions;
 using System.Net;
+using System.Reflection;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Mining;
 using Eden.Server.Administration;
@@ -16,6 +18,35 @@ namespace Eden.Protocol.Tests.Administration;
 
 public sealed class WorldSettingsPageTests
 {
+    [Fact]
+    public void DecimalRangesAcceptFractionalLimitsInFrenchServerCulture()
+    {
+        var original = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("fr-FR");
+            // Read fresh attributes because DataAnnotations caches the limits after first use.
+            var ranges = typeof(SettingsForm)
+                .GetProperties()
+                .Select(property => property.GetCustomAttribute<RangeAttribute>())
+                .OfType<RangeAttribute>()
+                .Where(range => range.OperandType == typeof(decimal));
+            foreach (var range in ranges)
+            {
+                decimal minimum = decimal.Parse((string)range.Minimum, CultureInfo.InvariantCulture);
+                decimal maximum = decimal.Parse((string)range.Maximum, CultureInfo.InvariantCulture);
+                Assert.True(range.IsValid(minimum));
+                Assert.True(range.IsValid(maximum));
+                Assert.False(range.IsValid(minimum - .01m));
+                Assert.False(range.IsValid(maximum + .01m));
+            }
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = original;
+        }
+    }
+
     [Fact]
     public void CustomsTaxControlAcceptsZeroAndFractionalPercentagesAndReportsRevisionChanges()
     {
