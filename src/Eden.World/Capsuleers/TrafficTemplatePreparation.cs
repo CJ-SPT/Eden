@@ -80,6 +80,11 @@ internal static partial class TrafficTemplatePreparation
         else
         {
             _ = TrafficProvisioning.CandidatePools(database, catalog, input.System, input.Route, input.Cargo, input.Roster);
+            // Refresh can fit a corvette and trigger correction in this same trade.
+            if (TrafficProvisioning.AllowsLightHull(catalog, input.Roster))
+            {
+                _ = TrafficCorrection.CandidatePools(database, catalog, input.System, input.Cargo, input.Drones);
+            }
         }
     }
 }

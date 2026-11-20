@@ -5,7 +5,7 @@ namespace Eden.World.Runtime.Economy;
 
 internal sealed partial class EconomyTransaction
 {
-    private sealed record NpcSpawnSlot(long EncounterId, int Slot);
+    private readonly record struct NpcSpawnSlot(long EncounterId, int Slot);
 
     private void ValidateNpcSpawnSlots()
     {
@@ -18,19 +18,17 @@ internal sealed partial class EconomyTransaction
         {
             return;
         }
-        // Project both saved and private members once. Per-NPC queries repeatedly
-        // merge every private row, making a population refresh quadratic.
-        var slots = Filter<WorldNpc>(npc =>
-                Enumerable.Contains(encounters, npc.EncounterId)
-                && npc.Role != NpcRole.Pirate
-                && npc.DestroyedAt == null
-                && npc.RetiredAt == null
-            )
-            .Select(npc => new NpcSpawnSlot(npc.EncounterId, npc.SpawnSlot));
+        var npcs = (EconomySet<WorldNpc, EconomyWorldNpc>)Set<WorldNpc>();
         HashSet<NpcSpawnSlot> occupied = [];
-        foreach (var slot in slots)
+        foreach (var npc in npcs.IndexedSnapshots(nameof(WorldNpc.EncounterId), encounters))
         {
-            if (!occupied.Add(slot))
+            if (
+                encounters.Contains(npc.EncounterId)
+                && npc.Role != NpcRole.Pirate
+                && npc.DestroyedAt is null
+                && npc.RetiredAt is null
+                && !occupied.Add(new(npc.EncounterId, npc.SpawnSlot))
+            )
             {
                 throw new InvalidDataException("Duplicate resident WorldNpc unique value.");
             }

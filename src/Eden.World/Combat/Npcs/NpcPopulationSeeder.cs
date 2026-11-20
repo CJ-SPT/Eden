@@ -65,15 +65,10 @@ internal sealed partial class NpcPopulationSeeder(
 
     public void Seed(WorldAction world, CatalogDbContext catalog, int systemId, long now)
     {
-        var excluded = NpcSpecialTypes.Excluded.ToArray();
-        var retired = world
-            .Filter<WorldNpc>(n =>
-                n.SystemId == systemId
-                && n.Role == NpcRole.Pirate
-                && Enumerable.Contains(excluded, n.TypeId)
-                && n.DestroyedAt == null
-                && n.RetiredAt == null
-            )
+        var membersInSystem = NpcPopulationMember.InSystem(world, systemId).Where(n => n.Active).ToArray();
+        var retired = membersInSystem
+            .Where(n => n.Role == NpcRole.Pirate && NpcSpecialTypes.Excluded.Contains(n.TypeId))
+            .Select(n => world.Set<WorldNpc>().Find(n.Id)!)
             .ToArray();
         foreach (var npc in retired)
         {
@@ -96,7 +91,7 @@ internal sealed partial class NpcPopulationSeeder(
         foreach (long encounterId in retired.Select(n => n.EncounterId).Distinct())
         {
             if (
-                !world.Set<WorldNpc>().Any(n => n.EncounterId == encounterId && n.DestroyedAt == null && n.RetiredAt == null)
+                !NpcPopulationMember.AtAnchor(world, encounterId).Any(n => n.Active)
                 && world.Set<WorldNpcEncounter>().Find(encounterId) is { } encounter
             )
             {
@@ -106,13 +101,9 @@ internal sealed partial class NpcPopulationSeeder(
         // Production policy retires the old fixture on activation. Tests inject
         // their own seeder, keeping that fixture isolated from normal space.
         int rookie = NpcEncounterDefinitions.GuristasRookieType;
-        foreach (
-            var npc in world.Filter<WorldNpc>(n =>
-                n.SystemId == systemId && n.TypeId == rookie && n.DestroyedAt == null && n.RetiredAt == null
-            )
-        )
+        foreach (var member in membersInSystem.Where(n => n.TypeId == rookie))
         {
-            npc.RetiredAt = now;
+            world.Set<WorldNpc>().Find(member.Id)!.RetiredAt = now;
         }
         world.SaveChanges();
         var system = catalog.FindSystem(systemId);
@@ -136,7 +127,7 @@ internal sealed partial class NpcPopulationSeeder(
         var policy = world.Settings.NpcPopulation;
         if (policy.Guards)
         {
-            guards.Seed(world, catalog, systemId, definition, band, now);
+            guards.Seed(world, catalog, systemId, band, now);
         }
         if (policy.Convoys)
         {
@@ -182,7 +173,7 @@ internal sealed partial class NpcPopulationSeeder(
             {
                 continue;
             }
-            if (world.Set<WorldNpc>().Any(n => n.EncounterId == encounter.Id && n.DestroyedAt == null && n.RetiredAt == null))
+            if (NpcPopulationMember.AtAnchor(world, encounter.Id).Any(n => n.Active))
             {
                 continue;
             }

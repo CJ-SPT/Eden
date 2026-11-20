@@ -37,6 +37,9 @@ internal sealed partial class EconomyTransaction(
     private readonly Dictionary<string, long> _sequences = new(StringComparer.Ordinal);
     private readonly Dictionary<int, InstitutionalPreparation> _preparations = [];
 
+    internal bool HasPrivateRows<T>()
+        where T : class => _sets.TryGetValue(typeof(T), out var set) && set.Materializations != 0;
+
     internal override bool Prepared(InstitutionalPreparation preparation) =>
         _preparations.GetValueOrDefault(preparation.StationId) == preparation || store.Prepared(preparation);
 
@@ -491,7 +494,7 @@ internal sealed partial class EconomyTransaction(
         {
             if (order is not null)
             {
-                locations.Add(new(order.StationId, order.SystemId, order.RegionId, order.Bid));
+                locations.Add(new(order.StationId, order.SystemId, order.RegionId, order.Bid, order.TypeId));
             }
         }
 
@@ -499,7 +502,7 @@ internal sealed partial class EconomyTransaction(
         {
             if (order is not null)
             {
-                locations.Add(new(order.StationId, order.SystemId, order.RegionId, order.Bid));
+                locations.Add(new(order.StationId, order.SystemId, order.RegionId, order.Bid, order.TypeId));
             }
         }
     }

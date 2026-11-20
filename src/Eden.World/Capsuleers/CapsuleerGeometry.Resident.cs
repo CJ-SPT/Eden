@@ -1,3 +1,5 @@
+using Eden.Data.World.Economy;
+using Eden.Data.World.Mining;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Mining;
 using Eden.World.Catalog;
@@ -12,6 +14,16 @@ internal sealed partial class CapsuleerGeometry
 {
     internal static IReadOnlyList<StaticSpaceObject> Load(WorldAction world, CatalogDbContext catalog, int systemId, long now)
     {
+        if (
+            world is EconomyTransaction resident
+            && !resident.HasPrivateRows<WorldAsteroid>()
+            && !resident.HasPrivateRows<SavedBeltRenewal>()
+            && LiveWorld.Find(world.WorldPath)?.TrafficGeometry.TryRead(systemId, catalog.Definitions.Identity.Generation, out var view)
+                == true
+        )
+        {
+            return view;
+        }
         AsteroidFieldStore.Populate(world, catalog, systemId, now);
         world.SaveChanges();
         return [.. SystemObjects.Geometry(catalog, systemId), .. AsteroidFieldStore.List(world, catalog, systemId)];

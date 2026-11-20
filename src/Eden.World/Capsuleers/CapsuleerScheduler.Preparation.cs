@@ -1,5 +1,6 @@
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Ships;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Catalog;
 using Eden.World.Market;
@@ -12,6 +13,8 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerScheduler
 {
+    private long _preparedNpcCatalog;
+
     internal sealed record PreparationInput(
         CapsuleerJob Job,
         int SystemId,
@@ -26,6 +29,9 @@ internal sealed partial class CapsuleerScheduler
         IReadOnlyList<CapsuleerGeometry.ResourcePreparation> Geometry,
         CapsuleerHauler.JourneyInput? Journey,
         TrafficTemplateInput? Template,
+        int TrainingHull,
+        CapsuleerProfession DefaultProfession,
+        bool PrepareMercoxit,
         bool PrepareInstitutionalOffers
     );
 
@@ -105,6 +111,14 @@ internal sealed partial class CapsuleerScheduler
             .OfType<CapsuleerGeometry.ResourcePreparation>()
             .ToArray();
         var missing = geometry.SelectMany(capture => capture.Missing).Distinct().ToArray();
+        bool dockedWork = stationId != 0 && job.Action is CapsuleerAction.Trade or CapsuleerAction.Prepare;
+        bool mercoxit =
+            dockedWork
+            && job.Action == CapsuleerAction.Prepare
+            && !world.Settings.FreshUniverse
+            && world.Settings.Capsuleers.Miners
+            && world.Set<Eden.Data.World.Capsuleers.SavedCapsuleerAgent>().Find(job.PilotId) is { Slot: 0 } miner
+            && miner.CommunitySystemId == system;
         return new(
             job,
             system,
@@ -129,9 +143,12 @@ internal sealed partial class CapsuleerScheduler
                     hauler?.PreparationRoute
                 )
                 : null,
-            stationId != 0
-                && (job.Action is CapsuleerAction.Trade or CapsuleerAction.Prepare)
-                && PilotMarketStore.UsesInstitutionalOffers(world)
+            dockedWork ? resident?.ShipTypeId ?? world.Ships.Find(shipId)?.TypeId ?? 0 : 0,
+            job.Action == CapsuleerAction.Prepare
+                ? CapsuleerProfession.Mining
+                : work?.CareerPlan?.Profession ?? CapsuleerProfession.Hauling,
+            mercoxit,
+            dockedWork && PilotMarketStore.UsesInstitutionalOffers(world)
         );
     }
 
@@ -175,9 +192,29 @@ internal sealed partial class CapsuleerScheduler
             {
                 using var phase = SessionPerformance.Phase("traffic.preparation");
                 using CatalogDbContext catalog = new(database.CatalogPath);
+                if (npcPopulation is not null && Volatile.Read(ref _preparedNpcCatalog) != input.Catalog)
+                {
+                    using var npcCatalog = SessionPerformance.Phase("traffic.prepareNpcCatalog");
+                    npcPopulation.WarmCatalog(database);
+                    Volatile.Write(ref _preparedNpcCatalog, input.Catalog);
+                }
                 if (input.Template is not null)
                 {
                     TrafficTemplatePreparation.Prepare(database, catalog, input.Template);
+                }
+                if (input.TrainingHull != 0)
+                {
+                    var hull = (HullClass)catalog.RequireItem(input.TrainingHull).GroupId;
+                    var profession =
+                        input.Job.Action == CapsuleerAction.Prepare
+                            ? CapsuleerProfession.Mining
+                            : CapsuleerCareerTraining.Profession(catalog, input.TrainingHull, hull) ?? input.DefaultProfession;
+                    CapsuleerCareerTraining.PrepareChoices(catalog, input.TrainingHull, profession);
+                }
+                if (input.PrepareMercoxit)
+                {
+                    using var routes = SessionPerformance.Phase("traffic.prepareMercoxitRoutes");
+                    _ = CapsuleerTrafficRoutes.MercoxitRoutes(catalog.Definitions);
                 }
                 foreach (int system in input.Systems)
                 {

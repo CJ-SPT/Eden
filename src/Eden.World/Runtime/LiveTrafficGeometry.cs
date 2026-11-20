@@ -70,7 +70,19 @@ internal sealed class LiveTrafficGeometry
                     _systems.Clear();
                     _belts.Clear();
                 }
-                else if (change.Table == "WorldBeltRenewal" || change.Table == "WorldAsteroid" && !MissionMiningRules.IsDeposit(change.Id))
+                else if (
+                    change.Table == "WorldAsteroidGeometry"
+                    && change.System is int changedSystem
+                    && !MissionMiningRules.IsDeposit(change.Id)
+                )
+                {
+                    Revision++;
+                    _systems.Remove(changedSystem);
+                }
+                else if (
+                    change.Table == "WorldBeltRenewal"
+                    || change.Table == "WorldAsteroid" && !change.Resident && !MissionMiningRules.IsDeposit(change.Id)
+                )
                 {
                     Revision++;
                     long belt =

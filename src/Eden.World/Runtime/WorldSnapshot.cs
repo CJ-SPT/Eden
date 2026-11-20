@@ -40,8 +40,11 @@ internal sealed class WorldSnapshot(
     internal TimeSpan MaximumCopyPause => maximumCopyPause;
     internal int CopySteps => copySteps;
     internal long ProjectionAllocatedBytes { get; private set; }
+    internal IReadOnlyList<WorldTableProjection>? ProjectionTables { get; private set; }
 
-    internal TimeSpan Project()
+    internal TimeSpan Project() => Project(measure: false);
+
+    internal TimeSpan Project(bool measure)
     {
         long started = Stopwatch.GetTimestamp();
         long allocated = GC.GetAllocatedBytesForCurrentThread();
@@ -62,17 +65,34 @@ internal sealed class WorldSnapshot(
             {
                 using WorldDbContext world = new(database);
                 using var transaction = world.Database.BeginTransaction();
-                economy?.Apply(world);
-                combat?.Apply(world);
-                heat?.Apply(world);
-                tractors?.Apply(world);
-                Eden.World.Capsuleers.MinerCheckpoint.Apply(world, miners ?? []);
-                Eden.World.Capsuleers.HaulerCheckpoint.Apply(world, haulers ?? []);
-                jobs?.Apply(world);
+                var metrics = measure ? new WorldProjectionMetrics() : null;
+                economy?.Apply(world, metrics);
+                combat?.Apply(world, metrics);
+                using (metrics?.Measure("WorldShipHeat", heat?.Ships.Count ?? 0))
+                {
+                    heat?.Apply(world);
+                }
+                using (metrics?.Measure("WorldPosition (tractors)", tractors?.Positions.Count ?? 0))
+                {
+                    tractors?.Apply(world);
+                }
+                using (metrics?.Measure("WorldCapsuleerCommunity", miners?.Count ?? 0))
+                {
+                    Eden.World.Capsuleers.MinerCheckpoint.Apply(world, miners ?? []);
+                }
+                using (metrics?.Measure("WorldCapsuleerHauler", haulers?.Count ?? 0))
+                {
+                    Eden.World.Capsuleers.HaulerCheckpoint.Apply(world, haulers ?? []);
+                }
+                using (metrics?.Measure("WorldCapsuleerJob", jobs?.Jobs.Count ?? 0))
+                {
+                    jobs?.Apply(world);
+                }
                 routines?.Apply(world);
                 activity?.Apply(world);
                 mapStatistics?.Apply(world);
                 transaction.Commit();
+                ProjectionTables = metrics?.Tables;
             }
             return Stopwatch.GetElapsedTime(started);
         }

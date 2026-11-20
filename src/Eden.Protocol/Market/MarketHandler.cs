@@ -125,9 +125,11 @@ internal sealed class MarketHandler(
                         "GetSystemAsks" => MarketScope.System,
                         _ => MarketScope.Region,
                     };
-                    return new BlueMap<long, MarketOrderRow>(
-                        market.BestAsks(context.Pilot.PilotId, scope).ToDictionary(o => (long)o.TypeId, o => Row(o))
-                    );
+                    var asks = market.BestAsks(context.Pilot.PilotId, scope);
+                    using (Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("market.summaryRows"))
+                    {
+                        return new BlueMap<long, MarketOrderRow>(asks.ToDictionary(o => (long)o.TypeId, o => Row(o)));
+                    }
                 case "GetCharOrders" when args.Length == 0:
                     return Rows(personal.PersonalOrders(context.Pilot.PilotId));
                 case "GetMarketOrderHistory" when args.Length == 0:

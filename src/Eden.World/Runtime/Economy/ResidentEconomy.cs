@@ -19,13 +19,15 @@ internal sealed record EconomyCheckpoint(IReadOnlyList<IEconomyProjection> Table
 {
     internal int Count => Tables.Sum(t => t.Count) + Sequences.Count;
 
-    internal void Apply(WorldDbContext world)
+    internal void Apply(WorldDbContext world, WorldProjectionMetrics? metrics = null)
     {
         world.Database.ExecuteSqlRaw("PRAGMA defer_foreign_keys=ON");
         foreach (var table in Tables)
         {
+            using var measurement = metrics?.Measure(table.Table, table.Count);
             table.Apply(world);
         }
+        using var sequenceMeasurement = metrics?.Measure("sqlite_sequence", Sequences.Count);
         foreach (var sequence in Sequences)
         {
             world.Database.ExecuteSql($"UPDATE sqlite_sequence SET seq=MAX(seq,{sequence.Value}) WHERE name={sequence.Name}");

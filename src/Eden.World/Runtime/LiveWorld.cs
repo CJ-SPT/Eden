@@ -29,7 +29,8 @@ internal sealed record WorldCheckpoint(
     long WriteAllocatedBytes = 0,
     long CopyBytes = 0,
     TimeSpan MaximumCopyPause = default,
-    int CopySteps = 1
+    int CopySteps = 1,
+    IReadOnlyList<WorldTableProjection>? ProjectionTables = null
 );
 
 // The resident relational image preserves the existing transaction, constraint and trigger rules.
@@ -82,6 +83,17 @@ internal sealed partial class LiveWorld : IDisposable
     internal LiveTractors Tractors => Current.Tractors;
     internal Eden.World.Capsuleers.CapsuleerActivity CapsuleerActivity { get; }
     internal bool MeasureCheckpoints { get; set; }
+    internal bool MeasureBotReplay { get; set; }
+    internal ConcurrentDictionary<string, long> NpcPopulationCounts { get; } = new(StringComparer.Ordinal);
+
+    internal void CountNpcPopulation(string reason, int count = 1)
+    {
+        if (MeasureBotReplay && count != 0)
+        {
+            NpcPopulationCounts.AddOrUpdate(reason, count, (_, previous) => previous + count);
+        }
+    }
+
     internal LiveMarketSummaries MarketSummaries { get; } = new();
     internal LiveOwnerDirectory OwnerDirectory { get; }
     internal LiveTrafficGeometry TrafficGeometry { get; } = new();
@@ -771,7 +783,7 @@ internal sealed partial class LiveWorld : IDisposable
             {
                 return null;
             }
-            var projection = snapshot.Project();
+            var projection = snapshot.Project(MeasureCheckpoints);
             long started = Stopwatch.GetTimestamp();
             long allocated = GC.GetAllocatedBytesForCurrentThread();
             _persist(snapshot.Database, _path);
@@ -794,7 +806,8 @@ internal sealed partial class LiveWorld : IDisposable
                 writeAllocated,
                 snapshot.CopyBytes,
                 snapshot.MaximumCopyPause,
-                snapshot.CopySteps
+                snapshot.CopySteps,
+                snapshot.ProjectionTables
             );
             using (Acquire())
             {

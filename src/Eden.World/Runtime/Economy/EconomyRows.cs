@@ -173,14 +173,14 @@ internal sealed partial class ResidentEconomy
     {
         foreach (var batch in changes.Chunk(ProjectionBatchSize))
         {
-            var removed = batch.Where(c => c.Value is null).Select(c => c.Key).ToArray();
+            var removed = batch.Where(c => c.Value is null).Select(c => c.Key.Id).ToArray();
             if (removed.Length != 0)
             {
                 string deleted = JsonSerializer.Serialize(removed);
                 world.Database.ExecuteSql(
                     $"""
                     DELETE FROM WorldPosition
-                    WHERE EXISTS (SELECT 1 FROM json_each({deleted}) WHERE WorldPosition.ShipId=json_extract(value,'$.Id'))
+                    WHERE ShipId IN (SELECT value FROM json_each({deleted}))
                     """
                 );
             }
@@ -223,13 +223,13 @@ internal sealed partial class ResidentEconomy
     {
         foreach (var batch in changes.Chunk(ProjectionBatchSize))
         {
-            var removed = batch.Where(c => c.Value is null).Select(c => c.Key).ToArray();
+            var removed = batch.Where(c => c.Value is null).Select(c => c.Key.Id).ToArray();
             if (removed.Length != 0)
             {
                 string deleted = JsonSerializer.Serialize(removed);
                 world.Database.ExecuteSql(
                     $"""
-                    DELETE FROM WorldItem WHERE EXISTS (SELECT 1 FROM json_each({deleted}) WHERE WorldItem.Id=json_extract(value,'$.Id'))
+                    DELETE FROM WorldItem WHERE Id IN (SELECT value FROM json_each({deleted}))
                     """
                 );
             }
@@ -1617,7 +1617,7 @@ internal sealed partial class ResidentEconomy
                 reader => new(reader.GetInt64(1), reader.GetInt64(2), reader.GetDouble(3)),
                 state => new(state.PilotId, state.SourceId),
                 readOnly: false,
-                indexes: [new("PilotId", row => row.PilotId)],
+                indexes: [new("PilotId", row => row.PilotId), new("SourceId", row => row.SourceId)],
                 primaryColumn: null
             )
         );

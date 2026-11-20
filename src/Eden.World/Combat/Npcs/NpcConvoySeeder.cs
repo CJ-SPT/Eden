@@ -24,21 +24,15 @@ internal sealed class NpcConvoySeeder(NpcConvoyCatalog profiles)
             return;
         }
         var stations = catalog.StationsInSystem(systemId).Where(station => catalog.FittingType(station.TypeId) is not null).ToArray();
-        var obstacles = NpcGuardSeeder.CatalogObstacles(catalog, systemId);
-        obstacles.AddRange(stations.Select(s => new NpcGuardObstacle(new(s.X, s.Y, s.Z), catalog.FittingType(s.TypeId)?.Radius ?? 0)));
-        // Include newly seeded, tracked guard encounters as well as saved ones.
-        _ = world.Filter<WorldNpcEncounter>(e => e.SystemId == systemId && e.Role == NpcRole.Navy).ToArray();
-        obstacles.AddRange(
-            world
-                .Set<WorldNpcEncounter>()
-                .Local.Where(e => e.SystemId == systemId && e.Role == NpcRole.Navy)
-                .Select(e => new NpcGuardObstacle(
-                    new(e.HomeX, e.HomeY, e.HomeZ),
-                    NpcGuardRules.PatrolRadius + NpcGuardRules.FormationMargin
-                ))
-        );
+        IReadOnlyList<NpcGuardObstacle>? obstacles = null;
         foreach (var station in stations)
         {
+            long id = NpcConvoyRules.EncounterId(station.Id);
+            var encounter = world.Set<WorldNpcEncounter>().Find(id);
+            if (encounter is not null && (encounter.NextSpawnAt is not long next || now < next))
+            {
+                continue;
+            }
             var owner = catalog.Read(CatalogData.Client.Npccorporations, (long)station.OwnerId);
             if (
                 owner?.FactionID is not long faction
@@ -54,8 +48,6 @@ internal sealed class NpcConvoySeeder(NpcConvoyCatalog profiles)
             {
                 continue;
             }
-            long id = NpcConvoyRules.EncounterId(station.Id);
-            var encounter = world.Set<WorldNpcEncounter>().Find(id);
             if (encounter is null)
             {
                 encounter = new()
@@ -92,7 +84,7 @@ internal sealed class NpcConvoySeeder(NpcConvoyCatalog profiles)
                 catalog.FittingType(station.TypeId)?.Radius ?? 0,
                 pool.Max(p => p.Radius),
                 StationUndockCatalog.Read(catalog, station.TypeId),
-                obstacles
+                obstacles ??= RouteObstacles(world, catalog, systemId)
             );
             if (route is null)
             {
@@ -138,5 +130,22 @@ internal sealed class NpcConvoySeeder(NpcConvoyCatalog profiles)
             // retired/killed, the same persisted field schedules the next group.
             encounter.NextSpawnAt = checked(now + (long)duration * TimeSpan.TicksPerSecond);
         }
+    }
+
+    private static IReadOnlyList<NpcGuardObstacle> RouteObstacles(WorldAction world, CatalogDbContext catalog, int systemId)
+    {
+        // Include newly seeded, tracked guard encounters as well as saved ones.
+        _ = world.Filter<WorldNpcEncounter>(e => e.SystemId == systemId && e.Role == NpcRole.Navy).ToArray();
+        return
+        [
+            .. NpcGuardSeeder.CatalogObstacles(catalog, systemId),
+            .. world
+                .Set<WorldNpcEncounter>()
+                .Local.Where(e => e.SystemId == systemId && e.Role == NpcRole.Navy)
+                .Select(e => new NpcGuardObstacle(
+                    new(e.HomeX, e.HomeY, e.HomeZ),
+                    NpcGuardRules.PatrolRadius + NpcGuardRules.FormationMargin
+                )),
+        ];
     }
 }

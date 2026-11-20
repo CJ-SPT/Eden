@@ -17,6 +17,7 @@ public sealed partial class ServerPerformanceReplayTests
 {
     private const int LatencyWarmupSeconds = 30;
     private const int MaximumVisitPhases = 64;
+    private static readonly HashSet<long> s_slowTradePilots = [90000016, 90001841, 90007109];
 
     // Pilots identified in the maintainer's November 10 traffic-owner capture.
     private static readonly long[] LatencyReportedPilots =
@@ -167,6 +168,8 @@ public sealed partial class ServerPerformanceReplayTests
             var diagnostics = host.GetRequiredService<ICapsuleerDiagnostics>();
             var live = host.GetRequiredService<LiveWorld>();
             live.MeasureCheckpoints = true;
+            live.MeasureBotReplay = true;
+            live.TrafficActions.ReportedTradePilots = s_slowTradePilots;
             using var ownershipObservation = live.ObserveOwnership(timing =>
             {
                 if (timing.Hold.TotalMilliseconds >= 25 || timing.Wait.TotalMilliseconds >= 25)
@@ -244,6 +247,8 @@ public sealed partial class ServerPerformanceReplayTests
                     ? sql => sqlCalls.AddOrUpdate(sql, key => (1, Environment.StackTrace), (_, value) => (value.Count + 1, value.Stack))
                     : null
             );
+            long completedAtStart = diagnostics.Read().CompletedActions;
+            int generation2AtStart = GC.CollectionCount(2);
             maintenance.Start();
             var populationMaintenance = host.GetRequiredService<CapsuleerPopulationMaintenance>();
             if (Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_PREPARATION") == "1")
@@ -252,6 +257,7 @@ public sealed partial class ServerPerformanceReplayTests
             }
             TimeSpan startedCpu = Process.GetCurrentProcess().TotalProcessorTime;
             long startedAllocations = GC.GetTotalAllocatedBytes();
+            long timedAllocations = 0;
             long arrivalsStarted = Stopwatch.GetTimestamp();
             Stopwatch elapsed = Stopwatch.StartNew();
             ConcurrentQueue<ThroughputRequest> requests = new();
@@ -315,11 +321,17 @@ public sealed partial class ServerPerformanceReplayTests
             long previousCompleted = 0;
             int previousDue = diagnostics.Read().DueJobs;
             double previousSeconds = 0;
+            IReadOnlyList<CapsuleerCareerQueue> previousCareers = [];
+            TimeSpan waitAtStart = maintenance.WorkerWait;
             List<double> finalDelays = [];
             while (elapsed.Elapsed.TotalSeconds < seconds)
             {
                 await Task.Delay(TimeSpan.FromSeconds(1));
                 var state = diagnostics.Read();
+                var blockingCollection = GC.GetGCMemoryInfo(GCKind.FullBlocking);
+                var backgroundCollection = GC.GetGCMemoryInfo(GCKind.Background);
+                var fullCollection = blockingCollection.Index > backgroundCollection.Index ? blockingCollection : backgroundCollection;
+                timedAllocations = GC.GetTotalAllocatedBytes() - startedAllocations;
                 double delay = TimeSpan.FromTicks(state.OldestDelayTicks).TotalMilliseconds;
                 if (delay < 1000)
                 {
@@ -333,7 +345,7 @@ public sealed partial class ServerPerformanceReplayTests
                     new
                     {
                         Seconds = elapsed.Elapsed.TotalSeconds,
-                        AllocatedBytes = GC.GetTotalAllocatedBytes() - startedAllocations,
+                        AllocatedBytes = timedAllocations,
                         state.ScheduledAgents,
                         state.DueJobs,
                         OldestMilliseconds = delay,
@@ -344,12 +356,32 @@ public sealed partial class ServerPerformanceReplayTests
                         EstimatedDueArrivalsPerSecond = (state.CompletedActions - previousCompleted + state.DueJobs - previousDue)
                             / Math.Max(0.001, elapsed.Elapsed.TotalSeconds - previousSeconds),
                         state.Failures,
+                        CareerQueue = state
+                            .Careers.Select(career =>
+                            {
+                                var previous = previousCareers.FirstOrDefault(entry => entry.Career == career.Career);
+                                return new
+                                {
+                                    career.Career,
+                                    career.Due,
+                                    career.Completed,
+                                    EstimatedNewlyDue = previous is null
+                                        ? 0
+                                        : career.Completed - previous.Completed + career.Due - previous.Due,
+                                };
+                            })
+                            .ToArray(),
+                        WorkerWaitMilliseconds = (maintenance.WorkerWait - waitAtStart).TotalMilliseconds,
+                        Generation2Collections = GC.CollectionCount(2) - generation2AtStart,
+                        LastFullCollectionIndex = fullCollection.Index,
+                        BytesAfterFullCollection = fullCollection.HeapSizeBytes - fullCollection.FragmentedBytes,
                         Runtime = state,
                     }
                 );
                 previousCompleted = state.CompletedActions;
                 previousDue = state.DueJobs;
                 previousSeconds = elapsed.Elapsed.TotalSeconds;
+                previousCareers = state.Careers;
                 File.AppendAllText(
                     progress,
                     $"seconds={elapsed.Elapsed.TotalSeconds:F1} scheduled={state.ScheduledAgents} "
@@ -386,6 +418,8 @@ public sealed partial class ServerPerformanceReplayTests
                         ColdSamples = cold,
                         Visits = visits,
                         Checkpoints = checkpointReports.DistinctBy(checkpoint => checkpoint.CompletedAt).ToArray(),
+                        NpcPopulation = live.NpcPopulationCounts.ToArray(),
+                        ReportedTrades = live.TrafficActions.ReportedTrades,
                         Samples = samples,
                         Requests = requests,
                         Ownership = ownership,
@@ -394,6 +428,7 @@ public sealed partial class ServerPerformanceReplayTests
                         Communities = communities,
                         CpuMilliseconds = (Process.GetCurrentProcess().TotalProcessorTime - startedCpu).TotalMilliseconds,
                         AllocatedBytes = GC.GetTotalAllocatedBytes() - startedAllocations,
+                        BytesPerCompletedAction = timedAllocations / (double)Math.Max(1, previousCompleted - completedAtStart),
                     }
                 )
             );

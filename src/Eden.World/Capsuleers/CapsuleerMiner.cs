@@ -483,16 +483,18 @@ internal sealed partial class CapsuleerMiner(
         {
             return false;
         }
-        var visible = encounters
-            .Advance(Pilot.SystemId, Now)
-            .Where(n => !n.Warping && n.Position.DistanceTo(Pilot.Position) <= AsteroidDefinitions.VisibilityRange)
-            .Select(n => n.Id)
-            .ToHashSet();
+        var contacts = encounters.Advance(Pilot.SystemId, Now);
+        var position = Pilot.Position;
+        bool InSight(NpcSimulationContact npc) => !npc.Warping && npc.Position.DistanceTo(position) <= AsteroidDefinitions.VisibilityRange;
         combat.Acquire([new(Pilot.PilotId, Pilot.ShipId)], Now);
         warfare.Advance(Pilot.PilotId, Pilot.ShipId, Now);
         var attackers = combat.Aggressors(Pilot.ShipId);
-        foreach (long npc in attackers.Where(visible.Contains))
+        foreach (long npc in attackers)
         {
+            if (!contacts.Any(contact => contact.Id == npc && InSight(contact)))
+            {
+                continue;
+            }
             var shot = combat.Fire(
                 Pilot.PilotId,
                 Pilot.ShipId,
@@ -516,7 +518,7 @@ internal sealed partial class CapsuleerMiner(
                 return true;
             }
         }
-        return visible.Count > 0 || attackers.Count > 0;
+        return attackers.Count > 0 || contacts.Any(InSight);
     }
 
     private void Load()

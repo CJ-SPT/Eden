@@ -275,10 +275,11 @@ internal sealed partial class NpcMiningSeeder(NpcMiningCatalog profiles)
         {
             return;
         }
-        var hostiles = world
-            .Filter<SavedNpcStanding>(s => s.SourceId == operation.CorporationId && s.Value <= NpcMiningRules.HostileStanding)
-            .Select(s => s.PilotId)
-            .ToArray();
+        var hostiles = NpcPopulationSchedule.HostilePilots(world, operation.CorporationId).ToArray();
+        if (hostiles.Length == 0)
+        {
+            return;
+        }
         var positions = world
             .Filter<Pilot>(p => Enumerable.Contains(hostiles, p.Id))
             .Where(p => p.ActiveShip.Position != null)

@@ -13,9 +13,12 @@ internal readonly record struct NpcPopulationMember(
     NpcAnchorKind AnchorKind,
     NpcRole Role,
     long? DestroyedAt,
-    long? RetiredAt
+    long? RetiredAt,
+    NpcNavigationState Navigation
 )
 {
+    internal bool Active => DestroyedAt is null && RetiredAt is null;
+
     internal static IEnumerable<NpcPopulationMember> InSystem(WorldAction world, int system) =>
         world.Set<WorldNpc>() is EconomySet<WorldNpc, EconomyWorldNpc> npcs
             ? Read(npcs.IndexedSnapshots(nameof(WorldNpc.SystemId), system).Where(n => n.SystemId == system))
@@ -36,7 +39,8 @@ internal readonly record struct NpcPopulationMember(
             n.AnchorKind,
             n.Role,
             n.DestroyedAt,
-            n.RetiredAt
+            n.RetiredAt,
+            n.Navigation
         ));
 
     private static IQueryable<NpcPopulationMember> Read(IQueryable<WorldNpc> source) =>
@@ -49,6 +53,7 @@ internal readonly record struct NpcPopulationMember(
             n.AnchorKind,
             n.Role,
             n.DestroyedAt,
-            n.RetiredAt
+            n.RetiredAt,
+            n.Navigation
         ));
 }

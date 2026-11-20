@@ -23,24 +23,51 @@ internal sealed partial class LiveCombatRuntime
 {
     private readonly NpcProfileCatalog _simulationProfiles = new();
     private readonly ResidentMap<int, long[]> _systemNpcs = [];
+    private readonly ResidentMap<int, IReadOnlyList<NpcSimulationContact>> _simulationContacts = [];
     private readonly ResidentMap<int, long> _populationDue = [];
     private int? _populationRefreshSystem;
 
+    private void InvalidatePopulationDeadline(int system, string reason)
+    {
+        if (_populationDue.Remove(system))
+        {
+            owner.CountNpcPopulation(reason);
+        }
+    }
+
+    private void InvalidatePopulationDeadlines(string reason)
+    {
+        owner.CountNpcPopulation(reason, _populationDue.Count);
+        _populationDue.Clear();
+    }
+
     private static bool IsPublicAsteroidChange(CombatRowChange change) =>
-        change.Table == "WorldAsteroid" && !MissionMiningRules.IsDeposit(change.Id);
+        (change.Table == "WorldAsteroidGeometry" || change.Table == "WorldAsteroid" && !change.Resident)
+        && !MissionMiningRules.IsDeposit(change.Id);
 
     private void ObserveAsteroidPopulation(IReadOnlyCollection<CombatRowChange> changes)
     {
-        if (_populationDue.Count == 0)
+        if (_populationDue.Count == 0 || !database.Settings.NpcPopulation.Mining)
         {
             return;
         }
         if (_populationRefreshSystem is { } scoped)
         {
-            _populationDue.Remove(scoped);
+            InvalidatePopulationDeadline(scoped, "asteroid");
             return;
         }
-        var ids = changes.Where(IsPublicAsteroidChange).Select(change => change.Id).ToArray();
+        foreach (var change in changes)
+        {
+            if (change.Table == "WorldAsteroidGeometry" && IsPublicAsteroidChange(change) && change.System is int knownSystem)
+            {
+                InvalidatePopulationDeadline(knownSystem, "asteroid");
+            }
+        }
+        var ids = changes.Where(change => !change.Resident && IsPublicAsteroidChange(change)).Select(change => change.Id).ToArray();
+        if (ids.Length == 0)
+        {
+            return;
+        }
         var systems =
             owner.Economy.IsLoaded || changes.Any(c => c.Resident)
                 ? ids.Select(id => owner.Economy.Peek<WorldAsteroid>(id)?.SystemId).OfType<int>().ToArray()
@@ -52,21 +79,22 @@ internal sealed partial class LiveCombatRuntime
         if (systems.Length != ids.Length)
         {
             // Deleted identities have no remaining location; retain conservative invalidation.
-            _populationDue.Clear();
+            InvalidatePopulationDeadlines("asteroid removed");
         }
         else
         {
             foreach (int system in systems.Distinct())
             {
-                _populationDue.Remove(system);
+                InvalidatePopulationDeadline(system, "asteroid");
             }
         }
     }
 
-    private void InvalidatePopulation(int system)
+    private void InvalidatePopulation(int system, string reason)
     {
-        _populationDue.Remove(system);
+        InvalidatePopulationDeadline(system, reason);
         _systemNpcs.Remove(system);
+        _simulationContacts.Remove(system);
         _contacts.Remove(system);
         _npcSceneIndices.Remove(system);
         foreach (var key in _guardGroups.Keys.Where(k => k.System == system).ToArray())
@@ -75,16 +103,16 @@ internal sealed partial class LiveCombatRuntime
         }
     }
 
-    private void ObserveNpcPopulation(long id, bool resident = false)
+    private void ObserveNpcPopulation(long id, string reason, bool resident)
     {
         if (_populationRefreshSystem is { } scoped)
         {
-            InvalidatePopulation(scoped);
+            InvalidatePopulation(scoped, reason);
             return;
         }
         if (_npcs.TryGetValue(id, out var previous))
         {
-            InvalidatePopulation(previous.SystemId);
+            InvalidatePopulation(previous.SystemId, reason);
         }
         int? current =
             resident || owner.Economy.IsLoaded
@@ -96,15 +124,15 @@ internal sealed partial class LiveCombatRuntime
                 });
         if (current is int system)
         {
-            InvalidatePopulation(system);
+            InvalidatePopulation(system, reason);
         }
     }
 
-    private void ObserveEncounterPopulation(long id, bool resident = false)
+    private void ObserveEncounterPopulation(long id, string reason, bool resident)
     {
         if (_populationRefreshSystem is { } scoped)
         {
-            InvalidatePopulation(scoped);
+            InvalidatePopulation(scoped, reason);
             return;
         }
         int? current =
@@ -117,7 +145,7 @@ internal sealed partial class LiveCombatRuntime
                 });
         if (current is int system)
         {
-            InvalidatePopulation(system);
+            InvalidatePopulation(system, reason);
         }
     }
 
@@ -142,17 +170,15 @@ internal sealed partial class LiveCombatRuntime
         {
             _ = DroneControllers();
             ids = Loading(() =>
-            {
-                return owner.Economy.Inspect(world =>
-                    world
-                        .Set<WorldNpc>()
-                        .Where(n => n.SystemId == system && n.DestroyedAt == null && n.RetiredAt == null)
-                        .OrderBy(n => n.Id)
-                        .Select(n => n.Id)
-                        .ToArray()
-                );
-            });
+                owner.Economy.Inspect(world =>
+                    NpcPopulationMember.InSystem(world, system).Where(n => n.Active).Select(n => n.Id).Order().ToArray()
+                )
+            );
             _systemNpcs[system] = ids;
+        }
+        if (ids.Length == 0)
+        {
+            return [];
         }
         LoadNpcs(ids.Where(id => !_npcs.ContainsKey(id) || _staleNpcs.Contains(id)).ToArray(), now);
         return ids.Select(id => Npc(id, now)).OfType<LiveCombatNpc>().Where(n => n.Available && n.SystemId == system).ToArray();
@@ -442,8 +468,10 @@ internal sealed partial class LiveCombatRuntime
 
     private LiveCombatNpc[] AdvanceSimulationNpcs(int system, long now, Func<long> refreshPopulation)
     {
-        if (!_populationDue.TryGetValue(system, out long due) || now >= due)
+        bool scheduled = _populationDue.TryGetValue(system, out long due);
+        if (!scheduled || now >= due)
         {
+            owner.CountNpcPopulation(scheduled ? "deadline reached" : "deadline missing");
             int? previousScope = _populationRefreshSystem;
             _populationRefreshSystem = system;
             try
@@ -454,9 +482,12 @@ internal sealed partial class LiveCombatRuntime
             {
                 _populationRefreshSystem = previousScope;
             }
-            _systemNpcs.Remove(system);
         }
         var npcs = SystemNpcs(system, now);
+        if (npcs.Length == 0)
+        {
+            return npcs;
+        }
         var effective = database.MotionStamps.ContainsKey(system) ? null : Effective(npcs);
         var aggression = Aggression();
         for (int index = 0; index < npcs.Length; index++)
@@ -501,9 +532,32 @@ internal sealed partial class LiveCombatRuntime
             return null;
         }
         Trim();
-        return AdvanceSimulationNpcs(system, now, refreshPopulation)
-            .Select(n => new NpcSimulationContact(n.Id, n.Position, n.Transit is not null))
-            .ToArray();
+        var npcs = AdvanceSimulationNpcs(system, now, refreshPopulation);
+        if (npcs.Length == 0)
+        {
+            return [];
+        }
+        if (_simulationContacts.TryGetValue(system, out var contacts) && contacts.Count == npcs.Length)
+        {
+            int matching = 0;
+            while (matching < npcs.Length)
+            {
+                var npc = npcs[matching];
+                var contact = contacts[matching];
+                if (contact.Id != npc.Id || contact.Position != npc.Position || contact.Warping != (npc.Transit is not null))
+                {
+                    break;
+                }
+                matching++;
+            }
+            if (matching == npcs.Length)
+            {
+                return contacts;
+            }
+        }
+        contacts = Array.AsReadOnly(npcs.Select(n => new NpcSimulationContact(n.Id, n.Position, n.Transit is not null)).ToArray());
+        _simulationContacts[system] = contacts;
+        return contacts;
     }
 
     internal void ReleaseObserverContacts(int system)
@@ -702,7 +756,8 @@ internal sealed partial class LiveCombatRuntime
     {
         _acquisitionShips.Clear();
         _systemNpcs.Clear();
-        _populationDue.Clear();
+        _simulationContacts.Clear();
+        InvalidatePopulationDeadlines("runtime reset");
         _effectiveNpcs.Clear();
         if (!retainPositions)
         {

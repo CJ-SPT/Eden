@@ -52,6 +52,13 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
     internal static IReadOnlyList<int> Ships(CatalogDbContext catalog, CapsuleerProfession profession) =>
         catalog.Definition(s_ships, (int)profession);
 
+    internal static void PrepareChoices(CatalogDbContext catalog, int hull, CapsuleerProfession profession)
+    {
+        using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.prepareCareerChoices");
+        _ = catalog.Definition(s_careerHullStages, hull);
+        _ = catalog.Definition(s_careerChoices, (int)profession);
+    }
+
     internal CapsuleerTrainingTurn Advance(
         EconomyTransaction world,
         CatalogDbContext catalog,

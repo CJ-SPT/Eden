@@ -2,6 +2,8 @@ namespace Eden.Gameplay.Capsuleers;
 
 public sealed record CapsuleerBlockingReason(string Reason, int Agents);
 
+public sealed record CapsuleerCareerQueue(CapsuleerCareer Career, int Due, long Completed);
+
 public sealed record CapsuleerRuntimeSummary(
     CapsuleerPopulationSummary Population,
     int KnownSystems,
@@ -23,6 +25,7 @@ public sealed record CapsuleerRuntimeSummary(
     public TimeSpan LastSimulation => LastUpdate > LastPresentation ? LastUpdate - LastPresentation : TimeSpan.Zero;
     public long BudgetOverruns { get; init; }
     public TimeSpan MaximumTurnOverrun { get; init; }
+    public IReadOnlyList<CapsuleerCareerQueue> Careers { get; init; } = [];
 
     public static CapsuleerRuntimeSummary Empty { get; } = new(new(0, 0, 0, 0, 0), 0, 0, 0, 0, 0, 0, 0, TimeSpan.Zero, [], null);
 }

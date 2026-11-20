@@ -42,7 +42,7 @@ public sealed class MarketSummaryPerformanceTests(ITestOutputHelper output)
             summaries.Publish(new(pilot, ship, station, system, region, orders, 10, 10), MarketScope.Region, 1, settings, 0, 0);
             Assert.True(summaries.TryRead(pilot, MarketScope.Region, 1, settings, 0, 0, out var cached));
             Assert.Same(orders, cached);
-            summaries.Observe([new("WorldMarketOrder", orders[0].Id)], [new(station, system, region, Bid: false)]);
+            summaries.Observe([new("WorldMarketMembership", orders[0].Id)], null);
             Assert.False(summaries.TryRead(pilot, MarketScope.Region, 1, settings, 0, 0, out _));
             return new(orders);
         }
@@ -149,6 +149,26 @@ public sealed class MarketSummaryPerformanceTests(ITestOutputHelper output)
         );
         Assert.Equal(first.Count, wire.Count);
         Assert.Equal(BlueMarshal.Encode(MarketWire.Row(seeded[firstType])), BlueMarshal.Encode(wire[firstType]));
+
+        var live = fixture.Services.GetRequiredService<LiveWorld>();
+        using (var sale = live.Economy.Begin(TransactionParticipants.None))
+        {
+            var expensive = sale.Set<NpcMarketOrder>().Single(o => o.TypeId == firstType && o.StationId == pilot.StationId);
+            expensive.Remaining--;
+            sale.Commit();
+        }
+        Assert.Same(first, market.BestAsks(pilot.PilotId, MarketScope.Region));
+        using (var reprice = live.Economy.Begin(TransactionParticipants.None))
+        {
+            var expensive = reprice.Set<NpcMarketOrder>().Single(o => o.TypeId == firstType && o.StationId == pilot.StationId);
+            expensive.PriceCents = 50;
+            reprice.Commit();
+        }
+        var repriced = market.BestAsks(pilot.PilotId, MarketScope.Region);
+        var newBest = Assert.Single(repriced, order => order.TypeId == firstType);
+        Assert.Equal(50, newBest.PriceCents);
+        Assert.Equal(4, newBest.Remaining);
+        Assert.Equal(first.Where(o => o.TypeId != firstType), repriced.Where(o => o.TypeId != firstType));
 
         void RecordSample(PerformanceSample sample)
         {

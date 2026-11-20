@@ -11,11 +11,31 @@ namespace Eden.World.Combat.Npcs;
 
 internal static class NpcPopulationSchedule
 {
+    internal static IEnumerable<long> HostilePilots(WorldAction world, long corporation) =>
+        world.Set<SavedNpcStanding>() is EconomySet<SavedNpcStanding, EconomySavedNpcStanding> resident
+            ? resident
+                .IndexedSnapshots(nameof(SavedNpcStanding.SourceId), corporation)
+                .Where(s => s.SourceId == corporation && s.Value <= NpcMiningRules.HostileStanding)
+                .Select(s => s.PilotId)
+            : world
+                .Filter<SavedNpcStanding>(s => s.SourceId == corporation && s.Value <= NpcMiningRules.HostileStanding)
+                .Select(s => s.PilotId);
+
     internal static long Next(WorldDbContext world, int system, long now) => Next(new SqlWorldAction(world), system, now);
 
     internal static long Next(WorldAction world, int system, long now)
     {
-        var encounters = world.Filter<WorldNpcEncounter>(e => e.SystemId == system).ToArray();
+        var encounters = world.Set<WorldNpcEncounter>() is EconomySet<WorldNpcEncounter, EconomyWorldNpcEncounter> resident
+            ? resident
+                .IndexedSnapshots(nameof(WorldNpcEncounter.SystemId), system)
+                .Where(e => e.SystemId == system)
+                .Select(e => new EncounterDeadline(e.Id, e.Role, e.Occupied, e.NextSpawnAt))
+                .ToArray()
+            : world
+                .Filter<WorldNpcEncounter>(e => e.SystemId == system)
+                .AsEnumerable()
+                .Select(e => new EncounterDeadline(e.Id, e.Role, e.Occupied, e.NextSpawnAt))
+                .ToArray();
         // Guards respawn per slot. Legacy fixture pirates have no encounter row.
         var tracked = encounters.Select(e => e.Id).ToHashSet();
         // Authored anomaly and mission losses advance their own objectives. They never
@@ -48,26 +68,24 @@ internal static class NpcPopulationSchedule
         return due <= now ? checked(now + TimeSpan.TicksPerSecond) : due;
     }
 
-    private static long? CalmMiningDeadline(WorldAction world, WorldNpcEncounter encounter, long now)
+    private readonly record struct EncounterDeadline(long Id, NpcRole Role, bool Occupied, long? NextSpawnAt);
+
+    private static long? CalmMiningDeadline(WorldAction world, EncounterDeadline encounter, long now)
     {
         var operation = world.Set<WorldNpcMiningOperation>().Find(encounter.Id);
         if (
             operation is not { Stage: NpcMiningStage.Working }
             || operation.PickupAt <= now
-            || world.Set<SavedNpcStanding>().Any(s => s.SourceId == operation.CorporationId && s.Value <= NpcMiningRules.HostileStanding)
+            || HostilePilots(world, operation.CorporationId).Any()
         )
         {
             return null;
         }
-        var active = world
-            .Filter<WorldNpc>(n =>
-                n.EncounterId == encounter.Id
-                && n.DestroyedAt == null
-                && n.RetiredAt == null
-                && n.AnchorKind != NpcAnchorKind.Anomaly
-                && n.AnchorKind != NpcAnchorKind.Mission
-                && n.AnchorKind != NpcAnchorKind.GhostSite
-                && n.AnchorKind != NpcAnchorKind.Abyssal
+        var active = NpcPopulationMember
+            .AtAnchor(world, encounter.Id)
+            .Where(n =>
+                n.Active
+                && n.AnchorKind is not (NpcAnchorKind.Anomaly or NpcAnchorKind.Mission or NpcAnchorKind.GhostSite or NpcAnchorKind.Abyssal)
             )
             .ToArray();
         if (

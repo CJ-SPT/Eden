@@ -90,6 +90,41 @@ public sealed class TrafficSnapshotTests
         Assert.Empty(correction.Candidates(0, Source, 0));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CorrectionPreparesOnlyTheFirstCompatibleTier(bool leaveRegion)
+    {
+        var original = Profile();
+        var replacement = original with { CharacterId = original.CharacterId + 1, KillId = original.KillId + 1 };
+        var elsewhere = original with
+        {
+            CharacterId = original.CharacterId + 2,
+            KillId = original.KillId + 2,
+            RegionId = original.RegionId + 1,
+        };
+        TrafficSnapshot snapshot = new(null, [original, replacement, elsewhere]);
+        bool Compatible(TrafficProfile profile) => !leaveRegion || profile.RegionId != original.RegionId;
+        int Group(TrafficProfile profile) => profile.HullTypeId;
+        var prepared = snapshot.RuntimeCandidates(
+            1,
+            original.RegionId,
+            original.SecurityBand,
+            true,
+            false,
+            Compatible,
+            Group,
+            correction: true
+        );
+
+        Assert.Equal(leaveRegion ? 2 : 1, prepared.Tiers.Length);
+        for (int slot = 0; slot < 8; slot++)
+        {
+            var expected = snapshot.Candidates(0, Source, slot, original.RegionId, original.SecurityBand, Compatible, Group).First();
+            Assert.Equal(expected, prepared.Candidates(0, Source, slot).First());
+        }
+    }
+
     [Fact]
     public async Task BuildingAColdPoolDoesNotBlockAWarmedPool()
     {
