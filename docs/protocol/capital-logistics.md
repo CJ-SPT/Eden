@@ -1,0 +1,160 @@
+# Capital ships and jump logistics
+
+[Protocol index](../protocol.md) · [Ship and module completion](../feature-notes.md#ship-and-module-completion-program)
+
+Planning baseline, November 20, 2026, Eden `6898acc7`, client build **3662168**. Start with a two-pilot jump-freighter
+delivery to an industrial cynosural field. The shared travel rules from that delivery support later combat capitals,
+fleet travel, and sovereignty infrastructure.
+
+## Milestones
+
+| Milestone | Playable outcome and acceptance |
+| --- | --- |
+| **1. Jump freighters and industrial cynos** | A fleetmate lights a cyno in lowsec. A loaded jump freighter jumps from another system, docks, and unloads. The ship, cargo, fuel, capacitor and pilot timers reconcile across disconnect and checkpoint reopen. |
+| **2. Standard cynos and sovereignty navigation** | Admit standard cyno emitters and jump-freighter use of standard fields. Enable mobile beacons and inhibitors plus Pharolux beacons and Tenebrex jammers. Verify placement, warm-up, fuel and access, including the effect of a hub upgrade or jammer state change on travel. |
+| **3. Ansiblex jump gates** | Link two authorized endpoints and exercise paid access and route discovery. Prove that loss of an endpoint, access or sovereignty affects the next transfer and route read. |
+| **4. Black Ops and covert travel** | Jump a Black Ops battleship to a covert cyno and move eligible fleetmates through a paid portal. Verify recipient eligibility, costs, timers, interruption and the native fleet menus. |
+| **5. Dreadnoughts and force auxiliaries** | Jump a dreadnought and a force auxiliary to a standard cyno. Exercise paid siege, capital weapons and structure damage, then triage and lawful remote repairs. Prove dock and gate restrictions, loss settlement, and survival of paid mode deadlines on reopen. |
+| **6. Carriers and fighters** | Launch, control, recall and replace fighter squadrons from a carrier using native tubes and abilities. Verify targeting, observer updates and fighter losses. Reuse squadron rules for Standup fighters once the structure control and fitting branch is integrated. |
+| **7. Capital industry and fleet services** | Fly a Rorqual with an industrial core, Excavators, compression and P.A.N.I.C. Add supported fleet hangar, ship maintenance, refit and clone services. Exercise a real production and resupply route, then let bot haulers use the same paid jump and access operations. |
+| **8. Supercapitals and production** | Deliver the verified Keepstar/Sotiyo docking and construction rules, supercarrier and titan roles, and supported portals, superweapons and counters. Exercise construction, deployment, combat, and irreversible loss with real inputs and sovereignty requirements. |
+
+Milestone 1 can start from main while faction warfare and Upwell combat integrate. Milestone 2 needs the resident sovereignty
+upgrade state and hull-specific Upwell service rules. Milestone 5 needs the Upwell battle and destruction paths for its
+siege acceptance. Verify Ansiblex behavior against build 3662168 before choosing the policy for Milestone 3, especially
+capacitor, allowed hulls, alliance access, and the routing change after lost sovereignty.
+[Sovereignty upgrades](sovereignty.md#sovereignty-resources-and-upgrades--november-16-2026) ·
+[Upwell implementation](structures.md) · [CCP Upwell structures](https://support.eveonline.com/hc/en-us/articles/213021829-Upwell-Structures) ·
+[CCP 24.01 notes](https://www.eveonline.com/news/view/patch-notes-version-24-01)
+
+## Milestone 1 jump-freighter delivery
+
+### A route to build and verify
+
+Begin with a **Rhea and Venture**, then verify the same operation for the Ark, Anshar and Nomad and each supported emitter
+cohort. The initial two-pilot fixture uses Jita `30000142` and Jan `30001385`. The pinned `client/systems` centers put them
+**5.2682 light years** apart, inside the Rhea's **6 LY** range at Jump Drive Calibration I. Jan's raw security is **0.41695**
+and the catalog includes NPC station `60001714`. Use a Jan beacon with a clear arrival point then dock by ordinary approach.
+Load cargo separately from the correct isotope and run the stock fleet-menu or Jump Beacon broadcast path from space.
+Finish by unloading the same cargo at the Jan station. With Jump Freighters I, Jump Drive Operation V and no fuel skill
+or economizer, the provisional fixture costs are **47,413 nitrogen isotopes** and **24,937.5 GJ** on an unmodified Rhea.
+With no prior fatigue, the client formula predicts **91 seconds** of activation cooldown and **916 seconds** of fatigue
+at whole-second precision. The fixture starts with owned assets. Eden's production audit admits the industrial cyno
+blueprint `52695` and all four jump freighter recipes. Trace blueprint access, invention inputs, construction components,
+skillbooks, Liquid Ozone and ice-derived isotopes through existing acquisition paths for a fresh-world delivery.
+[Production catalog](../production-catalog.json) · [Ice and industry](industry.md)
+
+### Catalog inputs and gameplay rules
+
+| Input | Build 3662168 evidence and implication |
+| --- | --- |
+| **Industrial cyno** | Generator `52694`, group `658`, effect `2857` (`cynosuralGeneration`) creates Industrial Cynosural Field `52696`, group `2020`. The module declares 600,000 ms duration, one active in group, 500 m/s activation limit, and 5,000 m spawn radius. It consumes 800 Liquid Ozone (`16273`) before bonuses and requires Cynosural Field Theory I (`21603`). It declares no early deactivation, activation during warp, docking or tethering. |
+| **Emitter hulls** | Module fitting allows hauler group `28`, blockade runner `1202`, deep space transport `380`, Venture `32880` and Venture Consortium Issue `89648`. Both Ventures carry the 50% ozone modifier. Verify its combination with the skill modifier and admit hulls where their other role checks pass. |
+| **Jump freighters** | Group `902`, base range 5 LY (`867`), jump capacitor fraction 0.95 (`898`), fatigue distance multiplier 0.1 (`1971`), 12,000 m³ fuel bay (`1549`). Rhea `28844` uses nitrogen at 10,000 units/LY, Nomad `28846` hydrogen at 8,200, Anshar `28848` oxygen at 9,400, Ark `28850` helium at 8,800. The rate (`868`) and fuel type (`866`) come from the effective fit. |
+| **Effective jump fit** | Calibration effects `1581/1582` modify range, Operation `1722/1723` modifies capacitor, and Fuel Conservation `3532` plus the hull's `3593` modify isotope rate. Verify the three published jump-drive economizers in group `1299` and each hull's fitting and trait rules before admission. `3317` points to beacon type list `343`, which includes `52696`, `21094` and `57425`. Only the industrial field is produced in this milestone. |
+
+- **Light a field.** Validate the active ship, space state, effective fit/skills, speed, local security, reachable grid,
+  and cyno restrictions before charging ozone. Pay once for one cycle. Publish a warpable system-wide beacon, expose
+  its jump action to authorized fleetmates, and stop voluntary movement, warp, cloak, docking and tethering during the
+  live cycle. Reject requests to stop the module early. Confirm the speed comparator and movement/effect interactions at
+  their boundaries. Expiry, ship loss and observer joins must reconcile even without updates from the emitter's client.
+  Highsec rejects ignition. Scope initial
+  field placement to reachable low/null known space, with Pochven, restricted pockets and wormhole systems excluded.
+  [CCP industrial cynos](https://www.eveonline.com/news/view/patch-notes-for-september-2019-release) ·
+  [CCP jammer rule](https://forums.eveonline.com/t/chaos-era-continues-cyno-update/182197) ·
+  [CCP Venture change](https://www.eveonline.com/news/view/patch-notes-for-november-2019-release) ·
+  [EVE University jump freighters](https://wiki.eveuniversity.org/Jump_Freighters)
+- **Take the jump.** Resolve the destination by the fleet access and the exact beacon identity; the supplied system is a
+  cross-check. Require an eligible active hull in space, a live field in another system, in-range catalog centers, valid
+  travel state, sufficient capacitor and usable isotope stacks. Use the fuel bay for isotopes in the initial delivery.
+  Confirm cargo fallback before including it as a rule for jump drives. Check Crimewatch, interdiction, active jump cooldown and
+  overlapping transitions at commit. A highsec origin can jump to an eligible lowsec destination. Reuse ordinary dock and
+  gate handling for an admitted freighter and keep tackle and arrival protection consistent with the verified jump rules.
+- **Apply costs and timers.** The pinned map tooltip predicts fuel as `max(1, trunc(distance LY × effective fuel/LY))`.
+  With `D = 1 + distance LY × fatigue multiplier` and `R` the seconds of fatigue remaining before the jump, the pinned
+  tooltip and hints derive fatigue from `clamp(R × D, 600 × D, 18000)` and activation from `max(60 × D, R / 10)`.
+  Apply CCP's 1,800-second activation cap. Use committed wall-clock deadlines owned by the pilot, with a single timestamp
+  for both timers. Fix rounding at the boundary and compare it with the client predictions before settling the fixtures.
+  [CCP jump timer rules](https://support.eveonline.com/hc/en-us/articles/212726865-Jump-Activation-Cooldown-and-Jump-Fatigue)
+
+### Resident ownership and reuse
+
+- **Gameplay and World.** Put the typed commands, results and pure range/cost checks in Gameplay. Use the existing
+  catalog and fitting graph, `InventoryFlag.FuelBay` (`133`) and [ship hold rules](../../src/Eden.Gameplay/Inventory/ShipHoldRules.cs).
+  Resolve paid stack withdrawals and capacitor from resident state. The [resident gate transfer](../../src/Eden.World/Docking/PilotGateTravelStore.Resident.cs)
+  shows how to reuse in-world travel checks, position settlement and map activity. Keep jump state authoritative in
+  World and include it in coherent checkpoints, including for saves created before capital travel.
+- **Prepare and commit.** Reserve a single pending operation for the active ship, with the fleet, ship and field identity
+  checked again at departure. Commit isotope withdrawal, capacitor debit, position, jump timers and travel activity as one
+  resident change. Publish inventory, session and observer changes after commit. If departure fails, keep the ship and its
+  resources at origin. If transport fails after commit, reconnect reads the committed destination and timers. Use existing
+  ownership ordering for source and destination and settle field expiry or ship loss against the same clock. For the first
+  milestone, a field removed before the jump commits causes an unpaid refusal. The exact live-game destruction race is
+  server-side behavior and may differ.
+- **Field lifecycle.** Store the active field identity, anchor and deadline with the paid cycle. A disappearing or destroyed
+  anchor retires the field. A disconnect by itself must not free a live cyno ship from the cycle. Rebuild surviving fields
+  from valid in-space anchors on reopen without paying again, and retire expired or invalid fields. Native fleet access is
+  transient. It is tied to the issuing fleet instance and current authorized recipients, with explicit leave and disband
+  invalidating access. A surviving public field cannot grant a new fleet jump access through a reused fleet or beacon ID.
+  Define and test access on an emitter disconnect against Eden's existing online-only fleet policy.
+- **Protocol.** Use the existing Dogma activation boundary for effect `2857` and the cooperative fleet notification queue
+  for beacon changes, with a snapshot for late joiners. Reuse the cross-system camera handoff
+  for departure and destination scene ordering. Adapt its session/Destiny mechanics to the paid resident operation. Use
+  the native jump-drive departure effect, one refreshed destination ballpark, and one arrival effect. Verify source and
+  destination observers as well as the traveler. Give the timer stub's selected-pilot route a single authoritative owner.
+  [Cooperative fleet delivery](fleets.md#cooperative-fleet-foundation-november-7-2026) ·
+  [Cross-system camera handoff](navigation.md#developer-translocation)
+
+### Native calls and source evidence
+
+The original 3662168 archive at `E:/EdenDev/downpatch-3662168/tq/code.ccp` has SHA-256
+`37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`. The contracts below come from its Python 2 code
+objects read as data with `xdis` and the read-only catalog. The generated route inventory lists
+the jump call as unhandled and the timer route as a compatibility handler. [Client RPC inventory](../client-routes/README.md)
+
+| Client entry point | Verified contract |
+| --- | --- |
+| `environment/godma.pyj` | `StateManager.Activate` forwards `(itemID, effectName, target, repeat)` to the Dogma location. Match the industrial module and its effect at the existing `dogmaIM.Activate` dispatch. |
+| `parklife/cynoTravelSvc.pyj` | `JumpToFleetModuleBeacon` calls `PerformSessionChange('jump', remotePark.CmdJumpToFleetModuleBeacon, charID, beaconID, solarsystemID)`. The owner character precedes the beacon ID and system ID on the wire. |
+| `parklife/fleetSvc.pyj` | `OnFleetJumpBeaconModuleChange(charID, solarsystemID, beaconID, typeID, active)` populates the menu cache keyed by character, with those three middle values in a tuple. `SendBroadcast_JumpBeacon` calls fleet `SendBroadcast('JumpBeacon', scope, beaconID, typeID)`. Validate the broadcast against active field state. |
+| `ui/services/crimewatchSvc.pyj`, `ui/crimewatch/crimewatchTimers.pyj` | `jumpTimers.GetTimers(session.charid)` returns `(jumpActivation, jumpFatigue, lastUpdated)`. `OnJumpTimersUpdated` supplies the same three positional values. Active timestamps are Blue wall-clock values. The UI subtracts `lastUpdated` from each active expiry. Inspect inactive values against both timer and map consumers. |
+| `ui/shared/mapView/filters/mapFilterCynosuralFields.pyj` | `map.GetBeaconCount()` supplies a dictionary of system ID to module beacon count. Derive counts from live public fields. The same filter consults the structure directory for structure beacons in a later milestone. |
+| `ui/shared/mapView/markers/markerTooltipUtil.pyj`, `ui/crimewatch/crimewatchHints.pyj`, `jumpFatigue/const.pyj` | Fuel, fatigue and activation projections use the ship's effective dogma values. The preview converts results to integer seconds for display. This is evidence for client parity, with server settlement details still to verify. |
+| `environment/effects/Jump.pyj` | `JumpDriveOut` reads the destination system from `graphicInfo[0]` and prepares `JumpTransitionCyno`. `JumpDriveIn` animates the arriving ship. Eden already carries the destination system in this effect for cross-system translocation. |
+
+EVE.js `261108.1` is a reference for behavior and wire shapes. The local checkout is a source snapshot without Git metadata
+and declares AGPL-3.0-only. Eden's MIT implementation uses its own owners and code. These are the relevant snapshot files.
+
+| EVE.js file and SHA-256 prefix | Reusable finding and limit |
+| --- | --- |
+| `server/src/services/ship/beyonceService.js` `5C13B78749BD` | `resolveFleetModuleBeacon` checks the requested owner, beacon and system against live fleet state. Use the pinned type list for hull compatibility. For example, the reference's hard-coded industrial list omits Black Ops, while the pinned Sin uses list `342`, which includes `52696`. |
+| `server/src/space/runtime/cynosuralField.js` `FE6D370EE6DD` | An active module creates a distinct scene object with expiry, source ship/module and spawn radius, paired with fleet cache updates. Eden can project both from one committed field. |
+| `server/src/services/_shared/jumpTimerRuntime.js` `3A4508CEA3B6` | The timer tuple and three-argument notification agree with the pinned client. Calculate these deadlines inside the paid transfer, since the reference applies timers as a separate best-effort step. |
+| `server/src/space/modules/sharedFuelRuntime.js` `767330CC9032` | Fuel lookup and debit recognize fuel bay and cargo. Confirm gameplay precedence and whether cargo can supplement the fuel bay before making that a supported Eden rule. |
+| `server/src/space/transitions.js` `89AE36918B01` | `jumpSessionToCynosuralBeacon` guards the original session/ship and sequences departure before the handoff. Reuse Eden's existing session generation and Destiny code for the corresponding checks. |
+
+[Carbon Destiny `27ee40b`](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Ballpark.cpp)
+backs the existing movement and explicit relocation primitives. The relevant Carbon behaviors are position and velocity
+updates for a ball. The native jump effect and ordering come from the pinned client and Eden's existing handoff tests.
+
+### Implementation checks
+
+1. Build the exact end-to-end resident fixture first. Use two selected pilots, the pinned Jita–Jan vectors, and an actual
+   station inventory move after arrival. Assert that a failed admission cannot spend ozone, isotope or capacitor, and
+   that a successful jump moves the same ship and cargo with exactly one debit and timer update.
+2. Cover range, security, speed and deadline edges, wrong isotope, fuel stack splits and rounding, insufficient capacitor,
+   stale/wrong/foreign beacons, concurrent duplicate clicks, fleet changes, anchor death and expiry during departure,
+   tackle and Crimewatch. Exercise checkpoint generation/reopen, old saves, and reconnect both before and after commit.
+3. Replay the native call with Blue numeric types and authenticate the timer read against the selected character. Verify
+   fleet cache add/remove and late join, public overview and map data, departure-before-session-change, fresh destination
+   state and one arrival event. Reuse focused ship fitting, inventory, fleet, Crimewatch, flight and detached checkpoint
+   tests for immediate dependencies. On warmed reads, check command, connection and fit-rebuild counts.
+
+**Automated validation.** Static checks passed for 13 local links and anchors, UTF-8, final newlines, whitespace, the pinned
+archive hash, catalog values for the four jump freighters and the cyno, the Jita–Jan vectors, and all five production recipes
+(under one second). `git diff --check` passed. Gameplay testing starts with the delivery fixture.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** After implementation, light a Venture cyno in Jan and jump from the native fleet menu;
+verify arrival camera, cargo and timers. Reconnect to verify the timer display. Observe the beacon from a third pilot.

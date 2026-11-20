@@ -329,7 +329,7 @@ Milestone 3 implements combat drones across its admitted hull cohort. Its first 
 | 15. T2 subcapitals | Complete ordinary subcapital cohorts, real-budget fits and role/equipment verification. |
 | 16. T3 | Tactical modes, strategic-cruiser subsystem assembly/refitting and nondestructive T3 rig removal. |
 | 17. Utility drones | Repair, salvage, energy, EWAR, web and functional hybrid drones. |
-| 18. Capital travel | Capital/capsule lifecycle, docking/gate restrictions, fuel, cynos, portals and jump timers. |
+| 18. Capital travel | Capital/capsule lifecycle, docking/gate restrictions, fuel, cynos, portals and jump timers. [Milestone plan](protocol/capital-logistics.md) starts with a jump-freighter delivery. |
 | 19. Capital modes | Siege, triage, bastion, flex hardeners, emergency energizers and sensor arrays. |
 | 20. Fighters | Tubes, squadrons, movement, abilities, losses, replenishment, recall and native fighter state. |
 | 21. Industrial command | Industrial cores, shipboard compression, industrial services, P.A.N.I.C. and ship clones. |
