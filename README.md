@@ -1,7 +1,7 @@
 # Eden
 
 Eden is a self-hosted C# server emulator for **EVE Online 24.01, Windows build 3662168**. Play solo or connect multiple
-pilots to the same persistent world. You’ll need to supply the matching Windows client and resource cache separately.
+pilots to the same persistent world. The downpatcher prepares the matching Windows client from your live EVE installation.
 
 [Join the Eden Discord](https://discord.gg/ZTxJrZKAXe)
 
@@ -13,7 +13,7 @@ installation and a separate staging directory. Catalog setup builds the server a
 on its first run.
 
 ```powershell
-.\tools\DevelopmentClient.ps1 -PrepareFrom 'E:\Eve' -DevelopmentRoot 'E:\EdenDev\3662168'
+python .\tools\Downpatch-Client.py --source 'E:\Eve' --destination 'E:\EdenDev\3662168'
 .\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\EdenDev\3662168'
 dotnet run --no-build --project src/Eden.Server
 ```

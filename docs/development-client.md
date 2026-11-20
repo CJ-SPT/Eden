@@ -33,10 +33,23 @@ Automated validation and confirmation that the milestone commit is on the remote
 
 ## Stage the client
 
-Use a shared EVE installation containing the sibling directories `tq` and `ResFiles`. Choose a separate, empty destination with room for both directories. The example paths below can be changed.
+Use the live EVE SharedCache folder containing `tq` and `ResFiles`. With Windows Python 3.11 or later, an internet
+connection and about 46 GiB free for a new copy, run the downpatcher into a separate, empty destination.
 
 ```powershell
-.\tools\DevelopmentClient.ps1 -PrepareFrom 'E:\Eve' -DevelopmentRoot 'E:\EdenDev\3662168'
+python .\tools\Downpatch-Client.py --source 'E:\Eve' --destination 'E:\EdenDev\3662168'
+```
+
+The downpatcher gets the pinned build 3662168 index from CCP, copies matching files from the live cache, and downloads
+missing or changed files from CCP's binary and resource CDNs. It verifies each file against the pinned indexes before
+marking the complete copy ready. The live cache is read-only during this process. Rerun the same command after an
+interruption to verify and reuse the files already staged. Eden Launcher can adopt the finished folder with
+**Use this client**. [CCP SharedCache guide](https://support.eveonline.com/hc/en-us/articles/5885307869468-Shared-Cache)
+
+If you already have a stock build 3662168 installation, you can stage an offline copy from it.
+
+```powershell
+.\tools\DevelopmentClient.ps1 -PrepareFrom 'E:\Eve3662168' -DevelopmentRoot 'E:\EdenDev\3662168'
 ```
 
 Preparation copies the client files and resources. It checks SHA-256 hashes for the executable, Blue library, script archive, and startup configuration. Repeat the command to resume an interrupted copy or refresh the staged files. The script marks the client ready after both copies and the final hash checks succeed.
