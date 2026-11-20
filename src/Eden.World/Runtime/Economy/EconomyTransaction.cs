@@ -270,7 +270,10 @@ internal sealed partial class EconomyTransaction(
 
     private void Validate()
     {
-        ValidateBotRows();
+        using (owner?.MeasureTrafficCommit("traffic.validateBotRows"))
+        {
+            ValidateBotRows();
+        }
         ValidateCorporationBlueprintLocks();
         ValidateSleeperSites();
         foreach (var job in Retained<IndustryJob>())
@@ -288,14 +291,14 @@ internal sealed partial class EconomyTransaction(
         }
         foreach (var account in Retained<Account>())
         {
+            var accounts = (EconomySet<Account, EconomyAccount>)Set<Account>();
             if (
                 string.IsNullOrWhiteSpace(account.UserName)
                 || account.CloneGrade is not (AccountCloneGrade.Alpha or AccountCloneGrade.Omega)
                 || account.Id == CapsuleerCommunityStore.MinerAccountId && account.CloneGrade != AccountCloneGrade.Omega
-                || Set<Account>()
-                    .Any(other =>
-                        other.Id != account.Id && string.Equals(other.UserName, account.UserName, StringComparison.OrdinalIgnoreCase)
-                    )
+                || accounts
+                    .IndexedSnapshots(nameof(Account.UserName), account.UserName)
+                    .Any(other => other.Id != account.Id && StringComparer.OrdinalIgnoreCase.Equals(other.UserName, account.UserName))
             )
             {
                 throw new InvalidDataException("Invalid resident account identity or clone grade.");
@@ -358,6 +361,21 @@ internal sealed partial class EconomyTransaction(
                 throw new InvalidDataException("The resident wallet has an invalid balance or pilot.");
             }
         }
+        using (owner?.MeasureTrafficCommit("traffic.validateMarketRows"))
+        {
+            ValidateMarketRows();
+        }
+        foreach (var owner in Set<InventoryOwner>().Local.Where(o => Set<InventoryOwner>().State(o) == EntityState.Deleted).ToArray())
+        {
+            if (Set<OwnedItem>().Any(i => i.OwnerId == owner.Id) || Ships.Any(ship => ship.OwnerId == owner.Id))
+            {
+                throw new InvalidDataException("An inventory owner with assets cannot be removed.");
+            }
+        }
+    }
+
+    private void ValidateMarketRows()
+    {
         foreach (var order in Retained<SavedPersonalOrder>())
         {
             if (
@@ -413,13 +431,6 @@ internal sealed partial class EconomyTransaction(
             )
             {
                 throw new InvalidDataException("The resident execution has invalid amounts or pilot.");
-            }
-        }
-        foreach (var owner in Set<InventoryOwner>().Local.Where(o => Set<InventoryOwner>().State(o) == EntityState.Deleted).ToArray())
-        {
-            if (Set<OwnedItem>().Any(i => i.OwnerId == owner.Id) || Ships.Any(ship => ship.OwnerId == owner.Id))
-            {
-                throw new InvalidDataException("An inventory owner with assets cannot be removed.");
             }
         }
     }

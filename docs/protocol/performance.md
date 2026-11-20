@@ -5833,6 +5833,27 @@ resupply inventory counts, the failed regional payment fixture, the cross-restar
 and paused in-space frame tests blocked in combat anomaly arrival. The unmodified branch baseline
 and the focused filter are recorded in `artifacts/bot-throughput-20261120/validation/`.
 
+The ten-minute replay of `5d86312b` recovered in 19.16 s and completed 486,611 actions with
+5,512 pilots scheduled at the end. Warm frame p95/p99 was 30.44/54.54 ms and warm market
+p95/p99 was 66.86/80.27 ms. The 570 warmed requests used zero SQL, connections and fitting
+calculations. The last sample was 996 ms behind. In the final five minutes, 39 samples reached
+one second, with a 1.54 s peak. One trade held the world owner for 383 ms, with 333 ms in
+resident transaction validation. Allocation averaged 499.8 KiB per action. The last of 13
+full collections left 1.66 GiB of managed objects. The acceptance assertion failed and the
+candidate stayed on its branch. See `artifacts/bot-throughput-20261120/final-acceptance/`.
+Over the final five minutes, miners completed 186,070 jobs against about 186,053 becoming due,
+and haulers completed 73,265 against about 73,269. The worker spent 11.38 s waiting in that window.
+
+Fitting-cache revision checks now limit transaction preparation to fitting inputs. Corporation,
+account and capsuleer slot validation reads the committed indexes together with private changes.
+That short replay completed 124,202 actions, ended with 5,496 pilots scheduled and recovered in
+23.19 s. Its maximum queue age after the midpoint was 671 ms. Allocation averaged 518.8 KiB per
+action. Warm frame and market p95/p99 were 27.50/32.33 ms and 64.06/79.30 ms. No traffic or population
+hold reached 250 ms. See `artifacts/bot-throughput-20261120/fit-and-validation/`.
+The affected test filter passed 202 cases in 205 s, including resident fitting and fitting rollback.
+The earlier wider filter reproduced an offline SQL-count failure and two disconnect projection
+failures on both revisions. The validation directory contains both results and the affected filter.
+
 ### Live acceptance
 
 Not performed; agent client testing is disabled.

@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Eden.Data.World.Capsuleers;
+using Eden.Data.World.Corporations;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -1766,6 +1768,7 @@ internal sealed partial class ResidentEconomy
                     new("StationId", row => row.StationId),
                     new("SystemId", row => row.SystemId),
                     new("Ticker", row => row.Ticker),
+                    new(nameof(SavedCorporation.CapsuleerFoundingSystemId), row => row.CapsuleerFoundingSystemId),
                 ],
                 primaryColumn: "Id"
             )
@@ -3637,7 +3640,7 @@ internal sealed partial class EconomyTransaction
             }
         }
         foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedCapsuleerAdmission>()) { }
-        foreach (var row in Retained<Eden.Data.World.Capsuleers.SavedCapsuleerAgent>())
+        foreach (var row in Retained<SavedCapsuleerAgent>())
         {
             if (Set<Eden.Data.World.Capsuleers.SavedCapsuleerPopulation>().Find(row.CommunitySystemId) is null)
             {
@@ -3647,15 +3650,15 @@ internal sealed partial class EconomyTransaction
             {
                 throw new InvalidDataException("Missing resident Pilot reference.");
             }
+            var agents = (EconomySet<SavedCapsuleerAgent, EconomySavedCapsuleerAgent>)Set<SavedCapsuleerAgent>();
             if (
-                true
-                && Set<Eden.Data.World.Capsuleers.SavedCapsuleerAgent>()
+                agents
+                    .IndexedSnapshots(nameof(SavedCapsuleerAgent.CommunitySystemId), row.CommunitySystemId)
                     .Any(other =>
-                        true
-                        && other.CommunitySystemId == row.CommunitySystemId
+                        other.CommunitySystemId == row.CommunitySystemId
                         && other.Career == row.Career
                         && other.Slot == row.Slot
-                        && (other.PilotId != row.PilotId)
+                        && other.PilotId != row.PilotId
                     )
             )
             {
@@ -3976,7 +3979,7 @@ internal sealed partial class EconomyTransaction
                 throw new InvalidDataException("Missing resident Ship reference.");
             }
         }
-        foreach (var row in Retained<Eden.Data.World.Corporations.SavedCorporation>())
+        foreach (var row in Retained<SavedCorporation>())
         {
             if (Set<Eden.Data.World.Characters.Pilot>().Find(row.CeoId) is null)
             {
@@ -3986,26 +3989,19 @@ internal sealed partial class EconomyTransaction
             {
                 throw new InvalidDataException("Missing resident Pilot reference.");
             }
+            var corporations = (EconomySet<SavedCorporation, EconomySavedCorporation>)Set<SavedCorporation>();
             if (
-                true
-                && Set<Eden.Data.World.Corporations.SavedCorporation>()
-                    .Any(other => row.ClosedAt == null && other.ClosedAt == null && other.CeoId == row.CeoId && (other.Id != row.Id))
-            )
-            {
-                throw new InvalidDataException("Duplicate resident SavedCorporation unique value.");
-            }
-            if (
-                true
-                && Set<Eden.Data.World.Corporations.SavedCorporation>()
-                    .Any(other => row.ClosedAt == null && other.ClosedAt == null && other.Name == row.Name && other.Id != row.Id)
-            )
-            {
-                throw new InvalidDataException("Duplicate resident SavedCorporation unique value.");
-            }
-            if (
-                true
-                && Set<Eden.Data.World.Corporations.SavedCorporation>()
-                    .Any(other => true && other.Ticker == row.Ticker && (other.Id != row.Id))
+                row.ClosedAt == null
+                    && corporations
+                        .IndexedSnapshots(nameof(SavedCorporation.CeoId), row.CeoId)
+                        .Any(other => other.ClosedAt == null && other.CeoId == row.CeoId && other.Id != row.Id)
+                || row.ClosedAt == null
+                    && corporations
+                        .IndexedSnapshots(nameof(SavedCorporation.Name), row.Name)
+                        .Any(other => other.ClosedAt == null && other.Name == row.Name && other.Id != row.Id)
+                || corporations
+                    .IndexedSnapshots(nameof(SavedCorporation.Ticker), row.Ticker)
+                    .Any(other => other.Ticker == row.Ticker && other.Id != row.Id)
             )
             {
                 throw new InvalidDataException("Duplicate resident SavedCorporation unique value.");

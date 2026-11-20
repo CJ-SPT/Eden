@@ -1,6 +1,12 @@
+using System.Collections.Frozen;
 using Eden.Data.World.Characters;
+using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
+using Eden.Data.World.Configuration;
+using Eden.Data.World.Docking;
+using Eden.Data.World.Exploration;
 using Eden.Data.World.Fittings;
+using Eden.Data.World.Fleets;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Propulsion;
 using Eden.Data.World.Repair;
@@ -13,6 +19,26 @@ namespace Eden.World.Runtime.Economy;
 
 internal sealed partial class EconomyTransaction
 {
+    private static readonly FrozenSet<Type> s_fitInputs = new[]
+    {
+        typeof(OwnedItem),
+        typeof(FlightPosition),
+        typeof(SavedAbyssalRun),
+        typeof(SavedAbyssalParticipant),
+        typeof(WorldTackle),
+        typeof(Ship),
+        typeof(PilotSkill),
+        typeof(Pilot),
+        typeof(ActiveFittedModule),
+        typeof(SavedMutatedItem),
+        typeof(SavedModuleCondition),
+        typeof(WorldCommandBurst),
+        typeof(WorldRemoteAssistance),
+        typeof(WorldNpcEwar),
+        typeof(WorldPlayerEwar),
+        typeof(SavedConfigurationState),
+    }.ToFrozenSet();
+
     private bool DifferentWormholeEnvironment(
         Eden.Data.World.Docking.FlightPosition? previous,
         Eden.Data.World.Docking.FlightPosition? current
@@ -29,6 +55,10 @@ internal sealed partial class EconomyTransaction
 
     internal IEnumerable<CombatRowChange> FitChanges(object? before, object? after)
     {
+        if ((before ?? after) is not { } changedRow || !s_fitInputs.Contains(changedRow.GetType()))
+        {
+            return [];
+        }
         HashSet<long> pilots = [];
         HashSet<long> drones = [];
         long? environmentRun = null;
