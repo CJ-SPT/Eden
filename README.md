@@ -3,6 +3,8 @@
 Eden is a self-hosted C# server emulator for **EVE Online 24.01, Windows build 3662168**. Play solo or connect multiple
 pilots to the same persistent world. You’ll need to supply the matching Windows client and resource cache separately.
 
+[Join the Eden Discord](https://discord.gg/ZTxJrZKAXe)
+
 ## Start here
 
 For local setup on Windows, install PowerShell 7, 64-bit Python 3.11 or later, and the .NET SDK pinned in
