@@ -481,6 +481,10 @@ internal sealed partial class LiveWorld : IDisposable
             {
                 using var directoryPhase = SessionPerformance.Phase("startup.ownerDirectory");
                 OwnerDirectory = new(directory);
+                if (Eden.World.Maps.MapStatisticsCheckpoint.Read(directory) is { } mapStatistics)
+                {
+                    MapStatistics.Restore(mapStatistics, SimulationTime);
+                }
             }
             if (!s_worlds.TryAdd(_path, this))
             {
@@ -496,6 +500,7 @@ internal sealed partial class LiveWorld : IDisposable
             }
             var interval = TimeSpan.FromSeconds(database.Settings.Simulation.CheckpointSeconds);
             _timer = clock.CreateTimer(_ => QueueSave(), null, interval, interval);
+            _mapStatisticsTimer = clock.CreateTimer(_ => SampleMapPilotsOnTimer(), null, MapSampleInterval, MapSampleInterval);
         }
         catch
         {
@@ -744,7 +749,8 @@ internal sealed partial class LiveWorld : IDisposable
                     copyAllocated,
                     bytes,
                     resident.Routines,
-                    resident.Economy
+                    resident.Economy,
+                    mapStatistics: resident.MapStatistics
                 );
             }
             catch
@@ -888,6 +894,7 @@ internal sealed partial class LiveWorld : IDisposable
             }
             _stopping = true;
             _timer.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+            _mapStatisticsTimer.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         }
         try
         {
@@ -899,6 +906,7 @@ internal sealed partial class LiveWorld : IDisposable
             {
                 _stopping = false;
                 _timer.Change(SaveInterval, SaveInterval);
+                _mapStatisticsTimer.Change(MapSampleInterval, MapSampleInterval);
             }
             throw;
         }
@@ -917,5 +925,6 @@ internal sealed partial class LiveWorld : IDisposable
             }
         }
         _timer.Dispose();
+        _mapStatisticsTimer.Dispose();
     }
 }

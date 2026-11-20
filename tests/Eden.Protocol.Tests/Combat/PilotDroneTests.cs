@@ -9,6 +9,7 @@ using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Maps;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Drones;
@@ -54,6 +55,14 @@ public sealed class PilotDroneTests
         Assert.Null(loss.Insurance);
         Assert.Equal(2, loss.InventoryChanges.Count);
         Assert.Empty(f.Tick(30).Hits);
+        if (resident)
+        {
+            var statistics = f.Base.Db.Services.GetRequiredService<IMapStatistics>();
+            Assert.Equal(
+                new MapHistoryRow(SystemId, new(0, 0, 0, 1)),
+                Assert.Single(statistics.History(MapHistoryStatistic.Kills, 1).Rows)
+            );
+        }
         using WorldDbContext saved = new(f.Base.Db.Path);
         Assert.Single(saved.Set<SavedHomeCloneTransfer>());
         Assert.Equal(2, saved.Set<SavedCombatReport>().Count());

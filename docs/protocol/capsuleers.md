@@ -1018,6 +1018,11 @@ remain unmeasured.
 | One local observer | 27.61 → 21.66 | 10,210,200 → 10,040,816 | 1 / 1 / 0 | 0.76 / 0.89 / 16.57 → 0.67 / 0.84 / 18.77 |
 | Two local observers | 36.65 → 38.14 | 16,533,648 → 16,656,984 | 1 / 1 / 0 | 0.56 / 0.93 / 15.47 → 0.49 / 0.87 / 18.45 |
 
+The final integration with star-map statistics on `71af02a0` passed 58 tests in 48 seconds. The filter combined
+`CapsuleerCorporationTests`, `MapNavigationTests`, `WorldMigrationTests`, `CapsuleerHandoffTests`, and `CapsuleerHaulerTests`
+with the two-batch Athanor replay and the three matched session-frame cases. Build took 20.88 seconds. Both Python policy
+suites, format verification and the documentation link check passed.
+
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** Read a working corporation's roster report after a longer dedicated-server session.

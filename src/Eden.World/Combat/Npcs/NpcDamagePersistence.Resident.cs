@@ -106,18 +106,21 @@ internal static partial class NpcDamagePersistence
                 return new(new(npc.Id, defense, result.Remaining), result.Applied, true, null);
             }
             if (
-                npc.Role == NpcRole.Pirate
-                && catalog.RequireItem(npc.TypeId).GroupId
-                    is not (NpcEncounterDefinitions.SentryGroup or NpcEncounterDefinitions.OverseerSentryGroup)
+                npc.Role is NpcRole.Pirate or NpcRole.Navy or NpcRole.Customs or NpcRole.Concord
+                && !NpcMotionRules.IsStationary(catalog.RequireItem(npc.TypeId).GroupId, npc.Role)
             )
             {
-                Eden.World.Sovereignty.SovereigntyDevelopmentPersistence.Record(
-                    world,
-                    npc.SystemId,
-                    Eden.Gameplay.Sovereignty.SovereigntyActivityKind.Military,
-                    1,
-                    now
-                );
+                Maps.MapStatisticsStore.Record(world, npc.SystemId, now, Eden.Gameplay.Maps.MapActivityKind.NpcShipLoss);
+                if (npc.Role == NpcRole.Pirate)
+                {
+                    Eden.World.Sovereignty.SovereigntyDevelopmentPersistence.Record(
+                        world,
+                        npc.SystemId,
+                        Eden.Gameplay.Sovereignty.SovereigntyActivityKind.Military,
+                        1,
+                        now
+                    );
+                }
             }
             NpcPopulationSeeder.RecordKill(world, npc, now);
             Eden.World.Exploration.CombatAnomalyStore.Killed(world, catalog, npc, now, pilot.Id);

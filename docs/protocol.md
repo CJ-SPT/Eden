@@ -570,7 +570,9 @@ records in-memory ship preparation, bulk grants and matched 2× startup measurem
 [Simulated-pilot target lock retention](protocol/capsuleers.md#simulated-pilot-target-lock-retention-november-9-2026)
 fixes completed locks disappearing during peaceful defense updates while retaining normal warp lock loss.
 
-[Native map navigation support](protocol/navigation.md#native-map-navigation-support-november-9-2026) records the route planner’s history dependency, stable cache replies and empty telemetry limits.
+[Star map statistics](protocol/navigation.md#star-map-statistics-november-20-2026) covers the eight statistics
+filters, including player and bot presence, stargate traffic and combat losses.
+[Native map navigation support](protocol/navigation.md#native-map-navigation-support-november-9-2026) records the original route-planner integration.
 
 [Universal native search](protocol/characters.md#universal-native-search-november-9-2026) records mixed-category main/map searches and result resolution.
 

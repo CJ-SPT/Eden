@@ -1,9 +1,11 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Maps;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Combat;
+using Eden.World.Maps;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -65,6 +67,7 @@ internal sealed partial class PilotGateTravelStore
         );
         SqliteWorld.SetPosition(world, catalog, shipId, arrival, gate.DestinationSystemId, now);
         Eden.World.Propulsion.GateCloakPersistence.Start(world, shipId, now);
+        MapStatisticsStore.Record(world, gate.DestinationSystemId, now, MapActivityKind.Jump);
         return new(pilot.AccountId, arrival, SystemObjects.FindSystem(catalog, gate.DestinationSystemId));
     }
 }

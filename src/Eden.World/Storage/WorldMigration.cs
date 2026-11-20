@@ -225,6 +225,9 @@ internal static class WorldMigration
         {
             CapsuleerCheckpointMigration.RemoveEmbeddedCollision(world);
         }
+        world.Database.ExecuteSqlRaw(
+            "CREATE TABLE IF NOT EXISTS WorldMapStatistics(Id INTEGER PRIMARY KEY CHECK (Id=1), Payload TEXT NOT NULL)"
+        );
         if (version < DevelopmentMarketOrderMigration.Version)
         {
             DevelopmentMarketOrderMigration.RemoveUnusedAsks(world);
