@@ -237,7 +237,8 @@ internal sealed partial class CapsuleerIndustry
         SavedStructure? structure,
         StructureProfile profile,
         int core,
-        long now
+        long now,
+        bool restockFracturedField = false
     )
     {
         if (structure is null)
@@ -264,12 +265,12 @@ internal sealed partial class CapsuleerIndustry
             }
         }
         var extraction = PilotStructureStore.ActiveExtraction(world, structure.Id);
-        if (
+        bool unminedField =
             extraction is null
             && world
                 .Filter<WorldAsteroid>(rock => rock.SystemId == structure.SystemId)
-                .Any(rock => rock.BeltId == site.Moon && rock.Quantity > 0)
-        )
+                .Any(rock => rock.BeltId == site.Moon && rock.Quantity > 0);
+        if (unminedField && !restockFracturedField)
         {
             return null;
         }
@@ -290,7 +291,9 @@ internal sealed partial class CapsuleerIndustry
             .Where(item => item.FlagId == StructureRules.FuelBayFlag)
             .Sum(item => (long)item.Quantity);
         return fuel < needed ? Task(RefineryWork.Fuel, NitrogenFuelBlock, (int)Math.Min(MaximumFuelShipment, needed - fuel))
-            : extraction is null ? Task(RefineryWork.StartExtraction, 0, 0)
+            : extraction is null && !unminedField ? Task(RefineryWork.StartExtraction, 0, 0)
+            : restockFracturedField && s_refineryServices.Any(type => services[type].All(module => !module.Online))
+                ? Task(RefineryWork.OnlineServices, 0, 0)
             : null;
 
         FactoryRefineryTask Task(RefineryWork work, int type, int quantity) =>

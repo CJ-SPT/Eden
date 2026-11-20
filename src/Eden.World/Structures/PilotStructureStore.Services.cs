@@ -210,8 +210,7 @@ internal sealed partial class PilotStructureStore
         var item = AccessibleItem(world, pilot, structure, itemId);
         var type = catalog.RequireItem(item.TypeId);
         int amount = quantity ?? item.Quantity;
-        const int FuelBlockGroup = 1136;
-        if (type.GroupId != FuelBlockGroup)
+        if (type.GroupId != StructureRules.FuelBlockGroup)
         {
             throw new InvalidDataException("The structure fuel bay accepts fuel blocks.");
         }

@@ -16,6 +16,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Ships;
 using Eden.Gameplay.Skills;
+using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Corporations;
@@ -257,22 +258,25 @@ internal sealed partial class CapsuleerIndustry(
         // Each station's pending output covers the same demand while other pilots work on different orders.
         listed.UnionWith(installed.Where(job => job.StationId == location).Select(job => job.ProductTypeId));
         FactorySupplyRequest? minerTwoSupply = null;
-        if (installed.Length == 0 && !listed.Contains(CapsuleerMinerTwoRules.Module))
-        {
-            var minerTwo = ProduceMinerTwo(
-                world,
-                catalog,
-                operatorPilot,
-                corporation,
-                hangar,
-                bids[CapsuleerMinerTwoRules.Module],
-                now,
-                out minerTwoSupply
+        var minerTwoBids = bids[CapsuleerMinerTwoRules.Module];
+        bool awaitingRefinery =
+            minerTwoBids.Any()
+            && installed.All(job =>
+                job.Activity == IndustryActivity.Reaction
+                || catalog.FittingType(job.ProductTypeId)?.GroupId == StructureRules.FuelBlockGroup
             );
+        if ((installed.Length == 0 || awaitingRefinery) && !listed.Contains(CapsuleerMinerTwoRules.Module))
+        {
+            var minerTwo = ProduceMinerTwo(world, catalog, operatorPilot, corporation, hangar, minerTwoBids, now, out minerTwoSupply);
             if (minerTwo.HasValue)
             {
                 supply = minerTwoSupply;
                 return minerTwo.Value;
+            }
+            if (minerTwoSupply?.MoonSupply is not null)
+            {
+                supply = minerTwoSupply;
+                return false;
             }
         }
         if (TryProduceForDemand(world, catalog, operatorPilot, corporation, hangar, bids, listed, now, out supply) is bool changed)

@@ -33,6 +33,7 @@ public sealed record FactorySupplyRequest(int CorporationId, int StationId, Fact
     public bool ResearchDatacores { get; init; }
     public bool Mercoxit { get; init; }
     public FactoryRefineryTask? Refinery { get; init; }
+    public FactoryMoonSupply? MoonSupply { get; init; }
     public int MaximumJumps =>
         Mercoxit ? CapsuleerIndustryRules.MaximumMercoxitSupplyJumps : CapsuleerIndustryRules.MaximumFactorySupplyJumps;
 }
@@ -42,12 +43,18 @@ public sealed record FactorySupplyShipment(long ManufacturerId, int FactoryStati
     public FactoryResearchSource? Research { get; init; }
     public FactoryPlanetaryVisit? Planetary { get; init; }
     public FactoryRefineryVisit? Refinery { get; init; }
+    public FactoryMoonSupply? MoonSupply { get; init; }
     public bool Mercoxit { get; init; }
     public int MaximumJumps =>
         Research is not null ? CapsuleerIndustryRules.MaximumResearchSupplyJumps
+        : MoonSupply is not null ? CapsuleerIndustryRules.MaximumRefinerySupplyJumps
         : Mercoxit ? CapsuleerIndustryRules.MaximumMercoxitSupplyJumps
         : CapsuleerIndustryRules.MaximumFactorySupplyJumps;
 }
+
+public sealed record FactoryMoonSupply(long StructureId, long OperatorId, int StationId, FactoryMoonMaterial[] Materials);
+
+public sealed record FactoryMoonMaterial(int TypeId, int Quantity);
 
 public sealed record FactoryResearchSource(long AgentId, int SkillId, int DatacoreTypeId);
 
@@ -83,6 +90,7 @@ public enum RefineryWork
     FitService,
     Fuel,
     StartExtraction,
+    OnlineServices,
 }
 
 public enum RefineryVisitPhase

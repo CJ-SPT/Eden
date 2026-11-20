@@ -67,6 +67,13 @@ internal sealed partial class CapsuleerIndustry
                 continue;
             }
             if (
+                request.MoonSupply is { } moon
+                && PlanMoonCollection(world, catalog, courier, employer, manufacturer, request, moon, avoided, free) is { } moonTrip
+            )
+            {
+                return moonTrip;
+            }
+            if (
                 request.ResearchDatacores
                 && PlanResearchCollection(world, catalog, courier, employer, manufacturer, request, avoided, now) is { } research
             )
@@ -170,6 +177,12 @@ internal sealed partial class CapsuleerIndustry
         )
         {
             return null;
+        }
+        if (shipment.MoonSupply is { } pickup)
+        {
+            return request.MoonSupply is { } current && current.OperatorId == pickup.OperatorId && current.StructureId == pickup.StructureId
+                ? CollectMoonCargo(world, catalog, courier, shipment, current)
+                : null;
         }
         var shortages = FactoryShortages(world, catalog, shipment.ManufacturerId, request);
         if (shipment.Research is { } research)

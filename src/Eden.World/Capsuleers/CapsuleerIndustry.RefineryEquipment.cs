@@ -19,7 +19,9 @@ internal sealed partial class CapsuleerIndustry
         OwnedItem[] hangar,
         int type,
         int quantity,
-        out FactorySupplyNeed[] needs
+        out FactorySupplyNeed[] needs,
+        bool manufacture = false,
+        IReadOnlySet<int>? harvest = null
     )
     {
         var recipes = catalog.Definitions.GlobalDefinition(s_recipesByProduct);
@@ -29,7 +31,8 @@ internal sealed partial class CapsuleerIndustry
         bool? action = Work(
             type,
             quantity,
-            permitPurchase: type is not AthanorType and not MoonDrillType and not ReprocessingServiceType and not CompositeReactorType
+            permitPurchase: !manufacture
+                && type is not AthanorType and not MoonDrillType and not ReprocessingServiceType and not CompositeReactorType
         );
         needs = missing.Values.ToArray();
         return action;
@@ -44,6 +47,10 @@ internal sealed partial class CapsuleerIndustry
             try
             {
                 var recipe = recipes[product].FirstOrDefault();
+                if (harvest?.Contains(product) == true)
+                {
+                    return null;
+                }
                 if (permitPurchase && Buy(product, shortfall))
                 {
                     return true;
@@ -56,7 +63,8 @@ internal sealed partial class CapsuleerIndustry
                     }
                     return null;
                 }
-                if (ProduceFactoryComponent(world, catalog, factory, corporation, hangar, product, shortfall) is bool changed)
+                var sponsor = manufacture && product == type ? corporation : null;
+                if (ProduceFactoryComponent(world, catalog, factory, corporation, hangar, product, shortfall, sponsor) is bool changed)
                 {
                     return changed;
                 }
