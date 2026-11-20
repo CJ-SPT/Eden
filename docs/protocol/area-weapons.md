@@ -1,5 +1,35 @@
 # Area weapons and electronic warfare
 
+## Checkpoint compatibility for older EWAR keys
+
+The checkpoint projects player electronic warfare by module and target so one paid area activation can have multiple
+recipients. Older worlds can retain a primary key on the module alone even after advancing to the current schema version.
+The area-weapon change extended an existing reconciliation that startup only ran for world versions below 96. On the
+old table, SQLite rejects the checkpoint upsert before writing its rows.
+
+Startup now reconciles the EWAR table on every open. The existing rebuild preserves rows during migration and restores
+the target index and fitting invalidation triggers. Normal startup still clears live bonuses after migration, as it
+does for other fitted effects.
+
+### Automated validation
+
+The exact filter `FullyQualifiedName=Eden.Protocol.Tests.Combat.AreaWeaponTests.LegacySingleTargetEffectsMigrateWithoutLossAndAllowIndependentAreaRecipients`
+reproduced the logged SQLite error on unchanged code for worlds marked with versions 178 and 191. Both pass in 7.91 seconds.
+The test opens migration twice, checks the original contact, and projects a detached checkpoint with two targets for
+the same module. Both contacts can be read independently from the projected database.
+
+The affected filter selected `AreaWeaponTests`, `PlayerEwarTests`, `WorldMigrationTests`, and `DetachedCheckpointTests`
+by fully qualified name. It passed 133 tests in 57 seconds. The zero-warning build, both Python policy suites,
+formatting, and whitespace checks passed. The complete validation took 96.63 seconds.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled. The affected running server and its pending resident state were not modified.
+
+### Optional maintainer checks
+
+After a planned update, check the checkpoint log after a new electronic-warfare cycle.
+
 ## Ship modules — November 16, 2026
 
 Build **3662168** has explicit fitting and operational owners for **29 published static modules**:

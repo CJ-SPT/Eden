@@ -90,10 +90,8 @@ internal static class WorldMigration
         {
             RigFittingSchema.Upgrade(world);
         }
-        if (version < 96)
-        {
-            PlayerEwarSchema.Upgrade(world);
-        }
+        // Saves that advanced beyond the old EWAR migration can still have the original single-column key.
+        PlayerEwarSchema.Upgrade(world);
         CorporationStorageSchema.Upgrade(world);
         RemoteRepairSchema.Upgrade(world);
         WorldConfigurationSchema.Upgrade(world);

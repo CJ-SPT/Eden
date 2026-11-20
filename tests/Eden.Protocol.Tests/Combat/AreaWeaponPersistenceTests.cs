@@ -112,8 +112,10 @@ public sealed partial class AreaWeaponTests
         Assert.Equal(ready, saved.Set<ModuleCooldown>().Find(module)!.ReadyAt);
     }
 
-    [Fact]
-    public void LegacySingleTargetEffectsMigrateWithoutLossAndAllowIndependentAreaRecipients()
+    [Theory]
+    [InlineData(178)]
+    [InlineData(WorldMigration.CurrentVersion)]
+    public void LegacySingleTargetEffectsMigrateWithoutLossAndAllowIndependentAreaRecipients(int version)
     {
         using var fixture = Prepare();
         long module = fixture.Fit(BurstJammer);
@@ -138,6 +140,7 @@ public sealed partial class AreaWeaponTests
             fixture.Clock.Now,
             fixture.Clock.Now + TimeSpan.FromSeconds(40).Ticks
         );
+        string json = JsonSerializer.Serialize(contact);
         using (WorldDbContext world = new(fixture.Db.Path))
         {
             world.Database.ExecuteSqlRaw(
@@ -149,12 +152,27 @@ public sealed partial class AreaWeaponTests
                     SystemId INTEGER NOT NULL,TargetKind INTEGER NOT NULL,ContactJson TEXT NOT NULL);
                 """
             );
-            string json = JsonSerializer.Serialize(contact);
+            if (version == 178)
+            {
+                world.Database.ExecuteSqlRaw("PRAGMA user_version=178");
+            }
             world.Database.ExecuteSql(
                 $"INSERT INTO WorldPlayerEwar VALUES ({module},{victim.ShipId},{fixture.PilotId},{fixture.ShipId},{SystemId},0,{json})"
             );
-            PlayerEwarSchema.Upgrade(world);
-            PlayerEwarSchema.Upgrade(world);
+            using CatalogDbContext catalog = new(fixture.CatalogPath);
+            WorldMigration.Open(world, catalog, fixture.Clock);
+            WorldMigration.Open(world, catalog, fixture.Clock);
+            var connection = world.Database.GetDbConnection();
+            connection.Open();
+            using var statement = connection.CreateCommand();
+            statement.CommandText =
+                "EXPLAIN INSERT INTO WorldPlayerEwar(ModuleId,TargetId) VALUES (NULL,NULL) " + "ON CONFLICT(ModuleId,TargetId) DO NOTHING";
+            _ = statement.ExecuteNonQuery();
+        }
+        WorldDatabase database = new(fixture.Db.Path);
+        using LiveWorld live = new(database, fixture.Clock, _ => { });
+        using (var world = live.Economy.Begin())
+        {
             Assert.Equal(json, world.Set<WorldPlayerEwar>().Single().ContactJson);
             world.Add(
                 new WorldPlayerEwar
@@ -167,9 +185,11 @@ public sealed partial class AreaWeaponTests
                     ContactJson = JsonSerializer.Serialize(contact with { Target = new(fixture.ShipId, TackleTargetKind.Ship) }),
                 }
             );
-            world.SaveChanges();
+            world.Commit();
         }
-        using WorldDbContext reopened = new(fixture.Db.Path);
+        using var snapshot = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());
+        snapshot.Project();
+        using WorldDbContext reopened = new(snapshot.Database);
         Assert.Equal(2, reopened.Set<WorldPlayerEwar>().Count());
         Assert.NotNull(reopened.Set<WorldPlayerEwar>().Find(module, victim.ShipId));
         Assert.NotNull(reopened.Set<WorldPlayerEwar>().Find(module, fixture.ShipId));
