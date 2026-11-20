@@ -8,7 +8,8 @@ pilots mine, trade, and form corporations.
 **Client required** · EVE Online 24.01 for Windows, build 3662168. Supply the matching client and resource cache separately.
 
 **[Set up on Windows](#start-here)** · [Connect and play](#connect-and-play) · [Host with Docker](docs/docker.md) ·
-[Documentation](docs/README.md) · [Discord](https://discord.gg/ZTxJrZKAXe)
+[Gameplay coverage](docs/feature-notes.md#gameplay-overview) · [Documentation](docs/README.md) ·
+[Discord](https://discord.gg/ZTxJrZKAXe)
 
 ## Start here
 
@@ -39,29 +40,6 @@ its first run. For staging, offline setup, and troubleshooting, see the [Windows
 [Get Eden Launcher](https://github.com/CJ-SPT/Eden-Launcher#run) ·
 [Build the launcher](https://github.com/CJ-SPT/Eden-Launcher#build-and-verify) ·
 [Account setup and remote hosting](docs/launcher.md)
-
-## Current status
-
-- **Flight and combat.** Fit ships, fly through stargates, use drones, take agent missions, and fight NPCs or other pilots.
-  [Fitting and modules](docs/feature-notes.md#fitting-weapons-and-modules) · [Supported missions](docs/missions.md)
-- **Exploration.** Scan down data and relic sites, explore C1–C6 wormholes, and run T0–T6 Abyssal Deadspace pockets.
-  [Scanning and hacking](docs/protocol/information.md) · [Wormholes](docs/protocol/wormholes.md) ·
-  [Abyssal Deadspace](docs/protocol/abyssal.md)
-- **Industry and trade.** Mine ore, ice, and gas, run planetary colonies, research blueprints, manufacture goods, and trade on
-  the market. [Industry](docs/protocol/industry.md) · [Planetary industry](docs/protocol/planetary.md) ·
-  [Market presets](docs/world-configuration.md#market-presets)
-- **Fleets and territory.** Fly together, manage corporations and alliances, deploy Upwell structures, and contest sovereignty.
-  [Fleets](docs/protocol/fleets.md) · [Corporations](docs/corporations.md) · [Structures](docs/protocol/structures.md) ·
-  [Sovereignty](docs/protocol/sovereignty.md)
-- **Faction Warfare.** Enlist as a pilot, corporation, or alliance. Capture complexes and battlefields, fight for
-  Advantage, and contest infrastructure hubs in both empire warzones. [Faction Warfare](docs/protocol/faction-warfare.md)
-- **Simulated capsuleers.** Encounter NPC pilots that mine, haul goods, form corporations, and take part in regional conflicts.
-  [Capsuleer population](docs/capsuleer-population.md) ·
-  [Regional conflicts](docs/protocol/capsuleers.md#regional-bot-conflicts--november-17-2026)
-
-Eden is in active development. The feature notes cover supported gameplay and known limits. The protocol records track
-implementation details, automated validation, and live client observations.
-[Feature notes](docs/feature-notes.md) · [Protocol records](docs/protocol.md)
 
 ## Customize your world
 
