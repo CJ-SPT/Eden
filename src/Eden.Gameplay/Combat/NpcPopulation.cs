@@ -15,6 +15,7 @@ public enum NpcRole
     Concord = 8,
     MissionStructure = 9,
     MilitiaNavy = 10,
+    MilitiaComplexDefender = 11,
 }
 
 public enum NpcAnchorKind
@@ -26,6 +27,7 @@ public enum NpcAnchorKind
     Mission,
     GhostSite,
     Abyssal,
+    MilitiaComplex,
 }
 
 public static class NpcPopulationRules

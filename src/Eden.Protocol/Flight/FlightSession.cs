@@ -6,6 +6,7 @@ using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Exploration;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
@@ -47,12 +48,16 @@ internal sealed partial class FlightSession(
     ICooperativeFleets? fleets = null,
     IPilotWarpDrive? warpDrive = null,
     IPilotInterdiction? interdiction = null,
-    Eden.Gameplay.Sovereignty.IPilotEntosis? entosis = null
+    Eden.Gameplay.Sovereignty.IPilotEntosis? entosis = null,
+    IMilitiaComplexes? complexes = null
 ) : IDisposable
 {
     internal const int ArrivalDurationTicks = FlightTravel.ArrivalDurationTicks;
     internal const int JumpDurationTicks = FlightTravel.JumpDurationTicks;
     internal const int TranslocationDurationTicks = FlightTravel.TranslocationDurationTicks;
+
+    private static long s_lastConnectionId;
+    private readonly long _connectionId = Interlocked.Increment(ref s_lastConnectionId);
 
     private FlightEffects? _effects;
     private FlightScene? _scene;
@@ -608,7 +613,8 @@ internal sealed partial class FlightSession(
             DepartureAt: _travel.DepartureAt,
             Cloaked: Cloaked,
             MicroJump: _microJump,
-            GateCloakUntil: GateCloaked ? SpatialStatus.GateCloakUntil : 0
+            GateCloakUntil: GateCloaked ? SpatialStatus.GateCloakUntil : 0,
+            ConnectionId: _connectionId
         );
 
     public void RefreshFitting(IReadOnlyDictionary<DogmaAttributeId, double> attributes)
@@ -1212,10 +1218,12 @@ internal sealed partial class FlightSession(
     {
         var origin = Pilot.Position!;
         var destination = missions?.WarpDestination(Pilot.SystemId, origin, requested) ?? requested;
-        return destination == requested
-            ? dedComplexes?.WarpDestination(Pilot.SystemId, origin, requested, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(), Pilot.PilotId)
-                ?? requested
-            : destination;
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        if (destination == requested)
+        {
+            destination = dedComplexes?.WarpDestination(Pilot.SystemId, origin, requested, now, Pilot.PilotId) ?? requested;
+        }
+        return destination == requested ? complexes?.Redirect(Pilot.SystemId, requested, now) ?? requested : destination;
     }
 
     private PilotCallResult StartWarp(long target, double range, SpacePosition? coordinates = null, bool accelerationGate = false)
@@ -1254,7 +1262,7 @@ internal sealed partial class FlightSession(
         {
             return PilotCallResult.Unsupported;
         }
-        if (!accelerationGate && (missions is not null || dedComplexes is not null))
+        if (!accelerationGate && (missions is not null || dedComplexes is not null || complexes is not null))
         {
             try
             {
@@ -1309,11 +1317,19 @@ internal sealed partial class FlightSession(
         }
         if (accelerationGate)
         {
-            var activation =
-                DedComplexRules.IsGate(target) && dedComplexes is not null
-                    ? dedComplexes.ActivateGate(Pilot.PilotId, target, coordinates!, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
-                    : missions!.ActivateGate(Pilot.PilotId, target, coordinates!);
-            _gateInventoryChanges.AddRange(activation.Items);
+            long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+            if (MilitiaComplexRules.IsGate(target) && complexes is not null)
+            {
+                complexes.Gate(Pilot.PilotId, target, now, coordinates!);
+            }
+            else
+            {
+                var activation =
+                    DedComplexRules.IsGate(target) && dedComplexes is not null
+                        ? dedComplexes.ActivateGate(Pilot.PilotId, target, coordinates!, now)
+                        : missions!.ActivateGate(Pilot.PilotId, target, coordinates!);
+                _gateInventoryChanges.AddRange(activation.Items);
+            }
         }
         else if (warpDrive is not null)
         {
@@ -1447,12 +1463,17 @@ internal sealed partial class FlightSession(
         }
         switch (command)
         {
-            case FlightCommand.ActivateAccelerationGate gate when missions is not null || dedComplexes is not null:
+            case FlightCommand.ActivateAccelerationGate gate when missions is not null || dedComplexes is not null || complexes is not null:
                 try
                 {
                     if (!CanTarget)
                     {
                         return new PilotCallResult.Failure("Wait until your ship can navigate before activating the gate.");
+                    }
+                    long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+                    if (MilitiaComplexRules.IsGate(gate.GateId) && complexes is not null)
+                    {
+                        return StartWarp(gate.GateId, 0, complexes.Gate(Pilot.PilotId, gate.GateId, now), accelerationGate: true);
                     }
                     var destination =
                         DedComplexRules.IsGate(gate.GateId) && dedComplexes is not null

@@ -1,5 +1,92 @@
 # Faction warfare
 
+## Shared complexes and rewards — November 20, 2026
+
+The 160 warzone systems each have one shared site slot for Scout, Small, Medium, Large, and Open complexes.
+The site's template follows the system's occupier. Completing a site removes it from the scanner, Agency,
+and space. The replacement uses a new instance ID and a new grid after 20, 40, or 60 minutes in Frontline,
+Command Operations, or Rearguard systems. Eden uses a deterministic rotation within each family.
+[CCP complex distribution and replacement intervals](https://www.eveonline.com/news/view/patch-notes-version-21-05)
+
+The [build 3662168 template manifest](../../src/Eden.Data/Catalog/FactionWarfare/MilitiaComplexVariants.cs)
+identifies the four empire dungeon IDs, beacon, occupier spawner, and payout capacity for each variant.
+The installed catalog audit covered 72 templates, of which 68 have gates. Four retired Small Interceptor
+templates remain in the manifest for provenance. The other 68 templates are available for rotation.
+
+| Family | Variants in rotation | Timer | Gate lists | Base LP | VP |
+| --- | --- | ---: | --- | ---: | --- |
+| Scout | BSC-1, NVY-1/2, ADV-1 | 5 minutes BSC, 10 minutes otherwise | 238, 511, 854 | 10,000 | 50 BSC, 25 NVY, 100 ADV |
+| Small | NVY-1/2, ADV-1/2, AF-1 | 10 minutes | 512, 515, 1015 | 15,000, 25,000 AF | 50 NVY, 75 ADV, 150 AF |
+| Medium | NVY-1/3, ADV-1/3 | 15 minutes | 513, 516 | 20,000 | 150 NVY, 175 ADV |
+| Large | NVY-1/4, ADV-1 | 15 minutes | 514, 517 | 25,000 | 250 NVY, 300 ADV |
+| Open | Open Complex, up to 5 full shares | 15 minutes | Open warp-in | 30,000 | 350 |
+
+Gate range is 90 km plus hull and gate radii. All installed gates check their native hull list and reject
+fitted warp core stabilizers via type list 984. Neutral pilots use Partial or Disabled safety and receive
+the ordinary lowsec suspect timer after a successful gate command. Direct warp to the gated pocket routes
+to its entrance. Open sites have no gated suspect check. Both sides can reverse a signed timer from inside
+the 30 km radius. Eligible opposing pilots pause it. Neutral pilots, capsules, Ventures, cloaked ships, ships
+aligning for warp, and ships in warp do not contribute. A capture point blocks cloak activation inside its
+radius. [CCP gate behavior](https://www.eveonline.com/news/view/patch-notes-for-march-2020-release) ·
+[UniWiki capture mechanics](https://wiki.eveuniversity.org/Faction_warfare#Capturing_complexes)
+
+Inert client inspection of `anomalyTracker.pyj` confirmed the Agency directory's system-to-list shape and
+occupier filtering. The normal complex bracket reads `slimItem.capturePoint` via `bracketMgr.pyj` and
+`inSpaceBracket.pyj`. Its fields are `points` as a signed percentage of the current side's progress,
+`captureTime` in minutes, `captureID` as the active faction, the frozen `"contested"` marker, or None for an idle point, and
+`lastCapturing` as the faction that holds the signed progress. The client records `lastIncident` in simulation
+time when it applies the slim. Both sides reuse the ordinary shared anomaly scanner notifications.
+
+The staged occupier spawners give a minimum replacement interval of 85 seconds for BSC and 210 seconds for
+the other audited variants. Eden uses one catalog militia hull per offensive wave and targets attackers
+inside the radius. The exact server-side spawn table rows, opposing NPC waves, special AF NPCs and their
+loot remain outside this runtime. Eden uses family base LP for the ordinary sites and an authored 100 VP for
+Scout ADV. The AF reward and removal of Interceptor-1 follow the September 22 V24.01 patch.
+[CCP site rewards and AF changes](https://www.eveonline.com/news/view/patch-notes-version-24-01) ·
+[CCP territorial VP and LP multipliers](https://www.eveonline.com/news/view/patch-notes-version-21-05)
+
+Settlement applies the 1.5×, 1×, and 0.01× operational multipliers, scales defense LP by pre-completion
+contestation, splits excess shares equally, truncates to whole LP, and credits the winning militia's issuer.
+Player corporation LP tax comes out of each pilot's share. Stable defense pays zero LP. Offensive capture
+at or above 75,000 VP pays zero LP and can still fill the 500 VP buffer. A single resident transaction
+commits the site deadline, VP change, and personal and corporation balances under world schema 196.
+The checkpoint preserves progress, defender IDs, completion, and the replacement deadline. The next active
+observation starts a fresh timing sample when a pilot reconnects or a world reopens. Dedicated completion notices, standings,
+rank progression, and hub conquest are later work.
+
+The evejs comparison used `fwOpenRuntime.js` (SHA-256
+`6ff64488da2110606f46bd989c372e6b9fdd65f0d75d3ee1aa947e39a0d8cd6c`) and
+`fwOpenRewards.js` (SHA-256 `87843f86fef1fd3daa8750fae887ccb675555b6712e082a050f13bb898684dbd`).
+It informed contact eligibility, signed reversal, continuous observation, and once-only settlement.
+
+**Automated validation.** The initial exact reward-rule test passed in 2.85 seconds. The exact offensive wave
+and shared settlement test passed in 6.12 seconds. The installed-catalog audit covered 72 dungeon records,
+the corresponding capture points and occupier spawners, 68 gate layouts, and 16 empire NPC hull profiles.
+
+The dependency filter passed 328 tests in 217.55 seconds. After the idle bracket correction and the additional
+post-settlement reopen assertions, the solution built in 9.87 seconds with zero warnings and the final
+complex and Agency filter passed 28 tests in 15.18 seconds. Warmed site reads recorded zero SQL commands,
+connections, and fitting calculations. Tool and solution restores, both Python policy suites (8 and 9 tests),
+and formatting verification (33.01 seconds) passed. Validation used focused suites.
+
+Dependency filter
+
+```text
+FullyQualifiedName~FactionWarfare|FullyQualifiedName~Exploration.AgencyTests|FullyQualifiedName~Exploration.CombatAnomaly|FullyQualifiedName~AnomalyWarpInTests|FullyQualifiedName~IdleAnomalyFrameTests|FullyQualifiedName~MissionGate|FullyQualifiedName~Combat.CrimewatchTests|FullyQualifiedName~Combat.NpcCombatTests|FullyQualifiedName~Propulsion.SpatialModule|FullyQualifiedName~Flight.GateCloakTests|FullyQualifiedName~Flight.SiteWarpInRuleTests|FullyQualifiedName~CorporationLoyaltyTests|FullyQualifiedName~LoyaltyWalletServiceTests|FullyQualifiedName~Market.LoyaltyStoreTests|FullyQualifiedName~Persistence.DetachedCheckpointTests|FullyQualifiedName~Persistence.IncrementalCheckpointTests|FullyQualifiedName~Persistence.WorldMigrationTests
+```
+
+Final filter
+
+```text
+FullyQualifiedName~FactionWarfare.MilitiaComplexTests|FullyQualifiedName~Exploration.AgencyTests
+```
+
+**Live acceptance.** Not performed. Agent client testing is disabled.
+
+**Optional maintainer checks.** Warp to a Scout from the scanner and verify the native capture timer.
+Try its gate at green and Partial safety on a neutral pilot. Capture an Open complex and check the militia LP
+wallet and the system's VP in the warzone map.
+
 ## Faction navy pursuit and service access — November 20, 2026
 
 Enemy empire highsec warns an enlisted pilot in a ship, then dispatches a faction frigate and cruiser.

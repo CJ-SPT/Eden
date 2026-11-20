@@ -139,7 +139,7 @@ internal sealed class SpatialModuleHandler(TimeProvider clock, IPilotSpatialModu
             }
             if (activation.Module.Cloak)
             {
-                if (!context.Flight.Cloaked || context.Flight.HasCloakObstacle())
+                if (!context.Flight.Cloaked || context.Flight.InMilitiaCaptureRange || context.Flight.HasCloakObstacle())
                 {
                     Stop(context, cycle);
                 }
@@ -205,9 +205,16 @@ internal sealed class SpatialModuleHandler(TimeProvider clock, IPilotSpatialModu
             {
                 throw new InvalidDataException("Activate your spatial module outside warp and session transitions.");
             }
-            if (SpatialModuleRules.IsCloak(effect) && context.Flight.HasCloakObstacle())
+            if (SpatialModuleRules.IsCloak(effect))
             {
-                throw new InvalidDataException("Move at least 2 km clear of nearby objects before cloaking.");
+                if (context.Flight.InMilitiaCaptureRange)
+                {
+                    throw new InvalidDataException("Move outside the militia capture radius before cloaking.");
+                }
+                if (context.Flight.HasCloakObstacle())
+                {
+                    throw new InvalidDataException("Move at least 2 km clear of nearby objects before cloaking.");
+                }
             }
             var activated = modules.Activate(context.Pilot.PilotId, module, effect, context.Flight.Heading, context.Flight.Velocity, Now());
             Cycle cycle = new(context.Pilot.PilotId, context.Pilot.ShipId, activated);

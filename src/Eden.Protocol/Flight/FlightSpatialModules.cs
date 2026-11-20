@@ -1,3 +1,4 @@
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
@@ -13,6 +14,12 @@ internal sealed partial class FlightSession
     private long _cloakGraceUntil;
     internal bool CanActivatePropulsion =>
         CanUseSelfModules && !InWarp && (!Cloaked || clock.GetUtcNow().UtcDateTime.ToFileTimeUtc() < _cloakGraceUntil);
+
+    internal bool InMilitiaCaptureRange =>
+        Pilot.Position is { } position
+        && Scene.Objects.Any(body =>
+            body.MilitiaCapture is not null && position.DistanceTo(body.Position) <= MilitiaComplexRules.CaptureRange
+        );
 
     internal bool HasCloakObstacle()
     {

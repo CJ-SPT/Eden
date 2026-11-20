@@ -1,9 +1,11 @@
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Exploration;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 
 namespace Eden.Protocol.Exploration;
@@ -15,7 +17,9 @@ internal sealed class CombatAnomalyHandler(
     TimeProvider clock,
     ProbeScanningHandler? probes = null,
     IDedEscalations? escalations = null,
-    IWorldTuning? tuning = null
+    IWorldTuning? tuning = null,
+    IMilitiaComplexes? complexes = null,
+    SharedSpace? space = null
 ) : ISelectedPilotCallHandler
 {
     private int? _system;
@@ -63,7 +67,7 @@ internal sealed class CombatAnomalyHandler(
         if (service == "scanMgr" && method == "SignalTrackerRegister" && args.Length == 0)
         {
             _system = context.Pilot.SystemId;
-            _known = sites.List(_system.Value, Now);
+            _known = PublicSites(_system.Value, Now);
             _signatures = sites.Signatures(_system.Value, Now);
             context.Notifications.Add(new SignalTrackerFullState(_system.Value, _known, _signatures));
             probes?.Enter(context);
@@ -79,7 +83,7 @@ internal sealed class CombatAnomalyHandler(
             probes?.Enter(context);
             var signatures = sites.Signatures(context.Pilot.SystemId, Now);
             RevealSignatures(context, signatures, []);
-            return new SignalTrackerState(sites.List(context.Pilot.SystemId, Now), signatures);
+            return new SignalTrackerState(PublicSites(context.Pilot.SystemId, Now), signatures);
         }
         return PilotCallResult.Unsupported;
     }
@@ -117,8 +121,12 @@ internal sealed class CombatAnomalyHandler(
             context.Flight.RefreshAnomalies([]);
             return;
         }
-        var current = sites.List(system, Now);
-        var signatures = sites.Signatures(system, Now);
+        if (complexes is not null && space is not null && complexes.IsWarzone(system))
+        {
+            complexes.Advance(system, space.MilitiaComplexPilots(system), now);
+        }
+        var current = PublicSites(system, now);
+        var signatures = sites.Signatures(system, now);
         var position = context.Pilot.Position;
         TrackGhostSite(context, position, signatures);
         context.Flight.RefreshAnomalies(
@@ -160,6 +168,13 @@ internal sealed class CombatAnomalyHandler(
         }
         _signatures = signatures;
         _known = current;
+    }
+
+    private IReadOnlyList<CombatAnomaly> PublicSites(int system, long now)
+    {
+        var ordinary = sites.List(system, now);
+        var militia = complexes?.Sites(system, now);
+        return militia is { Count: > 0 } ? ordinary.Concat(militia).ToArray() : ordinary;
     }
 
     private void RevealSignatures(PilotCallContext context, IReadOnlyList<CombatAnomaly> added, IReadOnlyList<CombatAnomaly> removed)

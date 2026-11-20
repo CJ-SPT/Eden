@@ -42,9 +42,9 @@ internal static partial class NpcHostility
             ConcordPersistence.Attack(world, catalog, attacked, shipId, now);
             return;
         }
-        if (attacked.Role == NpcRole.MilitiaNavy)
+        if (attacked.Role is NpcRole.MilitiaNavy or NpcRole.MilitiaComplexDefender)
         {
-            // The dispatch owns the pursued ship. A bystander cannot redirect it.
+            // The owning encounter selects targets. A bystander cannot redirect it.
             return;
         }
         if (NpcPopulationRules.IsMining(attacked.Role))

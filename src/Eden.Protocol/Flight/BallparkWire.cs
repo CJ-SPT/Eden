@@ -193,6 +193,20 @@ internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
                 fields["abyssFilamentTypeID"] = abyss.FilamentTypeId;
             }
         }
+        if (Body.MilitiaCapture is { } capture)
+        {
+            // Build 3662168 bracketMgr.UpdateCaptureFromSlim sets lastIncident using client simulation time.
+            fields["capturePoint"] = new Dictionary<string, object?>
+            {
+                ["points"] = capture.Points,
+                ["captureTime"] = capture.Minutes,
+                ["captureID"] =
+                    capture.Capturing is { } faction ? (object)(int)faction
+                    : capture.Paused ? "contested"
+                    : null,
+                ["lastCapturing"] = (int?)capture.Previous,
+            };
+        }
         if (Body.AccelerationGateDirection is { } direction && direction != SpacePosition.Zero)
         {
             // Build 3662168's AlignToDirection negates the model's +Z axis, which is the launch axis in the gate assets.
