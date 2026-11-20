@@ -416,7 +416,8 @@ internal sealed partial class CapsuleerScheduler(
                             var saved = Current[pilot];
                             long paused = _paused.GetValueOrDefault(pilot)?.ElapsedTicks ?? 0;
                             var resumed =
-                                MinerWorker(pilot)?.Resume(saved, entry, paused) ?? HaulerWorker(pilot)!.Resume(saved, entry, paused);
+                                MinerWorker(pilot)?.Resume(saved, entry, paused, activity.ActiveSystems.Contains(system))
+                                ?? HaulerWorker(pilot)!.Resume(saved, entry, paused);
                             Current[pilot] = resumed;
                             _resuming.Remove(pilot);
                             _paused.Remove(pilot);
@@ -441,7 +442,13 @@ internal sealed partial class CapsuleerScheduler(
                         if (MinerWorker(pilot) is { } miner)
                         {
                             using var phase = SessionPerformance.Phase("traffic.minerAction");
-                            next = miner.Execute(job, destinyStamp, activity.ElapsedTicks, activity.Resumes);
+                            next = miner.Execute(
+                                job,
+                                destinyStamp,
+                                activity.ElapsedTicks,
+                                activity.Resumes,
+                                background: !activity.ActiveSystems.Contains(system)
+                            );
                             Current[job.PilotId] = next;
                             _completed++;
                             IndexLocation(job.PilotId, miner.SystemId);
@@ -647,6 +654,7 @@ internal sealed partial class CapsuleerScheduler(
         _nextRunning = _running;
         _running = running;
         _membershipDirty = false;
+        WakeObservedMiners(activity.ElapsedTicks, transitions);
         UpdateDetailRetention(activity, transitions);
         _reconciledSystems = activity.ActiveSystems.ToArray();
         _reconciledPilots = activity.Pilots;
@@ -823,12 +831,12 @@ internal sealed partial class CapsuleerScheduler(
         }
     }
 
-    private void WakePilot(long pilot, long elapsedTicks)
+    private void WakePilot(long pilot, long dueTicks)
     {
         if (
             _resuming.ContainsKey(pilot)
             || !Current.TryGetValue(pilot, out var job)
-            || job.DueTicks <= elapsedTicks
+            || job.DueTicks <= dueTicks
             || WaitingForBackgroundStart(pilot)
         )
         {
@@ -838,7 +846,7 @@ internal sealed partial class CapsuleerScheduler(
         var next = job with
         {
             Revision = checked(job.Revision + 1),
-            DueTicks = elapsedTicks,
+            DueTicks = dueTicks,
         };
         Current[pilot] = next;
         _queue.Publish(next);

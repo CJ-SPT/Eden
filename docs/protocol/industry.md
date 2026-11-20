@@ -67,6 +67,13 @@ BotMinesAnOwnedFractureAndHaulsReprocessedFeedForOnePaidReaction
 Both Python policy suites passed all 17 cases in 1.89 seconds combined. Style, CSharpier and the
 140-character width check passed in 33.87 seconds. Git whitespace and documentation-link checks passed.
 
+After integrating the offscreen mining scheduler change from `ecb980ec`, the solution rebuilt in
+23.44 seconds with zero warnings and errors. The focused integration run passed all 47 cases in
+24.73 seconds. It selected `Eden.Protocol.Tests.Maps`, `ScienceJobTests`, `ReactionJobTests`,
+`UnobservedMinerAndPaidFactoryPauseAndResumeAcrossRestart` and
+`BotMinesAnOwnedFractureAndHaulsReprocessedFeedForOnePaidReaction` using the same filter syntax.
+Both policy suites, formatting verification (31.03 seconds) and Git whitespace checks passed again.
+
 ### Live acceptance
 
 Not performed. Agent client testing is disabled.

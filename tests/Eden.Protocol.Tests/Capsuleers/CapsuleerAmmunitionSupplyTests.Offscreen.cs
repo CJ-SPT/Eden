@@ -8,6 +8,7 @@ using Eden.Data.World.Skills;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Market;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Server;
 using Eden.Server.Maintenance;
 using Eden.World.Capsuleers;
@@ -112,6 +113,30 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
             var mining = live.MinerCheckpoints[producer].Work;
             Assert.True(mining.Activity == MinerActivity.Mining, $"{mining.Activity}: {mining.WaitingReason}");
             deposit = mining.TargetId;
+            var collection = scheduler.Jobs().Single(job => job.PilotId == producer);
+            Assert.Equal(CapsuleerAction.Collect, collection.Action);
+            Assert.Equal(mining.DueTicks, collection.DueTicks);
+            using (var metrics = SessionPerformance.Begin("quiet offscreen mining", _ => { }, force: true)!)
+            {
+                fixture.Clock.Seconds++;
+                maintenance.Tick();
+                Assert.Equal(collection, scheduler.Jobs().Single(job => job.PilotId == producer));
+                Assert.Equal(0, metrics.Commands);
+                Assert.Equal(0, metrics.Connections);
+                Assert.Equal(0, metrics.FittingCalculations);
+            }
+            last.Transfer(Home);
+            var observation = scheduler.Jobs().Single(job => job.PilotId == producer);
+            Assert.Equal(collection.Sequence, observation.Sequence);
+            Assert.True(observation.DueTicks < collection.DueTicks);
+            Assert.Contains(scheduler.Capture().Systems, state => state.SystemId == Home && state.Mode == SystemSimulationMode.Active);
+            fixture.Clock.Seconds++;
+            maintenance.Tick();
+            var observedMining = live.MinerCheckpoints[producer].Work;
+            Assert.Equal(mining.Cycles, observedMining.Cycles);
+            Assert.Equal(mining.DueTicks, observedMining.DueTicks);
+            Assert.Equal(mining.PaidUntil, observedMining.PaidUntil);
+            last.Transfer(distantSystem);
             first.Dispose();
             long before = live.CapsuleerActivity.Read().ElapsedTicks;
             fixture.Clock.Seconds++;

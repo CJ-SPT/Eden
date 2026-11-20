@@ -1,3 +1,4 @@
+using Eden.Data.Catalog;
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Mining;
@@ -182,7 +183,7 @@ internal sealed partial class CapsuleerMiner(
         return _pilot is null ? null : Observation(includeHealth);
     }
 
-    internal CapsuleerJob Resume(CapsuleerJob job, long elapsed, long pausedAt)
+    internal CapsuleerJob Resume(CapsuleerJob job, long elapsed, long pausedAt, bool observed = false)
     {
         if (!_loaded)
         {
@@ -209,7 +210,12 @@ internal sealed partial class CapsuleerMiner(
             resumed = resumed with { WarpReadyAt = ready, Navigation = navigation.Capture() };
         }
         long earliest = checked(elapsed + 1);
-        var next = job.Next(Math.Max(earliest, checked(job.DueTicks + delay)), job.Action);
+        long due = Math.Max(earliest, checked(job.DueTicks + delay));
+        if (observed && Work.Activity == MinerActivity.Mining && job.DueTicks == Work.DueTicks)
+        {
+            due = Math.Min(due, checked(elapsed + TimeSpan.TicksPerSecond));
+        }
+        var next = job.Next(due, job.Action);
         using CapsuleerOperation operation = new(database, job, marketSignal);
         if (
             resumed.Activity == MinerActivity.Mining
@@ -247,7 +253,7 @@ internal sealed partial class CapsuleerMiner(
         return true;
     }
 
-    internal CapsuleerJob Execute(CapsuleerJob job, int destinyStamp, long activeNow, long resumes)
+    internal CapsuleerJob Execute(CapsuleerJob job, int destinyStamp, long activeNow, long resumes, bool background = false)
     {
         if (!_loaded)
         {
@@ -266,7 +272,7 @@ internal sealed partial class CapsuleerMiner(
             }
         }
         RefreshCorporation();
-        ObserveDanger(destinyStamp);
+        bool npcThreat = ObserveDanger(destinyStamp);
         if (Pilot.Position is not null)
         {
             RefreshTackle();
@@ -337,7 +343,7 @@ internal sealed partial class CapsuleerMiner(
             {
                 Step();
             }
-            var next = Commit(job);
+            var next = Commit(job, background && !npcThreat && before.Activity is MinerActivity.Locking or MinerActivity.Mining);
             _resumeCount = resumes;
             return next;
         }
@@ -409,18 +415,31 @@ internal sealed partial class CapsuleerMiner(
         }
     }
 
-    private CapsuleerJob Commit(CapsuleerJob job)
+    private CapsuleerJob Commit(CapsuleerJob job, bool quietBackground = false)
     {
         _work = Work with { Navigation = _navigation.Capture() };
-        var schedule = Schedule();
+        var schedule = Schedule(quietBackground);
         var next = job.Next(schedule.DueTicks, schedule.Action);
         _operation.Commit(next, new MinerCheckpoint(pilotId, Work), null);
         return next;
     }
 
-    private CapsuleerSchedule Schedule()
+    private CapsuleerSchedule Schedule(bool quietBackground)
     {
-        var schedule = CapsuleerScheduleRules.Next(Work, Pilot.Position is not null);
+        // Only the safest belts exclude natural pirate spawns. A paid cycle may sleep
+        // there when it has no combat or crew warning checks to run between settlements.
+        bool sleep =
+            quietBackground
+            && Work is { Activity: MinerActivity.Mining, PaidUntil: > 0, Defense: null, MoonExtractionId: null, RefineryIceType: null }
+            && Work.WorkingBelt != 0
+            && _incoming.Length == 0
+            && Live is { } live
+            && database.Catalog.Find(CatalogData.Client.Systems, (long)Pilot.SystemId)?.SecurityStatus is double security
+            && security is >= 0 and <= 1
+            && NpcSpawnRules.SecurityBand(security) == NpcSecurityBand.Safest
+            && !live.Economy.HasIncomingNpcMissiles(pilotId)
+            && (!database.Settings.Capsuleers.SituationalAwareness || !crew.Any(member => member != pilotId && !suspended(member)));
+        var schedule = CapsuleerScheduleRules.Next(Work, Pilot.Position is not null, sleep);
         return schedule with { DueTicks = CapsuleerDefenseRules.NextDeadline(Work.Defense, Now, Work.ActiveTicks, schedule.DueTicks) };
     }
 
@@ -458,11 +477,11 @@ internal sealed partial class CapsuleerMiner(
         return new(Pilot, Work, _laser, Work.WaitingReason) { Health = includeHealth ? health.Read(pilotId, Now) : null };
     }
 
-    private void ObserveDanger(int destinyStamp)
+    private bool ObserveDanger(int destinyStamp)
     {
         if (Pilot.Position is null || _navigation.Warp is not null || Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup)
         {
-            return;
+            return false;
         }
         var visible = encounters
             .Advance(Pilot.SystemId, Now)
@@ -471,8 +490,8 @@ internal sealed partial class CapsuleerMiner(
             .ToHashSet();
         combat.Acquire([new(Pilot.PilotId, Pilot.ShipId)], Now);
         warfare.Advance(Pilot.PilotId, Pilot.ShipId, Now);
-        var attackers = combat.Aggressors(Pilot.ShipId).Where(visible.Contains).ToArray();
-        foreach (long npc in attackers)
+        var attackers = combat.Aggressors(Pilot.ShipId);
+        foreach (long npc in attackers.Where(visible.Contains))
         {
             var shot = combat.Fire(
                 Pilot.PilotId,
@@ -486,7 +505,7 @@ internal sealed partial class CapsuleerMiner(
             if (shot?.Capsule is not null)
             {
                 Load();
-                return;
+                return true;
             }
         }
         foreach (var impact in missiles.Advance(Pilot.PilotId, Pilot.ShipId, _navigation.Velocity, Now))
@@ -494,9 +513,10 @@ internal sealed partial class CapsuleerMiner(
             if (impact.Capsule is not null)
             {
                 Load();
-                return;
+                return true;
             }
         }
+        return visible.Count > 0 || attackers.Count > 0;
     }
 
     private void Load()
