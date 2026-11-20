@@ -57,4 +57,7 @@ public static class MilitiaRules
 
     public static bool CanUseDocking(WarzoneSystem? system, MilitiaFaction? faction, bool capsule) =>
         capsule || system is null || system.Adjacency == WarzoneAdjacency.Frontline || !AreEnemies(faction, system.Occupier);
+
+    public static bool IsThirdPartyCombat(MilitiaFaction? source, MilitiaFaction? recipient, bool recipientInCombat) =>
+        recipientInCombat && recipient is not null && source != recipient;
 }

@@ -14,6 +14,9 @@ internal static class FactionWarzoneSchema
         model.Entity<SavedMilitiaEnlistment>().ToTable("WorldMilitiaEnlistment").HasKey(row => row.PilotId);
         model.Entity<SavedMilitiaEnlistment>().Property(row => row.PilotId).ValueGeneratedNever();
         model.Entity<SavedMilitiaEnlistment>().HasOne<Pilot>().WithMany().HasForeignKey(row => row.PilotId);
+        model.Entity<SavedMilitiaNavyPursuit>().ToTable("WorldMilitiaNavyPursuit").HasKey(row => row.PilotId);
+        model.Entity<SavedMilitiaNavyPursuit>().Property(row => row.PilotId).ValueGeneratedNever();
+        model.Entity<SavedMilitiaNavyPursuit>().HasOne<Pilot>().WithMany().HasForeignKey(row => row.PilotId);
     }
 
     internal static void Upgrade(WorldDbContext world) =>
@@ -28,6 +31,14 @@ internal static class FactionWarzoneSchema
                 PilotId INTEGER PRIMARY KEY REFERENCES WorldPilot(Id) ON DELETE CASCADE,
                 DirectFaction INTEGER,
                 DirectCooldownUntil INTEGER NOT NULL);
+            CREATE TABLE IF NOT EXISTS WorldMilitiaNavyPursuit(
+                PilotId INTEGER PRIMARY KEY REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                ShipId INTEGER NOT NULL,
+                SystemId INTEGER NOT NULL,
+                Faction INTEGER NOT NULL,
+                RespondAt INTEGER NOT NULL,
+                FrigateId INTEGER,
+                CruiserId INTEGER);
             """
         );
 }

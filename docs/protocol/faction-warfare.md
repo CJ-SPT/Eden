@@ -1,5 +1,60 @@
 # Faction warfare
 
+## Faction navy pursuit and service access — November 20, 2026
+
+Enemy empire highsec warns an enlisted pilot in a ship, then dispatches a faction frigate and cruiser.
+System faction and security come from build 3662168. The four wings use the catalog navy profiles already
+admitted for empire guards and run through ordinary NPC motion, weapons, electronic warfare and ship loss.
+Capsules, neutral pilots and non-opposing militias are exempt. The patrol is assigned to its original pilot
+and the pursuit profiles omit warp disruption.
+
+Eden uses 6-, 9- or 12-second initial response delays by security band (0.85 and 0.65 boundaries)
+and a 10-second redeployment delay after the pilot leaves a grid or defeats the wing. Gate cloak and warp
+defer dispatch. Leaving the system or militia, docking, changing hull or closing the pilot session ends the
+current pursuit. World schema 195 preserves warning deadlines and live responder IDs across checkpoint
+reopen. An active wing uses the same NPC pursuit distance bound as other encounters. The selected pilot session
+advances dispatch, and the existing empire enforcement tick sweeps saved pursuits whose pilots have departed.
+
+Highsec command bursts skip an active militia combatant when the booster belongs to a different militia or
+has no militia affiliation. The recipient's capsuleer-logoff timer controls the restriction. Same-militia
+boosts and lowsec rules retain their normal behavior. A filtered recipient leaves the paid burst available to
+eligible fleet members.
+
+NPC station docking availability now reflects the current occupation and capsule exception. Upwell fitting,
+repair, insurance, industry, refining, compression and refinery service checks apply the same occupation rule
+alongside ACLs and service availability. The tether runtime is on `codex/structure-completion`. Its integration
+still needs the occupation check when the two branches are combined.
+
+The `OnRemoteMessage` warning was verified by inert inspection of build 3662168 `gameui.pyj`. The evejs
+`space/runtime/commandBurst.js` comparison (SHA-256
+`b6172225f6ed90d077ebb083aa48b7d497920164ebec7878e0a06a042cd931fb`) also checks the recipient's PvP timer.
+Eden uses the pinned empire pairings from the enlistment milestone. The reference's `fwOpenRuntime.js`
+illustrates the `CustomNotify` payload. Navy roster source is `NpcGuardRules` and the build-3662168 NPC catalog.
+[UniWiki faction navy behavior](https://wiki.eveuniversity.org/Faction_warfare_strategy_and_tactics) ·
+[CCP neutral burst rules](https://www.eveonline.com/news/view/patch-notes-for-april-2019-release) ·
+[CCP Upwell and station rules](https://www.eveonline.com/news/view/patch-notes-version-20-10)
+
+**Automated validation.** The exact
+`FullyQualifiedName=Eden.Protocol.Tests.FactionWarfare.MilitiaNavyTests.PursuitWaitsAcrossReopenAndDeploysOnlyOneLiveWingPerGrid`
+filter passed in 9.93 seconds after a 21.93-second test build. It covers the saved response deadline, delayed
+cloaked deployment, ordinary NPC damage, cleared aggressors, and redeployment on the next grid. Warmed
+pursuit reads recorded zero SQL commands, connections and fitting calculations.
+
+The milestone build passed in 28.13 seconds with zero warnings. The focused filter below passed all 227 cases
+in 90.25 seconds, including command burst recipient affiliation and timer expiry, occupation-dependent
+service access, ordinary NPC guards, CONCORD, industry and schema migration. Tool and solution restores,
+both Python policy suites (8 and 9 cases), and formatting verification (39.39 seconds) passed. Validation used
+focused suites.
+
+```text
+FullyQualifiedName~FactionWarfare|FullyQualifiedName~Fleets.CommandBurstTests|FullyQualifiedName~Docking.StructureServiceTests|FullyQualifiedName~Structures.StructureCompressionTests|FullyQualifiedName~Fittings.MultifitTests|FullyQualifiedName~Combat.NpcGuardTests|FullyQualifiedName~Combat.ConcordTests|FullyQualifiedName~Combat.CrimewatchTests|FullyQualifiedName~Persistence.WorldMigrationTests|FullyQualifiedName~InsuranceTests|FullyQualifiedName~Eden.Protocol.Tests.Reprocessing.ReprocessingTests|FullyQualifiedName~Eden.Protocol.Tests.Repair.RepairTests|FullyQualifiedName~Eden.Protocol.Tests.Industry.IndustryTests
+```
+
+**Live acceptance.** Not performed. Agent client testing is disabled.
+
+**Optional maintainer check.** Enter enemy highsec in a militia ship and verify the warning, navy appearance,
+and ability to warp away.
+
 ## Individual enlistment and militia combat — November 20, 2026
 
 Pilots can join any of the four NPC empire militias at a station owned by that empire. An eligible player corporation
@@ -33,8 +88,8 @@ The pinned client confirms the empire enemy pairs and the scope of the retiremen
 [CCP docking rules](https://www.eveonline.com/news/view/patch-notes-version-20-10) ·
 [CCP neutral assistance clarification](https://forums.eveonline.com/t/devblog-war-war-sometimes-changes/142879/192)
 
-Hostile highsec navy pursuit, war-specific command burst filtering, and service or tether restrictions remain
-separate pieces of the enrollment and combat milestone. Complexes, LP and capture actions remain later milestones.
+The navy pursuit, command burst and service changes are recorded above. Complexes, LP and capture actions remain
+later milestones.
 
 **Automated validation.** The direct-enlistment flow passed its initial exact-method rerun in 6.83 seconds.
 The 420-case dependency run took 211.82 seconds and produced 416 passes and four failures. One failure caught

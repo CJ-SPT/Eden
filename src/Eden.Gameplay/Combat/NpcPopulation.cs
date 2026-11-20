@@ -14,6 +14,7 @@ public enum NpcRole
     MiningLogistics,
     Concord = 8,
     MissionStructure = 9,
+    MilitiaNavy = 10,
 }
 
 public enum NpcAnchorKind

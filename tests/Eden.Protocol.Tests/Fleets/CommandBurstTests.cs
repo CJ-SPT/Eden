@@ -1,12 +1,14 @@
 using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
+using Eden.Data.World.FactionWarfare;
 using Eden.Data.World.Fittings;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
@@ -201,6 +203,69 @@ public sealed class CommandBurstTests
     }
 
     [Fact]
+    public void HighsecBurstsExcludeThirdPartyBoostsOnlyWhileMilitiaCombatIsActive()
+    {
+        using var fixture = Prepare(.9);
+        long module = fixture.Fit(ArmorBurst);
+        Load(fixture, module);
+        fixture.Clock.AdvanceWallTime(TimeSpan.FromMinutes(1));
+        var target = fixture.Db.Store.FindPilot(FleetmateAccount)!;
+        Place(fixture, target);
+        var pilot = fixture.Db.Store.FindPilot(AccountId)!;
+        target = fixture.Db.Store.FindPilot(FleetmateAccount)!;
+        Join(fixture.Db.Services.GetRequiredService<ICooperativeFleets>(), pilot, target);
+        using LiveWorld live = new(new(fixture.Db.Path), fixture.Clock, _ => { });
+        using var system = live.UseSystem(pilot.SystemId);
+        using (var action = live.Economy.Begin(TransactionParticipants.None))
+        {
+            action.Add(new SavedMilitiaEnlistment { PilotId = target.PilotId, DirectFaction = MilitiaFaction.Caldari });
+            action.Add(
+                new SavedCrimewatch
+                {
+                    PilotId = target.PilotId,
+                    SystemId = target.SystemId,
+                    PvpUntil = long.MaxValue,
+                }
+            );
+            action.Commit();
+        }
+
+        var store = fixture.Db.Services.GetRequiredService<IPilotCommandBursts>();
+        var neutral = Fire();
+        Assert.Equal([pilot.ShipId], neutral.Recipients);
+        Assert.Equal(3, neutral.Magazine.Quantity);
+        Assert.Empty(store.Incoming(target.ShipId, fixture.Clock.Now));
+
+        using (var action = live.Economy.Begin(TransactionParticipants.None))
+        {
+            action.Add(new SavedMilitiaEnlistment { PilotId = pilot.PilotId, DirectFaction = MilitiaFaction.Caldari });
+            action.Commit();
+        }
+        fixture.Clock.AdvanceWallTime(TimeSpan.FromTicks(neutral.ReadyAt - fixture.Clock.Now));
+        var teammate = Fire();
+        Assert.Equal([pilot.ShipId, target.ShipId], teammate.Recipients);
+
+        using (var action = live.Economy.Begin(TransactionParticipants.None))
+        {
+            action.Set<SavedMilitiaEnlistment>().Find(pilot.PilotId)!.DirectFaction = MilitiaFaction.Gallente;
+            action.Set<SavedCrimewatch>().Find(target.PilotId)!.PvpUntil = teammate.ReadyAt;
+            action.Commit();
+        }
+        fixture.Clock.AdvanceWallTime(TimeSpan.FromTicks(teammate.ReadyAt - fixture.Clock.Now));
+        Assert.Equal([pilot.ShipId, target.ShipId], Fire().Recipients);
+
+        CommandBurstPulse Fire() =>
+            store.Pulse(
+                pilot.PilotId,
+                pilot.ShipId,
+                module,
+                DogmaEffect.ArmorCommandBurst,
+                [new(target.PilotId, target.ShipId, new(1000, 0, 0))],
+                fixture.Clock.Now
+            );
+    }
+
+    [Fact]
     public void CollectionUsesStrongestValueWithAnIndependentFallback()
     {
         CommandBurstBoost[] rows = [new(1, -10, 10), new(1, -8, 20), new(2, 8, 20), new(2, 12, 20)];
@@ -209,14 +274,14 @@ public sealed class CommandBurstTests
         Assert.Equal([rows[1], rows[3]], CommandBurstRules.Strongest(rows.Where(row => row.ExpiresAt > 10), Definition));
     }
 
-    private static Fixture Prepare()
+    private static Fixture Prepare(double securityStatus = 0)
     {
         Fixture fixture = new();
         PassiveCatalogFixture.LoadCommandBursts(fixture.CatalogPath);
         using WorldDbContext world = new(fixture.Db.Path);
         using CatalogDbContext catalog = new(fixture.CatalogPath, writable: true);
         string system = fixture.Db.Store.FindPilot(AccountId)!.SystemId.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        string security = "{\"securityStatus\":0}";
+        string security = System.Text.Json.JsonSerializer.Serialize(new { securityStatus });
         catalog.Database.ExecuteSql($"INSERT OR REPLACE INTO SourceRecord VALUES ('client/systems',{system},{security})");
         world.Set<Account>().Find(AccountId)!.CloneGrade = AccountCloneGrade.Omega;
         world.Ships.Find(fixture.ShipId)!.TypeId = Ferox;

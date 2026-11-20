@@ -42,7 +42,7 @@ internal static class StructureIndustry
     {
         var type = catalog.FittingType(productTypeId);
         var required = StructureIndustryRules.Required(activity, type?.CategoryId ?? 0, type?.GroupId ?? 0);
-        return PilotStructureStore.Access(world, structure, pilotId)
+        return PilotStructureStore.ServiceAccess(world, catalog, structure, pilotId)
             && PilotStructureStore.Snapshot(world, catalog, structure).Services.Contains(required);
     }
 

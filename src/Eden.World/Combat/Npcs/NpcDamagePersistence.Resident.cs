@@ -106,7 +106,7 @@ internal static partial class NpcDamagePersistence
                 return new(new(npc.Id, defense, result.Remaining), result.Applied, true, null);
             }
             if (
-                npc.Role is NpcRole.Pirate or NpcRole.Navy or NpcRole.Customs or NpcRole.Concord
+                npc.Role is NpcRole.Pirate or NpcRole.Navy or NpcRole.Customs or NpcRole.Concord or NpcRole.MilitiaNavy
                 && !NpcMotionRules.IsStationary(catalog.RequireItem(npc.TypeId).GroupId, npc.Role)
             )
             {

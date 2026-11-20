@@ -289,7 +289,7 @@ internal sealed record NpcSlimItem(NpcContact Npc) : SlimItem
         fields["modules"] = new List<object?>();
         // Build 3662168's NPC bounty display normally reads catalog dogma.
         fields["edenNpcBounty"] = Npc.BountyCents / (double)MarketDefinitions.CentsPerIsk;
-        if (Npc.Role is NpcRole.Navy or NpcRole.Customs or NpcRole.Concord)
+        if (Npc.Role is NpcRole.Navy or NpcRole.Customs or NpcRole.Concord or NpcRole.MilitiaNavy)
         {
             fields["hostile_response_threshold"] = DefensivePatrolResponseThreshold;
             fields["friendly_response_threshold"] = DefensivePatrolResponseThreshold;

@@ -47,7 +47,7 @@ internal sealed class PilotReprocessingStore(WorldDatabase database, TimeProvide
             );
             var snapshot = Eden.World.Structures.PilotStructureStore.Snapshot(world, catalog, structure);
             if (
-                !Eden.World.Structures.PilotStructureStore.Access(world, structure, pilot.Id)
+                !Eden.World.Structures.PilotStructureStore.ServiceAccess(world, catalog, structure, pilot.Id)
                 || !snapshot.Services.Contains(Eden.Gameplay.Structures.StructureService.Reprocessing)
             )
             {

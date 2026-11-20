@@ -236,6 +236,7 @@ public sealed class MilitiaEnlistmentTests
         fixture.Store.SetPosition(pilot.ShipId, pilot.Home.Position, EnemySystem);
         Assert.Throws<InvalidDataException>(() => fixture.Store.Dock(First, pilot.ShipId, EnemyStation));
         Assert.NotNull(fixture.Store.FindPilot(1000001)!.Position);
+        Assert.False(CanUsePublicStructure());
 
         using (var action = live.Economy.Begin(TransactionParticipants.None))
         {
@@ -243,6 +244,7 @@ public sealed class MilitiaEnlistmentTests
             action.Commit();
         }
         Assert.Null(fixture.Store.Dock(First, pilot.ShipId, EnemyStation).Position);
+        Assert.True(CanUsePublicStructure());
         using (var action = live.Economy.Begin(TransactionParticipants.None))
         {
             action.Set<SavedWarzoneOccupation>().Find(EnemySystem)!.Occupier = MilitiaFaction.Caldari;
@@ -250,6 +252,19 @@ public sealed class MilitiaEnlistmentTests
         }
         Assert.Throws<InvalidDataException>(() => fixture.Store.SetPosition(pilot.ShipId, pilot.Home.Position));
         Assert.Null(fixture.Store.FindPilot(1000001)!.Position);
+
+        bool CanUsePublicStructure()
+        {
+            using CatalogDbContext catalog = new(new WorldDatabase(fixture.Path).CatalogPath);
+            return live.Economy.Inspect(world =>
+                Eden.World.Structures.PilotStructureStore.ServiceAccess(
+                    world,
+                    catalog,
+                    new() { SystemId = EnemySystem, PublicAccess = true },
+                    First
+                )
+            );
+        }
     }
 
     [Fact]

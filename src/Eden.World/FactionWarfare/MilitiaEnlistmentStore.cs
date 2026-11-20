@@ -38,18 +38,28 @@ internal sealed class MilitiaEnlistmentStore(WorldDatabase database, TimeProvide
 
     internal static void RequireDocking(WorldAction world, Pilot pilot, int systemId, int shipGroupId)
     {
-        if (
-            Effective(world, pilot) is { } faction
-            && !MilitiaRules.CanUseDocking(
-                FactionWarzoneStore.System(world, systemId),
-                faction,
-                shipGroupId == Eden.Gameplay.Docking.FleetDefinitions.CapsuleGroup
-            )
-        )
+        if (!CanUseDocking(world, pilot, systemId, shipGroupId))
         {
             throw new InvalidDataException("Only capsules can dock or undock in this enemy-occupied warzone system.");
         }
     }
+
+    internal static bool CanUseDocking(WorldAction world, Pilot pilot, int systemId, int shipGroupId) =>
+        Effective(world, pilot) is not { } faction
+        || MilitiaRules.CanUseDocking(
+            FactionWarzoneStore.System(world, systemId),
+            faction,
+            shipGroupId == Eden.Gameplay.Docking.FleetDefinitions.CapsuleGroup
+        );
+
+    internal static bool CanUseStructureServices(WorldAction world, CatalogDbContext catalog, Pilot pilot, int systemId) =>
+        Effective(world, pilot) is not { } faction
+        || FactionWarzoneStore.System(world, systemId) is not { } occupation
+        || MilitiaRules.CanUseDocking(
+            occupation,
+            faction,
+            catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId == Eden.Gameplay.Docking.FleetDefinitions.CapsuleGroup
+        );
 
     public IReadOnlyList<MilitiaFaction> AllowedFactions(int corporationId) =>
         Resident.Economy.Inspect(world => Allowed(world.Set<SavedCorporation>().Find(corporationId)));
