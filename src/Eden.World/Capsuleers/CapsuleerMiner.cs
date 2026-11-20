@@ -483,16 +483,18 @@ internal sealed partial class CapsuleerMiner(
         {
             return false;
         }
-        var visible = encounters
-            .Advance(Pilot.SystemId, Now)
-            .Where(n => !n.Warping && n.Position.DistanceTo(Pilot.Position) <= AsteroidDefinitions.VisibilityRange)
-            .Select(n => n.Id)
-            .ToHashSet();
+        var contacts = encounters.Advance(Pilot.SystemId, Now);
+        var position = Pilot.Position;
+        bool InSight(NpcSimulationContact npc) => !npc.Warping && npc.Position.DistanceTo(position) <= AsteroidDefinitions.VisibilityRange;
         combat.Acquire([new(Pilot.PilotId, Pilot.ShipId)], Now);
         warfare.Advance(Pilot.PilotId, Pilot.ShipId, Now);
         var attackers = combat.Aggressors(Pilot.ShipId);
-        foreach (long npc in attackers.Where(visible.Contains))
+        foreach (long npc in attackers)
         {
+            if (!contacts.Any(contact => contact.Id == npc && InSight(contact)))
+            {
+                continue;
+            }
             var shot = combat.Fire(
                 Pilot.PilotId,
                 Pilot.ShipId,
@@ -516,7 +518,7 @@ internal sealed partial class CapsuleerMiner(
                 return true;
             }
         }
-        return visible.Count > 0 || attackers.Count > 0;
+        return attackers.Count > 0 || contacts.Any(InSight);
     }
 
     private void Load()
@@ -710,10 +712,13 @@ internal sealed partial class CapsuleerMiner(
             _navigation = new();
             _work = Work with { ShipId = Pilot.ShipId, Navigation = _navigation.Capture(), PaidUntil = 0, ModuleId = 0 };
         }
-        JoinCorporationAtDock();
-        if (TryCorporationRelocation())
+        using (Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.minerCorporation"))
         {
-            return;
+            JoinCorporationAtDock();
+            if (TryCorporationRelocation())
+            {
+                return;
+            }
         }
         if (Work.FactoryStage is not null && _operation.World is EconomyTransaction stagedWorld)
         {
@@ -755,6 +760,7 @@ internal sealed partial class CapsuleerMiner(
             && _operation.World is EconomyTransaction supplyWorld
         )
         {
+            using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.minerIndustry");
             var moonSupply = CapsuleerIndustry.AssignedMoonSupply(supplyWorld, Pilot, Now);
             industry.RefineMoonFeed(supplyWorld, _operation.Catalog, Pilot, sponsored: moonSupply is not null);
             if (moonSupply is not null && TryTravelToMoonSupply(moonSupply))
@@ -816,6 +822,7 @@ internal sealed partial class CapsuleerMiner(
         _work = Work with { FactorySupply = supply };
         if (_operation.World is EconomyTransaction resident)
         {
+            using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.minerCareer");
             var training = careerTraining.Advance(resident, _operation.Catalog, Pilot, CapsuleerProfession.Mining, Work.CareerPlan, Now);
             _work = Work with { CareerPlan = training.Plan };
             _operation.MarketChanged |= training.MarketChanged;
@@ -841,6 +848,7 @@ internal sealed partial class CapsuleerMiner(
                 }
             }
         }
+        using var equipment = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.minerEquipment");
         var expedition = !fresh && moon is null ? PrepareMercoxitExpedition(aboard) : null;
         var laserType =
             fresh && Pilot.ShipGroupId == (int)HullClass.Corvette ? MiningLaserType.Civilian

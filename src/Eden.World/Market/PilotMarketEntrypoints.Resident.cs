@@ -215,6 +215,38 @@ internal sealed partial class PilotMarketStore
         return new(orders.Sum(o => o.EscrowCents), orders.Where(o => !o.Bid).Sum(o => checked(o.PriceCents * o.Remaining)));
     }
 
+    private MarketSummary? ChangedRegionAsks(LiveWorld live, long pilot, long catalog, long now, long active)
+    {
+        const int maximumIncrementalTypes = 8;
+        if (
+            live.MarketSummaries.ReadDirtyRegion(pilot, catalog, database.Settings, now, active) is not { } changed
+            || changed.Types.Count > maximumIncrementalTypes
+        )
+        {
+            return null;
+        }
+        using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("market.summaryChangedTypes");
+        var previous = changed.Summary;
+        var updated = changed.Types.Select(type => ResidentReadOrders(live, pilot, type, MarketScope.Region)).ToArray();
+        if (
+            updated.Any(summary => summary.RegionId != previous.RegionId) || !live.MarketSummaries.CanReplaceRegion(previous, changed.Types)
+        )
+        {
+            return null;
+        }
+        var orders = previous
+            .Orders.Where(order => !changed.Types.Contains(order.TypeId))
+            .Concat(updated.SelectMany(summary => summary.Orders))
+            .OrderBy(order => order.Id)
+            .ToArray();
+        return updated[0] with
+        {
+            Orders = orders.SequenceEqual(previous.Orders) ? previous.Orders : Array.AsReadOnly(orders),
+            ExpiresAt = Math.Min(previous.ExpiresAt, updated.Min(summary => summary.ExpiresAt)),
+            ActiveUntil = Math.Min(previous.ActiveUntil, updated.Min(summary => summary.ActiveUntil)),
+        };
+    }
+
     private MarketSummary ResidentReadOrders(Eden.World.Runtime.LiveWorld live, long pilotId, int? typeId, MarketScope? scope)
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("market.summaryLoad");

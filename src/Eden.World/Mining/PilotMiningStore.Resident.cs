@@ -20,6 +20,7 @@ using Eden.World.Ammunition;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Combat;
+using Eden.World.Corporations;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Market;
@@ -33,6 +34,8 @@ namespace Eden.World.Mining;
 
 internal sealed partial class PilotMiningStore
 {
+    private static readonly MiningSkill[] s_miningSkills = Enum.GetValues<MiningSkill>();
+
     internal static IReadOnlyDictionary<DogmaAttributeId, double> ModuleAttributes(
         WorldAction world,
         CatalogDbContext catalog,
@@ -40,10 +43,8 @@ internal sealed partial class PilotMiningStore
         InventoryItem module
     )
     {
-        var pilot = world.Pilots.Single(p => p.Id == pilotId);
-        var skills = Enum.GetValues<MiningSkill>();
-        var trained = PilotSkillReader.Levels(world, catalog, pilotId, skills.Select(skill => (int)skill).ToArray());
-        var levels = skills.ToDictionary(skill => skill, skill => trained[(int)skill]);
+        var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown pilot.");
+        var levels = s_miningSkills.ToDictionary(skill => skill, skill => PilotSkillReader.Level(world, catalog, pilotId, (int)skill));
         return MiningRules.ModuleAttributes(
             new(
                 module.GroupId,
@@ -69,8 +70,12 @@ internal sealed partial class PilotMiningStore
         long now
     )
     {
-        var pilot = world.Pilots.Single(p => p.Id == pilotId);
-        var module = PilotInventoryStore.List(world, catalog, pilotId, pilot.ActiveShipId).SingleOrDefault(i => i.Id == moduleId);
+        var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown pilot.");
+        var storedModule = world.Set<OwnedItem>().Find(moduleId);
+        var module =
+            storedModule?.OwnerId == pilotId && storedModule.LocationId == pilot.ActiveShipId
+                ? PilotInventoryStore.Read(catalog, storedModule)
+                : null;
         var asteroid = world.Set<WorldAsteroid>().Find(asteroidId);
         if (
             pilot.ActiveShip.Position is not { } position
@@ -155,7 +160,7 @@ internal sealed partial class PilotMiningStore
                 throw new InvalidDataException("The resource site is no longer available.");
             }
         }
-        var ship = PilotFittingStore.ShipAttributes(world, catalog, pilotId);
+        var ship = PilotFittingStore.ShipAttributes(world, catalog, pilot);
         if (PilotHealthStore.Read(world, pilot.ActiveShipId, ShipHealth.DefenseFrom(ship), now).Remaining.Destroyed)
         {
             throw new InvalidDataException("A destroyed ship cannot mine.");
@@ -202,15 +207,19 @@ internal sealed partial class PilotMiningStore
         long shipId,
         double capacity,
         InventoryFlag hold
-    ) =>
-        Math.Max(
-            0,
-            capacity
-                - PilotInventoryStore
-                    .List(world, catalog, pilotId, shipId)
-                    .Where(i => i.FlagId == (int)hold)
-                    .Sum(i => i.Volume * i.Quantity)
-        );
+    )
+    {
+        var items = world
+            .Filter<OwnedItem>(item => item.OwnerId == pilotId && item.LocationId == shipId && item.FlagId == (int)hold)
+            .AsEnumerable()
+            .Select(item => PilotInventoryStore.Read(catalog, item));
+        var ships = world
+            .Filter<Ship>(ship => ship.OwnerId == pilotId && ship.StoredInId == shipId && ship.StorageFlagId == (int)hold)
+            .AsEnumerable()
+            .Select(ship => PilotFleetStore.Read(catalog, ship));
+        double occupied = items.Concat(ships).OrderBy(item => item.Id).Sum(item => item.Volume * item.Quantity);
+        return Math.Max(0, capacity - occupied);
+    }
 
     internal static MiningStart Begin(
         WorldAction world,
@@ -312,7 +321,8 @@ internal sealed partial class PilotMiningStore
             throw new InvalidDataException("Crystal cycles must settle individually.");
         }
         laser = laser with { Volume = laser.Volume * cycles };
-        if (!droneCargo && world.Set<ModuleCooldown>().Find(moduleId) is not { Kind: ModuleCooldownKind.Cycle })
+        var cooldown = world.Set<ModuleCooldown>().Find(moduleId);
+        if (!droneCargo && cooldown is not { Kind: ModuleCooldownKind.Cycle })
         {
             throw new InvalidDataException("There is no paid mining cycle to collect.");
         }
@@ -373,8 +383,7 @@ internal sealed partial class PilotMiningStore
             {
                 PilotTrainingStore.CreditSilentFreePoints(world, pilotId, points);
             }
-            PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.Mined);
-            PilotTaskTrackingStore.Record(world, catalog, pilotId, now, TaskEvents.TotalMined, extracted + bonus);
+            PilotTaskTrackingStore.RecordMining(world, catalog, pilotId, now, extracted + bonus);
         }
         if (laser.Family != MiningFamily.Gas && !MissionMiningRules.IsDeposit(asteroid.Id))
         {
@@ -387,7 +396,10 @@ internal sealed partial class PilotMiningStore
             );
         }
         PersonalMiningLedgerStore.Record(world, pilot, asteroid, now, new(checked((long)extracted + bonus), bonus, collected.Residue));
-        world.RemoveRange(world.Set<ModuleCooldown>().Where(c => c.ModuleId == moduleId && c.Kind == ModuleCooldownKind.Cycle));
+        if (cooldown is { Kind: ModuleCooldownKind.Cycle })
+        {
+            world.Remove(cooldown);
+        }
         world.SaveChanges();
         bool depleted = asteroid.Quantity == 0;
         if (depleted)

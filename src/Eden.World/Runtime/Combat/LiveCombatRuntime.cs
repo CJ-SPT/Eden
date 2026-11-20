@@ -13,7 +13,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Runtime.Combat;
 
-internal readonly record struct CombatRowChange(string Table, long Id, bool Resident = false, bool Projection = false);
+internal readonly record struct CombatRowChange(string Table, long Id, bool Resident = false, bool Projection = false, int? System = null);
 
 internal sealed partial class LiveCombatRuntime(
     LiveWorld owner,
@@ -189,7 +189,7 @@ internal sealed partial class LiveCombatRuntime(
                 _contactEpoch++;
                 _acquisitions.Clear();
                 _systemNpcs.Clear();
-                _populationDue.Clear();
+                InvalidatePopulationDeadlines("NPC destruction");
                 _effectiveNpcs.Clear();
                 return result;
             }
@@ -748,18 +748,18 @@ internal sealed partial class LiveCombatRuntime(
                     break;
                 case "WorldNpcEncounter":
                 case "WorldNpcMiningOperation":
-                    ObserveEncounterPopulation(change.Id, change.Resident);
+                    ObserveEncounterPopulation(change.Id, change.Table, change.Resident);
                     break;
                 case "WorldNpcStanding":
-                    _populationDue.Clear();
+                    InvalidatePopulationDeadlines("standings");
                     break;
                 case "WorldNpcMiningMember":
-                    ObserveNpcPopulation(change.Id, change.Resident);
+                    ObserveNpcPopulation(change.Id, change.Table, change.Resident);
                     _contactEpoch++;
                     _staleNpcs.Add(change.Id);
                     break;
                 case "WorldNpc":
-                    ObserveNpcPopulation(change.Id, change.Resident);
+                    ObserveNpcPopulation(change.Id, change.Table, change.Resident);
                     _effectiveNpcs.Remove(change.Id);
                     _acquisitions.Clear();
                     _contactEpoch++;

@@ -57,7 +57,7 @@ public sealed partial class CatalogProvider
 
     private readonly record struct FileStamp(long Length, long WrittenAt);
 
-    private readonly record struct CacheKey(string Dataset, string Key);
+    private readonly record struct CacheKey<TKey>(string Dataset, TKey Key);
 
     private readonly record struct ProductBlueprint(int ProductTypeId, int BlueprintTypeId);
 
@@ -168,7 +168,10 @@ public sealed partial class CatalogProvider
         _regions = new(LoadRegions);
         _constellations = new(LoadConstellations);
         _gates = new(LoadGates);
+        _gateBodies = new(LoadGateBodies);
+        _systemPolitics = new(LoadSystemPolitics);
         _systemSecurity = new(LoadSystemSecurity);
+        _systemBelts = new(LoadBeltAnchors);
         _stationNames = new(LoadStationNames);
         _celestials = new(this, "projection/celestials");
         _systemCelestials = new(this, "projection/system-celestials");
@@ -213,12 +216,11 @@ public sealed partial class CatalogProvider
 
     public static CatalogProvider Open(string path, CatalogCacheOptions? options = null)
     {
-        string canonical = System.IO.Path.GetFullPath(path);
         if (options is { MaximumEstimatedBytes: <= 0 })
         {
             throw new ArgumentOutOfRangeException(nameof(options));
         }
-        var captured = CatalogReadScope.Resolve(canonical, () => OpenUnscoped(canonical, options));
+        var captured = CatalogReadScope.Resolve(path, options);
         if (options is not null && captured._options != options)
         {
             throw new InvalidOperationException("Shared catalog cache options must agree for the same catalog.");
@@ -226,7 +228,7 @@ public sealed partial class CatalogProvider
         return captured;
     }
 
-    private static CatalogProvider OpenUnscoped(string path, CatalogCacheOptions? options)
+    internal static CatalogProvider OpenUnscoped(string path, CatalogCacheOptions? options)
     {
         lock (s_gate)
         {
@@ -607,7 +609,7 @@ public sealed partial class CatalogProvider
 
         internal bool TryRead(TKey key, out CatalogValue<TValue> value)
         {
-            if (owner._cache.TryGetValue(new CacheKey(dataset, CatalogKey.Encode(key)), out CatalogValue<TValue>? cached))
+            if (owner._cache.TryGetValue(new CacheKey<TKey>(dataset, key), out CatalogValue<TValue>? cached))
             {
                 Interlocked.Increment(ref owner._hits);
                 value = cached!;
@@ -619,12 +621,17 @@ public sealed partial class CatalogProvider
 
         internal CatalogValue<TValue> Read(TKey key, Func<CatalogValue<TValue>> load)
         {
-            CacheKey cacheKey = new(dataset, CatalogKey.Encode(key));
+            CacheKey<TKey> cacheKey = new(dataset, key);
             if (owner._cache.TryGetValue(cacheKey, out CatalogValue<TValue>? cached))
             {
                 Interlocked.Increment(ref owner._hits);
                 return cached!;
             }
+            return Load(key, cacheKey, load);
+        }
+
+        private CatalogValue<TValue> Load(TKey key, CacheKey<TKey> cacheKey, Func<CatalogValue<TValue>> load)
+        {
             var pending = _loads.GetOrAdd(
                 key,
                 _ => new Lazy<CatalogValue<TValue>>(() =>
@@ -677,7 +684,11 @@ public sealed partial class CatalogProvider
                 Interlocked.Increment(ref _owner._hits);
                 return _pinned.Value.TryGetValue(key, out var pinned) ? new(true, pinned, 0) : new(false, default!, 0);
             }
-            return _memo.Read(
+            return _memo.TryRead(key, out var cached) ? cached : ReadRecord(key);
+        }
+
+        private CatalogValue<TValue> ReadRecord(TKey key) =>
+            _memo.Read(
                 key,
                 () =>
                 {
@@ -687,7 +698,6 @@ public sealed partial class CatalogProvider
                     return Decode(record);
                 }
             );
-        }
 
         private static CatalogValue<TValue> Decode(SourceRecord? record) =>
             record is null

@@ -17,7 +17,8 @@ internal sealed class CapsuleerMaintenance(
     TimeProvider clock,
     IWorldSynchronization synchronization,
     ICapsuleerUpdateDiagnostics updateDiagnostics,
-    IPilotOperationScope? operations = null
+    IPilotOperationScope? operations = null,
+    ICapsuleerDiagnostics? diagnostics = null
 ) : IDisposable, ICapsuleerPresentation
 {
     // System.Threading.Timer bounds one wait to uint.MaxValue - 1 milliseconds.
@@ -26,12 +27,14 @@ internal sealed class CapsuleerMaintenance(
     private CancellationTokenSource? _cancellation;
     private Task _loop = Task.CompletedTask;
     private volatile bool _stopping;
+    private long _waitTicks;
     private readonly Dictionary<long, ChatPilot> _lastPresence = [];
     private readonly List<ChatPilot> _presenceChanges = [];
     private CapsuleerBatch? _retryPresentation;
     private CapsuleerBatch? _publishedPresentation;
 
     internal Task Completion => _loop;
+    internal TimeSpan WorkerWait => TimeSpan.FromTicks(Interlocked.Read(ref _waitTicks));
 
     internal void Start(CancellationToken stopping = default)
     {
@@ -62,7 +65,9 @@ internal sealed class CapsuleerMaintenance(
         {
             try
             {
+                long waiting = clock.GetTimestamp();
                 await Wait(wake, cancellationToken).ConfigureAwait(false);
+                Interlocked.Add(ref _waitTicks, clock.GetElapsedTime(waiting).Ticks);
                 cancellationToken.ThrowIfCancellationRequested();
                 var changedDuringTurn = scheduler.NextWake().Changed;
                 var budget = CapsuleerJobQueue.ExecutionBudget;
@@ -74,13 +79,23 @@ internal sealed class CapsuleerMaintenance(
                     cancellationToken.ThrowIfCancellationRequested();
                     if (backlogged)
                     {
-                        // Spend up to half the next interval catching up while jobs advance.
-                        // A stale plan or a slow job still gets an asynchronous cooldown.
                         var interval = CapsuleerJobQueue.WakeInterval;
-                        var remaining = advanced ? interval - clock.GetElapsedTime(started) : interval;
+                        var worked = clock.GetElapsedTime(started);
+                        var remaining = advanced ? interval - worked : interval;
                         var delay = remaining > CapsuleerJobQueue.ExecutionBudget ? remaining : CapsuleerJobQueue.ExecutionBudget;
                         budget = advanced ? CatchUpBudget : CapsuleerJobQueue.ExecutionBudget;
-                        await Task.Delay(delay, clock, cancellationToken).ConfigureAwait(false);
+                        waiting = clock.GetTimestamp();
+                        if (advanced && worked < interval && diagnostics?.Read().OldestDelayTicks > interval.Ticks)
+                        {
+                            // Each job releases the owner. Yield to runnable requests between
+                            // productive slices while catching up more than one wake interval.
+                            await Task.Yield();
+                        }
+                        else
+                        {
+                            await Task.Delay(delay, clock, cancellationToken).ConfigureAwait(false);
+                        }
+                        Interlocked.Add(ref _waitTicks, clock.GetElapsedTime(waiting).Ticks);
                     }
                 } while (backlogged);
                 wake = scheduler.NextWake();

@@ -5,6 +5,42 @@ namespace Eden.Protocol.Tests.Persistence;
 public sealed class DogmaGraphTests
 {
     [Fact]
+    public void SparseFittingGraphsOnlyAllocateForTheModifiersTheyUse()
+    {
+        const int itemCount = 16;
+        const int attributesPerItem = 32;
+        const int measuredFits = 64;
+        var attribute = DogmaAttributeId.ShieldCapacity;
+        var raw = Enum.GetValues<DogmaAttributeId>()
+            .Distinct()
+            .Where(id => id != attribute)
+            .Take(attributesPerItem)
+            .ToDictionary(id => id, _ => 1d);
+        raw.Add(attribute, 100);
+        var items = Enumerable.Range(1, itemCount).Select(id => new DogmaNode(id, raw)).ToArray();
+        DogmaModifier[] modifiers = [new(1, attribute, DogmaOperation.Add, new DogmaValue.Constant(25))];
+        Dictionary<DogmaAttributeId, DogmaAttributeDefinition> definitions = [];
+
+        double Evaluate()
+        {
+            var fit = new DogmaGraph(items, modifiers, definitions);
+            return items.Sum(item => fit.Attributes(item.Id).Values.Sum());
+        }
+
+        double expected = itemCount * (attributesPerItem + 100) + 25;
+        Assert.Equal(expected, Evaluate());
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        double total = 0;
+        for (int index = 0; index < measuredFits; index++)
+        {
+            total += Evaluate();
+        }
+        long bytesPerFit = (GC.GetAllocatedBytesForCurrentThread() - before) / measuredFits;
+        Assert.Equal(expected * measuredFits, total);
+        Assert.True(bytesPerFit < 256 * 1024, $"Sparse fit allocated {bytesPerFit:N0} bytes.");
+    }
+
+    [Fact]
     public void PreMultipliersDiminishWithinTheirOwnOperatorBucket()
     {
         var attribute = DogmaAttributeId.MissileDamageMultiplier;

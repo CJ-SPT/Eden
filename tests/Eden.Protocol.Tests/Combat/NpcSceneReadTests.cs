@@ -72,10 +72,19 @@ public sealed class NpcSceneReadTests
         using NpcCombatTests.Fixture f = new(liveWorld: true, useTestClock: true);
         AddDispersedNpcs(f);
         var encounters = f.Db.Services.GetRequiredService<INpcEncounters>();
+        var simulation = f.Db.Services.GetRequiredService<INpcSimulation>();
         var first = encounters.ReadScene(f.Npc.SystemId, f.Npc.Position, f.Clock.Now);
         var other = encounters.ReadScene(f.Npc.SystemId, f.Npc.Position + new SpacePosition(2_000_000, 0, 0), f.Clock.Now);
         Assert.Same(first.Warping, other.Warping);
         var original = first.Visible.Single(n => n.Id == f.Npc.Id);
+        var previousContacts = simulation.Advance(f.Npc.SystemId, f.Clock.Now);
+        using (var metrics = SessionPerformance.Begin("shared simulation contacts", _ => { }, force: true)!)
+        {
+            Assert.Same(previousContacts, simulation.Advance(f.Npc.SystemId, f.Clock.Now));
+            Assert.Equal(0, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+            Assert.Equal(0, metrics.FittingCalculations);
+        }
         using (WorldDbContext world = new(f.Db.Path))
         {
             var row = world.Set<WorldNpc>().Find(f.Npc.Id)!;
@@ -95,6 +104,15 @@ public sealed class NpcSceneReadTests
         AssertScene(encounters, f, other.Visible[0].Position);
         Assert.Equal(f.Npc.Position, original.Position);
         AssertScene(encounters, f, f.Npc.Position);
+        var moved = simulation.Advance(f.Npc.SystemId, f.Clock.Now);
+        Assert.Equal(original.Position.X + 2_000_000, moved.Single(contact => contact.Id == f.Npc.Id).Position.X);
+        using (var action = f.Db.Services.GetRequiredService<LiveWorld>().Economy.Begin(new(systems: [f.Npc.SystemId])))
+        {
+            action.Set<WorldNpc>().Find(f.Npc.Id)!.DestroyedAt = f.Clock.Now;
+            action.Commit();
+        }
+        Assert.DoesNotContain(simulation.Advance(f.Npc.SystemId, f.Clock.Now), contact => contact.Id == f.Npc.Id);
+        Assert.Contains(moved, contact => contact.Id == f.Npc.Id);
     }
 
     [Fact]

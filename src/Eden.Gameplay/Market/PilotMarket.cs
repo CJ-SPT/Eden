@@ -75,6 +75,8 @@ public interface IPilotMarket
     void CheckStation(long pilotId, int stationId);
     long Balance(long pilotId);
     IReadOnlyList<MarketOrder> Orders(long pilotId, int? typeId = null);
+
+    // An immutable snapshot, shared across reads while the best asks are unchanged.
     IReadOnlyList<MarketOrder> BestAsks(long pilotId, MarketScope scope);
     IReadOnlyList<MarketTrade> Transactions(long pilotId, MarketTransactionQuery? query = null);
     IReadOnlyList<WalletEntryDefinition> EntryTypes();

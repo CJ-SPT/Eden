@@ -42,8 +42,9 @@ archive and publishes them to remote players through Eden Launcher.
 
 ### Build caching on a remote host
 
-Use a current Docker Engine with BuildKit and Compose v2. The Dockerfile retains both NuGet downloads and an
-SDK- and architecture-specific compilation cache between builds. The compilation cache keeps a source workspace and
+Use a current Docker Engine with BuildKit and Compose v2. The build stage uses Microsoft's `10.0-noble` SDK image tag,
+which tracks .NET 10 updates. The Dockerfile retains NuGet downloads and separates compilation caches by the resolved
+SDK version and target architecture. The compilation cache keeps a source workspace and
 [MSBuild artifacts](https://learn.microsoft.com/dotnet/core/sdk/artifacts-output), including intermediate files
 and compiled assemblies. Unchanged projects can skip compilation even when a source change reruns the publish step.
 Python 3 installation and the standalone Python 2 compiler are independent of server binaries, so a source update

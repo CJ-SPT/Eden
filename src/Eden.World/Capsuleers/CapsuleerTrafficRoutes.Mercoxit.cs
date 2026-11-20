@@ -36,20 +36,9 @@ internal static partial class CapsuleerTrafficRoutes
             return new Dictionary<int, int[]>();
         }
         var graph = catalog.Definitions.GlobalDefinition(s_graph);
-        var oreBelts = catalog
-            .Records(CatalogData.Client.Asteroidcountbytypeidbeltid)
-            .Where(record => record.Key is > 0 and <= int.MaxValue && HasMercoxit(catalog, record.Value))
-            .Select(record => (int)record.Key)
-            .ToHashSet();
         var destinations = catalog
-            .StaticCelestialSystems(AsteroidDefinitions.BeltGroup)
-            .Where(belt =>
-                oreBelts.Contains(belt.Key)
-                && graph.Links.ContainsKey(belt.Value)
-                && catalog.Definitions.SystemSecurity.GetValueOrDefault(belt.Value, 1) <= 0
-            )
-            .Select(belt => belt.Value)
-            .Distinct()
+            .BeltSystemsWithOreGroup(MiningDefinitions.MercoxitGroup)
+            .Where(system => graph.Links.ContainsKey(system) && catalog.Definitions.SystemSecurity.GetValueOrDefault(system, 1) <= 0)
             .Order()
             .ToArray();
         // Search from the deposits once. The graph contains only reciprocal gates with flight objects at both ends.

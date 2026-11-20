@@ -100,8 +100,8 @@ internal static partial class CapsuleerTrafficRoutes
         {
             return null;
         }
-        var arrivalBody = definitions.FindCelestial(arrival.Id);
-        var departureBody = definitions.FindCelestial(departure.Id);
+        var arrivalBody = definitions.FindGateBody(arrival.Id);
+        var departureBody = definitions.FindGateBody(departure.Id);
         if (
             arrivalBody?.SolarSystemId != gate.ObserverSystemId
             || departureBody?.SolarSystemId != gate.SourceSystemId

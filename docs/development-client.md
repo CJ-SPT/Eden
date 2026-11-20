@@ -45,7 +45,7 @@ Preparation copies the client files and resources. It checks SHA-256 hashes for 
 
 Optional [zKill-backed traffic snapshots](capsuleer-population.md#zkill-backed-travelers) add real pilot names and complete supported victim fits. Import them separately; normal catalog setup and gameplay remain offline. A replacement snapshot is adopted on the next server restart.
 
-From the repository root, run `.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\EdenDev\3662168'` after staging the client. Use 64-bit Windows Python 3.11 or later with the standard library, PowerShell 7, the pinned .NET SDK, and at least 8 GB free for the catalog, temporary records, and an existing installation. The first run downloads the [CCP build 3662168 export](https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip). To rebuild offline, reuse the cached export under `%LOCALAPPDATA%\Eden\catalog-input` or pass `-Archive` with a local copy.
+From the repository root, run `.\tools\Setup-Catalog.ps1 -DevelopmentRoot 'E:\EdenDev\3662168'` after staging the client. Use 64-bit Windows Python 3.11 or later with the standard library, PowerShell 7, a stable .NET 10 SDK, and at least 8 GB free for the catalog, temporary records, and an existing installation. The first run downloads the [CCP build 3662168 export](https://developers.eveonline.com/static-data/tranquility/eve-online-static-data-3662168-jsonl.zip). To rebuild offline, reuse the cached export under `%LOCALAPPDATA%\Eden\catalog-input` or pass `-Archive` with a local copy.
 
 Stop the server before rebuilding. Setup prints source counts and verifies typed reads before printing `Activated` and the installed path. By default, setup writes to `src/Eden.Server/data/catalog.sqlite`. Use `-Output` to write a catalog for another server. An interrupted import or checksum error leaves the previous catalog available. Restore the matching input files and rerun the same command.
 
@@ -85,6 +85,10 @@ those extra types are outside this station/structure runtime integration. Moving
 ### Starting with saved data
 
 Start the server with `dotnet run --no-build --project src/Eden.Server`. The server uses `src/Eden.Server/data/world.sqlite` from source or `data/world.sqlite` beside the published executable. Set `EDEN_DATA_DIR` to choose a different data directory for the server and catalog setup. Relative values resolve from the server folder. An explicit `--world` path takes precedence and uses the catalog beside that save.
+
+If startup reports a missing `catalog.sqlite`, copy your matching catalog to the path in the error or run `Setup-Catalog.ps1`
+with `-Output` set to that path. If you double-click `Eden.Server.exe` on Windows, its console displays the error until you
+press a key. Set `EDEN_NO_PAUSE_ON_ERROR=1` for automation that starts Eden in a dedicated Windows console.
 
 The first startup initializes a new world with Eden Pilot and Eden Wing. Existing saves migrate to the current schema, preserving their assets and supported history. Normal startup loads the saved world into RAM and checkpoints committed gameplay changes every 15 seconds. Graceful shutdown flushes remaining changes. Authentication mutations also request a durable checkpoint before returning. Save failures remain visible by default. Set `EDEN_VERBOSE_LOGGING=1` for routine checkpoint diagnostics.
 

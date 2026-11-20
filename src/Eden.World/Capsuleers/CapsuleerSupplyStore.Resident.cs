@@ -126,8 +126,8 @@ internal static partial class CapsuleerSupplyStore
             && !inventory.Any(item => item.FlagId == (int)InventoryFlag.DroneBay)
         )
         {
-            var drones = catalog.Definition(s_drones, 0);
-            if (drones.Length > 0)
+            var drones = AvailableDrones(catalog);
+            if (drones.Count > 0)
             {
                 GrantDroneSkills(world, catalog, pilotId);
                 var fit = FittingCalculation.Read(world, catalog, pilot);

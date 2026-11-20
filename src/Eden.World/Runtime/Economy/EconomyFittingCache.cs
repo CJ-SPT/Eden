@@ -39,7 +39,9 @@ internal sealed partial class EconomyTransaction
 
     private bool PendingFitChanges()
     {
-        foreach (var set in _sets.Values.ToArray())
+        // Fitting reads can open more sets while resolving a module's owner or
+        // environment. Inspect only the current sets that can invalidate a fit.
+        foreach (var set in _sets.Where(entry => s_fitInputs.Contains(entry.Key)).Select(entry => entry.Value).ToArray())
         {
             if (set.Prepare() && set.Changes.Any(c => ResidentEconomy.IsFitDependency(c.Table)))
             {

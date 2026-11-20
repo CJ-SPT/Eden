@@ -114,26 +114,30 @@ internal static partial class TrafficProvisioning
     )
     {
         int region = catalog.RequireSystem(system).RegionId;
-        var security = catalog.Definitions.SystemSecurity;
+        var definitions = catalog.Definitions;
+        var security = definitions.SystemSecurity;
         var band = TrafficRules.SecurityBand(security.GetValueOrDefault(system));
         bool high = route.Systems.Any(id => TrafficRules.SecurityBand(security.GetValueOrDefault(id)) == TrafficSecurityBand.High);
-        bool light =
-            (roster.Count(type => TrafficRules.LightHull((HullClass)catalog.RequireItem(type).GroupId)) + 1) * 10 <= roster.Count + 1;
+        bool light = AllowsLightHull(catalog, roster);
+        var items = definitions.Items;
         return database.Traffic.RuntimeCandidates(
-            catalog.Definitions.Identity.Generation,
+            definitions.Identity.Generation,
             region,
             band,
             high,
             light,
             profile =>
-                catalog.FittingType(profile.HullTypeId) is { } hull
+                items.TryGetValue(profile.HullTypeId, out var hull)
                 && TrafficRules.RouteAllows((HullClass)hull.GroupId, high)
                 && (light || !TrafficRules.LightHull((HullClass)hull.GroupId))
                 && (cargoVolume == 0 || (hull.Capacity ?? 0) >= cargoVolume),
-            profile => catalog.RequireItem(profile.HullTypeId).GroupId,
+            profile => items[profile.HullTypeId].GroupId,
             cargoVolume
         );
     }
+
+    internal static bool AllowsLightHull(CatalogDbContext catalog, IReadOnlyList<int> roster) =>
+        (roster.Count(type => TrafficRules.LightHull((HullClass)catalog.RequireItem(type).GroupId)) + 1) * 10 <= roster.Count + 1;
 
     internal static void Record(WorldDatabase database, WorldDbContext world, long pilot, TrafficProfile profile)
     {

@@ -11,13 +11,18 @@ internal sealed class CatalogReadScope : IPilotOperationScope
 
     public IDisposable Begin() => new Operation();
 
-    internal static CatalogProvider Resolve(string path, Func<CatalogProvider> load)
+    internal static CatalogProvider Resolve(string path, CatalogCacheOptions? options)
     {
-        if (s_current.Value is not { } operation)
+        var catalogs = s_current.Value?.Catalogs;
+        // World readers usually supply the canonical path already captured for this operation.
+        if (catalogs is not null && catalogs.TryGetValue(path, out var current))
         {
-            return load();
+            return current;
         }
-        return operation.Catalogs.GetOrAdd(path, _ => load());
+        string canonical = Path.GetFullPath(path);
+        return catalogs is null
+            ? CatalogProvider.OpenUnscoped(canonical, options)
+            : catalogs.GetOrAdd(canonical, static (key, settings) => CatalogProvider.OpenUnscoped(key, settings), options);
     }
 
     private sealed class Operation : IDisposable

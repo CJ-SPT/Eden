@@ -1,6 +1,7 @@
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Mining;
+using Eden.World.Catalog;
 using Eden.World.Runtime.Combat;
 
 namespace Eden.World.Runtime;
@@ -13,8 +14,58 @@ internal sealed class LiveTrafficGeometry
     private sealed record Entry(long Catalog, IReadOnlyList<StaticSpaceObject> Objects);
 
     private readonly Dictionary<int, Entry> _systems = [];
+    private readonly Dictionary<int, IReadOnlyList<StaticSpaceObject>> _static = [];
+    private readonly Queue<int> _staticOrder = new();
+    private long _staticCatalog;
+    private const int MaximumStaticObjects = 48 * 1024;
+    private int _staticObjects;
     private readonly Dictionary<long, int> _belts = [];
     internal long Revision { get; private set; }
+
+    internal IReadOnlyList<StaticSpaceObject> StaticObjects(CatalogDbContext catalog, int system)
+    {
+        long generation = catalog.Definitions.Identity.Generation;
+        lock (_gate)
+        {
+            if (_staticCatalog == generation && _static.TryGetValue(system, out var cached))
+            {
+                return cached;
+            }
+        }
+        var loaded = SystemObjects.Geometry(catalog, system);
+        if (loaded.Count > MaximumStaticObjects)
+        {
+            return loaded;
+        }
+        lock (_gate)
+        {
+            if (_staticCatalog > generation)
+            {
+                return loaded;
+            }
+            if (_staticCatalog != generation)
+            {
+                _static.Clear();
+                _staticOrder.Clear();
+                _staticObjects = 0;
+                _staticCatalog = generation;
+            }
+            if (_static.TryGetValue(system, out var cached))
+            {
+                return cached;
+            }
+            while (_static.Count >= MaximumSystems || _staticObjects + loaded.Count > MaximumStaticObjects)
+            {
+                int expired = _staticOrder.Dequeue();
+                _staticObjects -= _static[expired].Count;
+                _static.Remove(expired);
+            }
+            _static.Add(system, loaded);
+            _staticOrder.Enqueue(system);
+            _staticObjects += loaded.Count;
+            return loaded;
+        }
+    }
 
     internal bool TryRead(int system, long catalog, out IReadOnlyList<StaticSpaceObject> objects)
     {
@@ -70,7 +121,19 @@ internal sealed class LiveTrafficGeometry
                     _systems.Clear();
                     _belts.Clear();
                 }
-                else if (change.Table == "WorldBeltRenewal" || change.Table == "WorldAsteroid" && !MissionMiningRules.IsDeposit(change.Id))
+                else if (
+                    change.Table == "WorldAsteroidGeometry"
+                    && change.System is int changedSystem
+                    && !MissionMiningRules.IsDeposit(change.Id)
+                )
+                {
+                    Revision++;
+                    _systems.Remove(changedSystem);
+                }
+                else if (
+                    change.Table == "WorldBeltRenewal"
+                    || change.Table == "WorldAsteroid" && !change.Resident && !MissionMiningRules.IsDeposit(change.Id)
+                )
                 {
                     Revision++;
                     long belt =

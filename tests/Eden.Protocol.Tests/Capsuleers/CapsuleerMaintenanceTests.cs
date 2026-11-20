@@ -257,14 +257,16 @@ public sealed class CapsuleerMaintenanceTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task BackloggedTurnsWaitForCadenceWithoutDroppingDueJobs(bool stalled)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task BackloggedTurnsWaitForCadenceWithoutDroppingDueJobs(bool stalled, bool overdue)
     {
         using CapsuleerHaulerTests.Fixture f = new();
         using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
         ManualWakeClock clock = new();
-        BackloggedScheduler scheduler = new(clock, stalled);
+        BackloggedScheduler scheduler = new(clock, stalled, overdue);
         using CapsuleerMaintenance maintenance = new(
             scheduler,
             host.GetRequiredService<ICapsuleerHandoff>(),
@@ -272,14 +274,19 @@ public sealed class CapsuleerMaintenanceTests
             host.GetRequiredService<ChatRuntime>(),
             clock,
             host.GetRequiredService<IWorldSynchronization>(),
-            host.GetRequiredService<ICapsuleerUpdateDiagnostics>()
+            host.GetRequiredService<ICapsuleerUpdateDiagnostics>(),
+            diagnostics: scheduler
         );
         maintenance.Start();
         var initial = await clock.NextWake();
         initial.Fire();
-        (int Attempts, int Completed, int DelayMilliseconds)[] wakes = stalled
-            ? [(1, 1, 40), (2, 1, 50), (3, 2, 40)]
-            : [(1, 1, 40), (4, 4, 20)];
+        (int Attempts, int Completed, int DelayMilliseconds)[] wakes = (stalled, overdue) switch
+        {
+            (true, true) => [(2, 1, 50)],
+            (false, true) => [],
+            (true, false) => [(1, 1, 40), (2, 1, 50), (3, 2, 40)],
+            _ => [(1, 1, 40), (4, 4, 20)],
+        };
         foreach (var wake in wakes)
         {
             var next = await clock.NextWake();
@@ -294,11 +301,17 @@ public sealed class CapsuleerMaintenanceTests
         Assert.Equal(stalled ? 6 : 5, scheduler.Calls);
     }
 
-    private sealed class BackloggedScheduler(ManualWakeClock clock, bool stalled) : ICapsuleerScheduler
+    private sealed class BackloggedScheduler(ManualWakeClock clock, bool stalled, bool overdue) : ICapsuleerScheduler, ICapsuleerDiagnostics
     {
         public TaskCompletionSource Current { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public int Calls { get; private set; }
         public int Completed { get; private set; }
+
+        public CapsuleerRuntimeSummary Read() =>
+            CapsuleerRuntimeSummary.Empty with
+            {
+                OldestDelayTicks = overdue ? 2 * CapsuleerJobQueue.WakeInterval.Ticks : 0,
+            };
 
         public CapsuleerBatch Run(int destinyStamp, int maximumActions = CapsuleerJobQueue.ActionsPerTurn)
         {

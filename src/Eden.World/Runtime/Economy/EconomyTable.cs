@@ -16,11 +16,13 @@ internal sealed record EconomyChange<T>(EconomyKey Key, T? Value)
 
 internal interface IEconomyProjection
 {
+    string Table { get; }
     int Count { get; }
     void Apply(WorldDbContext world);
 }
 
 internal sealed record EconomyProjection<T>(
+    string Table,
     IReadOnlyList<EconomyChange<T>> Rows,
     Action<WorldDbContext, IReadOnlyList<EconomyChange<T>>> Project
 ) : IEconomyProjection
@@ -325,7 +327,11 @@ internal sealed partial class EconomyTable<TRow, TState>(
     }
 
     public IEconomyProjection Capture() =>
-        new EconomyProjection<TState>(_sqlBaselines.Keys.Select(id => new EconomyChange<TState>(id, Snapshot(id))).ToArray(), project);
+        new EconomyProjection<TState>(
+            name,
+            _sqlBaselines.Keys.Select(id => new EconomyChange<TState>(id, Snapshot(id))).ToArray(),
+            project
+        );
 
     public void Projected(WorldDbContext world, IEconomyProjection projection)
     {
@@ -438,15 +444,48 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
     {
         get
         {
+            if (_changes.Count == 0)
+            {
+                return [];
+            }
             List<Eden.World.Runtime.Combat.CombatRowChange> changes = [];
             foreach (var key in _changes.Keys)
             {
                 changes.Add(new(table.Name, key.Id, Resident: true));
-                changes.AddRange(transaction.FitChanges(table.Read(key), _removed.Contains(key) ? null : _local[key]));
+                var beforeRow = table.Read(key);
+                var afterRow = _removed.Contains(key) ? null : _local[key];
+                changes.AddRange(transaction.FitChanges(beforeRow, afterRow));
+                if (typeof(TRow) == typeof(Eden.Data.World.Mining.WorldAsteroid))
+                {
+                    var before = beforeRow as Eden.Data.World.Mining.WorldAsteroid;
+                    var after = afterRow as Eden.Data.World.Mining.WorldAsteroid;
+                    if (
+                        before is null
+                        || after is null
+                        || before.SystemId != after.SystemId
+                        || before.BeltId != after.BeltId
+                        || before.TypeId != after.TypeId
+                        || before.Radius != after.Radius
+                        || before.X != after.X
+                        || before.Y != after.Y
+                        || before.Z != after.Z
+                        || (before.Quantity > 0) != (after.Quantity > 0)
+                    )
+                    {
+                        if (before is not null && before.SystemId != after?.SystemId)
+                        {
+                            changes.Add(new("WorldAsteroidGeometry", key.Id, Resident: true, System: before.SystemId));
+                        }
+                        if (after is not null)
+                        {
+                            changes.Add(new("WorldAsteroidGeometry", key.Id, Resident: true, System: after.SystemId));
+                        }
+                    }
+                }
                 if (typeof(TRow) == typeof(Eden.Data.World.Docking.FlightPosition))
                 {
-                    var before = table.Read(key) as Eden.Data.World.Docking.FlightPosition;
-                    var after = _removed.Contains(key) ? null : _local[key] as Eden.Data.World.Docking.FlightPosition;
+                    var before = beforeRow as Eden.Data.World.Docking.FlightPosition;
+                    var after = afterRow as Eden.Data.World.Docking.FlightPosition;
                     if ((before is null) != (after is null) || before?.SystemId != after?.SystemId)
                     {
                         changes.Add(new("WorldPositionMembership", key.Id, Resident: true));
@@ -454,8 +493,8 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
                 }
                 if (typeof(TRow) == typeof(Eden.Data.World.Inventory.OwnedItem))
                 {
-                    var before = table.Read(key) as Eden.Data.World.Inventory.OwnedItem;
-                    var after = _removed.Contains(key) ? null : _local[key] as Eden.Data.World.Inventory.OwnedItem;
+                    var before = beforeRow as Eden.Data.World.Inventory.OwnedItem;
+                    var after = afterRow as Eden.Data.World.Inventory.OwnedItem;
                     long priorHold = MiningHoldShip(before);
                     long nextHold = MiningHoldShip(after);
                     if (priorHold > 0)
@@ -497,16 +536,32 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
             : 0;
 
     public override IReadOnlyCollection<long> Owners =>
-        _changes
-            .Keys.SelectMany(key => new[] { table.Read(key), _removed.Contains(key) ? null : _local[key] })
-            .OfType<TRow>()
-            .Select(EconomyOwnership.Pilot)
-            .Where(id => id > 0)
-            .Distinct()
-            .ToArray();
+        _changes.Count == 0
+            ? []
+            : _changes
+                .Keys.SelectMany(key => new[] { table.Read(key), _removed.Contains(key) ? null : _local[key] })
+                .OfType<TRow>()
+                .Select(EconomyOwnership.Pilot)
+                .Where(id => id > 0)
+                .Distinct()
+                .ToArray();
     internal override IReadOnlyCollection<TRow> Local => _local.Values;
 
-    internal IEnumerable<TState> IndexedSnapshots(string column, int value, (string Column, int Value)? alternate = null)
+    internal bool ContainsSnapshot(EconomyKey key) => !_removed.Contains(key) && (_local.ContainsKey(key) || table.Contains(key));
+
+    internal TState? ReadSnapshot(EconomyKey key) =>
+        _removed.Contains(key) ? null
+        : _local.TryGetValue(key, out var row) ? table.Capture(row)
+        : table.Snapshot(key);
+
+    // A different row claiming the slot in this action will validate its own key.
+    internal bool HasUniqueCommittedKey(EconomyKey row, string index, object value)
+    {
+        var matches = table.Indexed(index, value);
+        return matches.Count == 1 && matches.Contains(row);
+    }
+
+    internal IEnumerable<TState> IndexedSnapshots(string column, object value, (string Column, int Value)? alternate = null)
     {
         var keys = table.Indexed(column, value);
         if (alternate is { } index)
@@ -517,6 +572,14 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
                 keys = candidates;
             }
         }
+        return ReadSnapshots(keys);
+    }
+
+    internal IEnumerable<TState> IndexedSnapshots(string column, IReadOnlySet<long> values) =>
+        ReadSnapshots(values.SelectMany(value => table.Indexed(column, value)));
+
+    private IEnumerable<TState> ReadSnapshots(IEnumerable<EconomyKey> keys)
+    {
         foreach (var key in keys)
         {
             if (!_local.ContainsKey(key) && table.Snapshot(key) is { } saved)

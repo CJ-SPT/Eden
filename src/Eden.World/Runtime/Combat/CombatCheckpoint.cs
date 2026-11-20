@@ -43,10 +43,41 @@ internal sealed record CombatCheckpoint(
     private const int PositionBatchSize = 128;
     private static readonly JsonSerializerOptions PositionOptions = new() { IgnoreReadOnlyProperties = true };
 
-    internal void Apply(WorldDbContext world)
+    internal void Apply(WorldDbContext world, WorldProjectionMetrics? metrics = null)
     {
         using var phase = SessionPerformance.Phase("combat.project");
         using var transaction = world.Database.CurrentTransaction is null ? world.Database.BeginTransaction() : null;
+        using (metrics?.Measure("WorldPosition (combat)", Positions.Count))
+        {
+            ApplyPositions(world);
+        }
+        using (metrics?.Measure("WorldDrone", Drones.Count))
+        {
+            LiveCombatRuntime.ProjectDrones(world, Drones);
+        }
+        LiveCombatRuntime.ProjectDroneTriggers(world, DroneTriggers);
+        LiveCombatRuntime.ProjectDronePlayers(world, DroneTimers, DroneEngagements, DroneHostilities);
+        using (metrics?.Measure("ship combat state", Ships.Count))
+        {
+            foreach (var ship in Ships)
+            {
+                LiveCombatRuntime.ProjectShip(world, ship.Before, ship.After);
+            }
+        }
+        using (metrics?.Measure("WorldNpc (combat)", Npcs.Count))
+        {
+            LiveCombatRuntime.ProjectNpcs(world, Npcs);
+        }
+        using (metrics?.Measure("WorldNpcAggression", Aggressions.Count))
+        {
+            ApplyAggressions(world);
+        }
+        world.SaveChanges();
+        transaction?.Commit();
+    }
+
+    private void ApplyPositions(WorldDbContext world)
+    {
         foreach (var batch in Positions.Chunk(PositionBatchSize))
         {
             // A traffic mutation projects all pending resident motion before reading SQL.
@@ -62,31 +93,25 @@ internal sealed record CombatCheckpoint(
                 """
             );
         }
-        LiveCombatRuntime.ProjectDrones(world, Drones);
-        LiveCombatRuntime.ProjectDroneTriggers(world, DroneTriggers);
-        LiveCombatRuntime.ProjectDronePlayers(world, DroneTimers, DroneEngagements, DroneHostilities);
-        foreach (var ship in Ships)
+    }
+
+    private void ApplyAggressions(WorldDbContext world)
+    {
+        foreach (var batch in Aggressions.Chunk(PositionBatchSize))
         {
-            LiveCombatRuntime.ProjectShip(world, ship.Before, ship.After);
-        }
-        foreach (var npc in Npcs)
-        {
-            LiveCombatRuntime.ProjectNpc(world, npc.Before, npc.After);
-        }
-        foreach (var aggression in Aggressions)
-        {
+            string rows = JsonSerializer.Serialize(batch);
             world.Database.ExecuteSql(
                 $"""
                 INSERT INTO WorldNpcAggression(NpcId,TargetShipId,ReadyAt,MissileReadyAt,LastShotAt,LastTargetId)
-                VALUES({aggression.NpcId},{aggression.ShipId},{aggression.ReadyAt},{aggression.MissileReadyAt},
-                    {aggression.LastShotAt},{aggression.LastTargetId})
+                SELECT json_extract(value,'$.NpcId'),json_extract(value,'$.ShipId'),
+                    json_extract(value,'$.ReadyAt'),json_extract(value,'$.MissileReadyAt'),
+                    json_extract(value,'$.LastShotAt'),json_extract(value,'$.LastTargetId')
+                FROM json_each({rows}) WHERE 1
                 ON CONFLICT(NpcId) DO UPDATE SET TargetShipId=excluded.TargetShipId,ReadyAt=excluded.ReadyAt,
                     MissileReadyAt=excluded.MissileReadyAt,LastShotAt=excluded.LastShotAt,LastTargetId=excluded.LastTargetId
                 """
             );
         }
-        world.SaveChanges();
-        transaction?.Commit();
     }
 }
 

@@ -259,13 +259,17 @@ internal sealed partial class PilotMarketStore(
         long catalog = database.Catalog.Identity.Generation;
         long now = Now;
         long active = live.CapsuleerActivity.ReadElapsed() ?? 0;
-        if (
-            live.SqlConnections == 0
-            && live.MarketSummaries.TryRead(pilotId, scope, catalog, database.Settings, now, active, out var cached)
-        )
+        using (Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("market.summaryCache"))
         {
-            return cached;
+            if (
+                live.SqlConnections == 0
+                && live.MarketSummaries.TryRead(pilotId, scope, catalog, database.Settings, now, active, out var cached)
+            )
+            {
+                return cached;
+            }
         }
+        using var wait = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("market.summaryOwnerAndRead");
         return live.Run(() =>
         {
             using var owner = live.EnterShared("market summary");
@@ -280,7 +284,9 @@ internal sealed partial class PilotMarketStore(
             {
                 return view;
             }
-            var summary = ResidentReadOrders(live, pilotId, null, scope);
+            var summary =
+                (publish && scope == MarketScope.Region ? ChangedRegionAsks(live, pilotId, ownedCatalog, ownedNow, ownedActive) : null)
+                ?? ResidentReadOrders(live, pilotId, null, scope);
             if (publish)
             {
                 live.MarketSummaries.Publish(summary, scope, ownedCatalog, database.Settings, ownedNow, ownedActive);

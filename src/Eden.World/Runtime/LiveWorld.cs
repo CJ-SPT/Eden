@@ -29,7 +29,8 @@ internal sealed record WorldCheckpoint(
     long WriteAllocatedBytes = 0,
     long CopyBytes = 0,
     TimeSpan MaximumCopyPause = default,
-    int CopySteps = 1
+    int CopySteps = 1,
+    IReadOnlyList<WorldTableProjection>? ProjectionTables = null
 );
 
 // The resident relational image preserves the existing transaction, constraint and trigger rules.
@@ -82,6 +83,17 @@ internal sealed partial class LiveWorld : IDisposable
     internal LiveTractors Tractors => Current.Tractors;
     internal Eden.World.Capsuleers.CapsuleerActivity CapsuleerActivity { get; }
     internal bool MeasureCheckpoints { get; set; }
+    internal bool MeasureBotReplay { get; set; }
+    internal ConcurrentDictionary<string, long> NpcPopulationCounts { get; } = new(StringComparer.Ordinal);
+
+    internal void CountNpcPopulation(string reason, int count = 1)
+    {
+        if (MeasureBotReplay && count != 0)
+        {
+            NpcPopulationCounts.AddOrUpdate(reason, count, (_, previous) => previous + count);
+        }
+    }
+
     internal LiveMarketSummaries MarketSummaries { get; } = new();
     internal LiveOwnerDirectory OwnerDirectory { get; }
     internal LiveTrafficGeometry TrafficGeometry { get; } = new();
@@ -178,6 +190,18 @@ internal sealed partial class LiveWorld : IDisposable
             {
                 InstitutionalSupply.Remove(location.Station);
             }
+        }
+        if (
+            changes.Any(change =>
+                change.Table is "WorldSovereigntyHub" or "WorldSovereigntyConflict" or "WorldSovereigntyActivityEvent" or "schema"
+            )
+        )
+        {
+            Interlocked.Increment(ref _sovereigntyWorkRevision);
+        }
+        if (changes.Any(change => change.Table is "WorldEntosisCycle" or "schema"))
+        {
+            Interlocked.Increment(ref _entosisCycleRevision);
         }
         TrafficGeometry.Observe(changes);
         CapsuleerRoutines.Observe(changes);
@@ -293,16 +317,20 @@ internal sealed partial class LiveWorld : IDisposable
                 }
             }
         }
-        if (resident)
+        using (MeasureTrafficCommit("traffic.publishMembership"))
         {
-            foreach (long ship in changes.Where(c => c.Table is "WorldShip" or "WorldPositionMembership").Select(c => c.Id).Distinct())
+            if (resident)
             {
-                if (Economy.ActivePilot(ship) is long pilot)
+                foreach (long ship in changes.Where(c => c.Table is "WorldShip" or "WorldPositionMembership").Select(c => c.Id).Distinct())
                 {
-                    Economy.TrackPilot(pilot);
+                    if (Economy.ActivePilot(ship) is long pilot)
+                    {
+                        Economy.TrackPilot(pilot);
+                    }
                 }
             }
         }
+        using (MeasureTrafficCommit("traffic.notifyShared"))
         using (UseShared())
         {
             ObserveState(_shared, changes);
@@ -313,17 +341,20 @@ internal sealed partial class LiveWorld : IDisposable
         {
             Interlocked.Increment(ref _shared.PresentationRevision);
         }
-        foreach (var entry in recipients)
+        using (MeasureTrafficCommit("traffic.notifySystems"))
         {
-            Interlocked.Increment(ref entry.State.PresentationRevision);
-            if (entry.Ownership.IsEntered)
+            foreach (var entry in recipients)
             {
-                using var context = UseSystem(entry.Id);
-                ObserveState(entry.State, committed);
-            }
-            else
-            {
-                entry.State.PendingChanges.Enqueue(committed);
+                Interlocked.Increment(ref entry.State.PresentationRevision);
+                if (entry.Ownership.IsEntered)
+                {
+                    using var context = UseSystem(entry.Id);
+                    ObserveState(entry.State, committed);
+                }
+                else
+                {
+                    entry.State.PendingChanges.Enqueue(committed);
+                }
             }
         }
         if (changes.Count != 0)
@@ -340,6 +371,11 @@ internal sealed partial class LiveWorld : IDisposable
         state.Reads?.Observe(changes);
         state.Combat?.Observe(changes);
     }
+
+    private long _sovereigntyWorkRevision;
+    private long _entosisCycleRevision;
+    internal long SovereigntyWorkRevision => Volatile.Read(ref _sovereigntyWorkRevision);
+    internal long EntosisCycleRevision => Volatile.Read(ref _entosisCycleRevision);
 
     internal long CapsuleerRevision { get; private set; }
     internal long CapsuleerMetadataReset { get; private set; }
@@ -576,6 +612,11 @@ internal sealed partial class LiveWorld : IDisposable
     private CapsuleerJob? _trafficJob;
     private int _trafficSystem;
 
+    internal SessionPerformance? MeasureTrafficCommit(string phase) =>
+        MeasureBotReplay && _trafficJob?.Action is CapsuleerAction.Trade or CapsuleerAction.Prepare
+            ? SessionPerformance.Phase(phase)
+            : null;
+
     internal void ObserveTrafficJob(CapsuleerJob job, int system)
     {
         _ownershipMonitor.AttributeSystem(system);
@@ -781,7 +822,7 @@ internal sealed partial class LiveWorld : IDisposable
             {
                 return null;
             }
-            var projection = snapshot.Project();
+            var projection = snapshot.Project(MeasureCheckpoints);
             long started = Stopwatch.GetTimestamp();
             long allocated = GC.GetAllocatedBytesForCurrentThread();
             _persist(snapshot.Database, _path);
@@ -804,7 +845,8 @@ internal sealed partial class LiveWorld : IDisposable
                 writeAllocated,
                 snapshot.CopyBytes,
                 snapshot.MaximumCopyPause,
-                snapshot.CopySteps
+                snapshot.CopySteps,
+                snapshot.ProjectionTables
             );
             using (Acquire())
             {

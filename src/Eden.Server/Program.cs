@@ -23,7 +23,39 @@ namespace Eden.Server;
 
 internal static class Program
 {
-    private static async Task Main(string[] args)
+    private static async Task<int> Main(string[] args)
+    {
+        try
+        {
+            await RunAsync(args);
+            return 0;
+        }
+        catch (Exception error)
+        {
+            bool pause = ServerConsole.ShouldPauseOnError();
+            if (error is MissingCatalogException missingCatalog)
+            {
+                ServerConsole.WriteMissingCatalog(missingCatalog);
+            }
+            else if (pause)
+            {
+                Console.Error.WriteLine($"Eden stopped because of an error.{Environment.NewLine}{error}");
+            }
+            else
+            {
+                throw;
+            }
+            if (pause)
+            {
+                Console.Error.WriteLine();
+                Console.Error.WriteLine("Press any key to close this window.");
+                Console.ReadKey(intercept: true);
+            }
+            return 1;
+        }
+    }
+
+    private static async Task RunAsync(string[] args)
     {
         await using var logging = BufferedServerLog.Start();
         if (await Eden.Server.Capsuleers.TrafficImportCommand.TryRun(args))

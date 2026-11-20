@@ -255,6 +255,48 @@ public sealed class CapsuleerGatePerformanceTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public void WarmResidentDroneResupplyReusesTheCommittedFit()
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new();
+        PassiveCatalogFixture.LoadCombatDrones(fixture.Database.CatalogPath);
+        var founder = fixture.Founder();
+        using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+        const int brutix = 16229;
+        using (WorldDbContext seed = new(fixture.Database.Path))
+        {
+            using var transaction = seed.Database.BeginTransaction();
+            TrafficFitting.Apply(
+                seed,
+                catalog,
+                founder.PilotId,
+                founder.FounderShipId,
+                TrafficSnapshotTests.Profile() with
+                {
+                    HullTypeId = brutix,
+                    Equipment = [],
+                },
+                fixture.Clock.Now
+            );
+            CapsuleerSupplyStore.Ensure(seed, catalog, founder.PilotId, founder.FounderShipId);
+            transaction.Commit();
+        }
+        using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var live = host.GetRequiredService<LiveWorld>();
+        var participants = new TransactionParticipants(pilots: [founder.PilotId], ships: [founder.FounderShipId]);
+        using (var cold = live.Economy.Begin(participants))
+        using (var metrics = SessionPerformance.Begin("cold resident resupply", output.WriteLine, force: true)!)
+        {
+            Assert.Empty(CapsuleerResupply.Requirements(fixture.Database, cold, catalog, founder.PilotId, []));
+            Assert.Equal(1, metrics.FittingCalculations);
+            cold.Commit();
+        }
+        using var warm = live.Economy.Begin(participants);
+        using var warmed = SessionPerformance.Begin("warm resident resupply", output.WriteLine, force: true)!;
+        Assert.Empty(CapsuleerResupply.Requirements(fixture.Database, warm, catalog, founder.PilotId, []));
+        Assert.Equal((0, 0, 0), (warmed.Commands, warmed.Connections, warmed.FittingCalculations));
+    }
+
+    [Fact]
     public void ResupplyOfAHullWithoutDroneSupportDoesNotCalculateFittings()
     {
         using CapsuleerHaulerTests.Fixture fixture = new();
@@ -279,7 +321,7 @@ public sealed class CapsuleerGatePerformanceTests(ITestOutputHelper output)
         using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
         _ = catalog.Definitions.TypesInGroup(Eden.Gameplay.Drones.DroneRules.CombatDroneGroup);
         long pinned = catalog.Definitions.Statistics.PinnedRecords;
-        Eden.Gameplay.Drones.DroneProfile[] drones;
+        IReadOnlyList<Eden.Gameplay.Drones.DroneProfile> drones;
         using (var cold = SessionPerformance.Begin("cold starter drone discovery", output.WriteLine, force: true)!)
         {
             drones = CapsuleerSupplyStore.AvailableDrones(catalog);
@@ -288,7 +330,7 @@ public sealed class CapsuleerGatePerformanceTests(ITestOutputHelper output)
             Assert.Equal(0, cold.FittingCalculations);
         }
         Assert.NotEmpty(drones);
-        Assert.Equal(pinned, catalog.Definitions.Statistics.PinnedRecords);
+        Assert.Equal(pinned + 1, catalog.Definitions.Statistics.PinnedRecords);
         using var metrics = SessionPerformance.Begin("warm starter drone discovery", output.WriteLine, force: true)!;
         Assert.Same(drones, CapsuleerSupplyStore.AvailableDrones(catalog));
         Assert.Equal(0, metrics.Commands);

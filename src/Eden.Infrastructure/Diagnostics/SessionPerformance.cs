@@ -17,6 +17,7 @@ public readonly record struct PerformanceSample(
 
 public sealed class SessionPerformance : IDisposable
 {
+    private const double SlowCommandMilliseconds = 100;
     private static readonly AsyncLocal<SessionPerformance?> s_current = new();
     private static readonly bool s_enabled = Environment.GetEnvironmentVariable("EDEN_TRACE_PERFORMANCE") == "1";
     private readonly SessionPerformance? _parent = s_current.Value;
@@ -24,6 +25,7 @@ public sealed class SessionPerformance : IDisposable
     private readonly string _name;
     private readonly Action<string>? _report;
     private readonly Action<string>? _command;
+    private readonly Action<TimeSpan, string>? _slowCommand;
     private readonly Action<PerformanceSample>? _sample;
     private readonly long _allocated = GC.GetAllocatedBytesForCurrentThread();
     public int FittingCalculations { get; private set; }
@@ -37,18 +39,25 @@ public sealed class SessionPerformance : IDisposable
         string name,
         Action<string>? report,
         Action<PerformanceSample>? sample = null,
-        Action<string>? command = null
+        Action<string>? command = null,
+        Action<TimeSpan, string>? slowCommand = null
     )
     {
         _name = name;
         _command = command;
+        _slowCommand = slowCommand;
         _report = report;
         _sample = sample ?? _parent?._sample;
         s_current.Value = this;
     }
 
-    public static SessionPerformance? Begin(string name, Action<string> report, bool force = false, Action<string>? command = null) =>
-        force || s_enabled || IsActive ? new(name, report, command: command) : null;
+    public static SessionPerformance? Begin(
+        string name,
+        Action<string> report,
+        bool force = false,
+        Action<string>? command = null,
+        Action<TimeSpan, string>? slowCommand = null
+    ) => force || s_enabled || IsActive ? new(name, report, command: command, slowCommand: slowCommand) : null;
 
     public static SessionPerformance? Phase(string name) => s_current.Value is { } parent ? new(name, parent._report) : null;
 
@@ -66,7 +75,7 @@ public sealed class SessionPerformance : IDisposable
         }
     }
 
-    public static void DatabaseElapsed(TimeSpan duration, bool commit = false)
+    public static void DatabaseElapsed(TimeSpan duration, bool commit = false, string? command = null)
     {
         for (var scope = s_current.Value; scope is not null; scope = scope._parent)
         {
@@ -77,6 +86,10 @@ public sealed class SessionPerformance : IDisposable
             else
             {
                 scope.SqlMilliseconds += duration.TotalMilliseconds;
+                if (scope._slowCommand is { } report && command is not null && duration.TotalMilliseconds >= SlowCommandMilliseconds)
+                {
+                    report(duration, command);
+                }
             }
         }
     }

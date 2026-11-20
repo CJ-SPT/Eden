@@ -21,9 +21,9 @@ internal static partial class CapsuleerSupplyStore
 {
     internal const int SpareMagazines = 5;
 
-    internal static DroneProfile[] AvailableDrones(CatalogDbContext catalog) => catalog.Definition(s_drones, 0);
+    internal static IReadOnlyList<DroneProfile> AvailableDrones(CatalogDbContext catalog) => catalog.GlobalDefinition(s_drones);
 
-    private static readonly CatalogDefinition<DroneProfile[]> s_drones = new("capsuleer-starter-drones", LoadDrones);
+    private static readonly CatalogDefinition<IReadOnlyList<DroneProfile>> s_drones = new("capsuleer-starter-drones", LoadDrones);
 
     internal static void Ensure(WorldDbContext world, CatalogDbContext catalog, long pilotId, long founderShip)
     {
@@ -106,8 +106,8 @@ internal static partial class CapsuleerSupplyStore
             && !inventory.Any(item => item.FlagId == (int)InventoryFlag.DroneBay)
         )
         {
-            var drones = catalog.Definition(s_drones, 0);
-            if (drones.Length > 0)
+            var drones = AvailableDrones(catalog);
+            if (drones.Count > 0)
             {
                 GrantDroneSkills(world, catalog, pilotId);
                 var fit = FittingCalculation.Read(world, catalog, pilot);
@@ -187,7 +187,7 @@ internal static partial class CapsuleerSupplyStore
         }
     }
 
-    private static DroneProfile[] LoadDrones(CatalogDbContext catalog, int unused)
+    private static IReadOnlyList<DroneProfile> LoadDrones(CatalogDbContext catalog, int unused)
     {
         List<DroneProfile> profiles = [];
         // Use the projected group index. Pinning every type payload here can hold
@@ -213,6 +213,6 @@ internal static partial class CapsuleerSupplyStore
                 // Unsupported catalog families do not become starter equipment.
             }
         }
-        return profiles.ToArray();
+        return profiles.AsReadOnly();
     }
 }

@@ -18,11 +18,15 @@ internal sealed class TrafficActionDiagnostics
     private const int RetainedPhases = 64;
     private const int SlowActionMilliseconds = 250;
     private readonly ConcurrentQueue<TrafficActionTiming> _slow = new();
+    private readonly ConcurrentQueue<TrafficActionTiming> _reportedTrades = new();
     internal IReadOnlyList<TrafficActionTiming> SlowActions => _slow.ToArray();
+    internal IReadOnlySet<long>? ReportedTradePilots { get; set; }
+    internal IReadOnlyList<TrafficActionTiming> ReportedTrades => _reportedTrades.ToArray();
 
     internal IDisposable Measure(CapsuleerJob job, IReadOnlyList<int> systems, Func<(long Count, bool Copying)> checkpointCopies)
     {
         var before = checkpointCopies();
+        bool reportedTrade = job.Action == CapsuleerAction.Trade && ReportedTradePilots?.Contains(job.PilotId) == true;
         List<PerformanceSample> phases = [];
         return SessionPerformance.Capture(
             "traffic.measuredAction",
@@ -36,7 +40,8 @@ internal sealed class TrafficActionDiagnostics
                     }
                     return;
                 }
-                if (sample.Elapsed.TotalMilliseconds < SlowActionMilliseconds)
+                bool slow = sample.Elapsed.TotalMilliseconds >= SlowActionMilliseconds;
+                if (!slow && !reportedTrade)
                 {
                     return;
                 }
@@ -47,11 +52,15 @@ internal sealed class TrafficActionDiagnostics
                     sample,
                     phases.AsReadOnly()
                 );
-                _slow.Enqueue(timing);
-                while (_slow.Count > RetainedActions)
+                if (reportedTrade)
                 {
-                    _slow.TryDequeue(out _);
+                    Retain(_reportedTrades, timing);
                 }
+                if (!slow)
+                {
+                    return;
+                }
+                Retain(_slow, timing);
                 string detail = string.Join(
                     ", ",
                     phases
@@ -77,5 +86,14 @@ internal sealed class TrafficActionDiagnostics
                 );
             }
         );
+    }
+
+    private static void Retain(ConcurrentQueue<TrafficActionTiming> timings, TrafficActionTiming timing)
+    {
+        timings.Enqueue(timing);
+        while (timings.Count > RetainedActions)
+        {
+            timings.TryDequeue(out _);
+        }
     }
 }

@@ -4,6 +4,7 @@ using System.Text.Json;
 using Eden.Data.Catalog;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Catalog;
 using Eden.World.Storage;
@@ -30,6 +31,74 @@ public sealed class CatalogProviderTests
         Assert.Null(catalog.Find(CatalogData.Client.Types, long.MaxValue));
         Assert.Equal(0, metrics.Commands);
         Assert.Equal(0, metrics.Connections);
+    }
+
+    [Fact]
+    public void WarmTravelIndexesMatchTheCatalogAndKeepMissingValues()
+    {
+        using TestWorld world = new();
+        string path = new WorldDatabase(world.Path).CatalogPath;
+        using CatalogDbContext catalog = new(path);
+        var definitions = catalog.Definitions;
+        var gate = definitions.Gates.Values.First();
+        var body = Assert.IsType<CatalogCelestialDefinition>(catalog.FindCelestial(gate.Id));
+        var system = catalog.Read(CatalogData.Client.Systems, (long)gate.SolarSystemId);
+        var systemContent = catalog.Read(CatalogData.Client.Solarsystemcontent, (long)gate.SolarSystemId);
+        var belts = catalog.CelestialsInSystem(gate.SolarSystemId).Where(body => body.GroupId == AsteroidDefinitions.BeltGroup).ToArray();
+        Assert.Equal(body, catalog.FindGateBody(gate.Id));
+        Assert.Equal(new CatalogSystemPolitics(system?.SecurityStatus, system?.FactionID), catalog.SystemPolitics(gate.SolarSystemId));
+        Assert.Equal(systemContent?.Security, catalog.SystemContentSecurity(gate.SolarSystemId));
+        Assert.Equal(belts, catalog.BeltAnchors(gate.SolarSystemId));
+
+        using var metrics = SessionPerformance.Begin("warm catalog travel indexes", _ => { }, force: true)!;
+        Assert.Equal(body, catalog.FindGateBody(gate.Id));
+        Assert.Null(catalog.FindGateBody(long.MaxValue));
+        Assert.Null(catalog.FindGateBody(0));
+        Assert.Equal(default, catalog.SystemPolitics(0));
+        Assert.Null(catalog.SystemContentSecurity(0));
+        Assert.Empty(catalog.BeltAnchors(0));
+        Assert.Equal(belts, catalog.BeltAnchors(gate.SolarSystemId));
+        Assert.Equal(systemContent?.Security, catalog.SystemContentSecurity(gate.SolarSystemId));
+        _ = catalog.SystemPolitics(gate.SolarSystemId);
+        Assert.Equal(0, metrics.Commands);
+        Assert.Equal(0, metrics.Connections);
+        Assert.Equal(0, metrics.FittingCalculations);
+    }
+
+    [Fact]
+    public void MercoxitDestinationSystemsMatchBeltRowsWithOneCatalogRead()
+    {
+        using TestWorld world = new();
+        string path = new WorldDatabase(world.Path).CatalogPath;
+        using CatalogDbContext catalog = new(path);
+        var belts = catalog
+            .Records(CatalogData.Client.Asteroidcountbytypeidbeltid)
+            .Where(entry =>
+                entry.Key is > 0 and <= int.MaxValue
+                && entry.Value.Any(ore =>
+                    ore.Value > 0
+                    && int.TryParse(ore.Key, NumberStyles.None, CultureInfo.InvariantCulture, out int type)
+                    && catalog.FittingType(type)?.GroupId == MiningDefinitions.MercoxitGroup
+                )
+            )
+            .Select(entry => (int)entry.Key)
+            .ToHashSet();
+        var expected = catalog
+            .Set<Celestial>()
+            .Where(belt => belt.GroupId == AsteroidDefinitions.BeltGroup)
+            .Select(belt => new { belt.Id, belt.SolarSystemId })
+            .AsEnumerable()
+            .Where(belt => belts.Contains(belt.Id))
+            .Select(belt => belt.SolarSystemId)
+            .Distinct()
+            .Order()
+            .ToArray();
+
+        using var metrics = SessionPerformance.Begin("Mercoxit destination catalog read", _ => { }, force: true)!;
+        using CatalogDbContext projected = new(path);
+        Assert.Equal(expected, projected.BeltSystemsWithOreGroup(MiningDefinitions.MercoxitGroup).Order());
+        Assert.Equal(1, metrics.Commands);
+        Assert.Equal(0, metrics.FittingCalculations);
     }
 
     [Fact]
@@ -110,7 +179,15 @@ public sealed class CatalogProviderTests
                     "{\"volume\":123}"
                 );
             }
-            Assert.Same(original, CatalogProvider.Open(path));
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            CatalogProvider? warmed = null;
+            for (int read = 0; read < 128; read++)
+            {
+                warmed = CatalogProvider.Open(path);
+            }
+            long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            Assert.Same(original, warmed);
+            Assert.Equal(0, allocated);
             Assert.Same(oldType, original.Get(CatalogData.Client.Types, 601L));
             Assert.Throws<InvalidOperationException>(() => original.Get(CatalogData.Client.Types, 3651L));
         }

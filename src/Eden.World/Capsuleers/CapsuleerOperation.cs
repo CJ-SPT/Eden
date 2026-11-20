@@ -36,12 +36,10 @@ internal sealed class CapsuleerOperation(
             if (_action is null)
             {
                 var live = LiveWorld.Find(database.Path);
-                long ship =
-                    live?.MinerCheckpoints.GetValueOrDefault(expected.PilotId)?.Work.ShipId
-                    ?? live?.HaulerCheckpoints.GetValueOrDefault(expected.PilotId)?.Work.ShipId
-                    ?? 0;
-                TransactionParticipants? participants = declared ?? new(pilots: [expected.PilotId], ships: ship > 0 ? [ship] : []);
+                var miner = live?.MinerCheckpoints.GetValueOrDefault(expected.PilotId)?.Work;
                 var work = live?.HaulerCheckpoints.GetValueOrDefault(expected.PilotId)?.Work;
+                long ship = miner?.ShipId ?? work?.ShipId ?? 0;
+                TransactionParticipants? participants = declared ?? new(pilots: [expected.PilotId], ships: ship > 0 ? [ship] : []);
                 bool inbound = expected.Action == CapsuleerAction.Arrival && work?.Activity == HaulerActivity.Inbound;
                 if (coarse is not null)
                 {
@@ -49,7 +47,10 @@ internal sealed class CapsuleerOperation(
                 }
                 else if (expected.Action == CapsuleerAction.GateTransfer || inbound)
                 {
-                    long? sourceGate = inbound ? work?.TrafficLane?.DepartureGateId : work?.TargetId;
+                    long? sourceGate =
+                        inbound ? work?.TrafficLane?.DepartureGateId
+                        : miner is { Activity: MinerActivity.Jumping } ? miner.TargetId
+                        : work?.TargetId;
                     if (sourceGate is > 0 and <= int.MaxValue && database.Catalog.Gates.TryGetValue((int)sourceGate, out var gate))
                     {
                         participants = new(

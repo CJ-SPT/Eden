@@ -12,7 +12,14 @@ namespace Eden.World.Alliances;
 
 internal sealed partial class AllianceStore
 {
-    public long Head => LiveWorld.Find(database.Path)?.Economy.Inspect(_ => Resident.Economy.Sequence("WorldAllianceChange")) ?? 0;
+    private const string ChangeSequence = "WorldAllianceChange";
+
+    public long Head =>
+        LiveWorld.Find(database.Path)?.Economy is { } economy
+            ? economy.IsLoaded
+                ? economy.Sequence(ChangeSequence)
+                : economy.Inspect(_ => economy.Sequence(ChangeSequence))
+            : 0;
 
     public AllianceApplication Apply(long actorId, int allianceId, string text)
     {
@@ -258,7 +265,7 @@ internal sealed partial class AllianceStore
 
     internal static void Record(WorldAction world, AllianceChange change)
     {
-        long id = world.Next("WorldAllianceChange");
+        long id = world.Next(ChangeSequence);
         world.Add(
             new SavedAllianceChange
             {

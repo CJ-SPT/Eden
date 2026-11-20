@@ -44,18 +44,16 @@ public static class WorldInitialization
         var mods = new Eden.World.Modding.ModStore(database);
         bool modsChanged = mods.BeginActivation();
         bool skillsChanged = modsChanged || (!mods.OwnsCatalog && Eden.World.Skills.SkillPackageActivation.Activate(database));
-        if (!File.Exists(database.CatalogPath))
+        string catalogPath = database.CatalogPath;
+        if (!File.Exists(catalogPath))
         {
-            throw new FileNotFoundException(
-                "Build the local game catalog with tools/catalog/build.py before starting Eden.",
-                database.CatalogPath
-            );
+            throw new MissingCatalogException(catalogPath, catalogPath != database.OriginalCatalogPath);
         }
         // Activation can replace the catalog. Capture its resulting generation and
         // reuse one read connection throughout reconciliation, including belt batches.
         using var catalogReads = new CatalogReadScope().Begin();
         using WorldDbContext world = new(database.Path);
-        using CatalogDbContext catalog = new(database.CatalogPath);
+        using CatalogDbContext catalog = new(catalogPath);
         if (economics is not null)
         {
             EconomicStore.CheckCatalog(catalog, economics);

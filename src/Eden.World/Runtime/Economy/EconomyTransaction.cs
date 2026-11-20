@@ -2,9 +2,11 @@ using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Contracts;
 using Eden.Data.World.Docking;
+using Eden.Data.World.Economy;
 using Eden.Data.World.Industry;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
+using Eden.Data.World.Mining;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Docking;
@@ -35,6 +37,9 @@ internal sealed partial class EconomyTransaction(
     private readonly Dictionary<string, long> _sequences = new(StringComparer.Ordinal);
     private readonly Dictionary<int, InstitutionalPreparation> _preparations = [];
 
+    internal bool HasPrivateRows<T>()
+        where T : class => _sets.TryGetValue(typeof(T), out var set) && set.Materializations != 0;
+
     internal override bool Prepared(InstitutionalPreparation preparation) =>
         _preparations.GetValueOrDefault(preparation.StationId) == preparation || store.Prepared(preparation);
 
@@ -44,6 +49,17 @@ internal sealed partial class EconomyTransaction(
         ((EconomySet<NpcMarketOrder, EconomyNpcMarketOrder>)Set<NpcMarketOrder>())
             .IndexedSnapshots(nameof(NpcMarketOrder.RegionId), region, typeId is int type ? (nameof(NpcMarketOrder.TypeId), type) : null)
             .Where(o => o.RegionId == region && (typeId is null || o.TypeId == typeId));
+
+    internal override IEnumerable<EconomyWorldAsteroid> AsteroidsInSystem(int system) =>
+        ((EconomySet<WorldAsteroid, EconomyWorldAsteroid>)Set<WorldAsteroid>())
+            .IndexedSnapshots(nameof(WorldAsteroid.SystemId), system)
+            .Where(a => a.SystemId == system);
+
+    internal override IEnumerable<int> RenewedBeltsInSystem(int system) =>
+        ((EconomySet<SavedBeltRenewal, EconomySavedBeltRenewal>)Set<SavedBeltRenewal>())
+            .IndexedSnapshots(nameof(SavedBeltRenewal.SystemId), system)
+            .Where(b => b.SystemId == system)
+            .Select(b => b.BeltId);
 
     internal override long NextExpiry => store.NextExpiry;
 
@@ -241,12 +257,23 @@ internal sealed partial class EconomyTransaction(
         }
     }
 
-    private IEnumerable<T> Retained<T>()
-        where T : class => Set<T>().Local.Where(row => Set<T>().State(row) != EntityState.Deleted).ToArray();
+    private T[] Retained<T>()
+        where T : class
+    {
+        if (!_sets.TryGetValue(typeof(T), out var opened) || opened is not EconomySet<T> { Local.Count: > 0 } set)
+        {
+            return [];
+        }
+        // Validation may load related rows into the same private set.
+        return set.Local.Where(row => set.State(row) != EntityState.Deleted).ToArray();
+    }
 
     private void Validate()
     {
-        ValidateBotRows();
+        using (owner?.MeasureTrafficCommit("traffic.validateBotRows"))
+        {
+            ValidateBotRows();
+        }
         ValidateCorporationBlueprintLocks();
         ValidateSleeperSites();
         foreach (var job in Retained<IndustryJob>())
@@ -264,14 +291,15 @@ internal sealed partial class EconomyTransaction(
         }
         foreach (var account in Retained<Account>())
         {
+            var accounts = (EconomySet<Account, EconomyAccount>)Set<Account>();
             if (
                 string.IsNullOrWhiteSpace(account.UserName)
                 || account.CloneGrade is not (AccountCloneGrade.Alpha or AccountCloneGrade.Omega)
                 || account.Id == CapsuleerCommunityStore.MinerAccountId && account.CloneGrade != AccountCloneGrade.Omega
-                || Set<Account>()
-                    .Any(other =>
-                        other.Id != account.Id && string.Equals(other.UserName, account.UserName, StringComparison.OrdinalIgnoreCase)
-                    )
+                || !accounts.HasUniqueCommittedKey(new(account.Id), nameof(Account.UserName), account.UserName)
+                    && accounts
+                        .IndexedSnapshots(nameof(Account.UserName), account.UserName)
+                        .Any(other => other.Id != account.Id && StringComparer.OrdinalIgnoreCase.Equals(other.UserName, account.UserName))
             )
             {
                 throw new InvalidDataException("Invalid resident account identity or clone grade.");
@@ -334,6 +362,21 @@ internal sealed partial class EconomyTransaction(
                 throw new InvalidDataException("The resident wallet has an invalid balance or pilot.");
             }
         }
+        using (owner?.MeasureTrafficCommit("traffic.validateMarketRows"))
+        {
+            ValidateMarketRows();
+        }
+        foreach (var owner in Set<InventoryOwner>().Local.Where(o => Set<InventoryOwner>().State(o) == EntityState.Deleted).ToArray())
+        {
+            if (Set<OwnedItem>().Any(i => i.OwnerId == owner.Id) || Ships.Any(ship => ship.OwnerId == owner.Id))
+            {
+                throw new InvalidDataException("An inventory owner with assets cannot be removed.");
+            }
+        }
+    }
+
+    private void ValidateMarketRows()
+    {
         foreach (var order in Retained<SavedPersonalOrder>())
         {
             if (
@@ -391,13 +434,6 @@ internal sealed partial class EconomyTransaction(
                 throw new InvalidDataException("The resident execution has invalid amounts or pilot.");
             }
         }
-        foreach (var owner in Set<InventoryOwner>().Local.Where(o => Set<InventoryOwner>().State(o) == EntityState.Deleted).ToArray())
-        {
-            if (Set<OwnedItem>().Any(i => i.OwnerId == owner.Id) || Ships.Any(ship => ship.OwnerId == owner.Id))
-            {
-                throw new InvalidDataException("An inventory owner with assets cannot be removed.");
-            }
-        }
     }
 
     internal void Commit()
@@ -407,7 +443,10 @@ internal sealed partial class EconomyTransaction(
             throw new InvalidOperationException("This economic transaction already committed.");
         }
         var live = owner ?? throw new InvalidOperationException("A fitting preview cannot publish changes.");
-        Validate();
+        using (live.MeasureTrafficCommit("traffic.validateCommit"))
+        {
+            Validate();
+        }
         var sets = _sets.Values.ToArray();
         foreach (var set in sets)
         {
@@ -443,9 +482,15 @@ internal sealed partial class EconomyTransaction(
                 participants.Ships,
                 participants.Resources
             );
-        store.Committed(_sequences, changes, affected, pilots, marketLocations);
+        using (live.MeasureTrafficCommit("traffic.publishCommit"))
+        {
+            store.Committed(_sequences, changes, affected, pilots, marketLocations);
+        }
         _completed = true;
-        PublishActions();
+        using (live.MeasureTrafficCommit("traffic.afterCommit"))
+        {
+            PublishActions();
+        }
     }
 
     private IReadOnlyList<MarketLocation> AffectedMarketLocations(IReadOnlyCollection<CombatRowChange> changes)
@@ -470,7 +515,7 @@ internal sealed partial class EconomyTransaction(
         {
             if (order is not null)
             {
-                locations.Add(new(order.StationId, order.SystemId, order.RegionId, order.Bid));
+                locations.Add(new(order.StationId, order.SystemId, order.RegionId, order.Bid, order.TypeId));
             }
         }
 
@@ -478,7 +523,7 @@ internal sealed partial class EconomyTransaction(
         {
             if (order is not null)
             {
-                locations.Add(new(order.StationId, order.SystemId, order.RegionId, order.Bid));
+                locations.Add(new(order.StationId, order.SystemId, order.RegionId, order.Bid, order.TypeId));
             }
         }
     }

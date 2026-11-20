@@ -441,7 +441,7 @@ public sealed partial class ServerPerformanceReplayTests
                     ),
                 },
             };
-            using var metrics = SessionPerformance.Begin("scale skill application", _reports.Enqueue, force: MeasureCounters);
+            using var metrics = SessionPerformance.Begin("scale skill application", _report, force: MeasureCounters);
             await _calls.ProcessAsync(new BlueInstance(request.Name, fields), _arrival);
             Assert.True(_reply > 0);
             return new(

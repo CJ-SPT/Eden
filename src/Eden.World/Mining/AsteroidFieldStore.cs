@@ -10,6 +10,7 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Economy;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -82,33 +83,8 @@ internal sealed partial class AsteroidFieldStore(WorldDatabase database, TimePro
         return List(world, catalog, systemId);
     }
 
-    internal static IReadOnlyList<StaticSpaceObject> List(WorldDbContext world, CatalogDbContext catalog, int systemId)
-    {
-        var saved = world
-            .Set<WorldAsteroid>()
-            .AsNoTracking()
-            .Where(a => a.SystemId == systemId && a.Quantity > 0)
-            .Where(a => a.Id < MissionMiningRules.FirstDepositId || a.Id >= MissionMiningRules.EndDepositId)
-            .OrderBy(a => a.Id)
-            .ToArray();
-        var types = saved.Select(a => a.TypeId).Distinct().ToArray();
-        var definitions = types.Select(catalog.FittingType).OfType<CatalogItemDefinition>().ToDictionary(type => type.Id);
-        return saved
-            .Select(a => new StaticSpaceObject(
-                a.Id,
-                a.TypeId,
-                definitions[a.TypeId].GroupId,
-                definitions[a.TypeId].CategoryId,
-                1,
-                new SpacePosition(a.X, a.Y, a.Z),
-                a.Radius
-            )
-            {
-                Solid = definitions[a.TypeId].GroupId != MiningDefinitions.GasCloudGroup,
-                IsGlobal = false,
-            })
-            .ToArray();
-    }
+    internal static IReadOnlyList<StaticSpaceObject> List(WorldDbContext world, CatalogDbContext catalog, int systemId) =>
+        List(new SqlWorldAction(world), catalog, systemId);
 
     private void Initialize(WorldDbContext world, CatalogDbContext catalog, int systemId)
     {

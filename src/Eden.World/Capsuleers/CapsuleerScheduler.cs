@@ -4,6 +4,7 @@ using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Operations;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
+using Eden.World.Combat.Npcs;
 using Eden.World.Market;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
@@ -22,7 +23,8 @@ internal sealed partial class CapsuleerScheduler(
     CapsuleerMinerFactory miners,
     CapsuleerHaulerFactory haulers,
     ICapsuleerGateWatch gateWatch,
-    PilotMarketStore market
+    PilotMarketStore market,
+    NpcPopulationSeeder? npcPopulation = null
 ) : ICapsuleerScheduler, ICapsuleerSimulation, ICapsuleerHauling, ICapsuleerHandoff, ICapsuleerDiagnostics, ICapsuleerUpdateDiagnostics
 {
     private readonly SystemSimulationRegistry _systems = new();
@@ -52,6 +54,9 @@ internal sealed partial class CapsuleerScheduler(
     private long? _diagnosticTimestamp;
     private CapsuleerQueueStatus _queueStatus = new(0, null);
     private long _completed;
+    private long _completedMining;
+    private long _completedHauling;
+    private IReadOnlyList<CapsuleerCareerQueue> _careerQueue = [];
     private long _failures;
     private string? _lastFailure;
 
@@ -109,6 +114,17 @@ internal sealed partial class CapsuleerScheduler(
         {
             using var inspection = SessionPerformance.Phase("traffic.queueDiagnostics");
             _queueStatus = _queue.Inspect(activity.ElapsedTicks);
+            if (Live?.MeasureBotReplay == true)
+            {
+                int dueMining = _queue
+                    .DueJobs(activity.ElapsedTicks)
+                    .Count(job => _registrations[job.PilotId].Career == CapsuleerCareer.Mining);
+                _careerQueue =
+                [
+                    new(CapsuleerCareer.Mining, dueMining, _completedMining),
+                    new(CapsuleerCareer.Hauling, _queueStatus.Due - dueMining, _completedHauling),
+                ];
+            }
             _diagnosticTimestamp = sampledAt;
         }
         var status = _queueStatus;
@@ -137,6 +153,7 @@ internal sealed partial class CapsuleerScheduler(
                 LastPresentation = _diagnostics.LastPresentation,
                 BudgetOverruns = _diagnostics.BudgetOverruns + (overrun > TimeSpan.Zero ? 1 : 0),
                 MaximumTurnOverrun = overrun > _diagnostics.MaximumTurnOverrun ? overrun : _diagnostics.MaximumTurnOverrun,
+                Careers = _careerQueue,
             }
         );
     }
@@ -469,6 +486,7 @@ internal sealed partial class CapsuleerScheduler(
                             );
                             Current[job.PilotId] = next;
                             _completed++;
+                            _completedMining++;
                             IndexLocation(job.PilotId, miner.SystemId);
                             _systems.Register(miner.SystemId);
                             var observation = miner.Read(includeHealth: activity.ActiveSystems.Contains(miner.SystemId))!;
@@ -498,6 +516,7 @@ internal sealed partial class CapsuleerScheduler(
                             _membershipDirty |= wasGang != ActiveOperation(job.PilotId);
                             Current[job.PilotId] = next;
                             _completed++;
+                            _completedHauling++;
                             IndexLocation(job.PilotId, hauler.SystemId);
                             _systems.Register(hauler.SystemId);
                             using var observationContext = Live?.UseSystem(hauler.SystemId);

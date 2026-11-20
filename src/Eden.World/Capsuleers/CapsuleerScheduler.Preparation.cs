@@ -1,7 +1,11 @@
+using System.Collections.Concurrent;
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Ships;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Catalog;
+using Eden.World.Combat.Npcs;
 using Eden.World.Market;
 using Eden.World.Mining;
 using Eden.World.Runtime.Economy;
@@ -12,6 +16,9 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerScheduler
 {
+    private long _preparedTravelCatalog;
+    private readonly ConcurrentDictionary<int, long> _preparedPopulationCatalog = [];
+
     internal sealed record PreparationInput(
         CapsuleerJob Job,
         int SystemId,
@@ -26,6 +33,9 @@ internal sealed partial class CapsuleerScheduler
         IReadOnlyList<CapsuleerGeometry.ResourcePreparation> Geometry,
         CapsuleerHauler.JourneyInput? Journey,
         TrafficTemplateInput? Template,
+        int TrainingHull,
+        CapsuleerProfession DefaultProfession,
+        bool PrepareMercoxit,
         bool PrepareInstitutionalOffers
     );
 
@@ -42,12 +52,18 @@ internal sealed partial class CapsuleerScheduler
             StartBackgroundPilots(activity.ElapsedTicks);
         }
         var job = _queue.NextJob;
+        if (job is null || _resuming.ContainsKey(job.PilotId) || _queue.NextDueTicks > activity.ElapsedTicks)
+        {
+            return null;
+        }
         if (
-            job is null
-            || _resuming.ContainsKey(job.PilotId)
-            || _queue.NextDueTicks > activity.ElapsedTicks
-            || job.Action
-                is not (CapsuleerAction.Trade or CapsuleerAction.GateTransfer or CapsuleerAction.Arrival or CapsuleerAction.Prepare)
+            job.Action is not (CapsuleerAction.Trade or CapsuleerAction.GateTransfer or CapsuleerAction.Arrival or CapsuleerAction.Prepare)
+            && (
+                npcPopulation is null
+                || job.Action is not (CapsuleerAction.Collect or CapsuleerAction.Lock)
+                || _registrations[job.PilotId].Career != CapsuleerCareer.Mining
+                || _preparedPopulationCatalog.GetValueOrDefault(_locations[job.PilotId]) == database.Catalog.Identity.Generation
+            )
         )
         {
             return null;
@@ -99,12 +115,22 @@ internal sealed partial class CapsuleerScheduler
         }
         bool detailed =
             ActiveOperation(job.PilotId) || _registrations[job.PilotId].Career == CapsuleerCareer.Mining || work?.Ratting is not null;
-        var geometry = systems
-            .Where(id => detailed || occupied.Contains(id))
-            .Select(id => CapsuleerGeometry.CaptureResources(database, world, catalog, id))
-            .OfType<CapsuleerGeometry.ResourcePreparation>()
-            .ToArray();
+        var geometry = job.Action is CapsuleerAction.Collect or CapsuleerAction.Lock
+            ? []
+            : systems
+                .Where(id => detailed || occupied.Contains(id))
+                .Select(id => CapsuleerGeometry.CaptureResources(database, world, catalog, id))
+                .OfType<CapsuleerGeometry.ResourcePreparation>()
+                .ToArray();
         var missing = geometry.SelectMany(capture => capture.Missing).Distinct().ToArray();
+        bool dockedWork = stationId != 0 && job.Action is CapsuleerAction.Trade or CapsuleerAction.Prepare;
+        bool mercoxit =
+            dockedWork
+            && job.Action == CapsuleerAction.Prepare
+            && !world.Settings.FreshUniverse
+            && world.Settings.Capsuleers.Miners
+            && world.Set<Eden.Data.World.Capsuleers.SavedCapsuleerAgent>().Find(job.PilotId) is { Slot: 0 } miner
+            && miner.CommunitySystemId == system;
         return new(
             job,
             system,
@@ -129,9 +155,12 @@ internal sealed partial class CapsuleerScheduler
                     hauler?.PreparationRoute
                 )
                 : null,
-            stationId != 0
-                && (job.Action is CapsuleerAction.Trade or CapsuleerAction.Prepare)
-                && PilotMarketStore.UsesInstitutionalOffers(world)
+            dockedWork ? resident?.ShipTypeId ?? world.Ships.Find(shipId)?.TypeId ?? 0 : 0,
+            job.Action == CapsuleerAction.Prepare
+                ? CapsuleerProfession.Mining
+                : work?.CareerPlan?.Profession ?? CapsuleerProfession.Hauling,
+            mercoxit,
+            dockedWork && PilotMarketStore.UsesInstitutionalOffers(world)
         );
     }
 
@@ -175,20 +204,71 @@ internal sealed partial class CapsuleerScheduler
             {
                 using var phase = SessionPerformance.Phase("traffic.preparation");
                 using CatalogDbContext catalog = new(database.CatalogPath);
+                if (Volatile.Read(ref _preparedTravelCatalog) != input.Catalog)
+                {
+                    using var travelCatalog = SessionPerformance.Phase("traffic.prepareTravelCatalog");
+                    catalog.Definitions.WarmGateBodies();
+                    npcPopulation?.WarmCatalog(database);
+                    Volatile.Write(ref _preparedTravelCatalog, input.Catalog);
+                }
                 if (input.Template is not null)
                 {
                     TrafficTemplatePreparation.Prepare(database, catalog, input.Template);
                 }
+                if (
+                    input.Job.Action == CapsuleerAction.Trade
+                    && (input.Template is not null || DroneRules.SupportsHull(input.TrainingHull))
+                )
+                {
+                    using var supplies = SessionPerformance.Phase("traffic.prepareDroneSupplies");
+                    _ = CapsuleerSupplyStore.AvailableDrones(catalog);
+                }
+                if (input.TrainingHull != 0)
+                {
+                    var hull = (HullClass)catalog.RequireItem(input.TrainingHull).GroupId;
+                    var profession =
+                        input.Job.Action == CapsuleerAction.Prepare
+                            ? CapsuleerProfession.Mining
+                            : CapsuleerCareerTraining.Profession(catalog, input.TrainingHull, hull) ?? input.DefaultProfession;
+                    CapsuleerCareerTraining.PrepareChoices(catalog, input.TrainingHull, profession);
+                }
+                if (input.PrepareMercoxit)
+                {
+                    using var routes = SessionPerformance.Phase("traffic.prepareMercoxitRoutes");
+                    _ = CapsuleerTrafficRoutes.MercoxitRoutes(catalog.Definitions);
+                }
+                if (input.Job.Action == CapsuleerAction.Prepare && input.StationId != 0)
+                {
+                    using var production = SessionPerformance.Phase("traffic.prepareManufacturing");
+                    CapsuleerIndustry.WarmManufacturing(catalog);
+                }
                 foreach (int system in input.Systems)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    var objects = SystemObjects.Geometry(catalog, system);
+                    if (
+                        npcPopulation is not null
+                        && input.Job.Action is CapsuleerAction.Prepare or CapsuleerAction.Collect or CapsuleerAction.Lock
+                        && _preparedPopulationCatalog.GetValueOrDefault(system) != input.Catalog
+                    )
+                    {
+                        using var population = SessionPerformance.Phase("traffic.prepareSystemPopulation");
+                        NpcPopulationSeeder.WarmSystem(database, catalog, system);
+                        _preparedPopulationCatalog[system] = input.Catalog;
+                    }
+                    if (input.Job.Action is CapsuleerAction.Collect or CapsuleerAction.Lock)
+                    {
+                        continue;
+                    }
+                    var objects = Live?.TrafficGeometry.StaticObjects(catalog, system) ?? SystemObjects.Geometry(catalog, system);
                     if (input.Geometry.FirstOrDefault(capture => capture.System == system)?.Resources is { } resources)
                     {
                         geometry[system] = Array.AsReadOnly<StaticSpaceObject>([.. objects, .. resources]);
                     }
                 }
-                _ = CapsuleerTrafficRoutes.Read(catalog, input.CommunityId);
+                if (input.Job.Action is not (CapsuleerAction.Collect or CapsuleerAction.Lock))
+                {
+                    _ = CapsuleerTrafficRoutes.Read(catalog, input.CommunityId);
+                }
                 cancellationToken.ThrowIfCancellationRequested();
                 if (input.Journey is not null)
                 {

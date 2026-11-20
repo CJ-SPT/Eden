@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Flight;
 using Eden.Server;
 using Eden.Server.Launcher;
@@ -256,6 +257,30 @@ public sealed class LiveWorldTests
     public async Task FailedSaveRetainsDirtyStateAndLastCompletedCheckpointThenRetries()
     {
         using TestWorld db = new();
+        const long pilot = 90000001;
+        const int trainedSkill = 2_000_000;
+        const int removedSkill = trainedSkill + 1;
+        const int newSkill = trainedSkill + 2;
+        using (WorldDbContext seed = new(db.Path))
+        {
+            seed.Add(
+                new PilotSkill
+                {
+                    PilotId = pilot,
+                    TypeId = trainedSkill,
+                    Points = 100,
+                }
+            );
+            seed.Add(
+                new PilotSkill
+                {
+                    PilotId = pilot,
+                    TypeId = removedSkill,
+                    Points = 200,
+                }
+            );
+            seed.SaveChanges();
+        }
         bool fail = false;
         TestClock simulation = new();
         CheckpointClock clock = new(simulation);
@@ -272,6 +297,7 @@ public sealed class LiveWorldTests
                 LiveWorld.PersistSnapshot(snapshot, path);
             }
         );
+        live.MeasureCheckpoints = true;
         using (WorldDbContext world = new(db.Path))
         {
             world.Database.ExecuteSqlRaw("UPDATE WorldPilot SET Name='Saved checkpoint' WHERE Id=90000001");
@@ -282,6 +308,21 @@ public sealed class LiveWorldTests
         {
             world.Database.ExecuteSqlRaw("UPDATE WorldPilot SET Name='Pending checkpoint' WHERE Id=90000001");
         }
+        using (var action = live.Economy.Begin(new(pilots: [pilot])))
+        {
+            var skills = action.Set<PilotSkill>();
+            skills.Find(pilot, trainedSkill)!.Points = 300;
+            action.Remove(skills.Find(pilot, removedSkill)!);
+            action.Add(
+                new PilotSkill
+                {
+                    PilotId = pilot,
+                    TypeId = newSkill,
+                    Points = 400,
+                }
+            );
+            action.Commit();
+        }
         fail = true;
         simulation.Seconds = 15;
         clock.FireDueTimers();
@@ -290,12 +331,18 @@ public sealed class LiveWorldTests
         Assert.Same(completed, live.LastCheckpoint);
         Assert.IsType<IOException>(live.LastSaveFailure);
         Assert.Equal(1, DiskValue(db.Path, "SELECT COUNT(*) FROM WorldPilot WHERE Name='Saved checkpoint'"));
+        Assert.Equal(100, DiskValue(db.Path, $"SELECT Points FROM WorldPilotSkill WHERE PilotId={pilot} AND TypeId={trainedSkill}"));
         fail = false;
         simulation.Seconds = 30;
         clock.FireDueTimers();
         await live.PendingSave;
         Assert.Null(live.LastSaveFailure);
         Assert.Equal(1, DiskValue(db.Path, "SELECT COUNT(*) FROM WorldPilot WHERE Name='Pending checkpoint'"));
+        var projection = Assert.Single(live.LastCheckpoint!.ProjectionTables!, table => table.Table == "WorldPilotSkill");
+        Assert.Equal((3, 2), (projection.Rows, projection.Commands));
+        Assert.Equal(300, DiskValue(db.Path, $"SELECT Points FROM WorldPilotSkill WHERE PilotId={pilot} AND TypeId={trainedSkill}"));
+        Assert.Equal(0, DiskValue(db.Path, $"SELECT COUNT(*) FROM WorldPilotSkill WHERE PilotId={pilot} AND TypeId={removedSkill}"));
+        Assert.Equal(400, DiskValue(db.Path, $"SELECT Points FROM WorldPilotSkill WHERE PilotId={pilot} AND TypeId={newSkill}"));
     }
 
     [Fact]

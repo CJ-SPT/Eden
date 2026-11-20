@@ -183,10 +183,9 @@ public sealed class CapsuleerJobQueue
     }
 
     public CapsuleerQueueStatus Inspect(long throughTicks) =>
-        new(
-            _queue.TakeWhile(j => j.DueTicks <= throughTicks).Count(),
-            _queue.Min is { } first && first.DueTicks <= throughTicks ? first.DueTicks : null
-        );
+        new(DueJobs(throughTicks).Count(), _queue.Min is { } first && first.DueTicks <= throughTicks ? first.DueTicks : null);
+
+    public IEnumerable<CapsuleerJob> DueJobs(long throughTicks) => _queue.TakeWhile(j => j.DueTicks <= throughTicks).Select(j => j.Job);
 
     private void Enqueue(ScheduledJob job) => _queue.Add(job);
 

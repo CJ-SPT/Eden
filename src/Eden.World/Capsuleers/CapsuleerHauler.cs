@@ -192,15 +192,7 @@ internal sealed partial class CapsuleerHauler(
 
     internal CapsuleerJob Resume(CapsuleerJob job, long elapsed, long? pausedAt = null)
     {
-        if (!_loaded)
-        {
-            Load();
-        }
-        if (Live is { } live && _hullRevision != live.CapsuleerHullRevisions.GetValueOrDefault(pilotId))
-        {
-            _hullRevision = live.CapsuleerHullRevisions.GetValueOrDefault(pilotId);
-            Load();
-        }
+        EnsureCurrentHull();
         long delay = Math.Max(0, elapsed - Math.Max(Work.ActiveTicks, pausedAt ?? 0));
         // A visible flying ship needs its next motion pulse even when an older save paired its
         // alignment with a distant job deadline. Otherwise Destiny predicts a warp from a frozen grid.
@@ -703,11 +695,12 @@ internal sealed partial class CapsuleerHauler(
         long account = world.Pilots.Where(p => p.Id == Founder.PilotId).Select(p => p.AccountId).Single();
         _pilot = ReadPilot(world, account);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        _route = CapsuleerTrafficFlight.Route(Founder, catalog);
+        var savedWork = HaulerCheckpoint.Read(Founder.Progress);
+        _route = CapsuleerTrafficFlight.Route(Founder, catalog, savedWork?.Journey);
         _incoming = [];
         _tackleRevision = -1;
         _warpBlocked = false;
-        _work = Live?.HaulerCheckpoints.GetValueOrDefault(pilotId)?.Work ?? HaulerCheckpoint.Read(Founder.Progress);
+        _work = Live?.HaulerCheckpoints.GetValueOrDefault(pilotId)?.Work ?? savedWork;
         if (_work is { Ratting.Patrol.Camp: { } camp } && Work.ShipId == Pilot.ShipId)
         {
             defense.Camps.At(Pilot.SystemId, camp.GateId, camp.Until, Work.ActiveTicks)?.Join(pilotId, false, camp.Role);
@@ -803,7 +796,7 @@ internal sealed partial class CapsuleerHauler(
         {
             // Background travel only needs the static route geometry until detailed work begins.
             using CatalogDbContext catalog = new(database.CatalogPath);
-            _objects = SystemObjects.Geometry(catalog, Pilot.SystemId);
+            _objects = Live?.TrafficGeometry.StaticObjects(catalog, Pilot.SystemId) ?? SystemObjects.Geometry(catalog, Pilot.SystemId);
             _obstacles = [];
             return;
         }

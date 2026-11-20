@@ -1,8 +1,7 @@
 # syntax=docker/dockerfile:1
 
-ARG EDEN_DOTNET_SDK=10.0.403
+ARG EDEN_DOTNET_SDK=10.0
 FROM mcr.microsoft.com/dotnet/sdk:${EDEN_DOTNET_SDK}-noble AS build
-ARG EDEN_DOTNET_SDK
 WORKDIR /source
 COPY global.json Directory.Build.props Directory.Build.targets .editorconfig ./
 COPY src/ src/
@@ -11,8 +10,9 @@ COPY tools/Build-SkillClient.py tools/mod_client_loader.py tools/skill_client_ov
 ARG EDEN_REVISION
 ARG TARGETARCH
 RUN --mount=type=cache,id=eden-nuget,target=/root/.nuget/packages,sharing=locked \
-    --mount=type=cache,id=eden-compile-${EDEN_DOTNET_SDK}-${TARGETARCH},target=/build-cache,sharing=locked \
-    bash tools/Publish-Docker.sh /source /build-cache /publish "$EDEN_REVISION" \
+    --mount=type=cache,id=eden-compile-${TARGETARCH},target=/build-cache,sharing=locked \
+    sdk_version="$(dotnet --version)" \
+    && bash tools/Publish-Docker.sh /source "/build-cache/$sdk_version" /publish "$EDEN_REVISION" \
     && test -s /publish/wwwroot/_framework/blazor.web.js
 
 FROM ubuntu:24.04 AS mod-compiler

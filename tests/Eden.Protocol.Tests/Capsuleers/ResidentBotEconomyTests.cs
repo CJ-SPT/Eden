@@ -4,12 +4,16 @@ using Eden.Data.World.Combat;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Mining;
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Flight;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Server;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
+using Eden.World.Docking;
+using Eden.World.Market;
 using Eden.World.Mining;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -94,6 +98,61 @@ public sealed class ResidentBotEconomyTests(ITestOutputHelper output)
         using var saved = new WorldDbContext(captured.Database);
         Assert.Equal(commit ? remaining : before, saved.Set<WorldAsteroid>().Find(paid.Work.TargetId)!.Quantity);
         Assert.Equal(commit ? null : (long?)ready, saved.Set<ModuleCooldown>().Find(paid.Work.ModuleId)?.ReadyAt);
+    }
+
+    [Fact]
+    public void MiningExpeditionGateTransferPublishesOnlyToItsEndpointSystems()
+    {
+        TestClock clock = new();
+        using TestWorld db = new(clock: clock, liveWorld: true);
+        var pilot = db.Store.FindPilot(1000001)!;
+        var gate = db.Objects.Single(body => body.DestinationGateId.HasValue);
+        int destination = gate.DestinationSystemId!.Value;
+        db.Store.SetPosition(pilot.ShipId, gate.Position);
+
+        var live = db.Services.GetRequiredService<LiveWorld>();
+        var database = db.Services.GetRequiredService<WorldDatabase>();
+        var market = db.Services.GetRequiredService<MarketChangeSignal>();
+        using var owner = live.EnterShared();
+        const int unrelated = 30000145;
+        Assert.NotEqual(unrelated, pilot.SystemId);
+        Assert.NotEqual(unrelated, destination);
+        var originBefore = live.PresentationVersion(pilot.SystemId);
+        var destinationBefore = live.PresentationVersion(destination);
+        var unrelatedBefore = live.PresentationVersion(unrelated);
+        CapsuleerJob job = new(pilot.PilotId, 0, 0, 0, CapsuleerAction.GateTransfer);
+        MinerCheckpoint checkpoint = new(
+            pilot.PilotId,
+            new(MinerActivity.Jumping, gate.Id, 0, 0, 0, 0, 0, new NavigationState().Capture(), pilot.ShipId)
+        );
+        using var systemContext = live.UseSystem(pilot.SystemId);
+        using CapsuleerOperation operation = new(database, job, market);
+        live.MinerCheckpoints[pilot.PilotId] = checkpoint;
+        EconomyTransaction action;
+        try
+        {
+            action = Assert.IsType<EconomyTransaction>(operation.World);
+        }
+        finally
+        {
+            live.MinerCheckpoints.Remove(pilot.PilotId);
+        }
+        var transfer = PilotGateTravelStore.TransferDetailed(
+            action,
+            operation.Catalog,
+            pilot.PilotId,
+            pilot.ShipId,
+            gate.Id,
+            gate.DestinationGateId!.Value,
+            clock.Now
+        );
+        action.Commit();
+
+        Assert.Equal(destination, transfer.System.Id);
+        Assert.Equal(destination, live.Economy.Peek<Eden.Data.World.Docking.FlightPosition>(pilot.ShipId)!.SystemId);
+        Assert.NotEqual(originBefore, live.PresentationVersion(pilot.SystemId));
+        Assert.NotEqual(destinationBefore, live.PresentationVersion(destination));
+        Assert.Equal(unrelatedBefore, live.PresentationVersion(unrelated));
     }
 
     [Theory]

@@ -180,7 +180,7 @@ public sealed partial class ServerPerformanceReplayTests
     private sealed partial class ReplayPlayer : IDisposable
     {
         private readonly IServiceScope _scope;
-        private readonly ConcurrentQueue<string> _reports;
+        private readonly Action<string> _report;
         private readonly PilotSessionOutput _output;
         private readonly PilotSessionCalls _calls;
         private readonly PilotSessionTick _tick;
@@ -198,10 +198,20 @@ public sealed partial class ServerPerformanceReplayTests
             ConcurrentQueue<string> reports,
             bool selected = true
         )
+            : this(host, clock, pilot, account, reports.Enqueue, selected) { }
+
+        internal ReplayPlayer(
+            ServiceProvider host,
+            TimeProvider clock,
+            long pilot,
+            long account,
+            Action<string> report,
+            bool selected = true
+        )
         {
             _scope = host.CreateScope();
             _account = account;
-            _reports = reports;
+            _report = report;
             var provider = _scope.ServiceProvider;
             var lookup = provider.GetRequiredService<IPilotLookup>();
             Context = new(
@@ -234,7 +244,7 @@ public sealed partial class ServerPerformanceReplayTests
                     }
                     return Task.CompletedTask;
                 },
-                reports.Enqueue
+                report
             );
             var updates = provider.GetRequiredService<PilotUpdateCoordinator>();
             var skills = provider.GetRequiredService<SkillHandler>();
@@ -248,7 +258,7 @@ public sealed partial class ServerPerformanceReplayTests
                 updates,
                 skills,
                 clock,
-                reports.Enqueue,
+                report,
                 account,
                 account,
                 operations,
@@ -276,7 +286,7 @@ public sealed partial class ServerPerformanceReplayTests
         {
             _arrival = Stopwatch.GetTimestamp();
             _reply = 0;
-            using var metrics = SessionPerformance.Begin($"player {service}.{method}", _reports.Enqueue, force: MeasureCounters);
+            using var metrics = SessionPerformance.Begin($"player {service}.{method}", _report, force: MeasureCounters);
             await _calls.ProcessAsync(Request(service, method, arguments), _arrival);
             Assert.True(_reply > 0);
             return new(
@@ -292,8 +302,8 @@ public sealed partial class ServerPerformanceReplayTests
         internal async Task<ReplaySample> Frame()
         {
             long started = Stopwatch.GetTimestamp();
-            using var metrics = SessionPerformance.Begin("player frame", _reports.Enqueue, force: MeasureCounters);
-            await _tick.AdvanceAsync(Context, _output, _reports.Enqueue, _account, _account);
+            using var metrics = SessionPerformance.Begin("player frame", _report, force: MeasureCounters);
+            await _tick.AdvanceAsync(Context, _output, _report, _account, _account);
             return new(
                 "frame",
                 0,

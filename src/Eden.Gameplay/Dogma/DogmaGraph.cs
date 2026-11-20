@@ -59,20 +59,9 @@ public sealed class DogmaGraph
     // stackingNurfedAttribute.pyj: exp((index / 2.67) ** 2).
     private const double StackingDivisor = 2.67;
 
-    // Native precedence puts -1 first. Enum.GetValues sorts negative IDs as
-    // unsigned values, so it cannot supply the operator order.
-    private static readonly DogmaOperation[] s_operationOrder =
-    [
-        DogmaOperation.PreAssignment,
-        DogmaOperation.PreMultiply,
-        DogmaOperation.Add,
-        DogmaOperation.PostMultiply,
-        DogmaOperation.PostPercent,
-        DogmaOperation.PostAssignment,
-    ];
     private readonly IReadOnlyDictionary<long, DogmaNode> _items;
     private readonly IReadOnlyDictionary<DogmaAttributeId, DogmaAttributeDefinition> _definitions;
-    private readonly ILookup<(long Item, DogmaAttributeId Attribute), DogmaModifier> _incoming;
+    private readonly Dictionary<(long Item, DogmaAttributeId Attribute), IGrouping<DogmaOperation, DogmaModifier>[]> _incoming;
     private readonly Dictionary<(long Item, DogmaAttributeId Attribute), double> _values = [];
     private readonly HashSet<(long Item, DogmaAttributeId Attribute)> _evaluating = [];
 
@@ -84,7 +73,11 @@ public sealed class DogmaGraph
     {
         _items = items.ToDictionary(i => i.Id);
         _definitions = definitions;
-        _incoming = modifiers.ToLookup(m => (m.TargetId, m.Attribute));
+        // Signed operator IDs give native precedence, including PreAssignment (-1).
+        // GroupBy retains source order for multiple modifiers in the same operation.
+        _incoming = modifiers
+            .GroupBy(m => (m.TargetId, m.Attribute))
+            .ToDictionary(group => group.Key, group => group.GroupBy(m => m.Operation).OrderBy(bucket => (int)bucket.Key).ToArray());
     }
 
     public double Read(DogmaValue value) =>
@@ -110,67 +103,31 @@ public sealed class DogmaGraph
         }
         try
         {
-            var definition = _definitions.GetValueOrDefault(attribute) ?? new(attribute, 0);
-            double value = _items[itemId].Attributes.GetValueOrDefault(attribute, definition.DefaultValue);
+            var definition = _definitions.GetValueOrDefault(attribute);
+            double value = _items[itemId].Attributes.GetValueOrDefault(attribute, definition?.DefaultValue ?? 0);
             // Attribute.Update bounds the base value before applying modifiers.
-            if (definition.Maximum is { } maximum)
+            if (definition?.Maximum is { } maximum)
             {
                 value = Math.Min(value, Read(itemId, maximum));
             }
-            if (definition.Minimum is { } minimum)
+            if (definition?.Minimum is { } minimum)
             {
                 value = Math.Max(value, Read(itemId, minimum));
             }
-            foreach (var operation in s_operationOrder)
+            if (_incoming.TryGetValue(key, out var operations))
             {
-                var modifiers = _incoming[key].Where(m => m.Operation == operation).ToArray();
-                if (operation is DogmaOperation.PreAssignment or DogmaOperation.PostAssignment)
-                {
-                    foreach (var modifier in modifiers)
-                    {
-                        value = Read(modifier.Source);
-                    }
-                    continue;
-                }
-                if (operation == DogmaOperation.Add)
-                {
-                    value += modifiers.Sum(m => Read(m.Source));
-                    continue;
-                }
-                var factors = modifiers
-                    .Select(m =>
-                        (
-                            Factor: operation == DogmaOperation.PostPercent ? 1 + Read(m.Source) / Percent : Read(m.Source),
-                            Exempt: definition.Stackable || m.ExemptFromStacking
-                        )
-                    )
-                    .ToArray();
-                value *= factors.Where(f => f.Exempt).Aggregate(1d, (v, f) => v * f.Factor);
-                // Bonuses and penalties occupy separate strongest-first sequences.
-                foreach (bool increasing in new[] { false, true })
-                {
-                    var penalized = factors
-                        .Where(f => !f.Exempt && (f.Factor >= 1) == increasing)
-                        .Select(f => f.Factor)
-                        .OrderByDescending(f => Math.Abs(f - 1))
-                        .Take(MaximumPenalizedModifiers);
-                    int index = 0;
-                    foreach (double factor in penalized)
-                    {
-                        value *= 1 + (factor - 1) / Math.Exp(Math.Pow(index++ / StackingDivisor, 2));
-                    }
-                }
+                value = ApplyModifiers(value, operations, definition?.Stackable ?? true);
             }
             // Attribute.Update clamps both the base and the final modified value.
-            if (definition.Maximum is { } finalMaximum)
+            if (definition?.Maximum is { } finalMaximum)
             {
                 value = Math.Min(value, Read(itemId, finalMaximum));
             }
-            if (definition.Minimum is { } finalMinimum)
+            if (definition?.Minimum is { } finalMinimum)
             {
                 value = Math.Max(value, Read(itemId, finalMinimum));
             }
-            if (definition.Integer)
+            if (definition?.Integer == true)
             {
                 value = Math.Truncate(value);
             }
@@ -191,9 +148,91 @@ public sealed class DogmaGraph
         }
     }
 
-    public Dictionary<DogmaAttributeId, double> Attributes(long itemId) =>
-        _items[itemId]
-            .Attributes.Keys.Concat(_incoming.Where(group => group.Key.Item == itemId).Select(group => group.Key.Attribute))
-            .Distinct()
-            .ToDictionary(id => id, id => Read(itemId, id));
+    private double ApplyModifiers(double value, IGrouping<DogmaOperation, DogmaModifier>[] operations, bool stackable)
+    {
+        foreach (var modifiers in operations)
+        {
+            switch (modifiers.Key)
+            {
+                case DogmaOperation.PreAssignment:
+                case DogmaOperation.PostAssignment:
+                    foreach (var modifier in modifiers)
+                    {
+                        value = Read(modifier.Source);
+                    }
+                    break;
+                case DogmaOperation.Add:
+                    double sum = 0;
+                    foreach (var modifier in modifiers)
+                    {
+                        sum += Read(modifier.Source);
+                    }
+                    value += sum;
+                    break;
+                case DogmaOperation.PreMultiply:
+                case DogmaOperation.PostMultiply:
+                case DogmaOperation.PostPercent:
+                    value = Multiply(value, modifiers, stackable);
+                    break;
+            }
+        }
+        return value;
+    }
+
+    private double Multiply(double value, IGrouping<DogmaOperation, DogmaModifier> modifiers, bool stackable)
+    {
+        double product = 1;
+        List<double>? penalties = null;
+        List<double>? bonuses = null;
+        foreach (var modifier in modifiers)
+        {
+            double source = Read(modifier.Source);
+            double factor = modifiers.Key == DogmaOperation.PostPercent ? 1 + source / Percent : source;
+            if (stackable || modifier.ExemptFromStacking)
+            {
+                product *= factor;
+            }
+            else if (factor >= 1)
+            {
+                (bonuses ??= []).Add(factor);
+            }
+            else
+            {
+                (penalties ??= []).Add(factor);
+            }
+        }
+        // Apply exempt factors first. Reductions and increases have separate rankings.
+        return ApplyStacking(ApplyStacking(value * product, penalties), bonuses);
+    }
+
+    private static double ApplyStacking(double value, List<double>? factors)
+    {
+        if (factors is not null)
+        {
+            int index = 0;
+            foreach (double factor in factors.OrderByDescending(f => Math.Abs(f - 1)).Take(MaximumPenalizedModifiers))
+            {
+                value *= 1 + (factor - 1) / Math.Exp(Math.Pow(index++ / StackingDivisor, 2));
+            }
+        }
+        return value;
+    }
+
+    public Dictionary<DogmaAttributeId, double> Attributes(long itemId)
+    {
+        var raw = _items[itemId].Attributes;
+        Dictionary<DogmaAttributeId, double> values = new(raw.Count);
+        foreach (var attribute in raw.Keys)
+        {
+            values.Add(attribute, Read(itemId, attribute));
+        }
+        foreach (var target in _incoming.Keys)
+        {
+            if (target.Item == itemId && !raw.ContainsKey(target.Attribute))
+            {
+                values.Add(target.Attribute, Read(itemId, target.Attribute));
+            }
+        }
+        return values;
+    }
 }
