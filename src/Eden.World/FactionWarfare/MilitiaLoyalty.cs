@@ -1,5 +1,6 @@
 using Eden.Data.World.Characters;
 using Eden.Data.World.Corporations;
+using Eden.Data.World.FactionWarfare;
 using Eden.Data.World.Market;
 using Eden.Gameplay.FactionWarfare;
 using Eden.World.Runtime.Economy;
@@ -8,7 +9,15 @@ namespace Eden.World.FactionWarfare;
 
 internal static class MilitiaLoyalty
 {
-    internal static void Credit(WorldAction world, MilitiaFaction faction, Pilot pilot, long points)
+    internal static void Credit(
+        WorldAction world,
+        MilitiaFaction faction,
+        Pilot pilot,
+        long points,
+        MilitiaLoyaltySource source,
+        long sourceId,
+        long now
+    )
     {
         if (points <= 0)
         {
@@ -25,6 +34,20 @@ internal static class MilitiaLoyalty
                 ?? world.Add(new SavedCorporationLoyaltyBalance { CorporationId = corpId, IssuerCorporationId = issuer }).Entity;
             corporate.Points = checked(corporate.Points + tax);
         }
+        world.Add(
+            new SavedMilitiaLoyaltyAward
+            {
+                Id = world.Next("WorldMilitiaLoyaltyAward"),
+                PilotId = pilot.Id,
+                CorporationId = corpId,
+                IssuerId = issuer,
+                Points = points,
+                Tax = tax,
+                Time = now,
+                SourceId = sourceId,
+                Source = source,
+            }
+        );
         if (points > tax)
         {
             var personal =

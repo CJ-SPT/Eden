@@ -41,7 +41,12 @@ internal sealed record MissionProfile(
     internal ImmutableArray<MissionDeposit> Deposits { get; init; } = [];
 
     internal bool AvailableTo(CatalogAgent agent) =>
-        (SupplierFaction == 0 || SupplierFaction == agent.FactionId)
+        (
+            MilitiaMissionCatalog.Issuer(Definition.MissionId) is { } militia
+                ? agent.Type == AgentType.FactionalWarfare && (int)militia == agent.FactionId
+                : agent.Type != AgentType.FactionalWarfare
+        )
+        && (SupplierFaction == 0 || SupplierFaction == agent.FactionId)
         && (SupplierCorporation == 0 || SupplierCorporation == agent.CorporationId)
         && (Definition.FixedAgentIds.IsEmpty || Definition.FixedAgentIds.Contains(agent.Id));
 
@@ -121,6 +126,9 @@ internal static class MissionCatalog
             .Select(definition => catalog.Definition(s_profile, definition.MissionId))
             .OfType<MissionProfile>();
 
+    internal static IEnumerable<MissionProfile> ForMilitia(CatalogDbContext catalog, CatalogAgent agent) =>
+        MilitiaMissionCatalog.ForAgent(agent).Select(id => catalog.Definition(s_profile, id)).OfType<MissionProfile>();
+
     internal static bool IsMining(int missionId) => s_content.Value.Missions.Any(m => m.MissionId == missionId && m.Mining);
 
     internal static bool IsFixed(int missionId) => s_content.Value.Missions.Any(m => m.MissionId == missionId && !m.FixedAgentIds.IsEmpty);
@@ -148,7 +156,8 @@ internal static class MissionCatalog
 
     private static MissionProfile? Load(CatalogDbContext catalog, int missionId)
     {
-        var definition = s_content.Value.Missions.SingleOrDefault(m => m.MissionId == missionId);
+        var definition =
+            s_content.Value.Missions.SingleOrDefault(m => m.MissionId == missionId) ?? MilitiaMissionCatalog.Load(catalog, missionId);
         if (definition is null)
         {
             return null;

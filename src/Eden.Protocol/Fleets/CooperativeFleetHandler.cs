@@ -70,7 +70,7 @@ internal sealed partial class CooperativeFleetHandler(ICooperativeFleets fleets,
         {
             var value = delivery.Event;
             if (
-                value is not (FleetEvent.Invitation or FleetEvent.MissionStanding)
+                value is not (FleetEvent.Invitation or FleetEvent.StandingChanged)
                 && delivery.FleetId != identity?.FleetId
                 && !(identity is null && value is FleetEvent.Left { PilotId: var departed } && departed == pilot.PilotId)
             )
@@ -131,7 +131,7 @@ internal sealed partial class CooperativeFleetHandler(ICooperativeFleets fleets,
                         );
                     }
                     break;
-                case FleetEvent.MissionStanding standing:
+                case FleetEvent.StandingChanged standing:
                     context.Notifications.Add(new NpcStandingSet(standing.SourceId, pilot.PilotId, standing.Value));
                     break;
                 case FleetEvent.Resync resync:

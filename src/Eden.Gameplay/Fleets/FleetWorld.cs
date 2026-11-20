@@ -157,9 +157,9 @@ public sealed partial class FleetWorld(long seed)
         return result;
     }
 
-    public void NotifyMissionStanding(long pilotId, long sourceId, double value)
+    public void NotifyStandingChanged(long pilotId, long sourceId, double value)
     {
-        Queue(pilotId, Identity(pilotId)?.FleetId ?? 0, new FleetEvent.MissionStanding(sourceId, value));
+        Queue(pilotId, Identity(pilotId)?.FleetId ?? 0, new FleetEvent.StandingChanged(sourceId, value));
     }
 
     private void Queue(long actor, long fleetId, FleetEvent value)

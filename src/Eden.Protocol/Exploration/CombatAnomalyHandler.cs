@@ -129,12 +129,13 @@ internal sealed class CombatAnomalyHandler(
         var signatures = sites.Signatures(system, now);
         var position = context.Pilot.Position;
         TrackGhostSite(context, position, signatures);
+        var missionSites = missions.Sites(system).Where(s => !s.Private || s.PilotId == context.Pilot.PilotId).ToArray();
         context.Flight.RefreshAnomalies(
             current
                 .Concat(signatures)
                 .Concat(escalations?.Sites(context.Pilot.PilotId, system, now) ?? [])
                 .SelectMany(s => s.Objects)
-                .Concat(missions.Sites(system).Where(s => !s.Private || s.PilotId == context.Pilot.PilotId).SelectMany(s => s.Objects))
+                .Concat(missionSites.SelectMany(s => s.Objects))
                 .Where(o =>
                     position is not null
                     && position.DistanceTo(o.Position)
@@ -144,6 +145,7 @@ internal sealed class CombatAnomalyHandler(
                                 : Eden.Gameplay.Combat.NpcEncounterDefinitions.VisibilityRange
                         )
                 )
+                .Concat(position is null ? [] : missionSites.Select(site => site.PublicBeacon).OfType<StaticSpaceObject>())
                 .ToArray()
         );
         if (_system != system)

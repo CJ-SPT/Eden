@@ -435,7 +435,15 @@ internal sealed class MilitiaObjectiveStore(WorldDatabase database, NpcProfileCa
                     now,
                     pilot
                 );
-                MilitiaLoyalty.Credit(world, state.Faction, pilot, MilitiaObjectiveRules.DeploymentReward);
+                MilitiaLoyalty.Credit(
+                    world,
+                    state.Faction,
+                    pilot,
+                    MilitiaObjectiveRules.DeploymentReward,
+                    MilitiaLoyaltySource.AdvantageObjective,
+                    state.Id,
+                    now
+                );
                 Retire(world, catalog, state, now);
                 ForgetSample(world, state.Id);
                 world.Remove(state);
@@ -628,7 +636,7 @@ internal sealed class MilitiaObjectiveStore(WorldDatabase database, NpcProfileCa
                     / contributors.Length;
             foreach (var contributor in contributors)
             {
-                MilitiaLoyalty.Credit(world, winner, contributor, points);
+                MilitiaLoyalty.Credit(world, winner, contributor, points, MilitiaLoyaltySource.AdvantageObjective, npc.Id, now);
             }
         }
     }

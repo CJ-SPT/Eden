@@ -888,6 +888,7 @@ internal sealed partial class ResidentEconomy
         RegisterMilitiaComplex();
         RegisterMilitiaAdvantage();
         RegisterMilitiaObjectives();
+        RegisterMilitiaProgression();
         RegisterMilitiaHubs();
         RegisterSovereigntyHub();
         RegisterEntosisCycle();

@@ -16,7 +16,8 @@
   [Fleets](protocol/fleets.md) · [Corporations](corporations.md) · [Structures](protocol/structures.md) ·
   [Sovereignty](protocol/sovereignty.md)
 - **Faction Warfare.** Enlist as a pilot, corporation, or alliance. Capture complexes and battlefields, fight for
-  Advantage, and contest infrastructure hubs in both empire warzones. [Faction Warfare](protocol/faction-warfare.md)
+  Advantage, and contest infrastructure hubs in both empire warzones. Run militia missions, earn ranks and LP
+  from opposing-militia combat, and compare kills and victory points in the dashboard. [Faction Warfare](protocol/faction-warfare.md)
 - **Simulated capsuleers.** Encounter NPC pilots that mine, haul goods, form corporations, and take part in regional conflicts.
   [Capsuleer population](capsuleer-population.md) ·
   [Regional conflicts](protocol/capsuleers.md#regional-bot-conflicts--november-17-2026)

@@ -113,8 +113,8 @@ internal sealed class CooperativeFleetStore(TimeProvider clock, IPilotSecuritySt
 
     public IReadOnlyList<FleetDelivery> Drain(long actor) => Read(() => _world.Drain(actor));
 
-    public void NotifyMissionStanding(long pilotId, long sourceId, double value) =>
-        Write(() => _world.NotifyMissionStanding(pilotId, sourceId, value));
+    public void NotifyStandingChanged(long pilotId, long sourceId, double value) =>
+        Write(() => _world.NotifyStandingChanged(pilotId, sourceId, value));
 
     public CooperativeFleet Create(long actor) => Read(() => _world.Create(actor));
 

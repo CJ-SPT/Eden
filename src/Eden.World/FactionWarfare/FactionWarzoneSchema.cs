@@ -9,6 +9,11 @@ internal static class FactionWarzoneSchema
 {
     internal static void Configure(ModelBuilder model)
     {
+        model.Entity<SavedMilitiaRank>().ToTable("WorldMilitiaRank").HasKey(row => new { row.PilotId, row.Faction });
+        model.Entity<SavedMilitiaRank>().HasOne<Pilot>().WithMany().HasForeignKey(row => row.PilotId);
+        model.Entity<SavedMilitiaStatistics>().ToTable("WorldMilitiaStatistics").HasKey(row => new { row.Scope, row.OwnerId });
+        model.Entity<SavedMilitiaLoyaltyAward>().ToTable("WorldMilitiaLoyaltyAward").HasKey(row => row.Id);
+        model.Entity<SavedMilitiaLoyaltyAward>().HasIndex(row => row.PilotId);
         model.Entity<SavedWarzoneOccupation>().ToTable("WorldWarzoneOccupation").HasKey(row => row.SystemId);
         model.Entity<SavedWarzoneOccupation>().Property(row => row.SystemId).ValueGeneratedNever();
         model.Entity<SavedMilitiaEnlistment>().ToTable("WorldMilitiaEnlistment").HasKey(row => row.PilotId);
@@ -38,6 +43,16 @@ internal static class FactionWarzoneSchema
     internal static void Upgrade(WorldDbContext world) =>
         world.Database.ExecuteSqlRaw(
             """
+            CREATE TABLE IF NOT EXISTS WorldMilitiaRank(
+                PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id) ON DELETE CASCADE,
+                Faction INTEGER NOT NULL, HighestRank INTEGER NOT NULL, PRIMARY KEY(PilotId,Faction));
+            CREATE TABLE IF NOT EXISTS WorldMilitiaStatistics(
+                Scope INTEGER NOT NULL, OwnerId INTEGER NOT NULL, Kills INTEGER NOT NULL, VictoryPoints INTEGER NOT NULL,
+                DaysJson TEXT NOT NULL, PRIMARY KEY(Scope,OwnerId));
+            CREATE TABLE IF NOT EXISTS WorldMilitiaLoyaltyAward(
+                Id INTEGER PRIMARY KEY, PilotId INTEGER NOT NULL, CorporationId INTEGER NOT NULL, IssuerId INTEGER NOT NULL,
+                Points INTEGER NOT NULL, Tax INTEGER NOT NULL, Time INTEGER NOT NULL, SourceId INTEGER NOT NULL, Source INTEGER NOT NULL);
+            CREATE INDEX IF NOT EXISTS IX_WorldMilitiaLoyaltyAward_PilotId ON WorldMilitiaLoyaltyAward(PilotId);
             CREATE TABLE IF NOT EXISTS WorldWarzoneOccupation(
                 SystemId INTEGER PRIMARY KEY,
                 Occupier INTEGER NOT NULL,

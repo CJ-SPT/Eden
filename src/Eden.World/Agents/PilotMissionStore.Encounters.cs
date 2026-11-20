@@ -4,6 +4,7 @@ using Eden.Data.World.Combat.Npcs;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Flight;
 using Eden.World.Catalog;
 using Eden.World.Combat.Npcs;
@@ -108,6 +109,7 @@ internal sealed partial class PilotMissionStore
                                 Gates = gates,
                                 Deadspace = profile.Definition.Deadspace,
                                 Private = profile.Kind == MissionKind.Mining,
+                                PublicBeacon = room == profile.Rooms[0] ? MilitiaBeacon(catalog, m, profile, position) : null,
                             };
                         })
                         .ToArray();
@@ -120,6 +122,33 @@ internal sealed partial class PilotMissionStore
                 rows.Where(m => m.State == MissionState.Accepted).Select(m => m.ExpiresAt).DefaultIfEmpty(long.MaxValue).Min()
             );
         }
+    }
+
+    private static StaticSpaceObject? MilitiaBeacon(
+        CatalogDbContext catalog,
+        SavedMission mission,
+        MissionProfile profile,
+        SpacePosition position
+    )
+    {
+        if (MilitiaMissionCatalog.Issuer(mission.MissionId) is not { } faction)
+        {
+            return null;
+        }
+        var type = catalog.RequireItem(MilitiaMissionCatalog.BeaconType(mission.Level));
+        return new(
+            MissionRules.FirstSiteId + mission.Id,
+            type.Id,
+            type.GroupId,
+            type.CategoryId,
+            MilitiaRules.Corporation(faction),
+            position,
+            0
+        )
+        {
+            Name = profile.Name,
+            Solid = false,
+        };
     }
 
     public void Arrive(int systemId, SpacePosition position)

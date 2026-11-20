@@ -10,6 +10,7 @@ using Eden.Data.World.Market;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.FactionWarfare;
+using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Diagnostics;
@@ -172,6 +173,8 @@ public sealed partial class MilitiaComplexTests
         using var reopened = ServerServices.Build(database, clock, liveWorld: true);
         live = reopened.GetRequiredService<LiveWorld>();
         complexes = reopened.GetRequiredService<IMilitiaComplexes>();
+        var fleets = reopened.GetRequiredService<ICooperativeFleets>();
+        fleets.Update(Guid.NewGuid(), new(defender.PilotId, corp, defender.ShipId, defender.ShipTypeId, SystemId, sit));
         warzones = reopened.GetRequiredService<IFactionWarzones>();
         clock.AdvanceWallTime(TimeSpan.FromHours(1));
         complexes.Advance(SystemId, [defense], clock.Now);
@@ -185,6 +188,12 @@ public sealed partial class MilitiaComplexTests
         complexes.Advance(SystemId, [defense], clock.Now);
         Assert.DoesNotContain(complexes.Sites(SystemId, clock.Now), s => s.Id == open.Id);
         Assert.Equal(74_545, warzones.System(SystemId)!.VictoryPoints);
+        var progression = reopened.GetRequiredService<IMilitiaProgression>();
+        Assert.Equal(455, progression.Statistics(defender.PilotId, MilitiaStatisticOwner.Pilot).Total.VictoryPoints);
+        Assert.Equal(455, progression.Statistics(defender.PilotId, MilitiaStatisticOwner.Corporation).Total.VictoryPoints);
+        var update = Assert.Single(fleets.Drain(defender.PilotId).Select(delivery => delivery.Event).OfType<FleetEvent.StandingChanged>());
+        Assert.Equal(issuer, update.SourceId);
+        Assert.Equal(0.05, update.Value, 8);
         CheckBalances(live);
 
         long due = clock.Now + MilitiaComplexRules.Replacement(warzones.System(SystemId)!.Adjacency).Ticks;
@@ -208,6 +217,13 @@ public sealed partial class MilitiaComplexTests
         using var completed = ServerServices.Build(database, clock, liveWorld: true);
         CheckBalances(completed.GetRequiredService<LiveWorld>());
         Assert.Equal(74_545, completed.GetRequiredService<IFactionWarzones>().System(SystemId)!.VictoryPoints);
+        Assert.Equal(
+            455,
+            completed
+                .GetRequiredService<IMilitiaProgression>()
+                .Statistics(defender.PilotId, MilitiaStatisticOwner.Pilot)
+                .Total.VictoryPoints
+        );
         var restored = completed.GetRequiredService<IMilitiaComplexes>();
         Assert.DoesNotContain(restored.Sites(SystemId, due - 1), s => s.DungeonId == OpenDungeon);
         Assert.Equal(replacement.Id, Assert.Single(restored.Sites(SystemId, due), s => s.DungeonId == OpenDungeon).Id);

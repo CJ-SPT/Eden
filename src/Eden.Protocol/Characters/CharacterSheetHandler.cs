@@ -2,7 +2,9 @@ using Eden.Gameplay.Agents;
 using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Corporations;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.FactionWarfare;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 
@@ -14,7 +16,8 @@ internal sealed class CharacterSheetHandler(
     INpcDirectory npcs,
     IPlayerCorporations corporations,
     ICorporationRoles corporationRoles,
-    IAlliances alliances
+    IAlliances alliances,
+    IMilitiaProgression? militia = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -74,9 +77,9 @@ internal sealed class CharacterSheetHandler(
             {
                 return new PilotCallResult.Failure("Invalid public character request.");
             }
-            // Build 3662168 DecorationsPanel.ShowMyRanks and Info.UpdateDataRank
-            // iterate the overview. Eden pilots have no earned militia ranks.
-            return method == "GetMyCharacterRankOverview" ? BlueEmpty.List : PilotCallResult.None;
+            return method == "GetMyCharacterRankOverview"
+                ? new MilitiaRankOverview(militia?.Ranks(pilot.PilotId) ?? [])
+                : Rank(pilot.PilotId);
         }
         if (
             (service == "charMgr" && method is "GetPublicInfo" or "GetPublicInfo3")
@@ -85,7 +88,7 @@ internal sealed class CharacterSheetHandler(
                 service == "corporationSvc"
                 && method is "GetMedalsReceived" or "GetEmployementRecordAndCharacterTransfers" or "GetEmploymentRecord"
             )
-            || (service == "facWarMgr" && method == "GetCharacterRankInfo")
+            || (service == "facWarMgr" && method is "GetCharacterRankInfo" or "GetCharacterRankOverview")
         )
         {
             if (keywords is { Count: > 0 } || args is not [long id] || id <= 0)
@@ -133,12 +136,15 @@ internal sealed class CharacterSheetHandler(
                     profile,
                     player ? corporations.Employment(id) : null
                 ),
-                "GetCharacterRankInfo" => PilotCallResult.None,
+                "GetCharacterRankInfo" => player ? Rank(id) : PilotCallResult.None,
+                "GetCharacterRankOverview" => new MilitiaRankOverview(player ? militia?.Ranks(id) ?? [] : []),
                 _ => new PublicCharacterInfo(profile),
             };
         }
         return PilotCallResult.Unsupported;
     }
+
+    private PilotCallResult Rank(long id) => militia?.Rank(id) is { } rank ? new MilitiaRankReply(rank) : PilotCallResult.None;
 
     private CharacterCorporationInfo PublicCorporationInfo(PublicCharacterProfile profile)
     {

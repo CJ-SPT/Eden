@@ -197,7 +197,15 @@ internal sealed class MilitiaHubStore(WorldDatabase database) : IMilitiaHubs
             .ToArray();
         for (int index = 0; index < winners.Length; index++)
         {
-            MilitiaLoyalty.Credit(world, attacker, winners[index], MilitiaHubRules.Share(index, winners.Length));
+            MilitiaLoyalty.Credit(
+                world,
+                attacker,
+                winners[index],
+                MilitiaHubRules.Share(index, winners.Length),
+                MilitiaLoyaltySource.InfrastructureHub,
+                npc.Id,
+                now
+            );
         }
         world.RemoveRange(contributors);
         if (LiveWorld.Find(world.WorldPath) is { } live)

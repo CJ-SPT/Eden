@@ -156,8 +156,12 @@ internal static partial class NpcDamagePersistence
                 attacker,
                 loot
             );
-            PilotInteractionHistoryStore.FactionLoss(world, catalog, pilot, npc, attributes, now);
-            long originalCents = NpcBountyRules.BaseCents(npc.Role, attributes);
+            bool militiaMission = Eden.World.Agents.MilitiaMissionCatalog.IsMilitia(world, npc);
+            if (!militiaMission && npc.AnchorKind is not (NpcAnchorKind.MilitiaComplex or NpcAnchorKind.MilitiaObjective))
+            {
+                PilotInteractionHistoryStore.FactionLoss(world, catalog, pilot, npc, attributes, now);
+            }
+            long originalCents = militiaMission ? 0 : NpcBountyRules.BaseCents(npc.Role, attributes);
             long cents = WorldTuningRules.Reward(originalCents, world.Settings.Rewards.BountyMultiplier);
             long skillPoints = NpcSkillPointRewards.FromBounty(
                 cents,

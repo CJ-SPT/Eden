@@ -1,5 +1,86 @@
 # Faction warfare
 
+## Militia missions, ranks, and combat statistics — November 20, 2026
+
+### Mission content and rewards
+
+Militia agents offer a build 3662168 assignment at each level for each empire. The initial rotation uses
+Decapitation (1), Knife in the Throat (2), A Left Hook (3), and Lethal Strike (4). The
+[mission bindings](../../src/Eden.Data/Catalog/FactionWarfare/MilitiaMissionBindings.cs) identify all 16 missions,
+objectives and escorts. Layouts, mission text and gate type lists 512, 513, 514 and 517 come from the pinned catalog.
+The exported dungeons lack server spawn-table rows. Eden selects escorts and commander hulls from the opposing
+militia's catalog and uses the existing agent reward schedule. Other militia mission scripts remain outside this
+rotation.
+
+Only members of the issuing militia with sufficient agent access can take an offer. Destinations rotate among the
+five nearest reachable opposing systems without a pending transfer at offer time. Accepted assignments create a
+public, warpable entrance beacon and use the catalog gate's hull restrictions. Levels 1 and 4 require destroying a
+commander. Levels 2 and 3 require destroying a structure. Completing an objective makes the mission eligible for
+remote turn-in while docked and still enlisted. Mission NPC kills grant no bounty or enemy faction standing loss.
+Completion gives militia LP and agent and militia corporation standings. Missions give no VP or storyline progress.
+Quitting, expiry of an accepted mission, and declining again within four hours lower militia corporation standing.
+
+### Progression, PvP and the dashboard
+
+The ten client ranks use raw militia corporation standing. Promotions through ranks 1–9 award a one-time 2%
+standing gain toward the issuing empire per newly reached rank. Eden keeps a durable high-water mark per pilot and
+faction so demotion, retirement and re-enlistment cannot repeat a promotion award. Promotion earnings do not
+propagate to other empires. Successful complexes and battlefields give winners a 0.5% militia corporation standing
+gain. These percentages and the 2% militia mission penalty are Eden policies.
+
+An eligible opposing-militia ship loss records one kill for the final pilot. LP uses the catalog market
+reference or resident adjusted hull value, subtracts maximum insurance when available, then adds items actually
+destroyed in the loss. Eden awards one LP per 10,000 ISK, rounded down and capped at 50,000 per loss. Pods,
+corvettes, friendly, neutral and same-account kills do not count. The final pilot and same-side pilots who dealt
+damage and are present on grid split the award once per account, with integer remainders assigned in pilot-ID
+order. There is no multiplier for dropped items. The historical CCP formula establishes the valuation inputs.
+Current server-only multipliers and payout coefficients were unavailable. [CCP PvP LP announcement](https://www.eveonline.com/news/view/fw-dev-blog-1-1-1#lps-for-kills)
+
+Mission, PvP, complex, battlefield, hub and Advantage LP credits use the militia issuer and existing corporation
+LP tax. An award receipt records time, source, issuer, recipient, gross LP and tax in the same resident transaction
+as the balance change. The existing LP store spends these balances on its supported catalog offers.
+
+The dashboard reports actual pilot, corporation, alliance and militia kills and VP for yesterday, the previous
+seven complete UTC days, and the lifetime of the recorded activity. The kill and capture events supply historical
+organization membership. Complexes and battlefields divide the actual applied VP change among winners, including
+defensive reductions. The pinned dashboard's top and all tables return category maxima and sums across recorded
+pilots, corporations and alliances. Faction summaries use current occupancy and enlistment. The migration does
+not infer historical kills or VP from older saves.
+
+Build 3662168 static inspection covered the statistics calls in `facWarSvc.pyj`, rank reads, dashboard group
+IDs 1, 2 and 32, and standing events in `appLogConst.pyj`. The older evejs
+`server/src/services/faction/facWarMgrService.js` confirmed rank and faction-info fields at SHA-256
+`0deb401e43bea36d4f01e7125135e1e46b840b4f15488c3168874d6c54ac9422`. Gameplay references include the
+[CCP 23.02 patch notes](https://www.eveonline.com/news/view/patch-notes-version-23-02),
+[CCP standings update](https://www.eveonline.com/news/view/standings-and-awoxing-update),
+[EVE University militia missions](https://wiki.eveuniversity.org/Faction_warfare_missions),
+[EVE University standings](https://wiki.eveuniversity.org/Faction_warfare_standings), and
+[EVE University ranks](https://wiki.eveuniversity.org/Ranks).
+
+### Milestone 7 validation
+
+**Automated validation.** All 16 mission, gate, beacon, NPC and structure profiles loaded from the installed
+build 3662168 catalog. Tool restore, solution restore, and the warning-free build passed in 4.49 seconds
+combined. The exact PvP ship-loss test passed in 6.35 seconds. The six directly affected mission, rank, PvP and
+capture checks passed in 8.11 seconds. The broader focused run passed 958 of 961 tests in 10 minutes 31 seconds.
+The two Blockade warp cases and the fatal-shot combat-text session case failed in the same way on the
+pre-milestone commit `ed522cf6` when run in isolation. Both Python policy suites passed all 17 checks.
+Formatting and width verification passed in 31.68 seconds, and documentation links and whitespace passed.
+The full .NET suite was not run.
+
+The broader run used the following filter.
+
+```text
+FullyQualifiedName~FactionWarfare|FullyQualifiedName~Agents.Mission|FullyQualifiedName~CharacterSheet|FullyQualifiedName~CharacterInteractionHistoryTests|FullyQualifiedName~PilotCombatTests|FullyQualifiedName~NpcCombatTests|FullyQualifiedName~LoyaltyStoreTests|FullyQualifiedName~CorporationLoyaltyTests|FullyQualifiedName~LoyaltyWalletServiceTests|FullyQualifiedName~IncrementalCheckpointTests|FullyQualifiedName~DetachedCheckpointTests|FullyQualifiedName~CombatAnomaly|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~CooperativeFleetTests
+```
+
+The test logs are in `artifacts/faction-warfare/milestone-7/`.
+
+**Live acceptance.** Not performed. Agent client testing is disabled.
+
+**Optional maintainer checks.** Warp to another militia pilot's mission beacon. Check the native character-sheet
+rank and faction warfare dashboard after earning a promotion and an opposing-militia kill.
+
 ## Advantage and battlefields — November 20, 2026
 
 Faction scores now come from resident warzone state. Frontline systems get 10,000 terrain points per

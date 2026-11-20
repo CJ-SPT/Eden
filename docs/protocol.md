@@ -807,6 +807,7 @@ factory freight, and production after bootstrap fuel is exhausted.
 - [Pilot services subscription and checkout, November 8, 2026](protocol/characters.md#pilot-services-subscription-and-checkout-november-8-2026)
 
 - [Sovereignty plan and resident foundation, November 16, 2026](protocol/sovereignty.md)
+- [Faction Warfare militia missions, ranks and combat statistics, November 20, 2026](protocol/faction-warfare.md#militia-missions-ranks-and-combat-statistics--november-20-2026)
 - [Faction Warfare Advantage and battlefields, November 20, 2026](protocol/faction-warfare.md#advantage-and-battlefields--november-20-2026)
 - [Faction Warfare warzone foundation, November 20, 2026](protocol/faction-warfare.md#resident-warzone-foundation--november-20-2026)
 - [Faction Warfare shared complexes and rewards, November 20, 2026](protocol/faction-warfare.md#shared-complexes-and-rewards--november-20-2026)

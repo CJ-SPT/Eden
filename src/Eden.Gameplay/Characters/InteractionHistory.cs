@@ -42,6 +42,12 @@ public enum StandingEvent
 
     // Build 3662168 appLogConst.eventStandingCombatShipKill.
     CombatShipKill = 77,
+
+    AgentMissionFailed = 74,
+    AgentMissionDeclined = 75,
+    PromotionFactionIncrease = 216,
+    TacticalSiteDefended = 229,
+    TacticalSiteConquered = 230,
 }
 
 public sealed record NpcStanding(long SourceId, double Value);

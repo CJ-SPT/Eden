@@ -5,9 +5,11 @@ using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.FactionWarfare;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Agents;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Exploration;
 using Eden.Gameplay.FactionWarfare;
+using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
@@ -26,7 +28,8 @@ internal sealed partial class MilitiaComplexStore(
     WorldDatabase database,
     NpcProfileCatalog profiles,
     IMilitiaHubs? hubs = null,
-    MilitiaObjectiveStore? objectives = null
+    MilitiaObjectiveStore? objectives = null,
+    ICooperativeFleets? fleets = null
 ) : IMilitiaComplexes
 {
     private static readonly IGrouping<MilitiaComplexFamily, MilitiaComplexVariant>[] Variants = MilitiaComplexVariants
@@ -296,7 +299,7 @@ internal sealed partial class MilitiaComplexStore(
         return candidates.DistinctBy(candidate => candidate.Pilot.Id).OrderBy(candidate => candidate.ShipId).ToArray();
     }
 
-    private static void Settle(
+    private void Settle(
         WorldAction world,
         CatalogDbContext catalog,
         Site site,
@@ -326,14 +329,37 @@ internal sealed partial class MilitiaComplexStore(
             site.Profile.Battlefield is null ? MilitiaComplexRules.PointsPerPilot(system, offense, policy, winners.Length)
             : winners.Length == 0 ? 0
             : (long)policy.BasePoints * Math.Min(policy.Capacity, winners.Length) / winners.Length;
-        if (points <= 0)
+        var ordered = winners.OrderBy(winner => winner.Pilot.Id).ToArray();
+        int gained = Math.Abs(score - system.VictoryPoints);
+        for (int i = 0; i < ordered.Length; i++)
         {
-            return;
-        }
-
-        foreach (var winner in winners)
-        {
-            MilitiaLoyalty.Credit(world, faction, winner.Pilot, points);
+            var pilot = ordered[i].Pilot;
+            long vp = MilitiaProgressionRules.Share(gained, i, ordered.Length);
+            MilitiaProgressionStore.Record(world, pilot, faction, new(0, vp), now);
+            List<MissionStandingChange> standings = [];
+            MilitiaProgressionStore.AdjustStanding(
+                world,
+                pilot,
+                faction,
+                MilitiaProgressionRules.CaptureStandingFraction,
+                offense ? StandingEvent.TacticalSiteConquered : StandingEvent.TacticalSiteDefended,
+                system.SystemId,
+                now,
+                standings
+            );
+            foreach (var standing in standings)
+            {
+                world.AfterCommit(() => fleets?.NotifyStandingChanged(pilot.Id, standing.SourceId, standing.After));
+            }
+            MilitiaLoyalty.Credit(
+                world,
+                faction,
+                pilot,
+                points,
+                site.Profile.Battlefield is null ? MilitiaLoyaltySource.Complex : MilitiaLoyaltySource.Battlefield,
+                site.Id,
+                now
+            );
         }
     }
 
