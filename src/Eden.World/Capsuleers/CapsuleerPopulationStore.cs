@@ -1,6 +1,7 @@
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Characters;
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Configuration;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Runtime;
@@ -16,7 +17,14 @@ internal sealed partial class CapsuleerPopulationStore(WorldDatabase database) :
     private readonly Lock _gate = new();
     private Metadata? _metadata;
 
-    private sealed record Metadata(long Revision, CapsuleerPopulationSummary Summary, IReadOnlyList<CapsuleerSystemSummary> Systems);
+    private readonly record struct MetadataInputs(long CatalogGeneration, CapsuleerPopulationPolicy Policy, string? TrafficIdentity);
+
+    private sealed record Metadata(
+        long Revision,
+        MetadataInputs? Inputs,
+        CapsuleerPopulationSummary Summary,
+        IReadOnlyList<CapsuleerSystemSummary> Systems
+    );
 
     internal const int PopulationVersion = 1;
 
@@ -215,28 +223,28 @@ internal sealed partial class CapsuleerPopulationStore(WorldDatabase database) :
     {
         var live = LiveWorld.Find(database.Path);
         using var owner = live?.Enter();
-        bool cache = live?.Economy.HasActiveAction != true;
+        MetadataInputs? inputs =
+            live?.Economy.HasActiveAction == false
+                ? new(database.Catalog.Identity.Generation, database.Settings.Capsuleers, database.Traffic.Manifest?.Identity)
+                : null;
         lock (_gate)
         {
-            if (cache && live is not null && _metadata?.Revision == live.CapsuleerRevision)
+            if (inputs is not null && _metadata is { } cached && cached.Inputs == inputs && cached.Revision == live!.CapsuleerRevision)
             {
-                return _metadata;
+                return cached;
             }
-            return WorldActionScope.Inspect(database, world => ReadMetadataOwned(world, cache));
+            return WorldActionScope.Inspect(database, world => ReadMetadataOwned(world, inputs));
         }
     }
 
-    private Metadata ReadMetadataOwned(WorldAction world, bool cache)
+    private Metadata ReadMetadataOwned(WorldAction world, MetadataInputs? inputs)
     {
         var live = LiveWorld.Find(database.Path);
         using var owner = live?.Enter();
         lock (_gate)
         {
-            if (cache && live is not null && _metadata?.Revision == live.CapsuleerRevision)
-            {
-                return _metadata;
-            }
-            bool incremental = cache && live is not null && _metadata is not null && _metadata.Revision >= live.CapsuleerMetadataReset;
+            bool incremental =
+                inputs is not null && _metadata is { } cached && cached.Inputs == inputs && cached.Revision >= live!.CapsuleerMetadataReset;
             int[] changedSystems = incremental
                 ? live!.CapsuleerSystemRevisions.Where(p => p.Value > _metadata!.Revision).Select(p => p.Key).ToArray()
                 : [];
@@ -296,8 +304,8 @@ internal sealed partial class CapsuleerPopulationStore(WorldDatabase database) :
                 PreparedSystems = systems.Count(s => s.CurrentPolicy),
                 PreparedEligibleSystems = systems.Count(s => s.CurrentPolicy && s.Eligibility == CapsuleerEligibility.Eligible),
             };
-            var metadata = new Metadata(live?.CapsuleerRevision ?? 0, summary, Array.AsReadOnly(systems));
-            if (cache && live is not null)
+            var metadata = new Metadata(live?.CapsuleerRevision ?? 0, inputs, summary, Array.AsReadOnly(systems));
+            if (inputs is not null)
             {
                 _metadata = metadata;
             }

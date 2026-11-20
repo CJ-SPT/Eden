@@ -70,5 +70,7 @@ public static class NpcPopulationRules
         IReadOnlyDictionary<DogmaAttributeId, double> attributes,
         double missileRange = 0,
         double? acquisitionRange = null
-    ) => Math.Max(NpcEncounterDefinitions.ChaseLeash, DetectionRange(attributes, missileRange, acquisitionRange) * 2);
+    ) => Leash(DetectionRange(attributes, missileRange, acquisitionRange));
+
+    internal static double Leash(double detectionRange) => Math.Max(NpcEncounterDefinitions.ChaseLeash, detectionRange * 2);
 }

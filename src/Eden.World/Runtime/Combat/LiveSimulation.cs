@@ -617,11 +617,14 @@ internal sealed partial class LiveCombatRuntime
             return;
         }
         var aggression = Aggression();
-        var npcs = ships.Select(s => s.SystemId).Distinct().SelectMany(s => SystemNpcs(s, now)).ToArray();
+        var npcs =
+            ships.Length == 1
+                ? SystemNpcs(ships[0].SystemId, now)
+                : ships.Select(s => s.SystemId).Distinct().SelectMany(system => SystemNpcs(system, now)).ToArray();
         var additions = LiveNpcAcquisitionRules.Acquire(
             npcs,
             ships.Select(s => new LiveNpcTarget(s.ShipId, s.SystemId, s.Position, s.Radius)).ToArray(),
-            aggression.Keys.ToHashSet(),
+            aggression.ContainsKey,
             now
         );
         foreach (var addition in additions)

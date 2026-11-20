@@ -220,6 +220,10 @@ internal sealed partial class CapsuleerScheduler(
             return;
         }
         WorldActionScope.Inspect(database, world => Load(world, preparedSystem, preparedPilot));
+        // Once the private inspection ends, the population store can reuse its committed summary.
+        _population = population.Summary();
+        _populationRevision = Live?.CapsuleerRevision ?? 0;
+        _loaded = true;
     }
 
     private void Load(WorldAction world, int? preparedSystem, long? preparedPilot)
@@ -232,7 +236,7 @@ internal sealed partial class CapsuleerScheduler(
             && live.CapsuleerMetadataReset <= _populationRevision
         )
         {
-            RefreshChangedPopulation(live);
+            RefreshChangedPopulation(world, live);
             return;
         }
         using var loading = SessionPerformance.Phase("traffic.load");
@@ -257,9 +261,6 @@ internal sealed partial class CapsuleerScheduler(
                 LoadSystem(world, observed, null);
             }
         }
-        _populationRevision = Live?.CapsuleerRevision ?? 0;
-        _population = population.Summary();
-        _loaded = true;
     }
 
     private void LoadSystem(WorldAction world, int system, long? pilot)
@@ -284,15 +285,29 @@ internal sealed partial class CapsuleerScheduler(
             }
         }
         var ships = localShips.ToArray();
-        var pilots = world.Pilots.Where(p => Enumerable.Contains(ships, p.ActiveShipId)).Select(p => p.Id).ToArray();
+        var pilots = world.Pilots.Where(p => Enumerable.Contains(ships, p.ActiveShipId)).Select(p => p.Id).ToHashSet();
         // A visitor slot stores the smaller reciprocal gate ID, plus a stride per visitor.
-        var lanes = database.Catalog.GatesInSystem(system).Select(gate => Math.Min(gate.Id, gate.DestinationId)).ToArray();
+        // Expand the saved slots up front so the resident query can use its slot index.
+        HashSet<int> visitorSlots = [];
+        const int stride = TrafficJourneyRules.VisitorSlotStride;
+        foreach (var gate in database.Catalog.GatesInSystem(system))
+        {
+            int lane = Math.Min(gate.Id, gate.DestinationId);
+            if (lane is > 0 and < stride)
+            {
+                // Include saved visitors admitted under a previous population setting.
+                for (long slot = lane; slot <= int.MaxValue; slot += stride)
+                {
+                    visitorSlots.Add((int)slot);
+                }
+            }
+        }
         var agents = world
             .Set<SavedCapsuleerAgent>()
             .Where(agent =>
                 Enumerable.Contains(pilots, agent.PilotId)
                 || agent.Career == CapsuleerCareer.Hauling
-                    && (agent.CommunitySystemId == system || Enumerable.Contains(lanes, agent.Slot % TrafficJourneyRules.VisitorSlotStride))
+                    && (agent.CommunitySystemId == system || Enumerable.Contains(visitorSlots, agent.Slot))
             )
             .OrderBy(a => a.PilotId)
             .ToArray();

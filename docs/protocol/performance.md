@@ -5459,3 +5459,68 @@ Not performed. Agent client testing is disabled.
 ### Optional maintainer checks
 
 Compare oldest due-job age after restart at a similar scheduled population and one occupied system.
+
+## Capsuleer system entry and NPC acquisition
+
+Preparing a system now resolves reciprocal gate visitor slots before querying the resident bot roster.
+The resident query uses the existing indexes for active pilots, community membership and saved visitor slots.
+Slots admitted under an older population setting remain eligible. The scheduler reads the committed population
+summary after closing its private inspection, which allows repeated system entries to reuse the same summary.
+The cache checks the population revision, catalog generation, policy and traffic identity. A private action can
+still read its own pending changes without publishing them to the shared cache.
+
+Resident NPC acquisition now finds each pirate's closest eligible target in one pass and queries existing
+aggression directly. The rule still checks surface range, leash and electronic warfare, breaks equal ranges by
+ship ID, and retains the original NPC ordering and exact reaction time. Gameplay context comes from
+[EVE University's belt ratting guide](https://wiki.eveuniversity.org/Ratting). The local evejs reference's
+`server/src/space/npc/npcBehaviorLoop.js` was checked for scene worker scope. Its SHA-256 is
+`21AD46AB54D10507B6811C2FF14A49B0E0181D5AA38A1CCCFCEE0B97F6DA843B`.
+
+### Automated validation
+
+The exact checks covered deterministic targeting across concurrent viewers, entry without warming background
+fits, and recovery of saved visitors whose ships and home community are outside the entering observer's system.
+The visitor fixture warmed the catalog indexes before measuring and asserted zero queries, connection opens
+and fit calculations during admission.
+
+The final affected selection passed **134 tests in 167.96 seconds**. The filter used
+`FullyQualifiedName~.<Class>.` for `CapsuleerInboundProvisioningTests`, `CapsuleerHandoffTests`,
+`CapsuleerRuntimeTests`, `CapsuleerGlobalPopulationTests`, `CapsuleerPopulationSettingsTests`,
+`CapsuleerTrafficPerformanceTests`, `NpcAggressionTests`, `LiveSimulationTests`, `NpcPopulationTests` and
+`CombatAnomalyWorldTests`. Tool restore, solution restore, build, both Python policy suites and formatting passed.
+
+`ServerPerformanceReplayTests.ReplaySustainedBotThroughput` compared `f795cb85` with this patch using the same
+frozen save, the same 450 communities in the same order, one observer, and a 60-second maintenance window
+with checkpoint requests every 15 seconds. Both runs scheduled 5,000 pilots and recorded zero failures.
+The control ran alongside focused tests, and the real-time runs started with different queue ages.
+
+| Measurement | Control | Patch |
+| --- | ---: | ---: |
+| 450 visits and observer transfers | 18.54 s | 1.84 s |
+| Allocations on the exploration thread | 13.44 GB | 1.34 GB |
+| Oldest due-job delay, first / last sample | 28.90 / 74.75 s | 6.48 / 58.58 s |
+| Completed actions | 3,135 | 4,577 |
+| Full frame p95 after warmup | 40.65 ms | 67.19 ms |
+| `GetRegionBest` p95 after warmup | 89.06 ms | 64.33 ms |
+| Peak checkpoint capture / projection / file writing | 22.58 / 335.43 / 1,379.53 ms | 32.66 / 722.97 / 1,195.32 ms |
+
+Exploration allocated 90% less. Both queues fell further behind during the maintenance window, so the run
+does not establish sustainable capacity at 5,000 pilots. Replay inputs, reports and acquisition results are
+retained under `artifacts/bot-scans-20261120/`.
+
+An isolated acquisition replay compared 20,000 warmed evaluations per case with 64 NPCs. Both builds returned
+identical NPC and target IDs, ordering and reaction deadlines. Allocation counts capture the selection rule
+only. They exclude world ownership, NPC motion, combat settlement and session output.
+
+| Targets | Previous allocation per call | Updated allocation per call | Previous / updated total |
+| ---: | ---: | ---: | ---: |
+| 1 | 48,152 B | 8,128 B | 500 / 459 ms |
+| 24 | 84,520 B | 44,496 B | 4,491 / 1,786 ms |
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+None for the system-entry and acquisition comparisons.

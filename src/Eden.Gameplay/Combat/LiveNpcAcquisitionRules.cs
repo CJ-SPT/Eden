@@ -12,15 +12,26 @@ public static class LiveNpcAcquisitionRules
         IReadOnlyList<LiveNpcTarget> targets,
         IReadOnlySet<long> occupied,
         long now
+    ) => Acquire(npcs, targets, occupied.Contains, now);
+
+    public static IReadOnlyList<LiveAggression> Acquire(
+        IReadOnlyList<LiveCombatNpc> npcs,
+        IReadOnlyList<LiveNpcTarget> targets,
+        Func<long, bool> occupied,
+        long now
     )
     {
-        List<LiveAggression> additions = [];
+        if (npcs.Count == 0 || targets.Count == 0)
+        {
+            return [];
+        }
+        List<LiveAggression>? additions = null;
         foreach (var npc in npcs.OrderBy(n => n.Id))
         {
             if (
                 npc.Role != NpcRole.Pirate
                 || npc.Navigation != NpcNavigationState.Idle
-                || occupied.Contains(npc.Id)
+                || occupied(npc.Id)
                 || (
                     !npc.Attributes.TryGetValue(DogmaAttributeId.EntityAttackDelayMinimum, out double delay)
                     && npc.GroupId is not (NpcEncounterDefinitions.SentryGroup or NpcEncounterDefinitions.OverseerSentryGroup)
@@ -29,20 +40,29 @@ public static class LiveNpcAcquisitionRules
             {
                 continue;
             }
-            var target = targets
-                .Where(s => s.SystemId == npc.SystemId)
-                .Select(s => (Ship: s, Range: Math.Max(0, s.Position.DistanceTo(npc.Position) - npc.Radius - s.Radius)))
-                .Where(t =>
-                    PlayerEwarRules.CanTarget(npc.IncomingElectronicWarfare, t.Ship.Id)
-                    && t.Range <= npc.Attributes.GetValueOrDefault(DogmaAttributeId.MaxTargetRange, double.MaxValue)
-                    && t.Range <= NpcPopulationRules.DetectionRange(npc.Attributes, npc.MissileRange, npc.AcquisitionRange)
-                    && t.Ship.Position.DistanceTo(npc.Home)
-                        <= NpcPopulationRules.Leash(npc.Attributes, npc.MissileRange, npc.AcquisitionRange)
+            double detection = NpcPopulationRules.DetectionRange(npc.Attributes, npc.MissileRange, npc.AcquisitionRange);
+            double maximumRange = Math.Min(detection, npc.Attributes.GetValueOrDefault(DogmaAttributeId.MaxTargetRange, double.MaxValue));
+            double leash = NpcPopulationRules.Leash(detection);
+            LiveNpcTarget? target = null;
+            double closest = double.PositiveInfinity;
+            foreach (var ship in targets)
+            {
+                if (ship.SystemId != npc.SystemId || !PlayerEwarRules.CanTarget(npc.IncomingElectronicWarfare, ship.Id))
+                {
+                    continue;
+                }
+                double range = Math.Max(0, ship.Position.DistanceTo(npc.Position) - npc.Radius - ship.Radius);
+                if (
+                    range <= maximumRange
+                    && (target is null || range < closest || range == closest && ship.Id < target.Id)
+                    && ship.Position.DistanceTo(npc.Home) <= leash
                 )
-                .OrderBy(t => t.Range)
-                .ThenBy(t => t.Ship.Id)
-                .FirstOrDefault();
-            if (target.Ship is null)
+                {
+                    target = ship;
+                    closest = range;
+                }
+            }
+            if (target is null)
             {
                 continue;
             }
@@ -51,8 +71,8 @@ public static class LiveNpcAcquisitionRules
                 throw new InvalidDataException("Invalid NPC reaction delay.");
             }
             long ready = checked(now + (long)Math.Ceiling(delay * TimeSpan.TicksPerMillisecond));
-            additions.Add(new(npc.Id, target.Ship.Id, ready, ready, null));
+            (additions ??= []).Add(new(npc.Id, target.Id, ready, ready, null));
         }
-        return additions;
+        return additions is null ? [] : additions;
     }
 }

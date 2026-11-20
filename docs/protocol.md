@@ -1261,6 +1261,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Session performance and resident state
 
+- [Capsuleer system entry and NPC acquisition](protocol/performance.md#capsuleer-system-entry-and-npc-acquisition)
 - [Offscreen mining queue pressure](protocol/performance.md#offscreen-mining-queue-pressure)
 - [Gameplay SQL migration and replay](protocol/performance.md#gameplay-sql-migration-and-replay)
 - [Resident skill memory and fitting cache limits, November 13, 2026](protocol/performance.md#resident-skill-memory-and-fitting-cache-limits-november-13-2026)

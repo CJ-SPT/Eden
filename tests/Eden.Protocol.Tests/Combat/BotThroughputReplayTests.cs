@@ -175,6 +175,8 @@ public sealed partial class ServerPerformanceReplayTests
                 }
             });
             List<ThroughputVisit> visits = [];
+            var exploration = Stopwatch.StartNew();
+            long beforeExploration = GC.GetAllocatedBytesForCurrentThread();
             using (var explorer = host.GetRequiredService<IHumanPresence>().Select(90000001, communities[0]))
             {
                 foreach (int system in communities)
@@ -221,6 +223,8 @@ public sealed partial class ServerPerformanceReplayTests
                     File.AppendAllText(progress, $"Activated {system}.\n");
                 }
             }
+            long explorationBytes = GC.GetAllocatedBytesForCurrentThread() - beforeExploration;
+            exploration.Stop();
             ReplaySample[] cold = [await player.Frame(), await player.Call("marketProxy", "GetRegionBest")];
             foreach (var observer in additional.Players)
             {
@@ -376,6 +380,8 @@ public sealed partial class ServerPerformanceReplayTests
                         seconds,
                         RecoveredSeconds = recovered,
                         SetupMilliseconds = setup.Elapsed.TotalMilliseconds,
+                        ExplorationMilliseconds = exploration.Elapsed.TotalMilliseconds,
+                        ExplorationAllocatedBytes = explorationBytes,
                         ColdSamples = cold,
                         Visits = visits,
                         Checkpoints = checkpointReports.DistinctBy(checkpoint => checkpoint.CompletedAt).ToArray(),
