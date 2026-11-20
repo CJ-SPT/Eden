@@ -1,13 +1,28 @@
 # Feature implementation notes
 
-Station [R&D agents](protocol/agents.md#rd-agents-and-datacores--november-11-2026) support persistent passive
-research and paid datacore redemption. Daily bonus research missions remain unsupported.
+[Documentation index](README.md) / [Protocol records](protocol.md)
 
-[Documentation index](README.md) / [Project status](../README.md#current-status)
+## Gameplay overview
 
-Detailed implementation summaries formerly collected in the root README, grouped by feature. The [README](../README.md#current-status) provides the short project overview; [protocol records](protocol.md) retain validation evidence and subsequent corrections.
+- **Flight and combat.** Fit ships, fly through stargates, use drones, take agent missions, and fight NPCs or other pilots.
+  [Fitting and modules](#fitting-weapons-and-modules) · [Supported missions](missions.md)
+- **Exploration.** Scan down data and relic sites, explore C1–C6 wormholes, and run T0–T6 Abyssal Deadspace pockets.
+  [Scanning and hacking](protocol/information.md) · [Wormholes](protocol/wormholes.md) ·
+  [Abyssal Deadspace](protocol/abyssal.md)
+- **Industry and trade.** Mine ore, ice, and gas, run planetary colonies, research blueprints, manufacture goods, and trade on
+  the market. [Industry](protocol/industry.md) · [Planetary industry](protocol/planetary.md) ·
+  [Market presets](world-configuration.md#market-presets)
+- **Fleets and territory.** Fly together, manage corporations and alliances, deploy Upwell structures, and contest sovereignty.
+  [Fleets](protocol/fleets.md) · [Corporations](corporations.md) · [Structures](protocol/structures.md) ·
+  [Sovereignty](protocol/sovereignty.md)
+- **Simulated capsuleers.** Encounter NPC pilots that mine, haul goods, form corporations, and take part in regional conflicts.
+  [Capsuleer population](capsuleer-population.md) ·
+  [Regional conflicts](protocol/capsuleers.md#regional-bot-conflicts--november-17-2026)
 
 Counts, schema versions, example pilots, fixture populations and native observations describe the recorded implementation. Read the linked follow-ups before treating an older example as current behavior. Automated support and historical client observations are distinct; native presentation remains unverified where stated.
+
+Station [R&D agents](protocol/agents.md#rd-agents-and-datacores--november-11-2026) support persistent passive
+research and paid datacore redemption. Daily bonus research missions remain unsupported.
 
 The [hacking and archaeology milestone](protocol/information.md#hacking-and-archaeology-november-9-2026) adds native analyzer minigames and persistent pirate data/relic exploration with earned loot. Earlier probe and equipment limitations below are historical where superseded.
 

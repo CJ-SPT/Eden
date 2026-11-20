@@ -323,7 +323,7 @@ Native loyalty store behavior, offline offer provenance and exclusions are recor
 
 | Reference | Use it for |
 | --- | --- |
-| [Feature implementation notes](feature-notes.md) | Detailed coverage, restrictions and examples grouped by feature. The [README status](../README.md#current-status) is the short overview. |
+| [Feature implementation notes](feature-notes.md) | Gameplay overview, coverage, limitations and examples. |
 | [Protocol records by topic](protocol.md) | Native call/reply findings, source revisions, milestone validation and historical client observations. |
 | [Cooperative fleets](protocol/fleets.md) | Fleet creation/invites, leadership, broadcasts, fleet chat, coordinated travel and current limits. |
 | [Corporation roadmap](corporations.md) | Published standalone corporation milestones and remaining scope. |
@@ -338,7 +338,9 @@ Native loyalty store behavior, offline offer provenance and exclusions are recor
 
 ## Keeping documentation organized
 
-Keep the root README focused on the project overview, current status, build/run commands and formatting. Put setup and launch instructions in the Windows client guide, hosting configuration in the launcher guide, and architecture details in the runtime guide.
+Use the root README for the project overview, quick start, build commands and formatting. Track gameplay coverage and limits in the
+[feature notes](feature-notes.md). Put detailed setup and launch instructions in the Windows client guide, hosting configuration
+in the launcher guide, and architecture details in the runtime guide.
 
 Add native protocol findings and milestone evidence to the relevant page under `docs/protocol/`, then add a link to the [protocol index](protocol.md). Preserve existing section anchors when moving records, and update repository links to their new destination. Keep dates, source revisions, automated results and live observations with their record. Older observations are historical evidence, not acceptance of later changes.
 
