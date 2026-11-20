@@ -572,6 +572,8 @@ fixes completed locks disappearing during peaceful defense updates while retaini
 
 [Star map statistics](protocol/navigation.md#star-map-statistics-november-20-2026) covers the eight statistics
 filters, including player and bot presence, stargate traffic and combat losses.
+[Star map Industry filters](protocol/industry.md#star-map-industry-filters-november-20-2026) covers player and bot
+job starts and the configured system cost overlays.
 [Native map navigation support](protocol/navigation.md#native-map-navigation-support-november-9-2026) records the original route-planner integration.
 
 [Universal native search](protocol/characters.md#universal-native-search-november-9-2026) records mixed-category main/map searches and result resolution.

@@ -243,6 +243,7 @@ internal sealed partial class ResidentEconomy
                 state => new(state.SystemId),
                 readOnly: true,
                 indexes: [],
+                changed: (_, _) => _industryMapCosts = null,
                 primaryColumn: "SystemId"
             )
         );
