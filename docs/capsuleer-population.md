@@ -92,6 +92,10 @@ Some recruits then take their ship and supplies to company headquarters or to a 
 The ship travels through gates, and the pilot starts its regular work from the new base after docking. The first destination
 can be seen in the pilot's ordinary travel. [Relocation and checkpoint behavior](protocol/capsuleers.md#bot-corporation-relocation)
 
+Established members of bot-led corporations consider changing employers after eight hours of active play and at least
+30 minutes of continued interest in a materially better offer. A corporate headquarters change can trigger another
+move. A successful freight escort can introduce pilots to a friendly corporation. [Retention and roster diagnostics](protocol/capsuleers.md#bot-corporation-retention)
+
 Roaming gangs, escorts and gate camps use current corporation and alliance membership. When a roster splits across
 unaffiliated corporations, a roaming gang cancels its patrol and returns home. Corporate and alliance mates are
 excluded from autonomous patrol targeting. [Recruitment and gang implementation](protocol/capsuleers.md#bot-corporation-recruitment-and-gangs)

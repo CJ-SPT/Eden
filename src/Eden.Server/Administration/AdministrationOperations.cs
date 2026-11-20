@@ -102,6 +102,12 @@ internal sealed partial class AdministrationOperations(
         return corporationIdentities.Apply(preview);
     }
 
+    internal async Task<CapsuleerRosterReport?> CorporationRoster(ClaimsPrincipal user, int id)
+    {
+        await Authorize(user);
+        return CapsuleerCorporations.Roster(database, id);
+    }
+
     internal async Task<ConfigurationRevision> Revision(ClaimsPrincipal user, long id)
     {
         await Authorize(user);

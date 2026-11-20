@@ -24,7 +24,8 @@ internal static partial class CapsuleerCorporations
 {
     private const int MaximumSupplyStacks = 3;
 
-    private static CapsuleerRelocation? PlanOperatingBase(
+    private static CapsuleerOrganization ChooseOperatingBase(
+        CapsuleerOrganization organization,
         CatalogDbContext catalog,
         int source,
         SavedCorporation corporation,
@@ -38,13 +39,20 @@ internal static partial class CapsuleerCorporations
             var site = CapsuleerProvisioningCatalog.Mining(catalog, corporation.SystemId);
             if (site.Eligibility != CapsuleerEligibility.Eligible || site.HomeStationId is not int miningStation)
             {
-                return null;
+                return organization;
             }
             destination = miningStation;
         }
-        return source != destination && RelocationRoute(catalog, source, destination, hull) is not null
-            ? new(corporation.Id, corporation.StationId, destination)
-            : null;
+        if (source == destination)
+        {
+            return organization with { OperatingStationId = destination };
+        }
+        return RelocationRoute(catalog, source, destination, hull) is not null
+            ? organization with
+            {
+                Relocation = new(corporation.Id, corporation.StationId, destination),
+            }
+            : organization;
     }
 
     internal static CapsuleerTrafficRoute? StartRelocation(WorldAction world, CatalogDbContext catalog, DockedPilot pilot, long now)
@@ -121,7 +129,16 @@ internal static partial class CapsuleerCorporations
                 }
             }
         }
-        SaveOrganization(world, pilot.PilotId, organization with { OperatingStationId = pilot.StationId, Relocation = null });
+        SaveOrganization(
+            world,
+            pilot.PilotId,
+            organization with
+            {
+                OperatingStationId = pilot.StationId,
+                Relocation = null,
+                RelocationsCompleted = checked(organization.RelocationsCompleted + 1),
+            }
+        );
         return true;
     }
 

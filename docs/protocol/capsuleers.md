@@ -974,6 +974,35 @@ type array by reference. It now compares its contents and still checks the remai
 
 **Optional maintainer checks.** Follow a recruit through a gate, then observe its next work cycle at the new base.
 
+## Bot corporation retention
+
+Members of bot-led corporations need eight active-play hours of tenure and at least 30 active minutes of continued
+interest before pursuing a better employer. The new offer must improve on their existing work base and tax by at least
+eight points on the recruitment score. Ordinary role permissions, existing assignments, and last combat staffing in an
+alliance member corporation can defer autonomous departures. A human-led corporation continues to control its roster.
+
+An intact delivery through the regional escort operation can record a working contact with another corporation. The
+contact expires after 24 active hours. It can bring a charter into the search and lead to an ordinary invitation from
+its authorized recruiter. Autonomous applications and invitations expire after two active hours. A committed headquarters
+change reopens the work-base decision and schedules one member at a time. The usual movement and custody rules apply.
+
+An administrator can read `GET /api/admin/population/corporations/{id}/roster` for the charter's current member count,
+the number and proportion of bots by provisioning origin, pending applications, and the number of bots moving or based
+at a chosen work station. The repeat-move total counts relocations after each current member's first one. The report
+uses a resident roster snapshot. [Retention plan](../bot-corporation-plan.md#4-add-retention-later-moves-and-population-checks)
+
+**Automated validation.** One paid-ad fixture hired from three provisioning systems. The largest origin supplied two
+of four members, and two recruits were scheduled to move. The legacy one-jump policy excluded both two-jump hires in
+this topology. The retention replay checked the tenure threshold, a checkpoint during consideration, an escort-contact
+invitation, and a later headquarters move. Its warmed employer review opened no SQL connections, issued no SQL commands,
+and performed no fitting calculations. The initial integration filter passed 77 tests in 44 seconds, including paid trade,
+alliances, escorted freight, checkpoint migrations and the matched session-frame workload. Build took 21.27 seconds and
+both Python policy suites passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Read a working corporation's roster report after a longer dedicated-server session.
+
 ## Bot corporation recruitment and gangs
 
 Schema 188 opens applications for existing active bot-led charters. New bot charters start open. The bot CEO uses the existing

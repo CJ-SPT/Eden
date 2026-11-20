@@ -113,24 +113,28 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
             throw new InvalidDataException("Personnel management is required to invite corporation members.");
         }
         var pilot = Pilot(world, pilotId);
+        var application = SubmitInvitation(world, pilot, corporation, Now);
+        world.Commit();
+        return application.Snapshot();
+    }
+
+    internal static SavedCorporationApplication SubmitInvitation(WorldAction world, Pilot pilot, SavedCorporation corporation, long now)
+    {
         CheckJoin(world, pilot, corporation);
         var application = world
-            .Set<SavedCorporationApplication>()
-            .Where(a => a.PilotId == pilotId && a.CorporationId == corporation.Id)
-            .AsEnumerable()
-            .SingleOrDefault(a => !CorporationMembershipRules.Closed(a.Status));
+            .Filter<SavedCorporationApplication>(a => a.PilotId == pilot.Id)
+            .SingleOrDefault(a => a.CorporationId == corporation.Id && !CorporationMembershipRules.Closed(a.Status));
         if (application?.Status is CorporationApplicationStatus.Invited or CorporationApplicationStatus.Offered)
         {
-            return application.Snapshot();
+            return application;
         }
-        long now = Now;
         if (application is null)
         {
             application = world
                 .Add(
                     new SavedCorporationApplication
                     {
-                        PilotId = pilotId,
+                        PilotId = pilot.Id,
                         CorporationId = corporation.Id,
                         Status = CorporationApplicationStatus.Invited,
                         AppliedAt = now,
@@ -147,8 +151,7 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
         }
         world.SaveChanges();
         NotifyApplication(world, application);
-        world.Commit();
-        return application.Snapshot();
+        return application;
     }
 
     public CorporationApplication Update(long actorId, CorporationApplicationUpdate update)

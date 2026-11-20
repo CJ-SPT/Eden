@@ -6,6 +6,14 @@ public static class CapsuleerRecruitmentRules
     public const int MaximumSearchSystems = 64;
     public const int MinimumOfferScore = 12;
     public const int AdDays = 1;
+    public const int MinimumSwitchImprovement = 8;
+    public const int ReferralValue = 6;
+    public const int MaximumContacts = 4;
+
+    public static readonly TimeSpan MinimumTenure = TimeSpan.FromHours(8);
+    public static readonly TimeSpan SustainedInterest = TimeSpan.FromMinutes(30);
+    public static readonly TimeSpan ApplicationLifetime = TimeSpan.FromHours(2);
+    public static readonly TimeSpan ContactLifetime = TimeSpan.FromHours(24);
 
     public static TimeSpan ReviewDelay(long pilotId) => TimeSpan.FromMinutes(18 + (int)(unchecked((ulong)pilotId) % 23));
 

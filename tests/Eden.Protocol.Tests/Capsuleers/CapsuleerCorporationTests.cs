@@ -10,6 +10,7 @@ using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Corporations;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
@@ -21,6 +22,7 @@ using Eden.Server.Chat;
 using Eden.Server.Maintenance;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
+using Eden.World.Corporations;
 using Eden.World.Docking;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
@@ -494,7 +496,7 @@ public sealed class CapsuleerCorporationTests
         using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
         PrepareExistingSave(fixture);
         const int headquarters = 31000001;
-        int[] origins = [headquarters, 31000002, 31000003];
+        int[] origins = [headquarters, 31000002, 31000003, 31000004];
         long[] recruits;
         int corporationId;
         using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
@@ -568,16 +570,135 @@ public sealed class CapsuleerCorporationTests
                 Assert.Single(admission.Filter<SavedCorporationApplication>(a => a.PilotId == recruit)).Status
             );
         }
-        charter.MemberLimit = 3;
+        charter.MemberLimit = 4;
         Assert.True(CompleteRecruitment(admission, source, fixture, recruits[1]));
-        long rejectedDue = CapsuleerCorporations.Organization(admission, recruits[2]).DueTicks;
-        Assert.False(CapsuleerCorporations.Place(admission, source, fixture.Database, recruits[2], fixture.Clock.Now, rejectedDue));
+        Assert.True(CompleteRecruitment(admission, source, fixture, recruits[2]));
+        long rejectedDue = CapsuleerCorporations.Organization(admission, recruits[3]).DueTicks;
+        Assert.False(CapsuleerCorporations.Place(admission, source, fixture.Database, recruits[3], fixture.Clock.Now, rejectedDue));
         Assert.Equal(corporationId, admission.Pilots.Find(recruits[1])!.CorporationId);
-        Assert.NotEqual(corporationId, admission.Pilots.Find(recruits[2])!.CorporationId);
+        Assert.Equal(corporationId, admission.Pilots.Find(recruits[2])!.CorporationId);
+        Assert.NotEqual(corporationId, admission.Pilots.Find(recruits[3])!.CorporationId);
         Assert.Equal(
             CorporationApplicationStatus.RejectedByApplicant,
-            Assert.Single(admission.Filter<SavedCorporationApplication>(a => a.PilotId == recruits[2])).Status
+            Assert.Single(admission.Filter<SavedCorporationApplication>(a => a.PilotId == recruits[3])).Status
         );
+        int[] originCounts = admission
+            .Pilots.Where(pilot => pilot.CorporationId == corporationId)
+            .AsEnumerable()
+            .GroupBy(pilot => admission.Set<SavedCapsuleerAgent>().Find(pilot.Id)!.CommunitySystemId)
+            .Select(group => group.Count())
+            .OrderDescending()
+            .ToArray();
+        Assert.Equal([2, 1, 1], originCounts);
+        var roster = Assert.IsType<CapsuleerRosterReport>(CapsuleerCorporations.Roster(admission, corporationId));
+        Assert.Equal(originCounts, roster.Origins.Select(origin => origin.Pilots));
+        Assert.Equal(0.5, roster.LargestOriginShare);
+        Assert.Equal(0, roster.PendingApplications);
+        Assert.Equal(2, roster.PilotsRelocating);
+    }
+
+    [Fact]
+    public async Task BetterEmployerRequiresTenureAndSustainedInterestThenRetainsFutureRebase()
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
+        PrepareExistingSave(fixture);
+        int current;
+        int next;
+        long pilotId;
+        long mature;
+        using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+            using (var world = live.Economy.Begin(TransactionParticipants.None))
+            {
+                var roster = world
+                    .Filter<SavedCapsuleerAgent>(agent => agent.CommunitySystemId == Home)
+                    .OrderBy(agent => agent.PilotId)
+                    .Take(3)
+                    .ToArray();
+                long founder = roster[0].PilotId;
+                pilotId = roster[1].PilotId;
+                long recruiter = roster[2].PilotId;
+                int berth = world.Pilots.Find(founder)!.ActiveShip.StationId;
+                foreach (var agent in roster)
+                {
+                    var ship = world.Pilots.Find(agent.PilotId)!.ActiveShip;
+                    ship.StationId = berth;
+                    if (world.Positions.Find(ship.Id) is { } position)
+                    {
+                        world.Remove(position);
+                    }
+                }
+                Assert.True(CapsuleerCorporations.Place(world, catalog, fixture.Database, founder, fixture.Clock.Now));
+                Assert.True(CompleteRecruitment(world, catalog, fixture, pilotId));
+                var incumbent = Assert.Single(world.Set<SavedCorporation>());
+                current = incumbent.Id;
+                incumbent.DetailsJson = System.Text.Json.JsonSerializer.Serialize(incumbent.Snapshot(0).Details with { TaxRate = 1.0 });
+                world.Set<PilotWallet>().Find(recruiter)!.Cents = CorporationRules.CreationFeeCents;
+                var skill =
+                    world.Set<PilotSkill>().Find(recruiter, CorporationRules.ManagementSkill)
+                    ?? world.Add(new PilotSkill { PilotId = recruiter, TypeId = CorporationRules.ManagementSkill }).Entity;
+                skill.Points = 250;
+                next = PlayerCorporationStore
+                    .Create(
+                        world,
+                        catalog,
+                        recruiter,
+                        PlayerCorporationTests.Details() with
+                        {
+                            ApplicationsEnabled = true,
+                            TaxRate = 0,
+                        },
+                        fixture.Clock.Now
+                    )
+                    .Corporation.Id;
+                world.Set<SavedCorporation>().Find(next)!.CapsuleerFoundingSystemId = Home;
+                var employment = Assert.IsType<CapsuleerEmployment>(CapsuleerCorporations.Organization(world, pilotId).Employment);
+                mature = employment.JoinedTicks + CapsuleerRecruitmentRules.MinimumTenure.Ticks;
+                CapsuleerCorporations.RememberWorkingContact(world, pilotId, next, mature);
+                long due = CapsuleerCorporations.Organization(world, pilotId).DueTicks;
+                Assert.True(due < mature);
+                Assert.False(CapsuleerCorporations.Place(world, catalog, fixture.Database, pilotId, fixture.Clock.Now, due));
+                Assert.Null(CapsuleerCorporations.Organization(world, pilotId).Prospect);
+                using (var metrics = SessionPerformance.Begin("resident employer review", _ => { }, force: true)!)
+                {
+                    Assert.False(CapsuleerCorporations.Place(world, catalog, fixture.Database, pilotId, fixture.Clock.Now, mature));
+                    Assert.Equal(0, metrics.Commands);
+                    Assert.Equal(0, metrics.Connections);
+                    Assert.Equal(0, metrics.FittingCalculations);
+                }
+                Assert.Equal(next, CapsuleerCorporations.Organization(world, pilotId).Prospect?.CorporationId);
+                Assert.Null(CapsuleerCorporations.Organization(world, pilotId).ApplicationId);
+                world.Commit();
+            }
+            await live.FlushAsync();
+        }
+        using var reopened = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        using CatalogDbContext definitions = new(fixture.Database.CatalogPath);
+        var restored = reopened.GetRequiredService<LiveWorld>();
+        using var review = restored.Economy.Begin(TransactionParticipants.None);
+        long sustained = Math.Max(
+            CapsuleerCorporations.Organization(review, pilotId).DueTicks,
+            mature + CapsuleerRecruitmentRules.SustainedInterest.Ticks
+        );
+        Assert.False(CapsuleerCorporations.Place(review, definitions, fixture.Database, pilotId, fixture.Clock.Now, sustained));
+        var invitation = Assert.Single(
+            review.Filter<SavedCorporationApplication>(app => app.PilotId == pilotId).Where(app => app.CorporationId == next)
+        );
+        Assert.Equal(CorporationApplicationStatus.Invited, invitation.Status);
+        Assert.Equal(current, review.Pilots.Find(pilotId)!.CorporationId);
+        long accept = CapsuleerCorporations.Organization(review, pilotId).DueTicks;
+        Assert.True(CapsuleerCorporations.Place(review, definitions, fixture.Database, pilotId, fixture.Clock.Now, accept));
+        Assert.Equal(next, review.Pilots.Find(pilotId)!.CorporationId);
+        Assert.Equal(CorporationApplicationStatus.Joined, invitation.Status);
+        var corporation = review.Set<SavedCorporation>().Find(next)!;
+        corporation.SystemId = 31000001;
+        corporation.StationId = definitions.Definitions.StationsInSystem(corporation.SystemId).Single().Id;
+        long rebaseReview = CapsuleerCorporations.Organization(review, pilotId).DueTicks;
+        Assert.False(CapsuleerCorporations.Place(review, definitions, fixture.Database, pilotId, fixture.Clock.Now, rebaseReview));
+        var move = Assert.IsType<CapsuleerRelocation>(CapsuleerCorporations.Organization(review, pilotId).Relocation);
+        Assert.Equal((next, corporation.StationId), (move.CorporationId, move.DestinationId));
     }
 
     [Theory]
@@ -684,6 +805,7 @@ public sealed class CapsuleerCorporationTests
             var organization = CapsuleerCorporations.Organization(world, recruit);
             Assert.Equal(destination, organization.OperatingStationId);
             Assert.Null(organization.Relocation);
+            Assert.Equal(1, organization.RelocationsCompleted);
             Assert.Equal(ship, world.Pilots.Find(recruit)!.ActiveShipId);
             Assert.Equal(destination, world.Ships.Find(ship)!.StationId);
             Assert.Equal(origin, world.Set<SavedCapsuleerAgent>().Find(recruit)!.CommunitySystemId);

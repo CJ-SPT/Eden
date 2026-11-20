@@ -2,6 +2,10 @@
 
 [Documentation index](README.md#long-term-design) · [Current bot corporation behavior](capsuleer-population.md#bot-led-player-corporations)
 
+Implementation records cover [identities](protocol/capsuleers.md#bot-corporation-identities),
+[recruitment](protocol/capsuleers.md#autonomous-corporation-recruitment), [relocation](protocol/capsuleers.md#bot-corporation-relocation),
+and [retention](protocol/capsuleers.md#bot-corporation-retention).
+
 ## Why rosters are local today
 
 At `a1437dc4`, `CapsuleerCorporations.Place` looks for employers in the pilot's provisioning community and its immediate

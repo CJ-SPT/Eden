@@ -308,6 +308,10 @@ internal static class AdministrationHost
             "/population/corporations/{id:int}/name",
             (ClaimsPrincipal user, AdministrationOperations operations, int id) => operations.PreviewCorporationName(user, id)
         );
+        api.MapGet(
+            "/population/corporations/{id:int}/roster",
+            (ClaimsPrincipal user, AdministrationOperations operations, int id) => operations.CorporationRoster(user, id)
+        );
         api.MapPost(
             "/population/corporations/name",
             async (

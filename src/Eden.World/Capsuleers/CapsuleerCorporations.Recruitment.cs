@@ -22,11 +22,16 @@ internal sealed record CapsuleerOrganization(long DueTicks = 0, long? Applicatio
 {
     public int? OperatingStationId { get; init; }
     public CapsuleerRelocation? Relocation { get; init; }
+    public CapsuleerEmployment? Employment { get; init; }
+    public CapsuleerProspect? Prospect { get; init; }
+    public long? ApplicationExpiresAt { get; init; }
+    public CapsuleerWorkContact[] Contacts { get; init; } = [];
+    public int RelocationsCompleted { get; init; }
 }
 
 internal static partial class CapsuleerCorporations
 {
-    private sealed record Employer(SavedCorporation Corporation, CapsuleerTrafficRoute Route, int Score);
+    private sealed record Employer(SavedCorporation Corporation, int Score, bool Referred);
 
     private static readonly CatalogDefinition<int[]> s_recruitmentSystems = new("capsuleer-recruitment-systems", RecruitmentSystems);
 
@@ -76,6 +81,7 @@ internal static partial class CapsuleerCorporations
         long nextReview = checked(activeTicks + CapsuleerRecruitmentRules.ReviewDelay(pilotId).Ticks);
         organization = organization with { Profession = profession, DueTicks = nextReview };
         var former = world.Set<SavedCorporation>().Find(pilot.CorporationId);
+        organization = ObserveEmployer(organization, former, activeTicks);
         if (former?.CeoId == pilotId && CanRecruit(world, former))
         {
             Advertise(world, former, now);
@@ -100,28 +106,54 @@ internal static partial class CapsuleerCorporations
         {
             return ReviewApplication(world, catalog, database, pilot, hull, profession, organization, application, free, now, activeTicks);
         }
-        organization = organization with { ApplicationId = null };
-        if (!Eligible(world, catalog, pilotId))
+        organization = organization with { ApplicationId = null, ApplicationExpiresAt = null };
+        if (former is not null && organization.Employment is { } employment && former.StationId != employment.HeadquartersId)
+        {
+            SaveOrganization(
+                world,
+                pilotId,
+                ReviewOperatingBase(world, catalog, pilot, hull, profession, organization, former, employment)
+            );
+            return false;
+        }
+        bool independent = Eligible(world, catalog, pilotId);
+        bool canSwitch = free && CanSwitch(world, pilotId, former, profession, organization, activeTicks);
+        if (!independent && !canSwitch)
         {
             SaveOrganization(world, pilotId, organization);
             return false;
         }
-        var employer = FindEmployer(world, catalog, pilot, hull, profession, station.SolarSystemId, now);
+        var employer = FindEmployer(world, catalog, pilot, hull, profession, station.SolarSystemId, now, organization, activeTicks);
+        if (canSwitch && former is not null)
+        {
+            organization = ReviewProspect(catalog, pilot, organization, former, profession, employer, activeTicks);
+            if (
+                organization.Prospect is not { } prospect
+                || activeTicks - prospect.FirstConsideredTicks < CapsuleerRecruitmentRules.SustainedInterest.Ticks
+            )
+            {
+                SaveOrganization(world, pilotId, organization);
+                return false;
+            }
+        }
         if (employer is not null)
         {
-            var submitted = CorporationMembershipStore.SubmitApplication(
-                world,
-                pilot,
-                employer.Corporation,
-                $"I am looking for regular {profession.ToString().ToLowerInvariant()} work.",
-                now
-            );
+            var submitted = employer.Referred
+                ? CorporationMembershipStore.SubmitInvitation(world, pilot, employer.Corporation, now)
+                : CorporationMembershipStore.SubmitApplication(
+                    world,
+                    pilot,
+                    employer.Corporation,
+                    $"I am looking for regular {profession.ToString().ToLowerInvariant()} work.",
+                    now
+                );
             SaveOrganization(
                 world,
                 pilotId,
                 organization with
                 {
                     ApplicationId = submitted.Id,
+                    ApplicationExpiresAt = checked(activeTicks + CapsuleerRecruitmentRules.ApplicationLifetime.Ticks),
                     DueTicks = checked(activeTicks + CapsuleerRecruitmentRules.OfferDelay(pilotId).Ticks),
                 }
             );
@@ -129,7 +161,7 @@ internal static partial class CapsuleerCorporations
         }
         SaveOrganization(world, pilotId, organization);
         var homeArea = CapsuleerTrafficRoutes.Neighbours(catalog, agent.CommunitySystemId).Prepend(agent.CommunitySystemId).ToArray();
-        return !world.Settings.FreshUniverse || agent.Career == CapsuleerCareer.Mining
+        return independent && (!world.Settings.FreshUniverse || agent.Career == CapsuleerCareer.Mining)
             ? Found(world, catalog, database, pilot, homeArea, now)
             : false;
     }
@@ -148,15 +180,36 @@ internal static partial class CapsuleerCorporations
         long activeTicks
     )
     {
+        bool autonomous = organization.ApplicationId == application.Id;
+        var retry = autonomous ? organization with { ApplicationId = null, ApplicationExpiresAt = null, Prospect = null } : organization;
         if (world.Set<SavedCorporation>().Find(application.CorporationId) is not { ClosedAt: null } corporation)
         {
-            SaveOrganization(world, pilot.Id, organization with { ApplicationId = null });
+            SaveOrganization(world, pilot.Id, retry);
             return false;
         }
-        bool autonomous = organization.ApplicationId == application.Id;
-        var employer = Evaluate(world, catalog, pilot, hull, profession, corporation, autonomous);
-        bool suitable = free && employer is not null && (!autonomous || CanRecruit(world, corporation));
+        bool referred = HasContact(organization, corporation.Id, activeTicks);
+        var employer = Evaluate(world, catalog, pilot, hull, profession, corporation, autonomous, referred);
+        bool unexpired = organization.ApplicationExpiresAt.GetValueOrDefault(long.MaxValue) > activeTicks;
         bool offered = application.Status is CorporationApplicationStatus.Invited or CorporationApplicationStatus.Offered;
+        bool suitable =
+            free
+            && employer is not null
+            && (!autonomous || CanRecruit(world, corporation) && unexpired)
+            && (
+                offered
+                || application.Status is CorporationApplicationStatus.Applied or CorporationApplicationStatus.RenegotiatedByApplicant
+            );
+        if (
+            suitable
+            && autonomous
+            && organization.Prospect is not null
+            && world.Set<SavedCorporation>().Find(pilot.CorporationId) is { } incumbent
+        )
+        {
+            suitable =
+                CanSwitch(world, pilot.Id, incumbent, profession, organization, activeTicks)
+                && BetterOffer(catalog, pilot, organization, incumbent, profession, employer!);
+        }
         if (!suitable)
         {
             var closed = offered ? CorporationApplicationStatus.RejectedByApplicant : CorporationApplicationStatus.Withdrawn;
@@ -170,7 +223,7 @@ internal static partial class CapsuleerCorporations
                 "I cannot commit to the opening or its operating area.",
                 now
             );
-            SaveOrganization(world, pilot.Id, organization with { ApplicationId = null });
+            SaveOrganization(world, pilot.Id, retry);
             return false;
         }
         if (!offered)
@@ -205,8 +258,18 @@ internal static partial class CapsuleerCorporations
             "",
             now
         );
-        var relocation = PlanOperatingBase(catalog, pilot.ActiveShip.StationId, corporation, hull, profession);
-        SaveOrganization(world, pilot.Id, organization with { ApplicationId = null, Relocation = relocation });
+        var appointed = retry with
+        {
+            ApplicationId = null,
+            ApplicationExpiresAt = null,
+            Prospect = null,
+            Employment = new(corporation.Id, activeTicks, corporation.StationId),
+        };
+        SaveOrganization(
+            world,
+            pilot.Id,
+            ChooseOperatingBase(appointed, catalog, pilot.ActiveShip.StationId, corporation, hull, profession)
+        );
         world.AfterCommit(database.NotifyAccessGroupsChanged);
         return true;
     }
@@ -218,12 +281,19 @@ internal static partial class CapsuleerCorporations
         HullClass hull,
         CapsuleerProfession profession,
         int system,
-        long now
+        long now,
+        CapsuleerOrganization organization,
+        long activeTicks
     )
     {
         Employer? best = null;
         int region = catalog.RequireSystem(system).RegionId;
-        foreach (int home in catalog.Definition(s_recruitmentSystems, system))
+        var neighbours = CapsuleerTrafficRoutes.Neighbours(catalog, system);
+        var contactSystems = organization
+            .Contacts.Where(contact => contact.ExpiresAt > activeTicks)
+            .Select(contact => world.Set<SavedCorporation>().Find(contact.CorporationId)?.SystemId)
+            .OfType<int>();
+        foreach (int home in catalog.Definition(s_recruitmentSystems, system).Concat(contactSystems).Distinct())
         {
             foreach (var corporation in world.Filter<SavedCorporation>(row => row.SystemId == home))
             {
@@ -231,14 +301,15 @@ internal static partial class CapsuleerCorporations
                 {
                     continue;
                 }
-                bool local = home == system || CapsuleerTrafficRoutes.Neighbours(catalog, system).Contains(home);
+                bool local = home == system || neighbours.Contains(home);
+                bool referred = HasContact(organization, corporation.Id, activeTicks);
                 bool advertised =
                     !local
                     && catalog.RequireSystem(home).RegionId == region
                     && world.Filter<SavedCorporationRecruitmentAd>(ad => ad.CorporationId == corporation.Id).Any(ad => ad.ExpiresAt > now);
                 if (
-                    (local || advertised)
-                    && Evaluate(world, catalog, pilot, hull, profession, corporation, true) is { } option
+                    (local || advertised || referred)
+                    && Evaluate(world, catalog, pilot, hull, profession, corporation, true, referred) is { } option
                     && (best is null || option.Score > best.Score || option.Score == best.Score && corporation.Id < best.Corporation.Id)
                 )
                 {
@@ -256,7 +327,8 @@ internal static partial class CapsuleerCorporations
         HullClass hull,
         CapsuleerProfession profession,
         SavedCorporation corporation,
-        bool autonomous
+        bool autonomous,
+        bool referred
     )
     {
         if (!CorporationMembershipStore.CanJoin(world, pilot, corporation) || catalog.FindStation(corporation.StationId) is not { } station)
@@ -299,7 +371,8 @@ internal static partial class CapsuleerCorporations
             route.Systems.Length - 1,
             danger
         );
-        return !autonomous || score >= CapsuleerRecruitmentRules.MinimumOfferScore ? new(corporation, route, score) : null;
+        score += referred ? CapsuleerRecruitmentRules.ReferralValue : 0;
+        return !autonomous || score >= CapsuleerRecruitmentRules.MinimumOfferScore ? new(corporation, score, referred) : null;
     }
 
     private static int[] RecruitmentSystems(CatalogDbContext catalog, int origin)
