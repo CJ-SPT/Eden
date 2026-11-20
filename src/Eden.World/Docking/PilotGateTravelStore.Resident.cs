@@ -40,8 +40,8 @@ internal sealed partial class PilotGateTravelStore
         var position = pilot.ActiveShip.Position;
         int origin = position?.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
         var gate = catalog.GatesInSystem(origin).SingleOrDefault(g => g.Id == sourceGateId && g.DestinationId == exitGateId);
-        var body = catalog.FindCelestial(sourceGateId);
-        var exit = catalog.FindCelestial(exitGateId);
+        var body = catalog.FindGateBody(sourceGateId);
+        var exit = catalog.FindGateBody(exitGateId);
         double radius = catalog.RequireItem(pilot.ActiveShip.TypeId).Radius ?? 0;
         if (
             pilot.ActiveShipId != shipId

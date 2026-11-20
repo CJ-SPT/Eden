@@ -132,6 +132,16 @@ public sealed partial class NpcMiningTests
         {
             Assert.Equal(due, NpcPopulationSchedule.Next(world, SystemId, clock.Now));
         }
+        var simulation = db.Services.GetRequiredService<INpcSimulation>();
+        var before = simulation.Advance(SystemId, clock.Now);
+        var live = db.Services.GetRequiredService<Eden.World.Runtime.LiveWorld>();
+        using (var action = live.Economy.Begin(new(systems: [SystemId])))
+        {
+            action.Set<WorldNpcEncounter>().Find(NpcMiningRules.EncounterId(SystemId))!.NextSpawnAt = checked(clock.Now + 1);
+            action.Commit();
+        }
+        Assert.Same(before, simulation.Advance(SystemId, clock.Now));
+        Assert.Equal(due, db.Services.GetRequiredService<WorldDatabase>().PopulationDeadlines[SystemId]);
         clock.Seconds += 2;
         using (var metrics = SessionPerformance.Begin("calm mining before paid deadline", _ => { }, force: true)!)
         {

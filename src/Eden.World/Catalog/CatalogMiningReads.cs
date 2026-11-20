@@ -26,4 +26,19 @@ public sealed partial class CatalogDbContext
                 """
             )
             .ToArray();
+
+    internal int[] BeltSystemsWithOreGroup(int oreGroup) =>
+        Database
+            .SqlQuery<int>(
+                $"""
+                SELECT DISTINCT belt.SolarSystemId AS Value
+                FROM SourceRecord AS counts
+                JOIN Celestial AS belt ON belt.Id=CAST(counts.Key AS INTEGER) AND belt.GroupId={AsteroidDefinitions.BeltGroup}
+                JOIN json_each(counts.Data) AS deposit ON deposit.type='integer' AND deposit.value>0
+                JOIN ItemType AS ore ON ore.Id=CAST(deposit.key AS INTEGER) AND ore.GroupId={oreGroup}
+                WHERE counts.Dataset={CatalogData.Client.Asteroidcountbytypeidbeltid.Name}
+                  AND deposit.key NOT GLOB '*[^0-9]*'
+                """
+            )
+            .ToArray();
 }

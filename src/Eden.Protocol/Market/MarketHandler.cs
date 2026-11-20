@@ -128,7 +128,7 @@ internal sealed class MarketHandler(
                     var asks = market.BestAsks(context.Pilot.PilotId, scope);
                     using (Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("market.summaryRows"))
                     {
-                        return new BlueMap<long, MarketOrderRow>(asks.ToDictionary(o => (long)o.TypeId, o => Row(o)));
+                        return MarketBestAsks.Read(asks);
                     }
                 case "GetCharOrders" when args.Length == 0:
                     return Rows(personal.PersonalOrders(context.Pilot.PilotId));

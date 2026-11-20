@@ -192,7 +192,7 @@ public static class LiveSystemMotionRules
         }
         else if (contactsOnly)
         {
-            return npc with { Navigation = state.Navigation };
+            return state.Navigation == npc.Navigation ? npc : npc with { Navigation = state.Navigation };
         }
         else if (
             npc.Role is NpcRole.Navy or NpcRole.Customs

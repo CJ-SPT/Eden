@@ -181,6 +181,18 @@ internal sealed partial class LiveWorld : IDisposable
                 InstitutionalSupply.Remove(location.Station);
             }
         }
+        if (
+            changes.Any(change =>
+                change.Table is "WorldSovereigntyHub" or "WorldSovereigntyConflict" or "WorldSovereigntyActivityEvent" or "schema"
+            )
+        )
+        {
+            Interlocked.Increment(ref _sovereigntyWorkRevision);
+        }
+        if (changes.Any(change => change.Table is "WorldEntosisCycle" or "schema"))
+        {
+            Interlocked.Increment(ref _entosisCycleRevision);
+        }
         TrafficGeometry.Observe(changes);
         CapsuleerRoutines.Observe(changes);
         if (changes.Any(c => c.Table is "WorldItem" or "WorldCapsuleerAgent" or "schema"))
@@ -295,16 +307,20 @@ internal sealed partial class LiveWorld : IDisposable
                 }
             }
         }
-        if (resident)
+        using (MeasureTrafficCommit("traffic.publishMembership"))
         {
-            foreach (long ship in changes.Where(c => c.Table is "WorldShip" or "WorldPositionMembership").Select(c => c.Id).Distinct())
+            if (resident)
             {
-                if (Economy.ActivePilot(ship) is long pilot)
+                foreach (long ship in changes.Where(c => c.Table is "WorldShip" or "WorldPositionMembership").Select(c => c.Id).Distinct())
                 {
-                    Economy.TrackPilot(pilot);
+                    if (Economy.ActivePilot(ship) is long pilot)
+                    {
+                        Economy.TrackPilot(pilot);
+                    }
                 }
             }
         }
+        using (MeasureTrafficCommit("traffic.notifyShared"))
         using (UseShared())
         {
             ObserveState(_shared, changes);
@@ -315,17 +331,20 @@ internal sealed partial class LiveWorld : IDisposable
         {
             Interlocked.Increment(ref _shared.PresentationRevision);
         }
-        foreach (var entry in recipients)
+        using (MeasureTrafficCommit("traffic.notifySystems"))
         {
-            Interlocked.Increment(ref entry.State.PresentationRevision);
-            if (entry.Ownership.IsEntered)
+            foreach (var entry in recipients)
             {
-                using var context = UseSystem(entry.Id);
-                ObserveState(entry.State, committed);
-            }
-            else
-            {
-                entry.State.PendingChanges.Enqueue(committed);
+                Interlocked.Increment(ref entry.State.PresentationRevision);
+                if (entry.Ownership.IsEntered)
+                {
+                    using var context = UseSystem(entry.Id);
+                    ObserveState(entry.State, committed);
+                }
+                else
+                {
+                    entry.State.PendingChanges.Enqueue(committed);
+                }
             }
         }
         if (changes.Count != 0)
@@ -342,6 +361,11 @@ internal sealed partial class LiveWorld : IDisposable
         state.Reads?.Observe(changes);
         state.Combat?.Observe(changes);
     }
+
+    private long _sovereigntyWorkRevision;
+    private long _entosisCycleRevision;
+    internal long SovereigntyWorkRevision => Volatile.Read(ref _sovereigntyWorkRevision);
+    internal long EntosisCycleRevision => Volatile.Read(ref _entosisCycleRevision);
 
     internal long CapsuleerRevision { get; private set; }
     internal long CapsuleerMetadataReset { get; private set; }
@@ -577,6 +601,11 @@ internal sealed partial class LiveWorld : IDisposable
     private string? _ownerDescription;
     private CapsuleerJob? _trafficJob;
     private int _trafficSystem;
+
+    internal SessionPerformance? MeasureTrafficCommit(string phase) =>
+        MeasureBotReplay && _trafficJob?.Action is CapsuleerAction.Trade or CapsuleerAction.Prepare
+            ? SessionPerformance.Phase(phase)
+            : null;
 
     internal void ObserveTrafficJob(CapsuleerJob job, int system)
     {

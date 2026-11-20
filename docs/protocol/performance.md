@@ -5753,6 +5753,86 @@ across all three. A large string-slot array and resident item dictionary storage
 These are samples of newly observed allocations. They do not identify every retained object or its
 root. The replay's accumulated verbose logs contribute to the measured heap.
 
+### Gate travel, population and market follow-up
+
+The next short replay found four-second gate transfer holds from miners on expeditions. Their saved
+jump target was absent from the transaction participants, which caused economic publication to
+visit every resident system. Miner transfers now declare the saved gate's origin and destination,
+the pilot and the ship. A warmed regression checks the committed destination, both endpoint
+presentation versions and an unrelated system's unchanged version.
+
+Gate bodies and system security and faction values use compact indexes for each catalog generation.
+Traffic retains static geometry separately from mutable belt views, with limits of 1,024 systems and
+49,152 objects. Career training keeps the ordered choices per profession for the catalog generation.
+Encounter and mining operation updates invalidate population deadlines. NPC and mining member writes
+continue to invalidate contacts, and unchanged motion preserves the resident snapshot. The market
+reply shares its encoded bytes while its immutable order view is current. Focused checks verify
+the native map encoding after a trade changes the best ask and reuse when the winning ask stays the same.
+
+The short catalog diagnostic recovered in 47.42 s and went from 26.68 ms to 0.98 ms average
+jump completion. The follow-up short run with the geometry, population and market changes recovered
+in 20.16 s. Its eight long traffic holds included seven gate transfers spending 1.57–4.82 s in
+resident publication, with zero SQL during publication. The run finished 2.36 s behind with
+117,891 completed actions. These runs are under
+`artifacts/bot-throughput-20261120/travel-indexes/` and
+`artifacts/bot-throughput-20261120/travel-publication/`.
+
+After scoping miner jumps, the short replay completed 117,856 actions, recovered in 21.24 s and
+finished 256 ms behind. None of its traffic or population holds exceeded 250 ms. Warm frame
+p95/p99 was 58.64/103.06 ms and market p95/p99 was 70.69/107.33 ms. The paid mining path now uses
+the resident pilot index for ledger buckets, reuses catalog task definitions, and evaluates
+task completion once after both counters advance. The next short run allocated 611.8 KiB per
+completed action, down from 620.0 KiB. Its final sample reached 1.36 s and market p95 reached
+103.26 ms. The earlier nine samples were under one second. The reports are under
+`artifacts/bot-throughput-20261120/miner-gate-scope/` and `artifacts/bot-throughput-20261120/paid-mining/`.
+
+Warm session polls reuse resident entosis and interdiction snapshots, with invalidation on commit
+and expiry at the paid cycle or probe deadline. The alliance monitor reads its committed cursor
+without entering the world owner. Four docked request cases complete during a paused checkpoint
+copy with zero SQL, connections and fitting calculations. The short run recovered in 23.26 s,
+completed 120,737 actions and reached 39.48/74.66 ms warm frame p95/p99 and 65.68/82.77 ms
+warm market p95/p99. Its maximum queue delay in the final half was 1.81 s. The report is under
+`artifacts/bot-throughput-20261120/warm-player-reads/`.
+
+Per-table counters identified over 3,200 single-row skill commands at the last checkpoint.
+Skill projection now batches inserts and updates and looks up the composite key for deletes.
+The save-retry test covers a trained, deleted and added skill in two projection commands and
+verifies the values in the reopened file. The market order projector uses the primary key for
+deletes. NPC population checks immutable encounter fields before materializing pirate,
+convoy or mining rows for a due update.
+
+That short replay completed 122,217 actions at 600.5 KiB per action. At its last checkpoint,
+3,296 skill rows required 26 commands. Peak projection was 1.22 s and total commands per
+checkpoint peaked at 1,184. The queue finished 42 ms behind after a late peak of 1.47 s.
+One miner preparation held the owner for 290 ms. The report is under
+`artifacts/bot-throughput-20261120/checkpoint-and-population/`.
+
+Paid mining now finds the fitted module and each mining skill by key. Hold capacity checks
+read the selected hold and keep the original item order for the volume calculation.
+The next replay allocated 592.9 KiB per completed action. Its one long traffic hold spent
+410.70 ms in commit publication. The first Mercoxit route warmup spent 439.38 ms reading
+catalog data. A scalar catalog query now finds the same destination systems without
+deserializing every belt's ore rows. The gate graph, route order, jump limit and home market
+eligibility still use the same catalog and rules.
+
+The replay now streams verbose lines to its existing log file. It uses the same frozen save,
+observer arrivals, performance counters and acceptance assertions. This keeps retained diagnostic
+strings out of the measured world heap as the log grows.
+
+The final short replay recovered in 20.19 s, completed 123,774 actions and ended with 5,464 pilots
+scheduled. Its maximum queue delay after the midpoint was 772 ms and it finished 171 ms behind.
+Warm frame p95/p99 was 29.89/56.13 ms and warm market p95/p99 was 60.42/67.93 ms. The 150 warmed
+requests used zero SQL, connections and fitting calculations. No traffic or population owner hold
+reached 250 ms. Allocation averaged 584.5 KiB per action. The report is under
+`artifacts/bot-throughput-20261120/compact-mercoxit/`.
+
+The follow-up passed 500 focused .NET cases in 203 s of test execution, including the catalog
+projection, miner gate scope, paid mining, regional quote encoding and checkpoint retry checks.
+Both Python policy suites passed. The focused filter excludes previously reproduced failures in
+resupply inventory counts, the failed regional payment fixture, the cross-restart Mercoxit fixture
+and paused in-space frame tests blocked in combat anomaly arrival. The unmodified branch baseline
+and the focused filter are recorded in `artifacts/bot-throughput-20261120/validation/`.
+
 ### Live acceptance
 
 Not performed; agent client testing is disabled.

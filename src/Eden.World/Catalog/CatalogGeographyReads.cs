@@ -22,9 +22,6 @@ public sealed partial class CatalogDbContext
             select new { body.Id, body.SolarSystemId }
         ).ToDictionary(body => body.Id, body => body.SolarSystemId);
 
-    internal IReadOnlyDictionary<int, int> StaticCelestialSystems(int group) =>
-        Set<Celestial>().Where(body => body.GroupId == group).ToDictionary(body => body.Id, body => body.SolarSystemId);
-
     internal IEnumerable<CatalogGateDefinition> GatesInSystem(int id) =>
         writable
             ? Set<Stargate>()
@@ -85,6 +82,18 @@ public sealed partial class CatalogDbContext
     }
 
     internal CatalogSystemDefinition RequireSystem(int id) => FindSystem(id) ?? throw new InvalidDataException($"Missing system {id}.");
+
+    internal CatalogSystemPolitics SystemPolitics(int id)
+    {
+        if (!writable)
+        {
+            return Definitions.SystemPolitics.GetValueOrDefault(id);
+        }
+        var system = Read(CatalogData.Client.Systems, (long)id);
+        return new(system?.SecurityStatus, system?.FactionID);
+    }
+
+    internal CatalogCelestialDefinition? FindGateBody(long id) => writable ? FindCelestial(id) : Definitions.FindGateBody(id);
 
     internal CatalogCelestialDefinition? FindCelestial(long id) =>
         writable

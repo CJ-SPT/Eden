@@ -20,7 +20,7 @@ internal static partial class CrimewatchPersistence
 
     internal static double Security(CatalogDbContext catalog, int systemId, bool required = true)
     {
-        double? security = catalog.Read(CatalogData.Client.Systems, (long)systemId)?.SecurityStatus;
+        double? security = catalog.SystemPolitics(systemId).Security;
         return security is double value && double.IsFinite(value) ? value
             : !required ? 0
             : throw new InvalidDataException("Missing system security classification.");

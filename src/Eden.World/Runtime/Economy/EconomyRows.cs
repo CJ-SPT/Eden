@@ -362,16 +362,11 @@ internal sealed partial class ResidentEconomy
     {
         foreach (var batch in changes.Chunk(ProjectionBatchSize))
         {
-            var removed = batch.Where(c => c.Value is null).Select(c => c.Key).ToArray();
+            var removed = batch.Where(c => c.Value is null).Select(c => c.Key.Id).ToArray();
             if (removed.Length != 0)
             {
                 string deleted = JsonSerializer.Serialize(removed);
-                world.Database.ExecuteSql(
-                    $"""
-                    DELETE FROM WorldMarketOrder
-                    WHERE EXISTS (SELECT 1 FROM json_each({deleted}) WHERE WorldMarketOrder.Id=json_extract(value,'$.Id'))
-                    """
-                );
+                world.Database.ExecuteSql($"DELETE FROM WorldMarketOrder WHERE Id IN (SELECT value FROM json_each({deleted}))");
             }
             var rows = batch.Where(c => c.Value is not null).Select(c => c.Value).ToArray();
             if (rows.Length != 0)
@@ -742,20 +737,33 @@ internal sealed partial class ResidentEconomy
 {
     private static void ProjectPilotSkill(WorldDbContext world, IReadOnlyList<EconomyChange<EconomyPilotSkill>> changes)
     {
-        foreach (var change in changes)
+        foreach (var batch in changes.Chunk(ProjectionBatchSize))
         {
-            if (change.Value is { } row)
+            var removed = batch.Where(change => change.Value is null).Select(change => change.Key).ToArray();
+            if (removed.Length != 0)
             {
+                string deleted = JsonSerializer.Serialize(removed);
                 world.Database.ExecuteSql(
                     $"""
-                    INSERT INTO WorldPilotSkill(PilotId,TypeId,Points) VALUES({row.PilotId},{row.TypeId},{row.Points})
-                    ON CONFLICT(PilotId,TypeId) DO UPDATE SET Points=excluded.Points
+                    DELETE FROM WorldPilotSkill
+                    WHERE (PilotId,TypeId) IN (
+                        SELECT json_extract(value,'$.Id'),json_extract(value,'$.Part') FROM json_each({deleted})
+                    )
                     """
                 );
             }
-            else
+            var rows = batch.Where(change => change.Value is not null).Select(change => change.Value).ToArray();
+            if (rows.Length != 0)
             {
-                world.Database.ExecuteSql($"DELETE FROM WorldPilotSkill WHERE PilotId={change.Key.Id} AND TypeId={change.Key.Part}");
+                string values = JsonSerializer.Serialize(rows);
+                world.Database.ExecuteSql(
+                    $"""
+                    INSERT INTO WorldPilotSkill(PilotId,TypeId,Points)
+                    SELECT json_extract(value,'$.PilotId'),json_extract(value,'$.TypeId'),json_extract(value,'$.Points')
+                    FROM json_each({values}) WHERE 1
+                    ON CONFLICT(PilotId,TypeId) DO UPDATE SET Points=excluded.Points
+                    """
+                );
             }
         }
     }

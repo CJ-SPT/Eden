@@ -57,11 +57,14 @@ internal static class NpcPopulationSchedule
             }
             due = Math.Min(due, next);
         }
-        foreach (var latest in slots.GroupBy(n => (n.EncounterId, n.BeltId, n.Slot)).Select(g => g.MaxBy(n => n.Id)!))
+        if (slots.Any(n => n.DestroyedAt != null && n.RetiredAt == null))
         {
-            if (latest.DestroyedAt is { } destroyed && latest.RetiredAt is null)
+            foreach (var latest in slots.GroupBy(n => (n.EncounterId, n.BeltId, n.Slot)).Select(g => g.MaxBy(n => n.Id)!))
             {
-                due = Math.Min(due, checked(destroyed + NpcEncounterDefinitions.RespawnSeconds * TimeSpan.TicksPerSecond));
+                if (latest.DestroyedAt is { } destroyed && latest.RetiredAt is null)
+                {
+                    due = Math.Min(due, checked(destroyed + NpcEncounterDefinitions.RespawnSeconds * TimeSpan.TicksPerSecond));
+                }
             }
         }
         // Unsupported catalog pools can remain due; retry at most once per second.
@@ -69,6 +72,8 @@ internal static class NpcPopulationSchedule
     }
 
     private readonly record struct EncounterDeadline(long Id, NpcRole Role, bool Occupied, long? NextSpawnAt);
+
+    private readonly record struct MiningDeadline(long NpcId, long? MiningDueAt, long? WarpStartedAt);
 
     private static long? CalmMiningDeadline(WorldAction world, EncounterDeadline encounter, long now)
     {
@@ -95,7 +100,15 @@ internal static class NpcPopulationSchedule
         {
             return null;
         }
-        var members = world.Filter<WorldNpcMiningMember>(m => m.EncounterId == encounter.Id).ToArray();
+        var members = world.Set<WorldNpcMiningMember>() is EconomySet<WorldNpcMiningMember, EconomyWorldNpcMiningMember> resident
+            ? resident
+                .IndexedSnapshots(nameof(WorldNpcMiningMember.EncounterId), encounter.Id)
+                .Where(m => m.EncounterId == encounter.Id)
+                .Select(m => new MiningDeadline(m.NpcId, m.MiningDueAt, m.WarpStartedAt))
+            : world
+                .Filter<WorldNpcMiningMember>(m => m.EncounterId == encounter.Id)
+                .AsEnumerable()
+                .Select(m => new MiningDeadline(m.NpcId, m.MiningDueAt, m.WarpStartedAt));
         var current = members.Where(m => active.Any(n => n.Id == m.NpcId)).ToArray();
         if (current.Length != active.Length || current.Any(m => m.MiningDueAt is null || m.MiningDueAt <= now || m.WarpStartedAt != null))
         {

@@ -796,7 +796,7 @@ internal sealed partial class CapsuleerHauler(
         {
             // Background travel only needs the static route geometry until detailed work begins.
             using CatalogDbContext catalog = new(database.CatalogPath);
-            _objects = SystemObjects.Geometry(catalog, Pilot.SystemId);
+            _objects = Live?.TrafficGeometry.StaticObjects(catalog, Pilot.SystemId) ?? SystemObjects.Geometry(catalog, Pilot.SystemId);
             _obstacles = [];
             return;
         }

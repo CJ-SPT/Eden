@@ -193,18 +193,13 @@ internal sealed class NpcGuardSeeder
     {
         List<GuardAnchor> sites = [];
         List<int> missing = [];
-        if (
-            catalog.Read(CatalogData.Client.Systems, (long)systemId)?.FactionID is not long faction
-            || NpcGuardRules.Roster(checked((int)faction)) is null
-        )
+        if (catalog.SystemPolitics(systemId).FactionId is not long faction || NpcGuardRules.Roster(checked((int)faction)) is null)
         {
             return new([], []);
         }
-        var gates = catalog.GatesInSystem(systemId).ToArray();
-        var bodies = catalog.Definitions.FindCelestials(gates.Select(gate => gate.Id));
-        foreach (var gate in gates)
+        foreach (var gate in catalog.GatesInSystem(systemId))
         {
-            if (!bodies.TryGetValue(gate.Id, out var body))
+            if (catalog.FindGateBody(gate.Id) is not { } body)
             {
                 missing.Add(gate.Id);
                 continue;
@@ -257,11 +252,9 @@ internal sealed class NpcGuardSeeder
     private void SeedAnchor(WorldAction world, CatalogDbContext catalog, int systemId, GuardAnchor site, long now)
     {
         var (anchorId, kind, factionId, anchor, radius, lanes) = site;
-        var roster = NpcGuardRules.Roster(factionId)!;
-        NpcGuardType[] types =
-            kind == NpcAnchorKind.Gate ? [roster.Cruiser, roster.Frigate, roster.Customs] : [roster.Cruiser, roster.Frigate];
+        int slots = kind == NpcAnchorKind.Gate ? 3 : 2;
         // A destroyed guard only schedules a respawn when it is the newest occupant of its slot.
-        Span<NpcPopulationMember?> latest = stackalloc NpcPopulationMember?[types.Length];
+        Span<NpcPopulationMember?> latest = stackalloc NpcPopulationMember?[slots];
         latest.Clear();
         foreach (var npc in NpcPopulationMember.AtAnchor(world, anchorId))
         {
@@ -270,7 +263,7 @@ internal sealed class NpcGuardSeeder
                 latest[npc.Slot] = npc;
             }
         }
-        Span<bool> due = stackalloc bool[types.Length];
+        Span<bool> due = stackalloc bool[slots];
         bool anyDue = false;
         for (int slot = 0; slot < latest.Length; slot++)
         {
@@ -295,6 +288,9 @@ internal sealed class NpcGuardSeeder
         {
             return;
         }
+        var roster = NpcGuardRules.Roster(factionId)!;
+        NpcGuardType[] types =
+            kind == NpcAnchorKind.Gate ? [roster.Cruiser, roster.Frigate, roster.Customs] : [roster.Cruiser, roster.Frigate];
         var members = types.Select(type => Profile(catalog, (int)type, factionId)).ToArray();
         if (members.Any(m => m is null))
         {

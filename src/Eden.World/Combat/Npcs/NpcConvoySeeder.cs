@@ -23,12 +23,24 @@ internal sealed class NpcConvoySeeder(NpcConvoyCatalog profiles)
         {
             return;
         }
-        var stations = catalog.StationsInSystem(systemId).Where(station => catalog.FittingType(station.TypeId) is not null).ToArray();
+        var encounters = world.Set<WorldNpcEncounter>();
         IReadOnlyList<NpcGuardObstacle>? obstacles = null;
-        foreach (var station in stations)
+        foreach (var station in catalog.StationsInSystem(systemId))
         {
             long id = NpcConvoyRules.EncounterId(station.Id);
-            var encounter = world.Set<WorldNpcEncounter>().Find(id);
+            if (
+                encounters is EconomySet<WorldNpcEncounter, EconomyWorldNpcEncounter> resident
+                && resident.ReadSnapshot(new(id)) is { } scheduled
+                && (scheduled.NextSpawnAt is not long upcoming || now < upcoming)
+            )
+            {
+                continue;
+            }
+            if (catalog.FittingType(station.TypeId) is not { } stationType)
+            {
+                continue;
+            }
+            var encounter = encounters.Find(id);
             if (encounter is not null && (encounter.NextSpawnAt is not long next || now < next))
             {
                 continue;
@@ -81,7 +93,7 @@ internal sealed class NpcConvoySeeder(NpcConvoyCatalog profiles)
             }
             var route = NpcConvoyRules.Route(
                 new(station.X, station.Y, station.Z),
-                catalog.FittingType(station.TypeId)?.Radius ?? 0,
+                stationType.Radius ?? 0,
                 pool.Max(p => p.Radius),
                 StationUndockCatalog.Read(catalog, station.TypeId),
                 obstacles ??= RouteObstacles(world, catalog, systemId)

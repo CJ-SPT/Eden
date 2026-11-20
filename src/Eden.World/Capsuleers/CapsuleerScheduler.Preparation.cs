@@ -13,7 +13,7 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerScheduler
 {
-    private long _preparedNpcCatalog;
+    private long _preparedTravelCatalog;
 
     internal sealed record PreparationInput(
         CapsuleerJob Job,
@@ -192,11 +192,12 @@ internal sealed partial class CapsuleerScheduler
             {
                 using var phase = SessionPerformance.Phase("traffic.preparation");
                 using CatalogDbContext catalog = new(database.CatalogPath);
-                if (npcPopulation is not null && Volatile.Read(ref _preparedNpcCatalog) != input.Catalog)
+                if (Volatile.Read(ref _preparedTravelCatalog) != input.Catalog)
                 {
-                    using var npcCatalog = SessionPerformance.Phase("traffic.prepareNpcCatalog");
-                    npcPopulation.WarmCatalog(database);
-                    Volatile.Write(ref _preparedNpcCatalog, input.Catalog);
+                    using var travelCatalog = SessionPerformance.Phase("traffic.prepareTravelCatalog");
+                    catalog.Definitions.WarmGateBodies();
+                    npcPopulation?.WarmCatalog(database);
+                    Volatile.Write(ref _preparedTravelCatalog, input.Catalog);
                 }
                 if (input.Template is not null)
                 {
@@ -219,7 +220,7 @@ internal sealed partial class CapsuleerScheduler
                 foreach (int system in input.Systems)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    var objects = SystemObjects.Geometry(catalog, system);
+                    var objects = Live?.TrafficGeometry.StaticObjects(catalog, system) ?? SystemObjects.Geometry(catalog, system);
                     if (input.Geometry.FirstOrDefault(capture => capture.System == system)?.Resources is { } resources)
                     {
                         geometry[system] = Array.AsReadOnly<StaticSpaceObject>([.. objects, .. resources]);

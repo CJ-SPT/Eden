@@ -51,7 +51,7 @@ internal sealed partial class ResidentEconomy
     private LiveWorld _owner => _live ?? throw new InvalidOperationException("The fitting preview has no live world.");
     private WorldDatabase _database => _source ?? throw new InvalidOperationException("The fitting preview has no saved world.");
     private readonly Dictionary<Type, IEconomyTable> _tables = [];
-    private readonly Dictionary<string, long> _sequences = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, long> _sequences = new(StringComparer.Ordinal);
     private readonly HashSet<string> _dirtySequences = [];
     private readonly Dictionary<long, EconomyStructure> _structures = [];
     private readonly HashSet<long> _cloaked = [];
@@ -315,7 +315,7 @@ internal sealed partial class ResidentEconomy
     internal long? ActivePilot(long ship)
     {
         var table = (EconomyTable<Eden.Data.World.Characters.Pilot, EconomyPilot>)_tables[typeof(Eden.Data.World.Characters.Pilot)];
-        return table.Matching(p => p.ActiveShipId == ship).Select(key => (long?)key.Id).SingleOrDefault();
+        return table.Indexed(nameof(EconomyPilot.ActiveShipId), ship).Select(key => (long?)key.Id).SingleOrDefault();
     }
 
     internal (int Corporation, int? Alliance) CorporationAffiliation(long pilot)

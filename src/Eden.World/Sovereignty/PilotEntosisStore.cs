@@ -165,8 +165,15 @@ internal sealed partial class PilotEntosisStore(
 
     public SovereigntyHub? Hub(int systemId)
     {
-        Advance(systemId, Now);
-        return Live.Economy.Inspect(world => Snapshot(world, systemId, Now));
+        var live = Live;
+        if (
+            database.Catalog.Systems.TryGetValue(systemId, out var definition)
+            && !AdvanceIfPending(live, systemId, definition.ConstellationId, Now)
+        )
+        {
+            return null;
+        }
+        return live.Economy.Inspect(world => Snapshot(world, systemId, Now));
     }
 
     public IReadOnlyList<SovereigntyClaim> Claims() =>
@@ -210,11 +217,15 @@ internal sealed partial class PilotEntosisStore(
         };
     }
 
-    public IReadOnlyList<EntosisCycle> Cycles(long pilotId) =>
-        Live.Economy.Inspect(world =>
-            (IReadOnlyList<EntosisCycle>)
+    public IReadOnlyList<EntosisCycle> Cycles(long pilotId)
+    {
+        var live = Live;
+        IReadOnlyList<EntosisCycle> Read(WorldAction world) =>
+            Array.AsReadOnly(
                 world.Filter<SavedEntosisCycle>(row => row.PilotId == pilotId).OrderBy(row => row.ModuleId).Select(Cycle).ToArray()
-        );
+            );
+        return live.Reads?.EntosisCycles(pilotId, Read) ?? live.Economy.Inspect(Read);
+    }
 
     private static EntosisCycle Cycle(SavedEntosisCycle row) =>
         new(
@@ -235,19 +246,26 @@ internal sealed partial class PilotEntosisStore(
     public bool TravelLocked(long shipId, long now) =>
         Live.Economy.Inspect(world => EntosisPersistence.SpeedLimit(world, shipId, now) is not null);
 
-    public double? SpeedLimit(long shipId, long now) =>
-        Live.Economy.Inspect(world =>
-        {
-            using CatalogDbContext catalog = new(database.CatalogPath);
-            // Effect 6163 is passive while online. Retain an outstanding paid cycle's
-            // limit as well, even if a module disappears before its reservation ends.
-            return world
-                .Filter<OwnedItem>(row => row.LocationId == shipId && row.Singleton && row.Online)
-                .AsEnumerable()
-                .Where(row => catalog.FittingType(row.TypeId)?.GroupId == EntosisRules.ModuleGroup)
-                .Select(row => (double?)catalog.FittingAttributes(row.TypeId).GetValueOrDefault(EntosisCatalog.SpeedLimitAttribute))
-                .Append(EntosisPersistence.SpeedLimit(world, shipId, now))
-                .Where(value => value > 0)
-                .Min();
-        });
+    public double? SpeedLimit(long shipId, long now)
+    {
+        var live = Live;
+        LiveReadModels.EntosisLimit Read() =>
+            live.Economy.Inspect(world =>
+            {
+                using CatalogDbContext catalog = new(database.CatalogPath);
+                // Effect 6163 is passive while online. Retain an outstanding paid cycle's
+                // limit as well, even if a module disappears before its reservation ends.
+                var cycles = world.Filter<SavedEntosisCycle>(row => row.ShipId == shipId && row.EndsAt > now).ToArray();
+                double? limit = world
+                    .Filter<OwnedItem>(row => row.LocationId == shipId && row.Singleton && row.Online)
+                    .AsEnumerable()
+                    .Where(row => catalog.FittingType(row.TypeId)?.GroupId == EntosisRules.ModuleGroup)
+                    .Select(row => (double?)catalog.FittingAttributes(row.TypeId).GetValueOrDefault(EntosisCatalog.SpeedLimitAttribute))
+                    .Append(cycles.Select(cycle => (double?)cycle.SpeedLimit).Min())
+                    .Where(value => value > 0)
+                    .Min();
+                return new LiveReadModels.EntosisLimit(limit, cycles.Select(cycle => cycle.EndsAt).DefaultIfEmpty(long.MaxValue).Min());
+            });
+        return (live.Reads?.EntosisSpeedLimit(shipId, database.Catalog.Identity.Generation, now, Read) ?? Read()).Speed;
+    }
 }

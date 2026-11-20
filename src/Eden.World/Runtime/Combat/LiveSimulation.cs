@@ -130,9 +130,11 @@ internal sealed partial class LiveCombatRuntime
 
     private void ObserveEncounterPopulation(long id, string reason, bool resident)
     {
+        // Encounters and operations schedule population work. NPC and mining member
+        // rows own the contacts and invalidate them when a refresh changes those rows.
         if (_populationRefreshSystem is { } scoped)
         {
-            InvalidatePopulation(scoped, reason);
+            InvalidatePopulationDeadline(scoped, reason);
             return;
         }
         int? current =
@@ -145,7 +147,7 @@ internal sealed partial class LiveCombatRuntime
                 });
         if (current is int system)
         {
-            InvalidatePopulation(system, reason);
+            InvalidatePopulationDeadline(system, reason);
         }
     }
 
@@ -510,11 +512,10 @@ internal sealed partial class LiveCombatRuntime
             {
                 npc = npc with { Navigation = NpcNavigationState.Returning };
             }
-            else
+            if (!ReferenceEquals(npc, npcs[index]))
             {
-                continue;
+                npcs[index] = PublishNpc(npc);
             }
-            npcs[index] = PublishNpc(npc);
         }
         return npcs;
     }

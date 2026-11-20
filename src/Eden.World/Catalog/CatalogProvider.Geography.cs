@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Catalog;
 
+internal readonly record struct CatalogSystemPolitics(double? Security, long? FactionId);
+
 public sealed partial class CatalogProvider
 {
     private const long CelestialEstimatedBytes = 192;
@@ -13,6 +15,8 @@ public sealed partial class CatalogProvider
     private readonly Lazy<FrozenDictionary<int, string>> _regions;
     private readonly Lazy<FrozenDictionary<int, CatalogConstellationDefinition>> _constellations;
     private readonly Lazy<FrozenDictionary<int, CatalogGateDefinition>> _gates;
+    private readonly Lazy<FrozenDictionary<int, CatalogCelestialDefinition>> _gateBodies;
+    private readonly Lazy<FrozenDictionary<int, CatalogSystemPolitics>> _systemPolitics;
     private readonly Lazy<FrozenDictionary<int, double>> _systemSecurity;
     private readonly Lazy<FrozenDictionary<int, string>> _stationNames;
     private readonly Lazy<FrozenDictionary<int, ImmutableArray<CatalogStationDefinition>>> _systemStations;
@@ -24,6 +28,13 @@ public sealed partial class CatalogProvider
     public IReadOnlyDictionary<int, CatalogConstellationDefinition> Constellations => _constellations.Value;
     public IReadOnlyDictionary<int, CatalogGateDefinition> Gates => _gates.Value;
     internal IReadOnlyDictionary<int, double> SystemSecurity => _systemSecurity.Value;
+    internal IReadOnlyDictionary<int, CatalogSystemPolitics> SystemPolitics => _systemPolitics.Value;
+
+    internal void WarmGateBodies() => _ = _gateBodies.Value;
+
+    internal CatalogCelestialDefinition? FindGateBody(long id) =>
+        id is >= int.MinValue and <= int.MaxValue ? _gateBodies.Value.GetValueOrDefault((int)id) : null;
+
     public IReadOnlyDictionary<int, string> StationNames => _stationNames.Value;
 
     public ImmutableArray<CatalogStationDefinition> StationsInSystem(int systemId) => _systemStations.Value.GetValueOrDefault(systemId, []);
@@ -167,6 +178,39 @@ public sealed partial class CatalogProvider
             .Select(gate => new CatalogGateDefinition(gate.Id, gate.SolarSystemId, gate.DestinationId, gate.Destination.SolarSystemId))
             .AsEnumerable()
             .ToFrozenDictionary(value => value.Id);
+        Interlocked.Add(ref _pinnedRecords, rows.Count);
+        return rows;
+    }
+
+    private FrozenDictionary<int, CatalogCelestialDefinition> LoadGateBodies()
+    {
+        RequireCurrent();
+        using CatalogDbContext catalog = new(Identity.Path);
+        var bodies = from gate in catalog.Set<Stargate>() join body in catalog.Set<Celestial>() on gate.Id equals body.Id select body;
+        var rows = CelestialRows(bodies).AsEnumerable().ToFrozenDictionary(body => body.Id);
+        Interlocked.Increment(ref _loads);
+        Interlocked.Add(ref _pinnedRecords, rows.Count);
+        return rows;
+    }
+
+    private sealed record SystemPoliticsRow(int Id, double? Security, long? FactionId);
+
+    private FrozenDictionary<int, CatalogSystemPolitics> LoadSystemPolitics()
+    {
+        RequireCurrent();
+        using CatalogDbContext catalog = new(Identity.Path);
+        // Population and Crimewatch need two scalar fields from the pinned system dataset.
+        var rows = catalog
+            .Database.SqlQuery<SystemPoliticsRow>(
+                $"""
+                SELECT CAST(Key AS INTEGER) AS Id, json_extract(Data, '$.securityStatus') AS Security,
+                       json_extract(Data, '$.factionID') AS FactionId
+                FROM SourceRecord WHERE Dataset={CatalogData.Client.Systems.Name}
+                """
+            )
+            .AsEnumerable()
+            .ToFrozenDictionary(row => row.Id, row => new CatalogSystemPolitics(row.Security, row.FactionId));
+        Interlocked.Increment(ref _loads);
         Interlocked.Add(ref _pinnedRecords, rows.Count);
         return rows;
     }

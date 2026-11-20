@@ -549,6 +549,11 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
 
     internal bool ContainsSnapshot(EconomyKey key) => !_removed.Contains(key) && (_local.ContainsKey(key) || table.Contains(key));
 
+    internal TState? ReadSnapshot(EconomyKey key) =>
+        _removed.Contains(key) ? null
+        : _local.TryGetValue(key, out var row) ? table.Capture(row)
+        : table.Snapshot(key);
+
     internal IEnumerable<TState> IndexedSnapshots(string column, object value, (string Column, int Value)? alternate = null)
     {
         var keys = table.Indexed(column, value);

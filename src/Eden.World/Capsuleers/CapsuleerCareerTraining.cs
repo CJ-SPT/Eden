@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Globalization;
 using Eden.Data.Catalog;
 using Eden.Data.World.Capsuleers;
@@ -56,7 +57,7 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.prepareCareerChoices");
         _ = catalog.Definition(s_careerHullStages, hull);
-        _ = catalog.Definition(s_careerChoices, (int)profession);
+        _ = catalog.Definitions.GlobalDefinition(s_careerChoices[profession]);
     }
 
     internal CapsuleerTrainingTurn Advance(
@@ -215,7 +216,7 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
         var flown = catalog.Definition(s_careerHullStages, pilot.ShipTypeId);
         int stage = Math.Max(saved?.HighestHullStage ?? 0, flown.Profession == profession ? flown.Stage : 0);
         var focus = saved?.NextFocus ?? CapsuleerTrainingFocus.Work;
-        var choices = catalog.Definition(s_careerChoices, (int)profession);
+        var choices = catalog.Definitions.GlobalDefinition(s_careerChoices[profession]);
         var next = choices[stage + 1];
         if (saved is { ShipTypeId: > 0 } && next.Contains(saved.ShipTypeId))
         {
@@ -267,14 +268,19 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
         }
     );
 
-    private static readonly CatalogDefinition<ILookup<int, int>> s_careerChoices = new(
-        "career-goal-stages",
-        (catalog, profession) =>
-            Ships(catalog, (CapsuleerProfession)profession)
-                .Select(type => (Type: type, Stage: catalog.Definition(s_careerHullStages, type).Stage))
-                .Where(ship => ship.Stage > 0 && catalog.Definition(s_careerFitPlans, ship.Type) is not null)
-                .ToLookup(ship => ship.Stage, ship => ship.Type)
-    );
+    private static readonly FrozenDictionary<CapsuleerProfession, CatalogDefinition<ILookup<int, int>>> s_careerChoices =
+        Enum.GetValues<CapsuleerProfession>()
+            .ToFrozenDictionary(
+                profession => profession,
+                profession => new CatalogDefinition<ILookup<int, int>>(
+                    "career-goal-stages/" + profession,
+                    (catalog, _) =>
+                        Ships(catalog, profession)
+                            .Select(type => (Type: type, Stage: catalog.Definition(s_careerHullStages, type).Stage))
+                            .Where(ship => ship.Stage > 0 && catalog.Definition(s_careerFitPlans, ship.Type) is not null)
+                            .ToLookup(ship => ship.Stage, ship => ship.Type)
+                )
+            );
 
     private static int[] LoadShips(CatalogDbContext catalog, int profession) =>
         catalog

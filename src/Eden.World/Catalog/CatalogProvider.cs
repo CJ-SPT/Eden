@@ -168,6 +168,8 @@ public sealed partial class CatalogProvider
         _regions = new(LoadRegions);
         _constellations = new(LoadConstellations);
         _gates = new(LoadGates);
+        _gateBodies = new(LoadGateBodies);
+        _systemPolitics = new(LoadSystemPolitics);
         _systemSecurity = new(LoadSystemSecurity);
         _stationNames = new(LoadStationNames);
         _celestials = new(this, "projection/celestials");

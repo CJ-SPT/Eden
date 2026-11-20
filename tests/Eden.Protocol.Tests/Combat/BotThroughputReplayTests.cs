@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text.Json;
+using System.Threading.Channels;
 using Eden.Data.World.Capsuleers;
 using Eden.Gameplay.Capsuleers;
 using Eden.Infrastructure.Diagnostics;
@@ -98,14 +99,16 @@ public sealed partial class ServerPerformanceReplayTests
         File.WriteAllText(progress, "Copying frozen source.\n");
         Stopwatch setup = Stopwatch.StartNew();
         string directory = CopySnapshot(source);
-        ConcurrentQueue<string> reports = new();
+        var reports = Channel.CreateUnbounded<string>(new() { SingleReader = true });
+        var writingLog = WriteThroughputLog(Path.Combine(destination, name + ".log"), reports.Reader);
+        void Report(string line) => reports.Writer.TryWrite(line);
         ConcurrentQueue<OwnershipTiming> ownership = new();
         using var logging = ServerLog.Console.Redirect(
             (level, message) =>
             {
                 if (level is ServerLogLevel.Warning or ServerLogLevel.Error)
                 {
-                    reports.Enqueue(message);
+                    Report(message);
                 }
             }
         );
@@ -161,8 +164,8 @@ public sealed partial class ServerPerformanceReplayTests
                     .ToArray();
             }
             using var host = ServerServices.Build(database, clock, liveWorld: true);
-            using var player = new ReplayPlayer(host, clock, 90000006, 1000003, reports);
-            using var additional = new ThroughputObservers(host, clock, observers - 1, player.Context.Pilot.SystemId, reports);
+            using var player = new ReplayPlayer(host, clock, 90000006, 1000003, Report);
+            using var additional = new ThroughputObservers(host, clock, observers - 1, player.Context.Pilot.SystemId, Report);
             ReplayPlayer[] players = [player, .. additional.Players];
             var maintenance = host.GetRequiredService<CapsuleerMaintenance>();
             var diagnostics = host.GetRequiredService<ICapsuleerDiagnostics>();
@@ -241,7 +244,7 @@ public sealed partial class ServerPerformanceReplayTests
             }
             using var metrics = Eden.Infrastructure.Diagnostics.SessionPerformance.Begin(
                 "sustained bot worker",
-                reports.Enqueue,
+                Report,
                 force: true,
                 command: Environment.GetEnvironmentVariable("EDEN_SQL_HOTSPOTS") == "1"
                     ? sql => sqlCalls.AddOrUpdate(sql, key => (1, Environment.StackTrace), (_, value) => (value.Count + 1, value.Stack))
@@ -432,7 +435,6 @@ public sealed partial class ServerPerformanceReplayTests
                     }
                 )
             );
-            File.WriteAllLines(Path.Combine(destination, name + ".log"), reports);
             File.WriteAllText(
                 Path.Combine(destination, name + ".sql.json"),
                 JsonSerializer.Serialize(
@@ -476,7 +478,26 @@ public sealed partial class ServerPerformanceReplayTests
         }
         finally
         {
-            Directory.Delete(directory, recursive: true);
+            reports.Writer.Complete();
+            try
+            {
+                await writingLog;
+            }
+            finally
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
+    private static async Task WriteThroughputLog(string path, ChannelReader<string> reports)
+    {
+        const int bufferSize = 128 * 1024;
+        await using var stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Read, bufferSize, useAsync: true);
+        await using StreamWriter log = new(stream, bufferSize: bufferSize);
+        await foreach (string line in reports.ReadAllAsync())
+        {
+            await log.WriteLineAsync(line);
         }
     }
 
@@ -484,7 +505,7 @@ public sealed partial class ServerPerformanceReplayTests
     {
         internal List<ReplayPlayer> Players { get; } = [];
 
-        internal ThroughputObservers(ServiceProvider host, TimeProvider clock, int count, int system, ConcurrentQueue<string> reports)
+        internal ThroughputObservers(ServiceProvider host, TimeProvider clock, int count, int system, Action<string> report)
         {
             (long Pilot, long Account)[] identities = [(90000001, 1000001), (90000002, 1000002), (90000004, 1000004)];
             var ships = host.GetRequiredService<Eden.World.Docking.SqliteWorld>();
@@ -493,7 +514,7 @@ public sealed partial class ServerPerformanceReplayTests
                 var pilot = ships.FindPilot(identity.Account, identity.Pilot)!;
                 var reference = ships.FindPilot(1000003, 90000006)!;
                 ships.SetPosition(pilot.ShipId, new(reference.X + 2000000 + Players.Count * 100000, reference.Y, reference.Z), system);
-                Players.Add(new(host, clock, identity.Pilot, identity.Account, reports));
+                Players.Add(new(host, clock, identity.Pilot, identity.Account, report));
             }
         }
 

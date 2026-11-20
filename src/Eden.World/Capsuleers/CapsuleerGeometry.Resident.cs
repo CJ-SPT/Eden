@@ -14,19 +14,20 @@ internal sealed partial class CapsuleerGeometry
 {
     internal static IReadOnlyList<StaticSpaceObject> Load(WorldAction world, CatalogDbContext catalog, int systemId, long now)
     {
+        var live = LiveWorld.Find(world.WorldPath);
         if (
             world is EconomyTransaction resident
             && !resident.HasPrivateRows<WorldAsteroid>()
             && !resident.HasPrivateRows<SavedBeltRenewal>()
-            && LiveWorld.Find(world.WorldPath)?.TrafficGeometry.TryRead(systemId, catalog.Definitions.Identity.Generation, out var view)
-                == true
+            && live?.TrafficGeometry.TryRead(systemId, catalog.Definitions.Identity.Generation, out var view) == true
         )
         {
             return view;
         }
         AsteroidFieldStore.Populate(world, catalog, systemId, now);
         world.SaveChanges();
-        return [.. SystemObjects.Geometry(catalog, systemId), .. AsteroidFieldStore.List(world, catalog, systemId)];
+        var objects = live?.TrafficGeometry.StaticObjects(catalog, systemId) ?? SystemObjects.Geometry(catalog, systemId);
+        return [.. objects, .. AsteroidFieldStore.List(world, catalog, systemId)];
     }
 
     internal static ResourcePreparation? CaptureResources(WorldDatabase database, WorldAction world, CatalogDbContext catalog, int systemId)

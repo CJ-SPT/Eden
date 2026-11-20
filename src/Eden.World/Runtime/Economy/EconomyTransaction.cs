@@ -431,7 +431,10 @@ internal sealed partial class EconomyTransaction(
             throw new InvalidOperationException("This economic transaction already committed.");
         }
         var live = owner ?? throw new InvalidOperationException("A fitting preview cannot publish changes.");
-        Validate();
+        using (live.MeasureTrafficCommit("traffic.validateCommit"))
+        {
+            Validate();
+        }
         var sets = _sets.Values.ToArray();
         foreach (var set in sets)
         {
@@ -467,9 +470,15 @@ internal sealed partial class EconomyTransaction(
                 participants.Ships,
                 participants.Resources
             );
-        store.Committed(_sequences, changes, affected, pilots, marketLocations);
+        using (live.MeasureTrafficCommit("traffic.publishCommit"))
+        {
+            store.Committed(_sequences, changes, affected, pilots, marketLocations);
+        }
         _completed = true;
-        PublishActions();
+        using (live.MeasureTrafficCommit("traffic.afterCommit"))
+        {
+            PublishActions();
+        }
     }
 
     private IReadOnlyList<MarketLocation> AffectedMarketLocations(IReadOnlyCollection<CombatRowChange> changes)

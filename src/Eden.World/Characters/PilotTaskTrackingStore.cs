@@ -103,7 +103,14 @@ internal sealed partial class PilotTaskTrackingStore(WorldDatabase database, Tim
         transaction.Commit();
     }
 
-    private static IReadOnlyList<TaskDefinition> Definitions(CatalogDbContext catalog)
+    private static readonly CatalogDefinition<IReadOnlyList<TaskDefinition>> s_definitions = new(
+        "task-definitions",
+        static (catalog, _) => LoadDefinitions(catalog)
+    );
+
+    private static IReadOnlyList<TaskDefinition> Definitions(CatalogDbContext catalog) => catalog.GlobalDefinition(s_definitions);
+
+    private static IReadOnlyList<TaskDefinition> LoadDefinitions(CatalogDbContext catalog)
     {
         var events = catalog
             .Records(CatalogData.Client.Achievementevents)

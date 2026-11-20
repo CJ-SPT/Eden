@@ -149,6 +149,9 @@ public sealed class MarketSummaryPerformanceTests(ITestOutputHelper output)
         );
         Assert.Equal(first.Count, wire.Count);
         Assert.Equal(BlueMarshal.Encode(MarketWire.Row(seeded[firstType])), BlueMarshal.Encode(wire[firstType]));
+        var reply = RegionReply();
+        byte[] originalEncoding = reply.EncodeReply();
+        Assert.Equal(BlueMarshal.Encode(wire), originalEncoding);
 
         var live = fixture.Services.GetRequiredService<LiveWorld>();
         using (var sale = live.Economy.Begin(TransactionParticipants.None))
@@ -158,6 +161,7 @@ public sealed class MarketSummaryPerformanceTests(ITestOutputHelper output)
             sale.Commit();
         }
         Assert.Same(first, market.BestAsks(pilot.PilotId, MarketScope.Region));
+        Assert.Same(originalEncoding, RegionReply().EncodeReply());
         using (var reprice = live.Economy.Begin(TransactionParticipants.None))
         {
             var expensive = reprice.Set<NpcMarketOrder>().Single(o => o.TypeId == firstType && o.StationId == pilot.StationId);
@@ -169,6 +173,16 @@ public sealed class MarketSummaryPerformanceTests(ITestOutputHelper output)
         Assert.Equal(50, newBest.PriceCents);
         Assert.Equal(4, newBest.Remaining);
         Assert.Equal(first.Where(o => o.TypeId != firstType), repriced.Where(o => o.TypeId != firstType));
+        var changed = RegionReply();
+        Assert.NotSame(reply, changed);
+        Assert.Equal(BlueMarshal.Encode(changed.ToBlue()), changed.EncodeReply());
+
+        MarketBestAsks RegionReply() =>
+            Assert.IsType<MarketBestAsks>(
+                Assert
+                    .IsType<PilotCallResult.Success>(router.Call(context, "marketProxy", "GetRegionBest", Array.Empty<object?>(), _ => { }))
+                    .Reply
+            );
 
         void RecordSample(PerformanceSample sample)
         {

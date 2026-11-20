@@ -4201,17 +4201,19 @@ internal sealed partial class EconomyTransaction
             {
                 throw new InvalidDataException("Missing resident Pilot reference.");
             }
+            var ledger =
+                (EconomySet<Eden.Data.World.Mining.SavedPersonalMiningLog, EconomySavedPersonalMiningLog>)
+                    Set<Eden.Data.World.Mining.SavedPersonalMiningLog>();
             if (
-                true
-                && Set<Eden.Data.World.Mining.SavedPersonalMiningLog>()
+                ledger
+                    .IndexedSnapshots(nameof(Eden.Data.World.Mining.SavedPersonalMiningLog.PilotId), row.PilotId)
                     .Any(other =>
-                        true
-                        && other.PilotId == row.PilotId
+                        other.PilotId == row.PilotId
                         && other.Day == row.Day
                         && other.CorporationId == row.CorporationId
                         && other.SystemId == row.SystemId
                         && other.TypeId == row.TypeId
-                        && (other.Id != row.Id)
+                        && other.Id != row.Id
                     )
             )
             {
