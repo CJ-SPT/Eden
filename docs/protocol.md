@@ -129,6 +129,7 @@ handles the native structure-container alias and launches the real ship when und
 aligns native inventory binds and resident combat/heat membership with the docked structure's system.
 
 [Area weapons and EWAR](protocol/area-weapons.md) records burst jammers, projectors, bombs, defenders and heavy grapplers.
+[Checkpoint compatibility](protocol/area-weapons.md#checkpoint-compatibility-for-older-ewar-keys) records the startup repair for older EWAR keys.
 
 [Docked structure control and quantum cores](protocol/structures.md#docked-structure-control-and-quantum-core-setup--november-16-2026)
 adds native control sessions and setup inventories, and fixes the missing solar-system binding behind black docked screens.
