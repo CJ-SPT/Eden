@@ -1005,6 +1005,10 @@ internal sealed partial class CapsuleerHauler(
             }
         }
         JoinCorporationAtDock();
+        if (TryCorporationRelocation())
+        {
+            return;
+        }
         if (TrySovereigntyExpedition())
         {
             return;
@@ -1394,6 +1398,7 @@ internal sealed partial class CapsuleerHauler(
                     0
                 ),
             };
+            FinishCorporationRelocation();
             if (Work.Ratting is { } returning)
             {
                 _work = Work with { RattingLoot = returning.LootIds };
@@ -1444,7 +1449,13 @@ internal sealed partial class CapsuleerHauler(
             DepartureAt = null,
         };
         RefreshObjects(loadResources: Live?.CapsuleerActivity.Read().ActiveSystems.Contains(Pilot.SystemId) != false);
-        if (Work.Journey?.Kind is TrafficJourneyKind.CapsuleEscape or TrafficJourneyKind.SovereigntyExpedition || !TryRegionalGrid())
+        if (
+            Work.Journey?.Kind
+                is TrafficJourneyKind.CapsuleEscape
+                    or TrafficJourneyKind.SovereigntyExpedition
+                    or TrafficJourneyKind.CorporationRelocation
+            || !TryRegionalGrid()
+        )
         {
             BeginTravel();
         }

@@ -1,6 +1,7 @@
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Corporations;
 using Eden.Data.World.Docking;
+using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Capsuleers;
@@ -8,6 +9,7 @@ using Eden.Gameplay.Chat;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Inventory;
 using Eden.Protocol.Corporations;
 using Eden.Protocol.Docking;
 using Eden.Protocol.Flight;
@@ -20,6 +22,7 @@ using Eden.Server.Maintenance;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Docking;
+using Eden.World.Inventory;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -575,6 +578,139 @@ public sealed class CapsuleerCorporationTests
             CorporationApplicationStatus.RejectedByApplicant,
             Assert.Single(admission.Filter<SavedCorporationApplication>(a => a.PilotId == recruits[2])).Status
         );
+    }
+
+    [Theory]
+    [InlineData(CapsuleerCareer.Mining)]
+    [InlineData(CapsuleerCareer.Hauling)]
+    public async Task RecruitsFlyOwnedShipsAndSuppliesToTheirBaseAcrossCheckpoint(CapsuleerCareer career)
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
+        PrepareExistingSave(fixture);
+        const int origin = 31000001;
+        const int distantObserver = 31000004;
+        const int supplies = 13;
+        const int charge = CapsuleerAmmunitionSupplyRules.ChargeType;
+        long recruit;
+        long ship;
+        int source;
+        int destination;
+        using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            using var provisioner = new CapsuleerProvisioner(fixture.Database, fixture.Clock);
+            provisioner.EnsureSystem(origin);
+            using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+            using (var world = live.Economy.Begin(TransactionParticipants.None))
+            {
+                long founder = world
+                    .Filter<SavedCapsuleerAgent>(agent => agent.CommunitySystemId == Home)
+                    .First(agent => agent.Career == CapsuleerCareer.Hauling)
+                    .PilotId;
+                recruit = world
+                    .Filter<SavedCapsuleerAgent>(agent => agent.CommunitySystemId == origin)
+                    .First(agent => agent.Career == career)
+                    .PilotId;
+                var pilot = world.Pilots.Find(recruit)!;
+                ship = pilot.ActiveShipId;
+                source = catalog.Definitions.StationsInSystem(origin).First().Id;
+                pilot.ActiveShip.StationId = source;
+                if (world.Positions.Find(ship) is { } position)
+                {
+                    world.Remove(position);
+                }
+                if (career == CapsuleerCareer.Hauling)
+                {
+                    new HaulerCheckpoint(recruit, new(HaulerActivity.Docked, 0, 0, ship, source, 0, new NavigationState().Capture())).Apply(
+                        world
+                    );
+                    world.Set<SavedCapsuleerJob>().Find(recruit)!.Action = CapsuleerAction.Trade;
+                }
+                InventoryPersistence.MergeOutput(world, catalog, recruit, source, (int)InventoryFlag.Hangar, charge, supplies);
+                Assert.True(CapsuleerCorporations.Place(world, catalog, fixture.Database, founder, fixture.Clock.Now));
+                Assert.True(CompleteRecruitment(world, catalog, fixture, recruit));
+                destination = Assert
+                    .IsType<CapsuleerRelocation>(CapsuleerCorporations.Organization(world, recruit).Relocation)
+                    .DestinationId;
+                Assert.NotEqual(source, destination);
+                foreach (
+                    long other in world.Set<SavedCapsuleerAgent>().Where(agent => agent.PilotId != recruit).Select(agent => agent.PilotId)
+                )
+                {
+                    if (world.Set<SavedCapsuleerSuspension>().Find(other) is null)
+                    {
+                        world.Add(new SavedCapsuleerSuspension { PilotId = other });
+                    }
+                }
+                world.Commit();
+            }
+            var presence = host.GetRequiredService<IHumanPresence>();
+            using var observer = presence.Select(Human, distantObserver);
+            var maintenance = host.GetRequiredService<CapsuleerMaintenance>();
+            for (int second = 0; second < 300 && live.Economy.Peek<FlightPosition>(ship) is null; second++)
+            {
+                fixture.Clock.Seconds++;
+                maintenance.Tick();
+            }
+            Assert.Equal(origin, live.Economy.Peek<FlightPosition>(ship)?.SystemId);
+            var moving = live.Economy.Read(world => CapsuleerCorporations.Organization(world, recruit));
+            Assert.Equal(ship, moving.Relocation?.ShipId);
+            Assert.Null(moving.OperatingStationId);
+            Assert.Single(moving.Relocation!.Cargo, item => item.Quantity == supplies);
+            Assert.False(live.IsDetailedSystem(origin));
+            await live.FlushAsync();
+        }
+
+        using var reopened = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var restored = reopened.GetRequiredService<LiveWorld>();
+        var run = reopened.GetRequiredService<CapsuleerMaintenance>();
+        fixture.Clock.Seconds += 1000;
+        Assert.Null(run.Tick());
+        Assert.Equal(origin, restored.Economy.Peek<FlightPosition>(ship)?.SystemId);
+        using var remote = reopened.GetRequiredService<IHumanPresence>().Select(Human, Home);
+        for (int second = 0; second < 900; second++)
+        {
+            fixture.Clock.Seconds++;
+            run.Tick();
+            if (restored.Economy.Read(world => CapsuleerCorporations.Organization(world, recruit).OperatingStationId) == destination)
+            {
+                break;
+            }
+        }
+        var diagnostics = reopened.GetRequiredService<CapsuleerScheduler>().Read();
+        Assert.True(diagnostics.Failures == 0, diagnostics.LastFailure);
+        restored.Economy.Read(world =>
+        {
+            var organization = CapsuleerCorporations.Organization(world, recruit);
+            Assert.Equal(destination, organization.OperatingStationId);
+            Assert.Null(organization.Relocation);
+            Assert.Equal(ship, world.Pilots.Find(recruit)!.ActiveShipId);
+            Assert.Equal(destination, world.Ships.Find(ship)!.StationId);
+            Assert.Equal(origin, world.Set<SavedCapsuleerAgent>().Find(recruit)!.CommunitySystemId);
+            Assert.Equal(
+                supplies,
+                world
+                    .Filter<OwnedItem>(item => item.OwnerId == recruit)
+                    .Where(item => item.LocationId == destination && item.TypeId == charge)
+                    .Sum(item => item.Quantity)
+            );
+            Assert.Empty(
+                world.Filter<OwnedItem>(item => item.OwnerId == recruit).Where(item => item.LocationId == source && item.TypeId == charge)
+            );
+            return true;
+        });
+        bool StartedAtBase() =>
+            career == CapsuleerCareer.Mining
+                ? restored.MinerCheckpoints.GetValueOrDefault(recruit)?.Work is { Trips: > 0, OperatingStationId: var station }
+                    && station == destination
+                : restored.HaulerCheckpoints.GetValueOrDefault(recruit)?.Work.Journey is { HomeStationId: var home } && home == destination;
+        for (int second = 0; second < 900 && !StartedAtBase(); second++)
+        {
+            fixture.Clock.Seconds++;
+            run.Tick();
+        }
+        Assert.True(StartedAtBase());
+        await restored.FlushAsync();
     }
 
     internal static void PrepareExistingSave(CapsuleerHaulerTests.Fixture fixture)

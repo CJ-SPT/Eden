@@ -69,10 +69,28 @@ internal sealed partial class CapsuleerScheduler
         }
         if (!_miners.TryGetValue(pilot, out var worker))
         {
-            worker = miners.Create(pilot, _miningCrews[_registrations[pilot].Community], id => _suspended.Contains(id));
+            worker = miners.Create(pilot, _miningCrews[_registrations[pilot].CrewSystem], id => _suspended.Contains(id));
             _miners.Add(pilot, worker);
         }
         return worker;
+    }
+
+    private void RebaseMiningCrew(long pilot, CapsuleerMiner worker, int system)
+    {
+        var registration = _registrations[pilot];
+        if (system == registration.CrewSystem)
+        {
+            return;
+        }
+        _miningCrews[registration.CrewSystem].Remove(pilot);
+        if (!_miningCrews.TryGetValue(system, out var crew))
+        {
+            crew = [];
+            _miningCrews.Add(system, crew);
+        }
+        crew.Add(pilot);
+        _registrations[pilot] = registration with { CrewSystem = system };
+        worker.ChangeCrew(crew);
     }
 
     private CapsuleerHauler? HaulerWorker(long pilot)

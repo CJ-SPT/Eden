@@ -88,6 +88,10 @@ invitation on a later NPC station dock once its assignments allow it to move. Th
 seven jumps that the ship can fly. A loaded hauler waits for its destination. A bot already employed by a human-led
 corporation stays with that corporation. Normal CEO and role restrictions apply to departures.
 
+Some recruits then take their ship and supplies to company headquarters or to a station suited to their career.
+The ship travels through gates, and the pilot starts its regular work from the new base after docking. The first destination
+can be seen in the pilot's ordinary travel. [Relocation and checkpoint behavior](protocol/capsuleers.md#bot-corporation-relocation)
+
 Roaming gangs, escorts and gate camps use current corporation and alliance membership. When a roster splits across
 unaffiliated corporations, a roaming gang cancels its patrol and returns home. Corporate and alliance mates are
 excluded from autonomous patrol targeting. [Recruitment and gang implementation](protocol/capsuleers.md#bot-corporation-recruitment-and-gangs)

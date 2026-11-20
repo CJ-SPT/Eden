@@ -18,7 +18,11 @@ using Eden.World.Storage;
 
 namespace Eden.World.Capsuleers;
 
-internal sealed record CapsuleerOrganization(long DueTicks = 0, long? ApplicationId = null, CapsuleerProfession? Profession = null);
+internal sealed record CapsuleerOrganization(long DueTicks = 0, long? ApplicationId = null, CapsuleerProfession? Profession = null)
+{
+    public int? OperatingStationId { get; init; }
+    public CapsuleerRelocation? Relocation { get; init; }
+}
 
 internal static partial class CapsuleerCorporations
 {
@@ -60,7 +64,7 @@ internal static partial class CapsuleerCorporations
             return false;
         }
         var organization = Organization(world, pilotId);
-        if (organization.DueTicks > activeTicks)
+        if (organization.DueTicks > activeTicks || organization.Relocation is not null)
         {
             return false;
         }
@@ -201,7 +205,8 @@ internal static partial class CapsuleerCorporations
             "",
             now
         );
-        SaveOrganization(world, pilot.Id, organization with { ApplicationId = null });
+        var relocation = PlanOperatingBase(catalog, pilot.ActiveShip.StationId, corporation, hull, profession);
+        SaveOrganization(world, pilot.Id, organization with { ApplicationId = null, Relocation = relocation });
         world.AfterCommit(database.NotifyAccessGroupsChanged);
         return true;
     }

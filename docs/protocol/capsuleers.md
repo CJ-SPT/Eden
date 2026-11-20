@@ -948,6 +948,32 @@ passed 64 tests in 30 seconds. The solution built in 3.77 seconds and both Pytho
 
 **Optional maintainer checks.** Check a bot corporation's recruitment history after several active-play reviews.
 
+## Bot corporation relocation
+
+Acceptance can commit a relocation to the headquarters or to a mining station in its system. A miner whose new
+corporation lacks a workable local belt stays where it can work. The existing pilot and fitted ship travel using the
+regular undock, warp, gate and dock operations. The pilot packs up to three compatible stacks of personal supplies into
+the existing hold. Capacity limits leave excess supplies at the source. The freight gate and existing assignment checks
+protect cargo and paid work from premature departures.
+
+The corporation assignment, ship, route and packed item quantities are checkpointed with the pilot. The operating station
+changes only at the destination dock. The miner starts work with the destination crew, and the hauler plans its regular
+journeys from the new base. The original system and provisioning slot still identify the same saved pilot. The medical
+home station and corporate property use their existing rules. [Relocation plan](../bot-corporation-plan.md#3-move-recruits-and-rebase-their-work) ·
+[Eden home-station mechanics](characters.md#persistent-home-stations-and-docked-clone-transfer)
+
+**Automated validation.** The miner and hauler replays each reloaded an unobserved departure from a checkpoint, kept
+the same ship and moved 13 rounds from the old hangar to the new one. The active clock paused with no selected human,
+and the same pilot started its next cycle from the new base. The focused filter
+`FullyQualifiedName~CapsuleerCorporationTests|FullyQualifiedName~CapsuleerHandoffTests|FullyQualifiedName~CapsuleerTrafficNavigationTests|FullyQualifiedName~CapsuleerMinerTests|FullyQualifiedName~CapsuleerHaulerTests`
+passed 65 tests in 32 seconds. The solution built in 0.74 seconds with warm build outputs. Both Python policy suites
+passed. The paid mining checkpoint test also failed on unmodified `3229a079`, where the helper compared the starter ore
+type array by reference. It now compares its contents and still checks the remaining saved state.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Follow a recruit through a gate, then observe its next work cycle at the new base.
+
 ## Bot corporation recruitment and gangs
 
 Schema 188 opens applications for existing active bot-led charters. New bot charters start open. The bot CEO uses the existing

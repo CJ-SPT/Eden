@@ -67,6 +67,7 @@ public sealed record MinerProgress(
     public MercoxitExpedition? Mercoxit { get; init; }
     public CapsuleerFactoryStage? FactoryStage { get; init; }
     public long? MoonExtractionId { get; init; }
+    public int? OperatingStationId { get; init; }
 }
 
 public sealed record MercoxitExpedition(int StationId, int[] Systems, bool Returning = false);

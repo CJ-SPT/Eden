@@ -687,6 +687,10 @@ internal sealed partial class CapsuleerMiner(
             _work = Work with { ShipId = Pilot.ShipId, Navigation = _navigation.Capture(), PaidUntil = 0, ModuleId = 0 };
         }
         JoinCorporationAtDock();
+        if (TryCorporationRelocation())
+        {
+            return;
+        }
         if (Work.FactoryStage is not null && _operation.World is EconomyTransaction stagedWorld)
         {
             UnloadFactoryCargo(stagedWorld);
@@ -1013,6 +1017,7 @@ internal sealed partial class CapsuleerMiner(
                 _navigation.Dock();
                 _operation.TravelChanged = true;
                 _work = Work with { Activity = MinerActivity.Docked, TargetId = 0, Mercoxit = null, MoonExtractionId = null };
+                FinishCorporationRelocation();
             }
             else
             {
@@ -1204,6 +1209,10 @@ internal sealed partial class CapsuleerMiner(
         if (_objects.Count == 0)
         {
             RefreshObjects();
+        }
+        if (Work.Mercoxit is null && _operation.World is EconomyTransaction world && ContinueCorporationRelocation(world))
+        {
+            return;
         }
         if (Work.Mercoxit is { } expedition)
         {
