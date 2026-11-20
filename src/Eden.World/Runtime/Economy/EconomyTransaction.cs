@@ -296,9 +296,10 @@ internal sealed partial class EconomyTransaction(
                 string.IsNullOrWhiteSpace(account.UserName)
                 || account.CloneGrade is not (AccountCloneGrade.Alpha or AccountCloneGrade.Omega)
                 || account.Id == CapsuleerCommunityStore.MinerAccountId && account.CloneGrade != AccountCloneGrade.Omega
-                || accounts
-                    .IndexedSnapshots(nameof(Account.UserName), account.UserName)
-                    .Any(other => other.Id != account.Id && StringComparer.OrdinalIgnoreCase.Equals(other.UserName, account.UserName))
+                || !accounts.HasUniqueCommittedKey(new(account.Id), nameof(Account.UserName), account.UserName)
+                    && accounts
+                        .IndexedSnapshots(nameof(Account.UserName), account.UserName)
+                        .Any(other => other.Id != account.Id && StringComparer.OrdinalIgnoreCase.Equals(other.UserName, account.UserName))
             )
             {
                 throw new InvalidDataException("Invalid resident account identity or clone grade.");

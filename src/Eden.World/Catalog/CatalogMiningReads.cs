@@ -6,6 +6,17 @@ namespace Eden.World.Catalog;
 
 public sealed partial class CatalogDbContext
 {
+    internal IReadOnlyList<CatalogCelestialDefinition> BeltAnchors(int systemId) =>
+        writable
+            ? CatalogProvider
+                .CelestialRows(
+                    Set<Celestial>()
+                        .Where(body => body.SolarSystemId == systemId && body.GroupId == AsteroidDefinitions.BeltGroup)
+                        .OrderBy(body => body.Id)
+                )
+                .ToArray()
+            : Definitions.BeltAnchors(systemId);
+
     internal HashSet<int> MiningSystems() =>
         Set<Celestial>()
             .Where(body => body.GroupId == AsteroidDefinitions.BeltGroup)

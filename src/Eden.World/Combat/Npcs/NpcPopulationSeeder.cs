@@ -31,6 +31,7 @@ internal sealed partial class NpcPopulationSeeder(
         if (policy.Pirates)
         {
             _ = profiles.Profiles;
+            _ = catalog.BeltAnchors(0);
         }
         if (policy.Guards)
         {
@@ -43,6 +44,31 @@ internal sealed partial class NpcPopulationSeeder(
         if (policy.Mining)
         {
             mining.WarmCatalog(catalog);
+        }
+    }
+
+    internal static void WarmSystem(WorldDatabase database, CatalogDbContext catalog, int systemId)
+    {
+        if (catalog.FindSystem(systemId) is not { } system || NpcRegions.Pirates(system.RegionId) is null)
+        {
+            return;
+        }
+        var politics = catalog.SystemPolitics(systemId);
+        if (politics.Security is not double security)
+        {
+            return;
+        }
+        var policy = database.Settings.NpcPopulation;
+        if (policy.Guards && NpcSpawnRules.SecurityBand(security) != NpcSecurityBand.Null)
+        {
+            NpcGuardSeeder.WarmSystem(catalog, systemId);
+        }
+        if (policy.Mining && politics.FactionId.HasValue && NpcConvoyRules.Eligible(security))
+        {
+            foreach (var belt in catalog.BeltAnchors(systemId))
+            {
+                _ = catalog.Read(CatalogData.Client.Asteroidcountbytypeidbeltid, (long)belt.Id);
+            }
         }
     }
 
@@ -151,7 +177,7 @@ internal sealed partial class NpcPopulationSeeder(
         {
             return;
         }
-        var belts = catalog.CelestialsInSystem(systemId).Where(c => c.GroupId == AsteroidDefinitions.BeltGroup).OrderBy(c => c.Id);
+        var belts = catalog.BeltAnchors(systemId);
         var encounters = world.Set<WorldNpcEncounter>();
         foreach (var belt in belts)
         {

@@ -21,15 +21,15 @@ internal readonly record struct NpcPopulationMember(
 
     internal static IEnumerable<NpcPopulationMember> InSystem(WorldAction world, int system) =>
         world.Set<WorldNpc>() is EconomySet<WorldNpc, EconomyWorldNpc> npcs
-            ? Read(npcs.IndexedSnapshots(nameof(WorldNpc.SystemId), system).Where(n => n.SystemId == system))
+            ? FromSnapshots(npcs.IndexedSnapshots(nameof(WorldNpc.SystemId), system).Where(n => n.SystemId == system))
             : Read(world.Filter<WorldNpc>(n => n.SystemId == system));
 
     internal static IEnumerable<NpcPopulationMember> AtAnchor(WorldAction world, long anchor) =>
         world.Set<WorldNpc>() is EconomySet<WorldNpc, EconomyWorldNpc> npcs
-            ? Read(npcs.IndexedSnapshots(nameof(WorldNpc.EncounterId), anchor).Where(n => n.EncounterId == anchor))
+            ? FromSnapshots(npcs.IndexedSnapshots(nameof(WorldNpc.EncounterId), anchor).Where(n => n.EncounterId == anchor))
             : Read(world.Filter<WorldNpc>(n => n.EncounterId == anchor));
 
-    private static IEnumerable<NpcPopulationMember> Read(IEnumerable<EconomyWorldNpc> source) =>
+    internal static IEnumerable<NpcPopulationMember> FromSnapshots(IEnumerable<EconomyWorldNpc> source) =>
         source.Select(n => new NpcPopulationMember(
             n.Id,
             n.EncounterId,

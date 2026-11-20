@@ -43,14 +43,22 @@ public sealed class CatalogProviderTests
         var gate = definitions.Gates.Values.First();
         var body = Assert.IsType<CatalogCelestialDefinition>(catalog.FindCelestial(gate.Id));
         var system = catalog.Read(CatalogData.Client.Systems, (long)gate.SolarSystemId);
+        var systemContent = catalog.Read(CatalogData.Client.Solarsystemcontent, (long)gate.SolarSystemId);
+        var belts = catalog.CelestialsInSystem(gate.SolarSystemId).Where(body => body.GroupId == AsteroidDefinitions.BeltGroup).ToArray();
         Assert.Equal(body, catalog.FindGateBody(gate.Id));
         Assert.Equal(new CatalogSystemPolitics(system?.SecurityStatus, system?.FactionID), catalog.SystemPolitics(gate.SolarSystemId));
+        Assert.Equal(systemContent?.Security, catalog.SystemContentSecurity(gate.SolarSystemId));
+        Assert.Equal(belts, catalog.BeltAnchors(gate.SolarSystemId));
 
         using var metrics = SessionPerformance.Begin("warm catalog travel indexes", _ => { }, force: true)!;
         Assert.Equal(body, catalog.FindGateBody(gate.Id));
         Assert.Null(catalog.FindGateBody(long.MaxValue));
         Assert.Null(catalog.FindGateBody(0));
         Assert.Equal(default, catalog.SystemPolitics(0));
+        Assert.Null(catalog.SystemContentSecurity(0));
+        Assert.Empty(catalog.BeltAnchors(0));
+        Assert.Equal(belts, catalog.BeltAnchors(gate.SolarSystemId));
+        Assert.Equal(systemContent?.Security, catalog.SystemContentSecurity(gate.SolarSystemId));
         _ = catalog.SystemPolitics(gate.SolarSystemId);
         Assert.Equal(0, metrics.Commands);
         Assert.Equal(0, metrics.Connections);

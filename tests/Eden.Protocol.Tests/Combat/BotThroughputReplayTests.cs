@@ -248,7 +248,8 @@ public sealed partial class ServerPerformanceReplayTests
                 force: true,
                 command: Environment.GetEnvironmentVariable("EDEN_SQL_HOTSPOTS") == "1"
                     ? sql => sqlCalls.AddOrUpdate(sql, key => (1, Environment.StackTrace), (_, value) => (value.Count + 1, value.Stack))
-                    : null
+                    : null,
+                slowCommand: (duration, sql) => Report($"Slow SQL command: {duration.TotalMilliseconds:F2} ms. {sql}")
             );
             long completedAtStart = diagnostics.Read().CompletedActions;
             int generation2AtStart = GC.CollectionCount(2);

@@ -6,6 +6,9 @@ namespace Eden.World.Catalog;
 
 public sealed partial class CatalogDbContext
 {
+    internal double? SystemContentSecurity(int systemId) =>
+        writable ? Read(CatalogData.Client.Solarsystemcontent, (long)systemId)?.Security : Definitions.SystemContentSecurity(systemId);
+
     internal IEnumerable<CatalogStationDefinition> Stations() =>
         writable ? Set<Station>().Select(station => station.Id).ToArray().Select(RequireStation) : Definitions.Stations.Values;
 

@@ -151,6 +151,14 @@ internal sealed class NpcGuardSeeder
     internal static IReadOnlyList<NpcGuardObstacle> CatalogObstacles(CatalogDbContext catalog, int systemId) =>
         catalog.Definition(s_obstacles, systemId);
 
+    internal static void WarmSystem(CatalogDbContext catalog, int systemId)
+    {
+        if (catalog.Definition(s_guardAnchors, systemId).Sites.Length != 0)
+        {
+            _ = CatalogObstacles(catalog, systemId);
+        }
+    }
+
     private static IReadOnlyList<NpcGuardObstacle> LoadCatalogObstacles(CatalogDbContext catalog, int systemId)
     {
         List<NpcGuardObstacle> obstacles = [];

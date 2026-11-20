@@ -554,6 +554,13 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
         : _local.TryGetValue(key, out var row) ? table.Capture(row)
         : table.Snapshot(key);
 
+    // A different row claiming the slot in this action will validate its own key.
+    internal bool HasUniqueCommittedKey(EconomyKey row, string index, object value)
+    {
+        var matches = table.Indexed(index, value);
+        return matches.Count == 1 && matches.Contains(row);
+    }
+
     internal IEnumerable<TState> IndexedSnapshots(string column, object value, (string Column, int Value)? alternate = null)
     {
         var keys = table.Indexed(column, value);

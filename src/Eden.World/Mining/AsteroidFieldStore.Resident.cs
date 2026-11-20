@@ -32,12 +32,8 @@ internal sealed partial class AsteroidFieldStore
     internal static void Populate(WorldAction world, CatalogDbContext catalog, int systemId, long now)
     {
         long? nextRenewal = null;
-        var belts = catalog
-            .CelestialsInSystem(systemId)
-            .Where(b => b.GroupId == AsteroidDefinitions.BeltGroup)
-            .OrderBy(b => b.Id)
-            .ToArray();
-        if (belts.Length == 0)
+        var belts = catalog.BeltAnchors(systemId);
+        if (belts.Count == 0)
         {
             return;
         }

@@ -112,18 +112,22 @@ internal sealed class NpcEncounterStore(
         bool seed =
             database.PopulationStamps.GetValueOrDefault(systemId, -1) != stamp
             || database.PopulationDeadlines.GetValueOrDefault(systemId, long.MaxValue) <= now;
+        using var shared = live.EnterShared("resident population participants", TransactionParticipants.None);
+        var participants =
+            live.Economy.IsLoaded && !live.Economy.HasActiveAction
+                ? PopulationParticipants(NpcPopulationMember.FromSnapshots(live.Economy.PopulationMembers(systemId)), systemId)
+                : live.Economy.Inspect(world => PopulationParticipants(world, systemId));
         long due;
         if (seed)
         {
-            using WorldActionScope transaction = new(database, select: world => PopulationParticipants(world, systemId));
+            using var transaction = live.Economy.Begin(participants);
             using CatalogDbContext catalog = new(database.CatalogPath);
-            population.Seed(transaction.World, catalog, systemId, now);
-            due = population.NextUpdate(transaction.World, systemId, now);
+            population.Seed(transaction, catalog, systemId, now);
+            due = population.NextUpdate(transaction, systemId, now);
             transaction.Commit();
         }
         else
         {
-            var participants = live.Economy.Inspect(world => PopulationParticipants(world, systemId));
             due = live.Economy.Inspect(world => population.NextUpdate(world, systemId, now), participants);
         }
         database.PopulationStamps[systemId] = stamp;
@@ -131,13 +135,14 @@ internal sealed class NpcEncounterStore(
         return due;
     }
 
-    internal static TransactionParticipants PopulationParticipants(WorldAction world, int system)
+    internal static TransactionParticipants PopulationParticipants(WorldAction world, int system) =>
+        PopulationParticipants(NpcPopulationMember.InSystem(world, system), system);
+
+    private static TransactionParticipants PopulationParticipants(IEnumerable<NpcPopulationMember> members, int system)
     {
-        var npcs = NpcPopulationMember
-            .InSystem(world, system)
+        var npcs = members
             .Where(n =>
-                n.DestroyedAt == null
-                && n.RetiredAt == null
+                n.Active
                 && (
                     NpcPopulationRules.IsMining(n.Role)
                     || n.Role == NpcRole.Convoy

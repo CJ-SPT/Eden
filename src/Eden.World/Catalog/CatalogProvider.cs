@@ -171,6 +171,7 @@ public sealed partial class CatalogProvider
         _gateBodies = new(LoadGateBodies);
         _systemPolitics = new(LoadSystemPolitics);
         _systemSecurity = new(LoadSystemSecurity);
+        _systemBelts = new(LoadBeltAnchors);
         _stationNames = new(LoadStationNames);
         _celestials = new(this, "projection/celestials");
         _systemCelestials = new(this, "projection/system-celestials");

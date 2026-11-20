@@ -99,12 +99,15 @@ internal sealed partial class NpcMiningSeeder(NpcMiningCatalog profiles)
             SpawnMiners(world, catalog, operation, encounter, rock, now);
         }
         encounter!.NextSpawnAt = checked(now + TimeSpan.TicksPerSecond);
-        var active = world
-            .Filter<WorldNpc>(n => n.EncounterId == id && n.DestroyedAt == null && n.RetiredAt == null)
-            .OrderBy(n => n.Id)
+        var npcs = world.Set<WorldNpc>();
+        var active = NpcPopulationMember
+            .AtAnchor(world, id)
+            .Where(npc => npc.Active)
+            .OrderBy(npc => npc.Id)
+            .Select(npc => npcs.Find(npc.Id)!)
             .ToArray();
-        var activeIds = active.Select(n => n.Id).ToArray();
-        var members = world.Filter<WorldNpcMiningMember>(m => Enumerable.Contains(activeIds, m.NpcId)).ToArray();
+        var miningMembers = world.Set<WorldNpcMiningMember>();
+        var members = active.Select(npc => miningMembers.Find(npc.Id)).OfType<WorldNpcMiningMember>().ToArray();
         if (operation.ResetAt is long reset && now >= reset)
         {
             foreach (var npc in active)

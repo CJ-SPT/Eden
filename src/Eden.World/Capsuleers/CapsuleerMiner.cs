@@ -712,10 +712,13 @@ internal sealed partial class CapsuleerMiner(
             _navigation = new();
             _work = Work with { ShipId = Pilot.ShipId, Navigation = _navigation.Capture(), PaidUntil = 0, ModuleId = 0 };
         }
-        JoinCorporationAtDock();
-        if (TryCorporationRelocation())
+        using (Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.minerCorporation"))
         {
-            return;
+            JoinCorporationAtDock();
+            if (TryCorporationRelocation())
+            {
+                return;
+            }
         }
         if (Work.FactoryStage is not null && _operation.World is EconomyTransaction stagedWorld)
         {
@@ -757,6 +760,7 @@ internal sealed partial class CapsuleerMiner(
             && _operation.World is EconomyTransaction supplyWorld
         )
         {
+            using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.minerIndustry");
             var moonSupply = CapsuleerIndustry.AssignedMoonSupply(supplyWorld, Pilot, Now);
             industry.RefineMoonFeed(supplyWorld, _operation.Catalog, Pilot, sponsored: moonSupply is not null);
             if (moonSupply is not null && TryTravelToMoonSupply(moonSupply))
@@ -818,6 +822,7 @@ internal sealed partial class CapsuleerMiner(
         _work = Work with { FactorySupply = supply };
         if (_operation.World is EconomyTransaction resident)
         {
+            using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.minerCareer");
             var training = careerTraining.Advance(resident, _operation.Catalog, Pilot, CapsuleerProfession.Mining, Work.CareerPlan, Now);
             _work = Work with { CareerPlan = training.Plan };
             _operation.MarketChanged |= training.MarketChanged;
@@ -843,6 +848,7 @@ internal sealed partial class CapsuleerMiner(
                 }
             }
         }
+        using var equipment = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.minerEquipment");
         var expedition = !fresh && moon is null ? PrepareMercoxitExpedition(aboard) : null;
         var laserType =
             fresh && Pilot.ShipGroupId == (int)HullClass.Corvette ? MiningLaserType.Civilian

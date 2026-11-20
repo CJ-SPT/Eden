@@ -182,14 +182,41 @@ internal sealed partial class LiveCombatRuntime
         {
             return [];
         }
-        LoadNpcs(ids.Where(id => !_npcs.ContainsKey(id) || _staleNpcs.Contains(id)).ToArray(), now);
-        return ids.Select(id => Npc(id, now)).OfType<LiveCombatNpc>().Where(n => n.Available && n.SystemId == system).ToArray();
+        List<long>? missing = null;
+        foreach (long id in ids)
+        {
+            if (!_npcs.ContainsKey(id) || _staleNpcs.Contains(id))
+            {
+                (missing ??= []).Add(id);
+            }
+        }
+        if (missing is not null)
+        {
+            LoadNpcs(missing, now);
+        }
+        var current = new LiveCombatNpc[ids.Length];
+        int count = 0;
+        foreach (long id in ids)
+        {
+            if (Npc(id, now) is { Available: true } npc && npc.SystemId == system)
+            {
+                current[count++] = npc;
+            }
+        }
+        return count == current.Length ? current : current[..count];
     }
 
     private IReadOnlyDictionary<long, IReadOnlyDictionary<DogmaAttributeId, double>> Effective(LiveCombatNpc[] npcs)
     {
-        var missing = npcs.Where(n => !_effectiveNpcs.ContainsKey(n.Id)).ToArray();
-        if (missing.Length != 0)
+        List<LiveCombatNpc>? missing = null;
+        foreach (var npc in npcs)
+        {
+            if (!_effectiveNpcs.ContainsKey(npc.Id))
+            {
+                (missing ??= []).Add(npc);
+            }
+        }
+        if (missing is not null)
         {
             Loading(() =>
             {

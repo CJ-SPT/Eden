@@ -5854,6 +5854,67 @@ The affected test filter passed 202 cases in 205 s, including resident fitting a
 The earlier wider filter reproduced an offline SQL-count failure and two disconnect projection
 failures on both revisions. The validation directory contains both results and the affected filter.
 
+The ten-minute replay of `45507e91` recovered in 19.15 s and completed 457,757 actions. It ended
+40.40 s behind with 5,532 scheduled pilots, 755 overdue mining jobs and 2,577 overdue hauling jobs.
+Warm frame p95/p99 was 29.85/46.26 ms and warm market p95/p99 was 70.32/86.22 ms.
+One hold reached 568 ms in NPC population refresh. The hold occurred before the GC trace began.
+The subsequent six-and-a-half-minute trace recorded a longest runtime suspension of 16.32 ms.
+A 15-second worker profile during the backlog attributed 22.5% of sampled time to population
+refresh, 4.9% to full solar-system records read for provisioning security and 2.8% to reading
+complete celestial collections in the pirate seeder. The artifacts are under
+`artifacts/bot-throughput-20261120/acceptance-after-fit-checks/`.
+
+NPC population refresh now selects participants from the resident system index before opening
+the action, uses keyed pilot-independent NPC member reads, and hydrates combat details only
+for missing or stale contacts. Compact per-catalog indexes supply the belt anchors and nullable
+system security values used by pirate seeding and capsuleer provisioning.
+The 168 focused tests passed. The short replay completed 129,199 actions with 5,532 pilots scheduled.
+Its maximum queue age after the midpoint was 932 ms and its last sample was 455 ms.
+Allocation averaged 483.8 KiB per action. See `artifacts/bot-throughput-20261120/compact-npc-catalog/`.
+
+Hauler drone resupply now uses the committed fitting snapshot's capacity, bandwidth and control
+limit when its revision is current. It still reads the pilot's current drone inventory before
+selecting supplies. The focused regression verifies the same supply decision with zero SQL,
+connection opens and fitting calculations on the warmed resident path.
+Transfers and capacity checks share the fitted hold capacities for that dock action and
+read current occupied volume after each transfer. The bounded resupply short replay completed
+133,854 actions at 5,628 scheduled pilots. Its final-half maximum queue age was 478 ms.
+One owner hold reached 251 ms, including 205 ms in the miner industry stage.
+Miner preparation now warms the immutable manufacturing recipe index outside world ownership.
+The affected tests passed in groups of 206, 42 and 58, with both Python policy suites and
+formatting verification. See `artifacts/bot-throughput-20261120/validation/`.
+
+The next short replay measured 189 ms of manufacturing preparation outside the world owner.
+It still recorded a 330 ms collection hold during cold NPC refresh and a 419 ms miner preparation
+hold that included 326 ms of resident bot validation. Immutable guard and mining inputs now warm
+outside ownership on the first relevant action in a system. Resident uniqueness checks use the
+committed composite capsuleer slot index and skip rechecking unchanged unique keys against every
+private row. Changed keys still check committed and private rows before publishing.
+The solution build, 176 affected .NET cases (70 seconds including runner overhead), both Python
+policy suites and formatting verification passed. The focused report is
+`artifacts/bot-throughput-20261120/validation/prepared-population.trx`.
+
+The population warmup short replay recovered in 19.13 seconds and completed 135,066 actions at
+5,620 scheduled pilots. The final-half queue age peaked at 981 ms and ended at 166 ms. Allocation
+averaged 467.0 KiB per action. One 549 ms trade held the world owner, with 525 ms recorded as SQL
+execution during resupply. Comparable resupplies with similar command counts took under 39 ms.
+The replay now records individual SQL commands taking at least 100 ms and splits resupply into
+requirements, offers, reload and remaining stock phases. The compact immutable drone selection
+list stays loaded for the catalog generation and warms during trade preparation.
+See `artifacts/bot-throughput-20261120/prepared-population/`.
+
+The resupply follow-up passed 75 focused .NET cases, both Python suites and formatting verification.
+The shopping fixture's overpriced case fails on `e6f62071` and on this branch with the same result.
+The focused filter excludes that fixture and the previously reproduced offline hangar SQL count case.
+The comparison and focused reports are under `artifacts/bot-throughput-20261120/validation/`.
+
+The final short replay recovered in 20.16 s, completed 134,820 actions without job failures, and
+ended with 5,644 pilots scheduled. Queue age peaked at 787 ms after the midpoint and ended at
+101 ms. Warm frame p95/p99 was 26.38/34.30 ms and market p95/p99 was 57.97/68.87 ms. The 150 warmed
+requests recorded zero SQL commands, connections and fitting calculations. No traffic or population
+owner hold reached 250 ms. Allocation averaged 470.3 KiB per completed action, and peak projection
+was 1.32 s across 13 checkpoints. See `artifacts/bot-throughput-20261120/prepared-resupply/`.
+
 ### Live acceptance
 
 Not performed; agent client testing is disabled.

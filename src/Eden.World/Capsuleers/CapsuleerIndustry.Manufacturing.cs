@@ -26,6 +26,8 @@ internal sealed partial class CapsuleerIndustry
             ManufacturingCatalog.Recipes(catalog).Values.OrderBy(recipe => recipe.BlueprintTypeId).ToLookup(recipe => recipe.ProductTypeId)
     );
 
+    internal static void WarmManufacturing(CatalogDbContext catalog) => _ = catalog.Definitions.GlobalDefinition(s_recipesByProduct);
+
     private static ILookup<int, SavedPersonalOrder> LocalProductionBids(
         WorldAction world,
         long pilot,
@@ -67,7 +69,7 @@ internal sealed partial class CapsuleerIndustry
             return null;
         }
         long pilot = operatorPilot.PilotId;
-        double? security = catalog.Definitions.Find(CatalogData.Client.Systems, (long)operatorPilot.SystemId)?.SecurityStatus;
+        double? security = catalog.SystemPolitics(operatorPilot.SystemId).Security;
         if (security is null && EconomicStore.Enabled(world))
         {
             return null;
