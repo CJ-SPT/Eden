@@ -2,6 +2,27 @@
 
 [Documentation](../README.md) / [Protocol index](../protocol.md) / [Administrator guide](../world-configuration.md)
 
+## Administration settings with decimal-comma locales, November 20, 2026
+
+On a French-configured server, changing **Warp speed** on `localhost` caused the administration reload banner before
+the draft was submitted. Field validation tried to read the fixed minimum `0.1` using the server's regional format and
+threw, terminating the Blazor connection. The settings form now parses its fixed decimal limits using the invariant
+culture. Valid fractional edits remain interactive, and out-of-range values show field validation messages.
+[Microsoft .NET RangeAttribute documentation](https://learn.microsoft.com/dotnet/api/system.componentmodel.dataannotations.rangeattribute.parselimitsininvariantculture)
+
+**Automated validation.** Before the fix, `WorldSettingsPageTests.DecimalRangesAcceptFractionalLimitsInFrenchServerCulture`
+threw while parsing the minimum, and `AdministrationTests.LiveSettingsStayInteractiveInFirefoxAndChromium` showed the
+reload banner on the first decimal edit in Firefox. Both passed after the change. The browser check edits and saves
+against isolated resident worlds using Firefox on `localhost` with `fr-FR` and Chromium on `127.0.0.1` with `en-US`.
+The final filter joined `AdministrationTests`, `WorldSettingsPageTests`, `AdministrationComponentTests`,
+`WorldConfigurationTests` and `WorldTuningTests` with `FullyQualifiedName~` and `|`. It passed all 115 cases in
+38.46 seconds. Tool and solution restore, the build (5.08 seconds, zero warnings or errors), both Python policy suites
+(8 catalog and 9 formatting tests), and formatting verification passed.
+
+**Live acceptance.** Not performed. Agent game client testing is disabled.
+
+**Optional maintainer checks.** Update the reporter's server and edit the same setting in their browser.
+
 ## Minimum corporation age for anchoring, November 16, 2026
 
 `settings.structures.minimumCorporationAgeDays` now controls the Upwell anchoring age gate. The default is **7** days,

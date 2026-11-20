@@ -42,7 +42,7 @@ public sealed class SettingsForm
     public bool RegionalHubSupply { get; set; }
     public bool BeginnerMarketSupply { get; set; }
 
-    [Range(typeof(decimal), "0", "1")]
+    [Range(typeof(decimal), "0", "1", ParseLimitsInInvariantCulture = true)]
     public decimal ManufacturingIndex { get; set; }
     public bool TestingMarket { get; set; }
     public bool TestingGrants { get; set; }
@@ -101,7 +101,7 @@ public sealed class SettingsForm
     public bool SimulatedPilots { get; set; }
     public bool SimulatedMiners { get; set; }
 
-    [Range(typeof(decimal), "0", "10")]
+    [Range(typeof(decimal), "0", "10", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Station traffic density")]
     public decimal TrafficMultiplier { get; set; }
 
@@ -122,128 +122,128 @@ public sealed class SettingsForm
     [Display(Name = "Autopilot gate landing distance (metres)")]
     public int AutopilotGateLandingMeters { get; set; } = NavigationDefinitions.AutopilotLandingMeters;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Warp speed")]
     public decimal WarpSpeedMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Align speed")]
     public decimal AlignSpeedMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Ore mining yield")]
     public decimal OreYieldMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Ice harvesting yield")]
     public decimal IceYieldMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Gas harvesting yield")]
     public decimal GasYieldMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "General mining hold capacity")]
     public decimal GeneralMiningHoldMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Ice hold capacity")]
     public decimal IceHoldMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Gas hold capacity")]
     public decimal GasHoldMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0", "100")]
+    [Range(typeof(decimal), "0", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "NPC bounty ISK")]
     public decimal BountyMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0", "100")]
+    [Range(typeof(decimal), "0", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Mission ISK")]
     public decimal MissionIskMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0", "100")]
+    [Range(typeof(decimal), "0", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Mission loyalty points")]
     public decimal MissionLpMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0", "100")]
+    [Range(typeof(decimal), "0", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Positive mission standings")]
     public decimal MissionStandingMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0", "100")]
+    [Range(typeof(decimal), "0", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "NPC kill skill points")]
     public decimal KillSkillPointMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0", "100")]
+    [Range(typeof(decimal), "0", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Mining skill points")]
     public decimal MiningSkillPointMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0", "100")]
+    [Range(typeof(decimal), "0", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "NPC kill base SP rate")]
     public decimal KillSkillPointPercent { get; set; } = NpcSkillPointRewards.DefaultPercent;
 
-    [Range(typeof(decimal), "0.01", "1000000000")]
+    [Range(typeof(decimal), "0.01", "1000000000", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Mining reference ISK per SP")]
     public decimal MiningIskPerSkillPoint { get; set; } = ActivitySkillPointRewards.IskPerSkillPoint;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Manufacturing speed")]
     public decimal ManufacturingSpeed { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Research speed")]
     public decimal ResearchSpeed { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Copying speed")]
     public decimal CopyingSpeed { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Invention speed")]
     public decimal InventionSpeed { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Reprocessing efficiency")]
     public decimal ReprocessingEfficiency { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     public decimal StructureAnchoringSpeed { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     public decimal StructureOnliningSpeed { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     public decimal StructureUnanchoringSpeed { get; set; } = 1;
 
     [Range(0, int.MaxValue)]
     [Display(Name = "Minimum corporation age for anchoring (days)")]
     public int StructureMinimumCorporationAgeDays { get; set; } = 7;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Extraction yield")]
     public decimal PlanetaryExtractionYieldMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Factory output")]
     public decimal PlanetaryFactoryOutputMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Planetary storage capacity")]
     public decimal PlanetaryStorageCapacityMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Factory speed")]
     public decimal PlanetaryFactorySpeedMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Command center CPU")]
     public decimal PlanetaryCpuMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0.1", "100")]
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Command center powergrid")]
     public decimal PlanetaryPowergridMultiplier { get; set; } = 1;
 
-    [Range(typeof(decimal), "0", "100")]
+    [Range(typeof(decimal), "0", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "Customs tax (%)")]
     public decimal PlanetaryCustomsTaxPercent { get; set; } = 17;
 

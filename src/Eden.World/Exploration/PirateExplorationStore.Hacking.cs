@@ -66,7 +66,8 @@ internal sealed partial class PirateExplorationStore
         if (
             site.SovereigntySlot == MilitiaOperationSlot
             && (
-                FactionWarzoneStore.System(world, site.SystemId)
+                world is not EconomyTransaction
+                || FactionWarzoneStore.System(world, site.SystemId)
                     is not { Adjacency: WarzoneAdjacency.Rearguard, PendingTransferAt: null } system
                 || Definition(catalog, site).FactionId != (int)system.Occupier
                 || !MilitiaRules.AreEnemies(MilitiaEnlistmentStore.Effective(world, pilot), system.Occupier)

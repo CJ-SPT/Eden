@@ -16,9 +16,9 @@ public sealed partial class AdministrationTests
     [AdministrationBrowserFact]
     public async Task LiveSettingsStayInteractiveInFirefoxAndChromium()
     {
-        foreach (string browser in new[] { "firefox", "chromium" })
+        foreach (var (browser, host, culture) in new[] { ("firefox", "localhost", "fr-FR"), ("chromium", "127.0.0.1", "en-US") })
         {
-            await using var fixture = await Fixture.Start(liveWorld: true);
+            await using var fixture = await Fixture.Start(liveWorld: true, culture: culture);
             var frames = fixture.World.Services.GetRequiredService<SessionFrameMonitor>();
             frames.Record(TimeSpan.FromMilliseconds(4), TimeSpan.FromMilliseconds(1));
             frames.Record(TimeSpan.FromMilliseconds(12), TimeSpan.FromMilliseconds(3));
@@ -31,8 +31,9 @@ public sealed partial class AdministrationTests
             start.ArgumentList.Add(
                 Path.Combine(AppContext.BaseDirectory, "administration-browser-tests", "Test-AdministrationInteractivity.py")
             );
-            start.ArgumentList.Add(fixture.Client.BaseAddress!.ToString());
+            start.ArgumentList.Add(new UriBuilder(fixture.Client.BaseAddress!) { Host = host }.Uri.ToString());
             start.ArgumentList.Add(browser);
+            start.ArgumentList.Add(culture);
             using var process = System.Diagnostics.Process.Start(start)!;
             var output = process.StandardOutput.ReadToEndAsync();
             var errors = process.StandardError.ReadToEndAsync();

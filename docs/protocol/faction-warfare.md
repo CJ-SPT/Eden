@@ -72,6 +72,12 @@ The filter joined the following FullyQualifiedName substring selectors with the 
   Combat.PilotDroneTests, Combat.ResidentDroneTests, Flight.FlightSessionTests, Gateway
 - LoyaltyStoreTests, WorldMigrationTests, IncrementalCheckpointTests, DetachedCheckpointTests
 
+The follow-up merge brought in main at 09787a13. Its build passed with zero warnings in 9.97 seconds.
+The integration filter passed 158 tests with 9 skipped in 14.61 seconds. It covered MilitiaAdvantageTests,
+MilitiaObjectiveTests, BattlefieldThreePointScore, OperationCenterRequiresOpposingMilitia,
+NpcPopulationFrameTests, and Eden.Protocol.Tests.Administration. The Operation Center case passed again
+in 6.92 seconds after enforcing resident-only access.
+
 **Live acceptance.** Not performed. Agent client testing is disabled.
 
 **Optional maintainer checks.** Open the Advantage panel and complete an objective. Verify the native
