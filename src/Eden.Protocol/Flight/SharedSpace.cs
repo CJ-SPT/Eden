@@ -80,7 +80,8 @@ internal sealed record PilotContact(
     double X,
     double Y,
     double Z,
-    int? AllianceId = null
+    int? AllianceId = null,
+    Eden.Gameplay.FactionWarfare.MilitiaFaction? WarFaction = null
 )
 {
     internal static PilotContact From(DockedPilot pilot) =>
@@ -101,7 +102,8 @@ internal sealed record PilotContact(
             pilot.X,
             pilot.Y,
             pilot.Z,
-            pilot.Identity.AllianceId
+            pilot.Identity.AllianceId,
+            pilot.Identity.WarFaction
         );
 }
 

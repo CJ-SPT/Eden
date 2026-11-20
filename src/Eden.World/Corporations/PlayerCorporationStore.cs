@@ -91,7 +91,8 @@ internal sealed class PlayerCorporationStore(WorldDatabase database, TimeProvide
                     joined,
                     access,
                     CorporationWalletStore.SelectedKey(world, pilotId, corporation),
-                    world is EconomyTransaction ? world.Set<SavedAllianceMember>().Find(pilot.CorporationId)?.AllianceId : null
+                    world is EconomyTransaction ? world.Set<SavedAllianceMember>().Find(pilot.CorporationId)?.AllianceId : null,
+                    Eden.World.FactionWarfare.MilitiaEnlistmentStore.Effective(world, pilot)
                 );
             }
         );

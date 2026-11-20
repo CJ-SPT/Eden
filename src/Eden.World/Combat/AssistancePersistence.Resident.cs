@@ -5,6 +5,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Repair;
 using Eden.World.Catalog;
+using Eden.World.FactionWarfare;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -33,6 +34,7 @@ internal static partial class AssistancePersistence
         Eden.World.Sovereignty.EntosisPersistence.RequireAssistance(world, target.ActiveShipId, now);
         var timers = world.Set<SavedCrimewatch>().Find(target.Id)?.Timers() ?? CrimewatchTimers.Empty;
         int system = CrimewatchPersistence.System(catalog, source.ActiveShip);
+        var targetFaction = MilitiaEnlistmentStore.Effective(world, target);
         return AssistanceRules.Decide(
             new(
                 CrimewatchPersistence.Security(catalog, system),
@@ -41,7 +43,8 @@ internal static partial class AssistancePersistence
                 timers.Flag(now),
                 (world.Set<SavedSecurityStatus>().Find(target.Id)?.Value ?? 0) <= CrimewatchRules.OutlawSecurity,
                 world.Set<SavedEngagement>().Any(e => (e.LowerPilotId == target.Id || e.HigherPilotId == target.Id) && e.ExpiresAt > now),
-                timers.Pvp.Running(now)
+                timers.Pvp.Running(now),
+                timers.Pvp.Running(now) && targetFaction is not null && targetFaction != MilitiaEnlistmentStore.Effective(world, source)
             )
         );
     }

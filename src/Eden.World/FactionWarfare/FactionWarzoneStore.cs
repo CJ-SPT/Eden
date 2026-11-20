@@ -24,15 +24,21 @@ internal sealed class FactionWarzoneStore(WorldDatabase database) : IFactionWarz
 
     public WarzoneSystem? System(int systemId)
     {
+        if (!FactionWarzoneCatalog.Systems.ContainsKey(systemId))
+        {
+            return null;
+        }
+        return Resident.Economy.Inspect(world => System(world, systemId));
+    }
+
+    internal static WarzoneSystem? System(WorldAction world, int systemId)
+    {
         if (!FactionWarzoneCatalog.Systems.TryGetValue(systemId, out var seed))
         {
             return null;
         }
-        return Resident.Economy.Inspect(world =>
-        {
-            var occupations = world.Set<SavedWarzoneOccupation>();
-            return Read(seed, id => occupations.Find(id));
-        });
+        var occupations = world.Set<SavedWarzoneOccupation>();
+        return Read(seed, id => occupations.Find(id));
     }
 
     public ImmutableArray<WarzoneSystem> Systems() =>

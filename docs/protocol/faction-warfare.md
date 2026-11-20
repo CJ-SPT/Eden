@@ -1,11 +1,76 @@
 # Faction warfare
 
+## Individual enlistment and militia combat — November 20, 2026
+
+Pilots can join any of the four NPC empire militias at a station owned by that empire. An eligible player corporation
+member can instead enlist directly and keep their corporation. The CEO or a director sets which militias members may
+join. Both entry paths require nonnegative raw faction standings, a matching NPC station and no current enlistment.
+Joining an NPC militia from a player corporation also checks that corporation's existing departure rules.
+Self-retirement from an NPC militia uses the native corporation departure call and restores the pilot's original NPC
+corporation. Direct retirement starts the pinned 24-hour direct-enlistment cooldown. The deadline survives reopening
+and permits enrollment at equality. The corporation policy governs admission to direct enlistment.
+
+World schema 194 stores direct affiliation and its cooldown in the resident economy. NPC militia membership and
+history use ordinary corporation employment. Native session changes publish `warfactionid`. The enlistment notification
+and read both carry effective, direct and corporation faction IDs. Public character rows and ship slim items use the
+same authoritative affiliation. The corporation status and employment reads support the native Militia window.
+
+Only Amarr–Minmatar and Caldari–Gallente are hostile empire pairs. Opposing enlistees can fight at green safety,
+including in the same corporation. Paid attacks retain weapons and capsuleer-logoff timers and use the shared ship
+loss path. Militia legality by itself applies neither a suspect/criminal flag nor a limited engagement. Assistance
+from outside the recipient's militia while their capsuleer-logoff timer is active follows the shared highsec criminal
+and lowsec suspect rules. Ordinary Crimewatch checks still apply to neutral targets. An enemy enlistee can dock or
+undock only in a capsule at NPC stations and Upwell structures in Command Operations and Rearguard systems.
+Frontlines and friendly occupation retain the existing docking permissions.
+
+Inert build-3662168 inspection used `fwEnlistmentSvc.pyj`, `enlistmentChecks.pyj`, `facWarSvc.pyj`,
+`facwarCommon.pyj`, `dockableChecks.pyj` and `enlistmentUtil.pyj` from the staged archive identified below.
+The retirement button calls `corp.KickOut`, which dispatches `corpRegistry.KickOutMember`. The reference
+`fwCharacterEnlistmentMgrService.js` supplies the independent evejs comparison. Its hash is recorded below.
+The older `faction/facWarMgrService.js` hash is `0deb401e43bea36d4f01e7125135e1e46b840b4f15488c3168874d6c54ac9422`.
+The pinned client confirms the empire enemy pairs and the scope of the retirement cooldown.
+[EVE University](https://wiki.eveuniversity.org/Faction_warfare) ·
+[CCP docking rules](https://www.eveonline.com/news/view/patch-notes-version-20-10) ·
+[CCP neutral assistance clarification](https://forums.eveonline.com/t/devblog-war-war-sometimes-changes/142879/192)
+
+Hostile highsec navy pursuit, war-specific command burst filtering, and service or tether restrictions remain
+separate pieces of the enrollment and combat milestone. Complexes, LP and capture actions remain later milestones.
+
+**Automated validation.** The direct-enlistment flow passed its initial exact-method rerun in 6.83 seconds.
+The 420-case dependency run took 211.82 seconds and produced 416 passes and four failures. One failure caught
+the corporation faction lookup accepting an unknown corporation ID. The lookup now retains the original
+corporation validation. The other three assertions reproduced at the same lines on `bd8adb62`: two cases of
+`FutureLogisticsHullSelectorsHaveKnownConsumersWithoutEnablingTheirHullCohort` and one of
+`RestrictionsAndDuplicateFittingPreserveInventory`. They assert older hull admission boundaries.
+
+The corrected solution build passed in 23.31 seconds. The correction filter passed all 41 cases in 22.57
+seconds, including native join, retirement, occupation-based docking, corporation permissions and checkpoint
+reopen. Both Python policy suites passed (8 and 9 cases), as did tool and solution restores and formatting
+verification (40.75 seconds). The full .NET suite was outside these runs.
+
+Dependency filter
+
+```text
+FullyQualifiedName~FactionWarzone|FullyQualifiedName~MilitiaEnlistmentTests|FullyQualifiedName~CrimewatchTests|FullyQualifiedName~ConcordTests|FullyQualifiedName~RemoteAssistanceTests|FullyQualifiedName~RemoteRepairTests|FullyQualifiedName~CorporationAdministrationTests|FullyQualifiedName~CorporationScreenTests|FullyQualifiedName~CorporationShowInfoTests|FullyQualifiedName~CharacterSheetServiceTests|FullyQualifiedName~MapStartupTests|FullyQualifiedName~FlightSessionTests|FullyQualifiedName~StationUndockTests|FullyQualifiedName~StructureServiceTests|FullyQualifiedName~DockedServicesTests|FullyQualifiedName~WorldMigrationTests
+```
+
+Correction filter
+
+```text
+FullyQualifiedName~MilitiaEnlistmentTests|FullyQualifiedName~CorporationShowInfoTests|FullyQualifiedName~CorporationScreenTests|FullyQualifiedName~CharacterSheetServiceTests
+```
+
+**Live acceptance.** Not performed. Agent client testing is disabled.
+
+**Optional maintainer checks.** Check enlistment and retirement in the native Militia window. Observe the war-target
+icon on an opposing militia pilot.
+
 ## Resident warzone foundation — November 20, 2026
 
 Eden serves both empire warzones, their four militia headquarters, local and global occupation and victory-point
 reads, and the initial Advantage score query. A local read outside the warzones returns the pilot's system ID and
 Python None. HQ systems appear in the HQ directory. The Agency has no Faction Warfare complexes or battlefields
-to list yet. Enlistment and militia combat are the next implementation milestone.
+to list yet.
 
 The [embedded roster](../../src/Eden.Data/Catalog/FactionWarfare/warzone-roster-3662168.json) contains 70 systems
 in Amarr–Minmatar and 90 in Caldari–Gallente. The November 20

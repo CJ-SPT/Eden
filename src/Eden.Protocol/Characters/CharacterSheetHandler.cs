@@ -81,7 +81,10 @@ internal sealed class CharacterSheetHandler(
         if (
             (service == "charMgr" && method is "GetPublicInfo" or "GetPublicInfo3")
             || (service == "corpRegistry" && method == "GetInfoWindowDataForChar")
-            || (service == "corporationSvc" && method is "GetMedalsReceived" or "GetEmployementRecordAndCharacterTransfers")
+            || (
+                service == "corporationSvc"
+                && method is "GetMedalsReceived" or "GetEmployementRecordAndCharacterTransfers" or "GetEmploymentRecord"
+            )
             || (service == "facWarMgr" && method == "GetCharacterRankInfo")
         )
         {
@@ -90,6 +93,7 @@ internal sealed class CharacterSheetHandler(
                 return new PilotCallResult.Failure("Invalid public character request.");
             }
             var profile = sheet.ReadPublicProfile(id);
+            bool player = profile is not null;
             if (profile is null && npcs.Character(id) is { } npc)
             {
                 if (method == "GetPublicInfo")
@@ -116,13 +120,18 @@ internal sealed class CharacterSheetHandler(
             return method switch
             {
                 "GetPublicInfo3" => new PublicCharacterInfo3(profile),
-                "GetInfoWindowDataForChar" => sheet.ReadPublicProfile(id) is null
-                    ? new CharacterCorporationInfo(profile.CorporationId, AllianceId: alliances.Affiliation(profile.CorporationId))
-                    : PublicCorporationInfo(id, profile.CorporationId),
+                "GetInfoWindowDataForChar" => player
+                    ? PublicCorporationInfo(profile)
+                    : new CharacterCorporationInfo(profile.CorporationId, AllianceId: alliances.Affiliation(profile.CorporationId)),
                 "GetMedalsReceived" => new PublicCharacterMedals(),
+                "GetEmploymentRecord" => new CharacterEmploymentHistory(
+                    player ? corporations.Employment(id)
+                    : profile.CreatedAt is long born ? [new(profile.CorporationId, born)]
+                    : []
+                ),
                 "GetEmployementRecordAndCharacterTransfers" => new PublicCharacterEmployment(
                     profile,
-                    sheet.ReadPublicProfile(id) is null ? null : corporations.Employment(id)
+                    player ? corporations.Employment(id) : null
                 ),
                 "GetCharacterRankInfo" => PilotCallResult.None,
                 _ => new PublicCharacterInfo(profile),
@@ -131,15 +140,18 @@ internal sealed class CharacterSheetHandler(
         return PilotCallResult.Unsupported;
     }
 
-    private CharacterCorporationInfo PublicCorporationInfo(long pilotId, int corporationId)
+    private CharacterCorporationInfo PublicCorporationInfo(PublicCharacterProfile profile)
     {
+        long pilotId = profile.CharacterId;
+        int corporationId = profile.CorporationId;
         var member = corporations.Members(pilotId).Single(m => m.PilotId == pilotId);
         long mask = member.Access?.TitleMask ?? 0;
         return new(
             corporationId,
             member.Access?.Title ?? "",
             corporationRoles.Titles(pilotId).Where(t => (mask & t.Id) != 0).ToArray(),
-            alliances.Affiliation(corporationId)
+            alliances.Affiliation(corporationId),
+            (int?)profile.MilitiaFaction
         );
     }
 }

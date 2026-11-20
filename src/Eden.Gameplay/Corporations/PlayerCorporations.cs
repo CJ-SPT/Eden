@@ -1,3 +1,4 @@
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Market;
 
 namespace Eden.Gameplay.Corporations;
@@ -17,7 +18,8 @@ public sealed record CorporationDetails(
     CorporationDivisions? Divisions = null,
     CorporationCommunications? Communications = null,
     long RecruitmentRevision = 0,
-    long GovernanceRevision = 0
+    long GovernanceRevision = 0,
+    IReadOnlyList<MilitiaFaction>? AllowedMilitiaFactions = null
 );
 
 public sealed record PlayerCorporation(
@@ -59,7 +61,8 @@ public sealed record CorporationIdentity(
     long JoinedAt,
     CorporationMemberAccess? Access = null,
     int AccountKey = CorporationWalletRules.MasterKey,
-    int? AllianceId = null
+    int? AllianceId = null,
+    MilitiaFaction? WarFaction = null
 );
 
 public interface IPlayerCorporations

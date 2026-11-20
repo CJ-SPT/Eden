@@ -1,9 +1,11 @@
 using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Corporations;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Alliances;
 using Eden.Protocol.Docking;
+using Eden.Protocol.FactionWarfare;
 using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -19,7 +21,8 @@ internal sealed partial class CorporationHandler(
     ICorporationShares shares,
     ICorporationStorage storage,
     IAllianceMembership allianceMembership,
-    AllianceSocialMonitor allianceSocial
+    AllianceSocialMonitor allianceSocial,
+    IMilitiaEnlistment militia
 ) : ISelectedPilotCallHandler
 {
     public void Advance(PilotCallContext context)
@@ -38,6 +41,7 @@ internal sealed partial class CorporationHandler(
             && context.Pilot.Identity.CorporationAccess == identity.Access
             && context.Pilot.Identity.CorporationAccountKey == identity.AccountKey
             && context.Pilot.Identity.AllianceId == identity.AllianceId
+            && context.Pilot.Identity.WarFaction == identity.WarFaction
         )
         {
             return;
@@ -50,7 +54,12 @@ internal sealed partial class CorporationHandler(
         {
             context.ReleaseReference("allianceRegistry");
         }
+        bool militiaChanged = context.Pilot.Identity.WarFaction != identity.WarFaction;
         context.Flight.UpdateCorporation(identity);
+        if (militiaChanged)
+        {
+            context.Notifications.Add(new MilitiaEnlistmentUpdated(militia.Read(context.Pilot.PilotId)));
+        }
         context.Roster = context.Roster.Select(p => p.PilotId == context.Pilot.PilotId ? context.Pilot : p).ToArray();
     }
 

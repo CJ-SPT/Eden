@@ -55,7 +55,8 @@ public sealed record AggressionInputs(
     bool TargetCapsule,
     CrimewatchFlag TargetFlag,
     bool TargetOutlaw,
-    bool Engagement
+    bool Engagement,
+    bool MilitiaWarTarget = false
 );
 
 public sealed record AggressionDecision(CrimewatchFlag Flag, bool Engagement);
@@ -90,6 +91,10 @@ public static class CrimewatchRules
         if (input.Security <= 0)
         {
             return new(CrimewatchFlag.None, input.Engagement);
+        }
+        if (input.MilitiaWarTarget)
+        {
+            return new(CrimewatchFlag.None, false);
         }
         bool free = input.TargetFlag != CrimewatchFlag.None || input.TargetOutlaw;
         if (free || input.Engagement)

@@ -319,6 +319,7 @@ internal sealed record ShipSlimItem(ShipContact Ship) : SlimItem
         fields["charID"] = pilot.PilotId;
         fields["corpID"] = pilot.CorpId;
         fields["allianceID"] = pilot.AllianceId;
+        fields["warFactionID"] = (int?)pilot.WarFaction;
         fields["dirtTime"] = Ship.DirtTime;
         fields["modules"] = (Ship.Modules ?? [])
             .Select(module => (object?)new object?[] { module.ItemId, module.TypeId, module.FlagId })

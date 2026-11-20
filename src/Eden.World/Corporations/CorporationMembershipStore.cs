@@ -246,7 +246,16 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
         }
         var pilot = Pilot(world, pilotId);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        bool departed = RequestRemoval(world, catalog, actorId, pilot, Now);
+        bool departed;
+        if (Eden.Gameplay.FactionWarfare.MilitiaRules.CorporationFaction(pilot.CorporationId) is not null)
+        {
+            Eden.World.FactionWarfare.MilitiaEnlistmentStore.LeaveNpcMilitia(world, catalog, pilot, Now);
+            departed = true;
+        }
+        else
+        {
+            departed = RequestRemoval(world, catalog, actorId, pilot, Now);
+        }
         world.Commit();
         if (departed)
         {
@@ -274,6 +283,10 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
     {
         var actor = Pilot(world, actorId);
         var pilot = Pilot(world, pilotId);
+        if (Eden.Gameplay.FactionWarfare.MilitiaRules.CorporationFaction(pilot.CorporationId) is not null)
+        {
+            return actorId == pilotId ? new(true, "") : new(false, "Only the enrolled pilot may retire from this militia.");
+        }
         var corporation = world.Set<SavedCorporation>().Find(pilot.CorporationId);
         if (
             corporation is null
