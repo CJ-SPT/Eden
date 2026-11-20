@@ -113,6 +113,31 @@ internal sealed partial class CapsuleerScheduler
         _haulers.Remove(pilot);
     }
 
+    private void WakeObservedMiners(long elapsed, IReadOnlyList<SystemSimulationState> transitions)
+    {
+        if (transitions.Count == 0 || Live is not { } live)
+        {
+            return;
+        }
+        long pulse = checked(elapsed + TimeSpan.TicksPerSecond);
+        foreach (var state in transitions.Where(state => state.Mode == SystemSimulationMode.Activating))
+        {
+            foreach (long pilot in _systemAgents.GetValueOrDefault(state.SystemId) ?? [])
+            {
+                if (
+                    _running.Contains(pilot)
+                    && live.MinerCheckpoints.GetValueOrDefault(pilot)?.Work is { Activity: MinerActivity.Mining } work
+                    && Current[pilot].DueTicks == work.DueTicks
+                    && work.DueTicks > pulse
+                )
+                {
+                    // Publish a threat-check deadline while retaining the paid collection deadline in Work.
+                    WakePilot(pilot, pulse);
+                }
+            }
+        }
+    }
+
     private void SettleReadySystems(HumanActivitySnapshot activity)
     {
         foreach (var state in _systems.Observed())

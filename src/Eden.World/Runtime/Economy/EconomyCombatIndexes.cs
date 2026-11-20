@@ -83,8 +83,10 @@ internal sealed partial class ResidentEconomy
 
     internal bool MissileImpacted(long id) => _missileImpacts.ContainsKey(id);
 
+    internal bool HasIncomingNpcMissiles(long pilot) => _npcMissilePilots.ContainsKey(pilot);
+
     internal bool HasNpcMissileWork(long pilot, long oldest) =>
-        _npcMissilePilots.ContainsKey(pilot) || Volatile.Read(ref _oldestNpcMissileEnd) < oldest;
+        HasIncomingNpcMissiles(pilot) || Volatile.Read(ref _oldestNpcMissileEnd) < oldest;
 
     internal IEnumerable<long> ExpiredMissileHistory(long oldest, bool npcOnly) =>
         (npcOnly ? _npcMissileEnds : _reportedMissileEnds).TakeWhile(row => row.EndedAt < oldest).Select(row => row.Id);

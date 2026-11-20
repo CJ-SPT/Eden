@@ -5401,3 +5401,61 @@ Not performed. Agent client testing is disabled. The server logs describe behavi
 
 After deployment, compare completed actions per second, oldest queue delay and peak frame processing at about
 3,000 scheduled pilots.
+
+## Offscreen mining queue pressure
+
+The November 20 administration capture showed 2,126 scheduled pilots, 2,589 awaiting offscreen admission,
+628 jobs due and a 7.74-second oldest delay with one occupied system. The last pass spent 25.57 ms in simulation
+and preparation and 0.09 ms in scene and Local updates.
+
+Commit `07709a76` enrolled ordinary miners in offscreen simulation. The miner's scheduler still used the
+occupied-system path, so it scheduled a `Collect` job every second during a paid cycle. Each pulse ran the miner's
+combat and awareness checks. The diagnostic replay already backed up before the November 20 recruitment merge.
+
+The following 60-second runs copied the same frozen save, visited 450 communities, retained one observer and
+ran the production maintenance loop with 15-second checkpoint requests. The replay uses wall-clock scheduling,
+so initial lateness and actual scheduled counts differ by revision. The current-main run included seven seconds
+of sampled thread stacks. These short runs show queue pressure during startup and recovery.
+
+| Revision | Scheduled at end | Due at end | Oldest delay at end | Completed actions |
+| --- | ---: | ---: | ---: | ---: |
+| `9e2e42bc`, before offscreen expansion | 4,718 | 2,585 | 39.14 s | 7,444 |
+| `71af02a0`, before the recruitment merge | 5,000 | 3,411 | 70.53 s | 4,029 |
+| `002e999d`, after the recruitment merge | 5,000 | 3,267 | 68.87 s | 3,776 |
+| Paid-cycle scheduling patch | 5,000 | 3,049 | 64.06 s | 4,469 |
+
+The two 5,000-pilot runs started with oldest delays of 20.07 s on `002e999d` and 16.21 s with the patch.
+Oldest delay grew by about 48 s over each run, so this replay does not establish sustained capacity gains.
+After the 30-second warmup, the patched run's full-frame p95 was 30.87 ms and `GetRegionBest` p95 was
+52.17 ms. Peak checkpoint capture, detached projection and file write were 21.47 ms, 415.13 ms and 1.24 s.
+The scheduler reported zero failures in all four runs. Replay JSON, checkpoints and logs are retained under
+`artifacts/bot-capacity-20261120/`.
+
+An offscreen miner now schedules its next paid collection directly in Eden's safest security band when it has
+no nearby NPCs, aggressors, incoming missiles, tackle, active defense or available crew warnings. The ordinary
+cadence applies in occupied systems and belts with possible natural pirate spawns. Observing a sleeping miner
+restores the next one-second threat check without advancing its funded mining cycle. The saved progress still
+owns the collection time. The security rule comes from Eden's catalog and NPC spawn policy, with gameplay
+context from [EVE University's mining mission notes](https://wiki.eveuniversity.org/Mining_missions).
+
+### Automated validation
+
+The exact development filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerAmmunitionSupplyTests.UnobservedMinerAndPaidFactoryPauseAndResumeAcrossRestart`.
+It exercises an actual paid offscreen cycle, a warmed idle turn with zero SQL commands, connection opens and
+fit calculations, re-entry during the cycle, and continued mining and manufacturing after checkpoint reopen.
+The exact test passed in 12.12 seconds. The affected selection passed 71 tests in 47.92 seconds. It covered the
+miner, handoff, deadline, deadline performance, runtime, defense, occupied simulation and pilot activity tests.
+An earlier selection reported three failures that reproduced on unchanged `002e999d`. Two occupied-only tests
+expected remote work to pause, and one shopping theory expected an overpriced listing to be rejected. The final
+selection excluded those two methods and all three variants of the shopping method. Both Python policy suites
+passed, with eight catalog and nine formatting cases. The solution built in 8.31 seconds without warnings or errors.
+Style, CSharpier, line-width, documentation link and Git whitespace checks passed.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+Compare oldest due-job age after restart at a similar scheduled population and one occupied system.
