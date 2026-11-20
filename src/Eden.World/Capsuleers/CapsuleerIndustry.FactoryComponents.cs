@@ -21,7 +21,8 @@ internal sealed partial class CapsuleerIndustry
         SavedCorporation corporation,
         OwnedItem[] hangar,
         int product,
-        int shortage
+        int shortage,
+        SavedCorporation? reprocessingSponsor = null
     )
     {
         double security = ManufacturingCatalog.Security(catalog, factory.SystemId);
@@ -84,7 +85,7 @@ internal sealed partial class CapsuleerIndustry
                 .ToDictionary(part => part.Key, part => part.Value - (int)stock.GetValueOrDefault(part.Key));
             if (missing.Count > 0)
             {
-                if (RefineFactoryOre(world, catalog, factory, hangar, missing))
+                if (RefineFactoryOre(world, catalog, factory, hangar, missing, reprocessingSponsor))
                 {
                     return false;
                 }
@@ -118,10 +119,11 @@ internal sealed partial class CapsuleerIndustry
         CatalogDbContext catalog,
         DockedPilot factory,
         OwnedItem[] hangar,
-        IReadOnlyDictionary<int, int> missing
+        IReadOnlyDictionary<int, int> missing,
+        SavedCorporation? sponsor = null
     ) =>
         hangar.Any(item =>
             catalog.Definitions.Items.GetValueOrDefault(item.TypeId)?.CategoryId == (int)InventoryCategory.Asteroid
-            && refinery.RefineForProduction(world, catalog, factory.PilotId, factory.StationId, item, missing)
+            && refinery.RefineForProduction(world, catalog, factory.PilotId, factory.StationId, item, missing, sponsor)
         );
 }

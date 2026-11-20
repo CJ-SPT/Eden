@@ -5,6 +5,7 @@ namespace Eden.Gameplay.Structures;
 
 public static class StructureRules
 {
+    public const int FuelBlockGroup = 1136;
     public const long FirstStructureId = 1_000_000_000_000;
     public const int CategoryId = 65;
     public const int ServiceCategoryId = 66;

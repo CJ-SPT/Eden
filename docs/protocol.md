@@ -670,6 +670,8 @@ and paid NPC-station production on the human-active clock.
 resident factory cargo, and manufacturing pauses across logout and restart.
 [Fractured moon ore and paid reactions](protocol/capsuleers.md#fractured-moon-ore-and-paid-reactions) records the
 mining, refining, and hauling cycle after Athanor commissioning.
+[Athanor-to-Miner II chain](protocol/capsuleers.md#athanor-to-miner-ii-chain) records composite dependencies,
+factory freight, and production after bootstrap fuel is exhausted.
 
 | Topic | Coverage |
 | --- | --- |

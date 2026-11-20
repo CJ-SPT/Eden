@@ -281,7 +281,8 @@ internal sealed partial class CapsuleerIndustry
             case RefineryWork.Fuel:
                 PilotStructureStore.DepositFuel(world, catalog, owned, pilot, visit.Cargo!.ItemId, visit.Cargo.Quantity);
                 break;
-            case RefineryWork.StartExtraction when PilotStructureStore.ActiveExtraction(world, id) is null:
+            case RefineryWork.OnlineServices:
+            case RefineryWork.StartExtraction:
                 foreach (
                     var service in fitted.Where(service =>
                         !service.Online && s_refineryServices.Contains(world.Set<OwnedItem>().Find(service.ItemId)!.TypeId)
@@ -290,7 +291,10 @@ internal sealed partial class CapsuleerIndustry
                 {
                     PilotStructureStore.SetServiceOnline(world, catalog, owned, service.ItemId, true, now);
                 }
-                PilotStructureStore.Start(world, catalog, pilot.Id, id, MoonMiningRules.MinimumExtractionSeconds, now);
+                if (task.Work == RefineryWork.StartExtraction && PilotStructureStore.ActiveExtraction(world, id) is null)
+                {
+                    PilotStructureStore.Start(world, catalog, pilot.Id, id, MoonMiningRules.MinimumExtractionSeconds, now);
+                }
                 break;
         }
     }
