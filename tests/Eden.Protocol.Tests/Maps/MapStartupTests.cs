@@ -139,6 +139,12 @@ public sealed class MapStartupTests
             case "stationSvc":
                 Assert.Empty(Assert.IsType<List<object?>>(reply));
                 break;
+            case "fwWarzoneSolarsystem":
+                var warzones = Assert.IsType<Dictionary<long, object?>>(reply);
+                Assert.Equal(2, warzones.Count);
+                Assert.Equal(70, Assert.IsType<Dictionary<long, object?>>(warzones[1]).Count);
+                Assert.Equal(90, Assert.IsType<Dictionary<long, object?>>(warzones[2]).Count);
+                break;
             case "charMgr":
                 var row = Assert.IsType<BlueInstance>(reply);
                 Assert.Equal("utillib.KeyVal", row.Name);

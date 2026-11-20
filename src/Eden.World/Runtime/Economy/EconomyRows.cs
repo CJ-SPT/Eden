@@ -873,6 +873,7 @@ internal sealed partial class ResidentEconomy
         RegisterCorporationRemovals();
         RegisterAlliances();
         RegisterSovereigntyClaim();
+        RegisterWarzoneOccupation();
         RegisterSovereigntyHub();
         RegisterEntosisCycle();
         RegisterSovereigntyPrime();

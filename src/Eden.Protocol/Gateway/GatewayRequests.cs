@@ -1,6 +1,7 @@
 using System.Net;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Corporations;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Maps;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Gateway.Plans;
@@ -18,7 +19,8 @@ public sealed class GatewayRequests(
     ICharacterDirectory characters,
     IPlayerCorporations corporations,
     Eden.Gameplay.Sovereignty.ISovereigntyResources? sovereignty = null,
-    Eden.Protocol.Sovereignty.SovereigntyGatewayUpdates? sovereigntyUpdates = null
+    Eden.Protocol.Sovereignty.SovereigntyGatewayUpdates? sovereigntyUpdates = null,
+    IFactionWarzones? factionWarzones = null
 )
 {
     private readonly ByteString _instanceId = ByteString.CopyFrom(Guid.NewGuid().ToByteArray());
@@ -43,6 +45,7 @@ public sealed class GatewayRequests(
                         sovereigntyUpdates
                     )
             )
+            ?? (factionWarzones is null ? null : FactionActivityRequests.Read(type, payload, factionWarzones))
             ?? CorporationPaletteRequests.Read(type, payload, request.AuthoritativeContext, characters, corporations)
             ?? CelestialResourceRequests.Read(type, payload, celestialResources);
         IMessage? result =
