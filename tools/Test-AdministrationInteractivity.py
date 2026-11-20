@@ -11,7 +11,7 @@ from playwright.sync_api import expect, sync_playwright
 
 
 def main():
-    address, browser_name, culture = sys.argv[1:]
+    address, browser_name, culture, separator = sys.argv[1:]
     with sync_playwright() as playwright:
         browser = getattr(playwright, browser_name).launch(headless=True)
         page = browser.new_page(locale=culture)
@@ -135,7 +135,6 @@ def main():
         expect(page.get_by_role("heading", name="Session frame latency")).to_be_visible()
         expect(page.get_by_role("heading", name="Frame processing time")).to_be_visible()
         expect(page.get_by_role("heading", name="Frame start delay")).to_be_visible()
-        separator = "," if culture == "fr-FR" else "."
         expect(page.get_by_text(f"8{separator}00 ms", exact=True)).to_be_visible()
         expect(page.get_by_text(f"12{separator}00 ms", exact=True)).to_be_visible()
         expect(page.locator(".frame-readings").get_by_text(f"3{separator}00 ms", exact=True)).to_be_visible()

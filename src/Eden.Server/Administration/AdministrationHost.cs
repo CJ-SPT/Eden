@@ -20,6 +20,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 
 namespace Eden.Server.Administration;
 
@@ -68,6 +69,14 @@ internal static class AdministrationHost
         builder.Configuration.Sources.Clear();
         builder.WebHost.UseStaticWebAssets();
         builder.Logging.ClearProviders();
+        // Blazor handles circuit exceptions internally and reports them through the framework logger.
+        builder.Logging.SetMinimumLevel(LogLevel.None);
+        builder.Logging.AddFilter("Microsoft.AspNetCore.Components.Server.Circuits", LogLevel.Warning);
+        builder.Logging.AddConsole(options =>
+        {
+            options.LogToStandardErrorThreshold = LogLevel.Warning;
+            options.QueueFullMode = ConsoleLoggerQueueFullMode.DropWrite;
+        });
         builder.WebHost.ConfigureKestrel(options =>
         {
             options.Limits.MaxRequestBodySize = 8 * 1024 * 1024;

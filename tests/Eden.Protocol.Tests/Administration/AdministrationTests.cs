@@ -12,6 +12,7 @@ using Eden.Server.Administration;
 using Eden.World.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Eden.Protocol.Tests.Administration;
 
@@ -250,6 +251,18 @@ public sealed partial class AdministrationTests
             await App.DisposeAsync();
             World.Dispose();
         }
+    }
+
+    [Fact]
+    public async Task AdministrationLogsCircuitFailuresWithoutEnablingRoutineFrameworkMessages()
+    {
+        await using var fixture = await Fixture.Start();
+        var logs = fixture.App.Services.GetRequiredService<ILoggerFactory>();
+        var circuit = logs.CreateLogger("Microsoft.AspNetCore.Components.Server.Circuits.CircuitHost");
+        Assert.True(circuit.IsEnabled(LogLevel.Warning));
+        Assert.True(circuit.IsEnabled(LogLevel.Error));
+        Assert.False(circuit.IsEnabled(LogLevel.Information));
+        Assert.False(logs.CreateLogger("Microsoft.AspNetCore.Hosting.Diagnostics").IsEnabled(LogLevel.Warning));
     }
 
     [Fact]

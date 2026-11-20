@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using Eden.Gameplay.Configuration;
 using Eden.Infrastructure.Diagnostics;
@@ -16,7 +17,14 @@ public sealed partial class AdministrationTests
     [AdministrationBrowserFact]
     public async Task LiveSettingsStayInteractiveInFirefoxAndChromium()
     {
-        foreach (var (browser, host, culture) in new[] { ("firefox", "localhost", "fr-FR"), ("chromium", "127.0.0.1", "en-US") })
+        var cases = new[]
+        {
+            ("firefox", "localhost", "fr-FR"),
+            ("chromium", "127.0.0.1", "en-US"),
+            ("firefox", "localhost", "en-ZA"),
+            ("chromium", "localhost", "en-ZA"),
+        };
+        foreach (var (browser, host, culture) in cases)
         {
             await using var fixture = await Fixture.Start(liveWorld: true, culture: culture);
             var frames = fixture.World.Services.GetRequiredService<SessionFrameMonitor>();
@@ -34,6 +42,7 @@ public sealed partial class AdministrationTests
             start.ArgumentList.Add(new UriBuilder(fixture.Client.BaseAddress!) { Host = host }.Uri.ToString());
             start.ArgumentList.Add(browser);
             start.ArgumentList.Add(culture);
+            start.ArgumentList.Add(CultureInfo.GetCultureInfo(culture).NumberFormat.NumberDecimalSeparator);
             using var process = System.Diagnostics.Process.Start(start)!;
             var output = process.StandardOutput.ReadToEndAsync();
             var errors = process.StandardError.ReadToEndAsync();
@@ -48,7 +57,7 @@ public sealed partial class AdministrationTests
                     process.Kill(entireProcessTree: true);
                 }
             }
-            Assert.True(process.ExitCode == 0, browser + ": " + await output + await errors);
+            Assert.True(process.ExitCode == 0, $"{browser} at {host} ({culture}): {await output}{await errors}");
             var state = fixture.World.Services.GetRequiredService<IWorldConfiguration>().Read();
             Assert.Equal(1, state.Active.Id);
             Assert.Equal(3, state.Pending!.Id);

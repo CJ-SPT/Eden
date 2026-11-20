@@ -23,6 +23,20 @@ The final filter joined `AdministrationTests`, `WorldSettingsPageTests`, `Admini
 
 **Optional maintainer checks.** Update the reporter's server and edit the same setting in their browser.
 
+### English (South Africa) follow-up
+
+A later report saw the same banner on a build with the decimal validation fix. Firefox and Chromium both passed edits,
+fractional range validation, and repeated saves on `localhost` with `en-ZA` in both the server and the browser.
+The cause on the reported installation is still unknown. Eden now writes Blazor circuit warnings and errors to the server console so
+the exception behind a future reload banner can be identified. The browser still shows the generic banner.
+[ASP.NET Core circuit error handling](https://github.com/dotnet/aspnetcore/blob/v10.0.0/src/Components/Server/src/Circuits/CircuitHost.cs#L636-L664)
+
+**Automated validation.** The exact browser method passed in 39.31 seconds and the exact
+`AdministrationTests.AdministrationLogsCircuitFailuresWithoutEnablingRoutineFrameworkMessages` check passed in 5.99 seconds.
+The final `FullyQualifiedName~` filter joined `AdministrationTests`, `WorldSettingsPageTests` and
+`AdministrationComponentTests`. All 50 tests passed in 44.61 seconds with the opt-in browser checks enabled.
+Tool and solution restore, the build, both Python policy suites, and formatting passed in 111.39 seconds including the tests.
+
 ## Minimum corporation age for anchoring, November 16, 2026
 
 `settings.structures.minimumCorporationAgeDays` now controls the Upwell anchoring age gate. The default is **7** days,
