@@ -44,33 +44,55 @@ internal sealed partial class CapsuleerMiner
         {
             return false;
         }
-        const int cargoFlag = (int)InventoryFlag.Cargo;
-        Dictionary<long, int> loaded = [];
-        foreach (var stack in plan.Load)
-        {
-            var changes = PilotInventoryStore.Move(
-                world,
-                catalog,
-                pilotId,
-                Pilot.ShipId,
-                new([stack.ItemId], Pilot.StationId, cargoFlag, stack.Quantity),
-                Now
-            );
-            var aboard = changes.Single(change => change.Item.LocationId == Pilot.ShipId && change.Item.Quantity > 0).Item;
-            loaded[aboard.Id] = checked(loaded.GetValueOrDefault(aboard.Id) + stack.Quantity);
-        }
         _work = Work with
         {
-            FactoryStage = new(
-                plan.Structure.Id,
-                Pilot.StationId,
-                loaded.Select(stack => new CapsuleerFactoryCargo(stack.Key, stack.Value)).ToArray()
-            ),
+            FactoryStage = new(plan.Structure.Id, Pilot.StationId, LoadFactoryCargo(world, plan.Load)),
             FactorySupply = null,
         };
         UndockMiner();
         StartCourse(FactoryContact(catalog, plan.Structure), MinerActivity.Returning);
         return true;
+    }
+
+    private CapsuleerFactoryCargo[] LoadFactoryCargo(EconomyTransaction world, CapsuleerFactoryCargo[] cargo)
+    {
+        const int cargoFlag = (int)InventoryFlag.Cargo;
+        Dictionary<long, int> loaded = [];
+        foreach (var stack in cargo)
+        {
+            var changes = PilotInventoryStore.Move(
+                world,
+                _operation.Catalog,
+                pilotId,
+                Pilot.ShipId,
+                new([stack.ItemId], Pilot.DockedLocationId, cargoFlag, stack.Quantity),
+                Now
+            );
+            var aboard = changes.Single(change => change.Item.LocationId == Pilot.ShipId && change.Item.Quantity > 0).Item;
+            loaded[aboard.Id] = checked(loaded.GetValueOrDefault(aboard.Id) + stack.Quantity);
+        }
+        return loaded.Select(stack => new CapsuleerFactoryCargo(stack.Key, stack.Value)).ToArray();
+    }
+
+    private bool TryReturnMoonProducts(EconomyTransaction world, FactoryMoonSupply supply)
+    {
+        var cargo = CapsuleerIndustry.MoonCargoForStation(world, _operation.Catalog, Pilot, supply);
+        if (cargo.Length == 0)
+        {
+            return false;
+        }
+        var loaded = LoadFactoryCargo(world, cargo);
+        _work = Work with { FactoryStage = new(0, supply.StationId, loaded) };
+        ReturnFromFactory();
+        return true;
+    }
+
+    private void ReturnFromFactory()
+    {
+        var stage = Work.FactoryStage ?? new(0, Pilot.StationId, []);
+        _work = Work with { FactoryStage = stage with { StructureId = 0 } };
+        UndockMiner();
+        ReturnHome();
     }
 
     private void UnloadFactoryCargo(EconomyTransaction world)

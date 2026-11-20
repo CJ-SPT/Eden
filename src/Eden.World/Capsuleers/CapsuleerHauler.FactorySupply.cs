@@ -58,7 +58,7 @@ internal sealed partial class CapsuleerHauler
             {
                 return CompleteFactorySupply();
             }
-            _operation.MarketChanged |= shipment.Research is null;
+            _operation.MarketChanged |= shipment.Research is null && shipment.MoonSupply is null;
             _work = Work with { Freight = freight };
         }
         BeginSupplyJourney(delivery);

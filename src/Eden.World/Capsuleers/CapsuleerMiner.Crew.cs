@@ -51,9 +51,9 @@ internal sealed partial class CapsuleerMiner
                 )
                 && Distance(rock) <= AsteroidDefinitions.VisibilityRange
                 && (
-                    Work.Mercoxit is null
-                        ? Enum.IsDefined((MiningResourceGroup)rock.GroupId)
-                        : rock.GroupId == MiningDefinitions.MercoxitGroup
+                    Work.RefineryIceType is int ice ? rock.TypeId == ice
+                    : Work.Mercoxit is null ? Enum.IsDefined((MiningResourceGroup)rock.GroupId)
+                    : rock.GroupId == MiningDefinitions.MercoxitGroup
                 )
             )
             .MinBy(rock => (claimed.Contains(rock.Id), Distance(rock), rock.Id));

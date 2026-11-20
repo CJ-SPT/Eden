@@ -43,7 +43,13 @@ internal sealed partial class CapsuleerIndustry
 
     internal sealed record MoonMiningTrip(long ExtractionId, int MoonId, StaticSpaceObject Target);
 
-    internal static MoonMiningTrip? PlanMoonMining(EconomyTransaction world, CatalogDbContext catalog, DockedPilot pilot, long now)
+    internal static MoonMiningTrip? PlanMoonMining(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        DockedPilot pilot,
+        long now,
+        FactoryMoonSupply? supply = null
+    )
     {
         if (
             pilot.StationId == 0
@@ -53,6 +59,16 @@ internal sealed partial class CapsuleerIndustry
         {
             return null;
         }
+        HashSet<int>? required = supply is null
+            ? null
+            : PlanMoonInputs(
+                catalog,
+                supply,
+                Hangar(world, pilot.PilotId, pilot.StationId),
+                Hangar(world, pilot.PilotId, supply.StructureId)
+            )
+                .Inputs.Select(input => input.TypeId)
+                .ToHashSet();
         var fields = world
             .Filter<SavedMoonExtraction>(e => e.SystemId == pilot.SystemId)
             .Where(e => e.CorporationId == pilot.CorpId && e.FracturedAt.HasValue && e.FieldExpiresAt > now)
@@ -72,7 +88,17 @@ internal sealed partial class CapsuleerIndustry
         }
         var rocks = AsteroidFieldStore
             .List(world, catalog, pilot.SystemId)
-            .Where(rock => MoonMiningRules.IsMoonRock(rock.Id))
+            .Where(rock =>
+                MoonMiningRules.IsMoonRock(rock.Id)
+                && (
+                    required is null
+                    || catalog
+                        .Read(CatalogData.Client.Typematerials, (long)rock.TypeId)
+                        ?.Materials?.Any(material =>
+                            material.MaterialTypeID.HasValue && required.Contains((int)material.MaterialTypeID.Value)
+                        ) == true
+                )
+            )
             .ToLookup(rock => MoonMiningRules.ExtractionId(rock.Id));
         foreach (var field in fields)
         {
@@ -84,11 +110,11 @@ internal sealed partial class CapsuleerIndustry
         return null;
     }
 
-    internal void RefineMoonFeed(EconomyTransaction world, CatalogDbContext catalog, DockedPilot pilot)
+    internal void RefineMoonFeed(EconomyTransaction world, CatalogDbContext catalog, DockedPilot pilot, bool sponsored)
     {
         if (
             pilot.StationId == 0
-            || Employer(world, pilot.PilotId, pilot.CorpId) is null
+            || Employer(world, pilot.PilotId, pilot.CorpId) is not { } corporation
             || !world
                 .Filter<SavedStructure>(structure => structure.CorporationId == pilot.CorpId)
                 .AsEnumerable()
@@ -101,11 +127,11 @@ internal sealed partial class CapsuleerIndustry
         var grades = MoonMiningRules.OreTypes.ToHashSet();
         foreach (var ore in Hangar(world, pilot.PilotId, pilot.StationId).Where(item => grades.Contains(item.TypeId)))
         {
-            refinery.RefineForProduction(world, catalog, pilot.PilotId, pilot.StationId, ore, needed);
+            refinery.RefineForProduction(world, catalog, pilot.PilotId, pilot.StationId, ore, needed, sponsored ? corporation : null);
         }
     }
 
-    private sealed record MoonReactionBatch(ReactionRecipe Recipe, OwnedItem Formula, CapsuleerFactoryCargo[] Load);
+    private sealed record MoonReactionBatch(ReactionRecipe Recipe, OwnedItem Formula, CapsuleerFactoryCargo[] Load, bool Assigned);
 
     private static bool CanRunComposite(
         WorldAction world,
@@ -125,7 +151,8 @@ internal sealed partial class CapsuleerIndustry
         CatalogDbContext catalog,
         DockedPilot pilot,
         SavedStructure structure,
-        OwnedItem[] origin
+        OwnedItem[] origin,
+        long now
     )
     {
         if (!CanRunComposite(world, catalog, pilot, structure, StructureService.CompositeReactions))
@@ -135,14 +162,21 @@ internal sealed partial class CapsuleerIndustry
         var feed = catalog.Definitions.GlobalDefinition(s_moonReactionFeed);
         var recipes = ReactionCatalog.Recipes(catalog);
         var local = Hangar(world, pilot.PilotId, structure.Id);
-        foreach (var formula in local.Concat(origin))
+        var supply = AssignedMoonSupply(world, pilot, now);
+        var station = supply is not null && pilot.InStructure ? Hangar(world, pilot.PilotId, supply.StationId) : origin;
+        var formulas = supply?.StructureId == structure.Id ? PlanMoonInputs(catalog, supply, station, local).Formulas : null;
+        var items = local.Concat(origin).ToLookup(item => item.TypeId);
+        foreach (var formula in formulas is null ? local.Concat(origin) : formulas.SelectMany(type => items[type]))
         {
             if (
                 formula.BlueprintRuns >= 0
                 || !recipes.TryGetValue(formula.TypeId, out var recipe)
                 || recipe.Service != StructureService.CompositeReactions
-                || !recipe.Materials.Any(material => feed.ContainsKey((int)material.TypeId!.Value))
-                || local.Any(item => item.TypeId == recipe.Output)
+                || formulas is null
+                    && (
+                        !recipe.Materials.Any(material => feed.ContainsKey((int)material.TypeId!.Value))
+                        || local.Any(item => item.TypeId == recipe.Output)
+                    )
                 || PilotIndustryStore.IsInstalled(world, formula.Id)
                 || recipe.Skills.Any(skill => PilotSkillReader.Level(world, catalog, pilot.PilotId, skill.TypeId) < skill.Level)
             )
@@ -152,7 +186,7 @@ internal sealed partial class CapsuleerIndustry
             var materials = IndustryMaterials.Calculate(recipe.Materials, MoonReactionRuns);
             if (FactoryCargo(structure.Id, formula, materials, local, origin) is { } load)
             {
-                return new(recipe, formula, load);
+                return new(recipe, formula, load, formulas is not null);
             }
         }
         return null;
@@ -167,7 +201,7 @@ internal sealed partial class CapsuleerIndustry
         long now
     )
     {
-        if (PlanMoonReaction(world, catalog, pilot, structure, []) is not { } batch)
+        if (PlanMoonReaction(world, catalog, pilot, structure, [], now) is not { } batch)
         {
             return false;
         }

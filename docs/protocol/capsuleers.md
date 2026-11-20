@@ -999,6 +999,25 @@ and performed no fitting calculations. The initial integration filter passed 77 
 alliances, escorted freight, checkpoint migrations and the matched session-frame workload. Build took 21.27 seconds and
 both Python policy suites passed.
 
+The merge with the Athanor production work on `6f62966d` passed 75 focused tests in 73 seconds. The filter combined
+`CapsuleerCorporationTests`, `CapsuleerAllianceTests`, `CorporationMembershipTests`, `CorporationRecruitmentTests`,
+`AdministrationInteractionTests`, `CapsuleerHandoffTests`, `WorldMigrationTests` and `AreaWeaponPersistenceTests`
+with `EscortFollowsOwnedFreightAndCompletesOnlyAfterItsActualDelivery`, `RegionalTradePaysForTwoLossesWithBountyTaxAndProductionMargin`,
+`UnobservedMinerAndPaidFactoryPauseAndResumeAcrossRestart` and `BotsDeliverTwoMinerTwoBatchesAcrossRestartsAndReplaceBootstrapReactionFuel`.
+The solution built in 20.90 seconds. Both Python policy suites and format verification passed.
+
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerDeadlinePerformanceTests.MatchedMaintenanceFramesPreserveJobsAndAssetsWithFewerIdleTurns`
+passed three cases in nine seconds on the `3229a079` baseline and on the integrated tree. Both revisions ran ten due
+turns per case. SQL commands, connections and fitting calculations matched for each case. The table compares total
+measured session-frame time and checkpoint phases in local fixtures. Longer dedicated-server capacity and roster pacing
+remain unmeasured.
+
+| Observation | Session frames, ms | Allocation, bytes | SQL commands / connections / fits | Checkpoint capture / project / write, ms |
+| --- | --- | --- | --- | --- |
+| One distant observer | 57.79 → 65.43 | 17,956,328 → 18,151,648 | 31 / 2 / 8 | 0.50 / 0.94 / 16.08 → 0.52 / 0.98 / 16.01 |
+| One local observer | 27.61 → 21.66 | 10,210,200 → 10,040,816 | 1 / 1 / 0 | 0.76 / 0.89 / 16.57 → 0.67 / 0.84 / 18.77 |
+| Two local observers | 36.65 → 38.14 | 16,533,648 → 16,656,984 | 1 / 1 / 0 | 0.56 / 0.93 / 15.47 → 0.49 / 0.87 / 18.45 |
+
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** Read a working corporation's roster report after a longer dedicated-server session.
@@ -3871,6 +3890,9 @@ None.
 
 ## Fractured moon ore and paid reactions
 
+The subsequent [Athanor-to-Miner II chain](#athanor-to-miner-ii-chain) adds funded demand, composite reaction dependencies,
+factory freight, and replacement fuel. This section records the original one-reaction milestone.
+
 A miner based at a same-system NPC reprocessing station can work an unexpired fracture from its corporation's Athanor.
 The saved extraction ID and native rock IDs limit the trip to that field. The miner uses a fitted laser and the regular
 capacitor, ore hold, and collection rules. It returns with a whole reprocessing portion or a full hold, and the native
@@ -3913,3 +3935,57 @@ Not performed. Agent client testing is disabled.
 ### Optional maintainer checks
 
 None.
+
+## Athanor-to-Miner II chain
+
+A funded Miner II order can assign a corporate miner to an owned Athanor and a reachable NPC station with
+market, reprocessing, and manufacturing services. The factory plans advanced component shortages from catalog
+recipes. The operator works backward from those needs through the composite reactions, accounting for stock at
+the station, in the reactor hangar, and in corporate freight. The miner reprocesses moon ore with corporate funds,
+sources complementary inputs and formulas through ordinary supply, and stages batches in loads that fit the ship.
+
+The operator returns required reaction output to the NPC station. A corpmate physically hauls owned stacks
+to the requesting factory, where jobs make Photon Microprocessors and Laser Focusing Crystals. The existing
+copying, invention, and Miner II jobs deliver stock for the funded order. Jobs, cargo and escrow retain their
+normal resident ownership, checkpoint, and human-active clock rules.
+
+Service fuel and the fuel each reaction consumes are budgeted separately. The operator manufactures blocks from
+owned and paid inputs. A fitted ice harvester can work eligible local public ice sites. The NPC station reprocesses
+ice. A courier deposits service fuel, brings services online, and starts the next extraction when the old field
+is gone. The published recipe graph comes from build 3662168. The EVE.js moon-fracture reference remains the
+snapshot recorded above. [Tech II manufacturing](industry.md#tech-ii-manufacturing-integration) ·
+[Supply audit](../tech-two-supply-audit.json) · [CCP reactions](https://support.eveonline.com/hc/en-us/articles/115005405785-Reactions)
+
+### Automated validation
+
+The scheduler replay starts with a commissioned Athanor, complementary stock, one owned ice block, and bootstrap
+fuel. It uses an isolated catalog with controlled material counts, job durations, and invention chance. The only
+human is in another system. The replay reopens during a paid reaction and service outage, with courier cargo on
+board, and during final manufacturing. After the first sale, the service fuel runs out and the old field expires.
+The bots reprocess the ice, manufacture replacement fuel, fill the Athanor, and start a second extraction.
+After another reopen, they mine the new field and sell the second module. The test checks job outputs, corporate
+charges, cargo, and settled escrow. It does not establish supply availability with the unmodified catalog, live
+ice acquisition, or dedicated-server pacing.
+
+The exact filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.CapsuleerAmmunitionSupplyTests.BotsDeliverTwoMinerTwoBatchesAcrossRestartsAndReplaceBootstrapReactionFuel`.
+The replay passed in 45.48 seconds including runner startup. An initial affected run found that corporate
+reprocessing charges had also reached the original single-reaction flow. Restricting those charges to assigned
+Miner II supply preserved that flow. Its exact filter passed in 13.15 seconds.
+
+The affected selection passed 105 cases in 1 minute 51 seconds. The filter matched
+`CapsuleerAmmunitionSupplyTests`, `CapsuleerMinerTests`, `CapsuleerHaulerTests`, `MoonExtractionTests`,
+`MoonMiningRulesTests`, `MoonMiningWarpTests`, `ReactionJobTests`, `ReprocessingTests`, `IceMiningTests`,
+and `WorldMigrationTests` by fully qualified name. The build, both Python policy suites, formatting,
+and whitespace checks passed. This sequence took 156.35 seconds. After requiring a core and all three fitted
+services before assigning a refinery, the final build and five focused cases passed. Those cases cover the
+two-batch replay, the original single reaction, and the three refinery commissioning scenarios
+(`BotsBuildAndCommissionTheirMoonRefineryAcrossRestarts`). Tests took 58 seconds and the final run took 88.84 seconds.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Observe the refinery and destination factory during a funded Miner II order.

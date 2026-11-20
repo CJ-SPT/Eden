@@ -62,7 +62,7 @@ internal sealed partial class CapsuleerMiner
         int index = Array.IndexOf(expedition.Systems, Pilot.SystemId);
         if (index < 0)
         {
-            throw new InvalidDataException("The miner has left its Mercoxit route.");
+            throw new InvalidDataException("The miner has left its expedition route.");
         }
         _work = Work with { Mercoxit = expedition, WorkingBelt = 0 };
         int next = index + (expedition.Returning ? -1 : 1);
@@ -70,12 +70,16 @@ internal sealed partial class CapsuleerMiner
         {
             var gate =
                 _objects.FirstOrDefault(body => body.DestinationSystemId == expedition.Systems[next])
-                ?? throw new InvalidDataException("A gate on the Mercoxit route is unavailable.");
+                ?? throw new InvalidDataException("A gate on the mining expedition route is unavailable.");
             StartCourse(gate, MinerActivity.FlyingToGate);
         }
         else if (expedition.Returning)
         {
             StartCourse(_objects.Single(body => body.Id == expedition.StationId), MinerActivity.Returning);
+        }
+        else if (expedition.RefineryStationId > 0)
+        {
+            StartCourse(_objects.Single(body => body.Id == expedition.RefineryStationId), MinerActivity.Returning);
         }
         else if (NextBelt(out _, out _) is { } field)
         {
@@ -110,7 +114,7 @@ internal sealed partial class CapsuleerMiner
     {
         if (_target?.DestinationGateId is not int exit)
         {
-            throw new InvalidDataException("The mining route jump has no reciprocal gate.");
+            throw new InvalidDataException("The miner's jump has no reciprocal gate.");
         }
         var world = _operation.World;
         var transfer = PilotGateTravelStore.TransferDetailed(world, _operation.Catalog, pilotId, Pilot.ShipId, _target.Id, exit, Now);

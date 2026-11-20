@@ -561,10 +561,14 @@ internal sealed partial class CapsuleerMiner(
                 Work.FactoryStage is { StructureId: > 0 } stage && Work.TargetId == stage.StructureId
                     ? FactoryTarget(world, catalog, stage.StructureId)
                     : null;
+            var iceTarget =
+                Work.RefineryIceType.HasValue && Work.Activity == MinerActivity.FlyingToBelt
+                    ? AsteroidFieldStore.List(world, catalog, Pilot.SystemId).FirstOrDefault(rock => rock.Id == Work.TargetId)
+                    : null;
             transaction.Commit();
             transaction.Dispose();
             RefreshObjects();
-            _target = stagedReturn ?? _objects.FirstOrDefault(o => o.Id == Work.TargetId);
+            _target = stagedReturn ?? iceTarget ?? _objects.FirstOrDefault(o => o.Id == Work.TargetId);
             if (Work.WorkingBelt == 0 && _target is { GroupId: AsteroidDefinitions.BeltGroup } belt)
             {
                 _work = Work with { WorkingBelt = belt.Id };
@@ -731,13 +735,63 @@ internal sealed partial class CapsuleerMiner(
             && _operation.World is EconomyTransaction supplyWorld
         )
         {
-            industry.RefineMoonFeed(supplyWorld, _operation.Catalog, Pilot);
+            var moonSupply = CapsuleerIndustry.AssignedMoonSupply(supplyWorld, Pilot, Now);
+            industry.RefineMoonFeed(supplyWorld, _operation.Catalog, Pilot, sponsored: moonSupply is not null);
+            if (moonSupply is not null && TryTravelToMoonSupply(moonSupply))
+            {
+                return;
+            }
+            if (moonSupply is not null && TryReturnMoonProducts(supplyWorld, moonSupply))
+            {
+                return;
+            }
             if (TryStageFactory(supplyWorld))
             {
                 return;
             }
-            _operation.MarketChanged |= industry.ProduceScheduled(supplyWorld, _operation.Catalog, Pilot, Now, out supply);
-            moon = CapsuleerIndustry.PlanMoonMining(supplyWorld, _operation.Catalog, Pilot, Now);
+            if (moonSupply is not null && !Pilot.InStructure)
+            {
+                industry.SettleMoonStationJobs(supplyWorld, _operation.Catalog, Pilot, Now);
+            }
+            else
+            {
+                _operation.MarketChanged |= industry.ProduceScheduled(supplyWorld, _operation.Catalog, Pilot, Now, out supply);
+            }
+            if (moonSupply is not null)
+            {
+                if (TryReturnMoonProducts(supplyWorld, moonSupply))
+                {
+                    return;
+                }
+                if (Pilot.InStructure)
+                {
+                    if (CapsuleerIndustry.HasPendingMoonJob(supplyWorld, Pilot.PilotId))
+                    {
+                        _work = Work with { DueTicks = Work.ActiveTicks + TimeSpan.FromSeconds(HaulingRules.PollSeconds).Ticks };
+                    }
+                    else
+                    {
+                        ReturnFromFactory();
+                    }
+                    return;
+                }
+                _operation.MarketChanged |= industry.PrepareMoonSupply(
+                    supplyWorld,
+                    _operation.Catalog,
+                    Pilot,
+                    moonSupply,
+                    Now,
+                    out var supplies,
+                    out var ice
+                );
+                supply ??= supplies;
+                if (ice.Length > 0 && TryLaunchRefineryIce(supplyWorld, aboard, ice))
+                {
+                    _work = Work with { FactorySupply = supply };
+                    return;
+                }
+            }
+            moon = CapsuleerIndustry.PlanMoonMining(supplyWorld, _operation.Catalog, Pilot, Now, moonSupply);
         }
         _work = Work with { FactorySupply = supply };
         if (_operation.World is EconomyTransaction resident)
@@ -1016,7 +1070,14 @@ internal sealed partial class CapsuleerMiner(
                 Eden.World.Combat.Npcs.NpcCombatStore.Disengage(_operation.World, _operation.Catalog, Pilot.ShipId);
                 _navigation.Dock();
                 _operation.TravelChanged = true;
-                _work = Work with { Activity = MinerActivity.Docked, TargetId = 0, Mercoxit = null, MoonExtractionId = null };
+                _work = Work with
+                {
+                    Activity = MinerActivity.Docked,
+                    TargetId = 0,
+                    Mercoxit = null,
+                    MoonExtractionId = null,
+                    RefineryIceType = null,
+                };
                 FinishCorporationRelocation();
             }
             else
@@ -1042,7 +1103,7 @@ internal sealed partial class CapsuleerMiner(
         var rock = SelectRock(available);
         if (rock is null)
         {
-            if (Work.MoonExtractionId.HasValue)
+            if (Work.MoonExtractionId.HasValue || Work.RefineryIceType.HasValue)
             {
                 ReturnHome();
                 return;

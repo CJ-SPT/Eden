@@ -130,8 +130,13 @@ internal sealed partial class CapsuleerIndustry
         var inputCopy = copies.FirstOrDefault(item => item.TypeId == Rules.Original);
         var original = hangar.FirstOrDefault(item => item.TypeId == Rules.Original && item.BlueprintRuns < 0);
         int runs = Math.Min(Rules.BatchSize, invented?.BlueprintRuns ?? recipe.InventedRuns);
+        var bid = bids.FirstOrDefault();
+        if (bid is not null)
+        {
+            runs = Math.Min(runs, (int)Math.Ceiling((double)bid.Remaining / recipe.Manufacturing.OutputQuantity));
+        }
         int quantity = checked(runs * recipe.Manufacturing.OutputQuantity);
-        long price = Math.Max(bids.FirstOrDefault()?.PriceCents ?? 0, ReferencePrice(catalog, Rules.Module));
+        long price = Math.Max(bid?.PriceCents ?? 0, ReferencePrice(catalog, Rules.Module));
         if (price <= 0)
         {
             return null;
@@ -255,6 +260,15 @@ internal sealed partial class CapsuleerIndustry
             }
             if (s_minerTwoReactionComponents.Any(missing.ContainsKey))
             {
+                if (bid is not null && FindMoonSupply(world, catalog, operatorPilot, hangar, missing) is { } moon)
+                {
+                    supply = (supply ?? new(corporation.Id, station, null, [])) with
+                    {
+                        MoonSupply = moon,
+                        Demand = new(bid.Id, bid.PriceCents, Math.Min(bid.Remaining, quantity)),
+                    };
+                    return null;
+                }
                 var construction = BuildMoonRefinery(world, catalog, operatorPilot, corporation, hangar, now, out var equipment);
                 if (equipment is not null)
                 {

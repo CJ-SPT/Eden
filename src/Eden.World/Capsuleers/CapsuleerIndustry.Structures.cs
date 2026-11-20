@@ -65,9 +65,8 @@ internal sealed partial class CapsuleerIndustry
                 }
                 continue;
             }
-            var cargo =
-                PlanMoonReaction(world, catalog, pilot, structure, origin)?.Load
-                ?? PlanStructureProduction(world, catalog, pilot, structure, origin)?.Load;
+            var reaction = PlanMoonReaction(world, catalog, pilot, structure, origin, now);
+            var cargo = reaction?.Load ?? PlanStructureProduction(world, catalog, pilot, structure, origin)?.Load;
             if (cargo is null)
             {
                 continue;
@@ -82,6 +81,26 @@ internal sealed partial class CapsuleerIndustry
             if (load <= capacity - used)
             {
                 return new(structure, cargo);
+            }
+            if (reaction?.Assigned == true)
+            {
+                double free = capacity - used;
+                List<CapsuleerFactoryCargo> partial = [];
+                foreach (var stack in cargo)
+                {
+                    var item = origin.Single(item => item.Id == stack.ItemId);
+                    double volume = item.VolumeOverride ?? PilotInventoryStore.Volume(catalog, item.TypeId, item.Singleton);
+                    int units = volume > 0 ? (int)Math.Clamp(Math.Floor(free / volume), 0, stack.Quantity) : stack.Quantity;
+                    if (units > 0)
+                    {
+                        partial.Add(stack with { Quantity = units });
+                        free -= units * volume;
+                    }
+                }
+                if (partial.Count > 0)
+                {
+                    return new(structure, partial.ToArray());
+                }
             }
         }
         return null;
