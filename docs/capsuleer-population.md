@@ -74,6 +74,10 @@ keep their employment choices. The first bot founder in each headquarters system
 and a one-time allowance for the normal 1,599,800 ISK fee. Later founders there need the skill and pay from their
 own wallets. See the [implementation and validation record](protocol/capsuleers.md#bot-led-player-corporations).
 
+New charters draw from several naming styles and save their chosen name, ticker and logo at founding. Existing
+charters retain their names unless an administrator confirms a refresh for a legacy-generated bot charter with
+no human members. [Bot corporation identities](protocol/capsuleers.md#bot-corporation-identities)
+
 ### Recruiting and joining
 
 Open a bot corporation in Show Info and use **Apply to Join**. If applications are open and the corporation has room,

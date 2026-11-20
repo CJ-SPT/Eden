@@ -34,6 +34,74 @@ public sealed class CapsuleerCorporationTests
     private const long Human = 90000001;
 
     [Fact]
+    public void SeededCharterIdentitiesHaveVarietyAndResolveCollisions()
+    {
+        HashSet<string> names = new(StringComparer.OrdinalIgnoreCase);
+        HashSet<string> tickers = new(StringComparer.OrdinalIgnoreCase);
+        int retries = 0;
+        for (int founder = 0; founder < 500; founder++)
+        {
+            CorporationDetails Draw(int attempt) =>
+                CapsuleerCorporationRules.Identity("Jita", 27, Human + founder, "Ria Vey", attempt, founder % 2 == 0, false);
+            var first = Draw(0);
+            Assert.Equal(first, Draw(0));
+            Assert.False(first.Name.StartsWith("Jita", StringComparison.Ordinal));
+            Assert.Contains("Jita", first.Description);
+            var accepted = Enumerable
+                .Range(0, CapsuleerCorporationRules.MaximumIdentityAttempts)
+                .First(attempt => !names.Contains(Draw(attempt).Name) && !tickers.Contains(Draw(attempt).Ticker));
+            retries += accepted;
+            var identity = Draw(accepted);
+            Assert.True(names.Add(identity.Name));
+            Assert.True(tickers.Add(identity.Ticker));
+        }
+        Assert.Equal(500, names.Count);
+        Assert.InRange(retries, 1, 500);
+        Assert.Contains(names, name => !name.Contains(' '));
+        Assert.Contains(names, name => name.Contains("Cooperative", StringComparison.Ordinal));
+        Assert.Contains(names, name => name.StartsWith("Vey ", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task LegacyRenameRequiresMatchingPreviewAndRefreshesResidentOwnerName()
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
+        PrepareExistingSave(fixture);
+        CapsuleerCorporationNamePreview preview;
+        using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+            int id;
+            using (var world = live.Economy.Begin(TransactionParticipants.None))
+            {
+                long founder = world.Filter<SavedCapsuleerAgent>(agent => agent.CommunitySystemId == Home).First().PilotId;
+                Assert.True(CapsuleerCorporations.Place(world, catalog, fixture.Database, founder, fixture.Clock.Now));
+                var charter = Assert.Single(world.Set<SavedCorporation>());
+                id = charter.Id;
+                long seed = world.Set<SavedCapsuleerProvisioning>().Find(1)?.WorldSeed ?? 0;
+                var legacy = CapsuleerCorporationRules.LegacyIdentity(catalog.RequireSystem(Home).Name, seed, Home, 0, true, false);
+                charter.Name = legacy.Name;
+                charter.Ticker = legacy.Ticker;
+                charter.DetailsJson = System.Text.Json.JsonSerializer.Serialize(legacy);
+                world.Commit();
+            }
+            var store = new CapsuleerCorporationIdentityStore(fixture.Database);
+            preview = Assert.IsType<CapsuleerCorporationNamePreview>(store.Preview(id));
+            var directory = host.GetRequiredService<IPlayerCorporationDirectory>();
+            Assert.Equal(preview.CurrentName, Assert.Single(directory.Read([id])).Name);
+            Assert.False(store.Apply(preview with { CurrentName = "Stale charter" }));
+            Assert.True(store.Apply(preview));
+            Assert.Null(store.Preview(id));
+            Assert.Equal(preview.ProposedName, Assert.Single(directory.Read([id])).Name);
+            await live.FlushAsync();
+        }
+        using var reopened = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var identity = reopened.GetRequiredService<IPlayerCorporations>().Read(preview.CorporationId)!;
+        Assert.Equal((preview.ProposedName, preview.Ticker), (identity.Details.Name, identity.Details.Ticker));
+    }
+
+    [Fact]
     public async Task ExistingSchoolPilotsFoundAndJoinOnceAcrossCheckpointAndRestart()
     {
         using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);

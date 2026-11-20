@@ -4,6 +4,7 @@ using Eden.Data.Catalog;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Skills;
+using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Skills;
 using Microsoft.AspNetCore.Authorization;
@@ -44,6 +45,7 @@ internal sealed partial class AdministrationOperations(
     Eden.World.Modding.ModStore mods,
     Eden.Server.Modding.ModPublisher modPublisher,
     Eden.World.Storage.WorldDatabase database,
+    CapsuleerCorporationIdentityStore corporationIdentities,
     IRegionalConflictDiagnostics? regionalConflicts = null
 )
 {
@@ -86,6 +88,18 @@ internal sealed partial class AdministrationOperations(
         {
             RegionalConflicts = regionalConflicts?.ReadConflicts() ?? [],
         };
+    }
+
+    internal async Task<CapsuleerCorporationNamePreview?> PreviewCorporationName(ClaimsPrincipal user, int id)
+    {
+        await Authorize(user);
+        return corporationIdentities.Preview(id);
+    }
+
+    internal async Task<bool> ApplyCorporationName(ClaimsPrincipal user, CapsuleerCorporationNamePreview preview)
+    {
+        await Authorize(user);
+        return corporationIdentities.Apply(preview);
     }
 
     internal async Task<ConfigurationRevision> Revision(ClaimsPrincipal user, long id)

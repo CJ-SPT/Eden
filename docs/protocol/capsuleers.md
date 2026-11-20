@@ -897,6 +897,31 @@ Not performed. Agent client testing is disabled.
 
 In the client, find a bot-made Iron Charge S ask and verify the resulting trade in the corporation wallet.
 
+## Bot corporation identities
+
+New charters generate a name and ticker from the saved seed and founder, with independent palette selection.
+The generator draws compound names, named companies, cooperatives, and two-word names. Role and system go in
+the description. Founding checks names and tickers against the existing resident and catalog owner namespaces.
+The charter stores the accepted candidate, so changing headquarters leaves the identity intact.
+
+Existing charters keep their names. A signed-in administrator can preview one charter with
+`GET /api/admin/population/corporations/{id}/name`. The preview requires an exact match against the legacy generator,
+a current bot CEO, and zero human members. To confirm, send the preview as JSON to
+`POST /api/admin/population/corporations/name` with the administrator antiforgery token. Eden rechecks eligibility,
+the old name, and the proposed name in the resident transaction. The corporation ID and ticker stay the same.
+The name update is published through the existing owner-directory revision and saved in the next world checkpoint.
+[Recruitment, relocation, and identity plan](../bot-corporation-plan.md#1-give-new-corporations-distinct-identities)
+
+**Automated validation.** The baseline founding checkpoint replay passed. The fixed-seed 500-founder sample produced
+500 distinct accepted names and tickers after collision retries. The legacy replay checked stale and successful
+confirmation, immediate directory reads, and checkpoint reopen. The focused filter
+`FullyQualifiedName~CapsuleerCorporationTests|FullyQualifiedName~PlayerCorporationTests|FullyQualifiedName~CorporationHeadquartersTests|FullyQualifiedName~AdministrationInteractionTests`
+passed 26 tests in 18 seconds. The solution built in 3.61 seconds. Both Python policy suites and format verification passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None.
+
 ## Bot corporation recruitment and gangs
 
 Schema 188 opens applications for existing active bot-led charters. New bot charters start open. The bot CEO uses the existing

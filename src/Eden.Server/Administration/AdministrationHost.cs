@@ -99,6 +99,7 @@ internal static class AdministrationHost
         builder.Services.AddSingleton(worldServices.GetRequiredService<ICapsuleerPopulation>());
         builder.Services.AddSingleton(worldServices.GetRequiredService<ICapsuleerDiagnostics>());
         builder.Services.AddSingleton(worldServices.GetRequiredService<ICapsuleerScene>());
+        builder.Services.AddSingleton(worldServices.GetRequiredService<Eden.World.Capsuleers.CapsuleerCorporationIdentityStore>());
         builder.Services.AddSingleton(
             new ServerPerformanceMonitor(
                 TimeProvider.System,
@@ -303,6 +304,18 @@ internal static class AdministrationHost
             }
         );
         api.MapGet("/population", (ClaimsPrincipal user, AdministrationOperations operations) => operations.Population(user));
+        api.MapGet(
+            "/population/corporations/{id:int}/name",
+            (ClaimsPrincipal user, AdministrationOperations operations, int id) => operations.PreviewCorporationName(user, id)
+        );
+        api.MapPost(
+            "/population/corporations/name",
+            async (
+                ClaimsPrincipal user,
+                AdministrationOperations operations,
+                Eden.World.Capsuleers.CapsuleerCorporationNamePreview preview
+            ) => await operations.ApplyCorporationName(user, preview) ? Results.NoContent() : Results.Conflict()
+        );
         api.MapGet("/mods", (ClaimsPrincipal user, AdministrationOperations operations) => operations.Mods(user));
         api.MapPost(
             "/mods/install",

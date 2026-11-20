@@ -128,15 +128,14 @@ internal static class CapsuleerCorporations
         bool frontier = catalog.Definitions.SystemSecurity.GetValueOrDefault(system, 1) <= 0;
         string systemName = catalog.RequireSystem(system).Name;
         CorporationDetails details;
-        const int maximumNameAttempts = 64;
         int attempt = 0;
         do
         {
-            if (attempt == maximumNameAttempts)
+            if (attempt == CapsuleerCorporationRules.MaximumIdentityAttempts)
             {
                 return false;
             }
-            details = CapsuleerCorporationRules.Identity(systemName, seed, system, attempt++, mining, frontier);
+            details = CapsuleerCorporationRules.Identity(systemName, seed, pilotId, pilot.Name, attempt++, mining, frontier);
         } while (PlayerCorporationStore.IdentityTaken(world, catalog, details));
 
         if (initial)
