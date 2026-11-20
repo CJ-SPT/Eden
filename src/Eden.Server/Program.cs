@@ -246,6 +246,13 @@ internal static class Program
         WorldWipeRequest worldWipe = new(worldPath);
         await ServerLifetime.RunAsync(async lifetime =>
         {
+            ConsoleCancelEventHandler interrupt = (_, args) =>
+            {
+                args.Cancel = true;
+                shutdown.Cancel();
+            };
+            Console.CancelKeyPress += interrupt;
+            lifetime.OnStop("console interrupt", () => Console.CancelKeyPress -= interrupt);
             var world = services.GetRequiredService<Eden.World.Runtime.LiveWorld>();
             lifetime.OnStop("resident world", world.Dispose);
             // Load the canonical world image before accepting players or starting bot turns.
@@ -253,6 +260,7 @@ internal static class Program
             ServerStartup.Measure("resident readiness", world.Economy.Warm);
             ServerStartup.Measure("accounts", accounts.Initialize);
             var mods = services.GetRequiredService<Eden.Server.Modding.ModRuntime>();
+            using var modFailure = mods.FailureToken.Register(shutdown.Cancel);
             lifetime.OnStop("mods", mods.Stop);
             ServerStartup.Measure(
                 "mod activation",
@@ -302,7 +310,7 @@ internal static class Program
             corporationMaintenance.Start();
             var capsuleerMaintenance = services.GetRequiredService<CapsuleerMaintenance>();
             lifetime.OnStop(nameof(CapsuleerMaintenance), capsuleerMaintenance.Dispose);
-            capsuleerMaintenance.Start();
+            capsuleerMaintenance.Start(shutdown.Token);
             var population = services.GetRequiredService<CapsuleerPopulationMaintenance>();
             lifetime.OnStop(nameof(CapsuleerPopulationMaintenance), population.Dispose);
             var gateway = LocalGateway.Create(
@@ -370,7 +378,7 @@ internal static class Program
             );
             if (!server.IsCompleted)
             {
-                population.Start();
+                population.Start(shutdown.Token);
             }
             var completed = await Task.WhenAny(server, chat.Completion, worldWipe.ShutdownRequested);
             if (completed == worldWipe.ShutdownRequested)

@@ -385,7 +385,10 @@ internal sealed partial class CapsuleerScheduler(
     }
 
     public CapsuleerBatch Run(int destinyStamp, int maximumActions = CapsuleerJobQueue.ActionsPerTurn) =>
-        RunPrepared(destinyStamp, maximumActions);
+        Run(destinyStamp, maximumActions, CancellationToken.None);
+
+    public CapsuleerBatch Run(int destinyStamp, int maximumActions, CancellationToken cancellationToken) =>
+        RunPrepared(destinyStamp, maximumActions, cancellationToken);
 
     private CapsuleerBatch RunCore(
         int destinyStamp,

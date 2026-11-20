@@ -5,29 +5,14 @@ using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Transport;
 using Eden.Server.Launcher;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Server;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class LoopbackServer(
-    ConnectionRunner connections,
-    LauncherOptions? options = null,
-    Eden.Server.Modding.ModRuntime? mods = null
-)
+internal sealed class LoopbackServer(ConnectionRunner connections, LauncherOptions? options = null)
 {
     public async Task RunAsync(long? startupStarted = null, CancellationToken cancellationToken = default)
     {
-        using var shutdown = CancellationTokenSource.CreateLinkedTokenSource(
-            cancellationToken,
-            mods?.FailureToken ?? CancellationToken.None
-        );
-        void OnCancel(object? sender, ConsoleCancelEventArgs args)
-        {
-            args.Cancel = true;
-            shutdown.Cancel();
-        }
-
         using TcpListener listener = new(IPAddress.Parse((options ?? new()).ListenAddress), (options ?? new()).GamePort);
         listener.Start();
         if (startupStarted is { } started)
@@ -35,14 +20,12 @@ internal sealed class LoopbackServer(
             ServerLog.Console.Information($"Listeners ready after {Stopwatch.GetElapsedTime(started).TotalSeconds:F2}s.");
         }
         ServerLog.Console.Information($"Eden listening on {listener.LocalEndpoint} for build {CompatibilityHandshake.Build}.");
-        Console.CancelKeyPress += OnCancel;
         try
         {
-            await ListenAsync(listener, shutdown.Token);
+            await ListenAsync(listener, cancellationToken);
         }
         finally
         {
-            Console.CancelKeyPress -= OnCancel;
             ServerLog.Console.Information("Game listener stopped.");
         }
     }

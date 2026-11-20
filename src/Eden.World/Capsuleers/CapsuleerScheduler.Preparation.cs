@@ -29,10 +29,11 @@ internal sealed partial class CapsuleerScheduler
         bool PrepareInstitutionalOffers
     );
 
-    internal PreparationInput? CapturePreparation()
+    internal PreparationInput? CapturePreparation(CancellationToken cancellationToken = default)
     {
         using var phase = SessionPerformance.Phase("traffic.prepareCapture");
         using var owner = synchronization.Enter("traffic preparation capture");
+        cancellationToken.ThrowIfCancellationRequested();
         Load();
         var activity = presence.Read();
         Reconcile(activity);
@@ -148,10 +149,11 @@ internal sealed partial class CapsuleerScheduler
             && database.Catalog.Identity.Generation == input.Catalog;
     }
 
-    private CapsuleerBatch RunPrepared(int destinyStamp, int maximumActions)
+    private CapsuleerBatch RunPrepared(int destinyStamp, int maximumActions, CancellationToken cancellationToken)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maximumActions);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(maximumActions, CapsuleerJobQueue.ActionsPerTurn);
+        cancellationToken.ThrowIfCancellationRequested();
         // Legacy synchronous callers may already own the world; they retain the safe
         // in-owner fallback. Production maintenance enters here without ownership.
         if (synchronization.IsEntered)
@@ -159,7 +161,8 @@ internal sealed partial class CapsuleerScheduler
             return RunCore(destinyStamp, maximumActions);
         }
         long started = clock.GetTimestamp();
-        var input = CapturePreparation();
+        var input = CapturePreparation(cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
         using var measurement = input is null
             ? null
             : Live?.TrafficActions.Measure(input.Job, input.Systems, () => (Live!.CheckpointCopies, Live.CheckpointCopying));
@@ -178,6 +181,7 @@ internal sealed partial class CapsuleerScheduler
                 }
                 foreach (int system in input.Systems)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     var objects = SystemObjects.Geometry(catalog, system);
                     if (input.Geometry.FirstOrDefault(capture => capture.System == system)?.Resources is { } resources)
                     {
@@ -185,16 +189,19 @@ internal sealed partial class CapsuleerScheduler
                     }
                 }
                 _ = CapsuleerTrafficRoutes.Read(catalog, input.CommunityId);
+                cancellationToken.ThrowIfCancellationRequested();
                 if (input.Journey is not null)
                 {
                     journey = CapsuleerHauler.PlanJourney(catalog, input.Journey);
                 }
                 foreach (int belt in input.MissingBelts)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     belts[belt] = AsteroidFieldStore.Prepare(catalog, belt);
                 }
                 if (input.PrepareInstitutionalOffers)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     using var institutional = SessionPerformance.Phase("traffic.institutionalOffers");
                     market.PrepareInstitutional(catalog, input.StationId);
                 }
@@ -207,7 +214,7 @@ internal sealed partial class CapsuleerScheduler
                 geometry.Clear();
                 journey = null;
             }
-            catch (Exception error)
+            catch (Exception error) when (error is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
             {
                 using var failureOwner = synchronization.Enter("traffic preparation failure");
                 // Another maintenance caller may have committed this job while its
@@ -219,7 +226,9 @@ internal sealed partial class CapsuleerScheduler
                 throw;
             }
         }
+        cancellationToken.ThrowIfCancellationRequested();
         using var owner = synchronization.Enter("traffic maintenance");
+        cancellationToken.ThrowIfCancellationRequested();
         if (input is not null && !PreparationCurrent(input))
         {
             long? oldest = _queue.NextDueTicks is { } due && due <= presence.Read().ElapsedTicks ? due : null;

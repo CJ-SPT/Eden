@@ -5524,3 +5524,47 @@ Not performed. Agent client testing is disabled.
 ### Optional maintainer checks
 
 None for the system-entry and acquisition comparisons.
+
+## Capsuleer shutdown and checkpoint projection
+
+Host shutdown previously joined the game listener and client sessions before cancelling its two capsuleer
+workers. A worker draining due work could start another atomic job, build another optional plan, or publish
+another Local and scene update while connections were closing. The console interrupt, SIGTERM, world wipe,
+and fatal mod paths now use the same host cancellation signal as both workers. Scheduling takes cancellation
+at preparation and job boundaries. A job already settling finishes its transaction, and the host still joins
+both workers before the final resident checkpoint.
+
+The checkpoint groups saved miner and hauler progress by the existing batch size. Each batch passes typed
+progress through the existing JSON serializer and uses one keyed SQLite update. Projection keeps its existing
+transaction and writes the same progress into existing rows. Ordinary periodic saves and the final shutdown
+save use the same pathway.
+
+### Automated validation
+
+The exact cases cancel preparation before publication, stop the active worker between two real saved jobs,
+and cancel population preparation before disposal. Reopening the shutdown checkpoint confirms that the first
+job advanced once and the remaining due job retained its revision, sequence and deadline.
+
+The exact filter selected `HostShutdownStopsBetweenAtomicJobsAndSavesTheCommittedJob`,
+`CancelledPreparationLeavesItsJobDueWithoutRecordingAFailure`, and `HostShutdownCancelsPopulationPreparationBeforeDisposal`.
+All three passed in 10.70 seconds. The affected selection passed **79 tests in 47.99 seconds**, covering
+`ServerLifetimeTests`, `CapsuleerMaintenanceTests`, `TrafficPreparationTests`, `CapsuleerBackgroundPreparationTests`,
+`CapsuleerHandoffTests`, `CapsuleerResidentRoutineTests`, `CapsuleerDeadlinePerformanceTests`, `CapsuleerRuntimeTests`,
+`DetachedCheckpointTests`, `LiveWorldTests`, and `UnobservedMinerAndPaidFactoryPauseAndResumeAcrossRestart`.
+Tool restore, solution restore, the warning-free build, both Python policy suites and formatting passed.
+
+An isolated Release benchmark projected 902 miner and 4,098 hauler progress rows read from the same frozen
+world. Five warmed samples compared the production projection methods against `37c2f38c`. Median projection
+time fell from 150.06 ms to 99.85 ms, and median allocation fell from 74.99 MB to 23.77 MB. The destination
+rows had identical checksums. The benchmark covers the progress writes inside a transaction. Full-world
+capture, disk copy, file installation and client drain take separate time. The harness and results are retained
+under `artifacts/bot-shutdown-20261120/projection/`.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled. Production shutdown duration and the slowest deployed step
+remain unverified.
+
+### Optional maintainer checks
+
+Compare the `Shutdown step` timings for both capsuleer workers and the resident world.

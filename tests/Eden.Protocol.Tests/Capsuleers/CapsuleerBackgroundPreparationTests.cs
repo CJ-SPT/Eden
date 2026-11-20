@@ -584,6 +584,32 @@ public sealed class CapsuleerBackgroundPreparationTests
         Assert.Equal(18, preparation.Calls);
     }
 
+    [Fact]
+    public async Task HostShutdownCancelsPopulationPreparationBeforeDisposal()
+    {
+        using CapsuleerHaulerTests.Fixture f = new(legacyFounders: false, isolateRoute: true);
+        using var host = ServerServices.Build(f.Database, f.Clock);
+        TaskCompletionSource entered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        TaskCompletionSource cancelled = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        FakePreparation preparation = new(token =>
+        {
+            entered.TrySetResult();
+            if (token.WaitHandle.WaitOne(TimeSpan.FromSeconds(5)))
+            {
+                cancelled.TrySetResult();
+            }
+            token.ThrowIfCancellationRequested();
+        });
+        using CancellationTokenSource shutdown = new();
+        using CapsuleerPopulationMaintenance worker = new(preparation, f.Clock, host.GetRequiredService<IPilotOperationScope>());
+        worker.Start(shutdown.Token);
+        await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        shutdown.Cancel();
+        await cancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        worker.Dispose();
+        Assert.Equal(1, preparation.Calls);
+    }
+
     internal static void PrepareStartup(CapsuleerHaulerTests.Fixture f)
     {
         var settings = new WorldConfigurationStore(f.Database, f.Clock);
@@ -618,7 +644,7 @@ public sealed class CapsuleerBackgroundPreparationTests
         );
     }
 
-    private sealed class FakePreparation : ICapsuleerBackgroundPreparation
+    private sealed class FakePreparation(Action<CancellationToken>? duringPreparation = null) : ICapsuleerBackgroundPreparation
     {
         internal int Calls { get; private set; }
         public Task Changed { get; } = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously).Task;
@@ -626,6 +652,7 @@ public sealed class CapsuleerBackgroundPreparationTests
         public CapsuleerBackgroundTurn PrepareNext(CancellationToken cancellationToken = default)
         {
             Calls++;
+            duringPreparation?.Invoke(cancellationToken);
             return new(new(Calls, 18, 0), Calls, Calls == 18);
         }
     }

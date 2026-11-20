@@ -20,6 +20,12 @@ public sealed record CapsuleerBatch(CapsuleerTurn Turn, IReadOnlyList<MinerObser
 public interface ICapsuleerScheduler
 {
     CapsuleerBatch Run(int destinyStamp, int maximumActions = CapsuleerJobQueue.ActionsPerTurn);
+    CapsuleerBatch Run(int destinyStamp, int maximumActions, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Run(destinyStamp, maximumActions);
+    }
+
     IReadOnlyList<CapsuleerJob> Jobs();
     MinerObservation? Miner(long pilotId);
     HaulerObservation? Hauler(long pilotId);

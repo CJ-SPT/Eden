@@ -106,6 +106,36 @@ public sealed class TrafficPreparationTests
     }
 
     [Fact]
+    public void CancelledPreparationLeavesItsJobDueWithoutRecordingAFailure()
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new();
+        using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        using var human = host.GetRequiredService<IHumanPresence>().Select(90000001, SourceSystem);
+        var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+        fixture.Clock.Seconds++;
+        var before = scheduler.Jobs();
+        using CancellationTokenSource shutdown = new();
+        using (
+            SessionPerformance.Capture(
+                "shutdown during preparation",
+                sample =>
+                {
+                    if (sample.Name == "traffic.prepareCapture")
+                    {
+                        shutdown.Cancel();
+                    }
+                }
+            )
+        )
+        {
+            Assert.Throws<OperationCanceledException>(() => scheduler.Run(1, 1, shutdown.Token));
+        }
+        Assert.Equal(before, scheduler.Jobs());
+        Assert.Equal(0, scheduler.Read().Failures);
+        Assert.Equal(1, scheduler.Run(1, 1).Turn.Completed);
+    }
+
+    [Fact]
     public void CommittedFittingRevisionDiscardsPreparationWithoutAdvancingTheJob()
     {
         using CapsuleerHaulerTests.Fixture fixture = new();

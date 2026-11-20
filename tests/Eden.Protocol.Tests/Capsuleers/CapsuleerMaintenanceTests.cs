@@ -141,7 +141,7 @@ public sealed class CapsuleerMaintenanceTests
         public bool IsEntered => actual.IsEntered;
         public TaskCompletionSource BetweenJobs { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public TaskCompletionSource Resume { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        private int _acquisitions;
+        public int Calls { get; private set; }
 
         public IReadOnlyList<CapsuleerJob> Jobs() => scheduler.Jobs();
 
@@ -151,14 +151,62 @@ public sealed class CapsuleerMaintenanceTests
 
         public CapsuleerBatch Run(int destinyStamp, int maximumActions = CapsuleerJobQueue.ActionsPerTurn)
         {
-            if (++_acquisitions == 2)
+            var batch = scheduler.Run(destinyStamp, maximumActions);
+            if (++Calls == 1)
             {
                 Assert.False(IsEntered);
                 BetweenJobs.SetResult();
                 Resume.Task.WaitAsync(TimeSpan.FromSeconds(10)).GetAwaiter().GetResult();
             }
-            return scheduler.Run(destinyStamp, maximumActions);
+            return batch;
         }
+    }
+
+    [Fact]
+    public async Task HostShutdownStopsBetweenAtomicJobsAndSavesTheCommittedJob()
+    {
+        using CapsuleerHaulerTests.Fixture f = new();
+        using var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+        using var selected = host.GetRequiredService<IHumanPresence>().Select(90000001, 30000141);
+        var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
+        var original = scheduler.Jobs().ToArray();
+        Assert.Equal(2, original.Length);
+        var synchronization = host.GetRequiredService<IWorldSynchronization>();
+        PauseAfterFirstJob gate = new(scheduler, synchronization);
+        ManualWakeClock clock = new();
+        using CancellationTokenSource shutdown = new();
+        using CapsuleerMaintenance worker = new(
+            gate,
+            host.GetRequiredService<ICapsuleerHandoff>(),
+            host.GetRequiredService<ICapsuleerScene>(),
+            host.GetRequiredService<ChatRuntime>(),
+            clock,
+            synchronization,
+            host.GetRequiredService<ICapsuleerUpdateDiagnostics>()
+        );
+        f.Clock.Seconds++;
+        worker.Start(shutdown.Token);
+        try
+        {
+            (await clock.NextWake()).Fire();
+            await gate.BetweenJobs.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            shutdown.Cancel();
+        }
+        finally
+        {
+            gate.Resume.TrySetResult();
+        }
+        await worker.Completion.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.Equal(1, gate.Calls);
+        selected.Dispose();
+        await host.GetRequiredService<LiveWorld>().FlushAsync();
+
+        string reopenedPath = Path.Combine(Path.GetDirectoryName(f.Database.Path)!, "shutdown-jobs.sqlite");
+        File.Copy(f.Database.Path, reopenedPath);
+        using WorldDbContext reopened = new(reopenedPath);
+        var saved = CapsuleerPopulationStore.Jobs(reopened).ToDictionary(job => job.PilotId);
+        Assert.Equal(original[0].Sequence + 1, saved[original[0].PilotId].Sequence);
+        Assert.Equal(original[1], saved[original[1].PilotId]);
     }
 
     [Theory]

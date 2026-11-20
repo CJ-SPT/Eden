@@ -6,6 +6,8 @@ namespace Eden.World.Capsuleers;
 
 internal static class CapsuleerCheckpointJson
 {
+    internal const int ProjectionBatchSize = 128;
+
     internal static JsonSerializerOptions Options { get; } =
         new()
         {
