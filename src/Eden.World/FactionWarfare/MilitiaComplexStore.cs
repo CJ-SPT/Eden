@@ -2,10 +2,8 @@ using Eden.Data.Catalog.FactionWarfare;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
-using Eden.Data.World.Corporations;
 using Eden.Data.World.FactionWarfare;
 using Eden.Data.World.Inventory;
-using Eden.Data.World.Market;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Exploration;
@@ -24,7 +22,7 @@ using Eden.World.Storage;
 namespace Eden.World.FactionWarfare;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCatalog profiles) : IMilitiaComplexes
+internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCatalog profiles, IMilitiaHubs? hubs = null) : IMilitiaComplexes
 {
     private static readonly IGrouping<MilitiaComplexFamily, MilitiaComplexVariant>[] Variants = MilitiaComplexVariants
         .All.Where(variant => !variant.Retired)
@@ -38,7 +36,7 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
 
     private readonly record struct Presence(long ShipId, long ConnectionId);
 
-    private sealed record Sample(long At, int Side, Presence[] Ships);
+    private sealed record Sample(long SiteId, long At, int Side, Presence[] Ships);
 
     private sealed record Site(
         long Slot,
@@ -72,20 +70,24 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
         {
             return [];
         }
+        hubs?.Sweep(now);
         return live.Economy.Inspect(world => Read(world, systemId, now).Select(site => View(site, now)).ToArray());
     }
 
-    public IReadOnlyList<AnomalySystemSites> Directory(long now) =>
-        Resident?.Economy.Inspect(world =>
-            FactionWarzoneCatalog
-                .Roster.Select(seed => new AnomalySystemSites(
-                    seed.SystemId,
-                    Read(world, seed.SystemId, now).Select(s => View(s, now, false)).ToArray()
-                ))
-                .Where(entry => entry.Sites.Count > 0)
-                .ToArray()
-        )
-        ?? [];
+    public IReadOnlyList<AnomalySystemSites> Directory(long now)
+    {
+        hubs?.Sweep(now);
+        return Resident?.Economy.Inspect(world =>
+                FactionWarzoneCatalog
+                    .Roster.Select(seed => new AnomalySystemSites(
+                        seed.SystemId,
+                        Read(world, seed.SystemId, now).Select(s => View(s, now, false)).ToArray()
+                    ))
+                    .Where(entry => entry.Sites.Count > 0)
+                    .ToArray()
+            )
+            ?? [];
+    }
 
     public SpacePosition Redirect(int systemId, SpacePosition position, long now)
     {
@@ -93,6 +95,7 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
         {
             return position;
         }
+        hubs?.Sweep(now);
         return live.Economy.Inspect(world =>
         {
             var site = Read(world, systemId, now)
@@ -109,6 +112,7 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
         {
             return;
         }
+        hubs?.Sweep(now);
         using var owner = live.EnterPersistence("militia complex", TransactionParticipants.None);
         pilots = pilots.Where(pilot => !live.Economy.Cloaked(pilot.ShipId)).ToArray();
         var nearby = live.Economy.Inspect(world =>
@@ -126,11 +130,13 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
         }
 
         using CatalogDbContext catalog = new(database.CatalogPath);
+        long? hubNpc = nearby[0].System.HubPhase == MilitiaHubPhase.Vulnerable ? live.Economy.Peek<SavedMilitiaHub>(systemId)?.NpcId : null;
         var participants = new TransactionParticipants(
             pilots: pilots.Select(p => p.PilotId),
             ships: pilots.Select(p => p.ShipId),
             resources: nearby
                 .Select(s => s.Saved?.DefenderId)
+                .Append(hubNpc)
                 .OfType<long>()
                 .Select(id => new SimulationResource(SharedSimulationResource.Npc, id))
         );
@@ -158,7 +164,7 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
     private Sample? Step(WorldAction world, CatalogDbContext catalog, Site site, IReadOnlyList<MilitiaComplexPilot> pilots, long now)
     {
         var state = world.Set<SavedMilitiaComplex>().Find(site.Slot);
-        var previous = _samples.GetValueOrDefault(site.Slot);
+        var previous = SampleFor(site);
         if (previous?.At > now)
         {
             return previous;
@@ -189,7 +195,7 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
             _ => 0,
         };
         var ships = (side == 1 ? attackers : defenders).Select(p => p.Presence).ToArray();
-        var sample = new Sample(now, side, ships);
+        var sample = new Sample(site.Id, now, side, ships);
         if (side == 0 && participants.Length == 0)
         {
             return null;
@@ -206,7 +212,7 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
             state.Progress = MilitiaComplexRules.Advance(state.Progress, side, now - previous.At, policy.Duration);
             if (Math.Abs(state.Progress) == policy.Duration)
             {
-                Settle(world, site, side == 1 ? attackers : defenders, side == 1, policy);
+                Settle(world, catalog, site, side == 1 ? attackers : defenders, side == 1, policy, now);
                 RetireDefender(world, catalog, state, now);
                 state.ReplaceAt = checked(now + MilitiaComplexRules.Replacement(site.System.Adjacency).Ticks);
                 return null;
@@ -250,7 +256,15 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
         return candidates.DistinctBy(candidate => candidate.Pilot.Id).OrderBy(candidate => candidate.ShipId).ToArray();
     }
 
-    private static void Settle(WorldAction world, Site site, Participant[] winners, bool offense, MilitiaComplexRewardPolicy policy)
+    private static void Settle(
+        WorldAction world,
+        CatalogDbContext catalog,
+        Site site,
+        Participant[] winners,
+        bool offense,
+        MilitiaComplexRewardPolicy policy,
+        long now
+    )
     {
         var system = FactionWarzoneStore.System(world, site.System.SystemId)!;
         int score = MilitiaComplexRules.VictoryPoints(system.VictoryPoints, offense, policy);
@@ -260,6 +274,10 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
                 world.Set<SavedWarzoneOccupation>().Find(system.SystemId)
                 ?? world.Add(new SavedWarzoneOccupation { SystemId = system.SystemId, Occupier = system.Occupier }).Entity;
             occupation.VictoryPoints = score;
+            if (system.HubPhase == MilitiaHubPhase.Vulnerable && score < FactionWarzoneRules.VictoryPointThreshold)
+            {
+                MilitiaHubStore.Recover(world, catalog, system.SystemId, system.Occupier, now);
+            }
         }
         long points = MilitiaComplexRules.PointsPerPilot(system, offense, policy, winners.Length);
         if (points <= 0)
@@ -268,29 +286,32 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
         }
 
         var faction = offense ? Opponent(system) : system.Occupier;
-        int issuer = MilitiaRules.Corporation(faction);
         foreach (var winner in winners)
         {
-            long pilotId = winner.Pilot.Id;
-            int corpId = winner.Pilot.CorporationId;
-            var corp = world.Set<SavedCorporation>().Find(corpId);
-            long tax = MilitiaComplexRules.CorporationTax(points, corp?.Snapshot(0).Details.LoyaltyPointTaxRate ?? 0);
-            if (tax > 0)
-            {
-                var corporate =
-                    world.Set<SavedCorporationLoyaltyBalance>().Find(corpId, issuer)
-                    ?? world.Add(new SavedCorporationLoyaltyBalance { CorporationId = corpId, IssuerCorporationId = issuer }).Entity;
-                corporate.Points = checked(corporate.Points + tax);
-            }
-            if (points > tax)
-            {
-                var personal =
-                    world.Set<SavedLoyaltyBalance>().Find(pilotId, issuer)
-                    ?? world.Add(new SavedLoyaltyBalance { PilotId = pilotId, IssuerCorporationId = issuer }).Entity;
-                personal.Points = checked(personal.Points + points - tax);
-            }
+            MilitiaLoyalty.Credit(world, faction, winner.Pilot, points);
         }
     }
+
+    internal static IEnumerable<long> DefenderIds(WorldAction world, int systemId) =>
+        Variants
+            .Select(family => world.Set<SavedMilitiaComplex>().Find(MilitiaComplexRules.Slot(systemId, family.Key))?.DefenderId)
+            .OfType<long>();
+
+    internal static void ResetForOccupation(WorldAction world, CatalogDbContext catalog, int systemId, MilitiaFaction occupier, long now)
+    {
+        foreach (var family in Variants)
+        {
+            long slot = MilitiaComplexRules.Slot(systemId, family.Key);
+            var state = world.Set<SavedMilitiaComplex>().Find(slot) ?? world.Add(new SavedMilitiaComplex { Slot = slot }).Entity;
+            RetireDefender(world, catalog, state, now);
+            state.Generation = checked(state.Generation + 1);
+            state.Occupier = occupier;
+            state.Progress = 0;
+            state.ReplaceAt = null;
+        }
+    }
+
+    private Sample? SampleFor(Site site) => _samples.TryGetValue(site.Slot, out var sample) && sample.SiteId == site.Id ? sample : null;
 
     private bool HoldDefender(
         WorldAction world,
@@ -370,7 +391,7 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
 
     private IEnumerable<Site> Read(WorldAction world, int systemId, long now)
     {
-        if (FactionWarzoneStore.System(world, systemId) is not { } system)
+        if (FactionWarzoneStore.System(world, systemId) is not { PendingTransferAt: null } system)
         {
             yield break;
         }
@@ -422,7 +443,7 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
         var bodies = new List<StaticSpaceObject>(3);
         if (includeObjects)
         {
-            var sample = site.Replaced ? null : _samples.GetValueOrDefault(site.Slot);
+            var sample = site.Replaced ? null : SampleFor(site);
             bool fresh = sample is not null && now >= sample.At && now - sample.At <= MilitiaComplexRules.MaximumSampleGap.Ticks;
             int side = fresh ? sample!.Side : 0;
             long progress = site.Replaced ? 0 : site.Saved?.Progress ?? 0;
@@ -482,6 +503,7 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
     public SpacePosition Gate(long pilotId, long gateId, long now, SpacePosition? activate = null)
     {
         var live = Resident ?? throw new InvalidDataException("Militia complexes require the resident world.");
+        hubs?.Sweep(now);
         using var owner = live.EnterPersistence("militia acceleration gate", TransactionParticipants.None);
         using CatalogDbContext catalog = new(database.CatalogPath);
         if (activate is null)

@@ -11,6 +11,7 @@ using Eden.Gameplay.Ships;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
+using Eden.World.FactionWarfare;
 using Eden.World.Mining;
 using Eden.World.Propulsion;
 using Eden.World.Runtime;
@@ -24,7 +25,8 @@ namespace Eden.World.Combat.Npcs;
 internal sealed class NpcEncounterStore(
     WorldDatabase database,
     INpcPopulationSeeder? population = null,
-    NpcProfileCatalog? hullProfiles = null
+    NpcProfileCatalog? hullProfiles = null,
+    MilitiaHubStore? militiaHubs = null
 ) : INpcEncounters, INpcSimulation
 {
     public NpcSceneContacts ReadScene(int systemId, SpacePosition position, long now)
@@ -35,6 +37,7 @@ internal sealed class NpcEncounterStore(
     private NpcSceneContacts ReadSceneOwned(int systemId, SpacePosition position, long now)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
+        militiaHubs?.Ensure(systemId, now);
         using (database.EnterMovement())
         {
             return LiveCombatRuntime.Find(database.Path)?.ReadScene(systemId, position, now, () => RefreshPopulation(systemId, now))
@@ -52,6 +55,7 @@ internal sealed class NpcEncounterStore(
         // Take the resident owner before the shared movement gate. Bot execution
         // already owns the world when it requests these same views.
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
+        militiaHubs?.Ensure(systemId, now);
         using (database.EnterMovement())
         {
             if (
@@ -75,6 +79,7 @@ internal sealed class NpcEncounterStore(
     private IReadOnlyList<NpcSimulationContact> AdvanceOwned(int systemId, long now)
     {
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
+        militiaHubs?.Ensure(systemId, now);
         using (database.EnterMovement())
         {
             if (LiveCombatRuntime.Find(database.Path)?.Simulate(systemId, now, () => RefreshPopulation(systemId, now)) is { } resident)

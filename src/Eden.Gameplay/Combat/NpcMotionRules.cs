@@ -8,7 +8,8 @@ public sealed record NpcMotionState(long Id, SpacePosition Position, SpacePositi
 public static class NpcMotionRules
 {
     public static bool IsStationary(int groupId, NpcRole role) =>
-        groupId is NpcEncounterDefinitions.SentryGroup or NpcEncounterDefinitions.OverseerSentryGroup || role == NpcRole.MissionStructure;
+        groupId is NpcEncounterDefinitions.SentryGroup or NpcEncounterDefinitions.OverseerSentryGroup
+        || role is NpcRole.MissionStructure or NpcRole.MilitiaHub;
 
     public static SpacePosition CoastVelocity(SpacePosition velocity) => velocity with { Y = velocity.Y * (0.93 / 1.07) };
 

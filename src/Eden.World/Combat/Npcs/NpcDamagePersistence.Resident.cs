@@ -15,6 +15,7 @@ using Eden.Gameplay.Ships;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Corporations;
+using Eden.World.FactionWarfare;
 using Eden.World.Inventory;
 using Eden.World.Loot;
 using Eden.World.Market;
@@ -45,6 +46,10 @@ internal static partial class NpcDamagePersistence
         if (npc.DestroyedAt.HasValue || npc.RetiredAt.HasValue)
         {
             throw new InvalidDataException("The NPC is no longer available.");
+        }
+        if (npc.Role == NpcRole.MilitiaHub)
+        {
+            return MilitiaHubStore.Apply(world, npc, pilot, attributes, damage, now, bypassResistances);
         }
         // A paid missile already checked safety and recorded CONCORD hostility
         // at launch. Its impact cannot recheck a later safety setting or hull.

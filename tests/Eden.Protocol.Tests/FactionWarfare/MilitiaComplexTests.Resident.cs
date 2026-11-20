@@ -19,6 +19,7 @@ using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Server;
 using Eden.World.Catalog;
+using Eden.World.FactionWarfare;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -417,7 +418,7 @@ public sealed partial class MilitiaComplexTests
 
     private static long Progress(LiveWorld live) => live.Economy.Inspect(w => w.Set<SavedMilitiaComplex>().Find(OpenSlot)!.Progress);
 
-    private static void LoadComplexCatalog(WorldDatabase database)
+    internal static void LoadComplexCatalog(WorldDatabase database)
     {
         using CatalogDbContext catalog = new(database.CatalogPath, writable: true);
         catalog.Database.ExecuteSql(
@@ -431,6 +432,7 @@ public sealed partial class MilitiaComplexTests
                 (310,'Beacon',2),(922,'Capture Point',11),(366,'Warp Gate',2),(315,'Warp Core Stabilizer',7),(1186,'FW NPC',11);
             INSERT OR IGNORE INTO ItemType(Id,Name,GroupId,Radius) VALUES
                 ({CapturePoint},'30km Minmatar Capture Point',922,0),({ScoutBeacon},'Scout Advanced Beacon',310,0),
+                (29311,'30km Amarr Capture Point',922,0),
                 ({OpenBeacon},'Open Complex Military Beacon',310,0),({AccelerationGate},'Acceleration Gate',366,500),
                 ({Stabilizer},'Warp Core Stabilizer',315,0),({OpenDefender},'Republic Battlecruiser',1186,150);
             """
@@ -438,9 +440,17 @@ public sealed partial class MilitiaComplexTests
         Add("client/systems", SystemId, """{"securityStatus":0.2}""");
         Add("client/typelist", 854, """{"includedGroupIDs":[237]}""");
         Add("client/typelist", 984, """{"includedGroupIDs":[315]}""");
-        foreach (var (id, beacon, archetype) in new[] { (OpenDungeon, OpenBeacon, 36), (ScoutDungeon, ScoutBeacon, 33) })
+        var open = MilitiaComplexVariants.All.Single(v => v.Minmatar == OpenDungeon);
+        var scout = MilitiaComplexVariants.All.Single(v => v.Minmatar == ScoutDungeon);
+        foreach (
+            var (id, beacon, archetype, point, spawner) in new[]
+            {
+                (OpenDungeon, OpenBeacon, 36, CapturePoint, open.DefenderSpawner),
+                (open.Amarr, OpenBeacon, 36, MilitiaComplexCatalog.CapturePoint(MilitiaFaction.Amarr), open.DefenderSpawner),
+                (ScoutDungeon, ScoutBeacon, 33, CapturePoint, scout.DefenderSpawner),
+            }
+        )
         {
-            var variant = MilitiaComplexVariants.All.Single(v => v.Minmatar == id);
             var room = new Dictionary<string, object>
             {
                 ["1"] = new
@@ -456,7 +466,7 @@ public sealed partial class MilitiaComplexTests
                 },
                 ["2"] = new
                 {
-                    typeID = CapturePoint,
+                    typeID = point,
                     objectID = 2,
                     position = new
                     {
@@ -467,7 +477,7 @@ public sealed partial class MilitiaComplexTests
                 },
                 ["3"] = new
                 {
-                    typeID = variant.DefenderSpawner,
+                    typeID = spawner,
                     objectID = 3,
                     position = new
                     {

@@ -877,6 +877,7 @@ internal sealed partial class ResidentEconomy
         RegisterMilitiaEnlistment();
         RegisterMilitiaNavyPursuit();
         RegisterMilitiaComplex();
+        RegisterMilitiaHubs();
         RegisterSovereigntyHub();
         RegisterEntosisCycle();
         RegisterSovereigntyPrime();

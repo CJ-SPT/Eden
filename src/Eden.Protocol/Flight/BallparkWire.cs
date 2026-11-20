@@ -300,6 +300,10 @@ internal sealed record NpcSlimItem(NpcContact Npc) : SlimItem
             fields["corpID"] = null;
         }
         fields["charID"] = null;
+        if (Npc.Role == NpcRole.MilitiaHub)
+        {
+            fields["warFactionID"] = Npc.FactionId;
+        }
         fields["modules"] = new List<object?>();
         // Build 3662168's NPC bounty display normally reads catalog dogma.
         fields["edenNpcBounty"] = Npc.BountyCents / (double)MarketDefinitions.CentsPerIsk;

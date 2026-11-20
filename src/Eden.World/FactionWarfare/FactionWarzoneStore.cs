@@ -10,12 +10,17 @@ using Eden.World.Storage;
 namespace Eden.World.FactionWarfare;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class FactionWarzoneStore(WorldDatabase database) : IFactionWarzones
+internal sealed class FactionWarzoneStore(WorldDatabase database, IMilitiaHubs? hubs = null, TimeProvider? clock = null) : IFactionWarzones
 {
     private static readonly ImmutableArray<WarzoneSystem> Initial = FactionWarzoneCatalog
         .Roster.Select(seed => Read(seed, _ => null))
         .ToImmutableArray();
 
+    private Snapshot? _snapshot;
+
+    private sealed record Snapshot(LiveWorld Resident, long Revision, ImmutableArray<WarzoneSystem> Systems);
+
+    public long Revision => LiveWorld.Find(database.Path)?.Economy.WarzoneRevision ?? -1;
     public ImmutableArray<WarzoneDefinition> Warzones => FactionWarzoneCatalog.Warzones;
     public ImmutableArray<MilitiaHeadquarters> Headquarters => FactionWarzoneCatalog.Headquarters;
 
@@ -28,6 +33,7 @@ internal sealed class FactionWarzoneStore(WorldDatabase database) : IFactionWarz
         {
             return null;
         }
+        hubs?.Sweep((clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc());
         return Resident.Economy.Inspect(world => System(world, systemId));
     }
 
@@ -38,17 +44,36 @@ internal sealed class FactionWarzoneStore(WorldDatabase database) : IFactionWarz
             return null;
         }
         var occupations = world.Set<SavedWarzoneOccupation>();
-        return Read(seed, id => occupations.Find(id));
+        return Read(seed, id => occupations.Find(id)) with { PendingTransferAt = world.Set<SavedMilitiaHub>().Find(systemId)?.TransferAt };
     }
 
-    public ImmutableArray<WarzoneSystem> Systems() =>
-        Resident.Economy.Inspect(world =>
+    public ImmutableArray<WarzoneSystem> Systems()
+    {
+        hubs?.Sweep((clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc());
+        var live = Resident;
+        return live.Economy.Inspect(world =>
         {
+            long revision = live.Economy.WarzoneRevision;
+            if (_snapshot is { } snapshot && ReferenceEquals(snapshot.Resident, live) && snapshot.Revision == revision)
+            {
+                return snapshot.Systems;
+            }
             var occupations = world.Set<SavedWarzoneOccupation>().ToDictionary(row => row.SystemId);
-            return occupations.Count == 0
-                ? Initial
-                : FactionWarzoneCatalog.Roster.Select(seed => Read(seed, id => occupations.GetValueOrDefault(id))).ToImmutableArray();
+            var systems =
+                occupations.Count == 0
+                    ? Initial
+                    : FactionWarzoneCatalog
+                        .Roster.Select(seed =>
+                            Read(seed, id => occupations.GetValueOrDefault(id)) with
+                            {
+                                PendingTransferAt = world.Set<SavedMilitiaHub>().Find(seed.SystemId)?.TransferAt,
+                            }
+                        )
+                        .ToImmutableArray();
+            _snapshot = new(live, revision, systems);
+            return systems;
         });
+    }
 
     private static WarzoneSystem Read(WarzoneSeed seed, Func<int, SavedWarzoneOccupation?> occupation)
     {

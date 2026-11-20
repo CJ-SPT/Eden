@@ -58,7 +58,7 @@ public sealed record NpcNavigationContact(
 );
 
 // Authoritative background callers need identity and geometry, not native observer records.
-public sealed record NpcSimulationContact(long Id, SpacePosition Position, bool Warping);
+public sealed record NpcSimulationContact(long Id, SpacePosition Position, bool Warping, bool IsGlobal = false);
 
 public interface INpcSimulation
 {

@@ -1,5 +1,65 @@
 # Faction warfare
 
+## Infrastructure hubs and territorial conquest — November 20, 2026
+
+Each capturable warzone system exposes a warpable empire infrastructure hub when its resident space scene loads.
+The four build 3662168 types are 29286 (Amarr), 29302 (Caldari), 29303 (Gallente), and 29304 (Minmatar).
+Their catalog group is 925, radius is 10,290 m, and base shield, armor, and structure are 7.5M, 7.5M, and 10M HP.
+Catalog shield recharge time is 10,800 seconds. The exported celestial catalog contains no hub coordinates.
+Eden uses a stable grid at `(20,000,000,000, 0, -10,000,000,000)` meters in each warzone system. The closest
+catalog celestial or station to this grid across the 160 systems is more than 9 billion meters away.
+
+At 75,000 VP the hub becomes vulnerable to the opposing militia. Turrets, missiles, drones, and area damage share
+that check. A defense that leaves the score in the 500 VP buffer preserves the current hub's damage and
+contributors. A defense that drops the score below 75,000 replaces the hub at full health on the same grid and
+clears the failed attack's contributions. The new item ID invalidates paid impacts addressed to the previous hub.
+At 1% structure, the hub is destroyed and the system is captured with its old occupier until the next 11:00 UTC.
+Eden suspends the local complexes during that interval. [UniWiki infrastructure hubs and victory points](https://wiki.eveuniversity.org/Faction_warfare#Infrastructure_Hub) ·
+[CCP downtime schedule](https://support.eveonline.com/hc/en-us/articles/26205909113244-Downtime)
+
+The terminal hit records a durable attacker and transfer deadline and settles a fixed 40,000 LP pool among
+distinct contributors who still belong to the attacking militia. The pool is split equally, with any remainder
+assigned in pilot ID order. Each share applies normal player corporation LP tax. Eden adopts the published
+historical base payout and preserves contributions from eligible pilots who have left the grid or disconnected.
+[CCP hub capture rewards](https://www.eveonline.com/news/view/fw-dev-blog-1-1-1#rewards-paying-for-a-job-well-done)
+
+World schema 197 stores the current hub, pending transfer, and damage contributions. Durability uses the ordinary
+resident checkpoint generation. Startup and empire maintenance process due transfers without observers. Transfer
+creates the attacker's hub, resets VP, retires old complex defenders, and regenerates the system's complex
+identities in one resident action. The occupation snapshot recalculates adjacency and supplies docking and service
+policy as well as the map. The effective capture date is the scheduled downtime even when the server reopens later.
+
+Stock `fwWarzoneSvc.pyj` consumes `OnWarzoneOccupationStateUpdated(systemID, new, old)`.
+`fwVictoryPointSvc.pyj` consumes `OnVictoryPointStateUpdated(systemID, state)` and the two
+`OnFacWarBunkerVulnerable` and `OnFacWarBunkerNonVulnerable` prompts with the attacker faction ID. The host
+publishes these from committed warzone revisions. A destroyed hub is removed through Destiny. The native
+two-field `VictoryPointState` still represents the pending system by its VP score. The retired hub LP donation
+window and upgrade tiers are outside this milestone.
+[Carbon Destiny ball insertion flags at 27ee40b](https://github.com/carbonengine/destiny/blob/27ee40b38a563d29054b32f64c3ebc87fabaec1f/src/Thunkers.cpp#L101)
+
+The evejs `factionWarfareAuthority.js` comparison (SHA-256
+`4437cc03679a9a2ee1cd127da6c293e815b05b10faeb564cda6e8b284b1fc5a2`) exposes occupation and VP for two
+authored systems. Hub combat and transfer timing here come from the pinned catalog and the gameplay references.
+
+**Automated validation.** Exact-method checks passed for threshold and downtime boundaries (2.63 seconds),
+defensive recovery and checkpoint reopen (7.60 seconds), and the defense-versus-final-hit race
+(6.88 seconds). The catalog audit covered all four hub types and checked the placement against stations
+and celestials in all 160 warzone systems. Warmed warzone reads and deadline checks recorded zero SQL
+commands, connections, and fitting calculations.
+
+The solution built in 12.37 seconds with zero warnings. The focused dependency run passed all 267 tests
+in 126.66 seconds. Tool and solution restores, both Python policy suites (8 and 9 tests), and formatting
+verification (28.83 seconds) passed.
+
+```text
+FullyQualifiedName~FactionWarfare|FullyQualifiedName~Combat.NpcCombatTests|FullyQualifiedName~Combat.NpcScene|FullyQualifiedName~Combat.PilotMissileTests|FullyQualifiedName~Combat.ResidentMissileLaunchTests|FullyQualifiedName~Combat.PilotDroneTests|FullyQualifiedName~Combat.ResidentDroneTests|FullyQualifiedName~Combat.AreaWeaponTests|FullyQualifiedName~Combat.SmartbombTests|FullyQualifiedName~Flight.FlightSessionTests|FullyQualifiedName~Flight.DungeonObjectGeometryTests|FullyQualifiedName~Docking.StructureServiceTests|FullyQualifiedName~PilotSessions.CorporationLoyaltyTests|FullyQualifiedName~Persistence.DetachedCheckpointTests|FullyQualifiedName~Persistence.IncrementalCheckpointTests|FullyQualifiedName~Persistence.WorldMigrationTests
+```
+
+**Live acceptance.** Not performed. Agent client testing is disabled.
+
+**Optional maintainer checks.** Warp to a warzone hub from the overview. Compare the native damage and
+vulnerability UI on either side of the VP threshold. Verify the new hub and map after a scheduled transfer.
+
 ## Shared complexes and rewards — November 20, 2026
 
 The 160 warzone systems each have one shared site slot for Scout, Small, Medium, Large, and Open complexes.

@@ -19,6 +19,9 @@ internal static class FactionWarzoneSchema
         model.Entity<SavedMilitiaNavyPursuit>().HasOne<Pilot>().WithMany().HasForeignKey(row => row.PilotId);
         model.Entity<SavedMilitiaComplex>().ToTable("WorldMilitiaComplex").HasKey(row => row.Slot);
         model.Entity<SavedMilitiaComplex>().Property(row => row.Slot).ValueGeneratedNever();
+        model.Entity<SavedMilitiaHub>().ToTable("WorldMilitiaHub").HasKey(row => row.SystemId);
+        model.Entity<SavedMilitiaHub>().Property(row => row.SystemId).ValueGeneratedNever();
+        model.Entity<SavedMilitiaHubContribution>().ToTable("WorldMilitiaHubContribution").HasKey(row => new { row.NpcId, row.PilotId });
     }
 
     internal static void Upgrade(WorldDbContext world) =>
@@ -48,6 +51,16 @@ internal static class FactionWarzoneSchema
                 Progress INTEGER NOT NULL,
                 ReplaceAt INTEGER,
                 DefenderId INTEGER);
+            CREATE TABLE IF NOT EXISTS WorldMilitiaHub(
+                SystemId INTEGER PRIMARY KEY,
+                NpcId INTEGER NOT NULL,
+                Attacker INTEGER,
+                TransferAt INTEGER);
+            CREATE TABLE IF NOT EXISTS WorldMilitiaHubContribution(
+                NpcId INTEGER NOT NULL,
+                PilotId INTEGER NOT NULL,
+                Damage REAL NOT NULL,
+                PRIMARY KEY(NpcId, PilotId));
             """
         );
 }

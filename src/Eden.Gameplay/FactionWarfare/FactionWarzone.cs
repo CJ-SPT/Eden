@@ -34,10 +34,15 @@ public sealed record WarzoneSystem(
     WarzoneAdjacency Adjacency,
     int VictoryPoints,
     long? CapturedAt
-);
+)
+{
+    public long? PendingTransferAt { get; init; }
+    public MilitiaHubPhase HubPhase => MilitiaHubRules.Phase(VictoryPoints, PendingTransferAt);
+}
 
 public interface IFactionWarzones
 {
+    long Revision => 0;
     ImmutableArray<WarzoneDefinition> Warzones { get; }
     ImmutableArray<MilitiaHeadquarters> Headquarters { get; }
     WarzoneSystem? System(int systemId);

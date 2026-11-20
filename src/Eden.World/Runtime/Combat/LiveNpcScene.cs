@@ -30,7 +30,9 @@ internal sealed partial class LiveCombatRuntime
         {
             return current;
         }
-        var index = new NpcSceneIndex(npcs.Select(n => new NpcSimulationContact(n.Id, n.Position, n.Transit is not null)).ToArray());
+        var index = new NpcSceneIndex(
+            npcs.Select(n => new NpcSimulationContact(n.Id, n.Position, n.Transit is not null, n.Role == NpcRole.MilitiaHub)).ToArray()
+        );
         _npcSceneIndices[system] = index;
         return index;
     }

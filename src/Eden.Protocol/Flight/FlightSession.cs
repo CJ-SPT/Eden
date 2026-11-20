@@ -1258,6 +1258,14 @@ internal sealed partial class FlightSession(
             return new PilotCallResult.Failure("Your ship is inside a warp disruption bubble.");
         }
         var body = Scene.Objects.FirstOrDefault(item => item.Id == target);
+        if (
+            body is null
+            && coordinates is null
+            && VisibleNpcs.FirstOrDefault(n => n.Id == target && n.Role == NpcRole.MilitiaHub) is { } hub
+        )
+        {
+            body = new(hub.Id, hub.TypeId, hub.GroupId, hub.CategoryId, hub.CorporationId, hub.Position, hub.Radius);
+        }
         if (body is null && coordinates is null)
         {
             return PilotCallResult.Unsupported;

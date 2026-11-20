@@ -10,6 +10,9 @@ internal sealed record EconomyWarzoneOccupation(int SystemId, MilitiaFaction Occ
 
 internal sealed partial class ResidentEconomy
 {
+    private long _warzoneRevision;
+    internal long WarzoneRevision => Volatile.Read(ref _warzoneRevision);
+
     private void RegisterWarzoneOccupation() =>
         Register(
             new EconomyTable<SavedWarzoneOccupation, EconomyWarzoneOccupation>(
@@ -34,6 +37,7 @@ internal sealed partial class ResidentEconomy
                         reader.IsDBNull(4) ? null : reader.GetInt64(4)
                     ),
                 state => new(state.SystemId),
+                changed: (_, _) => Interlocked.Increment(ref _warzoneRevision),
                 primaryColumn: "SystemId"
             )
         );

@@ -20,6 +20,7 @@ using Eden.World.Characters;
 using Eden.World.Combat.Npcs;
 using Eden.World.Combat.Weapons;
 using Eden.World.Docking;
+using Eden.World.FactionWarfare;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
@@ -281,6 +282,7 @@ internal sealed partial class PilotCombatStore(
             {
                 throw new InvalidDataException("The target NPC is unavailable.");
             }
+            MilitiaHubStore.RequireAttack(world, npc, pilot);
             target = new(
                 npc.SystemId,
                 npc.TypeId,
