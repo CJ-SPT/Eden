@@ -47,6 +47,8 @@ public interface IFactionWarzones
     ImmutableArray<MilitiaHeadquarters> Headquarters { get; }
     WarzoneSystem? System(int systemId);
     ImmutableArray<WarzoneSystem> Systems();
+    MilitiaAdvantageState? Advantage(int systemId, long now) => null;
+    IReadOnlyList<MilitiaAdvantageContribution> AdvantageContributions(long accountId, long now) => [];
 }
 
 public static class FactionWarzoneRules

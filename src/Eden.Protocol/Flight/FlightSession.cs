@@ -1261,7 +1261,7 @@ internal sealed partial class FlightSession(
         if (
             body is null
             && coordinates is null
-            && VisibleNpcs.FirstOrDefault(n => n.Id == target && n.Role == NpcRole.MilitiaHub) is { } hub
+            && VisibleNpcs.FirstOrDefault(n => n.Id == target && n.Role is NpcRole.MilitiaHub or NpcRole.MilitiaObjective) is { } hub
         )
         {
             body = new(hub.Id, hub.TypeId, hub.GroupId, hub.CategoryId, hub.CorporationId, hub.Position, hub.Radius);

@@ -51,6 +51,10 @@ internal static partial class NpcDamagePersistence
         {
             return MilitiaHubStore.Apply(world, npc, pilot, attributes, damage, now, bypassResistances);
         }
+        if (!MilitiaObjectiveStore.CanAttack(world, npc, pilot))
+        {
+            throw new InvalidDataException("Only the opposing militia may attack this objective.");
+        }
         // A paid missile already checked safety and recorded CONCORD hostility
         // at launch. Its impact cannot recheck a later safety setting or hull.
         if (!paidProjectile || npc.Role != NpcRole.Concord)
@@ -105,6 +109,7 @@ internal static partial class NpcDamagePersistence
                 PilotTaskTrackingStore.Record(world, catalog, pilot.Id, now, TaskEvents.NpcDestroyed);
             }
             npc.DestroyedAt = now;
+            MilitiaObjectiveStore.Destroyed(world, catalog, npc, pilot, now);
             if (npc.AnchorKind == NpcAnchorKind.Abyssal)
             {
                 Eden.World.Exploration.AbyssalStore.Killed(world, catalog, npc, pilot, now);
@@ -131,7 +136,10 @@ internal static partial class NpcDamagePersistence
             Eden.World.Exploration.CombatAnomalyStore.Killed(world, catalog, npc, now, pilot.Id);
             Eden.World.Agents.PilotMissionStore.Killed(world, catalog, npc, now);
             PilotSecurityStatusStore.RecordKill(world, catalog, pilot, npc, attributes, now);
-            WreckStore.Create(world, catalog, npc, pilot, now);
+            if (npc.Role != NpcRole.MilitiaObjective)
+            {
+                WreckStore.Create(world, catalog, npc, pilot, now);
+            }
             var wreck = world.Set<WorldWreck>().Local.SingleOrDefault(w => w.NpcId == npc.Id);
             var loot = world
                 .Set<OwnedItem>()

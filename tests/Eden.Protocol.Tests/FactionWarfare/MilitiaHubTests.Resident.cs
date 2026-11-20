@@ -104,7 +104,7 @@ public sealed partial class MilitiaHubTests
         Assert.Equal(0, Deal(hub.Id, wing.PilotId, 50_000_000));
         Assert.Equal(1, Contributions(hub.Id));
         Assert.True(Defend(clock.Now, oldOpen));
-        Assert.Equal(75_150, warzones.System(System)!.VictoryPoints);
+        Assert.Equal(75_045, warzones.System(System)!.VictoryPoints);
         Assert.Equal(hub.Id, Hub().Id);
         Assert.Equal(1, Contributions(hub.Id));
 
@@ -112,7 +112,7 @@ public sealed partial class MilitiaHubTests
         var nextOpen = complexes.Sites(System, clock.Now).Single(s => s.DungeonId == MinmatarOpen);
         Assert.True(Defend(clock.Now, nextOpen));
         var defended = warzones.System(System)!;
-        Assert.Equal(74_800, defended.VictoryPoints);
+        Assert.Equal(74_590, defended.VictoryPoints);
         Assert.Equal(MilitiaHubPhase.Contested, defended.HubPhase);
         var repaired = Hub();
         Assert.NotEqual(hub.Id, repaired.Id);
@@ -315,7 +315,7 @@ public sealed partial class MilitiaHubTests
         else
         {
             Assert.Equal(MilitiaHubPhase.Contested, system.HubPhase);
-            Assert.Equal(FactionWarzoneRules.VictoryPointThreshold - 350, system.VictoryPoints);
+            Assert.Equal(FactionWarzoneRules.VictoryPointThreshold - 455, system.VictoryPoints);
             Assert.Null(Loyalty(live, attacker.PilotId));
             Assert.NotEqual(hub.Id, encounters.List(System, now).Single(npc => npc.Role == NpcRole.MilitiaHub).Id);
         }

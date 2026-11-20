@@ -42,7 +42,7 @@ internal static partial class NpcHostility
             ConcordPersistence.Attack(world, catalog, attacked, shipId, now);
             return;
         }
-        if (attacked.Role is NpcRole.MilitiaNavy or NpcRole.MilitiaComplexDefender or NpcRole.MilitiaHub)
+        if (attacked.Role is NpcRole.MilitiaNavy or NpcRole.MilitiaComplexDefender or NpcRole.MilitiaHub or NpcRole.MilitiaObjective)
         {
             // The owning encounter selects targets. A bystander cannot redirect it.
             return;

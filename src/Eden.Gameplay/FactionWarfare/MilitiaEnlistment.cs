@@ -45,6 +45,16 @@ public static class MilitiaRules
             _ => null,
         };
 
+    public static MilitiaFaction Opponent(MilitiaFaction faction) =>
+        faction switch
+        {
+            MilitiaFaction.Amarr => MilitiaFaction.Minmatar,
+            MilitiaFaction.Minmatar => MilitiaFaction.Amarr,
+            MilitiaFaction.Caldari => MilitiaFaction.Gallente,
+            MilitiaFaction.Gallente => MilitiaFaction.Caldari,
+            _ => throw new ArgumentOutOfRangeException(nameof(faction)),
+        };
+
     public static bool AreEnemies(MilitiaFaction? first, MilitiaFaction? second) =>
         (first, second)
             is

@@ -1,8 +1,10 @@
 using System.Text.Json;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Exploration;
+using Eden.Data.World.FactionWarfare;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Exploration;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Diagnostics;
@@ -14,6 +16,7 @@ using Eden.Protocol.Serialization;
 using Eden.Protocol.Targeting;
 using Eden.World.Catalog;
 using Eden.World.Exploration;
+using Eden.World.FactionWarfare;
 using Eden.World.Fittings;
 using Eden.World.Runtime;
 using Eden.World.Storage;
@@ -127,6 +130,104 @@ public sealed class HackingWorldTests
                 i => i.TypeId == AbyssalRules.TranquilDarkFilament && i.Quantity == 1
             );
         }
+    }
+
+    [Fact]
+    public void OperationCenterRequiresOpposingMilitiaAndSuppliesDeploymentComponent()
+    {
+        using var f = Prepare();
+        long module = f.Fit(22175);
+        WorldDatabase database = new(f.Db.Path);
+        using LiveWorld live = new(database, f.Clock, _ => { });
+        var store = Reopen(f);
+        var system = live.Economy.Inspect(world =>
+            FactionWarzoneCatalog
+                .Roster.Select(seed => FactionWarzoneStore.System(world, seed.SystemId)!)
+                .First(zone => zone.Occupier == MilitiaFaction.Caldari && zone.Adjacency == WarzoneAdjacency.Rearguard)
+        );
+        const int Dungeon = 9906;
+        const int Storage = 73429;
+        const int Splice = 73403;
+        using (CatalogDbContext catalog = new(database.CatalogPath, writable: true))
+        {
+            catalog.Database.ExecuteSql(
+                $"""
+                INSERT OR IGNORE INTO SolarSystem(Id,ConstellationId,Name)
+                SELECT {system.SystemId},ConstellationId,'Operation system' FROM SolarSystem WHERE Id=30000142;
+                INSERT OR IGNORE INTO ItemGroup(Id,Name,CategoryId) VALUES (526,'Militia components',4),(306,'Data storage',2);
+                INSERT OR IGNORE INTO ItemType(Id,Name,GroupId,Radius) VALUES ({Storage},'Caldari Cryptograph Storage',306,1);
+                INSERT OR IGNORE INTO ItemType(Id,Name,GroupId,Radius) VALUES ({Splice},'Caldari Encoder Splice',526,1);
+                """
+            );
+            string data = JsonSerializer.Serialize(
+                new
+                {
+                    archetypeID = 67,
+                    dungeonNameID = 638531,
+                    rooms = new Dictionary<int, object>
+                    {
+                        [1] = new
+                        {
+                            objects = Enumerable
+                                .Range(1, 5)
+                                .ToDictionary(
+                                    i => i,
+                                    i => new
+                                    {
+                                        typeID = Storage,
+                                        objectID = i,
+                                        position = new
+                                        {
+                                            x = i * 500,
+                                            y = 0,
+                                            z = 0,
+                                        },
+                                    }
+                                ),
+                        },
+                    },
+                }
+            );
+            const string component = """{"volume":0.1}""";
+            catalog.Database.ExecuteSql(
+                $"""
+                INSERT INTO SourceRecord(Dataset,Key,Data) VALUES ('client/dungeons',{Dungeon},{data}),
+                    ('client/types',{Splice},{component}),('client/types',{Storage},{component})
+                """
+            );
+        }
+        var site = Assert.Single(store.Signatures(system.SystemId, f.Clock.Now), row => row.DungeonId == Dungeon);
+        Assert.True(site.IsSignature);
+        Assert.Equal(5, site.Objects.Count);
+        var target = site.Objects[0];
+        f.Db.Store.SetPosition(f.ShipId, target.Position, system.SystemId);
+        Assert.Throws<InvalidDataException>(() => store.Begin(f.PilotId, module, target.Id, new HashSet<long> { target.Id }, f.Clock.Now));
+        using (var action = live.Economy.Begin(TransactionParticipants.None))
+        {
+            action.Add(new SavedMilitiaEnlistment { PilotId = f.PilotId, DirectFaction = MilitiaFaction.Gallente });
+            action.Commit();
+        }
+
+        var contact = store.Begin(f.PilotId, module, target.Id, new HashSet<long> { target.Id }, f.Clock.Now);
+        using (var action = live.Economy.Begin(TransactionParticipants.None))
+        {
+            action.Set<SavedHackingAttempt>().Find(f.PilotId)!.ContactJson = JsonSerializer.Serialize(
+                contact with
+                {
+                    Board = WinningBoard(),
+                }
+            );
+            action.Commit();
+        }
+        var result = store.Act(f.PilotId, new(HackingActionKind.Click, new(1, 0)), f.Clock.Now);
+        Assert.Equal(HackingOutcome.Won, result.Current.Outcome);
+        Assert.Single(store.Read(f.PilotId, target.Id, f.Clock.Now).Items, row => row.TypeId == Splice && row.Quantity == 1);
+        var dataSite = live.Economy.Inspect(world => world.Set<SavedExplorationSite>().Find(site.Id)!);
+        Assert.Equal(f.Clock.Now + TimeSpan.FromSeconds(8).Ticks, dataSite.ResponseAt);
+        Assert.Equal(f.Clock.Now + TimeSpan.FromMinutes(20).Ticks, dataSite.ExpiresAt);
+        Assert.Throws<InvalidDataException>(() =>
+            store.Begin(f.PilotId, module, target.Id, new HashSet<long> { target.Id }, contact.ReadyAt)
+        );
     }
 
     private static Fixture Prepare()

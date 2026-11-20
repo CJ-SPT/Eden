@@ -5,12 +5,14 @@ using Eden.Data.World.Exploration;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Exploration;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Docking;
+using Eden.World.FactionWarfare;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
@@ -34,7 +36,8 @@ internal sealed partial class PirateExplorationStore(
         bool Enabled,
         IReadOnlyList<CombatAnomaly> Sites,
         long Version = 0,
-        long SovereigntyVersion = 0
+        long SovereigntyVersion = 0,
+        MilitiaFaction? OperationOccupier = null
     );
 
     private readonly ConcurrentDictionary<int, View> _views = [];
@@ -51,6 +54,16 @@ internal sealed partial class PirateExplorationStore(
         {
             sovereignty?.AdvanceAll();
             long sovereigntyVersion = Eden.World.Sovereignty.SovereigntySites.Version(database.Path, systemId);
+            var live = LiveWorld.Find(database.Path);
+            MilitiaFaction? operationOccupier =
+                live is not null && FactionWarzoneCatalog.Systems.ContainsKey(systemId)
+                    ? live.Economy.Inspect(world =>
+                        FactionWarzoneStore.System(world, systemId)
+                            is { Adjacency: WarzoneAdjacency.Rearguard, PendingTransferAt: null } info
+                            ? info.Occupier
+                            : (MilitiaFaction?)null
+                    )
+                    : null;
             long generation = database.Catalog.Identity.Generation;
             bool enabled = database.Settings.NpcPopulation.Pirates;
             long version = WormholeRules.IsWormholeSystem(systemId) ? CombatAnomalyStore.ResidentVersion(database.Path, systemId) : 0;
@@ -60,6 +73,7 @@ internal sealed partial class PirateExplorationStore(
                 && view.Enabled == enabled
                 && view.Version == version
                 && view.SovereigntyVersion == sovereigntyVersion
+                && view.OperationOccupier == operationOccupier
                 && now < view.Deadline
             )
             {
@@ -68,7 +82,9 @@ internal sealed partial class PirateExplorationStore(
             using CatalogDbContext catalog = new(database.CatalogPath);
             var system = catalog.FindSystem(systemId);
             var faction = system is null ? null : NpcRegions.Pirates(system.RegionId);
-            if (system is null || !enabled || faction is null && !WormholeRules.IsWormholeSystem(systemId))
+            bool ordinary = enabled && (faction is not null || WormholeRules.IsWormholeSystem(systemId));
+            bool warzone = live is not null && FactionWarzoneCatalog.Systems.ContainsKey(systemId);
+            if (system is null || !ordinary && !warzone)
             {
                 _views[systemId] = new(generation, long.MaxValue, enabled, [], version, sovereigntyVersion);
                 return _views[systemId].Sites;
@@ -90,7 +106,7 @@ internal sealed partial class PirateExplorationStore(
             List<CombatAnomaly> sites = [];
             long deadline = long.MaxValue;
             int explorationTier = Eden.World.Sovereignty.SovereigntySites.Read(world, catalog, systemId).Exploration;
-            foreach (var kind in Enum.GetValues<ExplorationKind>())
+            foreach (var kind in ordinary ? Enum.GetValues<ExplorationKind>() : [])
             {
                 if (wormhole && kind != ExplorationKind.Ghost && wormholeClass is not (>= 1 and <= 6))
                 {
@@ -121,7 +137,9 @@ internal sealed partial class PirateExplorationStore(
                 int slots = wormhole || kind == ExplorationKind.Ghost ? 0 : Math.Max(explorationTier, existingSlots);
                 for (int sovereigntySlot = 0; sovereigntySlot <= slots; sovereigntySlot++)
                 {
-                    var candidatesForSlot = world.Filter<SavedExplorationSite>(site => site.SystemId == systemId && site.Kind == (int)kind);
+                    var candidatesForSlot = world.Filter<SavedExplorationSite>(site =>
+                        site.SystemId == systemId && site.Kind == (int)kind && site.SovereigntySlot >= 0
+                    );
                     if (slots > 0)
                     {
                         candidatesForSlot = candidatesForSlot.Where(site => site.SovereigntySlot == sovereigntySlot);
@@ -294,14 +312,20 @@ internal sealed partial class PirateExplorationStore(
                     deadline = Math.Min(deadline, row.ExpiresAt);
                 }
             }
+            if (warzone)
+            {
+                ReadOperationCenter(world, catalog, systemId, operationOccupier, now, sites, ref deadline);
+            }
             transaction.Commit();
-            _views[systemId] = new(generation, deadline, enabled, sites.ToArray(), version, sovereigntyVersion);
+            _views[systemId] = new(generation, deadline, enabled, sites.ToArray(), version, sovereigntyVersion, operationOccupier);
             return _views[systemId].Sites;
         }
     }
 
     private static ExplorationDefinition Definition(CatalogDbContext catalog, SavedExplorationSite site) =>
-        site.Kind == (int)ExplorationKind.Ghost ? GhostSiteCatalog.Find(catalog, site.DungeonId)
+        site.SovereigntySlot == MilitiaOperationSlot
+            ? MilitiaOperationCatalog.Find(catalog, site.DungeonId) ?? throw new InvalidDataException("Unknown Operation Center.")
+        : site.Kind == (int)ExplorationKind.Ghost ? GhostSiteCatalog.Find(catalog, site.DungeonId)
         : WormholeRules.IsWormholeSystem(site.SystemId)
         && SleeperSiteCatalog.Exploration(catalog).FirstOrDefault(d => d.DungeonId == site.DungeonId) is { } sleeper
             ? sleeper
@@ -383,6 +407,12 @@ internal sealed partial class PirateExplorationStore(
         long pilotId
     )
     {
+        if (MilitiaAdvantageRules.IsEmpire(definition.FactionId))
+        {
+            int component = MilitiaOperationCatalog.Loot((MilitiaFaction)definition.FactionId, container.Index);
+            InventoryPersistence.MergeOutput(world, catalog, pilotId, container.Id, (int)InventoryFlag.Cargo, component, 1);
+            return;
+        }
         if (definition.WormholeClass > 0)
         {
             GrantSleeperLoot(world, catalog, container, definition, pilotId);

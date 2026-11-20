@@ -75,7 +75,12 @@ internal sealed class MilitiaHubStore(WorldDatabase database) : IMilitiaHubs
         if (due.Length > 0)
         {
             var resources = live.Economy.Inspect(world =>
-                due.SelectMany(hub => MilitiaComplexStore.DefenderIds(world, hub.SystemId).Prepend(hub.NpcId))
+                due.SelectMany(hub =>
+                        MilitiaComplexStore
+                            .DefenderIds(world, hub.SystemId)
+                            .Concat(MilitiaObjectiveStore.ActiveNpcs(world, hub.SystemId))
+                            .Prepend(hub.NpcId)
+                    )
                     .Select(id => new SimulationResource(SharedSimulationResource.Npc, id))
                     .ToArray()
             );
@@ -89,6 +94,8 @@ internal sealed class MilitiaHubStore(WorldDatabase database) : IMilitiaHubs
                 occupation.CapturedAt = hub.TransferAt;
                 occupation.Occupier = attacker;
                 occupation.VictoryPoints = 0;
+                MilitiaAdvantageStore.Reset(action, entry.SystemId);
+                MilitiaObjectiveStore.ResetForOccupation(action, catalog, entry.SystemId, now);
                 MilitiaComplexStore.ResetForOccupation(action, catalog, entry.SystemId, attacker, now);
                 Replace(action, catalog, hub, attacker, now);
             }
@@ -99,19 +106,24 @@ internal sealed class MilitiaHubStore(WorldDatabase database) : IMilitiaHubs
 
     internal static bool CanAttack(WorldAction world, WorldNpc npc, Pilot pilot) =>
         npc.Role != NpcRole.MilitiaHub
-        || world is EconomyTransaction
-            && world.Set<SavedMilitiaHub>().Find(npc.SystemId) is { } hub
-            && hub.NpcId == npc.Id
-            && npc is { DestroyedAt: null, RetiredAt: null }
-            && world.Set<SavedWarzoneOccupation>().Find(npc.SystemId) is { } occupation
-            && MilitiaHubRules.CanAttack(
-                MilitiaHubRules.Phase(occupation.VictoryPoints, hub.TransferAt),
-                occupation.Occupier,
-                MilitiaEnlistmentStore.Effective(world, pilot)
-            );
+            ? MilitiaObjectiveStore.CanAttack(world, npc, pilot)
+            : world is EconomyTransaction
+                && world.Set<SavedMilitiaHub>().Find(npc.SystemId) is { } hub
+                && hub.NpcId == npc.Id
+                && npc is { DestroyedAt: null, RetiredAt: null }
+                && world.Set<SavedWarzoneOccupation>().Find(npc.SystemId) is { } occupation
+                && MilitiaHubRules.CanAttack(
+                    MilitiaHubRules.Phase(occupation.VictoryPoints, hub.TransferAt),
+                    occupation.Occupier,
+                    MilitiaEnlistmentStore.Effective(world, pilot)
+                );
 
     internal static void RequireAttack(WorldAction world, WorldNpc npc, Pilot pilot)
     {
+        if (!MilitiaObjectiveStore.CanAttack(world, npc, pilot))
+        {
+            throw new InvalidDataException("Only the opposing militia may attack this objective.");
+        }
         if (npc.Role == NpcRole.MilitiaHub && !CanAttack(world, npc, pilot))
         {
             throw new InvalidDataException("Only the opposing militia can attack a vulnerable infrastructure hub.");

@@ -167,6 +167,7 @@ internal sealed class SmartbombStore(
         {
             if (
                 world.Set<WorldNpc>().Find(id) is not { DestroyedAt: null, RetiredAt: null } npc
+                || !Eden.World.FactionWarfare.MilitiaObjectiveStore.CanAttack(world, npc, pilot)
                 || npc.SystemId != system
                 || npc.Navigation == NpcNavigationState.Warping
                 || !Near(NpcMotion.Position(npc), catalog.RequireItem(npc.TypeId).Radius ?? 0)

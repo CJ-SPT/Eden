@@ -58,6 +58,8 @@ internal sealed class AgencyHandler(IAgencyDirectory directory, TimeProvider clo
         return method switch
         {
             "GetFactionWarfareInstances" when complexes?.Directory(now) is { Count: > 0 } militia => new AnomalyDirectory(militia),
+            "GetFactionWarfareBattlefieldInstances" when complexes?.Directory(now, battlefields: true) is { Count: > 0 } fields =>
+                new AnomalyDirectory(fields),
             "GetSignatureInstances" => new AgencyCounts(directory.Signatures(now)),
             "GetIceBeltInstances" => new AnomalyDirectory(directory.Ice(now).Known),
             "GetIceBeltsCount" => new AgencyCounts(directory.Ice(now).Available),

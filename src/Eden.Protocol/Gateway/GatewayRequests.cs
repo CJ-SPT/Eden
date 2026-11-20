@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Corporations;
@@ -23,6 +24,8 @@ public sealed class GatewayRequests(
     IFactionWarzones? factionWarzones = null
 )
 {
+    private readonly ConcurrentDictionary<long, ConcurrentDictionary<int, MilitiaAdvantageState>> _factionObservations = new();
+
     private readonly ByteString _instanceId = ByteString.CopyFrom(Guid.NewGuid().ToByteArray());
     private const string PersonalPlans = "eve_public.character.skill.plan.";
     private const string FreelanceProjects = "eve_public.freelance.project.api.";
@@ -45,7 +48,17 @@ public sealed class GatewayRequests(
                         sovereigntyUpdates
                     )
             )
-            ?? (factionWarzones is null ? null : FactionActivityRequests.Read(type, payload, factionWarzones))
+            ?? (
+                factionWarzones is null
+                    ? null
+                    : FactionActivityRequests.Read(
+                        type,
+                        payload,
+                        factionWarzones,
+                        clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(),
+                        ObserveFactionScores
+                    )
+            )
             ?? CorporationPaletteRequests.Read(type, payload, request.AuthoritativeContext, characters, corporations)
             ?? CelestialResourceRequests.Read(type, payload, celestialResources);
         IMessage? result =
@@ -101,9 +114,54 @@ public sealed class GatewayRequests(
             };
         }
         return response;
+
+        void ObserveFactionScores(MilitiaAdvantageState scores)
+        {
+            if (authenticatedAccount is long account)
+            {
+                _factionObservations.GetOrAdd(account, static _ => new())[scores.SystemId] = scores;
+            }
+        }
     }
 
     public IReadOnlyList<Notice> SovereigntyNotices(long accountId) => sovereigntyUpdates?.Notices(accountId) ?? [];
+
+    public IReadOnlyList<Notice> FactionActivityNotices(long accountId)
+    {
+        if (factionWarzones is null)
+        {
+            return [];
+        }
+
+        var now = clock.GetUtcNow();
+        long time = now.UtcDateTime.ToFileTimeUtc();
+        List<Notice> result = factionWarzones
+            .AdvantageContributions(accountId, time)
+            .Select(contribution => Wrap(FactionActivityRequests.Contribution(contribution)))
+            .ToList();
+        if (!_factionObservations.TryGetValue(accountId, out var systems))
+        {
+            return result;
+        }
+        foreach (var (system, before) in systems)
+        {
+            var current = factionWarzones.Advantage(system, time);
+            if (current is not null && current != before && systems.TryUpdate(system, current, before))
+            {
+                result.Add(Wrap(FactionActivityRequests.Changed(current)));
+            }
+        }
+        return result;
+
+        Notice Wrap(IMessage message) =>
+            new()
+            {
+                Dispatched = Timestamp.FromDateTimeOffset(now),
+                Uuid = ByteString.CopyFrom(Guid.NewGuid().ToByteArray()),
+                InternalOrigin = "eden",
+                Payload = Any.Pack(message),
+            };
+    }
 
     public void ForgetSovereigntyNotices(long accountId) => sovereigntyUpdates?.Forget(accountId);
 }

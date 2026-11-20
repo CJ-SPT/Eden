@@ -97,7 +97,7 @@ public sealed class FactionWarzoneProtocolTests
     }
 
     [Fact]
-    public void AdvantageReadEchoesSystemAndReturnsNeutralParticipantScores()
+    public void AdvantageReadEchoesSystemAndReturnsTerrainFloors()
     {
         using TestWorld world = new(liveWorld: true);
         var gateway = world.Services.GetRequiredService<GatewayRequests>();
@@ -107,14 +107,8 @@ public sealed class FactionWarzoneProtocolTests
         var scores = response.Payload.Unpack<GetSolarSystemScoresResponse>();
         Assert.Equal(request.SolarSystem, scores.SolarSystem);
         Assert.Equal(new[] { 500003ul, 500002ul }, scores.Scores.Select(score => score.Faction.Sequential));
-        Assert.All(
-            scores.Scores,
-            score =>
-            {
-                Assert.Equal(0u, score.Contribution);
-                Assert.Equal(0u, score.Floor);
-            }
-        );
+        Assert.All(scores.Scores, score => Assert.Equal(0u, score.Contribution));
+        Assert.Equal(new uint[] { 10_000, 40_000 }, scores.Scores.Select(score => score.Floor));
 
         request.SolarSystem.Sequential = 30003788;
         response = gateway.Handle(new() { Payload = Any.Pack(request) });

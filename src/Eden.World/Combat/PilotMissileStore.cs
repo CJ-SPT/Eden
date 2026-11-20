@@ -460,6 +460,8 @@ internal sealed partial class PilotMissileStore(
                 && row.TargetKind == MissileTargetKind.Npc
                 && world.Set<WorldNpc>().Find(row.TargetId) is { DestroyedAt: null, RetiredAt: null } npc
                 && npc.Navigation != NpcNavigationState.Warping
+                && world.Pilots.Find(row.PilotId) is { } pilot
+                && MilitiaObjectiveStore.CanAttack(world, npc, pilot)
             )
             {
                 var attributes = PlayerEwarStore.NpcAttributes(world, npc.Id, PilotFittingStore.ReadAttributes(catalog, npc.TypeId));
@@ -469,7 +471,6 @@ internal sealed partial class PilotMissileStore(
                     payload.Target!.Velocity.Length
                 );
                 var damage = payload.Warhead.Damage.Scale(application);
-                var pilot = world.Pilots.Find(row.PilotId)!;
                 var result = NpcDamagePersistence.Apply(
                     world,
                     catalog,

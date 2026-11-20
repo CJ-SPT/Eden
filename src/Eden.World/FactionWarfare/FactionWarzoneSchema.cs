@@ -23,6 +23,11 @@ internal static class FactionWarzoneSchema
         model.Entity<SavedMilitiaNavyPursuit>().ToTable("WorldMilitiaNavyPursuit").HasKey(row => row.PilotId);
         model.Entity<SavedMilitiaNavyPursuit>().Property(row => row.PilotId).ValueGeneratedNever();
         model.Entity<SavedMilitiaNavyPursuit>().HasOne<Pilot>().WithMany().HasForeignKey(row => row.PilotId);
+        model.Entity<SavedMilitiaObjective>().ToTable("WorldMilitiaObjective").HasKey(row => row.Id);
+        model.Entity<SavedMilitiaObjective>().Property(row => row.Id).ValueGeneratedNever();
+        model.Entity<SavedMilitiaObjective>().HasIndex(row => row.SystemId);
+        model.Entity<SavedMilitiaAdvantage>().ToTable("WorldMilitiaAdvantage").HasKey(row => row.SystemId);
+        model.Entity<SavedMilitiaAdvantage>().Property(row => row.SystemId).ValueGeneratedNever();
         model.Entity<SavedMilitiaComplex>().ToTable("WorldMilitiaComplex").HasKey(row => row.Slot);
         model.Entity<SavedMilitiaComplex>().Property(row => row.Slot).ValueGeneratedNever();
         model.Entity<SavedMilitiaHub>().ToTable("WorldMilitiaHub").HasKey(row => row.SystemId);
@@ -66,6 +71,26 @@ internal static class FactionWarzoneSchema
                 RespondAt INTEGER NOT NULL,
                 FrigateId INTEGER,
                 CruiserId INTEGER);
+            CREATE TABLE IF NOT EXISTS WorldMilitiaObjective(
+                Id INTEGER PRIMARY KEY,
+                SystemId INTEGER NOT NULL,
+                Kind INTEGER NOT NULL,
+                Faction INTEGER NOT NULL,
+                PilotId INTEGER,
+                TargetId INTEGER,
+                Generation INTEGER NOT NULL,
+                ReadyAt INTEGER NOT NULL,
+                ExpiresAt INTEGER NOT NULL,
+                ReplaceAt INTEGER,
+                Elapsed INTEGER NOT NULL,
+                Waves INTEGER NOT NULL);
+            CREATE INDEX IF NOT EXISTS IX_WorldMilitiaObjective_SystemId ON WorldMilitiaObjective(SystemId);
+            CREATE TABLE IF NOT EXISTS WorldMilitiaAdvantage(
+                SystemId INTEGER PRIMARY KEY,
+                FirstContribution INTEGER NOT NULL,
+                FirstUpdatedAt INTEGER NOT NULL,
+                SecondContribution INTEGER NOT NULL,
+                SecondUpdatedAt INTEGER NOT NULL);
             CREATE TABLE IF NOT EXISTS WorldMilitiaComplex(
                 Slot INTEGER PRIMARY KEY,
                 Generation INTEGER NOT NULL,

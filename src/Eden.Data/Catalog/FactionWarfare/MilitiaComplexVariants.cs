@@ -45,6 +45,8 @@ public sealed record MilitiaComplexVariant(
 
 public static class MilitiaComplexVariants
 {
+    public static MilitiaComplexVariant Battlefield { get; } = new(MilitiaComplexFamily.Battlefield, 30, 75922, 0, 9900, 9899, 9898, 9901);
+
     // Build 3662168 client/dungeons and reactiveSpawnComponent occupier spawners.
     public static ImmutableArray<MilitiaComplexVariant> All { get; } =
     [

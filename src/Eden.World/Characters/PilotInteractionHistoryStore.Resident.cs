@@ -49,6 +49,19 @@ internal sealed partial class PilotInteractionHistoryStore
         row.Damage += damage;
     }
 
+    internal static Pilot[] DamagePilots(WorldAction world, long victimId) =>
+        world
+            .Filter<SavedCombatDamage>(row => row.VictimId == victimId)
+            .Concat(world.Set<SavedCombatDamage>().Local.Where(row => row.VictimId == victimId))
+            .AsEnumerable()
+            .DistinctBy(row => row.AttackerId)
+            .Select(row => JsonSerializer.Deserialize<CombatParty>(row.PartyJson)?.CharacterId)
+            .OfType<long>()
+            .Distinct()
+            .Select(id => world.Pilots.Find(id))
+            .OfType<Pilot>()
+            .ToArray();
+
     internal static void Destroyed(
         WorldAction world,
         long pilotId,

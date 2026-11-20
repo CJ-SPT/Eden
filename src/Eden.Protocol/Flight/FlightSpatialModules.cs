@@ -18,7 +18,8 @@ internal sealed partial class FlightSession
     internal bool InMilitiaCaptureRange =>
         Pilot.Position is { } position
         && Scene.Objects.Any(body =>
-            body.MilitiaCapture is not null && position.DistanceTo(body.Position) <= MilitiaComplexRules.CaptureRange
+            (body.MilitiaCapture is not null || body.BattlefieldCapture is not null)
+            && position.DistanceTo(body.Position) <= MilitiaComplexRules.CaptureRange
         );
 
     internal bool HasCloakObstacle()

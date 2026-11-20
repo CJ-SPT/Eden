@@ -39,9 +39,9 @@ internal static partial class NpcDamagePersistence
         bool paidProjectile = false
     )
     {
-        if (npc.Role == NpcRole.MilitiaHub)
+        if (npc.Role == NpcRole.MilitiaHub || npc.AnchorKind == NpcAnchorKind.MilitiaObjective)
         {
-            throw new InvalidDataException("Infrastructure hub damage requires the resident world.");
+            throw new InvalidDataException("Faction warfare objective damage requires the resident world.");
         }
         if (npc.DestroyedAt.HasValue || npc.RetiredAt.HasValue)
         {

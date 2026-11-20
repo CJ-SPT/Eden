@@ -124,7 +124,11 @@ internal sealed class FlightCallHandler(
             command is FlightCommand.WarpToScan
             || command is FlightCommand.WarpTo { TargetId: >= CombatAnomalyRules.FirstSiteId and < CombatAnomalyRules.FirstObjectId }
             || command is FlightCommand.WarpTo siteWarpRequest
-                && (WormholeRules.IsEndpoint(siteWarpRequest.TargetId) || MilitiaComplexRules.IsSite(siteWarpRequest.TargetId))
+                && (
+                    WormholeRules.IsEndpoint(siteWarpRequest.TargetId)
+                    || MilitiaComplexRules.IsSite(siteWarpRequest.TargetId)
+                    || MilitiaObjectiveRules.IsSite(siteWarpRequest.TargetId)
+                )
         )
         {
             var site = anomalies

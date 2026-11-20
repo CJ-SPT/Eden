@@ -75,6 +75,22 @@ internal sealed class FactionWarzoneStore(WorldDatabase database, IMilitiaHubs? 
         });
     }
 
+    public MilitiaAdvantageState? Advantage(int systemId, long now)
+    {
+        if (!FactionWarzoneCatalog.Systems.ContainsKey(systemId))
+        {
+            return null;
+        }
+        hubs?.Sweep(now);
+        return Resident.Economy.Inspect(world => MilitiaAdvantageStore.Read(world, System(world, systemId)!, now));
+    }
+
+    public IReadOnlyList<MilitiaAdvantageContribution> AdvantageContributions(long accountId, long now) =>
+        LiveWorld.Find(database.Path)?.MilitiaContributions(accountId, now) ?? [];
+
+    internal static MilitiaFaction Occupier(WorldAction world, int systemId) =>
+        world.Set<SavedWarzoneOccupation>().Find(systemId)?.Occupier ?? FactionWarzoneCatalog.Systems[systemId].OriginalOccupier;
+
     private static WarzoneSystem Read(WarzoneSeed seed, Func<int, SavedWarzoneOccupation?> occupation)
     {
         var saved = occupation(seed.SystemId);

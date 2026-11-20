@@ -4,6 +4,7 @@ using Eden.Data.Catalog.FactionWarfare;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Inventory;
 using Eden.World.Catalog;
 using Eden.World.Inventory;
 
@@ -20,7 +21,15 @@ internal sealed record MilitiaComplexProfile(
     StaticSpaceObject? Gate,
     MissionGateAccess? Access,
     SpacePosition Defender,
-    TimeSpan DefenderInterval
+    TimeSpan DefenderInterval,
+    MilitiaBattlefieldProfile? Battlefield = null
+);
+
+internal sealed record MilitiaBattlefieldProfile(
+    IReadOnlyList<StaticSpaceObject> Points,
+    StaticSpaceObject Scoreboard,
+    InventoryTypeList Capturing,
+    InventoryTypeList Blocking
 );
 
 internal sealed class MilitiaComplexCatalog(string catalogPath)
@@ -41,9 +50,10 @@ internal sealed class MilitiaComplexCatalog(string catalogPath)
 
         var captureRoom = dungeon.Rooms!.Values.Single(room => room.Objects!.Values.Any(o => o.TypeID == variant.BeaconType));
         var objects = captureRoom.Objects!.Values.ToArray();
-        var point = objects.Single(o => o.TypeID == CapturePoint(occupier));
+        var battlefield = variant.Family == MilitiaComplexFamily.Battlefield ? Battlefield() : null;
+        var point = battlefield?.Points[0] ?? Body(objects.Single(o => o.TypeID == CapturePoint(occupier)));
         var beacon = objects.Single(o => o.TypeID == variant.BeaconType);
-        var spawn = objects.Single(o => o.TypeID == variant.DefenderSpawner);
+        var spawn = battlefield is null ? objects.Single(o => o.TypeID == variant.DefenderSpawner) : null;
         StaticSpaceObject? gate = null;
         MissionGateAccess? access = null;
         if (dungeon.Connections is { Length: 1 } connections)
@@ -64,13 +74,41 @@ internal sealed class MilitiaComplexCatalog(string catalogPath)
             checked((int)dungeon.DungeonNameID!.Value),
             checked((int)dungeon.ArchetypeID!.Value),
             checked((int)dungeon.Difficulty!.Value),
-            Body(point),
+            point,
             Body(beacon),
             gate,
             access,
-            Position(spawn),
-            TimeSpan.FromSeconds(variant.DefenderSpawner == 92671 ? 85 : 210)
+            spawn is null ? SpacePosition.Zero : Position(spawn),
+            TimeSpan.FromSeconds(variant.DefenderSpawner == 92671 ? 85 : 210),
+            battlefield
         );
+
+        MilitiaBattlefieldProfile Battlefield()
+        {
+            const int firstZoneA = 73443;
+            const int lastZoneA = 73446;
+            const int firstZoneB = 73854;
+            const int lastZoneC = 73861;
+            const int firstScoreboard = 73447;
+            const int lastScoreboard = 73450;
+            const int capturingHulls = 514;
+            const int blockingHulls = 521;
+            var points = objects
+                .Where(o => o.TypeID is >= firstZoneA and <= lastZoneA or >= firstZoneB and <= lastZoneC)
+                .OrderBy(o => o.TypeID)
+                .Select(Body)
+                .ToArray();
+            if (points.Length != 3)
+            {
+                throw new InvalidDataException($"Battlefield {dungeonId} requires three capture points.");
+            }
+            return new(
+                points,
+                Body(objects.Single(o => o.TypeID is >= firstScoreboard and <= lastScoreboard)),
+                CatalogTypeLists.Read(catalog, capturingHulls),
+                CatalogTypeLists.Read(catalog, blockingHulls)
+            );
+        }
 
         StaticSpaceObject Body(ClientDungeonsRoomsValueObjectsValue obj)
         {
@@ -124,7 +162,7 @@ internal sealed class MilitiaComplexCatalog(string catalogPath)
                     MilitiaComplexFamily.Scout => 0,
                     MilitiaComplexFamily.Small => 1,
                     MilitiaComplexFamily.Medium => 2,
-                    MilitiaComplexFamily.Large or MilitiaComplexFamily.Open => 3,
+                    MilitiaComplexFamily.Large or MilitiaComplexFamily.Open or MilitiaComplexFamily.Battlefield => 3,
                     _ => throw new ArgumentOutOfRangeException(nameof(family)),
                 }
             );

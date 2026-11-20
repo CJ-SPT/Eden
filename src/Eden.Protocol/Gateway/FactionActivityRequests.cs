@@ -7,7 +7,13 @@ namespace Eden.Protocol.Gateway;
 
 internal static class FactionActivityRequests
 {
-    internal static GatewayReply? Read(string type, ByteString payload, IFactionWarzones warzones)
+    internal static GatewayReply? Read(
+        string type,
+        ByteString payload,
+        IFactionWarzones warzones,
+        long now,
+        Action<MilitiaAdvantageState> observe
+    )
     {
         if (type != "eve_public.faction.activity.GetSolarSystemScoresRequest")
         {
@@ -21,11 +27,11 @@ internal static class FactionActivityRequests
                 return new(HttpStatusCode.BadRequest);
             }
             var response = new GetSolarSystemScoresResponse { SolarSystem = system };
-            if (warzones.System((int)system.Sequential) is { Warzone: var zone })
+            if (warzones.Advantage((int)system.Sequential, now) is { } scores)
             {
-                // Until Advantage has a gameplay owner, both participants start with zero score and floor.
-                response.Scores.Add(NeutralScore(zone.FirstFaction));
-                response.Scores.Add(NeutralScore(zone.SecondFaction));
+                response.Scores.Add(Wire(scores.First));
+                response.Scores.Add(Wire(scores.Second));
+                observe(scores);
             }
             return new(HttpStatusCode.OK, response);
         }
@@ -35,5 +41,27 @@ internal static class FactionActivityRequests
         }
     }
 
-    private static Score NeutralScore(MilitiaFaction faction) => new() { Faction = new() { Sequential = (ulong)faction } };
+    internal static SolarSystemScoresNotice Changed(MilitiaAdvantageState state) =>
+        new()
+        {
+            SolarSystem = new() { Sequential = (ulong)state.SystemId },
+            Scores = { Wire(state.First), Wire(state.Second) },
+        };
+
+    internal static ScoreContributionNotice Contribution(MilitiaAdvantageContribution contribution) =>
+        new()
+        {
+            SolarSystem = new() { Sequential = (ulong)contribution.SystemId },
+            Contributor = new() { Sequential = (ulong)contribution.PilotId },
+            Faction = new() { Sequential = (ulong)contribution.Faction },
+            Contribution = contribution.Amount,
+        };
+
+    private static Score Wire(MilitiaAdvantageScore score) =>
+        new()
+        {
+            Faction = new() { Sequential = (ulong)score.Faction },
+            Contribution = (uint)score.Contribution,
+            Floor = (uint)score.Floor,
+        };
 }

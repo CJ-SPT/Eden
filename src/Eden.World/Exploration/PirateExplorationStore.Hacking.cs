@@ -7,10 +7,12 @@ using Eden.Data.World.Inventory;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Exploration;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.World.Catalog;
 using Eden.World.Combat;
+using Eden.World.FactionWarfare;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Loot;
@@ -60,6 +62,18 @@ internal sealed partial class PirateExplorationStore
         )
         {
             throw new InvalidDataException("This exploration container is unavailable in your current system.");
+        }
+        if (
+            site.SovereigntySlot == MilitiaOperationSlot
+            && (
+                FactionWarzoneStore.System(world, site.SystemId)
+                    is not { Adjacency: WarzoneAdjacency.Rearguard, PendingTransferAt: null } system
+                || Definition(catalog, site).FactionId != (int)system.Occupier
+                || !MilitiaRules.AreEnemies(MilitiaEnlistmentStore.Effective(world, pilot), system.Occupier)
+            )
+        )
+        {
+            throw new InvalidDataException("Only opposing militia pilots may access this Operation Center.");
         }
         var body = Object(catalog, site, container);
         if (
@@ -238,6 +252,11 @@ internal sealed partial class PirateExplorationStore
                     GrantLoot(world, catalog, access.Container, Definition(catalog, access.Site), pilotId);
                     access.Container.Hacked = true;
                     access.Container.OwnerId = pilotId;
+                    if (access.Site.SovereigntySlot == MilitiaOperationSlot && access.Site.ResponseAt is null)
+                    {
+                        access.Site.ResponseAt = now + OperationResponse.Ticks;
+                        access.Site.ExpiresAt = Math.Min(access.Site.ExpiresAt, now + OperationCollapse.Ticks);
+                    }
                     CombatAnomalyStore.HackSignal(world, catalog, access.Site.Id, SleeperWaveTrigger.HackResolved, now);
                 }
                 else

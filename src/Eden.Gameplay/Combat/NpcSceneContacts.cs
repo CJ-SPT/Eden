@@ -12,7 +12,10 @@ public sealed record NpcSceneContacts(IReadOnlyList<NpcContact> Visible, IReadOn
             contacts
                 .Where(n =>
                     n.SystemId == systemId
-                    && (n.Role == NpcRole.MilitiaHub || position.DistanceTo(n.Position) <= NpcEncounterDefinitions.VisibilityRange)
+                    && (
+                        n.Role is NpcRole.MilitiaHub or NpcRole.MilitiaObjective
+                        || position.DistanceTo(n.Position) <= NpcEncounterDefinitions.VisibilityRange
+                    )
                 )
                 .ToArray(),
             contacts.Where(n => n.SystemId == systemId && n.Warp is not null).Select(n => n.Id).ToFrozenSet()

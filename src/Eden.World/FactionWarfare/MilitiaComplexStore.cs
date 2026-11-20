@@ -22,7 +22,12 @@ using Eden.World.Storage;
 namespace Eden.World.FactionWarfare;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCatalog profiles, IMilitiaHubs? hubs = null) : IMilitiaComplexes
+internal sealed partial class MilitiaComplexStore(
+    WorldDatabase database,
+    NpcProfileCatalog profiles,
+    IMilitiaHubs? hubs = null,
+    MilitiaObjectiveStore? objectives = null
+) : IMilitiaComplexes
 {
     private static readonly IGrouping<MilitiaComplexFamily, MilitiaComplexVariant>[] Variants = MilitiaComplexVariants
         .All.Where(variant => !variant.Retired)
@@ -36,7 +41,7 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
 
     private readonly record struct Presence(long ShipId, long ConnectionId);
 
-    private sealed record Sample(long SiteId, long At, int Side, Presence[] Ships);
+    private sealed record Sample(long SiteId, long At, int Side, Presence[] Ships, long TicksHeld = 0);
 
     private sealed record Site(
         long Slot,
@@ -55,7 +60,7 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
         internal bool Replaced => Saved is not null && (Saved.Generation != Generation || Saved.Occupier != System.Occupier);
     }
 
-    private sealed record Participant(Pilot Pilot, Presence Presence, int Side)
+    private sealed record Participant(Pilot Pilot, Presence Presence, int Side, bool CanCapture)
     {
         internal long ShipId => Presence.ShipId;
     }
@@ -71,17 +76,21 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
             return [];
         }
         hubs?.Sweep(now);
-        return live.Economy.Inspect(world => Read(world, systemId, now).Select(site => View(site, now)).ToArray());
+        var sites = live.Economy.Inspect(world => Read(world, systemId, now).Select(site => View(site, now)).ToArray());
+        return objectives?.Sites(systemId, now) is { Count: > 0 } available ? sites.Concat(available).ToArray() : sites;
     }
 
-    public IReadOnlyList<AnomalySystemSites> Directory(long now)
+    public IReadOnlyList<AnomalySystemSites> Directory(long now, bool battlefields = false)
     {
         hubs?.Sweep(now);
         return Resident?.Economy.Inspect(world =>
                 FactionWarzoneCatalog
                     .Roster.Select(seed => new AnomalySystemSites(
                         seed.SystemId,
-                        Read(world, seed.SystemId, now).Select(s => View(s, now, false)).ToArray()
+                        Read(world, seed.SystemId, now)
+                            .Where(site => (site.Profile.Battlefield is not null) == battlefields)
+                            .Select(s => View(s, now, false))
+                            .ToArray()
                     ))
                     .Where(entry => entry.Sites.Count > 0)
                     .ToArray()
@@ -115,12 +124,17 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
         hubs?.Sweep(now);
         using var owner = live.EnterPersistence("militia complex", TransactionParticipants.None);
         pilots = pilots.Where(pilot => !live.Economy.Cloaked(pilot.ShipId)).ToArray();
+        objectives?.Advance(systemId, pilots, now);
         var nearby = live.Economy.Inspect(world =>
             Read(world, systemId, now)
                 .Where(site =>
                     _samples.ContainsKey(site.Slot)
                     || site.Saved is { DefenderId: not null }
-                    || pilots.Any(pilot => pilot.Position.DistanceTo(site.Capture) <= MilitiaComplexRules.CaptureRange)
+                    || pilots.Any(pilot =>
+                        site.Profile.Battlefield is null
+                            ? pilot.Position.DistanceTo(site.Capture) <= MilitiaComplexRules.CaptureRange
+                            : pilot.Position.DistanceTo(site.Room) <= NpcEncounterDefinitions.VisibilityRange
+                    )
                 )
                 .ToArray()
         );
@@ -136,6 +150,16 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
             ships: pilots.Select(p => p.ShipId),
             resources: nearby
                 .Select(s => s.Saved?.DefenderId)
+                .Concat(
+                    live.Economy.Inspect(world =>
+                        nearby
+                            .Where(s => s.Profile.Battlefield is not null)
+                            .SelectMany(s => BattlefieldWings(world, s.Id))
+                            .Where(npc => npc.Active)
+                            .Select(npc => (long?)npc.Id)
+                            .ToArray()
+                    )
+                )
                 .Append(hubNpc)
                 .OfType<long>()
                 .Select(id => new SimulationResource(SharedSimulationResource.Npc, id))
@@ -144,7 +168,14 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
         var samples = new Dictionary<long, Sample?>();
         foreach (var site in nearby)
         {
-            samples[site.Slot] = Step(action, catalog, site, pilots, now);
+            if (site.Profile.Battlefield is not null)
+            {
+                AdvanceBattlefield(action, catalog, site, pilots, now, samples);
+            }
+            else
+            {
+                samples[site.Slot] = Step(action, catalog, site, pilots, now);
+            }
         }
         action.SaveChanges();
         action.Commit();
@@ -179,7 +210,7 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
             previous = null;
         }
 
-        var participants = Participants(world, catalog, site, pilots);
+        var participants = Participants(world, catalog, site, pilots, site.Capture);
         var attackers = participants.Where(p => p.Side == 1).ToArray();
         var defenders = participants.Where(p => p.Side == -1).ToArray();
         if (state is null && participants.Length == 0)
@@ -225,32 +256,41 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
         WorldAction world,
         CatalogDbContext catalog,
         Site site,
-        IReadOnlyList<MilitiaComplexPilot> pilots
+        IReadOnlyList<MilitiaComplexPilot> pilots,
+        SpacePosition capture
     )
     {
         var candidates = new List<Participant>();
         foreach (var candidate in pilots)
         {
             if (
-                candidate.Position.DistanceTo(site.Capture) > MilitiaComplexRules.CaptureRange
+                candidate.Position.DistanceTo(capture) > MilitiaComplexRules.CaptureRange
                 || world.Set<Pilot>().Find(candidate.PilotId) is not { } pilot
                 || pilot.ActiveShipId != candidate.ShipId
                 || world.Set<Ship>().Find(candidate.ShipId) is not { Position: { } at } ship
                 || CrimewatchPersistence.System(catalog, ship) != site.System.SystemId
-                || new SpacePosition(at.X, at.Y, at.Z).DistanceTo(site.Capture) > MilitiaComplexRules.CaptureRange
-                || !MilitiaComplexRules.CanCapture(ship.TypeId, catalog.RequireItem(ship.TypeId).GroupId)
+                || new SpacePosition(at.X, at.Y, at.Z).DistanceTo(capture) > MilitiaComplexRules.CaptureRange
                 || MilitiaEnlistmentStore.Effective(world, pilot) is not { } faction
             )
             {
                 continue;
             }
+            var type = catalog.RequireItem(ship.TypeId);
+            var battlefield = site.Profile.Battlefield;
+            bool canCapture =
+                MilitiaComplexRules.CanCapture(ship.TypeId, type.GroupId)
+                && (battlefield is null || battlefield.Capturing.Contains(type.Id, type.GroupId, type.CategoryId));
+            if (!canCapture && battlefield?.Blocking.Contains(type.Id, type.GroupId, type.CategoryId) != true)
+            {
+                continue;
+            }
             if (faction == site.System.Occupier)
             {
-                candidates.Add(new(pilot, new(ship.Id, candidate.ConnectionId), -1));
+                candidates.Add(new(pilot, new(ship.Id, candidate.ConnectionId), -1, canCapture));
             }
             else if (MilitiaRules.AreEnemies(faction, site.System.Occupier))
             {
-                candidates.Add(new(pilot, new(ship.Id, candidate.ConnectionId), 1));
+                candidates.Add(new(pilot, new(ship.Id, candidate.ConnectionId), 1, canCapture));
             }
         }
         return candidates.DistinctBy(candidate => candidate.Pilot.Id).OrderBy(candidate => candidate.ShipId).ToArray();
@@ -267,7 +307,10 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
     )
     {
         var system = FactionWarzoneStore.System(world, site.System.SystemId)!;
-        int score = MilitiaComplexRules.VictoryPoints(system.VictoryPoints, offense, policy);
+        var faction = offense ? Opponent(system) : system.Occupier;
+        int net = MilitiaAdvantageStore.Read(world, system, now).Net(faction);
+        var adjusted = policy with { VictoryPoints = MilitiaAdvantageRules.AdjustedVictoryPoints(policy.VictoryPoints, net) };
+        int score = MilitiaComplexRules.VictoryPoints(system.VictoryPoints, offense, adjusted);
         if (score != system.VictoryPoints)
         {
             var occupation =
@@ -279,13 +322,15 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
                 MilitiaHubStore.Recover(world, catalog, system.SystemId, system.Occupier, now);
             }
         }
-        long points = MilitiaComplexRules.PointsPerPilot(system, offense, policy, winners.Length);
+        long points =
+            site.Profile.Battlefield is null ? MilitiaComplexRules.PointsPerPilot(system, offense, policy, winners.Length)
+            : winners.Length == 0 ? 0
+            : (long)policy.BasePoints * Math.Min(policy.Capacity, winners.Length) / winners.Length;
         if (points <= 0)
         {
             return;
         }
 
-        var faction = offense ? Opponent(system) : system.Occupier;
         foreach (var winner in winners)
         {
             MilitiaLoyalty.Credit(world, faction, winner.Pilot, points);
@@ -295,15 +340,28 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
     internal static IEnumerable<long> DefenderIds(WorldAction world, int systemId) =>
         Variants
             .Select(family => world.Set<SavedMilitiaComplex>().Find(MilitiaComplexRules.Slot(systemId, family.Key))?.DefenderId)
-            .OfType<long>();
+            .OfType<long>()
+            .Concat(BattlefieldDefenders(world, systemId));
+
+    private static IEnumerable<long> BattlefieldDefenders(WorldAction world, int systemId)
+    {
+        long slot = MilitiaComplexRules.Slot(systemId, MilitiaComplexFamily.Battlefield);
+        return world.Set<SavedMilitiaComplex>().Find(slot) is { } state
+            ? BattlefieldWings(world, MilitiaComplexRules.SiteId(slot, state.Generation)).Where(npc => npc.Active).Select(npc => npc.Id)
+            : [];
+    }
 
     internal static void ResetForOccupation(WorldAction world, CatalogDbContext catalog, int systemId, MilitiaFaction occupier, long now)
     {
-        foreach (var family in Variants)
+        foreach (var family in Variants.Concat(BattlefieldVariants))
         {
             long slot = MilitiaComplexRules.Slot(systemId, family.Key);
             var state = world.Set<SavedMilitiaComplex>().Find(slot) ?? world.Add(new SavedMilitiaComplex { Slot = slot }).Entity;
             RetireDefender(world, catalog, state, now);
+            if (family.Key == MilitiaComplexFamily.Battlefield)
+            {
+                RetireBattlefield(world, catalog, slot, state.Generation, now);
+            }
             state.Generation = checked(state.Generation + 1);
             state.Occupier = occupier;
             state.Progress = 0;
@@ -329,54 +387,70 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
             {
                 return false;
             }
-            int type = MilitiaComplexCatalog.DefenderType(site.System.Occupier, site.Profile.Variant.Family);
-            var profile = profiles.Read(catalog, type);
-            var spawn = site.Room + site.Profile.Defender;
-            npc = world
-                .Add(
-                    new WorldNpc
-                    {
-                        SystemId = site.System.SystemId,
-                        TypeId = type,
-                        Role = NpcRole.MilitiaComplexDefender,
-                        AnchorKind = NpcAnchorKind.MilitiaComplex,
-                        EncounterId = site.Id,
-                        FactionId = (int)site.System.Occupier,
-                        CorporationId = MilitiaRules.Corporation(site.System.Occupier),
-                        X = spawn.X,
-                        Y = spawn.Y,
-                        Z = spawn.Z,
-                        HomeX = spawn.X,
-                        HomeY = spawn.Y,
-                        HomeZ = spawn.Z,
-                        ShieldCharge = profile.Defense.Shield,
-                        UpdatedAt = now,
-                    }
-                )
-                .Entity;
-            world.SaveChanges();
+            npc = SpawnDefender(world, catalog, site, site.Room + site.Profile.Defender, 0, now);
             state.DefenderId = npc.Id;
         }
 
-        var aggression = world.Set<NpcAggression>().Find(npc.Id);
+        EngageDefender(world, catalog, npc.Id, attackers, now);
+        return true;
+    }
+
+    private WorldNpc SpawnDefender(WorldAction world, CatalogDbContext catalog, Site site, SpacePosition spawn, int slot, long now)
+    {
+        int type = MilitiaComplexCatalog.DefenderType(site.System.Occupier, site.Profile.Variant.Family);
+        var profile = profiles.Read(catalog, type);
+        var npc = world
+            .Add(
+                new WorldNpc
+                {
+                    SystemId = site.System.SystemId,
+                    TypeId = type,
+                    Role = NpcRole.MilitiaComplexDefender,
+                    AnchorKind = NpcAnchorKind.MilitiaComplex,
+                    EncounterId = site.Id,
+                    SpawnSlot = slot,
+                    FactionId = (int)site.System.Occupier,
+                    CorporationId = MilitiaRules.Corporation(site.System.Occupier),
+                    X = spawn.X,
+                    Y = spawn.Y,
+                    Z = spawn.Z,
+                    HomeX = spawn.X,
+                    HomeY = spawn.Y,
+                    HomeZ = spawn.Z,
+                    ShieldCharge = profile.Defense.Shield,
+                    UpdatedAt = now,
+                }
+            )
+            .Entity;
+        world.SaveChanges();
+        return npc;
+    }
+
+    private static void EngageDefender(WorldAction world, CatalogDbContext catalog, long id, Participant[] attackers, long now)
+    {
+        var aggression = world.Set<NpcAggression>().Find(id);
         if (aggression is not null && !attackers.Any(p => p.ShipId == aggression.TargetShipId))
         {
-            NpcCombatStore.Disengage(world, catalog, aggression.TargetShipId, npc.Id);
+            NpcCombatStore.Disengage(world, catalog, aggression.TargetShipId, id);
             aggression = null;
         }
         if (aggression is null && attackers.Length > 0)
         {
-            world.Add(NpcAggression.Start(npc.Id, attackers[0].ShipId, NpcGuardRules.ReactionMilliseconds, now));
+            world.Add(NpcAggression.Start(id, attackers[0].ShipId, NpcGuardRules.ReactionMilliseconds, now));
         }
-        return true;
     }
 
     private static void RetireDefender(WorldAction world, CatalogDbContext catalog, SavedMilitiaComplex state, long now)
     {
-        if (state.DefenderId is not long id)
+        if (state.DefenderId is long id)
         {
-            return;
+            RetireNpc(world, catalog, id, now);
+            state.DefenderId = null;
         }
+    }
+
+    private static void RetireNpc(WorldAction world, CatalogDbContext catalog, long id, long now)
+    {
         if (world.Set<NpcAggression>().Find(id) is { } aggression)
         {
             NpcCombatStore.Disengage(world, catalog, aggression.TargetShipId, id);
@@ -386,7 +460,6 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
         {
             npc.RetiredAt = now;
         }
-        state.DefenderId = null;
     }
 
     private IEnumerable<Site> Read(WorldAction world, int systemId, long now)
@@ -396,7 +469,8 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
             yield break;
         }
         var saved = world.Set<SavedMilitiaComplex>();
-        foreach (var family in Variants)
+        var eligible = system.Adjacency == WarzoneAdjacency.Frontline ? Variants.Concat(BattlefieldVariants) : Variants;
+        foreach (var family in eligible)
         {
             long slot = MilitiaComplexRules.Slot(systemId, family.Key);
             var state = saved.Find(slot);
@@ -461,14 +535,21 @@ internal sealed class MilitiaComplexStore(WorldDatabase database, NpcProfileCata
                     : null,
                 side == 0 && (fresh || progress != 0)
             );
-            bodies.Add(
-                profile.CapturePoint with
-                {
-                    Id = MilitiaComplexRules.PointId(site.Id),
-                    Position = site.Capture,
-                    MilitiaCapture = bracket,
-                }
-            );
+            if (profile.Battlefield is not null)
+            {
+                BattlefieldBodies(site, now, bodies);
+            }
+            else
+            {
+                bodies.Add(
+                    profile.CapturePoint with
+                    {
+                        Id = MilitiaComplexRules.PointId(site.Id),
+                        Position = site.Capture,
+                        MilitiaCapture = bracket,
+                    }
+                );
+            }
             bodies.Add(profile.Beacon with { Id = MilitiaComplexRules.BeaconId(site.Id), Position = site.Beacon });
             if (profile.Gate is { } gate)
             {

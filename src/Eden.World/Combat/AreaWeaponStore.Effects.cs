@@ -166,6 +166,10 @@ internal sealed partial class AreaWeaponStore
                 .Where(target => target.Position.DistanceTo(center) <= bomb.Radius + target.Radius)
         )
         {
+            if (target.Npc is { } candidate && !Eden.World.FactionWarfare.MilitiaObjectiveStore.CanAttack(world, candidate, source))
+            {
+                continue;
+            }
             Aggression(world, catalog, source, row.SourceShipId, flight.Module.TypeId, target, row.SystemId, now, now);
             double signature = target.Attributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius);
             double factor = AreaWeaponRules.SignatureFactor(signature, bomb.SignatureResolution);

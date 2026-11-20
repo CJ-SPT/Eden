@@ -17,6 +17,7 @@ public enum NpcRole
     MilitiaNavy = 10,
     MilitiaComplexDefender = 11,
     MilitiaHub = 12,
+    MilitiaObjective = 13,
 }
 
 public enum NpcAnchorKind
@@ -30,6 +31,7 @@ public enum NpcAnchorKind
     Abyssal,
     MilitiaComplex,
     MilitiaHub,
+    MilitiaObjective,
 }
 
 public static class NpcPopulationRules

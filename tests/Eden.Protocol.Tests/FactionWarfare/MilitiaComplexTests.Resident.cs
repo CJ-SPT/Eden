@@ -184,7 +184,7 @@ public sealed partial class MilitiaComplexTests
         complexes.Advance(SystemId, [defense], clock.Now);
         complexes.Advance(SystemId, [defense], clock.Now);
         Assert.DoesNotContain(complexes.Sites(SystemId, clock.Now), s => s.Id == open.Id);
-        Assert.Equal(74_650, warzones.System(SystemId)!.VictoryPoints);
+        Assert.Equal(74_545, warzones.System(SystemId)!.VictoryPoints);
         CheckBalances(live);
 
         long due = clock.Now + MilitiaComplexRules.Replacement(warzones.System(SystemId)!.Adjacency).Ticks;
@@ -207,7 +207,7 @@ public sealed partial class MilitiaComplexTests
         reopened.Dispose();
         using var completed = ServerServices.Build(database, clock, liveWorld: true);
         CheckBalances(completed.GetRequiredService<LiveWorld>());
-        Assert.Equal(74_650, completed.GetRequiredService<IFactionWarzones>().System(SystemId)!.VictoryPoints);
+        Assert.Equal(74_545, completed.GetRequiredService<IFactionWarzones>().System(SystemId)!.VictoryPoints);
         var restored = completed.GetRequiredService<IMilitiaComplexes>();
         Assert.DoesNotContain(restored.Sites(SystemId, due - 1), s => s.DungeonId == OpenDungeon);
         Assert.Equal(replacement.Id, Assert.Single(restored.Sites(SystemId, due), s => s.DungeonId == OpenDungeon).Id);

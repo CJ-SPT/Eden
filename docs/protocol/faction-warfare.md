@@ -1,5 +1,82 @@
 # Faction warfare
 
+## Advantage and battlefields — November 20, 2026
+
+Faction scores now come from resident warzone state. Frontline systems get 10,000 terrain points per
+same-warzone neighboring system owned by each faction. Contribution and terrain sum to at most 100,000 per
+faction. Positive net Advantage adds a proportional VP bonus with a minimum of one extra VP. Defense applies
+the bonus in the direction of reducing contestation. The underlying formula, minimum, and score scale were
+verified in build 3662168's advantageState.pyj. Terrain updates immediately when occupation changes. Eden
+decays earned contribution by 1,000 per elapsed day since a faction's last effective score change in that
+system and clears earned scores on occupation transfer. This decay schedule is an Eden policy.
+[CCP Uprising notes](https://www.eveonline.com/news/view/patch-notes-version-20-10) ·
+[UniWiki terrain and objectives](https://wiki.eveuniversity.org/Faction_Warfare#Advantage)
+
+On Frontlines, each system has a shared NVY-30 battlefield drawn from the four pinned templates (9898–9901).
+The existing acceleration gate reads hull list 514 and forbidden equipment list 984. Three 30 km points
+each contribute one signed point per 20 seconds of continuous control. Opposing pilots and local militia
+defenders block scoring. The scoreboard ends the site at ±150. The scanner lists it with a separate Agency
+battlefield directory. Completion settles 2,000 base VP, 15,000 Advantage, and 150,000 LP per eligible
+winner up to 30 full shares. Eden splits excess shares and uses eligible ships in the capture areas at
+completion. The respawn is three hours from completion and survives restarts. Eden uses one modeled
+occupier defender per active contested point, with the normal complex NPC replacement interval.
+[CCP battlefield and reward changes](https://www.eveonline.com/news/view/patch-notes-version-20-10-2) ·
+[CCP V24.01 battlefield notes](https://www.eveonline.com/news/view/patch-notes-version-24-01)
+
+Frontline and Command Operations systems share empire supply cache and depot targets plus a probe-scannable
+occupier Rendezvous Point. A supply loss removes 2,000 Advantage and credits participating enemies with
+15,000 LP each up to five full shares. Rendezvous completion awards 2,000 Advantage and an Eden-authored
+15,000 LP to the eligible final attacker. The layouts use stable Eden grids for each instance. The
+supply ship roster and the basic three-hull Rendezvous wing use catalog militia hulls. Rare officer
+waves and authored NPC spawn-table rows remain unmodeled.
+
+Rearguard Operation Centers use the five containers in each of the four native layouts (9904–9907).
+Opposing militia pilots can run the normal data hacking and loot flow. Eden awards one enemy splice
+or decoder per solved container. The first success schedules a militia response after eight seconds
+and limits the site to another 20 minutes. The existing militia LP offers exchange the components for
+Propaganda Broadcast Structures or Listening Outposts.
+
+Build 3662168's eveMisc.pyj sends ship.Drop with a list of (itemID, quantity) tuples, an owner and an
+ignore-warning flag. The reply maps input IDs to lists of launched IDs. Eden validates cargo ownership,
+faction, Anchoring III, system security, placement near gates, stations and the same deployable type, and
+the system cap before consuming a unit. Deployables activate after ten seconds. The ten-minute reward
+timer advances while the sponsor is present and pauses for enemy reinforcements. Eden uses three modeled
+reinforcement waves, a one-hour expiry, and 10,000 LP at successful completion. Propaganda adds 2,000
+Advantage and listening removes 2,000 from the opponent.
+[CCP deployable balance](https://www.eveonline.com/news/view/patch-notes-version-22-02) ·
+[UniWiki deployment and hacking](https://wiki.eveuniversity.org/Faction_Warfare#Propaganda_Broadcast_Structures)
+
+The native battlefield slim uses component_fwCapturePoint_factionInfo, component_fwCapturePoint_nextPointTime
+and component_fwScoreboard_score. The gateway uses GetSolarSystemScoresResponse and SolarSystemScoresNotice
+for public values and routes ScoreContributionNotice only to the activating or settling pilot's account.
+The evejs comparison used fwAdvantageGatewayService.js SHA-256
+2b432a5f5b239fb169bc4475d77e846ce17341ba849cf410daaa7bb40c5f769e for the public reply shape and fixture scores.
+The reference gateway serves fixture scores. Rigid objective balls reuse the Carbon Destiny
+layout already used by infrastructure hubs. World schema 199 saves Advantage, objective identities and
+deadlines through resident checkpoints. Short timing samples are discarded at restart.
+
+**Automated validation.** The merge filter passed all 34 scheduler, complex, and infrastructure hub tests
+in 9.21 seconds. The milestone solution built with zero warnings in 9.99 seconds. The final focused run
+passed all 551 tests in 323.52 seconds. Tool and solution restores and the two Python policy suites
+(8 catalog setup and 9 formatting policy tests) passed. The installed catalog audit covered four
+battlefield layouts and 12 capture points, four Operation Centers and 20 containers, all four Rendezvous
+layouts, and 16 supply and deployable types. Formatting verification passed in 31.53 seconds.
+Warmed Advantage reads issued zero SQL commands or connections
+and performed zero fitting calculations. Validation used focused suites.
+
+The filter joined the following FullyQualifiedName substring selectors with the test runner's OR operator.
+
+- FactionWarfare, Exploration.Hacking, Exploration.AgencyTests, Exploration.ProbeScanning,
+  Exploration.CombatAnomaly, IdleAnomalyFrameTests, MissionGate, Combat.NpcPopulation, Combat.NpcCombatTests
+- Combat.AreaWeaponTests, Combat.SmartbombTests, Combat.PilotMissileTests, Combat.ResidentMissileLaunchTests,
+  Combat.PilotDroneTests, Combat.ResidentDroneTests, Flight.FlightSessionTests, Gateway
+- LoyaltyStoreTests, WorldMigrationTests, IncrementalCheckpointTests, DetachedCheckpointTests
+
+**Live acceptance.** Not performed. Agent client testing is disabled.
+
+**Optional maintainer checks.** Open the Advantage panel and complete an objective. Verify the native
+scoreboard and gate on a Battlefield NVY-30. Hack an Operation Center and launch its redeemed deployable.
+
 ## Organization enlistment and militia communications — November 20, 2026
 
 Player corporation CEOs and directors can apply for their independent corporation. The executor corporation’s
