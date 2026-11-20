@@ -922,6 +922,32 @@ passed 26 tests in 18 seconds. The solution built in 3.61 seconds. Both Python p
 
 **Optional maintainer checks.** None.
 
+## Autonomous corporation recruitment
+
+World schema 192 checkpoints each pilot's recruitment deadline, profession and current autonomous application separately
+from its immutable provisioning identity. The due docked role owns the review. The existing resident scheduling queue
+admits miners and haulers when any human has selected a pilot, including work outside observed systems. Admission and
+ordinary service requests no longer recruit bots directly.
+
+The pilot checks reachable charters near the current dock and paid ads in the same region, with a bounded 64-system search
+and a seven-jump limit. Vacant profession slots, useful station services, tax, travel danger and a stable pilot preference
+produce the candidate score. The recruiter rechecks its authority and available role before offering. Acceptance separately
+checks capacity, departure permissions and current work, and uses the ordinary membership transition and notification path.
+Invitations from humans use that same review and departure logic. Bot CEOs buy ordinary ads from their treasury when there
+are roster openings and funds. Fresh worlds require the earned qualification and founding fee even for a system's first charter.
+[EVE University recruitment](https://wiki.eveuniversity.org/Recruiting_corporation_members) ·
+[Native invitation contract](corporations.md#direct-invitations-and-corporation-window-reads-november-14-2026)
+
+**Automated validation.** The paid-ad replay held applications from two different two-jump origins across a checkpoint.
+Two offers competed for the final berth and only one took it. The native invitation replay preserved a deferred offer
+and published the eventual employment change. The focused filter
+`FullyQualifiedName~CapsuleerCorporationTests|FullyQualifiedName~CorporationMembershipTests|FullyQualifiedName~CorporationRecruitmentTests|FullyQualifiedName~CapsuleerBackgroundPreparationTests|FullyQualifiedName~WorldMigrationTests`
+passed 64 tests in 30 seconds. The solution built in 3.77 seconds and both Python policy suites passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Check a bot corporation's recruitment history after several active-play reviews.
+
 ## Bot corporation recruitment and gangs
 
 Schema 188 opens applications for existing active bot-led charters. New bot charters start open. The bot CEO uses the existing

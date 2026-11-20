@@ -62,17 +62,16 @@ Mining crews use the same population switch and local activity rules as solo min
 
 ## Bot-led player corporations
 
-When a player enters a prepared community, docked school-corporation bots can found or join a local player corporation.
-A founder needs six eligible simulated pilots whose home systems are at most one jump from its station.
-Miners, haulers and gate visitors in space can join at a later NPC station dock. The corporation's headquarters must
-be within one jump of the recruit's home system. The scheduler favors a corporation in that system and fills it to
-12 members or the corporation's member limit, whichever comes first. A sparse community can supply recruits to a neighbor.
+Docked school-corporation bots can found or apply to corporations during their normal active-play work. A founder needs
+six eligible simulated pilots whose communities are at most one jump from its station. Pilots compare openings by
+career, station services, taxes and travel. They can discover nearby employers while docked and look farther within
+the region for corporations with paid advertisements. An application, an offer and acceptance happen on separate reviews.
 
 Look up a member in Local or station guests and open its corporation in Show Info to see the CEO, ticker and headquarters.
 Membership persists across restarts, density changes and ship loss. Pilots with prior player-corporation employment
-keep their employment choices. The first bot founder in each headquarters system receives Corporation Management I
-and a one-time allowance for the normal 1,599,800 ISK fee. Later founders there need the skill and pay from their
-own wallets. See the [implementation and validation record](protocol/capsuleers.md#bot-led-player-corporations).
+keep their employment choices. In established worlds, the first bot founder in each headquarters system receives
+Corporation Management I and a one-time allowance for the normal 1,599,800 ISK fee. Later founders and all fresh-world
+founders need the skill and pay from their own wallets. [Autonomous recruitment](protocol/capsuleers.md#autonomous-corporation-recruitment)
 
 New charters draw from several naming styles and save their chosen name, ticker and logo at founding. Existing
 charters retain their names unless an administrator confirms a refresh for a legacy-generated bot charter with
@@ -84,9 +83,10 @@ Open a bot corporation in Show Info and use **Apply to Join**. If applications a
 the bot CEO sends a normal offer. Accept it in the corporation application window to join. A human CEO handles
 applications manually after taking over the corporation.
 
-A CEO, Director or Personnel Manager can invite a bot through the normal character invitation menu. A bot evaluates
-invitations within one jump of its home system once docked at an NPC station, after an active gang or escort assignment ends. A loaded hauler waits until the shipment reaches its destination. A bot already employed by a human-led corporation stays with that corporation.
-Normal CEO and role restrictions apply to departures.
+A CEO, Director or Personnel Manager can invite a bot through the normal character invitation menu. A bot reviews the
+invitation on a later NPC station dock once its assignments allow it to move. The destination needs a route of at most
+seven jumps that the ship can fly. A loaded hauler waits for its destination. A bot already employed by a human-led
+corporation stays with that corporation. Normal CEO and role restrictions apply to departures.
 
 Roaming gangs, escorts and gate camps use current corporation and alliance membership. When a roster splits across
 unaffiliated corporations, a roaming gang cancels its patrol and returns home. Corporate and alliance mates are

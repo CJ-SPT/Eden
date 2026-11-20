@@ -14,6 +14,7 @@ internal static class CapsuleerProvisioningSchema
         model.Entity<SavedCapsuleerCoarseWork>().ToTable("WorldCapsuleerCoarseWork").HasKey(s => s.SystemId);
         model.Entity<SavedCapsuleerAdmission>().ToTable("WorldCapsuleerAdmission").HasKey(a => a.PilotId);
         model.Entity<SavedCapsuleerCoarsePilot>().ToTable("WorldCapsuleerCoarsePilot").HasKey(p => p.PilotId);
+        model.Entity<SavedCapsuleerOrganization>().ToTable("WorldCapsuleerOrganization").HasKey(p => p.PilotId);
         model.Entity<SavedCapsuleerCommunity>().HasIndex(c => c.PilotId).IsUnique();
         model.Entity<SavedCapsuleerHauler>().HasIndex(h => h.PilotId).IsUnique();
         model.Entity<SavedCapsuleerHauler>().PrimitiveCollection(h => h.RouteSystems);
@@ -73,6 +74,9 @@ internal static class CapsuleerProvisioningSchema
             CREATE TABLE IF NOT EXISTS WorldCapsuleerCoarsePilot(
                 PilotId INTEGER PRIMARY KEY REFERENCES WorldPilot(Id) ON DELETE CASCADE,
                 SettledTicks INTEGER NOT NULL CHECK(SettledTicks>=0));
+            CREATE TABLE IF NOT EXISTS WorldCapsuleerOrganization(
+                PilotId INTEGER PRIMARY KEY REFERENCES WorldCapsuleerAgent(PilotId) ON DELETE CASCADE,
+                StateJson TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS WorldCapsuleerSystem(
                 SystemId INTEGER PRIMARY KEY, Eligibility INTEGER NOT NULL CHECK(Eligibility BETWEEN 0 AND 8),
                 HomeStationId INTEGER, DestinationStationId INTEGER, CatalogFingerprint TEXT NOT NULL,

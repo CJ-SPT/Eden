@@ -179,6 +179,7 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Set<Eden.Data.World.Thermal.SavedNaniteRepair>().Where(child => child.PilotId == removed.Id));
                 break;
             case Eden.Data.World.Capsuleers.SavedCapsuleerAgent removed:
+                RemoveRange(Filter<Eden.Data.World.Capsuleers.SavedCapsuleerOrganization>(row => row.PilotId == removed.PilotId));
                 RemoveRange(Set<Eden.Data.World.Capsuleers.SavedCapsuleerJob>().Where(child => child.PilotId == removed.PilotId));
                 RemoveRange(Set<Eden.Data.World.Capsuleers.SavedCapsuleerSuspension>().Where(child => child.PilotId == removed.PilotId));
                 break;

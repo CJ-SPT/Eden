@@ -52,6 +52,22 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
         var world = transaction.World;
         var pilot = Pilot(world, pilotId);
         var corporation = Corporation(world, corporationId);
+        long now = Now;
+        var application = SubmitApplication(world, pilot, corporation, text, now);
+        var submitted = application.Snapshot();
+        OfferToPlayer(world, corporation, pilot, application, now);
+        transaction.Commit();
+        return submitted;
+    }
+
+    internal static SavedCorporationApplication SubmitApplication(
+        WorldAction world,
+        Pilot pilot,
+        SavedCorporation corporation,
+        string text,
+        long now
+    )
+    {
         CheckJoin(world, pilot, corporation);
         if (!corporation.Snapshot(0).Details.ApplicationsEnabled)
         {
@@ -60,20 +76,19 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
         if (
             world
                 .Set<SavedCorporationApplication>()
-                .Where(a => a.PilotId == pilotId && a.CorporationId == corporationId)
+                .Where(a => a.PilotId == pilot.Id && a.CorporationId == corporation.Id)
                 .AsEnumerable()
                 .Any(a => !CorporationMembershipRules.Closed(a.Status))
         )
         {
             throw new InvalidDataException("You already have an active application to this corporation.");
         }
-        long now = Now;
         var application = world
             .Add(
                 new SavedCorporationApplication
                 {
-                    PilotId = pilotId,
-                    CorporationId = corporationId,
+                    PilotId = pilot.Id,
+                    CorporationId = corporation.Id,
                     Text = text,
                     Status = CorporationApplicationStatus.Applied,
                     AppliedAt = now,
@@ -83,10 +98,7 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
             .Entity;
         world.SaveChanges();
         NotifyApplication(world, application);
-        var submitted = application.Snapshot();
-        OfferToPlayer(world, corporation, pilot, application, now);
-        transaction.Commit();
-        return submitted;
+        return application;
     }
 
     public CorporationApplication Invite(long actorId, long pilotId)
@@ -135,7 +147,6 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
         }
         world.SaveChanges();
         NotifyApplication(world, application);
-        SettleBotInvitations(world, pilot, now);
         world.Commit();
         return application.Snapshot();
     }
@@ -167,10 +178,6 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
         long now = Now;
         ChangeApplication(world, applicant ? pilot.Id : actor.Id, pilot, corporation, application, update.Status, update.Response, now);
         OfferToPlayer(world, corporation, pilot, application, now);
-        if (world is EconomyTransaction resident && application.Status == CorporationApplicationStatus.Offered)
-        {
-            SettleBotInvitations(resident, pilot, now);
-        }
         transaction.Commit();
         if (update.Status == CorporationApplicationStatus.Joined)
         {
@@ -179,7 +186,7 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
         return application.Snapshot();
     }
 
-    private static void ChangeApplication(
+    internal static void ChangeApplication(
         WorldAction world,
         long actor,
         Pilot pilot,
@@ -291,15 +298,6 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
             return new(false, "Wait 24 hours after the last corporation role was removed.");
         }
         return new(true, "");
-    }
-
-    internal static void Enroll(WorldAction world, Pilot pilot, SavedCorporation corporation, long now)
-    {
-        CheckJoin(world, pilot, corporation);
-        Move(world, pilot, corporation.Id, now);
-        DeliverWelcomeMail(world, pilot.Id, corporation, now);
-        WithdrawOtherApplications(world, pilot.Id, null, now);
-        Eden.World.Bookmarks.PilotBookmarksStore.PruneUnavailableConnections(world, pilot.Id);
     }
 
     internal static void Move(WorldAction world, Pilot pilot, int corporationId, long now)

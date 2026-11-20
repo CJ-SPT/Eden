@@ -18,7 +18,7 @@ using Eden.World.Storage;
 
 namespace Eden.World.Capsuleers;
 
-internal static class CapsuleerCorporations
+internal static partial class CapsuleerCorporations
 {
     internal static bool CanFlyTogether(LiveWorld live, long pilot, long other) =>
         CanFlyTogether(live, live.Economy.CorporationAffiliation(pilot), other);
@@ -31,52 +31,6 @@ internal static class CapsuleerCorporations
         var right = live.Economy.CorporationAffiliation(other);
         return PatrolRules.Unaffiliated(left.Corporation, right.Corporation)
             || PatrolRules.CorporateAllies(left.Corporation, left.Alliance, right.Corporation, right.Alliance);
-    }
-
-    internal static bool Place(EconomyTransaction world, CatalogDbContext catalog, WorldDatabase database, long pilotId, long now)
-    {
-        if (!world.Settings.Capsuleers.Enabled || world.Pilots.Find(pilotId) is not { } pilot)
-        {
-            return false;
-        }
-        var review = CorporationMembershipStore.SettleBotInvitations(world, database, pilot, now);
-        if (review != CorporationMembershipStore.BotInvitationReview.None)
-        {
-            return review == CorporationMembershipStore.BotInvitationReview.Changed;
-        }
-        if (
-            world.Set<SavedCapsuleerAgent>().Find(pilotId) is not { } agent
-            || !Eligible(world, catalog, pilotId)
-            || world.Positions.Find(pilot.ActiveShipId) is not null
-            || pilot.ActiveShip.StructureId.HasValue
-        )
-        {
-            return false;
-        }
-
-        var homes = catalog
-            .Definitions.GatesInSystem(agent.CommunitySystemId)
-            .Select(gate => gate.DestinationSystemId)
-            .Prepend(agent.CommunitySystemId)
-            .Distinct()
-            .ToArray();
-        var corporations = homes
-            .SelectMany(home => world.Filter<SavedCorporation>(row => row.SystemId == home).AsEnumerable())
-            .Where(row => row.ClosedAt is null && CorporationMembershipStore.BotLed(world, row))
-            .OrderByDescending(row => row.SystemId == agent.CommunitySystemId)
-            .ThenBy(row => row.Id);
-        var employer = corporations.FirstOrDefault(row =>
-            world.Filter<Pilot>(member => member.CorporationId == row.Id).Count()
-            < Math.Min(row.MemberLimit, CapsuleerCorporationRules.TargetMembers)
-        );
-        if (employer is not null)
-        {
-            CorporationMembershipStore.Enroll(world, pilot, employer, now);
-            world.AfterCommit(database.NotifyAccessGroupsChanged);
-            return true;
-        }
-
-        return Found(world, catalog, database, pilot, homes, now);
     }
 
     private static bool Found(
@@ -107,7 +61,7 @@ internal static class CapsuleerCorporations
         }
 
         var wallet = world.Set<PilotWallet>().Find(pilotId);
-        bool initial = !world.Set<SavedCorporation>().Any(row => row.CapsuleerFoundingSystemId == system);
+        bool initial = !world.Settings.FreshUniverse && !world.Set<SavedCorporation>().Any(row => row.CapsuleerFoundingSystemId == system);
         double rank = catalog.FittingAttributes(CorporationRules.ManagementSkill).GetValueOrDefault(DogmaAttributeId.SkillTimeConstant);
         if (wallet is null || rank <= 0 || !initial && wallet.Cents < CorporationRules.CreationFeeCents)
         {
