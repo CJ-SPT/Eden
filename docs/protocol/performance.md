@@ -5915,6 +5915,21 @@ requests recorded zero SQL commands, connections and fitting calculations. No tr
 owner hold reached 250 ms. Allocation averaged 470.3 KiB per completed action, and peak projection
 was 1.32 s across 13 checkpoints. See `artifacts/bot-throughput-20261120/prepared-resupply/`.
 
+The ten-minute acceptance replay passed on `d812297a` in 10 minutes and 49 seconds including
+setup and shutdown. It recovered in 19.15 s, completed 530,960 actions without job failures, and
+ended with 5,776 pilots scheduled. The final five minutes peaked at 674 ms of queue age and ended
+at 61 ms. Warm frame p95/p99 was 23.97/36.86 ms and warm market was 75.85/94.62 ms. All 570 warm
+requests used zero SQL commands, connections and fitting calculations. No measured traffic or
+population owner hold reached 250 ms. Allocation averaged 405.5 KiB per completed action.
+Peak projection was 2.33 s across 41 checkpoints. Market orders accounted for 1.14 s and 652
+commands in that projection. The last of 11 full collections left 1.73 GiB of managed objects.
+
+The three reported trades took 94, 170 and 510 ms, with 83, 103 and 38 ms in world execution,
+respectively. The acceptance artifacts include SQL, fitting and allocation counts for each action.
+Focused tests cover candidate order, fitting and transaction outcomes. The original trace lacks
+complete trade inventory and wallet snapshots for an exact comparison. See
+`artifacts/bot-throughput-20261120/acceptance-prepared-resupply/`.
+
 ### Live acceptance
 
 Not performed; agent client testing is disabled.
