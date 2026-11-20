@@ -909,6 +909,84 @@ Gameplay reference was checked against [EVE University stargates](https://wiki.e
 **Optional maintainer checks.** After restarting with the new build, verify the shortened tunnel and arrival camera while following traffic through a gate.
 
 
+## Star map statistics, November 20, 2026
+
+All eight filters in the native **Statistics** menu read known-space activity. Eden samples
+selected player characters and enabled, unsuspended autonomous capsuleers once a minute from
+resident ship locations. The 30-minute averages use the samples available since collection
+started, then roll forward. A character is counted once across simultaneous connections.
+Bots contribute from observed and offscreen systems while a player is selected. NPC stations
+and dockable structures both contribute to the docked count.
+
+Completed stargate transfers count once in the destination system. Committed combat records
+capsuleer ship and capsule losses by victim and NPC pirate, navy, customs and CONCORD ship
+losses by their system. Players and autonomous capsuleers share the same travel and combat
+settlement paths. The windows are measured from the event timestamp. Recent aggregates and
+samples survive checkpoint reopen. Collection begins with this update and downtime adds no
+samples. Private and wormhole systems are outside the known-space filters.
+
+Pinned build 3662168's `MapSvc.GetInfoOnPilotsBySolarSystemIDs` calls
+`machoNet.GetClusterGameStatisticsForClient('EVE', ({}, {}, 0))`. The reply contains
+system totals, docked totals and a positive sample divisor. The client adds 30,000,000 to
+dictionary keys, subtracts docked totals and rounds each average. The map filter modules call
+`map.GetHistory(1, 1)` for gate traffic and `map.GetHistory(3, 1|24)` for losses.
+History uses the existing rowset with `value1` for jumps or combined ship losses,
+`value2` for NPC ship losses and `value3` for capsule losses. The ship filter subtracts
+`value2` from `value1`. The pirate and police filter reads `value2` over 24 hours.
+The 24-hour pod history also supplies the native route planner's avoidance data.
+History has a one-minute native cache and a payload checksum that changes with the rows.
+Faction warfare statistic 5 retains its empty baseline.
+
+The client contract was inspected inertly in the staged build 3662168 archive
+(SHA-256 `238ef5811fcecd77db8ecdb8f143f0e74bbd337d225a2582ed25132def900d8c`), including
+`mapSvc.pyj`, the map filters, `idCheckers.pyj` and Carbon `objectCaching.pyj`. Compared
+evejs release 261108.1's `mapService.js` (SHA-256
+`6c06a8e47c57e514381da2d0b35cc7aad6fbf39c3da480fa6d2b1baa90fafbb1`) for jump attribution,
+combined kill columns and native method caching. The map guide describes the player-facing
+filters. [EVE University Star Map](https://wiki.eveuniversity.org/Star_Map)
+
+### Automated validation
+
+Exact development filters selected
+`Eden.Protocol.Tests.Maps.MapNavigationTests.GateHistoryPublishesCommittedArrivalsAndExpiresAfterCheckpointReopen`
+and `Eden.Protocol.Tests.Maps.MapNavigationTests.PopulationAveragesSelectedPlayersAndOffscreenBotsAcrossSamplesAndRestart`
+with `FullyQualifiedName=`. Both passed in 6.71 and 9.81 seconds of test command time after correcting
+the population fixture to use the pilot's actual home system. The cases check native packets, arrival
+attribution, rejected transfers, rollback, one-hour and 24-hour expiry, duplicate sessions, offscreen bots,
+and checkpoint reopen. The warmed sample and jump-history read issued zero SQL commands, opened zero
+connections, and made zero fitting calculations. Combat cases cover a bot hull loss, a capsule kill,
+a pirate ship kill and a rejected kill transaction.
+
+At base `6f62966d`, tool restore and solution restore took 0.15 and 0.63 seconds, and the solution built
+in 24.71 seconds with zero warnings and errors. The broader affected run passed 215 and failed 11
+in 57 seconds of reported test time. All 11 failures reproduced on unchanged `6f62966d`.
+Ten were deliberate paused-checkpoint cases that timed out. One was a regional market rollback fixture
+that left its world-owner file locked. The final focused run passed 215 tests in 65.57 seconds of
+command time. Its filter uses these `FullyQualifiedName~` clauses joined by `|`.
+
+```text
+Eden.Protocol.Tests.Maps, CapsuleerHaulerTests, CapsuleerPopulationSettingsTests, GateCloakTests,
+GateTravelRulesTests, GateActivityProtocolTests, PilotDroneTests, NpcCombatTests, InteractionHistoryPersistenceTests,
+AreaWeaponPersistenceTests, WorldMigrationTests, LiveWorldTests, CheckpointOwnershipTests, DetachedCheckpointTests,
+IncrementalCheckpointTests, RegionalMarketTests, TestingMarketTests
+```
+
+The final run excluded only the three baseline-reproduced method names
+`WarmDockedCallsCompleteDuringCheckpointCopyOnFirstPeriodicPoll`,
+`PausedCopyAllowsWarmFramesAndIndependentMovementWhileSqlWritersWait` and
+`FailedPaymentRollsBackStockGoodsAndHistoryAndRetrySettlesOnce` with `FullyQualifiedName!~`.
+Both Python policy suites passed all 17 cases in 1.66 seconds combined. Style, CSharpier, the 140-character
+width check and Git whitespace verification passed. Formatting verification took 41.39 seconds.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+On an updated host, open the native Star Map Statistics filters after a population sample,
+a stargate jump and a combat loss. Check that the systems light up and the filter tooltips show the expected counts.
+
 ## Native map navigation support, November 9, 2026
 
 The native route planner calls `map.GetHistory(mapHistoryStatKills, 24)` while preparing its pod-kill avoidance list, even when the intended action is ordinary map navigation. Eden now handles this read with a named native `CachedMethodCallResult`, serialized history rowset and stable version `(1, 0)`. `versionCheck="run"` matches the immutable baseline, with no personal session key. Repeated reads across statistics/pilots do not invent a new version or force the pathfinder to rebuild unchanged avoidance data. Known statistics are jumps **1**, kills **3** and faction-war kills **5**; durations must be positive 32-bit integers. Unknown statistics, malformed calls and unexpected options fail without changing saved state. Router-owned `machoVersion` remains accepted.

@@ -17,7 +17,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = DevelopmentMarketOrderMigration.Version;
+    internal const int CurrentVersion = 192;
 
     public static void Open(
         WorldDbContext world,
@@ -225,6 +225,9 @@ internal static class WorldMigration
         {
             CapsuleerCheckpointMigration.RemoveEmbeddedCollision(world);
         }
+        world.Database.ExecuteSqlRaw(
+            "CREATE TABLE IF NOT EXISTS WorldMapStatistics(Id INTEGER PRIMARY KEY CHECK (Id=1), Payload TEXT NOT NULL)"
+        );
         if (version < DevelopmentMarketOrderMigration.Version)
         {
             DevelopmentMarketOrderMigration.RemoveUnusedAsks(world);

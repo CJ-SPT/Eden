@@ -10,6 +10,7 @@ using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Maps;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Characters;
@@ -19,6 +20,7 @@ using Eden.World.Drones;
 using Eden.World.Insurance;
 using Eden.World.Inventory;
 using Eden.World.Loot;
+using Eden.World.Maps;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -191,6 +193,11 @@ internal static partial class ShipLossPersistence
         // belong to this transaction: a failed capsule/loss cannot consume it.
         world.SaveChanges();
         world.Remove(old);
+        var kind =
+            catalog.RequireItem(old.TypeId).GroupId == FleetDefinitions.CapsuleGroup
+                ? MapActivityKind.CapsuleLoss
+                : MapActivityKind.ShipLoss;
+        MapStatisticsStore.Record(world, system, now, kind);
         return insurance;
     }
 
