@@ -7,6 +7,82 @@ Asteroids, mining, reprocessing, manufacturing, markets, loyalty balances and LP
 [Planetary industry](planetary.md) now covers surface colonies, extraction, all 68 processing schematics,
 command launches and NPC customs import/export. Earlier milestone scope statements below remain historical.
 
+## Star map Industry filters, November 20, 2026
+
+The native Industry menu shows starts over the last 24 hours for all jobs and for manufacturing,
+time efficiency research, material efficiency research, copying and invention. Installed reactions also
+contribute to the all-jobs total. The map counts each start once regardless of runs, and keeps the start
+through delivery or cancellation until it expires. Player and bot starts share the same resident job
+index, including bot work in offscreen systems and jobs installed at structures. Eden counts committed
+records and rebuilds the recent window from the saved job rows on reopen. Existing saves can therefore
+show recent work immediately after updating.
+
+All six cost overlays show Eden's configured system index. Per-system overrides and the saved default
+match the system rates used for paid installation by players and bots. Eden applies this rate across
+manufacturing, both research activities, copying, invention and reactions. Free-service worlds show
+zero. Job activity affects the start counts. Pricing continues to follow the saved economy policy.
+
+Pinned build 3662168's `mapFilterJobs24Hours.pyj` calls `map.GetIndustryJobsOverLast24Hours` with None
+for all activities and IDs 1, 3, 4, 5 or 8 for the five specialized overlays. The call also accepts the
+legacy zero selector and reaction ID 9. Its native rowset uses `solarSystemID` and `noOfJobs`.
+`mapFilterCostIndex.pyj` calls `map.GetIndustryCostModifier` with IDs 1, 3, 4, 5, 8 or 9 and consumes
+a known-space system-ID dictionary of fractional indices. The tooltip multiplies the index by 100.
+Both calls use the existing selected-character router and ordinary Blue serialization.
+
+The staged client archive inspected for these calls has SHA-256
+`238ef5811fcecd77db8ecdb8f143f0e74bbd337d225a2582ed25132def900d8c`. The local evejs 261108.1
+`mapService.js` (SHA-256 `6c06a8e47c57e514381da2d0b35cc7aad6fbf39c3da480fa6d2b1baa90fafbb1`)
+and `industrySystemCostIndex.js` (SHA-256 `aac9a2d045a07438405a83a3bb47dbfdcb57b78d2239a3fa202a9f851e6534d1`)
+confirmed the two wire shapes and offered a comparable configured-index policy. The gameplay reference
+describes the role of system costs in choosing a facility. [EVE University Industry](https://wiki.eveuniversity.org/Industry)
+[CCP's industry installation cost reference](https://www.eveonline.com/news/view/industry-3rd-party-developers)
+
+### Automated validation
+
+The exact development filter
+`FullyQualifiedName=Eden.Protocol.Tests.Maps.IndustryMapTests.InstalledJobCountsOnceAfterCommitAndSurvivesCancellationAndRestartUntilExpiry`
+passed in 6.98 seconds of test command time. It checks rollback, one count for a multi-run install,
+cancellation, reopen and expiry at exactly 24 hours. Warmed reads use zero SQL commands, connections
+and fitting calculations.
+
+On base `002e999d`, tool and solution restore took 0.19 and 0.93 seconds. The solution built
+in 24.44 seconds with zero warnings and errors. The focused run passed 183 tests in 320.75 seconds
+of command time with zero failures and two opt-in installed-catalog tests skipped. Native replies
+covered all six cost requests, the activity selectors, default and overridden rates, and startup
+calls from docked and in-space sessions. Offscreen factory and Athanor reaction scenarios verified
+bot starts after checkpoint reopen.
+
+The filter used these `FullyQualifiedName~` clauses joined by `|`.
+
+```text
+Eden.Protocol.Tests.Maps, Eden.Protocol.Tests.Industry,
+ManufacturingValidatesQuoteAndFundsThenPersistsPaidJobWithoutCancellationRefund,
+PriceInputsRoundTripThroughNativeReplyAndSavedWorld,
+NativeInstallAcceptsThePricedQuoteAndNotifiesWalletAndJobChanges,
+FreshEconomySavesExplicitInputsWhileExistingWorldRejectsCreationOverrides,
+UnobservedMinerAndPaidFactoryPauseAndResumeAcrossRestart,
+BotMinesAnOwnedFractureAndHaulsReprocessedFeedForOnePaidReaction
+```
+
+Both Python policy suites passed all 17 cases in 1.89 seconds combined. Style, CSharpier and the
+140-character width check passed in 33.87 seconds. Git whitespace and documentation-link checks passed.
+
+After integrating the offscreen mining scheduler change from `ecb980ec`, the solution rebuilt in
+23.44 seconds with zero warnings and errors. The focused integration run passed all 47 cases in
+24.73 seconds. It selected `Eden.Protocol.Tests.Maps`, `ScienceJobTests`, `ReactionJobTests`,
+`UnobservedMinerAndPaidFactoryPauseAndResumeAcrossRestart` and
+`BotMinesAnOwnedFractureAndHaulsReprocessedFeedForOnePaidReaction` using the same filter syntax.
+Both policy suites, formatting verification (31.03 seconds) and Git whitespace checks passed again.
+
+### Live acceptance
+
+Not performed. Agent client testing is disabled.
+
+### Optional maintainer checks
+
+Start a job on the updated host and check its system in the all-jobs and matching activity overlays.
+Open a cost overlay and compare the tooltip with that system's configured index.
+
 ## Standard live order market and unified economy settings (November 16, 2026)
 
 The administration **Economy & market** section replaces the separate Economy and Development supply cards.

@@ -155,6 +155,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 return (job.Id, Assert.IsType<long>(job.CapsuleerEndTicks));
             });
             Assert.True(deadline > elapsed);
+            Assert.Equal(new IndustryMapJobCount(Home, 1), Assert.Single(host.GetRequiredService<IIndustryMap>().JobsStarted(null)));
             fixture.Clock.Seconds += 7200;
             Assert.Null(maintenance.Tick());
             Assert.Equal(elapsed, live.CapsuleerActivity.Read().ElapsedTicks);
@@ -174,6 +175,10 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
         Assert.Equal(elapsed, resumed.CapsuleerActivity.Read().ElapsedTicks);
         Assert.Equal(deadline, resumed.Economy.Read(world => world.Set<IndustryJob>().Find(jobId)!.CapsuleerEndTicks));
         Assert.Equal(IndustryJobStatus.Installed, industry.Job(producer, jobId).Status);
+        Assert.Equal(
+            new IndustryMapJobCount(Home, 1),
+            Assert.Single(restarted.GetRequiredService<IIndustryMap>().JobsStarted(IndustryActivity.Manufacturing))
+        );
         using var online = restarted.GetRequiredService<IHumanPresence>().Select(Customer, distantSystem);
         for (
             int turn = 0;

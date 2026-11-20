@@ -157,6 +157,8 @@ public sealed class MapNavigationTests
             PilotServicesTests.Request("structureDirectory", "GetStructureMapData", [30000142L]),
             PilotServicesTests.Request("stationSvc", "GetStation", [60003760L]),
             PilotServicesTests.Request("machoNet", "GetClusterGameStatisticsForClient", ClusterArguments()),
+            PilotServicesTests.Request("map", "GetIndustryJobsOverLast24Hours", [null]),
+            PilotServicesTests.Request("map", "GetIndustryCostModifier", [(long)Eden.Gameplay.Industry.IndustryActivity.Reaction]),
         ];
         Queue<object?> input = new(requests.Select(packet => BlueMarshal.Decode(BlueMarshal.Encode(packet))));
         List<BlueInstance> output = [];
@@ -202,6 +204,9 @@ public sealed class MapNavigationTests
         Assert.Equal(30000142L, station["solarSystemID"]);
         var population = BlueRead.Tuple(replies[10], 3);
         Assert.Equal(1L, population[2]);
+        var jobs = BlueRead.Fields(Assert.IsType<BlueInstance>(replies[11]).State);
+        Assert.Empty(Assert.IsType<List<object?>>(jobs["lines"]));
+        Assert.Contains(30000142L, Assert.IsType<Dictionary<long, object?>>(replies[12]).Keys);
         Assert.Equal(before, world.Store.FindPilot(1000001));
     }
 

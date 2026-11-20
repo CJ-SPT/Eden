@@ -1738,6 +1738,7 @@ internal sealed partial class ResidentEconomy
                     new("StationId", row => row.StationId),
                     new("Status", row => row.Status),
                 ],
+                changed: IndustryJobChanged,
                 primaryColumn: "Id"
             )
         );

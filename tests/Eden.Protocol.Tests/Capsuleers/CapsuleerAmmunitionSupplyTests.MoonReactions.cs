@@ -232,6 +232,10 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
             var live = host.GetRequiredService<LiveWorld>();
             var industry = host.GetRequiredService<IPilotIndustry>();
             Assert.Equal(IndustryJobStatus.Installed, industry.Job(miner, jobId).Status);
+            Assert.Equal(
+                new IndustryMapJobCount(Home, 1),
+                Assert.Single(host.GetRequiredService<IIndustryMap>().JobsStarted(IndustryActivity.Reaction))
+            );
             Assert.Null(host.GetRequiredService<CapsuleerMaintenance>().Tick());
             using var online = host.GetRequiredService<IHumanPresence>().Select(Customer, otherSystem);
             AdvanceUntil(host, () => industry.Job(miner, jobId).Status == IndustryJobStatus.Delivered);

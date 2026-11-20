@@ -2127,6 +2127,7 @@ internal sealed partial class ResidentEconomy
                 reader => new(reader.GetInt32(1), reader.GetBoolean(2), reader.GetDecimal(3), reader.GetBoolean(4), reader.GetInt32(5)),
                 state => new(state.Id),
                 indexes: [new("Id", row => row.Id)],
+                changed: (_, _) => _industryMapCosts = null,
                 primaryColumn: "Id"
             )
         );

@@ -284,6 +284,8 @@ internal sealed partial class ResidentEconomy
         _marketHeads.Clear();
         _mailHeads.Clear();
         _listHeads.Clear();
+        _industryMapHistory.Clear();
+        _industryMapCosts = null;
         foreach (var table in _tables.Values)
         {
             using var phase = SessionPerformance.Phase($"resident.load.{table.Name}");
