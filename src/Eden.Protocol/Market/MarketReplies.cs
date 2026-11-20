@@ -64,23 +64,9 @@ internal sealed record CachedMarketOrders(IBlueWritable Result, long Version) : 
             {
                 new Dictionary<string, object?> { ["versionCheck"] = "always", ["sessionInfo"] = "regionid" },
                 payload,
-                new object?[] { Version, PayloadChecksum(payload) },
+                new object?[] { Version, CachedMethodPayload.Checksum(payload) },
             }
         );
-    }
-
-    // Native object caching compares the Adler-32 field to decide whether the payload changed.
-    private static int PayloadChecksum(ReadOnlySpan<byte> payload)
-    {
-        const uint adlerModulus = 65521;
-        uint sum = 1;
-        uint accumulated = 0;
-        foreach (byte value in payload)
-        {
-            sum = (sum + value) % adlerModulus;
-            accumulated = (accumulated + sum) % adlerModulus;
-        }
-        return unchecked((int)((accumulated << 16) | sum));
     }
 }
 

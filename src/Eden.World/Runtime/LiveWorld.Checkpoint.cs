@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using Eden.World.Capsuleers;
+using Eden.World.Maps;
 using Eden.World.Runtime.Combat;
 using Eden.World.Storage;
 
@@ -19,6 +20,7 @@ internal sealed record WorldResidentCapture(
     CapsuleerJobCheckpoint Jobs,
     CapsuleerRoutineCheckpoint Routines,
     Eden.World.Runtime.Economy.EconomyCheckpoint Economy,
+    MapStatisticsCheckpoint MapStatistics,
     TimeSpan Wait,
     TimeSpan Capture,
     long AllocatedBytes
@@ -108,6 +110,7 @@ internal sealed partial class LiveWorld
                 new(CapsuleerJobs.Values.Where(j => ProjectedCapsuleerJobs.GetValueOrDefault(j.PilotId) != j).ToArray()),
                 CapsuleerRoutines.Capture(),
                 Economy.Capture(),
+                MapStatistics.Capture(SimulationTime),
                 wait,
                 Stopwatch.GetElapsedTime(started) - wait,
                 GC.GetAllocatedBytesForCurrentThread() - allocated

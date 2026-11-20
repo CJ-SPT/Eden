@@ -5,6 +5,7 @@ using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Loot;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Maps;
 using Eden.Protocol.Tests.Combat;
 using Eden.Server;
 using Eden.World.Catalog;
@@ -12,6 +13,7 @@ using Eden.World.Characters;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Loot;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -41,6 +43,7 @@ public sealed class InteractionHistoryPersistenceTests
         using PilotCombatTests.Fixture fixture = new();
         PrepareFaction(fixture);
         fixture.AlmostDefeated();
+        using var live = new LiveWorld(new(fixture.Db.Path), fixture.Clock, _ => { });
         Assert.Empty(History(fixture.Db).Combat(PilotId, 25, null));
         var shot = fixture.Fire();
         Assert.True(shot.Destroyed);
@@ -71,6 +74,12 @@ public sealed class InteractionHistoryPersistenceTests
         Assert.Throws<InvalidDataException>(() => fixture.Fire());
         Assert.Single(History(fixture.Db).Combat(PilotId, 25, null));
         Assert.Single(History(fixture.Db).Transactions(PilotId, FactionId));
+        var statistics = fixture.Db.Services.GetRequiredService<IMapStatistics>();
+        Assert.Equal(
+            new MapHistoryRow(fixture.Npc.SystemId, new(0, 0, 1, 0)),
+            Assert.Single(statistics.History(MapHistoryStatistic.Kills, 1).Rows)
+        );
+        live.Dispose();
         _ = WorldInitialization.Open(fixture.Db.Path);
         using var reopened = ServerServices.Build(new(fixture.Db.Path));
         var history = reopened.GetRequiredService<IPilotInteractionHistory>();
@@ -86,7 +95,9 @@ public sealed class InteractionHistoryPersistenceTests
         using PilotCombatTests.Fixture fixture = new();
         PrepareFaction(fixture, 1.5);
         fixture.AlmostDefeated();
+        using var live = new LiveWorld(new(fixture.Db.Path), fixture.Clock, _ => { });
         Assert.Throws<InvalidDataException>(() => fixture.Fire());
+        Assert.Empty(fixture.Db.Services.GetRequiredService<IMapStatistics>().History(MapHistoryStatistic.Kills, 1).Rows);
         using WorldDbContext world = new(fixture.Db.Path);
         Assert.Null(world.Set<WorldNpc>().Find(fixture.Npc.Id)!.DestroyedAt);
         Assert.Empty(world.Set<SavedCombatReport>());

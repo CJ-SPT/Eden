@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Eden.World.Maps;
 using Eden.World.Runtime.Combat;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
@@ -24,7 +25,8 @@ internal sealed class WorldSnapshot(
     Eden.World.Capsuleers.CapsuleerRoutineCheckpoint? routines = null,
     Eden.World.Runtime.Economy.EconomyCheckpoint? economy = null,
     TimeSpan maximumCopyPause = default,
-    int copySteps = 1
+    int copySteps = 1,
+    MapStatisticsCheckpoint? mapStatistics = null
 ) : IDisposable
 {
     internal SqliteConnection Database => database;
@@ -55,6 +57,7 @@ internal sealed class WorldSnapshot(
                 || jobs is not null
                 || routines is not null
                 || economy is not null
+                || mapStatistics is not null
             )
             {
                 using WorldDbContext world = new(database);
@@ -68,6 +71,7 @@ internal sealed class WorldSnapshot(
                 jobs?.Apply(world);
                 routines?.Apply(world);
                 activity?.Apply(world);
+                mapStatistics?.Apply(world);
                 transaction.Commit();
             }
             return Stopwatch.GetElapsedTime(started);

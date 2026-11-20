@@ -10,6 +10,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Maps;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Flight;
@@ -71,6 +72,8 @@ public sealed class CapsuleerHaulerTests
         );
         Assert.DoesNotContain(chat.Members(connection.Id, room), p => p.Id == hauler);
         Assert.Contains(chat.Members(connection.Id, room), p => p.Id == miner);
+        var statistics = host.GetRequiredService<IMapStatistics>();
+        Assert.Equal(1, statistics.History(MapHistoryStatistic.Jumps, 1).Rows.Single(r => r.SystemId == DestinationSystem).Counts.Jumps);
         var ships = host.GetRequiredService<SqliteWorld>();
         var arrival = ships.FindPilot(-1, hauler)!;
         var human = ships.FindPilot(1000001)!;
@@ -215,6 +218,11 @@ public sealed class CapsuleerHaulerTests
                 capsule = victim.ActiveShipId;
                 action.Commit();
             }
+            var statistics = host.GetRequiredService<IMapStatistics>();
+            Assert.Equal(
+                new MapHistoryRow(LossSystem, new(0, 1, 0, 0)),
+                Assert.Single(statistics.History(MapHistoryStatistic.Kills, 1).Rows)
+            );
             var escaping = Until(host, f.Clock, state => state.Work.Activity == HaulerActivity.Flying);
             Assert.Equal(capsule, escaping.Pilot.ShipId);
             Assert.Equal(LossSystem, escaping.Pilot.SystemId);

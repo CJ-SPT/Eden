@@ -1,3 +1,4 @@
+using Eden.Gameplay.Maps;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
@@ -6,7 +7,7 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Maps;
 
 // Pinned build 3662168 eve/common/lib/appConst.pyj mapHistoryStat*.
-internal enum MapHistoryStatistic
+internal enum MapHistoryStatId
 {
     Jumps = 1,
     Kills = 3,
@@ -14,7 +15,7 @@ internal enum MapHistoryStatistic
 }
 
 [Injectable]
-internal sealed class MapNavigationHandler : ISelectedPilotCallHandler
+internal sealed class MapNavigationHandler(IMapStatistics statistics) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -24,6 +25,13 @@ internal sealed class MapNavigationHandler : ISelectedPilotCallHandler
         Dictionary<string, object?>? keywords = null
     )
     {
+        if (service == "machoNet" && method == "GetClusterGameStatisticsForClient")
+        {
+            return
+                keywords is not { Count: > 0 } && args is [string or byte[], object?[] { Length: 3 }] && BlueMarshal.Text(args[0]) == "EVE"
+                ? new MapPopulationReply(statistics.Population())
+                : new PilotCallResult.Failure("Choose the EVE cluster statistics.");
+        }
         if (service != "map" || method is not ("GetHistory" or "GetAllRoamingWeatherSystems"))
         {
             return PilotCallResult.Unsupported;
@@ -41,38 +49,73 @@ internal sealed class MapNavigationHandler : ISelectedPilotCallHandler
         if (
             args is not [long statistic, long hours]
             || statistic is < int.MinValue or > int.MaxValue
-            || !Enum.IsDefined((MapHistoryStatistic)statistic)
+            || !Enum.IsDefined((MapHistoryStatId)statistic)
             || hours is <= 0 or > int.MaxValue
         )
         {
             return new PilotCallResult.Failure("Choose a known map statistic and a positive history duration.");
         }
-        return new MapHistoryReply();
+        var id = (MapHistoryStatId)statistic;
+        var snapshot = id switch
+        {
+            MapHistoryStatId.Jumps => statistics.History(MapHistoryStatistic.Jumps, (int)hours),
+            MapHistoryStatId.Kills => statistics.History(MapHistoryStatistic.Kills, (int)hours),
+            _ => MapHistorySnapshot.Empty,
+        };
+        return new MapHistoryReply(id, snapshot);
     }
 }
 
-internal sealed record MapHistoryReply : BlueModel
+internal sealed record MapHistoryReply(MapHistoryStatId Statistic, MapHistorySnapshot Snapshot) : BlueModel
 {
-    // This immutable empty baseline is shared by all statistics and pilots. Activity
-    // telemetry is not collected yet. A wall-clock version would make the route planner
-    // rebuild its pod-kill avoidance list on every read (UpdatePodKillList).
-    private const long EmptyHistoryVersion = 1;
-
-    public override object ToBlue() =>
-        new BlueInstance(
+    public override object ToBlue()
+    {
+        byte[] payload = BlueMarshal.Encode(
+            new CompatibilityRowset(
+                ["solarSystemID", "value1", "value2", "value3"],
+                Snapshot.Rows.Select(row => new MapHistoryWireRow(Statistic, row)).ToArray()
+            )
+        );
+        return new BlueInstance(
             "carbon.common.script.net.objectCaching.CachedMethodCallResult",
             new object?[]
             {
-                new Dictionary<string, object?> { ["versionCheck"] = "run" },
-                BlueMarshal.Encode(new MapHistoryRows()),
-                new object?[] { EmptyHistoryVersion, 0L },
+                new Dictionary<string, object?> { ["versionCheck"] = "1 minute" },
+                payload,
+                new object?[] { Snapshot.UpdatedAt, CachedMethodPayload.Checksum(payload) },
             }
         );
+    }
 }
 
-internal sealed record MapHistoryRows : BlueModel
+internal sealed record MapHistoryWireRow(MapHistoryStatId Statistic, MapHistoryRow Row) : BlueModel
 {
-    public override object ToBlue() => new CompatibilityRowset(["solarSystemID", "value1", "value2", "value3"], []).ToBlue();
+    // Both ship-loss filters subtract NPC losses (value2) from the combined ship count (value1).
+    public override object ToBlue() =>
+        Statistic == MapHistoryStatId.Jumps
+            ? new object?[] { Row.SystemId, Row.Counts.Jumps, 0, 0 }
+            : new object?[] { Row.SystemId, Row.Counts.Ships + Row.Counts.NpcShips, Row.Counts.NpcShips, Row.Counts.Capsules };
+}
+
+internal sealed record MapPopulationReply(MapPilotPopulation Population) : BlueModel
+{
+    private const int SystemIdBase = 30_000_000;
+
+    public override object ToBlue()
+    {
+        Dictionary<long, object?> totals = [];
+        Dictionary<long, object?> docked = [];
+        foreach (var (system, counts) in Population.Systems.OrderBy(pair => pair.Key))
+        {
+            long key = system - SystemIdBase;
+            totals.Add(key, counts.InSpace + counts.Docked);
+            if (counts.Docked > 0)
+            {
+                docked.Add(key, counts.Docked);
+            }
+        }
+        return new object?[] { totals, docked, Population.Samples };
+    }
 }
 
 internal sealed record MapRoamingWeatherReply : BlueModel

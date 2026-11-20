@@ -8,12 +8,14 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Insurance;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Maps;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Corporations;
 using Eden.World.Docking;
 using Eden.World.Inventory;
+using Eden.World.Maps;
 using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 
@@ -120,6 +122,7 @@ internal sealed class PilotLossSettlement(PilotTrainingStore training, IShipLoot
         // owns one transaction for damage, body/implant loss, history and respawn.
         world.SaveChanges();
         ShipStoragePersistence.Destroy(world, old);
+        MapStatisticsStore.Record(world, system, now, MapActivityKind.CapsuleLoss);
         return new(null, [new(previous with { Quantity = 0 }, previous), new(PilotFleetStore.Read(catalog, replacement), null)]);
     }
 }

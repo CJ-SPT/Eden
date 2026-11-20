@@ -96,7 +96,8 @@ internal sealed partial class LiveWorld
                             resident.Routines,
                             resident.Economy,
                             maximumPause,
-                            steps
+                            steps,
+                            resident.MapStatistics
                         );
                     }
                 }
