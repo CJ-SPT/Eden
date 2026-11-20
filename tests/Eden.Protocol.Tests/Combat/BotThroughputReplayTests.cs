@@ -333,6 +333,7 @@ public sealed partial class ServerPerformanceReplayTests
                     new
                     {
                         Seconds = elapsed.Elapsed.TotalSeconds,
+                        AllocatedBytes = GC.GetTotalAllocatedBytes() - startedAllocations,
                         state.ScheduledAgents,
                         state.DueJobs,
                         OldestMilliseconds = delay,

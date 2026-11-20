@@ -1261,6 +1261,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Session performance and resident state
 
+- [Player bot allocation and queue delay](protocol/performance.md#player-bot-allocation-and-queue-delay)
 - [Capsuleer shutdown and checkpoint projection](protocol/performance.md#capsuleer-shutdown-and-checkpoint-projection)
 - [Capsuleer system entry and NPC acquisition](protocol/performance.md#capsuleer-system-entry-and-npc-acquisition)
 - [Offscreen mining queue pressure](protocol/performance.md#offscreen-mining-queue-pressure)

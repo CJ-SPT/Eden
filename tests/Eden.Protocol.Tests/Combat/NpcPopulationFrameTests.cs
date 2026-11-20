@@ -4,6 +4,7 @@ using Eden.Data.World.Combat.Npcs;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Flight;
 using Eden.Infrastructure.Diagnostics;
+using Eden.World.Combat.Npcs;
 using Eden.World.Runtime;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -16,6 +17,7 @@ public sealed partial class ServerPerformanceReplayTests
     [InlineData(512)]
     public async Task PopulationMaintenanceAndTwoMovingSessionFramesStaySqlFree(int population)
     {
+        const long firstAnchor = 70000000;
         const int npcSystem = 30000144;
         const int warmupSamples = 3;
         const int measuredSamples = 5;
@@ -30,7 +32,7 @@ public sealed partial class ServerPerformanceReplayTests
                     new WorldNpc
                     {
                         Id = NpcEncounterDefinitions.FirstNpcId + 1000 + index,
-                        EncounterId = 70000000 + index,
+                        EncounterId = firstAnchor + index,
                         SystemId = npcSystem,
                         TypeId = NpcEncounterDefinitions.GuristasRookieType,
                         Role = NpcRole.Navy,
@@ -38,6 +40,24 @@ public sealed partial class ServerPerformanceReplayTests
                 );
             }
             setup.Commit();
+        }
+        using (var read = live.Economy.Begin(new(systems: [npcSystem])))
+        {
+            Assert.Equal(population, NpcPopulationMember.InSystem(read, npcSystem).Count());
+            var guards = NpcPopulationMember.AtAnchor(read, firstAnchor).ToArray();
+            Assert.Equal(0, read.Materializations);
+            if (population == 0)
+            {
+                Assert.Empty(guards);
+            }
+            else
+            {
+                var guard = Assert.Single(guards);
+                Assert.Equal(firstAnchor, guard.EncounterId);
+                read.Set<WorldNpc>().Find(guard.Id)!.EncounterId = firstAnchor - 1;
+                Assert.Empty(NpcPopulationMember.AtAnchor(read, firstAnchor));
+                Assert.Equal(guard.Id, Assert.Single(NpcPopulationMember.AtAnchor(read, firstAnchor - 1)).Id);
+            }
         }
         var first = fixture.Store.FindPilot(1000001)!;
         var second = fixture.Store.FindPilot(1000002)!;

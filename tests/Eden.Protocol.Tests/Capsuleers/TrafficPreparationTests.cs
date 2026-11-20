@@ -1,3 +1,4 @@
+using Eden.Data.World.Economy;
 using Eden.Data.World.Market;
 using Eden.Data.World.Mining;
 using Eden.Gameplay.Capsuleers;
@@ -206,6 +207,49 @@ public sealed class TrafficPreparationTests
         using WorldDbContext after = new(fixture.Database.Path) { Participants = TransactionParticipants.None };
         Assert.Same(committed, CapsuleerGeometry.Load(after, catalog, SourceSystem, fixture.Clock.Now));
         Assert.True(after.Set<WorldAsteroid>().Single(a => a.Id == depleted).Quantity > 0);
+    }
+
+    [Fact]
+    public void ResidentGeometryReadsIndexedSnapshotsAndSeesPrivateDepletionAndRenewal()
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new();
+        using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var live = host.GetRequiredService<LiveWorld>();
+        using var owner = live.EnterShared();
+        using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+        using (var setup = live.Economy.Begin(new(systems: [SourceSystem])))
+        {
+            AsteroidFieldStore.Populate(setup, catalog, SourceSystem, fixture.Clock.Now);
+            setup.Commit();
+        }
+        long asteroid;
+        int belt;
+        using (var read = live.Economy.Begin(new(systems: [SourceSystem])))
+        {
+            var resources = CapsuleerGeometry.CaptureResources(fixture.Database, read, catalog, SourceSystem)!;
+            Assert.NotNull(resources.Resources);
+            var first = resources.Resources.First();
+            asteroid = first.Id;
+            belt = first.AsteroidBeltId!.Value;
+            using var metrics = SessionPerformance.Begin("resident asteroid geometry", _ => { }, force: true)!;
+            var warm = CapsuleerGeometry.CaptureResources(fixture.Database, read, catalog, SourceSystem)!;
+            Assert.Equal(resources.Resources, warm.Resources);
+            Assert.Equal(0, read.Materializations);
+            Assert.Equal(0, metrics.Commands);
+            Assert.Equal(0, metrics.Connections);
+            Assert.Equal(0, metrics.FittingCalculations);
+            read.Set<WorldAsteroid>().Find(asteroid)!.Quantity = 0;
+            var depleted = CapsuleerGeometry.CaptureResources(fixture.Database, read, catalog, SourceSystem)!;
+            Assert.Empty(depleted.Missing);
+            Assert.DoesNotContain(depleted.Resources!, item => item.Id == asteroid);
+            var renewals = read.Set<SavedBeltRenewal>();
+            read.Remove(renewals.Find(belt)!);
+            Assert.Null(CapsuleerGeometry.CaptureResources(fixture.Database, read, catalog, SourceSystem)!.Resources);
+        }
+        using var after = live.Economy.Begin(new(systems: [SourceSystem]));
+        var restored = CapsuleerGeometry.CaptureResources(fixture.Database, after, catalog, SourceSystem)!;
+        Assert.Contains(restored.Resources!, item => item.Id == asteroid);
+        Assert.Equal(0, after.Materializations);
     }
 
     [Fact]

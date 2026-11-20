@@ -2,9 +2,11 @@ using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Contracts;
 using Eden.Data.World.Docking;
+using Eden.Data.World.Economy;
 using Eden.Data.World.Industry;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
+using Eden.Data.World.Mining;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Docking;
@@ -44,6 +46,17 @@ internal sealed partial class EconomyTransaction(
         ((EconomySet<NpcMarketOrder, EconomyNpcMarketOrder>)Set<NpcMarketOrder>())
             .IndexedSnapshots(nameof(NpcMarketOrder.RegionId), region, typeId is int type ? (nameof(NpcMarketOrder.TypeId), type) : null)
             .Where(o => o.RegionId == region && (typeId is null || o.TypeId == typeId));
+
+    internal override IEnumerable<EconomyWorldAsteroid> AsteroidsInSystem(int system) =>
+        ((EconomySet<WorldAsteroid, EconomyWorldAsteroid>)Set<WorldAsteroid>())
+            .IndexedSnapshots(nameof(WorldAsteroid.SystemId), system)
+            .Where(a => a.SystemId == system);
+
+    internal override IEnumerable<int> RenewedBeltsInSystem(int system) =>
+        ((EconomySet<SavedBeltRenewal, EconomySavedBeltRenewal>)Set<SavedBeltRenewal>())
+            .IndexedSnapshots(nameof(SavedBeltRenewal.SystemId), system)
+            .Where(b => b.SystemId == system)
+            .Select(b => b.BeltId);
 
     internal override long NextExpiry => store.NextExpiry;
 
@@ -241,8 +254,16 @@ internal sealed partial class EconomyTransaction(
         }
     }
 
-    private IEnumerable<T> Retained<T>()
-        where T : class => Set<T>().Local.Where(row => Set<T>().State(row) != EntityState.Deleted).ToArray();
+    private T[] Retained<T>()
+        where T : class
+    {
+        if (!_sets.TryGetValue(typeof(T), out var opened) || opened is not EconomySet<T> { Local.Count: > 0 } set)
+        {
+            return [];
+        }
+        // Validation may load related rows into the same private set.
+        return set.Local.Where(row => set.State(row) != EntityState.Deleted).ToArray();
+    }
 
     private void Validate()
     {

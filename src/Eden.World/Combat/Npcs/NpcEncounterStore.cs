@@ -133,10 +133,10 @@ internal sealed class NpcEncounterStore(
 
     internal static TransactionParticipants PopulationParticipants(WorldAction world, int system)
     {
-        var npcs = world
-            .Filter<WorldNpc>(n =>
-                n.SystemId == system
-                && n.DestroyedAt == null
+        var npcs = NpcPopulationMember
+            .InSystem(world, system)
+            .Where(n =>
+                n.DestroyedAt == null
                 && n.RetiredAt == null
                 && (
                     NpcPopulationRules.IsMining(n.Role)

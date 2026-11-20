@@ -5568,3 +5568,92 @@ remain unverified.
 ### Optional maintainer checks
 
 Compare the `Shutdown step` timings for both capsuleer workers and the resident world.
+
+## Player bot allocation and queue delay
+
+A 180-second replay on November 20, 2026 reproduced the reported process allocation rate. Both builds used copies of
+the same frozen world, activated the same 450 communities in the same order, and kept one simulated observer online
+with 5,000 pilots scheduled. The comparison isolates these changes on `37c2f38c`. Both builds sampled process-wide
+allocated bytes between the start and the last sample of the timed maintenance window.
+Each timing is one run per build on the same machine.
+
+Early allocation samples attributed 94–97% of allocated bytes to bot maintenance, predominantly hauler resumption.
+The third-minute control sample attributed 36% to asteroid geometry capture and 36% to advancing NPCs for miners.
+The scheduler now restores a hauler's current hull once. Fitting evaluation groups modifiers in native operation order
+and only constructs stacking sequences for attributes with penalized modifiers. Within an operation, repeated catalog
+reads reuse the canonical path and typed cache keys. Resident transaction validation visits tables opened by the action.
+Asteroid geometry reads the system index and overlays private changes without materializing tracked asteroid entities.
+Guard refreshes read each anchor's slot history once and select the newest occupant per slot. Population scheduling
+and participant lookup read immutable NPCs from the system index, including private transaction changes.
+The queue keeps the existing deadlines, budgets and ordering.
+
+The pinned client's `stackingNurfedAttribute.pyj` supplies the stacking penalty formula. The related evejs file
+`server/src/services/fitting/liveFittingState.js` was inspected at SHA-256
+`604fc96b1e57271ff184dcb096b60cb6e5f9a29b7db77b7ae0b0a6f404003440`. Gameplay references include
+[EVE University on stacking penalties](https://wiki.eveuniversity.org/Stacking_penalties) and
+[EVE University on belt encounters](https://wiki.eveuniversity.org/Ratting).
+
+### Automated validation
+
+| Timed measurement | Control | Optimized |
+| --- | ---: | ---: |
+| Process allocations | 308.4 MiB/s | 245.7 MiB/s |
+| Allocated per completed bot action, including other process work | 2,217 KiB | 1,174 KiB |
+| Completed actions | 25,718 | 38,667 |
+| Due jobs at the last sample | 3,644 | 3,530 |
+| Oldest due job at the last sample | 125.0 s | 95.3 s |
+| Failed bot actions | 0 | 0 |
+| Observer frame p95 after 30 s | 61.2 ms | 57.7 ms |
+| `GetRegionBest` p95 after 30 s | 56.2 ms | 79.0 ms |
+| Peak checkpoint capture / projection / file write | 25 ms / 4.75 s / 4.48 s | 23 ms / 10.32 s / 4.96 s |
+
+In both runs, all 150 warmed observer requests issued zero SQL commands, opened zero connections and performed zero
+fitting calculations. Thirteen checkpoints completed in each run. More actions reached the checkpoint writer in the
+optimized run. The queue still accumulated delay over three minutes. After the NPC change, population refresh
+accounted for 18% of bytes in the third-minute allocation sample, down from 37% in the intermediate build.
+
+A separate warmed, fixed-work comparison evaluated 256 identical sparse fits. Allocation per fit fell from
+1,442,446 B to 84,096 B, and elapsed time fell from 516.5 ms to 45.5 ms. Both returned a checksum of 547,072.
+The final managed heap samples from the two 10-second third-minute traces were 2,614 MiB and 2,630 MiB.
+Neither trace contained a generation 2 collection. These runs establish a reduction in allocation churn.
+Retained heap growth over longer sessions remains unmeasured.
+
+Reproduce with `ReplaySustainedBotThroughput`, `EDEN_BOT_REPLAY_SOURCE` set to the frozen save,
+`EDEN_BOT_REPLAY_CASE=450-False` and `EDEN_BOT_REPLAY_SECONDS=180`. The same one-case replay was selected on each
+build. The three other parameter combinations returned before opening a world. Local manifests, per-second samples,
+checkpoint timings and allocation stacks are under `artifacts/bot-allocation-20261120/`.
+
+The integrated branch builds on `2e57166c`, which adds cancellation between bot jobs and batches checkpoint
+projection. A fresh 180-second replay on that branch averaged 230.1 MiB/s, completed 37,105 actions with zero
+failures, and ended with 3,546 jobs due and the oldest 100.2 s late. The warmed frame and market request p95s
+were 71.7 ms and 110.8 ms. The 13 checkpoints peaked at 44 ms for capture, 12.37 s for projection and 1.22 s
+for file writing. This integration run used the same save and observer workload and ran without an allocation trace.
+
+The solution build took 33.88 s and produced zero warnings or errors. The focused selection ran
+288 tests in 156.76 s. It passed 286. Two SQL-count assertions reproduced on both unmodified base revisions.
+`HostOperationSharesFittingInputsAndOneConnectionAcrossAwaitAndNestedScopes` observed three commands against an
+expected two. `ModuleAndBrainReadsShareTheCommittedGraphAndReturnIndependentAttributes` observed ten against a
+maximum of nine. Its preceding assertions for equivalent attributes and zero warmed fitting calculations passed.
+The asteroid restart comparison also failed on the original base. Sharing the geometry builder preserves the belt ID
+after reopening and that test now passes. Both Python policy suites passed, with eight catalog and nine formatting cases.
+Formatting and line-width verification passed in 45.96 s.
+
+The focused .NET filter ORs `FullyQualifiedName~.<Class>.` for these classes, plus
+`FullyQualifiedName~.PopulationMaintenanceAndTwoMovingSessionFramesStaySqlFree` and
+`FullyQualifiedName~.SustainedPercentilesSortArrivalOrder`.
+
+```text
+DogmaGraphTests, CatalogProviderTests, CatalogFittingReadTests, PassiveFittingTests, FittingSnapshotTests,
+ResidentBotEconomyTests, CapsuleerHaulerTests, CapsuleerFitRetentionTests, CapsuleerDeadlinePerformanceTests,
+CapsuleerTrafficPerformanceTests, TrafficPreparationTests, CapsuleerMaintenanceTests, ResidentEconomyTests,
+CapsuleerHandoffTests, ResourceRenewalTests, AsteroidFieldTests, RegionalNpcTests, NpcGuardTests, NpcConvoyTests,
+NpcPopulationTests, NpcMiningTests
+```
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+After deployment, compare allocation rate and oldest due-job age at the same active pilot count.

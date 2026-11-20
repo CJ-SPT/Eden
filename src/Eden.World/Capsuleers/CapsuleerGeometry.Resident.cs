@@ -1,14 +1,10 @@
-using Eden.Data.World.Economy;
-using Eden.Data.World.Mining;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Mining;
-using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Mining;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
-using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Capsuleers;
 
@@ -31,14 +27,10 @@ internal sealed partial class CapsuleerGeometry
         var belts = catalog.CelestialsInSystem(systemId).Where(b => b.GroupId == AsteroidDefinitions.BeltGroup).Select(b => b.Id).ToArray();
         // Recording ownership before first insertion preserves unrelated committed views.
         live?.TrafficGeometry.TrackBelts(systemId, belts);
-        var populated =
-            belts.Length == 0
-                ? []
-                : world.Set<WorldAsteroid>().Where(a => a.SystemId == systemId).Select(a => a.BeltId).Distinct().ToArray();
-        var renewed =
-            belts.Length == 0 ? [] : world.Set<SavedBeltRenewal>().Where(b => b.SystemId == systemId).Select(b => b.BeltId).ToArray();
-        var missing = belts.Except(populated).ToArray();
-        var resources = missing.Length == 0 && !belts.Except(renewed).Any() ? AsteroidFieldStore.List(world, catalog, systemId) : null;
+        var asteroids = world.AsteroidsInSystem(systemId).ToArray();
+        var missing = belts.Except(asteroids.Select(a => a.BeltId)).ToArray();
+        bool complete = missing.Length == 0 && (belts.Length == 0 || !belts.Except(world.RenewedBeltsInSystem(systemId)).Any());
+        var resources = complete ? AsteroidFieldStore.List(catalog, asteroids) : null;
         return new(systemId, Array.AsReadOnly(belts), Array.AsReadOnly(missing), resources);
     }
 }

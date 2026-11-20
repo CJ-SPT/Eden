@@ -438,6 +438,10 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
     {
         get
         {
+            if (_changes.Count == 0)
+            {
+                return [];
+            }
             List<Eden.World.Runtime.Combat.CombatRowChange> changes = [];
             foreach (var key in _changes.Keys)
             {
@@ -497,16 +501,18 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
             : 0;
 
     public override IReadOnlyCollection<long> Owners =>
-        _changes
-            .Keys.SelectMany(key => new[] { table.Read(key), _removed.Contains(key) ? null : _local[key] })
-            .OfType<TRow>()
-            .Select(EconomyOwnership.Pilot)
-            .Where(id => id > 0)
-            .Distinct()
-            .ToArray();
+        _changes.Count == 0
+            ? []
+            : _changes
+                .Keys.SelectMany(key => new[] { table.Read(key), _removed.Contains(key) ? null : _local[key] })
+                .OfType<TRow>()
+                .Select(EconomyOwnership.Pilot)
+                .Where(id => id > 0)
+                .Distinct()
+                .ToArray();
     internal override IReadOnlyCollection<TRow> Local => _local.Values;
 
-    internal IEnumerable<TState> IndexedSnapshots(string column, int value, (string Column, int Value)? alternate = null)
+    internal IEnumerable<TState> IndexedSnapshots(string column, object value, (string Column, int Value)? alternate = null)
     {
         var keys = table.Indexed(column, value);
         if (alternate is { } index)

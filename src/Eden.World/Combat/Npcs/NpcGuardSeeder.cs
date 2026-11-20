@@ -258,14 +258,19 @@ internal sealed class NpcGuardSeeder
             };
             world.Add(encounter);
         }
+        // A destroyed guard only schedules a respawn when it is the newest occupant of its slot.
+        NpcPopulationMember?[] latest = new NpcPopulationMember?[members.Length];
+        foreach (var npc in NpcPopulationMember.AtAnchor(world, anchorId))
+        {
+            if ((uint)npc.Slot < latest.Length && (latest[npc.Slot] is not { } prior || prior.Id < npc.Id))
+            {
+                latest[npc.Slot] = npc;
+            }
+        }
         for (int slot = 0; slot < members.Length; slot++)
         {
-            var previous = world
-                .Filter<WorldNpc>(n => n.EncounterId == encounter.Id && n.SpawnSlot == slot)
-                .OrderByDescending(n => n.Id)
-                .FirstOrDefault();
             if (
-                previous is not null
+                latest[slot] is { } previous
                 && (
                     !previous.DestroyedAt.HasValue
                     || now - previous.DestroyedAt.Value < NpcEncounterDefinitions.RespawnSeconds * TimeSpan.TicksPerSecond

@@ -20,16 +20,12 @@ internal static class NpcPopulationSchedule
         var tracked = encounters.Select(e => e.Id).ToHashSet();
         // Authored anomaly and mission losses advance their own objectives. They never
         // use regional slot respawns, even without a regional encounter row.
-        var slots = world
-            .Filter<WorldNpc>(n =>
-                n.SystemId == system
-                && n.AnchorKind != NpcAnchorKind.Anomaly
-                && n.AnchorKind != NpcAnchorKind.Mission
-                && n.AnchorKind != NpcAnchorKind.GhostSite
-                && n.AnchorKind != NpcAnchorKind.Abyssal
-                && (n.Role == NpcRole.Navy || n.Role == NpcRole.Customs || !Enumerable.Contains(tracked, n.EncounterId))
+        var slots = NpcPopulationMember
+            .InSystem(world, system)
+            .Where(n =>
+                n.AnchorKind is not (NpcAnchorKind.Anomaly or NpcAnchorKind.Mission or NpcAnchorKind.GhostSite or NpcAnchorKind.Abyssal)
+                && (n.Role is NpcRole.Navy or NpcRole.Customs || !tracked.Contains(n.EncounterId))
             )
-            .Select(n => new PopulationSlot(n.Id, n.EncounterId, n.BeltId, n.SpawnSlot, n.DestroyedAt, n.RetiredAt))
             .ToArray();
         long due = long.MaxValue;
         foreach (var encounter in encounters.Where(e => e.Occupied && e.NextSpawnAt != null))
@@ -51,8 +47,6 @@ internal static class NpcPopulationSchedule
         // Unsupported catalog pools can remain due; retry at most once per second.
         return due <= now ? checked(now + TimeSpan.TicksPerSecond) : due;
     }
-
-    private sealed record PopulationSlot(long Id, long EncounterId, int BeltId, int Slot, long? DestroyedAt, long? RetiredAt);
 
     private static long? CalmMiningDeadline(WorldAction world, WorldNpcEncounter encounter, long now)
     {

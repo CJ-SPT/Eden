@@ -110,7 +110,15 @@ public sealed class CatalogProviderTests
                     "{\"volume\":123}"
                 );
             }
-            Assert.Same(original, CatalogProvider.Open(path));
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            CatalogProvider? warmed = null;
+            for (int read = 0; read < 128; read++)
+            {
+                warmed = CatalogProvider.Open(path);
+            }
+            long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            Assert.Same(original, warmed);
+            Assert.Equal(0, allocated);
             Assert.Same(oldType, original.Get(CatalogData.Client.Types, 601L));
             Assert.Throws<InvalidOperationException>(() => original.Get(CatalogData.Client.Types, 3651L));
         }
