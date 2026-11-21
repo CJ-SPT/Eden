@@ -272,7 +272,7 @@ internal sealed partial class ResidentEconomy
                 );
             }
             EnsureLoaded();
-            if (participants is not null)
+            if (participants is { Pilots.Count: > 0 })
             {
                 participants = new(participants.Systems, participants.Pilots.Where(IsPilot), participants.Ships, participants.Resources);
                 foreach (long pilot in participants.Pilots)
@@ -282,12 +282,11 @@ internal sealed partial class ResidentEconomy
             }
             if (participants is not null)
             {
-                participants = new(
-                    _owner.ParticipantSystems(participants),
-                    participants.Pilots,
-                    participants.Ships,
-                    participants.Resources
-                );
+                var resolved = _owner.ParticipantSystems(participants);
+                if (!ReferenceEquals(resolved, participants.Systems))
+                {
+                    participants = new(resolved, participants.Pilots, participants.Ships, participants.Resources);
+                }
             }
             systems = _owner.EnterTransactionSystems(participants);
             _ = _owner.CapsuleerActivity.Read();

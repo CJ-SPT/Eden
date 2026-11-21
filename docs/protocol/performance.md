@@ -6545,3 +6545,104 @@ Not performed; agent client testing is disabled.
 ### Optional maintainer checks
 
 None.
+
+## Bot CPU and the fresh-world population ceiling
+
+The November 21 dedicated-server checkpoint had a cap of 5,000 and 2,418 saved autonomous pilots.
+Fresh-world background preparation had processed all 1,002 high-security systems with stations in
+the pinned catalog. Of those, 955 had founders. There were 542 producer miners, 542 buyer miners,
+388 rookie couriers and 946 bounty pilots. The existing rules admit up to two miners, one courier
+and one bounty pilot per eligible system. Even if all four roles qualified everywhere, the initial
+roster could only reach 4,008. Increasing the cap or speeding up the scheduler cannot supply the
+other founders. Reaching 5,000 in this world needs another way to admit pilots, such as additional
+funded crews in established communities.
+
+A read-only 30-second sample on the four-vCPU host measured 1.10 cores for the Eden process.
+Background and server GC threads accounted for 10.06 CPU-seconds out of 33.13. Across four
+consecutive checkpoint intervals, Eden consumed 79.45 CPU-seconds in 60.34 seconds of wall time
+(1.32 cores). Its 2,418 pilots advanced 46,642 saved job sequences over 60.01 seconds of active-world
+time, including 35,513 for miners. Another checkpoint showed 742 bounty pilots waiting for a viable
+patrol. Their ordinary retry interval is 30 seconds. The sequence counts measure the activity mix.
+The CPU measurements cover the whole process.
+
+In an isolated established-world replay, a 15-second allocation trace during admission attributed
+27.9% of sampled bytes to stacks containing NPC population refresh. Transaction setup, combat
+capture and publication repeatedly looked up NPCs to find the systems they owned. The resident
+economy now reads the system ID from the committed NPC snapshot. A transaction with only systems
+and shared resources reuses its declared system set whenever it covers the current system and all
+resource locations. An NPC move becomes visible to subsequent lookups at commit.
+
+### Automated validation
+
+The exact `NpcResourceSystemsFollowCommittedMovesAndReuseTheDeclaredScope` filter resolves
+16 resident NPCs and one absent ID. The Release probe ran 8,192 lookups. The control at
+`2e1bd3fd` allocated 42,205,184 bytes and took 52.26 ms. The updated lookup allocated zero
+bytes and took 18.68 ms. Both reported zero SQL commands, connection opens and fitting
+calculations. The new allocation assertion failed on the control as expected. The test also
+checks a private NPC move, rollback and the additional system appearing after commit.
+
+The Release replay uses `ReplaySustainedBotThroughput`, case `450-False`, server GC, four
+reported processors and process affinity to four local logical CPUs (0, 2, 4 and 6). One
+observer alternates frame and market requests. Market maintenance runs with 15-second
+checkpoint requests. The established-world input is the previous CPU fixture with the
+active cap raised to 5,000. Its manifest SHA-256 is
+`AC31D4BE6C794B838941F5F7010C9546DE8360ABB6BC3B3B357B2D62FB25B59F`.
+Preparation and worker tracing were disabled for the comparison. All runs use private
+copies of the same save. Background preparation is enabled in the remote fresh world.
+
+Visiting 550 communities reached the cap late in an initial diagnostic run (550.8 s).
+The paired replays visit all 2,728 populated communities before starting the timer.
+The first control and updated run each began at 4,985 scheduled and reached 5,000 by
+16.3 s. The table covers seconds 60 through 179 of the three-minute runs. CPU is the
+delta in test-host processor time divided by completed scheduler actions or elapsed time.
+
+| At 5,000 scheduled pilots | Control | Updated |
+| --- | ---: | ---: |
+| CPU per completed action | 0.740 ms | 0.709 ms |
+| Actions/s | 572.4 | 572.7 |
+| CPU share of four processors | 10.59% | 10.15% |
+| Oldest due job p95 | 69.4 ms | 57.9 ms |
+| End-to-end frame p95 / p99 | 15.7 / 19.6 ms | 14.5 / 16.5 ms |
+| End-to-end regional market p95 / p99 | 28.2 / 37.9 ms | 23.8 / 31.7 ms |
+| Peak process working set in the window | 3.73 GiB | 3.79 GiB |
+| Median checkpoint capture / projection / write, all 13 checkpoints | 26 / 815 / 1,110 ms | 25 / 818 / 1,061 ms |
+
+Both builds completed all 120 observer calls in the comparison window with zero SQL commands,
+connection opens and fitting rebuilds. Over the whole short run they recorded 8,072 / 8,073
+paid mining collections and zero failed actions. The process-wide allocation series moved
+backwards on at least one sample, so the allocation comparison uses the isolated lookup.
+
+For a second pair the updated build ran first, followed by a fresh control. Using the same
+seconds 60 through 179, CPU per action was 0.749 ms on the control and 0.718 ms on the
+updated build, a 4.13% reduction following the first pair's 4.25%. Throughput was 573.0
+and 572.5 actions/s, respectively. Oldest due job p95 was 60.1 and 50.0 ms. Frame p99
+varied by run order (19.2 ms control, 37.9 ms updated in the second pair).
+
+The ten-minute updated replay reached 5,000 at 16.2 s and held that population through the
+last sample. It completed 314,744 scheduler actions, including 30,770 paid mining collections,
+with zero failed actions and 41 checkpoints. The oldest due job peaked at 94.1 ms in the
+final five minutes. Across 570 observer requests after warm-up, frame p95 / p99 was
+17.1 / 25.6 ms and regional market p95 / p99 was 30.7 / 39.7 ms. The slowest request
+took 63.5 ms. Those 570 calls issued zero SQL commands, opened zero connections and rebuilt
+zero fits. The test took 10 min 48 s including fixture setup. The local raw measurements,
+replay manifests and `comparison.json` are under `artifacts/bot-cpu-5000/` in the main checkout.
+
+The exact NPC lookup regression passed in 6.86 s. The affected resident, combat, mining,
+traffic and system-isolation filters passed all 102 cases in 50 s. A broader run also
+exercised checkpoint ownership and system isolation. Eight of 135 cases timed out in
+53 s. The same eight cases timed out with identical exceptions on the control (134 cases,
+55 s). They were six variants of `PausedCopyAllowsWarmFramesAndIndependentMovementWhileSqlWritersWait`,
+`CopyAllowsAnotherPaidShotAndKeepsEachCapturedGenerationCoherent` and the shared-coordination
+case of `PausedSystemCannotBlockAnotherSystemsCompleteWarmFrame`. Debug and Release builds,
+formatting and the 17 catalog and formatting policy checks passed.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Repeat the CPU and observer measurements on a 5,000-pilot fresh-world fixture once its
+admission rules can supply the additional pilots. The remote sample had about 777 saved
+job-sequence advances per second at 2,418 pilots. The established-world replay has a
+different activity mix, so it cannot establish the dedicated server's 5,000-pilot capacity.

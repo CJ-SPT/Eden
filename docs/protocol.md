@@ -764,6 +764,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Session performance and resident state
 
+- [Bot CPU and the fresh-world population ceiling](protocol/performance.md#bot-cpu-and-the-fresh-world-population-ceiling)
 - [CPU profiling at 2,500 autonomous capsuleers](protocol/performance.md#cpu-profiling-at-2500-autonomous-capsuleers)
 - [Site history discovery and identity maxima](protocol/performance.md#site-history-discovery-and-identity-maxima-november-15-2026)
 - [Population validation during travel](protocol/performance.md#population-validation-during-travel-november-15-2026)

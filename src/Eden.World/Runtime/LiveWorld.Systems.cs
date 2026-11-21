@@ -620,14 +620,39 @@ internal sealed partial class LiveWorld
         {
             return _systems.Snapshot().Select(entry => entry.Id).ToArray();
         }
+        if (participants.Pilots.Count == 0 && participants.Ships.Count == 0 && (participants.Resources.Count == 0 || Economy.IsLoaded))
+        {
+            // A population action usually names the system containing all its NPCs.
+            HashSet<int>? extra = null;
+            void Include(int system)
+            {
+                if (!participants.Systems.Contains(system))
+                {
+                    (extra ??= [.. participants.Systems]).Add(system);
+                }
+            }
+            if (CurrentSystem is int scoped)
+            {
+                Include(scoped);
+            }
+            foreach (var resource in participants.Resources)
+            {
+                if (ResidentResourceSystem(resource) is int system && system > 0)
+                {
+                    Include(system);
+                }
+            }
+            return extra is null ? participants.Systems : extra;
+        }
+        return ResolveParticipantSystems(participants);
+    }
+
+    private IReadOnlyCollection<int> ResolveParticipantSystems(TransactionParticipants participants)
+    {
         HashSet<int> systems = [.. participants.Systems];
         if (CurrentSystem is int current)
         {
             systems.Add(current);
-        }
-        if (participants.Pilots.Count + participants.Ships.Count + participants.Resources.Count == 0)
-        {
-            return systems;
         }
         foreach (long pilot in participants.Pilots)
         {
@@ -668,13 +693,7 @@ internal sealed partial class LiveWorld
             }
             foreach (var resource in participants.Resources)
             {
-                int system =
-                    resource.Kind == SharedSimulationResource.Npc
-                        ? Economy.Peek<Eden.Data.World.Combat.Npcs.WorldNpc>(resource.Id)?.SystemId ?? 0
-                        : Economy.Peek<Eden.Data.World.Loot.WorldWreck>(resource.Id)?.SystemId
-                            ?? Economy.Peek<Eden.Data.World.Structures.SavedStructureLoot>(resource.Id)?.SystemId
-                            ?? 0;
-                if (system > 0)
+                if (ResidentResourceSystem(resource) is int system && system > 0)
                 {
                     systems.Add(system);
                 }
@@ -702,6 +721,12 @@ internal sealed partial class LiveWorld
         }
         return systems;
     }
+
+    private int? ResidentResourceSystem(SimulationResource resource) =>
+        resource.Kind == SharedSimulationResource.Npc
+            ? Economy.NpcSystem(resource.Id)
+            : Economy.Peek<Eden.Data.World.Loot.WorldWreck>(resource.Id)?.SystemId
+                ?? Economy.Peek<Eden.Data.World.Structures.SavedStructureLoot>(resource.Id)?.SystemId;
 
     internal void BeforeSystemsSql(string sql, bool readsResidentNpcTimer)
     {
