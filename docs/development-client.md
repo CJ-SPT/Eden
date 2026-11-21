@@ -46,6 +46,8 @@ marking the complete copy ready. The live cache is read-only during this process
 interruption to verify and reuse the files already staged. Eden Launcher can adopt the finished folder with
 **Use this client**. [CCP SharedCache guide](https://support.eveonline.com/hc/en-us/articles/5885307869468-Shared-Cache)
 
+Server operators can [publish the Windows downpatcher and announce Tranquility updates from Ubuntu](downpatcher-publisher.md).
+
 If you already have a stock build 3662168 installation, you can stage an offline copy from it.
 
 ```powershell

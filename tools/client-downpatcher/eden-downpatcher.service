@@ -1,0 +1,21 @@
+[Unit]
+Description=Verify and publish the Eden client downpatcher
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=eden-downpatcher
+StateDirectory=eden-downpatcher
+StateDirectoryMode=0700
+UMask=0022
+EnvironmentFile=/etc/eden-downpatcher/publisher.env
+LoadCredential=discord-webhook:/etc/eden-downpatcher/discord-webhook
+ExecStart=/usr/bin/python3 -B /opt/eden-downpatcher/tools/Watch-ClientDownpatch.py --state-dir %S/eden-downpatcher \
+    --publish-dir /var/www/eden-downpatcher --public-url ${EDEN_DOWNPATCHER_PUBLIC_URL} --webhook-file %d/discord-webhook
+TimeoutStartSec=5min
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/var/www/eden-downpatcher

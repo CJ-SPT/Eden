@@ -220,6 +220,7 @@ reward, progression and industry multipliers, including restart activation and n
 | Guide | Use it for |
 | --- | --- |
 | [Windows client setup](development-client.md) | Stage build 3662168, prepare the catalog, manage saves, launch locally and use developer travel. Optional gameplay procedures are labeled separately. |
+| [Ubuntu downpatcher publisher](downpatcher-publisher.md) | Build the Windows ZIP and announce verified Tranquility updates in Discord. |
 | [Saved world configuration](world-configuration.md) | Use the local Blazor editor or commands to browse catalogs, stage settings, compare history and restore revisions. |
 | [Desktop launcher hosting](launcher.md) | Register accounts, configure developer access, host remotely and provision native chat trust. |
 | [Docker deployment](docker.md) | Build and run the Linux server container with persistent data and TLS. |

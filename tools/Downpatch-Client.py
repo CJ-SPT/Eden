@@ -65,8 +65,9 @@ class Entry:
     sha256: str | None
 
 
-def read_index(data, *, resources):
+def read_index(data, *, resources, pin_sha256=True):
     scheme = "res:/" if resources else "app:/"
+    sha256_by_path = PINNED_SHA256 if pin_sha256 else {}
     entries = {}
     for line in data.decode("utf-8-sig").splitlines():
         if not line:
@@ -84,7 +85,7 @@ def read_index(data, *, resources):
                 raise ValueError(f"Invalid client path in CDN index: {logical_path}")
             path = Path("tq", *components)
             origin = BINARIES
-        entry = Entry(path, f"{origin}/{blob}", size, md5, PINNED_SHA256.get(path.as_posix()))
+        entry = Entry(path, f"{origin}/{blob}", size, md5, sha256_by_path.get(path.as_posix()))
         add_entry(entries, entry)
     if not entries:
         raise ValueError(f"Empty {scheme} CDN index")
