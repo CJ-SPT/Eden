@@ -13,6 +13,7 @@ public enum HullCohort
     Combat,
     Utility,
     CombatCapital,
+    Carrier,
 }
 
 public sealed record HullAdmissionCohort(int TechLevel, HullCohort Cohort, ImmutableHashSet<int> Classes, ImmutableHashSet<int> Types);
@@ -27,6 +28,9 @@ public static class HullSupportRules
         && cohorts.Any(cohort =>
             cohort.TechLevel == hull.TechLevel && (cohort.Types.Contains(hull.TypeId) || cohort.Classes.Contains((int)hull.Class))
         );
+
+    public static bool IsCarrier(int typeId) =>
+        BuildContentPolicy.Current.Hulls.Cohorts.Any(c => c.Cohort == HullCohort.Carrier && c.Types.Contains(typeId));
 
     public static bool IsTechTwoSubcapital(int typeId) =>
         BuildContentPolicy.Current.Hulls.Cohorts.Any(c => c.Cohort == HullCohort.TechTwoSubcapital && c.Types.Contains(typeId));

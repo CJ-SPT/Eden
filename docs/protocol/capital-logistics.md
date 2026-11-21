@@ -225,6 +225,38 @@ The two Python suites passed all 17 cases. Formatting and the 140-column check p
 **Optional maintainer checks.** Inspect siege and triage effects from a second pilot. Verify mode timer replay
 after reconnect.
 
+## Carrier launch decks and light attack fighters
+
+Archon, Chimera, Thanatos and Nidhoggur use the capital jump drive and the pinned carrier launch deck. Build 3662168
+gives each four tubes, with at most three light and two support squadrons occupying those tubes. The fighter bay holds
+reserve fighters. Loading splits only the units needed to fill the squadron. Topping up a partially depleted squadron
+retains its identity. A multi-tube launch commits as a unit. Invalid selections leave the loaded tubes intact.
+
+`fightersSvc.pyj`, `shipFighterState.pyj`, and `fighterConst.pyj` specify `fighterMgr` calls, tube states, and the
+order of the rows in `GetFightersForShip`. The controller sees the native launch, count, recall and landed
+notifications. Other pilots see the fighter ball and the pinned `squadronSize` in the slim item. Eve.js
+`fighterMgrService.js` and `fighterRuntime.js` were used to cross-check the lifecycle and wire shapes. The underlying
+inventory and movement implementation uses Eden's resident world.
+[CCP fighter controls](https://support.eveonline.com/hc/en-us/articles/207659599-Fighter-Controls) ·
+[CCP Citadel release notes](https://www.eveonline.com/news/view/patch-notes-for-eve-online-citadel)
+
+Light attack squadrons use their slot-zero attack missile with pinned duration, damage, optimal range, falloff and
+application. A pilot can toggle the attack, order the squadron to return and orbit, and recall it to its tube. A smartbomb
+hit that destroys an individual fighter reduces the squadron count and carries excess damage into the next fighter.
+Squadrons retain their tube assignment on a clean restart and stop attacking on disconnect. Recall and replenishment
+reuse the same squadron item.
+
+Support, space superiority and heavy combat, the other fighter abilities, general maneuver commands, and Standup
+squadrons remain open. The initial focused cases cover a short squadron, capacity and class rejection, checkpointed
+tube contents, a second pilot observing launch, and an Archon using a light attack squadron against an Astrahus. The
+second test also verifies atomic rollback for a batch with an empty tube, the loss of one fighter, restart, recall and
+replacement.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Inspect tube and fighter HUD updates from the carrier. Confirm the visible squadron
+shrinks from a second client's grid.
+
 ## Milestones
 
 | Milestone | Playable outcome and acceptance |

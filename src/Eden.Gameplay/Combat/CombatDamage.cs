@@ -125,7 +125,17 @@ public static class CombatDamage
     public static DamageResult Apply(HullDamage current, HullDefense defense, DamageVector incoming) =>
         Apply(current, defense, incoming, 0, 0);
 
-    public static DamageResult Apply(HullDamage current, HullDefense defense, DamageVector incoming, long targetId, long time)
+    public static DamageResult Apply(HullDamage current, HullDefense defense, DamageVector incoming, long targetId, long time) =>
+        Apply(current, defense, incoming, targetId, time, out _);
+
+    public static DamageResult Apply(
+        HullDamage current,
+        HullDefense defense,
+        DamageVector incoming,
+        long targetId,
+        long time,
+        out DamageVector excess
+    )
     {
         if (
             !double.IsFinite(defense.ShieldUniformity)
@@ -189,6 +199,7 @@ public static class CombatDamage
         }
         double armor = Layer(current.Armor, defense.Armor, defense.ArmorResonance);
         double structure = Layer(current.Structure, defense.Structure, defense.StructureResonance);
+        excess = remaining;
         return new(new(shield, armor, structure), applied);
     }
 }

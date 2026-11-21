@@ -819,15 +819,16 @@ internal sealed partial class FlightSession(
     {
         ReleaseTether();
         missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
-        drones?.Release(Pilot.PilotId, Pilot.ShipId);
         _accelerationGateWarp = false;
         if (_disconnecting)
         {
+            drones?.Disconnect(Pilot.PilotId, Pilot.ShipId);
             tackle?.Disconnect(Pilot.PilotId, Pilot.ShipId);
             electronicWarfare?.Cancel(Pilot.PilotId, Pilot.ShipId);
         }
         else
         {
+            drones?.Release(Pilot.PilotId, Pilot.ShipId);
             tackle?.Cancel(Pilot.PilotId, Pilot.ShipId);
             electronicWarfare?.Cancel(Pilot.PilotId, Pilot.ShipId, incoming: true);
         }

@@ -83,7 +83,9 @@ public sealed record DroneProfile(
     DamageVector Damage,
     HullDefense Defense,
     CombatDroneKind Kind = CombatDroneKind.Unspecified,
-    UtilityDroneProfile? Utility = null
+    UtilityDroneProfile? Utility = null,
+    MissileWarhead? FighterAttack = null,
+    int FighterGroup = 0
 );
 
 public sealed record DroneContact(
@@ -105,6 +107,8 @@ public sealed record DroneContact(
     DroneDelegation? Delegation = null
 )
 {
+    public int SquadronSize { get; init; }
+
     public DroneWorkEffect? WorkEffect { get; init; }
 
     public Eden.Gameplay.Exploration.AbyssalDroneEnvironment? Abyssal { get; init; }
@@ -158,4 +162,5 @@ public interface IPilotDrones
     DroneProfile? Profile(long pilotId, int typeId);
     void ChangeSettings(long pilotId, bool? aggressive, bool? focusFire);
     void Release(long pilotId, long shipId);
+    void Disconnect(long pilotId, long shipId) => Release(pilotId, shipId);
 }

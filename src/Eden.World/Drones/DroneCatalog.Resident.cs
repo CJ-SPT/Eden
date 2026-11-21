@@ -54,8 +54,25 @@ internal static partial class DroneCatalog
             }
             world.StageFit(key, revision, fitted);
         }
+        var profile = Profile(catalog, typeId, fitted);
+        if (profile.FighterAttack is { } weapon)
+        {
+            // Pinned effects 6560 and 6561 give 5% per level to fighter damage and light fighter speed.
+            double damageBonus =
+                1 + PilotSkillReader.Level(world, catalog, pilotId, (int)Eden.Gameplay.Ships.HullBonusSkill.Fighters) * 0.05;
+            float speedBonus =
+                1 + PilotSkillReader.Level(world, catalog, pilotId, (int)Eden.Gameplay.Ships.HullBonusSkill.LightFighters) * 0.05f;
+            var damage = weapon.Damage.Scale(damageBonus);
+            return profile with
+            {
+                Damage = damage,
+                FighterAttack = weapon with { Damage = damage },
+                MaximumSpeed = profile.MaximumSpeed * speedBonus,
+                OrbitSpeed = profile.OrbitSpeed * speedBonus,
+            };
+        }
         return UtilityDroneRules.ApplyGathering(
-            DroneRules.ApplySkills(Profile(catalog, typeId, fitted), Skills(world, catalog, pilotId), required),
+            DroneRules.ApplySkills(profile, Skills(world, catalog, pilotId), required),
             world.Settings.Resources
         );
     }

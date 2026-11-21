@@ -101,10 +101,19 @@ public static class WorldInitialization
                 // Reconcile all overdue escrow once before admitting connections.
             }
         }
-        // Drones remain where they were left; downtime releases control and never replays damage.
+        // Drones remain where they were left. Fighters retain their assigned tube and controller.
+        // The simulation advances at most one observed cycle after the resident world reopens.
         world.Set<WorldDroneCombatTriggers>().ExecuteDelete();
+        var fighterItems = world
+            .Set<OwnedItem>()
+            .Where(item =>
+                item.FlagId >= Eden.Gameplay.Flight.FighterDeckRules.FirstTube
+                && item.FlagId < Eden.Gameplay.Flight.FighterDeckRules.FirstTube + Eden.Gameplay.Flight.FighterDeckRules.MaximumTubes
+            )
+            .Select(item => item.Id);
         world
             .Set<WorldDrone>()
+            .Where(row => !fighterItems.Contains(row.ItemId))
             .ExecuteUpdate(set =>
                 set.SetProperty(d => d.ControllerShipId, 0)
                     .SetProperty(d => d.TargetId, 0)

@@ -45,7 +45,10 @@ internal sealed class FlightDroneScene(SharedSpace space, TimeProvider clock, IP
             {
                 update(new DestinyCommand.DroneActivityChanged(departed.Id, null));
             }
-            update(new DestinyCommand.DroneStateChanged(new(departed, Removed: true)));
+            if (departed.Profile.FighterGroup == 0)
+            {
+                update(new DestinyCommand.DroneStateChanged(new(departed, Removed: true)));
+            }
             update(new DestinyCommand.RemoveBall(departed.Id, drones?.WasDestroyed(departed.Id) == true));
         }
         var added = current.ExceptBy(Contacts.Select(d => d.Id), d => d.Id).ToArray();
@@ -61,11 +64,17 @@ internal sealed class FlightDroneScene(SharedSpace space, TimeProvider clock, IP
             {
                 update(new DestinyCommand.DroneActivityChanged(drone.Id, drone.Delegation));
             }
-            if (old is null || old.ShipId != drone.ShipId || old.Activity != drone.Activity || old.TargetId != drone.TargetId)
+            if (
+                old is null
+                || old.ShipId != drone.ShipId
+                || old.Activity != drone.Activity
+                || old.TargetId != drone.TargetId
+                || old.SquadronSize != drone.SquadronSize
+            )
             {
                 // Michelle uses the control row's owner OR controller to keep a panel entry.
                 // The physical slim keeps the owner for reconnect and scooping.
-                if (drone.ShipId != 0 || old is { ShipId: not 0 })
+                if (drone.Profile.FighterGroup == 0 && (drone.ShipId != 0 || old is { ShipId: not 0 }))
                 {
                     update(new DestinyCommand.DroneStateChanged(new(drone, Removed: drone.ShipId == 0)));
                 }

@@ -100,7 +100,8 @@ internal sealed class PilotUpdateCoordinator(
     Eden.Protocol.Sovereignty.SovereigntyMonitor? sovereignty = null,
     Eden.Protocol.Sovereignty.SovereigntyGatewayUpdates? sovereigntyGateway = null,
     Eden.Protocol.Flight.CapitalTravelHandler? capital = null,
-    Eden.Protocol.Structures.AssetSafetyHandler? assetSafety = null
+    Eden.Protocol.Structures.AssetSafetyHandler? assetSafety = null,
+    Eden.Protocol.Fighters.FighterDeckHandler? fighterDeck = null
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -271,6 +272,7 @@ internal sealed class PilotUpdateCoordinator(
         hacking?.Advance(context);
         capacitorBoosters.Advance(context);
         drones.Advance(context);
+        fighterDeck?.Advance(context);
         hardeners.Advance(context);
         signatureSuppression.Advance(context);
         assaultDamageControl.Advance(context);

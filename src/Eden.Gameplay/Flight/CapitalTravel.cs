@@ -138,7 +138,8 @@ public static class CapitalTravelRules
     public static bool JumpDrive(int groupId) =>
         groupId is (int)HullClass.JumpFreighter or (int)HullClass.BlackOps || CombatCapital(groupId);
 
-    public static bool CombatCapital(int groupId) => groupId is (int)HullClass.Dreadnought or (int)HullClass.ForceAuxiliary;
+    public static bool CombatCapital(int groupId) =>
+        groupId is (int)HullClass.Dreadnought or (int)HullClass.ForceAuxiliary or (int)HullClass.Carrier;
 
     public static int Isotopes(double distance, double rate)
     {

@@ -28,8 +28,3 @@ internal sealed record DynamicBountyState() : BlueModel
 {
     public override object ToBlue() => new object?[] { 1d, false };
 }
-
-internal sealed record FighterState() : BlueModel
-{
-    public override object ToBlue() => new object?[] { new List<object?>(), new List<object?>(), new Dictionary<string, object?>() };
-}

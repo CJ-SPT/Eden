@@ -57,6 +57,7 @@ public enum HullCapability
     ShipModes,
     CapacitorBoosters,
     MicroJumpFields,
+    Fighters,
 }
 
 // Catalog selectors are IDs, independent of a pilot's trained level.
@@ -125,6 +126,9 @@ public enum HullBonusSkill
     CapitalCapacitorEmissionSystems = 24572,
     XLPrecursorWeapon = 52998,
     RepairDroneOperation = 3439,
+    Fighters = 23069,
+    LightFighters = 40572,
+    SupportFighters = 40573,
     Torpedoes = 3325,
     CruiseMissiles = 21668,
     XLTorpedoes = 32435,
@@ -249,6 +253,8 @@ public static class HullBonusRules
             {
                 (int)HullBonusSkill.BombDeployment => HullCapability.Bombs,
                 (int)HullBonusSkill.Survey => HullCapability.SurveyProbes,
+                (int)HullBonusSkill.Fighters or (int)HullBonusSkill.LightFighters or (int)HullBonusSkill.SupportFighters =>
+                    HullCapability.Fighters,
                 int skill when MissileDefinitions.SupportsOwnerSkill(skill) => HullCapability.Missiles,
                 (int)HullBonusSkill.Science or (int)HullBonusSkill.Astrometrics => HullCapability.Probes,
                 (int)HullBonusSkill.PropulsionJamming

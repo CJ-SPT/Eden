@@ -54,9 +54,10 @@ public static class ShipStorageRules
         if (
             containsShips
             || contents.Any(item =>
-                ShipHoldRules.IsHold(item.FlagId)
-                && item.FlagId is not ((int)InventoryFlag.DroneBay or (int)InventoryFlag.FighterBay)
-                && !CanRetainCargo(item)
+                FighterDeckRules.IsTube(item.FlagId)
+                || ShipHoldRules.IsHold(item.FlagId)
+                    && item.FlagId is not ((int)InventoryFlag.DroneBay or (int)InventoryFlag.FighterBay)
+                    && !CanRetainCargo(item)
             )
         )
         {

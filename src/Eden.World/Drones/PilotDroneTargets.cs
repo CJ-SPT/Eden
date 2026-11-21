@@ -1,6 +1,7 @@
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Drones;
+using Eden.Data.World.Inventory;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
@@ -110,7 +111,8 @@ internal sealed partial class PilotDroneStore
             ? losses.Apply(world, catalog, victim, shipId, drone.SystemId!.Value, victim.ActiveShip.Position!, now, party)
             : null;
         ShipHealth health = new(shipId, defense, result.Remaining);
-        double quality = damage.Total / profile.Damage.Total;
+        int count = profile.FighterGroup == 0 ? 1 : world.Set<OwnedItem>().Find(drone.ItemId)!.Quantity;
+        double quality = damage.Total / (profile.Damage.Total * count);
         world.SaveChanges();
         var capsule = result.Remaining.Destroyed ? lookup.FindPilot(world, victim.AccountId, victim.Id)! : null;
         return new(

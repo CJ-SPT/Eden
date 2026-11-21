@@ -168,7 +168,7 @@ internal sealed partial class LiveCombatRuntime
                 .ToArray();
             return settle(rolls, endpoints);
         }
-        if (drones.Any(drone => drone.Contact.Profile.Utility is not null))
+        if (drones.Any(drone => drone.Contact.Profile.Utility is not null || drone.Contact.Profile.FighterGroup != 0))
         {
             // Utility cycles mutate the same resident economy generation as
             // their targets and inventory. This does not open the saved world.

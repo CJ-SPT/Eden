@@ -25,6 +25,7 @@ internal sealed record ShipContentRoadmap(
         {
             HullCapability.MicroJumpFields => ShipContentMilestone.FleetServices,
             HullCapability.ShipModes => ShipContentMilestone.CapitalModes,
+            HullCapability.Fighters => ShipContentMilestone.Fighters,
             HullCapability.Overheating => ShipContentMilestone.Overheating,
             HullCapability.Bombs => ShipContentMilestone.AreaWeaponsAndInterdiction,
             HullCapability.CombatDrones => ShipContentMilestone.CombatDrones,

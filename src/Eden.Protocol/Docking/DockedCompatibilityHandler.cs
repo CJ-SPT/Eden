@@ -119,7 +119,6 @@ internal sealed class DockedCompatibilityHandler(
             ("stationSvc", "GetStationItemBits") => new StationItemBits(pilot),
             ("warRegistry", "GetWars") => BlueEmpty.Dictionary,
             ("air_npe", "get_air_npe_state") => 0,
-            ("fighterMgr", "GetFightersForShip") => new FighterState(),
             ("map", "GetTriglavianMinorVictorySystems" or "GetEdencomFortressSystems" or "GetEdencomMinorVictorySystems") => BlueEmpty.List,
             ("operationsManager", "can_character_play_the_tutorial") => false,
             ("standingMgr", "GetNPCNPCStandings") => Rows(["fromID", "toID", "standing"]),

@@ -300,7 +300,18 @@ internal sealed class SmartbombStore(
     internal static SmartbombHit DamageDrone(WorldAction world, WorldDrone row, DroneContact contact, DamageVector damage, long now)
     {
         var defense = contact.Profile.Defense;
-        var result = CombatDamage.Apply(contact.Health.Remaining, defense, damage, contact.Id, now);
+        var result = CombatDamage.Apply(contact.Health.Remaining, defense, damage, contact.Id, now, out var excess);
+        int remaining = contact.SquadronSize;
+        while (remaining > 1 && result.Remaining.Destroyed)
+        {
+            remaining--;
+            var overflow = CombatDamage.Apply(defense.Undamaged, defense, excess, contact.Id, now, out excess);
+            result = new(overflow.Remaining, result.Applied + overflow.Applied);
+        }
+        if (remaining > 0 && remaining < contact.SquadronSize)
+        {
+            world.Set<OwnedItem>().Find(row.ItemId)!.Quantity = remaining;
+        }
         row.Shield = result.Remaining.Shield;
         row.ArmorDamage = defense.Armor - result.Remaining.Armor;
         row.StructureDamage = defense.Structure - result.Remaining.Structure;
