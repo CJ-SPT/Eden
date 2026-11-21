@@ -210,6 +210,7 @@ internal sealed partial class EconomyTransaction
                 );
                 break;
             case Eden.Data.World.Corporations.SavedCorporation removed:
+                RemoveRange(Filter<Eden.Data.World.Calendar.SavedCorporationCalendarEvent>(child => child.CorporationId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Characters.SavedContact>(child => child.ContactId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Corporations.SavedCorporationVote>().Where(child => child.CorporationId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Corporations.SavedCorporationTitle>().Where(child => child.CorporationId == removed.Id));

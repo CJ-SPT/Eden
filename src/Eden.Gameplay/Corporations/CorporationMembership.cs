@@ -52,7 +52,8 @@ public sealed record CorporationChange(
     CorporationRoleChange? Roles = null,
     CorporationTitleChange? Title = null,
     CorporationShareChange? Shares = null,
-    CorporationStorageChange? Storage = null
+    CorporationStorageChange? Storage = null,
+    Eden.Gameplay.Calendar.CalendarChange? Calendar = null
 );
 
 public sealed record CorporationLeavePermission(bool Allowed, string Reason, string ErrorName = "CustomInfo");

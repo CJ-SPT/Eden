@@ -1,4 +1,5 @@
 using Eden.Gameplay.Corporations;
+using Eden.Protocol.Calendar;
 using Eden.Protocol.Docking;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -71,6 +72,10 @@ internal sealed partial class CorporationHandler
                         }
                     }
                 }
+            }
+            if (change.Calendar is { } calendar && calendar.Event.OwnerId == corporations.Identity(context.Pilot.PilotId).Id)
+            {
+                context.Notifications.Add(CalendarNotification.From(calendar));
             }
             if (change.Shares is { } shareChange && shares.CanObserve(context.Pilot.PilotId, shareChange.ShareholderId))
             {

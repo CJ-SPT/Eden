@@ -28,7 +28,8 @@ internal sealed record EconomyCorporationChange(
     string? RoleJson,
     string? TitleJson,
     string? ShareJson,
-    string? StorageJson
+    string? StorageJson,
+    string? CalendarJson
 );
 
 internal sealed record EconomyCorporationContact(int CorporationId, long ContactId, double Standing, long LabelMask);
@@ -102,7 +103,8 @@ internal sealed partial class ResidentEconomy
                         row.RoleJson,
                         row.TitleJson,
                         row.ShareJson,
-                        row.StorageJson
+                        row.StorageJson,
+                        row.CalendarJson
                     ),
                 state => new SavedCorporationChange
                 {
@@ -115,9 +117,10 @@ internal sealed partial class ResidentEconomy
                     TitleJson = state.TitleJson,
                     ShareJson = state.ShareJson,
                     StorageJson = state.StorageJson,
+                    CalendarJson = state.CalendarJson,
                 },
                 ProjectSavedCorporationChange,
-                "Id,PilotId,ApplicationJson,MembershipJson,AdministrationJson,RoleJson,TitleJson,ShareJson,StorageJson",
+                "Id,PilotId,ApplicationJson,MembershipJson,AdministrationJson,RoleJson,TitleJson,ShareJson,StorageJson,CalendarJson",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -128,7 +131,8 @@ internal sealed partial class ResidentEconomy
                         reader.IsDBNull(6) ? null : reader.GetString(6),
                         reader.IsDBNull(7) ? null : reader.GetString(7),
                         reader.IsDBNull(8) ? null : reader.GetString(8),
-                        reader.IsDBNull(9) ? null : reader.GetString(9)
+                        reader.IsDBNull(9) ? null : reader.GetString(9),
+                        reader.IsDBNull(10) ? null : reader.GetString(10)
                     ),
                 state => new(state.Id),
                 indexes: [new("PilotId", row => row.PilotId)],
@@ -267,16 +271,17 @@ internal sealed partial class ResidentEconomy
             world.Database.ExecuteSql(
                 $"""
                 INSERT INTO WorldCorporationChange(
-                    Id,PilotId,ApplicationJson,MembershipJson,AdministrationJson,RoleJson,TitleJson,ShareJson,StorageJson)
+                    Id,PilotId,ApplicationJson,MembershipJson,AdministrationJson,RoleJson,TitleJson,ShareJson,StorageJson,CalendarJson)
                 SELECT json_extract(value,'$.Id'), json_extract(value,'$.PilotId'), json_extract(value,'$.ApplicationJson'),
                     json_extract(value,'$.MembershipJson'), json_extract(value,'$.AdministrationJson'), json_extract(value,'$.RoleJson'),
-                    json_extract(value,'$.TitleJson'), json_extract(value,'$.ShareJson'), json_extract(value,'$.StorageJson')
+                    json_extract(value,'$.TitleJson'), json_extract(value,'$.ShareJson'), json_extract(value,'$.StorageJson'),
+                    json_extract(value,'$.CalendarJson')
                 FROM json_each({values}) WHERE 1
                 ON CONFLICT(Id) DO UPDATE SET
                     PilotId=excluded.PilotId, ApplicationJson=excluded.ApplicationJson,
                     MembershipJson=excluded.MembershipJson, AdministrationJson=excluded.AdministrationJson,
                     RoleJson=excluded.RoleJson, TitleJson=excluded.TitleJson,
-                    ShareJson=excluded.ShareJson, StorageJson=excluded.StorageJson
+                    ShareJson=excluded.ShareJson, StorageJson=excluded.StorageJson, CalendarJson=excluded.CalendarJson
                 """
             );
         }

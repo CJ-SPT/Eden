@@ -17,7 +17,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 212;
+    internal const int CurrentVersion = 213;
 
     public static void Open(
         WorldDbContext world,
@@ -94,6 +94,7 @@ internal static class WorldMigration
         // Saves that advanced beyond the old EWAR migration can still have the original single-column key.
         PlayerEwarSchema.Upgrade(world);
         CorporationStorageSchema.Upgrade(world);
+        CorporationCalendarSchema.Upgrade(world);
         RemoteRepairSchema.Upgrade(world);
         WorldConfigurationSchema.Upgrade(world);
         WorldConfigurationStore.Seed(world, catalog, clock, economy?.FreshUniverse == true);

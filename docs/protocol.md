@@ -1,5 +1,7 @@
 # Protocol findings and milestone records
 
+[Corporation calendar events](protocol/social.md#corporation-calendar-events) covers role-gated event management, member RSVPs and checkpointed notifications.
+
 [Native Upwell repair shop](protocol/structures.md#native-upwell-repair-shop) records the native structure binding and free repair call.
 
 [EVE.js comparison for map, character and dungeon routes](protocol/compatibility.md#evejs-comparison-for-map-character-and-dungeon-routes)
