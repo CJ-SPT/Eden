@@ -136,6 +136,90 @@ public sealed class NpcRestingOrderTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public void ResidentSalesKeepUnrelatedRegionalOrdersOutOfMatchingAllocations()
+    {
+        using Fixture f = new();
+        var pilot = f.Pilot;
+        const int type = 215;
+        var bid = Assert.Single(f.Market.Orders(pilot.PilotId, type), order => order.Bid && order.StationId == pilot.StationId);
+        var live = f.Host.GetRequiredService<LiveWorld>();
+        var market = f.Host.GetRequiredService<PilotMarketStore>();
+        using CatalogDbContext catalog = new(f.Data.Database.CatalogPath);
+        MarketSale[] sale;
+        using (var setup = live.Economy.Begin())
+        {
+            var stack = setup
+                .Add(
+                    new OwnedItem
+                    {
+                        Id = setup.NextItemId(),
+                        OwnerId = pilot.PilotId,
+                        TypeId = type,
+                        LocationId = pilot.StationId,
+                        FlagId = (int)InventoryFlag.Hangar,
+                        Quantity = 10,
+                    }
+                )
+                .Entity;
+            sale = [new(stack.Id, pilot.StationId, type, bid.PriceCents, 2)];
+            setup.Commit();
+        }
+        _ = Measure();
+        var small = Measure();
+        const int depth = 16384;
+        using (var setup = live.Economy.Begin())
+        {
+            for (int index = 0; index < depth; index++)
+            {
+                setup.Add(
+                    new NpcMarketOrder
+                    {
+                        StationId = pilot.StationId + 1,
+                        SystemId = pilot.SystemId,
+                        RegionId = pilot.RegionId,
+                        OwnerId = pilot.StationOwnerId,
+                        TypeId = 100_000 + index,
+                        Kind = NpcMarketKind.Regional,
+                        Bid = true,
+                        Entered = 1,
+                        Remaining = 1,
+                        PriceCents = bid.PriceCents,
+                        Issued = bid.Issued,
+                    }
+                );
+            }
+            setup.Commit();
+        }
+        var large = Measure();
+        output.WriteLine($"Four sales on the small book: {small.AllocatedBytes:N0} bytes, {small.Elapsed.TotalMilliseconds:F2} ms.");
+        output.WriteLine(
+            $"Four sales with {depth:N0} unrelated orders: {large.AllocatedBytes:N0} bytes, {large.Elapsed.TotalMilliseconds:F2} ms."
+        );
+        output.WriteLine(
+            $"SQL commands / opens / fitting calculations per four sales: {large.Commands} / {large.Connections} / {large.Fittings}."
+        );
+        Assert.Equal((0, 0, 0), (small.Commands, small.Connections, small.Fittings));
+        Assert.Equal((0, 0, 0), (large.Commands, large.Connections, large.Fittings));
+        Assert.InRange(large.AllocatedBytes, 0, small.AllocatedBytes + 1024 * 1024);
+
+        PerformanceSample Measure()
+        {
+            PerformanceSample sample = default;
+            using (SessionPerformance.Capture("resident NPC order matching", value => sample = value))
+            {
+                for (int index = 0; index < 4; index++)
+                {
+                    // Roll back after each fill so every measurement crosses the same bid for the same quantity.
+                    using var world = live.Economy.Begin();
+                    var fill = Assert.Single(market.ExecuteSell(world, catalog, pilot.PilotId, sale, 0).Trades);
+                    Assert.Equal((bid.Id, bid.PriceCents, 2), (fill.OrderId, fill.PriceCents, fill.Quantity));
+                }
+            }
+            return sample;
+        }
+    }
+
+    [Fact]
     public async Task PartialSalesRecoverDuringOtherPilotsPlayAndSurviveOfflineRestart()
     {
         using Fixture f = new();

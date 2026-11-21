@@ -117,7 +117,7 @@ internal sealed partial class LiveCombatRuntime
         }
         int? current =
             resident || owner.Economy.IsLoaded
-                ? owner.Economy.Peek<WorldNpc>(id)?.SystemId
+                ? owner.Economy.NpcSystem(id)
                 : Loading(() =>
                 {
                     using WorldDbContext world = new(database.Path) { IsResidentProjection = true };

@@ -81,6 +81,55 @@ public sealed class NpcPopulationValidationTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public void NpcResourceSystemsFollowCommittedMovesAndReuseTheDeclaredScope()
+    {
+        using TestWorld fixture = new(liveWorld: true);
+        var live = fixture.Services.GetRequiredService<LiveWorld>();
+        TransactionParticipants local = new(systems: [System]);
+        const int members = 16;
+        using (var setup = live.Economy.Begin(local))
+        {
+            for (int index = 0; index < members; index++)
+            {
+                setup.Add(Npc(index));
+            }
+            setup.Commit();
+        }
+        // Include a missing NPC and resolve the same participants used for capture, locking and publication.
+        TransactionParticipants population = new(
+            systems: [System],
+            resources: Enumerable.Range(0, members + 1).Select(i => new SimulationResource(SharedSimulationResource.Npc, FirstNpc + i))
+        );
+        Assert.Equal([System], live.ParticipantSystems(population));
+        using var metrics = SessionPerformance.Begin("NPC resource systems", output.WriteLine, force: true)!;
+        long started = Stopwatch.GetTimestamp();
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        const int reads = 8192;
+        int resolved = 0;
+        for (int i = 0; i < reads; i++)
+        {
+            resolved += live.ParticipantSystems(population).Count;
+        }
+        long bytes = GC.GetAllocatedBytesForCurrentThread() - before;
+        output.WriteLine($"{reads} population lookups: {Stopwatch.GetElapsedTime(started).TotalMilliseconds:F2} ms, {bytes} bytes.");
+        Assert.Equal(reads, resolved);
+        Assert.Equal((0, 0, 0), (metrics.Commands, metrics.Connections, metrics.FittingCalculations));
+        using (var pending = live.Economy.Begin(local))
+        {
+            pending.Set<WorldNpc>().Find(FirstNpc)!.SystemId = System + 1;
+            Assert.Equal([System], live.ParticipantSystems(population));
+        }
+        Assert.Equal([System], live.ParticipantSystems(population));
+        using (var move = live.Economy.Begin(new(systems: [System, System + 1])))
+        {
+            move.Set<WorldNpc>().Find(FirstNpc)!.SystemId = System + 1;
+            move.Commit();
+        }
+        Assert.Equal([System, System + 1], live.ParticipantSystems(population).Order());
+        Assert.True(bytes < reads * 64L, $"Population lookups allocated {bytes} bytes.");
+    }
+
+    [Fact]
     public void NewDuplicateSlotsRejectTheWholePopulation()
     {
         using TestWorld fixture = new(liveWorld: true);

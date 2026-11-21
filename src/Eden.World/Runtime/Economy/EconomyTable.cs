@@ -116,7 +116,7 @@ internal sealed partial class EconomyTable<TRow, TState>(
             return [];
         }
         var candidates = EconomyCandidates.Find(predicate.Body, predicate.Parameters[0], (column, value) => Candidates(column, value));
-        if (candidates is { Count: 0 })
+        if (candidates is { UpperBound: 0 })
         {
             return [];
         }
@@ -135,7 +135,7 @@ internal sealed partial class EconomyTable<TRow, TState>(
         {
             // A whole entity argument cannot be evaluated on its scalar snapshot.
         }
-        var keys = candidates ?? Keys;
+        var keys = candidates?.Keys ?? Keys;
         return keys.Where(id => Snapshot(id) is { } row && (match is null || match(row))).ToArray();
     }
 
