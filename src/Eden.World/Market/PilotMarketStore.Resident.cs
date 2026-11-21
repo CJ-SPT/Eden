@@ -305,6 +305,7 @@ internal sealed partial class PilotMarketStore
         {
             return [];
         }
+        int[] requested = types.Distinct().ToArray();
         bool progressive = RegionalMarketStore.Enabled(world);
         if (progressive)
         {
@@ -315,13 +316,13 @@ internal sealed partial class PilotMarketStore
                 station.RegionId,
                 stationId,
                 Now,
-                types.Distinct().ToArray(),
+                requested,
                 includeDemand: false
             );
         }
         else if (MarketKind(world) == NpcMarketKind.Development)
         {
-            foreach (int type in types.Distinct())
+            foreach (int type in requested)
             {
                 SeedDevelopment(world, catalog, station, type);
             }
@@ -332,6 +333,11 @@ internal sealed partial class PilotMarketStore
         }
         world.SaveChanges();
         var kind = MarketKind(world);
+        if (world is EconomyTransaction resident)
+        {
+            return ResidentSupplyOrders(resident, stationId, requested, buyerId, buyerCorporationId, kind, progressive, Now);
+        }
+
         long cutoff = Now - TimeSpan.FromDays(MarketDefinitions.NpcOrderDays).Ticks;
         var npc = world
             .Set<NpcMarketOrder>()
@@ -375,6 +381,75 @@ internal sealed partial class PilotMarketStore
             )
             .AsEnumerable()
             .Select(o => o.Snapshot());
-        return npc.Concat(personal).OrderBy(o => o.PriceCents).ThenBy(o => o.Issued).ThenBy(o => o.Id).ToArray();
+        return SortSupplyOrders(npc.Concat(personal));
     }
+
+    private static MarketOrder[] ResidentSupplyOrders(
+        EconomyTransaction world,
+        int stationId,
+        IReadOnlyList<int> types,
+        long? buyerId,
+        int? buyerCorporationId,
+        NpcMarketKind kind,
+        bool progressive,
+        long now
+    )
+    {
+        long cutoff = now - TimeSpan.FromDays(MarketDefinitions.NpcOrderDays).Ticks;
+        var npc = types
+            .SelectMany(type => world.StationMarketOrders(stationId, type))
+            .Where(o =>
+                !o.Bid
+                && o.Remaining > 0
+                && o.Issued > cutoff
+                && o.Issued + (long)o.DurationDays * TimeSpan.TicksPerDay > now
+                && (progressive ? o.Kind is NpcMarketKind.Institutional or NpcMarketKind.Regional : o.Kind == kind)
+            )
+            .Select(o => new MarketOrder(
+                o.Id,
+                o.StationId,
+                o.SystemId,
+                o.RegionId,
+                o.OwnerId,
+                o.TypeId,
+                false,
+                o.PriceCents,
+                o.Remaining,
+                o.Entered,
+                o.Issued,
+                DurationDays: o.DurationDays,
+                Range: o.Range,
+                MinimumVolume: o.MinimumVolume
+            ));
+        var personal = types
+            .SelectMany(type => world.StationPersonalOrders(stationId, type))
+            .Where(o =>
+                !o.Bid
+                && o.Remaining > 0
+                && o.Status == PersonalOrderStatus.Open
+                && o.Expires > now
+                && (buyerId == null || o.PilotId != buyerId)
+                && (buyerCorporationId == null || o.CorporationId != buyerCorporationId)
+            )
+            .Select(o => new MarketOrder(
+                o.Id,
+                o.StationId,
+                o.SystemId,
+                o.RegionId,
+                o.CorporationId ?? o.PilotId,
+                o.TypeId,
+                false,
+                o.PriceCents,
+                o.Remaining,
+                o.Entered,
+                o.Issued,
+                o.DurationDays,
+                o.EscrowCents,
+                IsCorporation: o.CorporationId.HasValue
+            ));
+        return SortSupplyOrders(npc.Concat(personal));
+    }
+
+    private static MarketOrder[] SortSupplyOrders(IEnumerable<MarketOrder> offers) =>
+        offers.OrderBy(o => o.PriceCents).ThenBy(o => o.Issued).ThenBy(o => o.Id).ToArray();
 }

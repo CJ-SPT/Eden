@@ -9,16 +9,18 @@ using Eden.Protocol.Serialization;
 using Eden.Protocol.Tests.Capsuleers;
 using Eden.Server;
 using Eden.World.Catalog;
+using Eden.World.Configuration;
 using Eden.World.Market;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Eden.World.Storage.Migrations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Xunit.Abstractions;
 
 namespace Eden.Protocol.Tests.Market;
 
-public sealed class TestingMarketTests
+public sealed class TestingMarketTests(ITestOutputHelper output)
 {
     private const long PilotId = 90000001;
     private const int StationId = 60003760;
@@ -84,6 +86,130 @@ public sealed class TestingMarketTests
         using WorldDbContext reopened = new(database.Path);
         Assert.Equal(orderId, Assert.Single(reopened.Set<NpcMarketOrder>().Where(order => order.StationId == station && !order.Bid)).Id);
         Assert.Equal(orderId, Assert.Single(reopened.Set<MarketExecution>().Where(trade => trade.PilotId == pilot)).OrderId);
+    }
+
+    [Fact]
+    public void ResidentSupplyQuotesUseScopedSnapshotsAndSeePrivateChanges()
+    {
+        const int requested = 10001;
+        const int unrelated = 10002;
+        const int buyerCorporation = 2000001;
+        using CapsuleerHaulerTests.Fixture fixture = new();
+        var database = fixture.Database;
+        using (CatalogDbContext edit = new(database.CatalogPath, writable: true))
+        {
+            edit.Database.ExecuteSqlRaw(
+                """
+                INSERT INTO ItemType(Id,Name,GroupId) VALUES (10001,'Quoted',54),(10002,'Unrelated',54);
+                INSERT INTO SourceRecord VALUES
+                    ('client/types','10001','{{"published":1,"marketGroupID":2,"volume":5}}'),
+                    ('client/types','10002','{{"published":1,"marketGroupID":2,"volume":5}}');
+                """
+            );
+        }
+        var configuration = new WorldConfigurationStore(database, fixture.Clock);
+        var saved = configuration.Read();
+        var draft = saved.Active.Draft;
+        configuration.Save(
+            saved.Generation,
+            draft with
+            {
+                Settings = draft.Settings with { DevelopmentSupply = draft.Settings.DevelopmentSupply with { TestingMarket = true } },
+            },
+            "Resident development supply replay"
+        );
+        WorldInitialization.Initialize(database, fixture.Clock);
+        long seller = fixture.Founder().PilotId;
+        using var host = ServerServices.Build(database, fixture.Clock, liveWorld: true);
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var live = host.GetRequiredService<LiveWorld>();
+        var market = host.GetRequiredService<PilotMarketStore>();
+        var station = catalog.RequireStation(StationId);
+        long now = fixture.Clock.Now;
+        MarketOrder npc;
+        MarketOrder first;
+        MarketOrder second;
+        using (var world = live.Economy.Begin())
+        {
+            npc = Assert.Single(market.SupplyOrders(world, catalog, StationId, [requested, requested]));
+            first = world.Add(Listing(seller, requested, 2, now - 2)).Entity.Snapshot();
+            second = world.Add(Listing(seller, requested, 2, now - 2)).Entity.Snapshot();
+            world.Add(Listing(PilotId, requested, 1, now - 5));
+            world.Add(Listing(seller, requested, 1, now - 4, buyerCorporation));
+            var expired = Listing(seller, requested, 1, now - 3);
+            expired.Expires = now;
+            world.Add(expired);
+            var bid = Listing(seller, requested, 1, now - 3);
+            bid.Bid = true;
+            world.Add(bid);
+            world.Commit();
+        }
+
+        MarketOrder[] expected = new[] { first, second, npc }
+            .OrderBy(order => order.PriceCents)
+            .ThenBy(order => order.Issued)
+            .ThenBy(order => order.Id)
+            .ToArray();
+        var small = Measure();
+        using (var world = live.Economy.Begin())
+        {
+            for (int i = 0; i < 4096; i++)
+            {
+                world.Add(Listing(seller, unrelated, 1, now));
+            }
+            world.Commit();
+        }
+        var large = Measure();
+        output.WriteLine($"Four quotes: {small.Bytes:N0} bytes / {small.Materialized} materializations on small book.");
+        output.WriteLine($"Four quotes: {large.Bytes:N0} bytes / {large.Materialized} materializations with 4,096 unrelated offers.");
+        Assert.Equal(0, small.Materialized);
+        Assert.Equal(0, large.Materialized);
+        Assert.InRange(large.Bytes, 0, small.Bytes + 64 * 1024);
+
+        using (var pending = live.Economy.Begin())
+        {
+            var orders = pending.Set<SavedPersonalOrder>();
+            orders.Find(first.Id)!.Remaining = 1;
+            pending.Remove(orders.Find(second.Id)!);
+            var corporation = pending.Add(Listing(seller, requested, 1, now, buyerCorporation + 1)).Entity.Snapshot();
+            var quote = market.SupplyOrders(pending, catalog, StationId, [requested], PilotId, buyerCorporation);
+            Assert.Contains(corporation, quote);
+            Assert.Contains(first with { Remaining = 1 }, quote);
+            Assert.DoesNotContain(second, quote);
+        }
+        using var reopened = live.Economy.Begin();
+        Assert.Equal(expected, market.SupplyOrders(reopened, catalog, StationId, [requested], PilotId, buyerCorporation));
+
+        (long Bytes, int Materialized) Measure()
+        {
+            int materialized = 0;
+            long allocated = GC.GetAllocatedBytesForCurrentThread();
+            for (int iteration = 0; iteration < 4; iteration++)
+            {
+                using var world = live.Economy.Begin();
+                Assert.Equal(expected, market.SupplyOrders(world, catalog, StationId, [requested, requested], PilotId, buyerCorporation));
+                materialized += world.Set<SavedPersonalOrder>().Local.Count;
+            }
+            return (GC.GetAllocatedBytesForCurrentThread() - allocated, materialized);
+        }
+
+        SavedPersonalOrder Listing(long pilot, int type, long price, long issued, int? corporation = null) =>
+            new()
+            {
+                PilotId = pilot,
+                CorporationId = corporation,
+                StationId = station.Id,
+                SystemId = station.SolarSystemId,
+                RegionId = station.RegionId,
+                TypeId = type,
+                PriceCents = price,
+                Remaining = 2,
+                Entered = 2,
+                Issued = issued,
+                Expires = now + TimeSpan.TicksPerDay,
+                DurationDays = 1,
+                Status = PersonalOrderStatus.Open,
+            };
     }
 
     [Fact]
