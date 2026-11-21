@@ -65,7 +65,8 @@ internal static class ServerServices
                     residentReads: residentReads,
                     simulationObjects: simulationObjects,
                     fleets: provider.GetRequiredService<Eden.Gameplay.Fleets.ICooperativeFleets>(),
-                    targetLocks: provider.GetRequiredService<Eden.Gameplay.Targeting.IPilotTargetLocks>()
+                    targetLocks: provider.GetRequiredService<Eden.Gameplay.Targeting.IPilotTargetLocks>(),
+                    diskCheckpointCapture: Environment.GetEnvironmentVariable("EDEN_CHECKPOINT_CAPTURE_FILE") == "1"
                 )
             );
         }

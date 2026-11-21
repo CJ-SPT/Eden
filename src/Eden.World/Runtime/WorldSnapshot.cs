@@ -27,7 +27,8 @@ internal sealed class WorldSnapshot(
     EconomyCheckpoint? economy = null,
     TimeSpan maximumCopyPause = default,
     int copySteps = 1,
-    MapStatisticsCheckpoint? mapStatistics = null
+    MapStatisticsCheckpoint? mapStatistics = null,
+    string? captureFile = null
 ) : IDisposable
 {
     internal SqliteConnection Database => database;
@@ -105,5 +106,20 @@ internal sealed class WorldSnapshot(
         }
     }
 
-    public void Dispose() => database.Dispose();
+    public void Dispose() => DisposeDatabase(database, captureFile);
+
+    internal static void DisposeDatabase(SqliteConnection? image, string? path)
+    {
+        try
+        {
+            image?.Dispose();
+        }
+        finally
+        {
+            if (path is not null)
+            {
+                CheckpointCaptureFile.Delete(path);
+            }
+        }
+    }
 }

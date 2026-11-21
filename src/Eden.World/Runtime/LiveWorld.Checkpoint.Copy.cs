@@ -1,15 +1,19 @@
 using System.Diagnostics;
 using System.Globalization;
+using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
 
 namespace Eden.World.Runtime;
 
 internal sealed partial class LiveWorld
 {
+    private readonly bool _diskCheckpointCapture;
+
     private WorldSnapshot? CaptureIncrementalSnapshot()
     {
         using var context = UseShared();
-        SqliteConnection database = new("Data Source=:memory:;Pooling=False;Foreign Keys=True");
+        SqliteConnection? database = null;
+        string? captureFile = null;
         WorldDatabaseCopy.Incremental? backup = null;
         TimeSpan wait = TimeSpan.Zero;
         TimeSpan copy = TimeSpan.Zero;
@@ -21,7 +25,22 @@ internal sealed partial class LiveWorld
         bool transferred = false;
         try
         {
+            if (_diskCheckpointCapture)
+            {
+                captureFile = CheckpointCaptureFile.Create(_path);
+            }
+            database = captureFile is null
+                ? new("Data Source=:memory:;Pooling=False;Foreign Keys=True")
+                : WorldConnections.FileConnection(captureFile, SqliteOpenMode.ReadWrite);
             database.Open();
+            if (captureFile is not null)
+            {
+                // This image can be regenerated after a crash. The separate durable
+                // staging file still syncs before it replaces the saved world.
+                using var configure = database.CreateCommand();
+                configure.CommandText = "PRAGMA synchronous=OFF";
+                configure.ExecuteNonQuery();
+            }
             while (true)
             {
                 long requested = Stopwatch.GetTimestamp();
@@ -76,8 +95,7 @@ internal sealed partial class LiveWorld
                         using var size = database.CreateCommand();
                         size.CommandText = "SELECT page_count*page_size FROM pragma_page_count(),pragma_page_size()";
                         long bytes = Convert.ToInt64(size.ExecuteScalar(), CultureInfo.InvariantCulture);
-                        transferred = true;
-                        return new(
+                        WorldSnapshot snapshot = new(
                             database,
                             resident.Combat,
                             resident.Generation,
@@ -97,8 +115,11 @@ internal sealed partial class LiveWorld
                             resident.Economy,
                             maximumPause,
                             steps,
-                            resident.MapStatistics
+                            resident.MapStatistics,
+                            captureFile
                         );
+                        transferred = true;
+                        return snapshot;
                     }
                 }
                 // The FIFO owner admits queued sessions before the next page batch.
@@ -107,14 +128,20 @@ internal sealed partial class LiveWorld
         }
         finally
         {
-            using (EnterPersistence("checkpoint copy cleanup"))
+            try
             {
-                backup?.Dispose();
-                Volatile.Write(ref _checkpointCopying, false);
+                using (EnterPersistence("checkpoint copy cleanup"))
+                {
+                    backup?.Dispose();
+                    Volatile.Write(ref _checkpointCopying, false);
+                }
             }
-            if (!transferred)
+            finally
             {
-                database.Dispose();
+                if (!transferred)
+                {
+                    WorldSnapshot.DisposeDatabase(database, captureFile);
+                }
             }
         }
     }

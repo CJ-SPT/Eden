@@ -485,7 +485,8 @@ internal sealed partial class LiveWorld : IDisposable
         bool simulationObjects = true,
         Action<SqliteConnection, SqliteConnection>? copy = null,
         Eden.Gameplay.Fleets.ICooperativeFleets? fleets = null,
-        Eden.Gameplay.Targeting.IPilotTargetLocks? targetLocks = null
+        Eden.Gameplay.Targeting.IPilotTargetLocks? targetLocks = null,
+        bool diskCheckpointCapture = false
     )
     {
         Fleets = fleets;
@@ -507,6 +508,7 @@ internal sealed partial class LiveWorld : IDisposable
         _reportTrace = report ?? ServerLog.Console.Trace;
         _persist = persist ?? PersistSnapshot;
         _copy = copy;
+        _diskCheckpointCapture = diskCheckpointCapture;
         Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
         _ownership = new(_path + ".owner", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
         ConnectionString = new SqliteConnectionStringBuilder
@@ -520,6 +522,10 @@ internal sealed partial class LiveWorld : IDisposable
         _memory = new(ConnectionString);
         try
         {
+            if (_diskCheckpointCapture)
+            {
+                CheckpointCaptureFile.Reclaim(_path);
+            }
             _memory.Open();
             using (var disk = WorldConnections.FileConnection(_path))
             {

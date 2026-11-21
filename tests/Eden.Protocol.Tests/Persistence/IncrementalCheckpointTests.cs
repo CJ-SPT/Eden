@@ -8,9 +8,11 @@ namespace Eden.Protocol.Tests.Persistence;
 public sealed class IncrementalCheckpointTests
 {
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task WritersRunBetweenPageBatchesAndFinalImageMatchesResidentGeneration(bool rollback)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task WritersRunBetweenPageBatchesAndFinalImageMatchesResidentGeneration(bool rollback, bool diskCapture)
     {
         using TestWorld fixture = new();
         using (WorldDbContext world = new(fixture.Path))
@@ -19,7 +21,7 @@ public sealed class IncrementalCheckpointTests
                 "CREATE TABLE CheckpointPadding(Value BLOB); INSERT INTO CheckpointPadding VALUES(zeroblob(4194304))"
             );
         }
-        using LiveWorld live = new(new(fixture.Path), new TestClock(), Console.WriteLine);
+        using LiveWorld live = new(new(fixture.Path), new TestClock(), Console.WriteLine, diskCheckpointCapture: diskCapture);
         using (var action = live.Economy.Begin())
         {
             action.Add(new PilotWallet { PilotId = 90000001, Cents = 100 });
@@ -75,6 +77,84 @@ public sealed class IncrementalCheckpointTests
             Assert.Equal(200, saved.Set<PilotWallet>().Find(90000001L)!.Cents);
             Assert.Equal(!rollback, saved.Pilots.Find(90000001L)!.Name == "Between batches");
         }
+        if (diskCapture)
+        {
+            string scratch = Assert.Single(CaptureFiles(fixture.Path));
+            Assert.Equal(scratch, snapshot.Database.DataSource);
+            snapshot.Dispose();
+            Assert.Empty(CaptureFiles(fixture.Path));
+        }
         live.CheckpointStepCompleted = null;
     }
+
+    [Fact]
+    public async Task DiskCaptureReclaimsAbandonedImagesAndCleansUpAfterCaptureAndWriteFailures()
+    {
+        const long pilot = 90000001;
+        using TestWorld fixture = new();
+        using (WorldDbContext world = new(fixture.Path))
+        {
+            world.Database.ExecuteSqlRaw(
+                "CREATE TABLE CheckpointPadding(Value BLOB); INSERT INTO CheckpointPadding VALUES(zeroblob(4194304))"
+            );
+            world.Add(new PilotWallet { PilotId = pilot, Cents = 100 });
+            world.SaveChanges();
+        }
+        string abandoned = fixture.Path + ".checkpoint-capture-" + Guid.NewGuid().ToString("N");
+        string unrelated = fixture.Path + ".checkpoint-capture-notes";
+        File.WriteAllText(abandoned, "interrupted capture");
+        File.WriteAllText(abandoned + "-journal", "interrupted journal");
+        File.WriteAllText(unrelated, "retained");
+        int attempts = 0;
+        using LiveWorld live = new(
+            new(fixture.Path),
+            new CheckpointClock(new TestClock()),
+            _ => { },
+            (snapshot, path) =>
+            {
+                if (++attempts == 1)
+                {
+                    throw new IOException("Injected durable write failure.");
+                }
+                LiveWorld.PersistSnapshot(snapshot, path);
+            },
+            diskCheckpointCapture: true
+        );
+        Assert.False(File.Exists(abandoned));
+        Assert.False(File.Exists(abandoned + "-journal"));
+        Assert.Equal("retained", File.ReadAllText(unrelated));
+        using (var action = live.Economy.Begin())
+        {
+            action.Set<PilotWallet>().Find(pilot)!.Cents = 200;
+            action.Commit();
+        }
+
+        live.CheckpointStepCompleted = _ => throw new IOException("Injected capture failure.");
+        await Assert.ThrowsAsync<IOException>(live.FlushAsync);
+        Assert.Equal([unrelated], CaptureFiles(fixture.Path));
+        Assert.Equal(0, attempts);
+        Assert.False(live.CheckpointCopying);
+        live.CheckpointStepCompleted = null;
+
+        await Assert.ThrowsAsync<IOException>(live.FlushAsync);
+        Assert.Equal([unrelated], CaptureFiles(fixture.Path));
+        Assert.Equal(100, CentsIn(fixture.Path));
+        Assert.Equal(1, attempts);
+
+        await live.FlushAsync();
+        Assert.Equal([unrelated], CaptureFiles(fixture.Path));
+        Assert.Equal(200, CentsIn(fixture.Path));
+        Assert.Equal(100, CentsIn(fixture.Path + ".previous"));
+        Assert.Equal(2, attempts);
+
+        static long CentsIn(string path)
+        {
+            using var connection = WorldConnections.FileConnection(path);
+            using WorldDbContext saved = new(connection);
+            return saved.Set<PilotWallet>().Find(pilot)!.Cents;
+        }
+    }
+
+    private static string[] CaptureFiles(string world) =>
+        Directory.GetFiles(Path.GetDirectoryName(world)!, Path.GetFileName(world) + ".checkpoint-capture-*");
 }
