@@ -694,6 +694,49 @@ public sealed partial class CapitalTravelTests
 
         internal Client Select(long account) => new(Db, Clock, account);
 
+        internal long AddUpwell(int type, int system, SpacePosition point, int corporation)
+        {
+            using var action = Live.Economy.Begin(new(systems: [system]));
+            long id = StructureRules.FirstStructureId + action.NextItemId();
+            action.Add(
+                new SavedStructure
+                {
+                    Id = id,
+                    TypeId = type,
+                    CorporationId = corporation,
+                    SystemId = system,
+                    State = StructureState.ShieldVulnerable,
+                    HasCore = true,
+                    X = point.X,
+                    Y = point.Y,
+                    Z = point.Z,
+                }
+            );
+            action.Commit();
+            return id;
+        }
+
+        internal long AssembleAndBoard(DockedPilot pilot, int type, long? deliveredPackage = null)
+        {
+            using CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath);
+            Assert.True(Eden.World.Fittings.HullCatalog.UsesCatalogBonuses(catalog, type));
+            var fitting = Db.Services.GetRequiredService<IPilotFitting>();
+            var attributes = fitting.Attributes(type);
+            Train(
+                pilot.PilotId,
+                InventoryDefinitions
+                    .RequiredSkills.Select(req =>
+                        ((int)attributes.GetValueOrDefault(req.Skill), (int)attributes.GetValueOrDefault(req.Level))
+                    )
+                    .Where(req => req.Item1 > 0)
+                    .ToArray()
+            );
+            var fleet = Db.Services.GetRequiredService<IPilotFleet>();
+            long package = deliveredPackage ?? Grant(pilot.PilotId, pilot.DockedLocationId, InventoryFlag.Hangar, type, 1);
+            long assembled = Assert.Single(fleet.Assemble(pilot.PilotId, [package], null).ShipIds);
+            return fleet.Board(pilot.PilotId, assembled, pilot.ShipId).Pilot.ShipId;
+        }
+
         internal long FitCapitalModule(int type)
         {
             var pilot = Db.Store.FindPilot(1000001)!;
@@ -709,15 +752,19 @@ public sealed partial class CapitalTravelTests
                     .ToArray()
             );
             // Fit through the normal docked path, then restore the prepared flight position.
-            using (var action = Live.Economy.Begin(new(pilots: [pilot.PilotId])))
+            if (pilot.Position is not null)
             {
+                using var action = Live.Economy.Begin(new(pilots: [pilot.PilotId]));
                 action.Remove(action.Positions.Find(pilot.ShipId)!);
                 action.Commit();
             }
-            long module = Grant(pilot.PilotId, pilot.StationId, InventoryFlag.Hangar, type, 1);
-            fitting.Fit(pilot.PilotId, [module], pilot.StationId, (int)InventoryFlag.AutoFit);
+            long module = Grant(pilot.PilotId, pilot.DockedLocationId, InventoryFlag.Hangar, type, 1);
+            fitting.Fit(pilot.PilotId, [module], pilot.DockedLocationId, (int)InventoryFlag.AutoFit);
             fitting.SetOnline(pilot.PilotId, pilot.ShipId, module, true);
-            Db.Store.SetPosition(pilot.ShipId, pilot.Position!, pilot.SystemId);
+            if (pilot.Position is { } position)
+            {
+                Db.Store.SetPosition(pilot.ShipId, position, pilot.SystemId);
+            }
             return module;
         }
 
@@ -800,6 +847,7 @@ public sealed partial class CapitalTravelTests
                         Id = corporationId,
                         Name = "Navigation",
                         Ticker = "NAV",
+                        MemberLimit = 10,
                         CeoId = pilot,
                         CreatorId = pilot,
                         StationId = owner.StationId,
@@ -1041,7 +1089,7 @@ public sealed partial class CapitalTravelTests
             Live = new(database, Clock, _ => { });
         }
 
-        private void Train(long pilot, params (int Skill, int Level)[] skills)
+        internal void Train(long pilot, params (int Skill, int Level)[] skills)
         {
             using CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath);
             using var action = Live.Economy.Begin(new(pilots: [pilot]));
@@ -1054,7 +1102,7 @@ public sealed partial class CapitalTravelTests
             action.Commit();
         }
 
-        private long Grant(long pilot, long location, InventoryFlag flag, int type, int quantity)
+        internal long Grant(long pilot, long location, InventoryFlag flag, int type, int quantity)
         {
             using var action = Live.Economy.Begin(new(pilots: [pilot]));
             long id = action.NextItemId();

@@ -1001,7 +1001,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Navigation and travel
 
-- [Capital logistics plan and industrial-cyno jump freighters, November 20, 2026](protocol/capital-logistics.md)
+- [Capital logistics and capital ships, November 20, 2026](protocol/capital-logistics.md)
 - [Dreadnoughts and force auxiliaries](protocol/capital-logistics.md#dreadnoughts-and-force-auxiliaries)
 - [Carrier launch decks and light attack fighters](protocol/capital-logistics.md#carrier-launch-decks-and-light-attack-fighters)
 - [Rorqual industrial core and shipboard compression](protocol/capital-logistics.md#rorqual-industrial-core-and-shipboard-compression)

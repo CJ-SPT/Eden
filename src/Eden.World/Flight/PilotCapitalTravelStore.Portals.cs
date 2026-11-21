@@ -1,3 +1,4 @@
+using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Fittings;
@@ -30,9 +31,15 @@ internal sealed partial class PilotCapitalTravelStore
         long now = Now;
         var host = ActivePilot(world, pilotId, shipId);
         var hull = catalog.RequireItem(host.ActiveShip.TypeId);
-        if (hull.GroupId != (int)HullClass.BlackOps || fleets.Identity(pilotId) is not { FleetId: var fleet })
+        int moduleType = hull.GroupId switch
         {
-            throw new InvalidDataException("Use an eligible Black Ops ship in a fleet to open a covert jump portal.");
+            (int)HullClass.Titan => CapitalTravelRules.TitanPortalGenerator,
+            (int)HullClass.BlackOps => CapitalTravelRules.CovertPortalGenerator,
+            _ => 0,
+        };
+        if (moduleType == 0 || fleets.Identity(pilotId) is not { FleetId: var fleet })
+        {
+            throw new InvalidDataException("Use an eligible Titan or Black Ops ship in a fleet to open a jump portal.");
         }
         RequireReady(world, host, now);
         RequireCynoSystem(catalog, request.SystemId);
@@ -40,15 +47,11 @@ internal sealed partial class PilotCapitalTravelStore
         var module =
             world
                 .Filter<OwnedItem>(item =>
-                    item.LocationId == shipId
-                    && item.OwnerId == pilotId
-                    && item.TypeId == CapitalTravelRules.CovertPortalGenerator
-                    && item.Online
-                    && item.Singleton
+                    item.LocationId == shipId && item.OwnerId == pilotId && item.TypeId == moduleType && item.Online && item.Singleton
                 )
                 .AsEnumerable()
                 .FirstOrDefault(item => InventoryDefinitions.IsHighSlot(item.FlagId))
-            ?? throw new InvalidDataException("Fit and online a Covert Jump Portal Generator.");
+            ?? throw new InvalidDataException("Fit and online a compatible jump portal generator.");
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, hull.Id);
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
         NaniteRepairPersistence.RequireAvailable(world, catalog, module.Id, now);
@@ -60,6 +63,21 @@ internal sealed partial class PilotCapitalTravelStore
         var fitted = fit.Graph.Attributes(module.Id);
         long end = SpatialModuleRules.Deadline(now, fitted[DogmaAttributeId.JumpPortalDuration]);
         double capacitor = ShipResources.SpendCapacitor(world, shipId, attributes, fitted[DogmaAttributeId.CapacitorNeed], now);
+        IReadOnlyList<InventoryChange> fuelChanges = [];
+        if (moduleType == CapitalTravelRules.TitanPortalGenerator)
+        {
+            int level = PilotSkillReader.Level(world, catalog, pilotId, CapitalTravelRules.JumpPortalGenerationSkill);
+            double reduction =
+                catalog.FittingAttributes(CapitalTravelRules.JumpPortalGenerationSkill)[DogmaAttributeId.JumpPortalFuelBonusPercent]
+                * level
+                / 100;
+            double baseQuantity = catalog.FittingAttributes(moduleType)[DogmaAttributeId.ConsumptionQuantity];
+            int quantity = checked((int)Math.Round(baseQuantity * (1 + reduction), MidpointRounding.AwayFromZero));
+            int fuelType = checked((int)fitted[DogmaAttributeId.ConsumptionType]);
+            var charge = FuelStacks(world, host.Id, shipId, InventoryFlag.Cargo, fuelType).ToArray();
+            RequireFuel(charge, quantity);
+            fuelChanges = SpendFuel(world, catalog, charge, quantity);
+        }
         var active =
             world.Set<ActiveFittedModule>().Find(module.Id)
             ?? world.Add(new ActiveFittedModule { ShipId = shipId, ModuleId = module.Id }).Entity;
@@ -75,7 +93,7 @@ internal sealed partial class PilotCapitalTravelStore
         portal.BeaconId = request.BeaconId;
         portal.StartedAt = now;
         portal.EndsAt = end;
-        var result = new JumpPortalActivation(PortalContact(portal), capacitor);
+        var result = new JumpPortalActivation(PortalContact(portal, moduleType), capacitor, fuelChanges);
         world.Commit();
         return result;
     }
@@ -87,7 +105,7 @@ internal sealed partial class PilotCapitalTravelStore
             ? economy.Inspect(
                 world =>
                     world.Set<SavedJumpPortal>().Find(pilotId) is { } portal && PortalActive(world, portal, now)
-                        ? PortalContact(portal)
+                        ? PortalContact(portal, PortalModuleType(world, portal))
                         : null,
                 new(pilots: [pilotId])
             )
@@ -110,7 +128,7 @@ internal sealed partial class PilotCapitalTravelStore
                 .Filter<SavedJumpPortal>(portal => portal.FleetId == fleet && portal.EndsAt > now)
                 .AsEnumerable()
                 .Where(portal => PortalActive(world, portal, now) && fleets.Identity(portal.PilotId)?.FleetId == fleet)
-                .Select(PortalContact)
+                .Select(portal => PortalContact(portal, PortalModuleType(world, portal)))
                 .ToArray()
         );
     }
@@ -144,7 +162,8 @@ internal sealed partial class PilotCapitalTravelStore
         {
             throw new InvalidDataException("Approach within range of the fleet jump portal.");
         }
-        var target = PortalContact(row).Target;
+        int moduleType = PortalModuleType(world, row);
+        var target = new CapitalJumpRequest(row.EmitterId, row.BeaconId, row.Destination, row.Target);
         var destination = PortalDestination(world, catalog, host.Id, target, now);
         var previous = RequireJumpReady(world, catalog, passenger, origin, target.SystemId, now);
         var attributes = PilotFittingStore.ShipAttributes(world, catalog, passenger);
@@ -154,9 +173,14 @@ internal sealed partial class PilotCapitalTravelStore
         RequireLiving(world, host, hostAttributes, now);
         var module = fit.Graph.Attributes(row.ModuleId);
         var eligibility = (DogmaAttributeId)checked((int)module[DogmaAttributeId.JumpPortalPassengerRequiredAttribute]);
-        if (eligibility != DogmaAttributeId.BlackOpsPortalPassenger || attributes.GetValueOrDefault(eligibility) <= 0)
+        var requiredAttribute =
+            moduleType == CapitalTravelRules.TitanPortalGenerator
+                ? DogmaAttributeId.TitanPortalPassenger
+                : DogmaAttributeId.BlackOpsPortalPassenger;
+        double defaultEligibility = catalog.Read(CatalogData.Client.Dogmaattributes, (long)requiredAttribute)?.DefaultValue ?? 0;
+        if (eligibility != requiredAttribute || attributes.GetValueOrDefault(requiredAttribute, defaultEligibility) <= 0)
         {
-            throw new InvalidDataException("This ship cannot use a covert jump portal.");
+            throw new InvalidDataException("This ship cannot use that jump portal.");
         }
         double distance = DriveDistance(catalog, origin, target.SystemId, destination, hostAttributes);
         double mass = attributes.GetValueOrDefault(DogmaAttributeId.Mass, hull.Mass ?? 0);
@@ -164,7 +188,7 @@ internal sealed partial class PilotCapitalTravelStore
         double required = Math.Ceiling(distance * mass * module[DogmaAttributeId.JumpPortalConsumptionMassFactor] * rate);
         if (!double.IsFinite(required) || required is <= 0 or > int.MaxValue)
         {
-            throw new InvalidDataException("Invalid covert portal fuel requirement.");
+            throw new InvalidDataException("Invalid jump portal fuel requirement.");
         }
         int fuelType = checked((int)hostAttributes[DogmaAttributeId.JumpDriveConsumptionType]);
         var fuel = FuelStacks(world, host.Id, row.ShipId, InventoryFlag.FuelBay, fuelType)
@@ -199,11 +223,15 @@ internal sealed partial class PilotCapitalTravelStore
         row.EndsAt > now
         && world.Positions.Find(row.ShipId)?.SystemId == row.Origin
         && world.Pilots.Find(row.PilotId)?.ActiveShipId == row.ShipId
-        && world.Set<OwnedItem>().Find(row.ModuleId) is { Online: true, TypeId: CapitalTravelRules.CovertPortalGenerator } fitted
+        && world.Set<OwnedItem>().Find(row.ModuleId) is { Online: true, Singleton: true } fitted
+        && fitted.TypeId is CapitalTravelRules.CovertPortalGenerator or CapitalTravelRules.TitanPortalGenerator
+        && InventoryDefinitions.IsHighSlot(fitted.FlagId)
         && fitted.LocationId == row.ShipId
         && world.Set<ShipLoss>().Find(row.ShipId) is null;
 
-    internal static JumpPortal PortalContact(SavedJumpPortal row) =>
+    private static int PortalModuleType(WorldAction world, SavedJumpPortal row) => world.Set<OwnedItem>().Find(row.ModuleId)!.TypeId;
+
+    internal static JumpPortal PortalContact(SavedJumpPortal row, int typeId = CapitalTravelRules.CovertPortalGenerator) =>
         new(
             row.PilotId,
             row.ShipId,
@@ -212,6 +240,7 @@ internal sealed partial class PilotCapitalTravelStore
             row.Origin,
             new(row.EmitterId, row.BeaconId, row.Destination, row.Target),
             row.StartedAt,
-            row.EndsAt
+            row.EndsAt,
+            typeId
         );
 }

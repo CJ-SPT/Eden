@@ -54,10 +54,11 @@ public sealed record JumpPortal(
     int Origin,
     CapitalJumpRequest Target,
     long StartedAt,
-    long EndsAt
+    long EndsAt,
+    int ModuleTypeId = CapitalTravelRules.CovertPortalGenerator
 );
 
-public sealed record JumpPortalActivation(JumpPortal Portal, double Capacitor);
+public sealed record JumpPortalActivation(JumpPortal Portal, double Capacitor, IReadOnlyList<InventoryChange> FuelChanges);
 
 public interface ICapitalInventoryEvents
 {
@@ -102,6 +103,9 @@ public static class CapitalTravelRules
     public const int CovertGenerator = 28646;
     public const int CovertField = 28650;
     public const int CovertFieldGroup = 897;
+    public const int TitanPortalGenerator = 23953;
+    public const int TitanPortalGroup = 590;
+    public const int JumpPortalGenerationSkill = 24562;
     public const int CovertPortalGenerator = 28652;
     public const int CovertPortalGroup = 4127;
     public const int MobileBeacon = 57319;
@@ -142,11 +146,10 @@ public static class CapitalTravelRules
         groupId is (int)HullClass.JumpFreighter or (int)HullClass.BlackOps || RestrictedCapital(groupId);
 
     public static bool RestrictedCapital(int groupId) =>
-        groupId
-            is (int)HullClass.Dreadnought
-                or (int)HullClass.ForceAuxiliary
-                or (int)HullClass.Carrier
-                or (int)HullClass.CapitalIndustrial;
+        groupId is (int)HullClass.Dreadnought or (int)HullClass.ForceAuxiliary or (int)HullClass.Carrier or (int)HullClass.CapitalIndustrial
+        || Supercapital(groupId);
+
+    public static bool Supercapital(int groupId) => groupId is (int)HullClass.Supercarrier or (int)HullClass.Titan;
 
     public static int Isotopes(double distance, double rate)
     {

@@ -2,11 +2,14 @@ using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Inventory;
+using Eden.Data.World.Structures;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
@@ -18,6 +21,7 @@ using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
+using Eden.World.Structures;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Corporations;
@@ -178,6 +182,19 @@ internal sealed class PilotFleetStore(WorldDatabase database, SqliteWorld lookup
             if (!HullCatalog.CanAssemble(catalog, type, type.CategoryId))
             {
                 throw new InvalidDataException("This hull is not supported for assembly yet.");
+            }
+            if (
+                CapitalTravelRules.Supercapital(type.GroupId)
+                && (
+                    pilot.ActiveShip.StructureId is not long structureId
+                    || world.Set<SavedStructure>().Find(structureId) is not { } host
+                    || !StructureRules.Operational(host.State)
+                    || host.TypeId != StructureIndustryRules.Sotiyo
+                        && !StructureRules.CanDock(StructureCatalog.Require(catalog, host.TypeId), host.State, type.GroupId)
+                )
+            )
+            {
+                throw new InvalidDataException("Assemble supercapitals in a Keepstar or Sotiyo.");
             }
             var before = PilotInventoryStore.Read(catalog, item);
             long shipId = item.Quantity == 1 ? id : nextId++;

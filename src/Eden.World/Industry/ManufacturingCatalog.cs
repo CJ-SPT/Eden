@@ -33,10 +33,15 @@ internal static class ManufacturingCatalog
         ?? catalog.Definitions.Find(CatalogData.Client.Solarsystemcontent, (long)systemId)?.Security
         ?? double.NaN;
 
-    internal static bool Allowed(CatalogDbContext catalog, int productId, double security)
+    internal static bool Allowed(CatalogDbContext catalog, int productId, double security, bool supercapitalShipyard = false)
     {
         var product = catalog.Definitions.Items[productId];
-        return ProductionFacilityRules.CanManufacture((InventoryCategory)product.CategoryId, product.GroupId, security);
+        return ProductionFacilityRules.CanManufacture(
+            (InventoryCategory)product.CategoryId,
+            product.GroupId,
+            security,
+            supercapitalShipyard
+        );
     }
 
     private static FrozenDictionary<int, ManufacturingRecipeDefinition> Load(CatalogDbContext catalog, int unused)

@@ -141,6 +141,15 @@ internal sealed partial class PilotStructureStore
             {
                 throw new InvalidDataException("Reaction services require low or null security.");
             }
+            if (
+                item.TypeId == StructureIndustryRules.SupercapitalShipyard
+                && !StructureIndustry.SupercapitalConstruction(world, catalog, structure)
+            )
+            {
+                throw new InvalidDataException(
+                    "Online the supercapital shipyard in an alliance-held nullsec system with the construction upgrade."
+                );
+            }
             if (service.Services.Contains(StructureService.MoonMining) && structure.MoonId is null)
             {
                 throw new InvalidDataException("Moon mining services require a refinery bound to a moon mining point.");
@@ -289,6 +298,7 @@ internal sealed partial class PilotStructureStore
     internal static void Advance(WorldAction world, CatalogDbContext catalog, long now, int? systemId = null)
     {
         CapitalNavigationStore.StopUnavailableServices(world, systemId, now);
+        StructureIndustry.StopUnavailableShipyards(world, catalog, systemId, now);
         foreach (int missileSystem in systemId is int selected ? new[] { selected } : world.StructureMissileSystems)
         {
             StructureMissileSettlement.Advance(world, catalog, missileSystem, now);

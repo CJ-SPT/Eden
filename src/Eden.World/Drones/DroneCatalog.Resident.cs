@@ -2,7 +2,9 @@ using Eden.Data.Catalog;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Ships;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
@@ -57,11 +59,17 @@ internal static partial class DroneCatalog
         var profile = Profile(catalog, typeId, fitted);
         if (profile.FighterAttack is { } weapon)
         {
-            // Pinned effects 6560 and 6561 give 5% per level to fighter damage and light fighter speed.
-            double damageBonus =
-                1 + PilotSkillReader.Level(world, catalog, pilotId, (int)Eden.Gameplay.Ships.HullBonusSkill.Fighters) * 0.05;
-            float speedBonus =
-                1 + PilotSkillReader.Level(world, catalog, pilotId, (int)Eden.Gameplay.Ships.HullBonusSkill.LightFighters) * 0.05f;
+            // Pinned effects 6560, 6561 and 6563 apply fighter damage, light fighter speed and heavy fighter damage.
+            double damageBonus = SkillMultiplier(HullBonusSkill.Fighters, DogmaAttributeId.SkillDamageBonus);
+            float speedBonus = 1;
+            if (FighterDeckRules.Class(fitted) == FighterClass.Heavy)
+            {
+                damageBonus *= SkillMultiplier(HullBonusSkill.HeavyFighters, DogmaAttributeId.SkillDamageBonus);
+            }
+            else
+            {
+                speedBonus = (float)SkillMultiplier(HullBonusSkill.LightFighters, DogmaAttributeId.LightFighterSpeedBonus);
+            }
             var damage = weapon.Damage.Scale(damageBonus);
             return profile with
             {
@@ -75,6 +83,12 @@ internal static partial class DroneCatalog
             DroneRules.ApplySkills(profile, Skills(world, catalog, pilotId), required),
             world.Settings.Resources
         );
+
+        double SkillMultiplier(HullBonusSkill skill, DogmaAttributeId bonus) =>
+            1
+            + PilotSkillReader.Level(world, catalog, pilotId, (int)skill)
+                * catalog.FittingAttributes((int)skill).GetValueOrDefault(bonus)
+                / 100;
     }
 
     internal static IReadOnlyDictionary<DroneSkill, int> Skills(WorldAction world, CatalogDbContext catalog, long pilotId) =>

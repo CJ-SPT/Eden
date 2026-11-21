@@ -123,6 +123,8 @@ public static class ModuleFittingRules
                     && effects.Contains(DogmaEffect.IndustrialItemCompression),
                 Flight.CapitalModeRules.Group => Flight.CapitalModeRules.Effect(typeId) is { } mode && effects.Contains(mode),
                 Flight.CapitalTravelRules.EconomizerGroup => effects.Contains(DogmaEffect.JumpDriveEconomizer),
+                Flight.CapitalTravelRules.TitanPortalGroup => typeId == Flight.CapitalTravelRules.TitanPortalGenerator
+                    && effects.Contains(DogmaEffect.TitanJumpPortalGeneration),
                 Flight.CapitalTravelRules.CovertPortalGroup => typeId == Flight.CapitalTravelRules.CovertPortalGenerator
                     && effects.Contains(DogmaEffect.CovertJumpPortalGeneration),
                 CapacitorBoosterDefinitions.Group => CapacitorBoosterDefinitions.IsSupported(groupId, attributes)

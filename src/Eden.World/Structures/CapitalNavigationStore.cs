@@ -200,10 +200,14 @@ internal sealed class CapitalNavigationStore(WorldDatabase database, TimeProvide
             JumpBridgeRules.Ansiblex => JumpBridgeRules.SovereigntyUpgrade,
             _ => throw new InvalidDataException("This hull is not a navigation structure."),
         };
-        return world.Set<SavedSovereigntyClaim>().Find(system) is { } claim
-            && (claim.CorporationId == corporation || world.Set<SavedAllianceMember>().Find(corporation)?.AllianceId == claim.AllianceId)
-            && world
-                .Filter<SavedSovereigntyUpgrade>(row => row.HubId == claim.HubId)
-                .Any(row => row.TypeId == upgrade && row.PowerState == SovereigntyUpgradePower.Online);
+        return HasOnlineUpgrade(world, system, corporation, upgrade);
     }
+
+    internal static bool HasOnlineUpgrade(WorldAction world, int system, int corporation, int upgrade) =>
+        world is EconomyTransaction
+        && world.Set<SavedSovereigntyClaim>().Find(system) is { } claim
+        && (claim.CorporationId == corporation || world.Set<SavedAllianceMember>().Find(corporation)?.AllianceId == claim.AllianceId)
+        && world
+            .Filter<SavedSovereigntyUpgrade>(row => row.HubId == claim.HubId)
+            .Any(row => row.TypeId == upgrade && row.PowerState == SovereigntyUpgradePower.Online);
 }

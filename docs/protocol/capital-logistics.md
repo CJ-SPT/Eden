@@ -310,6 +310,48 @@ in 18 seconds of test execution. Both Python suites and formatting passed.
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
+## Supercapital docking, construction and fleet bridging
+
+The four empire Titans and four empire supercarriers use their published hulls, racial isotopes and standard
+cynosural destinations. A Keepstar-family citadel accepts them. A Sotiyo can assemble and launch a supercapital
+but cannot receive it back from space. NPC stations and smaller Upwell structures reject docking. [CCP Upwell structures](https://support.eveonline.com/hc/en-us/articles/213021829-Upwell-Structures)
+
+A Sotiyo's Standup Supercapital Shipyard I (`35877`) requires the matching corporation or alliance claim in
+nullsec and an online Supercapital Construction Facilities upgrade (`81623`). It uses existing Upwell
+onlining and hourly fuel costs. Loss of the upgrade takes the yard offline and pauses installed manufacturing.
+Re-onlining the yard resumes the same job with its remaining duration and inputs. NPC facilities exclude these
+recipes. [EVE University manufacturing](https://wiki.eveuniversity.org/Manufacturing)
+
+The Titan's Jump Portal Generator I (`23953`) uses effect `2152` (`effects.JumpPortal`), a 60-second cycle and
+1,000 GJ at base fit. Opening consumes 500 Strontium Clathrates from cargo, reduced by 10% per level of Jump
+Portal Generation. Each completed passenger transfer consumes the Titan's racial isotope fuel using the pinned
+mass factor. Stock passenger attribute `3319` defaults to eligible and preserves each hull's explicit exclusions.
+The destination, fleet access, range, portal deadline, and fuel are checked again at departure settlement.
+The Titan remains in its source system until it performs its own jump. The native fleet and structure bridge
+calls follow the same pinned capital navigation paths as Black Ops, cross-checked with EVE.js
+`beyonceService.js`.
+
+Supercarriers use the native fighter tubes introduced for carriers, with class limits from the active hull and
+published light and heavy attack squadrons. Slot zero uses the attack missile profile. The Aeon's racial Carrier
+and Heavy Fighters skills apply to Cyclops attack damage. Supercarriers also use the existing
+`superWeaponMgr.ActivateSinglePointTargetedModule` path for burst projectors. The racial effects `6615`–`6618`
+modify their associated projector cycles, alongside Burst Projector Operation. Other fighter roles and abilities,
+Standup fighter control, Titan superweapons and Phenomena Generators remain open.
+
+The pinned catalog cases exercise all eight hulls. The Avatar pays to bridge a Rapier from Jan to a Pharolux,
+then jumps itself and docks at the Keepstar. The Aeon fires Cyclops attack missiles at an Astrahus and applies a
+fuel-paid Weapon Disruption Burst Projector after its ten-second spool. With Amarr Carrier IV and Burst Projector
+Operation I, the projector cycles in 228 seconds. The Sotiyo uses all 18 inputs from the pinned Aeon blueprint,
+reopens during a sovereignty outage, resumes the same job, then assembles and undocks the ship it delivers.
+
+**Automated validation.** The final filter passed all 118 cases in 63.75 seconds of test execution. It covered
+`CapitalTravelTests`, `AreaWeaponTests`, `AreaWeaponBoundaryTests`, `StructureRulesTests`,
+`SovereigntyResourceProtocolTests`, `IndustryFacilityLookupTests` and `FlightBoundaryTests`. The catalog and
+formatting policy suites passed. The older drone-bay cohort fixture omits Rorqual `28352` and fails its policy
+comparison. The same failure was reproduced at `ad9dc658`.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Milestones
 
 | Milestone | Playable outcome and acceptance |
@@ -321,7 +363,7 @@ in 18 seconds of test execution. Both Python suites and formatting passed.
 | **5. Dreadnoughts and force auxiliaries** | Jump a dreadnought and a force auxiliary to a standard cyno. Exercise paid siege, capital weapons and structure damage, then triage and lawful remote repairs. Prove dock and gate restrictions, loss settlement, and survival of paid mode deadlines on reopen. |
 | **6. Carriers and fighters** | Launch, control, recall and replace fighter squadrons from a carrier using native tubes and abilities. Verify targeting, observer updates and fighter losses. Reuse squadron rules for Standup fighters once the structure control and fitting branch is integrated. |
 | **7. Capital industry and fleet services** | Fly a Rorqual with an industrial core, Excavators, compression and P.A.N.I.C. Add supported fleet hangar, ship maintenance, refit and clone services. Exercise a real production and resupply route, then let bot haulers use the same paid jump and access operations. |
-| **8. Supercapitals and production** | Deliver the verified Keepstar/Sotiyo docking and construction rules, supercarrier and titan roles, and supported portals, superweapons and counters. Exercise construction, deployment, combat, and irreversible loss with real inputs and sovereignty requirements. |
+| **8. Supercapitals and production** | Keepstar docking, Sotiyo construction, direct jumps, Titan bridging, supercarrier heavy attack fighters and burst projectors are implemented. Titan superweapons and counters remain open. |
 
 Milestone 5 needs the Upwell battle and destruction paths for its siege acceptance.
 [Sovereignty upgrades](sovereignty.md#sovereignty-resources-and-upgrades--november-16-2026) ·

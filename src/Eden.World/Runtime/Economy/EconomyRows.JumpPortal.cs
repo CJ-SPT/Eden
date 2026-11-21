@@ -15,7 +15,8 @@ internal sealed partial class ResidentEconomy
             new EconomyTable<SavedJumpPortal, JumpPortal>(
                 "WorldJumpPortal",
                 row => new(row.PilotId),
-                PilotCapitalTravelStore.PortalContact,
+                // The module type comes from the fitted item when the portal is published.
+                row => PilotCapitalTravelStore.PortalContact(row),
                 row => new SavedJumpPortal
                 {
                     PilotId = row.PilotId,

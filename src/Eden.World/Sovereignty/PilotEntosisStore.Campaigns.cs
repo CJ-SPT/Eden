@@ -262,6 +262,7 @@ internal sealed partial class PilotEntosisStore
         }
         SovereigntyResourcePersistence.DestroyHub(world, catalog, conflict.HubId, at);
         Eden.World.Structures.CapitalNavigationStore.StopUnavailableServices(world, conflict.SystemId, at);
+        Eden.World.Structures.StructureIndustry.StopUnavailableShipyards(world, catalog, conflict.SystemId, at);
         world.Remove(conflict);
         SovereigntyDevelopmentPersistence.ReconcileCapital(world, conflict.DefenderAllianceId, at);
         // No winner receives a free replacement hull or automatic claim.

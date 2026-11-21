@@ -51,6 +51,7 @@ public static class StructureRules
                 or StructureService.Manufacturing
                 or StructureService.BasicManufacturing
                 or StructureService.CapitalManufacturing
+                or StructureService.SupercapitalManufacturing
                 or StructureService.Laboratory
                 or StructureService.TimeResearch
                 or StructureService.MaterialResearch

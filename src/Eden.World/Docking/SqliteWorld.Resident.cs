@@ -188,6 +188,10 @@ public sealed partial class SqliteWorld
         {
             throw new InvalidDataException("Dock your active ship at an available station.");
         }
+        if (Eden.Gameplay.Flight.CapitalTravelRules.Supercapital(catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId))
+        {
+            throw new InvalidDataException("Supercapitals require a Keepstar to dock.");
+        }
         int system = position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
         CrimewatchPersistence.CheckTravel(
             world,

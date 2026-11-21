@@ -80,7 +80,12 @@ internal sealed class ModuleActivationHandler(
                 ? new PilotCallResult.Failure("Unexpected capital mode arguments.")
                 : capital?.ActivateMode(context, method, args, mode) ?? PilotCallResult.Unsupported;
         }
-        if (effectName is CapitalTravelHandler.CynoEffectName or CapitalTravelHandler.PortalEffectName)
+        if (
+            effectName
+            is CapitalTravelHandler.CynoEffectName
+                or CapitalTravelHandler.PortalEffectName
+                or CapitalTravelHandler.TitanPortalEffectName
+        )
         {
             return keywords is { Count: > 0 }
                 ? new PilotCallResult.Failure("Unexpected cynosural activation arguments.")

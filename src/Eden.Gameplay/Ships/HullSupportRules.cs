@@ -15,6 +15,7 @@ public enum HullCohort
     CombatCapital,
     Carrier,
     CapitalIndustrial,
+    Supercapital,
 }
 
 public sealed record HullAdmissionCohort(int TechLevel, HullCohort Cohort, ImmutableHashSet<int> Classes, ImmutableHashSet<int> Types);

@@ -107,6 +107,7 @@ internal static class SovereigntyResourcePersistence
             now
         );
         bool navigationPowerLost = false;
+        bool shipyardPowerLost = false;
         foreach (var row in world.Filter<SavedSovereigntyUpgrade>(row => row.HubId == hub.HubId))
         {
             var next = result.Upgrades.Single(value => value.TypeId == row.TypeId);
@@ -119,6 +120,9 @@ internal static class SovereigntyResourcePersistence
                         is CapitalTravelRules.CynosuralNavigationUpgrade
                             or CapitalTravelRules.CynosuralSuppressionUpgrade
                             or JumpBridgeRules.SovereigntyUpgrade;
+                shipyardPowerLost |=
+                    row.PowerState == SovereigntyUpgradePower.Online
+                    && row.TypeId == StructureIndustryRules.SupercapitalConstructionUpgrade;
             }
             row.PowerState = next.State;
             row.StartupPaid = next.StartupPaid;
@@ -127,6 +131,10 @@ internal static class SovereigntyResourcePersistence
         if (navigationPowerLost)
         {
             CapitalNavigationStore.StopUnavailableServices(world, hub.SystemId, now);
+        }
+        if (shipyardPowerLost)
+        {
+            StructureIndustry.StopUnavailableShipyards(world, catalog, hub.SystemId, now);
         }
         foreach (var next in result.Fuels)
         {

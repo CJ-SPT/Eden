@@ -108,6 +108,7 @@ public enum DogmaEffect
     IndustrialItemCompression = 8364,
     CapitalTriage = 6581,
     CapitalSiege = 6582,
+    TitanJumpPortalGeneration = 2152,
     CovertJumpPortalGeneration = 3674,
     JumpDriveEconomizer = 5911,
     BurstJammer = 6714,

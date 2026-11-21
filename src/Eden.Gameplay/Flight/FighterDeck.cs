@@ -43,7 +43,17 @@ public static class FighterDeckRules
 
     public static bool IsTube(int flag) => flag is >= FirstTube and < FirstTube + MaximumTubes;
 
-    public static bool Supports(int group) => group == (int)HullClass.Carrier;
+    public static bool Supports(int group) => group is (int)HullClass.Carrier or (int)HullClass.Supercarrier;
+
+    public static bool FighterHullModifier(int skill, DogmaAttributeId attribute, DogmaOperation operation) =>
+        skill == (int)HullBonusSkill.Fighters
+        && operation == DogmaOperation.PostPercent
+        && attribute
+            is DogmaAttributeId.FighterAttackMissileDamageMultiplier
+                or DogmaAttributeId.FighterTurretDamageMultiplier
+                or DogmaAttributeId.FighterMissilesDamageMultiplier
+                or DogmaAttributeId.MaxVelocity
+                or DogmaAttributeId.ShieldCapacity;
 
     public static FighterClass? Class(IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
         attributes.GetValueOrDefault(DogmaAttributeId.LightFighterSquadron) == 1 ? FighterClass.Light

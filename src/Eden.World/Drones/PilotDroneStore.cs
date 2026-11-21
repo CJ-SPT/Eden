@@ -323,7 +323,11 @@ internal sealed partial class PilotDroneStore(
         );
         var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = InSpace(world, pilotId);
+        var pilot = InSpace(world, pilotId, requireDroneHull: !fighter);
+        if (fighter && !FighterDeckRules.Supports(catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId))
+        {
+            throw new InvalidDataException("This ship does not support fighter control.");
+        }
         var position = pilot.ActiveShip.Position!;
         int systemId = CurrentSystem(catalog, pilot);
         var fitting = FittingCalculation.Read(world, catalog, pilot);
@@ -692,6 +696,8 @@ internal sealed partial class PilotDroneStore(
         int controlledCount = 0;
         double controlledBandwidth = 0;
         bool released = false;
+        bool supportsDrones = DroneRules.SupportsHull(ship.TypeId);
+        bool supportsFighters = FighterDeckRules.Supports(catalog.RequireItem(ship.TypeId).GroupId);
         foreach (
             var drone in world
                 .Set<WorldDrone>()
@@ -700,9 +706,11 @@ internal sealed partial class PilotDroneStore(
                 .ToArray()
         )
         {
+            bool fighterTube =
+                world.Set<OwnedItem>().Find(drone.ItemId) is { } controlledItem && FighterDeckRules.IsTube(controlledItem.FlagId);
             if (
                 ship.Position is not { } source
-                || !DroneRules.SupportsHull(ship.TypeId)
+                || !(fighterTube ? supportsFighters : supportsDrones)
                 || sourceDestroyed
                 || drone.ControllerShipId != ship.Id
                 || systemId != drone.SystemId

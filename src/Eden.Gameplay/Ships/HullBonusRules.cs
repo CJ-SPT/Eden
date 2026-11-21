@@ -83,7 +83,8 @@ public enum HullBonusSkill
     MicroJumpDriveOperation = 4385,
     DefenderMissiles = 3323,
     HullUpgrades = 3394,
-    ShieldUpgrades = 3420,
+    TacticalShieldManipulation = 3420,
+    ShieldUpgrades = 3425,
     MiningForeman = 22536,
     InformationCommand = 20494,
     ExpeditionCommand = 89611,
@@ -127,9 +128,11 @@ public enum HullBonusSkill
     CapitalShieldEmissionSystems = 24571,
     CapitalCapacitorEmissionSystems = 24572,
     XLPrecursorWeapon = 52998,
+    BurstProjectorOperation = AreaWeaponRules.ProjectorSkill,
     RepairDroneOperation = 3439,
     Fighters = 23069,
     LightFighters = 40572,
+    HeavyFighters = 32339,
     SupportFighters = 40573,
     Torpedoes = 3325,
     CruiseMissiles = 21668,
@@ -176,6 +179,8 @@ public enum HullBonusEquipmentGroup
     TargetPainter = 379,
     ScanProbeLauncher = 481,
     CruiseMissileLauncher = 506,
+    XlTorpedoLauncher = 524,
+    XlCruiseMissileLauncher = 1674,
     TorpedoLauncher = 508,
     HeavyMissileLauncher = 510,
     RapidLightMissileLauncher = 511,
@@ -298,7 +303,9 @@ public static class HullBonusRules
                 or HullBonusEquipmentGroup.HeavyMissileLauncher
                 or HullBonusEquipmentGroup.RapidLightMissileLauncher
                 or HullBonusEquipmentGroup.HeavyAssaultMissileLauncher
-                or HullBonusEquipmentGroup.RapidHeavyMissileLauncher => HullCapability.Missiles,
+                or HullBonusEquipmentGroup.RapidHeavyMissileLauncher
+                or HullBonusEquipmentGroup.XlTorpedoLauncher
+                or HullBonusEquipmentGroup.XlCruiseMissileLauncher => HullCapability.Missiles,
                 HullBonusEquipmentGroup.RemoteShieldBooster
                 or HullBonusEquipmentGroup.RemoteArmorRepairer
                 or HullBonusEquipmentGroup.AncillaryRemoteShieldBooster
@@ -353,8 +360,13 @@ public static class HullBonusRules
                     HullCapability.ElectronicWarfare,
                 HullBonusSkill.BombDeployment => HullCapability.Bombs,
                 HullBonusSkill.DefenderMissiles => HullCapability.Interdiction,
-                HullBonusSkill.HullUpgrades or HullBonusSkill.ShieldUpgrades => HullCapability.Overheating,
+                HullBonusSkill.ShieldUpgrades when target.Attribute == DogmaAttributeId.ShieldCapacityBonus =>
+                    HullCapability.ShieldExtenders,
+                HullBonusSkill.HullUpgrades when target.Attribute == DogmaAttributeId.ArmorHitPointsBonus => HullCapability.ArmorPlates,
+                HullBonusSkill.HullUpgrades or HullBonusSkill.ShieldUpgrades or HullBonusSkill.TacticalShieldManipulation =>
+                    HullCapability.Overheating,
                 HullBonusSkill.MicroJumpDriveOperation => HullCapability.MicroJumpDrives,
+                HullBonusSkill.BurstProjectorOperation => HullCapability.ElectronicWarfare,
                 HullBonusSkill.Leadership
                 or HullBonusSkill.SkirmishCommand
                 or HullBonusSkill.InformationCommandSpecialist

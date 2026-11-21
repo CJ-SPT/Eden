@@ -10,6 +10,7 @@ internal static class FighterCombatCatalog
 {
     // The standard attack squadron uses the attack missile, in slot 0 on build 3662168.
     private const int LightAttackRole = 2;
+    private const int HeavyAttackRole = 4;
 
     internal static DroneProfile Profile(
         CatalogItemDefinition type,
@@ -20,14 +21,14 @@ internal static class FighterCombatCatalog
         double Value(DogmaAttributeId id) => values.GetValueOrDefault(id);
         if (
             source?.Published != 1
-            || FighterDeckRules.Class(values) != FighterClass.Light
-            || Value(DogmaAttributeId.FighterSquadronRole) != LightAttackRole
+            || (FighterDeckRules.Class(values), Value(DogmaAttributeId.FighterSquadronRole))
+                is not ((FighterClass.Light, LightAttackRole) or (FighterClass.Heavy, HeavyAttackRole))
             || type.Mass is not > 0
             || type.Radius is not > 0
             || source.Volume is not > 0
         )
         {
-            throw new InvalidDataException("Only published light attack fighter squadrons can launch.");
+            throw new InvalidDataException("Only published light and heavy attack fighter squadrons can launch.");
         }
         var damage = new DamageVector(
             Value(DogmaAttributeId.FighterAttackEmDamage),

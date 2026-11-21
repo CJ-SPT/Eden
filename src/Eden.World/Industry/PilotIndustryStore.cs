@@ -303,7 +303,11 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
                     return [];
                 }
                 double security = ManufacturingCatalog.Security(catalog, station.SolarSystemId);
-                return ProductTypes(catalog).Where(t => ManufacturingCatalog.Allowed(catalog, t, security)).ToArray();
+                bool supercapital =
+                    station.StructureServices?.Contains(StructureService.SupercapitalManufacturing) == true
+                    && world.Set<SavedStructure>().Find(id) is { } shipyard
+                    && StructureIndustry.SupercapitalConstruction(world, catalog, shipyard);
+                return ProductTypes(catalog).Where(t => ManufacturingCatalog.Allowed(catalog, t, security, supercapital)).ToArray();
             }
         );
     }
@@ -658,7 +662,12 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         StructureIndustry.RequireService(world, catalog, pilotId, request.FacilityId, request.Activity, recipe.ProductTypeId);
         if (
             request.ProductTypeId.HasValue && request.ProductTypeId != recipe.ProductTypeId
-            || !ManufacturingCatalog.Allowed(catalog, recipe.ProductTypeId, ManufacturingCatalog.Security(catalog, station.SolarSystemId))
+            || !ManufacturingCatalog.Allowed(
+                catalog,
+                recipe.ProductTypeId,
+                ManufacturingCatalog.Security(catalog, station.SolarSystemId),
+                station.StructureServices?.Contains(StructureService.SupercapitalManufacturing) == true
+            )
         )
         {
             throw new InvalidDataException("This product cannot be manufactured at this station.");

@@ -22,6 +22,7 @@ internal sealed partial class CapitalTravelHandler(
 ) : ISelectedPilotCallHandler, IModuleEffectSource, IDisposable
 {
     internal const string CynoEffectName = "cynosuralGeneration";
+    internal const string TitanPortalEffectName = "jumpPortalGeneration";
     internal const string PortalEffectName = "jumpPortalGenerationBO";
     private DogmaActiveEffect? _lastEffect;
     private readonly ConcurrentQueue<(long Pilot, InventoryChange Change)> _fuelChanges = new();
@@ -123,6 +124,10 @@ internal sealed partial class CapitalTravelHandler(
             var pilot = context.Pilot;
             var opened = travel.OpenPortal(pilot.PilotId, pilot.ShipId, request);
             flight.StopForCapitalModule();
+            foreach (var change in opened.FuelChanges)
+            {
+                InventoryChangesWire.NotifyItemChange(context, change, beforeFlight: true);
+            }
             context.NotificationsBeforeFlight.Add(
                 new ModuleAttributesChanged([
                     new(pilot.PilotId, new DogmaItemKey.Item(pilot.ShipId), DogmaAttributeId.CapacitorCharge, Now, opened.Capacitor),
@@ -199,7 +204,7 @@ internal sealed partial class CapitalTravelHandler(
     internal PilotCallResult Activate(PilotCallContext context, string method, object?[] args)
     {
         var pilot = context.Pilot;
-        if (BlueMarshal.Text(args[1]) == PortalEffectName)
+        if (BlueMarshal.Text(args[1]) is PortalEffectName or TitanPortalEffectName)
         {
             return new PilotCallResult.Failure(
                 method == "Deactivate"
@@ -303,6 +308,7 @@ internal sealed partial class CapitalTravelHandler(
     {
         var graphic = effect.Effect switch
         {
+            DogmaEffect.TitanJumpPortalGeneration => "effects.JumpPortal",
             DogmaEffect.CovertJumpPortalGeneration => "effects.JumpPortalBO",
             DogmaEffect.CapitalSiege or DogmaEffect.CapitalIndustrialCore => "effects.SiegeMode",
             DogmaEffect.CapitalTriage => "effects.TriageMode",
@@ -313,7 +319,12 @@ internal sealed partial class CapitalTravelHandler(
             flight.SetWeaponEffect(
                 new(
                     effect.ModuleId,
-                    effect.Effect == DogmaEffect.CovertJumpPortalGeneration ? CapitalTravelRules.CovertPortalGenerator : 0,
+                    effect.Effect switch
+                    {
+                        DogmaEffect.TitanJumpPortalGeneration => CapitalTravelRules.TitanPortalGenerator,
+                        DogmaEffect.CovertJumpPortalGeneration => CapitalTravelRules.CovertPortalGenerator,
+                        _ => 0,
+                    },
                     0,
                     null,
                     effect.StartTime,
@@ -375,7 +386,9 @@ internal sealed partial class CapitalTravelHandler(
             portal.PilotId,
             portal.ShipId,
             null,
-            DogmaEffect.CovertJumpPortalGeneration,
+            portal.ModuleTypeId == CapitalTravelRules.TitanPortalGenerator
+                ? DogmaEffect.TitanJumpPortalGeneration
+                : DogmaEffect.CovertJumpPortalGeneration,
             portal.StartedAt,
             (portal.EndsAt - portal.StartedAt) / (double)TimeSpan.TicksPerMillisecond,
             0

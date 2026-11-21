@@ -28,10 +28,17 @@ def export(source, destination):
                    32880, 33476, 89648, 52694, 52696, 57319, 57425, 59630, 59631,
                    16273, 16274, 16275, 17887, 17888, 17889,
                    670, 26475, 40639, 19720, 19722, 19724, 19726, 37604, 37605, 37606, 37607, 73787, 73790, 73792, 73793,
+                   671, 3764, 11567, 22852, 23773, 23913, 23917, 23919, 23953, 81623,
+                   26487, 26490, 26509, 26512, 26531, 26534, 26553, 26556, 40699,
                    23757, 23911, 23915, 24483, 23055, 23057, 23059, 23061, 32325,
                    42522, 16272, 28352, 28583, 42890, 41030, 43681, 1230, 62516, 62453, 62632, 62633, 62634, 62635, 62636,
                    20280, 4292, 27951, 4294, 20444, 17686, 20701, 24569,
                    34122, 34124, 34126, 1531, 2016, 3456, 21610, 21611, 21603}
+        blueprint = 23920  # Aeon Blueprint
+        recipe = read('client/blueprints', json.dumps(str(blueprint)))
+        records['client/blueprints', str(blueprint)] = recipe
+        pending.add(blueprint)
+        pending.update(row['typeID'] for key in ('materials', 'skills') for row in recipe['activities']['manufacturing'][key])
         visited = set()
         while pending:
             type_id = min(pending)
@@ -52,6 +59,8 @@ def export(source, destination):
             pending.update(int(v) for a, v in values if a in (182, 183, 184, 1285, 1289, 1290) and v > 0 and int(v) not in visited)
         for type_list in (330, 331, 332, 333, 334, 341, 342, 343, 348, 1000):
             keep('client/typelist', type_list)
+        for attribute in (3319, 3320):
+            keep('client/dogmaattributes', attribute)
         keep('client/compressibletypes', 1230)
         for buff in (3, 4, 5, 6, 8, 9, 55, 56, 57, 58, 59, 61):
             records['client/dbuffcollections', str(buff)] = read('client/dbuffcollections', json.dumps(str(buff)))
