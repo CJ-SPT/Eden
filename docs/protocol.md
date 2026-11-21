@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Autonomous pilot creation under load](protocol/capsuleers.md#autonomous-pilot-creation-under-load) records the
+resident asteroid and market-demand changes and the startup replay.
+
 [Bot population limits and work regions](protocol/capsuleers.md#bot-population-limits-and-work-regions) covers active admission,
 transit-only routing, and fresh-world preparation outside occupied systems.
 

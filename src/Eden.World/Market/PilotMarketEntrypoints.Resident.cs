@@ -497,7 +497,16 @@ internal sealed partial class PilotMarketStore
         var open = world
             .Set<SavedPersonalOrder>()
             .Where(o => !o.Bid && o.Status == PersonalOrderStatus.Open && o.Expires > now && o.Remaining > 0);
-        var page = open.Where(o => o.Id > cursor).OrderBy(o => o.Id).Take(limit).ToArray();
+        var page = open.Where(o => o.Id > cursor)
+            .Select(o => new
+            {
+                o.Id,
+                o.StationId,
+                o.TypeId,
+            })
+            .OrderBy(o => o.Id)
+            .Take(limit)
+            .ToArray();
         int settled = 0;
         foreach (var location in page.Select(o => new DemandLocation(o.StationId, o.TypeId)).Distinct())
         {
@@ -510,19 +519,20 @@ internal sealed partial class PilotMarketStore
         }
         bool more = page.Length == limit || settled == limit;
         long next = long.MaxValue;
-        if (!more && open.Any())
+        if (!more)
         {
-            long fallback = checked(snapshot.ElapsedTicks + RegionalMarketRules.RecoveryIntervalTicks);
-            var boundaries =
-                from stock in world.Set<SavedRegionalMarketStock>()
-                join bid in world.Set<NpcMarketOrder>() on stock.OrderId equals bid.Id
-                where
-                    bid.Kind == NpcMarketKind.Regional
-                    && bid.Bid
-                    && bid.Issued > 0
-                    && open.Any(o => o.StationId == bid.StationId && o.TypeId == bid.TypeId)
-                select (long?)stock.RefreshedTicks;
-            next = Math.Min(fallback, checked((boundaries.Min() ?? snapshot.ElapsedTicks) + RegionalMarketRules.RecoveryIntervalTicks));
+            // Read the listings after settlement. A closed listing no longer needs a recovery wake.
+            var demand = open.Select(o => new NpcMarketAssortment(o.StationId, o.TypeId, true, NpcMarketKind.Regional, 0)).ToHashSet();
+            if (demand.Count > 0)
+            {
+                var stock = world.Set<SavedRegionalMarketStock>();
+                long earliest = world
+                    .NpcMarketOrders(demand)
+                    .Where(bid => bid.Issued > 0)
+                    .Select(bid => stock.Find(bid.Id)?.RefreshedTicks)
+                    .Aggregate(snapshot.ElapsedTicks, (ticks, refreshed) => Math.Min(ticks, refreshed ?? ticks));
+                next = checked(earliest + RegionalMarketRules.RecoveryIntervalTicks);
+            }
         }
         world.SaveChanges();
         world.Commit();

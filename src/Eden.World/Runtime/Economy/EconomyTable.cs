@@ -585,8 +585,8 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
         return ReadSnapshots(keys);
     }
 
-    internal IEnumerable<TState> IndexedSnapshots(string column, IReadOnlySet<long> values) =>
-        ReadSnapshots(values.SelectMany(value => table.Indexed(column, value)));
+    internal IEnumerable<TState> IndexedSnapshots<TValue>(string column, IReadOnlySet<TValue> values)
+        where TValue : notnull => ReadSnapshots(values.SelectMany(value => table.Indexed(column, value)));
 
     private IEnumerable<TState> ReadSnapshots(IEnumerable<EconomyKey> keys)
     {

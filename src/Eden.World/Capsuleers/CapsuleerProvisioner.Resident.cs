@@ -3,7 +3,6 @@ using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
-using Eden.Data.World.Mining;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Docking;
@@ -92,11 +91,10 @@ internal sealed partial class CapsuleerProvisioner
             AsteroidFieldStore.Populate(world, catalog, systemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
             world.SaveChanges();
             awaitingOre = !world
-                .Set<WorldAsteroid>()
-                .Where(a => a.SystemId == systemId && a.BeltId > 0 && a.Quantity > 0)
+                .AsteroidsInSystem(systemId)
+                .Where(a => a.BeltId > 0 && a.Quantity > 0)
                 .Select(a => a.TypeId)
                 .Distinct()
-                .AsEnumerable()
                 .Any(id => CapsuleerProvisioningCatalog.SupportedOre(catalog, id));
             if (awaitingOre)
             {
@@ -490,13 +488,12 @@ internal sealed partial class CapsuleerProvisioner
             );
             // New encounters can begin midway through their first shift. This is
             // paid once, in the same transaction that creates their owned ship.
-            var rocks = world
-                .Set<WorldAsteroid>()
-                .Where(a => a.SystemId == site.SystemId && a.BeltId > 0 && a.Quantity > 0)
-                .OrderBy(a => a.Id)
-                .ToArray();
             var openingPhase = fresh || startDocked ? MinerEncounterOpening.Docked : CapsuleerEncounterRules.Opening(seed, site.SystemId);
-            if (rocks.Length > 0 && openingPhase != MinerEncounterOpening.Docked)
+            var rocks =
+                openingPhase == MinerEncounterOpening.Docked
+                    ? []
+                    : world.AsteroidsInSystem(site.SystemId).Where(a => a.BeltId > 0 && a.Quantity > 0).OrderBy(a => a.Id).ToArray();
+            if (rocks.Length > 0)
             {
                 var rock = rocks[(int)(CapsuleerProvisioningRules.Seed(seed, site.SystemId, career) % (ulong)rocks.Length)];
                 const double miningClearance = 750;

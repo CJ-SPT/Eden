@@ -2,6 +2,63 @@
 
 [Protocol index](../protocol.md)
 
+## Autonomous pilot creation under load
+
+The server log from revision `abdddb2d` reported 186 slow market-demand owner holds with a median of
+496.36 ms and a maximum of 810.07 ms. Traffic actions reported waits to reacquire the owner during
+the same period. The performance page also reported an 8.05 s checkpoint projection outside the owner,
+which is measured separately from the market holds.
+
+Resident founder preparation now uses the target system's asteroid and renewal indexes. A founder
+starting docked skips sorting the belt for an in-space opening. The same transaction records the
+pilot, equipment, and initial job. Depleted deposits keep their existing renewal deadlines.
+
+At the end of a [regional demand](industry.md#progressive-regional-markets--november-8-2026) maintenance
+sweep, Eden reads the remaining sale locations once and looks up each regional bid by its indexed
+assortment. The earliest applicable stock recovery boundary still determines the next wake. The batch
+cursor and deadline are published after settlement commits.
+
+The local EVE.js build 3396210 reference groups ambient startup controllers by system in
+`server/src/space/npc/npcAmbientMaterialization.js` (SHA-256 prefix `4A0424F0772374FD`).
+Eden's autonomous founders and regional stock recovery are server policies. [EVE University on regional markets](https://wiki.eveuniversity.org/Trading)
+
+### Automated validation
+
+The Windows Debug replay used the build 3662168 catalog, a fixed world seed and one selected pilot.
+It reached the configured cap, checked that occupied and unvisited systems in the permitted region
+received founders, and reopened the same roster after a checkpoint. Its measurement covers population
+preparation and scheduler registration. Checkpoint work occurs after that measurement.
+
+The market regression measured four warmed demand sweeps against one resting listing and 4,096
+unrelated regional bids. It checked the exact recovery deadline each pass and the remaining order
+quantity after the workload. The passes used zero SQL commands, connections or fitting calculations.
+
+| Local replay | Baseline `b929f314` | Updated |
+| --- | ---: | ---: |
+| Prepare 64 pilots | 4.00 s / 1,092,498,080 bytes allocated | 3.24 s / 1,046,476,416 bytes allocated |
+| Four market sweeps with unrelated bids | 1,001.60 ms / 634,242,104 bytes allocated | 11.54 ms / 4,941,576 bytes allocated |
+
+Both founder replays recorded 858 SQL commands, 49 connections and 18 fitting calculations.
+These are local workloads. The server log supplies the session and checkpoint context.
+
+The solution build passed in 16.32 s with zero warnings or errors. The two exact replay methods passed
+in 26.78 s. The affected filter passed 79 tests in 94.77 s. It covers founder retries and restart,
+population limits, asteroid creation and renewal, progressive stock and order settlement. It omits
+the previously documented SQL-trigger case `MaintenanceUsesPricePriorityAndRejectsDuplicateConsumptionAfterRollback`.
+All 17 Python policy checks passed, along with formatting and the new documentation links.
+
+```text
+(FullyQualifiedName~CapsuleerBackgroundPreparationTests|FullyQualifiedName~CapsuleerGlobalPopulationTests|FullyQualifiedName~CapsuleerPopulationSettingsTests|FullyQualifiedName~ResidentPopulationTests|FullyQualifiedName~AsteroidFieldTests|FullyQualifiedName~ResourceRenewalTests|FullyQualifiedName~NpcRestingOrderTests|FullyQualifiedName~ResidentMarketHistoryTests|FullyQualifiedName~IndustrialDemandTests|FullyQualifiedName~FreshPopulationPreparesUnvisitedWorkSystemsWhileSomeonePlaysAndStopsAtTheCap)&FullyQualifiedName!~MaintenanceUsesPricePriorityAndRejectsDuplicateConsumptionAfterRollback
+```
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+- During first population on the dedicated server, compare market-demand owner holds and frame start delay with the supplied log.
+
 ## Bot population limits and work regions
 
 The active cap counts admitted pilots world-wide, including saved pilots with offscreen or idle work. On activation

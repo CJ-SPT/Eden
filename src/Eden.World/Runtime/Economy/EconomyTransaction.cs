@@ -50,6 +50,11 @@ internal sealed partial class EconomyTransaction(
             .IndexedSnapshots(nameof(NpcMarketOrder.RegionId), region, typeId is int type ? (nameof(NpcMarketOrder.TypeId), type) : null)
             .Where(o => o.RegionId == region && (typeId is null || o.TypeId == typeId));
 
+    internal IEnumerable<EconomyNpcMarketOrder> NpcMarketOrders(IReadOnlySet<NpcMarketAssortment> assortments) =>
+        ((EconomySet<NpcMarketOrder, EconomyNpcMarketOrder>)Set<NpcMarketOrder>())
+            .IndexedSnapshots(nameof(NpcMarketAssortment), assortments)
+            .Where(o => assortments.Contains(new(o.StationId, o.TypeId, o.Bid, o.Kind, o.SourceOrderId)));
+
     internal override IEnumerable<EconomyWorldAsteroid> AsteroidsInSystem(int system) =>
         ((EconomySet<WorldAsteroid, EconomyWorldAsteroid>)Set<WorldAsteroid>())
             .IndexedSnapshots(nameof(WorldAsteroid.SystemId), system)

@@ -37,18 +37,12 @@ internal sealed partial class AsteroidFieldStore
         {
             return;
         }
-        var beltIds = belts.Select(b => b.Id).ToArray();
-        var renewed = world.Set<SavedBeltRenewal>().Where(b => Enumerable.Contains(beltIds, b.BeltId)).Select(b => b.BeltId).ToHashSet();
+        var renewed = world.RenewedBeltsInSystem(systemId).ToHashSet();
         renewed.UnionWith(world.Set<SavedBeltRenewal>().Local.Select(b => b.BeltId));
-        var populated = world
-            .Set<WorldAsteroid>()
-            .Where(a => Enumerable.Contains(beltIds, a.BeltId))
-            .Select(a => a.BeltId)
-            .Distinct()
-            .ToHashSet();
+        var populated = world.AsteroidsInSystem(systemId).Select(a => a.BeltId).ToHashSet();
         foreach (var belt in belts)
         {
-            if (!Enumerable.Contains(renewed, belt.Id))
+            if (!renewed.Contains(belt.Id))
             {
                 world.Add(
                     new SavedBeltRenewal
@@ -61,7 +55,7 @@ internal sealed partial class AsteroidFieldStore
                 );
             }
             // Visiting/reconnecting never replenishes a saved deposit.
-            if (Enumerable.Contains(populated, belt.Id))
+            if (populated.Contains(belt.Id))
             {
                 continue;
             }

@@ -14,10 +14,11 @@ using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Xunit.Abstractions;
 
 namespace Eden.Protocol.Tests.Market;
 
-public sealed class NpcRestingOrderTests
+public sealed class NpcRestingOrderTests(ITestOutputHelper output)
 {
     private sealed class Fixture : IDisposable
     {
@@ -167,6 +168,76 @@ public sealed class NpcRestingOrderTests
         Assert.Empty(f.Personal.PersonalOrders(f.Pilot.PilotId));
         Assert.Equal(100, f.Market.Transactions(f.Pilot.PilotId).Sum(t => t.Quantity));
         Assert.Equal(2, f.Personal.Changes(f.Pilot.PilotId, 0).Count(c => c.Kind == MarketOrderChangeKind.Settled));
+    }
+
+    [Fact]
+    public void ResidentDemandRecoveryKeepsUnrelatedStockOutOfDeadlinePlanning()
+    {
+        const int unrelatedOrders = 4096;
+        using Fixture f = new();
+        f.Stock(0);
+        f.List(f.Stack(5), 5, 100_000);
+        var live = f.Host.GetRequiredService<LiveWorld>();
+        var signal = f.Host.GetRequiredService<MarketChangeSignal>();
+        using var presence = f.Host.GetRequiredService<IHumanPresence>().Select(f.Pilot.PilotId, f.Pilot.SystemId);
+        f.Data.Clock.Seconds += 1;
+        Assert.Equal(0, f.Demand.AdvanceDemand());
+        long deadline = signal.DemandDeadline;
+        Assert.Equal(RegionalMarketRules.RecoveryIntervalTicks, deadline);
+        var small = Measure();
+
+        using (var world = live.Economy.Begin())
+        {
+            for (int index = 0; index < unrelatedOrders; index++)
+            {
+                var order = world
+                    .Add(
+                        new NpcMarketOrder
+                        {
+                            StationId = f.Pilot.StationId,
+                            SystemId = f.Pilot.SystemId,
+                            RegionId = f.Pilot.RegionId,
+                            OwnerId = f.Pilot.StationOwnerId,
+                            TypeId = 100_000 + index,
+                            Kind = NpcMarketKind.Regional,
+                            Bid = true,
+                            Entered = 1,
+                            Remaining = 1,
+                            PriceCents = 100,
+                            Issued = 1,
+                        }
+                    )
+                    .Entity;
+                world.Add(new SavedRegionalMarketStock { OrderId = order.Id, AnchorCents = 100 });
+            }
+            world.Commit();
+        }
+        var large = Measure();
+        output.WriteLine(
+            $"Four demand passes with one open listing: {small.Elapsed.TotalMilliseconds:F2} ms / {small.AllocatedBytes:N0} bytes. "
+                + $"With {unrelatedOrders:N0} unrelated bids: {large.Elapsed.TotalMilliseconds:F2} ms / {large.AllocatedBytes:N0} bytes."
+        );
+        Assert.InRange(large.AllocatedBytes, 0, small.AllocatedBytes + 8 * 1024 * 1024);
+        Assert.Equal(5, Assert.Single(f.Personal.PersonalOrders(f.Pilot.PilotId)).Remaining);
+
+        PerformanceSample Measure()
+        {
+            PerformanceSample sample = default;
+            using (SessionPerformance.Capture("resident demand recovery", value => sample = value))
+            {
+                for (int repeat = 0; repeat < 4; repeat++)
+                {
+                    signal.ScheduleDemand(0, 0);
+                    Assert.Equal(0, f.Demand.AdvanceDemand());
+                    Assert.Equal(deadline, signal.DemandDeadline);
+                    Assert.Equal(0, signal.DemandCursor);
+                }
+            }
+            Assert.Equal(0, sample.Commands);
+            Assert.Equal(0, sample.Connections);
+            Assert.Equal(0, sample.Fittings);
+            return sample;
+        }
     }
 
     [Fact]
