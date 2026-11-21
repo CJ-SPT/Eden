@@ -48,13 +48,7 @@ internal static partial class TrafficTemplatePreparation
         }
         double cargo = InventoryPersistence.UsedVolume(world, catalog, pilot, shipId, (int)InventoryFlag.Cargo);
         double drones = InventoryPersistence.UsedVolume(world, catalog, pilot, shipId, (int)InventoryFlag.DroneBay);
-        var owners = world
-            .Set<SavedCapsuleerAgent>()
-            .Where(agent => agent.CommunitySystemId == community && agent.Career == CapsuleerCareer.Hauling)
-            .Select(agent => agent.PilotId)
-            .ToArray();
-        var hulls = world.Pilots.Where(owner => Enumerable.Contains(owners, owner.Id)).Select(owner => owner.ActiveShipId).ToArray();
-        var roster = world.Ships.Where(hull => Enumerable.Contains(hulls, hull.Id)).Select(hull => hull.TypeId).ToArray();
+        var roster = TrafficProvisioning.HaulingRoster(world, community, out _);
         return new(community, route, cargo, drones, roster, correction)
         {
             Revision = LiveWorld.Find(database.Path)?.TrafficTemplateRevision ?? 0,

@@ -328,17 +328,21 @@ internal sealed partial class ResidentEconomy
     private readonly SortedSet<(long End, long Module, int System)> _structureTackleEnds = [];
 
     internal long[] DueStructureTackles(int? system, long now) =>
-        _structureTackleEnds.Count == 0 || _structureTackleEnds.Min.End > now
-            ? []
-            : _structureTackleEnds
-                .TakeWhile(row => row.End <= now)
-                .Where(row => system is null || row.System == system)
-                .Select(row => row.Module)
-                .ToArray();
+        _structureTackleEnds.Count == 0 || _structureTackleEnds.Min.End > now ? [] : CollectStructureTackles(system, now);
+
+    private long[] CollectStructureTackles(int? system, long now) =>
+        _structureTackleEnds
+            .TakeWhile(row => row.End <= now)
+            .Where(row => system is null || row.System == system)
+            .Select(row => row.Module)
+            .ToArray();
 
     private readonly SortedSet<(long End, long Module, long Target, int System)> _areaContactEnds = [];
 
     internal (long Module, long Target)[] DueAreaContacts(int? system, long now) =>
+        _areaContactEnds.Count == 0 || _areaContactEnds.Min.End > now ? [] : CollectAreaContacts(system, now);
+
+    private (long Module, long Target)[] CollectAreaContacts(int? system, long now) =>
         _areaContactEnds
             .TakeWhile(row => row.End <= now)
             .Where(row => system is null || row.System == system)

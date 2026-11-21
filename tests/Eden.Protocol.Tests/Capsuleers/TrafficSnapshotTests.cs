@@ -10,6 +10,8 @@ using Eden.Server;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
+using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -383,6 +385,70 @@ public sealed class TrafficSnapshotTests
         using WorldDbContext saved = new(fixture.Database.Path);
         Assert.Empty(saved.Set<SavedTrafficIdentity>());
         Assert.Single(saved.Pilots.Where(pilot => pilot.Name == name));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ExhaustedPoolObservesPrivateAndCommittedCharacterReleases(bool remove)
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
+        var profile = Profile();
+        Install(fixture.Database, profile);
+        using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var economy = host.GetRequiredService<LiveWorld>().Economy;
+        using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+        CapsuleerTrafficRoute route = new(60015157, 60003760, [Source, 30000142]);
+        const long pilot = 90000001;
+        long? Select(EconomyTransaction world) =>
+            TrafficProvisioning.Select(fixture.Database, world, catalog, 17, Source, 3, route, rosterTypes: [])?.CharacterId;
+        void Reserve(EconomyTransaction world) => TrafficProvisioning.Record(fixture.Database, world, pilot, profile);
+        void Release(EconomyTransaction world)
+        {
+            var identity = world.Set<SavedTrafficIdentity>().Find(pilot)!;
+            if (remove)
+            {
+                world.Remove(identity);
+            }
+            else
+            {
+                identity.CharacterId++;
+            }
+        }
+        using (var rollback = economy.Begin(TransactionParticipants.None))
+        {
+            Reserve(rollback);
+            Assert.Null(Select(rollback));
+        }
+        using (var assign = economy.Begin(TransactionParticipants.None))
+        {
+            Assert.Equal(profile.CharacterId, Select(assign));
+            Reserve(assign);
+            assign.Commit();
+        }
+        using (var rollback = economy.Begin(TransactionParticipants.None))
+        {
+            Assert.Null(Select(rollback));
+            Assert.Null(Select(rollback));
+            Release(rollback);
+            Assert.Equal(profile.CharacterId, Select(rollback));
+        }
+        using (var release = economy.Begin(TransactionParticipants.None))
+        {
+            Assert.Null(Select(release));
+            Release(release);
+            release.Commit();
+        }
+        using (var rename = economy.Begin(TransactionParticipants.None))
+        {
+            Assert.Equal(profile.CharacterId, Select(rename));
+            rename.Pilots.Find(pilot)!.Name = profile.Name.ToUpperInvariant();
+            rename.Commit();
+        }
+        using var available = economy.Begin(TransactionParticipants.None);
+        Assert.Null(Select(available));
+        available.Pilots.Find(pilot)!.Name = "Available Traffic Name";
+        Assert.Equal(profile.CharacterId, Select(available));
     }
 
     [Theory]

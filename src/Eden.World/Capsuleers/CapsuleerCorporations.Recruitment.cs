@@ -317,32 +317,34 @@ internal static partial class CapsuleerCorporations
         Employer? best = null;
         int region = catalog.RequireSystem(system).RegionId;
         var neighbours = CapsuleerTrafficRoutes.Neighbours(catalog, system);
-        var contactSystems = organization
-            .Contacts.Where(contact => contact.ExpiresAt > activeTicks)
-            .Select(contact => world.Set<SavedCorporation>().Find(contact.CorporationId)?.SystemId)
-            .OfType<int>();
-        foreach (int home in catalog.Definition(s_recruitmentSystems, system).Concat(contactSystems).Distinct())
+        var homes = catalog.Definition(s_recruitmentSystems, system).ToHashSet();
+        foreach (var contact in organization.Contacts)
         {
-            foreach (var corporation in world.Filter<SavedCorporation>(row => row.SystemId == home))
+            if (contact.ExpiresAt > activeTicks && world.Set<SavedCorporation>().Find(contact.CorporationId) is { } employer)
             {
-                if (!CanRecruit(world, corporation))
-                {
-                    continue;
-                }
-                bool local = home == system || neighbours.Contains(home);
-                bool referred = HasContact(organization, corporation.Id, activeTicks);
-                bool advertised =
-                    !local
-                    && catalog.RequireSystem(home).RegionId == region
-                    && world.Filter<SavedCorporationRecruitmentAd>(ad => ad.CorporationId == corporation.Id).Any(ad => ad.ExpiresAt > now);
-                if (
-                    (local || advertised || referred)
-                    && Evaluate(world, catalog, pilot, hull, profession, corporation, true, referred) is { } option
-                    && (best is null || option.Score > best.Score || option.Score == best.Score && corporation.Id < best.Corporation.Id)
-                )
-                {
-                    best = option;
-                }
+                homes.Add(employer.SystemId);
+            }
+        }
+        foreach (var corporation in world.Filter<SavedCorporation>(row => homes.Contains(row.SystemId)))
+        {
+            if (!CanRecruit(world, corporation))
+            {
+                continue;
+            }
+            int home = corporation.SystemId;
+            bool local = home == system || neighbours.Contains(home);
+            bool referred = HasContact(organization, corporation.Id, activeTicks);
+            bool advertised =
+                !local
+                && catalog.RequireSystem(home).RegionId == region
+                && world.Filter<SavedCorporationRecruitmentAd>(ad => ad.CorporationId == corporation.Id).Any(ad => ad.ExpiresAt > now);
+            if (
+                (local || advertised || referred)
+                && Evaluate(world, catalog, pilot, hull, profession, corporation, true, referred) is { } option
+                && (best is null || option.Score > best.Score || option.Score == best.Score && corporation.Id < best.Corporation.Id)
+            )
+            {
+                best = option;
             }
         }
         return best;
@@ -366,8 +368,7 @@ internal static partial class CapsuleerCorporations
         int vacancies = CapsuleerRecruitmentRules.DesiredMembers(profession);
         if (autonomous)
         {
-            var members = world.Filter<Pilot>(member => member.CorporationId == corporation.Id).Select(member => member.Id).ToArray();
-            vacancies -= members.Count(member => MemberProfession(world, member) == profession);
+            vacancies -= world.CorporationMembers(corporation.Id).Count(member => MemberProfession(world, member.PilotId) == profession);
             if (vacancies <= 0)
             {
                 return null;

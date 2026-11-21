@@ -598,6 +598,17 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
     internal IEnumerable<TState> IndexedSnapshots<TValue>(string column, IReadOnlySet<TValue> values)
         where TValue : notnull => ReadSnapshots(values.SelectMany(value => table.Indexed(column, value)));
 
+    internal IEnumerable<TState> VisibleCommittedSnapshots(string column, object value)
+    {
+        foreach (var key in table.Indexed(column, value))
+        {
+            if (!_local.ContainsKey(key) && transaction.VisibleScalar<TRow>(key) && table.Snapshot(key) is { } saved)
+            {
+                yield return saved;
+            }
+        }
+    }
+
     private IEnumerable<TState> ReadSnapshots(IEnumerable<EconomyKey> keys)
     {
         foreach (var key in keys)

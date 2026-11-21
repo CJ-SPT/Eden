@@ -9,8 +9,10 @@ using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Server;
 using Eden.Server.Chat;
+using Eden.World.Capsuleers;
 using Eden.World.Corporations;
 using Eden.World.Docking;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,6 +27,35 @@ public sealed partial class CorporationMembershipTests
 
     private static CorporationApplicationUpdate Change(CorporationApplication application, CorporationApplicationStatus status) =>
         new(application.Id, application.PilotId, application.CorporationId, application.Text, status, "Welcome", application.AppliedAt);
+
+    [Fact]
+    public void MembershipAudienceCountsVisiblePrivateMovesAndOnlyNotifiesPlayers()
+    {
+        using TestWorld db = new(liveWorld: true);
+        var economy = db.Services.GetRequiredService<LiveWorld>().Economy;
+        const int next = CorporationRules.FirstCorporationId;
+        using (var staged = economy.Begin(TransactionParticipants.None))
+        {
+            var before = staged.MembershipChangeAudience(NpcCorporation, next);
+            Assert.Contains(Ceo, before.Recipients);
+            Assert.Contains(Applicant, before.Recipients);
+            Assert.Empty(staged.Pilots.Local);
+            var founder = staged.Pilots.Find(Ceo)!;
+            founder.CorporationId = next;
+            founder.AccountId = CapsuleerCommunityStore.MinerAccountId;
+            staged.Pilots.Find(Applicant)!.ActiveShip.OwnerId = Ceo;
+
+            var after = staged.MembershipChangeAudience(NpcCorporation, next);
+            Assert.Equal(before.OldCount - 2, after.OldCount);
+            Assert.Equal(before.NewCount + 1, after.NewCount);
+            Assert.Equal(before.Recipients.Except([Ceo, Applicant]).Order(), after.Recipients.Order());
+        }
+        using var restored = economy.Begin(TransactionParticipants.None);
+        var audience = restored.MembershipChangeAudience(NpcCorporation, next);
+        Assert.Contains(Ceo, audience.Recipients);
+        Assert.Contains(Applicant, audience.Recipients);
+        Assert.Equal(0, audience.NewCount);
+    }
 
     [Fact]
     public void OfferRequiresApplicantConsentAndJoinLeavePersistWithoutMovingAssetsOrMoney()

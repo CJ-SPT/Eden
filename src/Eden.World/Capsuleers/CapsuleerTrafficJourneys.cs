@@ -1,4 +1,3 @@
-using System.Collections.Frozen;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Ships;
@@ -56,23 +55,41 @@ internal static partial class CapsuleerTrafficRoutes
 
     private readonly record struct JourneyNode(int Parent, int Jumps);
 
-    private sealed record JourneyMap(FrozenDictionary<int, JourneyNode> Nodes, int[] StationSystems)
+    private readonly record struct StationSystem(int Id, int Jumps);
+
+    private sealed class JourneyMap(Dictionary<int, JourneyNode> nodes, StationSystem[] stationSystems)
     {
-        internal long EstimatedBytes =>
-            EntryEstimatedBytes + (long)Nodes.Count * JourneyNodeEstimatedBytes + StationSystems.Length * sizeof(int);
+        // The search transfers its dictionary to this read-only map. Account for spare buckets in the catalog cache.
+        internal IReadOnlyDictionary<int, JourneyNode> Nodes { get; } = nodes;
+        internal StationSystem[] StationSystems { get; } = stationSystems;
+        internal long EstimatedBytes { get; } =
+            EntryEstimatedBytes + (long)nodes.EnsureCapacity(0) * JourneyNodeEstimatedBytes + stationSystems.Length * 2L * sizeof(int);
     }
 
-    private static readonly CatalogDefinition<JourneyMap> s_journeyMap = new(
-        "capsuleer-journey-systems",
-        (catalog, source) => LoadJourneyMap(catalog, source, true),
-        Estimate: map => map.EstimatedBytes
-    );
+    private sealed class JourneyMaps(bool unrestricted)
+    {
+        internal readonly CatalogDefinition<JourneyMap> Local = Define(unrestricted, TrafficJourneyKind.Local);
+        internal readonly CatalogDefinition<JourneyMap> Regional = Define(unrestricted, TrafficJourneyKind.Regional);
+        internal readonly CatalogDefinition<JourneyMap> LongDistance = Define(unrestricted, TrafficJourneyKind.LongDistance);
 
-    private static readonly CatalogDefinition<JourneyMap> s_capitalJourneyMap = new(
-        "capsuleer-capital-journey-systems",
-        (catalog, source) => LoadJourneyMap(catalog, source, false),
-        Estimate: map => map.EstimatedBytes
-    );
+        private static CatalogDefinition<JourneyMap> Define(bool unrestricted, TrafficJourneyKind kind) =>
+            new(
+                $"capsuleer-journey-{kind}-{unrestricted}",
+                (catalog, source) => LoadJourneyMap(catalog, source, unrestricted, TrafficJourneyRules.MaximumDistance(kind)),
+                Estimate: map => map.EstimatedBytes
+            );
+
+        internal CatalogDefinition<JourneyMap> For(TrafficJourneyKind kind) =>
+            kind switch
+            {
+                TrafficJourneyKind.Local => Local,
+                TrafficJourneyKind.Regional => Regional,
+                _ => LongDistance,
+            };
+    }
+
+    private static readonly JourneyMaps s_journeyMaps = new(true);
+    private static readonly JourneyMaps s_capitalJourneyMaps = new(false);
 
     internal static CapsuleerTrafficRoute? Journey(
         CatalogDbContext catalog,
@@ -96,21 +113,16 @@ internal static partial class CapsuleerTrafficRoutes
         var avoided = routine?.Threats.Where(threat => threat.ExpiresAt > elapsed).Select(threat => threat.SystemId).ToHashSet();
         var recentSystems = routine?.RecentStations.Select(id => catalog.Definitions.FindStation(id)?.SolarSystemId ?? 0).ToArray() ?? [];
         ulong draw = routine is null ? TravelerRoutineRules.Mix(unchecked((ulong)sequence)) : TravelerRoutineRules.Draw(routine, sequence);
-        var map = catalog.Definition(unrestricted ? s_journeyMap : s_capitalJourneyMap, source);
+        int maximum = TrafficJourneyRules.MaximumDistance(kind);
+        var maps = unrestricted ? s_journeyMaps : s_capitalJourneyMaps;
         Predicate<int> onwardStation = candidate => candidate != stationId && candidate != previousStationId;
-        int destination = 0;
-        bool onward = false;
-        if (avoided is { Count: > 0 })
+        var map = avoided is { Count: > 0 }
+            ? LoadJourneyMap(catalog, source, unrestricted, maximum, avoided)
+            : catalog.Definition(maps.For(kind), source);
+        var (destination, onward) = ChooseDestination(map, avoided);
+        if (destination == 0 && avoided is { Count: > 0 })
         {
-            var safe = LoadJourneyMap(catalog, source, unrestricted, avoided);
-            (destination, onward) = ChooseDestination(safe, avoided);
-            if (destination != 0)
-            {
-                map = safe;
-            }
-        }
-        if (destination == 0)
-        {
+            map = catalog.Definition(maps.For(kind), source);
             (destination, onward) = ChooseDestination(map, null);
         }
         if (destination == 0)
@@ -141,15 +153,10 @@ internal static partial class CapsuleerTrafficRoutes
             int selected = 0;
             (bool PreferredBand, bool Onward) bestPriority = default;
             int totalWeight = 0;
-            int maximum = TrafficJourneyRules.MaximumDistance(kind);
             int minimum = TrafficJourneyRules.MinimumDistance(kind);
-            foreach (int system in reachable.StationSystems)
+            foreach (var stop in reachable.StationSystems)
             {
-                int jumps = reachable.Nodes[system].Jumps;
-                if (jumps > maximum)
-                {
-                    break;
-                }
+                int system = stop.Id;
                 if (excluded?.Contains(system) == true || policy?.CanWork(catalog.Definitions, system) == false)
                 {
                     continue;
@@ -161,7 +168,7 @@ internal static partial class CapsuleerTrafficRoutes
                 }
 
                 // Preserve local stops and preferred distance bands. Every eligible system in the winning band gets one draw.
-                bool preferred = kind == TrafficJourneyKind.Local ? jumps == 0 : jumps >= minimum;
+                bool preferred = kind == TrafficJourneyKind.Local ? stop.Jumps == 0 : stop.Jumps >= minimum;
                 var priority = (preferred, Array.Exists(stations, onwardStation));
                 int comparison = priority.CompareTo(bestPriority);
                 if (comparison < 0)
@@ -201,8 +208,8 @@ internal static partial class CapsuleerTrafficRoutes
         int destination = catalog.RequireStation(homeStationId).SolarSystemId;
         bool unrestricted = TrafficRules.RouteAllows(hull, true);
         var map = avoided is { Count: > 0 }
-            ? LoadJourneyMap(catalog, source, unrestricted, avoided)
-            : catalog.Definition(unrestricted ? s_journeyMap : s_capitalJourneyMap, source);
+            ? LoadJourneyMap(catalog, source, unrestricted, TrafficJourneyRules.MaximumJumps, avoided)
+            : catalog.Definition((unrestricted ? s_journeyMaps : s_capitalJourneyMaps).LongDistance, source);
         if (!map.Nodes.ContainsKey(destination) || avoided?.Contains(destination) == true)
         {
             return null;
@@ -293,21 +300,27 @@ internal static partial class CapsuleerTrafficRoutes
     {
         var graph = catalog.Definitions.GlobalDefinition(s_graph);
         int source = catalog.RequireStation(stationId).SolarSystemId;
-        var map = catalog.Definition(s_journeyMap, source);
+        var map = catalog.Definition(s_journeyMaps.LongDistance, source);
         // Patrol planning keeps its bounded, geographically prioritized list.
         return map
-            .StationSystems.SelectMany(system => graph.Stations[system].Select(station => (System: system, Station: station)))
+            .StationSystems.SelectMany(stop => graph.Stations[stop.Id].Select(station => (System: stop.Id, Station: station, stop.Jumps)))
             .Where(stop => stop.Station != stationId)
             .OrderByDescending(stop => CapsuleerEncounterRules.IsTradeHubStation(stop.Station))
             .ThenByDescending(stop => graph.Stations[stop.System].Length)
             .ThenBy(stop => stop.Station)
-            .GroupBy(stop => map.Nodes[stop.System].Jumps)
+            .GroupBy(stop => stop.Jumps)
             .SelectMany(group => group.Take(MaximumRoutes))
             .Select(stop => new CapsuleerTrafficRoute(stationId, stop.Station, JourneyPath(graph, map, stop.System)))
             .ToArray();
     }
 
-    private static JourneyMap LoadJourneyMap(CatalogDbContext catalog, int source, bool unrestricted, IReadOnlySet<int>? avoided = null)
+    private static JourneyMap LoadJourneyMap(
+        CatalogDbContext catalog,
+        int source,
+        bool unrestricted,
+        int maximumJumps,
+        IReadOnlySet<int>? avoided = null
+    )
     {
         var graph = catalog.Definitions.GlobalDefinition(s_graph);
         var security = catalog.Definitions.SystemSecurity;
@@ -315,20 +328,20 @@ internal static partial class CapsuleerTrafficRoutes
             unrestricted || TrafficRules.SecurityBand(security.GetValueOrDefault(system)) != TrafficSecurityBand.High;
         if (!Allows(source))
         {
-            return new(FrozenDictionary<int, JourneyNode>.Empty, []);
+            return new([], []);
         }
         Queue<int> pending = new();
         Dictionary<int, JourneyNode> nodes = new() { [source] = new(source, 0) };
-        List<int> stations = [];
+        List<StationSystem> stations = [];
         pending.Enqueue(source);
         while (pending.TryDequeue(out int current))
         {
+            int jumps = nodes[current].Jumps;
             if (graph.Stations.ContainsKey(current))
             {
-                stations.Add(current);
+                stations.Add(new(current, jumps));
             }
-            int jumps = nodes[current].Jumps;
-            if (jumps >= TrafficJourneyRules.MaximumJumps)
+            if (jumps >= maximumJumps)
             {
                 continue;
             }
@@ -340,7 +353,7 @@ internal static partial class CapsuleerTrafficRoutes
                 }
             }
         }
-        return new(nodes.ToFrozenDictionary(), stations.ToArray());
+        return new(nodes, stations.ToArray());
     }
 
     private static int[] JourneyPath(TrafficGraph graph, JourneyMap map, int destination, ulong? draw = null)

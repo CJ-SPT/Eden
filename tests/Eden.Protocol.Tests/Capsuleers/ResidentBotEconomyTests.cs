@@ -251,6 +251,26 @@ public sealed class ResidentBotEconomyTests(ITestOutputHelper output)
         allocated = GC.GetAllocatedBytesForCurrentThread() - allocated;
         output.WriteLine($"Resident template refresh allocated {allocated:N0} bytes (commit={commit}).");
         Assert.InRange(allocated, 0, 8 * 1024 * 1024);
+        if (commit)
+        {
+            using var edit = live.Economy.Begin(participants);
+            var identity = edit.Set<SavedTrafficIdentity>().Find(pilotId)!;
+            var renamed = edit.Pilots.Find(pilotId)!;
+            renamed.Name = original;
+            identity.CharacterId++;
+            Assert.False(edit.HasPilotName(profile.Name));
+            Assert.True(edit.HasPilotName(original.ToUpperInvariant()));
+            Assert.False(edit.TrafficCharacterTaken(profile.CharacterId));
+            Assert.True(edit.TrafficCharacterTaken(identity.CharacterId));
+            edit.Remove(identity);
+            Assert.False(edit.TrafficCharacterTaken(identity.CharacterId));
+        }
+        using (var read = live.Economy.Begin(participants))
+        {
+            Assert.Equal(commit, read.HasPilotName(profile.Name));
+            Assert.Equal(commit, read.TrafficCharacterTaken(profile.CharacterId));
+            Assert.Empty(read.Set<SavedTrafficIdentity>().Local);
+        }
         using var captured = live.CaptureSnapshot();
         if (commit)
         {

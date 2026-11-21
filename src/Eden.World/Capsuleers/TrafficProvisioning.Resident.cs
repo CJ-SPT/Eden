@@ -34,28 +34,40 @@ internal static partial class TrafficProvisioning
         {
             return null;
         }
-        var roster =
-            rosterTypes
-            ?? world
-                .Set<SavedCapsuleerAgent>()
-                .Where(agent => agent.CommunitySystemId == system && agent.Career == CapsuleerCareer.Hauling)
-                .AsEnumerable()
-                .Select(agent => world.Pilots.Where(p => p.Id == agent.PilotId).Select(p => p.ActiveShipId).Single())
-                .Select(ship => world.Ships.Where(s => s.Id == ship).Select(s => s.TypeId).Single())
-                .ToArray();
-        return SelectCore(
-            database,
-            catalog,
-            seed,
-            system,
-            slot,
-            route,
-            cargoVolume,
-            reservations,
-            roster,
-            character => reservations?.Characters.Contains(character) ?? world.TrafficCharacterTaken(character),
-            name => reservations?.Names.Contains(name) ?? world.HasPilotName(name)
-        );
+        if (rosterTypes is null)
+        {
+            rosterTypes = HaulingRoster(world, system, out int pilots);
+            if (rosterTypes.Count != pilots)
+            {
+                throw new InvalidOperationException("A community hauler is missing its active ship.");
+            }
+        }
+        if (reservations is not null && cargoVolume == 0)
+        {
+            return SelectPrepared(database, catalog, seed, system, slot, route, reservations, rosterTypes);
+        }
+        var pool = CandidatePools(database, catalog, system, route, cargoVolume, rosterTypes);
+        if (reservations is null && world is EconomyTransaction resident)
+        {
+            return resident.SelectTrafficProfile(pool, seed, system, slot);
+        }
+        return pool.Candidates(seed, system, slot)
+            .FirstOrDefault(profile =>
+                !(reservations?.Characters.Contains(profile.CharacterId) ?? world.TrafficCharacterTaken(profile.CharacterId))
+                && !(reservations?.Names.Contains(profile.Name) ?? world.HasPilotName(profile.Name))
+            );
+    }
+
+    internal static int[] HaulingRoster(WorldAction world, int community, out int pilotCount)
+    {
+        var owners = world
+            .Set<SavedCapsuleerAgent>()
+            .Where(agent => agent.CommunitySystemId == community && agent.Career == CapsuleerCareer.Hauling)
+            .Select(agent => agent.PilotId)
+            .ToArray();
+        pilotCount = owners.Length;
+        var hulls = world.Pilots.Where(owner => Enumerable.Contains(owners, owner.Id)).Select(owner => owner.ActiveShipId).ToArray();
+        return world.Ships.Where(hull => Enumerable.Contains(hulls, hull.Id)).Select(hull => hull.TypeId).ToArray();
     }
 
     internal static TrafficProfile? SelectPrepared(
@@ -67,33 +79,6 @@ internal static partial class TrafficProvisioning
         CapsuleerTrafficRoute route,
         Reservations reservations,
         IReadOnlyList<int> roster
-    ) =>
-        SelectCore(
-            database,
-            catalog,
-            seed,
-            system,
-            slot,
-            route,
-            0,
-            reservations,
-            roster,
-            reservations.Characters.Contains,
-            reservations.Names.Contains
-        );
-
-    private static TrafficProfile? SelectCore(
-        WorldDatabase database,
-        CatalogDbContext catalog,
-        long seed,
-        int system,
-        int slot,
-        CapsuleerTrafficRoute route,
-        double cargoVolume,
-        Reservations? reservations,
-        IReadOnlyList<int> roster,
-        Func<long, bool> reservedCharacter,
-        Func<string, bool> reservedName
     )
     {
         if (database.Traffic.Profiles.Count == 0)
@@ -113,15 +98,9 @@ internal static partial class TrafficProvisioning
             var hull = catalog.FittingType(profile.HullTypeId);
             return hull is not null
                 && TrafficRules.RouteAllows((HullClass)hull.GroupId, visitsHighSecurity)
-                && (lightAllowed || !TrafficRules.LightHull((HullClass)hull.GroupId))
-                && (cargoVolume == 0 || (hull.Capacity ?? 0) >= cargoVolume);
+                && (lightAllowed || !TrafficRules.LightHull((HullClass)hull.GroupId));
         }
         int Group(TrafficProfile profile) => catalog.RequireItem(profile.HullTypeId).GroupId;
-        if (reservations is null || cargoVolume != 0)
-        {
-            var candidates = CandidatePools(database, catalog, system, route, cargoVolume, roster).Candidates(seed, system, slot);
-            return candidates.FirstOrDefault(profile => !reservedCharacter(profile.CharacterId) && !reservedName(profile.Name));
-        }
         Reservations.PoolKey key = new(region, band, visitsHighSecurity, lightAllowed);
         if (!reservations.Pools.TryGetValue(key, out var prepared))
         {
@@ -134,7 +113,9 @@ internal static partial class TrafficProvisioning
         }
         var selected = prepared
             .Candidates.Candidates(seed, system, slot)
-            .FirstOrDefault(profile => !reservedCharacter(profile.CharacterId) && !reservedName(profile.Name));
+            .FirstOrDefault(profile =>
+                !reservations.Characters.Contains(profile.CharacterId) && !reservations.Names.Contains(profile.Name)
+            );
         // Reservations only grow during stopped-world preparation; an exhausted pool stays exhausted.
         prepared.Exhausted = selected is null;
         return selected;

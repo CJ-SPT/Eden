@@ -1,5 +1,8 @@
+using System.Runtime.CompilerServices;
+using Eden.Data.Catalog.Capsuleers;
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Characters;
+using Eden.World.Capsuleers;
 
 namespace Eden.World.Runtime.Economy;
 
@@ -13,16 +16,18 @@ internal sealed class EconomyNameComparer : IEqualityComparer<object>
 
 internal sealed partial class ResidentEconomy
 {
-    internal IReadOnlyCollection<EconomyKey> PilotNames(string name) =>
-        ((EconomyTable<Pilot, EconomyPilot>)_tables[typeof(Pilot)]).Indexed("Name", name);
+    internal int SavedPilotCount => ((EconomyTable<Pilot, EconomyPilot>)_tables[typeof(Pilot)]).RowCount;
 
-    internal IReadOnlyCollection<EconomyKey> TrafficCharacters(long character) =>
-        ((EconomyTable<SavedTrafficIdentity, EconomySavedTrafficIdentity>)_tables[typeof(SavedTrafficIdentity)]).Indexed(
-            "CharacterId",
-            character
-        );
+    // Pools belong to a bounded catalog cache. Evicting a pool also releases its exhaustion marker.
+    internal ConditionalWeakTable<TrafficSnapshot.TrafficCandidatePools, object> FullyReservedTrafficPools { get; } = new();
 
-    internal int SavedPilotCount => ((EconomyTable<Pilot, EconomyPilot>)_tables[typeof(Pilot)]).Keys.Count();
+    private void TrafficIdentityChanged(EconomySavedTrafficIdentity? before, EconomySavedTrafficIdentity? after)
+    {
+        if (before is not null && before.CharacterId != after?.CharacterId)
+        {
+            FullyReservedTrafficPools.Clear();
+        }
+    }
 }
 
 internal sealed partial class EconomyTransaction
@@ -32,22 +37,78 @@ internal sealed partial class EconomyTransaction
         + Set<Pilot>().Local.Count(p => !store.IsPilot(p.Id))
         - Set<Pilot>().Local.Count(p => store.IsPilot(p.Id) && Entry(p).State == Microsoft.EntityFrameworkCore.EntityState.Deleted);
 
-    internal override bool HasPilotName(string name) => PilotNameTaken(name, 0);
+    internal override bool HasPilotName(string name) => PilotNameTaken(name, null);
 
-    private bool PilotNameTaken(string name, long excluded)
+    private bool PilotNameTaken(string name, long? excluded) =>
+        ((EconomySet<Pilot, EconomyPilot>)Pilots).HasReservation(
+            nameof(Pilot.Name),
+            name,
+            static (pilot, candidate) => StringComparer.OrdinalIgnoreCase.Equals(pilot.Name, candidate),
+            excluded
+        );
+
+    internal override bool TrafficCharacterTaken(long character) =>
+        ((EconomySet<SavedTrafficIdentity, EconomySavedTrafficIdentity>)Set<SavedTrafficIdentity>()).HasReservation(
+            nameof(SavedTrafficIdentity.CharacterId),
+            character,
+            static (identity, candidate) => identity.CharacterId == candidate
+        );
+
+    internal TrafficProfile? SelectTrafficProfile(TrafficSnapshot.TrafficCandidatePools pool, long seed, int system, int slot)
     {
-        var local = Set<Pilot>().Local;
-        return local.Any(p =>
-                p.Id != excluded
-                && Entry(p).State != Microsoft.EntityFrameworkCore.EntityState.Deleted
-                && StringComparer.OrdinalIgnoreCase.Equals(p.Name, name)
-            ) || store.PilotNames(name).Any(key => key.Id != excluded && !local.Any(p => p.Id == key.Id));
+        // A private assignment or release must never consume or publish a shared negative result.
+        bool committed = !HasPrivateRows<SavedTrafficIdentity>();
+        if (committed && store.FullyReservedTrafficPools.TryGetValue(pool, out _))
+        {
+            return null;
+        }
+        bool allCharactersTaken = true;
+        foreach (var profile in pool.Candidates(seed, system, slot))
+        {
+            if (TrafficCharacterTaken(profile.CharacterId))
+            {
+                continue;
+            }
+            allCharactersTaken = false;
+            if (!HasPilotName(profile.Name))
+            {
+                return profile;
+            }
+        }
+        // Names can be changed independently. Only occupied character IDs prove the entire pool unavailable.
+        if (committed && allCharactersTaken)
+        {
+            store.FullyReservedTrafficPools.GetOrCreateValue(pool);
+        }
+        return null;
     }
+}
 
-    internal override bool TrafficCharacterTaken(long character)
+internal sealed partial class EconomySet<TRow, TState>
+{
+    internal bool HasReservation<TValue>(string column, TValue value, Func<TRow, TValue, bool> matches, long? excluded = null)
+        where TValue : notnull
     {
-        var local = Set<SavedTrafficIdentity>().Local;
-        return local.Any(p => Entry(p).State != Microsoft.EntityFrameworkCore.EntityState.Deleted && p.CharacterId == character)
-            || store.TrafficCharacters(character).Any(key => !local.Any(p => p.PilotId == key.Id));
+        var committed = table.Indexed(column, value);
+        if (_local.Count == 0 && excluded is null)
+        {
+            return committed.Count != 0;
+        }
+        foreach (var (key, row) in _local)
+        {
+            if (key.Id != excluded && matches(row, value) && !_removed.Contains(key))
+            {
+                return true;
+            }
+        }
+        // A privately changed or removed row shadows its committed index membership.
+        foreach (var key in committed)
+        {
+            if (key.Id != excluded && !_local.ContainsKey(key))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }

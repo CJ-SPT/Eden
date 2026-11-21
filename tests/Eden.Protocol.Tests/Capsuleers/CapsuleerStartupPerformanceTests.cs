@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Eden.Data.Catalog.Capsuleers;
 using Eden.Data.World.Capsuleers;
 using Eden.Gameplay.Capsuleers;
@@ -52,6 +53,57 @@ public sealed class CapsuleerStartupPerformanceTests(ITestOutputHelper output)
             checks++;
             return profile.HullTypeId == template.HullTypeId;
         }
+    }
+
+    [Fact]
+    public void ExhaustingWarmedTrafficPoolsKeepsSeededOrderWithBoundedAllocation()
+    {
+        const int characters = 2048;
+        const int slots = 64;
+        const int system = 30000141;
+        var first = TrafficSnapshotTests.Profile();
+        var profiles = Enumerable
+            .Range(0, characters)
+            .Select(i =>
+                first with
+                {
+                    CharacterId = first.CharacterId + i,
+                    KillId = first.KillId + i,
+                    RegionId = first.RegionId + i % 2,
+                    SecurityBand = i % 3 == 0 ? TrafficSecurityBand.Null : first.SecurityBand,
+                    HullTypeId = i % 5,
+                }
+            )
+            .ToArray();
+        // Newer kills outside the preferred region move some of the same characters to a different hull group.
+        var later = profiles
+            .Where(p => p.RegionId == first.RegionId && p.SecurityBand == first.SecurityBand)
+            .Select(p => p with { RegionId = first.RegionId + 1, KillId = p.KillId + characters, HullTypeId = p.HullTypeId + 1 });
+        TrafficSnapshot snapshot = new(null, [.. profiles, .. later]);
+        var pools = snapshot.RuntimeCandidates(1, first.RegionId, first.SecurityBand, true, false, _ => true, p => p.HullTypeId);
+        Assert.Equal(characters, pools.Candidates(42, system, 0).DistinctBy(profile => profile.CharacterId).Count());
+
+        long start = Stopwatch.GetTimestamp();
+        long allocated = GC.GetAllocatedBytesForCurrentThread();
+        int count = 0;
+        long checksum = 0;
+        for (int slot = 0; slot < slots; slot++)
+        {
+            foreach (var profile in pools.Candidates(42, system, slot))
+            {
+                checksum = unchecked(checksum * 31 + profile.KillId);
+                count++;
+            }
+        }
+        allocated = GC.GetAllocatedBytesForCurrentThread() - allocated;
+        var elapsed = Stopwatch.GetElapsedTime(start);
+        output.WriteLine(
+            $"Exhausted {slots} pools in {elapsed.TotalMilliseconds:F2} ms, allocating {allocated:N0} bytes. Order {checksum}."
+        );
+        Assert.Equal(characters * slots, count);
+        // Ordered kill IDs from the original seeded traversal on 4dda77c7, including cross-tier hull changes.
+        Assert.Equal(-1_175_951_760_981_443_616L, checksum);
+        Assert.InRange(allocated, 0, 64 * 1024);
     }
 
     [Fact]

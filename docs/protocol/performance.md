@@ -6246,3 +6246,220 @@ Not performed; agent client testing is disabled.
 
 Compare allocation rate at 1,401 scheduled pilots after updating the dedicated server. Check the same interval
 for `market demand` owner holds and arrival `ownerReacquire` times.
+
+## Hauler traffic identity selection
+
+On `4dda77c7`, a 12-second allocation trace at 1,401 scheduled pilots attributed 45% of sampled bytes to
+traffic profile selection during docked hauler trades. Selection repeatedly checked reserved characters
+and pilot names, deduplicated overlapping pools and queried each local hauler for its ship type.
+
+Region, security-band and global pools now identify repeated characters during preparation. A repeat keeps
+its position in the seeded rotation, including when a newer kill lists a different hull. A fully redundant
+tier can be skipped. Character and name checks use the committed index count when the transaction has no
+private rows for that table. Private edits, additions and deletions take precedence during selection.
+Preparing a trade and executing it now use the same batched projection of the community's hauling roster.
+
+### Automated validation
+
+The fixed-work Release comparison exhausted 2,048 candidates at each of 64 seeded slots. Both versions
+returned the same ordered checksum across 131,072 kill IDs. The control allocated 9,879,824 bytes and
+the updated traversal allocated 8,192 bytes. The regression enforces a 64 KiB budget for all 64 scans.
+Elapsed time in the paired samples fell from 34.69 ms to 7.13 ms.
+
+Two untraced 90-second Release runs used the same copied world and traffic snapshot, 135 visited
+communities, one observer, real market maintenance, four reported processors and server GC.
+Both settled at the configured cap of 1,401 scheduled pilots before the final 30-second window.
+
+| Measurement | Control | Updated |
+| --- | ---: | ---: |
+| Process allocation at 1,401 pilots | 136.2 MiB/s | 109.9 MiB/s |
+| Process allocation per completed action in that window | 491.5 KiB | 397.4 KiB |
+| Completed actions per second in that window | 283.7 | 283.1 |
+| Oldest due job, p95 in that window | 54.2 ms | 36.0 ms |
+| Process allocation across admission and work, full run | 172.8 MiB/s | 142.4 MiB/s |
+| Completed actions over the full run | 23,549 | 23,790 |
+| Process CPU over the full run | 53.69 s | 51.05 s |
+| Warm frame processing p95 | 5.30 ms | 6.51 ms |
+| Warm end-to-end frame / market request p95 | 20.85 / 32.53 ms | 17.40 / 28.44 ms |
+| Peak checkpoint capture / projection / write | 13 / 826 / 1,117 ms | 19 / 868 / 1,063 ms |
+
+Each run completed seven checkpoints, finished with zero due jobs and recorded zero failed actions.
+All 60 warmed observer requests per run used zero SQL commands, connections and fitting rebuilds.
+These are single local timing samples. The replay used an approximate process allocation counter here.
+The [subsequent comparison](#bot-corporation-recruitment-and-timed-effects) explains its sampling limitation.
+Reproduce with the capped save and the
+[`ReplaySustainedBotThroughput` settings above](#allocation-during-bot-admission-and-market-settlement).
+The stack sample, per-second reports and comparison are under `artifacts/bot-hotpaths-20261121/`.
+
+The exact `ExhaustingWarmedTrafficPoolsKeepsSeededOrderWithBoundedAllocation` filter passed in 2.73 s.
+Both commit and rollback cases of `TemplateRefreshCommitsPilotHullAndIdentityWithoutCloningUnrelatedPortraits`
+passed in 9.85 s. The combined filter covered `TrafficSnapshotTests`, `TrafficActivityTests`, `TrafficPreparationTests`,
+`CapsuleerBackgroundPreparationTests`, `CapsuleerProvisioningTests`, `ResidentBotEconomyTests`, the three
+non-optional startup performance cases and character-creation name collisions. It passed 98 of 100 cases in 44.92 s.
+Both failures reproduced against the control binaries. `LocalPreparationDoesNotReadUnrelatedSystemPayloads`
+hit malformed fixture JSON in the system security index. `MultipleCommunitiesRunTheRealQueueWithoutCreatingBackgroundNativeScenes`
+expected a remote miner's sequence to stay at zero and observed 16 on both builds.
+The final Debug and Release solution builds passed with zero warnings or errors in 5.08 s and 4.98 s.
+The three selection and transaction cases also passed in Release in 6 s. Both Python policy suites
+passed all 17 checks, repository formatting passed and the protocol index link resolved.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
+## Bot corporation recruitment and timed effects
+
+In a 12-second allocation trace of the mixed bot replay on `f456717c`, employer searches accounted for
+8.7% of sampled bytes. Each search queried corporations separately for up to 64 nearby systems and any
+systems mentioned by active work contacts. Recruitment now queries the indexed system IDs together.
+Offer scoring, the corporation ID tie-break and the review deadline still determine what a docked bot does.
+
+Corporation moves count each visible roster and collect human notification recipients in the same pass.
+The resident action reads committed members from the corporation index and includes its private membership
+changes. A move serializes its notification once when there are recipients. Employer vacancy checks use
+the same roster. Timed effect checks test the earliest deadline before allocating the queries that collect
+due contacts or opening the expiry action.
+
+### Automated validation
+
+A focused Release comparison added 512 school-corporation pilots to the same saved-world fixture.
+After six warm founding attempts, each build ran three batches of 32 successful attempts for the same
+docked pilot, rolling back after each attempt. Median thread allocation fell from 28,279,040 to 9,684,480
+bytes per batch. Median elapsed time fell from 71.28 to 45.69 ms. Each batch recorded zero SQL commands,
+connections and fitting rebuilds. A separate loop of 100,000 quiet timer checks fell from 59,200,000 bytes
+and 46.19 ms to zero bytes and 13.85 ms. The projector regression also checks allocation one tick before
+the saved expiry and verifies that the effect ends on its deadline.
+
+The mixed replay uses the [same capped save and configuration](#allocation-during-bot-admission-and-market-settlement)
+with 135 visited communities, one observer, market maintenance, four reported processors and server GC.
+Early runs showed consecutive identical approximate allocation totals while hundreds of jobs continued to complete.
+The test now takes a precise process-wide managed allocation count at each one-second sample. Both builds used
+the same test assembly. With the default server GC configuration, one control sample fell by 3.65 GiB
+despite continued work. That pair cannot establish a process allocation reduction. For the final pair
+we set `DOTNET_GCDynamicAdaptationMode=0` and `DOTNET_GCHeapCount=4` on both processes and checked
+every allocation delta. These settings apply to the replay processes. Reports flag a decreasing series
+with `AllocationSamplesMonotonic=false` and omit the per-action rate by setting it to null.
+[.NET allocation counter][bot-gc-total]
+
+[bot-gc-total]: https://learn.microsoft.com/en-us/dotnet/api/system.gc.gettotalallocatedbytes?view=net-10.0
+
+Both 90-second Release replays reached 1,401 scheduled pilots before the final 30-second window.
+The allocation counter advanced at every sample on both builds.
+
+| Measurement | Control (`f456717c`) | Updated |
+| --- | ---: | ---: |
+| Managed allocation at 1,401 pilots | 113.8 MiB/s | 98.6 MiB/s |
+| Managed allocation per action in that window | 409.3 KiB | 353.9 KiB |
+| Completed actions per second in that window | 284.8 | 285.2 |
+| Oldest due job, p95 in that window | 48.8 ms | 38.7 ms |
+| Process allocation over the full run | 141.8 MiB/s | 127.5 MiB/s |
+| Completed actions over the full run | 23,715 | 23,919 |
+| Process CPU over the full run | 49.73 s | 49.20 s |
+| Warm frame processing p95 | 3.72 ms | 3.51 ms |
+| Warm end-to-end frame / market request p95 | 15.88 / 28.88 ms | 14.86 / 29.84 ms |
+| Peak checkpoint capture / projection / write | 14 / 827 / 991 ms | 12 / 833 / 1,100 ms |
+
+Both runs recorded zero failed actions, finished with zero due jobs and completed seven checkpoints.
+All 60 warm observer requests per build recorded zero SQL commands, connections and fitting rebuilds.
+Timing values come from one fixed-heap pair. The allocation trace, isolated probe and replay reports
+are under `artifacts/bot-hotpaths-20261121-followup/`.
+
+The exact `PaidAdvertRecruitsTwoJumpOriginsAndOffersCompeteForLastBerth` filter passed both cases in 9.67 s.
+`ProjectorPaysFuelSpoolsTracksOccupantsAndExpiresAtTheExactDeadline` passed in 7.67 s and
+`MembershipAudienceCountsVisiblePrivateMovesAndOnlyNotifiesPlayers` passed in 10.78 s. The latter exercises
+uncommitted changes in corporation, account and ship ownership, then reads the roster again after rollback.
+The combined filter for `CapsuleerCorporationTests`, `CorporationMembershipTests`, `CorporationBulkRemovalTests`,
+`AreaWeaponTests`, `StructureWarpDisruptorTests` and `CommandBurstTests` passed all 104 cases in 77.70 s.
+The final Debug and Release solution builds passed with zero warnings and errors in 23.20 s and 18.96 s.
+The final replay report check completed 1,917 actions in a 12-second workload, reported an increasing
+allocation series and emitted a positive per-action rate. The test took 48 s including setup.
+The three exact filters also passed all four cases in Release in 6 s. The Python catalog and
+formatting suites passed all 17 checks. Repository formatting and the protocol index link passed.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
+## Hauler identity reservations and journey ranges
+
+A 12-second allocation trace of `5f1558dd` attributed 123 MiB to the hauler's traffic identity
+selection predicate and 74 MiB to building journey maps. The resident economy now remembers a candidate
+pool when every character in it has a committed reservation. Releasing or replacing a character clears
+the result. A transaction with private identity rows uses its own view. A name collision alone leaves
+the character eligible for a later scan. The markers follow the lifetime of the catalog's candidate pools.
+
+Local and regional journeys now build origin maps out to their respective two- and seven-jump limits.
+Long-distance journeys, return routes and regional patrol planning retain the full twenty-jump search.
+The maps use the same gate order, security restrictions and seeded destination draws. A bot with an
+active threat builds the ordinary fallback map only when its detour search finds no destination.
+Each map keeps its search dictionary and records the jump count alongside each station system.
+The cache size estimate accounts for the dictionary's allocated capacity.
+
+### Automated validation
+
+On two private copies of the capped save, 64 warmed searches for a free identity in a 13,673-character
+pool returned no match on both builds. Thread allocation fell from 21,107,712 to 81,408 bytes.
+The median elapsed time across three batches fell from 92.07 to 0.55 ms.
+
+On the same catalog, both builds returned identical destination stations and system paths for 288
+seeded route requests, including the same five requests with no reachable destination. Each batch
+started with the global gate graph warm and 48 previously unseen origin systems. The mixed batch
+requested all three ranges from each origin. The warm timing repeats the same batch eight times.
+
+| Journey range | Cold allocation, before / after | Cold time, before / after | Warm time, before / after |
+| --- | ---: | ---: | ---: |
+| Local | 7,226,224 / 209,712 bytes | 25.86 / 1.09 ms | 4.85 / 4.65 ms |
+| Regional | 9,329,840 / 730,024 bytes | 13.37 / 2.57 ms | 9.59 / 8.52 ms |
+| Long-distance | 7,053,624 / 4,918,048 bytes | 12.04 / 19.11 ms | 27.29 / 23.63 ms |
+| All three ranges | 10,938,200 / 8,468,216 bytes | 18.14 / 17.50 ms | 42.77 / 38.91 ms |
+
+Each warm route batch allocated the same bytes on both builds. All reservation and route batches
+recorded zero SQL commands, connections and fitting rebuilds.
+
+The 90-second replay used the same saved world, workload manifest, four fixed server GC heaps,
+135 communities, one observer and market maintenance on both builds. Both held 1,401 scheduled
+bots throughout the final 30 seconds. Allocation counters advanced at every sample.
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| Warm allocation | 98.00 MiB/s | 94.49 MiB/s |
+| Warm allocation per completed action | 351.99 KiB | 342.77 KiB |
+| Warm completed actions/s | 285.10 | 282.29 |
+| Warm oldest due job p95 | 48.99 ms | 34.80 ms |
+| All-run allocation | 125.79 MiB/s | 123.98 MiB/s |
+| All-run completed actions | 23,850 | 23,921 |
+| Process CPU time | 49.66 s | 45.94 s |
+| Warm frame processing p95 | 9.61 ms | 5.50 ms |
+| Warm end-to-end frame / market request p95 | 15.36 / 30.37 ms | 16.07 / 29.35 ms |
+| Peak checkpoint capture / projection / write | 12 / 832 / 1,114 ms | 16 / 839 / 981 ms |
+
+Both runs completed seven checkpoints, recorded zero failed actions and finished with zero due jobs.
+All 60 warm observer requests on each build recorded zero SQL commands, connections and fitting rebuilds.
+Warm throughput fell 1.0% in this single replay pair. The isolated cold long-distance batch took
+7.07 ms longer while allocating 30% less. The trace, probes and reports are under
+`artifacts/bot-hotpaths-next/` in the main checkout.
+
+The exact `ExhaustedPoolObservesPrivateAndCommittedCharacterReleases` filter passed both cases in 31.64 s.
+`DestinationJourneysHaveRealEndpointsDistanceBandsAndNoRepeatedSystems` passed all three cases in 4.82 s.
+The combined filter for `TrafficSnapshotTests`, `TrafficActivityTests`, `TrafficPreparationTests`,
+`CapsuleerTrafficRoutesTests`, `CapsuleerTrafficNavigationTests`, `ResidentBotEconomyTests` and
+`CapsuleerBackgroundPreparationTests` passed all 134 cases in 50.08 s. In Release, the two exact filters
+and `ThreatMemoryUsesADetourExpiresAndFallsBackWhenThereIsNoAlternative` passed all six cases in 6 s.
+Debug and Release solution builds completed in 21.96 s and 15.72 s with zero warnings or errors.
+The Python catalog and formatting suites passed all 17 checks. Repository formatting and the protocol index link passed.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
