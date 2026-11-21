@@ -118,26 +118,33 @@ internal static partial class CapsuleerTrafficRoutes
             return null;
         }
         var blocked = anchor.Systems.ToHashSet();
-        Queue<int> pending = new();
+        Queue<(int System, int Jumps)> pending = new();
         Dictionary<int, int> parents = new() { [gate.ObserverSystemId] = gate.ObserverSystemId };
-        pending.Enqueue(gate.ObserverSystemId);
-        List<StationPath> destinations = [];
-        while (pending.TryDequeue(out int current))
+        pending.Enqueue((gate.ObserverSystemId, anchor.Systems.Length));
+        var kind = visitor % 2 == 0 ? TrafficJourneyKind.Regional : TrafficJourneyKind.LongDistance;
+        int minimum = TrafficJourneyRules.MinimumDistance(kind);
+        int maximum = TrafficJourneyRules.MaximumDistance(kind);
+        List<int> destinations = [];
+        List<int> preferred = [];
+        while (pending.TryDequeue(out var stop))
         {
-            var path = PathTo(current, parents);
-            foreach (int station in (graph.Stations.GetValueOrDefault(current) ?? []).Take(2))
+            if (graph.Stations.ContainsKey(stop.System))
             {
-                destinations.Add(new(station, path));
+                destinations.Add(stop.System);
+                if (stop.Jumps >= minimum && stop.Jumps <= maximum)
+                {
+                    preferred.Add(stop.System);
+                }
             }
-            if (path.Length + anchor.Systems.Length >= TrafficJourneyRules.MaximumJumps + 1)
+            if (stop.Jumps >= TrafficJourneyRules.MaximumJumps)
             {
                 continue;
             }
-            foreach (int next in graph.Links.GetValueOrDefault(current) ?? [])
+            foreach (int next in graph.Links.GetValueOrDefault(stop.System) ?? [])
             {
-                if (!blocked.Contains(next) && parents.TryAdd(next, current))
+                if (!blocked.Contains(next) && parents.TryAdd(next, stop.System))
                 {
-                    pending.Enqueue(next);
+                    pending.Enqueue((next, stop.Jumps + 1));
                 }
             }
         }
@@ -145,11 +152,16 @@ internal static partial class CapsuleerTrafficRoutes
         {
             return null;
         }
-        int minimum = visitor % 2 == 0 ? TrafficJourneyRules.RegionalMinimumJumps : TrafficJourneyRules.LongDistanceMinimumJumps;
-        var preferred = destinations.Where(path => path.Systems.Length + anchor.Systems.Length - 1 >= minimum).ToArray();
-        var choices = preferred.Length > 0 ? preferred : destinations.ToArray();
-        var destination = choices[visitor % choices.Length];
-        return new(anchor.StationId, destination.StationId, [.. anchor.Systems.Reverse(), .. destination.Systems]);
+        var choices = preferred.Count > 0 ? preferred : destinations;
+        ulong laneSeed = TravelerRoutineRules.Mix((ulong)gate.ArrivalGateId);
+        // Stagger each distance band across distinct destination systems before reusing one.
+        int destination = choices
+            .OrderBy(system => TravelerRoutineRules.Mix(laneSeed ^ (uint)system))
+            .ElementAt(visitor / 2 % choices.Count);
+        var stations = graph.Stations[destination];
+        ulong stationDraw = TravelerRoutineRules.Mix(laneSeed + (uint)visitor);
+        int stationId = stations[stationDraw % (ulong)stations.Length];
+        return new(anchor.StationId, stationId, [.. anchor.Systems.Reverse(), .. PathTo(destination, parents)]);
     }
 
     private static StationPath? FindStationPath(TrafficGraph graph, int root, int? blockedNeighbor = null)

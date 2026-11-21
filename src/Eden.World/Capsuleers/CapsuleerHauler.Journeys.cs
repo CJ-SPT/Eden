@@ -71,7 +71,7 @@ internal sealed partial class CapsuleerHauler
                     : previous?.HomeStationId ?? input.StationId
             );
         int homeSystem = input.OperatingStation.HasValue ? catalog.RequireStation(home).SolarSystemId : input.CommunityId;
-        var plan = CapsuleerTrafficRoutes.Read(catalog, homeRoster ? homeSystem : input.SystemId);
+        var plan = CapsuleerTrafficRoutes.Geography(catalog, homeRoster ? homeSystem : input.SystemId);
         bool busy = plan.GateCount >= 4 || plan.StationCount >= 4;
         var kind = homeRoster ? TrafficJourneyRules.Kind(input.Slot, busy) : previous?.Kind ?? TrafficJourneyKind.Regional;
         if (kind == TrafficJourneyKind.Local && plan.StationCount == 0)
@@ -79,32 +79,34 @@ internal sealed partial class CapsuleerHauler
             kind = TrafficJourneyKind.Regional;
         }
         long sequence = checked((previous?.Sequence ?? 0) + 1);
-        int avoided = previous?.SourceStationId ?? input.SourceStationId;
-        var route = CapsuleerTrafficRoutes.Journey(
-            catalog,
-            input.StationId,
-            kind,
-            sequence,
-            avoided,
-            (HullClass)input.GroupId,
-            routine,
-            input.ActiveTicks
-        );
+        ulong pathSeed = TravelerRoutineRules.Draw(routine, sequence);
+        var hull = (HullClass)input.GroupId;
+        CapsuleerTrafficRoute? route;
         if (kind == TrafficJourneyKind.Local && input.StationId != home && avoidedSystems.Count == 0)
         {
             route =
                 previous is not null && previous.Kind == TrafficJourneyKind.Local && previous.SourceStationId == home
                     ? new(input.StationId, home, previous.Systems.Reverse().ToArray())
-                    : CapsuleerTrafficRoutes.ToStation(catalog, input.StationId, home, (HullClass)input.GroupId);
+                    : CapsuleerTrafficRoutes.JourneyHome(catalog, input.StationId, home, hull, pathSeed);
         }
-        if (
-            kind != TrafficJourneyKind.Local
-            && (input.OperatingStation.HasValue || previous is not null)
-            && previous?.SourceStationId != home
-            && input.StationId != home
-        )
+        else
         {
-            route = CapsuleerTrafficRoutes.ToStation(catalog, input.StationId, home, (HullClass)input.GroupId, avoidedSystems) ?? route;
+            bool returnHome =
+                kind != TrafficJourneyKind.Local
+                && (input.OperatingStation.HasValue || previous is not null)
+                && previous?.SourceStationId != home
+                && input.StationId != home;
+            route = returnHome ? CapsuleerTrafficRoutes.JourneyHome(catalog, input.StationId, home, hull, pathSeed, avoidedSystems) : null;
+            route ??= CapsuleerTrafficRoutes.Journey(
+                catalog,
+                input.StationId,
+                kind,
+                sequence,
+                previous?.SourceStationId ?? input.SourceStationId,
+                hull,
+                routine,
+                input.ActiveTicks
+            );
         }
         if (route is null)
         {

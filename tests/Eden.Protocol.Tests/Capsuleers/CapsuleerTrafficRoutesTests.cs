@@ -213,10 +213,61 @@ public sealed class CapsuleerTrafficRoutesTests
         Assert.Equal(route.Systems.Length, route.Systems.Distinct().Count());
         AssertPathsAreReal(catalog, new(1, 1, [route]), FirstSystem);
         using var metrics = SessionPerformance.Begin("warm journey destinations", _ => { }, force: true)!;
-        Assert.Equal(route, CapsuleerTrafficRoutes.Journey(catalog, FirstStation, kind, 0, 0, HullClass.Hauler));
+        var repeated = CapsuleerTrafficRoutes.Journey(catalog, FirstStation, kind, 0, 0, HullClass.Hauler)!;
+        Assert.Equal(route.Systems, repeated.Systems);
+        Assert.Equal(route, repeated with { Systems = route.Systems });
         Assert.Equal(0, metrics.Commands);
         Assert.Equal(0, metrics.Connections);
         Assert.Equal(0, metrics.FittingCalculations);
+    }
+
+    [Fact]
+    public void RegionalTrafficSpreadsAcrossSystemsAndEqualLengthGatePaths()
+    {
+        using Fixture fixture = new();
+        int crowded = FirstSystem + 4;
+        int quiet = FirstSystem + 5;
+        fixture.AddStation(FirstStation, FirstSystem);
+        for (int index = 1; index <= 12; index++)
+        {
+            fixture.AddStation(FirstStation + index, crowded);
+        }
+        fixture.AddStation(FirstStation + 13, quiet);
+        fixture.Connect(FirstSystem, FirstSystem + 1);
+        fixture.Connect(FirstSystem, FirstSystem + 2);
+        fixture.Connect(FirstSystem + 1, FirstSystem + 3);
+        fixture.Connect(FirstSystem + 2, FirstSystem + 3);
+        fixture.Connect(FirstSystem + 3, crowded);
+        fixture.Connect(FirstSystem + 3, quiet);
+        using CatalogDbContext catalog = new(fixture.Path);
+
+        var journeys = Enumerable
+            .Range(1, 256)
+            .Select(pilot =>
+                CapsuleerTrafficRoutes.Journey(
+                    catalog,
+                    FirstStation,
+                    TrafficJourneyKind.Regional,
+                    1,
+                    0,
+                    HullClass.Hauler,
+                    TravelerRoutineRules.Create(pilot)
+                )!
+            )
+            .ToArray();
+        Assert.InRange(journeys.Count(route => route.Systems[^1] == crowded), 90, 166);
+        Assert.InRange(journeys.Count(route => route.Systems[^1] == quiet), 90, 166);
+        Assert.InRange(journeys.Count(route => route.Systems[1] == FirstSystem + 1), 90, 166);
+        Assert.InRange(journeys.Count(route => route.Systems[1] == FirstSystem + 2), 90, 166);
+        Assert.All(journeys, route => Assert.Equal(4, route.Systems.Length));
+        AssertPathsAreReal(catalog, new(2, 1, journeys), FirstSystem);
+
+        var gate = catalog.Definitions.GatesInSystem(FirstSystem).First();
+        WatchedTrafficGate watch = new(gate.DestinationSystemId, gate.SolarSystemId, gate.DestinationId, gate.Id);
+        var first = CapsuleerTrafficRoutes.Inbound(catalog, watch, visitor: 0)!;
+        var second = CapsuleerTrafficRoutes.Inbound(catalog, watch, visitor: 2)!;
+        Assert.Equal(new[] { crowded, quiet }, new[] { first.Systems[^1], second.Systems[^1] }.Order().ToArray());
+        AssertPathsAreReal(catalog, new(2, 1, [first, second]), watch.ObserverSystemId);
     }
 
     [Theory]
