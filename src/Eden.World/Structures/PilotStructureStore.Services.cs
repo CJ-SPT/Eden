@@ -141,9 +141,27 @@ internal sealed partial class PilotStructureStore
             {
                 throw new InvalidDataException("Reaction services require low or null security.");
             }
+            if (
+                item.TypeId == StructureIndustryRules.SupercapitalShipyard
+                && !StructureIndustry.SupercapitalConstruction(world, catalog, structure)
+            )
+            {
+                throw new InvalidDataException(
+                    "Online the supercapital shipyard in an alliance-held nullsec system with the construction upgrade."
+                );
+            }
             if (service.Services.Contains(StructureService.MoonMining) && structure.MoonId is null)
             {
                 throw new InvalidDataException("Moon mining services require a refinery bound to a moon mining point.");
+            }
+            if (CapitalNavigationStore.ServiceType(profile.Family) == item.TypeId)
+            {
+                if (profile.Family == StructureFamily.JumpBridge && world.Set<SavedJumpBridge>().Find(structure.Id) is null)
+                {
+                    throw new InvalidDataException("Deploy the Ansiblex with a destination system before activating its service.");
+                }
+                CapitalNavigationStore.CheckOnlining(world, structure, now);
+                module.OnlineSince = now;
             }
             Fuel(world, catalog, structure, service, AdjustedFuel(catalog, profile, service, service.OnlineFuel));
             module.NextFuelAt = checked(now + StructureRules.FuelInterval);
@@ -151,6 +169,7 @@ internal sealed partial class PilotStructureStore
         else
         {
             module.NextFuelAt = null;
+            module.OnlineSince = null;
         }
         item.Online = online;
         module.Online = online;
@@ -278,11 +297,30 @@ internal sealed partial class PilotStructureStore
 
     internal static void Advance(WorldAction world, CatalogDbContext catalog, long now, int? systemId = null)
     {
+        CapitalNavigationStore.StopUnavailableServices(world, systemId, now);
+        StructureIndustry.StopUnavailableShipyards(world, catalog, systemId, now);
+        foreach (int missileSystem in systemId is int selected ? new[] { selected } : world.StructureMissileSystems)
+        {
+            StructureMissileSettlement.Advance(world, catalog, missileSystem, now);
+        }
         var due = (
             systemId is int system
                 ? world.Filter<SavedStructure>(s => s.SystemId == system && (s.StateEndsAt <= now || s.UnanchorAt <= now))
                 : world.Filter<SavedStructure>(s => s.StateEndsAt <= now || s.UnanchorAt <= now)
         ).ToArray();
+        if (world is EconomyTransaction)
+        {
+            var battleStructures = systemId is int battleSystem
+                ? world.Filter<SavedStructure>(s => s.SystemId == battleSystem && s.State != StructureState.Destroyed)
+                : world.Filter<SavedStructure>(s => s.State != StructureState.Destroyed);
+            var combatDue = battleStructures
+                .AsEnumerable()
+                .Where(s =>
+                    world.Set<SavedStructureBattle>().Find(s.Id) is { } battle
+                    && (battle.RepairAt <= now || battle.PausedUntil != 0 && battle.PausedUntil <= now)
+                );
+            due = due.Concat(combatDue).DistinctBy(s => s.Id).ToArray();
+        }
         foreach (var structure in due)
         {
             var profile = StructureCatalog.Require(catalog, structure.TypeId);
@@ -303,6 +341,14 @@ internal sealed partial class PilotStructureStore
                 structure.State = StructureState.ShieldVulnerable;
                 structure.StateStartedAt = structure.StateEndsAt!.Value;
                 structure.StateEndsAt = null;
+                if (world is EconomyTransaction)
+                {
+                    StructureBattlePersistence.Restore(world, catalog, structure);
+                }
+            }
+            if (world is EconomyTransaction)
+            {
+                StructureBattlePersistence.Advance(world, catalog, structure, now);
             }
         }
         world.SaveChanges();
@@ -356,6 +402,7 @@ internal sealed partial class PilotStructureStore
                 var module = modules[deadline.ItemId];
                 module.Online = false;
                 module.NextFuelAt = null;
+                module.OnlineSince = null;
                 world.Set<OwnedItem>().Find(module.ItemId)!.Online = false;
                 world.SaveChanges();
                 structure.LowPowerAt = world.Filter<SavedStructureService>(m => m.StructureId == structure.Id && m.Online).Any()
@@ -372,13 +419,18 @@ internal sealed partial class PilotStructureStore
             {
                 module.Online = false;
                 module.NextFuelAt = null;
+                module.OnlineSince = null;
                 world.Set<OwnedItem>().Find(module.ItemId)!.Online = false;
             }
-            // Services stop at the saved deadline even if personal assets delay packaging.
-            // Settle their preceding fuel hours before changing the module state.
+            // Settle custody at the saved deadline, after paying the preceding fuel hours.
+            if (world is EconomyTransaction)
+            {
+                StructureDeparture.Settle(world, catalog, structure, stoppedAt, destroyed: false);
+            }
             if (
-                !world.Filter<Eden.Data.World.Inventory.Ship>(s => s.StructureId == structure.Id).Any()
-                && !world.Filter<OwnedItem>(i => i.LocationId == structure.Id && i.OwnerId != structure.CorporationId).Any()
+                world is EconomyTransaction
+                || !world.Filter<Eden.Data.World.Inventory.Ship>(s => s.StructureId == structure.Id).Any()
+                    && !world.Filter<OwnedItem>(i => i.LocationId == structure.Id && i.OwnerId != structure.CorporationId).Any()
             )
             {
                 structure.State = StructureState.Unanchored;

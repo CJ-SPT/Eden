@@ -20,6 +20,9 @@ wreck recovery, restart and sale into funded station demand.
 [Fresh-universe hauling and bounty careers](protocol/capsuleers.md#fresh-universe-hauling-and-bounty-careers)
 covers zero-ISK delivery and combat starts, earned skill points, and paid recovery after ship loss.
 
+[Upwell combat, asset safety and tethering](protocol/structures.md#upwell-completion-program--november-16-2026)
+covers paid structure attacks, reinforcement, asset recovery and saved tether repairs.
+
 [Administration settings with decimal-comma locales](protocol/world-configuration.md#administration-settings-with-decimal-comma-locales-november-20-2026)
 covers the reload banner while editing settings on servers that use a decimal comma.
 
@@ -1028,6 +1031,16 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Navigation and travel
 
+- [Capital logistics and capital ships, November 20, 2026](protocol/capital-logistics.md)
+- [Fresh-world Rhea acquisition](protocol/capital-logistics.md#fresh-world-rhea-acquisition)
+- [Dreadnoughts and force auxiliaries](protocol/capital-logistics.md#dreadnoughts-and-force-auxiliaries)
+- [Carrier launch decks and light attack fighters](protocol/capital-logistics.md#carrier-launch-decks-and-light-attack-fighters)
+- [Fighter rocket and torpedo salvos](protocol/capital-logistics.md#fighter-rocket-and-torpedo-salvos)
+- [Long-range heavy fighter bombs](protocol/capital-logistics.md#long-range-heavy-fighter-bombs)
+- [Standup fighter launch and recall](protocol/capital-logistics.md#standup-fighter-launch-and-recall)
+- [Upwell target locks](protocol/capital-logistics.md#upwell-target-locks)
+- [Rorqual industrial core and shipboard compression](protocol/capital-logistics.md#rorqual-industrial-core-and-shipboard-compression)
+- [Mobile jump clones](protocol/capital-logistics.md#mobile-jump-clones)
 - [Stargate handoff timing, November 14, 2026](protocol/navigation.md#stargate-handoff-timing-november-14-2026)
 - [Empty-space context menu latency](protocol/navigation.md#empty-space-context-menu-latency)
 - [Aligning and native autopilot, November 11, 2026](protocol/navigation.md#aligning-and-native-autopilot-november-11-2026)

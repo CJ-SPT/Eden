@@ -66,7 +66,15 @@ internal static partial class Ballpark
             .Select(s => s.Health!)
             .Concat(npcs.Select(n => n.Health))
             .Concat((drones ?? []).Select(d => d.Health))
+            .Concat(objects.Select(body => body.CynoDeployable?.Health).OfType<ShipHealth>())
             .ToDictionary(s => s.ShipId, s => s.DamageState());
+        foreach (var body in objects)
+        {
+            if (StructureDamage(body) is { } structureDamage)
+            {
+                damage[body.Id] = structureDamage;
+            }
+        }
         return new(
             buffer.WrittenSpan.ToArray(),
             pilot.ShipId,
@@ -126,9 +134,25 @@ internal static partial class Ballpark
         using BinaryWriter writer = new(buffer.AsStream());
         writer.Write((byte)0); // DESTINY_FULLSTATE, consumed by AddBalls in partial mode.
         writer.Write(stamp);
-        var slims = objects.Select(body => WriteObject(writer, body)).ToList();
-        return new(buffer.WrittenSpan.ToArray(), slims, new Dictionary<long, ShipDamageState>());
+        List<SlimItem> slims = [];
+        Dictionary<long, ShipDamageState> damage = [];
+        foreach (var body in objects)
+        {
+            slims.Add(WriteObject(writer, body));
+            if (body.CynoDeployable?.Health is { } health)
+            {
+                damage.Add(body.Id, health.DamageState());
+            }
+            if (StructureDamage(body) is { } structureDamage)
+            {
+                damage.Add(body.Id, structureDamage);
+            }
+        }
+        return new(buffer.WrittenSpan.ToArray(), slims, damage);
     }
+
+    internal static ShipDamageState? StructureDamage(StaticSpaceObject body) =>
+        body.Structure?.DamageFractions is { } health ? new(health.Shield, 0, health.Armor, health.Structure) : null;
 
     internal static BallparkAddition AddShip(ShipContact ship, int stamp)
     {

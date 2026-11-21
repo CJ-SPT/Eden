@@ -39,6 +39,10 @@ internal sealed class SmartbombStore(
     {
         using WorldActionScope transaction = new(database, select: world => Participants(world, pilotId, shipId, candidates));
         var world = transaction.World;
+        if (world.TetherProtected(shipId, now))
+        {
+            throw new InvalidDataException("Release tethering before activating a smartbomb.");
+        }
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Pilots.Find(pilotId);
         var item = world.Set<OwnedItem>().Find(moduleId);
@@ -57,6 +61,7 @@ internal sealed class SmartbombStore(
             throw new InvalidDataException("Use an online fitted smartbomb on your active ship in space.");
         }
         world.RequireUncloaked(shipId);
+        Eden.World.Flight.PilotCapitalTravelStore.RequireOffense(world, shipId, now);
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
         NaniteRepairPersistence.RequireAvailable(world, catalog, moduleId, now);
         var cooldown = world.Set<ModuleCooldown>().Find(moduleId);
@@ -125,7 +130,7 @@ internal sealed class SmartbombStore(
             {
                 continue;
             }
-            var contact = PilotDroneStore.Contact(world, catalog, row);
+            var contact = PilotDroneStore.Contact(world, catalog, row, now);
             if (contact.Health.Remaining.Destroyed)
             {
                 continue;
@@ -296,7 +301,18 @@ internal sealed class SmartbombStore(
     internal static SmartbombHit DamageDrone(WorldAction world, WorldDrone row, DroneContact contact, DamageVector damage, long now)
     {
         var defense = contact.Profile.Defense;
-        var result = CombatDamage.Apply(contact.Health.Remaining, defense, damage, contact.Id, now);
+        var result = CombatDamage.Apply(contact.Health.Remaining, defense, damage, contact.Id, now, out var excess);
+        int remaining = contact.SquadronSize;
+        while (remaining > 1 && result.Remaining.Destroyed)
+        {
+            remaining--;
+            var overflow = CombatDamage.Apply(defense.Undamaged, defense, excess, contact.Id, now, out excess);
+            result = new(overflow.Remaining, result.Applied + overflow.Applied);
+        }
+        if (remaining > 0 && remaining < contact.SquadronSize)
+        {
+            world.Set<OwnedItem>().Find(row.ItemId)!.Quantity = remaining;
+        }
         row.Shield = result.Remaining.Shield;
         row.ArmorDamage = defense.Armor - result.Remaining.Armor;
         row.StructureDamage = defense.Structure - result.Remaining.Structure;

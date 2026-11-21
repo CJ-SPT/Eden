@@ -33,7 +33,9 @@ public static class DroneRules
     public const double NpcRetaliationChance = .25;
 
     public static bool SupportsHull(int typeId) =>
-        BuildContentPolicy.Current.DroneHullTypes.Contains(typeId) || Eden.Gameplay.Ships.HullSupportRules.IsTechTwoSubcapital(typeId);
+        BuildContentPolicy.Current.DroneHullTypes.Contains(typeId)
+        || Eden.Gameplay.Ships.HullSupportRules.IsTechTwoSubcapital(typeId)
+        || Eden.Gameplay.Ships.HullSupportRules.IsCarrier(typeId);
 
     public static bool SupportsOwnerSkill(int skill) =>
         (DroneSkill)skill
@@ -152,6 +154,10 @@ public static class DroneRules
         IReadOnlySet<int> requiredSkills
     )
     {
+        if (profile.FighterGroup != 0)
+        {
+            return profile;
+        }
         if (profile.Utility is not null)
         {
             profile = UtilityDroneRules.ApplySkills(profile, skills, requiredSkills);
@@ -248,6 +254,18 @@ public static class DroneRules
     )
     {
         var profile = drone.Profile;
+        if (profile.FighterAttack is { } missile)
+        {
+            double range = Math.Max(0, drone.Position.DistanceTo(target) - profile.Radius - targetRadius);
+            double attenuation = 1;
+            if (range > profile.Optimal)
+            {
+                double falloff = profile.Falloff > 0 ? (range - profile.Optimal) / profile.Falloff : double.PositiveInfinity;
+                attenuation = Math.Pow(0.5, falloff * falloff);
+            }
+            double application = MissileRules.Application(missile, Math.Max(1, signature), velocity.Length);
+            return missile.Damage.Scale(drone.SquadronSize * application * attenuation);
+        }
         double chance = CombatDamage.HitChance(
             Math.Max(0, drone.Position.DistanceTo(target) - profile.Radius - targetRadius),
             CombatDamage.AngularVelocity(target - drone.Position, velocity - drone.Velocity),

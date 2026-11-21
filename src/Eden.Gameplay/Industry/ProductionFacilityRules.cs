@@ -6,7 +6,7 @@ namespace Eden.Gameplay.Industry;
 
 public static class ProductionFacilityRules
 {
-    public static bool CanManufacture(InventoryCategory category, int groupId, double security)
+    public static bool CanManufacture(InventoryCategory category, int groupId, double security, bool supercapitalShipyard = false)
     {
         if (category != InventoryCategory.Ship)
         {
@@ -14,7 +14,7 @@ public static class ProductionFacilityRules
         }
         return (HullClass)groupId switch
         {
-            HullClass.Titan or HullClass.Supercarrier => false,
+            HullClass.Titan or HullClass.Supercarrier => supercapitalShipyard && double.IsFinite(security) && security <= 0,
             HullClass.Carrier
             or HullClass.Dreadnought
             or HullClass.LancerDreadnought

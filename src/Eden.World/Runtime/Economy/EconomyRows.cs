@@ -858,6 +858,7 @@ internal sealed partial class ResidentEconomy
     private void RegisterTables()
     {
         RegisterBotTables();
+        RegisterCapitalTravel();
         RegisterLauncherTables();
         RegisterExplorationSites();
         RegisterProbeScanning();
@@ -906,10 +907,15 @@ internal sealed partial class ResidentEconomy
         RegisterSovereigntySkyhook();
         RegisterSovereigntyMiningLink();
         RegisterSovereigntyActivityEvent();
+        RegisterStructureBattle();
+        RegisterPilotTether();
+        RegisterAssetSafety();
+        RegisterStructureLoot();
         RegisterPilotActivity();
         RegisterCommandBursts();
         RegisterInterdiction();
         RegisterAreaWeapons();
+        RegisterLanceDisruptions();
         RegisterCloneTrainingTables();
         RegisterCharacterServices();
         RegisterSkillTrading();
@@ -1809,6 +1815,9 @@ internal sealed partial class EconomyTransaction
             case SavedMarketChange value:
                 value.Id = value.Id == 0 ? Next("WorldMarketChange") : value.Id;
                 Reserve("WorldMarketChange", value.Id);
+                break;
+            case Eden.Data.World.Structures.SavedAssetSafety value:
+                Reserve("WorldAssetSafety", value.Id);
                 break;
         }
     }

@@ -157,6 +157,9 @@ internal sealed class CooperativeFleetStore(TimeProvider clock, IPilotSecuritySt
 
     public void SetTakesWarp(long actor, long fleet, bool enabled) => Write(() => _world.SetTakesWarp(actor, fleet, enabled));
 
+    public void SetAcceptsConduitJumps(long actor, long fleet, bool enabled) =>
+        Write(() => _world.SetAcceptsConduitJumps(actor, fleet, enabled));
+
     public void Broadcast(
         long actor,
         long fleet,

@@ -46,6 +46,17 @@
       "attributes": []
     },
     {
+      "id": 60,
+      "name": "Asset Safety Wrap",
+      "groupId": 1319,
+      "groupName": "Miscellaneous",
+      "categoryId": 29,
+      "mass": 1.0,
+      "radius": 1.0,
+      "capacity": 1.0,
+      "attributes": []
+    },
+    {
       "id": 215,
       "name": "Iron Charge S",
       "groupId": 85,
@@ -7547,6 +7558,24 @@
         "basePrice": 8.0,
         "portionSize": 1,
         "groupID": 18
+      }
+    },
+    {
+      "dataset": "client/types",
+      "key": 60,
+      "data": {
+        "typeID": 60,
+        "graphicID": 1174,
+        "capacity": 1.0,
+        "typeNameID": 508609,
+        "iconID": 16,
+        "published": 0,
+        "radius": 1.0,
+        "volume": 1.0,
+        "mass": 1.0,
+        "basePrice": 0.0,
+        "portionSize": 1,
+        "groupID": 1319
       }
     },
     {

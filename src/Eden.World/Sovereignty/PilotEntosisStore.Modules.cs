@@ -131,6 +131,7 @@ internal sealed partial class PilotEntosisStore
             throw new InvalidDataException("Use an online fitted Entosis Link on your active ship in space.");
         }
         world.RequireUncloaked(shipId);
+        Eden.World.Flight.PilotCapitalTravelStore.RequireOffense(world, shipId, now);
         if (catalog.FittingType(pilot.ActiveShip.TypeId)?.GroupId == EntosisRules.InterceptorGroup)
         {
             throw new InvalidDataException("Interceptors cannot activate an Entosis Link.");

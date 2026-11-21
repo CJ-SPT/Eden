@@ -189,7 +189,7 @@ internal abstract record DestinyCommand(string Name) : BlueModel
         long ModuleId,
         int TypeId,
         long? TargetId,
-        int ChargeTypeId,
+        int? ChargeTypeId,
         string Graphic,
         Dictionary<string, object?>? GraphicInfo
     ) : DestinyCommand("OnSpecialFX")

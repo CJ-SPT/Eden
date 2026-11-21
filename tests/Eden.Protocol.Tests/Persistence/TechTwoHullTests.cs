@@ -2,6 +2,7 @@ using Eden.Data.Catalog;
 using Eden.Gameplay.Content;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Ships;
 using Eden.World.Catalog;
@@ -53,17 +54,15 @@ public sealed class TechTwoHullTests
         Assert.Equal(Hulls().Select(h => (int)h[0]), published);
         Assert.True(AssaultDamageControlCatalog.ConsumersAdmitted(catalog));
         Assert.NotNull(FittingCatalog.Definition(catalog, 580));
-        foreach (int module in new[] { 20280, 33400 })
-        {
-            Assert.Null(FittingCatalog.Definition(catalog, module));
-        }
+        Assert.NotNull(FittingCatalog.Definition(catalog, CapitalModeRules.SiegeOne));
+        Assert.Null(FittingCatalog.Definition(catalog, 33400));
         var entries = ShipContentAudit.Read(catalog).Entries;
         foreach (int type in Hulls().Select(h => (int)h[0]))
         {
             Assert.True(Assert.Single(entries, e => e.TypeId == type).Admitted);
         }
         Assert.False(HullSupportRules.CanAssemble(new(29984, InventoryCategory.Ship, true, 3, HullClass.StrategicCruiser)));
-        Assert.False(HullSupportRules.CanAssemble(new(28844, InventoryCategory.Ship, true, 2, HullClass.JumpFreighter)));
+        Assert.True(HullSupportRules.CanAssemble(new(28844, InventoryCategory.Ship, true, 2, HullClass.JumpFreighter)));
     }
 
     [Fact]

@@ -12,6 +12,8 @@ public enum AreaWeaponKind
     Bomb,
     Defender,
     Projector,
+    Doomsday,
+    DoomsdayField,
 }
 
 public sealed record AreaWeaponProfile(
@@ -28,7 +30,9 @@ public sealed record AreaWeaponProfile(
     double EffectDuration,
     int FuelType,
     int FuelQuantity,
-    NpcEwarPower Power
+    NpcEwarPower Power,
+    DoomsdayCharge? Doomsday = null,
+    DoomsdayFieldProfile? Field = null
 );
 
 public sealed record BombProfile(
@@ -54,7 +58,9 @@ public sealed record AreaWeaponFlight(
     long ResolvesAt,
     long TargetId = 0,
     HullDamage? Health = null,
-    bool Active = false
+    bool Active = false,
+    SpacePosition? EndPoint = null,
+    double SourceRadius = 0
 )
 {
     public SpacePosition Position(long now) =>
@@ -81,9 +87,12 @@ public interface IPilotAreaWeapons
         SpacePosition direction,
         SpacePosition velocity,
         SpacePosition? point,
-        long now
+        long now,
+        long? target = null,
+        SpacePosition? secondPoint = null
     );
     void Advance(int systemId, long now);
+    IReadOnlyList<DoomsdayFieldContact> DoomsdayFields(int systemId, long now);
     IReadOnlyList<MissileContact> Projectiles(int systemId, long now);
     void Cancel(long pilotId, long shipId, long now);
     void CancelModule(long pilotId, long shipId, long moduleId);
@@ -105,7 +114,9 @@ public static class AreaWeaponRules
     public const int EnergyBombGroup = 864;
     public const long FirstFlightId = 9_700_000_000;
 
-    public static bool IsModule(int group) => group is BurstJammerGroup or ProjectorGroup or BombLauncherGroup or DefenderLauncherGroup;
+    public static bool IsModule(int group, int type = 0) =>
+        group is BurstJammerGroup or ProjectorGroup or BombLauncherGroup or DefenderLauncherGroup
+        || group == DoomsdayRules.Group && DoomsdayRules.EffectForType(type) is not null;
 
     public static bool Compatible(int moduleGroup, int chargeGroup, IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
         (
@@ -141,6 +152,9 @@ public static class AreaWeaponRules
         {
             BurstJammerGroup when effect == DogmaEffect.BurstJammer => AreaWeaponKind.BurstJammer,
             ProjectorGroup when IsProjector(effect) => AreaWeaponKind.Projector,
+            DoomsdayRules.Group when DoomsdayRules.EffectForType(type) == effect => DoomsdayFieldRules.IsEffect(effect)
+                ? AreaWeaponKind.DoomsdayField
+                : AreaWeaponKind.Doomsday,
             BombLauncherGroup when effect == DogmaEffect.UseMissiles => AreaWeaponKind.Bomb,
             DefenderLauncherGroup when effect == DogmaEffect.UseMissiles => AreaWeaponKind.Defender,
             _ => throw new InvalidDataException("Unsupported area weapon program."),
@@ -184,11 +198,13 @@ public static class AreaWeaponRules
             Value(DogmaAttributeId.ModuleReactivationDelay),
             Value(kind == AreaWeaponKind.BurstJammer ? DogmaAttributeId.EcmBurstRange : DogmaAttributeId.MaxRange),
             Value(DogmaAttributeId.ProjectorRadius),
-            Value(DogmaAttributeId.ProjectorWarningDuration),
+            Value(kind == AreaWeaponKind.Doomsday ? DogmaAttributeId.DamageDelayDuration : DogmaAttributeId.ProjectorWarningDuration),
             Value(DogmaAttributeId.ProjectorEffectDuration),
             checked((int)Value(DogmaAttributeId.ConsumptionType)),
             checked((int)Value(DogmaAttributeId.ConsumptionQuantity)),
-            power
+            power,
+            kind is AreaWeaponKind.Doomsday or AreaWeaponKind.DoomsdayField ? DoomsdayRules.Charge(attributes, effect) : null,
+            kind == AreaWeaponKind.DoomsdayField ? DoomsdayFieldRules.Profile(effect, attributes) : null
         );
         if (
             new[]
@@ -203,6 +219,9 @@ public static class AreaWeaponRules
             }.Any(value => !double.IsFinite(value) || value < 0)
             || result.Duration <= 0
             || kind == AreaWeaponKind.BurstJammer && result.Range <= 0
+            || kind is AreaWeaponKind.Doomsday or AreaWeaponKind.DoomsdayField
+                && (result.Delay <= 0 || result.FuelType <= 0 || result.FuelQuantity <= 0)
+            || kind == AreaWeaponKind.DoomsdayField && result.Range <= 0
             || kind == AreaWeaponKind.Projector
                 && (result.Range <= 0 || result.Radius <= 0 || result.Delay <= 0 || result.FuelType <= 0 || result.FuelQuantity <= 0)
         )

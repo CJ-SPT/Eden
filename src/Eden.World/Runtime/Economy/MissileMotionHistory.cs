@@ -37,7 +37,12 @@ internal sealed class MissileMotionHistory
 
     internal sealed record FlightStep(WorldMissile Row, MissilePayload Payload, long Time);
 
-    internal static IEnumerable<FlightStep> DueSteps(WorldMissile[] rows, long now, Func<WorldMissile, MissilePayload> advance)
+    internal static IEnumerable<FlightStep> DueSteps(
+        WorldMissile[] rows,
+        long now,
+        Func<WorldMissile, MissilePayload> advance,
+        bool contactsBeforeBoundary = false
+    )
     {
         // Keep one predicted step per due flight. A later launch can hit before an
         // older one, and an overdue surviving flight can owe more than one step.
@@ -57,13 +62,20 @@ internal sealed class MissileMotionHistory
 
         void Schedule(WorldMissile row)
         {
-            if (row.Status != MissileFlightStatus.Flying || now < Math.Min(row.UpdatedAt + TimeSpan.TicksPerSecond, row.ExpiresAt))
+            if (
+                row.Status != MissileFlightStatus.Flying
+                || now < Math.Min(row.UpdatedAt + TimeSpan.TicksPerSecond, row.ExpiresAt)
+                    && (!contactsBeforeBoundary || now < row.UpdatedAt)
+            )
             {
                 return;
             }
             var next = advance(row);
             long time = checked(row.LaunchedAt + (long)Math.Round(next.Flight.ElapsedSeconds * TimeSpan.TicksPerSecond));
-            pending.Enqueue(new(row, next, time), (time, row.Id));
+            if (!contactsBeforeBoundary || time <= now)
+            {
+                pending.Enqueue(new(row, next, time), (time, row.Id));
+            }
         }
     }
 

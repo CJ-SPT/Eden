@@ -163,7 +163,7 @@ internal static class PassiveCatalog
                                 or Eden.Gameplay.Exploration.ProbeScanRules.ScienceSkill
                         && modifier.ModifiedAttributeID is (int)DogmaAttributeId.ProbeStrength or (int)DogmaAttributeId.ProbeDeviation
                     )
-                    && !(hull && DroneRules.SupportsOwnerSkill(ownerSkill))
+                    && !(hull && (DroneRules.SupportsOwnerSkill(ownerSkill) || HullCatalog.FighterHullModifier(modifier)))
                     && !DroneEquipmentRules.SupportsOwnerModifier(ownerSkill, (DogmaAttributeId)modifier.ModifiedAttributeID.Value)
                 )
             )

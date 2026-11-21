@@ -277,6 +277,8 @@ internal sealed partial class SovereigntyResourceStore(WorldDatabase database, T
             ?? throw new InvalidDataException("This upgrade is not installed.");
         action.Remove(row);
         SovereigntySites.Invalidate(action, row.SystemId);
+        Eden.World.Structures.CapitalNavigationStore.StopUnavailableServices(action, row.SystemId, Now);
+        Eden.World.Structures.StructureIndustry.StopUnavailableShipyards(action, catalog, row.SystemId, Now);
         SovereigntyResourcePersistence.Refresh(action, catalog, Now);
         action.Commit();
     }

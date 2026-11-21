@@ -12,7 +12,17 @@ using ZLinq;
 
 namespace Eden.Protocol.Flight;
 
-internal readonly record struct FlightSceneContext(DockedPilot Pilot, bool InBallpark, bool CanTarget, int SimulatedStamp);
+internal readonly record struct FlightSceneContext(
+    DockedPilot Pilot,
+    bool InBallpark,
+    bool CanTarget,
+    int SimulatedStamp,
+    long? ControlledStructure = null
+)
+{
+    internal long ObserverId => ControlledStructure ?? Pilot.ShipId;
+    internal SpacePosition? ObserverPosition => Pilot.Position ?? (ControlledStructure is null ? null : Pilot.Home.Position);
+}
 
 internal sealed class FlightScene(
     SharedSpace space,
@@ -45,6 +55,7 @@ internal sealed class FlightScene(
     private IReadOnlyList<StaticSpaceObject> _structures = [];
     private WreckContact[] _wrecks = [];
     private MissileContact[] _missiles = [];
+    private DoomsdayFieldContact[] _doomsdayFields = [];
 
     private FlightNpcScene Npcs => _npcScene ??= new(space, clock, encounters, effects, update, send);
     private FlightDroneScene Drones => _droneScene ??= new(space, clock, drones, update);
@@ -70,6 +81,17 @@ internal sealed class FlightScene(
 
     internal void RefreshDrones(FlightSceneContext context) => Drones.RefreshDrones(context);
 
+    internal void ResetStructureObservers()
+    {
+        _peers = [];
+        _peerOrderSequences.Clear();
+        _cloakedPeers.Clear();
+        _gateArrivals.Clear();
+        _gateDepartures.Clear();
+        Npcs.Clear();
+        Drones.Reset();
+    }
+
     internal void NotifyNpcWeapon(long npcId, NpcWeaponContact weapon) => Npcs.NotifyNpcWeapon(npcId, weapon);
 
     internal void NotifyHealth(ShipHealth current) => Npcs.NotifyHealth(current);
@@ -93,6 +115,11 @@ internal sealed class FlightScene(
     {
         Objects = Objects.ExceptBy(_anomalies.Select(o => o.Id), o => o.Id).ToArray();
         _anomalies = [];
+        if (_doomsdayFields.Length != 0)
+        {
+            Objects = Objects.Where(body => body.TypeId != DoomsdayFieldRules.BeaconType).ToArray();
+            _doomsdayFields = [];
+        }
         _peers = [];
         _peerOrderSequences.Clear();
         _cloakedPeers.Clear();
@@ -111,7 +138,11 @@ internal sealed class FlightScene(
         {
             return null;
         }
-        if (space.Peers(context.Pilot).FirstOrDefault(s => s.Pilot.ShipId == id && s.Warp is null && s.DepartureGate is null) is { } ship)
+        if (space.TetherProtected(id))
+        {
+            return null;
+        }
+        if (Peers(context).FirstOrDefault(s => s.Pilot.ShipId == id && s.Warp is null && s.DepartureGate is null) is { } ship)
         {
             return new(id, ship.Pilot.ShipTypeId, ship.Pilot.Position!, ship.Pilot.Flight.ShipRadius);
         }
@@ -132,9 +163,11 @@ internal sealed class FlightScene(
                 .FirstOrDefault(o =>
                     o.Id == id
                     && (
-                        MiningDefinitions.IsResource(o.CategoryId, o.GroupId)
+                        o.Structure is { } structure && Eden.Gameplay.Structures.StructureCombatRules.Vulnerable(structure.State)
+                        || MiningDefinitions.IsResource(o.CategoryId, o.GroupId)
                         || o.GroupId == Eden.Gameplay.Sovereignty.SovereigntyRules.HubGroupId
                         || o.GroupId == Eden.Gameplay.Sovereignty.SovereigntyWarfareRules.CommandNodeGroupId
+                        || o.CynoDeployable is not null
                         || Eden.Gameplay.Exploration.HackingRules.IsContainer(o.Id)
                     )
                 )
@@ -145,6 +178,7 @@ internal sealed class FlightScene(
 
     internal PilotWeaponTarget? FindPilotWeaponTarget(FlightSceneContext context, long id) =>
         context.CanTarget
+        && !space.TetherProtected(id)
         && space.Peers(context.Pilot).FirstOrDefault(s => s.Pilot.ShipId == id && s.Warp is null && s.DepartureGate is null && !s.Arriving)
             is { } ship
             ? new(id, ship.Velocity)
@@ -386,13 +420,143 @@ internal sealed class FlightScene(
         }
         foreach (var removed in previous.ExceptBy(structures.Select(o => o.Id), o => o.Id))
         {
-            update(new DestinyCommand.RemoveBall(removed.Id, false));
+            update(
+                new DestinyCommand.RemoveBall(removed.Id, removed.Structure?.State != Eden.Gameplay.Structures.StructureState.Unanchored)
+            );
         }
         foreach (var changed in structures.Where(o => previous.FirstOrDefault(p => p.Id == o.Id) is { } old && old != o))
         {
             update(new DestinyCommand.OnSlimItemChange(changed.Id, new StaticSlimItem(changed)));
+            if (Ballpark.StructureDamage(changed) is { } damage)
+            {
+                update(new DestinyCommand.OnDamageStateChange(changed.Id, damage));
+            }
         }
         var added = structures.ExceptBy(previous.Select(o => o.Id), o => o.Id).ToArray();
+        if (added.Length > 0)
+        {
+            update(new DestinyCommand.AddBalls(Ballpark.AddObjects(added, space.Stamp(clock))));
+        }
+    }
+
+    internal void RefreshDoomsdayFields(FlightSceneContext context, IReadOnlyList<DoomsdayFieldContact> current)
+    {
+        if (!context.InBallpark || context.Pilot.Position is not { } observer)
+        {
+            return;
+        }
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        var visible = current
+            .Where(field =>
+                field.VisualAt <= now
+                && field.VisualEndsAt > now
+                && field.SourcePosition.DistanceTo(observer) <= NpcEncounterDefinitions.VisibilityRange
+            )
+            .ToArray();
+        if (_doomsdayFields.SequenceEqual(visible))
+        {
+            return;
+        }
+        var removed = _doomsdayFields.ExceptBy(visible.Select(field => field.Id), field => field.Id).ToArray();
+        var added = visible.ExceptBy(_doomsdayFields.Select(field => field.Id), field => field.Id).ToArray();
+        _doomsdayFields = visible;
+        Objects = Objects
+            .Where(body => body.TypeId != DoomsdayFieldRules.BeaconType)
+            .Concat(visible.Select(field => field.Beacon).OfType<StaticSpaceObject>())
+            .ToArray();
+        foreach (var field in removed)
+        {
+            DoomsdayFieldEffect(field, now, false);
+            if (field.Beacon is { } oldBeacon)
+            {
+                update(new DestinyCommand.RemoveBall(oldBeacon.Id, false));
+            }
+        }
+        var beacons = added.Select(field => field.Beacon).OfType<StaticSpaceObject>().ToArray();
+        if (beacons.Length != 0)
+        {
+            update(new DestinyCommand.AddBalls(Ballpark.AddObjects(beacons, space.Stamp(clock))));
+        }
+        foreach (var field in added)
+        {
+            DoomsdayFieldEffect(field, now, true);
+        }
+    }
+
+    private void DoomsdayFieldEffect(DoomsdayFieldContact field, long now, bool start)
+    {
+        Dictionary<string, object?>? graphic = null;
+        double duration = 10_000;
+        if (start && field.StartOffset is { } first && field.EndOffset is { } second)
+        {
+            double progress = Math.Clamp((now - field.VisualAt) / (double)(field.VisualEndsAt - field.VisualAt), 0, 1);
+            var current = first + (second - first) * progress;
+            duration = (field.VisualEndsAt - now) / (double)TimeSpan.TicksPerMillisecond;
+            graphic = new()
+            {
+                ["startTargetOffset"] = new object?[] { current.X, current.Y, current.Z },
+                ["endTargetOffset"] = new object?[] { second.X, second.Y, second.Z },
+                ["duration"] = duration,
+            };
+        }
+        update(
+            new DestinyCommand.TimedSpecialEffect(
+                field.ShipId,
+                field.ModuleId,
+                field.TypeId,
+                field.Beacon?.Id,
+                0,
+                DoomsdayFieldRules.Graphic(field.TypeId),
+                true,
+                start,
+                false,
+                duration,
+                field.VisualAt,
+                graphic
+            )
+        );
+    }
+
+    internal void RefreshCynos(FlightSceneContext context, IReadOnlyList<StaticSpaceObject> current)
+    {
+        static bool Cyno(StaticSpaceObject body) =>
+            body.GroupId is CapitalTravelRules.FieldGroup or CapitalTravelRules.CovertFieldGroup || body.CynoDeployable is not null;
+        var previous = Objects.Where(Cyno).ToArray();
+        if (previous.SequenceEqual(current))
+        {
+            return;
+        }
+        Objects = Objects.Where(body => !Cyno(body)).Concat(current).ToArray();
+        if (!context.InBallpark)
+        {
+            return;
+        }
+        foreach (var removed in previous.ExceptBy(current.Select(body => body.Id), body => body.Id))
+        {
+            update(new DestinyCommand.RemoveBall(removed.Id, false));
+        }
+        foreach (var changed in current)
+        {
+            if (
+                previous.FirstOrDefault(prior => prior.Id == changed.Id)?.CynoDeployable is { } before
+                && changed.CynoDeployable is { } after
+            )
+            {
+                if (before.Active != after.Active)
+                {
+                    update(new DestinyCommand.OnSlimItemChange(changed.Id, new StaticSlimItem(changed)));
+                }
+                if (
+                    before.DamagedAt != after.DamagedAt
+                    || before.Health.Remaining.Armor != after.Health.Remaining.Armor
+                    || before.Health.Remaining.Structure != after.Health.Remaining.Structure
+                )
+                {
+                    NotifyHealth(after.Health);
+                }
+            }
+        }
+        var added = current.ExceptBy(previous.Select(body => body.Id), body => body.Id).ToArray();
         if (added.Length > 0)
         {
             update(new DestinyCommand.AddBalls(Ballpark.AddObjects(added, space.Stamp(clock))));
@@ -568,13 +732,16 @@ internal sealed class FlightScene(
     internal void CorrectPosition(long id, SpacePosition position, SpacePosition velocity, int stamp) =>
         FlightEffects.CorrectPosition(send, id, position, velocity, stamp);
 
+    private ShipContact[] Peers(FlightSceneContext context) =>
+        space.Peers(context.Pilot.SystemId, context.ObserverId, context.ObserverPosition);
+
     internal void RefreshPeers(FlightSceneContext context)
     {
         foreach (var arrival in space.GateArrivals(context.Pilot))
         {
             ObserveGateArrival(arrival);
         }
-        var current = space.Peers(context.Pilot);
+        var current = Peers(context);
         var previousById = _peers.ToDictionary(ship => ship.Pilot.ShipId);
         foreach (var departed in _peers.ExceptBy(current.Select(ship => ship.Pilot.ShipId), ship => ship.Pilot.ShipId))
         {
@@ -624,6 +791,7 @@ internal sealed class FlightScene(
                 || ship.Pilot.CorpId != previous.Pilot.CorpId
                 || ship.Pilot.AllianceId != previous.Pilot.AllianceId
                 || ship.Pilot.WarFaction != previous.Pilot.WarFaction
+                || !(ship.Compression ?? []).SequenceEqual(previous.Compression ?? [])
             )
             {
                 update(new DestinyCommand.OnSlimItemChange(ship.Pilot.ShipId, new ShipSlimItem(ship)));

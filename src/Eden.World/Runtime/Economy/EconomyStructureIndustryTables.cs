@@ -9,7 +9,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Eden.World.Runtime.Economy;
 
-internal sealed record EconomySavedStructureService(long ItemId, long StructureId, int Slot, bool Online, long? NextFuelAt);
+internal sealed record EconomySavedStructureService(
+    long ItemId,
+    long StructureId,
+    int Slot,
+    bool Online,
+    long? NextFuelAt,
+    long? OnlineSince
+);
 
 internal sealed record EconomySavedMoonExtraction(
     long Id,
@@ -56,11 +63,12 @@ internal sealed partial class ResidentEconomy
 {
     private void RegisterStructureIndustryTables()
     {
+        RegisterJumpBridges();
         Register(
             new EconomyTable<SavedStructureService, EconomySavedStructureService>(
                 "WorldStructureService",
                 row => new(row.ItemId),
-                row => new(row.ItemId, row.StructureId, row.Slot, row.Online, row.NextFuelAt),
+                row => new(row.ItemId, row.StructureId, row.Slot, row.Online, row.NextFuelAt, row.OnlineSince),
                 state => new SavedStructureService
                 {
                     ItemId = state.ItemId,
@@ -68,16 +76,18 @@ internal sealed partial class ResidentEconomy
                     Slot = state.Slot,
                     Online = state.Online,
                     NextFuelAt = state.NextFuelAt,
+                    OnlineSince = state.OnlineSince,
                 },
                 ProjectSavedStructureService,
-                "ItemId,StructureId,Slot,Online,NextFuelAt",
+                "ItemId,StructureId,Slot,Online,NextFuelAt,OnlineSince",
                 reader =>
                     new(
                         reader.GetInt64(1),
                         reader.GetInt64(2),
                         reader.GetInt32(3),
                         reader.GetBoolean(4),
-                        reader.IsDBNull(5) ? null : reader.GetInt64(5)
+                        reader.IsDBNull(5) ? null : reader.GetInt64(5),
+                        reader.IsDBNull(6) ? null : reader.GetInt64(6)
                     ),
                 state => new(state.ItemId),
                 indexes: [new("StructureId", row => row.StructureId), new("Online", row => row.Online)],
@@ -265,15 +275,15 @@ internal sealed partial class ResidentEconomy
             world.Database.ExecuteSql(
                 $"""
                 INSERT INTO WorldStructureService(
-                    ItemId,StructureId,Slot,Online,NextFuelAt
+                    ItemId,StructureId,Slot,Online,NextFuelAt,OnlineSince
                 )
                 SELECT
                     json_extract(value,'$.ItemId'),json_extract(value,'$.StructureId'),json_extract(value,'$.Slot'),
-                    json_extract(value,'$.Online'),json_extract(value,'$.NextFuelAt')
+                    json_extract(value,'$.Online'),json_extract(value,'$.NextFuelAt'),json_extract(value,'$.OnlineSince')
                 FROM json_each({values}) WHERE 1
                 ON CONFLICT(ItemId) DO UPDATE SET
                     StructureId=excluded.StructureId,Slot=excluded.Slot,Online=excluded.Online,
-                    NextFuelAt=excluded.NextFuelAt
+                    NextFuelAt=excluded.NextFuelAt,OnlineSince=excluded.OnlineSince
                 """
             );
         }

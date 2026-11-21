@@ -48,10 +48,19 @@ internal sealed partial class PilotInventoryStore
         long now,
         IReadOnlyDictionary<DogmaAttributeId, double>? attributes = null,
         bool deferFittingChanges = false,
-        Ship? fittingShip = null
+        Ship? fittingShip = null,
+        bool mobileRefit = false
     )
     {
         var (itemIds, sourceId, flagId, quantity) = request;
+        if (Eden.World.Structures.AssetSafetyStore.Ancestor(world, sourceId) is not null)
+        {
+            return Eden.World.Structures.AssetSafetyStore.Recover(world, catalog, pilotId, destinationId, request, now).Changes;
+        }
+        if (itemIds.Any(id => world.Set<Eden.Data.World.Structures.SavedAssetSafety>().Find(id) is not null))
+        {
+            throw new InvalidDataException("Recover the contents of an asset safety wrap before moving its container.");
+        }
         var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown pilot.");
         var active = pilot.ActiveShip;
         var sourceShip = InventoryShip(world, pilot, sourceId);
@@ -66,7 +75,7 @@ internal sealed partial class PilotInventoryStore
         bool sourceHangar = active.Position is null && sourceId == active.DockedLocationId;
         bool destinationHangar = active.Position is null && destinationId == active.DockedLocationId;
         if (
-            (active.Position is not null && !sameShipQuantityMove)
+            (active.Position is not null && !sameShipQuantityMove && !mobileRefit)
             || !(sourceHangar || sourceShip is not null)
             || !(destinationHangar && flagId == (int)InventoryFlag.Hangar || destinationShip is not null && ShipHoldRules.IsHold(flagId))
             || sourceHangar && destinationHangar && !quantity.HasValue
@@ -110,7 +119,7 @@ internal sealed partial class PilotInventoryStore
             items.Length + storedShips.Length != itemIds.Count
             || items.Any(i => quantity > i.Quantity)
             || storedShips.Any(s => s.Id == destinationId || quantity is > 1 || world.Pilots.Any(p => p.ActiveShipId == s.Id))
-            || (active.Position is not null && (items.Any(item => item.FlagId != flagId) || storedShips.Length > 0))
+            || (active.Position is not null && !mobileRefit && (items.Any(item => item.FlagId != flagId) || storedShips.Length > 0))
         )
         {
             throw new InvalidDataException("The requested items or quantity are unavailable.");

@@ -128,11 +128,18 @@ internal sealed class PilotSessionOutput(
             bool hasOwnGateDeparture = flight.Updates.Any(update =>
                 update.Command is DestinyCommand.JumpOut jump && jump.Id == flight.Pilot.ShipId
             );
+            bool hasOwnCapitalDeparture = flight.Updates.Any(update =>
+                update.Command is DestinyCommand.TranslocationOut jump && jump.Id == flight.Pilot.ShipId
+            );
             await SendNotificationAsync(new DestinyUpdatesNotification(flight.Updates));
             if (hasOwnGateDeparture)
             {
                 // Give SubwayService time to prepare the destination after sending JumpOut.
                 flight.GateDeparturePublished();
+            }
+            if (hasOwnCapitalDeparture)
+            {
+                flight.CapitalDeparturePublished();
             }
             if (hasFullState)
             {

@@ -8,6 +8,7 @@ using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Fleets;
 using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Flight;
 
@@ -23,7 +24,8 @@ internal sealed class FlightCallHandler(
     IWorldTuning? tuning = null,
     IDedEscalations? escalations = null,
     IWormholeTravel? wormholes = null,
-    IMilitiaComplexes? complexes = null
+    IMilitiaComplexes? complexes = null,
+    ICapitalNavigation? navigation = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -45,9 +47,10 @@ internal sealed class FlightCallHandler(
             {
                 return new PilotCallResult.Failure("Cyno jammer state does not accept arguments.");
             }
-            // Build 3662168 CynoJammerIcon uses None for no jammer; zero means online.
-            // Eden has no deployed jammers. Handle this read before movement checkpointing.
-            return PilotCallResult.None;
+            // Build 3662168 CynoJammerIcon compares the deadline to its current clock.
+            return navigation?.JammerOnlineAt(context.Pilot.SystemId) is long at
+                ? new PilotCallResult.Success(new CynoJammerDeadline(at))
+                : PilotCallResult.None;
         }
         if (service == "beyonce" && method == "GetFleetLocationAndInfo")
         {

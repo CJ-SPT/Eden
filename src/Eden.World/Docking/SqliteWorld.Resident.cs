@@ -168,6 +168,13 @@ public sealed partial class SqliteWorld
 
     internal DockedPilot Dock(WorldAction world, CatalogDbContext catalog, long pilotId, long shipId, long locationId)
     {
+        if (world is EconomyTransaction)
+        {
+            long now = _clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+            Eden.World.Flight.PilotCapitalTravelStore.RequireMobile(world, pilotId, shipId, now);
+            Eden.World.Combat.AreaWeaponStore.RequireDoomsdayCooldownComplete(world, shipId, now);
+            Eden.World.Combat.LanceDisruption.RequireTravel(world, shipId, now);
+        }
         if (locationId >= Eden.Gameplay.Structures.StructureRules.FirstStructureId)
         {
             return DockStructure(world, catalog, pilotId, shipId, locationId);
@@ -183,6 +190,10 @@ public sealed partial class SqliteWorld
         if (pilot.ActiveShipId != shipId || pilot.ActiveShip.Position is not { } position || destination is null)
         {
             throw new InvalidDataException("Dock your active ship at an available station.");
+        }
+        if (Eden.Gameplay.Flight.CapitalTravelRules.Supercapital(catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId))
+        {
+            throw new InvalidDataException("Supercapitals require a Keepstar to dock.");
         }
         int system = position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
         CrimewatchPersistence.CheckTravel(

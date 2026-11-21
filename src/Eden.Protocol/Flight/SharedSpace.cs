@@ -148,7 +148,9 @@ internal sealed record ShipContact(
     SpatialActivation? MicroJump = null,
     GateCamp? Camp = null,
     long GateCloakUntil = 0,
-    long ConnectionId = 0
+    long ConnectionId = 0,
+    Eden.Gameplay.Structures.PilotTether? Tether = null,
+    IReadOnlyList<ShipCompressionFacility>? Compression = null
 );
 
 internal sealed record MotionOrder(long Sequence, StampedDestinyUpdate Update);
@@ -160,8 +162,9 @@ internal sealed class SharedSpace(
     IWorldSynchronization? synchronization = null,
     IPilotSpatialModules? spatial = null,
     IAutonomousPilotPresence? autonomous = null,
-    IPilotGateCloak? gateCloaks = null
-) : IPilotCombatPresence
+    IPilotGateCloak? gateCloaks = null,
+    Eden.Gameplay.Structures.IPilotTethering? tethering = null
+) : IPilotCombatPresence, IConduitArrivalEvents
 {
     // The coordinator owns copied navigation states. Connections retain their socket and notification queue.
     private readonly ConcurrentDictionary<long, ShipContact> _ships = new();
@@ -171,19 +174,25 @@ internal sealed class SharedSpace(
     public Eden.Gameplay.Capsuleers.PilotSighting[] Observe(int system, long ship, SpacePosition origin, long sample)
     {
         var native = _sightGrid.Observe(_ships, system, ship, origin, sample, Now);
+        if (tethering is not null)
+        {
+            native = native.Where(contact => !TetherProtected(contact.ShipId)).ToArray();
+        }
         var residents = autonomous?.Observe(system, ship, origin, sample) ?? [];
         if (residents.Length == 0)
         {
             return autonomous is null ? native : native.Where(contact => !autonomous.Owns(contact.ShipId)).ToArray();
         }
         return residents
-            .Where(contact => !IsCloaked(contact.ShipId))
+            .Where(contact => !IsCloaked(contact.ShipId) && !TetherProtected(contact.ShipId))
             .Concat(native.Where(contact => autonomous?.Owns(contact.ShipId) != true))
             .OrderBy(contact => origin.DistanceTo(contact.Position))
             .ThenBy(contact => contact.ShipId)
             .Take(12)
             .ToArray();
     }
+
+    internal bool TetherProtected(long ship) => tethering?.Protected(ship) == true;
 
     private readonly OwnershipMonitor _motionOwnership = new("flight");
 
@@ -284,6 +293,117 @@ internal sealed class SharedSpace(
     }
 
     private readonly ConcurrentDictionary<long, ShipMotion> _motion = new();
+
+    internal sealed record Displacement(SpacePosition Position, NavigationState? PriorNavigation = null);
+
+    private readonly ConcurrentDictionary<long, Displacement> _displacements = new();
+    private readonly ConcurrentDictionary<long, CapitalJump> _conduitArrivals = new();
+
+    internal bool HasConduitArrival(long ship) => _conduitArrivals.ContainsKey(ship);
+
+    internal CapitalJump? TakeConduitArrival(long ship) => _conduitArrivals.TryRemove(ship, out var arrival) ? arrival : null;
+
+    public void Publish(int origin, CapitalJump arrival)
+    {
+        long ship = arrival.Pilot.ShipId;
+        RunMotion(
+            origin,
+            () =>
+            {
+                using var owned = EnterMotion(systemId: origin);
+                if (SystemFor(ship) == origin)
+                {
+                    LeaveOwned(ship);
+                    _conduitArrivals[ship] = arrival;
+                }
+            },
+            nameof(Publish)
+        );
+    }
+
+    internal Displacement? ConsumeDisplacement(long ship) => _displacements.TryRemove(ship, out var destination) ? destination : null;
+
+    internal IReadOnlyList<MicroJumpPassenger> MicroJumpCandidates(DockedPilot source, double radius)
+    {
+        if (source.Position is not { } origin)
+        {
+            return [];
+        }
+        return _sightGrid
+            .Nearby(source.SystemId, origin)
+            .Select(id => _ships.GetValueOrDefault(id))
+            .Where(ship =>
+                ship is not null
+                && ship.Pilot.ShipId != source.ShipId
+                && ship.Pilot.SystemId == source.SystemId
+                && ship.Pilot.Position is { } at
+                && at.DistanceTo(origin) <= radius + source.Flight.ShipRadius + ship.Pilot.Flight.ShipRadius
+                && ship.Warp is null
+                && ship.DepartureGate is null
+                && !ArrivalProtected(ship)
+                && ship.Health?.Remaining.Destroyed != true
+                && !IsCloaked(ship.Pilot.ShipId)
+            )
+            .Select(ship => new MicroJumpPassenger(ship!.Pilot.PilotId, ship.Pilot.ShipId, ship.Pilot.Position!))
+            .ToArray();
+    }
+
+    internal void TranslateForMicroJump(int systemId, MicroJumpArrival arrival) =>
+        Displace(systemId, arrival.ShipId, arrival.Position, true);
+
+    public void Displace(int systemId, long shipId, SpacePosition position) => Displace(systemId, shipId, position, false);
+
+    private void Displace(int systemId, long shipId, SpacePosition position, bool preserveMotion)
+    {
+        RunMotion(
+            systemId,
+            () =>
+            {
+                using var owned = EnterMotion(systemId: systemId);
+                NavigationState? navigation = null;
+                if (_motion.TryGetValue(shipId, out var motion) && motion.SystemId == systemId)
+                {
+                    if (preserveMotion)
+                    {
+                        navigation = motion.Navigation.Copy();
+                        navigation.CancelAlignment();
+                    }
+                    _motion[shipId] = motion with
+                    {
+                        Position = position,
+                        Navigation = navigation ?? new(),
+                        Target = preserveMotion ? motion.Target : null,
+                    };
+                    _history.TryRemove(shipId, out _);
+                    _displacements[shipId] = new(position, navigation);
+                }
+                if (_ships.TryGetValue(shipId, out var contact) && contact.Pilot.SystemId == systemId)
+                {
+                    _sightGrid.Move(shipId, systemId, contact.Pilot.Position, systemId, position);
+                    var moved = contact with
+                    {
+                        Pilot = contact.Pilot with { Position = position },
+                        AlignTo = null,
+                        Warp = null,
+                        Bumped = false,
+                    };
+                    _ships[shipId] = preserveMotion
+                        ? moved
+                        : moved with
+                        {
+                            Velocity = SpacePosition.Zero,
+                            Heading = null,
+                            SpeedFraction = 0,
+                            FollowRange = null,
+                            FollowTargetId = 0,
+                        };
+                    _displacements[shipId] = new(position, navigation);
+                }
+            },
+            nameof(Displace)
+        );
+    }
+
     private readonly ConcurrentDictionary<long, IReadOnlyList<ShipMotionResult>> _history = new();
 
     public void PublishMotion(ShipMotion ship)
@@ -446,6 +566,8 @@ internal sealed class SharedSpace(
                 _sightGrid.Move(shipId, previous.Pilot.SystemId, previous.Pilot.Position, 0, null);
             }
             _motion.TryRemove(shipId, out _);
+            _displacements.TryRemove(shipId, out _);
+            _conduitArrivals.TryRemove(shipId, out _);
             _history.TryRemove(shipId, out _);
             _orders.TryRemove(shipId, out _);
         }
@@ -472,7 +594,10 @@ internal sealed class SharedSpace(
     }
 
     public NpcTargetCandidate[] NpcTargets(int systemId) =>
-        TargetableShips(systemId).Select(ship => new NpcTargetCandidate(ship.Pilot.PilotId, ship.Pilot.ShipId)).ToArray();
+        TargetableShips(systemId)
+            .Where(ship => !TetherProtected(ship.Pilot.ShipId))
+            .Select(ship => new NpcTargetCandidate(ship.Pilot.PilotId, ship.Pilot.ShipId))
+            .ToArray();
 
     internal MilitiaComplexPilot[] MilitiaComplexPilots(int systemId) =>
         TargetableShips(systemId)
@@ -493,10 +618,10 @@ internal sealed class SharedSpace(
             && ship.Health?.Remaining.Destroyed != true
         );
 
-    public ShipContact[] Peers(DockedPilot pilot)
-    {
-        return RunMotion(pilot.SystemId, () => PeersOwned(pilot), nameof(Peers));
-    }
+    public ShipContact[] Peers(DockedPilot pilot) => Peers(pilot.SystemId, pilot.ShipId, pilot.Position);
+
+    internal ShipContact[] Peers(int system, long viewerId, SpacePosition? viewer) =>
+        viewer is null ? [] : RunMotion(system, () => PeersOwned(system, viewerId, viewer), nameof(Peers));
 
     internal IEnumerable<ShipContact> GateArrivals(DockedPilot pilot) =>
         _ships.Values.Where(ship =>
@@ -578,24 +703,21 @@ internal sealed class SharedSpace(
             SmartbombRules.InRange(origin, pilot.Flight.ShipRadius, position, radius, NavigationDefinitions.MaximumTargetDistance);
     }
 
-    private ShipContact[] PeersOwned(DockedPilot pilot)
+    private ShipContact[] PeersOwned(int system, long viewerId, SpacePosition viewer)
     {
-        using (EnterMotion(systemId: pilot.SystemId))
+        using (EnterMotion(systemId: system))
         {
             var offline =
-                crimewatch
-                    ?.LoggedOff(pilot.SystemId)
-                    .Select(p => new ShipContact(PilotContact.From(p.Pilot), SpacePosition.Zero, null, 0, null))
+                crimewatch?.LoggedOff(system).Select(p => new ShipContact(PilotContact.From(p.Pilot), SpacePosition.Zero, null, 0, null))
                 ?? [];
             return _ships
                 .Values.Concat(offline)
                 .GroupBy(s => s.Pilot.ShipId)
                 .Select(g => g.First())
                 .Where(ship =>
-                    ship.Pilot.SystemId == pilot.SystemId
-                    && ship.Pilot.ShipId != pilot.ShipId
+                    ship.Pilot.SystemId == system
+                    && ship.Pilot.ShipId != viewerId
                     && !IsCloaked(ship.Pilot.ShipId)
-                    && pilot.Position is { } viewer
                     && PeerInRange(ship, viewer)
                 )
                 .OrderBy(ship => ship.Pilot.ShipId)
@@ -678,6 +800,7 @@ internal sealed class SharedSpace(
                 && !ArrivalProtected(ship)
                 && !IsCloaked(ship.Pilot.ShipId)
                 && ship.Health?.Remaining.Destroyed != true
+                && !TetherProtected(shipId)
                 ? new(shipId, position, ship.Velocity)
                 : null;
         }
@@ -693,6 +816,7 @@ internal sealed class SharedSpace(
             systemId,
             () =>
                 IsGateCloaked(shipId)
+                || TetherProtected(shipId)
                 || (
                     autonomous?.Owns(shipId) == true
                         ? autonomous.Read(systemId, shipId)?.Protected == true
@@ -700,6 +824,13 @@ internal sealed class SharedSpace(
                             && (ship.Warp is not null || ship.DepartureGate is not null || ArrivalProtected(ship))
                 ),
             nameof(IsAreaProtected)
+        );
+
+    public bool IsTravelProtected(int systemId, long shipId) =>
+        RunMotion(
+            systemId,
+            () => _ships.TryGetValue(shipId, out var ship) && (ship.Warp is not null || ship.DepartureGate is not null || ship.Arriving),
+            nameof(IsTravelProtected)
         );
 
     public PilotCombatPresence? FindArea(int systemId, long shipId) =>
@@ -715,6 +846,8 @@ internal sealed class SharedSpace(
                         : null,
             nameof(FindArea)
         );
+
+    public IReadOnlyList<long> NearbyShips(int systemId, SpacePosition origin) => _sightGrid.Nearby(systemId, origin);
 
     private PilotCombatPresence? FindOwned(int systemId, long shipId)
     {

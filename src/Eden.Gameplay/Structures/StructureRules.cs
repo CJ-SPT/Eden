@@ -31,6 +31,11 @@ public static class StructureRules
     public const long AbandonmentDuration = 7 * TimeSpan.TicksPerDay;
     public const double FuelBayCapacity = 30_000;
 
+    public static StructureUpkeepState Upkeep(long? lowPowerAt, bool fullPower, long now) =>
+        fullPower ? StructureUpkeepState.FullPower
+        : lowPowerAt is long low && (decimal)now - low >= AbandonmentDuration ? StructureUpkeepState.Abandoned
+        : StructureUpkeepState.LowPower;
+
     public static bool CorporationIsOldEnough(long createdAt, long now, StructurePolicy policy) =>
         policy.MinimumCorporationAgeDays == 0
         || (decimal)now - createdAt >= (decimal)policy.MinimumCorporationAgeDays * TimeSpan.TicksPerDay;
@@ -46,12 +51,16 @@ public static class StructureRules
                 or StructureService.Manufacturing
                 or StructureService.BasicManufacturing
                 or StructureService.CapitalManufacturing
+                or StructureService.SupercapitalManufacturing
                 or StructureService.Laboratory
                 or StructureService.TimeResearch
                 or StructureService.MaterialResearch
                 or StructureService.Copying
                 or StructureService.Invention
                 or StructureService.MoonMining
+                or StructureService.CynoBeacon
+                or StructureService.CynoJammer
+                or StructureService.JumpBridge
                 or StructureService.CompositeReactions
                 or StructureService.HybridReactions
                 or StructureService.BiochemicalReactions;

@@ -26,6 +26,29 @@ internal sealed class PilotSightGrid
 
     private static long Coordinate(double meters) => (long)Math.Floor(meters / NpcEncounterDefinitions.VisibilityRange);
 
+    internal IReadOnlyList<long> Nearby(int system, SpacePosition origin)
+    {
+        var cell = Key(system, origin)!.Value;
+        List<long> ids = [];
+        lock (_gate)
+        {
+            for (int x = -1; x <= 1; x++)
+            {
+                for (int y = -1; y <= 1; y++)
+                {
+                    for (int z = -1; z <= 1; z++)
+                    {
+                        if (_cells.TryGetValue(new(system, cell.X + x, cell.Y + y, cell.Z + z), out var occupants))
+                        {
+                            ids.AddRange(occupants.Ids);
+                        }
+                    }
+                }
+            }
+        }
+        return ids;
+    }
+
     internal void Move(long id, int oldSystem, SpacePosition? before, int system, SpacePosition? after)
     {
         var old = Key(oldSystem, before);

@@ -16,7 +16,8 @@ internal sealed class DroneHandler(
     TimeProvider clock,
     TargetingHandler targeting,
     CharacterInteractionHistoryHandler? history = null,
-    Eden.Protocol.Sovereignty.EntosisHandler? entosis = null
+    Eden.Protocol.Sovereignty.EntosisHandler? entosis = null,
+    Eden.Gameplay.Structures.IStructureContacts? structures = null
 ) : ISelectedPilotCallHandler
 {
     private long _nextTick;
@@ -209,14 +210,14 @@ internal sealed class DroneHandler(
         }
     }
 
-    public void Advance(PilotCallContext context)
+    public void Advance(PilotCallContext context, bool fighterJumpDue = false)
     {
         if (!context.Selected || !context.Flight.CanTarget)
         {
             return;
         }
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        if (now < _nextTick)
+        if (now < _nextTick && !fighterJumpDue)
         {
             return;
         }
@@ -240,6 +241,10 @@ internal sealed class DroneHandler(
                 )
             );
             context.Flight.NotifyHealth(hit.Health);
+            if (context.Flight.LocalObject(hit.TargetId)?.Structure is not null && structures is not null)
+            {
+                context.Flight.RefreshStructures(structures.Contacts(context.Pilot.SystemId));
+            }
             if (hit.Health.Remaining.Destroyed)
             {
                 history?.NotifyDestruction(context);

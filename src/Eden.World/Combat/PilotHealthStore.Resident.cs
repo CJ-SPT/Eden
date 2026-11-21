@@ -70,6 +70,10 @@ internal sealed partial class PilotHealthStore
     )
     {
         var current = Read(world, shipId, defense, now);
+        if (world.TetherProtected(shipId, now))
+        {
+            return new(current.Remaining, 0);
+        }
         var result = CombatDamage.Apply(
             current.Remaining,
             bypassResistances ? CombatDamage.WithoutResistances(defense) : defense,

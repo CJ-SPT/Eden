@@ -80,6 +80,15 @@ internal sealed partial class PilotFittingStore
                 // Build 3662168 command nodes omit the dogma signature attribute.
                 return Math.Max(1, catalog.FittingType(typeId)?.Radius ?? 0);
             }
+            if (
+                npcSignature <= 0
+                && world.Set<Eden.Data.World.Mining.WorldAsteroid>().Find(itemId) is { } asteroid
+                && asteroid.TypeId == typeId
+            )
+            {
+                // Mineable ore and ice can omit signature data. The spawned deposit has a physical radius.
+                return asteroid.Radius;
+            }
             if (npcSignature <= 0 && catalog.FittingType(typeId) is { GroupId: MiningDefinitions.GasCloudGroup } cloud)
             {
                 // Gas types have no dogma signature. Use their physical catalog radius for locking.
@@ -114,12 +123,16 @@ internal sealed partial class PilotFittingStore
         bool completeOnline = false,
         FittingCheckpoint? batchCheckpoint = null,
         CargoContainerAccess? containerAccess = null,
-        Ship? fittingShip = null
+        Ship? fittingShip = null,
+        bool mobileRefit = false
     )
     {
         var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
         var ship = fittingShip ?? pilot.ActiveShip;
-        RequireFittingShip(pilot, ship);
+        if (!mobileRefit)
+        {
+            RequireFittingShip(pilot, ship);
+        }
         CheckFittingService(world, catalog, ship, pilotId);
         bool fromContainer = sourceId != ship.Id && sourceId != ship.DockedLocationId;
         if (fromContainer)
@@ -132,7 +145,7 @@ internal sealed partial class PilotFittingStore
             }
         }
         if (
-            ship.Position is not null
+            ship.Position is not null && !mobileRefit
             || itemIds.Count == 0
             || itemIds.Distinct().Count() != itemIds.Count
             || placements is not null && (placements.Count != itemIds.Count || itemIds.Any(id => !placements.ContainsKey(id)))
@@ -215,6 +228,14 @@ internal sealed partial class PilotFittingStore
                 if (other is not null)
                 {
                     var (otherFirst, otherSlots) = SlotsFor(other.TypeId);
+                    if (
+                        mobileRefit
+                        && world.Set<ActiveFittedModule>().Find(other.Id) is { } active
+                        && (active.ExpiresAt == 0 || active.ExpiresAt > now)
+                    )
+                    {
+                        throw new InvalidDataException("Stop the active module before exchanging slots.");
+                    }
                     if (
                         other.OwnerId != pilotId
                         || !other.Singleton
@@ -336,6 +357,10 @@ internal sealed partial class PilotFittingStore
             var definition =
                 FittingCatalog.Definition(catalog, typeId)
                 ?? throw new InvalidDataException("This module family or effect is not supported yet.");
+            if (mobileRefit && definition.Rack == ModuleRack.Rig)
+            {
+                throw new InvalidDataException("This fitting service supports high, medium and low power modules.");
+            }
             PilotSkillReader.CheckRequirements(world, catalog, pilotId, typeId);
             CheckHull(catalog, typeId, ship.TypeId);
             int first = definition.FirstFlag;
@@ -377,7 +402,8 @@ internal sealed partial class PilotFittingStore
         long shipId,
         long itemId,
         bool online,
-        long now
+        long now,
+        bool mobileRefit = false
     )
     {
         var pilot = world.Pilots.Single(p => p.Id == pilotId);
@@ -390,7 +416,7 @@ internal sealed partial class PilotFittingStore
                 && i.FlagId >= (int)InventoryFlag.LowSlot0
                 && i.FlagId <= (int)InventoryFlag.HighSlot7
             );
-        if (shipId != pilot.ActiveShipId || item is null || pilot.ActiveShip.Position is not null)
+        if (shipId != pilot.ActiveShipId || item is null || pilot.ActiveShip.Position is not null && !mobileRefit)
         {
             throw new InvalidDataException("Change module online state on your docked active ship.");
         }
@@ -538,6 +564,7 @@ internal sealed partial class PilotFittingStore
                     or SignatureSuppressionRules.Group
                     or SpatialModuleRules.CloakGroup
                     or SpatialModuleRules.MicroJumpGroup
+                    or SpatialModuleRules.CapitalMicroJumpGroup
             || FittingCatalog.Effects(catalog, module.TypeId).Contains(DogmaEffect.AssaultDamageControl)
             || module.TypeId == BreacherRules.CounterType
         )

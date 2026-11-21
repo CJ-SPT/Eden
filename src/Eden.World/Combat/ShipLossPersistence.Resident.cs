@@ -52,7 +52,7 @@ internal static partial class ShipLossPersistence
             .Where(i => i.OwnerId == pilotId && (i.LocationId == shipId || Enumerable.Contains(moduleIds, i.LocationId)))
             .OrderBy(i => i.Id)
             .ToArray();
-        var storedShips = world.Ships.Where(s => s.OwnerId == pilotId && s.StoredInId == shipId).OrderBy(s => s.Id).ToArray();
+        var storedShips = world.Ships.Where(s => s.StoredInId == shipId).OrderBy(s => s.Id).ToArray();
         var storedManifests = storedShips.Select(s => ShipStoragePersistence.Manifest(world, s)).ToArray();
         string storedManifest = JsonSerializer.Serialize(storedManifests);
         string manifest = JsonSerializer.Serialize(items);
@@ -165,6 +165,15 @@ internal static partial class ShipLossPersistence
         {
             if (survivors.Contains(stored.Id))
             {
+                if (stored.OwnerId != pilotId)
+                {
+                    foreach (var item in ShipStoragePersistence.Contents(world, stored.OwnerId, stored.Id))
+                    {
+                        item.OwnerId = pilotId;
+                    }
+                    stored.OwnerId = pilotId;
+                    PilotInsuranceStore.VoidRemovedHull(world, stored.Id);
+                }
                 stored.StoredInId = wreck.Id;
                 stored.StorageFlagId = (int)InventoryFlag.Cargo;
             }

@@ -80,6 +80,18 @@ internal sealed partial class LiveCombatRuntime(
         return _ships.GetValueOrDefault(pilotId)?.NpcAggression;
     }
 
+    private bool IndustryProtected(long ship, long now) =>
+        owner.Economy.MayHaveIndustrialProtection(now)
+        && owner.Economy.Inspect(world => Eden.World.Flight.PilotCapitalTravelStore.ProtectedIndustry(world, ship, now));
+
+    private void RequireIndustryOffense(long ship, long now)
+    {
+        if (IndustryProtected(ship, now))
+        {
+            throw new InvalidDataException("P.A.N.I.C. prevents use of offensive modules and drones.");
+        }
+    }
+
     internal CombatVolley? Fire(
         long pilotId,
         long moduleId,
@@ -126,6 +138,7 @@ internal sealed partial class LiveCombatRuntime(
             throw new InvalidDataException("Invalid weapon accuracy draw.");
         }
         var ship = Ship(pilotId, now);
+        RequireIndustryOffense(ship.ShipId, now);
         var target = Npc(targetId, now);
         if (target is null)
         {

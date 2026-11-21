@@ -274,7 +274,9 @@ internal sealed partial class PilotTackleStore(WorldDatabase database, TimeProvi
             // A connection owns each remote cycle. Its controller atomically
             // renews the paid row or stops it. Another connection must not
             // expire that row before the owner has made its repeat decision.
-            bool droneEffect = item is not null && catalog.FittingType(item.TypeId)?.CategoryId == (int)InventoryCategory.Drone;
+            bool droneEffect =
+                item is not null
+                && catalog.FittingType(item.TypeId)?.CategoryId is (int)InventoryCategory.Drone or (int)InventoryCategory.Fighter;
             bool valid =
                 source.ActiveShipId == row.SourceShipId
                 && source.ActiveShip.Position is not null

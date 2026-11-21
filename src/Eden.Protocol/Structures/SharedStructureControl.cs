@@ -1,9 +1,15 @@
+using Eden.Gameplay.Flight;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.Targeting;
 
 namespace Eden.Protocol.Structures;
 
 [Injectable(InjectionType.Singleton)]
-internal sealed class SharedStructureControl
+internal sealed class SharedStructureControl(
+    IStandupFighterFlight? fighters = null,
+    TimeProvider? clock = null,
+    SharedTargetLocks? targetLocks = null
+)
 {
     private readonly object _gate = new();
     private readonly Dictionary<long, StructureControlLease> _controllers = [];
@@ -29,6 +35,7 @@ internal sealed class SharedStructureControl
                 throw new InvalidDataException("Another pilot is controlling this structure.");
             }
             var lease = new StructureControlLease(structureId, pilotId, sessionId, this);
+            fighters?.Assign(pilotId, structureId);
             _controllers.Add(structureId, lease);
             return lease;
         }
@@ -40,6 +47,11 @@ internal sealed class SharedStructureControl
         {
             if (_controllers.GetValueOrDefault(lease.StructureId) == lease)
             {
+                fighters?.Release(lease.PilotId, lease.StructureId, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc());
+                if (targetLocks?.HasOutgoing(lease.StructureId) == true)
+                {
+                    targetLocks.BreakOutgoing(lease.StructureId);
+                }
                 _controllers.Remove(lease.StructureId);
             }
         }

@@ -3,6 +3,7 @@ using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Inventory;
+using Eden.Data.World.Structures;
 using Eden.Data.World.Thermal;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
@@ -22,12 +23,14 @@ using Eden.World.Combat.Weapons;
 using Eden.World.Docking;
 using Eden.World.FactionWarfare;
 using Eden.World.Fittings;
+using Eden.World.Flight;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Combat;
 using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
+using Eden.World.Structures;
 using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
@@ -183,6 +186,7 @@ internal sealed partial class PilotCombatStore(
         npcs = npcs.Concat((advanced?.Npcs ?? []).SelectMany(id => NpcHostility.Participants(world, id)));
         ships = ships.Concat(drones.Select(drone => drone.ControllerShipId).Where(id => id != 0));
         return new(
+            systems: world.Structure(target) is { } structure ? [structure.SystemId] : [],
             pilots: drones.Select(drone => drone.PilotId).Append(pilot),
             ships: ships,
             resources: npcs.Select(id => new SimulationResource(SharedSimulationResource.Npc, id))
@@ -205,8 +209,11 @@ internal sealed partial class PilotCombatStore(
     )
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("bank.volley");
+        bool structureTarget =
+            playerTarget is null && LiveWorld.Find(database.Path)?.Economy.Inspect(world => world.Structure(targetId) is not null) == true;
         if (
-            advanced is null
+            !structureTarget
+            && advanced is null
             && playerTarget is null
             && LiveCombatRuntime
                 .Find(database.Path, pilotId)
@@ -247,11 +254,17 @@ internal sealed partial class PilotCombatStore(
         overloaded |= PilotOverloadStore.Selected(world, database.Path, pilotId, moduleId);
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Pilots.Find(pilotId)!;
+        PilotCapitalTravelStore.RequireOffense(world, pilot.ActiveShipId, now);
         if (advanced is not null)
         {
             world.RequireUncloaked(pilot.ActiveShipId);
         }
         var npc = playerTarget is null ? world.Set<WorldNpc>().Find(targetId) : null;
+        var deployable =
+            playerTarget is null && npc is null && world is EconomyTransaction
+                ? PilotCapitalTravelStore.MobileTarget(world, targetId, now)
+                : null;
+        var structure = playerTarget is null && npc is null && deployable is null ? StructureCombatTargets.Find(world, targetId) : null;
         Pilot? victim = null;
         AggressionDecision? aggression = null;
         TurretTarget target;
@@ -275,6 +288,28 @@ internal sealed partial class PilotCombatStore(
                 throw new InvalidDataException("The target ship is destroyed.");
             }
             target = new(system, victim.ActiveShip.TypeId, new(saved.X, saved.Y, saved.Z), playerTarget.Velocity, attributes);
+        }
+        else if (deployable is not null)
+        {
+            world.RequireUncloaked(pilot.ActiveShipId);
+            target = new(
+                deployable.SystemId,
+                deployable.TypeId,
+                PilotCapitalTravelStore.MobilePosition(deployable),
+                SpacePosition.Zero,
+                PilotFittingStore.ReadAttributes(catalog, deployable.TypeId)
+            );
+        }
+        else if (structure is not null)
+        {
+            StructureCombatTargets.Check(world, catalog, structure, now);
+            target = new(
+                structure.SystemId,
+                structure.TypeId,
+                StructureCombatTargets.Position(structure),
+                SpacePosition.Zero,
+                PilotFittingStore.ReadAttributes(catalog, structure.TypeId)
+            );
         }
         else
         {
@@ -342,6 +377,14 @@ internal sealed partial class PilotCombatStore(
         {
             CrimewatchPersistence.Player(world, catalog, pilotId, victim.Id, target.SystemId, aggression!, now, cycleEnd);
         }
+        else if (deployable is not null)
+        {
+            CrimewatchPersistence.PersonalDeployable(world, catalog, pilot, deployable.PilotId, target.SystemId, now, cycleEnd);
+        }
+        else if (structure is not null)
+        {
+            StructureCombatTargets.Aggress(world, pilotId, target.SystemId, now, cycleEnd);
+        }
         else
         {
             CrimewatchPersistence.Npc(world, pilotId, target.SystemId, cycleEnd);
@@ -369,6 +412,14 @@ internal sealed partial class PilotCombatStore(
             }
             settlement = new(new(targetId, defense, applied.Remaining), applied.Applied, applied.Remaining.Destroyed, null);
         }
+        else if (deployable is not null)
+        {
+            settlement = PilotCapitalTravelStore.DamageMobile(world, deployable, ShipHealth.DefenseFrom(target.Attributes), combined, now);
+        }
+        else if (structure is not null)
+        {
+            settlement = StructureCombatTargets.Apply(world, catalog, structure, combined, now);
+        }
         else
         {
             settlement = NpcDamagePersistence.Apply(
@@ -395,7 +446,7 @@ internal sealed partial class PilotCombatStore(
         {
             WorldConnections.PublishHeat(world, pilotId, pilot.ActiveShipId, heat);
         }
-        if (settlement.Destroyed && victim is null || arcs.Shots.Any(shot => shot.Destroyed))
+        if (settlement.Destroyed && npc is not null || arcs.Shots.Any(shot => shot.Destroyed))
         {
             security.Publish();
         }

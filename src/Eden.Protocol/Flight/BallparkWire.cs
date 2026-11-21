@@ -101,6 +101,21 @@ internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
     public override object ToBlue()
     {
         var fields = Fields(Body.Id, Body.TypeId, Body.OwnerId, Body.GroupId, Body.CategoryId);
+        if (Body.JumpBridge is { } bridge)
+        {
+            fields["targetSolarsystemID"] = bridge.DestinationSystemId;
+            fields["component_jumpBridge"] = bridge.Revision;
+            fields["activationState"] = bridge.Active;
+        }
+        if (Body.TypeId == DoomsdayFieldRules.BeaconType && Body.GroupId == DoomsdayFieldRules.BeaconGroup)
+        {
+            fields["component_activate"] = new object?[] { true, null };
+        }
+        if (Body.CynoDeployable is { } deployable)
+        {
+            fields["component_activate"] = new object?[] { deployable.Active, deployable.Active ? null : deployable.OnlineAt };
+            fields["component_decay"] = deployable.ExpiresAt;
+        }
         if (Body.AgentId is long agentId)
         {
             fields["charID"] = agentId;
@@ -112,9 +127,12 @@ internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
             fields["structureState"] = (int)structure.State;
             fields["state"] = (int)structure.State;
             // The native construction animation reads timer and upkeepState from the slim item.
-            fields["timer"] = structure.StateEndsAt is long timerEnd ? new object?[] { structure.StateStartedAt, timerEnd, null } : null;
+            fields["timer"] = structure.TimerEnd is long timerEnd
+                ? new object?[] { structure.StateStartedAt, timerEnd, structure.TimerPausedAt }
+                : null;
             fields["upkeepState"] = (int)structure.UpkeepState;
-            fields["stateTimer"] = structure.StateEndsAt is long end ? new object?[] { structure.StateStartedAt, end, null } : null;
+            fields["stateTimer"] = fields["timer"];
+            fields["repairing"] = structure.Battle?.RepairAt.HasValue == true;
             fields["unanchoring"] = structure.UnanchorAt;
             fields["hasCore"] = structure.HasCore;
             // Native dunRotation is expressed in degrees; deployment yaw is saved in radians.
@@ -348,6 +366,10 @@ internal sealed record ShipSlimItem(ShipContact Ship) : SlimItem
         fields["allianceID"] = pilot.AllianceId;
         fields["warFactionID"] = (int?)pilot.WarFaction;
         fields["dirtTime"] = Ship.DirtTime;
+        if (Ship.Compression is { Count: > 0 } facilities)
+        {
+            fields["compression_facility_typelists"] = new BlueMap<int, double>(facilities.ToDictionary(f => f.TypeList, f => f.Range));
+        }
         fields["modules"] = (Ship.Modules ?? [])
             .Select(module => (object?)new object?[] { module.ItemId, module.TypeId, module.FlagId })
             .ToList();

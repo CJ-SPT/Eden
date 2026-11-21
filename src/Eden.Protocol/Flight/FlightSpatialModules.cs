@@ -81,7 +81,7 @@ internal sealed partial class FlightSession
             activation.Module.TypeId,
             null,
             null,
-            "effects.MicroJumpDriveEngage",
+            activation.Module.Field is not null ? "effects.MicroJumpFieldEngageCapital" : "effects.MicroJumpDriveEngage",
             false,
             active,
             active,

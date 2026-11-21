@@ -313,6 +313,17 @@ internal sealed partial record FittingCalculation
         }
         foreach (var module in modules)
         {
+            if (
+                module.Item.Online
+                && module.GroupId is Eden.Gameplay.Flight.CapitalModeRules.Group or Eden.Gameplay.Flight.CapitalModeRules.CloneVatGroup
+                && activeModules.ContainsKey(module.Item.Id)
+            )
+            {
+                foreach (var modifier in Eden.World.Flight.CapitalModeCatalog.Modifiers(catalog, module.Item.TypeId))
+                {
+                    Add(module.Item.Id, modifier, true);
+                }
+            }
             if (SpatialModuleCatalog.Supported(catalog, module.Item.TypeId, module.GroupId))
             {
                 foreach (var modifier in SpatialModuleCatalog.Modifiers(catalog, module.Item.TypeId))
@@ -325,7 +336,7 @@ internal sealed partial record FittingCalculation
                         Add(module.Item.Id, modifier, false);
                     }
                 }
-                if (module.Item.Online && module.GroupId == SpatialModuleRules.MicroJumpGroup && activeModules.ContainsKey(module.Item.Id))
+                if (module.Item.Online && SpatialModuleRules.IsDriveGroup(module.GroupId) && activeModules.ContainsKey(module.Item.Id))
                 {
                     modifiers.Add(
                         new(
@@ -418,7 +429,7 @@ internal sealed partial record FittingCalculation
                     );
                 }
             }
-            if (module.Item.Online && AreaWeaponRules.IsModule(module.GroupId))
+            if (module.Item.Online && AreaWeaponRules.IsModule(module.GroupId, module.Item.TypeId))
             {
                 foreach (var modifier in AreaWeaponCatalog.Modifiers(catalog, module.Item.TypeId))
                 {
@@ -503,6 +514,7 @@ internal sealed partial record FittingCalculation
                 && !Eden.World.Information.InformationCatalog.Supported(catalog, module.Item.TypeId, module.GroupId)
                 && !Eden.World.Exploration.ProbeCatalog.Launcher(catalog, module.Item.TypeId, module.GroupId)
                 && !CommandBurstCatalog.Module(catalog, module.Item.TypeId, module.GroupId)
+                && module.GroupId != Eden.Gameplay.Flight.CapitalTravelRules.EconomizerGroup
             )
             {
                 continue;
@@ -528,17 +540,46 @@ internal sealed partial record FittingCalculation
             .Concat([Eden.Gameplay.Flight.WarpCapacitorRules.WarpDriveOperationSkill])
             .Concat(AdvancedWeaponRules.Skills)
             .Concat([AreaWeaponRules.BombDeploymentSkill, AreaWeaponRules.DefenderSkill, AreaWeaponRules.ProjectorSkill])
+            .Concat(
+                modules.Any(module => DoomsdayRules.EffectForType(module.Item.TypeId) is not null)
+                    ? [DoomsdayRules.OperationSkill, DoomsdayRules.RapidFiringSkill, DoomsdayFieldRules.DisruptiveLanceOperation]
+                    : Array.Empty<int>()
+            )
             .Concat(modules.Any(m => m.GroupId == CommandBurstRules.Group) ? CommandBurstCatalog.Skills : [])
+            .Concat(modules.Any(m => m.GroupId == CommandBurstRules.PhenomenaGroup) ? [CommandBurstRules.SpatialPhenomenaGeneration] : [])
             .Concat(Eden.Gameplay.Exploration.ProbeScanRules.Skills)
             .Concat([(int)MiningSkill.GasHarvesting, (int)MiningSkill.IceHarvesting])
             .Concat([Eden.Gameplay.Exploration.HackingRules.HackingSkill, Eden.Gameplay.Exploration.HackingRules.ArchaeologySkill])
             .Concat(Enum.GetValues<ElectronicWarfareSkill>().Select(s => (int)s))
             .Concat(hullSkills)
+            .Concat(
+                hull.GroupId is (int)HullClass.Titan or (int)HullClass.CapitalIndustrial
+                    ? [Eden.Gameplay.Flight.CapitalModeRules.CloningFacilityOperation]
+                    : []
+            )
+            .Concat(
+                Eden.Gameplay.Flight.CapitalTravelRules.JumpDrive(hull.GroupId)
+                    ?
+                    [
+                        Eden.Gameplay.Flight.CapitalTravelRules.JumpDriveOperation,
+                        Eden.Gameplay.Flight.CapitalTravelRules.JumpDriveCalibration,
+                        Eden.Gameplay.Flight.CapitalTravelRules.JumpFuelConservation,
+                    ]
+                    : Array.Empty<int>()
+            )
+            .Concat(
+                modules.Any(module => Eden.Gameplay.Flight.CapitalTravelRules.ModuleField(module.Item.TypeId) is not null)
+                    ? [Eden.Gameplay.Flight.CapitalTravelRules.CynosuralFieldTheory]
+                    : Array.Empty<int>()
+            )
             .Concat(Enum.GetValues<RemoteRepairSkill>().Select(s => (int)s))
             .Concat(Enum.GetValues<Eden.Gameplay.Information.InformationSkill>().Select(s => (int)s))
             .Concat(Enum.GetValues<CapacitorEmissionSkill>().Select(s => (int)s))
             .Concat(Enum.GetValues<RiggingSkill>().Select(s => (int)s))
             .Concat([OverloadRules.ThermodynamicsSkill, SpatialModuleRules.MicroJumpSkill, SmartbombRules.EnergyPulseWeaponsSkill])
+            .Concat(
+                modules.Any(m => m.GroupId == SpatialModuleRules.CapitalMicroJumpGroup) ? [SpatialModuleRules.CapitalMicroJumpSkill] : []
+            )
             .Concat(Enum.GetValues<NaniteRepairSkill>().Select(s => (int)s))
             // Drone work/damage skills remain owned by DroneRules.ApplySkills.
             .Concat([(int)DroneSkill.Drones, (int)DroneSkill.DroneAvionics, (int)DroneSkill.AdvancedDroneAvionics])

@@ -130,11 +130,26 @@ internal static class HullCatalog
             .ToArray();
 
     private static bool Operational(ClientDogmaeffectsModifierInfoItem source) =>
-        HullBonusRules.Operational(
+        (
+            source.SkillTypeID == (int)HullBonusSkill.CynosuralFieldTheory
+            && source.ModifiedAttributeID is (int)DogmaAttributeId.ConsumptionQuantity or (int)DogmaAttributeId.Duration
+        )
+        || source.SkillTypeID == (int)HullBonusSkill.CapitalMicroJumpDriveOperation
+            && source.ModifiedAttributeID is (int)DogmaAttributeId.Duration or (int)DogmaAttributeId.MicroJumpPassengerLimit
+        || FighterHullModifier(source)
+        || HullBonusRules.Operational(
             Capability(source),
             source.Func == "LocationGroupModifier" ? (int?)source.GroupID : null,
             source.Func == "LocationRequiredSkillModifier" ? (int?)source.SkillTypeID : null
         );
+
+    internal static bool FighterHullModifier(ClientDogmaeffectsModifierInfoItem source) =>
+        source.Func == "OwnerRequiredSkillModifier"
+        && source.Domain == "charID"
+        && source.SkillTypeID is long skill
+        && source.ModifiedAttributeID is long attribute
+        && source.Operation is long operation
+        && Eden.Gameplay.Flight.FighterDeckRules.FighterHullModifier((int)skill, (DogmaAttributeId)attribute, (DogmaOperation)operation);
 
     private static HullCapability Capability(ClientDogmaeffectsModifierInfoItem source)
     {

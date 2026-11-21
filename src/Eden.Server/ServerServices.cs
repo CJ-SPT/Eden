@@ -64,7 +64,8 @@ internal static class ServerServices
                     combatObjects: combatObjects,
                     residentReads: residentReads,
                     simulationObjects: simulationObjects,
-                    fleets: provider.GetRequiredService<Eden.Gameplay.Fleets.ICooperativeFleets>()
+                    fleets: provider.GetRequiredService<Eden.Gameplay.Fleets.ICooperativeFleets>(),
+                    targetLocks: provider.GetRequiredService<Eden.Gameplay.Targeting.IPilotTargetLocks>()
                 )
             );
         }

@@ -5,6 +5,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Fleets;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Information;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
@@ -37,11 +38,14 @@ internal static class FittingCatalog
         {
             return null;
         }
-        if (AreaWeaponRules.IsModule(type.GroupId) && !AreaWeaponCatalog.Module(catalog, typeId, type.GroupId))
+        if (AreaWeaponRules.IsModule(type.GroupId, typeId) && !AreaWeaponCatalog.Module(catalog, typeId, type.GroupId))
         {
             return null;
         }
-        if (type.GroupId == CommandBurstRules.Group && !CommandBurstCatalog.Module(catalog, typeId, type.GroupId))
+        if (
+            type.GroupId is CommandBurstRules.Group or CommandBurstRules.PhenomenaGroup
+            && !CommandBurstCatalog.Module(catalog, typeId, type.GroupId)
+        )
         {
             return null;
         }
@@ -196,7 +200,7 @@ internal static class FittingCatalog
             return null;
         }
         if (
-            type.GroupId is SpatialModuleRules.CloakGroup or SpatialModuleRules.MicroJumpGroup
+            (type.GroupId == SpatialModuleRules.CloakGroup || SpatialModuleRules.IsDriveGroup(type.GroupId))
             && !SpatialModuleCatalog.Supported(catalog, typeId, type.GroupId)
         )
         {
@@ -205,6 +209,13 @@ internal static class FittingCatalog
         if (
             type.GroupId == Eden.Gameplay.Sovereignty.EntosisRules.ModuleGroup
             && !Eden.World.Sovereignty.EntosisCatalog.Supported(catalog, typeId)
+        )
+        {
+            return null;
+        }
+        if (
+            type.GroupId is CapitalModeRules.Group or CapitalModeRules.CloneVatGroup
+            && !Eden.World.Flight.CapitalModeCatalog.Supported(catalog, typeId)
         )
         {
             return null;

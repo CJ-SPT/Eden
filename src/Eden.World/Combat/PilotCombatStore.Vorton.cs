@@ -85,7 +85,7 @@ internal sealed partial class PilotCombatStore
         {
             if (world.Set<WorldDrone>().Find(id) is { } drone && drone.SystemId == system)
             {
-                var contact = PilotDroneStore.Contact(world, catalog, drone);
+                var contact = PilotDroneStore.Contact(world, catalog, drone, now);
                 if (!contact.Health.Remaining.Destroyed)
                 {
                     candidates.Add(

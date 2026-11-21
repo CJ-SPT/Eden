@@ -6,6 +6,9 @@ from pathlib import Path
 import sqlite3
 
 
+ASSET_SAFETY_WRAP_TYPE = 60  # Build 3662168 inventorycommon.const.typeAssetSafetyWrap.
+
+
 def export(path, output):
     with sqlite3.connect(path.resolve().as_uri() + '?mode=ro', uri=True) as db:
         definitions = {int(k): json.loads(v) for k, v in db.execute(
@@ -17,7 +20,7 @@ def export(path, output):
         ) if definitions.get(i, {}).get('published') == 1]
         services = [35892, 35894, 35899, 35891, 45550, 35886, 35878, 35881, 35877,
                     45538, 45537, 45539, 45009, 35913, 35912, 35914, 82941, 78330]
-        ids = set(hulls + services + [34, 35, 670, 1130, 215, 3380])
+        ids = set(hulls + services + [ASSET_SAFETY_WRAP_TYPE, 34, 35, 670, 1130, 215, 3380])
         for i in hulls:
             ids.update(int(v) for a, v in db.execute(
                 'SELECT AttributeId,Value FROM TypeAttribute WHERE ItemTypeId=?', (i,)

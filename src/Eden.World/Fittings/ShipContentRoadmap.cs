@@ -25,6 +25,7 @@ internal sealed record ShipContentRoadmap(
         {
             HullCapability.MicroJumpFields => ShipContentMilestone.FleetServices,
             HullCapability.ShipModes => ShipContentMilestone.CapitalModes,
+            HullCapability.Fighters => ShipContentMilestone.Fighters,
             HullCapability.Overheating => ShipContentMilestone.Overheating,
             HullCapability.Bombs => ShipContentMilestone.AreaWeaponsAndInterdiction,
             HullCapability.CombatDrones => ShipContentMilestone.CombatDrones,
@@ -53,8 +54,8 @@ internal sealed record ShipContentRoadmap(
 
     internal static ShipContentMilestone ForHull(HullClass hullClass, int? techLevel) =>
         techLevel == 3 ? ShipContentMilestone.TechThree
-        : hullClass is HullClass.Titan or HullClass.Supercarrier or HullClass.CommandCarrier ? ShipContentMilestone.Supercapitals
-        : hullClass == HullClass.Carrier ? ShipContentMilestone.Fighters
+        : hullClass is HullClass.Titan or HullClass.Supercarrier ? ShipContentMilestone.Supercapitals
+        : hullClass is HullClass.Carrier or HullClass.CommandCarrier ? ShipContentMilestone.Fighters
         : hullClass == HullClass.CapitalIndustrial ? ShipContentMilestone.IndustrialCommand
         : hullClass is HullClass.Dreadnought or HullClass.ForceAuxiliary or HullClass.LancerDreadnought ? ShipContentMilestone.CapitalModes
         : hullClass is HullClass.Capsule or HullClass.JumpFreighter ? ShipContentMilestone.CapitalTravel

@@ -14,7 +14,7 @@ internal static class CommandBurstSchema
                 ShipId INTEGER NOT NULL REFERENCES WorldShip(Id) ON DELETE CASCADE,
                 SystemId INTEGER NOT NULL,
                 ExpiresAt INTEGER NOT NULL,
-                BoostsJson TEXT NOT NULL
+                BoostsJson TEXT NOT NULL, IndustrialProtection INTEGER NOT NULL DEFAULT 0
             );
             CREATE INDEX IF NOT EXISTS IX_WorldCommandBurst_ShipId ON WorldCommandBurst(ShipId);
             CREATE INDEX IF NOT EXISTS IX_WorldCommandBurst_SystemExpiry ON WorldCommandBurst(SystemId,ExpiresAt);
@@ -30,6 +30,24 @@ internal static class CommandBurstSchema
             END;
             """
         );
+        if (
+            !world
+                .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldCommandBurst')")
+                .AsEnumerable()
+                .Contains("IndustrialProtection")
+        )
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldCommandBurst ADD COLUMN IndustrialProtection INTEGER NOT NULL DEFAULT 0");
+        }
+        if (
+            !world
+                .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldCommandBurst')")
+                .AsEnumerable()
+                .Contains(nameof(Eden.Data.World.Fleets.WorldCommandBurst.Phenomena))
+        )
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldCommandBurst ADD COLUMN Phenomena INTEGER NOT NULL DEFAULT 0");
+        }
         foreach (string operation in new[] { "INSERT", "DELETE" })
         {
             string row = operation == "INSERT" ? "NEW" : "OLD";

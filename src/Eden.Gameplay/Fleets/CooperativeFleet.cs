@@ -42,6 +42,7 @@ public enum FleetBroadcastKind
     EnemySpotted,
     InPosition,
     HealTarget,
+    JumpBeacon,
 }
 
 public sealed record FleetPilot(
@@ -64,7 +65,13 @@ public sealed record FleetIdentity(long FleetId, long WingId, long SquadId, Flee
 
 public sealed record FleetMembership(long FleetId, long Version);
 
-public sealed record FleetMember(FleetPilot Pilot, FleetPlacement Placement, int Job, bool TakesFleetWarp = true);
+public sealed record FleetMember(
+    FleetPilot Pilot,
+    FleetPlacement Placement,
+    int Job,
+    bool TakesFleetWarp = true,
+    bool AcceptsConduitJumps = true
+);
 
 public sealed record FleetSquad(long Id, string Name);
 
@@ -164,6 +171,7 @@ public interface ICooperativeFleets
     void SetFreeMove(long actor, long fleet, bool enabled);
     void SetMotd(long actor, long fleet, string text);
     void SetTakesWarp(long actor, long fleet, bool enabled);
+    void SetAcceptsConduitJumps(long actor, long fleet, bool enabled);
     void Broadcast(
         long actor,
         long fleet,

@@ -37,6 +37,11 @@ internal sealed partial class EconomyTransaction(
     private readonly Dictionary<string, long> _sequences = new(StringComparer.Ordinal);
     private readonly Dictionary<int, InstitutionalPreparation> _preparations = [];
 
+    internal IEnumerable<long> TimedModules(long ship) => store.TimedModules(ship);
+
+    internal bool MayHaveIndustrialProtection(long now) =>
+        store.MayHaveIndustrialProtection(now) || HasPrivateRows<Eden.Data.World.Fleets.WorldCommandBurst>();
+
     internal bool HasPrivateRows<T>()
         where T : class => _sets.TryGetValue(typeof(T), out var set) && set.Materializations != 0;
 
@@ -67,6 +72,17 @@ internal sealed partial class EconomyTransaction(
             .Select(b => b.BeltId);
 
     internal override long NextExpiry => store.NextExpiry;
+    internal override Eden.Gameplay.Targeting.IPilotTargetLocks? TargetLocks => owner?.TargetLocks;
+
+    internal override bool TetherProtected(long ship, long now)
+    {
+        if (Set<Eden.Data.World.Structures.SavedPilotTether>().Find(ship) is null)
+        {
+            return false;
+        }
+        using CatalogDbContext? catalog = previewCatalog is null ? new(database!.CatalogPath) : null;
+        return Eden.World.Structures.PilotTetherStore.Protected(this, previewCatalog ?? catalog!, ship, now);
+    }
 
     internal override bool PilotExists(long id) => store.IsPilot(id);
 
@@ -220,10 +236,23 @@ internal sealed partial class EconomyTransaction(
 
     internal override long NextItemId()
     {
-        string[] names = ["WorldItem", "WorldShip", "WorldPilotImplant", "WorldBooster", "WorldStructure", "WorldSovereigntyNode"];
+        string[] names =
+        [
+            "WorldItem",
+            "WorldShip",
+            "WorldPilotImplant",
+            "WorldBooster",
+            "WorldStructure",
+            "WorldSovereigntyNode",
+            "WorldAssetSafety",
+        ];
         long last = names.Select(name => _sequences.GetValueOrDefault(name, store.Sequence(name))).Max();
         return Next("WorldItem", Math.Max(last, InventoryDefinitions.FirstOwnedItemId));
     }
+
+    internal override bool HasStructureMissiles(int system) => store.HasStructureMissiles(system);
+
+    internal override IReadOnlyCollection<int> StructureMissileSystems => store.StructureMissileSystems;
 
     internal bool Overlay<T>(T row)
         where T : class

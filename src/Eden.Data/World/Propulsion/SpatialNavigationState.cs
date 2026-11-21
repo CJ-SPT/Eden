@@ -6,6 +6,7 @@ public sealed class SpatialNavigationState
     public long ShipId { get; set; }
     public long TargetingReadyAt { get; set; }
     public long GateCloakUntil { get; set; }
+    public long FieldScrambledUntil { get; set; }
     public long CloakModuleId { get; set; }
     public double CloakTargetingMilliseconds { get; set; }
     public double CloakReactivationMilliseconds { get; set; }

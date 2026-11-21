@@ -1,4 +1,5 @@
 using Eden.Data.World.Industry;
+using Eden.Data.World.Inventory;
 using Eden.Data.World.Structures;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Structures;
@@ -11,6 +12,44 @@ namespace Eden.World.Structures;
 
 internal static class StructureIndustry
 {
+    internal static bool SupercapitalConstruction(WorldAction world, CatalogDbContext catalog, SavedStructure structure) =>
+        structure.TypeId == StructureIndustryRules.Sotiyo
+        && ManufacturingCatalog.Security(catalog, structure.SystemId) <= 0
+        && CapitalNavigationStore.HasOnlineUpgrade(
+            world,
+            structure.SystemId,
+            structure.CorporationId,
+            StructureIndustryRules.SupercapitalConstructionUpgrade
+        );
+
+    internal static void StopUnavailableShipyards(WorldAction world, CatalogDbContext catalog, int? system, long now)
+    {
+        if (world is not EconomyTransaction)
+        {
+            return;
+        }
+        var shipyards = system is int systemId
+            ? world.Filter<SavedStructure>(row => row.SystemId == systemId && row.TypeId == StructureIndustryRules.Sotiyo)
+            : world.Filter<SavedStructure>(row => row.TypeId == StructureIndustryRules.Sotiyo);
+        foreach (var structure in shipyards)
+        {
+            if (SupercapitalConstruction(world, catalog, structure))
+            {
+                continue;
+            }
+            foreach (
+                var service in world
+                    .Filter<SavedStructureService>(row => row.StructureId == structure.Id && row.Online)
+                    .AsEnumerable()
+                    .Where(row => world.Set<OwnedItem>().Find(row.ItemId)?.TypeId == StructureIndustryRules.SupercapitalShipyard)
+                    .ToArray()
+            )
+            {
+                PilotStructureStore.SetServiceOnline(world, catalog, structure, service.ItemId, false, now);
+            }
+        }
+    }
+
     internal static void RequireService(
         WorldAction world,
         CatalogDbContext catalog,
@@ -42,7 +81,8 @@ internal static class StructureIndustry
     {
         var type = catalog.FittingType(productTypeId);
         var required = StructureIndustryRules.Required(activity, type?.CategoryId ?? 0, type?.GroupId ?? 0);
-        return PilotStructureStore.ServiceAccess(world, catalog, structure, pilotId)
+        return (required != StructureService.SupercapitalManufacturing || SupercapitalConstruction(world, catalog, structure))
+            && PilotStructureStore.ServiceAccess(world, catalog, structure, pilotId)
             && PilotStructureStore.Snapshot(world, catalog, structure).Services.Contains(required);
     }
 

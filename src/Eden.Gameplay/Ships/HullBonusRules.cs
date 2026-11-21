@@ -55,7 +55,10 @@ public enum HullCapability
     SecurityStatus,
     BoosterTraits,
     ShipModes,
+    CapacitorBoosters,
+    CargoScanning,
     MicroJumpFields,
+    Fighters,
 }
 
 // Catalog selectors are IDs, independent of a pilot's trained level.
@@ -78,13 +81,16 @@ public enum HullBonusSkill
     BombDeployment = 28073,
     Survey = 3551,
     MicroJumpDriveOperation = 4385,
+    CapitalMicroJumpDriveOperation = 83464,
     DefenderMissiles = 3323,
     HullUpgrades = 3394,
-    ShieldUpgrades = 3420,
+    TacticalShieldManipulation = 3420,
+    ShieldUpgrades = 3425,
     MiningForeman = 22536,
     InformationCommand = 20494,
     ExpeditionCommand = 89611,
     IndustrialReconfiguration = 58956,
+    CapitalIndustrialReconfiguration = 28585,
     IceHarvestingDroneOperation = 43702,
     Mining = 3386,
     RepairSystems = 3393,
@@ -114,7 +120,25 @@ public enum HullBonusSkill
     SentryDroneInterfacing = 23594,
     LightDroneOperation = 24241,
     InfomorphPsychology = 24242,
+    CapitalEnergyTurret = 20327,
+    CapitalHybridTurret = 21666,
+    CapitalProjectileTurret = 21667,
+    CapitalShieldOperation = 21802,
+    CapitalRepairSystems = 21803,
     CapitalRemoteArmorRepairSystems = 24568,
+    CapitalShieldEmissionSystems = 24571,
+    CapitalCapacitorEmissionSystems = 24572,
+    XLPrecursorWeapon = 52998,
+    BurstProjectorOperation = AreaWeaponRules.ProjectorSkill,
+    DisruptiveLanceOperation = DoomsdayFieldRules.DisruptiveLanceOperation,
+    RepairDroneOperation = 3439,
+    Fighters = 23069,
+    LightFighters = 40572,
+    HeavyFighters = 32339,
+    SupportFighters = 40573,
+    Torpedoes = 3325,
+    CruiseMissiles = 21668,
+    XLTorpedoes = 32435,
     GasCloudHarvesting = 25544,
     Salvaging = 25863,
     MediumDroneOperation = 33699,
@@ -128,6 +152,7 @@ public enum HullBonusSkill
 
 public enum HullBonusEquipmentGroup
 {
+    CargoScanner = 47,
     RemoteTrackingComputer = 209,
     RemoteSensorBooster = 290,
     ShieldExtender = 38,
@@ -136,6 +161,7 @@ public enum HullBonusEquipmentGroup
     ProjectileWeapon = 55,
     RocketLauncher = 507,
     LightMissileLauncher = 509,
+    SiegeModule = Eden.Gameplay.Flight.CapitalModeRules.Group,
     PropulsionModule = 46,
     Microwarpdrive = 475,
     MicroJumpDrive = 1189,
@@ -145,6 +171,8 @@ public enum HullBonusEquipmentGroup
     RemoteCapacitorTransmitter = 67,
     EnergyNosferatu = 68,
     EnergyNeutralizer = 71,
+    CapacitorBooster = 76,
+    CapacitorCharge = 87,
     ReinforcedBulkhead = 78,
     BurstJammer = 80,
     Ecm = 201,
@@ -154,6 +182,8 @@ public enum HullBonusEquipmentGroup
     TargetPainter = 379,
     ScanProbeLauncher = 481,
     CruiseMissileLauncher = 506,
+    XlTorpedoLauncher = 524,
+    XlCruiseMissileLauncher = 1674,
     TorpedoLauncher = 508,
     HeavyMissileLauncher = 510,
     RapidLightMissileLauncher = 511,
@@ -234,6 +264,8 @@ public static class HullBonusRules
             {
                 (int)HullBonusSkill.BombDeployment => HullCapability.Bombs,
                 (int)HullBonusSkill.Survey => HullCapability.SurveyProbes,
+                (int)HullBonusSkill.Fighters or (int)HullBonusSkill.LightFighters or (int)HullBonusSkill.SupportFighters =>
+                    HullCapability.Fighters,
                 int skill when MissileDefinitions.SupportsOwnerSkill(skill) => HullCapability.Missiles,
                 (int)HullBonusSkill.Science or (int)HullBonusSkill.Astrometrics => HullCapability.Probes,
                 (int)HullBonusSkill.PropulsionJamming
@@ -243,7 +275,7 @@ public static class HullBonusRules
                             or DogmaAttributeId.StructureHitPoints => HullCapability.UtilityDrones,
                 (int)HullBonusSkill.PropulsionJamming => HullCapability.Interdiction,
                 (int)HullBonusSkill.MiningDroneOperation or (int)HullBonusSkill.IceHarvestingDroneOperation => HullCapability.MiningDrones,
-                (int)HullBonusSkill.SalvageDroneOperation => HullCapability.UtilityDrones,
+                (int)HullBonusSkill.SalvageDroneOperation or (int)HullBonusSkill.RepairDroneOperation => HullCapability.UtilityDrones,
                 (int)HullBonusSkill.Drones
                 or (int)HullBonusSkill.LightDroneOperation
                 or (int)HullBonusSkill.MediumDroneOperation
@@ -253,6 +285,7 @@ public static class HullBonusRules
             },
             ModifierSelector.Group => (HullBonusEquipmentGroup?)target.Selection switch
             {
+                HullBonusEquipmentGroup.CargoScanner => HullCapability.CargoScanning,
                 HullBonusEquipmentGroup.TractorBeam => HullCapability.TractorBeams,
                 HullBonusEquipmentGroup.CloakingDevice => HullCapability.Cloaking,
                 HullBonusEquipmentGroup.CapitalFlexShieldHardener => HullCapability.CapitalFlexShieldHardening,
@@ -261,9 +294,11 @@ public static class HullBonusRules
                 HullBonusEquipmentGroup.StasisGrappler => HullCapability.Interdiction,
                 HullBonusEquipmentGroup.Booster => HullCapability.BoosterTraits,
                 HullBonusEquipmentGroup.ProjectileWeapon => HullCapability.Turrets,
+                HullBonusEquipmentGroup.SiegeModule => HullCapability.ShipModes,
                 HullBonusEquipmentGroup.WarpScrambler or HullBonusEquipmentGroup.StasisWeb => HullCapability.Tackle,
                 HullBonusEquipmentGroup.ArmorPlate => HullCapability.ArmorPlates,
                 HullBonusEquipmentGroup.ShieldExtender => HullCapability.ShieldExtenders,
+                HullBonusEquipmentGroup.CapacitorBooster or HullBonusEquipmentGroup.CapacitorCharge => HullCapability.CapacitorBoosters,
                 HullBonusEquipmentGroup.ReinforcedBulkhead => HullCapability.ReinforcedBulkheads,
                 HullBonusEquipmentGroup.RocketLauncher
                 or HullBonusEquipmentGroup.LightMissileLauncher
@@ -272,7 +307,9 @@ public static class HullBonusRules
                 or HullBonusEquipmentGroup.HeavyMissileLauncher
                 or HullBonusEquipmentGroup.RapidLightMissileLauncher
                 or HullBonusEquipmentGroup.HeavyAssaultMissileLauncher
-                or HullBonusEquipmentGroup.RapidHeavyMissileLauncher => HullCapability.Missiles,
+                or HullBonusEquipmentGroup.RapidHeavyMissileLauncher
+                or HullBonusEquipmentGroup.XlTorpedoLauncher
+                or HullBonusEquipmentGroup.XlCruiseMissileLauncher => HullCapability.Missiles,
                 HullBonusEquipmentGroup.RemoteShieldBooster
                 or HullBonusEquipmentGroup.RemoteArmorRepairer
                 or HullBonusEquipmentGroup.AncillaryRemoteShieldBooster
@@ -303,25 +340,38 @@ public static class HullBonusRules
                 or HullBonusSkill.MediumEnergyTurret
                 or HullBonusSkill.LargeHybridTurret
                 or HullBonusSkill.LargeProjectileTurret
-                or HullBonusSkill.LargeEnergyTurret => HullCapability.Turrets,
-                HullBonusSkill.MissileLauncherOperation => HullCapability.Missiles,
+                or HullBonusSkill.LargeEnergyTurret
+                or HullBonusSkill.CapitalEnergyTurret
+                or HullBonusSkill.CapitalHybridTurret
+                or HullBonusSkill.CapitalProjectileTurret => HullCapability.Turrets,
+                HullBonusSkill.MissileLauncherOperation
+                or HullBonusSkill.Torpedoes
+                or HullBonusSkill.CruiseMissiles
+                or HullBonusSkill.XLTorpedoes => HullCapability.Missiles,
                 HullBonusSkill.Mining => HullCapability.OreMining,
-                HullBonusSkill.RepairSystems => HullCapability.LocalArmorRepair,
-                HullBonusSkill.ShieldOperation => HullCapability.LocalShieldBoost,
+                HullBonusSkill.RepairSystems or HullBonusSkill.CapitalRepairSystems => HullCapability.LocalArmorRepair,
+                HullBonusSkill.ShieldOperation or HullBonusSkill.CapitalShieldOperation => HullCapability.LocalShieldBoost,
                 HullBonusSkill.PropulsionJamming or HullBonusSkill.Navigation => HullCapability.Tackle,
                 HullBonusSkill.Afterburner or HullBonusSkill.HighSpeedManeuvering => HullCapability.Propulsion,
                 HullBonusSkill.Astrometrics => HullCapability.Probes,
                 HullBonusSkill.EnergyPulseWeapons => HullCapability.Smartbombs,
                 HullBonusSkill.ShieldEmissionSystems
                 or HullBonusSkill.RemoteArmorRepairSystems
-                or HullBonusSkill.CapitalRemoteArmorRepairSystems => HullCapability.RemoteRepair,
-                HullBonusSkill.CapacitorEmissionSystems => HullCapability.EnergyWarfare,
+                or HullBonusSkill.CapitalRemoteArmorRepairSystems
+                or HullBonusSkill.CapitalShieldEmissionSystems => HullCapability.RemoteRepair,
+                HullBonusSkill.CapacitorEmissionSystems or HullBonusSkill.CapitalCapacitorEmissionSystems => HullCapability.EnergyWarfare,
                 HullBonusSkill.WeaponDisruption or HullBonusSkill.TargetPainting or HullBonusSkill.ElectronicWarfare =>
                     HullCapability.ElectronicWarfare,
                 HullBonusSkill.BombDeployment => HullCapability.Bombs,
                 HullBonusSkill.DefenderMissiles => HullCapability.Interdiction,
-                HullBonusSkill.HullUpgrades or HullBonusSkill.ShieldUpgrades => HullCapability.Overheating,
+                HullBonusSkill.ShieldUpgrades when target.Attribute == DogmaAttributeId.ShieldCapacityBonus =>
+                    HullCapability.ShieldExtenders,
+                HullBonusSkill.HullUpgrades when target.Attribute == DogmaAttributeId.ArmorHitPointsBonus => HullCapability.ArmorPlates,
+                HullBonusSkill.HullUpgrades or HullBonusSkill.ShieldUpgrades or HullBonusSkill.TacticalShieldManipulation =>
+                    HullCapability.Overheating,
                 HullBonusSkill.MicroJumpDriveOperation => HullCapability.MicroJumpDrives,
+                HullBonusSkill.CapitalMicroJumpDriveOperation => HullCapability.MicroJumpFields,
+                HullBonusSkill.BurstProjectorOperation or HullBonusSkill.DisruptiveLanceOperation => HullCapability.ElectronicWarfare,
                 HullBonusSkill.Leadership
                 or HullBonusSkill.SkirmishCommand
                 or HullBonusSkill.InformationCommandSpecialist
@@ -329,7 +379,8 @@ public static class HullBonusRules
                 or HullBonusSkill.MiningForeman
                 or HullBonusSkill.InformationCommand
                 or HullBonusSkill.ExpeditionCommand => HullCapability.CommandBursts,
-                HullBonusSkill.IndustrialReconfiguration => HullCapability.IndustrialCores,
+                HullBonusSkill.IndustrialReconfiguration or HullBonusSkill.CapitalIndustrialReconfiguration =>
+                    HullCapability.IndustrialCores,
                 HullBonusSkill.Cloaking => HullCapability.Cloaking,
                 HullBonusSkill.Archaeology or HullBonusSkill.Hacking => HullCapability.Hacking,
                 HullBonusSkill.IceHarvesting => HullCapability.IceMining,
@@ -337,8 +388,10 @@ public static class HullBonusRules
                 HullBonusSkill.InfomorphPsychology => HullCapability.Entosis,
                 HullBonusSkill.GasCloudHarvesting => HullCapability.GasMining,
                 HullBonusSkill.Salvaging => HullCapability.Salvaging,
-                HullBonusSkill.SmallPrecursorWeapon or HullBonusSkill.MediumPrecursorWeapon or HullBonusSkill.LargePrecursorWeapon =>
-                    HullCapability.Disintegrators,
+                HullBonusSkill.SmallPrecursorWeapon
+                or HullBonusSkill.MediumPrecursorWeapon
+                or HullBonusSkill.LargePrecursorWeapon
+                or HullBonusSkill.XLPrecursorWeapon => HullCapability.Disintegrators,
                 HullBonusSkill.SmallVortonProjector or HullBonusSkill.MediumVortonProjector or HullBonusSkill.LargeVortonProjector =>
                     HullCapability.VortonProjectors,
                 _ => HullCapability.Unclassified,
@@ -392,6 +445,9 @@ public static class HullBonusRules
             )
         || capability
             is HullCapability.Bombs
+                or HullCapability.CargoScanning
+                or HullCapability.CapacitorBoosters
+                or HullCapability.ShipModes
                 or HullCapability.Overheating
                 or HullCapability.CommandBursts
                 or HullCapability.Cloaking

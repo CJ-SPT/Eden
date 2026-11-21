@@ -49,14 +49,15 @@ public static class ShipStorageRules
         return access.Docked && ship.LocationId == access.StationId && ship.FlagId == (int)InventoryFlag.Hangar;
     }
 
-    public static void CheckContents(IReadOnlyList<InventoryItem> contents, bool containsShips)
+    public static void CheckContents(IReadOnlyList<InventoryItem> contents, bool containsShips, Func<InventoryItem, bool>? mayRetain = null)
     {
         if (
             containsShips
             || contents.Any(item =>
-                ShipHoldRules.IsHold(item.FlagId)
-                && item.FlagId is not ((int)InventoryFlag.DroneBay or (int)InventoryFlag.FighterBay)
-                && !CanRetainCargo(item)
+                FighterDeckRules.IsTube(item.FlagId)
+                || ShipHoldRules.IsHold(item.FlagId)
+                    && item.FlagId is not ((int)InventoryFlag.DroneBay or (int)InventoryFlag.FighterBay)
+                    && !(mayRetain?.Invoke(item) ?? CanRetainCargo(item))
             )
         )
         {

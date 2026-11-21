@@ -49,7 +49,8 @@ internal sealed partial class PilotDroneStore
         var position = validNpc ? NpcMotion.Position(npc!) : targetContact!.Position;
         var type = validNpc ? npc!.TypeId : victim!.ActiveShip.TypeId;
         double radius = catalog.FittingType(type)?.Radius ?? 0;
-        if (contact.Position.DistanceTo(position) - radius - contact.Profile.Radius > profile.Range)
+        double distance = Math.Max(0, contact.Position.DistanceTo(position) - radius - contact.Profile.Radius);
+        if (distance > profile.Range + profile.Falloff)
         {
             ClearDroneEffects(world, drone.ItemId);
             return;
@@ -78,10 +79,28 @@ internal sealed partial class PilotDroneStore
         long expires = checked(now + (long)Math.Ceiling(profile.EffectMilliseconds * TimeSpan.TicksPerMillisecond));
         ClearDroneEffects(world, drone.ItemId);
         var target = new TackleTarget(drone.TargetId, validNpc ? TackleTargetKind.Npc : TackleTargetKind.Ship);
+        int size = Math.Max(1, contact.SquadronSize);
+        double factor = profile.Falloff > 0 ? Math.Pow(.5, Math.Pow(Math.Max(0, distance - profile.Range) / profile.Falloff, 2)) : 1;
+        double amount = profile.Amount * size * factor;
         if (profile.ElectronicWarfare is { } template)
         {
             var module = template with { ItemId = drone.ItemId, TypeId = contact.Profile.TypeId };
-            var applied = PlayerEwarRules.Attempt(module, 0, attributes, DrawWork());
+            if (size > 1 && module.Power.Jamming is { } strength)
+            {
+                module = module with
+                {
+                    Power = module.Power with
+                    {
+                        Jamming = new(
+                            strength.Radar * size,
+                            strength.Ladar * size,
+                            strength.Magnetometric * size,
+                            strength.Gravimetric * size
+                        ),
+                    },
+                };
+            }
+            var applied = PlayerEwarRules.Attempt(module, distance, attributes, DrawWork());
             ElectronicWarfareContact effect = new(pilot.Id, drone.ItemId, module, target, applied, now, expires);
             world.Add(
                 new WorldPlayerEwar
@@ -96,8 +115,9 @@ internal sealed partial class PilotDroneStore
                 }
             );
         }
-        else if (profile.Kind == UtilityDroneKind.Webifying)
+        else if (profile.Kind is UtilityDroneKind.Webifying or UtilityDroneKind.WarpDisrupting)
         {
+            bool web = profile.Kind == UtilityDroneKind.Webifying;
             world.Add(
                 new WorldTackle
                 {
@@ -108,10 +128,11 @@ internal sealed partial class PilotDroneStore
                     SystemId = drone.SystemId!.Value,
                     TargetId = drone.TargetId,
                     TargetKind = target.Kind,
-                    Effect = DogmaEffect.StasisWebifier,
+                    Effect = web ? DogmaEffect.StasisWebifier : DogmaEffect.WarpDisruptor,
                     DurationMilliseconds = profile.DurationMilliseconds,
                     Range = profile.Range,
-                    WebPercent = profile.Amount,
+                    WebPercent = web ? Math.Max(-100, amount) : 0,
+                    Strength = web ? 0 : amount,
                     StartedAt = now,
                     ExpiresAt = expires,
                 }
@@ -122,20 +143,14 @@ internal sealed partial class PilotDroneStore
             var energy = world.Set<WorldNpcEnergy>().Find(npc!.Id);
             var pool = NpcCapacitorRules.Read(NpcCapacitorRules.Profile(attributes), energy?.State(), now);
             energy ??= world.Add(new WorldNpcEnergy { NpcId = npc.Id }).Entity;
-            energy.Charge = Math.Max(
-                0,
-                pool.Charge - profile.Amount * attributes.GetValueOrDefault(DogmaAttributeId.EnergyWarfareResistance, 1)
-            );
+            energy.Charge = Math.Max(0, pool.Charge - amount * attributes.GetValueOrDefault(DogmaAttributeId.EnergyWarfareResistance, 1));
             energy.UpdatedAt = now;
         }
         else
         {
             double capacitor = ShipResources.Capacitor(world, drone.TargetId, attributes, now);
             var energy = world.Set<ShipEnergy>().Find(drone.TargetId) ?? world.Add(new ShipEnergy { ShipId = drone.TargetId }).Entity;
-            energy.Charge = Math.Max(
-                0,
-                capacitor - profile.Amount * attributes.GetValueOrDefault(DogmaAttributeId.EnergyWarfareResistance, 1)
-            );
+            energy.Charge = Math.Max(0, capacitor - amount * attributes.GetValueOrDefault(DogmaAttributeId.EnergyWarfareResistance, 1));
             energy.UpdatedAt = now;
             world.AfterCommit(() => capacitorEvents.Publish(new(victim!.Id, victim.ActiveShipId)));
         }

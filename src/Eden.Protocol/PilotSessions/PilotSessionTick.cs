@@ -1,5 +1,6 @@
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Mining;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Operations;
@@ -57,6 +58,13 @@ internal sealed class PilotSessionTick(
         }
         var flight = context.Flight;
         var previousControl = context.ControlledStructureId;
+        var beforeConduit = flight.Pilot;
+        bool arrived = updates.AdoptConduit(context);
+        using var arrivalContext = arrived ? context.Flight.UseSystem() : null;
+        if (arrived)
+        {
+            await output.AnnounceTransitionAsync(beforeConduit, previousControl);
+        }
         var beforeControl = context.Pilot;
         var beforePlayerDamage = flight.Pilot;
         using (SessionLatency.Measure(SessionLatencyPhase.PendingDamage))
@@ -83,10 +91,29 @@ internal sealed class PilotSessionTick(
         {
             context.ReleaseLocationReferences();
             context.Roster = context.Roster.Select(p => p.PilotId == moved.Pilot.PilotId ? moved.Pilot : p).ToArray();
-            InventoryChangesWire.NotifyItemChange(context, moved.ShipChange);
+            foreach (var change in moved.Changes)
+            {
+                InventoryChangesWire.NotifyItemChange(context, change);
+            }
             updates.Enter(context);
             await output.WriteAsync(new PilotSessionChange(accountId, clientId, flight.Pilot, departure).ToBlue());
-            report($"Ship {flight.Pilot.ShipId} translocated from {departure.SystemId} to {flight.Pilot.SystemId}.");
+            if (moved.Timers is { } timers)
+            {
+                context.Notifications.Add(
+                    new ModuleAttributesChanged([
+                        new(
+                            moved.Pilot.PilotId,
+                            new DogmaItemKey.Item(moved.Pilot.ShipId),
+                            DogmaAttributeId.CapacitorCharge,
+                            timers.UpdatedAt,
+                            moved.Capacitor
+                        ),
+                    ])
+                );
+                context.Notifications.Add(new Eden.Protocol.Flight.JumpTimersUpdated(timers));
+            }
+            string action = moved.Timers is null ? "translocated" : "jumped";
+            report($"Ship {flight.Pilot.ShipId} {action} from {departure.SystemId} to {flight.Pilot.SystemId}.");
         }
         if (flight.CompleteJump())
         {
@@ -122,11 +149,16 @@ internal sealed class PilotSessionTick(
                 }
                 if (flight.InBallpark)
                 {
+                    flight.RefreshCynos();
                     flight.RefreshAsteroids(asteroids.List(flight.Pilot.SystemId));
                     flight.RefreshWrecks();
                     flight.RefreshMissiles();
                     flight.RefreshNpcs();
                     flight.RefreshPeers();
+                }
+                else if (context.ControlledStructureId is not null)
+                {
+                    flight.RefreshStructureObservers();
                 }
             }
 

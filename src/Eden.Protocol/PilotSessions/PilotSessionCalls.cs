@@ -83,6 +83,7 @@ internal sealed class PilotSessionCalls(
         PilotCallResult result = PilotCallResult.None;
         void Dispatch()
         {
+            using var arrivalContext = updates.AdoptConduit(context) ? context.Flight.UseSystem() : null;
             using (SessionLatency.Measure(SessionLatencyPhase.TrafficRefresh))
             {
                 presentation?.Refresh();

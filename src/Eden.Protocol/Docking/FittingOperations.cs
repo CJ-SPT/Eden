@@ -20,7 +20,8 @@ internal sealed class FittingOperations(
     DroneAttributeUpdates droneUpdates,
     Eden.Gameplay.Structures.IPilotStructures structures,
     Eden.Gameplay.Structures.IStructureContacts structureContacts,
-    Eden.Protocol.Structures.StructureDogmaBuilder structureDogma
+    Eden.Protocol.Structures.StructureDogmaBuilder structureDogma,
+    IPilotMobileRefitting? mobileRefitting = null
 )
 {
     internal IReadOnlyList<WeaponBank> ReadBanks(PilotCallContext context) => banks.Read(context.Pilot.PilotId, context.Pilot.ShipId);
@@ -116,7 +117,16 @@ internal sealed class FittingOperations(
                 return PilotCallResult.None;
             }
             var previousBanks = ReadBanks(context);
-            var changes = fitting.SetOnline(context.Pilot.PilotId, ship, module, online);
+            IReadOnlyList<InventoryChange> changes;
+            if (context.Pilot.Position is not null && mobileRefitting is not null)
+            {
+                InventoryTransfers.CheckRefitFlight(context);
+                changes = mobileRefitting.SetOnline(context.Pilot.PilotId, ship, module, online);
+            }
+            else
+            {
+                changes = fitting.SetOnline(context.Pilot.PilotId, ship, module, online);
+            }
             NotifyOnlineChanges(context, changes);
             NotifyShipAttributes(context, previousBanks);
             return PilotCallResult.None;

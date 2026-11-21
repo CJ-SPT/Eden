@@ -23,6 +23,7 @@ public enum StructureUpkeepState
 {
     FullPower = 1,
     LowPower = 2,
+    Abandoned = 3,
 }
 
 public enum StructureService
@@ -135,6 +136,10 @@ public sealed record StructureContact(
 )
 {
     public double Yaw { get; init; }
+    public StructureBattle? Battle { get; init; }
+    public Combat.HullDamage? DamageFractions { get; init; }
+    public long? TimerEnd => Battle?.RepairAt ?? StateEndsAt;
+    public long? TimerPausedAt => Battle is { PausedUntil: > 0 } b ? b.PausedUntil - StructureCombatRules.DamageWindow : null;
 }
 
 public sealed record StructureSnapshot(
@@ -158,7 +163,14 @@ public sealed record StructureSnapshot(
     long StateStartedAt = 0,
     int ReinforceWeekday = 0,
     int ReinforceHour = StructureRules.DefaultReinforceHour
-);
+)
+{
+    public StructureBattle? Battle { get; init; }
+    public Combat.HullDamage? DamageFractions { get; init; }
+    public StructureUpkeepState Upkeep { get; init; } = StructureUpkeepState.LowPower;
+    public long? TimerEnd => Battle?.RepairAt ?? StateEndsAt;
+    public long? TimerPausedAt => Battle is { PausedUntil: > 0 } b ? b.PausedUntil - StructureCombatRules.DamageWindow : null;
+}
 
 public sealed record StructureDeployment(
     long ItemId,
@@ -168,7 +180,8 @@ public sealed record StructureDeployment(
     string Description = "",
     int? MoonId = null,
     int ReinforceWeekday = 0,
-    int ReinforceHour = StructureRules.DefaultReinforceHour
+    int ReinforceHour = StructureRules.DefaultReinforceHour,
+    int? DestinationSystemId = null
 );
 
 public sealed record StructureResult(StructureSnapshot Structure, IReadOnlyList<Inventory.InventoryChange> Changes);

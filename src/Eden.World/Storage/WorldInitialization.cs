@@ -3,9 +3,12 @@ using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Drones;
 using Eden.Data.World.Fittings;
 using Eden.Data.World.Information;
+using Eden.Data.World.Inventory;
 using Eden.Data.World.Propulsion;
 using Eden.Data.World.Repair;
+using Eden.Data.World.Structures;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Catalog;
 using Eden.World.Combat;
@@ -101,10 +104,19 @@ public static class WorldInitialization
                 // Reconcile all overdue escrow once before admitting connections.
             }
         }
-        // Drones remain where they were left; downtime releases control and never replays damage.
+        // Drones remain where they were left. Fighters retain their assigned tube and controller.
+        // The simulation advances at most one observed cycle after the resident world reopens.
         world.Set<WorldDroneCombatTriggers>().ExecuteDelete();
+        var fighterItems = world
+            .Set<OwnedItem>()
+            .Where(item =>
+                item.FlagId >= Eden.Gameplay.Flight.FighterDeckRules.FirstTube
+                && item.FlagId < Eden.Gameplay.Flight.FighterDeckRules.FirstTube + Eden.Gameplay.Flight.FighterDeckRules.MaximumTubes
+            )
+            .Select(item => item.Id);
         world
             .Set<WorldDrone>()
+            .Where(row => !fighterItems.Contains(row.ItemId))
             .ExecuteUpdate(set =>
                 set.SetProperty(d => d.ControllerShipId, 0)
                     .SetProperty(d => d.TargetId, 0)
@@ -124,12 +136,48 @@ public static class WorldInitialization
                     .SetProperty(d => d.DelegateMembership, 0)
                     .SetProperty(d => d.ReactionRevision, 0)
             );
-        // Only autonomous salvage retains its information cycle across startup.
+        // A restarted world has no structure control leases. Recover deployed Standup fighters to their tubes.
+        var structureHosts = world.Set<SavedStructure>().Select(row => row.Id);
+        world
+            .Set<WorldDrone>()
+            .Where(row => row.SystemId != null && structureHosts.Contains(row.ControllerShipId))
+            .ExecuteUpdate(set =>
+                set.SetProperty(row => row.Activity, Eden.Gameplay.Drones.DroneActivity.ReturningToBay)
+                    .SetProperty(row => row.TargetId, row => row.ControllerShipId)
+                    .SetProperty(row => row.Orbiting, false)
+            );
+        // Autonomous salvage and committed capital modes retain their cycles across startup.
+        long moduleReopen = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        int[] capitalModes =
+        [
+            .. Eden.Gameplay.Flight.CapitalModeRules.Types,
+            Eden.Gameplay.Fleets.CommandBurstRules.AmarrPhenomena,
+            Eden.Gameplay.Fleets.CommandBurstRules.CaldariPhenomena,
+            Eden.Gameplay.Fleets.CommandBurstRules.GallentePhenomena,
+            Eden.Gameplay.Fleets.CommandBurstRules.MinmatarPhenomena,
+        ];
+        var committedModes = world
+            .Set<OwnedItem>()
+            .Where(i =>
+                i.Online
+                && (
+                    capitalModes.Contains(i.TypeId)
+                    || i.TypeId >= Eden.Gameplay.Flight.ShipCompressionRules.CapitalAsteroidOre
+                        && i.TypeId <= Eden.Gameplay.Flight.ShipCompressionRules.CapitalMoonOre
+                )
+            )
+            .Select(i => i.Id);
         world
             .Set<ActiveFittedModule>()
-            .Where(marker => !world.Set<SavedInformationCycle>().Any(cycle => cycle.ModuleId == marker.ModuleId))
+            .Where(a =>
+                !world.Set<SavedInformationCycle>().Any(cycle => cycle.ModuleId == a.ModuleId)
+                && (a.ExpiresAt <= moduleReopen || !committedModes.Contains(a.ModuleId))
+            )
             .ExecuteDelete();
-        world.Set<Eden.Data.World.Fleets.WorldCommandBurst>().ExecuteDelete();
+        world
+            .Set<Eden.Data.World.Fleets.WorldCommandBurst>()
+            .Where(row => !row.IndustrialProtection && !row.Phenomena || row.ExpiresAt <= moduleReopen)
+            .ExecuteDelete();
         PilotSpatialModuleStore.Reconcile(world, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc());
         world.Set<WorldTackle>().ExecuteDelete();
         world
@@ -138,7 +186,28 @@ public static class WorldInitialization
             .ExecuteDelete();
         Eden.World.Exploration.HackingSchema.Reconcile(world);
         world.Set<WorldPlayerEwar>().ExecuteDelete();
-        world.Set<SavedAreaWeapon>().ExecuteDelete();
+        world.Set<SavedLanceDisruption>().Where(row => row.EndsAt <= moduleReopen && row.OscillatorEndsAt <= moduleReopen).ExecuteDelete();
+        // Retain unexpired fighter bombs and paid superweapon navigation restrictions.
+        foreach (var row in world.Set<SavedAreaWeapon>().ToArray())
+        {
+            var flight = row.Flight();
+            if (flight.Module.Effect == DogmaEffect.FighterBombLaunch && row.ResolvesAt > moduleReopen)
+            {
+                continue;
+            }
+            long ends = flight.Module.Doomsday is { } charge
+                ? Eden.Gameplay.Combat.AreaWeaponRules.Deadline(flight.StartedAt, charge.DriveLockMilliseconds)
+                : 0;
+            if (ends <= moduleReopen)
+            {
+                world.Remove(row);
+            }
+            else
+            {
+                row.Save(flight with { Active = true, ResolvesAt = ends });
+            }
+        }
+        world.SaveChanges();
         world.Set<WorldRemoteRepair>().ExecuteDelete();
         world.Set<WorldRemoteAssistance>().ExecuteDelete();
         // NPC target ownership is connection activity, not offline combat.

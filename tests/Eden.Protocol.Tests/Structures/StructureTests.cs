@@ -122,6 +122,16 @@ public sealed class StructureTests
     public void PublishedHullsUseTheirDeploymentLifecycleWithoutDuplicatingInventory(int typeId)
     {
         using Fixture f = new();
+        if (typeId is CapitalTravelRules.Pharolux or CapitalTravelRules.Tenebrex or JumpBridgeRules.Ansiblex)
+        {
+            long item = f.Item(typeId);
+            Assert.Throws<InvalidDataException>(() => f.Structures.Deploy(f.PilotId, new(item, Fixture.Point, 0, "Navigation")));
+            Assert.Contains(
+                f.Db.Services.GetRequiredService<Eden.Gameplay.Inventory.IPilotInventory>().List(f.PilotId, f.ShipId),
+                cargo => cargo.Id == item && cargo.Quantity == 1
+            );
+            return;
+        }
         if (typeId == Eden.Gameplay.Sovereignty.SovereigntyResourceRules.SkyhookTypeId)
         {
             long item = f.Item(typeId);
@@ -339,7 +349,7 @@ public sealed class StructureTests
         Assert.False(Assert.Single(exhausted.Modules).Online);
         Assert.DoesNotContain(StructureService.BasicManufacturing, exhausted.Services);
         Assert.Null(Assert.Single(exhausted.Modules).NextFuelAt);
-        Assert.Equal(StructureUpkeepState.LowPower, Assert.Single(contacts.Contacts(Fixture.SystemId)).Structure!.UpkeepState);
+        Assert.Equal(StructureUpkeepState.Abandoned, Assert.Single(contacts.Contacts(Fixture.SystemId)).Structure!.UpkeepState);
     }
 
     [Fact]
@@ -571,7 +581,7 @@ public sealed class StructureTests
     }
 
     [Fact]
-    public void OverdueDecommissioningRefreshesContactsAfterTheLastDockedShipLeaves()
+    public void ResidentDecommissioningEvacuatesDockedShipsAtTheSavedDeadline()
     {
         using Fixture f = new(liveWorld: true);
         var structure = f.Online();
@@ -579,9 +589,11 @@ public sealed class StructureTests
         f.Structures.Unanchor(f.PilotId, structure.Id);
         f.Clock.AdvanceWallTime(TimeSpan.FromDays(7));
         var contacts = f.Db.Services.GetRequiredService<IStructureContacts>();
-        Assert.Equal(StructureState.ShieldVulnerable, Assert.Single(contacts.Contacts(Fixture.SystemId)).Structure!.State);
-        f.Db.Store.SetPosition(f.ShipId, Fixture.Point, Fixture.SystemId);
         Assert.Equal(StructureState.Unanchored, Assert.Single(contacts.Contacts(Fixture.SystemId)).Structure!.State);
+        var evacuated = f.Db.Store.FindPilot(1000001)!;
+        Assert.False(evacuated.InStructure);
+        Assert.NotNull(evacuated.Position);
+        Assert.Equal(Fixture.SystemId, evacuated.SystemId);
     }
 
     [Fact]
@@ -738,7 +750,6 @@ public sealed class StructureTests
 
     [Theory]
     [InlineData(35832)]
-    [InlineData(35841)]
     [InlineData(81826)]
     public void DecommissioningRecoversOneHullWithoutDuplicatingIntegralEquipment(int typeId)
     {

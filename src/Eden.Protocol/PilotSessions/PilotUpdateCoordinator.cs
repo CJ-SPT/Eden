@@ -98,7 +98,11 @@ internal sealed class PilotUpdateCoordinator(
     Eden.Protocol.Structures.StructureControlHandler? structureControl = null,
     Eden.Protocol.Sovereignty.EntosisHandler? entosis = null,
     Eden.Protocol.Sovereignty.SovereigntyMonitor? sovereignty = null,
-    Eden.Protocol.Sovereignty.SovereigntyGatewayUpdates? sovereigntyGateway = null
+    Eden.Protocol.Sovereignty.SovereigntyGatewayUpdates? sovereigntyGateway = null,
+    Eden.Protocol.Flight.CapitalTravelHandler? capital = null,
+    Eden.Protocol.Structures.AssetSafetyHandler? assetSafety = null,
+    Eden.Protocol.Fighters.FighterDeckHandler? fighterDeck = null,
+    ShipCloneMonitor? shipClones = null
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -128,7 +132,18 @@ internal sealed class PilotUpdateCoordinator(
         || implants.IsMonitoring
         || boosters.IsMonitoring
         || crimewatch.IsMonitoring
-        || naniteRepairs.IsMonitoring;
+        || naniteRepairs.IsMonitoring
+        || assetSafety?.IsMonitoring == true;
+
+    internal bool AdoptConduit(PilotCallContext context)
+    {
+        if (capital?.AdoptConduit(context) != true)
+        {
+            return false;
+        }
+        Enter(context);
+        return true;
+    }
 
     public void Enter(PilotCallContext context)
     {
@@ -142,6 +157,8 @@ internal sealed class PilotUpdateCoordinator(
         corporations.Enter(context);
         corporationWallet.Enter(context);
         fleets.Advance(context);
+        capital?.Advance(context);
+        shipClones?.Advance(context);
         chat.Advance(context);
         guests.Advance(context);
         trades.Advance(context);
@@ -266,7 +283,8 @@ internal sealed class PilotUpdateCoordinator(
         information.Advance(context);
         hacking?.Advance(context);
         capacitorBoosters.Advance(context);
-        drones.Advance(context);
+        drones.Advance(context, fighterDeck?.MicroJumpDue(context) == true);
+        fighterDeck?.Advance(context);
         hardeners.Advance(context);
         signatureSuppression.Advance(context);
         assaultDamageControl.Advance(context);
@@ -316,12 +334,15 @@ internal sealed class PilotUpdateCoordinator(
         {
             corporations.Advance(context);
             structureControl?.Advance(context);
+            assetSafety?.Advance(context);
             corporationWallet.Advance(context);
             bookmarks.Advance(context);
             accessGroups.Advance(context);
             savedFittings.Advance(context);
             corporationContacts.Advance(context);
             fleets.Advance(context);
+            capital?.Advance(context);
+            shipClones?.Advance(context);
             chat.Advance(context);
             guests.Advance(context);
             trades.Advance(context);

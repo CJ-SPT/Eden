@@ -13,7 +13,8 @@ internal sealed class StructureHandler(
     Eden.Gameplay.Corporations.IPlayerCorporations corporations,
     TimeProvider clock,
     IStructureContacts contacts,
-    ISystemObjects systemObjects
+    ISystemObjects systemObjects,
+    ICapitalNavigation? capitalNavigation = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -100,6 +101,20 @@ internal sealed class StructureHandler(
                 throw new InvalidDataException("Unexpected structure arguments.");
             }
             long pilot = context.Pilot.PilotId;
+            if (service == "structureDirectory" && method is "GetMyAccessibleOnlineCynoBeaconStructures" or "GetSolarSystemsWithBeacons")
+            {
+                if (args.Length != 0)
+                {
+                    return new PilotCallResult.Failure("Cynosural beacon directory calls do not accept arguments.");
+                }
+                return method == "GetMyAccessibleOnlineCynoBeaconStructures"
+                    ? new BlueList<StructureCynoBeaconRow>(
+                        capitalNavigation?.AccessibleBeacons(pilot).Select(beacon => new StructureCynoBeaconRow(beacon)).ToArray() ?? []
+                    )
+                    : new BlueList<int>(
+                        capitalNavigation?.AccessibleBeacons(null).Select(beacon => beacon.SystemId).Distinct().Order().ToArray() ?? []
+                    );
+            }
             if (service == "structureDirectory" && method == "GetStructureMapData")
             {
                 if (args is not [long systemId] || systemId is <= 0 or > int.MaxValue)
@@ -254,14 +269,13 @@ internal sealed class StructureHandler(
         {
             extra = configuration.State;
         }
-        if (
-            extra is not null
-            && extra is not Dictionary<string, object?> { Count: 0 }
-            && extra is not Dictionary<object, object?> { Count: 0 }
-        )
+        int? destination = extra switch
         {
-            throw new InvalidDataException("This deployment configuration is not supported.");
-        }
+            null or Dictionary<string, object?> { Count: 0 } or Dictionary<object, object?> { Count: 0 } => null,
+            Dictionary<string, object?> { Count: 1 } fields
+                when fields.GetValueOrDefault("destinationSolarsystemID") is long id && id is > 0 and <= int.MaxValue => (int)id,
+            _ => throw new InvalidDataException("This deployment configuration is not supported."),
+        };
         return new(
             item,
             StructureRules.DeploymentPosition(position, Number(x), Number(z)),
@@ -273,7 +287,8 @@ internal sealed class StructureHandler(
                 : throw new InvalidDataException("Invalid reinforcement day."),
             ReinforceHour: hour is null ? StructureRules.DefaultReinforceHour
                 : hour is long h ? checked((int)h)
-                : throw new InvalidDataException("Invalid reinforcement hour.")
+                : throw new InvalidDataException("Invalid reinforcement hour."),
+            DestinationSystemId: destination
         );
     }
 

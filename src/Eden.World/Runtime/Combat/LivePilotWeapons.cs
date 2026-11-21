@@ -241,6 +241,7 @@ internal sealed partial class LiveCombatRuntime
             return null;
         }
         var ship = Ship(pilot, now);
+        RequireIndustryOffense(ship.ShipId, now);
         var other = Ship(victim.PilotId, now).SettleRepairs(now);
         if (
             other.Position is null

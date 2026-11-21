@@ -27,7 +27,9 @@ internal sealed class InventoryTransfers(
     Eden.Gameplay.Exploration.IPilotHacking? hacking = null,
     Eden.Gameplay.Structures.IPilotStructures? structures = null,
     ICargoContainers? containers = null,
-    CargoContainerHandler? containerHandler = null
+    CargoContainerHandler? containerHandler = null,
+    IPilotShipSharing? sharing = null,
+    IPilotMobileRefitting? mobileRefitting = null
 )
 {
     internal PilotCallResult Move(PilotCallContext context, string service, InventoryMoveRequest request)
@@ -36,9 +38,40 @@ internal sealed class InventoryTransfers(
         long source = request.SourceId;
         int flag = request.FlagId;
         int? quantity = request.Quantity;
-        long destination = service == "@hangar" ? context.Pilot.DockedLocationId : InventoryHandler.ShipContainer(service, context.Pilot);
+        long shared = InventoryHandler.SharedShipContainer(service);
+        long destination =
+            shared > 0 ? shared
+            : service == "@hangar" ? context.Pilot.DockedLocationId
+            : InventoryHandler.ShipContainer(service, context.Pilot);
         try
         {
+            if (
+                shared > 0
+                || context.Pilot.Position is not null
+                    && destination == context.Pilot.ShipId
+                    && source != destination
+                    && context.Flight.HasPeerShip(source)
+            )
+            {
+                var flight = context.Flight;
+                if (!flight.CanUseSelfModules || flight.InWarp || flight.PreparingWarp || flight.Cloaked)
+                {
+                    return new PilotCallResult.Failure("Use shared fleet storage from your active ship outside warp.");
+                }
+                flight.Checkpoint();
+                if (sharing?.MoveFleetHangar(context.Pilot.PilotId, destination, request) is { } sharedChanges)
+                {
+                    foreach (var change in sharedChanges)
+                    {
+                        InventoryChangesWire.NotifyItemChange(context, change);
+                    }
+                    return PilotCallResult.None;
+                }
+                if (shared > 0)
+                {
+                    return new PilotCallResult.Failure("The shared fleet hangar is unavailable at your current location.");
+                }
+            }
             if (containers?.Handles(source) == true && containerHandler is not null)
             {
                 var banksBefore = fittingOperations.ReadBanks(context);
@@ -254,9 +287,46 @@ internal sealed class InventoryTransfers(
             (InventoryFlag)request.FlagId
         );
 
-    private IReadOnlyList<InventoryChange> FitItems(PilotCallContext context, InventoryMoveRequest request) =>
-        fitting.Fit(context.Pilot.PilotId, request.ItemIds, request.SourceId, request.FlagId);
+    private IReadOnlyList<InventoryChange> FitItems(PilotCallContext context, InventoryMoveRequest request)
+    {
+        if (context.Pilot.Position is not null && mobileRefitting is not null)
+        {
+            CheckRefitFlight(context);
+            return mobileRefitting.Fit(context.Pilot.PilotId, context.Pilot.ShipId, request);
+        }
+        return fitting.Fit(context.Pilot.PilotId, request.ItemIds, request.SourceId, request.FlagId);
+    }
 
-    private IReadOnlyList<InventoryChange> MoveInventory(PilotCallContext context, InventoryMoveRequest request, long destination) =>
-        inventory.Move(context.Pilot.PilotId, destination, request);
+    private IReadOnlyList<InventoryChange> MoveInventory(PilotCallContext context, InventoryMoveRequest request, long destination)
+    {
+        var pilot = context.Pilot;
+        if (
+            mobileRefitting is not null
+            && pilot.Position is not null
+            && destination == pilot.ShipId
+            && request.SourceId == destination
+            && request.FlagId == (int)InventoryFlag.Cargo
+            && inventory
+                .List(pilot.PilotId, destination)
+                .Any(item => request.ItemIds.Contains(item.Id) && InventoryDefinitions.IsFittedSlot(item.FlagId))
+        )
+        {
+            CheckRefitFlight(context);
+            if (mobileRefitting.Unfit(pilot.PilotId, destination, request) is { } result)
+            {
+                return result;
+            }
+        }
+        return inventory.Move(pilot.PilotId, destination, request);
+    }
+
+    internal static void CheckRefitFlight(PilotCallContext context)
+    {
+        var flight = context.Flight;
+        if (!flight.CanUseSelfModules || flight.InWarp || flight.PreparingWarp || flight.Cloaked || flight.MicroJumpSpooling)
+        {
+            throw new InvalidDataException("Use the mobile fitting service from your active ship outside warp.");
+        }
+        flight.Checkpoint();
+    }
 }

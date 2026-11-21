@@ -85,7 +85,7 @@ public sealed class CapsuleCombatTests
                 new SavedJumpClone
                 {
                     PilotId = Victim,
-                    StationId = f.Pilot.StationId,
+                    LocationId = f.Pilot.StationId,
                     Name = "Stored body",
                 }
             )

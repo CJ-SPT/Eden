@@ -63,6 +63,9 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Set<Eden.Data.World.Characters.SavedPilotImplant>().Where(child => child.CloneId == removed.Id));
                 break;
             case Eden.Data.World.Characters.Pilot removed:
+                RemoveRange(Filter<Eden.Data.World.Flight.SavedJumpTimers>(row => row.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Flight.SavedCynosuralField>(row => row.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Flight.SavedJumpPortal>(row => row.PilotId == removed.Id));
                 if (Set<Eden.Data.World.FactionWarfare.SavedMilitiaNavyPursuit>().Find(removed.Id) is { } pursuit)
                 {
                     foreach (long responderId in new[] { pursuit.FrigateId, pursuit.CruiserId }.OfType<long>())
@@ -242,7 +245,9 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Set<Eden.Data.World.Agents.SavedMissionStructure>().Where(child => child.MissionId == removed.Id));
                 break;
             case Eden.Data.World.Structures.SavedStructure removed:
+                RemoveRange(Filter<Eden.Data.World.Structures.SavedJumpBridge>(child => child.StructureId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Structures.SavedStructureService>(child => child.StructureId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Structures.SavedStructureBattle>(child => child.StructureId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Structures.SavedStructureAccess>().Where(child => child.StructureId == removed.Id));
                 break;
             case Eden.Data.World.Docking.FlightPosition removed:
@@ -250,12 +255,19 @@ internal sealed partial class EconomyTransaction
                 Eden.World.Repair.PilotRemoteAssistanceStore.ClearForTravel(this, removed.ShipId);
                 break;
             case Eden.Data.World.Inventory.Ship removed:
+                RemoveRange(Filter<Eden.Data.World.Characters.SavedJumpClone>(clone => clone.InShip && clone.LocationId == removed.Id));
+                RemoveRange(Set<Eden.Data.World.Combat.SavedLanceDisruption>().Where(row => row.ShipId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Flight.SavedJumpPortal>(row => row.ShipId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Characters.SavedShipDirt>(child => child.ShipId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Information.SavedInformationCycle>(cycle => cycle.ShipId == removed.Id));
                 Eden.World.Fleets.CommandBurstStore.Clear(this, removed.Id);
                 if (Set<Eden.Data.World.Characters.Pilot>().Any(child => child.ActiveShipId == removed.Id && child.Id == removed.OwnerId))
                 {
                     throw new InvalidDataException("The resident Ship still has Pilot references.");
+                }
+                if (Ships.Any(ship => ship.StoredInId == removed.Id && ship.OwnerId != removed.OwnerId))
+                {
+                    throw new InvalidDataException("Remove guest vessels before disposing of a maintenance-bay ship.");
                 }
                 RemoveRange(Set<Eden.Data.World.Combat.NpcAggression>().Where(child => child.TargetShipId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Combat.Npcs.WorldNpcEwar>().Where(child => child.TargetShipId == removed.Id));
@@ -267,6 +279,14 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Set<Eden.Data.World.Fittings.ActiveFittedModule>().Where(child => child.ShipId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Fittings.ShipEnergy>().Where(child => child.ShipId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Propulsion.SpatialNavigationState>().Where(child => child.ShipId == removed.Id));
+                if (Set<Eden.Data.World.Inventory.SavedShipSharing>().Find(removed.Id) is { } sharing)
+                {
+                    Remove(sharing);
+                }
+                if (Set<Eden.Data.World.Flight.SavedCynosuralField>().Find(removed.OwnerId) is { } field && field.ShipId == removed.Id)
+                {
+                    Remove(field);
+                }
                 RemoveRange(Set<Eden.Data.World.Propulsion.WorldTackle>().Where(child => child.SourceShipId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Repair.PendingLocalRepair>().Where(child => child.ShipId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Repair.WorldRemoteAssistance>().Where(child => child.SourceShipId == removed.Id));

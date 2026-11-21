@@ -264,9 +264,15 @@ internal sealed partial class PlayerEwarStore(WorldDatabase database, INpcEwarRo
         using CatalogDbContext catalog = new(database.CatalogPath);
         foreach (var row in world.Set<WorldPlayerEwar>().ToArray())
         {
-            if (AreaWeaponRules.IsProjector(row.Contact().Module.Effect))
+            var contact = row.Contact();
+            if (contact.Module.Effect == DogmaEffect.FighterTackle)
             {
-                if (row.Contact().ExpiresAt <= now)
+                Eden.World.Drones.PilotDroneStore.SweepFighterTackle(world, catalog, row, now);
+                continue;
+            }
+            if (AreaWeaponRules.IsProjector(contact.Module.Effect))
+            {
+                if (contact.ExpiresAt <= now)
                 {
                     world.Remove(row);
                 }
@@ -276,7 +282,9 @@ internal sealed partial class PlayerEwarStore(WorldDatabase database, INpcEwarRo
             var item = world.Set<OwnedItem>().Find(row.ModuleId);
             // Paid rows belong to the source controller, including at repeat
             // boundaries. A victim advancing first cannot expire a continuous effect.
-            bool droneEffect = item is not null && catalog.FittingType(item.TypeId)?.CategoryId == (int)InventoryCategory.Drone;
+            bool droneEffect =
+                item is not null
+                && catalog.FittingType(item.TypeId)?.CategoryId is (int)InventoryCategory.Drone or (int)InventoryCategory.Fighter;
             bool valid =
                 source?.ActiveShip.Position is not null
                 && source.ActiveShipId == row.SourceShipId
@@ -289,7 +297,7 @@ internal sealed partial class PlayerEwarStore(WorldDatabase database, INpcEwarRo
                             row.SourceShipId,
                             row.TargetId,
                             row.SystemId,
-                            row.Contact().ExpiresAt,
+                            contact.ExpiresAt,
                             now
                         )
                         : item is { Online: true, Singleton: true }

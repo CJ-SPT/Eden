@@ -1,5 +1,8 @@
 # Eden documentation
 
+[Upwell combat, asset safety and tethering](protocol/structures.md#upwell-completion-program--november-16-2026)
+covers paid structure attacks, reinforcement, asset recovery and saved tether repairs.
+
 [Regional loss accounting](protocol/capsuleers.md#regional-loss-accounting-across-refuge-regions--november-17-2026)
 fixes ship-loss settlement for nullsec communities with a refuge station in another region.
 

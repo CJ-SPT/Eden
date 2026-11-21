@@ -246,6 +246,20 @@ internal sealed partial class CorporationStorageStore(WorldDatabase database, Ti
     {
         using WorldActionScope transaction = new(database, TransactionParticipants.None);
         var world = transaction.World;
+        if (world is EconomyTransaction && Eden.World.Structures.AssetSafetyStore.Ancestor(world, request.SourceId) is not null)
+        {
+            using CatalogDbContext safetyCatalog = new(database.CatalogPath);
+            var recovered = Eden.World.Structures.AssetSafetyStore.Recover(
+                world,
+                safetyCatalog,
+                actorId,
+                destinationId,
+                request,
+                clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()
+            );
+            transaction.Commit();
+            return recovered.Changes;
+        }
         int station = DockedStation(world, actorId);
         var corporation = CorporationRoleStore.Current(world, actorId);
         var access = CorporationRoleStore.Effective(world, actorId, corporation);

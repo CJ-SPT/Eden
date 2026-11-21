@@ -150,6 +150,7 @@ internal sealed partial class LiveCombatRuntime
                 Orbiting = saved.Orbiting,
                 Delegation = DroneDelegationPersistence.Read(saved),
                 WorkEffect = PilotDroneStore.WorkEffect(saved, current.Contact.Profile),
+                Mobility = current.Contact.Profile.Mobility is null ? null : PilotDroneStore.ReadWork(saved).FighterMobility,
             },
             UpdatedAt = saved.UpdatedAt,
             ReadyAt = saved.ReadyAt,

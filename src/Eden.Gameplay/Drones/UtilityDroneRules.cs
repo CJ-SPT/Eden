@@ -1,6 +1,7 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 
@@ -20,6 +21,7 @@ public enum UtilityDroneKind
     Salvaging,
     OreMining,
     IceMining,
+    WarpDisrupting,
 }
 
 public sealed record UtilityDroneProfile(
@@ -30,7 +32,8 @@ public sealed record UtilityDroneProfile(
     ElectronicWarfareModule? ElectronicWarfare = null,
     double EffectMilliseconds = 0,
     double ResidueChance = 0,
-    double ResidueMultiplier = 0
+    double ResidueMultiplier = 0,
+    double Falloff = 0
 )
 {
     public bool Repair => Kind is UtilityDroneKind.ShieldRepair or UtilityDroneKind.ArmorRepair or UtilityDroneKind.HullRepair;
@@ -51,7 +54,10 @@ public sealed record DroneWork(
     long StartedAt = 0,
     long DueAt = 0,
     bool Returning = false,
-    IReadOnlyList<DroneCargo>? Cargo = null
+    IReadOnlyList<DroneCargo>? Cargo = null,
+    FighterMobilityCycle? FighterMobility = null,
+    FighterSalvoCycle? FighterSalvo = null,
+    FighterTackleCycle? FighterTackle = null
 );
 
 public static class UtilityDroneRules

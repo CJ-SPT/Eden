@@ -1,11 +1,14 @@
+using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Structures;
 
 namespace Eden.Protocol.Maps;
 
 [Injectable]
-internal sealed class MapStartupHandler(Eden.Gameplay.Sovereignty.IPilotEntosis entosis) : ISelectedPilotCallHandler
+internal sealed class MapStartupHandler(Eden.Gameplay.Sovereignty.IPilotEntosis entosis, IPilotJumpBridges? bridges = null)
+    : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
         PilotCallContext context,
@@ -34,22 +37,14 @@ internal sealed class MapStartupHandler(Eden.Gameplay.Sovereignty.IPilotEntosis 
             return new PilotCallResult.Failure("Map information does not accept arguments.");
         }
 
-        // Eden has no player jump bridges. Entosis owns alliance sovereignty.
         // No CRAB interference is simulated. Build 3662168 uses an absent system
         // dictionary entry or a None local state as its no-interference fallback.
         return service switch
         {
             "solarsystemInterferenceMgr" when method == "GetLocalInterferenceState" => PilotCallResult.None,
-            "structureDirectory" => new EmptyJumpBridgeAccessReply(),
+            "structureDirectory" => new JumpBridgeNetworkReply(bridges?.Network(context.Pilot.PilotId) ?? new([], [], [])),
             "stationSvc" => new Eden.Protocol.Sovereignty.AllianceSystemsReply(entosis.Claims()),
             _ => BlueEmpty.IndexedDictionary,
         };
     }
-}
-
-internal sealed record EmptyJumpBridgeAccessReply : BlueModel
-{
-    // Build 3662168 MapView.LoadAllJumpBridges unpacks these three values before
-    // iterating bridge endpoint pairs and checking structure-ID access membership.
-    public override object ToBlue() => new object?[] { BlueEmpty.List, BlueEmpty.List, BlueEmpty.List };
 }

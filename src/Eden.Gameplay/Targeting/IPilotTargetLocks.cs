@@ -8,4 +8,6 @@ public interface IPilotTargetLocks
     void RemoveShip(long ship);
     long[] Targeters(long target);
     bool IsTargeted(long target) => Targeters(target).Length != 0;
+    bool HasOutgoing(long ship) => false;
+    void Pending(long ship, long target) { }
 }

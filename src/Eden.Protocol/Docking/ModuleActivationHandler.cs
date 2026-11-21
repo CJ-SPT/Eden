@@ -1,9 +1,11 @@
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Ammunition;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Defenses;
 using Eden.Protocol.Fleets;
+using Eden.Protocol.Flight;
 using Eden.Protocol.Information;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
@@ -44,7 +46,8 @@ internal sealed class ModuleActivationHandler(
     CommandBurstHandler? commandBursts = null,
     InterdictionHandler? interdiction = null,
     AreaWeaponHandler? areaWeapons = null,
-    Eden.Protocol.Sovereignty.EntosisHandler? entosis = null
+    Eden.Protocol.Sovereignty.EntosisHandler? entosis = null,
+    CapitalTravelHandler? capital = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -60,6 +63,47 @@ internal sealed class ModuleActivationHandler(
             return PilotCallResult.Unsupported;
         }
         string effectName = BlueMarshal.Text(args[1]);
+        if (effectName == CapitalTravelHandler.ProtectionEffectName)
+        {
+            return keywords is { Count: > 0 }
+                ? new PilotCallResult.Failure("Unexpected P.A.N.I.C. activation arguments.")
+                : capital?.ActivateProtection(context, method, args) ?? PilotCallResult.Unsupported;
+        }
+        if (effectName == CapitalTravelHandler.CompressionEffectName)
+        {
+            return keywords is { Count: > 0 }
+                ? new PilotCallResult.Failure("Unexpected compression activation arguments.")
+                : capital?.ActivateCompression(context, method, args) ?? PilotCallResult.Unsupported;
+        }
+        if (CapitalTravelHandler.ModeEffect(effectName) is { } mode)
+        {
+            return keywords is { Count: > 0 }
+                ? new PilotCallResult.Failure("Unexpected capital mode arguments.")
+                : capital?.ActivateMode(context, method, args, mode) ?? PilotCallResult.Unsupported;
+        }
+        if (
+            effectName
+            is CapitalTravelHandler.CynoEffectName
+                or CapitalTravelHandler.PortalEffectName
+                or CapitalTravelHandler.TitanPortalEffectName
+        )
+        {
+            return keywords is { Count: > 0 }
+                ? new PilotCallResult.Failure("Unexpected cynosural activation arguments.")
+                : capital?.Activate(context, method, args) ?? PilotCallResult.Unsupported;
+        }
+        if (
+            method == "Activate"
+            && (
+                SpatialModuleHandler.Handles(effectName)
+                || effectName is PropulsionWireDefinitions.EffectName or PropulsionWireDefinitions.MicrowarpdriveEffectName
+            )
+            && context.Flight.CapitalModuleActive
+            && !(effectName == SpatialModuleHandler.MicroJumpEffect && context.Flight.MobileSiege)
+        )
+        {
+            return new PilotCallResult.Failure("The active capital module prevents navigation modules from activating.");
+        }
         if (method == "Activate" && args is [long module, _, _, long])
         {
             context.Flight.PrepareGateCloakModule(module);
@@ -76,10 +120,19 @@ internal sealed class ModuleActivationHandler(
                     or DogmaEffect.FocusedWarpDisruption
                     or DogmaEffect.FocusedWarpScrambling
             || effectName == AreaWeaponHandler.BurstEffect
+            || DoomsdayRules.Effect(effectName) is not null
             || effectName == SmartbombHandler.EffectName
             || TackleWire.Effect(effectName) is DogmaEffect.StasisWebifier or DogmaEffect.WarpDisruptor or DogmaEffect.WarpScrambler
             || PlayerEwarWire.Effect(effectName) is not null
             || CapacitorWire.Effect(effectName) is DogmaEffect.EnergyNeutralizer or DogmaEffect.EnergyNosferatu;
+        if (
+            method == "Activate"
+            && (offensive || SpatialModuleHandler.Handles(effectName) || effectName == Eden.Protocol.Sovereignty.EntosisHandler.EffectName)
+            && context.Flight.IndustrialProtectionActive
+        )
+        {
+            return new PilotCallResult.Failure("P.A.N.I.C. prevents using offensive, cloak and travel modules.");
+        }
         // Nullification is explicitly permitted through an active cloak by the pinned effect.
         if (
             method == "Activate"
@@ -130,6 +183,12 @@ internal sealed class ModuleActivationHandler(
                 ?? PilotCallResult.Unsupported,
             var name when InterdictionHandler.Effect(name) is { } field => interdiction?.Call(context, method, field, args)
                 ?? PilotCallResult.Unsupported,
+            var name when DoomsdayRules.Effect(name) is { } doomsday => keywords is { Count: > 0 }
+                ? new PilotCallResult.Failure("Unexpected doomsday arguments.")
+                : areaWeapons?.CallModule(context, method, args, doomsday) ?? PilotCallResult.Unsupported,
+            "doomsdayBeamDOT" or "doomsdaySlash" or "doomsdayConeDOT" or "debuffLance" => method == "Deactivate"
+                ? new PilotCallResult.Failure("A paid area doomsday cannot be stopped early.")
+                : new PilotCallResult.Failure("Aim the area doomsday from the tactical overlay."),
             AreaWeaponHandler.BurstEffect => areaWeapons?.CallModule(context, method, args, DogmaEffect.BurstJammer)
                 ?? PilotCallResult.Unsupported,
             SmartbombHandler.EffectName => smartbombs?.Call(context, method, args) ?? PilotCallResult.Unsupported,

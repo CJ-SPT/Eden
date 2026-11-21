@@ -1,5 +1,6 @@
 using System.Globalization;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
@@ -15,7 +16,8 @@ internal sealed class StructureInventoryHandler(
     IStructureContacts contacts,
     IPilotInventory personalInventory,
     IPilotFleet fleet,
-    InventoryTransfers transfers
+    InventoryTransfers transfers,
+    IStandupFighterInventory? fighterBay = null
 ) : ISelectedPilotCallHandler
 {
     private const string Prefix = "@structure-inventory:";
@@ -63,6 +65,7 @@ internal sealed class StructureInventoryHandler(
                 method == "MultiAdd"
                 && args is [List<object?> hangarItems, long hangarSource]
                 && Equals(keywords?.GetValueOrDefault("flag"), (long)InventoryFlag.Hangar)
+                && !(hangarItems.Count == 1 && hangarItems[0] is long fighter && BayItem(fighter))
             )
             {
                 if (
@@ -122,6 +125,11 @@ internal sealed class StructureInventoryHandler(
                 var s = structures.Read(context.Pilot.PilotId, id)!;
                 return StructureDogmaBuilder.Item(s);
             }
+            if (method == "GetCapacity" && args is [(long)InventoryFlag.FighterBay] && fighterBay is not null)
+            {
+                var bay = fighterBay.Bay(context.Pilot.PilotId, id);
+                return new CargoContainerCapacity(bay.Capacity, bay.Used);
+            }
             if (method == "Add" && args is [long item, long transferSource])
             {
                 if (keywords?.TryGetValue("qty", out var selectedQuantity) == true && selectedQuantity is not (null or long))
@@ -135,6 +143,19 @@ internal sealed class StructureInventoryHandler(
                 if (keywords?.Keys.Any(k => k is not ("flag" or "qty")) == true)
                 {
                     throw new InvalidDataException("Unexpected structure transfer arguments.");
+                }
+                bool depositFighters = flag == (int)InventoryFlag.FighterBay;
+                if (fighterBay is not null && (depositFighters || flag == (int)InventoryFlag.Hangar && BayItem(item)))
+                {
+                    if (transferSource != id)
+                    {
+                        throw new InvalidDataException("Move Standup fighters through the local structure hangar.");
+                    }
+                    foreach (var change in fighterBay.MoveStandupFighters(context.Pilot.PilotId, id, item, quantity, depositFighters))
+                    {
+                        InventoryChangesWire.NotifyItemChange(context, change);
+                    }
+                    return PilotCallResult.None;
                 }
                 if (flag == (int)InventoryFlag.Hangar)
                 {
@@ -158,6 +179,9 @@ internal sealed class StructureInventoryHandler(
                 return PilotCallResult.None;
             }
             return PilotCallResult.Unsupported;
+
+            bool BayItem(long item) =>
+                items.Any(row => row.Id == item && row.FlagId == (int)InventoryFlag.FighterBay && row.OwnerId == context.Pilot.CorpId);
         }
         catch (Exception error) when (error is InvalidDataException or OverflowException)
         {

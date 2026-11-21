@@ -67,6 +67,10 @@ internal sealed partial class NpcEwarStore(WorldDatabase database, INpcEwarRoll 
         // Take the resident owner before the shared movement gate. Bot execution
         // already owns the world when it requests these same views.
         using var ownership = LiveWorld.Find(database.Path)?.Enter();
+        if (LiveWorld.Find(database.Path) is { } live && live.Economy.Inspect(world => world.TetherProtected(shipId, now)))
+        {
+            return [];
+        }
         using (database.EnterMovement())
         {
             var sources = LiveCombatRuntime.Find(database.Path)?.EwarSources(shipId, now);

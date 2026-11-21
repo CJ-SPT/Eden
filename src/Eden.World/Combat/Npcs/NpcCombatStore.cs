@@ -259,6 +259,10 @@ internal sealed partial class NpcCombatStore(
         var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var aggression = world.Set<NpcAggression>().Find(npcId);
+        if (world.TetherProtected(shipId, now))
+        {
+            return null;
+        }
         if (aggression is null || aggression.TargetShipId != shipId)
         {
             return null;

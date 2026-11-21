@@ -17,7 +17,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 200;
+    internal const int CurrentVersion = 212;
 
     public static void Open(
         WorldDbContext world,
@@ -58,6 +58,7 @@ internal static class WorldMigration
             WorldVersions35To49.Apply(world, version);
             WorldVersions50To68.Apply(world, version);
         }
+        Eden.World.Characters.ShipCloneSchema.Upgrade(world);
         if (version is >= 6 and < ScienceSchema.Version)
         {
             ScienceSchema.UpgradeContracts(world);
@@ -152,6 +153,8 @@ internal static class WorldMigration
         Eden.World.Exploration.AbyssalSchema.Upgrade(world);
         Eden.World.Mining.MiningSiteSchema.Upgrade(world);
         Eden.World.Propulsion.SpatialNavigationSchema.Upgrade(world);
+        ShipSharingSchema.Upgrade(world);
+        Eden.World.Flight.CapitalTravelSchema.Upgrade(world);
         InventoryLookupSchema.Upgrade(world);
         if (version < 138)
         {

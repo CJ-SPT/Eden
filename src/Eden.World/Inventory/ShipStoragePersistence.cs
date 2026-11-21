@@ -75,14 +75,22 @@ internal static partial class ShipStoragePersistence
             var parent = world.Ships.Find(stored.StoredInId!.Value);
             var wreck = parent is null ? world.Set<WorldWreck>().Find(stored.StoredInId.Value) : null;
             var office = officesExist ? world.Set<SavedCorporationOffice>().Find(stored.StoredInId.Value) : null;
+            var safety = world.Set<Eden.Data.World.Structures.SavedAssetSafety>().Find(stored.StoredInId.Value);
+            var structureLoot = world.Set<Eden.Data.World.Structures.SavedStructureLoot>().Find(stored.StoredInId.Value);
             bool validParent =
-                office is not null
+                safety is not null ? safety.OwnerId == stored.OwnerId
+                : structureLoot is not null ? structureLoot.OwnerId == stored.OwnerId && stored.StorageFlagId == (int)InventoryFlag.Cargo
+                : office is not null
                     ? office.CorporationId == stored.OwnerId
                         && office.StationId == stored.StationId
                         && CorporationStorageRules.IsDivision(stored.StorageFlagId)
                 : parent is not null
-                    ? parent.OwnerId == stored.OwnerId
-                        && parent.StoredInId is null
+                    ? (parent.OwnerId == stored.OwnerId || stored.StorageFlagId == (int)InventoryFlag.ShipMaintenanceBay)
+                        && (
+                            parent.StoredInId is null
+                            || world.Set<Eden.Data.World.Structures.SavedAssetSafety>().Find(parent.StoredInId.Value) is not null
+                            || world.Set<Eden.Data.World.Structures.SavedStructureLoot>().Find(parent.StoredInId.Value) is not null
+                        )
                         && ShipHoldRules.Definition(stored.StorageFlagId)?.AllowsAssembledShip == true
                 : wreck?.OwnerId == stored.OwnerId && stored.StorageFlagId == (int)InventoryFlag.Cargo;
             if (!validParent || stored.Position is not null || world.Pilots.Any(p => p.ActiveShipId == stored.Id))

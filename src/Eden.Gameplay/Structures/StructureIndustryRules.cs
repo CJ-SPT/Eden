@@ -6,6 +6,11 @@ namespace Eden.Gameplay.Structures;
 
 public static class StructureIndustryRules
 {
+    // Build 3662168 service module 35877, its ship restriction and sovereignty upgrade attribute 5688.
+    public const int Sotiyo = 35827;
+    public const int SupercapitalShipyard = 35877;
+    public const int SupercapitalConstructionUpgrade = 81623;
+
     public static StructureService Required(IndustryActivity activity, int category = 0, int group = 0) =>
         activity switch
         {

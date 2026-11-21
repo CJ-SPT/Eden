@@ -12,7 +12,7 @@ using Eden.Protocol.Targeting;
 namespace Eden.Protocol.Propulsion;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class SpatialModuleHandler(TimeProvider clock, IPilotSpatialModules modules, SharedTargetLocks locks)
+internal sealed class SpatialModuleHandler(TimeProvider clock, IPilotSpatialModules modules, SharedTargetLocks locks, SharedSpace space)
     : IModuleEffectSource,
         IDisposable
 {
@@ -22,6 +22,8 @@ internal sealed class SpatialModuleHandler(TimeProvider clock, IPilotSpatialModu
 
     private long Now() => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
+    internal const string MicroJumpEffect = "microJumpDrive";
+
     internal static bool Handles(string name) => Effect(name) is not null;
 
     private static DogmaEffect? Effect(string name) =>
@@ -30,7 +32,8 @@ internal sealed class SpatialModuleHandler(TimeProvider clock, IPilotSpatialModu
             "cloaking" => DogmaEffect.Cloaking,
             "cloakingPrototype" => DogmaEffect.PrototypeCloaking,
             "cloakingWarpSafe" => DogmaEffect.CovertCloaking,
-            "microJumpDrive" => DogmaEffect.MicroJumpDrive,
+            MicroJumpEffect => DogmaEffect.MicroJumpDrive,
+            "microJumpPortalDriveCapital" => DogmaEffect.CapitalMicroJumpField,
             _ => null,
         };
 
@@ -147,9 +150,22 @@ internal sealed class SpatialModuleHandler(TimeProvider clock, IPilotSpatialModu
             }
             if (activation.EndsAt <= Now())
             {
-                var jump = modules.CompleteJump(cycle.PilotId, cycle.ShipId, activation.Module.ItemId, activation.StartedAt, Now());
+                using var system = activation.Module.Field is null ? null : context.Flight.UseSystem();
+                var candidates = activation.Module.Field is { } field ? space.MicroJumpCandidates(context.Pilot, field.Radius) : null;
+                var jump = modules.CompleteJump(
+                    cycle.PilotId,
+                    cycle.ShipId,
+                    activation.Module.ItemId,
+                    activation.StartedAt,
+                    Now(),
+                    candidates
+                );
                 if (jump is not null)
                 {
+                    foreach (var passenger in jump.Passengers)
+                    {
+                        space.TranslateForMicroJump(context.Pilot.SystemId, passenger);
+                    }
                     context.Flight.AdoptMicroJump(jump);
                 }
                 Stop(context, cycle);

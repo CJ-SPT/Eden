@@ -582,6 +582,12 @@ public sealed partial class FleetWorld(long seed)
         ChangeMember(fleet, fleet.Members[actor] with { TakesFleetWarp = enabled });
     }
 
+    public void SetAcceptsConduitJumps(long actor, long fleetId, bool enabled)
+    {
+        var fleet = MemberFleet(actor, fleetId);
+        ChangeMember(fleet, fleet.Members[actor] with { AcceptsConduitJumps = enabled });
+    }
+
     public void Broadcast(
         long actor,
         long fleetId,

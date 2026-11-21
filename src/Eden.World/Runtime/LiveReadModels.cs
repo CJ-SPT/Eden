@@ -127,6 +127,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         "resident.wrecks",
         "WorldPilotSecurity",
         "WorldWreck",
+        "WorldStructureLoot",
         "WorldPlanetaryLaunch",
         "WorldPlanetaryOffice",
         "WorldItemMembership",
@@ -246,9 +247,14 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
                             world.Filter<WorldWreck>(w => w.SystemId == system && w.ExpiresAt > now).Min(w => (long?)w.ExpiresAt)
                             ?? long.MaxValue;
                         long launchExpiry = Eden.World.Planetary.PlanetaryOrbitStore.NextExpiry(world, system, now);
+                        long structureExpiry =
+                            world
+                                .Filter<Eden.Data.World.Structures.SavedStructureLoot>(row => row.SystemId == system && row.ExpiresAt > now)
+                                .Min(row => (long?)row.ExpiresAt)
+                            ?? long.MaxValue;
                         var ids = contacts.Select(c => c.Id).ToHashSet();
                         var items = world.Filter<OwnedItem>(i => ids.Contains(i.LocationId)).Select(i => i.Id).ToFrozenSet();
-                        return new WreckView(contacts, Math.Min(wreckExpiry, launchExpiry), items);
+                        return new WreckView(contacts, Math.Min(structureExpiry, Math.Min(wreckExpiry, launchExpiry)), items);
                     }
                 );
             },

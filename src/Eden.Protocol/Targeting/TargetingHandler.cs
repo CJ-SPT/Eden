@@ -1,10 +1,12 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Targeting;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
+using Eden.Protocol.Structures;
 
 namespace Eden.Protocol.Targeting;
 
@@ -29,6 +31,7 @@ internal sealed class TargetingHandler(
     private long[] _targeters = [];
     private long _shipId;
     private long _breakRevision;
+    private StructureControlLease? _structureControl;
 
     public bool IsLocked(long id) =>
         _locked.Contains(id) && shared.Contains(_shipId, id) && shared.BreakRevision(_shipId) == _breakRevision;
@@ -39,7 +42,9 @@ internal sealed class TargetingHandler(
         {
             return;
         }
-        if (_shipId != 0 && _shipId != context.Pilot.ShipId)
+        long source = context.ControlledStructureId ?? context.Pilot.ShipId;
+        bool changedShip = _shipId != source || _structureControl != context.StructureControl;
+        if (_shipId != 0 && changedShip)
         {
             // Changing hulls clears both directions in the client's target UI.
             // Removing shared edges alone leaves portraits and targeted markers.
@@ -51,7 +56,10 @@ internal sealed class TargetingHandler(
             {
                 Notify(context, TargetChange.OtherLost, id);
             }
-            shared.RemoveShip(_shipId);
+            if (_structureControl is null)
+            {
+                shared.RemoveShip(_shipId);
+            }
             CancelPendingReplies();
             _pending.Clear();
             _locked.Clear();
@@ -59,8 +67,9 @@ internal sealed class TargetingHandler(
             _miningExcludedTargets.Clear();
             _targeters = [];
         }
-        bool changedShip = _shipId != context.Pilot.ShipId;
-        _shipId = context.Pilot.ShipId;
+        _shipId = source;
+        _structureControl = context.StructureControl;
+        var structure = context.Flight.StructureTargetingSource;
         long revision = shared.BreakRevision(_shipId);
         if (!changedShip && revision != _breakRevision)
         {
@@ -70,24 +79,27 @@ internal sealed class TargetingHandler(
             }
         }
         _breakRevision = revision;
-        if (!context.Flight.CanAcquireTargets)
+        if (structure is null && !context.Flight.CanAcquireTargets)
         {
             foreach (long target in _pending.Keys.Concat(_locked).ToArray())
             {
                 Remove(context, target);
             }
-            shared.RemoveShip(_shipId);
+            if (_structureControl is null)
+            {
+                shared.RemoveShip(_shipId);
+            }
         }
         else if (_pending.Count + _locked.Count > 0)
         {
-            double range = fitting.ShipAttributes(context.Pilot.PilotId).GetValueOrDefault(DogmaAttributeId.MaxTargetRange);
+            double range = Attributes(context, structure).GetValueOrDefault(DogmaAttributeId.MaxTargetRange);
             var incoming = Jamming(_shipId);
             foreach (long id in _pending.Keys.Concat(_locked).ToArray())
             {
-                var target = context.Flight.FindTarget(id);
+                var target = FindTarget(context, id);
                 if (
                     target is null
-                    || Distance(context, target) > range
+                    || Distance(context, structure, target) > range
                     || !NpcEwarRules.CanTarget(incoming, id)
                     || (_locked.Contains(id) && !shared.Contains(_shipId, id))
                 )
@@ -116,8 +128,18 @@ internal sealed class TargetingHandler(
         _targeters = targeters;
     }
 
-    private static double Distance(PilotCallContext context, TargetContact target) =>
-        Math.Max(0, context.Pilot.Position!.DistanceTo(target.Position) - context.Pilot.Flight.ShipRadius - target.Radius);
+    private IReadOnlyDictionary<DogmaAttributeId, double> Attributes(PilotCallContext context, StaticSpaceObject? structure) =>
+        structure is null ? fitting.ShipAttributes(context.Pilot.PilotId) : fitting.Attributes(structure.TypeId);
+
+    private static TargetContact? FindTarget(PilotCallContext context, long id) =>
+        context.ControlledStructureId is null ? context.Flight.FindTarget(id) : context.Flight.FindStructureTarget(id);
+
+    private static double Distance(PilotCallContext context, StaticSpaceObject? structure, TargetContact target)
+    {
+        var position = structure?.Position ?? context.Pilot.Position!;
+        double radius = structure?.Radius ?? context.Pilot.Flight.ShipRadius;
+        return Math.Max(0, position.DistanceTo(target.Position) - radius - target.Radius);
+    }
 
     private static void Notify(PilotCallContext context, TargetChange action, long target) =>
         context.Notifications.Add(new TargetChanged(action, target));
@@ -179,7 +201,7 @@ internal sealed class TargetingHandler(
         {
             return new PilotCallResult.NamedFailure("DeniedTargetSelf", BlueEmpty.Dictionary);
         }
-        if (context.Flight.FindTarget(id) is not { } target)
+        if (FindTarget(context, id) is not { } target)
         {
             return new PilotCallResult.NamedFailure("TargetCantValidate", BlueEmpty.Dictionary);
         }
@@ -191,17 +213,18 @@ internal sealed class TargetingHandler(
         {
             return new TargetLockReply(true, _locked.Order().ToArray()) { Completion = scanning.Completion.Task };
         }
-        if (!NpcEwarRules.CanTarget(Jamming(context.Pilot.ShipId), id))
+        if (!NpcEwarRules.CanTarget(Jamming(_shipId), id))
         {
             return new PilotCallResult.Failure("Electronic countermeasures prevent locking this target.");
         }
-        var attributes = fitting.ShipAttributes(context.Pilot.PilotId);
+        var structure = context.Flight.StructureTargetingSource;
+        var attributes = Attributes(context, structure);
         int limit = checked((int)attributes.GetValueOrDefault(DogmaAttributeId.MaxLockedTargets));
         if (_pending.Count + _locked.Count >= limit)
         {
             return new PilotCallResult.NamedFailure("TargetingSystemsAlreadyFullyUtilized", new TargetLimitErrorValues(limit));
         }
-        if (Distance(context, target) > attributes.GetValueOrDefault(DogmaAttributeId.MaxTargetRange))
+        if (Distance(context, structure, target) > attributes.GetValueOrDefault(DogmaAttributeId.MaxTargetRange))
         {
             return new PilotCallResult.NamedFailure("UnableToTarget", BlueEmpty.Dictionary);
         }
@@ -215,6 +238,7 @@ internal sealed class TargetingHandler(
         }
         PendingLock pending = new(clock.GetTimestamp(), seconds, silent);
         _pending.Add(id, pending);
+        shared.Pending(_shipId, id);
         // OnTarget("add") supplies success. If this scan is interrupted, the
         // outstanding RPC must fail so native FailLockTarget clears its animation.
         return new TargetLockReply(true, _locked.Order().ToArray()) { Completion = pending.Completion.Task };
@@ -302,7 +326,10 @@ internal sealed class TargetingHandler(
 
     public void Reset()
     {
-        shared.RemoveShip(_shipId);
+        if (_structureControl is null)
+        {
+            shared.RemoveShip(_shipId);
+        }
         CancelPendingReplies();
         _pending.Clear();
         _locked.Clear();
@@ -310,6 +337,7 @@ internal sealed class TargetingHandler(
         _miningExcludedTargets.Clear();
         _targeters = [];
         _shipId = 0;
+        _structureControl = null;
     }
 
     public void Dispose() => Reset();

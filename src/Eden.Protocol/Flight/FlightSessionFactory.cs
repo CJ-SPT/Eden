@@ -41,7 +41,9 @@ internal sealed class FlightSessionFactory(
     ICooperativeFleets? fleets = null,
     IPilotInterdiction? interdiction = null,
     Eden.Gameplay.Sovereignty.IPilotEntosis? entosis = null,
-    IMilitiaComplexes? complexes = null
+    IMilitiaComplexes? complexes = null,
+    IPilotCapitalTravel? capital = null,
+    Eden.Gameplay.Structures.IPilotTethering? tethering = null
 )
 {
     public FlightSession Create(DockedPilot pilot)
@@ -82,7 +84,9 @@ internal sealed class FlightSessionFactory(
                 warpDrive: warpDrive,
                 interdiction: interdiction,
                 entosis: entosis?.Available == true ? entosis : null,
-                complexes: complexes
+                complexes: complexes,
+                capital: capital,
+                tethering: tethering?.Available == true ? tethering : null
             );
         }
         catch

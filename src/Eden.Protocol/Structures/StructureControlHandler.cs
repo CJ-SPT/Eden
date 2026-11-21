@@ -12,7 +12,8 @@ internal sealed class StructureControlHandler(
     IStructureContacts contacts,
     SharedStructureControl controllers,
     StructureDogmaBuilder dogma,
-    Eden.Protocol.Docking.FittingOperations fitting
+    Eden.Protocol.Docking.FittingOperations fitting,
+    Eden.Gameplay.Docking.IPilotLookup pilots
 ) : ISelectedPilotCallHandler
 {
     private sealed record HangarState(long StructureId, StructureContact Contact);
@@ -144,7 +145,17 @@ internal sealed class StructureControlHandler(
         {
             long docked = context.Pilot.DockedLocationId;
             var contact = contacts.Contacts(context.Pilot.SystemId).FirstOrDefault(body => body.Id == docked)?.Structure;
-            if (contact is not null && _hangarState != new HangarState(docked, contact))
+            if (contact is null || contact.State == StructureState.Unanchored)
+            {
+                var evacuated = pilots.ListPilots(context.AccountId).Single(p => p.PilotId == context.Pilot.PilotId);
+                if (evacuated.Position is not null)
+                {
+                    context.ChangeShip(evacuated);
+                    context.Flight.Snapshot();
+                    _hangarState = null;
+                }
+            }
+            else if (_hangarState != new HangarState(docked, contact))
             {
                 if (structures.Read(context.Pilot.PilotId, docked) is { } structure)
                 {
