@@ -62,6 +62,16 @@ was out of scope for this focused run. The catalog and formatting policy suites 
 
 **Optional maintainer checks.** Open the star map's station-count filter and compare a system with NPC stations to one without.
 
+### Follow-up candidates
+
+The [Upwell repair shop](structures.md#native-upwell-repair-shop) was implemented from the next pass. The comparison also
+confirmed these gaps against the pinned client and the same EVE.js version.
+
+| Route | Client use and implementation dependency |
+| --- | --- |
+| `map.GetSolarSystemVisits` | The Personal map filter reads `lastDateTime`, `solarSystemID` and `visits` from each row. EVE.js increments on a return from another system, filters private Abyssal locations, and preserves history across reconnects. Eden needs checkpointed per-character visit counts for the map. |
+| `allianceRegistry.GetDaysInAlliance`, `GetAllianceMembersOlderThan` | The corporation wallet calls these to check EverMark donation eligibility. EVE.js computes whole elapsed days from current membership. Eden already saves membership start times. The donation flow still needs alliance-aware EverMark settlement. |
+
 ## In-game text for routine rejections
 
 Routine service rejections after pilot selection use the native `CustomNotify` message with a Unicode `notify` value.

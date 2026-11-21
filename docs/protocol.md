@@ -1,5 +1,7 @@
 # Protocol findings and milestone records
 
+[Native Upwell repair shop](protocol/structures.md#native-upwell-repair-shop) records the native structure binding and free repair call.
+
 [EVE.js comparison for map, character and dungeon routes](protocol/compatibility.md#evejs-comparison-for-map-character-and-dungeon-routes)
 covers NPC station counts, character creation timestamps, Local chat affiliations and dungeon state on reconnect.
 

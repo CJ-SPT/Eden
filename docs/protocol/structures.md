@@ -16,6 +16,39 @@ Historical foundation limitations below describe their original milestones; this
 | Defense | Combat fitting/control, supported defensive weapons and target updates | Planned |
 | Service completion | Remaining native structure profiles/access, economic/clone services, ownership and specialized structure consumers | Planned |
 
+### Native Upwell repair shop
+
+The November 21, 2026 EVE.js follow-up found two missing pieces in Eden's docked Upwell repair path. Pinned build
+**3662168** `base_repairshop.RepairSvc.GetRemoteRepairMgr` binds `repairSvc` with
+`(structureID, solarSystemID, groupSolarSystem)` while docked in an Upwell structure. The NPC station form uses
+`(stationID, stationID, groupStation)`. Its repair button sends `RepairItemsInStructure(itemIDs)` for Upwell facilities.
+This form has no payment argument.
+
+Eden validates the current dockable location, system and group before opening the bound repair service. Structure quotes
+show a zero ISK unit cost. The repair call commits through the resident world's existing repair transaction with its
+core, access and assembled-item ownership checks. Active hull and module damage updates use the existing client
+notifications. The free operation creates no wallet entry. NPC stations retain their paid repair path.
+
+Compared EVE.js **261108.1** (build **3396210**) `server/src/services/station/repairService.js` and `repairRuntime.js`,
+SHA-256 prefixes `49912b2b21a9` and `bec61da2c6cc`. The pinned client archive SHA-256 was
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`. Inspected bytecode as data.
+[EVE University Upwell services](https://wiki.eveuniversity.org/Upwell_structure#Upwell_Structure_Services) ·
+[EVE University docked repairs](https://wiki.eveuniversity.org/Overheating#Docked_repairs)
+
+**Automated validation.** The exact `UpwellRepairMonikerQuotesAndRepairsForFreeThroughTheResidentWorld` case passed
+in 6.94 seconds including the runner. It covers the native nested quote and repair requests, zero pricing, invalid
+binding and item selection, missing core, damage notifications, the wallet, and checkpointed damage.
+The solution build took 5.62 seconds with zero warnings or errors. The focused filter below passed 101 tests in
+45.27 seconds including the runner. The catalog and formatting policy suites passed eight and nine cases respectively.
+
+```text
+FullyQualifiedName~Eden.Protocol.Tests.Repair.RepairTests|FullyQualifiedName~StructureServiceTests|FullyQualifiedName~PilotBindingsTests|FullyQualifiedName~RepairHeatTests|FullyQualifiedName~StructureTetherTests|FullyQualifiedName~Eden.Protocol.Tests.Hosting
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Dock a damaged ship in a cored Upwell structure and use the repair shop's Repair All action.
+
 ### Resident tethering and repair
 
 Saved-world schema **187** adds `WorldPilotTether`. A piloted ship engages an accessible, cored, dockable structure inside

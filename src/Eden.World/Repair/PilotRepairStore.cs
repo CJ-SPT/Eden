@@ -20,6 +20,7 @@ using Eden.World.Docking;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Market;
+using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Eden.World.Thermal;
@@ -163,12 +164,42 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
             throw new InvalidDataException("Repair payments cannot be negative.");
         }
         using var scope = new WorldActionScope(database, new(pilots: [pilotId], ships: itemIds));
-        var world = scope.World;
+        var result = Repair(scope.World, pilotId, stationId, itemIds, paymentCents, now);
+        if (result.Ships.Count > 0 || result.Modules.Count > 0)
+        {
+            scope.Commit();
+        }
+        return result;
+    }
+
+    public RepairResult RepairInStructure(long pilotId, long structureId, IReadOnlyList<long> itemIds, long now)
+    {
+        var live = LiveWorld.Find(database.Path) ?? throw new InvalidOperationException("Structure repairs require the resident world.");
+        using var transaction = live.Economy.Begin(new(pilots: [pilotId], ships: itemIds));
+        var result = Repair(transaction, pilotId, structureId, itemIds, 0, now, requireStructure: true);
+        transaction.Commit();
+        return result;
+    }
+
+    private RepairResult Repair(
+        WorldAction world,
+        long pilotId,
+        long stationId,
+        IReadOnlyList<long> itemIds,
+        long paymentCents,
+        long now,
+        bool requireStructure = false
+    )
+    {
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = Pilot(world, pilotId);
+        bool free = pilot.ActiveShip.StructureId.HasValue;
+        if (requireStructure && !free)
+        {
+            throw new InvalidDataException("Dock in an Upwell structure to use free repairs.");
+        }
         var station = Station(world, catalog, pilot, stationId);
         var quotes = Quotes(world, catalog, pilot, itemIds).Values.SelectMany(q => q).Where(q => q.Damage > 0).ToArray();
-        bool free = pilot.ActiveShip.StructureId.HasValue;
         var budget = free ? new RepairBudget(0, 1) : RepairRules.Allocate(quotes, paymentCents);
         long charged = budget.ChargedCents;
         var wallet = world.Set<PilotWallet>().Find(pilotId);
@@ -205,7 +236,6 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
         }
         if (free)
         {
-            scope.Commit();
             return new(balance, repairs, modules);
         }
         wallet!.Cents = balance - charged;
@@ -228,7 +258,6 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
                             : JsonSerializer.Serialize(new StationRepairDetails(repairs, modules)),
                 }
             );
-        scope.Commit();
         return new(wallet.Cents, repairs, modules);
     }
 
