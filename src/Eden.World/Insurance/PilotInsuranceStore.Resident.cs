@@ -25,7 +25,7 @@ namespace Eden.World.Insurance;
 
 internal sealed partial class PilotInsuranceStore
 {
-    private static long Value(WorldAction world, CatalogDbContext catalog, int typeId)
+    internal static long Value(WorldAction world, CatalogDbContext catalog, int typeId)
     {
         var type = catalog.Definitions.Items.GetValueOrDefault(typeId);
         if (type?.CategoryId != (int)InventoryCategory.Ship || type.GroupId == FleetDefinitions.CapsuleGroup)

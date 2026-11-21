@@ -86,6 +86,18 @@ public sealed partial class SqliteWorld
         var hull = world.Ships.Find(shipId);
         var owner = hull is null ? null : world.Pilots.Find(hull.OwnerId);
         var pilot = owner?.ActiveShipId == shipId ? owner : null;
+        if (saved is null && position is not null && pilot is not null && world is EconomyTransaction)
+        {
+            int departureSystem = hull!.StructureId is long structure
+                ? world.StructureSystemId(structure)
+                : catalog.RequireStation(hull.StationId).SolarSystemId;
+            Eden.World.FactionWarfare.MilitiaEnlistmentStore.RequireDocking(
+                world,
+                pilot,
+                departureSystem,
+                catalog.RequireItem(hull.TypeId).GroupId
+            );
+        }
         bool transfer =
             position is null
             || systemId is int destinationSystem
@@ -193,6 +205,12 @@ public sealed partial class SqliteWorld
         {
             throw new InvalidDataException("The station is outside docking range.");
         }
+        Eden.World.FactionWarfare.MilitiaEnlistmentStore.RequireDocking(
+            world,
+            pilot,
+            system,
+            catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId
+        );
         PilotTaskTrackingStore.Record(world, catalog, pilotId, _clock.GetUtcNow().UtcDateTime.ToFileTimeUtc(), TaskEvents.Docked);
         pilot.ActiveShip.StationId = stationId;
         pilot.ActiveShip.StructureId = null;
@@ -261,7 +279,8 @@ public sealed partial class SqliteWorld
                 ),
                 CorporationAccess: corporationAccess,
                 CorporationAccountKey: CorporationWalletStore.SelectedKey(world, pilot.Id, corporation),
-                AllianceId: world.Set<Eden.Data.World.Alliances.SavedAllianceMember>().Find(pilot.CorporationId)?.AllianceId
+                AllianceId: world.Set<Eden.Data.World.Alliances.SavedAllianceMember>().Find(pilot.CorporationId)?.AllianceId,
+                WarFaction: Eden.World.FactionWarfare.MilitiaEnlistmentStore.Effective(world, pilot)
             ),
             new(
                 ship.Id,

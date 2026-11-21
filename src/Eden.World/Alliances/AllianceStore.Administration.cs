@@ -10,6 +10,7 @@ using Eden.Gameplay.Market;
 using Eden.Gameplay.Skills;
 using Eden.World.Catalog;
 using Eden.World.Corporations;
+using Eden.World.FactionWarfare;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
@@ -44,6 +45,10 @@ internal sealed partial class AllianceStore
             level,
             wallet?.Cents ?? 0
         );
+        if (MilitiaOrganizationStore.AllianceAdmissionFailure(world, corporation.Id, null, now) is { } failure)
+        {
+            throw new InvalidDataException(failure);
+        }
         if (IdentityTaken(world, catalog, details))
         {
             throw new InvalidDataException("That owner name or ticker is already taken.");

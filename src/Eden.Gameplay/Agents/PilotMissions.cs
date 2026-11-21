@@ -147,6 +147,7 @@ public sealed record MissionSite(
     public IReadOnlyList<MissionGate> Gates { get; init; } = [];
     public bool Deadspace { get; init; } = true;
     public bool Private { get; init; }
+    public StaticSpaceObject? PublicBeacon { get; init; }
 }
 
 public sealed record MissionGate(long Id, SpacePosition Position, float Radius, SpacePosition Destination, bool RequiresClear)

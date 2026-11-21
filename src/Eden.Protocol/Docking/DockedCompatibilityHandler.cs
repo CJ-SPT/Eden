@@ -123,7 +123,6 @@ internal sealed class DockedCompatibilityHandler(
             ("map", "GetTriglavianMinorVictorySystems" or "GetEdencomFortressSystems" or "GetEdencomMinorVictorySystems") => BlueEmpty.List,
             ("operationsManager", "can_character_play_the_tutorial") => false,
             ("standingMgr", "GetNPCNPCStandings") => Rows(["fromID", "toID", "standing"]),
-            ("fwWarzoneSolarsystem", "GetLocalOccupationState") => new LocalSystemState(pilot.SystemId),
 
 
             ("seasonManager", "get_season_data_for_character")

@@ -132,7 +132,7 @@ internal sealed partial class LiveCombatRuntime(
             return null;
         }
         // Mining alerts and cargo state share the paid shot's world action.
-        if (NpcPopulationRules.IsMining(target.Role) || target.Role == NpcRole.Concord)
+        if (NpcPopulationRules.IsMining(target.Role) || target.Role is NpcRole.Concord or NpcRole.MilitiaHub or NpcRole.MilitiaObjective)
         {
             return null;
         }

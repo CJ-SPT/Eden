@@ -14,9 +14,9 @@ internal sealed partial class PilotStructureStore
 {
     public MoonExtraction? Current(long pilotId, long structureId) =>
         ReadMoonMining(
-            (world, _) =>
+            (world, catalog) =>
             {
-                if (!Access(world, Require(world, structureId), pilotId))
+                if (!ServiceAccess(world, catalog, Require(world, structureId), pilotId))
                 {
                     throw new InvalidDataException("Access to this refinery is denied.");
                 }
@@ -55,7 +55,7 @@ internal sealed partial class PilotStructureStore
             (world, catalog) =>
             {
                 var structure = Require(world, structureId);
-                if (!Access(world, structure, pilotId))
+                if (!ServiceAccess(world, catalog, structure, pilotId))
                 {
                     throw new InvalidDataException("Access to this refinery is denied.");
                 }

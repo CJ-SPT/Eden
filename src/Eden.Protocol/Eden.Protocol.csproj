@@ -30,6 +30,8 @@
       GrpcServices="None"
     />
     <Protobuf Include="Gateway/mercenary_den_activity.proto" ProtoRoot="Gateway" GrpcServices="None" />
+    <Protobuf Include="Gateway/militia_faction.proto;Gateway/faction_activity.proto" ProtoRoot="Gateway" GrpcServices="None" />
+    <Protobuf Include="Gateway/public_character.proto;Gateway/faction_activity.proto" ProtoRoot="Gateway" GrpcServices="None" />
     <Protobuf Include="Gateway/corporation_palette.proto" ProtoRoot="Gateway" GrpcServices="None" />
     <Protobuf Include="Gateway/semanticversion.proto;Gateway/celestial_resource_values.proto" ProtoRoot="Gateway" GrpcServices="None" />
     <Protobuf

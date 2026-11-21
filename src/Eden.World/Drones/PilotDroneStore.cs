@@ -20,6 +20,7 @@ using Eden.World.Characters;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Docking;
+using Eden.World.FactionWarfare;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
@@ -363,9 +364,13 @@ internal sealed partial class PilotDroneStore(
             {
                 throw new InvalidDataException("Order drones to attack a locked NPC within drone control range.");
             }
-            else if (npc.Role == NpcRole.Concord)
+            else
             {
-                ConcordPersistence.Attack(world, catalog, npc, pilot.ActiveShipId, now);
+                MilitiaHubStore.RequireAttack(world, npc, pilot);
+                if (npc.Role == NpcRole.Concord)
+                {
+                    ConcordPersistence.Attack(world, catalog, npc, pilot.ActiveShipId, now);
+                }
             }
         }
         if (order == DroneOrder.Reconnect)
@@ -755,6 +760,7 @@ internal sealed partial class PilotDroneStore(
                     || npc.RetiredAt.HasValue
                     || npc.Navigation == NpcNavigationState.Warping
                     || npc.SystemId != drone.SystemId
+                    || !MilitiaHubStore.CanAttack(world, npc, pilot)
                     || drone.DelegationMode != DroneDelegationMode.None
                         && Position(source).DistanceTo(NpcMotion.Position(npc)) > controlRange
                 )

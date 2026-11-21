@@ -119,6 +119,9 @@ warm-up and decay, turret damage, checkpoint reopen and loss of the jump destina
 The focused capital travel, fleet, translocation, migration, checkpoint, Crimewatch and turret tests passed all 181
 cases in 102.00 seconds. Both Python validation suites passed all 17 cases.
 All 14 capital travel cases passed in 14.64 seconds after adding the build's one-jammer limit.
+After integrating the Faction Warfare merge on `main`, the combined capital travel, militia complexes,
+enlistment and navy, fleet, Crimewatch, translocation and migration filter passed all 152 cases in 90.73 seconds.
+Schema 201 opens both features on existing saves.
 
 ## Milestones
 

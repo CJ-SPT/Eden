@@ -2,7 +2,9 @@ using Eden.Gameplay.Agents;
 using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Corporations;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Infrastructure.Registration;
+using Eden.Protocol.FactionWarfare;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 
@@ -14,7 +16,8 @@ internal sealed class CharacterSheetHandler(
     INpcDirectory npcs,
     IPlayerCorporations corporations,
     ICorporationRoles corporationRoles,
-    IAlliances alliances
+    IAlliances alliances,
+    IMilitiaProgression? militia = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -74,15 +77,18 @@ internal sealed class CharacterSheetHandler(
             {
                 return new PilotCallResult.Failure("Invalid public character request.");
             }
-            // Build 3662168 DecorationsPanel.ShowMyRanks and Info.UpdateDataRank
-            // iterate the overview. Eden pilots have no earned militia ranks.
-            return method == "GetMyCharacterRankOverview" ? BlueEmpty.List : PilotCallResult.None;
+            return method == "GetMyCharacterRankOverview"
+                ? new MilitiaRankOverview(militia?.Ranks(pilot.PilotId) ?? [])
+                : Rank(pilot.PilotId);
         }
         if (
             (service == "charMgr" && method is "GetPublicInfo" or "GetPublicInfo3")
             || (service == "corpRegistry" && method == "GetInfoWindowDataForChar")
-            || (service == "corporationSvc" && method is "GetMedalsReceived" or "GetEmployementRecordAndCharacterTransfers")
-            || (service == "facWarMgr" && method == "GetCharacterRankInfo")
+            || (
+                service == "corporationSvc"
+                && method is "GetMedalsReceived" or "GetEmployementRecordAndCharacterTransfers" or "GetEmploymentRecord"
+            )
+            || (service == "facWarMgr" && method is "GetCharacterRankInfo" or "GetCharacterRankOverview")
         )
         {
             if (keywords is { Count: > 0 } || args is not [long id] || id <= 0)
@@ -90,6 +96,7 @@ internal sealed class CharacterSheetHandler(
                 return new PilotCallResult.Failure("Invalid public character request.");
             }
             var profile = sheet.ReadPublicProfile(id);
+            bool player = profile is not null;
             if (profile is null && npcs.Character(id) is { } npc)
             {
                 if (method == "GetPublicInfo")
@@ -116,30 +123,41 @@ internal sealed class CharacterSheetHandler(
             return method switch
             {
                 "GetPublicInfo3" => new PublicCharacterInfo3(profile),
-                "GetInfoWindowDataForChar" => sheet.ReadPublicProfile(id) is null
-                    ? new CharacterCorporationInfo(profile.CorporationId, AllianceId: alliances.Affiliation(profile.CorporationId))
-                    : PublicCorporationInfo(id, profile.CorporationId),
+                "GetInfoWindowDataForChar" => player
+                    ? PublicCorporationInfo(profile)
+                    : new CharacterCorporationInfo(profile.CorporationId, AllianceId: alliances.Affiliation(profile.CorporationId)),
                 "GetMedalsReceived" => new PublicCharacterMedals(),
+                "GetEmploymentRecord" => new CharacterEmploymentHistory(
+                    player ? corporations.Employment(id)
+                    : profile.CreatedAt is long born ? [new(profile.CorporationId, born)]
+                    : []
+                ),
                 "GetEmployementRecordAndCharacterTransfers" => new PublicCharacterEmployment(
                     profile,
-                    sheet.ReadPublicProfile(id) is null ? null : corporations.Employment(id)
+                    player ? corporations.Employment(id) : null
                 ),
-                "GetCharacterRankInfo" => PilotCallResult.None,
+                "GetCharacterRankInfo" => player ? Rank(id) : PilotCallResult.None,
+                "GetCharacterRankOverview" => new MilitiaRankOverview(player ? militia?.Ranks(id) ?? [] : []),
                 _ => new PublicCharacterInfo(profile),
             };
         }
         return PilotCallResult.Unsupported;
     }
 
-    private CharacterCorporationInfo PublicCorporationInfo(long pilotId, int corporationId)
+    private PilotCallResult Rank(long id) => militia?.Rank(id) is { } rank ? new MilitiaRankReply(rank) : PilotCallResult.None;
+
+    private CharacterCorporationInfo PublicCorporationInfo(PublicCharacterProfile profile)
     {
+        long pilotId = profile.CharacterId;
+        int corporationId = profile.CorporationId;
         var member = corporations.Members(pilotId).Single(m => m.PilotId == pilotId);
         long mask = member.Access?.TitleMask ?? 0;
         return new(
             corporationId,
             member.Access?.Title ?? "",
             corporationRoles.Titles(pilotId).Where(t => (mask & t.Id) != 0).ToArray(),
-            alliances.Affiliation(corporationId)
+            alliances.Affiliation(corporationId),
+            (int?)profile.MilitiaFaction
         );
     }
 }

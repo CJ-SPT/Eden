@@ -14,6 +14,8 @@ internal sealed record BlueConstructor(string Name, object?[] Arguments, object?
 {
     internal const string SovereigntyClaimClass = "sovereignty.data_types.SovClaimInfo";
     internal const string SovereigntyHubClass = "sovereignty.data_types.SovHubInfo";
+    internal const string FactionOccupationClass = "factionwarfare.occupationState.OccupationState";
+    internal const string FactionVictoryPointClass = "factionwarfare.victoryPointState.VictoryPointState";
 }
 
 internal sealed record BlueGlobal(string Name);
@@ -199,6 +201,19 @@ internal static class BlueMarshal
                     throw new InvalidDataException("Invalid sovereignty data tuple.");
                 }
                 // Retain native data-object constructors as inert data; never invoke a global.
+                return new BlueConstructor(global.Name, args);
+            }
+            if (pair.Length == 2 && global.Name is BlueConstructor.FactionOccupationClass or BlueConstructor.FactionVictoryPointClass)
+            {
+                bool valid =
+                    global.Name == BlueConstructor.FactionVictoryPointClass
+                        ? args is [long and >= 0, long and > 0]
+                        : args is [long and > 0, string or byte[], List<object?> { Count: 2 } factions, long and > 0, null or long and > 0]
+                            && factions.All(faction => faction is long and > 0);
+                if (!valid || reader.ReadByte() != 45)
+                {
+                    throw new InvalidDataException("Invalid faction warfare data tuple.");
+                }
                 return new BlueConstructor(global.Name, args);
             }
             if (args.Length != 1)

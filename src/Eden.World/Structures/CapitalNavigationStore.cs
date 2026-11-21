@@ -136,7 +136,7 @@ internal sealed class CapitalNavigationStore(WorldDatabase database, TimeProvide
         structure.TypeId == CapitalTravelRules.Pharolux
         && OnlineService(world, structure, CapitalTravelRules.PharoluxService, now) is not null
         && !Jammed(world, catalog, structure.SystemId, now)
-        && (pilotId is null || PilotStructureStore.Access(world, structure, pilotId.Value));
+        && (pilotId is null || PilotStructureStore.ServiceAccess(world, catalog, structure, pilotId.Value));
 
     internal static bool Jammed(WorldAction world, CatalogDbContext catalog, int systemId, long now) =>
         JammerOnlineAt(world, catalog, systemId, now) is long at && at <= now;

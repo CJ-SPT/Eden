@@ -42,10 +42,7 @@ internal static class NpcPopulationSchedule
         // use regional slot respawns, even without a regional encounter row.
         var slots = NpcPopulationMember
             .InSystem(world, system)
-            .Where(n =>
-                n.AnchorKind is not (NpcAnchorKind.Anomaly or NpcAnchorKind.Mission or NpcAnchorKind.GhostSite or NpcAnchorKind.Abyssal)
-                && (n.Role is NpcRole.Navy or NpcRole.Customs || !tracked.Contains(n.EncounterId))
-            )
+            .Where(n => !IsObjectiveAnchor(n.AnchorKind) && (n.Role is NpcRole.Navy or NpcRole.Customs || !tracked.Contains(n.EncounterId)))
             .ToArray();
         long due = long.MaxValue;
         foreach (var encounter in encounters.Where(e => e.Occupied && e.NextSpawnAt != null))
@@ -71,6 +68,16 @@ internal static class NpcPopulationSchedule
         return due <= now ? checked(now + TimeSpan.TicksPerSecond) : due;
     }
 
+    private static bool IsObjectiveAnchor(NpcAnchorKind kind) =>
+        kind
+            is NpcAnchorKind.Anomaly
+                or NpcAnchorKind.Mission
+                or NpcAnchorKind.GhostSite
+                or NpcAnchorKind.Abyssal
+                or NpcAnchorKind.MilitiaComplex
+                or NpcAnchorKind.MilitiaHub
+                or NpcAnchorKind.MilitiaObjective;
+
     private readonly record struct EncounterDeadline(long Id, NpcRole Role, bool Occupied, long? NextSpawnAt);
 
     private readonly record struct MiningDeadline(long NpcId, long? MiningDueAt, long? WarpStartedAt);
@@ -86,13 +93,7 @@ internal static class NpcPopulationSchedule
         {
             return null;
         }
-        var active = NpcPopulationMember
-            .AtAnchor(world, encounter.Id)
-            .Where(n =>
-                n.Active
-                && n.AnchorKind is not (NpcAnchorKind.Anomaly or NpcAnchorKind.Mission or NpcAnchorKind.GhostSite or NpcAnchorKind.Abyssal)
-            )
-            .ToArray();
+        var active = NpcPopulationMember.AtAnchor(world, encounter.Id).Where(n => n.Active && !IsObjectiveAnchor(n.AnchorKind)).ToArray();
         if (
             active.Length != NpcMiningRules.MinerCount
             || active.Any(n => n.Role != NpcRole.MiningMiner || n.Navigation != NpcNavigationState.Idle)

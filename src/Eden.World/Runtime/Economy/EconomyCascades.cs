@@ -65,6 +65,24 @@ internal sealed partial class EconomyTransaction
             case Eden.Data.World.Characters.Pilot removed:
                 RemoveRange(Filter<Eden.Data.World.Flight.SavedJumpTimers>(row => row.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Flight.SavedCynosuralField>(row => row.PilotId == removed.Id));
+                if (Set<Eden.Data.World.FactionWarfare.SavedMilitiaNavyPursuit>().Find(removed.Id) is { } pursuit)
+                {
+                    foreach (long responderId in new[] { pursuit.FrigateId, pursuit.CruiserId }.OfType<long>())
+                    {
+                        if (Set<Eden.Data.World.Combat.Npcs.WorldNpc>().Find(responderId) is { } responder)
+                        {
+                            responder.RetiredAt ??= responder.UpdatedAt;
+                        }
+                        if (Set<Eden.Data.World.Combat.NpcAggression>().Find(responderId) is { } aggression)
+                        {
+                            Remove(aggression);
+                        }
+                    }
+                    Remove(pursuit);
+                }
+                RemoveRange(Set<Eden.Data.World.FactionWarfare.SavedMilitiaEnlistment>().Where(child => child.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.FactionWarfare.SavedMilitiaRank>(child => child.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.FactionWarfare.SavedMilitiaStandingWarning>(child => child.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Characters.SavedPilotActivity>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Market.SavedRedeemedCurrency>(child => child.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Market.TestingWalletGrant>(child => child.PilotId == removed.Id));

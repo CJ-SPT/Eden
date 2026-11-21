@@ -5,8 +5,10 @@ using Eden.Data.World.Combat;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.FactionWarfare;
 using Eden.World.Catalog;
 using Eden.World.Characters;
+using Eden.World.FactionWarfare;
 using Eden.World.Inventory;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -40,7 +42,8 @@ internal static partial class CrimewatchPersistence
                 catalog.RequireItem(victim.ActiveShip.TypeId).GroupId == FleetDefinitions.CapsuleGroup,
                 target.Flag(now),
                 (world.Set<SavedSecurityStatus>().Find(victim.Id)?.Value ?? 0) <= CrimewatchRules.OutlawSecurity,
-                Engagement(world, source.Id, victim.Id)?.ExpiresAt > now
+                Engagement(world, source.Id, victim.Id)?.ExpiresAt > now,
+                MilitiaRules.AreEnemies(MilitiaEnlistmentStore.Effective(world, source), MilitiaEnlistmentStore.Effective(world, victim))
             )
         );
     }

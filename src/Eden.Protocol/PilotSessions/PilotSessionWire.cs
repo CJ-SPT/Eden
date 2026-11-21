@@ -26,6 +26,7 @@ internal static class PilotSessionWire
             ["charid"] = pilot.PilotId,
             ["corpid"] = pilot.CorpId,
             ["allianceid"] = pilot.Identity.AllianceId,
+            ["warfactionid"] = (int?)pilot.Identity.WarFaction,
             ["corprole"] = rights.Has(CorporationRole.Director) ? rights.Roles : pilot.Identity.CorporationRoles,
             ["rolesAtAll"] = rights.Roles,
             ["rolesAtHQ"] = rights.RolesAtHQ,

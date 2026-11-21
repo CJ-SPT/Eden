@@ -19,7 +19,9 @@ internal sealed record AnomalySiteInfo(CombatAnomaly Site) : BlueModel
                 ["targetID"] = Site.TargetId,
                 ["difficulty"] = Site.Difficulty,
                 ["dungeonID"] = Site.DungeonId,
-                ["archetypeID"] = Site.Mining == MiningFamily.Ice ? MiningSiteRules.IceArchetype : CombatAnomalyRules.CombatSiteArchetypeId,
+                ["archetypeID"] =
+                    Site.ArchetypeId
+                    ?? (Site.Mining == MiningFamily.Ice ? MiningSiteRules.IceArchetype : CombatAnomalyRules.CombatSiteArchetypeId),
                 ["dungeonNameID"] = Site.NameId,
                 ["factionID"] = Site.FactionId,
                 // The native Surroundings menu indexes its icons by this attribute. Ice uses the Ore group.

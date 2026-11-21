@@ -23,8 +23,6 @@ internal sealed class MapStartupHandler(Eden.Gameplay.Sovereignty.IPilotEntosis 
                 or
                 ("stationSvc", "GetAllianceSystems")
                 or
-                ("fwWarzoneSolarsystem", "GetAllWarzonesOccupationStates" or "GetAllWarzonesOccupationStatesUncached")
-                or
                 ("solarsystemInterferenceMgr", "GetAllInterferenceBands" or "GetLocalInterferenceState")
             )
         )
@@ -36,8 +34,7 @@ internal sealed class MapStartupHandler(Eden.Gameplay.Sovereignty.IPilotEntosis 
             return new PilotCallResult.Failure("Map information does not accept arguments.");
         }
 
-        // Eden has no player jump bridges, alliance sovereignty or faction-war occupations.
-        // The client retains its own static universe and NPC faction ownership data.
+        // Eden has no player jump bridges. Entosis owns alliance sovereignty.
         // No CRAB interference is simulated. Build 3662168 uses an absent system
         // dictionary entry or a None local state as its no-interference fallback.
         return service switch

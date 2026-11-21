@@ -18,6 +18,8 @@ Standard preset's imported live order books, original locations/quantities and c
 
 [Sovereignty](protocol/sovereignty.md) records deployment, Entosis capture, vulnerability windows, campaigns, activity indices, capitals, live ADM, Skyhook resources and upgrades.
 
+[Faction Warfare](protocol/faction-warfare.md) records resident warzones, individual and organization enlistment, militia communications, combat, complexes, and territorial conquest.
+
 [Alliances](protocol/alliances.md) records resident alliance implementation, pinned client contracts and milestone validation.
 
 [Interdiction](protocol/interdiction.md) records launched bubbles, focused HIC scripts, nullifiers and resident checkpoint persistence.

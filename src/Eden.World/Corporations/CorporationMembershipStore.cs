@@ -7,6 +7,7 @@ using Eden.Gameplay.Mail;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Characters;
+using Eden.World.FactionWarfare;
 using Eden.World.Mail;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
@@ -246,7 +247,16 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
         }
         var pilot = Pilot(world, pilotId);
         using CatalogDbContext catalog = new(database.CatalogPath);
-        bool departed = RequestRemoval(world, catalog, actorId, pilot, Now);
+        bool departed;
+        if (Eden.Gameplay.FactionWarfare.MilitiaRules.CorporationFaction(pilot.CorporationId) is not null)
+        {
+            Eden.World.FactionWarfare.MilitiaEnlistmentStore.LeaveNpcMilitia(world, catalog, pilot, Now);
+            departed = true;
+        }
+        else
+        {
+            departed = RequestRemoval(world, catalog, actorId, pilot, Now);
+        }
         world.Commit();
         if (departed)
         {
@@ -274,6 +284,10 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
     {
         var actor = Pilot(world, actorId);
         var pilot = Pilot(world, pilotId);
+        if (Eden.Gameplay.FactionWarfare.MilitiaRules.CorporationFaction(pilot.CorporationId) is not null)
+        {
+            return actorId == pilotId ? new(true, "") : new(false, "Only the enrolled pilot may retire from this militia.");
+        }
         var corporation = world.Set<SavedCorporation>().Find(pilot.CorporationId);
         if (
             corporation is null
@@ -305,6 +319,8 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
 
     internal static void Move(WorldAction world, Pilot pilot, int corporationId, long now)
     {
+        MilitiaOrganizationStore.RequireCorporateAdmission(world, pilot, corporationId);
+        MilitiaOrganizationStore.ClearMemberWarning(world, pilot.Id);
         if (world.Set<SavedCorporationWalletSelection>().Find(pilot.Id) is { } selection)
         {
             world.Remove(selection);
@@ -389,13 +405,16 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
         }
     }
 
-    private static void CheckJoin(WorldAction world, Pilot pilot, SavedCorporation corporation) =>
+    private static void CheckJoin(WorldAction world, Pilot pilot, SavedCorporation corporation)
+    {
         CorporationMembershipRules.CheckJoin(
             pilot.CorporationId == corporation.Id,
             world.Set<SavedCorporation>().Any(c => c.CeoId == pilot.Id && c.ClosedAt == null),
             world.Pilots.Count(p => p.CorporationId == corporation.Id),
             corporation.MemberLimit
         );
+        MilitiaOrganizationStore.RequireCorporateAdmission(world, pilot, corporation.Id);
+    }
 
     private static Pilot Pilot(WorldAction world, long id) => world.Pilots.Find(id) ?? throw new InvalidDataException("Unknown pilot.");
 

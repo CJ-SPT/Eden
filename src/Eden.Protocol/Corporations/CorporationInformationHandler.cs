@@ -37,8 +37,6 @@ internal sealed class CorporationInformationHandler(
                 ("allianceRegistry", "GetEmploymentRecord")
                 or
                 ("warsInfoMgr", "GetWarsByOwnerID" or "GetWarsByOwners")
-                or
-                ("facWarMgr", "GetCorporationWarFactionID")
             )
         )
         {
@@ -75,7 +73,6 @@ internal sealed class CorporationInformationHandler(
                 "GetCorpInfo" => new CorporationMarketActivityReply(markets.Read((int)id)),
                 // The last history row is the founding event, not an alliance membership.
                 "GetEmploymentRecord" => new AllianceHistoryReply(player is null ? [] : History(player)),
-                "GetCorporationWarFactionID" => PilotCallResult.None,
                 _ => BlueEmpty.List,
             };
         }

@@ -34,7 +34,8 @@ internal sealed class PilotCharacterSheetStore(WorldDatabase database, PilotTrai
                             .OrderByDescending(row => row.Id)
                             .Select(row => (long?)row.StartedAt)
                             .FirstOrDefault()
-                            ?? p.CreatedAt
+                            ?? p.CreatedAt,
+                        Eden.World.FactionWarfare.MilitiaEnlistmentStore.Effective(world, p)
                     )
                     : null,
             consistentFileRead: true

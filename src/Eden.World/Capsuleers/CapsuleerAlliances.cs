@@ -13,6 +13,7 @@ using Eden.Infrastructure.Registration;
 using Eden.World.Alliances;
 using Eden.World.Catalog;
 using Eden.World.Corporations;
+using Eden.World.FactionWarfare;
 using Eden.World.Market;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
@@ -98,7 +99,7 @@ internal sealed partial class CapsuleerAlliances(
         {
             return false;
         }
-        var independent = local.Where(row => IsIndependent(world, row)).ToArray();
+        var independent = local.Where(row => IsIndependent(world, row, now)).ToArray();
         var neighbors =
             independent.Length == 0
                 ? []
@@ -112,7 +113,7 @@ internal sealed partial class CapsuleerAlliances(
                     .ToArray();
         foreach (var corporation in independent)
         {
-            var existingExecutor = neighbors.FirstOrDefault(row => CanRecruit(world, row, corporation.Id));
+            var existingExecutor = neighbors.FirstOrDefault(row => CanRecruit(world, row, corporation.Id, now));
             if (existingExecutor is not null)
             {
                 int allianceId = world.Set<SavedAllianceMember>().Find(existingExecutor.Id)!.AllianceId;
@@ -120,7 +121,7 @@ internal sealed partial class CapsuleerAlliances(
                 return true;
             }
 
-            var partner = neighbors.FirstOrDefault(row => row.Id != corporation.Id && IsIndependent(world, row));
+            var partner = neighbors.FirstOrDefault(row => row.Id != corporation.Id && IsIndependent(world, row, now));
             if (partner is not null && TryFound(world, catalog, corporation, partner, now))
             {
                 return true;
@@ -146,13 +147,14 @@ internal sealed partial class CapsuleerAlliances(
     private static bool ActiveBot(WorldAction world, long pilot) =>
         world.Set<SavedCapsuleerAgent>().Find(pilot) is not null && world.Set<SavedCapsuleerSuspension>().Find(pilot) is null;
 
-    private static bool IsIndependent(WorldAction world, SavedCorporation corporation) =>
+    private static bool IsIndependent(WorldAction world, SavedCorporation corporation, long now) =>
         world.Set<SavedAllianceMember>().Find(corporation.Id) is null
+        && MilitiaOrganizationStore.AllianceAdmissionFailure(world, corporation.Id, null, now) is null
         && !world
             .Filter<SavedAllianceApplication>(row => row.CorporationId == corporation.Id)
             .Any(row => row.Status == AllianceApplicationStatus.New || row.Status == AllianceApplicationStatus.Accepted);
 
-    private static bool CanRecruit(WorldAction world, SavedCorporation executor, int applicant)
+    private static bool CanRecruit(WorldAction world, SavedCorporation executor, int applicant, long now)
     {
         if (
             world.Set<SavedAllianceMember>().Find(executor.Id) is not { } member
@@ -171,7 +173,8 @@ internal sealed partial class CapsuleerAlliances(
             + applications.Count(row => row.Status == AllianceApplicationStatus.Accepted);
         return reserved < CapsuleerAllianceRules.TargetCorporations
             && !applications.Any(row => row.CorporationId == applicant)
-            && CanFund(world, executor, reserved + 1, 0);
+            && CanFund(world, executor, reserved + 1, 0)
+            && MilitiaOrganizationStore.AllianceAdmissionFailure(world, applicant, alliance.Id, now) is null;
     }
 
     private bool TryFound(EconomyTransaction world, CatalogDbContext catalog, SavedCorporation founder, SavedCorporation partner, long now)

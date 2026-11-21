@@ -1,4 +1,5 @@
 using Eden.Gameplay.Corporations;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 
@@ -38,7 +39,8 @@ public sealed record PilotIdentity(
     CorporationMemberAccess? CorporationAccess = null,
     int CorporationAccountKey = CorporationWalletRules.MasterKey,
     FleetIdentity? Fleet = null,
-    int? AllianceId = null
+    int? AllianceId = null,
+    MilitiaFaction? WarFaction = null
 );
 
 public sealed record PilotShip(

@@ -1,6 +1,7 @@
 using Eden.Gameplay.Bookmarks;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Exploration;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Planetary;
 using Eden.Gameplay.Structures;
@@ -23,6 +24,7 @@ internal sealed class FlightCallHandler(
     IWorldTuning? tuning = null,
     IDedEscalations? escalations = null,
     IWormholeTravel? wormholes = null,
+    IMilitiaComplexes? complexes = null,
     ICapitalNavigation? navigation = null
 ) : ISelectedPilotCallHandler
 {
@@ -124,12 +126,18 @@ internal sealed class FlightCallHandler(
         if (
             command is FlightCommand.WarpToScan
             || command is FlightCommand.WarpTo { TargetId: >= CombatAnomalyRules.FirstSiteId and < CombatAnomalyRules.FirstObjectId }
-            || command is FlightCommand.WarpTo wormholeWarp && WormholeRules.IsEndpoint(wormholeWarp.TargetId)
+            || command is FlightCommand.WarpTo siteWarpRequest
+                && (
+                    WormholeRules.IsEndpoint(siteWarpRequest.TargetId)
+                    || MilitiaComplexRules.IsSite(siteWarpRequest.TargetId)
+                    || MilitiaObjectiveRules.IsSite(siteWarpRequest.TargetId)
+                )
         )
         {
             var site = anomalies
                 .List(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
                 .Concat(anomalies.Signatures(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()))
+                .Concat(complexes?.Sites(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) ?? [])
                 .SingleOrDefault(s =>
                     command is FlightCommand.WarpToScan scan
                         ? scan.TargetId == s.TargetId

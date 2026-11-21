@@ -23,13 +23,20 @@ internal sealed class CooperativeFleetStore(TimeProvider clock, IPilotSecuritySt
         {
             return;
         }
-        if (_directory is null || current.Pilots != _directory.Pilots || current.AllianceMemberships != _directory.AllianceMemberships)
+        if (
+            _directory is null
+            || current.Pilots != _directory.Pilots
+            || current.AllianceMemberships != _directory.AllianceMemberships
+            || current.DirectMilitias != _directory.DirectMilitias
+            || current.OrganizationMilitias != _directory.OrganizationMilitias
+        )
         {
             _world.RefreshAffiliations(id =>
                 current.Pilots.TryGetValue(id, out var pilot)
                     ? new(
                         pilot.CorporationId,
-                        current.AllianceMemberships.GetValueOrDefault(pilot.CorporationId) is > 0 and var alliance ? alliance : null
+                        current.AllianceMemberships.GetValueOrDefault(pilot.CorporationId) is > 0 and var alliance ? alliance : null,
+                        current.PilotMilitia(id)
                     )
                     : null
             );
@@ -81,6 +88,7 @@ internal sealed class CooperativeFleetStore(TimeProvider clock, IPilotSecuritySt
                 {
                     CorporationId = current.CorporationId,
                     AllianceId = directory.AllianceMemberships.GetValueOrDefault(current.CorporationId) is > 0 and var id ? id : null,
+                    WarFaction = directory.PilotMilitia(pilot.Id),
                 };
             }
             _world.Update(session, pilot);
@@ -105,8 +113,8 @@ internal sealed class CooperativeFleetStore(TimeProvider clock, IPilotSecuritySt
 
     public IReadOnlyList<FleetDelivery> Drain(long actor) => Read(() => _world.Drain(actor));
 
-    public void NotifyMissionStanding(long pilotId, long sourceId, double value) =>
-        Write(() => _world.NotifyMissionStanding(pilotId, sourceId, value));
+    public void NotifyStandingChanged(long pilotId, long sourceId, double value) =>
+        Write(() => _world.NotifyStandingChanged(pilotId, sourceId, value));
 
     public CooperativeFleet Create(long actor) => Read(() => _world.Create(actor));
 
