@@ -63,12 +63,26 @@ internal sealed partial class RegionalMarketStore
                 products.TryAdd(starter.TypeId, starter);
             }
         }
-        var stationOrders = world
-            .Set<NpcMarketOrder>()
-            .Where(o => o.StationId == stationId && o.Kind == NpcMarketKind.Regional && (includeDemand || !o.Bid));
-        if (types is not null)
+        var marketOrders = world.Set<NpcMarketOrder>();
+        IEnumerable<NpcMarketOrder> stationOrders;
+        if (types is { Count: 1 } && world is EconomyTransaction resident)
         {
-            stationOrders = stationOrders.Where(o => Enumerable.Contains(types, o.TypeId));
+            // Capture the IDs before materializing editable rows into the current transaction.
+            var orderIds = resident
+                .StationMarketOrders(stationId, types[0])
+                .Where(order => order.Kind == NpcMarketKind.Regional && (includeDemand || !order.Bid))
+                .Select(order => order.Id)
+                .ToArray();
+            stationOrders = orderIds.Select(id => marketOrders.Find(id)).OfType<NpcMarketOrder>();
+        }
+        else
+        {
+            stationOrders = marketOrders.Where(o =>
+                o.StationId == stationId
+                && o.Kind == NpcMarketKind.Regional
+                && (includeDemand || !o.Bid)
+                && (types == null || Enumerable.Contains(types, o.TypeId))
+            );
         }
         var orders = stationOrders.ToDictionary(o => (o.TypeId, o.Bid));
         var states = world.Set<SavedRegionalMarketStock>();

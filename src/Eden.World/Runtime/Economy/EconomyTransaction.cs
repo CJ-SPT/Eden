@@ -56,6 +56,11 @@ internal sealed partial class EconomyTransaction(
             .IndexedSnapshots(nameof(NpcMarketOrder.RegionId), region, typeId is int type ? (nameof(NpcMarketOrder.TypeId), type) : null)
             .Where(o => o.RegionId == region && (typeId is null || o.TypeId == typeId));
 
+    internal IEnumerable<EconomyNpcMarketOrder> StationMarketOrders(int station, int? typeId = null) =>
+        ((EconomySet<NpcMarketOrder, EconomyNpcMarketOrder>)Set<NpcMarketOrder>())
+            .IndexedSnapshots(nameof(NpcMarketOrder.StationId), station, typeId is int type ? (nameof(NpcMarketOrder.TypeId), type) : null)
+            .Where(order => order.StationId == station && (typeId is null || order.TypeId == typeId));
+
     internal IEnumerable<EconomyNpcMarketOrder> NpcMarketOrders(IReadOnlySet<NpcMarketAssortment> assortments) =>
         ((EconomySet<NpcMarketOrder, EconomyNpcMarketOrder>)Set<NpcMarketOrder>())
             .IndexedSnapshots(nameof(NpcMarketAssortment), assortments)

@@ -79,9 +79,9 @@ internal sealed partial class PilotMarketStore
         var station = Station(catalog, stationId);
         new RegionalMarketStore(activity).Advance(world, catalog, station.RegionId, stationId, Now, typeId);
         return world
-            .RegionalOrders(station.RegionId, typeId)
+            .StationMarketOrders(stationId, typeId)
             .SingleOrDefault(order =>
-                order.StationId == stationId && order.Kind == NpcMarketKind.Regional && order.Bid && order.Remaining > 0
+                order.RegionId == station.RegionId && order.Kind == NpcMarketKind.Regional && order.Bid && order.Remaining > 0
             );
     }
 
@@ -181,7 +181,7 @@ internal sealed partial class PilotMarketStore
                 .Entity;
     }
 
-    private void Refresh(WorldAction world, IQueryable<NpcMarketOrder> orders)
+    private void Refresh(WorldAction world, IQueryable<NpcMarketOrder> orders, int? institutionalStation = null)
     {
         if (world.Settings.Economy.StandardMarket)
         {
@@ -196,11 +196,29 @@ internal sealed partial class PilotMarketStore
             NpcSupplyRules.ValidateStock(stock);
             long institutionalCutoff = clock.GetUtcNow().AddDays(-MarketDefinitions.NpcOrderDays).UtcDateTime.ToFileTimeUtc();
             long issued = Now;
-            var refreshed = orders
-                .Where(o => o.Kind == NpcMarketKind.Institutional && !o.Bid && o.Issued > 0)
-                .Where(o => o.Remaining != stock || o.Entered != stock || o.Issued <= institutionalCutoff)
-                .AsTracking()
-                .ToArray();
+            IEnumerable<NpcMarketOrder> refreshed;
+            if (institutionalStation is int station && world is EconomyTransaction resident)
+            {
+                // Touch only the institutional rows whose stock or expiry needs updating.
+                var orderIds = resident
+                    .StationMarketOrders(station)
+                    .Where(order =>
+                        order is { Kind: NpcMarketKind.Institutional, Bid: false, Issued: > 0 }
+                        && (order.Remaining != stock || order.Entered != stock || order.Issued <= institutionalCutoff)
+                    )
+                    .Select(order => order.Id)
+                    .ToArray();
+                var marketOrders = world.Set<NpcMarketOrder>();
+                refreshed = orderIds.Select(id => marketOrders.Find(id)).OfType<NpcMarketOrder>();
+            }
+            else
+            {
+                refreshed = orders
+                    .Where(o => o.Kind == NpcMarketKind.Institutional && !o.Bid && o.Issued > 0)
+                    .Where(o => o.Remaining != stock || o.Entered != stock || o.Issued <= institutionalCutoff)
+                    .AsTracking()
+                    .ToArray();
+            }
             foreach (var order in refreshed)
             {
                 order.Remaining = stock;

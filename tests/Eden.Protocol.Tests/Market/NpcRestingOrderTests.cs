@@ -135,8 +135,10 @@ public sealed class NpcRestingOrderTests(ITestOutputHelper output)
         Assert.Equal(bid.Remaining - 10, f.Bid.Remaining);
     }
 
-    [Fact]
-    public void ResidentSalesKeepUnrelatedRegionalOrdersOutOfMatchingAllocations()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ResidentSalesKeepUnrelatedRegionalOrdersOutOfMatchingAllocations(bool atSellerStation)
     {
         using Fixture f = new();
         var pilot = f.Pilot;
@@ -167,6 +169,7 @@ public sealed class NpcRestingOrderTests(ITestOutputHelper output)
         _ = Measure();
         var small = Measure();
         const int depth = 16384;
+        int crowdedStation = atSellerStation ? pilot.StationId : pilot.StationId + 1;
         using (var setup = live.Economy.Begin())
         {
             for (int index = 0; index < depth; index++)
@@ -174,7 +177,7 @@ public sealed class NpcRestingOrderTests(ITestOutputHelper output)
                 setup.Add(
                     new NpcMarketOrder
                     {
-                        StationId = pilot.StationId + 1,
+                        StationId = crowdedStation,
                         SystemId = pilot.SystemId,
                         RegionId = pilot.RegionId,
                         OwnerId = pilot.StationOwnerId,
@@ -193,7 +196,8 @@ public sealed class NpcRestingOrderTests(ITestOutputHelper output)
         var large = Measure();
         output.WriteLine($"Four sales on the small book: {small.AllocatedBytes:N0} bytes, {small.Elapsed.TotalMilliseconds:F2} ms.");
         output.WriteLine(
-            $"Four sales with {depth:N0} unrelated orders: {large.AllocatedBytes:N0} bytes, {large.Elapsed.TotalMilliseconds:F2} ms."
+            $"Four sales with {depth:N0} unrelated orders at station {crowdedStation}: "
+                + $"{large.AllocatedBytes:N0} bytes, {large.Elapsed.TotalMilliseconds:F2} ms."
         );
         output.WriteLine(
             $"SQL commands / opens / fitting calculations per four sales: {large.Commands} / {large.Connections} / {large.Fittings}."

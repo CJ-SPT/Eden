@@ -25,7 +25,7 @@ internal sealed partial class PilotMarketStore
         var orders = market.Where(o => o.StationId == station.Id);
         if (world.Prepared(preparation))
         {
-            Refresh(world, orders);
+            Refresh(world, orders, institutionalStation: station.Id);
             return;
         }
         var existing = orders
@@ -76,6 +76,6 @@ internal sealed partial class PilotMarketStore
             retired.Issued = 0;
         }
         world.Remember(preparation);
-        Refresh(world, orders);
+        Refresh(world, orders, institutionalStation: station.Id);
     }
 }
