@@ -17,12 +17,13 @@ using Eden.World.Storage;
 namespace Eden.World.Inventory;
 
 [Injectable]
-internal sealed class PilotShipSharingStore(
+internal sealed partial class PilotShipSharingStore(
     WorldDatabase database,
     ICooperativeFleets fleets,
     IPilotCombatPresence presence,
-    Eden.Gameplay.Flight.ICapitalInventoryEvents events
-) : IPilotShipSharing
+    Eden.Gameplay.Flight.ICapitalInventoryEvents events,
+    TimeProvider clock
+) : IPilotShipSharing, IPilotMobileRefitting
 {
     private const int FleetHangarFlag = (int)InventoryFlag.FleetHangar;
 
@@ -217,7 +218,13 @@ internal sealed class PilotShipSharingStore(
         return changes;
     }
 
-    private Pilot? Adjacent(WorldAction world, CatalogDbContext catalog, Pilot pilot, long shipId)
+    private Pilot? Adjacent(
+        WorldAction world,
+        CatalogDbContext catalog,
+        Pilot pilot,
+        long shipId,
+        double range = ShipSharingRules.TransferRange
+    )
     {
         if (
             pilot.ActiveShip.Position is null
@@ -248,7 +255,7 @@ internal sealed class PilotShipSharingStore(
             return null;
         }
         double radii = (catalog.RequireItem(hull.TypeId).Radius ?? 0) + (catalog.RequireItem(pilot.ActiveShip.TypeId).Radius ?? 0);
-        return source.Position.DistanceTo(target.Position) - radii <= ShipSharingRules.TransferRange ? host : null;
+        return source.Position.DistanceTo(target.Position) - radii <= range ? host : null;
     }
 
     private bool Permitted(WorldAction world, Pilot pilot, Pilot host)

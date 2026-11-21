@@ -850,6 +850,8 @@ internal sealed class SharedSpace(
             nameof(FindArea)
         );
 
+    public IReadOnlyList<long> NearbyShips(int systemId, SpacePosition origin) => _sightGrid.Nearby(systemId, origin);
+
     private PilotCombatPresence? FindOwned(int systemId, long shipId)
     {
         using (EnterMotion(systemId: systemId))

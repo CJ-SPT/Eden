@@ -20,6 +20,7 @@ public interface IPilotCombatPresence
     PilotCombatPresence? FindOnline(int systemId, long shipId) => Find(systemId, shipId);
 
     PilotCombatPresence? FindArea(int systemId, long shipId) => Find(systemId, shipId);
+    IReadOnlyList<long> NearbyShips(int systemId, SpacePosition origin) => [];
     bool IsAreaProtected(int systemId, long shipId) => false;
     bool IsTravelProtected(int systemId, long shipId) => IsAreaProtected(systemId, shipId);
 

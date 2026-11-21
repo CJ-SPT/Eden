@@ -737,6 +737,27 @@ hold rules, cargo-container menus, fleet membership and migration.
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
+## Mobile refitting
+
+Build 3662168 `appConst.pyj` defines `maxConfigureDistance` as 5,000 m. EVE.js `shipServiceAccess.js`,
+`ejectRuntime.js` and `invBrokerService.js` use the same surface-range limit and fleet or corporation
+relationship for maintenance-bay fitting. The fitting service is available independently of storage
+sharing. Eden uses the ordinary inventory and dogma fitting calls for high, medium and low power modules.
+[CCP Retribution notes](https://www.eveonline.com/news/view/patch-notes-for-retribution-1) ·
+[CCP combat refitting notes](https://www.eveonline.com/news/view/reworking-capital-ships-skills-modules-and-refitting)
+
+A qualifying ship can refit itself or provide the fitting service to nearby fleet and corporation pilots.
+Eden rechecks provider range, flight state, active modules and the weapons timer at each transaction.
+Fitting, onlining and moving a module back to cargo share the existing resource and skills checks. Rig
+changes and fits sourced directly from a foreign hull's hangar remain outside this flow.
+
+**Automated validation.** The exact Venture and Rorqual case passed in 7.91 seconds. The 15-case
+refitting, shared fleet hangar and passive fitting filter passed in 11.32 seconds after an 8.80-second
+build. The Venture fitted and brought a module online, was refused while its weapons timer was active,
+and moved the module back to cargo at the deadline. Both Python suites passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Milestones
 
 | Milestone | Playable outcome and acceptance |
@@ -747,7 +768,7 @@ hold rules, cargo-container menus, fleet membership and migration.
 | **4. Black Ops and covert travel** | Implemented. Black Ops direct jumps, covert module and mobile beacons, eligible fleet passenger travel through a paid portal, and fleet conduit jumps. |
 | **5. Dreadnoughts and force auxiliaries** | Implemented. Dreadnoughts and force auxiliaries use standard cynos, paid siege or triage, and normal docking, repair and loss settlement. The acceptance cases reopen a paid siege and settle an Apostle loss. |
 | **6. Carriers and fighters** | Carrier tubes support light attack, space superiority and support squadrons, with launch, targeting, recall and replacement. Squadron losses persist. Standup fighters and additional combat abilities remain open. |
-| **7. Capital industry and fleet services** | Rorquals use paid industrial cores, Excavators, fleet compression and P.A.N.I.C. Nearby fleet or corporation members can move ordinary stacks through shared fleet hangars. Shared maintenance bays, mobile refitting, clone bays and fresh-world resupply remain open. |
+| **7. Capital industry and fleet services** | Rorquals use paid industrial cores, Excavators, fleet compression and P.A.N.I.C. Nearby fleet or corporation members can exchange ordinary stacks through shared fleet hangars and refit from their own cargo at a maintenance-bay ship. Shared maintenance-bay storage, clone bays and fresh-world resupply remain open. |
 | **8. Supercapitals and production** | Keepstar docking, Sotiyo construction, direct jumps, Titan bridging, supercarrier heavy attack fighters and burst projectors are implemented. Targeted Titan doomsdays have paid windups, counters and durable loss settlement. Titan lances, Reapers and Bosonic fields support paid aiming and positional counters. The oscillator transports subcapitals and locks capital warp. Phenomena Generators apply the pinned racial boosts and penalties. |
 
 Milestone 5 needs the Upwell battle and destruction paths for its siege acceptance.
