@@ -1,3 +1,4 @@
+using Eden.Gameplay.Combat;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Ammunition;
@@ -118,6 +119,7 @@ internal sealed class ModuleActivationHandler(
                     or DogmaEffect.FocusedWarpDisruption
                     or DogmaEffect.FocusedWarpScrambling
             || effectName == AreaWeaponHandler.BurstEffect
+            || DoomsdayRules.Effect(effectName) is not null
             || effectName == SmartbombHandler.EffectName
             || TackleWire.Effect(effectName) is DogmaEffect.StasisWebifier or DogmaEffect.WarpDisruptor or DogmaEffect.WarpScrambler
             || PlayerEwarWire.Effect(effectName) is not null
@@ -180,6 +182,9 @@ internal sealed class ModuleActivationHandler(
                 ?? PilotCallResult.Unsupported,
             var name when InterdictionHandler.Effect(name) is { } field => interdiction?.Call(context, method, field, args)
                 ?? PilotCallResult.Unsupported,
+            var name when DoomsdayRules.Effect(name) is { } doomsday => keywords is { Count: > 0 }
+                ? new PilotCallResult.Failure("Unexpected doomsday arguments.")
+                : areaWeapons?.CallModule(context, method, args, doomsday) ?? PilotCallResult.Unsupported,
             AreaWeaponHandler.BurstEffect => areaWeapons?.CallModule(context, method, args, DogmaEffect.BurstJammer)
                 ?? PilotCallResult.Unsupported,
             SmartbombHandler.EffectName => smartbombs?.Call(context, method, args) ?? PilotCallResult.Unsupported,

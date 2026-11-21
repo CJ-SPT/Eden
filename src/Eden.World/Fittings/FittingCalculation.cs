@@ -448,7 +448,7 @@ internal sealed partial record FittingCalculation(
                     );
                 }
             }
-            if (module.Item.Online && AreaWeaponRules.IsModule(module.GroupId))
+            if (module.Item.Online && AreaWeaponRules.IsModule(module.GroupId, module.Item.TypeId))
             {
                 foreach (var modifier in AreaWeaponCatalog.Modifiers(catalog, module.Item.TypeId))
                 {

@@ -136,9 +136,9 @@ internal sealed class AreaWeaponHandler(IPilotAreaWeapons weapons, TimeProvider 
         {
             if (_cycles.TryGetValue(module, out var cycle))
             {
-                if (AreaWeaponRules.IsProjector(cycle.Effect.Effect))
+                if (AreaWeaponRules.IsProjector(cycle.Effect.Effect) || DoomsdayRules.IsTargeted(cycle.Effect.Effect))
                 {
-                    return new PilotCallResult.Failure("A paid burst projector cycle cannot be stopped early.");
+                    return new PilotCallResult.Failure("A paid superweapon cycle cannot be stopped early.");
                 }
                 _cycles[module] = cycle with { Stopping = true };
             }
@@ -148,6 +148,12 @@ internal sealed class AreaWeaponHandler(IPilotAreaWeapons weapons, TimeProvider 
         {
             return PilotCallResult.Unsupported;
         }
+        if (DoomsdayRules.IsTargeted(effect))
+        {
+            return target is long id && id > 0
+                ? Activate(context, item, effect, repeats, null, id)
+                : new PilotCallResult.Failure("Select a locked capital ship.");
+        }
         if (target is not null && !Equals(target, context.Pilot.ShipId))
         {
             return new PilotCallResult.Failure("Activate this area weapon without a locked target.");
@@ -155,7 +161,14 @@ internal sealed class AreaWeaponHandler(IPilotAreaWeapons weapons, TimeProvider 
         return Activate(context, item, effect, repeats, null);
     }
 
-    private PilotCallResult Activate(PilotCallContext context, long module, DogmaEffect effect, long repeats, SpacePosition? point)
+    private PilotCallResult Activate(
+        PilotCallContext context,
+        long module,
+        DogmaEffect effect,
+        long repeats,
+        SpacePosition? point,
+        long? target = null
+    )
     {
         if (!context.Flight.CanTarget || context.Flight.Cloaked || repeats is < 0 or > int.MaxValue)
         {
@@ -168,7 +181,7 @@ internal sealed class AreaWeaponHandler(IPilotAreaWeapons weapons, TimeProvider 
         try
         {
             context.Flight.Checkpoint();
-            Start(context, module, effect, effect == DogmaEffect.BurstJammer ? repeats : 0, point);
+            Start(context, module, effect, effect == DogmaEffect.BurstJammer ? repeats : 0, point, target: target);
             return PilotCallResult.None;
         }
         catch (Exception error) when (error is InvalidDataException or OverflowException)
@@ -177,7 +190,15 @@ internal sealed class AreaWeaponHandler(IPilotAreaWeapons weapons, TimeProvider 
         }
     }
 
-    private void Start(PilotCallContext context, long item, DogmaEffect effect, long repeats, SpacePosition? point, Cycle? previous = null)
+    private void Start(
+        PilotCallContext context,
+        long item,
+        DogmaEffect effect,
+        long repeats,
+        SpacePosition? point,
+        Cycle? previous = null,
+        long? target = null
+    )
     {
         long now = Now;
         var result = weapons.Activate(
@@ -188,24 +209,33 @@ internal sealed class AreaWeaponHandler(IPilotAreaWeapons weapons, TimeProvider 
             context.Flight.Heading,
             context.Flight.Velocity,
             point,
-            now
+            now,
+            target
         );
         var module = result.Module;
-        DogmaActiveEffect active = new(item, context.Pilot.PilotId, context.Pilot.ShipId, null, effect, now, module.Duration, repeats);
+        bool doomsday = module.Kind == AreaWeaponKind.Doomsday;
+        var notifications = doomsday ? context.NotificationsBeforeFlight : context.Notifications;
+        DogmaActiveEffect active = new(item, context.Pilot.PilotId, context.Pilot.ShipId, target, effect, now, module.Duration, repeats);
         WeaponContact contact = new(
             item,
             module.TypeId,
             0,
-            null,
+            target,
             now,
             module.Duration,
-            effect == DogmaEffect.BurstJammer ? "effects.ECMBurst" : "effects.MissileDeployment"
+            doomsday ? DoomsdayRules.Graphic(effect)
+                : effect == DogmaEffect.BurstJammer ? "effects.ECMBurst"
+                : "effects.MissileDeployment"
         );
         _cycles[item] = new(active, contact, AreaWeaponRules.Deadline(now, module.Duration));
         if (previous is null)
         {
-            context.Notifications.Add(new ShipEffectChanged(active, now, true, true));
-            if (effect == DogmaEffect.BurstJammer)
+            notifications.Add(new ShipEffectChanged(active, now, true, true));
+            if (doomsday)
+            {
+                context.Flight.StopForCapitalModule();
+            }
+            if (doomsday || effect == DogmaEffect.BurstJammer)
             {
                 context.Flight.SetWeaponEffect(contact, true);
             }
@@ -220,9 +250,9 @@ internal sealed class AreaWeaponHandler(IPilotAreaWeapons weapons, TimeProvider 
         }
         foreach (var change in result.InventoryChanges)
         {
-            InventoryChangesWire.NotifyItemChange(context, change);
+            InventoryChangesWire.NotifyItemChange(context, change, beforeFlight: doomsday);
         }
-        context.Notifications.Add(
+        notifications.Add(
             new ModuleAttributesChanged([
                 new(
                     context.Pilot.PilotId,

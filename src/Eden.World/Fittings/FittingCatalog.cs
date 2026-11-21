@@ -37,7 +37,7 @@ internal static class FittingCatalog
         {
             return null;
         }
-        if (AreaWeaponRules.IsModule(type.GroupId) && !AreaWeaponCatalog.Module(catalog, typeId, type.GroupId))
+        if (AreaWeaponRules.IsModule(type.GroupId, typeId) && !AreaWeaponCatalog.Module(catalog, typeId, type.GroupId))
         {
             return null;
         }

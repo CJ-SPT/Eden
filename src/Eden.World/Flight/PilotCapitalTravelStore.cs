@@ -288,8 +288,15 @@ internal sealed partial class PilotCapitalTravelStore(
             })
         ?? new Dictionary<int, int>();
 
+    public bool DoomsdayMovementLocked(long shipId) =>
+        LiveWorld.Find(database.Path)?.Economy.Inspect(world => AreaWeaponStore.DoomsdayLocked(world, shipId, Now, movement: true)) == true;
+
     internal static void RequireMobile(WorldAction world, long pilotId, long shipId, long now)
     {
+        if (AreaWeaponStore.DoomsdayLocked(world, shipId, now, movement: true))
+        {
+            throw new InvalidDataException("The doomsday has immobilized this ship.");
+        }
         if (ProtectedIndustry(world, shipId, now))
         {
             throw new InvalidDataException("P.A.N.I.C. prevents warping, docking and jumping.");
@@ -332,6 +339,7 @@ internal sealed partial class PilotCapitalTravelStore(
         {
             throw new InvalidDataException("Use an eligible jump drive ship in a different system to jump to a cyno.");
         }
+        AreaWeaponStore.RequireDoomsdayCooldownComplete(world, shipId, now);
         var previous = RequireJumpReady(world, catalog, pilot, origin, request.SystemId, now);
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, pilot.ActiveShip.TypeId);
         var ship = PilotFittingStore.ShipAttributes(world, catalog, pilot);

@@ -147,6 +147,48 @@ internal sealed partial class AreaWeaponStore
         }
     }
 
+    private void HitPilot(
+        WorldAction world,
+        CatalogDbContext catalog,
+        SavedAreaWeapon row,
+        Pilot source,
+        Target target,
+        Pilot victim,
+        int weapon,
+        DamageVector damage,
+        long now,
+        List<PilotDamage> notifications
+    )
+    {
+        var defense = ShipHealth.DefenseFrom(target.Attributes);
+        var hit = PilotHealthStore.Apply(world, target.Id, defense, damage, now);
+        var attacker = PilotInteractionHistoryStore.Player(world, source, row.SourceShipId, weapon);
+        PilotInteractionHistoryStore.Damage(world, target.Id, attacker, hit.Applied);
+        var loss = hit.Remaining.Destroyed
+            ? losses.Apply(world, catalog, victim, target.Id, row.SystemId, victim.ActiveShip.Position!, now, attacker)
+            : null;
+        world.SaveChanges();
+        var replacement = loss is null ? null : lookup.FindPilot(world, victim.AccountId, victim.Id);
+        notifications.Add(
+            new(
+                victim.Id,
+                row.PilotId,
+                row.SourceShipId,
+                new(target.Id, defense, hit.Remaining),
+                damage,
+                hit.Applied,
+                1,
+                weapon,
+                false,
+                replacement,
+                loss?.Insurance
+            )
+            {
+                InventoryChanges = loss?.Changes ?? [],
+            }
+        );
+    }
+
     private bool Explode(
         WorldAction world,
         CatalogDbContext catalog,
@@ -203,33 +245,7 @@ internal sealed partial class AreaWeaponStore
             }
             else if (target.Pilot is { } victim)
             {
-                var defense = ShipHealth.DefenseFrom(target.Attributes);
-                var hit = PilotHealthStore.Apply(world, target.Id, defense, damage, now);
-                var attacker = PilotInteractionHistoryStore.Player(world, source, row.SourceShipId, flight.Module.TypeId);
-                PilotInteractionHistoryStore.Damage(world, target.Id, attacker, hit.Applied);
-                var loss = hit.Remaining.Destroyed
-                    ? losses.Apply(world, catalog, victim, target.Id, row.SystemId, victim.ActiveShip.Position!, now, attacker)
-                    : null;
-                world.SaveChanges();
-                var replacement = loss is null ? null : lookup.FindPilot(world, victim.AccountId, victim.Id);
-                notifications.Add(
-                    new(
-                        victim.Id,
-                        row.PilotId,
-                        row.SourceShipId,
-                        new(target.Id, defense, hit.Remaining),
-                        damage,
-                        hit.Applied,
-                        1,
-                        flight.Module.TypeId,
-                        false,
-                        replacement,
-                        loss?.Insurance
-                    )
-                    {
-                        InventoryChanges = loss?.Changes ?? [],
-                    }
-                );
+                HitPilot(world, catalog, row, source, target, victim, flight.Module.TypeId, damage, now, notifications);
             }
         }
         foreach (var other in world.Filter<SavedAreaWeapon>(other => other.SystemId == row.SystemId && other.Id != row.Id).ToArray())

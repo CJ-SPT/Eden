@@ -84,6 +84,7 @@ public interface IPilotCapitalTravel
     IReadOnlyDictionary<int, int> BeaconCounts();
     CynoDeployment Deploy(long pilotId, long shipId, IReadOnlyList<long> itemIds, SpacePosition heading);
     IReadOnlyList<StaticSpaceObject> Deployables(int systemId);
+    bool DoomsdayMovementLocked(long shipId);
     JumpPortalActivation OpenPortal(long pilotId, long shipId, CapitalJumpRequest request);
     JumpPortal? Portal(long pilotId);
     IReadOnlyList<JumpPortal> FleetPortals(long pilotId);

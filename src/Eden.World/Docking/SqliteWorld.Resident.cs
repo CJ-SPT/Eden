@@ -170,7 +170,9 @@ public sealed partial class SqliteWorld
     {
         if (world is EconomyTransaction)
         {
-            Eden.World.Flight.PilotCapitalTravelStore.RequireMobile(world, pilotId, shipId, _clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+            long now = _clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+            Eden.World.Flight.PilotCapitalTravelStore.RequireMobile(world, pilotId, shipId, now);
+            Eden.World.Combat.AreaWeaponStore.RequireDoomsdayCooldownComplete(world, shipId, now);
         }
         if (locationId >= Eden.Gameplay.Structures.StructureRules.FirstStructureId)
         {

@@ -239,6 +239,17 @@ internal sealed partial class AreaWeaponStore
         {
             return;
         }
+        if (
+            !Live.Economy.Inspect(world =>
+                world
+                    .Filter<SavedAreaWeapon>(row => row.SystemId == systemId)
+                    .AsEnumerable()
+                    .Any(row => row.ResolvesAt <= now || row.Flight() is { Active: true, Module.Kind: AreaWeaponKind.Projector })
+            )
+        )
+        {
+            return;
+        }
         using var transaction = Live.Economy.Begin(Participants(systemId));
         var world = (WorldAction)transaction;
         using CatalogDbContext catalog = new(database.CatalogPath);
@@ -276,7 +287,11 @@ internal sealed partial class AreaWeaponStore
             {
                 continue;
             }
-            if (flight.Module.Kind == AreaWeaponKind.Defender)
+            if (flight.Module.Kind == AreaWeaponKind.Doomsday)
+            {
+                SettleDoomsday(world, catalog, row, flight, now, damage);
+            }
+            else if (flight.Module.Kind == AreaWeaponKind.Defender)
             {
                 if (world.Set<SavedAreaWeapon>().Find(flight.TargetId) is { } bomb)
                 {

@@ -429,7 +429,7 @@ internal sealed partial record FittingCalculation
                     );
                 }
             }
-            if (module.Item.Online && AreaWeaponRules.IsModule(module.GroupId))
+            if (module.Item.Online && AreaWeaponRules.IsModule(module.GroupId, module.Item.TypeId))
             {
                 foreach (var modifier in AreaWeaponCatalog.Modifiers(catalog, module.Item.TypeId))
                 {
@@ -540,6 +540,11 @@ internal sealed partial record FittingCalculation
             .Concat([Eden.Gameplay.Flight.WarpCapacitorRules.WarpDriveOperationSkill])
             .Concat(AdvancedWeaponRules.Skills)
             .Concat([AreaWeaponRules.BombDeploymentSkill, AreaWeaponRules.DefenderSkill, AreaWeaponRules.ProjectorSkill])
+            .Concat(
+                modules.Any(module => DoomsdayRules.EffectForType(module.Item.TypeId) is not null)
+                    ? [DoomsdayRules.OperationSkill, DoomsdayRules.RapidFiringSkill]
+                    : Array.Empty<int>()
+            )
             .Concat(modules.Any(m => m.GroupId == CommandBurstRules.Group) ? CommandBurstCatalog.Skills : [])
             .Concat(Eden.Gameplay.Exploration.ProbeScanRules.Skills)
             .Concat([(int)MiningSkill.GasHarvesting, (int)MiningSkill.IceHarvesting])

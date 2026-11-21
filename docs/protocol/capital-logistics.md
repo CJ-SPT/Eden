@@ -336,7 +336,7 @@ published light and heavy attack squadrons. Slot zero uses the attack missile pr
 and Heavy Fighters skills apply to Cyclops attack damage. Supercarriers also use the existing
 `superWeaponMgr.ActivateSinglePointTargetedModule` path for burst projectors. The racial effects `6615`–`6618`
 modify their associated projector cycles, alongside Burst Projector Operation. Other fighter roles and abilities,
-Standup fighter control, Titan superweapons and Phenomena Generators remain open.
+Standup fighter control, area doomsdays and Phenomena Generators remain open.
 
 The pinned catalog cases exercise all eight hulls. The Avatar pays to bridge a Rapier from Jan to a Pharolux,
 then jumps itself and docks at the Keepstar. The Aeon fires Cyclops attack missiles at an Astrahus and applies a
@@ -347,8 +347,42 @@ reopens during a sovereignty outage, resumes the same job, then assembles and un
 **Automated validation.** The final filter passed all 118 cases in 63.75 seconds of test execution. It covered
 `CapitalTravelTests`, `AreaWeaponTests`, `AreaWeaponBoundaryTests`, `StructureRulesTests`,
 `SovereigntyResourceProtocolTests`, `IndustryFacilityLookupTests` and `FlightBoundaryTests`. The catalog and
-formatting policy suites passed. The older drone-bay cohort fixture omits Rorqual `28352` and fails its policy
-comparison. The same failure was reproduced at `ad9dc658`.
+formatting policy suites passed. An earlier broader run passed 672 of 673 in 798.39 seconds. Its drone-bay
+cohort fixture omits Rorqual `28352` and fails the policy comparison. The same failure was reproduced at
+`ad9dc658`.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+## Targeted Titan doomsdays
+
+The four racial single-target doomsdays use pinned build 3662168 effects `4489`–`4492`. The fitted weapon
+requires a current lock on a capital-size player ship in range. Legal activation pays 50,000 racial isotopes
+from cargo and the fitted capacitor cost once, then sends the targeted effect to the grid. The resident area
+weapon scheduler records the paid shot together with its deadline. At settlement, the shooter must still be in
+the same ship with the weapon online, and the target must still be eligible and locked. A lost lock prevents the
+hit and the spent fuel remains spent. The pinned base shot deals 2.4 million racial damage before Doomsday
+Operation and the target's resistances. Damage and capital losses use the normal resident settlement and
+checkpoint path. [CCP Legion expansion notes](https://www.eveonline.com/news/view/legion-expansion-notes)
+
+The four modules have different windups. Judgment's pinned attributes set a nine-second windup, 35,000 GJ
+activation cost, 30 seconds of immobility and 300 seconds without docking, tethering, cloaking, or jump-drive
+travel. Doomsday Rapid Firing changes the weapon cycle independently of the travel lock. The pinned effect
+names and catalog attributes drive activation. In the pinned client, `shipmodulebutton.pyj` acquires the
+active target before calling the fitted effect's activation. `environment/effects/superWeapon.pyj` plays the
+targeted warning. EVE.js `superweaponRuntime.js` served as a behavior cross-check.
+The current damage target path covers piloted capitals. Area weapons such as lances, reapers and the Bosonic
+Field Generator, the Gravitational Transportation Field Oscillator and Phenomena Generators are separate roles.
+
+`AvatarJudgmentPaysOnceAndSettlesAgainstALockedRevelation` exercises combat and the lost-lock counter.
+Both cases verify the fuel charge, warning effect, no early hit and exact travel-lock deadlines. One verifies
+the Revelation loss and capsule settlement. The other verifies that losing the lock leaves the Revelation intact.
+Both reopen a checkpoint before the docking lock expires.
+
+**Automated validation.** The exact Judgment and P.A.N.I.C. rerun passed all three cases in 15.39 seconds.
+The final `CapitalTravelTests`, `AreaWeaponTests`, `SmartbombTests`, `TargetingTests`,
+`SpatialModuleOperationTests`, `StructureTetherTests`, `FlightBoundaryTests`, `TypedCallResultTests` and
+`WorldMigrationTests` filter passed all 180 cases in 90.86 seconds. Both Python suites, formatting and
+`git diff --check` passed.
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
@@ -360,10 +394,10 @@ comparison. The same failure was reproduced at `ad9dc658`.
 | **2. Standard cynos and sovereignty navigation** | Implemented. Standard module and mobile cynos, mobile inhibitors, Pharolux beacons and Tenebrex jammers use the paid jump-freighter path and resident sovereignty checks. |
 | **3. Ansiblex jump gates** | Implemented. Link two aligned endpoints, enforce alliance access and the ship type list, and settle the source gate's capacitor at departure. |
 | **4. Black Ops and covert travel** | Implemented. Black Ops direct jumps, covert module and mobile beacons, and eligible fleet passenger travel through a paid portal. |
-| **5. Dreadnoughts and force auxiliaries** | Jump a dreadnought and a force auxiliary to a standard cyno. Exercise paid siege, capital weapons and structure damage, then triage and lawful remote repairs. Prove dock and gate restrictions, loss settlement, and survival of paid mode deadlines on reopen. |
-| **6. Carriers and fighters** | Launch, control, recall and replace fighter squadrons from a carrier using native tubes and abilities. Verify targeting, observer updates and fighter losses. Reuse squadron rules for Standup fighters once the structure control and fitting branch is integrated. |
-| **7. Capital industry and fleet services** | Fly a Rorqual with an industrial core, Excavators, compression and P.A.N.I.C. Add supported fleet hangar, ship maintenance, refit and clone services. Exercise a real production and resupply route, then let bot haulers use the same paid jump and access operations. |
-| **8. Supercapitals and production** | Keepstar docking, Sotiyo construction, direct jumps, Titan bridging, supercarrier heavy attack fighters and burst projectors are implemented. Titan superweapons and counters remain open. |
+| **5. Dreadnoughts and force auxiliaries** | Implemented. Dreadnoughts and force auxiliaries use standard cynos, paid siege or triage, and normal docking, repair and loss settlement. The acceptance cases reopen a paid siege and settle an Apostle loss. |
+| **6. Carriers and fighters** | Implemented for light attack squadrons. Carrier tubes support launch, targeting, recall and replacement, with squadron losses persisted. Standup fighters and additional combat abilities remain open. |
+| **7. Capital industry and fleet services** | Rorquals use paid industrial cores, Excavators, fleet compression and P.A.N.I.C. Shared fleet storage, mobile refitting, clone bays and fresh-world resupply remain open. |
+| **8. Supercapitals and production** | Keepstar docking, Sotiyo construction, direct jumps, Titan bridging, supercarrier heavy attack fighters and burst projectors are implemented. Targeted Titan doomsdays have paid windups, counters and durable loss settlement. Area superweapons and phenomena remain open. |
 
 Milestone 5 needs the Upwell battle and destruction paths for its siege acceptance.
 [Sovereignty upgrades](sovereignty.md#sovereignty-resources-and-upgrades--november-16-2026) ·

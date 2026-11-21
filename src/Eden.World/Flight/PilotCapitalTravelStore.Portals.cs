@@ -10,6 +10,7 @@ using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Ships;
 using Eden.World.Catalog;
+using Eden.World.Combat;
 using Eden.World.Fittings;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
@@ -42,6 +43,7 @@ internal sealed partial class PilotCapitalTravelStore
             throw new InvalidDataException("Use an eligible Titan or Black Ops ship in a fleet to open a jump portal.");
         }
         RequireReady(world, host, now);
+        AreaWeaponStore.RequireDoomsdayCooldownComplete(world, shipId, now);
         RequireCynoSystem(catalog, request.SystemId);
         var destination = PortalDestination(world, catalog, host.Id, request, now);
         var module =

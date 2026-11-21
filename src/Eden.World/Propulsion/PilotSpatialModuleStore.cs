@@ -146,6 +146,7 @@ internal sealed partial class PilotSpatialModuleStore(WorldDatabase database, IP
         var status = ReadStatus(world, catalog, pilot.ActiveShipId);
         if (cloak)
         {
+            Eden.World.Combat.AreaWeaponStore.RequireDoomsdayCooldownComplete(world, pilot.ActiveShipId, now);
             CheckCloakGeometry(world, catalog, pilot.ActiveShip, now);
         }
         var cloakTypes = catalog.Definitions.TypesInGroup(SpatialModuleRules.CloakGroup).ToHashSet();
