@@ -604,6 +604,9 @@ settings, occupied slots, saved/paused totals, individual system access and wait
   (`settings.capsuleers.activePilotCap`) and the switch for preparing unvisited systems in fresh universes
   (`settings.capsuleers.prepareUnvisitedSystems`). The cap includes pilots in idle or offscreen work and watched-gate visitors.
   **0** means unlimited. Turning off the master switch pauses and hides all simulated pilots.
+- **Fresh founder cohorts per system** (`settings.capsuleers.freshFounderCohortsPerSystem`) sets one to five sets of eligible
+  starter miners, couriers, and bounty pilots per system in Fresh Universe. The default is one. The active cap and each role's
+  eligibility still apply. Reducing the setting pauses additional cohorts after restart and preserves their pilots and jobs.
 - **Where bots work** applies the default, then the region override, then the solar-system override
   (`settings.capsuleers.systemAccess`). To keep work out of a starter system, choose its region and solar system and
   set the system to **Transit only**. Bots may still cross it by stargate. Choose **Use region rule** to remove the

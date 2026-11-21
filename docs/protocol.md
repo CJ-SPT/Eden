@@ -153,6 +153,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [First bot career ships](protocol/capsuleers.md#first-bot-career-ships)
 - [Earned bot career training](protocol/capsuleers.md#earned-bot-career-training)
 - [Fresh-universe starter industry](protocol/capsuleers.md#fresh-universe-starter-industry)
+- [Additional fresh-universe founder cohorts](protocol/capsuleers.md#additional-fresh-universe-founder-cohorts)
 - [Regional procurement for bot corporations](protocol/capsuleers.md#regional-procurement-for-bot-corporations)
 - [Dynamic paid ship replacement](protocol/capsuleers.md#dynamic-paid-ship-replacement)
 - [Autonomous Miner II production](protocol/capsuleers.md#autonomous-miner-ii-production)
@@ -766,6 +767,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 - [Bot CPU and the fresh-world population ceiling](protocol/performance.md#bot-cpu-and-the-fresh-world-population-ceiling)
 - [Fresh-world backlog during starter ore sales](protocol/performance.md#fresh-world-backlog-during-starter-ore-sales)
+- [Sustaining expanded fresh-world bot populations](protocol/performance.md#sustaining-expanded-fresh-world-bot-populations)
 - [CPU profiling at 2,500 autonomous capsuleers](protocol/performance.md#cpu-profiling-at-2500-autonomous-capsuleers)
 - [Site history discovery and identity maxima](protocol/performance.md#site-history-discovery-and-identity-maxima-november-15-2026)
 - [Population validation during travel](protocol/performance.md#population-validation-during-travel-november-15-2026)

@@ -6707,6 +6707,25 @@ was 31.3 / 43.6 ms and the 120 observer calls issued zero SQL commands, opened z
 connections and rebuilt zero fits. The test took 3 min 44 s including setup. The dedicated
 server's fresh-world queue still requires measurement on a deployed build.
 
+The dedicated host first admitted 5,000 fresh pilots but reached 7.53 seconds of backlog as they began work.
+A four-minute diagnostic from the later checkpoint finished 3.72 seconds behind. An eight-second allocation
+trace attributed 40.1% of sampled bytes to starter ore sales, primarily market order matching. The resident
+matcher now reads typed station and type snapshots and opens only eligible orders for the same settlement path.
+Standard regional bids retain their station and jump range checks. Fresh trades also omit unused legacy journey
+planning and quiet haulers avoid scanning NPC visibility when there are no attackers.
+
+A new three-minute run from the same later 5,000-pilot checkpoint held all 5,000 throughout and recorded
+341,450 completed actions, 9,602 paid mining collections, 13 checkpoints, and zero failures. The final 91
+queue-age samples stayed below one second, with p95 490 ms, maximum 727 ms, and an ending age of 59 ms.
+Warm frame p95/p99 was 10.73/12.19 ms and market p95/p99 was 14.85/21.99 ms. Peak process working set
+during measurement was 5.27 GiB. The isolated test used the dedicated host's four CPUs and a 6 GiB container
+limit with container swap disabled. The live service was stopped for the measured workload and restarted
+afterward. These tests used one in-process observer and did not expose game listeners.
+
+Focused market coverage passed 81 of 82 cases. The remaining payment rollback test reproduced the same
+`world.sqlite.owner` cleanup exception on the previous build. Exact large-book allocations and standard
+bid reach coverage passed all seven cases.
+
 ### Live acceptance
 
 Not performed; agent client testing is disabled.
@@ -6716,3 +6735,48 @@ Not performed; agent client testing is disabled.
 When the branch is deployed, compare allocation rate and oldest due job age across several
 15-second checkpoints with the fresh world active. The pre-change profile and checkpoint
 samples are under `artifacts/bot-cpu-5000/` in the main checkout.
+
+
+## Sustaining expanded fresh-world bot populations
+
+The dedicated Linux host has four vCPUs and 7.8 GiB of RAM. The established-world replay proved the scheduler at
+10,000 pilots with a different workload. Fresh universes also need additional eligible founders. The
+[founder cohort setting](capsuleers.md#additional-fresh-universe-founder-cohorts) expands the roster through the
+resident provisioner and preserves existing pilots, jobs, and normal starter economics.
+
+The market changes select a station and type assortment through its resident index before materializing
+rows for institutional refresh. In a matched probe with 16,384 unrelated orders in the same station, four sales
+filled the same bids at the same price and quantity. Allocations fell from 17,540,488 to 607,352 bytes. Both builds
+recorded zero SQL commands, connections, and fitting calculations for the sales.
+
+A completed durable checkpoint can promote unchanged NPC market rows to its SQLite compatibility base. The
+promotion yields between bounded transactions. Later changes stay dirty and failed saves keep the prior baseline.
+The detached image keeps the same generation, atomic replacement, and retry semantics. A local 90-second
+5,000-pilot pair using one observer and active market maintenance measured the last three checkpoints. Median
+market rows projected per checkpoint fell from 48,877 to 481 and market projection allocations fell from
+20,390,504 to 232,408 bytes. Both runs completed seven checkpoints without bot failures.
+
+Expanded fresh worlds allow one offscreen admission per 50 ms while oldest due work is less than 100 ms late,
+retaining up to four starts per interval when the queue drains. Start work enters at current simulation time.
+The deadline queue still orders already-due jobs. Starts do not accumulate during backlog or inactivity.
+
+### Automated validation
+
+The exact `ReplaySustainedBotThroughput` filter can use the observer pilot and account in a frozen fresh-world
+save. The admission window waits for the required number of scheduled pilots before timing the steady workload.
+The replay records admission time, actual paid mining collections, process working set, queue age, latency, and
+checkpoint costs. Market and population maintenance can run during the measured window.
+
+The merged market fix at `63a030c0` ran on the dedicated host against a private copy of its 2,418-pilot fresh
+save. The 180-second run recovered from its saved backlog in 58.1 seconds and completed 153,218 actions
+and 4,004 paid mining collections. In the final 90 seconds, due age p95 was 606 ms and peaked at 1.16 s. Warm
+frame p95/p99 was 53.1/88.0 ms and market p95/p99 was 32.9/44.7 ms. The test container ran alongside the idle
+production service for this diagnostic. Raw results are under `artifacts/remote-bot-10000-20261121/`.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Compare scheduled population and role activity, oldest job age, and peak memory during the deployed ramp.

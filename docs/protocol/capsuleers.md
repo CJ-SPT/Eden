@@ -4290,6 +4290,34 @@ Not performed; agent client testing is disabled.
 
 In a fresh world, watch the starter factory's market for the first Miner I bid and its eventual fill.
 
+## Additional fresh-universe founder cohorts
+
+The fresh-universe population setting allows one to five founder cohorts per eligible system. Each cohort offers
+one producer miner, one buyer miner, one courier, and one bounty pilot where the corresponding starter work
+qualifies. The default is one. Founders still start in racial corvettes with zero ISK and progress through the
+existing mining, market, courier, and bounty paths. Courier cargo and rewards remain part of the existing mission
+lifecycle. [EVE University distribution missions](https://wiki.eveuniversity.org/Distribution_missions)
+
+After restart, the provisioning fingerprint revisits systems whose configured cohort count changed. Preparation
+continues through the resident one-founder transaction, with occupied systems prioritized and background systems
+visited in rotation while someone plays. The active pilot cap still limits admissions. Original role slots,
+pilot IDs, and ship IDs stay in place. Reducing the cohort count pauses extra pilots at restart. Increasing the
+count again restores their checkpointed jobs and identity.
+
+### Automated validation
+
+The focused expansion test starts with one cohort in a system eligible for all four roles, raises the cap to 17,
+then completes five cohorts. It checks 20 distinct founders, zero starting ISK, original identity retention, saved
+role assignments and jobs, and pause and resume across checkpoint and reload.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Compare admitted and working pilots by role with due-job age during the dedicated server ramp.
+
 ## Earned bot career training
 
 Resident miners, haulers and combat pilots spend their unallocated skill points when they dock. They rotate
