@@ -50,6 +50,8 @@ internal sealed partial class AdministrationOperations(
     IRegionalConflictDiagnostics? regionalConflicts = null
 )
 {
+    internal IReadOnlyDictionary<int, string> RegionNames => catalog.Regions;
+
     private async Task Authorize(ClaimsPrincipal user)
     {
         if (!(await authorization.AuthorizeAsync(user, null, AdministratorAccounts.Policy)).Succeeded || !administrators.IsCurrent(user))

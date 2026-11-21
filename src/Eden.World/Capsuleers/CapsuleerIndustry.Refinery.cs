@@ -187,7 +187,14 @@ internal sealed partial class CapsuleerIndustry
             if (
                 security >= StructureRules.HighSecurityBoundary
                 || catalog.Definitions.StationsInSystem(system).OrderBy(station => station.Id).FirstOrDefault() is not { } station
-                || CapsuleerTrafficRoutes.ToStation(catalog, factory.StationId, station.Id, HullClass.Hauler, maximumJumps: maxJumps)
+                || CapsuleerTrafficRoutes.ToStation(
+                    catalog,
+                    factory.StationId,
+                    station.Id,
+                    HullClass.Hauler,
+                    maximumJumps: maxJumps,
+                    policy: world.Settings.Capsuleers
+                )
                     is not { } route
             )
             {

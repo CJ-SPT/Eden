@@ -36,6 +36,10 @@ internal sealed partial class CapsuleerProvisioner
         {
             return null;
         }
+        if (policy.ActivePilotCap > 0 && world is EconomyTransaction resident && resident.AdmittedCapsuleerCount >= policy.ActivePilotCap)
+        {
+            return null;
+        }
         var state = world.Set<SavedCapsuleerProvisioning>().SingleOrDefault();
         if (state is null)
         {

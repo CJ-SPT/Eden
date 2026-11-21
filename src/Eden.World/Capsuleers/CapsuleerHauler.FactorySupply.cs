@@ -36,7 +36,8 @@ internal sealed partial class CapsuleerHauler
             shipment.FactoryStationId,
             (HullClass)Pilot.ShipGroupId,
             AvoidedSupplierSystems(),
-            shipment.MaximumJumps
+            shipment.MaximumJumps,
+            policy: database.Settings.Capsuleers
         );
         if (delivery is null)
         {

@@ -1,5 +1,6 @@
 using System.Collections.Frozen;
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Configuration;
 using Eden.World.Catalog;
 
 namespace Eden.World.Capsuleers;
@@ -51,10 +52,31 @@ internal static partial class CapsuleerTrafficRoutes
 
     private sealed record StationPath(int StationId, int[] Systems);
 
-    internal static CapsuleerTrafficPlan Read(CatalogDbContext catalog, int systemId) => catalog.Definition(s_plans, systemId);
+    internal static CapsuleerTrafficPlan Read(CatalogDbContext catalog, int systemId, CapsuleerPopulationPolicy? policy = null)
+    {
+        var plan = catalog.Definition(s_plans, systemId);
+        return policy is null || policy.Unrestricted()
+            ? plan
+            : plan with
+            {
+                Routes = plan.Routes.Where(route => policy.CanUse(catalog.Definitions, route)).ToArray(),
+            };
+    }
 
-    internal static CapsuleerTrafficRoute? EscapeRoute(CatalogDbContext catalog, int systemId) =>
-        catalog.Definition(s_escapeRoutes, systemId);
+    internal static CapsuleerTrafficRoute? EscapeRoute(CatalogDbContext catalog, int systemId, CapsuleerPopulationPolicy? policy = null)
+    {
+        if (policy is null || policy.Unrestricted())
+        {
+            return catalog.Definition(s_escapeRoutes, systemId);
+        }
+        var graph = catalog.Definitions.GlobalDefinition(s_graph);
+        if (FindStationPath(graph, systemId, canStop: system => policy.CanWork(catalog.Definitions, system)) is not { } refuge)
+        {
+            return null;
+        }
+        Array.Reverse(refuge.Systems);
+        return new(refuge.StationId, refuge.StationId, refuge.Systems);
+    }
 
     internal static IReadOnlyList<int> Neighbours(CatalogDbContext catalog, int systemId) =>
         catalog.Definitions.GlobalDefinition(s_graph).Links.GetValueOrDefault(systemId) ?? [];
@@ -75,7 +97,8 @@ internal static partial class CapsuleerTrafficRoutes
         CatalogDbContext catalog,
         WatchedTrafficGate gate,
         bool sourceObserved = false,
-        int visitor = 0
+        int visitor = 0,
+        CapsuleerPopulationPolicy? policy = null
     )
     {
         if (
@@ -112,7 +135,12 @@ internal static partial class CapsuleerTrafficRoutes
             return null;
         }
         var graph = catalog.Definitions.GlobalDefinition(s_graph);
-        var anchor = FindStationPath(graph, gate.SourceSystemId, gate.ObserverSystemId);
+        bool CanStop(int system) => policy?.CanWork(definitions, system) != false;
+        if (!CanStop(gate.ObserverSystemId) || !CanStop(gate.SourceSystemId))
+        {
+            return null;
+        }
+        var anchor = FindStationPath(graph, gate.SourceSystemId, gate.ObserverSystemId, CanStop);
         if (anchor is null || anchor.Systems.Length > TrafficJourneyRules.MaximumJumps)
         {
             return null;
@@ -128,7 +156,7 @@ internal static partial class CapsuleerTrafficRoutes
         List<int> preferred = [];
         while (pending.TryDequeue(out var stop))
         {
-            if (graph.Stations.ContainsKey(stop.System))
+            if (graph.Stations.ContainsKey(stop.System) && CanStop(stop.System))
             {
                 destinations.Add(stop.System);
                 if (stop.Jumps >= minimum && stop.Jumps <= maximum)
@@ -164,14 +192,14 @@ internal static partial class CapsuleerTrafficRoutes
         return new(anchor.StationId, stationId, [.. anchor.Systems.Reverse(), .. PathTo(destination, parents)]);
     }
 
-    private static StationPath? FindStationPath(TrafficGraph graph, int root, int? blockedNeighbor = null)
+    private static StationPath? FindStationPath(TrafficGraph graph, int root, int? blockedNeighbor = null, Predicate<int>? canStop = null)
     {
         Queue<int> pending = new();
         Dictionary<int, int> parents = new() { [root] = root };
         pending.Enqueue(root);
         while (pending.TryDequeue(out int current))
         {
-            if (graph.Stations.TryGetValue(current, out var stations) && stations.Length > 0)
+            if (graph.Stations.TryGetValue(current, out var stations) && stations.Length > 0 && canStop?.Invoke(current) != false)
             {
                 return new(stations[0], PathTo(current, parents));
             }

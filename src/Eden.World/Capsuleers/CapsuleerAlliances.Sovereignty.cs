@@ -57,7 +57,7 @@ internal sealed partial class CapsuleerAlliances
         {
             return false;
         }
-        if (!catalog.Definition(s_firstClaimSystems, station.SolarSystemId).Any(system => !PilotEntosisStore.HasHub(world, system)))
+        if (!UnclaimedSites(world, catalog, station.SolarSystemId).Any())
         {
             return false;
         }
@@ -105,7 +105,9 @@ internal sealed partial class CapsuleerAlliances
             );
 
     internal static IEnumerable<int> UnclaimedSites(WorldAction world, CatalogDbContext catalog, int headquarters) =>
-        catalog.Definition(s_firstClaimSystems, headquarters).Where(system => !PilotEntosisStore.HasHub(world, system));
+        catalog
+            .Definition(s_firstClaimSystems, headquarters)
+            .Where(system => world.Settings.Capsuleers.CanWork(catalog.Definitions, system) && !PilotEntosisStore.HasHub(world, system));
 
     private static bool HasHubSupply(WorldAction world, SavedCorporation corporation, long now)
     {

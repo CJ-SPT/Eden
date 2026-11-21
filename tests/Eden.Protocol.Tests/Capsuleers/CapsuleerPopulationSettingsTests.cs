@@ -29,6 +29,59 @@ public sealed class CapsuleerPopulationSettingsTests(Xunit.Abstractions.ITestOut
     private static readonly WatchedTrafficGate s_gate = new(Source, 30000142, 50009991, 50009992);
 
     [Fact]
+    public async Task CapAppliesToResidentFoundersAndVisitorsAndRestoresSavedPilotsAfterRestart()
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
+        CapsuleerPopulationPolicy policy = new(TrafficMultiplier: 2, GateVisitors: 6) { ActivePilotCap = 2 };
+        Save(fixture, policy);
+        WorldInitialization.Initialize(fixture.Database, fixture.Clock);
+        long[] founders;
+        using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
+        {
+            var provisioner = host.GetRequiredService<CapsuleerProvisioner>();
+            provisioner.EnsureSystem(Source);
+            for (int visitor = 0; visitor < policy.GateVisitors; visitor++)
+            {
+                provisioner.EnsureInbound(s_gate, visitor: visitor);
+            }
+            var live = host.GetRequiredService<LiveWorld>();
+            founders = live.Economy.Inspect(world => world.Set<SavedCapsuleerAgent>().Select(agent => agent.PilotId).Order().ToArray());
+            Assert.Equal(2, founders.Length);
+            Assert.Equal(2, host.GetRequiredService<ICapsuleerPopulation>().Summary().EnabledAgents);
+            Assert.Null(provisioner.EnsureInbound(s_gate, visitor: 5));
+            await live.FlushAsync();
+        }
+
+        Save(fixture, policy with { ActivePilotCap = 1 });
+        WorldInitialization.Initialize(fixture.Database, fixture.Clock);
+        using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
+        {
+            var live = host.GetRequiredService<LiveWorld>();
+            var suspended = live.Economy.Inspect(world => world.Set<SavedCapsuleerSuspension>().Select(pause => pause.PilotId).ToArray());
+            Assert.Equal([founders[1]], suspended);
+            Assert.NotNull(live.Economy.Inspect(world => world.Pilots.Find(founders[1])?.ActiveShip));
+            Assert.NotNull(live.Economy.Inspect(world => world.Set<SavedCapsuleerJob>().Find(founders[1])));
+            using var observer = host.GetRequiredService<IHumanPresence>().Select(90000001, Source);
+            for (int turn = 0; turn < 4; turn++)
+            {
+                fixture.Clock.Seconds++;
+                host.GetRequiredService<ICapsuleerScheduler>().Run(turn);
+            }
+            Assert.Equal(1, host.GetRequiredService<ICapsuleerDiagnostics>().Read().ScheduledAgents);
+        }
+
+        Save(fixture, policy);
+        WorldInitialization.Initialize(fixture.Database, fixture.Clock);
+        using var reopened = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var restored = reopened.GetRequiredService<LiveWorld>();
+        Assert.Equal(
+            founders,
+            restored.Economy.Inspect(world => world.Set<SavedCapsuleerAgent>().Select(agent => agent.PilotId).Order().ToArray())
+        );
+        Assert.Equal(2, reopened.GetRequiredService<ICapsuleerPopulation>().Summary().EnabledAgents);
+    }
+
+    [Fact]
     public void RestartSuspendsAndReusesSavedPilotsWithoutChangingTheirPossessionsOrReplayingJobs()
     {
         using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);

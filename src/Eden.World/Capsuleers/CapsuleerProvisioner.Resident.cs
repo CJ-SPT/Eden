@@ -34,6 +34,19 @@ internal sealed partial class CapsuleerProvisioner
         int maximumFounders = int.MaxValue
     )
     {
+        var policy = world.Settings.Capsuleers;
+        if (!policy.CanWork(catalog.Definitions, systemId))
+        {
+            return new(1, 0, 0);
+        }
+        int capacity = world is EconomyTransaction resident
+            ? CapsuleerPopulationRules.AvailableSlots(policy.ActivePilotCap, resident.AdmittedCapsuleerCount)
+            : int.MaxValue;
+        if (capacity == 0)
+        {
+            return new(1, 0, 1);
+        }
+        maximumFounders = Math.Min(maximumFounders, capacity);
         var state = world.Set<SavedCapsuleerProvisioning>().SingleOrDefault();
         if (state is null)
         {
@@ -42,10 +55,8 @@ internal sealed partial class CapsuleerProvisioner
         }
         long seed = state.WorldSeed;
         var summary = world.Set<SavedCapsuleerSystem>().Find(systemId);
-        var policy = world.Settings.Capsuleers;
         bool fresh = world.Settings.FreshUniverse;
-        string fingerprint =
-            Fingerprint(database, catalog, seed, policy, resident: world is EconomyTransaction) + (fresh ? "|fresh-careers" : "");
+        string fingerprint = Fingerprint(database, catalog, seed, policy, resident: world is EconomyTransaction);
         if (summary?.PolicyVersion == CapsuleerProvisioningRules.Version && summary.CatalogFingerprint == fingerprint)
         {
             return new(1, 0, 0);
@@ -53,13 +64,13 @@ internal sealed partial class CapsuleerProvisioner
         var mining = fresh
             ? CapsuleerProvisioningCatalog.StarterIndustry(catalog, systemId)
             : CapsuleerProvisioningCatalog.Mining(catalog, systemId);
-        var traffic = fresh ? null : CapsuleerTrafficRoutes.Read(catalog, systemId);
+        var traffic = fresh ? null : CapsuleerTrafficRoutes.Read(catalog, systemId, policy);
         var origins = CapsuleerProvisioningCatalog.Origins(catalog);
         bool hasRoute = traffic?.Routes.Length > 0;
         bool canHaul =
             hasRoute && (database.Traffic.Profiles.Count > 0 || CapsuleerFreight.Available(catalog, database.Settings.Capsuleers.Freight));
         int count = canHaul ? CapsuleerEncounterRules.Haulers(seed, systemId, traffic!.GateCount, traffic.StationCount, policy) : 0;
-        var freshRoutes = fresh && world is EconomyTransaction && policy.Enabled ? FreshCareerRoutes.Read(catalog, systemId) : null;
+        var freshRoutes = fresh && world is EconomyTransaction && policy.Enabled ? FreshCareerRoutes.Read(catalog, systemId, policy) : null;
         var agents = world
             .Set<SavedCapsuleerAgent>()
             .Where(a => a.CommunitySystemId == systemId)

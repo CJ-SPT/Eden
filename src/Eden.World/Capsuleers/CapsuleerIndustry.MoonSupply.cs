@@ -178,7 +178,8 @@ internal sealed partial class CapsuleerIndustry
                 start,
                 end,
                 HullClass.Hauler,
-                maximumJumps: CapsuleerIndustryRules.MaximumRefinerySupplyJumps
+                maximumJumps: CapsuleerIndustryRules.MaximumRefinerySupplyJumps,
+                policy: world.Settings.Capsuleers
             );
     }
 

@@ -39,7 +39,8 @@ internal sealed partial class CapsuleerHauler
                 target.SystemId,
                 module.HasValue ? hull : HullClass.Hauler,
                 avoided,
-                TrafficJourneyRules.MaximumJumps
+                TrafficJourneyRules.MaximumJumps,
+                policy: world.Settings.Capsuleers
             );
             if (route is null)
             {
@@ -68,7 +69,14 @@ internal sealed partial class CapsuleerHauler
         {
             return false;
         }
-        var supplyRoute = CapsuleerTrafficRoutes.ToClaimSystem(catalog, Pilot.StationId, home.SystemId, hull, avoided);
+        var supplyRoute = CapsuleerTrafficRoutes.ToClaimSystem(
+            catalog,
+            Pilot.StationId,
+            home.SystemId,
+            hull,
+            avoided,
+            policy: world.Settings.Capsuleers
+        );
         if (supplyRoute is null || ammunitionSupply.LoadSovereigntyReagent(world, catalog, Pilot, corporation, home, Now) is not { } load)
         {
             return false;

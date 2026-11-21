@@ -117,6 +117,8 @@ public sealed class WorldConfigurationTests
             settings["economy"]!.AsObject().Remove(field);
         }
         settings["progression"]!.AsObject().Remove("grantStartingEquipment");
+        settings["capsuleers"]!.AsObject().Remove("exploration");
+        settings["capsuleers"]!.AsObject().Remove("wreckSalvage");
         var imported = store.Import(state.Generation, document.ToJsonString(), "legacy");
         var legacy = imported.Pending!.Draft.Settings;
         Assert.True(legacy.Economy.EmpireLpDatacores);
@@ -124,6 +126,8 @@ public sealed class WorldConfigurationTests
         Assert.True(legacy.Economy.RegionalHubSupply);
         Assert.True(legacy.Economy.BeginnerMarketSupply);
         Assert.True(legacy.Progression.GrantStartingEquipment);
+        Assert.True(legacy.Capsuleers.Exploration);
+        Assert.True(legacy.Capsuleers.WreckSalvage);
         var disabled = legacy with
         {
             Economy = legacy.Economy with
@@ -134,12 +138,14 @@ public sealed class WorldConfigurationTests
                 BeginnerMarketSupply = false,
             },
             Progression = legacy.Progression with { GrantStartingEquipment = false },
-            Capsuleers = legacy.Capsuleers with { Enabled = false },
+            Capsuleers = legacy.Capsuleers with { Enabled = false, Exploration = false, WreckSalvage = false },
         };
         var saved = store.Save(imported.Generation, imported.Pending.Draft with { Settings = disabled }, "admin");
         Assert.True(database.Settings.Economy.EmpireLpDatacores);
         Assert.True(database.Settings.Progression.GrantStartingEquipment);
         Assert.True(database.Settings.Capsuleers.Enabled);
+        Assert.True(database.Settings.Capsuleers.Exploration);
+        Assert.True(database.Settings.Capsuleers.WreckSalvage);
         var exported = store.Export(saved.Pending!.Id);
         var roundTrip = store.Import(saved.Generation, exported, "round trip");
         Assert.Equal(disabled, roundTrip.Pending!.Draft.Settings);

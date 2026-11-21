@@ -24,6 +24,7 @@ internal sealed partial class CapsuleerMiner
             || world.Set<SavedCapsuleerAgent>().Find(pilotId) is not { Slot: 0 } agent
             || agent.CommunitySystemId != Pilot.SystemId
             || !CapsuleerTrafficRoutes.MercoxitRoutes(catalog.Definitions).TryGetValue(Pilot.SystemId, out var route)
+            || !world.Settings.Capsuleers.CanWork(catalog.Definitions, route[^1])
             || !StationCapabilities.Has(catalog, Pilot.OperationId, StationService.Market)
         )
         {
@@ -81,7 +82,7 @@ internal sealed partial class CapsuleerMiner
         {
             StartCourse(_objects.Single(body => body.Id == expedition.RefineryStationId), MinerActivity.Returning);
         }
-        else if (NextBelt(out _, out _) is { } field)
+        else if (CanWorkHere && NextBelt(out _, out _) is { } field)
         {
             _work = Work with { WorkingBelt = field.Id };
             StartCourse(field, MinerActivity.FlyingToBelt);

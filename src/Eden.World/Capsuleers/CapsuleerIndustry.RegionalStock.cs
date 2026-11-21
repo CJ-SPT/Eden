@@ -138,7 +138,8 @@ internal sealed partial class CapsuleerIndustry
                     source.Key,
                     (HullClass)courier.ShipGroupId,
                     avoided,
-                    Rules.MaximumJumps
+                    Rules.MaximumJumps,
+                    policy: world.Settings.Capsuleers
                 );
                 var returning = CapsuleerTrafficRoutes.ToStation(
                     catalog,
@@ -146,7 +147,8 @@ internal sealed partial class CapsuleerIndustry
                     delivery.Id,
                     (HullClass)courier.ShipGroupId,
                     avoided,
-                    Rules.MaximumJumps
+                    Rules.MaximumJumps,
+                    policy: world.Settings.Capsuleers
                 );
                 var purchases =
                     route is null || returning is null

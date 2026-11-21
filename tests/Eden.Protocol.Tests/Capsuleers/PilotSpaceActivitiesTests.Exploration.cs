@@ -5,6 +5,7 @@ using Eden.Data.World.Market;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Inventory;
@@ -18,6 +19,7 @@ using Eden.World.Exploration;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
 using Eden.World.Skills;
+using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -26,13 +28,17 @@ namespace Eden.Protocol.Tests.Capsuleers;
 public sealed partial class PilotSpaceActivitiesTests
 {
     [Theory]
-    [InlineData(ExplorationKind.Data)]
-    [InlineData(ExplorationKind.Relic)]
-    public async Task ExplorerBuysFitsScansHacksAndSellsSiteLoot(ExplorationKind kind)
+    [InlineData(ExplorationKind.Data, false)]
+    [InlineData(ExplorationKind.Relic, false)]
+    [InlineData(ExplorationKind.Data, true)]
+    public async Task ExplorerBuysFitsScansHacksAndSellsSiteLoot(ExplorationKind kind, bool disableOnRestart)
     {
-        using CapsuleerHaulerTests.Fixture f = new();
-        PassiveCatalogFixture.LoadProbes(f.Database.CatalogPath);
-        PassiveCatalogFixture.LoadHacking(f.Database.CatalogPath);
+        using CapsuleerHaulerTests.Fixture f = new(additionalCatalogData: path =>
+        {
+            PassiveCatalogFixture.LoadProbes(path);
+            PassiveCatalogFixture.LoadHacking(path);
+            PassiveCatalogFixture.LoadStarterMarket(path, new HashSet<int> { (int)MarketSkill.Trade });
+        });
         long pilot = PrepareDockedRatter(f);
         using (CatalogDbContext writable = new(f.Database.CatalogPath, writable: true))
         {
@@ -62,16 +68,16 @@ public sealed partial class PilotSpaceActivitiesTests
         {
             originalShip = turn.Pilots.Find(pilot)!.ActiveShipId;
             Assert.Equal(0, turn.Set<SavedCapsuleerAgent>().Find(pilot)!.Slot);
+            // Keep the legacy founder eligible when startup reapplies the saved traffic density.
+            var population = turn.Set<SavedCapsuleerProvisioning>().Find(1) ?? turn.Add(new SavedCapsuleerProvisioning { Id = 1 }).Entity;
+            population.WorldSeed = 1;
             buyer = turn.Set<SavedCapsuleerAgent>().Single(agent => agent.Career == CapsuleerCareer.Mining).PilotId;
             turn.Set<PilotWallet>().Find(pilot)!.Cents = 4_000_000;
             turn.Set<PilotWallet>().Find(buyer)!.Cents = 4_000_000;
             int trade = (int)MarketSkill.Trade;
             var tradeSkill =
                 turn.Set<PilotSkill>().Find(buyer, trade) ?? turn.Add(new PilotSkill { PilotId = buyer, TypeId = trade }).Entity;
-            tradeSkill.Points = TrainedSkill.PointsForLevel(
-                catalog.FittingAttributes(trade).GetValueOrDefault(DogmaAttributeId.SkillTimeConstant, 1),
-                1
-            );
+            tradeSkill.Points = TrainedSkill.PointsForLevel(catalog.FittingAttributes(trade)[DogmaAttributeId.SkillTimeConstant], 1);
             HashSet<int> skills = [];
             foreach (var part in kit.Parts())
             {
@@ -168,6 +174,11 @@ public sealed partial class PilotSpaceActivitiesTests
                     f.Clock.Seconds += 90;
                     maintenance.Tick();
                     Assert.Equal(progress, scheduler.Hauler(pilot)!.Work.Exploration);
+                    if (disableOnRestart)
+                    {
+                        await ReturnWithExplorationDisabled(progress, bot.Pilot.ShipId);
+                        return;
+                    }
                     presence.Update(observer, 30000142);
                 }
                 var contact = live.Economy.Read(world => host.GetRequiredService<PirateExplorationStore>().Pending(world, pilot));
@@ -218,6 +229,68 @@ public sealed partial class PilotSpaceActivitiesTests
             );
             return true;
         });
+
+        async Task ReturnWithExplorationDisabled(ExplorationProgress scanning, long ship)
+        {
+            var config = host.GetRequiredService<IWorldConfiguration>();
+            var state = config.Read();
+            var settings = state.Active.Draft.Settings;
+            config.Save(
+                state.Generation,
+                state.Active.Draft with
+                {
+                    Settings = settings with { Capsuleers = settings.Capsuleers with { Exploration = false } },
+                },
+                "admin"
+            );
+            Assert.True(f.Database.Settings.Capsuleers.Exploration);
+            await live.FlushAsync();
+            host.Dispose();
+
+            WorldInitialization.Initialize(f.Database, f.Clock);
+            Assert.False(f.Database.Settings.Capsuleers.Exploration);
+            using var reopened = ServerServices.Build(f.Database, f.Clock, liveWorld: true);
+            var restored = reopened.GetRequiredService<LiveWorld>();
+            using var observerAfterReopen = reopened.GetRequiredService<IHumanPresence>().Select(90000001, SystemId);
+            var resumed = reopened.GetRequiredService<ICapsuleerScheduler>();
+            var jobs = reopened.GetRequiredService<CapsuleerMaintenance>();
+            Assert.False(restored.Economy.Read(world => world.Set<SavedCapsuleerSuspension>().Find(pilot) is not null));
+            var checkpoint = Assert.IsType<ExplorationProgress>(resumed.Hauler(pilot)?.Work.Exploration);
+            Assert.Equal(ExplorationPhase.Scanning, checkpoint.Phase);
+            Assert.True(checkpoint.ScanInFlight);
+            Assert.Equal(scanning.Scans, checkpoint.Scans);
+            Assert.Equal(scanning.ReadyTicks, checkpoint.ReadyTicks);
+            for (int tick = 0; tick < 500 && resumed.Hauler(pilot)!.Work.Exploration is not null; tick++)
+            {
+                f.Clock.Seconds++;
+                jobs.Tick();
+            }
+            var returned = resumed.Hauler(pilot)!;
+            Assert.Null(returned.Work.Exploration);
+            Assert.Equal(Station, returned.Pilot.StationId);
+            Assert.Equal(ship, returned.Pilot.ShipId);
+            restored.Economy.Read(world =>
+            {
+                Assert.Null(world.Set<SavedProbeScan>().Find(pilot));
+                Assert.Empty(world.Filter<SavedScanProbe>(probe => probe.PilotId == pilot));
+                Assert.Null(world.Set<SavedResolvedSignature>().Find(pilot, site.Id));
+                Assert.False(world.Set<SavedHackingContainer>().Find(site.Objects.First().Id)!.Hacked);
+                Assert.Equal(
+                    ProbeScanRules.MaximumProbes,
+                    world
+                        .Filter<OwnedItem>(item => item.LocationId == ship)
+                        .Where(item => item.TypeId == CapsuleerIndustry.ExplorerProbe)
+                        .Sum(item => item.Quantity)
+                );
+                return true;
+            });
+            for (int tick = 0; tick < 180; tick++)
+            {
+                f.Clock.Seconds++;
+                jobs.Tick();
+                Assert.Null(resumed.Hauler(pilot)?.Work.Exploration);
+            }
+        }
     }
 
     private static bool CanWin(int seed, int difficulty, int coherence, int strength)

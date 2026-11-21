@@ -90,7 +90,7 @@ internal sealed partial class CapsuleerScheduler
             market.PrepareInstitutional(catalog, input.StationId);
         }
         token.ThrowIfCancellationRequested();
-        return input.Journey is null ? null : CapsuleerHauler.PlanJourney(catalog, input.Journey);
+        return input.Journey is null ? null : CapsuleerHauler.PlanJourney(catalog, input.Journey, database.Settings.Capsuleers);
     }
 
     private bool TryPreparedTrade(PreparationInput current, out CapsuleerHauler.PreparedJourney? journey)

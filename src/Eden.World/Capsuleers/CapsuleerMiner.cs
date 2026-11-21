@@ -273,8 +273,27 @@ internal sealed partial class CapsuleerMiner(
                 Load();
             }
         }
+        bool canWork = CanWorkHere;
+        if (!canWork && !(_target?.DestinationGateId is not null && Work.Activity is MinerActivity.FlyingToGate or MinerActivity.Jumping))
+        {
+            using CapsuleerOperation hold = new(database, job, marketSignal);
+            var next = CapsuleerWorkRegions.Retry(job, activeNow);
+            _work = CapsuleerPauseRules.Resume(Work, Math.Max(0, job.DueTicks - Work.ActiveTicks)) with
+            {
+                WaitingReason = CapsuleerWorkRegions.TransitOnlyReason,
+            };
+            hold.Commit(next, new MinerCheckpoint(pilotId, Work), null);
+            return next;
+        }
+        if (Work.WaitingReason == CapsuleerWorkRegions.TransitOnlyReason)
+        {
+            _work = Work with { WaitingReason = null };
+        }
         RefreshCorporation();
-        ObserveDanger(destinyStamp);
+        if (canWork)
+        {
+            ObserveDanger(destinyStamp);
+        }
         if (Pilot.Position is not null)
         {
             RefreshTackle();
@@ -283,12 +302,13 @@ internal sealed partial class CapsuleerMiner(
         _pilot = defended.Pilot;
         _warpBlocked = defended.WarpBlocked ?? _warpBlocked;
         _work = Work with { Defense = defended.State, LastMotionStamp = defended.HoldsNavigation ? destinyStamp : Work.LastMotionStamp };
-        if (defended.Escape || WatchBelt(job.DueTicks))
+        if (canWork && (defended.Escape || WatchBelt(job.DueTicks)))
         {
             ObserveAggression(Pilot.ShipId);
         }
         if (
-            database.Settings.Capsuleers.SituationalAwareness
+            canWork
+            && database.Settings.Capsuleers.SituationalAwareness
             && Pilot.Position is not null
             && _navigation.Warp is null
             && CapsuleerMiningRules.WorkingField(Work)
@@ -299,6 +319,7 @@ internal sealed partial class CapsuleerMiner(
         }
         if (
             Interlocked.Exchange(ref _threatenedShip, 0) == Pilot.ShipId
+            && canWork
             && Pilot.Position is not null
             && Work.Activity != MinerActivity.Returning
         )
@@ -325,7 +346,7 @@ internal sealed partial class CapsuleerMiner(
         _operation = new(database, job, marketSignal);
         try
         {
-            if (defended.NewThreat)
+            if (canWork && defended.NewThreat)
             {
                 RegionalConflictStore.Attack(_operation, database, Pilot, Work.Defense, Work.WorkingBelt, Work.ActiveTicks);
             }
@@ -712,6 +733,8 @@ internal sealed partial class CapsuleerMiner(
                 break;
         }
     }
+
+    private bool CanWorkHere => CapsuleerPopulationRules.AllowsWork(database.Settings.Capsuleers, Pilot.RegionId);
 
     internal void RefreshCorporation()
     {

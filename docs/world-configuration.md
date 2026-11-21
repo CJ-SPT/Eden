@@ -346,6 +346,9 @@ original configuration into the draft. **Save for restart** validates and durabl
 activates the saved revision at restart. Revisions provides comparison, restore, JSON export and validated file import.
 Restoring also creates a pending revision.
 
+Use **Player bots** to configure individual bot activities. **Population** shows the active values after restart.
+[Autonomous population settings](#autonomous-population)
+
 Catalog provides searchable pages across all 442 generated datasets, typed fields, explicit missing/null distinctions, exact source numbers and relationship navigation. Nested collections have their own display pages. Native fields remain read-only in original, active and pending views. Generated types validate records before the browser displays their original payloads; dynamic JSON stays inside this administration/storage boundary.
 
 The editor uses a dark theme throughout settings, catalog browsing, revision history and sign-in, including native form controls, validation messages and keyboard focus indicators.
@@ -541,7 +544,23 @@ In **Player bots**, configure the saved world's population:
   interception, owned freight escorts and witnessed defensive responses. **Regional operations per group**
   (`settings.capsuleers.regionalOperationsPerGroup`) accepts 1-3, default 1. Losses delay offensive launches; no replacement
   ships are granted. Population reports groups and outcomes. [Regional behavior](capsuleer-population.md#regional-conflicts).
-- **Simulated miners** allows up to one miner per eligible system, prepared globally on restart.
+- **Active bot cap** (`settings.capsuleers.activePilotCap`) limits admitted player bots across the world, including
+  watched-gate visitors and bots working offscreen. **0** means unlimited. Admitted pilots retain their slots while
+  idle or offscreen. When the cap drops, Eden pauses excess pilots and preserves their assets and jobs. Existing
+  eligible pilots get reopened slots before Eden prepares new founders.
+- **Default region access** applies to regions without an explicit override. Select a region by name, then choose
+  **Work and transit**, **Transit only**, or **Use default**. Transit-only regions allow stargate passage. New
+  communities and work destinations require **Work and transit**. Eden suspends communities based in transit-only
+  regions and holds saved assignments that would require work at a restricted destination. Use **Population** to
+  check the active cap, configured overrides, per-system access and waiting reasons.
+- **Simulated miners** permits mining founders in eligible systems. Preparation uses the current world profile and
+  its available ore, stations and equipment.
+- **Explore data and relic sites** (`settings.capsuleers.exploration`, default on) allows eligible bots to acquire
+  exploration equipment and scan and hack ordinary high-security pirate sites. Disabling exploration sends active
+  explorers back to their departure stations when they next run.
+- **Salvage NPC wrecks** (`settings.capsuleers.wreckSalvage`, default on) allows bot ratters to equip salvagers and
+  recover salvage from their own wrecks. Disabling it stops any pending cycle when the pilot next runs. Pilots can
+  still pick up ordinary loot. Both activity settings preserve owned ships, fittings and inventory.
 - **Station traffic density** accepts **0–10×**, default **1×**. It scales the normal geography-based station roster,
   up to 60 travelers per community. Fractional densities use a saved-seed draw to distribute smaller rosters consistently.
   Zero pauses station traffic; gate visitors remain independently configurable.
@@ -553,8 +572,10 @@ equipment, wallet, loss, grant record or saved activity is deleted. Raising a li
 before missing station-traffic/miner slots are prepared in entered regions. New gate visitors are prepared on gate watches. A lost ship remains lost.
 Activity deadlines shift by the paused interval; suspended pilots earn no catch-up actions, items or rewards.
 Repeated restarts preserve the original pause and never replay a supply or wallet grant.
-Normal startup retains saved pilots without loading NPC jobs throughout the galaxy. A region activates when a player enters it,
-starting with the entered system and preparing its remaining systems in background batches. Other regions stay dormant until entered.
+Normal startup retains saved pilots and starts preparation when a human selects a character. Occupied systems get priority.
+In a fresh universe, Eden also prepares eligible unvisited high-security station systems in bounded background batches. It
+respects the active bot cap and region rules, and preparation stops when the last player leaves. Established worlds prepare
+new communities on demand in occupied systems.
 Saved identities and possessions are reused, and dormant time produces no catch-up rewards. Completed catalog/settings/snapshot
 fingerprints are reused; interrupted preparation retries missing communities
 without replacing completed pilots. Unsupported or temporarily depleted communities are recorded
@@ -565,3 +586,10 @@ administration commands do not populate the galaxy.
 Defaults preserve the existing population policy. Older revision documents receive the new defaults automatically;
 `Capsuleers.GlobalProvisioning` remains a preserved legacy preference and is not the population switch.
 See the [population guide](capsuleer-population.md) and [implementation record](protocol/capsuleers.md#configurable-simulated-pilot-population--november-9-2026).
+
+### Planned administration controls
+
+1. Add separate switches for automatic recruitment, alliance formation and new sovereignty claims. Define what happens
+   to existing applications, memberships, claims and expeditions when each switch changes.
+2. Add live pause and resume once all schedulers can preserve remaining activity deadlines. Verify that a paused
+   interval generates no catch-up rewards and that restarting preserves the administrator's choice.

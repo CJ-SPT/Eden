@@ -125,7 +125,8 @@ internal sealed partial class CapsuleerHauler
                     Pilot.StationId,
                     system,
                     qualified ? (HullClass)Pilot.ShipGroupId : HullClass.Hauler,
-                    avoided
+                    avoided,
+                    policy: world.Settings.Capsuleers
                 )
             )
             .FirstOrDefault(candidate => candidate is not null);

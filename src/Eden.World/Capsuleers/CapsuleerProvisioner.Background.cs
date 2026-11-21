@@ -27,6 +27,19 @@ internal sealed partial class CapsuleerProvisioner
     {
         using var scope = new CatalogReadScope().Begin();
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var policy = database.Settings.Capsuleers;
+        if (!policy.CanWork(catalog.Definitions, system))
+        {
+            return new(1, 0, 0);
+        }
+        if (policy.ActivePilotCap > 0)
+        {
+            using var owner = synchronization.Enter("capsuleer capacity snapshot");
+            if (LiveWorld.Find(database.Path) is { } live && live.Economy.AdmittedCapsuleerCount >= policy.ActivePilotCap)
+            {
+                return new(1, 0, 1);
+            }
+        }
         if (database.Settings.FreshUniverse)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -35,7 +48,7 @@ internal sealed partial class CapsuleerProvisioner
                 return null;
             }
             _ = CapsuleerProvisioningCatalog.StarterIndustry(catalog, system);
-            _ = FreshCareerRoutes.Read(catalog, system);
+            _ = FreshCareerRoutes.Read(catalog, system, policy);
             using var freshCoordinator = synchronization.TryEnterShared("starter capsuleer preparation");
             using var freshSystem = freshCoordinator is null ? null : synchronization.TryEnterSystems("starter capsuleer system", [system]);
             return freshSystem is not null && occupied() ? ProvisionPrepared(system, catalog) : null;
@@ -74,7 +87,7 @@ internal sealed partial class CapsuleerProvisioner
             slots = snapshot.Slots;
         }
         cancellationToken.ThrowIfCancellationRequested();
-        var traffic = CapsuleerTrafficRoutes.Read(catalog, system);
+        var traffic = CapsuleerTrafficRoutes.Read(catalog, system, policy);
         var origins = CapsuleerProvisioningCatalog.Origins(catalog);
         var mining = CapsuleerProvisioningCatalog.Mining(catalog, system);
         var miningRoster =

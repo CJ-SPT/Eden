@@ -27,8 +27,25 @@ internal sealed partial class CapsuleerIndustry
         if (
             Employer(world, supply.OperatorId, employer.Id) is null
             || MoonPickup(world, catalog, supply, free).Length == 0
-            || CapsuleerTrafficRoutes.ToStation(catalog, supply.StationId, request.StationId, HullClass.Hauler, avoided, maximum) is null
-            || CapsuleerTrafficRoutes.ToStation(catalog, courier.StationId, supply.StationId, HullClass.Hauler, avoided, maximum)
+            || CapsuleerTrafficRoutes.ToStation(
+                catalog,
+                supply.StationId,
+                request.StationId,
+                HullClass.Hauler,
+                avoided,
+                maximum,
+                policy: world.Settings.Capsuleers
+            )
+                is null
+            || CapsuleerTrafficRoutes.ToStation(
+                catalog,
+                courier.StationId,
+                supply.StationId,
+                HullClass.Hauler,
+                avoided,
+                maximum,
+                policy: world.Settings.Capsuleers
+            )
                 is not { } route
         )
         {

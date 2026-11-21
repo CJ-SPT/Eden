@@ -128,13 +128,16 @@ public sealed partial class AdministrationTests
         Assert.Contains("Visitors per watched gate", html);
         Assert.Contains("Regional conflicts", html);
         Assert.Contains("Regional operations per group", html);
-        Assert.Contains("without deleting them", html);
-        Assert.Contains("prepared globally on restart", html);
+        Assert.Contains("reuses them when the limits rise", html);
+        Assert.Contains("Explore data and relic sites", html);
+        Assert.Contains("Salvage NPC wrecks", html);
         var state = (await fixture.Client.GetFromJsonAsync<ConfigurationState>("/api/admin/configuration"))!;
         var policy = new CapsuleerPopulationPolicy(false, false, false, 0.5m, 2)
         {
             RegionalConflicts = false,
             RegionalOperationsPerGroup = 3,
+            Exploration = false,
+            WreckSalvage = false,
         };
         Assert.Equal(policy, SettingsForm.From(new() { Capsuleers = policy }).Build().Capsuleers);
         var draft = state.Active.Draft with { Settings = state.Active.Draft.Settings with { Capsuleers = policy } };
@@ -147,6 +150,8 @@ public sealed partial class AdministrationTests
         Assert.Equal(policy, (await export.Content.ReadFromJsonAsync<WorldConfigurationDraft>())!.Settings.Capsuleers);
         var differences = await fixture.Client.GetFromJsonAsync<RevisionDifference[]>("/api/admin/compare?left=1&right=2");
         Assert.Contains(differences!, c => c.Field == "Station traffic density");
+        Assert.Contains(differences!, c => c.Field == "Explore data and relic sites" && c.After == "Off");
+        Assert.Contains(differences!, c => c.Field == "Salvage NPC wrecks" && c.After == "Off");
         using var invalid = await fixture.Client.PostAsJsonAsync(
             "/api/admin/validate",
             draft with
@@ -357,6 +362,8 @@ public sealed partial class AdministrationTests
         Assert.Empty(snapshot.RegionalConflicts);
         Assert.Contains("href=\"/population\"", html);
         Assert.Contains("Active population settings", html);
+        Assert.Contains("Explore data and relic sites: On", html);
+        Assert.Contains("Salvage NPC wrecks: On", html);
         Assert.Contains("Saved pilots", html);
         Assert.DoesNotContain("Recent system returns", html);
         Assert.DoesNotContain("Forgone remote seconds on return", html);

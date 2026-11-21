@@ -21,7 +21,8 @@ internal sealed partial class CapsuleerMiner
                 Pilot.StationId,
                 supply.StationId,
                 (HullClass)Pilot.ShipGroupId,
-                maximumJumps: CapsuleerIndustryRules.MaximumRefinerySupplyJumps
+                maximumJumps: CapsuleerIndustryRules.MaximumRefinerySupplyJumps,
+                policy: database.Settings.Capsuleers
             )
                 is not { } route
         )

@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Security.Claims;
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Configuration;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Server.Administration;
@@ -87,6 +88,12 @@ public sealed partial class AdministrationTests
             await renderer.Change(nameof(SettingsForm.GeneralMiningHoldMultiplier), "2.5");
             await renderer.Change(nameof(SettingsForm.IceHoldMultiplier), "0.5");
             await renderer.Change(nameof(SettingsForm.GasHoldMultiplier), "3");
+            await renderer.Click("Player bots");
+            await renderer.Change(nameof(SettingsForm.BotExploration), false);
+            await renderer.Change(nameof(SettingsForm.ActivePilotCap), "250");
+            await renderer.ChangeSelection("bot-region", "10000002");
+            await renderer.ChangeSelection("bot-region-access", nameof(CapsuleerRegionAccess.TransitOnly));
+            Assert.Contains("The Forge", renderer.Text);
             Assert.Contains("Unsaved changes", renderer.Text);
             Assert.False(renderer.Button("Save for restart").Disabled);
             await renderer.Submit();
@@ -97,11 +104,22 @@ public sealed partial class AdministrationTests
             Assert.Equal(2, saved.Pending!.Draft.Settings.Resources.OreYieldMultiplier);
             Assert.Equal(new MiningHoldPolicy(2.5m, .5m, 3), saved.Pending.Draft.Settings.MiningHolds);
             Assert.Equal(new MiningHoldPolicy(), saved.Active.Draft.Settings.MiningHolds);
+            Assert.False(saved.Pending.Draft.Settings.Capsuleers.Exploration);
+            Assert.True(saved.Pending.Draft.Settings.Capsuleers.WreckSalvage);
+            Assert.True(saved.Active.Draft.Settings.Capsuleers.Exploration);
+            Assert.Equal(0, saved.Active.Draft.Settings.Capsuleers.ActivePilotCap);
+            Assert.Equal(250, saved.Pending.Draft.Settings.Capsuleers.ActivePilotCap);
+            Assert.Equal(CapsuleerRegionAccess.TransitOnly, saved.Pending.Draft.Settings.Capsuleers.RegionAccess[10000002]);
+            await renderer.Change(nameof(SettingsForm.BotWreckSalvage), false);
             await renderer.Click("Rewards");
             await renderer.Change(nameof(SettingsForm.BountyMultiplier), "3");
             await renderer.Submit();
             Assert.Contains("Revision 3 saved · pending restart.", renderer.Text);
-            Assert.Equal(new MiningHoldPolicy(2.5m, .5m, 3), config.Read().Pending!.Draft.Settings.MiningHolds);
+            var updated = config.Read();
+            Assert.Equal(new MiningHoldPolicy(2.5m, .5m, 3), updated.Pending!.Draft.Settings.MiningHolds);
+            Assert.False(updated.Pending.Draft.Settings.Capsuleers.Exploration);
+            Assert.False(updated.Pending.Draft.Settings.Capsuleers.WreckSalvage);
+            Assert.True(updated.Active.Draft.Settings.Capsuleers.WreckSalvage);
             await renderer.Click("Gathering");
             await renderer.Click("Reset to 1×");
             Assert.False(renderer.Button("Save for restart").Disabled);
@@ -219,7 +237,14 @@ public sealed partial class AdministrationTests
 
         internal Task Click(string text) => Dispatch(Button(text), "onclick", new Microsoft.AspNetCore.Components.Web.MouseEventArgs());
 
-        internal Task Change(string property, string value) => Dispatch(Input(property), "onchange", new ChangeEventArgs { Value = value });
+        internal Task Change(string property, object value) => Dispatch(Input(property), "onchange", new ChangeEventArgs { Value = value });
+
+        internal Task ChangeSelection(string name, string value) =>
+            Dispatch(
+                Elements(Root).Single(element => element.Name == "select" && Equals(element.Attributes.GetValueOrDefault("name"), name)),
+                "onchange",
+                new ChangeEventArgs { Value = value }
+            );
 
         internal Task Submit() => Dispatch(Elements(Root).Single(element => element.Name == "form"), "onsubmit", EventArgs.Empty);
 

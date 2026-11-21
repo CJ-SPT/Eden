@@ -113,7 +113,8 @@ internal sealed partial class CapsuleerIndustry
                 production.FactoryStationId,
                 HullClass.Hauler,
                 avoided,
-                CapsuleerIndustryRules.MaximumPlanetarySupplyJumps
+                CapsuleerIndustryRules.MaximumPlanetarySupplyJumps,
+                policy: world.Settings.Capsuleers
             );
             return route is null
                 ? null
@@ -196,7 +197,8 @@ internal sealed partial class CapsuleerIndustry
                         station,
                         HullClass.Hauler,
                         avoided,
-                        CapsuleerIndustryRules.MaximumPlanetarySupplyJumps
+                        CapsuleerIndustryRules.MaximumPlanetarySupplyJumps,
+                        policy: world.Settings.Capsuleers
                     )
             );
         return sites

@@ -1,4 +1,6 @@
+using System.Collections.Immutable;
 using System.ComponentModel.DataAnnotations;
+using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Flight;
@@ -80,6 +82,15 @@ public sealed class SettingsForm
     public bool SituationalAwareness { get; set; }
     public bool BeltRatting { get; set; }
     public bool AnomalyRatting { get; set; }
+    public bool BotExploration { get; set; }
+    public bool BotWreckSalvage { get; set; }
+
+    [Range(0, CapsuleerPopulationRules.MaximumActivePilotCap)]
+    [Display(Name = "Active bot cap")]
+    public int ActivePilotCap { get; set; }
+    public CapsuleerRegionAccess DefaultRegionAccess { get; set; }
+    public ImmutableSortedDictionary<int, CapsuleerRegionAccess> RegionAccess { get; set; } =
+        ImmutableSortedDictionary<int, CapsuleerRegionAccess>.Empty;
 
     public bool RoamingPvp { get; set; }
     public bool RoamingGangs { get; set; }
@@ -326,6 +337,11 @@ public sealed class SettingsForm
             SituationalAwareness = settings.Capsuleers.SituationalAwareness,
             BeltRatting = settings.Capsuleers.BeltRatting,
             AnomalyRatting = settings.Capsuleers.AnomalyRatting,
+            BotExploration = settings.Capsuleers.Exploration,
+            BotWreckSalvage = settings.Capsuleers.WreckSalvage,
+            ActivePilotCap = settings.Capsuleers.ActivePilotCap,
+            DefaultRegionAccess = settings.Capsuleers.DefaultRegionAccess,
+            RegionAccess = settings.Capsuleers.RegionAccess,
             RoamingPvp = settings.Capsuleers.RoamingPvp,
             RoamingGangs = settings.Capsuleers.RoamingGangs,
             RoamingGangSize = settings.Capsuleers.RoamingGangSize,
@@ -404,6 +420,11 @@ public sealed class SettingsForm
                 SituationalAwareness = SituationalAwareness,
                 BeltRatting = BeltRatting,
                 AnomalyRatting = AnomalyRatting,
+                Exploration = BotExploration,
+                WreckSalvage = BotWreckSalvage,
+                ActivePilotCap = ActivePilotCap,
+                DefaultRegionAccess = DefaultRegionAccess,
+                RegionAccess = RegionAccess,
                 RoamingPvp = RoamingPvp,
                 RoamingGangs = RoamingGangs,
                 RoamingGangSize = RoamingGangSize,

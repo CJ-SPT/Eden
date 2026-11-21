@@ -659,15 +659,17 @@ public sealed class CapsuleerTrafficNavigationTests
     }
 
     [Theory]
-    [InlineData(false, false)]
-    [InlineData(true, false)]
-    [InlineData(true, true)]
-    public async Task EightJumpJourneyRetainsShipDestinationAndCursorAcrossRestart(bool background, bool scheduled)
+    [InlineData(false, false, false)]
+    [InlineData(true, false, false)]
+    [InlineData(true, true, false)]
+    [InlineData(true, true, true)]
+    public async Task EightJumpJourneyRetainsShipDestinationAndCursorAcrossRestart(bool background, bool scheduled, bool transitOnly)
     {
         using CapsuleerHaulerTests.Fixture f = new();
         var founder = f.Founder();
         const int firstSystem = 30001001;
         const int jumps = 8;
+        const int transitRegion = 10000003;
         int[] route = [Source, .. Enumerable.Range(firstSystem, jumps)];
         using (CatalogDbContext catalog = new(f.Database.CatalogPath, writable: true))
         {
@@ -690,6 +692,16 @@ public sealed class CapsuleerTrafficNavigationTests
                 );
             }
             catalog.Database.ExecuteSql($"UPDATE Station SET SolarSystemId={route[^1]} WHERE Id={DestinationStation}");
+            if (transitOnly)
+            {
+                catalog.Database.ExecuteSql(
+                    $"""
+                    INSERT INTO Region VALUES ({transitRegion},'Transit region');
+                    INSERT INTO Constellation(Id,RegionId,Name) VALUES (20000021,{transitRegion},'Transit constellation');
+                    UPDATE SolarSystem SET ConstellationId=20000021 WHERE Id BETWEEN {route[1]} AND {route[^2]};
+                    """
+                );
+            }
         }
         using (WorldDbContext world = new(f.Database.Path))
         {
@@ -707,6 +719,36 @@ public sealed class CapsuleerTrafficNavigationTests
             );
             world.SaveChanges();
             new HaulerCheckpoint(founder.PilotId, work).Apply(world);
+            if (transitOnly)
+            {
+                var population =
+                    world.Set<SavedCapsuleerProvisioning>().Find(1) ?? world.Add(new SavedCapsuleerProvisioning { Id = 1 }).Entity;
+                population.WorldSeed = 1;
+                world.SaveChanges();
+            }
+        }
+        if (transitOnly)
+        {
+            WorldConfigurationStore configuration = new(f.Database, f.Clock);
+            var state = configuration.Read();
+            var settings = state.Active.Draft.Settings;
+            var policy = settings.Capsuleers;
+            configuration.Save(
+                state.Generation,
+                state.Active.Draft with
+                {
+                    Settings = settings with
+                    {
+                        Capsuleers = policy with
+                        {
+                            TrafficMultiplier = 10,
+                            RegionAccess = policy.RegionAccess.Add(transitRegion, CapsuleerRegionAccess.TransitOnly),
+                        },
+                    },
+                },
+                "Transit corridor"
+            );
+            WorldInitialization.Initialize(f.Database, f.Clock);
         }
         var host = ServerServices.Build(f.Database, f.Clock, liveWorld: true).WithPreparedCommunities(f.Database);
         IHumanPresenceLease? human = null;
@@ -736,6 +778,12 @@ public sealed class CapsuleerTrafficNavigationTests
                 var observation = Current();
                 Assert.Null(observation.Work.WaitingReason);
                 Assert.Equal(founder.FounderShipId, observation.Pilot.ShipId);
+                if (transitOnly && observation.Pilot.RegionId == transitRegion)
+                {
+                    Assert.NotNull(observation.Pilot.Position);
+                    Assert.Null(observation.Work.Ratting);
+                    Assert.Null(observation.Work.Exploration);
+                }
                 if (observation.Pilot.SystemId != visited[^1])
                 {
                     visited.Add(observation.Pilot.SystemId);

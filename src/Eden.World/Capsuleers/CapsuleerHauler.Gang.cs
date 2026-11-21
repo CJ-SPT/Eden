@@ -220,7 +220,7 @@ internal sealed partial class CapsuleerHauler
             return false;
         }
         var route =
-            CapsuleerTrafficRoutes.Roam(_operation.Catalog, Pilot.StationId, pilotId ^ Work.ActivitySequence)
+            CapsuleerTrafficRoutes.Roam(_operation.Catalog, Pilot.StationId, pilotId ^ Work.ActivitySequence, policy)
             ?? new CapsuleerTrafficRoute(Pilot.StationId, Pilot.StationId, [Pilot.SystemId]);
         List<RoamingGangRecruit> candidates = [Recruit(Pilot, own)];
         Dictionary<long, HaulerProgress> schedules = [];

@@ -331,7 +331,7 @@ internal sealed partial class CapsuleerScheduler
             cancellationToken.ThrowIfCancellationRequested();
             if (!preparedTrade && input.Journey is not null)
             {
-                journey = CapsuleerHauler.PlanJourney(catalog, input.Journey);
+                journey = CapsuleerHauler.PlanJourney(catalog, input.Journey, database.Settings.Capsuleers);
             }
             foreach (int belt in input.MissingBelts)
             {

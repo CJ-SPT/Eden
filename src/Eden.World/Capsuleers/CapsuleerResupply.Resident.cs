@@ -495,7 +495,15 @@ internal sealed partial class CapsuleerResupply
         List<ShoppingCandidate> candidates = [];
         foreach (int target in stations)
         {
-            var route = CapsuleerTrafficRoutes.ToStation(catalog, station, target, hull, avoided, RattingRules.MaximumShoppingJumps);
+            var route = CapsuleerTrafficRoutes.ToStation(
+                catalog,
+                station,
+                target,
+                hull,
+                avoided,
+                RattingRules.MaximumShoppingJumps,
+                policy: world.Settings.Capsuleers
+            );
             if (route is null || route.Systems.Length - 1 > RattingRules.MaximumShoppingJumps)
             {
                 continue;

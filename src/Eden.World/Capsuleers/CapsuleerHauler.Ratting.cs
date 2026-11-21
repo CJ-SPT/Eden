@@ -198,7 +198,7 @@ internal sealed partial class CapsuleerHauler
         {
             return false;
         }
-        if (_operation.World is Eden.World.Runtime.Economy.EconomyTransaction resident)
+        if (policy.WreckSalvage && _operation.World is Eden.World.Runtime.Economy.EconomyTransaction resident)
         {
             PrepareSalvager(resident, profile.ShipAttributes);
         }
@@ -368,7 +368,11 @@ internal sealed partial class CapsuleerHauler
                     NextBelt();
                     break;
                 }
-                if (activity.Salvage is not { } salvage || Work.ActiveTicks >= salvage.DueTicks)
+                if (
+                    activity.Salvage is not { } salvage
+                    || !database.Settings.Capsuleers.WreckSalvage
+                    || Work.ActiveTicks >= salvage.DueTicks
+                )
                 {
                     CollectRattingLoot();
                 }

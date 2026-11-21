@@ -614,11 +614,17 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
         );
     }
 
-    internal static void CreateWorld(WorldDatabase database, TestClock clock, bool legacyFounders = true)
+    internal static void CreateWorld(
+        WorldDatabase database,
+        TestClock clock,
+        bool legacyFounders = true,
+        Action<string>? additionalCatalogData = null
+    )
     {
         TestCatalog.Create(database.CatalogPath);
         TestCatalog.AddSchool(database.CatalogPath, 17, 1, 1, Kisogo, SchoolStation, 601);
         PassiveCatalogFixture.LoadStarterProduction(database.CatalogPath);
+        additionalCatalogData?.Invoke(database.CatalogPath);
         using CatalogDbContext catalog = new(database.CatalogPath, writable: true);
         // Extract of the school, station, belt and ordinary Caldari mining skills from build 3662168.
         catalog.Database.ExecuteSqlRaw(

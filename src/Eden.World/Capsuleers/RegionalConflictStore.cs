@@ -128,7 +128,7 @@ internal static class RegionalConflictStore
     {
         var source = catalog.RequireSystem(catalog.RequireStation(station).SolarSystemId);
         var region = Ensure(world, catalog, station, elapsed);
-        var journeys = CapsuleerTrafficRoutes.RegionalRoutes(catalog, station);
+        var journeys = CapsuleerTrafficRoutes.RegionalRoutes(catalog, station, world.Settings.Capsuleers);
         List<RegionalRoute> routes = [];
         foreach (var journey in journeys.Prepend(new(station, station, [source.Id])))
         {

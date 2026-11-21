@@ -101,7 +101,8 @@ internal sealed partial class CapsuleerIndustry
                     station,
                     HullClass.Hauler,
                     avoided,
-                    maximumJumps
+                    maximumJumps,
+                    policy: world.Settings.Capsuleers
                 );
                 var inbound = CapsuleerTrafficRoutes.ToStation(
                     catalog,
@@ -109,7 +110,8 @@ internal sealed partial class CapsuleerIndustry
                     request.StationId,
                     HullClass.Hauler,
                     avoided,
-                    maximumJumps
+                    maximumJumps,
+                    policy: world.Settings.Capsuleers
                 );
                 if (outbound is null || inbound is null || outbound.Systems.Length + inbound.Systems.Length >= bestDistance)
                 {
