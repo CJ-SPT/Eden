@@ -66,6 +66,11 @@ internal sealed partial class EconomyTransaction(
             .IndexedSnapshots(nameof(NpcMarketAssortment), assortments)
             .Where(o => assortments.Contains(new(o.StationId, o.TypeId, o.Bid, o.Kind, o.SourceOrderId)));
 
+    internal IEnumerable<EconomySavedPersonalOrder> StationPersonalOrders(int station, int type) =>
+        ((EconomySet<SavedPersonalOrder, EconomySavedPersonalOrder>)Set<SavedPersonalOrder>())
+            .IndexedSnapshots(nameof(SavedPersonalOrder.StationId), station, (nameof(SavedPersonalOrder.TypeId), type))
+            .Where(order => order.StationId == station && order.TypeId == type);
+
     internal bool PersonalOrderStillOpen(long id) =>
         ((EconomySet<SavedPersonalOrder, EconomySavedPersonalOrder>)Set<SavedPersonalOrder>()).ReadSnapshot(new(id))
             is { Status: PersonalOrderStatus.Open, Bid: false, Remaining: > 0 };

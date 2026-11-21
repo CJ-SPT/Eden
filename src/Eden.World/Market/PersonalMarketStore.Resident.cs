@@ -172,28 +172,29 @@ internal sealed partial class PilotMarketStore
     )
     {
         long now = Now;
-        var personal = world
-            .Set<SavedPersonalOrder>()
-            .Where(o =>
-                o.StationId == incoming.StationId
-                && o.TypeId == incoming.TypeId
-                && o.Bid != incoming.Bid
-                && o.Status == PersonalOrderStatus.Open
-                && o.Expires > now
-                && o.PilotId != incoming.PilotId
-                && (incoming.CorporationId == null || incoming.CorporationId != o.CorporationId)
-                && (specificOrder == null || o.Id == specificOrder)
-                && !npcDemandOnly
-            )
-            .ToArray()
-            .Where(o => o.Remaining > 0)
-            .Select(o => new Candidate(o, null));
+        var resident = world as EconomyTransaction;
+        var personal =
+            npcDemandOnly ? []
+            : resident is not null ? ResidentPersonalMatches(resident, incoming, specificOrder, now)
+            : world
+                .Set<SavedPersonalOrder>()
+                .Where(o =>
+                    o.StationId == incoming.StationId
+                    && o.TypeId == incoming.TypeId
+                    && o.Bid != incoming.Bid
+                    && o.Status == PersonalOrderStatus.Open
+                    && o.Expires > now
+                    && o.PilotId != incoming.PilotId
+                    && (incoming.CorporationId == null || incoming.CorporationId != o.CorporationId)
+                    && (specificOrder == null || o.Id == specificOrder)
+                )
+                .ToArray();
         long cutoff = clock.GetUtcNow().AddDays(-MarketDefinitions.NpcOrderDays).UtcDateTime.ToFileTimeUtc();
         var kind = MarketKind(world);
         bool progressive = RegionalMarketStore.Enabled(world);
         var npcs =
             specificOrder is not null ? []
-            : world is EconomyTransaction resident ? ResidentNpcMatches(resident, incoming, kind, progressive, npcDemandOnly, cutoff, now)
+            : resident is not null ? ResidentNpcMatches(resident, incoming, kind, progressive, npcDemandOnly, cutoff, now)
             : world
                 .Set<NpcMarketOrder>()
                 .Where(o =>
@@ -215,6 +216,8 @@ internal sealed partial class PilotMarketStore
                 )
                 .ToArray();
         var candidates = personal
+            .Where(order => order.Remaining > 0)
+            .Select(order => new Candidate(order, null))
             .Concat(
                 npcs.Where(o => o.Remaining > 0 && (o.Kind != NpcMarketKind.Standard || StandardBidReaches(catalog, o, incoming)))
                     .Select(o => new Candidate(null, o))
@@ -380,6 +383,31 @@ internal sealed partial class PilotMarketStore
             incoming.Status = PersonalOrderStatus.Filled;
         }
         return trades;
+    }
+
+    private static SavedPersonalOrder[] ResidentPersonalMatches(
+        EconomyTransaction world,
+        SavedPersonalOrder incoming,
+        long? specificOrder,
+        long now
+    )
+    {
+        var matches = world
+            .StationPersonalOrders(incoming.StationId, incoming.TypeId)
+            .Where(order =>
+                order.Bid != incoming.Bid
+                && order.Status == PersonalOrderStatus.Open
+                && order.Expires > now
+                && order.PilotId != incoming.PilotId
+                && (incoming.CorporationId == null || incoming.CorporationId != order.CorporationId)
+                && (specificOrder == null || order.Id == specificOrder)
+                && order.Remaining > 0
+                && PersonalMarketRules.Crosses(incoming.Bid, incoming.PriceCents, order.PriceCents)
+            )
+            .Select(order => order.Id)
+            .ToArray();
+        var writable = world.Set<SavedPersonalOrder>();
+        return Array.ConvertAll(matches, id => writable.Find(id)!);
     }
 
     private static NpcMarketOrder[] ResidentNpcMatches(
