@@ -1,4 +1,5 @@
 using Eden.Data.Catalog;
+using Eden.Data.World.Combat;
 using Eden.Data.World.Industry;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Capsuleers;
@@ -19,7 +20,10 @@ using Eden.World.Skills;
 
 namespace Eden.World.Capsuleers;
 
-internal readonly record struct CareerShipTurn(bool Boarded = false, bool MarketChanged = false, int[]? OreTypes = null);
+internal readonly record struct CareerShipTurn(bool Boarded = false, bool MarketChanged = false, int[]? OreTypes = null)
+{
+    internal CapsuleerTrafficRoute? Supplier { get; init; }
+}
 
 internal sealed partial class CapsuleerIndustry
 {
@@ -93,7 +97,8 @@ internal sealed partial class CapsuleerIndustry
         DockedPilot pilot,
         CapsuleerCareerPlan? plan,
         long now,
-        bool starterWorkshop = false
+        bool starterWorkshop = false,
+        IReadOnlySet<int>? avoidedSuppliers = null
     )
     {
         long id = pilot.PilotId;
@@ -123,6 +128,27 @@ internal sealed partial class CapsuleerIndustry
 
         var hangar = Hangar(world, id, station);
         var missing = MissingParts(parts, hangar.ToLookup(item => item.TypeId));
+        var bids = world.Settings.FreshUniverse && missing.Length > 0 ? LocalCareerBids(world, id, station, missing, now) : [];
+        if (
+            world.Settings.FreshUniverse
+            && missing.Length > 0
+            && pilot.ShipGroupId == (int)HullClass.Corvette
+            && Employer(world, id, pilot.CorpId) is { } employer
+            && world.Filter<ShipLoss>(loss => loss.PilotId == id).Any(loss => loss.TypeId == kit.HullTypeId)
+        )
+        {
+            var depot = DepotStacks(world, employer.Id, station).ToLookup(item => item.TypeId);
+            if (MissingParts(missing, depot).Length == 0)
+            {
+                foreach (var part in missing)
+                {
+                    TransferReplacementStock(world, catalog, id, station, part, depot[part.TypeId]);
+                }
+                CancelCareerBids(world, catalog, bids);
+                BoardKit(world, catalog, pilot, kit, now);
+                return new(Boarded: true, MarketChanged: bids.Length > 0);
+            }
+        }
         if (missing.Length == 0)
         {
             BoardKit(world, catalog, pilot, kit, now);
@@ -137,29 +163,10 @@ internal sealed partial class CapsuleerIndustry
             return default;
         }
         long balance = StarterBalance(world, id);
-        var offers = market
-            .SupplyOrders(world, catalog, station, missing.Select(part => part.TypeId).ToArray(), id)
-            .ToLookup(order => order.TypeId);
-        var purchases = missing
-            .Select(part =>
-                QuoteInput(
-                    offers[part.TypeId]
-                        .Where(order => order.PriceCents <= CapsuleerReplacementRules.LimitPrice(ReferencePrice(catalog, part.TypeId))),
-                    part.TypeId,
-                    part.Quantity
-                )
-                    is { } purchase
-                && purchase.Quantity == part.Quantity
-                    ? purchase
-                    : null
-            )
-            .OfType<MarketPurchase>()
-            .ToArray();
-        if (
-            purchases.Length == missing.Length
-            && purchases.Sum(purchase => (decimal)purchase.LimitPriceCents * purchase.Quantity) <= balance
-        )
+        decimal spending = balance + bids.Sum(bid => (decimal)bid.EscrowCents);
+        if (QuoteCareerKit(world, catalog, id, station, missing, spending) is { } purchases)
         {
+            CancelCareerBids(world, catalog, bids);
             market.ExecuteBuy(world, catalog, id, station, purchases, 0);
             if (MissingParts(parts, Hangar(world, id, station).ToLookup(item => item.TypeId)).Length == 0)
             {
@@ -192,7 +199,129 @@ internal sealed partial class CapsuleerIndustry
                 return new(MarketChanged: true);
             }
         }
+        if (
+            world.Settings.FreshUniverse
+            && avoidedSuppliers is not null
+            && CareerSupplier(world, catalog, pilot, kit.HullTypeId, parts, spending, avoidedSuppliers, now) is { } supplier
+        )
+        {
+            CancelCareerBids(world, catalog, bids);
+            return new(MarketChanged: bids.Length > 0) { Supplier = supplier };
+        }
         return new(MarketChanged: PlaceCareerBid(world, catalog, pilot, missing, balance, now));
+    }
+
+    private MarketPurchase[]? QuoteCareerKit(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        long pilot,
+        int station,
+        ReplacementPart[] missing,
+        decimal budget
+    )
+    {
+        var offers = market
+            .SupplyOrders(world, catalog, station, missing.Select(part => part.TypeId).ToArray(), pilot)
+            .ToLookup(order => order.TypeId);
+        List<MarketPurchase> purchases = [];
+        foreach (var part in missing)
+        {
+            long cap = CapsuleerReplacementRules.LimitPrice(ReferencePrice(catalog, part.TypeId));
+            if (
+                QuoteInput(offers[part.TypeId].Where(order => order.PriceCents <= cap), part.TypeId, part.Quantity) is not { } purchase
+                || purchase.Quantity != part.Quantity
+            )
+            {
+                return null;
+            }
+            budget -= (decimal)purchase.LimitPriceCents * purchase.Quantity;
+            if (budget < 0)
+            {
+                return null;
+            }
+            purchases.Add(purchase);
+        }
+        return purchases.ToArray();
+    }
+
+    private CapsuleerTrafficRoute? CareerSupplier(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        DockedPilot pilot,
+        int hull,
+        ReplacementPart[] parts,
+        decimal budget,
+        IReadOnlySet<int> avoided,
+        long now
+    )
+    {
+        if (budget <= 0)
+        {
+            return null;
+        }
+        const int jumps = CapsuleerRegionalStockRules.MaximumJumps;
+        var nearby = NearbySystems(catalog, pilot.SystemId, jumps);
+        var stations = world
+            .Filter<SavedPersonalOrder>(order => order.TypeId == hull)
+            .AsEnumerable()
+            .Where(order =>
+                !order.Bid
+                && order.PilotId != pilot.PilotId
+                && order.Status == PersonalOrderStatus.Open
+                && order.Expires > now
+                && order.Remaining > 0
+                && order.StationId != pilot.StationId
+                && nearby.Contains(order.SystemId)
+            )
+            .Select(order => order.StationId)
+            .Distinct()
+            .Where(station =>
+                catalog.FindStation(station) is { } stop && StationCapabilities.Has(catalog, stop.OperationId, StationService.Market)
+            );
+        return stations
+            .Select(station =>
+                CapsuleerTrafficRoutes.ToStation(
+                    catalog,
+                    pilot.StationId,
+                    station,
+                    (HullClass)pilot.ShipGroupId,
+                    avoided,
+                    jumps,
+                    world.Settings.Capsuleers
+                )
+            )
+            .OfType<CapsuleerTrafficRoute>()
+            .OrderBy(route => route.Systems.Length)
+            .ThenBy(route => route.DestinationStationId)
+            .FirstOrDefault(route => QuoteCareerKit(world, catalog, pilot.PilotId, route.DestinationStationId, parts, budget) is not null);
+    }
+
+    private static SavedPersonalOrder[] LocalCareerBids(
+        EconomyTransaction world,
+        long pilot,
+        int station,
+        ReplacementPart[] missing,
+        long now
+    ) =>
+        world
+            .Filter<SavedPersonalOrder>(row => row.PilotId == pilot)
+            .AsEnumerable()
+            .Where(row =>
+                row.CorporationId is null
+                && row.Bid
+                && row.StationId == station
+                && row.Status == PersonalOrderStatus.Open
+                && row.Expires > now
+                && missing.Any(part => part.TypeId == row.TypeId)
+            )
+            .ToArray();
+
+    private void CancelCareerBids(EconomyTransaction world, CatalogDbContext catalog, SavedPersonalOrder[] bids)
+    {
+        foreach (var bid in bids)
+        {
+            market.CancelPersonalSupplyBid(world, catalog, bid);
+        }
     }
 
     private bool FinishCareerManufacturing(

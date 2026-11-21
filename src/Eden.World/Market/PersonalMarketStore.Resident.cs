@@ -534,6 +534,14 @@ internal sealed partial class PilotMarketStore
         return order;
     }
 
+    internal void CancelPersonalSupplyBid(EconomyTransaction world, CatalogDbContext catalog, SavedPersonalOrder bid)
+    {
+        if (bid.Bid && bid.CorporationId is null && bid.Status == PersonalOrderStatus.Open)
+        {
+            Close(world, catalog, bid, PersonalOrderStatus.Cancelled);
+        }
+    }
+
     private void Close(WorldAction world, CatalogDbContext catalog, SavedPersonalOrder order, PersonalOrderStatus status)
     {
         List<InventoryChange> changes = [];

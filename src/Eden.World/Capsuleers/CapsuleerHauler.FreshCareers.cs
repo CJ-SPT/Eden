@@ -71,8 +71,20 @@ internal sealed partial class CapsuleerHauler
                 )
         )
         {
-            var purchase = ammunitionSupply.AdvanceCareerShip(world, catalog, Pilot, training.Plan, Now);
+            var purchase = ammunitionSupply.AdvanceCareerShip(
+                world,
+                catalog,
+                Pilot,
+                training.Plan,
+                Now,
+                avoidedSuppliers: AvoidedSupplierSystems()
+            );
             _operation.MarketChanged |= purchase.MarketChanged;
+            if (purchase.Supplier is { } supplier)
+            {
+                BeginSupplyJourney(supplier);
+                return;
+            }
             if (purchase.Boarded)
             {
                 _pilot = ReadPilot(world, CapsuleerCommunityStore.MinerAccountId);

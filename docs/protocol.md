@@ -29,6 +29,9 @@ probe resolution, native hacking and sale of recovered loot.
 [Bot wreck salvage and trade](protocol/capsuleers.md#bot-wreck-salvage-and-trade) covers paid salvager fitting,
 wreck recovery, restart and sale into funded station demand.
 
+[Fresh-world replacement markets](protocol/capsuleers.md#fresh-world-replacement-markets) covers buying and boarding
+at a reachable supplier and replacing starter fits from corporate reserves.
+
 [Fresh-world corporate careers](protocol/capsuleers.md#fresh-world-corporate-careers) covers the transition from
 paid career ships into recruitment, corporate freight, and station manufacturing.
 

@@ -84,7 +84,8 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
             return new(saved);
         }
         long id = pilot.PilotId;
-        var plan = Choose(world, catalog, pilot, profession, saved?.Profession == profession ? saved : null);
+        bool reset = world.Settings.FreshUniverse && pilot.ShipGroupId == (int)HullClass.Corvette && saved is { HighestHullStage: > 0 };
+        var plan = Choose(world, catalog, pilot, profession, !reset && saved?.Profession == profession ? saved : null);
         if (PilotTrainingStore.ReadFreePoints(world, id) == 0)
         {
             return new(plan);

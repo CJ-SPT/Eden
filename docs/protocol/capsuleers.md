@@ -2,6 +2,34 @@
 
 [Protocol index](../protocol.md)
 
+## Fresh-world replacement markets
+
+If a fresh courier or bounty hunter cannot assemble an affordable career fit locally, the pilot can travel to a
+station advertising the full kit within three traversable jumps. The route respects work restrictions and remembered
+threats. The return from a loss still starts in a corvette. At the supplier the pilot quotes the fit again and pays for
+the purchase at the destination. Retiring a superseded local bid refunds its escrow through the market owner.
+A pilot recovering from a recorded loss can also use a complete starter kit from its employer's station reserve.
+
+This is station-local settlement after actual gate travel, as described in [Trading](https://wiki.eveuniversity.org/Trading).
+The inspected EVE.js market proxy has SHA-256
+`F457CB1B181CEB570A5FA346C718D71A7CE7B84B8734C88CEE7F2546A8CE175B`. Eden uses its resident market,
+existing travel checkpoint and the paid career fit from build 3662168.
+
+### Automated validation
+
+The pinned-catalog `FreshCouriersAndRatsEarnTheirShipsAndPayToReplaceBothAfterLoss` method passed in 41.37 seconds.
+It supplied the courier's replacement kit only at a station in another region and verified the paid hull transaction
+there. The expanded market, replacement, corporate production, and recurring regional trade filter passed 28 cases
+in 47.49 seconds. The courier replay starts with finite fixture listings.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
 ## Fresh-world corporate careers
 
 A courier or bounty hunter in a paid career ship reviews ordinary corporation applications at dock. The courier

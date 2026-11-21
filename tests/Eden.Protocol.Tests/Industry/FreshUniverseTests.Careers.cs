@@ -79,16 +79,22 @@ public sealed partial class FreshUniverseTests
         int system;
         int courierHome;
         int patrolHome;
+        int replacementMarket;
         var goals = new[] { (int)FreightHull.Badger, (int)TechOneHullType.Merlin };
         using (CatalogDbContext catalog = new(database.CatalogPath))
         {
-            system = NpcDirectory
+            var opening = NpcDirectory
                 .Agents(catalog)
                 .Where(agent => agent is { Type: AgentType.Basic, Level: 1, DivisionId: MissionRules.DistributionDivision, SystemId: > 0 })
                 .Select(agent => agent.SystemId!.Value)
                 .Distinct()
-                .First(id => FreshCareerRoutes.Read(catalog, id) is { Courier: not null, Combat: not null });
-            var routes = FreshCareerRoutes.Read(catalog, system);
+                .Select(id => (System: id, Routes: FreshCareerRoutes.Read(catalog, id)))
+                .Where(site => site.Routes is { Courier: not null, Combat: not null })
+                .Select(site => (site.System, site.Routes, Market: RegionalReplacementMarket(catalog, site.Routes.Courier!)))
+                .First(site => site.Market > 0);
+            system = opening.System;
+            var routes = opening.Routes;
+            replacementMarket = opening.Market;
             courierHome = routes.Courier!.SourceStationId;
             patrolHome = routes.Combat!.SourceStationId;
             output.WriteLine(
@@ -222,10 +228,14 @@ public sealed partial class FreshUniverseTests
         Assert.All(pilots, id => Assert.Equal((int)HullClass.Corvette, scheduler.Hauler(id)!.Pilot.ShipGroupId));
         using (CatalogDbContext catalog = new(database.CatalogPath))
         {
-            ListStarterStock(reopened, catalog, supplier, goals, [courierHome, patrolHome]);
+            ListStarterStock(reopened, catalog, supplier, goals, [replacementMarket, patrolHome]);
         }
         AdvanceCareers(reopened, system, clock, () => Enumerable.Range(0, 2).All(i => Hull(reopened, pilots[i]) == goals[i]));
         VerifyPurchases(reopened, pilots, goals, supplier, 2);
+        Assert.Contains(
+            reopened.GetRequiredService<IPilotMarket>().Transactions(courier),
+            trade => trade.IsBuy && trade.TypeId == goals[0] && trade.StationId == replacementMarket
+        );
         restored.Economy.Inspect(world =>
         {
             Assert.All(Enumerable.Range(0, 2), i => Assert.NotEqual(firstShips[i], world.Pilots.Find(pilots[i])!.ActiveShipId));
@@ -263,6 +273,35 @@ public sealed partial class FreshUniverseTests
         VerifyPurchases(reopened, pilots, goals, supplier, 2);
 
         ServiceProvider Open() => ServerServices.Build(database, clock, population: new TestNpcPopulationSeeder(system), liveWorld: true);
+    }
+
+    private static int RegionalReplacementMarket(CatalogDbContext catalog, CapsuleerTrafficRoute opening)
+    {
+        var home = catalog.RequireStation(opening.SourceStationId);
+        HashSet<int> reachable = [home.SolarSystemId];
+        int[] frontier = [home.SolarSystemId];
+        for (int jump = 0; jump < CapsuleerRegionalStockRules.MaximumJumps; jump++)
+        {
+            frontier = frontier.SelectMany(system => CapsuleerTrafficRoutes.Neighbours(catalog, system)).Where(reachable.Add).ToArray();
+        }
+        return reachable
+            .Where(system => catalog.Definitions.Systems[system].RegionId != home.RegionId)
+            .SelectMany(system => catalog.Definitions.StationsInSystem(system))
+            .Where(station =>
+                station.Id != opening.DestinationStationId && StationCapabilities.Has(catalog, station.OperationId, StationService.Market)
+            )
+            .Select(station => station.Id)
+            .Order()
+            .FirstOrDefault(station =>
+                CapsuleerTrafficRoutes.ToStation(
+                    catalog,
+                    home.Id,
+                    station,
+                    HullClass.Corvette,
+                    maximumJumps: CapsuleerRegionalStockRules.MaximumJumps
+                )
+                    is not null
+            );
     }
 
     private static long CreateSupplier(ServiceProvider host, long example)
