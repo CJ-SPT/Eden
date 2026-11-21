@@ -257,14 +257,7 @@ internal sealed class TrafficSnapshot(TrafficSnapshotManifest? manifest, Traffic
         {
             throw new InvalidDataException("Traffic snapshot failed its SQLite integrity check.");
         }
-        command.CommandText = "SELECT Payload FROM Manifest";
-        var metadata =
-            JsonSerializer.Deserialize<TrafficSnapshotManifest>((string)command.ExecuteScalar()!)
-            ?? throw new InvalidDataException("Missing traffic snapshot manifest.");
-        if (metadata.Version != TrafficRules.SnapshotVersion || metadata.CatalogFingerprint != fingerprint)
-        {
-            throw new InvalidDataException("Traffic snapshot version or catalog fingerprint does not match; reimport it.");
-        }
+        var metadata = ReadManifest(command, fingerprint);
         command.CommandText = "SELECT Payload FROM Profile ORDER BY KillId";
         using var reader = command.ExecuteReader();
         List<TrafficProfile> values = [];
@@ -280,5 +273,30 @@ internal sealed class TrafficSnapshot(TrafficSnapshotManifest? manifest, Traffic
             throw new InvalidDataException("Traffic snapshot content checksum does not match.");
         }
         return new(metadata, values.ToArray());
+    }
+
+    internal static TrafficSnapshotManifest ReadManifest(string path, string fingerprint)
+    {
+        using var connection = TrafficConnections.Snapshot(path);
+        connection.Open();
+        using var command = connection.CreateCommand();
+        return ReadManifest(command, fingerprint);
+    }
+
+    private static TrafficSnapshotManifest ReadManifest(Microsoft.Data.Sqlite.SqliteCommand command, string fingerprint)
+    {
+        command.CommandText = "SELECT Payload FROM Manifest";
+        if (
+            command.ExecuteScalar() is not string payload
+            || JsonSerializer.Deserialize<TrafficSnapshotManifest>(payload) is not { } metadata
+        )
+        {
+            throw new InvalidDataException("Missing traffic snapshot manifest.");
+        }
+        if (metadata.Version != TrafficRules.SnapshotVersion || metadata.CatalogFingerprint != fingerprint)
+        {
+            throw new InvalidDataException("Traffic snapshot version or catalog fingerprint does not match; reimport it.");
+        }
+        return metadata;
     }
 }

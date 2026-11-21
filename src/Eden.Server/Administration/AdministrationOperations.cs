@@ -46,6 +46,7 @@ internal sealed partial class AdministrationOperations(
     Eden.Server.Modding.ModPublisher modPublisher,
     Eden.World.Storage.WorldDatabase database,
     CapsuleerCorporationIdentityStore corporationIdentities,
+    OptionalDataImports optionalDataImports,
     IRegionalConflictDiagnostics? regionalConflicts = null
 )
 {

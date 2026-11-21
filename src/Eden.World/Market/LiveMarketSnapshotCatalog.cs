@@ -12,11 +12,18 @@ public sealed class LiveMarketSnapshotCatalog(WorldDatabase database)
 {
     private readonly ConcurrentDictionary<int, Lazy<IReadOnlyDictionary<int, LiveMarketOrder[]>>> _regions = new();
     private LiveMarketSnapshotManifest? _manifest;
-    private string Root => Path.Combine(Path.GetDirectoryName(Path.GetFullPath(database.Path))!, "market-orders");
+    internal string Root => Path.Combine(Path.GetDirectoryName(Path.GetFullPath(database.Path))!, "market-orders");
 
-    public LiveMarketSnapshotManifest ReadManifest()
+    public LiveMarketSnapshotManifest ReadManifest() => ReadManifest(Root);
+
+    internal LiveMarketSnapshotManifest ReadManifest(string root)
     {
-        using var stream = File.OpenRead(Path.Combine(Root, "manifest.json"));
+        using FileStream stream = new(
+            Path.Combine(root, "manifest.json"),
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read | FileShare.Delete
+        );
         var manifest =
             JsonSerializer.Deserialize<LiveMarketSnapshotManifest>(stream, JsonSerializerOptions.Web)
             ?? throw new InvalidDataException("Invalid live market manifest.");
@@ -28,7 +35,7 @@ public sealed class LiveMarketSnapshotCatalog(WorldDatabase database)
             || manifest.Regions is null
             || manifest.ExcludedOrders is null
             || manifest.Regions.Length == 0
-            || manifest.Regions.Any(region => region.RegionId <= 0 || region.Orders <= 0 || region.Sha256.Length != 64)
+            || manifest.Regions.Any(region => region is null || region.RegionId <= 0 || region.Orders <= 0 || region.Sha256?.Length != 64)
             || manifest.Regions.Select(region => region.RegionId).Distinct().Count() != manifest.Regions.Length
             || manifest.Regions.Sum(region => (long)region.Orders) != manifest.ImportedOrders
             || manifest.CapturedAt == default
@@ -38,7 +45,7 @@ public sealed class LiveMarketSnapshotCatalog(WorldDatabase database)
         }
         foreach (var region in manifest.Regions)
         {
-            if (!File.Exists(RegionPath(manifest, region.RegionId)))
+            if (!File.Exists(RegionPath(root, manifest, region.RegionId)))
             {
                 throw new InvalidDataException("The live market snapshot is missing a region file.");
             }
@@ -51,8 +58,8 @@ public sealed class LiveMarketSnapshotCatalog(WorldDatabase database)
     internal IReadOnlyDictionary<int, LiveMarketOrder[]> Region(int regionId) =>
         _regions.GetOrAdd(regionId, id => new(() => LoadRegion(id))).Value;
 
-    private string RegionPath(LiveMarketSnapshotManifest manifest, int regionId) =>
-        Path.Combine(Root, manifest.Generation, $"{regionId}.json.gz");
+    private static string RegionPath(string root, LiveMarketSnapshotManifest manifest, int regionId) =>
+        Path.Combine(root, manifest.Generation, $"{regionId}.json.gz");
 
     private IReadOnlyDictionary<int, LiveMarketOrder[]> LoadRegion(int regionId)
     {
@@ -61,7 +68,7 @@ public sealed class LiveMarketSnapshotCatalog(WorldDatabase database)
         {
             return new Dictionary<int, LiveMarketOrder[]>();
         }
-        using var file = File.OpenRead(RegionPath(Manifest, regionId));
+        using var file = File.OpenRead(RegionPath(Root, Manifest, regionId));
         if (!Convert.ToHexString(SHA256.HashData(file)).Equals(descriptor.Sha256, StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidDataException("Live market region checksum does not match its manifest.");

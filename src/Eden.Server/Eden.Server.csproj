@@ -27,6 +27,12 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.0" />
     <Content Include="../../tools/mod_client_loader.py" Link="skill-tools/mod_client_loader.py" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="../../tools/Build-SkillClient.py" Link="skill-tools/Build-SkillClient.py" CopyToOutputDirectory="PreserveNewest" />
+    <Content
+      Include="../../tools/Import-LiveMarket.py"
+      Link="data-tools/Import-LiveMarket.py"
+      CopyToOutputDirectory="PreserveNewest"
+      CopyToPublishDirectory="PreserveNewest"
+    />
     <EmbeddedResource Include="Modding/Client/automining.py" LogicalName="Eden.AutoMining.Client" />
     <Content
       Include="../../tools/skill_client_overlay.py"

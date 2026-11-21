@@ -100,6 +100,9 @@ internal static class AdministrationHost
         );
         builder.Services.AddSingleton(worldServices.GetRequiredService<IWorldConfiguration>());
         builder.Services.AddSingleton(worldServices.GetRequiredService<WorldDatabase>());
+        builder.Services.AddSingleton<OptionalDataImporter>();
+        builder.Services.AddSingleton<OptionalDataImports>();
+        builder.Services.AddHostedService(provider => provider.GetRequiredService<OptionalDataImports>());
         builder.Services.AddSingleton(worldServices.GetRequiredService<CatalogProvider>());
         builder.Services.AddSingleton(provider => new CatalogBrowser(provider.GetRequiredService<CatalogProvider>()));
         builder.Services.AddScoped<AdministrationOperations>();
@@ -292,6 +295,24 @@ internal static class AdministrationHost
             (HttpContext context, IAntiforgery antiforgery) => new { token = antiforgery.GetAndStoreTokens(context).RequestToken }
         );
         api.MapGet("/performance", (ClaimsPrincipal user, AdministrationOperations operations) => operations.Performance(user));
+        api.MapPost(
+            "/optional-data/{dataset}",
+            async (string dataset, ClaimsPrincipal user, AdministrationOperations operations) =>
+            {
+                var source = dataset switch
+                {
+                    "market" => OptionalDataset.Market,
+                    "traffic" => OptionalDataset.Traffic,
+                    _ => (OptionalDataset?)null,
+                };
+                if (source is null)
+                {
+                    return Results.NotFound();
+                }
+                await operations.StartOptionalDataImport(user, source.Value);
+                return Results.Redirect("/optional-data");
+            }
+        );
         api.MapPost(
             "/world/wipe",
             async (HttpContext context, AdministrationOperations operations, WorldWipeRequest wipe) =>

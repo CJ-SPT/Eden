@@ -9,6 +9,7 @@ using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Market;
 using Eden.Protocol.Serialization;
 using Eden.Server;
+using Eden.Server.Administration;
 using Eden.World.Catalog;
 using Eden.World.Configuration;
 using Eden.World.Runtime;
@@ -95,14 +96,25 @@ public sealed class StandardMarketTests
     {
         TestClock clock = new();
         using TestWorld fixture = Create(clock);
+        WorldDatabase database = new(fixture.Path);
         long retained;
-        using (var host = ServerServices.Build(new(fixture.Path), clock, liveWorld: true))
+        using (var host = ServerServices.Build(database, clock, liveWorld: true))
         {
-            retained = Assert.Single(host.GetRequiredService<IPilotMarket>().Orders(Pilot, Tritanium), order => order.PriceCents == 100).Id;
+            var active = host.GetRequiredService<IPilotMarket>();
+            retained = Assert.Single(active.Orders(Pilot, Tritanium), order => order.PriceCents == 100).Id;
             await host.GetRequiredService<LiveWorld>().FlushAsync();
+            var snapshot = database.MarketSnapshot;
+            var previous = snapshot.ReadManifest();
+            string staging = Path.Combine(snapshot.Root, "staging");
+            Assert.Throws<DirectoryNotFoundException>(() => OptionalDataImporter.PublishMarketSnapshot(snapshot, staging, default));
+            Assert.Equal(previous.Generation, snapshot.ReadManifest().Generation);
+            clock.AdvanceWallTime(TimeSpan.FromMinutes(30));
+            WriteSnapshot(database, clock, [Order(clock, 1, 125, 7)], staging);
+            OptionalDataImporter.PublishMarketSnapshot(snapshot, staging, default);
+            Assert.NotEqual(previous.Generation, snapshot.ReadManifest().Generation);
+            Assert.True(Directory.Exists(Path.Combine(snapshot.Root, previous.Generation)));
+            Assert.Contains(active.Orders(Pilot, Tritanium), order => order.Id == retained && order.PriceCents == 100);
         }
-        clock.AdvanceWallTime(TimeSpan.FromMinutes(30));
-        WriteSnapshot(new(fixture.Path), clock, [Order(clock, 1, 125, 7)]);
         using var reopened = ServerServices.Build(new(fixture.Path), clock, liveWorld: true);
         var market = reopened.GetRequiredService<IPilotMarket>();
         var only = Assert.Single(market.Orders(Pilot, Tritanium));
@@ -282,10 +294,10 @@ public sealed class StandardMarketTests
     private static LiveMarketOrder Order(TestClock clock, long id, long price, int quantity) =>
         new(id, Hub, SystemId, Region, Tritanium, false, price, quantity, quantity, clock.Now, 90, -1, 1);
 
-    private static void WriteSnapshot(WorldDatabase database, TestClock clock, LiveMarketOrder[] orders)
+    private static void WriteSnapshot(WorldDatabase database, TestClock clock, LiveMarketOrder[] orders, string? output = null)
     {
         string generation = Guid.NewGuid().ToString("N");
-        string root = Path.Combine(Path.GetDirectoryName(database.Path)!, "market-orders");
+        string root = output ?? database.MarketSnapshot.Root;
         Directory.CreateDirectory(Path.Combine(root, generation));
         string regionPath = Path.Combine(root, generation, $"{Region}.json.gz");
         using (var file = File.Create(regionPath))
