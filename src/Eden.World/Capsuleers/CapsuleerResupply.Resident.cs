@@ -295,26 +295,26 @@ internal sealed partial class CapsuleerResupply
                     remaining -= quantity;
                 }
             }
-            if (!need.Drone && need.TypeId == CapsuleerAmmunitionSupplyRules.ChargeType)
+            int capacity = Capacity(need, remaining);
+            if (
+                CapsuleerIndustry.IssueReserve(world, catalog, pilotId, pilot.CorporationId, ship.StationId, need.TypeId, capacity) is
+                { } reserve
+            )
             {
-                int capacity = Capacity(need, remaining);
-                if (CapsuleerIndustry.IssueReserve(world, catalog, pilotId, pilot.CorporationId, ship.StationId, capacity) is { } reserve)
-                {
-                    Load(
-                        world,
-                        catalog,
-                        pilotId,
-                        ship.Id,
-                        ship.StationId,
-                        reserve.ItemId,
-                        reserve.Quantity,
-                        need.Drone,
-                        now,
-                        CapacityAttributes()
-                    );
-                    inventoryChanged = true;
-                    remaining -= reserve.Quantity;
-                }
+                Load(
+                    world,
+                    catalog,
+                    pilotId,
+                    ship.Id,
+                    ship.StationId,
+                    reserve.ItemId,
+                    reserve.Quantity,
+                    need.Drone,
+                    now,
+                    CapacityAttributes()
+                );
+                inventoryChanged = true;
+                remaining -= reserve.Quantity;
             }
             long limit = Limit(need.TypeId);
             if (remaining <= 0 || limit <= 0)

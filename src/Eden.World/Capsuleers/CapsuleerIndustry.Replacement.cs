@@ -40,7 +40,6 @@ internal sealed partial class CapsuleerIndustry
             docked.Position is not null
             || docked.InStructure
             || docked.ShipGroupId != FleetDefinitions.CapsuleGroup
-            || !StationCapabilities.Has(catalog, docked.OperationId, StationService.Market)
             || Employer(world, pilotId, docked.CorpId) is not { } corporation
             || world.Filter<ShipLoss>(loss => loss.CapsuleId == docked.ShipId).FirstOrDefault(loss => loss.PilotId == pilotId)
                 is not { } loss
@@ -124,6 +123,7 @@ internal sealed partial class CapsuleerIndustry
                 station,
                 part,
                 depot[part.TypeId],
+                StationCapabilities.Has(catalog, docked.OperationId, StationService.Market),
                 recoveryOrders
             );
         }
@@ -193,6 +193,16 @@ internal sealed partial class CapsuleerIndustry
             }
             var missing = MissingParts(parts, hangar);
             var toBuy = MissingParts(missing, depot);
+            if (
+                toBuy.Length > 0
+                && (
+                    !StationCapabilities.Has(catalog, docked.OperationId, StationService.Market)
+                    || toBuy.Any(part => !IsMarketSupply(catalog, part.TypeId))
+                )
+            )
+            {
+                continue;
+            }
             var asks = market
                 .SupplyOrders(world, catalog, docked.StationId, toBuy.Select(part => part.TypeId).ToArray(), docked.PilotId, corporation.Id)
                 .ToLookup(order => order.TypeId);
@@ -200,7 +210,10 @@ internal sealed partial class CapsuleerIndustry
             foreach (var part in toBuy)
             {
                 long limit = Rules.LimitPrice(ReferencePrice(catalog, part.TypeId));
-                if (QuoteInput(asks[part.TypeId].Where(order => order.PriceCents <= limit), part.TypeId, part.Quantity) is { } quote)
+                if (
+                    QuoteInput(asks[part.TypeId].Where(order => limit == 0 || order.PriceCents <= limit), part.TypeId, part.Quantity) is
+                    { } quote
+                )
                 {
                     purchases.Add(quote);
                 }
@@ -267,29 +280,31 @@ internal sealed partial class CapsuleerIndustry
         int station,
         ReplacementPart part,
         IEnumerable<OwnedItem> depot,
+        bool marketAvailable,
         List<long> recoveryOrders
     )
     {
         int remaining = TransferReplacementStock(world, catalog, pilot, station, part, depot);
         long price = Rules.LimitPrice(ReferencePrice(catalog, part.TypeId));
-        if (remaining == 0 || price <= 0)
+        if (remaining == 0 || !marketAvailable || !IsMarketSupply(catalog, part.TypeId))
         {
             return false;
         }
 
         long affordable = corporation.BalanceCents / remaining;
         var asks = market.SupplyOrders(world, catalog, station, [part.TypeId], pilot, corporation.Id);
-        if (QuoteInput(asks.Where(order => order.PriceCents <= Math.Min(price, affordable)), part.TypeId, remaining) is { } quote)
+        long limit = price > 0 ? Math.Min(price, affordable) : affordable / CapsuleerRegionalStockRules.BudgetDivisor;
+        if (QuoteInput(asks.Where(order => order.PriceCents <= limit), part.TypeId, remaining) is { } quote)
         {
             var bought = market.BuyCorporationStock(world, catalog, pilot, station, corporation, [quote]);
-            if (bought.Trades.Sum(trade => (long)trade.Quantity) != remaining)
+            if (bought.Trades.Sum(trade => (long)trade.Quantity) != quote.Quantity)
             {
                 throw new InvalidDataException("Replacement offers changed before purchase.");
             }
             return true;
         }
 
-        if (price > affordable || !PilotMarketStore.HasSupplyListingSlot(world, catalog, pilot))
+        if (price <= 0 || price > affordable || !PilotMarketStore.HasSupplyListingSlot(world, catalog, pilot))
         {
             return false;
         }

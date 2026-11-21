@@ -25,15 +25,37 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerIndustry
 {
-    private static readonly CatalogDefinition<IReadOnlyDictionary<int, ReactionRecipe>> s_compositeProducts = new(
-        "capsuleers/composite-products",
+    private static readonly CatalogDefinition<ILookup<(StructureService, int), ReactionRecipe>> s_reactionProducts = new(
+        "capsuleer-reactions-by-service-and-product",
         (catalog, _) =>
-            ReactionCatalog
-                .Recipes(catalog)
-                .Values.Where(recipe => recipe.Service == StructureService.CompositeReactions)
-                .GroupBy(recipe => recipe.Output)
-                .ToDictionary(group => group.Key, group => group.MinBy(recipe => recipe.Formula)!)
+            ReactionCatalog.Recipes(catalog).Values.OrderBy(recipe => recipe.Formula).ToLookup(recipe => (recipe.Service, recipe.Output))
     );
+
+    private static FactoryMoonSupply? FindReactionSupply(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        DockedPilot factory,
+        FactorySupplyRequest request
+    )
+    {
+        var recipes = catalog.Definitions.GlobalDefinition(s_reactionProducts);
+        foreach (var service in recipes.Select(group => group.Key.Item1).Distinct())
+        {
+            var materials = request
+                .Materials.Where(need =>
+                    recipes.Contains((service, need.TypeId))
+                    && ReferencePrice(catalog, need.TypeId) is > 0 and long price
+                    && price <= need.MaximumUnitPriceCents
+                )
+                .Select(need => new FactoryMoonMaterial(need.TypeId, need.PlannedUnits))
+                .ToArray();
+            if (materials.Length > 0 && LocateReactionSupply(world, catalog, factory, materials, service, true) is { } supply)
+            {
+                return supply;
+            }
+        }
+        return null;
+    }
 
     private static FactoryMoonSupply? FindMoonSupply(
         EconomyTransaction world,
@@ -44,7 +66,7 @@ internal sealed partial class CapsuleerIndustry
     )
     {
         var recipes = catalog.Definitions.GlobalDefinition(s_recipesByProduct);
-        var reactionProducts = catalog.Definitions.GlobalDefinition(s_compositeProducts);
+        var reactionProducts = catalog.Definitions.GlobalDefinition(s_reactionProducts);
         var materials = s_minerTwoReactionComponents
             .Where(missing.ContainsKey)
             .SelectMany(type =>
@@ -54,7 +76,7 @@ internal sealed partial class CapsuleerIndustry
                         IndustryMaterials.Calculate(recipe.Materials, (int)Math.Ceiling((double)missing[type] / recipe.OutputQuantity))
                     )
             )
-            .Where(material => reactionProducts.ContainsKey(material.Key))
+            .Where(material => reactionProducts.Contains((StructureService.CompositeReactions, material.Key)))
             .GroupBy(material => material.Key)
             .Select(group => new FactoryMoonMaterial(
                 group.Key,
@@ -62,10 +84,20 @@ internal sealed partial class CapsuleerIndustry
             ))
             .Where(material => material.Quantity > 0)
             .ToArray();
-        if (materials.Length == 0)
-        {
-            return null;
-        }
+        return materials.Length == 0
+            ? null
+            : LocateReactionSupply(world, catalog, factory, materials, StructureService.CompositeReactions, false);
+    }
+
+    private static FactoryMoonSupply? LocateReactionSupply(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        DockedPilot factory,
+        FactoryMoonMaterial[] materials,
+        StructureService reactor,
+        bool existingServices
+    )
+    {
         foreach (
             var structure in world
                 .Filter<SavedStructure>(structure => structure.CorporationId == factory.CorpId)
@@ -84,7 +116,11 @@ internal sealed partial class CapsuleerIndustry
                 .AsEnumerable()
                 .Select(service => world.Set<OwnedItem>().Find(service.ItemId)?.TypeId)
                 .ToHashSet();
-            if (s_refineryServices.Any(type => !services.Contains(type)))
+            if (
+                existingServices
+                    ? !PilotStructureStore.Snapshot(world, catalog, structure).Services.Contains(reactor)
+                    : s_refineryServices.Any(type => !services.Contains(type))
+            )
             {
                 continue;
             }
@@ -113,7 +149,23 @@ internal sealed partial class CapsuleerIndustry
                         && MoonRoute(station.Id, factory.StationId) is not null
                     )
                     {
-                        return new(structure.Id, member.Id, station.Id, materials);
+                        var supply = new FactoryMoonSupply(structure.Id, member.Id, station.Id, materials)
+                        {
+                            Service = reactor,
+                            UseExistingServices = existingServices,
+                        };
+                        if (
+                            !existingServices
+                            || PlanMoonInputs(catalog, supply, Hangar(world, member.Id, station.Id), Hangar(world, member.Id, structure.Id))
+                                .Formulas.All(formula =>
+                                    ReactionCatalog
+                                        .Recipes(catalog)[formula]
+                                        .Skills.All(skill => PilotSkillReader.Level(world, catalog, member.Id, skill.TypeId) >= skill.Level)
+                                )
+                        )
+                        {
+                            return supply;
+                        }
                     }
                 }
             }
@@ -243,7 +295,7 @@ internal sealed partial class CapsuleerIndustry
         OwnedItem[] structure
     )
     {
-        var reactions = catalog.Definitions.GlobalDefinition(s_compositeProducts);
+        var reactions = catalog.Definitions.GlobalDefinition(s_reactionProducts);
         var stock = station
             .Concat(structure)
             .Where(item => !item.Singleton)
@@ -267,7 +319,7 @@ internal sealed partial class CapsuleerIndustry
             {
                 return;
             }
-            if (!reactions.TryGetValue(type, out var recipe) || !ancestry.Add(type))
+            if (reactions[(supply.Service, type)].FirstOrDefault() is not { } recipe || !ancestry.Add(type))
             {
                 inputs[type] = checked(inputs.GetValueOrDefault(type) + missing);
                 return;
@@ -315,17 +367,19 @@ internal sealed partial class CapsuleerIndustry
         }
         var profile = StructureCatalog.Require(catalog, structure.TypeId);
         var site = new MoonRefinerySite(supply.StationId, structure.MoonId!.Value);
-        var service = NextRefineryWork(
-            world,
-            catalog,
-            pilot,
-            site,
-            structure,
-            profile,
-            profile.CoreTypeId!.Value,
-            now,
-            restockFracturedField: !CanRunComposite(world, catalog, pilot, structure, StructureService.CompositeReactions)
-        );
+        var service = supply.UseExistingServices
+            ? null
+            : NextRefineryWork(
+                world,
+                catalog,
+                pilot,
+                site,
+                structure,
+                profile,
+                profile.CoreTypeId!.Value,
+                now,
+                restockFracturedField: !CanRunReaction(world, catalog, pilot, structure, StructureService.CompositeReactions)
+            );
         if (
             service is { Work: RefineryWork.StartExtraction or RefineryWork.OnlineServices }
             || service is { Work: RefineryWork.Fuel } && Quantity(stationStock, service.ItemTypeId) >= service.Quantity
@@ -334,7 +388,7 @@ internal sealed partial class CapsuleerIndustry
             purchases = new(corporation.Id, pilot.StationId, null, []) { Refinery = service };
             return false;
         }
-        foreach (int formula in plan.Formulas)
+        foreach (int formula in supply.UseExistingServices ? [] : plan.Formulas)
         {
             foreach (var skill in ReactionCatalog.Recipes(catalog)[formula].Skills)
             {
@@ -348,7 +402,9 @@ internal sealed partial class CapsuleerIndustry
             .SelectMany(entry => catalog.Read(CatalogData.Client.Typematerials, (long)entry.TypeId)?.Materials ?? [])
             .Select(material => material.MaterialTypeID)
             .ToHashSet();
-        var inputs = plan.Inputs.Where(material => !moonInputs.Contains(material.TypeId));
+        var inputs = plan.Inputs.Where(material =>
+            supply.Service != StructureService.CompositeReactions || !moonInputs.Contains(material.TypeId)
+        );
         if (service is { Work: RefineryWork.Fuel })
         {
             int missing = service.Quantity - (int)Quantity(stationStock, service.ItemTypeId);
@@ -364,6 +420,22 @@ internal sealed partial class CapsuleerIndustry
         {
             int target = checked(needed.Quantity + (int)Quantity(stationStock, needed.TypeId));
             bool fuel = catalog.FittingType(needed.TypeId)?.GroupId == StructureRules.FuelBlockGroup;
+            if (supply.UseExistingServices)
+            {
+                long limit = CapsuleerReplacementRules.LimitPrice(ReferencePrice(catalog, needed.TypeId));
+                if (limit > 0)
+                {
+                    var offers = market.SupplyOrders(world, catalog, pilot.StationId, [needed.TypeId], pilot.PilotId, corporation.Id);
+                    var quote = QuoteInput(offers.Where(order => order.PriceCents <= limit), needed.TypeId, needed.Quantity);
+                    if (quote is not null && (decimal)quote.LimitPriceCents * quote.Quantity <= corporation.BalanceCents)
+                    {
+                        BuyFactoryInputs(world, catalog, pilot.PilotId, pilot.StationId, corporation, [quote]);
+                        return true;
+                    }
+                    needs.Add(new(needed.TypeId, target, target, needed.Quantity, limit));
+                }
+                continue;
+            }
             var harvest = fuel ? MissingIceIngredients(catalog, stationStock, needed.TypeId, target, harvestable) : [];
             if (
                 harvest.Count > 0

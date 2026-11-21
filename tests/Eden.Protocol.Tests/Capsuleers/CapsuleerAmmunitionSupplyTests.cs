@@ -2913,7 +2913,12 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
             }
         );
         world.Set<PilotWallet>().Find(ceo)!.Cents += CorporationRules.CreationFeeCents;
-        int id = PlayerCorporationStore.Create(world, catalog, ceo, PlayerCorporationTests.Details(name, ticker), now).Corporation.Id;
+        // Supply replays reconcile their treasuries independently of automatic recruitment purchases.
+        var details = PlayerCorporationTests.Details(name, ticker) with
+        {
+            ApplicationsEnabled = false,
+        };
+        int id = PlayerCorporationStore.Create(world, catalog, ceo, details, now).Corporation.Id;
         var saved = world.Set<SavedCorporation>().Find(id)!;
         saved.CapsuleerFoundingSystemId = saved.SystemId;
         return id;

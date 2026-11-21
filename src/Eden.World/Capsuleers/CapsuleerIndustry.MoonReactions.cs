@@ -8,6 +8,7 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Structures;
 using Eden.World.Catalog;
+using Eden.World.Economy;
 using Eden.World.Industry;
 using Eden.World.Mining;
 using Eden.World.Reprocessing;
@@ -133,7 +134,7 @@ internal sealed partial class CapsuleerIndustry
 
     private sealed record MoonReactionBatch(ReactionRecipe Recipe, OwnedItem Formula, CapsuleerFactoryCargo[] Load, bool Assigned);
 
-    private static bool CanRunComposite(
+    private static bool CanRunReaction(
         WorldAction world,
         CatalogDbContext catalog,
         DockedPilot pilot,
@@ -142,7 +143,6 @@ internal sealed partial class CapsuleerIndustry
     ) =>
         structure.CorporationId == pilot.CorpId
         && OwnedMoonRefinery(structure)
-        && service == StructureService.CompositeReactions
         && ManufacturingCatalog.Security(catalog, structure.SystemId) < StructureRules.HighSecurityBoundary
         && PilotStructureStore.Snapshot(world, catalog, structure).Services.Contains(service);
 
@@ -155,14 +155,15 @@ internal sealed partial class CapsuleerIndustry
         long now
     )
     {
-        if (!CanRunComposite(world, catalog, pilot, structure, StructureService.CompositeReactions))
+        var supply = AssignedMoonSupply(world, pilot, now);
+        var service = supply?.StructureId == structure.Id ? supply.Service : StructureService.CompositeReactions;
+        if (!CanRunReaction(world, catalog, pilot, structure, service))
         {
             return null;
         }
         var feed = catalog.Definitions.GlobalDefinition(s_moonReactionFeed);
         var recipes = ReactionCatalog.Recipes(catalog);
         var local = Hangar(world, pilot.PilotId, structure.Id);
-        var supply = AssignedMoonSupply(world, pilot, now);
         var station = supply is not null && pilot.InStructure ? Hangar(world, pilot.PilotId, supply.StationId) : origin;
         var formulas = supply?.StructureId == structure.Id ? PlanMoonInputs(catalog, supply, station, local).Formulas : null;
         var items = local.Concat(origin).ToLookup(item => item.TypeId);
@@ -171,7 +172,7 @@ internal sealed partial class CapsuleerIndustry
             if (
                 formula.BlueprintRuns >= 0
                 || !recipes.TryGetValue(formula.TypeId, out var recipe)
-                || recipe.Service != StructureService.CompositeReactions
+                || recipe.Service != service
                 || formulas is null
                     && (
                         !recipe.Materials.Any(material => feed.ContainsKey((int)material.TypeId!.Value))
@@ -206,6 +207,10 @@ internal sealed partial class CapsuleerIndustry
             return false;
         }
         int formula = batch.Formula.TypeId;
+        if (EconomicStore.Enabled(world) && EconomicStore.AdjustedPrice(world, formula) <= 0)
+        {
+            return false;
+        }
         var charge = PilotIndustryStore.ReactionCharge(
             world,
             pilot.PilotId,

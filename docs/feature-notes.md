@@ -19,7 +19,8 @@
   Advantage, and contest infrastructure hubs in both empire warzones. Run militia missions, earn ranks and LP
   from opposing-militia combat, and compare kills and victory points in the dashboard. [Faction Warfare](protocol/faction-warfare.md)
 - **Simulated capsuleers.** Encounter NPC pilots that mine, haul goods, form corporations, and take part in regional conflicts.
-  [Capsuleer population](capsuleer-population.md) ·
+  Corporations can build and buy reserves based on their pilots' current and lost equipment.
+  [Capsuleer population](capsuleer-population.md) · [Fleet supply](protocol/capsuleers.md#catalog-driven-fleet-supply-and-production) ·
   [Regional conflicts](protocol/capsuleers.md#regional-bot-conflicts--november-17-2026)
 
 Counts, schema versions, example pilots, fixture populations and native observations describe the recorded implementation. Read the linked follow-ups before treating an older example as current behavior. Automated support and historical client observations are distinct; native presentation remains unverified where stated.

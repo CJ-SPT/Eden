@@ -2,7 +2,68 @@
 
 [Protocol index](../protocol.md)
 
+## Catalog-driven fleet supply and production
+
+Headquarters calculates reserves from the largest active fit per item and the combined shortages of docked
+recovery fits. The kit comes from the hull, slots, magazines or compatible cargo charges, and drone bay. A loss
+uses the saved manifest and normal fitting and skill checks. Marketable parts can drive purchases. Pilots can
+also fit published parts they already own or receive from their corporation.
+
+The planner deducts depot stock, outstanding local bids, and manufacturing output due at the depot by quantity.
+Eligible industrials can deliver to headquarters or a stranded pilot's station. The planner checks cargo room,
+fees, treasury reserves, and gate access. After an empty or partial fill, the next review considers other suppliers
+first. The existing bid and freight checkpoints cover escrow, partial fills, restart, and cargo loss.
+
+Funded orders can drive catalog manufacturing, copying and invention of a selected result, and manufacturing
+of missing components. Operators use native skills, facilities, and owned licenses. The market can supply
+source originals and relics. Factories can also build affordable reserves for active fits from blueprints they
+already own. A profitable run can fill a small order and retain the excess in corporate stock.
+
+Manufacturing shortages can use qualified operators, existing online reactors for the catalog formulas, and
+the existing freight loop. Upstream materials, blueprints, and reactor access vary by location. Player-structure
+manufacturing uses dedicated staging paths. Inputs from exploration, salvage, and gas harvesting still depend
+on available supply.
+
+Build 3662168 lists the Small Shield Booster II invention path under blueprint 1032 and includes the Tech I
+booster in blueprint 1033's materials. EVE.js indexes recipes by blueprint in
+`server/src/services/industry/industryStaticData.js`
+(SHA-256 `19D0D5692F68D6E19570174F79AC2B81FEEC24B2305D93DAB19F7A90D0F1B567`).
+[CCP manufacturing](https://support.eveonline.com/hc/en-us/articles/203210292-Manufacturing) ·
+[CCP invention](https://support.eveonline.com/hc/en-us/articles/203210642-Invention) ·
+[CCP market orders](https://support.eveonline.com/hc/en-us/articles/203218932-Buy-and-Sell-Orders)
+
+### Automated validation
+
+`CatalogDemandCopiesAndInventsThenManufacturesAMissingComponentAcrossRestart` copies and invents a Small Shield
+Booster II license, reopens with the science job on disk, builds the Tech I component, sells one unit from a
+two-unit run, and produces a spare for an operating fleet. The catalog fixture controls material amounts, job times,
+and invention chance. `BotFundsRegionalKitOrdersAndHaulsManufacturedStockAcrossRestarts` covers full and partial
+Merlin-fit deliveries and a Venture fit with two mining lasers and a damage control.
+
+The solution build passed without warnings in 17.88 seconds. The following focused selection passed 149 cases
+in 132.18 seconds including runner overhead. Both Python policy suites passed 17 checks in total. Formatting,
+line width, and documentation checks passed.
+
+```text
+(FullyQualifiedName~CapsuleerAmmunitionSupplyTests|FullyQualifiedName~CapsuleerSupplyTests|FullyQualifiedName~ScienceJobTests|FullyQualifiedName~ReactionJobTests|FullyQualifiedName~ProductionCatalogTests|FullyQualifiedName~MissileFittingTests|FullyQualifiedName~AmmunitionTests)&FullyQualifiedName!~BotsMineAndHaulMercoxitToTheMinerTwoFactoryAcrossRestarts
+```
+
+The Mercoxit replay was excluded after it timed out at the same asteroid belt step on both this branch and
+unmodified `be9e571f`. The focused cases exercise representative items and activity handoffs. Catalog-wide
+production pacing and supply availability on a dedicated server remain unmeasured.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Follow a funded order for a Tech II product from the factory to market settlement. Inspect the destination depot
+after a courier restocks a fleet that recently took losses.
+
 ## Regional procurement for bot corporations
+
+This section records the initial deployment. [Current fleet supply rules](#catalog-driven-fleet-supply-and-production)
 
 An eligible corporate hauler checks its headquarters reserve while docked. A corporation flying a Merlin or
 recovering one from its current capsule's loss record targets one packaged hull, two 75mm Gatling Rail Is and

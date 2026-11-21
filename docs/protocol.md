@@ -683,6 +683,8 @@ resident factory cargo, and manufacturing pauses across logout and restart.
 mining, refining, and hauling cycle after Athanor commissioning.
 [Athanor-to-Miner II chain](protocol/capsuleers.md#athanor-to-miner-ii-chain) records composite dependencies,
 factory freight, and production after bootstrap fuel is exhausted.
+[Catalog-driven fleet supply and production](protocol/capsuleers.md#catalog-driven-fleet-supply-and-production) records
+fit-based procurement, factory prerequisites, and corporate reserves.
 
 | Topic | Coverage |
 | --- | --- |

@@ -14,18 +14,20 @@ internal sealed partial class CapsuleerHauler
         {
             return null;
         }
-        _work = Work with { RegionalStockRetryAt = checked(Now + Rules.ReviewInterval.Ticks) };
-        return CapsuleerIndustry.PlanRegionalStock(world, _operation.Catalog, live, Pilot, avoided, Now);
+        int emptySupplier = Work.RegionalStockEmptySupplier;
+        _work = Work with { RegionalStockRetryAt = checked(Now + Rules.ReviewInterval.Ticks), RegionalStockEmptySupplier = 0 };
+        return CapsuleerIndustry.PlanRegionalStock(world, _operation.Catalog, live, Pilot, avoided, Now, emptySupplier);
     }
 
     private bool HandleRegionalStock(EconomyTransaction world, CorporationSupplyRun run, RegionalStockTrip trip)
     {
         var catalog = _operation.Catalog;
+        int destination = trip.DeliveryStation ?? trip.Headquarters;
         if (Work.Freight is { } freight)
         {
-            if (Pilot.StationId != trip.Headquarters)
+            if (Pilot.StationId != destination)
             {
-                return ContinueFactoryFreight(trip.Headquarters, Rules.MaximumJumps);
+                return ContinueFactoryFreight(destination, Rules.MaximumJumps);
             }
             CapsuleerIndustry.Deliver(world, catalog, Pilot, run, freight);
             _work = Work with { RegionalStockRetryAt = checked(Now + Rules.ReviewInterval.Ticks) };
@@ -53,13 +55,17 @@ internal sealed partial class CapsuleerHauler
             return true;
         }
         _operation.MarketChanged |= ammunitionSupply.CancelRegionalStockBids(world, catalog, bids);
-        var cargo = CapsuleerIndustry.CollectRegionalStock(world, catalog, Pilot, trip.Headquarters, bids);
+        var cargo = CapsuleerIndustry.CollectRegionalStock(world, catalog, Pilot, destination, bids);
         if (cargo is null)
         {
             Wait("Waiting for room in the regional courier's cargo hold.");
             return true;
         }
-        _work = Work with { Freight = cargo };
-        return ContinueFactoryFreight(trip.Headquarters, Rules.MaximumJumps);
+        _work = Work with
+        {
+            Freight = cargo,
+            RegionalStockEmptySupplier = cargo.Stacks.Length == 0 || bids.Any(bid => bid.Remaining > 0) ? trip.Supplier : 0,
+        };
+        return ContinueFactoryFreight(destination, Rules.MaximumJumps);
     }
 }

@@ -49,6 +49,7 @@ public sealed record HaulerProgress(
     public int? HomeDefenseAllianceId { get; init; }
     public long PlanetaryRetryAt { get; init; }
     public long RegionalStockRetryAt { get; init; }
+    public int RegionalStockEmptySupplier { get; init; }
     public long[] RattingLoot { get; init; } = [];
     public RattingProgress? Ratting { get; init; }
     public ResupplyProgress? Resupply { get; init; }

@@ -236,12 +236,14 @@ internal sealed partial class CapsuleerIndustry(
             }
             var bid = demand.FirstOrDefault(order => order.Remaining >= stock.Quantity) ?? demand.FirstOrDefault();
             if (
-                jobs.Any(job =>
+                (bid is not null || stock.TypeId == Rules.ChargeType || stock.TypeId == CapsuleerMinerTwoRules.Module)
+                && jobs.Any(job =>
                     job.StationId == location
                     && job.ProductTypeId == stock.TypeId
                     && job.OutputFlagId == CorporationStorageRules.MarketDeliveriesFlag
                     && job.Status == IndustryJobStatus.Delivered
-                ) && ListStock(world, catalog, corporation, pilot, stock, bid, now)
+                )
+                && ListStock(world, catalog, corporation, pilot, stock, bid, now)
             )
             {
                 return true;
@@ -396,7 +398,7 @@ internal sealed partial class CapsuleerIndustry(
         long now
     )
     {
-        int quantity = stock.Quantity;
+        int quantity = Math.Min(stock.Quantity, bid?.Remaining ?? stock.Quantity);
         long reference = bid?.PriceCents ?? ReferencePrice(catalog, stock.TypeId);
         long minimum = bid is not null ? 1 : (PersonalMarketRules.MinimumBrokerFeeCents * 2 + quantity - 1) / quantity;
         long price = Math.Clamp(reference, minimum, (long)(MarketDefinitions.MaximumOrderPrice * MarketDefinitions.CentsPerIsk));

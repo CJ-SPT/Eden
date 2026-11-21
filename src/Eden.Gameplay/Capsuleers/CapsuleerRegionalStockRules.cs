@@ -12,6 +12,7 @@ public static class CapsuleerRegionalStockRules
 
 public sealed record RegionalStockTrip(int Headquarters, int Supplier, MarketPurchase[] Purchases)
 {
+    public int? DeliveryStation { get; init; }
     public long[]? OrderIds { get; init; }
     public long BidDeadline { get; init; }
 }

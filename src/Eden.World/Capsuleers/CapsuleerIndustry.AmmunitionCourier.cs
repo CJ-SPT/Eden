@@ -151,11 +151,25 @@ internal sealed partial class CapsuleerIndustry
     private static FreightStack StowPurchased(EconomyTransaction world, DockedPilot courier, int type, int quantity)
     {
         // Move only the newly purchased units. Keep them in a distinct ordinary ship cargo stack for loss and checkpoint handling.
-        var stock = Hangar(world, courier.PilotId, courier.StationId).First(item => item.TypeId == type && !item.Singleton);
-        stock.Quantity -= quantity;
-        if (stock.Quantity == 0)
+        var stocks = Hangar(world, courier.PilotId, courier.StationId).Where(item => item.TypeId == type && !item.Singleton);
+        int remaining = quantity;
+        foreach (var stock in stocks)
         {
-            world.Remove(stock);
+            int moved = Math.Min(stock.Quantity, remaining);
+            stock.Quantity -= moved;
+            remaining -= moved;
+            if (stock.Quantity == 0)
+            {
+                world.Remove(stock);
+            }
+            if (remaining == 0)
+            {
+                break;
+            }
+        }
+        if (remaining != 0)
+        {
+            throw new InvalidDataException("Purchased cargo is no longer in the courier's hangar.");
         }
         var cargo = world
             .Add(
@@ -236,6 +250,7 @@ internal sealed partial class CapsuleerIndustry
         long pilotId,
         int corporationId,
         int station,
+        int type,
         int quantity
     )
     {
@@ -243,7 +258,7 @@ internal sealed partial class CapsuleerIndustry
         {
             return null;
         }
-        var stock = DepotStock(world, corporationId, station).FirstOrDefault();
+        var stock = DepotStacks(world, corporationId, station).Where(item => item.TypeId == type).MinBy(item => item.Id);
         if (stock is null)
         {
             return null;
@@ -254,7 +269,7 @@ internal sealed partial class CapsuleerIndustry
         {
             world.Remove(stock);
         }
-        var moved = InventoryPersistence.MergeOutput(world, catalog, pilotId, station, (int)InventoryFlag.Hangar, Rules.ChargeType, units);
-        return new(moved.Item.Id, Rules.ChargeType, units);
+        var moved = InventoryPersistence.MergeOutput(world, catalog, pilotId, station, (int)InventoryFlag.Hangar, type, units);
+        return new(moved.Item.Id, type, units);
     }
 }

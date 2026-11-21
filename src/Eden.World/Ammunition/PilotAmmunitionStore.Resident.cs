@@ -176,6 +176,47 @@ internal sealed partial class PilotAmmunitionStore
         }
     }
 
+    internal static bool CompatibleCharge(CatalogDbContext catalog, int module, int charge)
+    {
+        return catalog.FittingType(module) is not null
+            && catalog.FittingType(charge) is { } type
+            && AmmunitionCatalog.Supported(catalog, charge, type.GroupId)
+            && CompatibleCharge(catalog, module, type.GroupId, Attributes(catalog, charge));
+    }
+
+    private static bool CompatibleCharge(
+        CatalogDbContext catalog,
+        int module,
+        int chargeGroup,
+        IReadOnlyDictionary<DogmaAttributeId, double> chargeAttributes
+    )
+    {
+        var attributes = Attributes(catalog, module);
+        int moduleGroup = catalog.RequireItem(module).GroupId;
+        return chargeGroup is MiningCrystalRules.Group or MiningCrystalRules.MercoxitGroup
+                ? MiningCrystalRules.Compatible(attributes, chargeGroup)
+            : chargeGroup == Eden.Gameplay.Propulsion.InterdictionRules.ProbeGroup
+                ? moduleGroup == Eden.Gameplay.Propulsion.InterdictionRules.LauncherGroup
+                    && attributes.GetValueOrDefault(DogmaAttributeId.ChargeGroup1) == chargeGroup
+            : CommandBurstRules.IsCharge(chargeGroup) ? CommandBurstRules.Compatible(moduleGroup, chargeGroup, attributes)
+            : chargeGroup is ProbeScanRules.ProbeGroup or (int)HoldCargoGroup.SurveyProbe
+                ? attributes.GetValueOrDefault(DogmaAttributeId.ChargeGroup1) == chargeGroup
+                    && ProbeCatalog.Compatible(attributes, chargeAttributes)
+            : AncillaryRepairRules.Kind(moduleGroup) is { } ancillary
+                ? AncillaryRepairRules.Compatible(ancillary, chargeGroup, attributes, chargeAttributes)
+            : RemoteRepairRules.AncillaryKind(moduleGroup) is { } remoteAncillary
+                ? AncillaryRepairRules.Compatible(remoteAncillary, chargeGroup, attributes, chargeAttributes, DogmaAttributeId.ChargeGroup1)
+            : SupportModuleDefinitions.IsScript(chargeGroup)
+                ? SupportModuleDefinitions.CompatibleScript(moduleGroup, chargeGroup, attributes, chargeAttributes)
+            : chargeGroup == CapacitorBoosterDefinitions.ChargeGroup
+                ? attributes.GetValueOrDefault(DogmaAttributeId.ChargeGroup1) == chargeGroup
+            : AreaWeaponRules.IsBomb(chargeGroup) || chargeGroup == AreaWeaponRules.DefenderChargeGroup
+                ? AreaWeaponRules.Compatible(moduleGroup, chargeGroup, attributes)
+            : MissileDefinitions.ChargeGroups.Contains(chargeGroup)
+                ? MissileDefinitions.CompatibleCharge(attributes, chargeGroup, chargeAttributes)
+            : AmmunitionDefinitions.CompatibleTurretCharge(attributes, chargeGroup, chargeAttributes);
+    }
+
     internal static AmmunitionTransfer Load(
         WorldAction world,
         CatalogDbContext catalog,
@@ -241,37 +282,7 @@ internal sealed partial class PilotAmmunitionStore
             {
                 break;
             }
-            var attributes = Attributes(catalog, module.TypeId);
-            int moduleGroup = catalog.RequireItem(module.TypeId).GroupId;
-            bool compatible =
-                chargeType.GroupId is MiningCrystalRules.Group or MiningCrystalRules.MercoxitGroup
-                    ? MiningCrystalRules.Compatible(attributes, chargeType.GroupId)
-                : chargeType.GroupId == Eden.Gameplay.Propulsion.InterdictionRules.ProbeGroup
-                    ? moduleGroup == Eden.Gameplay.Propulsion.InterdictionRules.LauncherGroup
-                        && attributes.GetValueOrDefault(DogmaAttributeId.ChargeGroup1) == chargeType.GroupId
-                : CommandBurstRules.IsCharge(chargeType.GroupId) ? CommandBurstRules.Compatible(moduleGroup, chargeType.GroupId, attributes)
-                : chargeType.GroupId is ProbeScanRules.ProbeGroup or (int)HoldCargoGroup.SurveyProbe
-                    ? attributes.GetValueOrDefault(DogmaAttributeId.ChargeGroup1) == chargeType.GroupId
-                        && ProbeCatalog.Compatible(attributes, chargeAttributes)
-                : AncillaryRepairRules.Kind(moduleGroup) is { } ancillary
-                    ? AncillaryRepairRules.Compatible(ancillary, chargeType.GroupId, attributes, chargeAttributes)
-                : RemoteRepairRules.AncillaryKind(moduleGroup) is { } remoteAncillary
-                    ? AncillaryRepairRules.Compatible(
-                        remoteAncillary,
-                        chargeType.GroupId,
-                        attributes,
-                        chargeAttributes,
-                        DogmaAttributeId.ChargeGroup1
-                    )
-                : script ? SupportModuleDefinitions.CompatibleScript(moduleGroup, chargeType.GroupId, attributes, chargeAttributes)
-                : chargeType.GroupId == CapacitorBoosterDefinitions.ChargeGroup
-                    ? attributes.GetValueOrDefault(DogmaAttributeId.ChargeGroup1) == chargeType.GroupId
-                : AreaWeaponRules.IsBomb(chargeType.GroupId) || chargeType.GroupId == AreaWeaponRules.DefenderChargeGroup
-                    ? AreaWeaponRules.Compatible(moduleGroup, chargeType.GroupId, attributes)
-                : MissileDefinitions.ChargeGroups.Contains(chargeType.GroupId)
-                    ? MissileDefinitions.CompatibleCharge(attributes, chargeType.GroupId, chargeAttributes)
-                : AmmunitionDefinitions.CompatibleTurretCharge(attributes, chargeType.GroupId, chargeAttributes);
-            if (!compatible)
+            if (!CompatibleCharge(catalog, module.TypeId, chargeType.GroupId, chargeAttributes))
             {
                 throw new InvalidDataException("The ammunition group or size does not match the weapon.");
             }

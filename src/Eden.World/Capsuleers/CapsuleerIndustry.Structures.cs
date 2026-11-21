@@ -119,7 +119,7 @@ internal sealed partial class CapsuleerIndustry
         job.Activity == IndustryActivity.Manufacturing && CanMake(world, catalog, pilot, structure, job.ProductTypeId)
         || job.Activity == IndustryActivity.Reaction
             && ReactionCatalog.Recipes(catalog).TryGetValue(job.BlueprintTypeId, out var recipe)
-            && CanRunComposite(world, catalog, pilot, structure, recipe.Service);
+            && CanRunReaction(world, catalog, pilot, structure, recipe.Service);
 
     internal static bool FactoryDeliveryReady(WorldAction world, CatalogDbContext catalog, DockedPilot pilot, long id, long now) =>
         world.Set<SavedStructure>().Find(id) is { } structure

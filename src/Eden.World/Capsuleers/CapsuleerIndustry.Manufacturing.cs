@@ -1,8 +1,10 @@
 using Eden.Data.Catalog;
 using Eden.Data.World.Corporations;
+using Eden.Data.World.Industry;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Industry;
@@ -26,7 +28,12 @@ internal sealed partial class CapsuleerIndustry
             ManufacturingCatalog.Recipes(catalog).Values.OrderBy(recipe => recipe.BlueprintTypeId).ToLookup(recipe => recipe.ProductTypeId)
     );
 
-    internal static void WarmManufacturing(CatalogDbContext catalog) => _ = catalog.Definitions.GlobalDefinition(s_recipesByProduct);
+    internal static void WarmManufacturing(CatalogDbContext catalog)
+    {
+        _ = catalog.Definitions.GlobalDefinition(s_recipesByProduct);
+        _ = catalog.Definitions.GlobalDefinition(s_inventionByBlueprint);
+        _ = catalog.Definitions.GlobalDefinition(s_reactionProducts);
+    }
 
     private static ILookup<int, SavedPersonalOrder> LocalProductionBids(
         WorldAction world,
@@ -64,10 +71,6 @@ internal sealed partial class CapsuleerIndustry
     )
     {
         supply = null;
-        if (bids.Count == 0)
-        {
-            return null;
-        }
         long pilot = operatorPilot.PilotId;
         double? security = catalog.SystemPolitics(operatorPilot.SystemId).Security;
         if (security is null && EconomicStore.Enabled(world))
@@ -76,7 +79,19 @@ internal sealed partial class CapsuleerIndustry
         }
 
         var recipes = catalog.Definitions.GlobalDefinition(s_recipesByProduct);
+        var copies = world
+            .Filter<OwnedItem>(item => item.OwnerId == corporation.Id)
+            .Where(item =>
+                item.LocationId == operatorPilot.StationId
+                && item.FlagId == CorporationStorageRules.MarketDeliveriesFlag
+                && item.Singleton
+                && item.BlueprintRuns > 0
+            )
+            .OrderBy(item => item.Id)
+            .ToArray();
+        var blueprints = hangar.Concat(copies).Where(item => item.BlueprintRuns != 0).ToLookup(item => item.TypeId);
         var inventory = hangar
+            .Where(item => !item.Singleton)
             .GroupBy(item => item.TypeId)
             .ToDictionary(group => group.Key, group => group.Sum(item => (long)item.Quantity));
         var qualifications = new Dictionary<int, int>();
@@ -114,8 +129,8 @@ internal sealed partial class CapsuleerIndustry
             }
             foreach (var recipe in recipes[product].Where(recipe => recipe.Skills.All(skill => Level(skill.TypeId) >= skill.Level)))
             {
-                var blueprint = hangar
-                    .Where(item => item.TypeId == recipe.BlueprintTypeId && item.BlueprintRuns != 0)
+                var blueprint = blueprints[recipe.BlueprintTypeId]
+                    .Where(item => !PilotIndustryStore.IsInstalled(world, item.Id))
                     .OrderBy(item => item.BlueprintRuns >= 0)
                     .ThenByDescending(item => item.MaterialEfficiency)
                     .FirstOrDefault();
@@ -147,11 +162,68 @@ internal sealed partial class CapsuleerIndustry
                         supply = null;
                         return changed;
                     }
-                    supply ??= request;
+                    if (request is not null)
+                    {
+                        var upstream = BuildFactoryInput(
+                            world,
+                            catalog,
+                            operatorPilot,
+                            corporation,
+                            blueprints,
+                            inventory,
+                            recipes,
+                            request,
+                            Level,
+                            security ?? 0,
+                            now,
+                            product
+                        );
+                        if (upstream.HasValue)
+                        {
+                            return upstream;
+                        }
+                        supply ??= request with { MoonSupply = FindReactionSupply(world, catalog, operatorPilot, request) };
+                    }
+                }
+                if (
+                    blueprint is null
+                    && product != CapsuleerMinerTwoRules.Module
+                    && TryInventForDemand(
+                        world,
+                        catalog,
+                        operatorPilot,
+                        corporation,
+                        inventory,
+                        blueprints,
+                        hangar,
+                        recipe,
+                        group,
+                        Level,
+                        security ?? 0,
+                        now
+                    )
+                        is bool invented
+                )
+                {
+                    return invented;
                 }
             }
         }
-        return null;
+        return supply is null
+            ? ProduceFleetReserve(
+                world,
+                catalog,
+                operatorPilot,
+                corporation,
+                blueprints,
+                inventory,
+                recipes,
+                Level,
+                stocked,
+                security ?? 0,
+                now
+            )
+            : null;
     }
 
     private bool? TryStartDemandJob(
@@ -183,24 +255,23 @@ internal sealed partial class CapsuleerIndustry
         var offers = shoppingTypes.Length == 0 ? [] : market.SupplyOrders(world, catalog, station, shoppingTypes, pilot, corporation.Id);
         var asks = offers.ToLookup(order => order.TypeId);
         var blueprintPurchase = blueprint is null ? QuoteInput(asks[recipe.BlueprintTypeId], recipe.BlueprintTypeId, 1) : null;
-        if (blueprint is null && blueprintPurchase is null)
+        if (blueprint is null && blueprintPurchase?.Quantity != 1)
         {
             return null;
         }
         for (int runs = maxRuns; runs > 0; runs--)
         {
             int quantity = runs * recipe.OutputQuantity;
-            var bid = bids.First(order => order.Remaining >= quantity);
-            long maxPrice = long.MaxValue / quantity;
-            long price = Math.Min(bid.PriceCents, maxPrice);
-            long net = PilotMarketStore.EstimatedSupplyProceeds(world, catalog, pilot, station, price, quantity);
-            var charge = EconomicStore.Manufacturing(
-                world,
-                pilot,
-                operatorPilot.SystemId,
-                IndustryMaterials.Calculate(recipe.Materials, runs),
-                security
-            );
+            var bid = bids.FirstOrDefault(order => order.Remaining >= quantity) ?? bids.First();
+            int sale = Math.Min(quantity, bid.Remaining);
+            long price = Math.Min(bid.PriceCents, long.MaxValue / sale);
+            long net = PilotMarketStore.EstimatedSupplyProceeds(world, catalog, pilot, station, price, sale);
+            var baseMaterials = IndustryMaterials.Calculate(recipe.Materials, runs);
+            if (EconomicStore.Enabled(world) && baseMaterials.Keys.Any(type => EconomicStore.AdjustedPrice(world, type) <= 0))
+            {
+                return null;
+            }
+            var charge = EconomicStore.Manufacturing(world, pilot, operatorPilot.SystemId, baseMaterials, security);
             if (net <= charge.TotalCents)
             {
                 continue;
@@ -242,12 +313,12 @@ internal sealed partial class CapsuleerIndustry
             {
                 return false;
             }
-            long broker = PilotMarketStore.SupplyBrokerFee(world, catalog, pilot, station, price, quantity);
+            long broker = PilotMarketStore.SupplyBrokerFee(world, catalog, pilot, station, price, sale);
             long localCost = (long)inputBudget + charge.TotalCents + broker;
             if (shortages.Count != 0)
             {
                 decimal available = Math.Min(net - charge.TotalCents - inputBudget - ownedValue - 1, corporation.BalanceCents - localCost);
-                var demand = new FactorySupplyDemand(bid.Id, bid.PriceCents, quantity);
+                var demand = new FactorySupplyDemand(bid.Id, bid.PriceCents, sale);
                 supply = FactoryRequest(catalog, corporation.Id, station, demand, shortages, inventory, materials, available) ?? supply;
                 continue;
             }
@@ -257,13 +328,10 @@ internal sealed partial class CapsuleerIndustry
             }
             if (purchases.Count != 0)
             {
-                var purchase = market.BuyCorporationStock(world, catalog, pilot, station, corporation, purchases);
-                if (purchase.Trades.Sum(trade => (long)trade.Quantity) != purchases.Sum(request => (long)request.Quantity))
-                {
-                    throw new InvalidDataException("The quoted manufacturing input quantities are no longer available.");
-                }
+                BuyFactoryInputs(world, catalog, pilot, station, corporation, purchases);
             }
             blueprint ??= Hangar(world, pilot, station).First(item => item.TypeId == recipe.BlueprintTypeId && item.BlueprintRuns < 0);
+            TakeFactoryBlueprint(world, corporation, pilot, blueprint);
             if (recipe.Skills.Contains(s_industryQualification))
             {
                 Qualify(world, catalog, pilot, s_industryQualification);

@@ -1,5 +1,6 @@
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Planetary;
+using Eden.Gameplay.Structures;
 
 namespace Eden.Gameplay.Capsuleers;
 
@@ -20,7 +21,7 @@ public static class CapsuleerIndustryRules
         int runLimit = licensedRuns is >= 0
             ? Math.Min(MaximumDemandRuns, licensedRuns.Value)
             : (int)Math.Min(MaximumDemandRuns, Math.Ceiling((double)IndustryDefinitions.MaximumJobSeconds / secondsPerRun));
-        return Math.Min(runLimit, demand / unitsPerRun);
+        return demand > 0 ? Math.Min(runLimit, Math.Max(1, demand / unitsPerRun)) : 0;
     }
 }
 
@@ -52,7 +53,11 @@ public sealed record FactorySupplyShipment(long ManufacturerId, int FactoryStati
         : CapsuleerIndustryRules.MaximumFactorySupplyJumps;
 }
 
-public sealed record FactoryMoonSupply(long StructureId, long OperatorId, int StationId, FactoryMoonMaterial[] Materials);
+public sealed record FactoryMoonSupply(long StructureId, long OperatorId, int StationId, FactoryMoonMaterial[] Materials)
+{
+    public StructureService Service { get; init; } = StructureService.CompositeReactions;
+    public bool UseExistingServices { get; init; }
+}
 
 public sealed record FactoryMoonMaterial(int TypeId, int Quantity);
 

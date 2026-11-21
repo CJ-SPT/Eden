@@ -750,6 +750,7 @@ internal sealed partial class CapsuleerHauler(
                 PlanetaryProduction = previous?.PlanetaryProduction,
                 PlanetaryRetryAt = previous?.PlanetaryRetryAt ?? 0,
                 RegionalStockRetryAt = previous?.RegionalStockRetryAt ?? 0,
+                RegionalStockEmptySupplier = previous?.RegionalStockEmptySupplier ?? 0,
             };
         }
         if (previous is null || previous.ShipId != Pilot.ShipId)

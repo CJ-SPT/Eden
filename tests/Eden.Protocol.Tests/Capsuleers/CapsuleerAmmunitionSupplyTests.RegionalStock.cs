@@ -10,6 +10,7 @@ using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Industry;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
+using Eden.Gameplay.Mining;
 using Eden.Gameplay.Ships;
 using Eden.Protocol.Tests.Industry;
 using Eden.Server;
@@ -32,16 +33,22 @@ namespace Eden.Protocol.Tests.Capsuleers;
 public sealed partial class CapsuleerAmmunitionSupplyTests
 {
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task BotFundsRegionalKitOrdersAndHaulsManufacturedStockAcrossRestarts(bool partialFill)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public async Task BotFundsRegionalKitOrdersAndHaulsManufacturedStockAcrossRestarts(bool partialFill, bool miningFit)
     {
         const int factorySystem = 30000142;
         const long buyerFunds = 100_000_000L * MarketDefinitions.CentsPerIsk;
         const int merlin = (int)TechOneHullType.Merlin;
         const int gun = (int)CombatWeaponType.GatlingRailgun75mm;
         const int personalCharges = 7;
-        var expected = Replacement.MerlinParts.Where(part => !partialFill || part.TypeId == merlin).ToArray();
+        const int high = (int)InventoryFlag.HighSlot0;
+        int hull = miningFit ? (int)CapsuleerMiningHull.Venture : merlin;
+        ReplacementPart[] reserve = miningFit
+            ? [new(hull, 1), new((int)MiningLaserType.MinerI, 2), new(2046, 1)]
+            : Replacement.MerlinParts.ToArray();
+        var expected = reserve.Where(part => !partialFill || part.TypeId == hull).ToArray();
         using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
         PrepareRegionalTrade(fixture);
         UseLocalOrders(fixture);
@@ -85,8 +92,21 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                     escort.ActiveShipId,
                     TrafficSnapshotTests.Profile() with
                     {
-                        HullTypeId = merlin,
-                        Equipment = [new(gun, (int)InventoryFlag.HighSlot0, 1)],
+                        HullTypeId = hull,
+                        Equipment = miningFit
+                            ?
+                            [
+                                new((int)MiningLaserType.MinerI, high, 1),
+                                new((int)MiningLaserType.MinerI, high + 1, 1),
+                                new(2046, (int)InventoryFlag.LowSlot0, 1),
+                            ]
+                            :
+                            [
+                                new(gun, high, 1),
+                                new(Ammo.ChargeType, high, 200),
+                                new(gun, high + 1, 1),
+                                new(Ammo.ChargeType, high + 1, 200),
+                            ],
                     },
                     fixture.Clock.Now
                 );
@@ -104,11 +124,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 foreach (
                     var recipe in StarterProductionTests
                         .ReadAudit()
-                        .Recipes.Where(recipe =>
-                            recipe.Products.Any(product =>
-                                product.TypeID == merlin || product.TypeID == gun || product.TypeID == Ammo.ChargeType
-                            )
-                        )
+                        .Recipes.Where(recipe => recipe.Products.Any(product => reserve.Any(part => part.TypeId == product.TypeID)))
                 )
                 {
                     setup.Add(
@@ -151,7 +167,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                 var planned = CapsuleerIndustry.PlanRegionalStock(setup, catalog, live, hauler, new HashSet<int>(), fixture.Clock.Now);
                 Assert.NotNull(planned);
                 Assert.Equal(
-                    Replacement.MerlinParts.Select(part => part.TypeId).Order(),
+                    reserve.Select(part => part.TypeId).Order(),
                     planned.Run.RegionalStock!.Purchases.Select(part => part.TypeId).Order()
                 );
                 setup.Commit();
@@ -180,7 +196,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                     }
                 );
                 Assert.Equal(
-                    Replacement.MerlinParts.Select(part => (part.TypeId, part.Quantity)).Order(),
+                    reserve.Select(part => (part.TypeId, part.Quantity)).Order(),
                     bids.Select(bid => (bid.TypeId, bid.Entered)).Order()
                 );
                 var fees = BuyerFees(world);
@@ -203,8 +219,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
             var ships = host.GetRequiredService<SqliteWorld>();
             for (
                 int turn = 0;
-                turn < 12
-                    && live.Economy.Read(world => Bids(world).Any(bid => bid.Remaining > 0 && (!partialFill || bid.TypeId == merlin)));
+                turn < 12 && live.Economy.Read(world => Bids(world).Any(bid => bid.Remaining > 0 && (!partialFill || bid.TypeId == hull)));
                 turn++
             )
             {
@@ -226,7 +241,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
             {
                 live.Economy.Inspect(world =>
                 {
-                    Assert.Single(Bids(world), bid => bid.Status == PersonalOrderStatus.Filled && bid.TypeId == merlin);
+                    Assert.Single(Bids(world), bid => bid.Status == PersonalOrderStatus.Filled && bid.TypeId == hull);
                     Assert.Equal(2, Bids(world).Count(bid => bid.Status == PersonalOrderStatus.Open && bid.EscrowCents > 0));
                     return true;
                 });
@@ -246,7 +261,7 @@ public sealed partial class CapsuleerAmmunitionSupplyTests
                     bid =>
                     {
                         Assert.Equal(
-                            partialFill && bid.TypeId != merlin ? PersonalOrderStatus.Cancelled : PersonalOrderStatus.Filled,
+                            partialFill && bid.TypeId != hull ? PersonalOrderStatus.Cancelled : PersonalOrderStatus.Filled,
                             bid.Status
                         );
                         Assert.Equal(0, bid.EscrowCents);
