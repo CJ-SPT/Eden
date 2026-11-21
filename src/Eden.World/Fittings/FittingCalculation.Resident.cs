@@ -315,7 +315,7 @@ internal sealed partial record FittingCalculation
         {
             if (
                 module.Item.Online
-                && module.GroupId == Eden.Gameplay.Flight.CapitalModeRules.Group
+                && module.GroupId is Eden.Gameplay.Flight.CapitalModeRules.Group or Eden.Gameplay.Flight.CapitalModeRules.CloneVatGroup
                 && activeModules.ContainsKey(module.Item.Id)
             )
             {

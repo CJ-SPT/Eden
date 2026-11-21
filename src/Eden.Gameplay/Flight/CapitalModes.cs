@@ -30,6 +30,11 @@ public static class CapitalModeRules
     public const int TriageTwo = 4294;
     public const int IndustrialCoreOne = 28583;
     public const int IndustrialCoreTwo = 42890;
+
+    // Build 3662168 Clone Vat Bay I and its Cloning Facility Operation prerequisite.
+    public const int CloneVatGroup = 815;
+    public const int CloneVat = 23735;
+    public const int CloningFacilityOperation = 24606;
     public const int CapitalIndustrialReconfiguration = 28585;
     public const int CapitalIndustrialShips = 28374;
     public const int CycleMilliseconds = 300_000;
@@ -37,7 +42,7 @@ public static class CapitalModeRules
     public const int SiegeSkill = 22043;
     public const int TriageSkill = 27906;
 
-    public static ReadOnlySpan<int> Types => [SiegeOne, SiegeTwo, TriageOne, TriageTwo, IndustrialCoreOne, IndustrialCoreTwo];
+    public static ReadOnlySpan<int> Types => [SiegeOne, SiegeTwo, TriageOne, TriageTwo, IndustrialCoreOne, IndustrialCoreTwo, CloneVat];
 
     public static DogmaEffect? Effect(int type) =>
         type switch
@@ -45,11 +50,14 @@ public static class CapitalModeRules
             SiegeOne or SiegeTwo => DogmaEffect.CapitalSiege,
             TriageOne or TriageTwo => DogmaEffect.CapitalTriage,
             IndustrialCoreOne or IndustrialCoreTwo => DogmaEffect.CapitalIndustrialCore,
+            CloneVat => DogmaEffect.CloneJumpAccepting,
             _ => null,
         };
 
     public static bool CanActivate(DogmaEffect effect, int group) =>
-        group == (int)RequiredHull(effect) || (effect == DogmaEffect.CapitalSiege && group == (int)HullClass.LancerDreadnought);
+        effect == DogmaEffect.CloneJumpAccepting
+            ? group is (int)HullClass.CapitalIndustrial or (int)HullClass.Titan
+            : group == (int)RequiredHull(effect) || (effect == DogmaEffect.CapitalSiege && group == (int)HullClass.LancerDreadnought);
 
     private static HullClass RequiredHull(DogmaEffect effect) =>
         effect switch
@@ -66,6 +74,7 @@ public static class CapitalModeRules
             DogmaEffect.CapitalSiege => SiegeSkill,
             DogmaEffect.CapitalTriage => TriageSkill,
             DogmaEffect.CapitalIndustrialCore => CapitalIndustrialReconfiguration,
+            DogmaEffect.CloneJumpAccepting => CloningFacilityOperation,
             _ => throw new InvalidDataException("Unknown capital mode."),
         };
 }

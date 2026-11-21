@@ -28,7 +28,7 @@ internal static class CapitalModeCatalog
         {
             return [];
         }
-        // These two activation effects use the same assignment and owner selectors as supported rigs.
+        // Capital modes use the same assignment and owner selectors as supported rigs.
         var parsed = modifiers.Select(m => PassiveCatalog.Parse(m, phase, rig: true)).ToArray();
         return parsed.Any(m => m is null) ? [] : parsed.Select(m => m!).ToImmutableArray();
     }

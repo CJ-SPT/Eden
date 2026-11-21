@@ -5,6 +5,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Fleets;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Information;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Propulsion;
@@ -212,7 +213,10 @@ internal static class FittingCatalog
         {
             return null;
         }
-        if (type.GroupId == Eden.Gameplay.Flight.CapitalModeRules.Group && !Eden.World.Flight.CapitalModeCatalog.Supported(catalog, typeId))
+        if (
+            type.GroupId is CapitalModeRules.Group or CapitalModeRules.CloneVatGroup
+            && !Eden.World.Flight.CapitalModeCatalog.Supported(catalog, typeId)
+        )
         {
             return null;
         }

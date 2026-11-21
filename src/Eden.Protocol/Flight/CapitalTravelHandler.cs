@@ -324,7 +324,11 @@ internal sealed partial class CapitalTravelHandler(
             CapitalVisual(context.Flight, ended, false);
             if (
                 ended.ShipId == context.Pilot.ShipId
-                && ended.Effect is DogmaEffect.CapitalSiege or DogmaEffect.CapitalTriage or DogmaEffect.CapitalIndustrialCore
+                && ended.Effect
+                    is DogmaEffect.CapitalSiege
+                        or DogmaEffect.CapitalTriage
+                        or DogmaEffect.CapitalIndustrialCore
+                        or DogmaEffect.CloneJumpAccepting
                 && fitting is not null
             )
             {

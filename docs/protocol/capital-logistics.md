@@ -785,6 +785,28 @@ and `git diff --check` passed.
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
+## Clone Vat Bay cycles
+
+Build 3662168 Clone Vat Bay I is type 23735 in group 815. Its default `cloneJumpAccepting`
+effect is 2858. The module consumes one Liquid Ozone per 300,000 ms activation and the
+catalog limits fitting to Titans and Rorquals. The assigned dogma modifiers include a
+100 percent speed reduction. EVE.js `space/runtime/shipActionRestrictions.js` also uses
+effect 2858 to block travel while the cycle runs. The pinned effect has no dedicated
+visual GUID. [CCP jump clones](https://support.eveonline.com/hc/en-us/articles/203217202-Jump-Clones)
+
+The vat uses the resident capital mode transaction for the fuel debit, movement lock,
+module cooldown and dogma updates. The paid cycle resumes through checkpoint reopen and
+ends at the original deadline. Clone offers, installation and arrival are separate work.
+
+**Automated validation.** The exact Rorqual activation and reopen case passed in 7.99 seconds.
+It checks fuel refusal, a one-unit debit, immobilization, refusal to pay again while active,
+the native module event and recovery of the ship's speed at the saved deadline. The
+capital modes, Rorqual services, micro jump and hull coverage filter passed 20 tests in
+28.81 seconds after a 12.74-second build. Both Python suites, formatting and `git diff --check`
+passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Milestones
 
 | Milestone | Playable outcome and acceptance |
