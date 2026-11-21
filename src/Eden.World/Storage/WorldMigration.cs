@@ -109,7 +109,6 @@ internal static class WorldMigration
         DroneDelegationPersistence.Upgrade(world);
         NpcEnergySchema.Upgrade(world);
         RemoteAssistanceSchema.Upgrade(world);
-        Eden.World.Information.InformationSchema.Upgrade(world);
         JetcanSchema.Upgrade(world);
         SpaceLootRights.Upgrade(world);
         Eden.World.Information.SalvagePersistence.Upgrade(world, catalog);
@@ -121,6 +120,7 @@ internal static class WorldMigration
         Eden.World.Capsuleers.RegionalConflictSchema.Upgrade(world);
 
         Eden.World.Capsuleers.CapsuleerPopulationStore.Initialize(world);
+        Eden.World.Information.InformationSchema.Upgrade(world);
         Eden.World.Capsuleers.CapsuleerPopulationStore.Reconcile(world, catalog);
         Eden.World.Capsuleers.CapsuleerPopulationStore.ScheduleFounders(world);
         Eden.World.Capsuleers.TrafficSchema.Upgrade(world);

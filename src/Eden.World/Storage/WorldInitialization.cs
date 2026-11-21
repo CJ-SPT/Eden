@@ -2,6 +2,7 @@ using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Drones;
 using Eden.Data.World.Fittings;
+using Eden.Data.World.Information;
 using Eden.Data.World.Propulsion;
 using Eden.Data.World.Repair;
 using Eden.Gameplay.Combat;
@@ -123,9 +124,11 @@ public static class WorldInitialization
                     .SetProperty(d => d.DelegateMembership, 0)
                     .SetProperty(d => d.ReactionRevision, 0)
             );
-        // Live module bonuses belong to a connection. A restart retains paid
-        // capacitor/cooldowns but never leaves an orphaned active bonus.
-        world.Set<ActiveFittedModule>().ExecuteDelete();
+        // Only autonomous salvage retains its information cycle across startup.
+        world
+            .Set<ActiveFittedModule>()
+            .Where(marker => !world.Set<SavedInformationCycle>().Any(cycle => cycle.ModuleId == marker.ModuleId))
+            .ExecuteDelete();
         world.Set<Eden.Data.World.Fleets.WorldCommandBurst>().ExecuteDelete();
         PilotSpatialModuleStore.Reconcile(world, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc());
         world.Set<WorldTackle>().ExecuteDelete();

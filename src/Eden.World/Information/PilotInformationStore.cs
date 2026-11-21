@@ -49,8 +49,23 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
     public InformationActivation Begin(long pilotId, long moduleId, DogmaEffect effect, long targetId, IReadOnlySet<long> locks, long now)
     {
         using WorldActionScope transaction = new(database, Participants(pilotId, targetId));
-        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var result = Begin(transaction.World, catalog, pilotId, moduleId, effect, targetId, locks, now);
+        transaction.Commit();
+        return result;
+    }
+
+    internal InformationActivation Begin(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long moduleId,
+        DogmaEffect effect,
+        long targetId,
+        IReadOnlySet<long> locks,
+        long now
+    )
+    {
         var pilot = Pilot(world, pilotId);
         _ = Position(pilot);
         var item = world.Set<OwnedItem>().Find(moduleId);
@@ -139,7 +154,6 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
                 )
             );
         }
-        transaction.Commit();
         return new(cycle, capacitor);
     }
 
@@ -241,8 +255,21 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
             database,
             select: world => Participants(pilotId, world.Set<SavedInformationCycle>().Find(moduleId)?.TargetId ?? 0)
         );
-        var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
+        var result = Complete(transaction.World, catalog, pilotId, moduleId, expectedReadyAt, now);
+        transaction.Commit();
+        return result;
+    }
+
+    internal InformationCompletion Complete(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long moduleId,
+        long expectedReadyAt,
+        long now
+    )
+    {
         var saved = world.Set<SavedInformationCycle>().Find(moduleId);
         if (saved is null || saved.PilotId != pilotId || saved.ReadyAt != expectedReadyAt || now < expectedReadyAt)
         {
@@ -334,21 +361,28 @@ internal sealed partial class PilotInformationStore(WorldDatabase database, ICoo
         }
         world.Remove(saved);
         RemoveMarker(world, moduleId, saved.ShipId);
-        transaction.Commit();
         return result;
     }
 
     public void Stop(long pilotId, long moduleId, long expectedReadyAt)
     {
         using WorldActionScope transaction = new(database, new(pilots: [pilotId]));
-        var world = transaction.World;
+        if (Stop(transaction.World, pilotId, moduleId, expectedReadyAt))
+        {
+            transaction.World.AfterCommit(() => LiveWorld.Find(database.Path)?.Tractors.Stop(moduleId));
+        }
+        transaction.Commit();
+    }
+
+    internal static bool Stop(WorldAction world, long pilotId, long moduleId, long expectedReadyAt)
+    {
         if (world.Set<SavedInformationCycle>().Find(moduleId) is { } cycle && cycle.PilotId == pilotId && cycle.ReadyAt == expectedReadyAt)
         {
             RemoveMarker(world, moduleId, cycle.ShipId);
             world.Remove(cycle);
-            world.AfterCommit(() => LiveWorld.Find(database.Path)?.Tractors.Stop(moduleId));
+            return true;
         }
-        transaction.Commit();
+        return false;
     }
 
     public bool IsActive(InformationCycle cycle) =>

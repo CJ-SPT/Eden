@@ -154,29 +154,51 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
                 return new(plan, boughtBook, trained || allocatedLevel);
             }
         }
-        if (state.Queue.Count > 0)
+        bool marketChanged = state.Queue.Count == 0 && QueueNextLevel(world, catalog, pilot, targets, now);
+        return new(plan, marketChanged, trained);
+    }
+
+    internal bool TrainForModule(EconomyTransaction world, CatalogDbContext catalog, DockedPilot pilot, int module, long now)
+    {
+        if (Expand(catalog, RequiredSkills(catalog, module)) is not { Length: > 0 } targets)
         {
-            return new(plan, LevelChanged: trained);
+            return false;
         }
+        long id = pilot.PilotId;
+        if (PilotTrainingStore.ReadFreePoints(world, id) > 0 && Spend(world, catalog, pilot, targets, now, out bool bought, out _))
+        {
+            return bought;
+        }
+        return training.Advance(world, id, now).Queue.Count == 0 && QueueNextLevel(world, catalog, pilot, targets, now);
+    }
+
+    private bool QueueNextLevel(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        DockedPilot pilot,
+        IReadOnlyList<TrainingTarget> targets,
+        long now
+    )
+    {
+        long id = pilot.PilotId;
         foreach (var target in targets)
         {
-            int current = PilotSkillReader.Level(world, catalog, id, target.TypeId);
-            if (current >= target.Level)
+            int level = PilotSkillReader.Level(world, catalog, id, target.TypeId);
+            if (level >= target.Level)
             {
                 continue;
             }
             bool marketChanged = false;
             if (
-                world.Set<PilotSkill>().Find(id, target.TypeId) is null
-                && !Learn(world, catalog, pilot, target.TypeId, now, out marketChanged)
+                world.Set<PilotSkill>().Find(id, target.TypeId) is not null
+                || Learn(world, catalog, pilot, target.TypeId, now, out marketChanged)
             )
             {
-                break;
+                training.QueueCareerLevel(world, id, new(target.TypeId, level + 1), now);
             }
-            training.QueueCareerLevel(world, id, new(target.TypeId, current + 1), now);
-            return new(plan, marketChanged, LevelChanged: trained);
+            return marketChanged;
         }
-        return new(plan, LevelChanged: trained);
+        return false;
     }
 
     private bool Spend(

@@ -20,7 +20,10 @@ public sealed record RattingProgress(int StationId, long[] Belts, int BeltIndex,
     public long TargetId { get; init; }
     public long[] LootIds { get; init; } = [];
     public long[] VisitedWrecks { get; init; } = [];
+    public RattingSalvage? Salvage { get; init; }
 }
+
+public sealed record RattingSalvage(long WreckId, long ModuleId, long DueTicks, long CycleReadyAt = 0);
 
 public sealed record SupplyRequirement(int TypeId, int Quantity, bool Drone, double Volume);
 

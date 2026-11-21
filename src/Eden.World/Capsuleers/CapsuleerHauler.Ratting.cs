@@ -198,6 +198,10 @@ internal sealed partial class CapsuleerHauler
         {
             return false;
         }
+        if (_operation.World is Eden.World.Runtime.Economy.EconomyTransaction resident)
+        {
+            PrepareSalvager(resident, profile.ShipAttributes);
+        }
         _background = false;
         _work = Work with
         {
@@ -278,6 +282,10 @@ internal sealed partial class CapsuleerHauler
         if (Work.Retreating || activity.RemainingTicks <= 0)
         {
             _work = Work with { Ratting = activity with { Phase = RattingPhase.Returning } };
+        }
+        if (Work.Ratting is { Phase: not RattingPhase.Looting, Salvage: { } pending })
+        {
+            StopRattingSalvage(pending);
         }
         activity = Work.Ratting!;
         switch (activity.Phase)
@@ -360,13 +368,20 @@ internal sealed partial class CapsuleerHauler
                     NextBelt();
                     break;
                 }
-                CollectRattingLoot();
+                if (activity.Salvage is not { } salvage || Work.ActiveTicks >= salvage.DueTicks)
+                {
+                    CollectRattingLoot();
+                }
                 break;
         }
     }
 
     private void NextBelt()
     {
+        if (Work.Ratting?.Salvage is { } pending)
+        {
+            StopRattingSalvage(pending);
+        }
         var activity = Work.Ratting!;
         if (activity.Patrol?.Kind == PatrolKind.Transit)
         {
@@ -398,16 +413,30 @@ internal sealed partial class CapsuleerHauler
     private void CollectRattingLoot()
     {
         var activity = Work.Ratting!;
-        var wreck = ratting
-            .Wrecks(Pilot, _target!, Now)
-            .Where(w => !activity.VisitedWrecks.Contains(w.Id))
-            .OrderBy(w => Pilot.Position!.DistanceTo(w.Position))
+        var contacts = ratting.Wrecks(Pilot, _target!, Now, Live is not null);
+        if (contacts.Count == 0)
+        {
+            NextBelt();
+            return;
+        }
+        var world = _operation.World;
+        var catalog = _operation.Catalog;
+        var salvager = Salvager(world, catalog);
+        var wreck = contacts
+            .Where(w => !activity.VisitedWrecks.Contains(w.Id) && (!w.Empty || CanSalvage(world, catalog, w.Id, salvager)))
+            .OrderByDescending(w => w.Id == activity.Salvage?.WreckId)
+            .ThenBy(w => Pilot.Position!.DistanceTo(w.Position))
             .ThenBy(w => w.Id)
             .FirstOrDefault();
         if (wreck is null)
         {
             NextBelt();
             return;
+        }
+        if (activity.Salvage is { } pending && (pending.WreckId != wreck.Id || pending.ModuleId != salvager?.ItemId))
+        {
+            StopRattingSalvage(pending);
+            activity = Work.Ratting!;
         }
         StaticSpaceObject wreckTarget = new(
             wreck.Id,
@@ -422,18 +451,10 @@ internal sealed partial class CapsuleerHauler
             IsGlobal = false,
             Solid = false,
         };
-        if (Pilot.Position!.DistanceTo(wreck.Position) - Pilot.Flight.ShipRadius - wreck.Radius > WreckDefinitions.TransferRange)
+        double range = wreck.Empty ? salvager!.Range : WreckDefinitions.TransferRange;
+        if (Pilot.Position!.DistanceTo(wreck.Position) - Pilot.Flight.ShipRadius - wreck.Radius > range)
         {
-            _navigation.Follow(
-                Pilot.ShipId,
-                Work.Stamp,
-                Pilot.Position,
-                Pilot.Flight.ShipRadius,
-                wreckTarget,
-                WreckDefinitions.TransferRange / 2,
-                false,
-                true
-            );
+            _navigation.Follow(Pilot.ShipId, Work.Stamp, Pilot.Position, Pilot.Flight.ShipRadius, wreckTarget, range / 2, false, true);
             var moved = _navigation.Advance(
                 Pilot.ShipId,
                 Work.Stamp,
@@ -446,9 +467,9 @@ internal sealed partial class CapsuleerHauler
             RestorePosition(Pilot);
             return;
         }
-        var world = _operation.World;
-        var catalog = _operation.Catalog;
-        var items = world.Set<OwnedItem>().Where(i => i.OwnerId == pilotId && i.LocationId == wreck.Id).OrderBy(i => i.Id).ToArray();
+        var items = wreck.Empty
+            ? []
+            : world.Filter<OwnedItem>(i => i.LocationId == wreck.Id).Where(i => i.OwnerId == pilotId).OrderBy(i => i.Id).ToArray();
         List<long> collected = activity.LootIds.ToList();
         foreach (var item in items)
         {
@@ -463,14 +484,17 @@ internal sealed partial class CapsuleerHauler
                 collected.AddRange(changes.Where(c => c.Item.LocationId == Pilot.ShipId).Select(c => c.Item.Id));
             }
         }
-        _work = Work with
+        _work = Work with { Ratting = activity with { LootIds = collected.Distinct().ToArray() } };
+        if (salvager is not null && CanSalvage(world, catalog, wreck.Id, salvager) && RecoverSalvage(wreck, salvager))
         {
-            Ratting = activity with
-            {
-                LootIds = collected.Distinct().ToArray(),
-                VisitedWrecks = activity.VisitedWrecks.Append(wreck.Id).ToArray(),
-            },
-        };
+            return;
+        }
+        activity = Work.Ratting!;
+        if (activity.Salvage is { } finished)
+        {
+            StopRattingSalvage(finished);
+        }
+        _work = Work with { Ratting = Work.Ratting! with { VisitedWrecks = activity.VisitedWrecks.Append(wreck.Id).ToArray() } };
     }
 
     private void UnloadRattingLoot()
@@ -492,7 +516,7 @@ internal sealed partial class CapsuleerHauler
             .ToArray();
         if (available.Length > 0)
         {
-            PilotInventoryStore.Move(
+            var unloaded = PilotInventoryStore.Move(
                 _operation.World,
                 _operation.Catalog,
                 pilotId,
@@ -500,6 +524,7 @@ internal sealed partial class CapsuleerHauler
                 new(available, Pilot.ShipId, (int)InventoryFlag.Hangar, null),
                 Now
             );
+            _operation.MarketChanged |= ammunitionSupply.SellRecoveredSalvage(_operation.World, _operation.Catalog, Pilot, unloaded, Now);
         }
         _work = Work with { RattingLoot = [] };
     }
