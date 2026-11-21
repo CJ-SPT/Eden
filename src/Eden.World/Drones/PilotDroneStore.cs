@@ -21,6 +21,7 @@ using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Docking;
 using Eden.World.FactionWarfare;
+using Eden.World.Fighters;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
@@ -369,8 +370,20 @@ internal sealed partial class PilotDroneStore(
             {
                 throw new InvalidDataException("Order drones to attack a locked ship within drone control range.");
             }
+            var companion = fighter && targetId is long companionId ? FighterTarget(world, catalog, pilot, companionId, systemId) : null;
             var structure = targetId is long structureId ? StructureCombatTargets.Find(world, structureId) : null;
-            if (structure is not null)
+            if (companion is not null)
+            {
+                if (
+                    Position(position).DistanceTo(companion.Contact.Position) - companion.Contact.Profile.Radius > range
+                    || selected.Any(d => !DroneCatalog.Profile(catalog, world.Set<OwnedItem>().Find(d!.ItemId)!.TypeId).SpaceSuperiority)
+                )
+                {
+                    throw new InvalidDataException("Order space-superiority fighters to attack a locked drone or fighter within range.");
+                }
+                _ = CrimewatchPersistence.CheckPlayer(world, catalog, pilot, companion.Owner, systemId, now);
+            }
+            else if (structure is not null)
             {
                 StructureCombatTargets.Check(world, catalog, structure, now);
                 if (
@@ -645,12 +658,21 @@ internal sealed partial class PilotDroneStore(
             }
         }
         HashSet<long> ships = [ship];
+        HashSet<long> pilots = [pilot];
         HashSet<long> npcs = [];
         foreach (long id in candidates.Where(id => id > 0 && id != ship))
         {
             if (world.Set<WorldNpc>().Find(id) is not null)
             {
                 npcs.UnionWith(NpcHostility.Participants(world, id));
+            }
+            else if (world.Set<WorldDrone>().Find(id) is { } companion)
+            {
+                pilots.Add(companion.PilotId);
+                if (companion.ControllerShipId > 0)
+                {
+                    ships.Add(companion.ControllerShipId);
+                }
             }
             else
             {
@@ -661,7 +683,7 @@ internal sealed partial class PilotDroneStore(
         using CatalogDbContext catalog = new(database.CatalogPath);
         return new(
             systems: [CurrentSystem(catalog, owner)],
-            pilots: [pilot],
+            pilots: pilots,
             ships: ships,
             resources: npcs.Select(id => new SimulationResource(SharedSimulationResource.Npc, id))
         );
@@ -853,8 +875,12 @@ internal sealed partial class PilotDroneStore(
                     structure = null;
                 }
             }
+            var companion =
+                profile.SpaceSuperiority && drone.Activity == DroneActivity.Fighting
+                    ? FighterTarget(world, catalog, pilot, drone.TargetId, systemId)
+                    : null;
             var victim =
-                npc is null && structure is null && drone.Activity == DroneActivity.Fighting
+                npc is null && structure is null && companion is null && drone.Activity == DroneActivity.Fighting
                     ? FindVictim(world, catalog, pilot, drone.TargetId, systemId, now)
                     : null;
             var victimContact = victim is null ? null : FindContact(world, victim, systemId, now);
@@ -867,33 +893,37 @@ internal sealed partial class PilotDroneStore(
                 victimContact = null;
             }
             AggressionDecision? decision = null;
-            if (victimContact is not null)
+            if (victimContact is not null || companion is not null)
             {
                 try
                 {
-                    decision = CrimewatchPersistence.CheckPlayer(world, catalog, pilot, victim!, systemId, now);
+                    decision = CrimewatchPersistence.CheckPlayer(world, catalog, pilot, companion?.Owner ?? victim!, systemId, now);
                 }
                 catch (InvalidDataException)
                 {
+                    companion = null;
                     victimContact = null;
                 }
             }
-            if (npc is null && structure is null && victimContact is null && drone.Activity == DroneActivity.Fighting)
+            if (npc is null && structure is null && companion is null && victimContact is null && drone.Activity == DroneActivity.Fighting)
             {
                 drone.Activity = DroneActivity.Idle;
                 drone.TargetId = anchor?.ShipId ?? ship.Id;
             }
             var target =
-                structure is not null ? StructureCombatTargets.Position(structure)
+                companion is not null ? companion.Contact.Position
+                : structure is not null ? StructureCombatTargets.Position(structure)
                 : npc is null ? victimContact?.Position ?? anchor?.Position ?? Position(source)
                 : NpcMotion.Position(npc);
-            float radius = (float)(
-                catalog
-                    .FittingType(structure?.TypeId ?? npc?.TypeId ?? (victimContact is null ? ship.TypeId : victim!.ActiveShip.TypeId))
-                    ?.Radius
-                ?? 0
-            );
-            if (npc is null && structure is null && victimContact is null && anchor is not null)
+            float radius =
+                companion?.Contact.Profile.Radius
+                ?? (float)(
+                    catalog
+                        .FittingType(structure?.TypeId ?? npc?.TypeId ?? (victimContact is null ? ship.TypeId : victim!.ActiveShip.TypeId))
+                        ?.Radius
+                    ?? 0
+                );
+            if (npc is null && structure is null && companion is null && victimContact is null && anchor is not null)
             {
                 radius = (float)anchor.Radius;
             }
@@ -961,7 +991,7 @@ internal sealed partial class PilotDroneStore(
             if (
                 protection
                 || profile.Damage.Total <= 0
-                || npc is null && structure is null && victimContact is null
+                || npc is null && structure is null && companion is null && victimContact is null
                 || drone.ReadyAt > now
                 || contact.Position.DistanceTo(target) - radius - profile.Radius > profile.Optimal + profile.Falloff * 2
             )
@@ -969,13 +999,15 @@ internal sealed partial class PilotDroneStore(
                 continue;
             }
             var attributes =
-                structure is not null ? catalog.FittingAttributes(structure.TypeId)
+                companion is not null ? catalog.FittingAttributes(companion.Contact.Profile.TypeId)
+                : structure is not null ? catalog.FittingAttributes(structure.TypeId)
                 : npc is null ? PilotFittingStore.ShipAttributes(world, catalog, victim!.Id)
                 : PlayerEwarStore.NpcAttributes(world, npc.Id, PilotFittingStore.ReadAttributes(catalog, npc.TypeId));
             var damage = DroneRules.Shot(
                 contact,
                 target,
-                structure is not null ? SpacePosition.Zero
+                companion is not null ? companion.Contact.Velocity
+                    : structure is not null ? SpacePosition.Zero
                     : npc is null ? victimContact!.Velocity
                     : NpcMotion.Velocity(npc),
                 attributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius),
@@ -984,9 +1016,32 @@ internal sealed partial class PilotDroneStore(
                     : RandomNumberGenerator.GetInt32(ProbabilityResolution) / (double)ProbabilityResolution,
                 radius
             );
+            if (profile.SpaceSuperiority)
+            {
+                damage = damage.Scale(
+                    attributes.GetValueOrDefault(
+                        DogmaAttributeId.AntiFighterMissileResistance,
+                        FighterCombatCatalog.DefaultAntiFighterResistance
+                    )
+                );
+            }
             drone.ReadyAt = checked(now + (long)Math.Ceiling(profile.CycleMilliseconds * TimeSpan.TicksPerMillisecond));
             DroneHit hit;
-            if (structure is not null)
+            if (companion is not null)
+            {
+                CrimewatchPersistence.Player(world, catalog, pilot.Id, companion.Owner.Id, systemId, decision!, now, drone.ReadyAt);
+                var result = SmartbombStore.DamageDrone(world, companion.Row, companion.Contact, damage, now);
+                hit = new(
+                    drone.ItemId,
+                    profile.TypeId,
+                    companion.Row.ItemId,
+                    result.Applied,
+                    damage,
+                    result.Health,
+                    damage.Total / (profile.Damage.Total * Math.Max(1, contact.SquadronSize))
+                );
+            }
+            else if (structure is not null)
             {
                 StructureCombatTargets.Aggress(world, pilotId, systemId, now, drone.ReadyAt);
                 var result = StructureCombatTargets.Apply(world, catalog, structure, damage, now);

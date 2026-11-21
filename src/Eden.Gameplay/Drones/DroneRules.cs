@@ -257,9 +257,14 @@ public static class DroneRules
         if (profile.FighterAttack is { } missile)
         {
             double range = Math.Max(0, drone.Position.DistanceTo(target) - profile.Radius - targetRadius);
-            double falloff = Math.Max(0, range - profile.Optimal) / profile.Falloff;
+            double attenuation = 1;
+            if (range > profile.Optimal)
+            {
+                double falloff = profile.Falloff > 0 ? (range - profile.Optimal) / profile.Falloff : double.PositiveInfinity;
+                attenuation = Math.Pow(0.5, falloff * falloff);
+            }
             double application = MissileRules.Application(missile, Math.Max(1, signature), velocity.Length);
-            return missile.Damage.Scale(drone.SquadronSize * application * Math.Pow(0.5, falloff * falloff));
+            return missile.Damage.Scale(drone.SquadronSize * application * attenuation);
         }
         double chance = CombatDamage.HitChance(
             Math.Max(0, drone.Position.DistanceTo(target) - profile.Radius - targetRadius),

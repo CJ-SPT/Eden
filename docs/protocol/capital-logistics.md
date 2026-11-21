@@ -268,12 +268,31 @@ The Support Fighters skill applies the pinned shield capacity bonus.
 
 The Archon test loads two support squadrons and rejects a third. It activates each racial ability
 against a locked Venture, verifies the capacitor drain or active disruption and checks effect
-cleanup on recall. Additional ability slots, space superiority and Standup fighters remain open.
+cleanup on recall. Additional ability slots and Standup fighters remain open.
 
 **Automated validation.** The four exact support fighter cases passed in 11.04 seconds. All 309 cases
 in the final capital travel, utility drone, resident drone, pilot drone, electronic warfare and
 tackle filter passed in 118.70 seconds after an 8.60-second build. Both Python suites, formatting
 and `git diff --check` passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+### Space-superiority fighter attacks
+
+Build 3662168's `fighterabilitiesbytype` declares ability `29` in slot zero for light
+space-superiority squadrons. It uses the Micro Missile Swarm damage, range and application attributes.
+The pinned anti-fighter resistance attribute `2189` has a default multiplier of 0.05. Fighter targets
+declare a multiplier of 1. EVE.js `fighterAbilities.js` and the pinned `fightersSvc.pyj` support the
+same item-targeted activation shape.
+
+Eden admits published Tech I, Tech II and navy space-superiority types. These fighters can lock and
+attack eligible hostile drones and squadrons through their carrier. Damage uses the existing per-fighter
+health and loss accounting. The Equite acceptance case exercises the native lock and slot-zero command
+against a Templar squadron. Evasive maneuvers and the secondary tackle ability remain open.
+
+**Automated validation.** The exact Equite case passed in 7.98 seconds. All 307 cases in the final
+capital travel, combat drones, resident drones, targeting and smartbomb filter passed in 173.70 seconds
+after a 9.40-second build. Both Python suites, formatting and `git diff --check` passed.
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
@@ -601,7 +620,7 @@ separation at arrival. Both Python suites, formatting and `git diff --check` pas
 | **3. Ansiblex jump gates** | Implemented. Link two aligned endpoints, enforce alliance access and the ship type list, and settle the source gate's capacitor at departure. |
 | **4. Black Ops and covert travel** | Implemented. Black Ops direct jumps, covert module and mobile beacons, eligible fleet passenger travel through a paid portal, and fleet conduit jumps. |
 | **5. Dreadnoughts and force auxiliaries** | Implemented. Dreadnoughts and force auxiliaries use standard cynos, paid siege or triage, and normal docking, repair and loss settlement. The acceptance cases reopen a paid siege and settle an Apostle loss. |
-| **6. Carriers and fighters** | Carrier tubes support light attack and support squadrons, with launch, targeting, recall and replacement. Squadron losses persist. Standup fighters and additional combat abilities remain open. |
+| **6. Carriers and fighters** | Carrier tubes support light attack, space superiority and support squadrons, with launch, targeting, recall and replacement. Squadron losses persist. Standup fighters and additional combat abilities remain open. |
 | **7. Capital industry and fleet services** | Rorquals use paid industrial cores, Excavators, fleet compression and P.A.N.I.C. Shared fleet storage, mobile refitting, clone bays and fresh-world resupply remain open. |
 | **8. Supercapitals and production** | Keepstar docking, Sotiyo construction, direct jumps, Titan bridging, supercarrier heavy attack fighters and burst projectors are implemented. Targeted Titan doomsdays have paid windups, counters and durable loss settlement. Titan lances, Reapers and Bosonic fields support paid aiming and positional counters. The oscillator transports subcapitals and locks capital warp. Phenomena Generators apply the pinned racial boosts and penalties. |
 

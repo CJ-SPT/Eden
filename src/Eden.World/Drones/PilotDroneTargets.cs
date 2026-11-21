@@ -87,6 +87,24 @@ internal sealed partial class PilotDroneStore
         }
     }
 
+    private sealed record FighterCompanionTarget(WorldDrone Row, DroneContact Contact, Pilot Owner);
+
+    private static FighterCompanionTarget? FighterTarget(WorldAction world, CatalogDbContext catalog, Pilot source, long id, int system)
+    {
+        if (
+            world.Set<WorldDrone>().Find(id) is not { } row
+            || row.SystemId != system
+            || row.PilotId == source.Id
+            || world.Set<OwnedItem>().Find(row.ItemId) is null
+            || world.Pilots.Find(row.PilotId) is not { } owner
+        )
+        {
+            return null;
+        }
+        var contact = Contact(world, catalog, row);
+        return contact.Health.Remaining.Destroyed ? null : new(row, contact, owner);
+    }
+
     private sealed record PendingDroneDamage(DroneHit Hit, PilotDamage Damage);
 
     private PendingDroneDamage ApplyPilotDamage(

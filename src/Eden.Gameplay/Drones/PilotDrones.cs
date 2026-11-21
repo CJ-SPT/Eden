@@ -85,7 +85,8 @@ public sealed record DroneProfile(
     CombatDroneKind Kind = CombatDroneKind.Unspecified,
     UtilityDroneProfile? Utility = null,
     MissileWarhead? FighterAttack = null,
-    int FighterGroup = 0
+    int FighterGroup = 0,
+    bool SpaceSuperiority = false
 );
 
 public sealed record DroneContact(
