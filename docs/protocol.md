@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Fresh-universe hauling and bounty careers](protocol/capsuleers.md#fresh-universe-hauling-and-bounty-careers)
+covers zero-ISK delivery and combat starts, earned skill points, and paid recovery after ship loss.
+
 [Administration settings with decimal-comma locales](protocol/world-configuration.md#administration-settings-with-decimal-comma-locales-november-20-2026)
 covers the reload banner while editing settings on servers that use a decimal comma.
 

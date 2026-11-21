@@ -1,3 +1,4 @@
+using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Fittings;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Capsuleers;
@@ -201,9 +202,16 @@ internal sealed partial record CapsuleerDefenseProfile
                 Overload = HeatProfile(catalog, fit, module.Item.TypeId),
             })
             .ToArray();
+        bool rookieCombat =
+            world.Settings.FreshUniverse
+            && catalog.FittingType(pilot.ActiveShip.TypeId)?.GroupId == (int)HullClass.Corvette
+            && world.Set<SavedCapsuleerAgent>().Find(pilotId) is { Career: CapsuleerCareer.Hauling, Slot: FreshCareerRules.CombatSlot };
         return new CapsuleerDefenseProfile(
-            CapsuleerPatrolFit.CombatHull(catalog, pilot.ActiveShip.TypeId)
-                && modules.All(module => module.Effect != DogmaEffect.MiningLaser),
+            rookieCombat
+                || (
+                    CapsuleerPatrolFit.CombatHull(catalog, pilot.ActiveShip.TypeId)
+                    && modules.All(module => module.Effect != DogmaEffect.MiningLaser)
+                ),
             modules
         )
         {

@@ -43,12 +43,13 @@ internal sealed partial class CapsuleerProvisioner
         long seed = state.WorldSeed;
         var summary = world.Set<SavedCapsuleerSystem>().Find(systemId);
         var policy = world.Settings.Capsuleers;
-        string fingerprint = Fingerprint(database, catalog, seed, policy, resident: world is EconomyTransaction);
+        bool fresh = world.Settings.FreshUniverse;
+        string fingerprint =
+            Fingerprint(database, catalog, seed, policy, resident: world is EconomyTransaction) + (fresh ? "|fresh-careers" : "");
         if (summary?.PolicyVersion == CapsuleerProvisioningRules.Version && summary.CatalogFingerprint == fingerprint)
         {
             return new(1, 0, 0);
         }
-        bool fresh = world.Settings.FreshUniverse;
         var mining = fresh
             ? CapsuleerProvisioningCatalog.StarterIndustry(catalog, systemId)
             : CapsuleerProvisioningCatalog.Mining(catalog, systemId);
@@ -58,6 +59,7 @@ internal sealed partial class CapsuleerProvisioner
         bool canHaul =
             hasRoute && (database.Traffic.Profiles.Count > 0 || CapsuleerFreight.Available(catalog, database.Settings.Capsuleers.Freight));
         int count = canHaul ? CapsuleerEncounterRules.Haulers(seed, systemId, traffic!.GateCount, traffic.StationCount, policy) : 0;
+        var freshRoutes = fresh && world is EconomyTransaction && policy.Enabled ? FreshCareerRoutes.Read(catalog, systemId) : null;
         var agents = world
             .Set<SavedCapsuleerAgent>()
             .Where(a => a.CommunitySystemId == systemId)
@@ -92,6 +94,13 @@ internal sealed partial class CapsuleerProvisioner
             }
         }
 
+        var rookieSlots = new[]
+        {
+            (Slot: FreshCareerRules.CourierSlot, Route: freshRoutes?.Courier, Eligible: true),
+            (Slot: FreshCareerRules.CombatSlot, Route: freshRoutes?.Combat, Eligible: policy.BeltRatting),
+        }
+            .Where(entry => entry.Eligible && entry.Route is not null)
+            .ToArray();
         if (summary is null)
         {
             summary = new() { SystemId = systemId };
@@ -101,16 +110,17 @@ internal sealed partial class CapsuleerProvisioner
         summary.Eligibility =
             !policy.Enabled ? CapsuleerEligibility.Disabled
             : origins.Length == 0 ? CapsuleerEligibility.MissingOrigin
-            : canHaul || mining.Eligibility == CapsuleerEligibility.Eligible ? CapsuleerEligibility.Eligible
+            : canHaul || rookieSlots.Length > 0 || mining.Eligibility == CapsuleerEligibility.Eligible ? CapsuleerEligibility.Eligible
             : hasRoute ? CapsuleerEligibility.MissingEquipment
             : CapsuleerEligibility.NoReciprocalRoute;
-        summary.HomeStationId = mining.HomeStationId ?? first?.SourceStationId;
-        summary.DestinationStationId = first?.DestinationStationId;
+        summary.HomeStationId = mining.HomeStationId ?? first?.SourceStationId ?? rookieSlots.FirstOrDefault().Route?.SourceStationId;
+        summary.DestinationStationId = first?.DestinationStationId ?? freshRoutes?.Courier?.DestinationStationId;
         // A depleted saved field must retry after renewal even with an unchanged catalog.
         summary.CatalogFingerprint = awaitingOre ? "" : fingerprint;
         summary.PolicyVersion = CapsuleerProvisioningRules.Version;
         var newSlots = Enumerable
             .Range(0, count)
+            .Concat(rookieSlots.Select(entry => entry.Slot))
             .Where(slot => !agents.Any(a => a.Career == CapsuleerCareer.Hauling && a.Slot == slot))
             .ToArray();
         if (origins.Length == 0 || newMiners.Length + newSlots.Length == 0)
@@ -162,21 +172,26 @@ internal sealed partial class CapsuleerProvisioner
         int remaining = Math.Max(0, newMiners.Length + newSlots.Length - maximumFounders);
         foreach (int slot in newSlots.Take(maximumFounders - attempted))
         {
-            var plannedOpening = CapsuleerEncounterRules.TrafficOpening(seed, systemId, slot, count);
-            var route = SelectRoute(catalog, traffic!, systemId, slot, plannedOpening, offset);
+            var plannedOpening = fresh
+                ? HaulerEncounterOpening.Docked
+                : CapsuleerEncounterRules.TrafficOpening(seed, systemId, slot, count);
+            var route = fresh
+                ? rookieSlots.Single(entry => entry.Slot == slot).Route!
+                : SelectRoute(catalog, traffic!, systemId, slot, plannedOpening, offset);
             // Incremental live preparation introduces new residents through normal departures.
             var opening = maximumFounders == int.MaxValue ? plannedOpening : HaulerEncounterOpening.Docked;
             var site = mining with { HomeStationId = route.SourceStationId, DestinationStationId = route.DestinationStationId };
-            TrafficJourney? journey = globalStartup
-                ? new(
-                    TrafficJourneyRules.HomeKind(slot, traffic!.GateCount, traffic.StationCount),
-                    route.SourceStationId,
-                    route.SourceStationId,
-                    route.DestinationStationId,
-                    route.Systems,
-                    0
-                )
-                : null;
+            TrafficJourney? journey =
+                globalStartup && !fresh
+                    ? new(
+                        TrafficJourneyRules.HomeKind(slot, traffic!.GateCount, traffic.StationCount),
+                        route.SourceStationId,
+                        route.SourceStationId,
+                        route.DestinationStationId,
+                        route.Systems,
+                        0
+                    )
+                    : null;
             long? added = CreateFounder(
                 world,
                 catalog,
@@ -246,7 +261,7 @@ internal sealed partial class CapsuleerProvisioner
         long ship = InventoryPersistence.NextId(world);
         bool fresh = world.Settings.FreshUniverse;
         var fittedProfile =
-            career == CapsuleerCareer.Hauling
+            !fresh && career == CapsuleerCareer.Hauling
                 ? CapsuleerPatrolFit.Select(
                     catalog,
                     database.Settings.Capsuleers,
@@ -268,7 +283,8 @@ internal sealed partial class CapsuleerProvisioner
                 : null;
         var trafficProfile = fittedProfile is { CharacterId: > 0 } ? fittedProfile : null;
         if (
-            career == CapsuleerCareer.Hauling
+            !fresh
+            && career == CapsuleerCareer.Hauling
             && fittedProfile is null
             && !CapsuleerFreight.Available(catalog, database.Settings.Capsuleers.Freight)
         )
@@ -276,10 +292,10 @@ internal sealed partial class CapsuleerProvisioner
             return null;
         }
         int hull =
-            career == CapsuleerCareer.Mining
-                ? (int)miningHull
-                : fittedProfile?.HullTypeId
-                    ?? CapsuleerFreight.Hull(catalog, seed, site.SystemId, slot, database.Settings.Capsuleers.Freight.VariedHulls);
+            fresh ? 0
+            : career == CapsuleerCareer.Mining ? (int)miningHull
+            : fittedProfile?.HullTypeId
+                ?? CapsuleerFreight.Hull(catalog, seed, site.SystemId, slot, database.Settings.Capsuleers.Freight.VariedHulls);
         int station = site.HomeStationId!.Value;
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         ulong roleSeed = CapsuleerProvisioningRules.Seed(seed, site.SystemId, career, slot);
@@ -346,6 +362,10 @@ internal sealed partial class CapsuleerProvisioner
             {
                 CapsuleerCommunityStore.GrantRequirements(world, catalog, pilot, hull, []);
             }
+        }
+        if (fresh && career == CapsuleerCareer.Hauling)
+        {
+            PilotInventoryStore.GrantStarterEquipment(world, pilot, station);
         }
         long module = 0;
         long cents =
@@ -517,6 +537,10 @@ internal sealed partial class CapsuleerProvisioner
                 emptyHull: trafficProfile is null
             );
             work = work with { Freight = freight };
+            if (fresh)
+            {
+                work = work with { CareerPlan = new(FreshCareerRules.Profession(slot), 0, CapsuleerTrainingFocus.Ship) };
+            }
             if (initialJourney is not null)
             {
                 work = work with { Journey = initialJourney };

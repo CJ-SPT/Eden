@@ -15,7 +15,9 @@ using Eden.Gameplay.Propulsion;
 using Eden.Gameplay.Ships;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Infrastructure.Registration;
+using Eden.World.Agents;
 using Eden.World.Catalog;
+using Eden.World.Corporations;
 using Eden.World.Docking;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
@@ -47,7 +49,9 @@ internal sealed class CapsuleerHaulerFactory(
     CapsuleerRatting ratting,
     CapsuleerIndustry ammunitionSupply,
     PilotEntosisStore entosis,
-    CapsuleerCareerTraining careerTraining
+    CapsuleerCareerTraining careerTraining,
+    PilotMissionStore missions,
+    PilotFleetStore fleet
 )
 {
     internal CapsuleerHauler Create(long pilotId) =>
@@ -69,7 +73,9 @@ internal sealed class CapsuleerHaulerFactory(
             ratting,
             ammunitionSupply,
             entosis,
-            careerTraining
+            careerTraining,
+            missions,
+            fleet
         );
 }
 
@@ -91,7 +97,9 @@ internal sealed partial class CapsuleerHauler(
     CapsuleerRatting ratting,
     CapsuleerIndustry ammunitionSupply,
     PilotEntosisStore entosis,
-    CapsuleerCareerTraining careerTraining
+    CapsuleerCareerTraining careerTraining,
+    PilotMissionStore missions,
+    PilotFleetStore fleet
 )
 {
     private SavedCapsuleerHauler? _founder;
@@ -974,6 +982,11 @@ internal sealed partial class CapsuleerHauler(
     private void TradeAndLaunch(CombatAnomaly? scoutedAnomaly)
     {
         using var phase = SessionPerformance.Phase("traffic.tradeAndLaunch");
+        if (database.Settings.FreshUniverse && _operation.World is EconomyTransaction freshWorld)
+        {
+            WorkFreshCareer(freshWorld);
+            return;
+        }
         if (Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup)
         {
             _work = Work with { SovereigntyExpedition = null, HomeDefenseAllianceId = null };

@@ -114,6 +114,71 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
         return new(plan);
     }
 
+    internal CapsuleerTrainingTurn AdvanceFreshCareer(
+        EconomyTransaction world,
+        CatalogDbContext catalog,
+        DockedPilot pilot,
+        CapsuleerProfession profession,
+        long now
+    )
+    {
+        var plan = new CapsuleerCareerPlan(profession, EntryHull(profession), CapsuleerTrainingFocus.Ship);
+        long id = pilot.PilotId;
+        var state = training.Advance(world, id, now);
+        bool trained = state.ChangedSkills.Count > 0;
+        if (catalog.Definition(s_careerFitPlans, plan.ShipTypeId) is not { } targets)
+        {
+            return new(plan, LevelChanged: trained);
+        }
+        if (PilotTrainingStore.ReadFreePoints(world, id) > 0)
+        {
+            if (Spend(world, catalog, pilot, targets, now, out bool boughtBook, out bool allocatedLevel))
+            {
+                return new(plan, boughtBook, trained || allocatedLevel);
+            }
+            if (
+                targets.All(target => PilotSkillReader.Level(world, catalog, id, target.TypeId) >= target.Level)
+                && (
+                    Spend(
+                        world,
+                        catalog,
+                        pilot,
+                        catalog.Definition(s_work, 0)[(profession, false, false)],
+                        now,
+                        out boughtBook,
+                        out allocatedLevel
+                    ) || Spend(world, catalog, pilot, catalog.Definition(s_foundation, 0), now, out boughtBook, out allocatedLevel)
+                )
+            )
+            {
+                return new(plan, boughtBook, trained || allocatedLevel);
+            }
+        }
+        if (state.Queue.Count > 0)
+        {
+            return new(plan, LevelChanged: trained);
+        }
+        foreach (var target in targets)
+        {
+            int current = PilotSkillReader.Level(world, catalog, id, target.TypeId);
+            if (current >= target.Level)
+            {
+                continue;
+            }
+            bool marketChanged = false;
+            if (
+                world.Set<PilotSkill>().Find(id, target.TypeId) is null
+                && !Learn(world, catalog, pilot, target.TypeId, now, out marketChanged)
+            )
+            {
+                break;
+            }
+            training.QueueCareerLevel(world, id, new(target.TypeId, current + 1), now);
+            return new(plan, marketChanged, LevelChanged: trained);
+        }
+        return new(plan, LevelChanged: trained);
+    }
+
     private bool Spend(
         EconomyTransaction world,
         CatalogDbContext catalog,

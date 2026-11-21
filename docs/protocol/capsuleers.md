@@ -2,6 +2,67 @@
 
 [Protocol index](../protocol.md)
 
+## Fresh-universe hauling and bounty careers
+
+The fresh profile can admit a courier and a bounty hunter alongside the existing miners. Each begins docked
+with zero ISK, the racial corvette, civilian equipment, and racial starting skills. Couriers need a basic
+level-one distribution agent at a market station and a reachable high-security destination. Bounty hunters
+need a high-security system with a station market and asteroid belts. They respect the belt-ratting setting
+and use the ordinary encounter assessment before fighting.
+
+The courier accepts a native offer that fits the corvette's hold, moves the mission package into that hold,
+flies to the destination, and completes the mission while docked. The agent service consumes the delivered
+cargo and records ISK and any time bonus in the normal wallet journal. A courier whose cargo is lost closes
+the delivery without collecting a reward. The hunter fits the civilian weapon, fights resident belt pirates,
+and earns the ordinary NPC bounty and skill-point reward on a kill.
+
+Both careers spend earned unallocated skill points through the existing allocator. Ship and fit prerequisites
+take priority, then work and foundation skills. The existing queue can train a missing level with time. Pilots
+buy or inject required skillbooks through their normal services. They purchase, fit, and board a Badger or
+Merlin from available market stock. Starter manufacturers can use locally sourced recipes to fill funded
+rookie orders after their first Miner I trade. A pilot who loses a paid ship uses the racial corvette recovery
+service, resumes earning, and can buy a replacement from the same market with personal ISK.
+
+Build 3662168 stores 125 m³ of cargo capacity on the Ibis item type. Mission 2912 asks for ten units of cargo
+type 16044 at 10 m³ per unit. The fresh courier selector checks total package volume. EVE.js records distribution
+mission completions in `server/src/services/career/careerMissionSources.js` and processes NPC bounty rewards in
+`server/src/services/bounty/npcBountySchedulerRuntime.js`. The inspected files have SHA-256 hashes
+`D762CF77D7A6644F2D67630941EC1AADF3F36BFF18C443D77F61E51B9C9C3501` and
+`DE742A68640C0B79E8C1FBF8AD44AAF652F8A962954BC7960322AF4110D5CAF3`.
+[EVE University distribution missions](https://wiki.eveuniversity.org/Distribution_missions) ·
+[CCP boarding and ejecting](https://support.eveonline.com/hc/en-us/articles/5166514480796-Boarding-and-Ejecting)
+
+### Automated validation
+
+`FullyQualifiedName=Eden.Protocol.Tests.Industry.FreshUniverseTests.FreshCouriersAndRatsEarnTheirShipsAndPayToReplaceBothAfterLoss`
+passed against the installed build 3662168 catalog in 38.66 seconds including runner overhead. The two pilots
+started with zero ISK and zero unallocated SP. Both purchased their first ships from ordinary finite sell orders.
+The replay applied a ship loss to each pilot, reopened the save, and withheld replacement stock until both earned
+again from their original careers in corvettes. Both then bought and boarded replacements. The combat pilot's
+bounty-earned SP allocation history survived the restart. The fixture uses a controlled pirate population and
+two finite lots at fixture prices. The replay measures earning and recovery with that supply. Independent
+acquisition and manufacturing of the seller's stock are outside the replay.
+
+The solution built without warnings in 10.26 seconds. The wider focused run passed 383 cases in 284.20 seconds,
+including runner overhead. It covered fresh progression, mission delivery and bonuses, ratting, inbound traffic,
+bounty SP, and the training queue. Both Python policy suites passed 17 checks, and formatting passed.
+
+```text
+(FullyQualifiedName~FreshUniverseTests|FullyQualifiedName~AgentDirectoryTests|FullyQualifiedName~PilotSpaceActivitiesTests|FullyQualifiedName~RattingRulesTests|FullyQualifiedName~CapsuleerInboundRuntimeTests|FullyQualifiedName~NpcSkillPointRewardTests|FullyQualifiedName~FreeSkillPointTests|FullyQualifiedName~PilotTrainingTests|FullyQualifiedName~MissionBonusTests|FullyQualifiedName~EveryAdmittedDeliveryCanBeOfferedTransportedReopenedAndPaidExactlyOnce)&FullyQualifiedName!~FailedAgentRemovalRollsBackEarlierPlayerContactDeletionInTheSameBatch&FullyQualifiedName!~ShoppingChoosesRealAffordableStockAndHonorsThreatMemory
+```
+
+The agent-contact rollback case and the overpriced shopping case failed the same way on main at `0787254e`.
+The final focused filter excludes the two affected methods.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Observe a rookie courier's cargo and wallet through one delivery. Follow a rookie bounty hunter through a kill
+and check earned and applied skill points after it docks.
+
 ## Catalog-driven fleet supply and production
 
 Headquarters calculates reserves from the largest active fit per item and the combined shortages of docked
