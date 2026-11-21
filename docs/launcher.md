@@ -21,6 +21,9 @@ administer the server, use **Open world setup** or follow the server console to 
 Players on a server with no published administration URL can ask its operator to finish setup. Choose **Check again** once
 the server is ready. The same flow applies after a wipe with **Configure new settings**.
 
+Once connected to a ready server that publishes an administration address, choose **Server admin** in the launcher’s top
+bar to open administration in your browser. Sign in there with your administrator account.
+
 ## Existing accounts
 
 Run `dotnet run --project src/Eden.Server -- --set-account-password Eden` in an interactive terminal. For the second account, use `--set-account-password 'Eden Wing'`. Passwords are entered twice without echo. No default passwords are assigned. Password changes revoke launcher sessions and preserve account IDs, characters, possessions and progress.

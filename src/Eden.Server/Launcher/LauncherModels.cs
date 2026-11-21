@@ -40,7 +40,8 @@ public sealed record ServerReply(
     Eden.World.Skills.SkillClientPackage? SkillPackage = null,
     Eden.Modding.ModSetPackage? ModSet = null,
     string WorldStatus = LauncherReadiness.Ready,
-    string? WorldSetupUrl = null
+    string? WorldSetupUrl = null,
+    string? AdministrationUrl = null
 );
 
 internal sealed class LauncherException(string code, string message, int status = 400) : Exception(message)

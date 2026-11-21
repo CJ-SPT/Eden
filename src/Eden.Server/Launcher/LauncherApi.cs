@@ -111,16 +111,20 @@ internal static class LauncherApi
                 var world = availability.World;
                 var mods = world?.Mods;
                 var activeSet = mods?.ActiveSet;
-                string? setupUrl = availability.SetupUrl;
+                string? administrationUrl = availability.AdministrationUrl;
                 if (
-                    Uri.TryCreate(setupUrl, UriKind.Absolute, out var uri)
+                    Uri.TryCreate(administrationUrl, UriKind.Absolute, out var uri)
                     && uri.IsLoopback
                     && !context.Request.Host.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
                     && !(IPAddress.TryParse(context.Request.Host.Host, out var ip) && IPAddress.IsLoopback(ip))
                 )
                 {
-                    setupUrl = null;
+                    administrationUrl = null;
                 }
+                string? setupUrl =
+                    availability.State == LauncherReadiness.SetupRequired && administrationUrl is not null
+                        ? administrationUrl.TrimEnd('/') + "/world/setup"
+                        : null;
                 return new ServerReply(
                     settings.ServerId,
                     settings.Name,
@@ -132,7 +136,8 @@ internal static class LauncherApi
                     activeSet is null ? world?.SkillPublisher?.Status().Active : null,
                     activeSet,
                     availability.State,
-                    setupUrl
+                    setupUrl,
+                    administrationUrl
                 );
             }
         );

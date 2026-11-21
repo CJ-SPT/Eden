@@ -10,6 +10,12 @@ Setup or startup returns HTTP 503 with `world_setup_required` or `world_starting
 operations. Ready servers keep the existing v1/v2 response shape with these additive fields. The launcher
 treats older metadata with the field omitted as ready and validates remote setup links as HTTPS.
 
+The server descriptor also includes optional `administrationUrl` once the administration listener is running.
+The launcher uses this address for **Server admin** on ready worlds. Remote launchers receive the configured
+HTTPS administration origin. Loopback-only links are available for local connections. The admin-link change passed
+7 server cases in 14.56 seconds (launcher API, remote administration and first-start setup) and 40 launcher
+cases in 3.83 seconds (API and view models).
+
 The setup-only administration host uses the existing administrator and antiforgery protection. It persists
 the selected Fresh or Established configuration in the stopped world before initialization. Startup activates
 the approved revision and removes the setup record in one transaction. A wiped checkpoint records when the

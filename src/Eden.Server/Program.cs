@@ -406,6 +406,7 @@ internal static class Program
             await chat.StartAsync(new(IPAddress.Parse(options.ListenAddress), ChatServer.ClientPort));
             lifetime.OnStop("gateway listener", () => new ValueTask(gateway.StopAsync()));
             await gateway.StartAsync();
+            string? administrationUrl = null;
             if (!admin.Disabled && new AdministratorAccounts(database.Path).Provisioned)
             {
                 var administration = AdministrationHost.Create(
@@ -420,7 +421,8 @@ internal static class Program
                 lifetime.OnStop("administration", administration.DisposeAsync);
                 lifetime.OnStop("administration listener", () => new ValueTask(administration.StopAsync()));
                 await administration.StartAsync();
-                ServerLog.Console.Information($"Administration available at {admin.Address}.");
+                administrationUrl = admin.Address;
+                ServerLog.Console.Information($"Administration available at {administrationUrl}.");
             }
             else if (!admin.Disabled && admin.Origin is not null)
             {
@@ -452,7 +454,8 @@ internal static class Program
                         services.GetRequiredService<ChatCertificate>().PublicPem,
                         services.GetRequiredService<SkillClientPublisher>(),
                         services.GetRequiredService<Eden.World.Modding.ModStore>()
-                    )
+                    ),
+                    administrationUrl
                 );
                 lifetime.OnStop("launcher account access", readiness.StartWorld);
             }
@@ -511,7 +514,7 @@ internal static class Program
             );
             await administration.StartAsync(shutdown);
             string address = admin.Address.TrimEnd('/') + "/world/setup";
-            readiness.RequireSetup(address);
+            readiness.RequireSetup(admin.Address);
             ServerLog.Console.Information($"Open {address} and sign in to configure the world.");
             var approval = await request.Approved.WaitAsync(shutdown);
             readiness.StartWorld();

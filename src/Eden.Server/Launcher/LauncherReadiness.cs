@@ -12,7 +12,7 @@ internal sealed record LauncherWorld(
     ModStore? Mods
 );
 
-internal sealed record LauncherAvailability(string State, string? SetupUrl = null, LauncherWorld? World = null);
+internal sealed record LauncherAvailability(string State, string? AdministrationUrl = null, LauncherWorld? World = null);
 
 internal sealed class LauncherReadiness
 {
@@ -23,11 +23,12 @@ internal sealed class LauncherReadiness
 
     public LauncherAvailability Read() => Volatile.Read(ref _availability);
 
-    public void RequireSetup(string? setupUrl) => Volatile.Write(ref _availability, new(SetupRequired, setupUrl));
+    public void RequireSetup(string? administrationUrl) => Volatile.Write(ref _availability, new(SetupRequired, administrationUrl));
 
     public void StartWorld() => Volatile.Write(ref _availability, new(Starting));
 
-    public void Open(LauncherWorld world) => Volatile.Write(ref _availability, new(Ready, World: world));
+    public void Open(LauncherWorld world, string? administrationUrl = null) =>
+        Volatile.Write(ref _availability, new(Ready, administrationUrl, world));
 
     public LauncherWorld RequireWorld()
     {

@@ -86,6 +86,7 @@ public sealed class LauncherApiTests
         using var client = new HttpClient { BaseAddress = new Uri($"http://127.0.0.1:{options.ApiPort}/api/v1/") };
         var server = await client.GetFromJsonAsync<ServerReply>("server");
         Assert.Equal(1, server!.ApiVersion);
+        Assert.Null(server.AdministrationUrl);
         using var registration = await client.PostAsJsonAsync("accounts", new AccountRequest("Http Pilot", password));
         Assert.Equal(HttpStatusCode.OK, registration.StatusCode);
         var account = await registration.Content.ReadFromJsonAsync<AccountReply>();
@@ -109,19 +110,22 @@ public sealed class LauncherApiTests
     {
         var options = new LauncherOptions { ApiPort = AvailablePort() };
         LauncherReadiness readiness = new();
-        const string setupUrl = "http://127.0.0.1:26003/world/setup";
-        readiness.RequireSetup(setupUrl);
+        const string administrationUrl = "http://127.0.0.1:26003";
+        readiness.RequireSetup(administrationUrl);
         await using var api = LauncherApi.Create(options, readiness, TimeProvider.System);
         await api.StartAsync();
         using var client = new HttpClient { BaseAddress = new Uri($"http://127.0.0.1:{options.ApiPort}/api/v1/") };
 
         var server = await client.GetFromJsonAsync<ServerReply>("server");
         Assert.Equal(LauncherReadiness.SetupRequired, server!.WorldStatus);
-        Assert.Equal(setupUrl, server.WorldSetupUrl);
+        Assert.Equal(administrationUrl + "/world/setup", server.WorldSetupUrl);
+        Assert.Equal(administrationUrl, server.AdministrationUrl);
         using var remote = new HttpRequestMessage(HttpMethod.Get, "server");
         remote.Headers.Host = "eden.test";
         using var remoteReply = await client.SendAsync(remote);
-        Assert.Null((await remoteReply.Content.ReadFromJsonAsync<ServerReply>())!.WorldSetupUrl);
+        var remoteServer = await remoteReply.Content.ReadFromJsonAsync<ServerReply>();
+        Assert.Null(remoteServer!.WorldSetupUrl);
+        Assert.Null(remoteServer.AdministrationUrl);
 
         foreach (string endpoint in new[] { "accounts", "sessions", "sessions/refresh", "launch-tickets" })
         {
@@ -130,7 +134,9 @@ public sealed class LauncherApiTests
             Assert.Equal("world_setup_required", (await response.Content.ReadFromJsonAsync<ApiError>())!.Code);
         }
         readiness.StartWorld();
-        Assert.Equal(LauncherReadiness.Starting, (await client.GetFromJsonAsync<ServerReply>("server"))!.WorldStatus);
+        var startingServer = await client.GetFromJsonAsync<ServerReply>("server");
+        Assert.Equal(LauncherReadiness.Starting, startingServer!.WorldStatus);
+        Assert.Null(startingServer.AdministrationUrl);
         using var starting = await client.PostAsJsonAsync("sessions", new SignInRequest("Test", "secret", false));
         Assert.Equal(HttpStatusCode.ServiceUnavailable, starting.StatusCode);
         Assert.Equal("world_starting", (await starting.Content.ReadFromJsonAsync<ApiError>())!.Code);
@@ -139,8 +145,18 @@ public sealed class LauncherApiTests
         var store = new LauncherStore(new WorldDatabase(world.Path), TimeProvider.System);
         store.Initialize();
         using var identity = new DevelopmentIdentity(TimeProvider.System, store, options);
-        readiness.Open(new(store, identity, null, null, null));
-        Assert.Equal(LauncherReadiness.Ready, (await client.GetFromJsonAsync<ServerReply>("server"))!.WorldStatus);
+        LauncherWorld launcherWorld = new(store, identity, null, null, null);
+        readiness.Open(launcherWorld, administrationUrl);
+        var readyServer = await client.GetFromJsonAsync<ServerReply>("server");
+        Assert.Equal(LauncherReadiness.Ready, readyServer!.WorldStatus);
+        Assert.Equal(administrationUrl, readyServer.AdministrationUrl);
+        Assert.Null(readyServer.WorldSetupUrl);
+
+        client.DefaultRequestHeaders.Host = "eden.test";
+        Assert.Null((await client.GetFromJsonAsync<ServerReply>("server"))!.AdministrationUrl);
+        const string publicAdministrationUrl = "https://eden.test:26003";
+        readiness.Open(launcherWorld, publicAdministrationUrl);
+        Assert.Equal(publicAdministrationUrl, (await client.GetFromJsonAsync<ServerReply>("server"))!.AdministrationUrl);
         using var registration = await client.PostAsJsonAsync("accounts", new AccountRequest("Test", "secret"));
         Assert.Equal(HttpStatusCode.OK, registration.StatusCode);
         using var signIn = await client.PostAsJsonAsync("sessions", new SignInRequest("Test", "secret", false));
