@@ -11,9 +11,10 @@ internal sealed class LiveTrafficGeometry
     private readonly Lock _gate = new();
     private const int MaximumSystems = 1024;
 
-    private sealed record Entry(long Catalog, IReadOnlyList<StaticSpaceObject> Objects);
+    private sealed record Entry(long Catalog, IReadOnlyList<StaticSpaceObject> Objects, LinkedListNode<int> Recency);
 
     private readonly Dictionary<int, Entry> _systems = [];
+    private readonly LinkedList<int> _systemOrder = new();
     private readonly Dictionary<int, IReadOnlyList<StaticSpaceObject>> _static = [];
     private readonly Queue<int> _staticOrder = new();
     private long _staticCatalog;
@@ -73,6 +74,7 @@ internal sealed class LiveTrafficGeometry
         {
             if (_systems.TryGetValue(system, out var entry) && entry.Catalog == catalog)
             {
+                Touch(entry.Recency);
                 objects = entry.Objects;
                 return true;
             }
@@ -96,17 +98,51 @@ internal sealed class LiveTrafficGeometry
     {
         lock (_gate)
         {
-            if (_systems.Count >= MaximumSystems)
+            var snapshot = Array.AsReadOnly(objects.ToArray());
+            LinkedListNode<int> recency;
+            if (_systems.TryGetValue(system, out var current))
             {
-                _systems.Clear();
-                _belts.Clear();
+                recency = current.Recency;
+                Touch(recency);
             }
-            _systems[system] = new(catalog, Array.AsReadOnly(objects.ToArray()));
+            else
+            {
+                if (_systems.Count == MaximumSystems)
+                {
+                    RemoveSystem(_systemOrder.First!.Value);
+                }
+                recency = _systemOrder.AddLast(system);
+            }
+            _systems[system] = new(catalog, snapshot, recency);
             foreach (int belt in belts)
             {
                 _belts[belt] = system;
             }
         }
+    }
+
+    private void Touch(LinkedListNode<int> recency)
+    {
+        if (recency.Next is not null)
+        {
+            _systemOrder.Remove(recency);
+            _systemOrder.AddLast(recency);
+        }
+    }
+
+    private void RemoveSystem(int system)
+    {
+        // Belt ownership outlives a view. A later renewal can still invalidate just that system.
+        if (_systems.Remove(system, out var entry))
+        {
+            _systemOrder.Remove(entry.Recency);
+        }
+    }
+
+    private void ClearSystems()
+    {
+        _systems.Clear();
+        _systemOrder.Clear();
     }
 
     internal void Observe(IReadOnlyCollection<CombatRowChange> changes)
@@ -118,7 +154,7 @@ internal sealed class LiveTrafficGeometry
                 if (change.Table == "schema")
                 {
                     Revision++;
-                    _systems.Clear();
+                    ClearSystems();
                     _belts.Clear();
                 }
                 else if (
@@ -128,7 +164,7 @@ internal sealed class LiveTrafficGeometry
                 )
                 {
                     Revision++;
-                    _systems.Remove(changedSystem);
+                    RemoveSystem(changedSystem);
                 }
                 else if (
                     change.Table == "WorldBeltRenewal"
@@ -142,11 +178,11 @@ internal sealed class LiveTrafficGeometry
                             : (change.Id - AsteroidDefinitions.FirstAsteroidId) / AsteroidDefinitions.IdsPerBelt;
                     if (_belts.TryGetValue(belt, out int system))
                     {
-                        _systems.Remove(system);
+                        RemoveSystem(system);
                     }
                     else
                     {
-                        _systems.Clear();
+                        ClearSystems();
                     }
                 }
             }
