@@ -22,5 +22,14 @@ internal static class AreaWeaponSchema
             );
             """
         );
+        if (
+            !world
+                .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('SavedLanceDisruption')")
+                .AsEnumerable()
+                .Contains(nameof(Eden.Data.World.Combat.SavedLanceDisruption.OscillatorEndsAt))
+        )
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE SavedLanceDisruption ADD COLUMN OscillatorEndsAt INTEGER NOT NULL DEFAULT 0");
+        }
     }
 }

@@ -203,7 +203,7 @@ public static class AreaWeaponRules
             checked((int)Value(DogmaAttributeId.ConsumptionType)),
             checked((int)Value(DogmaAttributeId.ConsumptionQuantity)),
             power,
-            kind is AreaWeaponKind.Doomsday or AreaWeaponKind.DoomsdayField ? DoomsdayRules.Charge(attributes) : null,
+            kind is AreaWeaponKind.Doomsday or AreaWeaponKind.DoomsdayField ? DoomsdayRules.Charge(attributes, effect) : null,
             kind == AreaWeaponKind.DoomsdayField ? DoomsdayFieldRules.Profile(effect, attributes) : null
         );
         if (

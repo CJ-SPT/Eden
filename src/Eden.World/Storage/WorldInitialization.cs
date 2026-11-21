@@ -160,7 +160,7 @@ public static class WorldInitialization
             .ExecuteDelete();
         Eden.World.Exploration.HackingSchema.Reconcile(world);
         world.Set<WorldPlayerEwar>().ExecuteDelete();
-        world.Set<SavedLanceDisruption>().Where(row => row.EndsAt <= moduleReopen).ExecuteDelete();
+        world.Set<SavedLanceDisruption>().Where(row => row.EndsAt <= moduleReopen && row.OscillatorEndsAt <= moduleReopen).ExecuteDelete();
         // Drop combat in progress at startup, while retaining paid superweapon navigation restrictions.
         foreach (var row in world.Set<SavedAreaWeapon>().ToArray())
         {

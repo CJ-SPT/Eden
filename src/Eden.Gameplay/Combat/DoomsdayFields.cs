@@ -9,6 +9,7 @@ public enum DoomsdayFieldShape
     Cylinder = 1,
     Sweep = 2,
     Cone = 3,
+    Sphere = 4,
 }
 
 public sealed record DoomsdayFieldProfile(
@@ -50,6 +51,7 @@ public static class DoomsdayFieldRules
     public const int Guillotine = 41443;
     public const int Jormungandr = 41444;
     public const int BosonicFieldGenerator = 40633;
+    public const int TransportationFieldOscillator = 40634;
     public const int Atgeir = 77398;
     public const int Azmaru = 77399;
     public const int SteelYari = 77400;
@@ -59,12 +61,20 @@ public static class DoomsdayFieldRules
     // CCP's Viridian notes specify the repair reduction. The pinned catalog supplies the duration.
     public const double DisruptedRemoteRepairMultiplier = 0.5;
 
+    // Build 3662168 localization_fsd_en-us description 516260 applies this lock to capital hulls.
+    public const long OscillatorWarpLock = 60 * TimeSpan.TicksPerSecond;
+
     public static bool IsDisruptiveLance(int type) => type is Atgeir or Azmaru or SteelYari or Sarissa;
 
     private const double SweepAngle = 15 * Math.PI / 180;
 
     public static bool IsEffect(DogmaEffect effect) =>
-        effect is DogmaEffect.DoomsdayBeam or DogmaEffect.DoomsdaySlash or DogmaEffect.DoomsdayCone or DogmaEffect.DisruptiveLance;
+        effect
+            is DogmaEffect.DoomsdayBeam
+                or DogmaEffect.DoomsdaySlash
+                or DogmaEffect.DoomsdayCone
+                or DogmaEffect.DoomsdayOscillator
+                or DogmaEffect.DisruptiveLance;
 
     public static string Graphic(int type) =>
         type switch
@@ -78,7 +88,7 @@ public static class DoomsdayFieldRules
             Guillotine => "effects.SWSlashBeamGallente",
             Jormungandr => "effects.SWSlashBeamMinmatar",
             // Use the pinned point indicator when no Bosonic-specific graphic is available.
-            BosonicFieldGenerator => "effects.IndicatorBeamMoving",
+            BosonicFieldGenerator or TransportationFieldOscillator => "effects.IndicatorBeamMoving",
             _ => throw new InvalidDataException("Unsupported area doomsday."),
         };
 
@@ -90,11 +100,12 @@ public static class DoomsdayFieldRules
             DogmaEffect.DoomsdayBeam or DogmaEffect.DisruptiveLance => DoomsdayFieldShape.Cylinder,
             DogmaEffect.DoomsdaySlash => DoomsdayFieldShape.Sweep,
             DogmaEffect.DoomsdayCone => DoomsdayFieldShape.Cone,
+            DogmaEffect.DoomsdayOscillator => DoomsdayFieldShape.Sphere,
             _ => throw new InvalidDataException("Unsupported area doomsday shape."),
         };
         var profile = new DoomsdayFieldProfile(
             shape,
-            Read(DogmaAttributeId.DoomsdayDamageRadius),
+            Read(shape == DoomsdayFieldShape.Sphere ? DogmaAttributeId.ProjectorRadius : DogmaAttributeId.DoomsdayDamageRadius),
             Read(DogmaAttributeId.SignatureRadius),
             Read(DogmaAttributeId.DoomsdayDamageDuration),
             Read(DogmaAttributeId.DoomsdayDamageCycle),
@@ -105,19 +116,19 @@ public static class DoomsdayFieldRules
         );
         if (
             Read(DogmaAttributeId.DoomsdayAreaShape) != (int)shape
-            || Read(DogmaAttributeId.DoomsdayFixedRange) != 1
+            || Read(DogmaAttributeId.DoomsdayFixedRange) != (shape == DoomsdayFieldShape.Sphere ? 0 : 1)
             || shape != DoomsdayFieldShape.Cone && (!double.IsFinite(profile.Radius) || profile.Radius <= 0)
-            || new[]
-            {
-                profile.Signature,
-                profile.DamageDuration,
-                profile.DamageCycle,
-                profile.NeutralizationRadius,
-                profile.NeutralizationAmount,
-                profile.NeutralizationSignature,
-            }.Any(value => !double.IsFinite(value) || value <= 0)
+            || new[] { profile.NeutralizationRadius, profile.NeutralizationAmount, profile.NeutralizationSignature }.Any(value =>
+                !double.IsFinite(value) || value <= 0
+            )
             || effect == DogmaEffect.DisruptiveLance && (!double.IsFinite(profile.DisruptionDuration) || profile.DisruptionDuration <= 0)
-            || profile.DamageCycle > profile.DamageDuration
+            || shape != DoomsdayFieldShape.Sphere
+                && (
+                    new[] { profile.Signature, profile.DamageDuration, profile.DamageCycle }.Any(value =>
+                        !double.IsFinite(value) || value <= 0
+                    )
+                    || profile.DamageCycle > profile.DamageDuration
+                )
         )
         {
             throw new InvalidDataException("Invalid area doomsday catalog data.");

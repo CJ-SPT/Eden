@@ -1,3 +1,4 @@
+using Eden.Data.World.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Infrastructure.Registration;
@@ -18,6 +19,10 @@ internal sealed class PilotWarpDriveStore(WorldDatabase database) : IPilotWarpDr
         Eden.World.Sovereignty.EntosisPersistence.RequireTravel(transaction, shipId, now);
         PilotCapitalTravelStore.RequireMobile(transaction, pilotId, shipId, now);
         Eden.World.Combat.LanceDisruption.RequireTravel(transaction, shipId, now);
+        if (transaction.Set<SavedLanceDisruption>().Find(shipId)?.OscillatorEndsAt > now)
+        {
+            throw new InvalidDataException("The transportation field prevents your ship from warping.");
+        }
         var pilot = transaction.Pilots.SingleOrDefault(p => p.Id == pilotId && p.ActiveShipId == shipId);
         if (pilot?.ActiveShip.Position is null)
         {

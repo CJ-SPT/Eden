@@ -59,7 +59,7 @@ internal sealed partial class AreaWeaponStore
                     var first = beacon is null ? flight.Point - flight.Origin : null;
                     var second = flight.EndPoint is { } point ? point - flight.Origin : first;
                     long visualAt = field.Shape == DoomsdayFieldShape.Sweep ? active : flight.StartedAt;
-                    long visualEnd = field.Shape == DoomsdayFieldShape.Cone ? active : end;
+                    long visualEnd = field.Shape is DoomsdayFieldShape.Cone or DoomsdayFieldShape.Sphere ? active : end;
                     return new DoomsdayFieldContact(
                         row.Id,
                         beacon,
@@ -115,7 +115,8 @@ internal sealed partial class AreaWeaponStore
         SavedAreaWeapon row,
         AreaWeaponFlight flight,
         long now,
-        List<PilotDamage> notifications
+        List<PilotDamage> notifications,
+        Dictionary<long, SpacePosition> displacements
     )
     {
         var charge = flight.Module.Doomsday!;
@@ -129,7 +130,7 @@ internal sealed partial class AreaWeaponStore
             return false;
         }
         if (
-            now >= damageEnd
+            field.Shape != DoomsdayFieldShape.Sphere && now >= damageEnd
             || world.Pilots.Find(row.PilotId) is not { } source
             || source.ActiveShipId != row.SourceShipId
             || source.ActiveShip.Position is null
@@ -139,6 +140,13 @@ internal sealed partial class AreaWeaponStore
             || weapon.LocationId != row.SourceShipId
         )
         {
+            row.Save(flight with { Active = true, ResolvesAt = lockEnd });
+            return false;
+        }
+
+        if (field.Shape == DoomsdayFieldShape.Sphere)
+        {
+            Oscillate(world, catalog, source, flight, row.SystemId, now, displacements);
             row.Save(flight with { Active = true, ResolvesAt = lockEnd });
             return false;
         }
@@ -172,6 +180,7 @@ internal sealed partial class AreaWeaponStore
         {
             if (
                 target.Id == row.SourceShipId
+                || displacements.ContainsKey(target.Id)
                 || target.Npc is { } candidate && !Eden.World.FactionWarfare.MilitiaObjectiveStore.CanAttack(world, candidate, source)
             )
             {

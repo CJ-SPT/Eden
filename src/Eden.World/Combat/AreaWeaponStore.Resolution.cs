@@ -58,7 +58,8 @@ internal sealed partial class AreaWeaponStore
         CatalogDbContext catalog,
         int system,
         long now,
-        Func<SpacePosition, double, bool>? intersects = null
+        Func<SpacePosition, double, bool>? intersects = null,
+        bool shipsOnly = false
     )
     {
         List<Target> targets = [];
@@ -93,6 +94,10 @@ internal sealed partial class AreaWeaponStore
                 continue;
             }
             targets.Add(new(pilot.ActiveShipId, pilot.ActiveShip.TypeId, position, radius, attributes, Pilot: pilot));
+        }
+        if (shipsOnly)
+        {
+            return targets.OrderBy(target => target.Id).ToArray();
         }
         foreach (var npc in world.Filter<WorldNpc>(row => row.SystemId == system && row.DestroyedAt == null && row.RetiredAt == null))
         {
@@ -263,6 +268,11 @@ internal sealed partial class AreaWeaponStore
         {
             return;
         }
+        Eden.World.Runtime.LiveWorld.Execute(database.Path, systemId, () => Settle(systemId, now), nameof(Advance));
+    }
+
+    private void Settle(int systemId, long now)
+    {
         using var transaction = Live.Economy.Begin(Participants(systemId));
         var world = (WorldAction)transaction;
         using CatalogDbContext catalog = new(database.CatalogPath);
@@ -270,6 +280,7 @@ internal sealed partial class AreaWeaponStore
         List<PilotDamage> damage = [];
         bool destroyedNpc = false;
         List<long> impacts = [];
+        Dictionary<long, SpacePosition> displacements = [];
         foreach (
             var row in world
                 .Filter<SavedAreaWeapon>(row => row.SystemId == systemId)
@@ -306,7 +317,7 @@ internal sealed partial class AreaWeaponStore
             }
             else if (flight.Module.Kind == AreaWeaponKind.DoomsdayField)
             {
-                destroyedNpc |= SettleDoomsdayField(world, catalog, row, flight, now, damage);
+                destroyedNpc |= SettleDoomsdayField(world, catalog, row, flight, now, damage, displacements);
             }
             else if (flight.Module.Kind == AreaWeaponKind.Defender)
             {
@@ -343,6 +354,10 @@ internal sealed partial class AreaWeaponStore
             }
         }
         transaction.Commit();
+        foreach (var (ship, position) in displacements)
+        {
+            presence.Displace(systemId, ship, position);
+        }
         foreach (long id in impacts)
         {
             _impacts[id] = now + TimeSpan.FromMinutes(2).Ticks;

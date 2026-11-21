@@ -495,6 +495,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         areaWeapons.HasIndex(row => row.ModuleId);
         var disruptions = model.Entity<Eden.Data.World.Combat.SavedLanceDisruption>().ToTable("SavedLanceDisruption");
         disruptions.HasKey(row => row.ShipId);
+        disruptions.Property(row => row.OscillatorEndsAt).HasDefaultValue(0L);
         disruptions.HasOne<Ship>().WithMany().HasForeignKey(row => row.ShipId).OnDelete(DeleteBehavior.Cascade);
         var interdiction = model.Entity<Eden.Data.World.Propulsion.SavedInterdictionField>().ToTable("SavedInterdictionField");
         interdiction.HasKey(row => row.Id);

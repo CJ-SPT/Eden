@@ -112,7 +112,7 @@ internal sealed class AreaWeaponHandler(IPilotAreaWeapons weapons, TimeProvider 
                 && args is [long module, long effect, var value]
                 && effect is >= int.MinValue and <= int.MaxValue
                 && (
-                    (DogmaEffect)effect is DogmaEffect.DoomsdayBeam or DogmaEffect.DoomsdayCone or DogmaEffect.DisruptiveLance
+                    DoomsdayFieldRules.IsEffect((DogmaEffect)effect) && (DogmaEffect)effect != DogmaEffect.DoomsdaySlash
                     || AreaWeaponRules.IsProjector((DogmaEffect)effect)
                 )
             )

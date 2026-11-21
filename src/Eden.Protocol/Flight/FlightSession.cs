@@ -458,6 +458,16 @@ internal sealed partial class FlightSession(
     {
         using (space.UseSystem(Pilot.SystemId))
         {
+            if (space.ConsumeDisplacement(Pilot.ShipId) is { } destination)
+            {
+                Pilot = Pilot with { Position = destination };
+                _navigation = new();
+                _simulatedStamp = Stamp;
+                CorrectPosition(Pilot.ShipId, destination, SpacePosition.Zero, _simulatedStamp);
+                Update(new DestinyCommand.Stop(Pilot.ShipId));
+                PublishMotion();
+                PublishContact();
+            }
             SynchronizeGateCloak();
             RefreshTackle();
             RefreshInterdiction();

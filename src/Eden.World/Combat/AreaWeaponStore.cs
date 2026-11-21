@@ -138,12 +138,16 @@ internal sealed partial class AreaWeaponStore(
         }
         double security = CrimewatchPersistence.Security(catalog, system);
         bool disruptive = effect == DogmaEffect.DisruptiveLance;
+        bool oscillator = effect == DogmaEffect.DoomsdayOscillator;
         if (module.Kind == AreaWeaponKind.BurstJammer)
         {
             bool alpha = world.Set<Account>().Find(pilot.AccountId)!.CloneGrade == AccountCloneGrade.Alpha;
             SmartbombRules.CheckSafety(security, pilot.SafetyLevel, alpha);
         }
-        else if (security >= CrimewatchRules.HighSecurity || security > 0 && module.Kind != AreaWeaponKind.Doomsday && !disruptive)
+        else if (
+            security >= CrimewatchRules.HighSecurity
+            || security > 0 && module.Kind != AreaWeaponKind.Doomsday && !disruptive && !oscillator
+        )
         {
             throw new InvalidDataException(
                 module.Kind == AreaWeaponKind.Doomsday
@@ -151,9 +155,9 @@ internal sealed partial class AreaWeaponStore(
                     : "This area weapon requires null-security or wormhole space."
             );
         }
-        if (disruptive && security > 0 && pilot.SafetyLevel != ShipSafetyLevel.Disabled)
+        if ((disruptive || oscillator) && security > 0 && pilot.SafetyLevel != ShipSafetyLevel.Disabled)
         {
-            throw new InvalidDataException("Use red safety before firing a disruptive lance in low-security space.");
+            throw new InvalidDataException("Use red safety before firing this area doomsday in low-security space.");
         }
         SpacePosition origin = new(saved.X, saved.Y, saved.Z);
         double sourceRadius = 0;
@@ -201,6 +205,13 @@ internal sealed partial class AreaWeaponStore(
                     throw new InvalidDataException("Choose both endpoints of the Reaper sweep.");
                 }
                 DoomsdayFieldRules.CheckSweep(origin, sourceRadius, module.Range, point, secondPoint);
+            }
+            else if (oscillator)
+            {
+                if (origin.DistanceTo(point) > sourceRadius + module.Range)
+                {
+                    throw new InvalidDataException("Aim the oscillator within its range.");
+                }
             }
             else
             {

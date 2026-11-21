@@ -336,7 +336,7 @@ published light and heavy attack squadrons. Slot zero uses the attack missile pr
 and Heavy Fighters skills apply to Cyclops attack damage. Supercarriers also use the existing
 `superWeaponMgr.ActivateSinglePointTargetedModule` path for burst projectors. The racial effects `6615`–`6618`
 modify their associated projector cycles, alongside Burst Projector Operation. Other fighter roles and abilities,
-Standup fighter control, additional area doomsdays and Phenomena Generators remain open.
+Standup fighter control and Phenomena Generators remain open.
 
 The pinned catalog cases exercise all eight hulls. The Avatar pays to bridge a Rapier from Jan to a Pharolux,
 then jumps itself and docks at the Keepstar. The Aeon fires Cyclops attack missiles at an Astrahus and applies a
@@ -468,6 +468,31 @@ filter passed in 104.85 seconds after a 10.54-second build. Both Python suites, 
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
+## Gravitational Transportation Field Oscillator
+
+Type `40634` uses `doomsdayHOG` (`6474`). Build 3662168's `positionalControl.pyj` uses
+`ActivateSinglePointTargetedModule` and a projected sphere. Its catalog sets a 100 km aim range, 10 km sphere,
+15 seconds of warning, 2,000 Strontium Clathrates and 30,000 GJ. The Titan pays before the warning and
+reuses the signature-scaled capacitor wave. Eden requires red safety in lowsec.
+[CCP Citadel patch notes](https://www.eveonline.com/news/view/patch-notes-for-eve-online-citadel)
+
+At settlement, eligible piloted subcapitals move together to an offset sampled 1 to 4 AU away in the
+same system. The coordinator updates their motion and sends absolute position corrections. Capitals
+stay in place and receive a 60-second warp lock. The capital deadline and the relocated positions
+survive restart, while pending pulses stop at restart. A tethered capsuleer is protected. The pinned
+localization entry `516260` specifies the capital lock. CCP removed the warp scramble from transported
+ships in February 2018. [CCP February 2018 patch notes](https://www.eveonline.com/news/view/patch-notes-for-february-2018-release-1-0)
+
+EVE.js had no oscillator settlement path to reuse. The pinned effect has no effect GUID, so Eden uses the
+stock point indicator for the warning. The transport applies to piloted ships. NPC encounters and drones
+keep their current positions.
+
+**Automated validation.** The three exact oscillator cases passed in 10.26 seconds. All 142 cases in the
+final capital travel, area weapons, tether, warp payment, flight boundary and migration filter passed in
+57.69 seconds after a 10.03-second build. Both Python suites, formatting and `git diff --check` passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Pirate capitals and the Zirnitra
 
 The pinned published roster adds Caiman, Chemosh, Sarathiel and Vehement dreadnoughts, Dagon and
@@ -505,7 +530,7 @@ fighter deck, hull audit, capacitor warfare, spatial modules and flight boundary
 | **5. Dreadnoughts and force auxiliaries** | Implemented. Dreadnoughts and force auxiliaries use standard cynos, paid siege or triage, and normal docking, repair and loss settlement. The acceptance cases reopen a paid siege and settle an Apostle loss. |
 | **6. Carriers and fighters** | Implemented for light attack squadrons. Carrier tubes support launch, targeting, recall and replacement, with squadron losses persisted. Standup fighters and additional combat abilities remain open. |
 | **7. Capital industry and fleet services** | Rorquals use paid industrial cores, Excavators, fleet compression and P.A.N.I.C. Shared fleet storage, mobile refitting, clone bays and fresh-world resupply remain open. |
-| **8. Supercapitals and production** | Keepstar docking, Sotiyo construction, direct jumps, Titan bridging, supercarrier heavy attack fighters and burst projectors are implemented. Targeted Titan doomsdays have paid windups, counters and durable loss settlement. Titan lances, Reapers and Bosonic fields support paid aiming and positional counters. Transport effects and phenomena remain open. |
+| **8. Supercapitals and production** | Keepstar docking, Sotiyo construction, direct jumps, Titan bridging, supercarrier heavy attack fighters and burst projectors are implemented. Targeted Titan doomsdays have paid windups, counters and durable loss settlement. Titan lances, Reapers and Bosonic fields support paid aiming and positional counters. The oscillator transports subcapitals and locks capital warp. Phenomena remain open. |
 
 Milestone 5 needs the Upwell battle and destruction paths for its siege acceptance.
 [Sovereignty upgrades](sovereignty.md#sovereignty-resources-and-upgrades--november-16-2026) ·

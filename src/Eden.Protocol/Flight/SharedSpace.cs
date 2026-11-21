@@ -293,6 +293,45 @@ internal sealed class SharedSpace(
     }
 
     private readonly ConcurrentDictionary<long, ShipMotion> _motion = new();
+    private readonly ConcurrentDictionary<long, SpacePosition> _displacements = new();
+
+    internal SpacePosition? ConsumeDisplacement(long ship) => _displacements.TryRemove(ship, out var destination) ? destination : null;
+
+    public void Displace(int systemId, long shipId, SpacePosition position)
+    {
+        RunMotion(
+            systemId,
+            () =>
+            {
+                using var owned = EnterMotion(systemId: systemId);
+                if (_motion.TryGetValue(shipId, out var motion) && motion.SystemId == systemId)
+                {
+                    _motion[shipId] = motion with { Position = position, Navigation = new(), Target = null };
+                    _history.TryRemove(shipId, out _);
+                    _displacements[shipId] = position;
+                }
+                if (_ships.TryGetValue(shipId, out var contact) && contact.Pilot.SystemId == systemId)
+                {
+                    _sightGrid.Move(shipId, systemId, contact.Pilot.Position, systemId, position);
+                    _ships[shipId] = contact with
+                    {
+                        Pilot = contact.Pilot with { Position = position },
+                        Velocity = SpacePosition.Zero,
+                        Heading = null,
+                        SpeedFraction = 0,
+                        FollowRange = null,
+                        FollowTargetId = 0,
+                        AlignTo = null,
+                        Warp = null,
+                        Bumped = false,
+                    };
+                    _displacements[shipId] = position;
+                }
+            },
+            nameof(Displace)
+        );
+    }
+
     private readonly ConcurrentDictionary<long, IReadOnlyList<ShipMotionResult>> _history = new();
 
     public void PublishMotion(ShipMotion ship)
@@ -455,6 +494,7 @@ internal sealed class SharedSpace(
                 _sightGrid.Move(shipId, previous.Pilot.SystemId, previous.Pilot.Position, 0, null);
             }
             _motion.TryRemove(shipId, out _);
+            _displacements.TryRemove(shipId, out _);
             _history.TryRemove(shipId, out _);
             _orders.TryRemove(shipId, out _);
         }

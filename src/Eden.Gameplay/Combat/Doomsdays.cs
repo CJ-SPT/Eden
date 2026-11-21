@@ -43,6 +43,7 @@ public static class DoomsdayRules
             or DoomsdayFieldRules.Guillotine
             or DoomsdayFieldRules.Jormungandr => DogmaEffect.DoomsdaySlash,
             DoomsdayFieldRules.BosonicFieldGenerator => DogmaEffect.DoomsdayCone,
+            DoomsdayFieldRules.TransportationFieldOscillator => DogmaEffect.DoomsdayOscillator,
             int disruptive when DoomsdayFieldRules.IsDisruptiveLance(disruptive) => DogmaEffect.DisruptiveLance,
             _ => null,
         };
@@ -57,7 +58,7 @@ public static class DoomsdayRules
             _ => throw new InvalidDataException("Unknown targeted doomsday effect."),
         };
 
-    public static DoomsdayCharge Charge(IReadOnlyDictionary<DogmaAttributeId, double> attributes)
+    public static DoomsdayCharge Charge(IReadOnlyDictionary<DogmaAttributeId, double> attributes, DogmaEffect effect)
     {
         double Read(DogmaAttributeId id) => attributes.GetValueOrDefault(id);
         var result = new DoomsdayCharge(
@@ -71,9 +72,8 @@ public static class DoomsdayRules
             Read(DogmaAttributeId.DoomsdayDriveLock)
         );
         if (
-            new[] { result.Damage.Total, result.MovementLockMilliseconds, result.DriveLockMilliseconds }.Any(value =>
-                !double.IsFinite(value) || value <= 0
-            )
+            new[] { result.MovementLockMilliseconds, result.DriveLockMilliseconds }.Any(value => !double.IsFinite(value) || value <= 0)
+            || effect != DogmaEffect.DoomsdayOscillator && (!double.IsFinite(result.Damage.Total) || result.Damage.Total <= 0)
         )
         {
             throw new InvalidDataException("Invalid targeted doomsday catalog data.");
