@@ -91,9 +91,12 @@ internal sealed partial class LiveCombatRuntime
         }
     }
 
-    private void InvalidatePopulation(int system, string reason)
+    private void InvalidatePopulation(int system, string reason, bool keepDeadline)
     {
-        InvalidatePopulationDeadline(system, reason);
+        if (!keepDeadline)
+        {
+            InvalidatePopulationDeadline(system, reason);
+        }
         _systemNpcs.Remove(system);
         _beltClearances.Remove(system);
         _simulationContacts.Remove(system);
@@ -105,16 +108,16 @@ internal sealed partial class LiveCombatRuntime
         }
     }
 
-    private void ObserveNpcPopulation(long id, string reason, bool resident)
+    private void ObserveNpcPopulation(long id, string reason, bool resident, bool keepDeadline = false)
     {
         if (_populationRefreshSystem is { } scoped)
         {
-            InvalidatePopulation(scoped, reason);
+            InvalidatePopulation(scoped, reason, keepDeadline);
             return;
         }
         if (_npcs.TryGetValue(id, out var previous))
         {
-            InvalidatePopulation(previous.SystemId, reason);
+            InvalidatePopulation(previous.SystemId, reason, keepDeadline);
         }
         int? current =
             resident || owner.Economy.IsLoaded
@@ -126,7 +129,7 @@ internal sealed partial class LiveCombatRuntime
                 });
         if (current is int system)
         {
-            InvalidatePopulation(system, reason);
+            InvalidatePopulation(system, reason, keepDeadline);
         }
     }
 

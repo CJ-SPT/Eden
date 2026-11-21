@@ -152,6 +152,68 @@ public sealed class RegionalNpcTests
     }
 
     [Fact]
+    public void ResidentBeltPirateMotionAndDamageKeepPopulationWarmButPublishContacts()
+    {
+        var clock = new TestClock(new DateTimeOffset(DateTime.FromFileTimeUtc(Now)));
+        using TestWorld db = new(regionalNpcs: true, liveWorld: true, clock: clock);
+        Prepare(db);
+        var live = db.Services.GetRequiredService<LiveWorld>();
+        using var schedulerOwner = live.EnterShared("belt pirate replay");
+        live.MeasureBotReplay = true;
+        var encounters = db.Services.GetRequiredService<INpcEncounters>();
+        var simulation = db.Services.GetRequiredService<INpcSimulation>();
+        var pirate = encounters.List(System, clock.Now).First(n => n.Role == NpcRole.Pirate && n.AnchorId > 0);
+        var database = db.Services.GetRequiredService<WorldDatabase>();
+        const int updates = 64;
+        long deadline = database.PopulationDeadlines[System];
+        Assert.True(deadline > clock.Now + updates * TimeSpan.TicksPerSecond);
+        long baseline = live.NpcPopulationCounts.GetValueOrDefault("deadline missing");
+        double shield = pirate.Health.Defense.Shield / 2;
+        using (var metrics = SessionPerformance.Begin("belt pirate combat updates", _ => { }, force: true)!)
+        {
+            for (int index = 1; index <= updates; index++)
+            {
+                clock.Seconds++;
+                double x = pirate.Position.X + index;
+                using (var action = live.Economy.Begin(new(systems: [System])))
+                {
+                    var row = action.Set<WorldNpc>().Find(pirate.Id)!;
+                    row.X = x;
+                    if (index == updates)
+                    {
+                        row.ShieldCharge = shield;
+                        row.UpdatedAt = clock.Now;
+                    }
+                    action.Commit();
+                }
+                Assert.Equal(x, simulation.Advance(System, clock.Now).Single(n => n.Id == pirate.Id).Position.X);
+            }
+            var current = encounters.List(System, clock.Now).Single(n => n.Id == pirate.Id);
+            Assert.Equal(pirate.Position.X + updates, current.Position.X);
+            Assert.Equal(shield, current.Health.Remaining.Shield);
+            Assert.Equal(baseline, live.NpcPopulationCounts.GetValueOrDefault("deadline missing"));
+            Assert.Equal(deadline, database.PopulationDeadlines[System]);
+            Assert.Equal((0, 0, 0), (metrics.Commands, metrics.Connections, metrics.FittingCalculations));
+        }
+
+        using (var action = live.Economy.Begin(new(systems: [System])))
+        {
+            action.Set<WorldNpc>().Find(pirate.Id)!.HomeX = pirate.Position.X + 10;
+            action.Commit();
+        }
+        _ = simulation.Advance(System, clock.Now);
+        Assert.Equal(baseline + 1, live.NpcPopulationCounts.GetValueOrDefault("deadline missing"));
+
+        using (var action = live.Economy.Begin(new(systems: [System])))
+        {
+            action.Set<WorldNpc>().Find(pirate.Id)!.RetiredAt = clock.Now;
+            action.Commit();
+        }
+        Assert.DoesNotContain(simulation.Advance(System, clock.Now), n => n.Id == pirate.Id);
+        Assert.Equal(baseline + 2, live.NpcPopulationCounts.GetValueOrDefault("deadline missing"));
+    }
+
+    [Fact]
     public void ResidentRegionalRespawnHonorsSavedDeadlineWithoutSql()
     {
         using TestWorld db = new(regionalNpcs: true, liveWorld: true);

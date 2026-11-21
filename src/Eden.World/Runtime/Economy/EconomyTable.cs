@@ -3,7 +3,9 @@ using System.Data.Common;
 using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Text.Json;
+using Eden.Data.World.Combat.Npcs;
 using Eden.Infrastructure.Diagnostics;
+using Eden.World.Combat.Npcs;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -463,9 +465,13 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
             List<Eden.World.Runtime.Combat.CombatRowChange> changes = [];
             foreach (var key in _changes.Keys)
             {
-                changes.Add(new(table.Name, key.Id, Resident: true));
                 var beforeRow = table.Read(key);
                 var afterRow = _removed.Contains(key) ? null : _local[key];
+                bool keepPopulationDeadline =
+                    beforeRow is WorldNpc beforeNpc
+                    && afterRow is WorldNpc afterNpc
+                    && NpcPopulationMember.RetainsBeltPirateDeadline(beforeNpc, afterNpc);
+                changes.Add(new(table.Name, key.Id, Resident: true, KeepNpcPopulationDeadline: keepPopulationDeadline));
                 changes.AddRange(transaction.FitChanges(beforeRow, afterRow));
                 if (typeof(TRow) == typeof(Eden.Data.World.Mining.WorldAsteroid))
                 {

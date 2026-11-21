@@ -19,6 +19,27 @@ internal readonly record struct NpcPopulationMember(
 {
     internal bool Active => DestroyedAt is null && RetiredAt is null;
 
+    // Belt pirates affect population through membership and availability. Their
+    // combat motion and damage still refresh the owning combat and contact views.
+    internal static bool RetainsBeltPirateDeadline(WorldNpc before, WorldNpc after) =>
+        before
+            is { Role: NpcRole.Pirate, AnchorKind: NpcAnchorKind.Belt, DestroyedAt: null, RetiredAt: null, BeltId: > 0, EncounterId: > 0 }
+        && after is { Role: NpcRole.Pirate, AnchorKind: NpcAnchorKind.Belt, DestroyedAt: null, RetiredAt: null }
+        && before.TypeId != NpcEncounterDefinitions.GuristasRookieType
+        && !NpcSpecialTypes.Excluded.Contains(before.TypeId)
+        && before.SystemId == after.SystemId
+        && before.BeltId == after.BeltId
+        && before.EncounterId == after.EncounterId
+        && before.SpawnSlot == after.SpawnSlot
+        && before.TypeId == after.TypeId
+        && before.CorporationId == after.CorporationId
+        && before.FactionId == after.FactionId
+        && before.Name == after.Name
+        && before.AcquisitionRange == after.AcquisitionRange
+        && before.HomeX == after.HomeX
+        && before.HomeY == after.HomeY
+        && before.HomeZ == after.HomeZ;
+
     internal static IEnumerable<NpcPopulationMember> InSystem(WorldAction world, int system) =>
         world.Set<WorldNpc>() is EconomySet<WorldNpc, EconomyWorldNpc> npcs
             ? FromSnapshots(npcs.IndexedSnapshots(nameof(WorldNpc.SystemId), system).Where(n => n.SystemId == system))
