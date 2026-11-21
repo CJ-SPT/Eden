@@ -17,6 +17,7 @@ internal sealed class CharacterSheetHandler(
     IPlayerCorporations corporations,
     ICorporationRoles corporationRoles,
     IAlliances alliances,
+    ICharacterDirectory directory,
     IMilitiaProgression? militia = null
 ) : ISelectedPilotCallHandler
 {
@@ -29,6 +30,29 @@ internal sealed class CharacterSheetHandler(
     )
     {
         var pilot = context.Pilot;
+        if (service == "charMgr" && method == "GetCharacterCreationDate")
+        {
+            return args.Length == 0 && keywords is null or { Count: 0 }
+                ? pilot.Identity.Profile.CreatedAt
+                : new PilotCallResult.Failure("The selected character's creation date does not accept arguments.");
+        }
+        if (service == "charMgr" && method == "GetOrganizationInfoForCharacters")
+        {
+            if (
+                keywords is { Count: > 0 }
+                || args is not [List<object?> ids]
+                || ids.Count > ContactRules.MaximumBatchSize
+                || ids.Any(id => id is not (long and > 0))
+            )
+            {
+                return new PilotCallResult.Failure("Supply a list of positive character IDs.");
+            }
+            var requested = ids.Cast<long>().Distinct().ToArray();
+            var affiliations = directory.Affiliations(requested);
+            return new BlueMap<long, CharacterAffiliationReply>(
+                requested.ToDictionary(id => id, id => new CharacterAffiliationReply(affiliations.GetValueOrDefault(id)))
+            );
+        }
         if (service == "charMgr" && method == "GetPrivateInfo")
         {
             if (keywords is { Count: > 0 } || args is not [long character] || character <= 0)

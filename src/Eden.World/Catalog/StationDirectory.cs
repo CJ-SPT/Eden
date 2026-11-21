@@ -14,10 +14,29 @@ internal sealed class StationDirectory(WorldDatabase database) : IStationDirecto
         Estimate: snapshot => 1024 + snapshot.Stations.Count * 512L
     );
 
+    private static readonly CatalogDefinition<ImmutableArray<SystemStationCount>> s_counts = new(
+        "directory/station-counts",
+        (catalog, _) =>
+        {
+            var counts = catalog.Stations().CountBy(station => station.SolarSystemId).ToDictionary();
+            return catalog
+                .Definitions.Systems.Keys.Order()
+                .Select(id => new SystemStationCount(id, counts.GetValueOrDefault(id)))
+                .ToImmutableArray();
+        },
+        Estimate: counts => counts.Length * 8L
+    );
+
     public StationDirectorySnapshot Read()
     {
         using CatalogDbContext catalog = new(database.CatalogPath);
         return catalog.Definition(s_snapshot, 0);
+    }
+
+    public IReadOnlyList<SystemStationCount> CountsBySystem()
+    {
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        return catalog.Definition(s_counts, 0);
     }
 
     private static StationDirectorySnapshot Load(CatalogDbContext catalog)

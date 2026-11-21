@@ -1,6 +1,9 @@
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Flight;
 
 namespace Eden.Gameplay.Exploration;
+
+public sealed record GhostDungeonState(int DungeonId, int RoomId, long InstanceId, long? CountdownEnd);
 
 public static class GhostSiteRules
 {
@@ -32,6 +35,9 @@ public static class GhostSiteRules
     public static bool IsBonusCache(int type) => type is >= FirstBonusType and <= LastBonusType;
 
     public static int MaximumFailures(ExplorationKind? kind) => kind == ExplorationKind.Ghost ? 1 : HackingRules.MaximumFailures;
+
+    public static bool IsOnGrid(SpacePosition pilot, SpacePosition site) =>
+        pilot.DistanceTo(site) <= NpcEncounterDefinitions.VisibilityRange;
 
     public static long ResponseAt(long now, long siteId)
     {

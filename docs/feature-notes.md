@@ -29,6 +29,10 @@
 
 Counts, schema versions, example pilots, fixture populations and native observations describe the recorded implementation. Read the linked follow-ups before treating an older example as current behavior. Automated support and historical client observations are distinct; native presentation remains unverified where stated.
 
+The star map can read NPC station counts, character customization can read the pilot's creation date, and Local can fill
+missing organization fields. Reconnecting pilots can recover their active Abyssal room or Ghost Site countdown.
+[EVE.js compatibility comparison](protocol/compatibility.md#evejs-comparison-for-map-character-and-dungeon-routes)
+
 Station [R&D agents](protocol/agents.md#rd-agents-and-datacores--november-11-2026) support persistent passive
 research and paid datacore redemption. Daily bonus research missions remain unsupported.
 

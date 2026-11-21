@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[EVE.js comparison for map, character and dungeon routes](protocol/compatibility.md#evejs-comparison-for-map-character-and-dungeon-routes)
+covers NPC station counts, character creation timestamps, Local chat affiliations and dungeon state on reconnect.
+
 [Market presets on fresh worlds and demand batching](protocol/industry.md#market-presets-on-fresh-worlds-and-demand-batching)
 covers preset activation, saved player orders, and shorter market-demand turns during population growth.
 

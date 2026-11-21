@@ -9,6 +9,20 @@ using Eden.Protocol.Serialization;
 
 namespace Eden.Protocol.Characters;
 
+internal sealed record CharacterAffiliationReply(CharacterAffiliation Affiliation) : BlueModel
+{
+    public override object ToBlue() =>
+        new BlueInstance(
+            "utillib.KeyVal",
+            new Dictionary<string, object?>
+            {
+                ["corporationID"] = Affiliation.CorporationId,
+                ["allianceID"] = Affiliation.AllianceId,
+                ["warFactionID"] = (int?)Affiliation.WarFaction ?? 0,
+            }
+        );
+}
+
 internal sealed record CharacterBiographyReply(string Biography) : BlueModel
 {
     public override object ToBlue() => new BlueUnicode(Biography);

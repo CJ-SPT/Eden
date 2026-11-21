@@ -74,7 +74,7 @@ internal sealed class StationDirectoryHandler(
                 ? new CorporationStationSystemsReply(owned.Select(station => station.SystemId).Distinct().Order().ToArray())
                 : new OwnerStationsReply(owned);
         }
-        if (service != "map" || method != "GetStationInfo")
+        if (service != "map" || method is not ("GetStationInfo" or "GetStationCount"))
         {
             return PilotCallResult.Unsupported;
         }
@@ -82,6 +82,6 @@ internal sealed class StationDirectoryHandler(
         {
             return new PilotCallResult.Failure("Station information does not accept arguments.");
         }
-        return new StationDirectoryReply(stations.Read());
+        return method == "GetStationCount" ? new StationCountReply(stations.CountsBySystem()) : new StationDirectoryReply(stations.Read());
     }
 }

@@ -42,6 +42,31 @@ internal sealed partial class PirateExplorationStore(
 
     private readonly ConcurrentDictionary<int, View> _views = [];
 
+    public GhostDungeonState? CurrentGhostDungeon(int systemId, SpacePosition position, long now)
+    {
+        var live = LiveWorld.Find(database.Path) ?? throw new InvalidOperationException("Ghost dungeon state requires the resident world.");
+        if (!database.Settings.NpcPopulation.Pirates)
+        {
+            return null;
+        }
+        return live.Economy.Inspect(world =>
+        {
+            var site = world
+                .Filter<SavedExplorationSite>(site =>
+                    site.SystemId == systemId && site.Kind == (int)ExplorationKind.Ghost && site.ReplaceAt == null && site.ExpiresAt > now
+                )
+                .FirstOrDefault(site => GhostSiteRules.IsOnGrid(position, new(site.X, site.Y, site.Z)));
+            if (site is null)
+            {
+                return null;
+            }
+            using CatalogDbContext catalog = new(database.CatalogPath);
+            var definition = Definition(catalog, site);
+            long? end = site.ResponseSpawned && !site.Detonated ? site.ResponseAt + GhostSiteRules.VisibleCountdown : null;
+            return new GhostDungeonState(site.DungeonId, definition.RoomId, site.Id, end > now ? end : null);
+        });
+    }
+
     public IReadOnlyList<CombatAnomaly> Signatures(int systemId, long now)
     {
         return LiveWorld.Execute(database.Path, systemId, () => SignaturesOwned(systemId, now), nameof(Signatures));

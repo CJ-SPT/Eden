@@ -192,10 +192,7 @@ internal sealed class CombatAnomalyHandler(
         var site =
             position is null || !context.Flight.InBallpark || context.Flight.InWarp
                 ? null
-                : signatures.FirstOrDefault(s =>
-                    s.Exploration == ExplorationKind.Ghost
-                    && s.Position.DistanceTo(position) <= Eden.Gameplay.Combat.NpcEncounterDefinitions.VisibilityRange
-                );
+                : signatures.FirstOrDefault(s => s.Exploration == ExplorationKind.Ghost && GhostSiteRules.IsOnGrid(position, s.Position));
         if (site?.Id != _ghostSite && _ghostSite != 0)
         {
             context.Notifications.Add(new ExitingExplorationDungeon(_ghostDungeon));
@@ -212,7 +209,8 @@ internal sealed class CombatAnomalyHandler(
             _ghostSite = site.Id;
             _ghostDungeon = site.DungeonId;
         }
-        else if (site.GhostCountdownEnd != _ghostCountdown)
+        // The pinned client ignores entry values if its reconnect lookup already created this dungeon.
+        if (site.GhostCountdownEnd != _ghostCountdown)
         {
             context.Notifications.Add(new GhostDungeonValues(site.DungeonId, site.GhostCountdownEnd));
         }

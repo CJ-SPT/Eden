@@ -33,7 +33,6 @@ internal sealed class DockedCompatibilityHandler(
         return (service, method) switch
         {
             ("charMgr", "GetSettingsInfo") => context.SignedSettings,
-            ("keeper", "GetCurrentDungeonForCharacter") => PilotCallResult.None,
             ("bountyProxy", "GetBountiesAndKillRights") => new BountiesAndKillRightsState(),
             ("bountyProxy", "GetBounties") when args is [HashSet<long> owners] => new BlueList<BountyReply>(
                 owners.Order().Select(owner => new BountyReply(owner)).ToArray()

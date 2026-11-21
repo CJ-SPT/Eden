@@ -1,3 +1,5 @@
+using Eden.Gameplay.FactionWarfare;
+
 namespace Eden.Gameplay.Characters;
 
 public sealed record PersonalContact(long ContactId, double Standing, bool InWatchlist, long LabelMask);
@@ -8,10 +10,13 @@ public sealed record PersonalContacts(IReadOnlyList<PersonalContact> Addresses, 
 
 public sealed record CharacterIdentity(long Id, string Name, int Gender, long? NameId = null, bool IsNpc = false);
 
+public readonly record struct CharacterAffiliation(int CorporationId, int AllianceId = 0, MilitiaFaction? WarFaction = null);
+
 public interface ICharacterDirectory
 {
     IReadOnlyList<CharacterIdentity> Read(IReadOnlyList<long> ids);
     int? Corporation(long characterId);
+    IReadOnlyDictionary<long, CharacterAffiliation> Affiliations(IReadOnlyList<long> ids);
 }
 
 public interface IPilotContacts
