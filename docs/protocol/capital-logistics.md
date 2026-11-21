@@ -731,12 +731,35 @@ EVE.js `fighterRuntime.js` corroborates the range check, teleport and motion cor
 The squadron persists its destination and deadline while spooling. At the deadline,
 the resident owner relocates it once and publishes an absolute motion update.
 Fighter tackle can prevent the jump. Recall cancels the pending destination.
-The bomb launcher occupies slot two and has its own settlement.
+The [bomb launcher](#long-range-heavy-fighter-bombs) occupies slot two.
 
 **Automated validation.** The two exact Ametat micro-jump cases passed in 12.70 seconds.
 The 22-case fighter, mobility, launch, secondary ability and resident drone filter passed
 in 28.90 seconds after an 18.18-second build. Both Python suites, formatting and
 `git diff --check` passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+## Long-range heavy fighter bombs
+
+Build 3662168 assigns point-targeted ability 7 and effect 6485 to slot two.
+`fightersSvc.pyj` passes an aim point and the pinned ability disallows empire
+space. The long-range squads load three charges on T1 or five on T2, use a
+60-second cycle and rearm one charge every 20 seconds. Types 41548–41551
+are the four racial fighter bombs. EVE.js `fighterRuntime.js` launches the
+projectile from the squadron and scales its damage by the current fighter count.
+[CCP Citadel notes](https://www.eveonline.com/news/view/patch-notes-for-eve-online-citadel)
+
+The point sets heading, and the projectile uses its catalog velocity, lifetime and blast radius.
+Eden records the charge debit, weapons timer, launch position and projectile in one
+resident transaction. The ordinary bomb resolver handles detonation and the existing
+Defender and smartbomb interception paths. Recall and disconnect leave the launched
+bomb in flight. A checkpoint reopen restores unexpired fighter bombs.
+
+**Automated validation.** The three exact Ametat cases passed in 13.52 seconds, covering
+empire refusal, single settlement after recall and reopen, and interception before impact.
+The 71-case fighter, area weapon, smartbomb and migration filter passed in 66.29 seconds
+after a 1.66-second build. Both Python suites, formatting and `git diff --check` passed.
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 

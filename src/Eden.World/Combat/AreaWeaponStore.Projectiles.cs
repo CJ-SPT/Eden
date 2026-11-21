@@ -2,7 +2,9 @@ using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Inventory;
 using Eden.World.Catalog;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -11,6 +13,62 @@ namespace Eden.World.Combat;
 
 internal sealed partial class AreaWeaponStore
 {
+    internal static void LaunchFighterBomb(
+        WorldAction world,
+        Pilot pilot,
+        DroneContact source,
+        FighterBomb weapon,
+        SpacePosition heading,
+        int system,
+        long now,
+        long end
+    )
+    {
+        var bomb = weapon.Payload with { Damage = weapon.Payload.Damage.Scale(source.SquadronSize) };
+        var module = new AreaWeaponProfile(
+            source.Id,
+            source.Profile.TypeId,
+            AreaWeaponKind.Bomb,
+            DogmaEffect.FighterBombLaunch,
+            weapon.DurationMilliseconds,
+            0,
+            0,
+            0,
+            bomb.Radius,
+            bomb.Lifetime,
+            0,
+            0,
+            0,
+            bomb.Power
+        );
+        var projectile = new SavedAreaWeapon
+        {
+            Id = world.Next("SavedAreaWeapon", AreaWeaponRules.FirstFlightId),
+            PilotId = pilot.Id,
+            SourceShipId = pilot.ActiveShipId,
+            ModuleId = source.Id,
+            SystemId = system,
+        };
+        var velocity = heading * bomb.Speed;
+        projectile.Save(
+            new(
+                module,
+                bomb,
+                source.Position,
+                velocity,
+                source.Position,
+                now,
+                AreaWeaponRules.Deadline(now, bomb.Lifetime),
+                Health: bomb.Defense.Undamaged
+            )
+        );
+        world.Add(projectile);
+        var timer = CrimewatchPersistence.State(world, pilot.Id);
+        timer.SystemId = system;
+        var timers = timer.Timers();
+        timer.Apply(timers with { Weapons = CrimewatchRules.Extend(timers.Weapons, end, CrimewatchRules.WeaponsDuration) });
+    }
+
     internal static bool DamageProjectiles(
         WorldAction world,
         int system,

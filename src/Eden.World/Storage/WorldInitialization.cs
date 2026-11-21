@@ -6,6 +6,7 @@ using Eden.Data.World.Inventory;
 using Eden.Data.World.Propulsion;
 using Eden.Data.World.Repair;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Diagnostics;
 using Eden.World.Catalog;
 using Eden.World.Combat;
@@ -168,10 +169,14 @@ public static class WorldInitialization
         Eden.World.Exploration.HackingSchema.Reconcile(world);
         world.Set<WorldPlayerEwar>().ExecuteDelete();
         world.Set<SavedLanceDisruption>().Where(row => row.EndsAt <= moduleReopen && row.OscillatorEndsAt <= moduleReopen).ExecuteDelete();
-        // Drop combat in progress at startup, while retaining paid superweapon navigation restrictions.
+        // Retain unexpired fighter bombs and paid superweapon navigation restrictions.
         foreach (var row in world.Set<SavedAreaWeapon>().ToArray())
         {
             var flight = row.Flight();
+            if (flight.Module.Effect == DogmaEffect.FighterBombLaunch && row.ResolvesAt > moduleReopen)
+            {
+                continue;
+            }
             long ends = flight.Module.Doomsday is { } charge
                 ? Eden.Gameplay.Combat.AreaWeaponRules.Deadline(flight.StartedAt, charge.DriveLockMilliseconds)
                 : 0;

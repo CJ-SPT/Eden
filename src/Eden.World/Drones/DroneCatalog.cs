@@ -45,6 +45,7 @@ internal static partial class DroneCatalog
                 Mobility = Eden.World.Fighters.FighterMobilityCatalog.Read(catalog, typeId, attributes),
                 Salvo = Eden.World.Fighters.FighterSalvoCatalog.Read(catalog, typeId, attributes),
                 Tackle = Eden.World.Fighters.FighterTackleCatalog.Read(catalog, typeId, attributes),
+                Bomb = Eden.World.Fighters.FighterBombCatalog.Read(catalog, typeId),
             };
         }
         if (UtilityDroneRules.Group(type.GroupId))

@@ -15,8 +15,8 @@ public sealed record FighterSalvo(
 
 public sealed record FighterSalvoCycle(int Charges, int Maximum, long RearmTicks, long StartedAt = 0, long EndsAt = 0, long RearmAt = 0)
 {
-    public static FighterSalvoCycle Full(FighterSalvo salvo) =>
-        new(salvo.Charges, salvo.Charges, (long)Math.Ceiling(salvo.RearmMilliseconds * TimeSpan.TicksPerMillisecond));
+    public static FighterSalvoCycle Full(int charges, double rearmMilliseconds) =>
+        new(charges, charges, (long)Math.Ceiling(rearmMilliseconds * TimeSpan.TicksPerMillisecond));
 
     public bool Active(long now) => StartedAt > 0 && EndsAt > now;
 

@@ -92,6 +92,7 @@ public sealed record DroneProfile(
     public FighterMobility? Mobility { get; init; }
     public FighterSalvo? Salvo { get; init; }
     public FighterTackle? Tackle { get; init; }
+    public FighterBomb? Bomb { get; init; }
 }
 
 public sealed record DroneContact(

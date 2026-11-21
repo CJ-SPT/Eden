@@ -41,7 +41,15 @@ public interface IPilotFighterDeck
 public interface IPilotFighterOrders
 {
     void OrderFighters(long pilotId, IReadOnlyList<long> squadrons, DroneOrder order, long? target, IReadOnlySet<long> locks, long now);
-    void SetSecondaryAbility(long pilotId, long shipId, IReadOnlyList<long> squadrons, long? target, bool locked, long now);
+    void SetSecondaryAbility(
+        long pilotId,
+        long shipId,
+        IReadOnlyList<long> squadrons,
+        long? target,
+        bool locked,
+        long now,
+        SpacePosition? point = null
+    );
 }
 
 public static class FighterDeckRules

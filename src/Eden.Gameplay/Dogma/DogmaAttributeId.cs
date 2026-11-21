@@ -307,6 +307,8 @@ public enum DogmaAttributeId
     FighterTackleRange = 2239,
     FighterTackleWebPercent = 2242,
     FighterTackleWarpStrength = 2425,
+    FighterBombType = 2324,
+    FighterBombDuration = 2349,
     FighterAttackMissileOptimal = 2236,
     FighterAttackMissileFalloff = 2237,
     CpuOutput = 48,

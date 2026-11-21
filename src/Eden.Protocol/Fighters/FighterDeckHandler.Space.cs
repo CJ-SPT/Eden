@@ -79,6 +79,12 @@ internal sealed partial class FighterDeckHandler
                 Advance(context);
                 flight.RefreshDrones();
                 return new BlueMap<long, object?>(firing.ToDictionary(id => id, _ => (object?)null));
+            case ("CmdActivateAbilitySlots", [var fighters, (long)FighterDeckRules.SecondarySlot, var aim]):
+                var bombing = ReadSelection(fighters);
+                orders.SetSecondaryAbility(pilot.PilotId, pilot.ShipId, bombing, null, false, Now, ReadPoint(aim));
+                Advance(context);
+                flight.RefreshMissiles();
+                return new BlueMap<long, object?>(bombing.ToDictionary(id => id, _ => (object?)null));
             case ("CmdDeactivateAbilitySlots", [var fighters, (long)FighterDeckRules.SecondarySlot]):
                 var ceasing = ReadSelection(fighters);
                 orders.SetSecondaryAbility(pilot.PilotId, pilot.ShipId, ceasing, null, false, Now);

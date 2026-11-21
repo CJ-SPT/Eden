@@ -97,9 +97,18 @@ internal sealed class PilotFighterDeckStore(WorldDatabase database, TimeProvider
             drone.SpeedLimit = profile.OrbitSpeed;
             drone.Orbiting = true;
             var work = PilotDroneStore.ReadWork(drone);
-            if (work.FighterSalvo is null && profile.Salvo is { } salvo)
+            if (work.FighterSalvo is null)
             {
-                PilotDroneStore.WriteWork(drone, work with { FighterSalvo = FighterSalvoCycle.Full(salvo) });
+                var charges = (profile.Salvo, profile.Bomb) switch
+                {
+                    ({ } salvo, _) => FighterSalvoCycle.Full(salvo.Charges, salvo.RearmMilliseconds),
+                    (_, { } bomb) => FighterSalvoCycle.Full(bomb.Charges, bomb.RearmMilliseconds),
+                    _ => null,
+                };
+                if (charges is not null)
+                {
+                    PilotDroneStore.WriteWork(drone, work with { FighterSalvo = charges });
+                }
             }
             var change = new InventoryChange(PilotInventoryStore.Read(catalog, item), before);
             launches.Add(new(new(flag, item.Id, item.TypeId, item.Quantity, drone.Activity), change));

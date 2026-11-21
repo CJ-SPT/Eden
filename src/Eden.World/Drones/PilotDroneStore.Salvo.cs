@@ -20,10 +20,18 @@ namespace Eden.World.Drones;
 
 internal sealed partial class PilotDroneStore
 {
-    public void SetSecondaryAbility(long pilotId, long shipId, IReadOnlyList<long> squadrons, long? targetId, bool locked, long now)
+    public void SetSecondaryAbility(
+        long pilotId,
+        long shipId,
+        IReadOnlyList<long> squadrons,
+        long? targetId,
+        bool locked,
+        long now,
+        SpacePosition? point = null
+    )
     {
         CheckIds(squadrons);
-        if (squadrons.Count > FighterDeckRules.MaximumTubes || targetId is not null && !locked)
+        if (squadrons.Count > FighterDeckRules.MaximumTubes || targetId is not null && (!locked || point is not null))
         {
             throw new InvalidDataException("Lock a target before using the fighter ability.");
         }
@@ -37,7 +45,7 @@ internal sealed partial class PilotDroneStore
             throw new InvalidDataException("Use the fighter controls on your active carrier.");
         }
         world.RequireUncloaked(shipId);
-        if (targetId is not null)
+        if (targetId is not null || point is not null)
         {
             Eden.World.Flight.PilotCapitalTravelStore.RequireOffense(world, shipId, now);
             var defense = ShipHealth.DefenseFrom(PilotFittingStore.ShipAttributes(world, catalog, pilot));
@@ -69,26 +77,32 @@ internal sealed partial class PilotDroneStore
             }
             var contact = Contact(world, catalog, row, now);
             var work = ReadWork(row);
+            if (contact.Profile.Bomb is { } bomb)
+            {
+                if (targetId is not null)
+                {
+                    throw new InvalidDataException("Aim the fighter bombs at a point in space.");
+                }
+                SetFighterBomb(world, catalog, pilot, row, contact, work, bomb, point, system, now);
+                continue;
+            }
+            if (point is not null)
+            {
+                throw new InvalidDataException("That fighter ability requires a locked target.");
+            }
             if (contact.Profile.Tackle is { } tackle)
             {
                 SetFighterTackle(world, catalog, pilot, row, contact, work, tackle, target, system, now);
                 continue;
             }
             var salvo = contact.Profile.Salvo ?? throw new InvalidDataException("That fighter has no supported secondary ability.");
-            var cycle = (work.FighterSalvo ?? FighterSalvoCycle.Full(salvo)).Refresh(now);
+            var cycle = (work.FighterSalvo ?? FighterSalvoCycle.Full(salvo.Charges, salvo.RearmMilliseconds)).Refresh(now);
             if (target is null)
             {
-                if (!cycle.Active(now))
-                {
-                    throw new InvalidDataException("The fighter salvo is no longer active.");
-                }
-                WriteWork(row, work with { FighterSalvo = cycle with { StartedAt = 0 } });
+                StopFighterChargeCycle(row, work, cycle, now);
                 continue;
             }
-            if (cycle.EndsAt > now || cycle.Charges == 0 || row.Activity == DroneActivity.ReturningToBay)
-            {
-                throw new InvalidDataException("The fighter salvo is active, rearming or returning to its tube.");
-            }
+            RequireFighterCharge(row, cycle, now);
             if (
                 !PlayerEwarRules.CanTarget(PlayerEwarStore.Active(world, row.ItemId), target.Id)
                 || contact.Position.DistanceTo(target.Position) - target.Radius - contact.Profile.Radius > salvo.Range
@@ -110,6 +124,23 @@ internal sealed partial class PilotDroneStore
             world.AfterCommit(security.Publish);
         }
         world.Commit();
+    }
+
+    private static void RequireFighterCharge(WorldDrone drone, FighterSalvoCycle cycle, long now)
+    {
+        if (cycle.EndsAt > now || cycle.Charges == 0 || drone.Activity == DroneActivity.ReturningToBay)
+        {
+            throw new InvalidDataException("The fighter weapon is active, rearming or returning to its tube.");
+        }
+    }
+
+    private static void StopFighterChargeCycle(WorldDrone drone, DroneWork work, FighterSalvoCycle cycle, long now)
+    {
+        if (!cycle.Active(now))
+        {
+            throw new InvalidDataException("The fighter weapon is no longer active.");
+        }
+        WriteWork(drone, work with { FighterSalvo = cycle with { StartedAt = 0 } });
     }
 
     private sealed record FighterAbilityTarget(
