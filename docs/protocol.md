@@ -1,5 +1,7 @@
 # Protocol findings and milestone records
 
+[Alliance membership age and EverMark donations](protocol/alliances.md#alliance-membership-age-and-evermark-donations) covers wallet lookups and transfers between an executor and its member corporations.
+
 [Corporation calendar events](protocol/social.md#corporation-calendar-events) covers role-gated event management, member RSVPs and checkpointed notifications.
 
 [Native Upwell repair shop](protocol/structures.md#native-upwell-repair-shop) records the native structure binding and free repair call.

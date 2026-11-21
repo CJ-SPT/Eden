@@ -53,6 +53,9 @@ public static class AllianceMembershipRules
     public static readonly TimeSpan AdmissionDelay = TimeSpan.FromHours(24);
     public const int MaximumApplicationLength = 1000;
 
+    public static int MembershipDays(long joinedAt, long now) =>
+        joinedAt <= 0 || joinedAt >= now ? 0 : checked((int)((now - joinedAt) / TimeSpan.TicksPerDay));
+
     public static void ValidateApplication(string text)
     {
         if (text.Length > MaximumApplicationLength || text.Contains('\0'))

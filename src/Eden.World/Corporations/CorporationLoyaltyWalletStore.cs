@@ -1,11 +1,11 @@
-using Eden.Data.Catalog;
+using Eden.Data.World.Alliances;
 using Eden.Data.World.Corporations;
 using Eden.Data.World.Market;
 using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Redemption;
 using Eden.Infrastructure.Registration;
-using Eden.World.Catalog;
+using Eden.World.Alliances;
 using Eden.World.Market;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
@@ -50,12 +50,11 @@ internal sealed class CorporationLoyaltyWalletStore(WorldDatabase database, Time
     {
         using WorldActionScope transaction = new(database, TransactionParticipants.None);
         var world = transaction.World;
-        using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Pilots.Find(actorId) ?? throw new InvalidDataException("Unknown pilot.");
         var recipient =
             world.Set<SavedCorporation>().Find(recipientId)
             ?? throw new InvalidDataException("Choose a player corporation as the LP recipient.");
-        if (catalog.NpcCorporationName(issuerId) is null)
+        if (!database.Catalog.NpcCorporations.ContainsKey(issuerId))
         {
             throw new InvalidDataException("Choose a known loyalty point issuer.");
         }
@@ -71,21 +70,27 @@ internal sealed class CorporationLoyaltyWalletStore(WorldDatabase database, Time
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         if (issuerId == CurrencyRewardRules.ParagonCorporation)
         {
-            if (fromCorporation || recipient.Id != pilot.CorporationId)
+            if (!fromCorporation)
             {
-                throw new InvalidDataException("Standalone EverMark donations go from a pilot to their own corporation.");
+                long joined =
+                    world
+                        .Filter<SavedCorporationEmployment>(e => e.PilotId == actorId)
+                        .OrderByDescending(e => e.Id)
+                        .Select(e => (long?)e.StartedAt)
+                        .FirstOrDefault()
+                    ?? pilot.CreatedAt;
+                if (now - joined < CorporationLoyaltyRules.EverMarkMembership.Ticks)
+                {
+                    throw new InvalidDataException("EverMark donations require 30 days of membership in your corporation.");
+                }
             }
-            long joined =
-                world
-                    .Set<SavedCorporationEmployment>()
-                    .Where(e => e.PilotId == actorId)
-                    .OrderByDescending(e => e.Id)
-                    .Select(e => (long?)e.StartedAt)
-                    .FirstOrDefault()
-                ?? pilot.CreatedAt;
-            if (now - joined < CorporationLoyaltyRules.EverMarkMembership.Ticks)
+            if (recipientId != pilot.CorporationId)
             {
-                throw new InvalidDataException("EverMark donations require 30 days of membership in your corporation.");
+                if (world is not EconomyTransaction resident)
+                {
+                    throw new InvalidDataException("Alliance EverMark donations require the resident world.");
+                }
+                CheckAllianceDonation(resident, pilot.CorporationId, recipientId, fromCorporation, now);
             }
         }
         var personal = fromCorporation ? null : world.Set<SavedLoyaltyBalance>().Find(actorId, issuerId);
@@ -124,5 +129,26 @@ internal sealed class CorporationLoyaltyWalletStore(WorldDatabase database, Time
             .Entity;
         transaction.Commit();
         return transfer.Snapshot();
+    }
+
+    private static void CheckAllianceDonation(EconomyTransaction world, int sourceId, int recipientId, bool fromCorporation, long now)
+    {
+        var source = world.Set<SavedAllianceMember>().Find(sourceId);
+        var target = world.Set<SavedAllianceMember>().Find(recipientId);
+        if (
+            source is null
+            || target is null
+            || world.Set<SavedAlliance>().Find(source.AllianceId) is not { ClosedAt: null, ExecutorCorporationId: int executor }
+        )
+        {
+            throw new InvalidDataException("Choose corporations in an active alliance with an executor.");
+        }
+        CorporationLoyaltyRules.CheckAllianceDonation(
+            AllianceStore.Member(source),
+            AllianceStore.Member(target),
+            executor,
+            fromCorporation,
+            now
+        );
     }
 }

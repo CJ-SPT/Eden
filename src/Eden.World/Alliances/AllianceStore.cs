@@ -53,6 +53,26 @@ internal sealed partial class AllianceStore(WorldDatabase database, TimeProvider
                     .ToArray()
         );
 
+    public int DaysInAlliance(int allianceId, int corporationId) =>
+        Resident.Economy.Inspect(world =>
+            world.Set<SavedAllianceMember>().Find(corporationId) is { } member && member.AllianceId == allianceId
+                ? AllianceMembershipRules.MembershipDays(member.JoinedAt, Now)
+                : 0
+        );
+
+    public IReadOnlyList<int> MembersOlderThan(int allianceId, int minimumDays) =>
+        Resident.Economy.Inspect(world =>
+        {
+            long now = Now;
+            return world
+                .Filter<SavedAllianceMember>(member => member.AllianceId == allianceId)
+                .AsEnumerable()
+                .Where(member => AllianceMembershipRules.MembershipDays(member.JoinedAt, now) >= minimumDays)
+                .Select(member => member.CorporationId)
+                .Order()
+                .ToArray();
+        });
+
     internal static Alliance? Snapshot(WorldAction world, int allianceId)
     {
         var row = world.Set<SavedAlliance>().Find(allianceId);

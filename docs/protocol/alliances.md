@@ -31,6 +31,45 @@ The evejs `allianceViewState.js` snapshot SHA-256 is
 All new wire models use the existing codec. Its reference remains
 [Carbon Blue Marshal.cpp, af0d65b29f951260ea09140ca11adf5d40566997](https://github.com/carbonengine/blue/blob/af0d65b29f951260ea09140ca11adf5d40566997/src/Marshal.cpp).
 
+## Alliance membership age and EverMark donations
+
+The personal and corporation EverMark panels in build **3662168** ask `allianceRegistry.GetDaysInAlliance(allianceID, corporationID)`
+for whole elapsed days in the corporation's current membership. A missing member or vacant executor returns zero.
+The executor's corporation panel also calls `GetAllianceMembersOlderThan(allianceID, minimumDays)`. It expects a Python
+list of corporation IDs and includes members at the exact threshold. Leaving removes the corporation from that list.
+Rejoining starts the clock at the new admission time.
+
+| Source wallet | Eligible EverMark recipients |
+| --- | --- |
+| Personal | The pilot's own player corporation after 30 days of personal membership. The alliance executor also qualifies when both corporations have 30 days of current alliance membership. |
+| Member corporation | Its alliance executor once both corporations qualify. Accountant, director or CEO authority is required. |
+| Executor corporation | A qualifying member corporation in its own alliance. The same financial role and membership requirements apply. |
+
+The two existing `LPSvc` transfer calls recheck the route, current membership and authority in the same resident
+transaction that debits the source, credits the recipient and records the transfer. Balances are checkpointed by issuer.
+The original personal and corporation wallet bytecode (`personalDonateEMPanel` offsets 81 and 180,
+`corpDonateEMPanel` offsets 66 and 192) was inspected from archive SHA-256
+`37fb2af4fa0ec5c8fa320f34cd28c8b7dbf4917418336b38cba20a7860db0368`. Eden uses the pinned 30-day default.
+The local EVE.js **261108.1** snapshot uses whole days and the inclusive comparison, with its donation threshold
+configured to zero. Compared `allianceRegistryRuntime.js` (`073f759c9ea8`), `allianceViewState.js` (`ebaee4bb2f6d`)
+and `lpWalletState.js` (`4da2d5a25706`) under `server/src/services/corporation`.
+[CCP's EverMark donation rules](https://support.eveonline.com/hc/en-us/articles/6807979979036-Heraldry-and-Emblems) ·
+[Corporation loyalty wallets and pinned constants](corporations.md#corporate-lp-and-evermark-wallets)
+
+**Automated validation.** The exact method `MembershipAgeUnlocksEverMarkDonationsAtTheDeadlineAndDepartureRevokesThem`
+passed in 10.45 seconds (build 12.30 seconds). Its first run crossed an unpaid maintenance deadline and correctly
+dissolved the test alliance. The fixture now pays its invoice before advancing the clock. Coverage includes the last
+tick before eligibility, the exact deadline, departure and readmission, stale-session requests, and balances after reopening.
+Warmed membership lookups issued zero SQL commands and opened zero connections.
+The solution built with zero warnings and errors. The filter
+`FullyQualifiedName~Eden.Protocol.Tests.Alliances|FullyQualifiedName~CorporationLoyaltyTests|FullyQualifiedName~LoyaltyWalletServiceTests|FullyQualifiedName~CorporationCalendarTests`
+passed 62 tests in 25.21 seconds. Eight catalog and nine formatting policy tests passed. Formatting and line width
+passed across 2,939 files. Total milestone validation took 71.36 seconds.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** None.
+
 ## Autonomous bot alliances
 
 An established bot-led corporation and a willing independent neighbor can form an ordinary alliance. Each corporation needs
