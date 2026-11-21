@@ -21,6 +21,7 @@ public interface IPilotCombatPresence
 
     PilotCombatPresence? FindArea(int systemId, long shipId) => Find(systemId, shipId);
     bool IsAreaProtected(int systemId, long shipId) => false;
+    bool IsTravelProtected(int systemId, long shipId) => IsAreaProtected(systemId, shipId);
 }
 
 public sealed record PilotDamage(

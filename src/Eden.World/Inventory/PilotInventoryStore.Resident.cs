@@ -52,6 +52,14 @@ internal sealed partial class PilotInventoryStore
     )
     {
         var (itemIds, sourceId, flagId, quantity) = request;
+        if (Eden.World.Structures.AssetSafetyStore.Ancestor(world, sourceId) is not null)
+        {
+            return Eden.World.Structures.AssetSafetyStore.Recover(world, catalog, pilotId, destinationId, request, now).Changes;
+        }
+        if (itemIds.Any(id => world.Set<Eden.Data.World.Structures.SavedAssetSafety>().Find(id) is not null))
+        {
+            throw new InvalidDataException("Recover the contents of an asset safety wrap before moving its container.");
+        }
         var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown pilot.");
         var active = pilot.ActiveShip;
         var sourceShip = InventoryShip(world, pilot, sourceId);

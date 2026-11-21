@@ -23,6 +23,7 @@ internal sealed partial class LiveReadModels
         var ships = changes.Where(c => c.Table is "WorldShip" or "WorldPosition").Select(c => c.Id).Distinct().ToArray();
         var npcs = changes.Where(c => c.Table == "WorldNpc").Select(c => c.Id).ToArray();
         var wrecks = changes.Where(c => c.Table == "WorldWreck").Select(c => c.Id).ToArray();
+        var structureLoot = changes.Where(c => c.Table == "WorldStructureLoot").Select(c => c.Id).ToArray();
         var launches = changes.Where(c => c.Table == "WorldPlanetaryLaunch").Select(c => c.Id).ToArray();
         var offices = changes.Where(c => c.Table == "WorldPlanetaryOffice").Select(c => c.Id).ToArray();
         var jetcans = changes.Where(c => c.Table == "WorldJetcan").Select(c => c.Id).ToArray();
@@ -54,6 +55,13 @@ internal sealed partial class LiveReadModels
             foreach (long id in wrecks)
             {
                 if (owner.Economy.Peek<WorldWreck>(id) is { } row)
+                {
+                    locations[id] = row.SystemId;
+                }
+            }
+            foreach (long id in structureLoot)
+            {
+                if (owner.Economy.Peek<Eden.Data.World.Structures.SavedStructureLoot>(id) is { } row)
                 {
                     locations[id] = row.SystemId;
                 }

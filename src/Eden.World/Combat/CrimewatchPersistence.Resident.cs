@@ -33,6 +33,10 @@ internal static partial class CrimewatchPersistence
         long now
     )
     {
+        if (world.TetherProtected(victim.ActiveShipId, now))
+        {
+            throw new InvalidDataException("The target is protected by a structure tether.");
+        }
         var target = world.Set<SavedCrimewatch>().Find(victim.Id)?.Timers() ?? CrimewatchTimers.Empty;
         return CrimewatchRules.Decide(
             new(

@@ -247,6 +247,7 @@ internal sealed partial class EconomyTransaction
             case Eden.Data.World.Structures.SavedStructure removed:
                 RemoveRange(Filter<Eden.Data.World.Structures.SavedJumpBridge>(child => child.StructureId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Structures.SavedStructureService>(child => child.StructureId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Structures.SavedStructureBattle>(child => child.StructureId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Structures.SavedStructureAccess>().Where(child => child.StructureId == removed.Id));
                 break;
             case Eden.Data.World.Docking.FlightPosition removed:

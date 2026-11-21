@@ -21,6 +21,7 @@ internal sealed partial class CargoContainerStore(WorldDatabase database, TimePr
         {
             using CatalogDbContext catalog = new(database.CatalogPath);
             return world.Set<OwnedItem>().Find(itemId) is { } item
+                && Eden.World.Structures.AssetSafetyStore.Ancestor(world, itemId) is null
                 && CargoContainerAssemblyRules.IsContainer(PilotInventoryStore.Read(catalog, item));
         });
 

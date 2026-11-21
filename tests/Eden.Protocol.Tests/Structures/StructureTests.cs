@@ -349,7 +349,7 @@ public sealed class StructureTests
         Assert.False(Assert.Single(exhausted.Modules).Online);
         Assert.DoesNotContain(StructureService.BasicManufacturing, exhausted.Services);
         Assert.Null(Assert.Single(exhausted.Modules).NextFuelAt);
-        Assert.Equal(StructureUpkeepState.LowPower, Assert.Single(contacts.Contacts(Fixture.SystemId)).Structure!.UpkeepState);
+        Assert.Equal(StructureUpkeepState.Abandoned, Assert.Single(contacts.Contacts(Fixture.SystemId)).Structure!.UpkeepState);
     }
 
     [Fact]
@@ -581,7 +581,7 @@ public sealed class StructureTests
     }
 
     [Fact]
-    public void OverdueDecommissioningRefreshesContactsAfterTheLastDockedShipLeaves()
+    public void ResidentDecommissioningEvacuatesDockedShipsAtTheSavedDeadline()
     {
         using Fixture f = new(liveWorld: true);
         var structure = f.Online();
@@ -589,9 +589,11 @@ public sealed class StructureTests
         f.Structures.Unanchor(f.PilotId, structure.Id);
         f.Clock.AdvanceWallTime(TimeSpan.FromDays(7));
         var contacts = f.Db.Services.GetRequiredService<IStructureContacts>();
-        Assert.Equal(StructureState.ShieldVulnerable, Assert.Single(contacts.Contacts(Fixture.SystemId)).Structure!.State);
-        f.Db.Store.SetPosition(f.ShipId, Fixture.Point, Fixture.SystemId);
         Assert.Equal(StructureState.Unanchored, Assert.Single(contacts.Contacts(Fixture.SystemId)).Structure!.State);
+        var evacuated = f.Db.Store.FindPilot(1000001)!;
+        Assert.False(evacuated.InStructure);
+        Assert.NotNull(evacuated.Position);
+        Assert.Equal(Fixture.SystemId, evacuated.SystemId);
     }
 
     [Fact]

@@ -18,7 +18,8 @@ internal sealed class MissileHandler(
     TimeProvider clock,
     IPilotMissiles missiles,
     TargetingHandler targeting,
-    CharacterInteractionHistoryHandler? history = null
+    CharacterInteractionHistoryHandler? history = null,
+    Eden.Gameplay.Structures.IStructureContacts? structures = null
 ) : IModuleEffectSource, IDisposable
 {
     internal const string EffectName = "useMissiles";
@@ -106,9 +107,13 @@ internal sealed class MissileHandler(
     {
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var locked = context.Flight.VisibleNpcs.Where(n => targeting.IsLocked(n.Id)).Select(n => n.Id).ToHashSet();
-        if (target is long pilotTarget && targeting.IsLocked(pilotTarget) && context.Flight.FindPilotWeaponTarget(pilotTarget) is not null)
+        if (
+            target is long selected
+            && targeting.IsLocked(selected)
+            && (context.Flight.FindPilotWeaponTarget(selected) is not null || context.Flight.LocalObject(selected)?.Structure is not null)
+        )
         {
-            locked.Add(pilotTarget);
+            locked.Add(selected);
         }
         var launches = missiles.LaunchBank(
             context.Pilot.PilotId,
@@ -182,6 +187,10 @@ internal sealed class MissileHandler(
                 )
             );
             context.Flight.NotifyHealth(impact.Health);
+            if (context.Flight.LocalObject(impact.TargetId)?.Structure is not null && structures is not null)
+            {
+                context.Flight.RefreshStructures(structures.Contacts(context.Pilot.SystemId));
+            }
             if (impact.Reward is { } reward)
             {
                 context.Notifications.Add(

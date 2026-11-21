@@ -68,6 +68,10 @@ internal sealed partial class LiveCombatRuntime
         {
             return false;
         }
+        if (owner.Economy.Inspect(world => world.TetherProtected(shipId, now)))
+        {
+            return true;
+        }
         Trim();
         var ship = Ship(pilotId, now);
         if (!database.MotionStamps.TryGetValue(ship.SystemId, out int motion) || motion != stamp)

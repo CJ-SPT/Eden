@@ -4,11 +4,13 @@ using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Inventory;
+using Eden.Data.World.Structures;
 using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Structures;
 using Eden.Gameplay.Thermal;
 using Eden.Infrastructure.Registration;
 using Eden.World.Ammunition;
@@ -24,6 +26,7 @@ using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
+using Eden.World.Structures;
 using Eden.World.Thermal;
 using Microsoft.EntityFrameworkCore;
 
@@ -247,6 +250,7 @@ internal sealed partial class PilotMissileStore(
             throw new InvalidDataException("Lock a nearby ship before launching missiles.");
         }
         var npc = targetId is long id ? world.Set<WorldNpc>().Find(id) : null;
+        var structure = targetId is long selectedStructure ? StructureCombatTargets.Find(world, selectedStructure) : null;
         Pilot? victim = null;
         AggressionDecision? aggression = null;
         MissileTarget target;
@@ -265,6 +269,16 @@ internal sealed partial class PilotMissileStore(
             MilitiaHubStore.RequireAttack(world, npc, pilot);
             targetType = catalog.FittingType(npc.TypeId)!;
             target = new(NpcMotion.Position(npc), NpcMotion.Velocity(npc), (float)(targetType.Radius ?? 0));
+        }
+        else if (structure is not null)
+        {
+            StructureCombatTargets.Check(world, catalog, structure, now);
+            if (structure.SystemId != systemId || automatic)
+            {
+                throw new InvalidDataException("Lock a structure in this system before launching missiles.");
+            }
+            targetType = catalog.RequireItem(structure.TypeId);
+            target = new(StructureCombatTargets.Position(structure), SpacePosition.Zero, (float)(targetType.Radius ?? 0));
         }
         else
         {
@@ -321,7 +335,10 @@ internal sealed partial class PilotMissileStore(
                     GroupId = chargeType.GroupId,
                     SystemId = systemId,
                     TargetId = targetId!.Value,
-                    TargetKind = victim is null ? MissileTargetKind.Npc : MissileTargetKind.Pilot,
+                    TargetKind =
+                        structure is not null ? MissileTargetKind.Structure
+                        : victim is null ? MissileTargetKind.Npc
+                        : MissileTargetKind.Pilot,
                     TargetRadius = target.Radius,
                     CorporationId = pilot.CorporationId,
                     LaunchStamp = motion.Stamp,
@@ -346,6 +363,10 @@ internal sealed partial class PilotMissileStore(
         if (victim is not null)
         {
             CrimewatchPersistence.Player(world, catalog, pilotId, victim.Id, systemId, aggression!, now, cooldown.ReadyAt);
+        }
+        else if (structure is not null)
+        {
+            StructureCombatTargets.Aggress(world, pilotId, systemId, now, cooldown.ReadyAt);
         }
         else
         {
@@ -373,9 +394,11 @@ internal sealed partial class PilotMissileStore(
         using WorldActionScope transaction = new(database, select: world => FlightParticipants(world, systemId));
         var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
+        StructureMissileSettlement.Advance(world, catalog, systemId, now);
         var rows = Flying(world, systemId).OrderBy(m => m.LaunchedAt).ThenBy(m => m.Id).ToArray();
         if (rows.Length == 0)
         {
+            transaction.Commit();
             return;
         }
         foreach (var source in rows.Where(m => m.Status == MissileFlightStatus.Flying).GroupBy(m => (m.PilotId, m.SourceShipId)))

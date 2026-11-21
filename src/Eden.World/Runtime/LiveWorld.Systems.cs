@@ -639,7 +639,9 @@ internal sealed partial class LiveWorld
                 int system =
                     resource.Kind == SharedSimulationResource.Npc
                         ? Economy.Peek<Eden.Data.World.Combat.Npcs.WorldNpc>(resource.Id)?.SystemId ?? 0
-                        : Economy.Peek<Eden.Data.World.Loot.WorldWreck>(resource.Id)?.SystemId ?? 0;
+                        : Economy.Peek<Eden.Data.World.Loot.WorldWreck>(resource.Id)?.SystemId
+                            ?? Economy.Peek<Eden.Data.World.Structures.SavedStructureLoot>(resource.Id)?.SystemId
+                            ?? 0;
                 if (system > 0)
                 {
                     systems.Add(system);

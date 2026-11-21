@@ -13,6 +13,7 @@ internal sealed partial class LiveReadModels
         "WorldStructure",
         "WorldStructureService",
         "WorldJumpBridge",
+        "WorldStructureBattle",
         "WorldSovereigntyHub",
         "WorldSovereigntyClaim",
         "WorldSovereigntyConflict",
@@ -43,6 +44,7 @@ internal sealed partial class LiveReadModels
                             or "WorldSovereigntySkyhook"
                             or "WorldStructureService"
                             or "WorldJumpBridge"
+                            or "WorldStructureBattle"
                             or "WorldStructure"
                             or "WorldMoonExtraction"
                         || view.WaitingForAssets

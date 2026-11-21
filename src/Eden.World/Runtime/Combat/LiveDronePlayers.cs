@@ -59,6 +59,10 @@ internal sealed partial class LiveCombatRuntime
 
     private AggressionDecision? DroneLegality(DronePlayer source, DronePlayer victim, int system, long now)
     {
+        if (owner.Economy.Inspect(world => world.TetherProtected(victim.ShipId, now)))
+        {
+            return null;
+        }
         if (!_droneSecurity.TryGetValue(system, out double security))
         {
             security = Loading(() =>

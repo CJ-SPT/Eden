@@ -111,6 +111,10 @@ internal sealed class FlightScene(
         {
             return null;
         }
+        if (space.TetherProtected(id))
+        {
+            return null;
+        }
         if (space.Peers(context.Pilot).FirstOrDefault(s => s.Pilot.ShipId == id && s.Warp is null && s.DepartureGate is null) is { } ship)
         {
             return new(id, ship.Pilot.ShipTypeId, ship.Pilot.Position!, ship.Pilot.Flight.ShipRadius);
@@ -132,7 +136,8 @@ internal sealed class FlightScene(
                 .FirstOrDefault(o =>
                     o.Id == id
                     && (
-                        MiningDefinitions.IsResource(o.CategoryId, o.GroupId)
+                        o.Structure is { } structure && Eden.Gameplay.Structures.StructureCombatRules.Vulnerable(structure.State)
+                        || MiningDefinitions.IsResource(o.CategoryId, o.GroupId)
                         || o.GroupId == Eden.Gameplay.Sovereignty.SovereigntyRules.HubGroupId
                         || o.GroupId == Eden.Gameplay.Sovereignty.SovereigntyWarfareRules.CommandNodeGroupId
                         || o.CynoDeployable is not null
@@ -146,6 +151,7 @@ internal sealed class FlightScene(
 
     internal PilotWeaponTarget? FindPilotWeaponTarget(FlightSceneContext context, long id) =>
         context.CanTarget
+        && !space.TetherProtected(id)
         && space.Peers(context.Pilot).FirstOrDefault(s => s.Pilot.ShipId == id && s.Warp is null && s.DepartureGate is null && !s.Arriving)
             is { } ship
             ? new(id, ship.Velocity)
@@ -387,11 +393,17 @@ internal sealed class FlightScene(
         }
         foreach (var removed in previous.ExceptBy(structures.Select(o => o.Id), o => o.Id))
         {
-            update(new DestinyCommand.RemoveBall(removed.Id, false));
+            update(
+                new DestinyCommand.RemoveBall(removed.Id, removed.Structure?.State != Eden.Gameplay.Structures.StructureState.Unanchored)
+            );
         }
         foreach (var changed in structures.Where(o => previous.FirstOrDefault(p => p.Id == o.Id) is { } old && old != o))
         {
             update(new DestinyCommand.OnSlimItemChange(changed.Id, new StaticSlimItem(changed)));
+            if (Ballpark.StructureDamage(changed) is { } damage)
+            {
+                update(new DestinyCommand.OnDamageStateChange(changed.Id, damage));
+            }
         }
         var added = structures.ExceptBy(previous.Select(o => o.Id), o => o.Id).ToArray();
         if (added.Length > 0)

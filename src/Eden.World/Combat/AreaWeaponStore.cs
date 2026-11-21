@@ -84,6 +84,10 @@ internal sealed partial class AreaWeaponStore(
         var pilot = world.Pilots.Find(pilotId);
         var item = world.Set<OwnedItem>().Find(moduleId);
         int group = item is null ? 0 : catalog.RequireItem(item.TypeId).GroupId;
+        if (group == AreaWeaponRules.BombLauncherGroup && world.TetherProtected(shipId, now))
+        {
+            throw new InvalidDataException("Release tethering before launching a bomb.");
+        }
         if (
             pilot?.ActiveShipId != shipId
             || pilot.ActiveShip.Position is not { } saved
@@ -102,7 +106,7 @@ internal sealed partial class AreaWeaponStore(
             throw new InvalidDataException("Use an online fitted area weapon on your active ship in space.");
         }
         world.RequireUncloaked(shipId);
-        if (CrimewatchPersistence.System(catalog, pilot.ActiveShip) != system || presence.IsAreaProtected(system, shipId))
+        if (CrimewatchPersistence.System(catalog, pilot.ActiveShip) != system || presence.IsTravelProtected(system, shipId))
         {
             throw new InvalidDataException("The source ship is travelling or has changed systems.");
         }

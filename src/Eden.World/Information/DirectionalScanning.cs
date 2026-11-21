@@ -143,6 +143,19 @@ internal sealed partial class PilotInformationStore
                 )
             );
         }
+        if (world is Eden.World.Runtime.Economy.EconomyTransaction)
+        {
+            var type = catalog.RequireItem(JetcanRules.TypeId);
+            foreach (var container in world.Filter<Eden.Data.World.Structures.SavedStructureLoot>(c => c.SystemId == system))
+            {
+                contacts.Add(
+                    new(
+                        new(container.Id, type.Id, type.GroupId, container.Name, new(container.X, container.Y, container.Z)),
+                        container.ExpiresAt
+                    )
+                );
+            }
+        }
         if (jetcans)
         {
             foreach (var can in world.Filter<SavedJetcan>(c => c.SystemId == system))

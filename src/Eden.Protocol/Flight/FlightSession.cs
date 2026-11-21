@@ -50,7 +50,8 @@ internal sealed partial class FlightSession(
     IPilotInterdiction? interdiction = null,
     Eden.Gameplay.Sovereignty.IPilotEntosis? entosis = null,
     IMilitiaComplexes? complexes = null,
-    IPilotCapitalTravel? capital = null
+    IPilotCapitalTravel? capital = null,
+    Eden.Gameplay.Structures.IPilotTethering? tethering = null
 ) : IDisposable
 {
     private readonly IPilotCapitalTravel? capitalTravel = capital;
@@ -64,6 +65,38 @@ internal sealed partial class FlightSession(
     private FlightEffects? _effects;
     private FlightScene? _scene;
     private FlightModuleEffects? _moduleEffects;
+    private Eden.Gameplay.Structures.PilotTether? _tether;
+
+    private void RefreshTether()
+    {
+        if (tethering?.Available != true)
+        {
+            return;
+        }
+        var next = tethering.Advance(
+            Pilot.PilotId,
+            new(
+                InBallpark && Pilot.Position is not null && !_destroying && _travel.Gate is null && !Translocating,
+                InWarp || PreparingWarp,
+                Cloaked,
+                ModuleEffects.WarpBlocked,
+                false
+            )
+        );
+        Effects.Tether(Pilot.ShipId, next, _tether);
+        _tether = next;
+    }
+
+    private void ReleaseTether()
+    {
+        if (tethering is not null)
+        {
+            tethering.Release(Pilot.PilotId);
+            Effects.Tether(Pilot.ShipId, null, _tether);
+            _tether = null;
+        }
+    }
+
     private readonly IHumanPresenceLease? _humanPresence = humanPresenceLease ?? presence?.Select(pilot.PilotId, pilot.SystemId);
 
     // Docking can replace Pilot before the lazy effect state is first needed.
@@ -269,6 +302,7 @@ internal sealed partial class FlightSession(
 
     private void PublishContact()
     {
+        RefreshTether();
         if (InBallpark && !_destroying)
         {
             space.Publish(CreateContact());
@@ -427,6 +461,7 @@ internal sealed partial class FlightSession(
             SynchronizeGateCloak();
             RefreshTackle();
             RefreshInterdiction();
+            RefreshTether();
             int now = Stamp;
             if (Pilot.Position is not null && world is ISystemMotionStore motionStore)
             {
@@ -444,6 +479,7 @@ internal sealed partial class FlightSession(
                     ApplyChanges(result.Changes, shared: true);
                 }
                 _simulatedStamp = now;
+                RefreshTether();
                 if (recover && InBallpark)
                 {
                     var contact = CreateContact();
@@ -470,6 +506,7 @@ internal sealed partial class FlightSession(
             {
                 world.SetPosition(Pilot.ShipId, Pilot.Position);
             }
+            RefreshTether();
         }
     }
 
@@ -616,7 +653,8 @@ internal sealed partial class FlightSession(
             Cloaked: Cloaked,
             MicroJump: _microJump,
             GateCloakUntil: GateCloaked ? SpatialStatus.GateCloakUntil : 0,
-            ConnectionId: _connectionId
+            ConnectionId: _connectionId,
+            Tether: _tether
         );
 
     public void RefreshFitting(IReadOnlyDictionary<DogmaAttributeId, double> attributes)
@@ -779,6 +817,7 @@ internal sealed partial class FlightSession(
 
     private void LeaveSpace(bool keepBallpark = false)
     {
+        ReleaseTether();
         missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
         drones?.Release(Pilot.PilotId, Pilot.ShipId);
         _accelerationGateWarp = false;
@@ -1082,6 +1121,7 @@ internal sealed partial class FlightSession(
         InBallpark = true;
         SynchronizeGateCloak();
         bool arriving = _travel.BeginArrival(entering, Stamp);
+        RefreshTether();
         PublishMotion();
         var contact = CreateContact();
         space.Publish(contact);
@@ -1157,6 +1197,7 @@ internal sealed partial class FlightSession(
             PilotNavigationRevision++;
         }
         _travel.BeginGate(transit, Stamp, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+        ReleaseTether();
         missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
         drones?.Release(Pilot.PilotId, Pilot.ShipId);
         tackle?.Cancel(Pilot.PilotId, Pilot.ShipId);
@@ -1192,6 +1233,7 @@ internal sealed partial class FlightSession(
             Stamp,
             clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()
         );
+        ReleaseTether();
         missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
         drones?.Release(Pilot.PilotId, Pilot.ShipId);
         tackle?.Cancel(Pilot.PilotId, Pilot.ShipId);
@@ -1413,6 +1455,7 @@ internal sealed partial class FlightSession(
             }
         }
         _navigation = navigation;
+        ReleaseTether();
         missiles?.Cancel(Pilot.PilotId, Pilot.ShipId);
         drones?.Release(Pilot.PilotId, Pilot.ShipId);
         var contact = CreateContact();

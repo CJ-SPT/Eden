@@ -61,7 +61,9 @@ internal sealed partial class AreaWeaponStore
                 .Pilots.Where(p => p.ActiveShip.Position != null)
                 .AsEnumerable()
                 .Where(p =>
-                    CrimewatchPersistence.System(catalog, p.ActiveShip) == system && !presence.IsAreaProtected(system, p.ActiveShipId)
+                    CrimewatchPersistence.System(catalog, p.ActiveShip) == system
+                    && !world.TetherProtected(p.ActiveShipId, now)
+                    && !presence.IsAreaProtected(system, p.ActiveShipId)
                 )
         )
         {

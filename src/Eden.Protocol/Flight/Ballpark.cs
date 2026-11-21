@@ -68,6 +68,13 @@ internal static partial class Ballpark
             .Concat((drones ?? []).Select(d => d.Health))
             .Concat(objects.Select(body => body.CynoDeployable?.Health).OfType<ShipHealth>())
             .ToDictionary(s => s.ShipId, s => s.DamageState());
+        foreach (var body in objects)
+        {
+            if (StructureDamage(body) is { } structureDamage)
+            {
+                damage[body.Id] = structureDamage;
+            }
+        }
         return new(
             buffer.WrittenSpan.ToArray(),
             pilot.ShipId,
@@ -136,9 +143,16 @@ internal static partial class Ballpark
             {
                 damage.Add(body.Id, health.DamageState());
             }
+            if (StructureDamage(body) is { } structureDamage)
+            {
+                damage.Add(body.Id, structureDamage);
+            }
         }
         return new(buffer.WrittenSpan.ToArray(), slims, damage);
     }
+
+    internal static ShipDamageState? StructureDamage(StaticSpaceObject body) =>
+        body.Structure?.DamageFractions is { } health ? new(health.Shield, 0, health.Armor, health.Structure) : null;
 
     internal static BallparkAddition AddShip(ShipContact ship, int stamp)
     {

@@ -48,10 +48,10 @@ public sealed class PilotCombatTests
         public NpcContact Npc { get; }
         public long Module { get; }
 
-        public Fixture(Clock? clock = null)
+        public Fixture(Clock? clock = null, bool liveWorld = false)
         {
             Clock = clock ?? new();
-            Db = new(clock: clock);
+            Db = new(clock: clock, liveWorld: liveWorld);
             NpcEncounterTests.Prepare(Db);
             using (CatalogDbContext catalog = new(new WorldDatabase(Db.Path).CatalogPath, writable: true))
             {
@@ -506,7 +506,7 @@ public sealed class PilotCombatTests
     [Fact]
     public async Task FatalShotSendsCombatTextBeforeRemovingTheTargetsClientRecord()
     {
-        using Fixture f = new(new Clock());
+        using Fixture f = new(new Clock(), liveWorld: true);
         f.AlmostDefeated();
         using (CatalogDbContext catalog = new(new WorldDatabase(f.Db.Path).CatalogPath, writable: true))
         {

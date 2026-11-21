@@ -244,6 +244,11 @@ internal sealed partial class LiveCombatRuntime
                     drone = drone with { Contact = contact };
                 }
             }
+            if (contact.Activity == DroneActivity.Fighting && owner.Economy.Structure(contact.TargetId) is not null)
+            {
+                // Structure HP, reinforcement and custody share the resident inventory transaction.
+                return Settle();
+            }
             var player = contact.Activity == DroneActivity.Fighting ? DronePlayerFor(contact.TargetId) : null;
             var npc =
                 contact.Activity == DroneActivity.Fighting && player is null

@@ -141,6 +141,9 @@ public enum WalletEntryType
     // Build 3662168 appConst.refCorporationDividendPayment.
     CorporationDividendPayment = 38,
     RepairBill = 15,
+
+    // Build 3662168 accountingentrytypes: asset_safety_recovery_tax.
+    AssetSafetyRecoveryTax = 123,
     OfficeRentalFee = 13,
     Insurance = 19,
     Manufacturing = 56,

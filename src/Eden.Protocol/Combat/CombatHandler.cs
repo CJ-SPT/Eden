@@ -21,7 +21,8 @@ internal sealed class CombatHandler(
     TimeProvider clock,
     IPilotCombat combat,
     TargetingHandler targeting,
-    CharacterInteractionHistoryHandler? history = null
+    CharacterInteractionHistoryHandler? history = null,
+    Eden.Gameplay.Structures.IStructureContacts? structures = null
 ) : IModuleEffectSource
 {
     private sealed record Cycle(
@@ -185,6 +186,10 @@ internal sealed class CombatHandler(
             }
         }
         context.Flight.NotifyHealth(result.Health);
+        if (context.Flight.LocalObject(result.Health.ShipId)?.Structure is not null && structures is not null)
+        {
+            context.Flight.RefreshStructures(structures.Contacts(context.Pilot.SystemId));
+        }
         foreach (var hit in volley.SecondaryHits)
         {
             context.NotificationsBeforeFlight.Add(
@@ -325,7 +330,9 @@ internal sealed class CombatHandler(
                 if (
                     !context.Flight.CanTarget
                     || !targeting.IsLocked(target)
-                    || !context.Flight.VisibleNpcs.Any(n => n.Id == target) && context.Flight.FindPilotWeaponTarget(target) is null
+                    || !context.Flight.VisibleNpcs.Any(n => n.Id == target)
+                        && context.Flight.FindPilotWeaponTarget(target) is null
+                        && context.Flight.LocalObject(target)?.Structure is null
                 )
                 {
                     return new PilotCallResult.Failure("Lock a nearby ship before activating the weapon.");

@@ -215,6 +215,7 @@ internal sealed class TargetingHandler(
         }
         PendingLock pending = new(clock.GetTimestamp(), seconds, silent);
         _pending.Add(id, pending);
+        shared.Pending(context.Pilot.ShipId, id);
         // OnTarget("add") supplies success. If this scan is interrupted, the
         // outstanding RPC must fail so native FailLockTarget clears its animation.
         return new TargetLockReply(true, _locked.Order().ToArray()) { Completion = pending.Completion.Task };

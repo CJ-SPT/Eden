@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Upwell combat, asset safety and tethering](protocol/structures.md#upwell-completion-program--november-16-2026)
+covers paid structure attacks, reinforcement, asset recovery and saved tether repairs.
+
 [Administration settings with decimal-comma locales](protocol/world-configuration.md#administration-settings-with-decimal-comma-locales-november-20-2026)
 covers the reload banner while editing settings on servers that use a decimal comma.
 

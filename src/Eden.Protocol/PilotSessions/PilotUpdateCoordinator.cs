@@ -99,7 +99,8 @@ internal sealed class PilotUpdateCoordinator(
     Eden.Protocol.Sovereignty.EntosisHandler? entosis = null,
     Eden.Protocol.Sovereignty.SovereigntyMonitor? sovereignty = null,
     Eden.Protocol.Sovereignty.SovereigntyGatewayUpdates? sovereigntyGateway = null,
-    Eden.Protocol.Flight.CapitalTravelHandler? capital = null
+    Eden.Protocol.Flight.CapitalTravelHandler? capital = null,
+    Eden.Protocol.Structures.AssetSafetyHandler? assetSafety = null
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -129,7 +130,8 @@ internal sealed class PilotUpdateCoordinator(
         || implants.IsMonitoring
         || boosters.IsMonitoring
         || crimewatch.IsMonitoring
-        || naniteRepairs.IsMonitoring;
+        || naniteRepairs.IsMonitoring
+        || assetSafety?.IsMonitoring == true;
 
     public void Enter(PilotCallContext context)
     {
@@ -318,6 +320,7 @@ internal sealed class PilotUpdateCoordinator(
         {
             corporations.Advance(context);
             structureControl?.Advance(context);
+            assetSafety?.Advance(context);
             corporationWallet.Advance(context);
             bookmarks.Advance(context);
             accessGroups.Advance(context);

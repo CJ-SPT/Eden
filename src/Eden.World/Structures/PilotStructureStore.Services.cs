@@ -289,11 +289,28 @@ internal sealed partial class PilotStructureStore
     internal static void Advance(WorldAction world, CatalogDbContext catalog, long now, int? systemId = null)
     {
         CapitalNavigationStore.StopUnavailableServices(world, systemId, now);
+        foreach (int missileSystem in systemId is int selected ? new[] { selected } : world.StructureMissileSystems)
+        {
+            StructureMissileSettlement.Advance(world, catalog, missileSystem, now);
+        }
         var due = (
             systemId is int system
                 ? world.Filter<SavedStructure>(s => s.SystemId == system && (s.StateEndsAt <= now || s.UnanchorAt <= now))
                 : world.Filter<SavedStructure>(s => s.StateEndsAt <= now || s.UnanchorAt <= now)
         ).ToArray();
+        if (world is EconomyTransaction)
+        {
+            var battleStructures = systemId is int battleSystem
+                ? world.Filter<SavedStructure>(s => s.SystemId == battleSystem && s.State != StructureState.Destroyed)
+                : world.Filter<SavedStructure>(s => s.State != StructureState.Destroyed);
+            var combatDue = battleStructures
+                .AsEnumerable()
+                .Where(s =>
+                    world.Set<SavedStructureBattle>().Find(s.Id) is { } battle
+                    && (battle.RepairAt <= now || battle.PausedUntil != 0 && battle.PausedUntil <= now)
+                );
+            due = due.Concat(combatDue).DistinctBy(s => s.Id).ToArray();
+        }
         foreach (var structure in due)
         {
             var profile = StructureCatalog.Require(catalog, structure.TypeId);
@@ -314,6 +331,14 @@ internal sealed partial class PilotStructureStore
                 structure.State = StructureState.ShieldVulnerable;
                 structure.StateStartedAt = structure.StateEndsAt!.Value;
                 structure.StateEndsAt = null;
+                if (world is EconomyTransaction)
+                {
+                    StructureBattlePersistence.Restore(world, catalog, structure);
+                }
+            }
+            if (world is EconomyTransaction)
+            {
+                StructureBattlePersistence.Advance(world, catalog, structure, now);
             }
         }
         world.SaveChanges();
@@ -387,11 +412,15 @@ internal sealed partial class PilotStructureStore
                 module.OnlineSince = null;
                 world.Set<OwnedItem>().Find(module.ItemId)!.Online = false;
             }
-            // Services stop at the saved deadline even if personal assets delay packaging.
-            // Settle their preceding fuel hours before changing the module state.
+            // Settle custody at the saved deadline, after paying the preceding fuel hours.
+            if (world is EconomyTransaction)
+            {
+                StructureDeparture.Settle(world, catalog, structure, stoppedAt, destroyed: false);
+            }
             if (
-                !world.Filter<Eden.Data.World.Inventory.Ship>(s => s.StructureId == structure.Id).Any()
-                && !world.Filter<OwnedItem>(i => i.LocationId == structure.Id && i.OwnerId != structure.CorporationId).Any()
+                world is EconomyTransaction
+                || !world.Filter<Eden.Data.World.Inventory.Ship>(s => s.StructureId == structure.Id).Any()
+                    && !world.Filter<OwnedItem>(i => i.LocationId == structure.Id && i.OwnerId != structure.CorporationId).Any()
             )
             {
                 structure.State = StructureState.Unanchored;
