@@ -46,7 +46,7 @@ public static class FighterDeckRules
     public static bool IsTube(int flag) => flag is >= FirstTube and < FirstTube + MaximumTubes;
 
     public static bool Supports(int group, int typeId) =>
-        group is (int)HullClass.Carrier or (int)HullClass.Supercarrier
+        CapitalTravelRules.CarrierConduitHull(group)
         || (group, typeId) is ((int)HullClass.Dreadnought, Caiman) or ((int)HullClass.Titan, Komodo);
 
     public static bool FighterHullModifier(int skill, DogmaAttributeId attribute, DogmaOperation operation) =>
@@ -60,6 +60,15 @@ public static class FighterDeckRules
                         or DogmaAttributeId.FighterAttackMissileExplosionVelocity
                         or DogmaAttributeId.FighterMissilesExplosionRadius
                         or DogmaAttributeId.FighterMissilesExplosionVelocity,
+            ((int)HullBonusSkill.SupportFighters, DogmaOperation.PostPercent) => attribute
+                is DogmaAttributeId.ShieldCapacity
+                    or DogmaAttributeId.MaxVelocity
+                    or DogmaAttributeId.FighterNeutralizeAmount
+                    or DogmaAttributeId.FighterWebStrength
+                    or DogmaAttributeId.FighterEcmRadar
+                    or DogmaAttributeId.FighterEcmLadar
+                    or DogmaAttributeId.FighterEcmGravimetric
+                    or DogmaAttributeId.FighterEcmMagnetometric,
             ((int)HullBonusSkill.Fighters, DogmaOperation.PostMultiply) => attribute == DogmaAttributeId.MaxVelocity,
             ((int)HullBonusSkill.LightFighters, DogmaOperation.PostMultiply) => IsDamageBonus(attribute),
             _ => false,

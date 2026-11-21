@@ -601,13 +601,33 @@ independently of the selected passengers' mass or number. Eligible passengers mo
 or capacitor. Each passenger receives individual jump timers. The anchor, passengers, paid fuel and timers
 commit in one resident transaction. The flight coordinator retires passenger contacts in the origin system
 and delivers the committed arrivals to their connections. Offline pilots, opt-outs and blocked or ineligible
-hulls stay at the origin. The industrial portal's standalone bridge and Tech II command carrier admission
-remain open.
+hulls stay at the origin. The industrial portal's standalone bridge remains open.
 
 **Automated validation.** The five exact Sin, Archon and Rorqual cases passed in 12.41 seconds. All
 146 cases in the final capital travel, fleet, translocation, gates and call result filter passed in
 98.81 seconds after an 11.21-second build. The final cases check the exact paid isotope costs and
 separation at arrival. Both Python suites, formatting and `git diff --check` passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+## Tech II command carriers
+
+Build 3662168 publishes the Salvation, Simurgh, Gaia and Ymir in group `5120`. EVE.js
+`transitions.js` corroborates their capital travel classification. Eden admits these four hulls
+with their pinned volume, wreck, skill and fitting records. They use the carrier fighter deck,
+standard capital jumps, and the existing command burst fitting rules. Their base conduit seats
+and the seats added by the Capital Jump Portal Generation skill use the same hull multiplier.
+[CCP Cradle of War expansion notes](https://www.eveonline.com/news/view/cradle-of-war-expansion-notes)
+
+The support fighter graph uses the pinned shield, speed, neutralizer, ECM and web hull modifiers.
+The Salvation case verifies assembly of the pinned cohort, a boosted Cenobite launch, ten base
+conduit seats, and paid travel to a Pharolux. Fighter mobility abilities and capital micro jump
+fields remain separate milestones.
+
+**Automated validation.** The exact Salvation case passed in 12.68 seconds. The final three-case
+filter covering the Salvation, Tech II hull admission and drone coverage passed in 12.20 seconds
+after a 6.41-second build. The regenerated Rorqual fixture also passed the drone audit and the
+lifecycle test across all 150 admitted drone-bay hulls in 50.42 seconds. Both Python suites passed.
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 

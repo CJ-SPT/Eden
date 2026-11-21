@@ -61,7 +61,8 @@ internal sealed partial class PilotCapitalTravelStore
             int skill = CapitalTravelRules.CapitalJumpPortalGenerationSkill;
             int level = PilotSkillReader.Level(world, catalog, pilot.Id, skill);
             var bonus = catalog.FittingAttributes(skill).GetValueOrDefault(DogmaAttributeId.ConduitPassengerSkillBonus);
-            count += checked((int)(level * bonus));
+            double baseSeats = catalog.FittingAttributes(pilot.ActiveShip.TypeId)[DogmaAttributeId.ConduitPassengerCount];
+            count += checked((int)(level * bonus * count / baseSeats));
         }
         else
         {

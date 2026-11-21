@@ -162,6 +162,7 @@ public static class CapitalTravelRules
                 or (int)HullClass.LancerDreadnought
                 or (int)HullClass.ForceAuxiliary
                 or (int)HullClass.Carrier
+                or (int)HullClass.CommandCarrier
                 or (int)HullClass.CapitalIndustrial
         || Supercapital(groupId);
 

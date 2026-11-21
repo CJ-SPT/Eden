@@ -80,6 +80,12 @@
       },
       {
         "techLevel": 2,
+        "cohort": "Carrier",
+        "classes": [],
+        "types": [92822, 92823, 92824, 92825]
+      },
+      {
+        "techLevel": 2,
         "cohort": "JumpFreighter",
         "classes": [902],
         "types": []

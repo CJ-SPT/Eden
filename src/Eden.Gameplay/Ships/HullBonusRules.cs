@@ -81,6 +81,7 @@ public enum HullBonusSkill
     BombDeployment = 28073,
     Survey = 3551,
     MicroJumpDriveOperation = 4385,
+    CapitalMicroJumpDriveOperation = 83464,
     DefenderMissiles = 3323,
     HullUpgrades = 3394,
     TacticalShieldManipulation = 3420,
@@ -369,6 +370,7 @@ public static class HullBonusRules
                 HullBonusSkill.HullUpgrades or HullBonusSkill.ShieldUpgrades or HullBonusSkill.TacticalShieldManipulation =>
                     HullCapability.Overheating,
                 HullBonusSkill.MicroJumpDriveOperation => HullCapability.MicroJumpDrives,
+                HullBonusSkill.CapitalMicroJumpDriveOperation => HullCapability.MicroJumpFields,
                 HullBonusSkill.BurstProjectorOperation or HullBonusSkill.DisruptiveLanceOperation => HullCapability.ElectronicWarfare,
                 HullBonusSkill.Leadership
                 or HullBonusSkill.SkirmishCommand
