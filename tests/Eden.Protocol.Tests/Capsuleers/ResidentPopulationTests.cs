@@ -174,6 +174,7 @@ public sealed class ResidentPopulationTests
         human.Dispose();
         Assert.False(scheduler.PreparationCurrent(background));
         Assert.Null(scheduler.CapturePreparation());
-        Assert.Equal(input.Job, live.CapsuleerJobs[input.Job.PilotId]);
+        Assert.DoesNotContain(input.Job.PilotId, live.CapsuleerJobs.Keys);
+        Assert.Contains(input.Job, scheduler.Jobs());
     }
 }

@@ -1,5 +1,7 @@
+using Eden.Data.World.Capsuleers;
 using Eden.Gameplay.Capsuleers;
 using Eden.World.Fittings;
+using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 
 namespace Eden.World.Capsuleers;
@@ -8,11 +10,30 @@ internal sealed partial class CapsuleerScheduler
 {
     private const int BackgroundStartsPerInterval = 4;
     private readonly SortedSet<(long DueTicks, long Pilot)> _waitingBackground = [];
+    private readonly Dictionary<long, long> _waitingDeadlines = [];
     private long _nextBackgroundStartTicks;
 
-    private bool WaitingForBackgroundStart(long pilot) => _waitingBackground.Contains((Current[pilot].DueTicks, pilot));
+    private void QueueBackgroundStart(long pilot, long dueTicks)
+    {
+        if (_waitingDeadlines.TryAdd(pilot, dueTicks))
+        {
+            _waitingBackground.Add((dueTicks, pilot));
+        }
+    }
 
-    private bool RemoveBackgroundStart(long pilot) => _waitingBackground.Remove((Current[pilot].DueTicks, pilot));
+    private void RemoveBackgroundStart(long pilot)
+    {
+        if (_waitingDeadlines.Remove(pilot, out long dueTicks))
+        {
+            _waitingBackground.Remove((dueTicks, pilot));
+        }
+    }
+
+    private void ClearBackgroundStarts()
+    {
+        _waitingBackground.Clear();
+        _waitingDeadlines.Clear();
+    }
 
     private long? NextWorkTicks() =>
         _waitingBackground.Count == 0 ? _queue.NextDueTicks : Math.Min(_queue.NextDueTicks ?? long.MaxValue, _nextBackgroundStartTicks);
@@ -30,8 +51,13 @@ internal sealed partial class CapsuleerScheduler
         for (; count < BackgroundStartsPerInterval && _waitingBackground.Count > 0; count++)
         {
             var start = _waitingBackground.Min;
+            if (!_registrations.ContainsKey(start.Pilot))
+            {
+                WorldActionScope.Inspect(database, world => Register(world, [world.Set<SavedCapsuleerAgent>().Find(start.Pilot)!]));
+            }
             StartPilot(start.Pilot, elapsedTicks);
-            _waitingBackground.Remove(start);
+            _running.Add(start.Pilot);
+            RemoveBackgroundStart(start.Pilot);
         }
         return count;
     }
@@ -112,6 +138,41 @@ internal sealed partial class CapsuleerScheduler
         _offscreenPresence.Remove(pilot);
         _miners.Remove(pilot);
         _haulers.Remove(pilot);
+    }
+
+    private CapsuleerMiner? ReadDormantMiner(long pilot) =>
+        Live!.Economy.Peek<SavedCapsuleerAgent>(pilot)?.Career == CapsuleerCareer.Mining && !_suspended.Contains(pilot)
+            ? miners.Create(pilot, [], id => _suspended.Contains(id))
+            : null;
+
+    private CapsuleerHauler? ReadDormantHauler(long pilot) =>
+        Live!.Economy.Peek<SavedCapsuleerAgent>(pilot)?.Career == CapsuleerCareer.Hauling && !_suspended.Contains(pilot)
+            ? haulers.Create(pilot)
+            : null;
+
+    private void ReleaseRegistration(LiveWorld live, long pilot)
+    {
+        ReleaseWorker(pilot);
+        var registration = _registrations[pilot];
+        _registrations.Remove(pilot);
+        _newPilots.Remove(pilot);
+        int system = _locations[pilot];
+        _locations.Remove(pilot);
+        RemoveMember(_systemAgents, system, pilot);
+        RemoveMember(_miningCrews, registration.CrewSystem, pilot);
+        if (_pilotShips.Remove(pilot, out long ship))
+        {
+            _ships.Remove(ship);
+        }
+        live.ReleaseCapsuleerDetails(pilot, system);
+    }
+
+    private static void RemoveMember(Dictionary<int, HashSet<long>> groups, int group, long pilot)
+    {
+        if (groups.TryGetValue(group, out var members) && members.Remove(pilot) && members.Count == 0)
+        {
+            groups.Remove(group);
+        }
     }
 
     private void WakeObservedMiners(long elapsed, IReadOnlyList<SystemSimulationState> transitions)

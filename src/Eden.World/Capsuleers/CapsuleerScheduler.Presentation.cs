@@ -159,7 +159,7 @@ internal sealed partial class CapsuleerScheduler
                 }
             }
             CapsuleerBatch batch = new(
-                new(0, Current.Count, null, false),
+                new(0, _registrations.Count, null, false),
                 _pendingMiners.Values.ToArray(),
                 _pendingHaulers.Values.ToArray()
             )

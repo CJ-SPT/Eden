@@ -36,7 +36,11 @@ internal sealed partial class CapsuleerScheduler
                 )
         )
         {
-            var work = live.HaulerCheckpoints.GetValueOrDefault(row.PilotId)?.Work ?? HaulerCheckpoint.Read(row.Progress);
+            if (_suspended.Contains(row.PilotId) || live.HaulerCheckpoints.ContainsKey(row.PilotId))
+            {
+                continue;
+            }
+            var work = HaulerCheckpoint.Read(row.Progress);
             if (
                 (
                     work?.Gang is { Phase: not RoamingGangPhase.Complete }
@@ -45,8 +49,9 @@ internal sealed partial class CapsuleerScheduler
                 ) && world.Set<SavedCapsuleerAgent>().Find(row.PilotId) is { } agent
             )
             {
-                live.HaulerCheckpoints.TryAdd(row.PilotId, new(row.PilotId, work));
-                Register(world, [agent]);
+                HaulerCheckpoint checkpoint = new(agent.PilotId, work);
+                live.HaulerCheckpoints.Add(agent.PilotId, checkpoint);
+                live.ProjectedHaulers.TryAdd(agent.PilotId, checkpoint);
             }
         }
     }
