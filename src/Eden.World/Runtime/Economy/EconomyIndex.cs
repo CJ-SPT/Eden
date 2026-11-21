@@ -157,7 +157,13 @@ internal sealed class EconomyPredicate(ParameterExpression row, ParameterExpress
 
 internal static class EconomyCandidates
 {
-    internal static IReadOnlyCollection<EconomyKey>? Find(
+    internal readonly record struct Selection(IEnumerable<EconomyKey> Keys, long UpperBound)
+    {
+        internal Selection(IReadOnlyCollection<EconomyKey> keys)
+            : this(keys, keys.Count) { }
+    }
+
+    internal static Selection? Find(
         Expression expression,
         ParameterExpression row,
         Func<string, object?, IReadOnlyCollection<EconomyKey>?> lookup
@@ -166,44 +172,42 @@ internal static class EconomyCandidates
         if (expression is BinaryExpression { NodeType: ExpressionType.AndAlso } and)
         {
             var left = Find(and.Left, row, lookup);
-            if (left is { Count: 0 })
+            if (left is { UpperBound: 0 })
             {
                 return left;
             }
             var right = Find(and.Right, row, lookup);
-            return left is null ? right
-                : right is null || left.Count <= right.Count ? left
-                : right;
+            return left is not { } first ? right
+                : right is not { } second || first.UpperBound <= second.UpperBound ? first
+                : second;
         }
         if (expression is BinaryExpression { NodeType: ExpressionType.OrElse } or)
         {
             // Either branch can admit a row. An unindexed branch requires the full
             // scan; union only complete candidate sets and keep the final predicate.
-            var left = Find(or.Left, row, lookup);
-            if (left is null)
+            if (Find(or.Left, row, lookup) is not { } left)
             {
                 return null;
             }
-            var right = Find(or.Right, row, lookup);
-            if (right is null)
+            if (Find(or.Right, row, lookup) is not { } right)
             {
                 return null;
             }
-            if (left.Count == 0)
+            if (left.UpperBound == 0)
             {
                 return right;
             }
-            if (right.Count == 0)
+            if (right.UpperBound == 0)
             {
                 return left;
             }
-            HashSet<EconomyKey> keys = new(left);
-            keys.UnionWith(right);
-            return keys;
+            // A more selective conjunct (often an item type) can discard the whole region-wide union.
+            return new(left.Keys.Union(right.Keys), left.UpperBound + right.UpperBound);
         }
         if (expression is BinaryExpression { NodeType: ExpressionType.Equal } equal)
         {
-            return Equal(equal.Left, equal.Right) ?? Equal(equal.Right, equal.Left);
+            var keys = Equal(equal.Left, equal.Right) ?? Equal(equal.Right, equal.Left);
+            return keys is null ? null : new(keys);
         }
         if (expression is MethodCallExpression { Method.Name: "Contains" } contains)
         {
@@ -228,7 +232,7 @@ internal static class EconomyCandidates
                     }
                     keys.UnionWith(found);
                 }
-                return keys;
+                return new(keys);
             }
         }
         return null;

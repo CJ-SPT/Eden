@@ -6646,3 +6646,73 @@ Repeat the CPU and observer measurements on a 5,000-pilot fresh-world fixture on
 admission rules can supply the additional pilots. The remote sample had about 777 saved
 job-sequence advances per second at 2,418 pilots. The established-world replay has a
 different activity mix, so it cannot establish the dedicated server's 5,000-pilot capacity.
+
+## Fresh-world backlog during starter ore sales
+
+At 18:42:24 UTC on November 21, the dedicated server showed 1,283 of 2,418 jobs due and
+the oldest 6.93 s late. Read-only samples of 11 published checkpoints between 18:43:34 and
+18:45:55 showed the oldest saved deadline increasing from 9.67 to 16.07 s and the number
+due increasing from 1,374 to 1,762. At the 18:52:55 checkpoint, 2,121 jobs were due and
+the oldest was 47.20 s late. At 19:01:25, the figures were 2,162 due and 99.93 s late.
+Over the final ten checkpoints in the initial sample, saved job sequences advanced about
+753 times per active-world second. Eden averaged 1.90 of
+four vCPUs and GC threads accounted for 31% of process CPU.
+
+A six-second allocation trace sampled 8.59 GB. Hash-set entry arrays for resident economy
+row IDs accounted for 61.9% of sampled bytes. The dominant call stacks ran from the
+miner's trip preparation through starter ore sales, NPC order matching and the union of
+two index buckets. Those stacks alone accounted for 5.31 GB (61.8% of sampled bytes).
+One checkpoint contained 160,528 NPC orders, including
+19,033 in its largest region. The query planner built the station/region union for each
+sale before comparing it with the usually smaller item-type index. The server also logged
+slow miner preparation outside checkpoint windows.
+
+The resident planner now compares candidate counts before enumerating a union. The sum
+of the two bucket sizes bounds the number of distinct keys. If the union is selected,
+it still deduplicates rows and the matcher applies the full predicate, including location,
+range, order type and expiration.
+
+### Automated validation
+
+`ResidentSalesKeepUnrelatedRegionalOrdersOutOfMatchingAllocations` exercises the miner's
+`ExecuteSell` entry point. Four warmed sales fill the same NPC bid, price and quantity.
+Each transaction rolls back so the next sale sees the identical book. The larger book
+adds 16,384 unrelated NPC orders in the seller's region. Both builds ran the same Release
+test assembly against their respective World implementation.
+
+| Allocated bytes for four sales | Previous build (`240f3453`) | Updated |
+| --- | ---: | ---: |
+| Small book | 797,152 | 751,912 |
+| With 16,384 unrelated orders | 5,632,288 | 757,672 |
+| Additional bytes when the book grew | 4,835,136 | 5,760 |
+
+On the larger book, four sales took 11.79 ms on the control and 3.48 ms on the updated
+build. Both measured zero SQL commands, connection opens and fitting calculations.
+The control failed the new allocation bound. Coverage also includes disjunctions with
+overlap, unindexed branches, private transaction changes, checkpoint restoration and
+standard buy orders reaching a seller from another station.
+
+The focused market and resident-index suite passed 113 cases in 39 s. A broader selection
+also included `RegionalMarketTests.FailedPaymentRollsBackStockGoodsAndHistoryAndRetrySettlesOnce`.
+It failed during fixture disposal because `world.sqlite.owner` was still open. The same
+test and file-lock exception reproduced on the previous build. Debug and Release builds,
+the formatting check and all 17 catalog and formatting policy checks passed.
+
+The three-minute `ReplaySustainedBotThroughput` run used the same four-CPU, 2,728-community
+established-world fixture described above. It reached 5,000 pilots at 16.2 s, completed
+109,328 actions with zero failures and ended with zero due jobs. It wrote 13 checkpoints.
+Between seconds 60 and 179 it completed 572.4 actions/s at 0.690 ms process CPU per
+action. The oldest due job reached 99.8 ms in that window. End-to-end frame / market p99
+was 31.3 / 43.6 ms and the 120 observer calls issued zero SQL commands, opened zero
+connections and rebuilt zero fits. The test took 3 min 44 s including setup. The dedicated
+server's fresh-world queue still requires measurement on a deployed build.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+When the branch is deployed, compare allocation rate and oldest due job age across several
+15-second checkpoints with the fresh world active. The pre-change profile and checkpoint
+samples are under `artifacts/bot-cpu-5000/` in the main checkout.
