@@ -65,12 +65,40 @@ Capital travel, migration, detached checkpoints, ship coverage and fleet tests p
 seconds. Both Python validation suites passed all 17 cases.
 [CCP September 2019 release notes](https://www.eveonline.com/news/view/patch-notes-for-september-2019-release)
 
+## Pharolux and Tenebrex
+
+Pharolux (`35840`) requires the online Cynosural Navigation upgrade (`81615`). Tenebrex (`37534`) requires
+Cynosural Suppression (`81619`). The structure owner must belong to the controlling alliance. A system can anchor
+one beacon and three jammers, with at most one jammer service online or spooling. The existing Upwell service cycle
+uses the pinned module fuel costs. Pharolux consumes 1,080 blocks at startup and 15 per hour. Tenebrex consumes
+2,880 at startup and 40 per hour. Its five-minute spool deadline comes from attribute `2794` on service module
+`35914` and survives a checkpoint. Disabling the service, loss of fuel or loss of the required sovereignty state
+removes the effect. An active jammer blocks ordinary field ignition and inbound jumps to already-lit ordinary fields.
+
+Pinned build 3662168 `cynoTravelSvc.pyj`, `structureDirectory.pyj`, `capitalnavigation.pyj` and `menusvc.pyj` confirm
+`CmdJumpToStructureBeacon(structureID, solarSystemID)` and the directory's six ordered fields: structure ID,
+type ID, owner ID, system ID, structure state and name. The system map uses a separate list of beacon systems.
+`sovDashboard/cynoJammerIcon.pyj` consumes the `beyonce.GetCynoJammerState` deadline, or Python None for off. Eden
+uses the existing Upwell access entries for beacon access and checks them again at departure. The jump shares the
+existing drive costs and timers. Arrival uses the structure and ship radii plus the 12 km clearance described
+by the EVE.js structural beacon runtime, with Eden's existing static geometry check.
+[CCP navigation structures](https://www.eveonline.com/news/view/navigation-structures-inbound) ·
+[CCP Upwell structures](https://support.eveonline.com/hc/en-us/articles/213021829-Upwell-Structures)
+
+The resident Jita–49-0LI case exercises anchoring, both module fuel deposits, access, the native directory rows, a
+jammer deadline reached during departure, an unpaid cancellation, persistence across checkpoint reopen, sovereignty
+upgrade loss, a subsequent successful jump and expiry of the beacon's fuel. The exact
+`CapitalTravelTests.PharoluxJumpRechecksAccessAndJammerDeadline` case passed in 8.23 seconds. Schema 195 adds
+the optional service start timestamp. The focused capital travel, Upwell structures, sovereignty, entosis,
+translocation and checkpoint suites passed all 325 cases in 130.06 seconds. Formatting, both Python policy suites
+and the whitespace check passed.
+
 ## Milestones
 
 | Milestone | Playable outcome and acceptance |
 | --- | --- |
 | **1. Jump freighters and industrial cynos** | Implemented. A fleetmate lights a cyno in lowsec. A loaded jump freighter jumps from another system, docks, and unloads. The ship, cargo, fuel, capacitor and pilot timers reconcile across disconnect and checkpoint reopen. |
-| **2. Standard cynos and sovereignty navigation** | Standard module cynos and jump-freighter use of standard fields are implemented. Enable mobile beacons and inhibitors plus Pharolux beacons and Tenebrex jammers. Verify placement, warm-up, fuel and access, including the effect of a hub upgrade or jammer state change on travel. |
+| **2. Standard cynos and sovereignty navigation** | Standard module cynos, Pharolux beacons and Tenebrex jammers are implemented with the paid jump-freighter path. Mobile beacons and inhibitors are still pending. |
 | **3. Ansiblex jump gates** | Link two authorized endpoints and exercise paid access and route discovery. Prove that loss of an endpoint, access or sovereignty affects the next transfer and route read. |
 | **4. Black Ops and covert travel** | Jump a Black Ops battleship to a covert cyno and move eligible fleetmates through a paid portal. Verify recipient eligibility, costs, timers, interruption and the native fleet menus. |
 | **5. Dreadnoughts and force auxiliaries** | Jump a dreadnought and a force auxiliary to a standard cyno. Exercise paid siege, capital weapons and structure damage, then triage and lawful remote repairs. Prove dock and gate restrictions, loss settlement, and survival of paid mode deadlines on reopen. |

@@ -278,10 +278,13 @@ internal sealed partial class PilotStructureStore(
 
     public bool HasService(long pilotId, long structureId, StructureService service) =>
         Execute(
-            (world, catalog, _) =>
+            (world, catalog, now) =>
                 world.Set<SavedStructure>().Find(structureId) is { } structure
-                && Access(world, structure, pilotId)
-                && Snapshot(world, catalog, structure).Services.Contains(service),
+                && (
+                    service == StructureService.CynoBeacon
+                        ? CapitalNavigationStore.CanUseBeacon(world, catalog, structure, pilotId, now)
+                        : Access(world, structure, pilotId) && Snapshot(world, catalog, structure).Services.Contains(service)
+                ),
             pilotId: pilotId,
             structureId: structureId
         );
@@ -369,6 +372,7 @@ internal sealed partial class PilotStructureStore(
             throw new InvalidDataException("Launch sovereignty hubs and Orbital Skyhooks through their dedicated Deploy action.");
         }
         int system = position.SystemId ?? catalog.RequireStation(ship.StationId).SolarSystemId;
+        CapitalNavigationStore.CheckPlacement(world, item.TypeId, system, corporation.Id);
         double security = catalog.Definitions.SystemSecurity.GetValueOrDefault(system);
         if (
             (profile.DisallowHighSecurity || !profile.Dockable) && security >= StructureRules.HighSecurityBoundary

@@ -34,6 +34,7 @@ public sealed class SavedStructureService
     public int Slot { get; set; }
     public bool Online { get; set; }
     public long? NextFuelAt { get; set; }
+    public long? OnlineSince { get; set; }
 }
 
 public sealed class SavedStructureAccess

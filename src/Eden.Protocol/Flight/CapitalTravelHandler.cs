@@ -50,18 +50,29 @@ internal sealed class CapitalTravelHandler(IPilotCapitalTravel travel, ISystemOb
                 {
                     return new PilotCallResult.Failure("Choose a valid fleet cynosural field.");
                 }
-                try
+                return StartJump(context, new(emitter, beacon, (int)system));
+            case ("structureCynoBeaconMgr", "CmdJumpToStructureBeacon"):
+                if (!plain || args is not [long structure, long destination] || structure <= 0 || destination is <= 0 or > int.MaxValue)
                 {
-                    context.Flight.Checkpoint();
-                    context.Flight.StartCapitalJump(travel, new(emitter, beacon, (int)system), systems);
-                    return PilotCallResult.None;
+                    return new PilotCallResult.Failure("Choose a valid structure cynosural beacon.");
                 }
-                catch (InvalidDataException error)
-                {
-                    return new PilotCallResult.Failure(error.Message);
-                }
+                return StartJump(context, new(0, structure, (int)destination, CapitalJumpTarget.Structure));
             default:
                 return PilotCallResult.Unsupported;
+        }
+    }
+
+    private PilotCallResult StartJump(PilotCallContext context, CapitalJumpRequest request)
+    {
+        try
+        {
+            context.Flight.Checkpoint();
+            context.Flight.StartCapitalJump(travel, request, systems);
+            return PilotCallResult.None;
+        }
+        catch (InvalidDataException error)
+        {
+            return new PilotCallResult.Failure(error.Message);
         }
     }
 
@@ -156,6 +167,11 @@ internal sealed record JumpTimerState(JumpTimers? Timers = null) : BlueModel
     public override object ToBlue() => Arguments(Timers);
 
     internal static object?[] Arguments(JumpTimers? timers) => [timers?.ActivationUntil, timers?.FatigueUntil, timers?.UpdatedAt];
+}
+
+internal sealed record CynoJammerDeadline(long OnlineAt) : BlueModel
+{
+    public override object ToBlue() => OnlineAt;
 }
 
 internal sealed record JumpTimersUpdated(JumpTimers Timers) : PilotNotification("OnJumpTimersUpdated")

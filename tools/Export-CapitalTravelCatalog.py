@@ -46,15 +46,15 @@ def export(source, destination):
                 keep('client/dogmaeffects', effect['effectID'])
             pending.update(int(v) for a, v in values if a in (182, 183, 184, 1285, 1289, 1290) and v > 0 and int(v) not in visited)
         keep('client/typelist', 343)
-        for system_id in (30000142, 30001385):
+        for system_id in (30000142, 30001385, 30000251):
             keep('client/systems', system_id, ('center', 'securityStatus', 'wormholeClassID', 'regionID', 'factionID'))
-        system = catalog.execute('SELECT s.Id,s.Name,c.Id,c.Name,r.Id,r.Name FROM SolarSystem s '
+        systems = catalog.execute('SELECT s.Id,s.Name,c.Id,c.Name,r.Id,r.Name FROM SolarSystem s '
                                  'JOIN Constellation c ON s.ConstellationId=c.Id JOIN Region r ON c.RegionId=r.Id '
-                                 'WHERE s.Id=30001385').fetchone()
+                                 'WHERE s.Id IN (30001385,30000251) ORDER BY s.Id').fetchall()
         orbit = catalog.execute('SELECT * FROM Celestial WHERE Id=40088235').fetchone()
     system_fields = ('id', 'name', 'constellationId', 'constellationName', 'regionId', 'regionName')
     orbit_fields = ('id', 'solarSystemId', 'typeId', 'groupId', 'radius', 'orbitId', 'x', 'y', 'z')
-    lines = ['{', '  "build": 3662168,', '  "systems": ' + json.dumps([dict(zip(system_fields, system))]) + ',',
+    lines = ['{', '  "build": 3662168,', '  "systems": ' + json.dumps([dict(zip(system_fields, system)) for system in systems]) + ',',
              '  "celestials": ' + json.dumps([dict(zip(orbit_fields, orbit))]) + ',', '  "types": [']
     lines.append(',\n'.join('    ' + json.dumps(row, ensure_ascii=False) for row in sorted(types, key=lambda row: row['id'])))
     lines += ['  ],', '  "records": [']

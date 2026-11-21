@@ -52,6 +52,8 @@ public static class StructureRules
                 or StructureService.Copying
                 or StructureService.Invention
                 or StructureService.MoonMining
+                or StructureService.CynoBeacon
+                or StructureService.CynoJammer
                 or StructureService.CompositeReactions
                 or StructureService.HybridReactions
                 or StructureService.BiochemicalReactions;

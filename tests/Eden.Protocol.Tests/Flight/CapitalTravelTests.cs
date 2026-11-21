@@ -1,5 +1,9 @@
+using Eden.Data.World.Alliances;
+using Eden.Data.World.Corporations;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Skills;
+using Eden.Data.World.Sovereignty;
+using Eden.Data.World.Structures;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Fleets;
@@ -7,11 +11,14 @@ using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Skills;
+using Eden.Gameplay.Sovereignty;
+using Eden.Gameplay.Structures;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
 using Eden.Protocol.Tests.Fixtures;
+using Eden.Protocol.Tests.PilotSessions;
 using Eden.World.Catalog;
 using Eden.World.Runtime;
 using Eden.World.Storage;
@@ -24,6 +31,7 @@ public sealed class CapitalTravelTests
 {
     private const int Jita = 30000142;
     private const int Jan = 30001385;
+    private const int NullSystem = 30000251;
     private const int JanStation = 60001714;
     private const int Rhea = 28844;
     private const int Rapier = 11963;
@@ -31,6 +39,77 @@ public sealed class CapitalTravelTests
     private const int LiquidOzone = 16273;
     private const int Cargo = 34;
     private static readonly SpacePosition s_station = new(-102770810880, 7849451520, 353786634240);
+
+    [Fact]
+    public async Task PharoluxJumpRechecksAccessAndJammerDeadline()
+    {
+        using Fixture fixture = new(emitterHull: Rapier, generator: CapitalTravelRules.StandardGenerator, structures: true);
+        var (beacon, jammer) = fixture.PrepareNavigation();
+        using Client freighter = fixture.Select(1000001);
+        using Client operatorPilot = fixture.Select(1000002);
+        long actor = operatorPilot.Pilot.PilotId;
+        Assert.Empty(ReadBeacons());
+        Assert.IsType<PilotCallResult.Failure>(Jump());
+        fixture.Structures.SetAccess(actor, beacon.Id, false, [new(freighter.Pilot.PilotId, true)]);
+        var entry = Assert.IsType<List<object?>>(Assert.Single(ReadBeacons()));
+        Assert.Equal(6, entry.Count);
+        Assert.Equal(
+            new object?[] { beacon.Id, (long)beacon.Profile.TypeId, (long)beacon.CorporationId, (long)NullSystem, 110L },
+            entry.Take(5)
+        );
+        Assert.Equal(beacon.Name, BlueMarshal.Text(entry[5]));
+        Assert.Equal(
+            (long)NullSystem,
+            Assert.Single(Assert.IsType<List<object?>>(Reply(freighter.Call("structureDirectory", "GetSolarSystemsWithBeacons"))))
+        );
+
+        var module = Assert.Single(jammer.Modules);
+        fixture.Structures.SetServiceOnline(actor, jammer.Id, module.ItemId, true);
+        long deadline = fixture.Clock.Now + 5 * TimeSpan.TicksPerMinute;
+        Assert.Equal(deadline, Reply(operatorPilot.Call("beyonce", "GetCynoJammerState")));
+        fixture.Clock.AdvanceWallTime(TimeSpan.FromSeconds(298));
+        Assert.IsType<PilotCallResult.Success>(Jump());
+        await freighter.TickAsync();
+        fixture.Clock.Seconds += 3;
+        await freighter.TickAsync();
+        Assert.Equal(Jita, freighter.Pilot.SystemId);
+        Assert.Equal(60_000, Quantity(fixture, freighter, Nitrogen));
+        Assert.Null(fixture.Travel.Timers(freighter.Pilot.PilotId));
+        Assert.Empty(ReadBeacons());
+        Assert.IsType<PilotCallResult.Failure>(operatorPilot.Call("dogmaIM", "Activate", fixture.Module, "cynosuralGeneration", null, 0));
+        Assert.Equal(1000, Quantity(fixture, operatorPilot, LiquidOzone));
+
+        freighter.Dispose();
+        operatorPilot.Dispose();
+        await fixture.Live.FlushAsync();
+        fixture.Reopen();
+        using Client reconnectedFreighter = fixture.Select(1000001);
+        using Client reconnectedOperator = fixture.Select(1000002);
+        Assert.Equal(deadline, Reply(reconnectedOperator.Call("beyonce", "GetCynoJammerState")));
+        fixture.SetUpgrade(CapitalTravelRules.CynosuralSuppressionUpgrade, SovereigntyUpgradePower.Offline);
+        Assert.Null(Reply(reconnectedOperator.Call("beyonce", "GetCynoJammerState")));
+        Assert.False(Assert.Single(fixture.Structures.Read(actor, jammer.Id)!.Modules).Online);
+        Assert.IsType<PilotCallResult.Success>(
+            reconnectedFreighter.Call("structureCynoBeaconMgr", "CmdJumpToStructureBeacon", beacon.Id, NullSystem)
+        );
+        await reconnectedFreighter.TickAsync();
+        fixture.Clock.Seconds += 3;
+        await reconnectedFreighter.TickAsync();
+        Assert.Equal(NullSystem, reconnectedFreighter.Pilot.SystemId);
+        Assert.InRange(Quantity(fixture, reconnectedFreighter, Nitrogen), 1, 59_999);
+        fixture.Clock.AdvanceWallTime(TimeSpan.FromHours(1));
+        Assert.NotEmpty(fixture.Db.Services.GetRequiredService<ICapitalNavigation>().AccessibleBeacons(reconnectedFreighter.Pilot.PilotId));
+        Assert.DoesNotContain(fixture.Structures.Inventory(actor, beacon.Id), item => item.FlagId == StructureRules.FuelBayFlag);
+        fixture.Clock.AdvanceWallTime(TimeSpan.FromHours(1));
+        Assert.Empty(fixture.Db.Services.GetRequiredService<ICapitalNavigation>().AccessibleBeacons(reconnectedFreighter.Pilot.PilotId));
+        Assert.False(Assert.Single(fixture.Structures.Read(actor, beacon.Id)!.Modules).Online);
+
+        List<object?> ReadBeacons() =>
+            Assert.IsType<List<object?>>(Reply(freighter.Call("structureDirectory", "GetMyAccessibleOnlineCynoBeaconStructures")));
+        PilotCallResult Jump() => freighter.Call("structureCynoBeaconMgr", "CmdJumpToStructureBeacon", beacon.Id, NullSystem);
+        static object? Reply(PilotCallResult result) =>
+            BlueMarshal.Decode(BlueMarshal.Encode(Assert.IsType<PilotCallResult.Success>(result).Reply));
+    }
 
     [Fact]
     public async Task RheaDeliversCargoFromJitaToJanThroughVentureCyno()
@@ -215,6 +294,7 @@ public sealed class CapitalTravelTests
         internal IPilotInventory Inventory => Db.Services.GetRequiredService<IPilotInventory>();
         internal IPilotCapitalTravel Travel => Db.Services.GetRequiredService<IPilotCapitalTravel>();
         internal ICooperativeFleets Fleets => Db.Services.GetRequiredService<ICooperativeFleets>();
+        internal IPilotStructures Structures => Db.Services.GetRequiredService<IPilotStructures>();
         internal long FreighterId { get; }
         internal long Module { get; }
         internal long CargoId { get; }
@@ -224,12 +304,17 @@ public sealed class CapitalTravelTests
             int hull = Rhea,
             int isotope = Nitrogen,
             int emitterHull = (int)StarterShipType.Venture,
-            int generator = CapitalTravelRules.IndustrialGenerator
+            int generator = CapitalTravelRules.IndustrialGenerator,
+            bool structures = false
         )
         {
             Db = new(clock: Clock);
             var database = new WorldDatabase(Db.Path);
             PassiveCatalogFixture.LoadCapitalTravel(database.CatalogPath);
+            if (structures)
+            {
+                PassiveCatalogFixture.LoadStructures(database.CatalogPath);
+            }
             using (CatalogDbContext catalog = new(database.CatalogPath, writable: true))
             {
                 catalog.Database.ExecuteSqlRaw("INSERT OR IGNORE INTO NpcCorporation VALUES (1000015,'Caldari Steel')");
@@ -278,6 +363,130 @@ public sealed class CapitalTravelTests
         }
 
         internal Client Select(long account) => new(Db, Clock, account);
+
+        internal (StructureSnapshot Beacon, StructureSnapshot Jammer) PrepareNavigation()
+        {
+            const int corporationId = 98000001;
+            const int allianceId = 99000001;
+            const int fuelType = 4051;
+            var owner = Db.Store.FindPilot(1000002)!;
+            long pilot = owner.PilotId;
+            long ship = owner.ShipId;
+            Train(
+                Db.Store.FindPilot(1000001)!.PilotId,
+                (CapitalTravelRules.JumpDriveCalibration, 5),
+                (CapitalTravelRules.JumpFuelConservation, 5)
+            );
+            using (var action = Live.Economy.Begin(new(systems: [NullSystem], pilots: [pilot])))
+            {
+                action.Add(
+                    new SavedCorporation
+                    {
+                        Id = corporationId,
+                        Name = "Navigation",
+                        Ticker = "NAV",
+                        CeoId = pilot,
+                        CreatorId = pilot,
+                        StationId = owner.StationId,
+                        SystemId = NullSystem,
+                        CreatedAt = Clock.Now - 8 * TimeSpan.TicksPerDay,
+                        DetailsJson = System.Text.Json.JsonSerializer.Serialize(PlayerCorporationTests.Details("Navigation", "NAV")),
+                    }
+                );
+                action.Pilots.Find(pilot)!.CorporationId = corporationId;
+                action.Add(new InventoryOwner { Id = corporationId });
+                action.Add(
+                    new SavedAlliance
+                    {
+                        Id = allianceId,
+                        Name = "Navigation Alliance",
+                        Ticker = "NAV",
+                        CreatorId = pilot,
+                        CreatorCorporationId = corporationId,
+                        ExecutorCorporationId = corporationId,
+                        CreatedAt = Clock.Now,
+                    }
+                );
+                action.Add(
+                    new SavedAllianceMember
+                    {
+                        AllianceId = allianceId,
+                        CorporationId = corporationId,
+                        JoinedAt = Clock.Now,
+                    }
+                );
+                long hubId = action.NextItemId();
+                action.Add(
+                    new SavedStructure
+                    {
+                        Id = hubId,
+                        TypeId = EntosisRules.HubTypeId,
+                        CorporationId = corporationId,
+                        SystemId = NullSystem,
+                        State = StructureState.ShieldVulnerable,
+                        HasCore = true,
+                        X = 30_000_000,
+                    }
+                );
+                action.Add(
+                    new SavedSovereigntyClaim
+                    {
+                        SystemId = NullSystem,
+                        HubId = hubId,
+                        CorporationId = corporationId,
+                        AllianceId = allianceId,
+                    }
+                );
+                foreach (
+                    int type in new[] { CapitalTravelRules.CynosuralNavigationUpgrade, CapitalTravelRules.CynosuralSuppressionUpgrade }
+                )
+                {
+                    action.Add(
+                        new SavedSovereigntyUpgrade
+                        {
+                            Id = action.NextItemId(),
+                            HubId = hubId,
+                            SystemId = NullSystem,
+                            TypeId = type,
+                            ConfiguredOnline = true,
+                            PowerState = SovereigntyUpgradePower.Online,
+                        }
+                    );
+                }
+                action.Commit();
+            }
+            var beacon = Deploy(CapitalTravelRules.Pharolux, new(10_000_000, 0, 0), "Pharolux");
+            var jammer = Deploy(CapitalTravelRules.Tenebrex, new(20_000_000, 0, 0), "Tenebrex");
+            Clock.AdvanceWallTime(TimeSpan.FromHours(1));
+            Assert.True(Structures.Read(pilot, beacon.Id)!.HasCore);
+            Assert.True(Structures.Read(pilot, jammer.Id)!.HasCore);
+            Fuel(beacon, 1095);
+            Fuel(jammer, 2880);
+            long module = Assert.Single(beacon.Modules).ItemId;
+            var online = Structures.SetServiceOnline(pilot, beacon.Id, module, true).Structure;
+            Assert.True(Assert.Single(online.Modules).Online);
+            Assert.Equal(15, Structures.Inventory(pilot, beacon.Id).Single(item => item.FlagId == StructureRules.FuelBayFlag).Quantity);
+            return (online, jammer);
+
+            StructureSnapshot Deploy(int type, SpacePosition point, string name)
+            {
+                Db.Store.SetPosition(ship, point, NullSystem);
+                return Structures.Deploy(pilot, new(Grant(pilot, ship, InventoryFlag.Cargo, type, 1), point, 0, name)).Structure;
+            }
+
+            void Fuel(StructureSnapshot structure, int blocks)
+            {
+                Db.Store.SetPosition(ship, structure.Position + new SpacePosition(25_000, 0, 0), NullSystem);
+                Structures.DepositFuel(pilot, structure.Id, Grant(pilot, ship, InventoryFlag.Cargo, fuelType, blocks));
+            }
+        }
+
+        internal void SetUpgrade(int type, SovereigntyUpgradePower power)
+        {
+            using var action = Live.Economy.Begin(new(systems: [NullSystem]));
+            action.Set<SavedSovereigntyUpgrade>().Single(row => row.SystemId == NullSystem && row.TypeId == type).PowerState = power;
+            action.Commit();
+        }
 
         internal CynosuralField Light(Client emitter)
         {

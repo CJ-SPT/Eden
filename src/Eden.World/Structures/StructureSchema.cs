@@ -68,5 +68,13 @@ internal static class StructureSchema
                 MemberId INTEGER NOT NULL, Allowed INTEGER NOT NULL, PRIMARY KEY(StructureId,MemberId));
             """
         );
+        if (
+            !world
+                .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldStructureService')")
+                .Contains("OnlineSince")
+        )
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldStructureService ADD COLUMN OnlineSince INTEGER");
+        }
     }
 }

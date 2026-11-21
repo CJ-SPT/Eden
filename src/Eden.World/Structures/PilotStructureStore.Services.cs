@@ -145,12 +145,18 @@ internal sealed partial class PilotStructureStore
             {
                 throw new InvalidDataException("Moon mining services require a refinery bound to a moon mining point.");
             }
+            if (CapitalNavigationStore.ServiceType(profile.Family) == item.TypeId)
+            {
+                CapitalNavigationStore.CheckOnlining(world, structure, now);
+                module.OnlineSince = now;
+            }
             Fuel(world, catalog, structure, service, AdjustedFuel(catalog, profile, service, service.OnlineFuel));
             module.NextFuelAt = checked(now + StructureRules.FuelInterval);
         }
         else
         {
             module.NextFuelAt = null;
+            module.OnlineSince = null;
         }
         item.Online = online;
         module.Online = online;
@@ -278,6 +284,7 @@ internal sealed partial class PilotStructureStore
 
     internal static void Advance(WorldAction world, CatalogDbContext catalog, long now, int? systemId = null)
     {
+        CapitalNavigationStore.StopUnavailableServices(world, systemId, now);
         var due = (
             systemId is int system
                 ? world.Filter<SavedStructure>(s => s.SystemId == system && (s.StateEndsAt <= now || s.UnanchorAt <= now))
@@ -356,6 +363,7 @@ internal sealed partial class PilotStructureStore
                 var module = modules[deadline.ItemId];
                 module.Online = false;
                 module.NextFuelAt = null;
+                module.OnlineSince = null;
                 world.Set<OwnedItem>().Find(module.ItemId)!.Online = false;
                 world.SaveChanges();
                 structure.LowPowerAt = world.Filter<SavedStructureService>(m => m.StructureId == structure.Id && m.Online).Any()
@@ -372,6 +380,7 @@ internal sealed partial class PilotStructureStore
             {
                 module.Online = false;
                 module.NextFuelAt = null;
+                module.OnlineSince = null;
                 world.Set<OwnedItem>().Find(module.ItemId)!.Online = false;
             }
             // Services stop at the saved deadline even if personal assets delay packaging.

@@ -8,6 +8,7 @@ public enum DogmaAttributeId
     ConsumptionType = 713,
     ConsumptionQuantity = 714,
     CynosuralFieldSpawnRadius = 2455,
+    CynoJammerActivationDelay = 2794,
     MaxVelocityActivationLimit = 1334,
     JumpDriveConsumptionType = 866,
     JumpDriveRange = 867,

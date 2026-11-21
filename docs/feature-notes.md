@@ -329,7 +329,7 @@ Milestone 3 implements combat drones across its admitted hull cohort. Its first 
 | 15. T2 subcapitals | Complete ordinary subcapital cohorts, real-budget fits and role/equipment verification. |
 | 16. T3 | Tactical modes, strategic-cruiser subsystem assembly/refitting and nondestructive T3 rig removal. |
 | 17. Utility drones | Repair, salvage, energy, EWAR, web and functional hybrid drones. |
-| 18. Capital travel | [Industrial cynos and jump freighters](protocol/capital-logistics.md#industrial-cynos-and-jump-freighters) implement the first paid jump loop, including fuel bays, fleet access, native travel and checkpointed timers. Standard and covert fields, larger capital hulls and portals remain in later milestones. |
+| 18. Capital travel | [Jump freighters](protocol/capital-logistics.md#industrial-cynos-and-jump-freighters) use industrial and standard cynos or [Pharolux beacons](protocol/capital-logistics.md#pharolux-and-tenebrex). Fleet and structure access, Tenebrex jamming, isotope and capacitor costs, and checkpointed jump timers are supported. |
 | 19. Capital modes | Siege, triage, bastion, flex hardeners, emergency energizers and sensor arrays. |
 | 20. Fighters | Tubes, squadrons, movement, abilities, losses, replenishment, recall and native fighter state. |
 | 21. Industrial command | Industrial cores, shipboard compression, industrial services, P.A.N.I.C. and ship clones. |

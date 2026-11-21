@@ -1,9 +1,29 @@
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Structures;
 
 namespace Eden.Gameplay.Flight;
 
-public sealed record CapitalJumpRequest(long EmitterId, long BeaconId, int SystemId);
+public enum CapitalJumpTarget
+{
+    FleetModule,
+    Structure,
+}
+
+public sealed record CapitalJumpRequest(
+    long EmitterId,
+    long BeaconId,
+    int SystemId,
+    CapitalJumpTarget Target = CapitalJumpTarget.FleetModule
+);
+
+public sealed record StructureCynoBeacon(long Id, int TypeId, int OwnerId, int SystemId, StructureState State, string Name);
+
+public interface ICapitalNavigation
+{
+    IReadOnlyList<StructureCynoBeacon> AccessibleBeacons(long? pilotId);
+    long? JammerOnlineAt(int systemId);
+}
 
 public sealed record JumpTimers(long ActivationUntil, long FatigueUntil, long UpdatedAt);
 
@@ -49,6 +69,14 @@ public static class CapitalTravelRules
     public const int JumpDriveOperation = 3456;
     public const int JumpDriveCalibration = 21611;
     public const int JumpFuelConservation = 21610;
+    public const int Pharolux = 35840;
+    public const int Tenebrex = 37534;
+    public const int PharoluxService = 35912;
+    public const int TenebrexService = 35914;
+    public const int CynosuralNavigationUpgrade = 81615;
+    public const int CynosuralSuppressionUpgrade = 81619;
+    public const int MaximumJammers = 3;
+    public const double StructureArrivalClearance = 12_000;
     public const double LightYearMeters = 9_460_730_472_580_800;
 
     public static int? ModuleField(int typeId) =>

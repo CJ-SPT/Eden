@@ -13,7 +13,8 @@ internal sealed class StructureHandler(
     Eden.Gameplay.Corporations.IPlayerCorporations corporations,
     TimeProvider clock,
     IStructureContacts contacts,
-    ISystemObjects systemObjects
+    ISystemObjects systemObjects,
+    ICapitalNavigation? capitalNavigation = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -100,6 +101,20 @@ internal sealed class StructureHandler(
                 throw new InvalidDataException("Unexpected structure arguments.");
             }
             long pilot = context.Pilot.PilotId;
+            if (service == "structureDirectory" && method is "GetMyAccessibleOnlineCynoBeaconStructures" or "GetSolarSystemsWithBeacons")
+            {
+                if (args.Length != 0)
+                {
+                    return new PilotCallResult.Failure("Cynosural beacon directory calls do not accept arguments.");
+                }
+                return method == "GetMyAccessibleOnlineCynoBeaconStructures"
+                    ? new BlueList<StructureCynoBeaconRow>(
+                        capitalNavigation?.AccessibleBeacons(pilot).Select(beacon => new StructureCynoBeaconRow(beacon)).ToArray() ?? []
+                    )
+                    : new BlueList<int>(
+                        capitalNavigation?.AccessibleBeacons(null).Select(beacon => beacon.SystemId).Distinct().Order().ToArray() ?? []
+                    );
+            }
             if (service == "structureDirectory" && method == "GetStructureMapData")
             {
                 if (args is not [long systemId] || systemId is <= 0 or > int.MaxValue)

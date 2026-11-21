@@ -6,6 +6,7 @@ using Eden.Data.World.Fittings;
 using Eden.Data.World.Flight;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Propulsion;
+using Eden.Data.World.Structures;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Fleets;
@@ -30,6 +31,7 @@ using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Sovereignty;
 using Eden.World.Storage;
+using Eden.World.Structures;
 using Eden.World.Thermal;
 
 namespace Eden.World.Flight;
@@ -40,13 +42,15 @@ internal sealed class PilotCapitalTravelStore(WorldDatabase database, SqliteWorl
 {
     private sealed record JumpPlan(
         Pilot Pilot,
-        SavedCynosuralField Field,
+        JumpDestination Destination,
         IReadOnlyDictionary<DogmaAttributeId, double> Attributes,
         OwnedItem[] Fuel,
         int Quantity,
         double CapacitorCost,
         JumpTimers Timers
     );
+
+    private sealed record JumpDestination(int FieldType, SpacePosition Position, double SpawnRadius, double StructureRadius = 0);
 
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
     private LiveWorld Live =>
@@ -60,6 +64,11 @@ internal sealed class PilotCapitalTravelStore(WorldDatabase database, SqliteWorl
         var position = pilot.ActiveShip.Position!;
         int system = position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
         long now = Now;
+        CapitalNavigationStore.SettleFuel(action, catalog, system, now);
+        if (CapitalNavigationStore.Jammed(action, catalog, system, now))
+        {
+            throw new InvalidDataException("This solar system is cynosural jammed.");
+        }
         var field = action.Set<SavedCynosuralField>().Find(pilotId);
         if (Active(action, field, now))
         {
@@ -153,7 +162,7 @@ internal sealed class PilotCapitalTravelStore(WorldDatabase database, SqliteWorl
         long now = Now;
         var plan = Plan(action, catalog, pilotId, shipId, request, now);
         var before = PilotFleetStore.Read(catalog, plan.Pilot.ActiveShip);
-        var arrival = Arrival(catalog, request.SystemId, plan.Field, catalog.RequireItem(plan.Pilot.ActiveShip.TypeId).Radius ?? 0);
+        var arrival = Arrival(catalog, request.SystemId, plan.Destination, catalog.RequireItem(plan.Pilot.ActiveShip.TypeId).Radius ?? 0);
         double capacitor = ShipResources.SpendCapacitor(action, shipId, plan.Attributes, plan.CapacitorCost, now);
         var changes = SpendFuel(action, catalog, plan.Fuel, plan.Quantity);
         SqliteWorld.SetPosition(action, catalog, shipId, arrival, request.SystemId, now);
@@ -249,28 +258,21 @@ internal sealed class PilotCapitalTravelStore(WorldDatabase database, SqliteWorl
     private JumpPlan Plan(WorldAction world, CatalogDbContext catalog, long pilotId, long shipId, CapitalJumpRequest request, long now)
     {
         var pilot = ActivePilot(world, pilotId, shipId);
-        var field = world.Set<SavedCynosuralField>().Find(request.EmitterId);
-        if (
-            field is null
-            || field.BeaconId != request.BeaconId
-            || field.SystemId != request.SystemId
-            || field.FleetId == 0
-            || fleets.Identity(pilotId)?.FleetId != field.FleetId
-            || fleets.Identity(field.PilotId)?.FleetId != field.FleetId
-            || !Active(world, field, now)
-        )
+        RequireCynoSystem(catalog, request.SystemId);
+        CapitalNavigationStore.SettleFuel(world, catalog, request.SystemId, now);
+        if (CapitalNavigationStore.Jammed(world, catalog, request.SystemId, now))
         {
-            throw new InvalidDataException("That fleet cynosural field is no longer available.");
+            throw new InvalidDataException("The destination solar system is cynosural jammed.");
         }
+        var destination = Destination(world, catalog, pilotId, request, now);
         var position = pilot.ActiveShip.Position!;
         int origin = position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
-        if (origin == field.SystemId || catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId != (int)HullClass.JumpFreighter)
+        if (origin == request.SystemId || catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId != (int)HullClass.JumpFreighter)
         {
             throw new InvalidDataException("Use a jump freighter in a different system to jump to a cyno.");
         }
-        RequireCynoSystem(catalog, field.SystemId);
         RequireReady(world, pilot, now);
-        CrimewatchPersistence.CheckTravel(world, catalog, pilot, CrimewatchTravel.Jump, now, field.SystemId);
+        CrimewatchPersistence.CheckTravel(world, catalog, pilot, CrimewatchTravel.Jump, now, request.SystemId);
         if (
             world
                 .Filter<WorldTackle>(row =>
@@ -296,11 +298,11 @@ internal sealed class PilotCapitalTravelStore(WorldDatabase database, SqliteWorl
         var ship = PilotFittingStore.ShipAttributes(world, catalog, pilot);
         RequireLiving(world, pilot, ship, now);
         long list = checked((long)ship[DogmaAttributeId.JumpDriveTargetBeaconTypeList]);
-        if (catalog.Read(CatalogData.Client.Typelist, list)?.IncludedTypeIDs?.Contains(field.TypeId) != true)
+        if (catalog.Read(CatalogData.Client.Typelist, list)?.IncludedTypeIDs?.Contains(destination.FieldType) != true)
         {
             throw new InvalidDataException("This ship cannot jump to that type of cynosural field.");
         }
-        double distance = Center(catalog, origin).DistanceTo(Center(catalog, field.SystemId)) / CapitalTravelRules.LightYearMeters;
+        double distance = Center(catalog, origin).DistanceTo(Center(catalog, request.SystemId)) / CapitalTravelRules.LightYearMeters;
         if (!double.IsFinite(distance) || distance <= 0 || distance > ship[DogmaAttributeId.JumpDriveRange])
         {
             throw new InvalidDataException("The cynosural field is outside jump range.");
@@ -314,11 +316,51 @@ internal sealed class PilotCapitalTravelStore(WorldDatabase database, SqliteWorl
             throw new InvalidDataException("Insufficient capacitor to jump.");
         }
         var timers = CapitalTravelRules.AfterJump(now, previous?.FatigueUntil ?? 0, distance, ship[DogmaAttributeId.JumpFatigueMultiplier]);
-        return new(pilot, field, ship, fuel, isotopes, cost, timers);
+        return new(pilot, destination, ship, fuel, isotopes, cost, timers);
+    }
+
+    private JumpDestination Destination(WorldAction world, CatalogDbContext catalog, long pilotId, CapitalJumpRequest request, long now)
+    {
+        if (request.Target == CapitalJumpTarget.Structure)
+        {
+            if (
+                world.Set<SavedStructure>().Find(request.BeaconId) is not { } structure
+                || structure.SystemId != request.SystemId
+                || !CapitalNavigationStore.CanUseBeacon(world, catalog, structure, pilotId, now)
+            )
+            {
+                throw new InvalidDataException("That structure beacon is unavailable to your pilot.");
+            }
+            return new(
+                CapitalTravelRules.StandardField,
+                new(structure.X, structure.Y, structure.Z),
+                CapitalTravelRules.StructureArrivalClearance,
+                StructureCatalog.Require(catalog, structure.TypeId).Radius
+            );
+        }
+        var field = world.Set<SavedCynosuralField>().Find(request.EmitterId);
+        if (
+            request.Target != CapitalJumpTarget.FleetModule
+            || field is null
+            || field.BeaconId != request.BeaconId
+            || field.SystemId != request.SystemId
+            || field.FleetId == 0
+            || fleets.Identity(pilotId)?.FleetId != field.FleetId
+            || fleets.Identity(field.PilotId)?.FleetId != field.FleetId
+            || !Active(world, field, now)
+        )
+        {
+            throw new InvalidDataException("That fleet cynosural field is no longer available.");
+        }
+        return new(field.TypeId, new(field.X, field.Y, field.Z), field.SpawnRadius);
     }
 
     private static TransactionParticipants Participants(long pilotId, long shipId, CapitalJumpRequest request) =>
-        new(systems: [request.SystemId], pilots: [pilotId, request.EmitterId], ships: [shipId]);
+        new(
+            systems: [request.SystemId],
+            pilots: request.Target == CapitalJumpTarget.FleetModule ? [pilotId, request.EmitterId] : [pilotId],
+            ships: [shipId]
+        );
 
     private static Pilot ActivePilot(WorldAction world, long pilotId, long shipId) =>
         world.Pilots.Find(pilotId) is { } pilot
@@ -405,14 +447,15 @@ internal sealed class PilotCapitalTravelStore(WorldDatabase database, SqliteWorl
             }
         );
 
-    private static SpacePosition Arrival(CatalogDbContext catalog, int system, SavedCynosuralField field, double shipRadius)
+    private static SpacePosition Arrival(CatalogDbContext catalog, int system, JumpDestination destination, double shipRadius)
     {
-        SpacePosition center = new(field.X, field.Y, field.Z);
+        var center = destination.Position;
+        double offset = destination.SpawnRadius + (destination.StructureRadius > 0 ? destination.StructureRadius + shipRadius : 0);
         var geometry = SystemObjects.Geometry(catalog, system);
         SpacePosition[] directions = [new(1, 0, 0), new(0, 1, 0), new(0, 0, 1), new(-1, 0, 0), new(0, -1, 0), new(0, 0, -1)];
         foreach (var direction in directions)
         {
-            var point = center + direction * field.SpawnRadius;
+            var point = center + direction * offset;
             if (
                 geometry.All(body =>
                     !body.Solid
