@@ -21,7 +21,9 @@ using Eden.World.Storage;
 namespace Eden.World.Fighters;
 
 [Injectable]
-internal sealed class PilotFighterDeckStore(WorldDatabase database, TimeProvider clock) : IPilotFighterDeck
+internal sealed partial class PilotFighterDeckStore(WorldDatabase database, TimeProvider clock)
+    : IPilotFighterDeck,
+        IStandupFighterInventory
 {
     private LiveWorld Live =>
         LiveWorld.Find(database.Path) ?? throw new InvalidOperationException("Fighter decks require the resident world.");
@@ -36,7 +38,7 @@ internal sealed class PilotFighterDeckStore(WorldDatabase database, TimeProvider
                             TubeItems(world, pilotId, shipId).OrderBy(item => item.FlagId).Select(Tube).ToArray(),
                             Deployed(world, pilotId, shipId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()).ToArray()
                         )
-                        : new FighterDeckSnapshot([], []),
+                        : ReadStandupDeck(world, pilotId, shipId),
                 new(pilots: [pilotId], ships: [shipId])
             )
         ?? new([], []);
@@ -232,8 +234,8 @@ internal sealed class PilotFighterDeckStore(WorldDatabase database, TimeProvider
     {
         using var action = Live.Economy.Begin(new(pilots: [pilotId], ships: [shipId]));
         using CatalogDbContext catalog = new(database.CatalogPath);
-        var pilot = RequireDeck(action, catalog, pilotId, shipId, flag);
-        var stack = InventoryPersistence.OwnedStack(action, pilotId, stackId);
+        var host = RequireStockDeck(action, catalog, pilotId, shipId, flag);
+        var stack = InventoryPersistence.OwnedStack(action, host.Owner, stackId);
         if (
             stack is not { Singleton: false, Quantity: > 0 }
             || stack.LocationId != shipId
@@ -242,34 +244,36 @@ internal sealed class PilotFighterDeckStore(WorldDatabase database, TimeProvider
             || catalog.Read(CatalogData.Client.Types, (long)stack.TypeId)?.Published != 1
         )
         {
-            throw new InvalidDataException("Load an owned fighter stack from the current ship's fighter bay.");
+            throw new InvalidDataException("Load an eligible fighter stack from the selected fighter bay.");
         }
         var attributes = catalog.FittingAttributes(stack.TypeId);
         int maximum = checked((int)attributes.GetValueOrDefault(DogmaAttributeId.FighterSquadronMaximum));
-        if (maximum <= 0 || FighterDeckRules.Class(attributes) is not { } kind)
+        if (maximum <= 0 || host.Class(attributes) is not { } kind)
         {
             throw new InvalidDataException("This fighter type has no usable squadron data.");
         }
-        PilotSkillReader.CheckRequirements(action, catalog, pilotId, stack.TypeId);
+        if (!host.Standup)
+        {
+            PilotSkillReader.CheckRequirements(action, catalog, pilotId, stack.TypeId);
+        }
         var deployed = Deployed(action, pilotId, shipId).ToArray();
         if (deployed.Any(squad => squad.Flag == flag))
         {
             throw new InvalidDataException("Recall this tube's fighter squadron before loading it.");
         }
-        var loaded = TubeItems(action, pilotId, shipId);
+        var loaded = TubeItems(action, host.Owner, shipId);
         var squadron = loaded.SingleOrDefault(item => item.FlagId == flag);
         if (squadron is not null && squadron.TypeId != stack.TypeId)
         {
             throw new InvalidDataException("Unload the other fighter type before filling this tube.");
         }
-        var hull = PilotFittingStore.ShipAttributes(action, catalog, pilot);
-        int slots = FighterDeckRules.Bays(kind, hull);
+        int slots = host.Standup ? FighterDeckRules.StandupBays(kind, host.Attributes) : FighterDeckRules.Bays(kind, host.Attributes);
         if (
             squadron is null
             && loaded
                 .Select(item => item.TypeId)
                 .Concat(deployed.Select(squad => squad.TypeId))
-                .Count(type => FighterDeckRules.Class(catalog.FittingAttributes(type)) == kind) >= slots
+                .Count(type => host.Class(catalog.FittingAttributes(type)) == kind) >= slots
         )
         {
             throw new InvalidDataException("The carrier has no free slot for this fighter class.");
@@ -315,15 +319,18 @@ internal sealed class PilotFighterDeckStore(WorldDatabase database, TimeProvider
     {
         using var action = Live.Economy.Begin(new(pilots: [pilotId], ships: [shipId]));
         using CatalogDbContext catalog = new(database.CatalogPath);
-        _ = RequireDeck(action, catalog, pilotId, shipId, flag);
+        var host = RequireStockDeck(action, catalog, pilotId, shipId, flag);
         var squadron =
-            TubeItems(action, pilotId, shipId).SingleOrDefault(item => item.FlagId == flag)
+            TubeItems(action, host.Owner, shipId).SingleOrDefault(item => item.FlagId == flag)
             ?? throw new InvalidDataException("There is no landed fighter squadron in this tube.");
         var previous = PilotInventoryStore.Read(catalog, squadron);
         const int bay = (int)InventoryFlag.FighterBay;
         double free =
-            PilotInventoryStore.HoldCapacity(action, catalog, pilotId, shipId, bay)
-            - InventoryPersistence.UsedVolume(action, catalog, pilotId, shipId, bay);
+            (
+                host.Standup
+                    ? host.Attributes.GetValueOrDefault(DogmaAttributeId.FighterCapacity)
+                    : PilotInventoryStore.HoldCapacity(action, catalog, pilotId, shipId, bay)
+            ) - InventoryPersistence.UsedVolume(action, catalog, host.Owner, shipId, bay);
         double required = ShipHoldRules.Definition(bay)!.RequiredCapacity(previous, squadron.Quantity);
         if (free < required)
         {

@@ -29,21 +29,18 @@ internal sealed partial class FighterDeckHandler(
             return PilotCallResult.Unsupported;
         }
         var pilot = context.Pilot;
-        if (method == "GetFightersForShip" && args.Length == 0)
-        {
-            return new FighterDeckReply(
-                FighterDeckRules.Supports(pilot.ShipGroupId, pilot.ShipTypeId) ? deck.Read(pilot.PilotId, pilot.ShipId) : new([], [])
-            );
-        }
-        if (
-            !FighterDeckRules.Supports(pilot.ShipGroupId, pilot.ShipTypeId)
-            || (pilot.Position is not null && !context.Flight.CanUseSelfModules)
-        )
+        long host = context.ControlledStructureId ?? pilot.ShipId;
+        bool supports = context.ControlledStructureId is not null || FighterDeckRules.Supports(pilot.ShipGroupId, pilot.ShipTypeId);
+        if (method != "GetFightersForShip" && (!supports || pilot.Position is not null && !context.Flight.CanUseSelfModules))
         {
             return false;
         }
         try
         {
+            if (method == "GetFightersForShip" && args.Length == 0)
+            {
+                return new FighterDeckReply(supports ? deck.Read(pilot.PilotId, host) : new([], []));
+            }
             if (
                 method
                 is "LaunchFightersFromTubes"
@@ -59,13 +56,13 @@ internal sealed partial class FighterDeckHandler(
             {
                 ("LoadFightersToTube", [long stack, long flag]) when stack > 0 && flag is >= int.MinValue and <= int.MaxValue => deck.Load(
                     pilot.PilotId,
-                    pilot.ShipId,
+                    host,
                     stack,
                     (int)flag
                 ),
                 ("UnloadTubeToFighterBay", [long flag]) when flag is >= int.MinValue and <= int.MaxValue => deck.Unload(
                     pilot.PilotId,
-                    pilot.ShipId,
+                    host,
                     (int)flag
                 ),
                 _ => null,

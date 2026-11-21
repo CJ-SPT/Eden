@@ -813,6 +813,29 @@ formatting and `git diff --check` passed.
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
+## Standup fighter stock and tubes
+
+Build 3662168 `invControllers.pyj` uses the normal fighter-bay flag 158 for
+`StructureFighterBay`. `fightersSvc.pyj` uses the same deck, load and unload
+calls for a controlled structure. EVE.js `fighterInventory.js` distinguishes
+Standup light, support and heavy classes and reads their slot limits separately
+from ship fighters. An Astrahus has a 200,000 m³ bay and three tubes, with room
+for at most one support squadron and no heavy squadrons.
+[CCP Upwell structures](https://support.eveonline.com/hc/en-us/articles/213021829-Upwell-Structures)
+
+A corporation manager docked at an eligible structure can move published Standup
+stacks between their local hangar and the corporation's fighter bay. The active
+structure controller can fill and unload launch tubes using the existing inventory
+transaction and squadron cap. The items remain in corporation custody through
+the world checkpoint. Standup launch, combat and automatic recall are separate work.
+
+**Automated validation.** The exact Astrahus case passed in 12.14 seconds. The
+320-case Standup inventory, Upwell control, fighter and ship inventory filter
+passed in 35.23 seconds after a 22.47-second build. Both Python suites, formatting
+and `git diff --check` passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Shared fleet hangars
 
 Build 3662168 `shipConfigSvc.pyj` uses `ship.GetShipConfiguration(shipID)` and sends a one-key dictionary

@@ -52,6 +52,14 @@ public interface IPilotFighterOrders
     );
 }
 
+public sealed record StandupFighterBay(double Capacity, double Used);
+
+public interface IStandupFighterInventory
+{
+    StandupFighterBay Bay(long pilotId, long structureId);
+    IReadOnlyList<InventoryChange> MoveStandupFighters(long pilotId, long structureId, long itemId, int? quantity, bool deposit);
+}
+
 public static class FighterDeckRules
 {
     // Build 3662168 inventory flags, from the client inventory constants.
@@ -104,6 +112,25 @@ public static class FighterDeckRules
         : attributes.GetValueOrDefault(DogmaAttributeId.SupportFighterSquadron) == 1 ? FighterClass.Support
         : attributes.GetValueOrDefault(DogmaAttributeId.HeavyFighterSquadron) == 1 ? FighterClass.Heavy
         : null;
+
+    public static FighterClass? StandupClass(IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
+        attributes.GetValueOrDefault(DogmaAttributeId.StandupLightFighterSquadron) == 1 ? FighterClass.Light
+        : attributes.GetValueOrDefault(DogmaAttributeId.StandupSupportFighterSquadron) == 1 ? FighterClass.Support
+        : attributes.GetValueOrDefault(DogmaAttributeId.StandupHeavyFighterSquadron) == 1 ? FighterClass.Heavy
+        : null;
+
+    public static int StandupBays(FighterClass kind, IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
+        checked(
+            (int)
+                attributes.GetValueOrDefault(
+                    kind switch
+                    {
+                        FighterClass.Light => DogmaAttributeId.StandupLightFighterSlots,
+                        FighterClass.Support => DogmaAttributeId.StandupSupportFighterSlots,
+                        _ => DogmaAttributeId.StandupHeavyFighterSlots,
+                    }
+                )
+        );
 
     public static int Bays(FighterClass kind, IReadOnlyDictionary<DogmaAttributeId, double> hull) =>
         checked(
