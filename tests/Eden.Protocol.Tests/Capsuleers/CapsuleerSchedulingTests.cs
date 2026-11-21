@@ -7,6 +7,81 @@ namespace Eden.Protocol.Tests.Capsuleers;
 public sealed class CapsuleerSchedulingTests(ITestOutputHelper output)
 {
     [Fact]
+    public void FailedSafetyCheckRetriesBeforeThePaidDeadline()
+    {
+        long second = TimeSpan.TicksPerSecond;
+        CapsuleerJobQueue queue = new();
+        CapsuleerJob paid = new(1, 0, 0, 30 * second, CapsuleerAction.Collect);
+        queue.Publish(paid);
+        queue.ScheduleCheck(paid, second);
+        Assert.True(queue.Defer(paid, second));
+        queue.Restore([paid]);
+        Assert.Equal(2 * second, queue.NextDueTicks);
+        var result = queue.Run(
+            2 * second,
+            _ => throw new InvalidOperationException("Ore cannot settle before its paid deadline."),
+            TimeProvider.System,
+            check: (job, at) =>
+            {
+                Assert.Equal(second, at);
+                queue.ScheduleCheck(job, 3 * second);
+            }
+        );
+        Assert.Equal((0, 1), (result.Completed, result.SafetyChecks));
+        Assert.Equal(3 * second, queue.NextDueTicks);
+    }
+
+    [Fact]
+    public void AQuietCheckReleasesTheNextTradeForItsOwnPreparation()
+    {
+        CapsuleerJobQueue queue = new();
+        CapsuleerJob miner = new(1, 1, 1, 20, CapsuleerAction.Collect);
+        CapsuleerJob trader = new(2, 1, 1, 10, CapsuleerAction.Trade);
+        queue.Restore([miner, trader]);
+        queue.ScheduleCheck(miner, 9);
+        var turn = queue.Run(
+            10,
+            _ => throw new InvalidOperationException("The trade has not prepared its inputs."),
+            TimeProvider.System,
+            useCanonicalQueue: true,
+            maximumActions: 1,
+            check: (job, _) => queue.ScheduleCheck(job, null)
+        );
+        Assert.Equal((0, 1), (turn.Completed, turn.SafetyChecks));
+        Assert.Equal(trader, queue.NextJob);
+    }
+
+    [Fact]
+    public void SleepingPaidCycleChecksCanWakeAtTheSameDeadlineAsAnotherPilot()
+    {
+        CapsuleerJobQueue queue = new();
+        CapsuleerJob paid = new(2, 1, 1, 12, CapsuleerAction.Collect);
+        CapsuleerJob freight = new(1, 1, 1, 9, CapsuleerAction.Trade);
+        queue.Publish(paid);
+        queue.Publish(freight);
+        queue.ScheduleCheck(paid, 6);
+        List<long> settled = [];
+        var first = queue.Run(6, Execute, TimeProvider.System, check: (job, at) => queue.ScheduleCheck(job, at + 3));
+        Assert.Equal(0, first.Completed);
+        Assert.Equal(9, queue.NextDueTicks);
+        queue.Restore([paid, freight]);
+        // A warning at tick nine becomes a real job and retains the canonical tie break.
+        queue.Run(9, Execute, TimeProvider.System, check: Wake);
+        while (queue.NextDueTicks <= 9)
+        {
+            queue.Run(9, Execute, TimeProvider.System, check: Wake);
+        }
+        Assert.Equal([1L, 2L], settled);
+
+        CapsuleerJob Execute(CapsuleerJob job)
+        {
+            settled.Add(job.PilotId);
+            return job.Next(20, job.Action);
+        }
+        void Wake(CapsuleerJob job, long at) => queue.Publish(job with { DueTicks = at, Revision = job.Revision + 1 });
+    }
+
+    [Fact]
     public void CanonicalQueuePreservesOrderingAndWithdrawsCompletedTravelersWithoutRebuildingCandidates()
     {
         const int Population = 1804;

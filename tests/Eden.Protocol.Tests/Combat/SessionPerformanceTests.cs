@@ -30,6 +30,28 @@ public sealed class SessionPerformanceTests
         public void Disengage(long shipId, long? npcId = null) { }
     }
 
+    [Fact]
+    public void TotalsOnlyCaptureCountsWorkAndAnExplicitNestedTraceKeepsItsPhases()
+    {
+        List<PerformanceSample> totals = [];
+        List<PerformanceSample> traced = [];
+        using (SessionPerformance.Capture("ordinary traffic", totals.Add, includePhases: false))
+        {
+            Assert.Null(SessionPerformance.Phase("untraced step"));
+            SessionPerformance.ConnectionOpened();
+            using (SessionPerformance.Capture("selected trade", traced.Add))
+            using (SessionPerformance.Phase("reload"))
+            {
+                SessionPerformance.DatabaseCommand("SELECT 1");
+                SessionPerformance.FittingCalculated();
+            }
+            Assert.False(SessionPerformance.IncludesPhases);
+        }
+        var total = Assert.Single(totals);
+        Assert.Equal((1, 1, 1), (total.Commands, total.Connections, total.Fittings));
+        Assert.Equal(["reload", "selected trade"], traced.Select(sample => sample.Name));
+    }
+
     [Theory]
     [InlineData(1)]
     [InlineData(24)]

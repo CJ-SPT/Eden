@@ -7,6 +7,7 @@ using Eden.Gameplay.Capsuleers;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Server;
 using Eden.Server.Maintenance;
+using Eden.World.Capsuleers;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -242,15 +243,17 @@ public sealed partial class ServerPerformanceReplayTests
             {
                 clock.Offset = TimeSpan.FromSeconds(70);
             }
+            bool traceWorker = Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_WORKER_TRACE") != "0";
             using var metrics = Eden.Infrastructure.Diagnostics.SessionPerformance.Begin(
                 "sustained bot worker",
                 Report,
-                force: true,
+                force: traceWorker,
                 command: Environment.GetEnvironmentVariable("EDEN_SQL_HOTSPOTS") == "1"
                     ? sql => sqlCalls.AddOrUpdate(sql, key => (1, Environment.StackTrace), (_, value) => (value.Count + 1, value.Stack))
                     : null,
                 slowCommand: (duration, sql) => Report($"Slow SQL command: {duration.TotalMilliseconds:F2} ms. {sql}")
             );
+            var scheduler = host.GetRequiredService<CapsuleerScheduler>();
             long completedAtStart = diagnostics.Read().CompletedActions;
             int generation2AtStart = GC.CollectionCount(2);
             maintenance.Start();
@@ -321,17 +324,20 @@ public sealed partial class ServerPerformanceReplayTests
                     }
                 }
             });
+            int minimumScheduled = int.MaxValue;
             double? recovered = null;
             long previousCompleted = 0;
             int previousDue = diagnostics.Read().DueJobs;
             double previousSeconds = 0;
             IReadOnlyList<CapsuleerCareerQueue> previousCareers = [];
             TimeSpan waitAtStart = maintenance.WorkerWait;
+            TimeSpan pauseAtStart = GC.GetTotalPauseDuration();
             List<double> finalDelays = [];
             while (elapsed.Elapsed.TotalSeconds < seconds)
             {
                 await Task.Delay(TimeSpan.FromSeconds(1));
                 var state = diagnostics.Read();
+                minimumScheduled = Math.Min(minimumScheduled, state.ScheduledAgents);
                 var blockingCollection = GC.GetGCMemoryInfo(GCKind.FullBlocking);
                 var backgroundCollection = GC.GetGCMemoryInfo(GCKind.Background);
                 var fullCollection = blockingCollection.Index > backgroundCollection.Index ? blockingCollection : backgroundCollection;
@@ -377,6 +383,7 @@ public sealed partial class ServerPerformanceReplayTests
                             .ToArray(),
                         WorkerWaitMilliseconds = (maintenance.WorkerWait - waitAtStart).TotalMilliseconds,
                         Generation2Collections = GC.CollectionCount(2) - generation2AtStart,
+                        GcPauseMilliseconds = (GC.GetTotalPauseDuration() - pauseAtStart).TotalMilliseconds,
                         LastFullCollectionIndex = fullCollection.Index,
                         BytesAfterFullCollection = fullCollection.HeapSizeBytes - fullCollection.FragmentedBytes,
                         Runtime = state,
@@ -423,6 +430,18 @@ public sealed partial class ServerPerformanceReplayTests
                         Visits = visits,
                         Checkpoints = checkpointReports.DistinctBy(checkpoint => checkpoint.CompletedAt).ToArray(),
                         NpcPopulation = live.NpcPopulationCounts.ToArray(),
+                        MeasurementTimestamp = arrivalsStarted,
+                        TimestampFrequency = Stopwatch.Frequency,
+                        ServerGC = System.Runtime.GCSettings.IsServerGC,
+                        TraceWorkerPhases = traceWorker,
+                        MinimumScheduled = minimumScheduled,
+                        scheduler.TradesStartedAhead,
+                        scheduler.TradesUsedAhead,
+                        scheduler.RoutineArrivals,
+                        scheduler.PreparedArrivals,
+                        scheduler.EarlyMiningChecks,
+                        scheduler.QuietMiningChecks,
+                        scheduler.PaidCollections,
                         ReportedTrades = live.TrafficActions.ReportedTrades,
                         Samples = samples,
                         Requests = requests,
@@ -454,11 +473,19 @@ public sealed partial class ServerPerformanceReplayTests
             output.WriteLine($"Systems={systems} backlog={backlog} recovered={recovered} scheduled={diagnostics.Read().ScheduledAgents}");
             if (seconds >= 600 && Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_BASELINE") != "1")
             {
+                if (Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_MINIMUM_PILOTS") is { } required)
+                {
+                    Assert.True(minimumScheduled >= int.Parse(required), $"Minimum scheduled population was {minimumScheduled}.");
+                }
                 Assert.NotNull(recovered);
                 Assert.True(recovered <= 120);
                 Assert.All(finalDelays, delay => Assert.True(delay < 1000));
                 var warmed = requests.Where(request => request.ArrivalSecond > LatencyWarmupSeconds).ToArray();
                 Assert.All(warmed, request => Assert.True(request.Total < 1000, $"{request.Result.Operation}: {request.Total:F2} ms"));
+                Assert.All(
+                    warmed,
+                    request => Assert.Equal((0, 0, 0), (request.Result.Sql, request.Result.Connections, request.Result.Fits))
+                );
                 foreach (string operation in new[] { "frame", "GetRegionBest" })
                 {
                     var values = warmed.Where(request => request.Result.Operation == operation).Select(request => request.Total).ToArray();

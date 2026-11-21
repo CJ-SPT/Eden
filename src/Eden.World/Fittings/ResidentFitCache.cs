@@ -148,7 +148,10 @@ internal sealed class ResidentFitCache : IDisposable
     }
 
     internal static ResidentFitCache? Find(string path) =>
-        s_worlds.TryGetValue(Path.GetFullPath(path), out var weak) && weak.TryGetTarget(out var cache) ? cache : null;
+        (s_worlds.TryGetValue(path, out var weak) || s_worlds.TryGetValue(Path.GetFullPath(path), out weak))
+        && weak.TryGetTarget(out var cache)
+            ? cache
+            : null;
 
     internal Dictionary<DogmaAttributeId, double>? Read(FitCacheKey key, string revision)
     {

@@ -109,6 +109,7 @@ internal sealed partial class CapsuleerScheduler
 
     private void ReleaseWorker(long pilot)
     {
+        _offscreenPresence.Remove(pilot);
         _miners.Remove(pilot);
         _haulers.Remove(pilot);
     }
@@ -124,6 +125,17 @@ internal sealed partial class CapsuleerScheduler
         {
             foreach (long pilot in _systemAgents.GetValueOrDefault(state.SystemId) ?? [])
             {
+                if (
+                    _running.Contains(pilot)
+                    && !_resuming.ContainsKey(pilot)
+                    && live.MinerCheckpoints.GetValueOrDefault(pilot)?.Work.Navigation.Warp is not null
+                    && Current[pilot].DueTicks > elapsed
+                    && _miners.TryGetValue(pilot, out var traveler)
+                )
+                {
+                    traveler.Sample(elapsed);
+                    WakePilot(pilot, Math.Min(pulse, Current[pilot].DueTicks));
+                }
                 if (
                     _running.Contains(pilot)
                     && live.MinerCheckpoints.GetValueOrDefault(pilot)?.Work is { Activity: MinerActivity.Mining } work

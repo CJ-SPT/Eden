@@ -1,4 +1,5 @@
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Docking;
 using Eden.World.Runtime;
 
 namespace Eden.World.Capsuleers;
@@ -17,6 +18,29 @@ internal sealed partial class CapsuleerScheduler
 
     private readonly Dictionary<int, SystemPresentation> _presentations = [];
     private bool _presentationHadPending;
+
+    private readonly record struct LocalPresence(int System, int Region, string Name, int Corporation, int Gender);
+
+    private readonly Dictionary<long, LocalPresence> _offscreenPresence = [];
+
+    private bool NeedsPresentation(DockedPilot pilot, int departed, IReadOnlyList<int> observed)
+    {
+        // An observed departure removes its ship from the grid. Docked updates also carry
+        // the station guest's full current ship and identity. In empty space only Local and
+        // online membership consume the handoff until a human enters and gets the full scene.
+        if (pilot.Position is null || observed.Contains(departed) || observed.Contains(pilot.SystemId))
+        {
+            _offscreenPresence.Remove(pilot.PilotId);
+            return true;
+        }
+        LocalPresence current = new(pilot.SystemId, pilot.RegionId, pilot.Name, pilot.CorpId, pilot.Profile.GenderId);
+        if (_offscreenPresence.TryGetValue(pilot.PilotId, out var previous) && previous == current)
+        {
+            return false;
+        }
+        _offscreenPresence[pilot.PilotId] = current;
+        return true;
+    }
 
     private SystemPresentation ReadPresentation(SystemSimulationState state, long now, out bool changed)
     {

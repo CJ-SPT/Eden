@@ -85,7 +85,7 @@ internal sealed class CapsuleerMaintenance(
                         var delay = remaining > CapsuleerJobQueue.ExecutionBudget ? remaining : CapsuleerJobQueue.ExecutionBudget;
                         budget = advanced ? CatchUpBudget : CapsuleerJobQueue.ExecutionBudget;
                         waiting = clock.GetTimestamp();
-                        if (advanced && worked < interval && diagnostics?.Read().OldestDelayTicks > interval.Ticks)
+                        if (advanced && diagnostics?.Read().OldestDelayTicks > interval.Ticks)
                         {
                             // Each job releases the owner. Yield to runnable requests between
                             // productive slices while catching up more than one wake interval.
@@ -182,8 +182,9 @@ internal sealed class CapsuleerMaintenance(
                 // Let waiting sessions enter before the next job or scene capture.
                 var batch = scheduler.Run(scene.Stamp, maximumActions: 1, cancellationToken);
                 backlogged = batch.Turn.OldestDueTicks is not null;
-                advanced = batch.Turn.Completed > 0;
-                completed += batch.Turn.Completed;
+                int work = batch.Turn.Completed + batch.Turn.SafetyChecks;
+                advanced = work > 0;
+                completed += work;
                 lastMiner = batch.Miners.LastOrDefault() ?? lastMiner;
             } while (
                 !cancellationToken.IsCancellationRequested

@@ -109,9 +109,17 @@ internal sealed partial class EconomyTable<TRow, TState>(
     private readonly Dictionary<long, EconomyKey>? _rowIds = rowIdIsKey ? null : [];
     private readonly Dictionary<string, EconomyIndex<TState>> _indexes = (indexes ?? []).ToDictionary(i => i.Name);
 
-    internal IEnumerable<EconomyKey> Matching(Expression<Func<TRow, bool>> predicate)
+    internal EconomyKey[] Matching(Expression<Func<TRow, bool>> predicate)
     {
+        if (_rows is { Count: 0 } || _integerRows is { Count: 0 })
+        {
+            return [];
+        }
         var candidates = EconomyCandidates.Find(predicate.Body, predicate.Parameters[0], (column, value) => Candidates(column, value));
+        if (candidates is { Count: 0 })
+        {
+            return [];
+        }
         var state = Expression.Parameter(typeof(TState), "saved");
         Func<TState, bool>? match = null;
         try
@@ -600,8 +608,8 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
 
     internal IEnumerable<TRow> SelectUnfiltered(Expression<Func<TRow, bool>> predicate)
     {
-        var check = predicate.Compile(preferInterpretation: true);
-        return table.Matching(predicate).Concat(_local.Keys).Distinct().ToArray().Select(FindUnfiltered).OfType<TRow>().Where(check);
+        var keys = QueryKeys(predicate);
+        return keys.Length == 0 ? [] : keys.Select(FindUnfiltered).OfType<TRow>().Where(predicate.Compile(preferInterpretation: true));
     }
 
     internal override TRow? FindUnfiltered(EconomyKey id)
@@ -631,15 +639,23 @@ internal sealed partial class EconomySet<TRow, TState>(EconomyTable<TRow, TState
 
     internal override IEnumerable<TRow> SelectRows(Expression<Func<TRow, bool>>? predicate)
     {
-        var matches = predicate?.Compile(preferInterpretation: true);
-        var candidates = predicate is null ? table.Keys : table.Matching(predicate);
-        return candidates
-            .Concat(_local.Keys)
-            .Distinct()
-            .ToArray()
-            .Select(Find)
-            .OfType<TRow>()
-            .Where(row => matches is null || matches(row));
+        var keys = QueryKeys(predicate);
+        if (keys.Length == 0)
+        {
+            return [];
+        }
+        var rows = keys.Select(Find).OfType<TRow>();
+        return predicate is null ? rows : rows.Where(predicate.Compile(preferInterpretation: true));
+    }
+
+    private EconomyKey[] QueryKeys(Expression<Func<TRow, bool>>? predicate)
+    {
+        if (_local.Count == 0)
+        {
+            return predicate is null ? table.Keys.ToArray() : table.Matching(predicate);
+        }
+        var committed = predicate is null ? table.Keys : table.Matching(predicate);
+        return committed.Concat(_local.Keys).Distinct().ToArray();
     }
 
     protected override IEnumerable<TRow> Rows => SelectRows(null);

@@ -5937,3 +5937,139 @@ Not performed; agent client testing is disabled.
 ### Optional maintainer checks
 
 Compare deployed oldest-job age and frame latency with a similar active pilot count and observer workload.
+
+## Offscreen bot scheduling at ten thousand pilots
+
+A loaded hauler on an ordinary offscreen arrival reuses its target and geometry while their
+catalog generation matches. A loaded miner can reuse resident geometry. Gate transfers, cold
+state and detailed hauler activity retain their preparation path. A background miner in warp
+schedules its next motion step at warp exit on the original sampling cadence. Observer entry
+samples the course and wakes the pilot.
+
+Paid high-security belt cycles keep their settlement deadline. A transient queue entry checks
+for aggression, incoming effects, moving or nearby hostile NPCs, missiles and crew warnings on
+the original one-second cadence. A due population refresh serves the system. A clear check
+grants no ore. A warning brings the pilot back to its ordinary action at the check deadline.
+Offscreen travel publishes Local and docked guest changes. Observed ships receive full scene updates.
+The existing settlement boundary follows the [EVE University mining mechanics](https://wiki.eveuniversity.org/Mining#Mechanics).
+The local EVE.js reference handles mining cycle boundaries in `server/src/services/mining/miningRuntime.js`
+(SHA-256 `0a4a64ee74d915099dc268acd4ff0cf6eeb5de4e11011797ac04fd0372aa93b5`).
+
+Two workers can prepare catalog, fitting-template, supply and journey inputs for upcoming trades
+in different systems. The scheduler checks the inputs again at the head of the queue. Ship, cargo,
+wallet, market and job changes commit in queue order.
+
+On the frozen traffic-stalls save at `7d049a6d`, the original three-minute, 900-community Debug
+replay completed 96,467 actions and ended 68.4 seconds behind. The staged candidate with travel
+reuse, mining checks and advance trade preparation completed 153,000 and ended 175 milliseconds
+behind, with 9,432 scheduled. A subsequent 1,000-community Debug run started with 9,915 scheduled
+and ended 15.3 seconds behind. Short runs report measurements. Ten-minute runs also assert queue
+age and client latency. Reports are in `artifacts/bot-throughput-review-d13dc927/` and
+`artifacts/bot-10000-20261120/`.
+
+The matched seeded belt and eight-jump shipment had the same outcomes on the baseline and candidate
+after checkpoint and reopen. The miner collected 2,898 ore in 12 cycles and left 125,519 units in
+the rock. The hauler delivered 10 units, with zero remaining aboard. Their wallet balances were
+1,000,000 and 10,000,000 cents respectively. Capacitor, skill points, gate arrival times and pending
+job deadlines matched. Fixture inputs and results are in `artifacts/bot-10000-20261120/economy/`.
+
+For the capacity check, use `ReplaySustainedBotThroughput` with the frozen source, one observer,
+1,040 visited communities, 600 seconds and `EDEN_BOT_REPLAY_MINIMUM_PILOTS=10000`. The default
+worker trace records each timing phase. Setting `EDEN_BOT_REPLAY_WORKER_TRACE=0` uses ordinary
+worker logging. Both modes measure warmed requests, ownership, checkpoints and queue age.
+The population minimum counts admitted pilots.
+
+The matching 1,040-community Release control on `7d049a6d` started with 10,156 admitted pilots.
+At three minutes it had completed 76,455 actions and the oldest due job was 101.3 seconds late.
+This control used ordinary worker logging and the same frozen save, observer arrivals and checkpoint cadence.
+The control harness and report are in `artifacts/bot-10000-20261120/baseline-production-1040/`.
+
+In the intermediate ten-minute Release run, the scheduler first caught up after 111.5 seconds.
+The queue fell behind again and ended 12.4 seconds late. The final five minutes contained 207
+samples at or above one second. A late twelve-second CPU profile attributed about 25% of sampled
+bot worker time to fitting calculation, including 9.8% to fitted mining lasers during collection.
+About 29% included resident query evaluation. These groups overlap. The report and trace are in
+`artifacts/bot-10000-20261120/production-1040/`.
+
+The fitted laser's static attributes now share the bounded cache for derived fitting values. Changes to
+skills, fitting inputs or catalog data invalidate the entry. Module damage and cooldowns come from the
+current action. Docked resupply reads the supported magazines once per inspection and rechecks quantities
+after stocking. Ordinary bot action diagnostics retain total duration, allocations, SQL and fitting counts.
+Explicit traces, selected trades and repetitions of a slow action also retain phase timings.
+
+With the laser cache, resupply and timing changes, the 1,040-community run recovered in 82.0 seconds.
+It completed 129,480 actions by 179.9 seconds, with a 14.6 ms oldest job. Over ten minutes it completed
+433,239 actions and ended with 10,392 admitted, 221 due, and a 203 ms oldest job. The 570 warmed
+requests performed zero SQL commands, connection opens or fitting calculations. Frame p95/p99 were
+34.7/76.5 ms and market p95/p99 were 85.4/143.8 ms. All monitored traffic and population holds
+stayed below 250 ms. Nineteen of 297 samples in the final five minutes reached one second, peaking
+at 3.58 seconds. The queue-age assertion failed. See `artifacts/bot-10000-20261120/final-1040/`.
+
+The resident query path now returns immediately on an empty committed index, then considers rows added
+or changed in the current transaction. A simple captured field can supply an index key directly.
+Scalar projections build their private-row delegates on first use. The replay records the active
+garbage collector and process pause time so that runs using the test-host default and Eden.Server's
+server GC can be distinguished. The automated cohort has one observer, regular checkpoint writes and
+a previously populated frozen world. Background community provisioning is disabled for this comparison.
+
+### Automated validation
+
+The final Release replay used the frozen traffic-stalls save, one observer and the server garbage
+collector from Eden.Server's runtime configuration. Set `DOTNET_gcServer=1` on the test host,
+`EDEN_BOT_REPLAY_CASE=900-False`, `EDEN_BOT_REPLAY_SYSTEMS=1040`, `EDEN_BOT_REPLAY_SECONDS=600`,
+`EDEN_BOT_REPLAY_PREPARATION=0`, `EDEN_BOT_REPLAY_MINIMUM_PILOTS=10000` and
+`EDEN_BOT_REPLAY_WORKER_TRACE=0`. Supply the frozen source in `EDEN_BOT_REPLAY_SOURCE` and an output
+directory in `EDEN_PERFORMANCE_OUTPUT`. Run the exact filter
+`FullyQualifiedName=Eden.Protocol.Tests.Combat.ServerPerformanceReplayTests.ReplaySustainedBotThroughput`
+in Release. The selected theory case took 11 minutes 18 seconds including setup and teardown.
+
+| Ten-minute server GC replay | Result |
+| --- | ---: |
+| Admitted bots, minimum / end | 10,156 / 10,480 |
+| Completed actions / failures | 446,271 / 0 |
+| Initial recovery to less than 1 second | 43.54 s |
+| Oldest due job, maximum over final 5 minutes / end | 931.2 ms / 49.3 ms |
+| Samples reaching 1 second in final 5 minutes | 0 of 298 |
+| Warm frame p95 / p99 | 25.17 / 95.02 ms |
+| Warm regional market p95 / p99 | 54.84 / 93.49 ms |
+| Warm SQL commands / connections / fitting rebuilds across 570 requests | 0 / 0 / 0 |
+| Maximum recorded traffic or population hold | 214.39 ms |
+| Checkpoints | 41 |
+
+The original revision and final build also ran with identical server GC settings. The nearest samples
+to 180 seconds were at 179.96 and 179.85 seconds respectively. Both runs began with 10,156 admitted.
+
+| Same frozen workload at three minutes | Original `7d049a6d` | Final build |
+| --- | ---: | ---: |
+| Admitted bots | 10,156 | 10,416 |
+| Due jobs | 6,265 | 112 |
+| Oldest due job | 29.80 s | 61.5 ms |
+| Total process allocation since workload start | 93.66 GiB | 41.82 GiB |
+| Committed actions | 141,258 | 136,325 |
+
+The original scheduler counted routine mining pulses as committed actions. The final build can handle
+those pulses as transient checks. The economic fixtures compare actual production and delivery after
+reopen. The original three-minute control stayed above one second of queue age throughout. Its report is
+in `artifacts/bot-10000-20261120/baseline-server-gc-1040/`.
+
+The report, manifest, progress log and test result are in `artifacts/bot-10000-20261120/indexed-server-gc-1040/`.
+The workload admits existing miners and haulers while a player is online. Source-save population, admitted
+population and completed actions are separate counters. Transient threat checks are excluded from completed actions.
+
+The solution build and Release test build each finished with zero warnings and errors. The working tree
+passed formatting and line-width checks. The focused Release run selected 130 cases across scheduler,
+deadlines, background preparation, maintenance, presentation, mining, NPC acquisition, resupply, fitting
+retention, diagnostics, resident economy and the two matched economic replays. In 1 minute 30 seconds,
+128 passed. Both parameterizations of
+`CapsuleerGatePerformanceTests.ResupplyStopsInspectingHangarAfterStockFillsTheRequirement` reproduced
+the existing offline SQL assertion on the base and candidate, with 61 commands against the expected 60.
+The exact private-wallet-index test also passed through `Test-Feature.ps1` in 6.14 seconds including runner
+startup. Logs are in `artifacts/bot-10000-20261120/validation/`.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Compare queue age and frame and market latency on the dedicated server during a similarly populated session.

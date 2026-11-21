@@ -135,6 +135,17 @@ internal sealed partial class CapsuleerHauler(
         || _warpBlocked
         || Volatile.Read(ref _threatenedShip) != 0;
 
+    internal bool HasFlightInputs(int system, long catalog) =>
+        _loaded
+        && _pilot is { Position: not null } pilot
+        && pilot.SystemId == system
+        && _target is not null
+        && _target.Id == _work?.TargetId
+        && _work.Activity == HaulerActivity.Flying
+        && !RequiresDetail
+        && _flightCatalog == catalog;
+
+    private long _flightCatalog;
     private bool _trafficRefreshChecked;
     private CapsuleerOperation _operation = null!;
     private long _hullRevision;
@@ -791,6 +802,7 @@ internal sealed partial class CapsuleerHauler(
     private void RefreshObjects(bool? loadResources = null)
     {
         using var phase = SessionPerformance.Phase("traffic.geometry");
+        _flightCatalog = database.Catalog.Identity.Generation;
         _resourceGeometry = loadResources ?? !_background;
         if (!_resourceGeometry)
         {

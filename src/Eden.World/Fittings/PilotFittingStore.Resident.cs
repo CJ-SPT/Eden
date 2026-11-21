@@ -498,34 +498,37 @@ internal sealed partial class PilotFittingStore
         FittingCalculation? calculation = null
     )
     {
-        // Read mutable condition alongside pilot membership, outside the committed fitting cache.
         bool isModule = module.CategoryId == (int)InventoryCategory.Module;
-        var damage = ModuleConditionPersistence.OwnedDamage(world, pilotId, module.Id);
-        var current = world
-            .Pilots.Where(p => p.Id == pilotId)
-            .Select(p => new { Pilot = p, Damage = isModule ? damage.FirstOrDefault() : 0 })
-            .Single();
-        var pilot = current.Pilot;
-        var snapshot = calculation is null ? world.CachedFittingSnapshot(pilotId, pilot.ActiveShipId, world.FitRevision(pilotId)) : null;
-        Dictionary<DogmaAttributeId, double> attributes;
-        if (snapshot is not null)
+        var (pilot, damage) = ReadModuleCondition(world, pilotId, module.Id, isModule);
+        string? revision = calculation is null ? world.FitRevision(pilotId) : null;
+        var key = new FitCacheKey(pilotId, pilot.ActiveShipId, module.Id);
+        bool retain = revision is not null && module.Id > 0 && InventoryDefinitions.IsMiningGroup(module.GroupId);
+        var attributes = retain ? world.CachedFit(key, revision) : null;
+        if (attributes is null)
         {
-            attributes = snapshot.Modules.TryGetValue(module.Id, out var fitted)
-                ? fitted.ToDictionary()
-                : MutaplasmidStore.Attributes(world, catalog, module.Id, module.TypeId).ToDictionary();
-        }
-        else
-        {
-            calculation ??= FittingCalculation.Read(world, catalog, pilot);
-            attributes = (
-                calculation.Modules.Any(m => m.Item.Id == module.Id)
-                    ? calculation.Graph.Attributes(module.Id)
-                    : MutaplasmidStore.Attributes(world, catalog, module.Id, module.TypeId)
-            ).ToDictionary();
+            var snapshot = calculation is null ? world.CachedFittingSnapshot(pilotId, pilot.ActiveShipId, revision) : null;
+            IReadOnlyDictionary<DogmaAttributeId, double>? fitted = null;
+            if (snapshot is not null)
+            {
+                fitted = snapshot.Modules.GetValueOrDefault(module.Id);
+            }
+            else
+            {
+                calculation ??= FittingCalculation.Read(world, catalog, pilot);
+                if (calculation.Modules.Any(m => m.Item.Id == module.Id))
+                {
+                    fitted = calculation.Graph.Attributes(module.Id);
+                }
+            }
+            if (retain && fitted is not null)
+            {
+                world.StageFit(key, revision, fitted);
+            }
+            attributes = (fitted ?? MutaplasmidStore.Attributes(world, catalog, module.Id, module.TypeId)).ToDictionary();
         }
         if (isModule)
         {
-            attributes[DogmaAttributeId.Damage] = current.Damage;
+            attributes[DogmaAttributeId.Damage] = damage;
         }
         // Deadlines are live state and must not be captured with the fitted graph.
         if (
@@ -549,5 +552,26 @@ internal sealed partial class PilotFittingStore
             attributes[DogmaAttributeId.NextActivationTime] = cooldown?.Kind == ModuleCooldownKind.Reload ? cooldown.ReadyAt : 0;
         }
         return attributes;
+    }
+
+    private static (Pilot Pilot, double Damage) ReadModuleCondition(WorldAction world, long pilotId, long moduleId, bool isModule)
+    {
+        if (world is EconomyTransaction)
+        {
+            var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidOperationException("Unknown pilot.");
+            double damage =
+                isModule
+                && world.Set<SavedModuleCondition>().Find(moduleId) is { } condition
+                && world.Set<OwnedItem>().Find(moduleId)?.OwnerId == pilotId
+                    ? condition.Damage
+                    : 0;
+            return (pilot, damage);
+        }
+        var owned = ModuleConditionPersistence.OwnedDamage(world, pilotId, moduleId);
+        var current = world
+            .Pilots.Where(p => p.Id == pilotId)
+            .Select(p => new { Pilot = p, Damage = isModule ? owned.FirstOrDefault() : 0 })
+            .Single();
+        return (current.Pilot, current.Damage);
     }
 }

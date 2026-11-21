@@ -73,6 +73,30 @@ public sealed class ResidentEconomyTests
     }
 
     [Fact]
+    public void EmptyCommittedIndexStillFindsPrivateWalletChanges()
+    {
+        using TestWorld fixture = new(liveWorld: true);
+        var live = fixture.Services.GetRequiredService<LiveWorld>();
+        using var action = live.Economy.Begin();
+        long selected = Human;
+        var wallets = action.Set<PilotWallet>().Where(wallet => wallet.PilotId == selected);
+        var balances = wallets.Select(wallet => wallet.Cents);
+        Assert.Empty(wallets);
+        Assert.Empty(balances);
+        var added = action.Add(new PilotWallet { PilotId = Human, Cents = 100 }).Entity;
+        Assert.Same(added, Assert.Single(wallets));
+        Assert.Equal(100, Assert.Single(balances));
+        added.Cents = 200;
+        Assert.Equal(200, Assert.Single(balances));
+        selected++;
+        Assert.Empty(balances);
+        selected = Human;
+        action.Remove(added);
+        Assert.Empty(wallets);
+        Assert.Empty(balances);
+    }
+
+    [Fact]
     public async Task CompactSkillRowsPreservePilotIdentityAndCommittedCheckpointGenerations()
     {
         const long otherPilot = 90000002;

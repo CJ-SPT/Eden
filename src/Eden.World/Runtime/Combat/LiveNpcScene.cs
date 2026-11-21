@@ -60,6 +60,18 @@ internal sealed partial class LiveCombatRuntime
             }
             _npcSceneIndices.Remove(npc.SystemId);
         }
+        if (
+            previous is null
+            || previous.Position != npc.Position
+            || previous.Radius != npc.Radius
+            || previous.SystemId != npc.SystemId
+            || previous.Role != npc.Role
+            || previous.Navigation != npc.Navigation
+            || previous.Transit != npc.Transit
+        )
+        {
+            _miningGeometry++;
+        }
         _npcs[npc.Id] = npc;
     }
 
@@ -68,6 +80,7 @@ internal sealed partial class LiveCombatRuntime
         if (_npcs.Remove(id, out var npc))
         {
             _npcSceneIndices.Remove(npc.SystemId);
+            _miningGeometry++;
         }
     }
 }

@@ -27,6 +27,7 @@ public sealed class SessionPerformance : IDisposable
     private readonly Action<string>? _command;
     private readonly Action<TimeSpan, string>? _slowCommand;
     private readonly Action<PerformanceSample>? _sample;
+    private readonly bool _includePhases;
     private readonly long _allocated = GC.GetAllocatedBytesForCurrentThread();
     public int FittingCalculations { get; private set; }
     public int Commands { get; private set; }
@@ -34,13 +35,15 @@ public sealed class SessionPerformance : IDisposable
     public int TackleReads { get; private set; }
     public int AggressionReads { get; private set; }
     public static bool IsActive => s_current.Value is not null;
+    public static bool IncludesPhases => s_current.Value?._includePhases == true;
 
     private SessionPerformance(
         string name,
         Action<string>? report,
         Action<PerformanceSample>? sample = null,
         Action<string>? command = null,
-        Action<TimeSpan, string>? slowCommand = null
+        Action<TimeSpan, string>? slowCommand = null,
+        bool includePhases = true
     )
     {
         _name = name;
@@ -48,6 +51,7 @@ public sealed class SessionPerformance : IDisposable
         _slowCommand = slowCommand;
         _report = report;
         _sample = sample ?? _parent?._sample;
+        _includePhases = includePhases;
         s_current.Value = this;
     }
 
@@ -59,9 +63,11 @@ public sealed class SessionPerformance : IDisposable
         Action<TimeSpan, string>? slowCommand = null
     ) => force || s_enabled || IsActive ? new(name, report, command: command, slowCommand: slowCommand) : null;
 
-    public static SessionPerformance? Phase(string name) => s_current.Value is { } parent ? new(name, parent._report) : null;
+    public static SessionPerformance? Phase(string name) =>
+        s_current.Value is { _includePhases: true } parent ? new(name, parent._report) : null;
 
-    public static SessionPerformance Capture(string name, Action<PerformanceSample> sample) => new(name, s_current.Value?._report, sample);
+    public static SessionPerformance Capture(string name, Action<PerformanceSample> sample, bool includePhases = true) =>
+        new(name, s_current.Value?._report, sample, includePhases: includePhases);
 
     public double SqlMilliseconds { get; private set; }
     public double CommitMilliseconds { get; private set; }

@@ -4,11 +4,13 @@ using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Data.World.Mining;
+using Eden.Data.World.Thermal;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Chat;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Protocol.Flight;
@@ -23,6 +25,7 @@ using Eden.World.Characters;
 using Eden.World.Combat;
 using Eden.World.Docking;
 using Eden.World.Fittings;
+using Eden.World.Inventory;
 using Eden.World.Mining;
 using Eden.World.Runtime;
 using Eden.World.Storage;
@@ -276,6 +279,129 @@ public sealed class CapsuleerMinerTests(ITestOutputHelper output)
             Assert.Equal(ship, reopened.Pilots.Find(pilot)!.ActiveShipId);
             Assert.Single(reopened.Set<OwnedItem>().Where(i => i.OwnerId == pilot));
             Assert.Equal(CapsuleerCommunityStore.StartingCents, reopened.Set<PilotWallet>().Find(pilot)!.Cents);
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public void MiningLaserKeepsItsFittedValuesAfterGraphEvictionAndReadsCurrentDamage()
+    {
+        var directory = TestDirectory.Create("capsuleer-laser-fit-");
+        WorldDatabase database = new(Path.Combine(directory.FullName, "world.sqlite"));
+        TestClock clock = new();
+        try
+        {
+            CreateWorld(database, clock);
+            using var host = ServerServices.Build(database, clock, liveWorld: true);
+            using var observer = host.GetRequiredService<IHumanPresence>().Select(1000001, Kisogo);
+            var work = Until(MinerActivity.Mining, host.GetRequiredService<CapsuleerMaintenance>(), clock);
+            var live = host.GetRequiredService<LiveWorld>();
+            long pilot = work.Pilot.PilotId;
+            long ship = work.Work.ShipId;
+            using CatalogDbContext catalog = new(database.CatalogPath);
+            var cache = ResidentFitCache.Find(database.Path)!;
+            cache.Pin([]);
+            InventoryItem laser;
+            IReadOnlyDictionary<DogmaAttributeId, double> fitted;
+            string revision;
+            using (var cold = live.Economy.Begin(TransactionParticipants.None))
+            {
+                laser = cold.Filter<OwnedItem>(item => item.LocationId == ship)
+                    .Select(item => PilotInventoryStore.Read(catalog, item))
+                    .First(item => InventoryDefinitions.IsMiningGroup(item.GroupId));
+                fitted = PilotFittingStore.ReadModuleAttributes(cold, catalog, pilot, laser);
+                revision = cold.FitRevision(pilot)!;
+                cold.Commit();
+            }
+            Assert.NotNull(cache.Read(new(pilot, ship, laser.Id), revision));
+            var snapshot = Assert.IsType<FittingSnapshot>(cache.ReadSnapshot(pilot, ship, revision));
+            cache.PublishSnapshots(
+                Enumerable.Range(1, 513).ToDictionary(i => (-(long)i, -(long)i), _ => new FittingSnapshotEntry(revision, snapshot))
+            );
+            Assert.Null(cache.ReadSnapshot(pilot, ship, revision));
+            using (var warm = live.Economy.Begin(TransactionParticipants.None))
+            {
+                using var timing = SessionPerformance.Begin("evicted mining graph", output.WriteLine, force: true)!;
+                var actual = PilotFittingStore.ReadModuleAttributes(warm, catalog, pilot, laser);
+                Assert.Equal(fitted[DogmaAttributeId.MiningAmount], actual[DogmaAttributeId.MiningAmount]);
+                Assert.Equal(fitted[DogmaAttributeId.Damage], actual[DogmaAttributeId.Damage]);
+                Assert.Equal((0, 0, 0), (timing.Commands, timing.Connections, timing.FittingCalculations));
+            }
+            using (var damaged = live.Economy.Begin(TransactionParticipants.None))
+            {
+                damaged.Add(new SavedModuleCondition { ModuleId = laser.Id, Damage = 4 });
+                var updated = PilotFittingStore.ReadModuleAttributes(damaged, catalog, pilot, laser);
+                Assert.Equal(4, updated[DogmaAttributeId.Damage]);
+            }
+            ResidentFitCache.CatalogChanged(database.CatalogPath);
+            using var changed = live.Economy.Begin(TransactionParticipants.None);
+            using var rebuilt = SessionPerformance.Begin("invalidated mining fit", output.WriteLine, force: true)!;
+            var fresh = PilotFittingStore.ReadModuleAttributes(changed, catalog, pilot, laser);
+            Assert.Equal(fitted[DogmaAttributeId.Damage], fresh[DogmaAttributeId.Damage]);
+            Assert.Equal(1, rebuilt.FittingCalculations);
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public void OffscreenPaidMinerWakesForAggressionBeforeSettlement()
+    {
+        const int remote = 31000001;
+        var directory = TestDirectory.Create("capsuleer-belt-warning-");
+        WorldDatabase database = new(Path.Combine(directory.FullName, "world.sqlite"));
+        TestClock clock = new();
+        try
+        {
+            CreateWorld(database, clock);
+            using (CatalogDbContext catalog = new(database.CatalogPath, writable: true))
+            {
+                catalog.Database.ExecuteSqlRaw(
+                    """
+                    INSERT INTO SolarSystem(Id,ConstellationId,Name) VALUES (31000001,20000020,'Observer');
+                    INSERT OR REPLACE INTO SourceRecord VALUES ('client/systems','30000141','{{"securityStatus":1.0}}');
+                    """
+                );
+            }
+            using var host = ServerServices.Build(database, clock, liveWorld: true);
+            var live = host.GetRequiredService<LiveWorld>();
+            long pilot;
+            using (var setup = live.Economy.Begin(TransactionParticipants.None))
+            {
+                var agents = setup.Set<SavedCapsuleerAgent>().ToArray();
+                pilot = agents.Single(agent => agent.Career == CapsuleerCareer.Mining).PilotId;
+                foreach (var peer in agents.Where(agent => agent.PilotId != pilot))
+                {
+                    setup.Add(new SavedCapsuleerSuspension { PilotId = peer.PilotId });
+                }
+                setup.Commit();
+            }
+            using var observer = host.GetRequiredService<IHumanPresence>().Select(1000001, remote);
+            var scheduler = host.GetRequiredService<ICapsuleerScheduler>();
+            for (int turns = 0; live.MinerCheckpoints.GetValueOrDefault(pilot)?.Work.Activity != MinerActivity.Mining; turns++)
+            {
+                Assert.True(turns < 400);
+                clock.Seconds++;
+                scheduler.Run(0, maximumActions: 1);
+            }
+            var paid = live.MinerCheckpoints[pilot].Work;
+            var job = Assert.Single(scheduler.Jobs(), job => job.PilotId == pilot);
+            Assert.Equal(paid.DueTicks, job.DueTicks);
+            long quantity = live.Economy.Read(world => world.Set<WorldAsteroid>().Find(paid.TargetId)!.Quantity);
+            clock.Seconds++;
+            host.GetRequiredService<ICapsuleerSimulation>().ObserveAggression(paid.ShipId);
+            var woken = Assert.Single(scheduler.Jobs(), job => job.PilotId == pilot);
+            Assert.True(woken.DueTicks < paid.DueTicks);
+            Assert.Equal(job.Sequence, woken.Sequence);
+            Assert.Equal(1, scheduler.Run(0, maximumActions: 1).Turn.Completed);
+            Assert.Equal(MinerActivity.Returning, live.MinerCheckpoints[pilot].Work.Activity);
+            Assert.Equal(paid.Cycles, live.MinerCheckpoints[pilot].Work.Cycles);
+            Assert.Equal(quantity, live.Economy.Read(world => world.Set<WorldAsteroid>().Find(paid.TargetId)!.Quantity));
         }
         finally
         {

@@ -108,6 +108,7 @@ internal sealed partial class CapsuleerMiner(
     private CapsuleerOperation _operation = null!;
     private long _threatenedShip;
     private long _nextLook;
+    private long _resumedAt;
 
     private bool WatchBelt(long elapsed)
     {
@@ -211,7 +212,7 @@ internal sealed partial class CapsuleerMiner(
         }
         long earliest = checked(elapsed + 1);
         long due = Math.Max(earliest, checked(job.DueTicks + delay));
-        if (observed && Work.Activity == MinerActivity.Mining && job.DueTicks == Work.DueTicks)
+        if (observed && (resumed.Navigation.Warp is not null || Work.Activity == MinerActivity.Mining && job.DueTicks == Work.DueTicks))
         {
             due = Math.Min(due, checked(elapsed + TimeSpan.TicksPerSecond));
         }
@@ -229,6 +230,7 @@ internal sealed partial class CapsuleerMiner(
         operation.Commit(next, new MinerCheckpoint(pilotId, resumed), null);
         _navigation = NavigationState.Restore(resumed.Navigation, Pilot.Flight);
         _work = resumed;
+        _resumedAt = elapsed;
         return next;
     }
 
@@ -272,7 +274,7 @@ internal sealed partial class CapsuleerMiner(
             }
         }
         RefreshCorporation();
-        bool npcThreat = ObserveDanger(destinyStamp);
+        ObserveDanger(destinyStamp);
         if (Pilot.Position is not null)
         {
             RefreshTackle();
@@ -343,7 +345,11 @@ internal sealed partial class CapsuleerMiner(
             {
                 Step();
             }
-            var next = Commit(job, background && !npcThreat && before.Activity is MinerActivity.Locking or MinerActivity.Mining);
+            var next = Commit(
+                job,
+                background && before.Activity is MinerActivity.Locking or MinerActivity.Mining,
+                background && before.Navigation.Warp is not null && Work.Defense is null && _navigation.Warp is not null
+            );
             _resumeCount = resumes;
             return next;
         }
@@ -415,10 +421,19 @@ internal sealed partial class CapsuleerMiner(
         }
     }
 
-    private CapsuleerJob Commit(CapsuleerJob job, bool quietBackground = false)
+    private CapsuleerJob Commit(CapsuleerJob job, bool quietBackground = false, bool backgroundWarp = false)
     {
         _work = Work with { Navigation = _navigation.Capture() };
         var schedule = Schedule(quietBackground);
+        if (
+            backgroundWarp
+            && CapsuleerScheduleRules.WarpDeadline(Work.Navigation, Pilot.Flight, Work.ClockOffsetTicks, Work.ActiveTicks) is { } exit
+        )
+        {
+            // Preserve the phase of the original one-second samples, including fractional lock deadlines.
+            long steps = (exit - Work.ActiveTicks + TimeSpan.TicksPerSecond - 1) / TimeSpan.TicksPerSecond;
+            schedule = schedule with { DueTicks = checked(Work.ActiveTicks + steps * TimeSpan.TicksPerSecond) };
+        }
         var next = job.Next(schedule.DueTicks, schedule.Action);
         _operation.Commit(next, new MinerCheckpoint(pilotId, Work), null);
         return next;
@@ -426,21 +441,51 @@ internal sealed partial class CapsuleerMiner(
 
     private CapsuleerSchedule Schedule(bool quietBackground)
     {
-        // Only the safest belts exclude natural pirate spawns. A paid cycle may sleep
-        // there when it has no combat or crew warning checks to run between settlements.
-        bool sleep =
-            quietBackground
-            && Work is { Activity: MinerActivity.Mining, PaidUntil: > 0, Defense: null, MoonExtractionId: null, RefineryIceType: null }
-            && Work.WorkingBelt != 0
-            && _incoming.Length == 0
-            && Live is { } live
-            && database.Catalog.Find(CatalogData.Client.Systems, (long)Pilot.SystemId)?.SecurityStatus is double security
-            && security is >= 0 and <= 1
-            && NpcSpawnRules.SecurityBand(security) == NpcSecurityBand.Safest
-            && !live.Economy.HasIncomingNpcMissiles(pilotId)
-            && (!database.Settings.Capsuleers.SituationalAwareness || !crew.Any(member => member != pilotId && !suspended(member)));
+        bool sleep = quietBackground && WatchableCycle();
         var schedule = CapsuleerScheduleRules.Next(Work, Pilot.Position is not null, sleep);
         return schedule with { DueTicks = CapsuleerDefenseRules.NextDeadline(Work.Defense, Now, Work.ActiveTicks, schedule.DueTicks) };
+    }
+
+    internal int CompletedCycles => _work?.Cycles ?? 0;
+
+    private bool WatchableCycle() =>
+        Work is { Activity: MinerActivity.Mining, PaidUntil: > 0, Defense: null, MoonExtractionId: null, RefineryIceType: null }
+        && Work.WorkingBelt != 0
+        && _incoming.Length == 0
+        && Live is { } live
+        && !live.Economy.HasIncomingNpcMissiles(pilotId)
+        && TrafficRules.SecurityBand(database.Catalog.Definition(CapsuleerProvisioningCatalog.Security, Pilot.SystemId))
+            == TrafficSecurityBand.High;
+
+    internal bool WatchesPaidCycle(CapsuleerJob job, out long started)
+    {
+        started = Math.Max(_work?.ActiveTicks ?? 0, _resumedAt);
+        return _work is { Activity: MinerActivity.Mining, PaidUntil: > 0 } && job.DueTicks == _work.DueTicks;
+    }
+
+    internal bool BeltIsQuiet(long elapsed)
+    {
+        if (
+            !_loaded
+            || !WatchableCycle()
+            || _pilot?.Position is not { } position
+            || Volatile.Read(ref _threatenedShip) != 0
+            || Live is not { } live
+            || _hullRevision != live.CapsuleerHullRevisions.GetValueOrDefault(pilotId)
+            || database.Settings.Capsuleers.SituationalAwareness && CrewDanger(elapsed)
+            || live.CombatForSystem(Pilot.SystemId) is not { } combatSystem
+        )
+        {
+            return false;
+        }
+        long now = Now;
+        // One due population refresh serves every miner in this system. A contact entering
+        // the belt then wakes the affected pilots in canonical queue order.
+        if (combatSystem.MiningPopulationDue(Pilot.SystemId, now))
+        {
+            encounters.Advance(Pilot.SystemId, now);
+        }
+        return combatSystem.QuietMiningBelt(Pilot.SystemId, Pilot.ShipId, position, Pilot.Flight.ShipRadius, now);
     }
 
     internal bool Sample(long throughTicks)
@@ -477,11 +522,11 @@ internal sealed partial class CapsuleerMiner(
         return new(Pilot, Work, _laser, Work.WaitingReason) { Health = includeHealth ? health.Read(pilotId, Now) : null };
     }
 
-    private bool ObserveDanger(int destinyStamp)
+    private void ObserveDanger(int destinyStamp)
     {
         if (Pilot.Position is null || _navigation.Warp is not null || Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup)
         {
-            return false;
+            return;
         }
         var contacts = encounters.Advance(Pilot.SystemId, Now);
         var position = Pilot.Position;
@@ -507,7 +552,7 @@ internal sealed partial class CapsuleerMiner(
             if (shot?.Capsule is not null)
             {
                 Load();
-                return true;
+                return;
             }
         }
         foreach (var impact in missiles.Advance(Pilot.PilotId, Pilot.ShipId, _navigation.Velocity, Now))
@@ -515,10 +560,9 @@ internal sealed partial class CapsuleerMiner(
             if (impact.Capsule is not null)
             {
                 Load();
-                return true;
+                return;
             }
         }
-        return attackers.Count > 0 || contacts.Any(InSight);
     }
 
     private void Load()

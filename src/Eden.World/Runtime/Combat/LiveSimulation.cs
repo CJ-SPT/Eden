@@ -94,6 +94,7 @@ internal sealed partial class LiveCombatRuntime
     {
         InvalidatePopulationDeadline(system, reason);
         _systemNpcs.Remove(system);
+        _beltClearances.Remove(system);
         _simulationContacts.Remove(system);
         _contacts.Remove(system);
         _npcSceneIndices.Remove(system);
@@ -547,6 +548,90 @@ internal sealed partial class LiveCombatRuntime
         return npcs;
     }
 
+    private sealed record BeltClearance(long[] Members, long Contacts, long Geometry, SpacePosition Center, double Range);
+
+    private readonly ResidentMap<int, BeltClearance> _beltClearances = [];
+    private long _miningGeometry;
+
+    internal bool MiningPopulationDue(int system, long now)
+    {
+        using var ownership = owner.Enter();
+        return !_populationDue.TryGetValue(system, out long due) || due <= now || !_systemNpcs.ContainsKey(system);
+    }
+
+    // The encounter owner invalidates these membership and population snapshots on changes.
+    // Cold, mobile and contested scenes return to the ordinary NPC and defense owners.
+    internal bool QuietMiningBelt(int system, long ship, SpacePosition position, double radius, long now)
+    {
+        using var ownership = owner.Enter();
+        if (
+            !simulationObjects
+            || !CanRun
+            || !_populationDue.TryGetValue(system, out long due)
+            || due <= now
+            || !_systemNpcs.TryGetValue(system, out var members)
+            || !_droneAttackers.TryGetValue(ship, out var attacks)
+            || attacks.Length != 0
+            || _residentAttackers.TryGetValue(ship, out var pending) && pending.Count != 0
+            || DroneControllers().ContainsKey(ship)
+            || owner.Reads is not { } reads
+            || reads.HasNpcEwar(ship)
+            || reads.Incoming(ship).Count != 0
+        )
+        {
+            return false;
+        }
+        var aggressions = Aggression();
+        if (aggressions.Count > 0)
+        {
+            var recent = DroneTriggers(ship).Incoming;
+            if (recent.At > 0 && recent.At + CrimewatchRules.PvpDuration.Ticks > now && aggressions.ContainsKey(recent.OtherId))
+            {
+                return false;
+            }
+        }
+        if (aggressions.Values.Any(aggression => aggression.ShipId == ship))
+        {
+            return false;
+        }
+        if (
+            _staleNpcs.Count == 0
+            && _beltClearances.TryGetValue(system, out var cleared)
+            && ReferenceEquals(cleared.Members, members)
+            && cleared.Contacts == _contactEpoch
+            && cleared.Geometry == _miningGeometry
+            && cleared.Center.DistanceTo(position) + radius < cleared.Range
+        )
+        {
+            return true;
+        }
+        double clearance = double.PositiveInfinity;
+        foreach (long id in members)
+        {
+            if (
+                _staleNpcs.Contains(id)
+                || !_npcs.TryGetValue(id, out var npc)
+                || npc.Transit is not null
+                || npc.Navigation is NpcNavigationState.Pursuing or NpcNavigationState.Orbiting or NpcNavigationState.Returning
+            )
+            {
+                return false;
+            }
+            // Ambient stationary traffic cannot acquire a miner. A previously acquired target,
+            // including guard retaliation, was checked against the aggression owner above.
+            if (npc.Role == NpcRole.Pirate)
+            {
+                clearance = Math.Min(clearance, position.DistanceTo(npc.Position) - npc.Radius - NpcEncounterDefinitions.VisibilityRange);
+            }
+            if (clearance <= radius)
+            {
+                return false;
+            }
+        }
+        _beltClearances[system] = new(members, _contactEpoch, _miningGeometry, position, clearance);
+        return true;
+    }
+
     internal IReadOnlyList<NpcSimulationContact>? Simulate(int system, long now, Func<long> refreshPopulation)
     {
         return Execute(() => SimulateOwned(system, now, refreshPopulation), nameof(Simulate));
@@ -785,6 +870,7 @@ internal sealed partial class LiveCombatRuntime
         _acquisitionShips.Clear();
         _systemNpcs.Clear();
         _simulationContacts.Clear();
+        _beltClearances.Clear();
         InvalidatePopulationDeadlines("runtime reset");
         _effectiveNpcs.Clear();
         if (!retainPositions)

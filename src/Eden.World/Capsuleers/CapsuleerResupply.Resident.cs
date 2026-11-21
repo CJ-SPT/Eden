@@ -1,4 +1,5 @@
 using Eden.Data.World.Capsuleers;
+using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
@@ -26,17 +27,17 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerResupply
 {
-    internal static SupplyRequirement[] Requirements(
+    private sealed record SupplyMagazine(long Module, int Type, int Capacity, int Loaded);
+
+    private static List<SupplyMagazine> ReadMagazines(
         WorldDatabase database,
         WorldAction world,
         CatalogDbContext catalog,
-        long pilotId,
-        SupplyRequirement[] previous
+        Pilot pilot,
+        OwnedItem[] inventory
     )
     {
-        var pilot = world.Pilots.Single(p => p.Id == pilotId);
-        var ship = pilot.ActiveShip;
-        var inventory = world.Set<OwnedItem>().Where(i => i.OwnerId == pilotId && i.LocationId == ship.Id).ToArray();
+        long pilotId = pilot.Id;
         var correction = world.Set<SavedTrafficCorrection>().Find(pilotId);
         var identity = world.Set<SavedTrafficIdentity>().Find(pilotId);
         long kill = correction?.TemplateKillId ?? identity?.KillId ?? 0;
@@ -47,7 +48,7 @@ internal sealed partial class CapsuleerResupply
         var charges =
             moduleIds.Length == 0 ? [] : world.Set<OwnedItem>().Where(i => Enumerable.Contains(moduleIds, i.LocationId)).ToArray();
         var magazines = charges.ToLookup(i => i.LocationId);
-        Dictionary<int, int> targets = [];
+        List<SupplyMagazine> result = [];
         foreach (var module in modules)
         {
             var charge = magazines[module.Id].SingleOrDefault();
@@ -84,6 +85,43 @@ internal sealed partial class CapsuleerResupply
             {
                 continue;
             }
+            double volume = PilotInventoryStore.Volume(catalog, type);
+            int magazine = volume > 0 ? (int)Math.Floor((catalog.RequireItem(module.TypeId).Capacity ?? 0) / volume) : 0;
+            result.Add(new(module.Id, type, magazine, charge?.Quantity ?? 0));
+        }
+        return result;
+    }
+
+    internal static SupplyRequirement[] Requirements(
+        WorldDatabase database,
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        SupplyRequirement[] previous
+    )
+    {
+        var pilot = world.Pilots.Single(p => p.Id == pilotId);
+        var ship = pilot.ActiveShip;
+        var inventory = world.Set<OwnedItem>().Where(i => i.OwnerId == pilotId && i.LocationId == ship.Id).ToArray();
+        var magazines = ReadMagazines(database, world, catalog, pilot, inventory);
+        return Requirements(world, catalog, pilot, inventory, magazines, previous);
+    }
+
+    private static SupplyRequirement[] Requirements(
+        WorldAction world,
+        CatalogDbContext catalog,
+        Pilot pilot,
+        OwnedItem[] inventory,
+        IReadOnlyList<SupplyMagazine> magazines,
+        SupplyRequirement[] previous
+    )
+    {
+        long pilotId = pilot.Id;
+        var ship = pilot.ActiveShip;
+        Dictionary<int, int> targets = [];
+        foreach (var magazine in magazines)
+        {
+            int type = magazine.Type;
             var ammo = catalog.FittingAttributes(type);
             if (
                 Eden.Gameplay.Ammunition.AmmunitionDefinitions.IsCrystalGroup(catalog.RequireItem(type).GroupId)
@@ -92,12 +130,10 @@ internal sealed partial class CapsuleerResupply
             {
                 continue;
             }
-            double volume = PilotInventoryStore.Volume(catalog, type);
-            int magazine = volume > 0 ? (int)Math.Floor((catalog.RequireItem(module.TypeId).Capacity ?? 0) / volume) : 0;
             targets[type] = checked(
                 targets.GetValueOrDefault(type)
-                + magazine * CapsuleerSupplyStore.SpareMagazines
-                + Math.Max(0, magazine - (charge?.Quantity ?? 0))
+                + magazine.Capacity * CapsuleerSupplyStore.SpareMagazines
+                + Math.Max(0, magazine.Capacity - magazine.Loaded)
             );
         }
         List<SupplyRequirement> result = [];
@@ -190,9 +226,12 @@ internal sealed partial class CapsuleerResupply
             return progress;
         }
         SupplyRequirement[] needs;
+        List<SupplyMagazine> magazines;
         using (SessionPerformance.Phase("traffic.resupplyRequirements"))
         {
-            needs = Requirements(database, world, catalog, pilotId, progress.Requirements);
+            var inventory = world.Set<OwnedItem>().Where(i => i.OwnerId == pilotId && i.LocationId == ship.Id).ToArray();
+            magazines = ReadMagazines(database, world, catalog, pilot, inventory);
+            needs = Requirements(world, catalog, pilot, inventory, magazines, progress.Requirements);
         }
         var neededTypes = needs.Select(need => need.TypeId).Distinct().ToArray();
         var hangarItems =
@@ -335,7 +374,9 @@ internal sealed partial class CapsuleerResupply
         }
         using (SessionPerformance.Phase("traffic.resupplyReload"))
         {
-            inventoryChanged |= Reload(database, world, catalog, pilotId, now);
+            // Purchases and transfers above touch station stock and cargo holds. Fitted modules
+            // and their magazines are still the inputs captured for this dock transaction.
+            inventoryChanged |= Reload(world, catalog, pilotId, ship.Id, magazines, now);
         }
         if (inventoryChanged)
         {
@@ -347,63 +388,25 @@ internal sealed partial class CapsuleerResupply
 
     internal static bool Reload(WorldDatabase database, WorldAction world, CatalogDbContext catalog, long pilotId, long now)
     {
-        bool changed = false;
         var pilot = world.Pilots.Single(p => p.Id == pilotId);
         long ship = pilot.ActiveShipId;
-        long kill =
-            world.Set<SavedTrafficCorrection>().Find(pilotId)?.TemplateKillId
-            ?? world.Set<SavedTrafficIdentity>().Find(pilotId)?.KillId
-            ?? 0;
-        var profile = database.Traffic.Find(kill);
         var inventory = world.Set<OwnedItem>().Where(i => i.OwnerId == pilotId && i.LocationId == ship).ToArray();
-        var modules = inventory.Where(i => i.Online && InventoryDefinitions.IsFittedSlot(i.FlagId)).ToArray();
-        var moduleIds = modules.Select(i => i.Id).ToArray();
-        var charges =
-            moduleIds.Length == 0 ? [] : world.Set<OwnedItem>().Where(i => Enumerable.Contains(moduleIds, i.LocationId)).ToArray();
-        var magazines = charges.ToLookup(i => i.LocationId);
-        List<ReloadCandidate> candidates = [];
-        foreach (var module in modules)
-        {
-            var loaded = magazines[module.Id].SingleOrDefault();
-            int type =
-                loaded?.TypeId
-                ?? profile
-                    ?.Equipment.FirstOrDefault(e =>
-                        e.Flag == module.FlagId && catalog.RequireItem(e.TypeId).CategoryId == (int)InventoryCategory.Charge
-                    )
-                    ?.TypeId
-                ?? (
-                    pilot.CorporationId >= CorporationRules.FirstCorporationId
-                    && CapsuleerIndustry.CanUseIron(catalog, module.TypeId)
-                    && CapsuleerIndustry.Employer(world, pilotId, pilot.CorporationId) is not null
-                        ? CapsuleerAmmunitionSupplyRules.ChargeType
-                        : 0
-                );
-            var effect = FittingCatalog.DefaultEffect(catalog, module.TypeId);
-            if (
-                type == 0
-                || effect
-                    is not (
-                        DogmaEffect.LaserFired
-                        or DogmaEffect.ProjectileFired
-                        or DogmaEffect.UseMissiles
-                        or DogmaEffect.CapacitorBoosting
-                        or DogmaEffect.AncillaryShieldBoosting
-                        or DogmaEffect.AncillaryArmorRepair
-                    )
-                || world.Set<ModuleCooldown>().Find(module.Id)?.ReadyAt > now
-            )
-            {
-                continue;
-            }
-            double volume = PilotInventoryStore.Volume(catalog, type);
-            int maximum = volume > 0 ? (int)Math.Floor((catalog.RequireItem(module.TypeId).Capacity ?? 0) / volume) : 0;
-            if ((loaded?.Quantity ?? 0) >= maximum)
-            {
-                continue;
-            }
-            candidates.Add(new(module.Id, type, checked(maximum - (loaded?.Quantity ?? 0))));
-        }
+        return Reload(world, catalog, pilotId, ship, ReadMagazines(database, world, catalog, pilot, inventory), now);
+    }
+
+    private static bool Reload(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        long ship,
+        IReadOnlyList<SupplyMagazine> magazines,
+        long now
+    )
+    {
+        bool changed = false;
+        var candidates = magazines
+            .Where(m => m.Loaded < m.Capacity && !(world.Set<ModuleCooldown>().Find(m.Module)?.ReadyAt > now))
+            .Select(m => new ReloadCandidate(m.Module, m.Type, checked(m.Capacity - m.Loaded)));
         foreach (var group in candidates.GroupBy(candidate => candidate.TypeId))
         {
             int type = group.Key;
