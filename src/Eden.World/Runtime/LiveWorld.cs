@@ -652,14 +652,15 @@ internal sealed partial class LiveWorld : IDisposable
     {
         bool nested = Monitor.IsEntered(_gate);
         var ownership = _ownershipMonitor.Enter(operation, systemId);
-        if (!nested)
+        if (nested)
         {
-            Volatile.Write(ref _ownerDescription, SessionLatency.CurrentDescription ?? operation);
+            return ownership;
         }
-        return new Lease(this, ownership, nested, Stopwatch.GetTimestamp());
+        Volatile.Write(ref _ownerDescription, SessionLatency.CurrentDescription ?? operation);
+        return new Lease(this, ownership, Stopwatch.GetTimestamp());
     }
 
-    private sealed class Lease(LiveWorld world, IDisposable ownership, bool nested, long started) : IDisposable
+    private sealed class Lease(LiveWorld world, IDisposable ownership, long started) : IDisposable
     {
         private LiveWorld? _world = world;
 
@@ -668,18 +669,13 @@ internal sealed partial class LiveWorld : IDisposable
             if (Interlocked.Exchange(ref _world, null) is { } held)
             {
                 string? operation = held._ownerDescription;
-                CapsuleerJob? job = null;
-                int system = 0;
-                if (!nested)
-                {
-                    job = held._trafficJob;
-                    system = held._trafficSystem;
-                    held._trafficJob = null;
-                    Volatile.Write(ref held._ownerDescription, null);
-                }
-                var elapsed = nested ? TimeSpan.Zero : Stopwatch.GetElapsedTime(started);
+                CapsuleerJob? job = held._trafficJob;
+                int system = held._trafficSystem;
+                held._trafficJob = null;
+                Volatile.Write(ref held._ownerDescription, null);
+                var elapsed = Stopwatch.GetElapsedTime(started);
                 ownership.Dispose();
-                if (!nested && elapsed.TotalMilliseconds >= SlowOwnershipMilliseconds)
+                if (elapsed.TotalMilliseconds >= SlowOwnershipMilliseconds)
                 {
                     string detail = job is null ? "" : $" Included {job.Action} for pilot {job.PilotId} in system {system}.";
                     ServerLog.Console.Warning($"Slow world owner {operation}: {elapsed.TotalMilliseconds:F2} ms held.{detail}");
