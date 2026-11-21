@@ -40,15 +40,29 @@ internal sealed partial class CapsuleerScheduler
 
     private int StartBackgroundPilots(long elapsedTicks)
     {
-        // Let already eligible jobs drain before adding more work. An overloaded turn
-        // or a period with no humans must never accumulate a credit for future starts.
-        if (_waitingBackground.Count == 0 || elapsedTicks < _nextBackgroundStartTicks || _queue.NextDueTicks <= elapsedTicks)
+        if (_waitingBackground.Count == 0 || elapsedTicks < _nextBackgroundStartTicks)
         {
             return 0;
         }
+        int limit = BackgroundStartsPerInterval;
+        if (_queue.NextDueTicks is long oldest && oldest <= elapsedTicks)
+        {
+            // An expanded fresh roster can keep some work due even while healthy.
+            // Let one current-time start join the existing deadlines per interval.
+            var settings = _populationSettings.Settings;
+            if (
+                !settings.FreshUniverse
+                || settings.Capsuleers.FreshFounderCohortsPerSystem == FreshCareerRules.DefaultFounderCohorts
+                || elapsedTicks - oldest >= CapsuleerJobQueue.WakeInterval.Ticks * 2
+            )
+            {
+                return 0;
+            }
+            limit = 1;
+        }
         _nextBackgroundStartTicks = checked(elapsedTicks + CapsuleerJobQueue.WakeInterval.Ticks);
         int count = 0;
-        for (; count < BackgroundStartsPerInterval && _waitingBackground.Count > 0; count++)
+        for (; count < limit && _waitingBackground.Count > 0; count++)
         {
             var start = _waitingBackground.Min;
             if (!_registrations.ContainsKey(start.Pilot))
