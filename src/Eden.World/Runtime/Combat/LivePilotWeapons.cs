@@ -22,19 +22,21 @@ internal sealed partial class LiveCombatRuntime
         {
             return [];
         }
-        List<CapsuleerAttacker> result = [];
         var recent = DroneTriggers(ship.ShipId).Incoming;
         var attempts = owner.Reads?.NpcEwarAttempts(ship.ShipId) ?? [];
         var aggressionById = Aggression();
-        var launched =
-            recent.At > 0 && recent.At + CrimewatchRules.PvpDuration.Ticks > now && aggressionById.ContainsKey(recent.OtherId)
-                ? new[] { recent.OtherId }
-                : [];
+        bool launched = recent.At > 0 && recent.At + CrimewatchRules.PvpDuration.Ticks > now && aggressionById.ContainsKey(recent.OtherId);
+        var aggressors = Aggressors(ship.ShipId) ?? [];
+        if (aggressors.Count == 0 && incoming.Count == 0 && attempts.Count == 0 && !launched)
+        {
+            return [];
+        }
+        List<CapsuleerAttacker> result = [];
         foreach (
-            long id in (Aggressors(ship.ShipId) ?? [])
+            long id in aggressors
                 .Concat(incoming.Select(effect => effect.SourceId))
                 .Concat(attempts.Select(attempt => attempt.SourceId))
-                .Concat(launched)
+                .Concat(launched ? [recent.OtherId] : [])
                 .Distinct()
         )
         {

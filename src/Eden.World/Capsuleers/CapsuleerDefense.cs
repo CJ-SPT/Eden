@@ -228,10 +228,10 @@ internal sealed partial class CapsuleerDefense(
             }
             return new(pilot, null, false, false, false);
         }
-        var cycles = state.Cycles.ToArray();
-        for (int index = 0; index < cycles.Length; index++)
+        CapsuleerModuleCycle[]? cycles = null;
+        for (int index = 0; index < state.Cycles.Length; index++)
         {
-            var cycle = cycles[index];
+            var cycle = state.Cycles[index];
             if (
                 cycle.Effect == DogmaEffect.WarpCoreStabilizer
                 && cycle.Tackle is { } core
@@ -239,27 +239,23 @@ internal sealed partial class CapsuleerDefense(
             )
             {
                 StopModule(pilot.PilotId, pilot.ShipId, cycle);
+                cycles ??= state.Cycles.ToArray();
                 cycles[index] = cycle with { Effect = DogmaEffect.Online };
             }
         }
-        state = state with { Cycles = cycles };
+        if (cycles is not null)
+        {
+            state = state with { Cycles = cycles };
+        }
         var incoming = tackle.Incoming(pilot.ShipId);
-        bool blocked = incoming.Sum(effect => effect.Module.Strength) > 0;
         var attackers = runtime is null ? PlayerAttackers(pilot, now) : runtime.DefenseAttackers(pilot.PilotId, presence, now);
         var jams = npcWarfare.Incoming(pilot.ShipId);
         var npcAttackers = runtime?.DefenseNpcAttackers(pilot.PilotId, now, jams) ?? [];
-        var candidates = attackers
-            .Where(attacker => runtime?.IsCapsuleerCorporationAlly(pilot.PilotId, attacker.PilotId) != true)
-            .Concat(npcAttackers)
-            .Select(attacker =>
-                attacker with
-                {
-                    Tackling =
-                        attacker.Tackling || incoming.Any(effect => effect.SourceShipId == attacker.ShipId && effect.Module.Strength > 0),
-                }
-            )
-            .ToArray();
-        var target = proactive ?? CapsuleerDefenseRules.Select(candidates);
+        var candidates =
+            attackers.Length == 0 && npcAttackers.Length == 0
+                ? []
+                : DefenseCandidates(attackers, npcAttackers, pilot.PilotId, runtime, incoming);
+        var target = proactive ?? (candidates.Length == 0 ? null : CapsuleerDefenseRules.Select(candidates));
         if (target is null)
         {
             Stop(pilot.PilotId, state);
@@ -300,7 +296,7 @@ internal sealed partial class CapsuleerDefense(
         };
         var live = runtime?.DefenseShip(pilot.PilotId, now);
         var attributes = profile.ShipAttributes;
-        blocked = attributes.GetValueOrDefault(DogmaAttributeId.WarpScrambleStatus) > 0;
+        bool blocked = attributes.GetValueOrDefault(DogmaAttributeId.WarpScrambleStatus) > 0;
         var currentHealth = health.Read(pilot.PilotId, now);
         bool hasDamage =
             profile.Modules.Any(module =>
@@ -721,6 +717,25 @@ internal sealed partial class CapsuleerDefense(
         }
         return LiveReadModels.Find(database.Path)?.DefenseProfile(pilot, Load) ?? Load();
     }
+
+    private static CapsuleerAttacker[] DefenseCandidates(
+        CapsuleerAttacker[] attackers,
+        CapsuleerAttacker[] npcAttackers,
+        long pilot,
+        LiveCombatRuntime? runtime,
+        IReadOnlyList<TackleEffect> incoming
+    ) =>
+        attackers
+            .Where(attacker => runtime?.IsCapsuleerCorporationAlly(pilot, attacker.PilotId) != true)
+            .Concat(npcAttackers)
+            .Select(attacker =>
+                attacker with
+                {
+                    Tackling =
+                        attacker.Tackling || incoming.Any(effect => effect.SourceShipId == attacker.ShipId && effect.Module.Strength > 0),
+                }
+            )
+            .ToArray();
 
     private CapsuleerAttacker[] PlayerAttackers(DockedPilot pilot, long now)
     {

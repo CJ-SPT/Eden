@@ -4,9 +4,11 @@ using Eden.Data.World.Fittings;
 using Eden.Data.World.Repair;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Repair;
 using Eden.Infrastructure.Diagnostics;
+using Eden.Protocol.Tests.Combat;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Runtime;
@@ -19,6 +21,44 @@ namespace Eden.Protocol.Tests.Capsuleers;
 
 public sealed class CapsuleerDefensePerformanceTests(ITestOutputHelper output)
 {
+    [Fact]
+    public void WarmQuietDefenseChecksKeepNavigationAndAvoidSql()
+    {
+        const int checks = 512;
+        using NpcCombatTests.Fixture f = new(liveWorld: true, useTestClock: true);
+        var pilot = f.Pilot;
+        var position = Assert.IsType<SpacePosition>(pilot.Position);
+        var defense = f.Db.Services.GetRequiredService<CapsuleerDefense>();
+        NavigationState navigation = new();
+        var destination = position + new SpacePosition(1_000_000, 0, 0);
+        Assert.True(navigation.StartWarpPoint(pilot.ShipId, pilot.Flight, position, destination, 0, 0, 0));
+        Assert.Null(navigation.Warp);
+        var queuedWarp = Assert.IsType<SpacePosition>(navigation.WarpDestination);
+        var quiet = defense.Advance(pilot, navigation, null, f.Clock.Now, 0, []);
+        Assert.Equal(new(pilot, null, false, false, false), quiet);
+        for (int stamp = 1; stamp <= checks; stamp++)
+        {
+            defense.Advance(pilot, navigation, quiet.State, f.Clock.Now, stamp, []);
+        }
+
+        using var metrics = SessionPerformance.Begin("warm quiet defense", output.WriteLine, force: true)!;
+        long allocated = GC.GetAllocatedBytesForCurrentThread();
+        long started = Stopwatch.GetTimestamp();
+        bool unchanged = true;
+        for (int stamp = checks + 1; stamp <= checks * 2; stamp++)
+        {
+            unchanged &= defense.Advance(pilot, navigation, quiet.State, f.Clock.Now, stamp, []) == quiet;
+        }
+        long bytes = GC.GetAllocatedBytesForCurrentThread() - allocated;
+        output.WriteLine($"{checks} quiet defense checks: {Stopwatch.GetElapsedTime(started).TotalMilliseconds:F2} ms, {bytes} bytes.");
+        Assert.True(unchanged);
+        Assert.Equal(queuedWarp, navigation.WarpDestination);
+        Assert.InRange(bytes, 0, 4_500_000);
+        Assert.Equal(0, metrics.Commands);
+        Assert.Equal(0, metrics.Connections);
+        Assert.Equal(0, metrics.FittingCalculations);
+    }
+
     [Fact]
     public async Task WarmLocalRepairCyclesUseNoSqlAndCheckpointOnePaidCompletionAcrossRestart()
     {
