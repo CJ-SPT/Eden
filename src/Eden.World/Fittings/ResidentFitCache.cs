@@ -66,16 +66,25 @@ internal sealed record FittingSnapshotEntry(string Revision, FittingSnapshot Sna
 
 internal sealed class ResidentFitCache : IDisposable
 {
-    private const int MaximumEntries = 8192;
+    private const int MaximumAttributeEntries = 24 * 1024;
+    private const long MaximumAttributeBytes = 48 * 1024 * 1024;
+
+    // Bound the frozen keys, values and indexes, plus the cache key, entry and revision.
+    private const long EstimatedAttributeBytes = 24;
+    private const long EstimatedEntryBytes = 256;
     private const int MaximumSnapshots = 512;
     private static readonly ConcurrentDictionary<string, WeakReference<ResidentFitCache>> s_worlds = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<FitCacheKey, FitCacheEntry> _entries = [];
-    private readonly Queue<FitCacheKey> _order = [];
+
+    private readonly record struct AttributeEntry(FitCacheEntry Fit, long Bytes, LinkedListNode<FitCacheKey> Recency);
+
+    private readonly Dictionary<FitCacheKey, AttributeEntry> _entries = [];
+    private readonly LinkedList<FitCacheKey> _order = new();
     private readonly Dictionary<(long Pilot, long Ship), FittingSnapshotEntry> _snapshots = [];
     private readonly Queue<(long Pilot, long Ship)> _snapshotOrder = [];
     private readonly string _path;
     private readonly object _gate = new();
     private HashSet<long> _pinned = [];
+    private long _attributeBytes;
 
     internal void Pin(IEnumerable<long> pilots)
     {
@@ -95,17 +104,11 @@ internal sealed class ResidentFitCache : IDisposable
             }
             foreach (var key in _entries.Keys.Where(k => k.PilotId == pilot).ToArray())
             {
-                _entries.Remove(key);
+                RemoveAttributes(key);
             }
             foreach (var key in _snapshots.Keys.Where(k => k.Pilot == pilot).ToArray())
             {
                 _snapshots.Remove(key);
-            }
-            var order = _order.Where(_entries.ContainsKey).ToArray();
-            _order.Clear();
-            foreach (var key in order)
-            {
-                _order.Enqueue(key);
             }
             var snapshots = _snapshotOrder.Where(_snapshots.ContainsKey).ToArray();
             _snapshotOrder.Clear();
@@ -157,7 +160,16 @@ internal sealed class ResidentFitCache : IDisposable
     {
         lock (_gate)
         {
-            return _entries.TryGetValue(key, out var entry) && entry.Revision == revision ? entry.Values.ToDictionary() : null;
+            if (!_entries.TryGetValue(key, out var entry) || entry.Fit.Revision != revision)
+            {
+                return null;
+            }
+            if (entry.Recency.Next is not null)
+            {
+                _order.Remove(entry.Recency);
+                _order.AddLast(entry.Recency);
+            }
+            return entry.Fit.Values.ToDictionary();
         }
     }
 
@@ -165,18 +177,53 @@ internal sealed class ResidentFitCache : IDisposable
     {
         lock (_gate)
         {
-            foreach (var pair in entries)
+            foreach (var (key, fit) in entries)
             {
-                if (!_entries.ContainsKey(pair.Key))
+                LinkedListNode<FitCacheKey>? recency = null;
+                if (_entries.TryGetValue(key, out var previous))
                 {
-                    if (_entries.Count >= MaximumEntries && !MakeRoom(_entries, _order, static key => key.PilotId, pair.Key.PilotId))
-                    {
-                        continue;
-                    }
-                    _order.Enqueue(pair.Key);
+                    recency = previous.Recency;
+                    RemoveAttributes(key);
                 }
-                _entries[pair.Key] = pair.Value;
+                long bytes = EstimatedEntryBytes + fit.Values.Count * EstimatedAttributeBytes;
+                if (bytes > MaximumAttributeBytes || !MakeAttributeRoom(key.PilotId, bytes))
+                {
+                    continue;
+                }
+                recency ??= new(key);
+                _order.AddLast(recency);
+                _entries.Add(key, new(fit, bytes, recency));
+                _attributeBytes += bytes;
             }
+        }
+    }
+
+    private bool MakeAttributeRoom(long pilot, long bytes)
+    {
+        while (_entries.Count >= MaximumAttributeEntries || _attributeBytes + bytes > MaximumAttributeBytes)
+        {
+            var oldest = _order.First;
+            var unpinned = oldest;
+            while (unpinned is not null && _pinned.Contains(unpinned.Value.PilotId))
+            {
+                unpinned = unpinned.Next;
+            }
+            if (unpinned is null && !_pinned.Contains(pilot))
+            {
+                return false;
+            }
+            // Observed fits displace other observed fits only when they occupy the entire cache.
+            RemoveAttributes((unpinned ?? oldest!).Value);
+        }
+        return true;
+    }
+
+    private void RemoveAttributes(FitCacheKey key)
+    {
+        if (_entries.Remove(key, out var entry))
+        {
+            _order.Remove(entry.Recency);
+            _attributeBytes -= entry.Bytes;
         }
     }
 
@@ -221,6 +268,7 @@ internal sealed class ResidentFitCache : IDisposable
                 {
                     cache._entries.Clear();
                     cache._order.Clear();
+                    cache._attributeBytes = 0;
                     cache._snapshots.Clear();
                     cache._snapshotOrder.Clear();
                 }
