@@ -14,6 +14,7 @@ using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Combat.Npcs;
 using Eden.World.Propulsion;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -775,6 +776,11 @@ internal sealed partial class LiveCombatRuntime
 
     private void SimulationAcquire(IReadOnlyList<NpcTargetCandidate> candidates, long now)
     {
+        if (candidates.Count == 1)
+        {
+            SimulationAcquire(candidates[0], now);
+            return;
+        }
         var ships = AcquisitionShips(candidates).ToArray();
         if (ships.Length == 0)
         {
@@ -791,8 +797,46 @@ internal sealed partial class LiveCombatRuntime
             aggression.ContainsKey,
             now
         );
-        foreach (var addition in additions)
+        PublishAcquisitions(aggression, additions);
+    }
+
+    private void SimulationAcquire(NpcTargetCandidate candidate, long now)
+    {
+        if (!_acquisitionShips.TryGetValue(candidate.PilotId, out var ship))
         {
+            ship = Loading(() =>
+            {
+                using CatalogDbContext catalog = new(database.CatalogPath);
+                return owner.Economy.Inspect(world =>
+                    world.Pilots.Find(candidate.PilotId) is { } pilot
+                        ? ReadAcquisitionShip(world, catalog, pilot.Id, pilot.ActiveShipId)
+                        : null
+                );
+            });
+            _acquisitionShips[candidate.PilotId] = ship;
+        }
+        if (ship is null || ship.ShipId != candidate.ShipId || ship.GroupId == FleetDefinitions.CapsuleGroup)
+        {
+            return;
+        }
+
+        var current = _positions.GetValueOrDefault(ship.ShipId);
+        int system = current?.System ?? ship.SystemId;
+        var aggression = Aggression();
+        var additions = LiveNpcAcquisitionRules.AcquireOrdered(
+            SystemNpcs(system, now),
+            new(ship.ShipId, system, current?.Position ?? ship.Position, ship.Radius),
+            aggression.ContainsKey,
+            now
+        );
+        PublishAcquisitions(aggression, additions);
+    }
+
+    private void PublishAcquisitions(ResidentMap<long, LiveAggression> aggression, IReadOnlyList<LiveAggression> additions)
+    {
+        for (int index = 0; index < additions.Count; index++)
+        {
+            var addition = additions[index];
             aggression[addition.NpcId] = addition;
             _dirtyAggressions.Add(addition.NpcId);
             owner.ObjectsChanged();
@@ -822,21 +866,7 @@ internal sealed partial class LiveCombatRuntime
                         .ToArray();
                     foreach (var pilot in pilots)
                     {
-                        var ship = world.Ships.Find(pilot.ShipId);
-                        if (ship?.Position is not { } position)
-                        {
-                            continue;
-                        }
-                        var type = catalog.RequireItem(ship.TypeId);
-                        int system = position.SystemId ?? catalog.RequireStation(ship.StationId).SolarSystemId;
-                        loaded[pilot.PilotId] = new(
-                            pilot.PilotId,
-                            ship.Id,
-                            system,
-                            new(position.X, position.Y, position.Z),
-                            type.Radius ?? 0,
-                            type.GroupId
-                        );
+                        loaded[pilot.PilotId] = ReadAcquisitionShip(world, catalog, pilot.PilotId, pilot.ShipId);
                     }
                     return true;
                 });
@@ -860,6 +890,18 @@ internal sealed partial class LiveCombatRuntime
                     }
                     : s
             );
+    }
+
+    private static AcquisitionShip? ReadAcquisitionShip(WorldAction world, CatalogDbContext catalog, long pilot, long shipId)
+    {
+        var ship = world.Ships.Find(shipId);
+        if (ship?.Position is not { } position)
+        {
+            return null;
+        }
+        var type = catalog.RequireItem(ship.TypeId);
+        int system = position.SystemId ?? catalog.RequireStation(ship.StationId).SolarSystemId;
+        return new(pilot, ship.Id, system, new(position.X, position.Y, position.Z), type.Radius ?? 0, type.GroupId);
     }
 
     private void ClearSimulation(bool retainPositions)
