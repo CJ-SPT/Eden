@@ -11,6 +11,7 @@ using Eden.Gameplay.Mining;
 using Eden.Gameplay.Ships;
 using Eden.World.Combat;
 using Eden.World.Docking;
+using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Loot;
 using Microsoft.EntityFrameworkCore;
@@ -134,7 +135,7 @@ internal sealed partial class CapsuleerHauler
         return false;
     }
 
-    private bool TryLaunchSortie(ResupplyProgress supplies, CombatAnomaly? site)
+    private bool TryLaunchSortie(ResupplyProgress supplies, CombatAnomaly? site, FittingCalculation? fit = null)
     {
         var policy = database.Settings.Capsuleers;
         if (!policy.BeltRatting && (_background || !policy.AnomalyRatting && !policy.RoamingPvp && !policy.GateCamps))
@@ -150,20 +151,13 @@ internal sealed partial class CapsuleerHauler
         {
             return false;
         }
-        var profile = CapsuleerDefenseProfile.Read(_operation.World, _operation.Catalog, pilotId);
+        var profile = CapsuleerDefenseProfile.Read(_operation.World, _operation.Catalog, pilotId, fit);
         if (
             !profile.Combat
             || profile.RattingWeapons.Length == 0
             || !profile.RattingWeapons.Any(w => w.AvailableShots > 0)
             || CapsuleerDefenseRules.Retreat(
-                PilotHealthStore.Read(
-                    _operation.World,
-                    Pilot.ShipId,
-                    ShipHealth.DefenseFrom(
-                        Eden.World.Fittings.PilotFittingStore.ShipAttributes(_operation.World, _operation.Catalog, pilotId)
-                    ),
-                    Now
-                ),
+                PilotHealthStore.Read(_operation.World, Pilot.ShipId, ShipHealth.DefenseFrom(profile.ShipAttributes), Now),
                 true
             )
             || Work.Journey is { } current && Pilot.StationId != current.DestinationStationId

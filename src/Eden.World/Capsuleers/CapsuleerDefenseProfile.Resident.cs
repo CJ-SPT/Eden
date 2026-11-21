@@ -168,10 +168,10 @@ internal sealed partial record CapsuleerDefenseProfile
         return result.ToArray();
     }
 
-    internal static CapsuleerDefenseProfile Read(WorldAction world, CatalogDbContext catalog, long pilotId)
+    internal static CapsuleerDefenseProfile Read(WorldAction world, CatalogDbContext catalog, long pilotId, FittingCalculation? fit = null)
     {
         var pilot = world.Pilots.Single(value => value.Id == pilotId);
-        var fit = FittingCalculation.Read(world, catalog, pilot);
+        fit ??= FittingCalculation.Read(world, catalog, pilot);
         var active = world
             .Set<ActiveFittedModule>()
             .Where(module => module.ShipId == pilot.ActiveShipId && module.ExpiresAt == 0)

@@ -1,11 +1,15 @@
 using Eden.Data.World.Capsuleers;
+using Eden.Data.World.Inventory;
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Server;
 using Eden.Server.Maintenance;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Configuration;
+using Eden.World.Fittings;
+using Eden.World.Inventory;
 using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
@@ -294,6 +298,82 @@ public sealed class CapsuleerGatePerformanceTests(ITestOutputHelper output)
         using var warmed = SessionPerformance.Begin("warm resident resupply", output.WriteLine, force: true)!;
         Assert.Empty(CapsuleerResupply.Requirements(fixture.Database, warm, catalog, founder.PilotId, []));
         Assert.Equal((0, 0, 0), (warmed.Commands, warmed.Connections, warmed.FittingCalculations));
+    }
+
+    [Theory]
+    [InlineData(false, 1)]
+    [InlineData(true, 4)]
+    public void ResidentResupplyReusesCurrentFitForStockAndSortie(bool reload, int expectedDockFits)
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new();
+        PassiveCatalogFixture.LoadCombatDrones(fixture.Database.CatalogPath);
+        var founder = fixture.Founder();
+        var profile = PilotSpaceActivitiesTests.CombatProfile with { HullTypeId = 16229 };
+        TrafficSnapshotTests.Install(fixture.Database, profile);
+        using CatalogDbContext catalog = new(fixture.Database.CatalogPath);
+        int magazine = (int)Math.Floor(catalog.RequireItem(561).Capacity!.Value / PilotInventoryStore.Volume(catalog, 215));
+        long moduleId;
+        long droneQuantity;
+        using (WorldDbContext seed = new(fixture.Database.Path))
+        {
+            using var transaction = seed.Database.BeginTransaction();
+            TrafficFitting.Apply(seed, catalog, founder.PilotId, founder.FounderShipId, profile, fixture.Clock.Now);
+            seed.Add(
+                new SavedTrafficIdentity
+                {
+                    PilotId = founder.PilotId,
+                    CharacterId = profile.CharacterId,
+                    KillId = profile.KillId,
+                    SnapshotId = "test",
+                }
+            );
+            seed.SaveChanges();
+            CapsuleerSupplyStore.Ensure(seed, catalog, founder.PilotId, founder.FounderShipId);
+            var module = seed.Set<OwnedItem>()
+                .Single(i => i.LocationId == founder.FounderShipId && i.FlagId == (int)InventoryFlag.HighSlot0);
+            moduleId = module.Id;
+            var charge = seed.Set<OwnedItem>().Single(i => i.LocationId == module.Id);
+            if (reload)
+            {
+                seed.Remove(charge);
+                var cargo = seed.Set<OwnedItem>().Single(i => i.LocationId == founder.FounderShipId && i.TypeId == charge.TypeId);
+                cargo.Quantity += magazine;
+            }
+            else
+            {
+                charge.Quantity = magazine;
+            }
+            var drones = seed.Set<OwnedItem>()
+                .Single(i => i.LocationId == founder.FounderShipId && i.FlagId == (int)InventoryFlag.DroneBay);
+            droneQuantity = drones.Quantity;
+            drones.LocationId = seed.Ships.Find(founder.FounderShipId)!.StationId;
+            drones.FlagId = (int)InventoryFlag.Hangar;
+            seed.SaveChanges();
+            transaction.Commit();
+        }
+        fixture.Clock.Seconds += 60;
+        using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var live = host.GetRequiredService<LiveWorld>();
+        using var world = live.Economy.Begin(new(pilots: [founder.PilotId], ships: [founder.FounderShipId]));
+        using var metrics = SessionPerformance.Begin("resident resupply and sortie", output.WriteLine, force: true)!;
+        var supplies = host.GetRequiredService<CapsuleerResupply>()
+            .Dock(fixture.Database, world, catalog, founder.PilotId, null, fixture.Clock.Now, out var fit);
+        Assert.True(supplies.Checked);
+        Assert.Empty(supplies.Requirements);
+        Assert.Equal(0, supplies.SpentCents);
+        Assert.Equal(
+            droneQuantity,
+            world.Set<OwnedItem>().Single(i => i.LocationId == founder.FounderShipId && i.FlagId == (int)InventoryFlag.DroneBay).Quantity
+        );
+        var chargeFit = Assert.Single(Assert.IsType<FittingCalculation>(fit).Charges);
+        Assert.Equal(moduleId, chargeFit.Item.LocationId);
+        Assert.Equal(magazine, chargeFit.Item.Quantity);
+        Assert.Equal(expectedDockFits, metrics.FittingCalculations);
+        var sortie = CapsuleerDefenseProfile.Read(world, catalog, founder.PilotId, fit);
+        // The drone owner-specific graph is still calculated separately.
+        Assert.Equal(expectedDockFits + 1, metrics.FittingCalculations);
+        Assert.Equal(magazine, Assert.Single(sortie.RattingWeapons, w => w.Weapon.ItemId == moduleId).LoadedShots);
+        Assert.Contains(sortie.RattingWeapons, w => w.Weapon.ItemId < 0);
     }
 
     [Fact]

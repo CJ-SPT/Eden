@@ -108,10 +108,11 @@ internal sealed partial class CapsuleerHauler
 
         FitRookieWeapon(world);
         _work = Work with { Journey = null };
-        var supplies = resupply.Dock(database, world, catalog, pilotId, Work.Resupply, Now);
+        var supplies = resupply.Dock(database, world, catalog, pilotId, Work.Resupply, Now, out var fit);
         _operation.MarketChanged |= supplies.SpentCents != (Work.Resupply?.SpentCents ?? 0);
         _work = Work with { Resupply = supplies };
-        if (rookie ? TryLaunchSortie(supplies, null) : TryFrontierPatrol(world, supplies) || TryLaunchActivity(scoutedAnomaly))
+        // The direct rookie launch still owns the fitted inputs read by resupply.
+        if (rookie ? TryLaunchSortie(supplies, null, fit) : TryFrontierPatrol(world, supplies) || TryLaunchActivity(scoutedAnomaly))
         {
             return;
         }

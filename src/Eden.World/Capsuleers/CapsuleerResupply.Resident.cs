@@ -104,7 +104,8 @@ internal sealed partial class CapsuleerResupply
         var ship = pilot.ActiveShip;
         var inventory = world.Set<OwnedItem>().Where(i => i.OwnerId == pilotId && i.LocationId == ship.Id).ToArray();
         var magazines = ReadMagazines(database, world, catalog, pilot, inventory);
-        return Requirements(world, catalog, pilot, inventory, magazines, previous);
+        FittingCalculation? fit = null;
+        return Requirements(world, catalog, pilot, inventory, magazines, previous, ref fit);
     }
 
     private static SupplyRequirement[] Requirements(
@@ -113,7 +114,8 @@ internal sealed partial class CapsuleerResupply
         Pilot pilot,
         OwnedItem[] inventory,
         IReadOnlyList<SupplyMagazine> magazines,
-        SupplyRequirement[] previous
+        SupplyRequirement[] previous,
+        ref FittingCalculation? fit
     )
     {
         long pilotId = pilot.Id;
@@ -153,9 +155,9 @@ internal sealed partial class CapsuleerResupply
         }
         if (DroneRules.SupportsHull(ship.TypeId))
         {
-            var snapshot = world.CachedFittingSnapshot(pilotId, ship.Id, world.FitRevision(pilotId));
-            var fit = snapshot is null ? FittingCalculation.Read(world, catalog, pilot) : null;
-            int controls = snapshot is null ? DroneCatalog.ControlLimit(fit!) : checked((int)snapshot.DroneControlLimit);
+            var snapshot = fit is null ? world.CachedFittingSnapshot(pilotId, ship.Id, world.FitRevision(pilotId)) : null;
+            var droneFit = snapshot is null ? fit ??= FittingCalculation.Read(world, catalog, pilot) : null;
+            int controls = snapshot is null ? DroneCatalog.ControlLimit(droneFit!) : checked((int)snapshot.DroneControlLimit);
             long owned = inventory.Where(i => i.FlagId == (int)InventoryFlag.DroneBay).Sum(i => i.Quantity);
             if (owned >= controls)
             {
@@ -167,8 +169,8 @@ internal sealed partial class CapsuleerResupply
                 inventory.FirstOrDefault(i => i.FlagId == (int)InventoryFlag.DroneBay)?.TypeId
                 ?? previous.FirstOrDefault(r => r.Drone)?.TypeId
                 ?? 0;
-            double bay = snapshot?.DroneCapacity ?? fit!.Graph.Read(ship.Id, DogmaAttributeId.DroneCapacity);
-            double bandwidth = snapshot?.DroneBandwidth ?? fit!.Graph.Read(ship.Id, DogmaAttributeId.DroneBandwidth);
+            double bay = snapshot?.DroneCapacity ?? droneFit!.Graph.Read(ship.Id, DogmaAttributeId.DroneCapacity);
+            double bandwidth = snapshot?.DroneBandwidth ?? droneFit!.Graph.Read(ship.Id, DogmaAttributeId.DroneBandwidth);
             var candidates = CapsuleerSupplyStore
                 .AvailableDrones(catalog)
                 .Select(d => new DroneCandidate(
@@ -208,9 +210,20 @@ internal sealed partial class CapsuleerResupply
         long pilotId,
         ResupplyProgress? saved,
         long now
+    ) => Dock(database, world, catalog, pilotId, saved, now, out _);
+
+    internal ResupplyProgress Dock(
+        WorldDatabase database,
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        ResupplyProgress? saved,
+        long now,
+        out FittingCalculation? currentFit
     )
     {
         using var phase = SessionPerformance.Phase("traffic.resupply");
+        currentFit = null;
         var pilot = world.Pilots.Single(p => p.Id == pilotId);
         var ship = pilot.ActiveShip;
         var progress =
@@ -227,11 +240,13 @@ internal sealed partial class CapsuleerResupply
         }
         SupplyRequirement[] needs;
         List<SupplyMagazine> magazines;
+        FittingCalculation? fit = null;
+        OwnedItem[] ReadInventory() => world.Set<OwnedItem>().Where(i => i.OwnerId == pilotId && i.LocationId == ship.Id).ToArray();
         using (SessionPerformance.Phase("traffic.resupplyRequirements"))
         {
-            var inventory = world.Set<OwnedItem>().Where(i => i.OwnerId == pilotId && i.LocationId == ship.Id).ToArray();
+            var inventory = ReadInventory();
             magazines = ReadMagazines(database, world, catalog, pilot, inventory);
-            needs = Requirements(world, catalog, pilot, inventory, magazines, progress.Requirements);
+            needs = Requirements(world, catalog, pilot, inventory, magazines, progress.Requirements, ref fit);
         }
         var neededTypes = needs.Select(need => need.TypeId).Distinct().ToArray();
         var hangarItems =
@@ -262,7 +277,7 @@ internal sealed partial class CapsuleerResupply
         IReadOnlyDictionary<DogmaAttributeId, double>? attributes = null;
         // Stock purchases and transfers only touch the hangar and holds until Reload.
         IReadOnlyDictionary<DogmaAttributeId, double> CapacityAttributes() =>
-            attributes ??= PilotFittingStore.ShipAttributes(world, catalog, pilot);
+            attributes ??= PilotFittingStore.ShipAttributes(world, catalog, pilot, calculation: fit);
         int Capacity(SupplyRequirement need, int desired)
         {
             if (desired <= 0)
@@ -372,17 +387,25 @@ internal sealed partial class CapsuleerResupply
                 }
             }
         }
+        bool reloaded;
         using (SessionPerformance.Phase("traffic.resupplyReload"))
         {
             // Purchases and transfers above touch station stock and cargo holds. Fitted modules
             // and their magazines are still the inputs captured for this dock transaction.
-            inventoryChanged |= Reload(world, catalog, pilotId, ship.Id, magazines, now);
+            reloaded = Reload(world, catalog, pilotId, ship.Id, magazines, now);
         }
-        if (inventoryChanged)
+        if (reloaded)
+        {
+            fit = null;
+        }
+        if (inventoryChanged || reloaded)
         {
             using var remaining = SessionPerformance.Phase("traffic.resupplyRemaining");
-            needs = Requirements(database, world, catalog, pilotId, needs);
+            var inventory = ReadInventory();
+            magazines = ReadMagazines(database, world, catalog, pilot, inventory);
+            needs = Requirements(world, catalog, pilot, inventory, magazines, needs, ref fit);
         }
+        currentFit = fit;
         return progress with { Checked = true, Requirements = needs };
     }
 
