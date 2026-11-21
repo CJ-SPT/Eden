@@ -13,6 +13,7 @@ using Eden.World.Corporations;
 using Eden.World.Docking;
 using Eden.World.Inventory;
 using Eden.World.Market;
+using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Skills;
 using Eden.World.Storage;
@@ -219,6 +220,19 @@ internal sealed class PilotJumpCloneStore(WorldDatabase database, SqliteWorld lo
         world.SaveChanges();
         transaction.Commit();
         return station;
+    }
+
+    public void ResetCooldown(long pilotId)
+    {
+        var live =
+            LiveWorld.Find(database.Path) ?? throw new InvalidDataException("Jump clone cooldown reset requires the resident world.");
+        using var world = live.Economy.Begin(new(pilots: [pilotId]));
+        _ = Pilot(world, pilotId);
+        if (world.Set<SavedJumpCloneTimer>().Find(pilotId) is { } timer)
+        {
+            world.Remove(timer);
+        }
+        world.Commit();
     }
 
     internal static void ResetActive(WorldDbContext world, long pilotId)

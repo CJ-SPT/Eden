@@ -197,6 +197,16 @@ role-filtered list, correcting the **Unable to acquire server slash command list
 client after updating so its cached command list is refreshed. See the
 [implementation record](protocol/navigation.md#insider-tools-and-reward-destinations-november-9-2026). Native presentation remains unverified.
 
+## Insider QA tab
+
+Select a pilot on a developer account and open **Insider → QA**. The client builds the menu using two status reads from the server.
+**Asset Holding** starts with both switches off. The switches record entitlement QA settings for that connection.
+Eden's inventory validation and item creation continue to use their normal rules.
+
+**Jump Clones → Reset last clone jump time** clears the selected pilot's cooldown immediately and refreshes the client's clone cache.
+The reset survives a world checkpoint. Other native menu entries may require additional services, including entitlement processing,
+HyperNet and test-token generation. See the [Insider QA protocol record](protocol/navigation.md#insider-qa-tab-november-21-2026).
+
 ## Issuing account redeem rewards
 
 Create a local JSON grant file for an existing account. For example, save the following as `reward.json` outside the repository:
