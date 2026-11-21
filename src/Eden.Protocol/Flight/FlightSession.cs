@@ -235,9 +235,9 @@ internal sealed partial class FlightSession(
     internal void NotifyCommandBursts(IReadOnlyList<CommandBurstBoost> boosts) =>
         Update(new DestinyCommand.DbuffUpdated(Pilot.ShipId, boosts));
 
-    internal void NotifyCommandBurstPulse(CommandBurstPulse pulse)
+    internal void NotifyCommandBurstPulse(CommandBurstModule module, IReadOnlyList<long> recipients, int? charge)
     {
-        string family = pulse.Module.Effect switch
+        string family = module.Effect switch
         {
             DogmaEffect.ArmorCommandBurst => "Armor",
             DogmaEffect.ShieldCommandBurst => "Shield",
@@ -249,24 +249,16 @@ internal sealed partial class FlightSession(
             Pilot.ShipId,
             null,
             "effects.WarfareLinkSphere" + family,
-            new() { ["graphicRadius"] = pulse.Module.Radius, ["radius"] = pulse.Module.Radius }
+            new() { ["graphicRadius"] = module.Radius, ["radius"] = module.Radius }
         );
-        foreach (long recipient in pulse.Recipients)
+        foreach (long recipient in recipients)
         {
             Emit(recipient, Pilot.ShipId, "effects.WarfareLink" + family, null);
         }
 
         void Emit(long ship, long? target, string graphic, Dictionary<string, object?>? info)
         {
-            var command = new DestinyCommand.CommandBurstVisual(
-                ship,
-                pulse.Module.Id,
-                pulse.Module.TypeId,
-                target,
-                pulse.Magazine.TypeId,
-                graphic,
-                info
-            );
+            var command = new DestinyCommand.CommandBurstVisual(ship, module.Id, module.TypeId, target, charge, graphic, info);
             // Publish the source and recipient visuals together in the emitting ship's flight stream.
             Update(command);
         }

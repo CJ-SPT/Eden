@@ -514,7 +514,7 @@ internal sealed partial class PilotCapitalTravelStore(
     private static void RequireCynoSystem(CatalogDbContext catalog, int system)
     {
         var data = catalog.Read(CatalogData.Client.Systems, system);
-        // Wormhole classes 7–9 locate normal high, low and null security systems in the pinned client.
+        // Wormhole classes 7Ã¢â‚¬â€œ9 locate normal high, low and null security systems in the pinned client.
         if (
             data is not { SecurityStatus: < StructureRules.HighSecurityBoundary, WormholeClassID: 8 or 9 }
             || data.RegionID is 10000004 or 10000017 or 10000019 or 10000070
@@ -613,7 +613,7 @@ internal sealed partial class PilotCapitalTravelStore(
         return stacks;
     }
 
-    private static IEnumerable<OwnedItem> FuelStacks(WorldAction world, long pilotId, long shipId, InventoryFlag flag, int type)
+    internal static IEnumerable<OwnedItem> FuelStacks(WorldAction world, long pilotId, long shipId, InventoryFlag flag, int type)
     {
         int inventoryFlag = (int)flag;
         return world
@@ -636,7 +636,7 @@ internal sealed partial class PilotCapitalTravelStore(
         }
     }
 
-    private static List<InventoryChange> SpendFuel(WorldAction world, CatalogDbContext catalog, OwnedItem[] stacks, int required)
+    internal static List<InventoryChange> SpendFuel(WorldAction world, CatalogDbContext catalog, OwnedItem[] stacks, int required)
     {
         List<InventoryChange> changes = [];
         foreach (var stack in stacks)

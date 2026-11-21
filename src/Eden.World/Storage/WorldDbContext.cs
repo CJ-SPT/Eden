@@ -503,6 +503,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         interdiction.HasIndex(row => row.ModuleId);
         var commandBursts = model.Entity<Eden.Data.World.Fleets.WorldCommandBurst>().ToTable("WorldCommandBurst");
         commandBursts.Property(row => row.IndustrialProtection).HasDefaultValue(false);
+        commandBursts.Property(row => row.Phenomena).HasDefaultValue(false);
         commandBursts.HasKey(b => b.Id);
         commandBursts.HasOne<Ship>().WithMany().HasForeignKey(b => b.ShipId).OnDelete(DeleteBehavior.Cascade);
         model.Entity<ActiveFittedModule>().ToTable("WorldActiveModule").HasKey(h => h.ModuleId);

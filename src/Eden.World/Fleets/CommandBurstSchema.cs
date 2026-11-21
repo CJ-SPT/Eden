@@ -39,6 +39,15 @@ internal static class CommandBurstSchema
         {
             world.Database.ExecuteSqlRaw("ALTER TABLE WorldCommandBurst ADD COLUMN IndustrialProtection INTEGER NOT NULL DEFAULT 0");
         }
+        if (
+            !world
+                .Database.SqlQueryRaw<string>("SELECT name AS Value FROM pragma_table_info('WorldCommandBurst')")
+                .AsEnumerable()
+                .Contains(nameof(Eden.Data.World.Fleets.WorldCommandBurst.Phenomena))
+        )
+        {
+            world.Database.ExecuteSqlRaw("ALTER TABLE WorldCommandBurst ADD COLUMN Phenomena INTEGER NOT NULL DEFAULT 0");
+        }
         foreach (string operation in new[] { "INSERT", "DELETE" })
         {
             string row = operation == "INSERT" ? "NEW" : "OLD";

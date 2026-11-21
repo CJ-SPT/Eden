@@ -41,7 +41,10 @@ internal static class FittingCatalog
         {
             return null;
         }
-        if (type.GroupId == CommandBurstRules.Group && !CommandBurstCatalog.Module(catalog, typeId, type.GroupId))
+        if (
+            type.GroupId is CommandBurstRules.Group or CommandBurstRules.PhenomenaGroup
+            && !CommandBurstCatalog.Module(catalog, typeId, type.GroupId)
+        )
         {
             return null;
         }

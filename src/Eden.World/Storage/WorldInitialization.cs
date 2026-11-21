@@ -135,7 +135,14 @@ public static class WorldInitialization
             );
         // Committed capital modes finish their paid cycle across restarts.
         long moduleReopen = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc();
-        int[] capitalModes = Eden.Gameplay.Flight.CapitalModeRules.Types.ToArray();
+        int[] capitalModes =
+        [
+            .. Eden.Gameplay.Flight.CapitalModeRules.Types,
+            Eden.Gameplay.Fleets.CommandBurstRules.AmarrPhenomena,
+            Eden.Gameplay.Fleets.CommandBurstRules.CaldariPhenomena,
+            Eden.Gameplay.Fleets.CommandBurstRules.GallentePhenomena,
+            Eden.Gameplay.Fleets.CommandBurstRules.MinmatarPhenomena,
+        ];
         var committedModes = world
             .Set<OwnedItem>()
             .Where(i =>
@@ -150,7 +157,7 @@ public static class WorldInitialization
         world.Set<ActiveFittedModule>().Where(a => a.ExpiresAt <= moduleReopen || !committedModes.Contains(a.ModuleId)).ExecuteDelete();
         world
             .Set<Eden.Data.World.Fleets.WorldCommandBurst>()
-            .Where(row => !row.IndustrialProtection || row.ExpiresAt <= moduleReopen)
+            .Where(row => !row.IndustrialProtection && !row.Phenomena || row.ExpiresAt <= moduleReopen)
             .ExecuteDelete();
         PilotSpatialModuleStore.Reconcile(world, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc());
         world.Set<WorldTackle>().ExecuteDelete();

@@ -1,3 +1,4 @@
+using Eden.Gameplay.Ammunition;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Fleets;
@@ -34,6 +35,7 @@ internal sealed class CommandBurstHandler(
             "moduleBonusWarfareLinkSkirmish" => DogmaEffect.SkirmishCommandBurst,
             "moduleBonusWarfareLinkInfo" => DogmaEffect.InformationCommandBurst,
             "moduleBonusWarfareLinkMining" => DogmaEffect.MiningForemanBurst,
+            "moduleTitanEffectGenerator" => DogmaEffect.TitanPhenomena,
             _ => null,
         };
 
@@ -184,30 +186,59 @@ internal sealed class CommandBurstHandler(
     {
         context.Flight.Checkpoint();
         var pilot = context.Pilot;
+        if (effect == DogmaEffect.TitanPhenomena)
+        {
+            var pulse = bursts.PulsePhenomena(pilot.PilotId, pilot.ShipId, module, now);
+            foreach (var change in pulse.FuelChanges)
+            {
+                InventoryChangesWire.NotifyItemChange(context, change, beforeFlight: true);
+            }
+            PublishPulse(context, pulse.Module, pulse.ReadyAt, pulse.Capacitor, pulse.Recipients, null, repeats, now, repeating);
+            return;
+        }
         var result = bursts.Pulse(pilot.PilotId, pilot.ShipId, module, effect, context.Flight.CommandBurstCandidates(), now);
+        PublishPulse(context, result.Module, result.ReadyAt, result.Capacitor, result.Recipients, result.Magazine, repeats, now, repeating);
+    }
+
+    private void PublishPulse(
+        PilotCallContext context,
+        CommandBurstModule module,
+        long readyAt,
+        double capacitor,
+        long[] recipients,
+        Magazine? magazine,
+        long repeats,
+        long now,
+        bool repeating
+    )
+    {
+        var pilot = context.Pilot;
         var activation = new DogmaActiveEffect(
-            module,
+            module.Id,
             pilot.PilotId,
             pilot.ShipId,
             null,
-            effect,
+            module.Effect,
             now,
-            result.Module.CycleTicks / (double)TimeSpan.TicksPerMillisecond,
+            module.CycleTicks / (double)TimeSpan.TicksPerMillisecond,
             repeats
         );
-        _cycles[module] = new(activation, result.ReadyAt);
+        _cycles[module.Id] = new(activation, readyAt);
         if (!repeating)
         {
             context.Notifications.Add(new ShipEffectChanged(activation, now, true, true));
         }
-        MagazineWire.NotifyQuantity(context, result.Magazine, result.Magazine.Quantity, now);
+        if (magazine is not null)
+        {
+            MagazineWire.NotifyQuantity(context, magazine, magazine.Quantity, now);
+        }
         context.Notifications.Add(
             new ModuleAttributesChanged([
-                new(pilot.PilotId, new DogmaItemKey.Item(pilot.ShipId), DogmaAttributeId.CapacitorCharge, now, result.Capacitor),
+                new(pilot.PilotId, new DogmaItemKey.Item(pilot.ShipId), DogmaAttributeId.CapacitorCharge, now, capacitor),
             ])
         );
-        context.Notifications.Add(new FleetBoosted(result.Module.TypeId, result.Recipients.Length));
-        context.Flight.NotifyCommandBurstPulse(result);
+        context.Notifications.Add(new FleetBoosted(module.TypeId, recipients.Length));
+        context.Flight.NotifyCommandBurstPulse(module, recipients, magazine?.TypeId);
         Refresh(context, now);
     }
 

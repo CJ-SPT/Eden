@@ -8,4 +8,5 @@ public sealed class WorldCommandBurst
     public long ExpiresAt { get; set; }
     public string BoostsJson { get; set; } = "";
     public bool IndustrialProtection { get; set; }
+    public bool Phenomena { get; set; }
 }

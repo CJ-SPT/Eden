@@ -558,6 +558,7 @@ internal sealed partial record FittingCalculation(
             .Concat(AdvancedWeaponRules.Skills)
             .Concat([AreaWeaponRules.BombDeploymentSkill, AreaWeaponRules.DefenderSkill, AreaWeaponRules.ProjectorSkill])
             .Concat(modules.Any(m => m.GroupId == CommandBurstRules.Group) ? CommandBurstCatalog.Skills : [])
+            .Concat(modules.Any(m => m.GroupId == CommandBurstRules.PhenomenaGroup) ? [CommandBurstRules.SpatialPhenomenaGeneration] : [])
             .Concat(Eden.Gameplay.Exploration.ProbeScanRules.Skills)
             .Concat([(int)MiningSkill.GasHarvesting, (int)MiningSkill.IceHarvesting])
             .Concat([Eden.Gameplay.Exploration.HackingRules.HackingSkill, Eden.Gameplay.Exploration.HackingRules.ArchaeologySkill])

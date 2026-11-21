@@ -28,6 +28,14 @@ public sealed record CommandBurstCandidate(long PilotId, long ShipId, SpacePosit
 
 public sealed record CommandBurstPulse(CommandBurstModule Module, long ReadyAt, double Capacitor, Magazine Magazine, long[] Recipients);
 
+public sealed record PhenomenaPulse(
+    CommandBurstModule Module,
+    long ReadyAt,
+    double Capacitor,
+    IReadOnlyList<InventoryChange> FuelChanges,
+    long[] Recipients
+);
+
 public interface IPilotCommandBursts
 {
     CommandBurstPulse Pulse(
@@ -39,12 +47,24 @@ public interface IPilotCommandBursts
         long now
     );
 
+    PhenomenaPulse PulsePhenomena(long pilot, long ship, long module, long now);
+
     IReadOnlyList<CommandBurstBoost> Incoming(long ship, long now);
 }
 
 public static class CommandBurstRules
 {
     public const int Group = 1770;
+
+    // Build 3662168 module group, racial generators, and the buff duration skill.
+    public const int PhenomenaGroup = 1815;
+    public const int AmarrPhenomena = 43658;
+    public const int CaldariPhenomena = 43660;
+    public const int GallentePhenomena = 43662;
+    public const int MinmatarPhenomena = 43664;
+    public const int SpatialPhenomenaGeneration = 43728;
+
+    public static bool IsPhenomena(int type) => type is AmarrPhenomena or CaldariPhenomena or GallentePhenomena or MinmatarPhenomena;
 
     public static bool IsBurst(DogmaEffect effect) =>
         effect
@@ -72,7 +92,7 @@ public static class CommandBurstRules
         double capacitor = a.GetValueOrDefault(DogmaAttributeId.CapacitorNeed);
         double limit = a.GetValueOrDefault(DogmaAttributeId.MaxGroupActive);
         if (
-            !IsBurst(effect)
+            !(IsBurst(effect) || effect == DogmaEffect.TitanPhenomena && IsPhenomena(type))
             || !double.IsFinite(radius)
             || radius <= 0
             || !double.IsFinite(capacitor)

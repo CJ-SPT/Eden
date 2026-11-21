@@ -8,7 +8,15 @@ namespace Eden.World.Runtime.Economy;
 
 internal sealed partial class ResidentEconomy
 {
-    private sealed record CommandBurstRow(long Id, long ShipId, int SystemId, long ExpiresAt, string BoostsJson, bool IndustrialProtection);
+    private sealed record CommandBurstRow(
+        long Id,
+        long ShipId,
+        int SystemId,
+        long ExpiresAt,
+        string BoostsJson,
+        bool IndustrialProtection,
+        bool Phenomena
+    );
 
     private long _latestIndustrialProtection;
 
@@ -23,7 +31,7 @@ internal sealed partial class ResidentEconomy
             new EconomyTable<WorldCommandBurst, CommandBurstRow>(
                 "WorldCommandBurst",
                 row => new(row.Id),
-                row => new(row.Id, row.ShipId, row.SystemId, row.ExpiresAt, row.BoostsJson, row.IndustrialProtection),
+                row => new(row.Id, row.ShipId, row.SystemId, row.ExpiresAt, row.BoostsJson, row.IndustrialProtection, row.Phenomena),
                 state => new WorldCommandBurst
                 {
                     Id = state.Id,
@@ -32,9 +40,10 @@ internal sealed partial class ResidentEconomy
                     ExpiresAt = state.ExpiresAt,
                     BoostsJson = state.BoostsJson,
                     IndustrialProtection = state.IndustrialProtection,
+                    Phenomena = state.Phenomena,
                 },
                 ProjectCommandBursts,
-                "Id,ShipId,SystemId,ExpiresAt,BoostsJson,IndustrialProtection",
+                "Id,ShipId,SystemId,ExpiresAt,BoostsJson,IndustrialProtection,Phenomena",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -42,7 +51,8 @@ internal sealed partial class ResidentEconomy
                         reader.GetInt32(3),
                         reader.GetInt64(4),
                         reader.GetString(5),
-                        reader.GetBoolean(6)
+                        reader.GetBoolean(6),
+                        reader.GetBoolean(7)
                     ),
                 state => new(state.Id),
                 changed: CommandBurstChanged,
@@ -111,9 +121,10 @@ internal sealed partial class ResidentEconomy
                 string rows = JsonSerializer.Serialize(added);
                 world.Database.ExecuteSql(
                     $"""
-                    INSERT INTO WorldCommandBurst(Id,ShipId,SystemId,ExpiresAt,BoostsJson,IndustrialProtection)
+                    INSERT INTO WorldCommandBurst(Id,ShipId,SystemId,ExpiresAt,BoostsJson,IndustrialProtection,Phenomena)
                     SELECT json_extract(value,'$.Id'),json_extract(value,'$.ShipId'),json_extract(value,'$.SystemId'),
-                        json_extract(value,'$.ExpiresAt'),json_extract(value,'$.BoostsJson'),json_extract(value,'$.IndustrialProtection')
+                        json_extract(value,'$.ExpiresAt'),json_extract(value,'$.BoostsJson'),json_extract(value,'$.IndustrialProtection'),
+                        json_extract(value,'$.Phenomena')
                     FROM json_each({rows}) WHERE 1 ON CONFLICT(Id) DO NOTHING
                     """
                 );

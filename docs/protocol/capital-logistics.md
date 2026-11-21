@@ -336,7 +336,7 @@ published light and heavy attack squadrons. Slot zero uses the attack missile pr
 and Heavy Fighters skills apply to Cyclops attack damage. Supercarriers also use the existing
 `superWeaponMgr.ActivateSinglePointTargetedModule` path for burst projectors. The racial effects `6615`–`6618`
 modify their associated projector cycles, alongside Burst Projector Operation. Other fighter roles and abilities,
-Standup fighter control and Phenomena Generators remain open.
+Standup fighter control remains open.
 
 The pinned catalog cases exercise all eight hulls. The Avatar pays to bridge a Rapier from Jan to a Pharolux,
 then jumps itself and docks at the Keepstar. The Aeon fires Cyclops attack missiles at an Astrahus and applies a
@@ -519,6 +519,30 @@ fighter deck, hull audit, capacitor warfare, spatial modules and flight boundary
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
+## Titan Phenomena Generators
+
+Build 3662168 uses `dogmaIM.Activate` with `moduleTitanEffectGenerator` (`6753`) for the four racial
+modules. The pinned fitting restrictions admit the corresponding empire Titan and the listed pirate Titans.
+Each activation spends 25,000 GJ and 40,000 racial isotopes. The five-minute module cycle blocks docking and
+tethering. Titans can keep moving. Spatial Phenomena Generation adds 10% buff duration per level.
+[CCP Ascension patch notes](https://www.eveonline.com/news/view/patch-notes-for-eve-online-ascension)
+
+The pulse applies the four pinned DBuff collections from each module to piloted ships within 20,000 km.
+Fleet membership does not affect eligibility. Eden reuses the command burst DBuff notification and
+fitting graph to apply both bonuses and penalties. Schema 208 preserves the active module cycle and
+recipient deadlines across startup. Existing command burst rules clear the recipient's buff on docking
+or a system change. A disconnected source does not pay for new cycles.
+
+EVE.js `commandBurstRuntime.js` provided the module effect and range cross-check. The pinned effect registry
+lacks its `effects.TitanEffectGenerator` GUID, so Eden uses the stock information burst visual and the native
+DBuff entries for presentation. The effects currently apply to piloted ships.
+
+**Automated validation.** The two exact Amarr cases passed in 9.12 seconds. All 92 cases in the final
+capital travel, command burst, tether, flight boundary and migration filter passed in 50.38 seconds after
+a 10.68-second build. Both Python suites, formatting and `git diff --check` passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Milestones
 
 | Milestone | Playable outcome and acceptance |
@@ -530,7 +554,7 @@ fighter deck, hull audit, capacitor warfare, spatial modules and flight boundary
 | **5. Dreadnoughts and force auxiliaries** | Implemented. Dreadnoughts and force auxiliaries use standard cynos, paid siege or triage, and normal docking, repair and loss settlement. The acceptance cases reopen a paid siege and settle an Apostle loss. |
 | **6. Carriers and fighters** | Implemented for light attack squadrons. Carrier tubes support launch, targeting, recall and replacement, with squadron losses persisted. Standup fighters and additional combat abilities remain open. |
 | **7. Capital industry and fleet services** | Rorquals use paid industrial cores, Excavators, fleet compression and P.A.N.I.C. Shared fleet storage, mobile refitting, clone bays and fresh-world resupply remain open. |
-| **8. Supercapitals and production** | Keepstar docking, Sotiyo construction, direct jumps, Titan bridging, supercarrier heavy attack fighters and burst projectors are implemented. Targeted Titan doomsdays have paid windups, counters and durable loss settlement. Titan lances, Reapers and Bosonic fields support paid aiming and positional counters. The oscillator transports subcapitals and locks capital warp. Phenomena remain open. |
+| **8. Supercapitals and production** | Keepstar docking, Sotiyo construction, direct jumps, Titan bridging, supercarrier heavy attack fighters and burst projectors are implemented. Targeted Titan doomsdays have paid windups, counters and durable loss settlement. Titan lances, Reapers and Bosonic fields support paid aiming and positional counters. The oscillator transports subcapitals and locks capital warp. Phenomena Generators apply the pinned racial boosts and penalties. |
 
 Milestone 5 needs the Upwell battle and destruction paths for its siege acceptance.
 [Sovereignty upgrades](sovereignty.md#sovereignty-resources-and-upgrades--november-16-2026) ·
