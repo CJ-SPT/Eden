@@ -1314,7 +1314,7 @@ FullyQualifiedName~Eden.Protocol.Tests.Persistence.WorldInitializationTests
 
 **Live acceptance:** Not performed; agent client testing is disabled. Native rendering, input and gameplay feel remain unverified. No game was launched, running host restarted or normal save edited.
 
-**Optional maintainer checks:** See the three [player EWAR checks](../development-client.md#optional-player-electronic-warfare-checks) on a copied save.
+**Optional maintainer checks:** See the three [player EWAR checks](../live-checks.md#optional-player-electronic-warfare-checks) on a copied save.
 
 
 ## Player remote shield and armor repairs, November 7, 2026
@@ -1341,7 +1341,7 @@ FullyQualifiedName~Eden.Protocol.Tests.Combat.RemoteRepairTests|FullyQualifiedNa
 
 **Live acceptance:** Not performed; agent client testing is disabled. Native rendering, input and gameplay feel remain unverified.
 
-**Optional maintainer checks:** See the three [remote repair checks](../development-client.md#optional-remote-shield-and-armor-repair-checks) on a copied save.
+**Optional maintainer checks:** See the three [remote repair checks](../live-checks.md#optional-remote-shield-and-armor-repair-checks) on a copied save.
 
 At that checkpoint the maintainer requested stopping; remote hull repair and capacitor transfer had not started. Remote hull repair subsequently continued under the ship-content program below.
 

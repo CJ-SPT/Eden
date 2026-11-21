@@ -1,41 +1,22 @@
 # Standalone corporation implementation
 
-[Documentation index](README.md) / [Corporation protocol records](protocol/corporations.md)
+[Documentation index](README.md) · [Corporation protocol records](protocol/corporations.md)
 
-Player corporations support membership, administration, assets and governance. [Alliances](protocol/alliances.md) now add resident corporation associations and shared services. Corporation wars and sovereignty remain outside the implemented alliance scope.
-
-Each milestone includes typed rules, authenticated native calls, persistence, focused automated checks and a verified push before the next milestone starts. Native client acceptance is disabled for agents.
-
-| Milestone | Status |
+| Feature | Supported actions |
 | --- | --- |
-| Creation, identity, applications, joining/leaving | Published; [direct invitations](protocol/corporations.md#direct-invitations-and-corporation-window-reads-november-14-2026) now use resident applications and checkpoints |
-| Login and corporation-window compatibility | Published |
-| Persistent settings, logos and division names | Published; 116 focused tests and required checks passed |
-| Delegated roles, titles and member administration | Published; 177 focused tests and required checks passed |
-| Member search and activity tracking | Typed queries, title/implied-role searches, online status and persistent session times implemented |
-| Shared ISK wallets, journals and bounty tax collection | Published; 309 focused tests and required checks passed; CEO/Director startup correction passed 136 focused tests |
-| Corporate LP/EverMark wallets | Published; 191 focused tests and required checks passed |
-| Bills panel reads/preferences and corporate market history reads | Published; 203 focused tests and required checks passed; invoice sources/corporate trading remain separate |
-| Corporation inventory ownership storage | Published; 176 focused tests and required checks passed |
-| Offices and corporation asset access | Implemented: rentals, seven hangar divisions, transfers and asset reports; recurring billing/impound recovery deferred |
-| Member communications and recruitment services | Direct invitations, bulletins, automatic welcome mail and paid recruitment advertisements implemented |
-| Share holdings, shareholders and transfers | Published; 198 focused tests and required checks passed |
-| Dividends and CEO succession | Implemented: exact member/shareholder payments and docked CEO transfer |
-| Corporation closure | Implemented: member departures, archived identity/assets and released office slots |
-| General polls and share-creation votes | Implemented: weighted ballots, deadlines, CEO sanction and persistent share supply |
-| Member-expulsion votes | Implemented: shareholder protection, suspended roles, CEO sanctions and persistent docked-removal queue |
-| Bulk member removal | Implemented: resident batch settlement, native mixed results, current Director permissions and existing removal protections |
-| Native administration and inventory blockers | Implemented: member audit reads, current membership dates, headquarters relocation, Goals Deliveries queries and corporate Deliveries binding |
-| CEO elections | Implemented: personal-share eligibility, incumbent suspension, automatic succession and a persistent successor authority delay |
-| Blueprint lock/unlock votes | Implemented: immediate resident holds, automatic permanent locks, CEO-only unlock sanctions and inventory enforcement |
-| Ordinary member auto-removal | Implemented: resident single/bulk queues, next-dock settlement, stale-request cancellation and native Auto Removal reads |
+| [Membership](protocol/corporations.md#player-corporation-applications-and-membership) | Create a corporation, apply, invite pilots, accept offers, leave and remove members. |
+| [Delegated roles and titles](protocol/corporations.md#delegated-corporation-roles-and-titles) | Assign roles and titles, manage member access and apply the role-removal wait. |
+| [Member administration](protocol/corporations.md#administration-and-inventory-blockers-november-15-2026) | Search members, read activity and membership dates, move headquarters, and manage docked or queued removals. |
+| [Communication and recruitment](protocol/corporations.md#bulletins-and-welcome-mail-november-14-2026) | Publish bulletins and recruitment adverts, send welcome mail and [schedule corporation events](protocol/social.md#corporation-calendar-events). |
+| [Wallets](protocol/corporations.md#shared-corporation-isk-wallets-and-bounty-taxation) | Seven shared ISK divisions, journals, transfers, bounty tax, LP and EverMark balances. The client can read bills and corporate market history and save autopay preferences. |
+| [Office and asset storage](protocol/corporations.md#corporation-offices-and-shared-storage-november-6-2026) | Rent offices, use division hangars, transfer and stack assets by role, and read corporate asset reports. |
+| [Shares and governance](protocol/corporations.md#general-and-share-creation-votes-november-15-2026) | Transfer shares, pay dividends, hold polls and share-creation votes, vote on member expulsion and blueprint locks, elect successors and close a corporation. |
 
-See [corporation protocol findings](protocol/corporations.md) for native call shapes and milestone validation evidence, and [inventory ownership](inventory-ownership.md) for the storage boundary. This table records implemented scope, not live client acceptance.
+Recurring office billing, impound recovery and corporate market orders remain open. See the
+[inventory ownership notes](inventory-ownership.md) for the schema-78 migration and isolation rules. See
+[alliances](protocol/alliances.md), [sovereignty](protocol/sovereignty.md), and
+[Faction Warfare organization enlistment](protocol/faction-warfare.md#organization-enlistment-and-militia-communications--november-20-2026)
+for related organization features. Corporation war declarations remain open.
 
-The maintainer confirmed that the corporation window loads after the November 14 title-row correction. Completion work
-covers the remaining standalone tabs and actions, including recruitment, member queries and governance. Alliance
-services are recorded separately in the [alliance implementation notes](protocol/alliances.md); corporation wars remain pending.
-
-Implementation resumed after the member-expulsion vote milestone. Remaining standalone work includes full historical
-auditing/decorations, outstanding home settings, recent combat records, automatic downtime removal sweeps
-and office billing/impound recovery. The complete corporation window is not yet implemented.
+The maintainer confirmed that the corporation window loaded after the November 14 title-row correction.
+[Title-row correction and acceptance record](protocol/corporations.md#corporation-title-row-decoding-november-14-2026)

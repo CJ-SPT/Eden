@@ -464,7 +464,9 @@ See the [implementation and validation record](protocol/capsuleers.md#observed-c
 
 ## Previous global simulation
 
-The following sections preserve the previous design and its measurements as historical evidence.
+The following sections record the schema 116–118 rollout and its historical measurements. Use
+[population controls](#population-controls) for current admission and [bot development milestones](bot-development-plan.md)
+for later fresh-universe work.
 
 ## Agreed outcome
 

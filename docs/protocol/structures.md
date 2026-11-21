@@ -1,8 +1,8 @@
-# Player Upwell structures â€” November 10, 2026
+# Player Upwell structures — November 10, 2026
 
 [Protocol index](../protocol.md) Â· [Documentation index](../README.md)
 
-## Upwell completion program â€” November 16, 2026
+## Upwell completion program — November 16, 2026
 
 The completion program continues the existing foundation with resident authority and checkpoint persistence.
 Historical foundation limitations below describe their original milestones; this program records subsequent work explicitly.
@@ -117,7 +117,7 @@ deadline are captured with the owning structure's state and reinforcement deadli
 The new battle operation requires the resident world; it has no offline SQL gameplay implementation or damage RPC.
 Player weapon routing and destruction/asset settlement belong to the next milestone and are not enabled by this foundation.
 
-Damage uses catalog shield/armor/hull resonances, layer damage limits **2034â€“2036**, pause thresholds **3354â€“3356** and
+Damage uses catalog shield/armor/hull resonances, layer damage limits **2034–2036**, pause thresholds **3354–3356** and
 `CanHaveAutoRepair` **5770**. Caps apply to actual layer HP lost, shared across all attackers. The initial timing policy
 uses one-second UTC windows and one-second repair holds on qualifying damage; idle time cannot bank burst damage.
 This discretization is Eden's explicit server policy, not a claim about CCP's undisclosed damage-sampling implementation.
@@ -354,7 +354,7 @@ newlines and trailing whitespace passed separate checks. The full .NET suite was
 **Optional maintainer checks:** Observe native structure targeting/damage/reinforcement; observe a docked session's
 forced departure and public core loot. Rendering and gameplay feel remain unverified.
 
-## Station and structure hull geometry â€” November 16, 2026
+## Station and structure hull geometry — November 16, 2026
 
 The Athanor's catalog radius is a 45 km docking/range ball, while its visible model extends roughly 15 km from its
 origin. Treating that range ball as solid blocked the docking-ring interior and pushed undocking ships away from the
@@ -466,12 +466,12 @@ in 16.43 seconds. The solution built without warnings or errors. Both Python pol
 **Optional maintainer checks:** Inspect the beacon and placement preview at a catalog moon, align a survey launcher and inspect
 the delayed result, and check the scheduling and ledger views on a copied save.
 
-### Correct moon ore identities â€” November 16, 2026
+### Correct moon ore identities — November 16, 2026
 
 The composition table now uses the build-3662168 asteroid identities rather than assuming consecutive type IDs.
 The rare tier is Carnotite **45502**, Zircon **45503**, Pollucite **45504** and Cinnabar **45506**. The exceptional tier is
 Xenotime **45510**, Monazite **45511**, Loparite **45512** and Ytterbite **45513**. The previous table selected SKINs
-**45505** and **45507â€“45509**, placed Cinnabar in the exceptional tier and omitted all four exceptional ores.
+**45505** and **45507–45509**, placed Cinnabar in the exceptional tier and omitted all four exceptional ores.
 Named ore values document the gaps, and the shared AutoMining ore list receives the corrected identities as well.
 
 All 20 base moon ores are reachable in both lowsec and nullsec, supplying all 20 raw moon materials through the existing
@@ -482,7 +482,7 @@ lowsec and nullsec and the fixed shares remain Eden policy, not a reproduction o
 
 New extractions use the corrected composition after the updated server starts. Existing extractions retain their saved
 composition, and existing asteroid fields are not rewritten. Cancel and restart an unfinished pull to use the corrected
-table. In particular, Efa V â€“ Moon 2 now supplies 70% Xenotime and 30% Zeolites instead of the old Cinnabar result.
+table. In particular, Efa V – Moon 2 now supplies 70% Xenotime and 30% Zeolites instead of the old Cinnabar result.
 
 References: [CCP Moon Mining](https://support.eveonline.com/hc/en-us/articles/115005404229-Moon-Mining) and
 [EVE University moon ores](https://wiki.eveuniversity.org/Moon_mining#Moon-specific_Ore). IDs and yields were checked against
@@ -507,7 +507,7 @@ Tool and solution restore, the solution build (zero warnings/errors, 6.23 second
 
 **Optional maintainer checks:** Inspect a corrected rare or exceptional moon's survey/planner composition in the native client.
 
-### Native refinery setup calls â€” November 16, 2026
+### Native refinery setup calls — November 16, 2026
 
 User screenshots reported `Unsupported local call beyonce.MachoBindObject (CmdWarpToStuff)` when choosing a moon's
 mining point, followed by `corpRegistry.MachoBindObject (GetStructureReinforceDefault)` during structure setup.
@@ -520,7 +520,7 @@ fleet, capacitor and interdiction paths remain in force; the caller supplies no 
 `corpRegistry.GetStructureReinforceDefault` now returns the native tuple **`(255, 18)`**, meaning no preferred weekday
 and Eden's existing default **18:00 UTC** hour. It rejects unexpected arguments and does not change corporation state.
 The build-3662168 deployment picker sends weekday **255** back to `structureDeployment.Anchor`. Deployment now accepts
-and checkpoints that sentinel alongside the existing weekday values **0â€“6**, while rejecting other days and invalid
+and checkpoints that sentinel alongside the existing weekday values **0–6**, while rejecting other days and invalid
 hours. Corporation-wide customization of the default hour is outside this repair.
 
 Inert inspection of the installed build-3662168 archive confirmed
@@ -556,7 +556,7 @@ the failures, not acceptance of the corrected behavior.
 **Optional maintainer checks:** Warp to a moon's mining point through its native menu, then open the refinery deployment
 screen and verify that its reinforcement hour loads and the chosen configuration can be anchored.
 
-### Native anchor configuration container â€” November 16, 2026
+### Native anchor configuration container — November 16, 2026
 
 The user's follow-up anchoring screenshot reported "This deployment configuration is not supported."
 Build-3662168 `structureDeployment.ConfirmDeployment` creates a `util.KeyVal` and sends it as the tenth `Anchor`
@@ -576,7 +576,7 @@ verification and whitespace checks passed. No new regression tests were added, a
 
 **Optional maintainer checks:** Retry confirming the Athanor deployment after the updated server starts.
 
-### Anchored structure scene publication â€” November 16, 2026
+### Anchored structure scene publication — November 16, 2026
 
 The user reported that confirming Anchor consumed the hull without showing a structure. Read-only remote verification
 on revision `ab8c3e6e` confirmed a saved Athanor in state **Anchoring (2)** with a running saved deadline. No inventory
@@ -617,7 +617,7 @@ establish the failure context, not acceptance of the corrected rendering.
 **Optional maintainer checks:** After updating the server, reconnect and check the existing Athanor's construction model
 and timer; confirm a future deployment appears immediately after Anchor.
 
-## Structure discovery, docked login and access reads â€” November 16, 2026
+## Structure discovery, docked login and access reads — November 16, 2026
 
 The user's docking attempt persisted the ship inside the Athanor, then the docked UI queried the missing
 `structureSettings.CharacterHasSetting` method. On reconnect, the selection card exposed the compatibility `StationId`
@@ -683,7 +683,7 @@ and immediate startup dependencies. No new cases or classes were added. Tool and
 **Optional maintainer checks:** After updating the server, log back into the docked character; check the Athanor in the
 system map/right-click menu and off-grid overview; select its bracket during a timed lifecycle phase.
 
-## Docked structure control and quantum-core setup â€” November 16, 2026
+## Docked structure control and quantum-core setup — November 16, 2026
 
 Docked managers can now take and release control of an Upwell structure through the native `structureControl` service,
 install its quantum core, deposit fuel and fit/online supported service modules. The earlier control limitation in the
@@ -766,7 +766,7 @@ not acceptance of the corrected hangar or control view.
 **Optional maintainer checks:** Update/restart and reconnect to the docked Athanor; take control and place its matching
 quantum core in the Core Room; after the repair timer, deposit fuel and fit/online the desired service modules.
 
-## Structure moniker and docked-system correction â€” November 16, 2026
+## Structure moniker and docked-system correction — November 16, 2026
 
 The next user login reached inventory startup but failed with `invbroker.MachoBindObject (GetInventoryFromId)`.
 `character-selection-25108.log` (November 17 at 00:11 UTC, November 16 local time) also recorded "The ship's system
@@ -808,7 +808,7 @@ failure, not successful native rendering after this change.
 
 **Optional maintainer checks:** Update/restart, reconnect to the docked character, then open its inventory and take control.
 
-## Structure hangar container and controlled undocking â€” November 16, 2026
+## Structure hangar container and controlled undocking — November 16, 2026
 
 The next two screenshots showed `invbroker.MachoBindObject (GetInventory)` during hangar loading and taking control.
 Native `invCache.GetInventory` rewrites `containerHangar` (10004) to `containerStructure` (10014) whenever `structureid`
@@ -860,7 +860,7 @@ evidence; rendering, button behavior and the native undock animation remain unve
 **Optional maintainer checks:** Update/restart and reconnect; open the hangar and take control; undock from control and
 confirm the original ship appears outside the Athanor.
 
-## Athanor setup flow audit â€” November 16, 2026
+## Athanor setup flow audit — November 16, 2026
 
 The user's native lobby now opened without RPC popups, but its outside view remained black; undocking did not complete
 until a relog, and the displayed exit was wrong. The same setup exposed missing personal ship/hangar rows while controlling
@@ -927,7 +927,7 @@ restore, solution build (zero warnings/errors, 0.91 seconds), both Python policy
 **Optional maintainer checks:** After updating and reconnecting, verify the docked outside scene and undock transition;
 open Ship/Item Hangars and transfer the core; take control, fit/online the drill and open the moon planner.
 
-## Structure compression and gas decompression â€” November 11, 2026
+## Structure compression and gas decompression — November 11, 2026
 
 Milestone 7 implements all three pinned `structureCompressionMgr` calls: `CompressItemInStructure(itemID)`,
 `DecompressGasInStructure(itemID)` and `GetMyGasDecompressionEfficiency()`. The two mutations return the native tuple
@@ -1033,9 +1033,9 @@ names share resident caching and refresh when their owning structure row changes
 ## Administration
 
 The Settings page has a **Structures** tab with independent **Anchoring speed**,
-**Core onlining speed** and **Decommissioning speed** controls. Each accepts **0.1â€“100Ã—**,
-defaults to **1Ã—**, and participates in revision comparison, JSON import/export and save for
-restart. A speed of 2Ã— halves the duration. Existing deadlines retain their original terms;
+**Core onlining speed** and **Decommissioning speed** controls. Each accepts **0.1–100×**,
+defaults to **1×**, and participates in revision comparison, JSON import/export and save for
+restart. A speed of 2× halves the duration. Existing deadlines retain their original terms;
 a newly started phase uses the active setting at that time. Fuel's hourly cadence is unchanged.
 
 Ordinary dockable hulls anchor for 24 hours and online for 15 minutes after core installation.
@@ -1049,6 +1049,11 @@ never as a second loose copy. Other fitted equipment and an installed loose quan
 return as contents. Duplicate recovery is rejected.
 
 ## Admission policy and remaining mechanics
+
+This section records the original structure foundation. For later mechanics see
+[Upwell combat, asset safety and tethering](#upwell-completion-program--november-16-2026), [moon extraction](#manual-moon-extraction),
+[capital and Standup logistics](capital-logistics.md), [sovereignty](sovereignty.md), and [reactions](industry.md#composite-reaction-jobs).
+See [world settings](../world-configuration.md#world-tuning) for the configurable corporation age and deployment timers.
 
 Deployment requires a packaged hull in the active ship's cargo, a player corporation at least
 seven days old and Station Manager or Director authority. Coordinates must be finite, within
@@ -1078,7 +1083,7 @@ Moon mining and reactions are still required for the missing T2 material sources
 Weapon/control fitting, structure combat, damage caps, reinforcement battles, tethering,
 abandonment/destruction, loot and asset safety are also pending. Reinforcement day/hour choices
 are validated and saved as metadata; no reinforcement combat is simulated. Fuel capacity is
-an explicit shared Eden policy of 30,000 mÂ³ until specialized bays are modeled. No structure
+an explicit shared Eden policy of 30,000 m³ until specialized bays are modeled. No structure
 rig bonuses or configurable service taxes are claimed. These limits must remain visible in
 status reports; support for a hull's lifecycle does not imply its specialized service works.
 
@@ -1091,7 +1096,7 @@ and service ownership. Structure identities share the inventory allocator and hi
 they cannot collide with ships, items or later recovered deployments. Inventory, core, fuel,
 service and recovery mutations commit together with rejection/unchanged-state checks.
 
-Build-specific inventory flags are service slots 164â€“171, structure fuel bay 172 and core room
+Build-specific inventory flags are service slots 164–171, structure fuel bay 172 and core room
 180. Native session changes set `structureid`, clear `stationid`/`stationid2` and retain the true
 64-bit location. The hangar reply is the inert native
 `structures.structureHangarViewState.StructureHangarViewState` new-object form. Its class is
