@@ -109,7 +109,9 @@ public sealed partial class ServerPerformanceReplayTests
         string progress = Path.Combine(destination, name + ".progress");
         File.WriteAllText(progress, "Copying frozen source.\n");
         Stopwatch setup = Stopwatch.StartNew();
-        string directory = CopySnapshot(source);
+        FrozenReplayCatalogs? immutableCatalogs =
+            Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_IMMUTABLE_CATALOG_LINKS") == "1" ? new(source) : null;
+        string directory = CopySnapshot(source, immutableCatalogs);
         var reports = Channel.CreateUnbounded<string>(new() { SingleReader = true });
         var writingLog = WriteThroughputLog(Path.Combine(destination, name + ".log"), reports.Reader);
         void Report(string line) => reports.Writer.TryWrite(line);
@@ -127,28 +129,7 @@ public sealed partial class ServerPerformanceReplayTests
         ConcurrentDictionary<string, (int Count, string Stack)> sqlCalls = new();
         try
         {
-            string traffic = Path.Combine(source, "traffic.sqlite");
-            if (File.Exists(traffic))
-            {
-                File.Copy(traffic, Path.Combine(directory, "traffic.sqlite"));
-            }
-            foreach (string file in new[] { "world.sqlite.skills.sqlite", "world.sqlite.skills-active" })
-            {
-                if (File.Exists(Path.Combine(source, file)))
-                {
-                    File.Copy(Path.Combine(source, file), Path.Combine(directory, file));
-                }
-            }
-            string packages = Path.Combine(source, "world.sqlite.skill-packages");
-            if (Directory.Exists(packages))
-            {
-                foreach (string file in Directory.EnumerateFiles(packages, "*", SearchOption.AllDirectories))
-                {
-                    string target = Path.Combine(directory, Path.GetRelativePath(source, file));
-                    Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-                    File.Copy(file, target);
-                }
-            }
+            CopyThroughputSidecars(source, directory, immutableCatalogs);
             WorldDatabase database = new(Path.Combine(directory, "world.sqlite"));
             ThroughputClock clock = new(startTime);
             File.AppendAllText(progress, "Initializing copied world.\n");
@@ -570,6 +551,34 @@ public sealed partial class ServerPerformanceReplayTests
             finally
             {
                 Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
+    private static void CopyThroughputSidecars(string source, string destination, FrozenReplayCatalogs? immutableCatalogs)
+    {
+        foreach (string file in new[] { "traffic.sqlite", "world.sqlite.skills.sqlite", "world.sqlite.skills-active" })
+        {
+            if (File.Exists(Path.Combine(source, file)))
+            {
+                File.Copy(Path.Combine(source, file), Path.Combine(destination, file));
+            }
+        }
+        string packages = Path.Combine(source, "world.sqlite.skill-packages");
+        if (Directory.Exists(packages))
+        {
+            foreach (string file in Directory.EnumerateFiles(packages, "*", SearchOption.AllDirectories))
+            {
+                string target = Path.Combine(destination, Path.GetRelativePath(source, file));
+                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                if (immutableCatalogs is not null && Path.GetFileName(file) == "catalog.sqlite")
+                {
+                    immutableCatalogs.Link(file, target);
+                }
+                else
+                {
+                    File.Copy(file, target);
+                }
             }
         }
     }

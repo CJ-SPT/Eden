@@ -282,13 +282,18 @@ public sealed partial class ServerPerformanceReplayTests(ITestOutputHelper outpu
         }
     }
 
-    private static string CopySnapshot(string source)
+    private static string CopySnapshot(string source, FrozenReplayCatalogs? immutableCatalogs = null)
     {
         string directory = TestDirectory.Create("eden-performance-").FullName;
         try
         {
             foreach (string file in new[] { "world.sqlite", "catalog.sqlite" })
             {
+                if (immutableCatalogs is not null && file == "catalog.sqlite")
+                {
+                    immutableCatalogs.Link(Path.Combine(source, file), Path.Combine(directory, file));
+                    continue;
+                }
                 using SqliteConnection original = new(
                     new SqliteConnectionStringBuilder
                     {
