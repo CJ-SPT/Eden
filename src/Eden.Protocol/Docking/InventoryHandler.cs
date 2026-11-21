@@ -26,10 +26,12 @@ internal sealed class InventoryHandler(
     IPilotContracts contracts,
     IPilotInventoryStacks stacks,
     ICorporationStorage corporationStorage,
-    Eden.Gameplay.Structures.IPilotStructures structures
+    Eden.Gameplay.Structures.IPilotStructures structures,
+    IPilotShipSharing? sharing = null
 ) : IPilotCallHandler, ISelectedPilotCallHandler
 {
     internal const string ShipInventoryPrefix = "@ship:";
+    internal const string SharedShipInventoryPrefix = "@shared-ship:";
 
     internal static BlueConstructor ItemDescriptor() => InventoryWire.Descriptor();
 
@@ -57,6 +59,12 @@ internal sealed class InventoryHandler(
         && long.TryParse(service.AsSpan(ShipInventoryPrefix.Length), out long id)
             ? id
         : 0;
+
+    internal static long SharedShipContainer(string service) =>
+        service.StartsWith(SharedShipInventoryPrefix, StringComparison.Ordinal)
+        && long.TryParse(service.AsSpan(SharedShipInventoryPrefix.Length), out long id)
+            ? id
+            : 0;
 
     private bool CanReadShip(PilotCallContext context, InventoryItem ship)
     {
@@ -263,6 +271,29 @@ internal sealed class InventoryHandler(
     {
         var pilot = context.Pilot;
         long container = ShipContainer(service, pilot);
+        if (SharedShipContainer(service) is > 0 and var shared)
+        {
+            if (method is "Add" or "MultiAdd")
+            {
+                return MoveFromWire(context, service, method, args, keywords);
+            }
+            if (context.Flight.InWarp || context.Flight.PreparingWarp || sharing?.FleetHangar(pilot.PilotId, shared) is not { } hangar)
+            {
+                return new PilotCallResult.Failure("The shared fleet hangar is unavailable at your current location.");
+            }
+            const long flag = (long)InventoryFlag.FleetHangar;
+            return method switch
+            {
+                "List" when args is [] or [null or flag] => new BlueList<InventoryRow>(hangar.Items.Select(Item).ToArray()),
+                "List" => BlueEmpty.List,
+                "ListByFlags" when keywords?.GetValueOrDefault("flags") is List<object?> flags && flags.Contains(flag) =>
+                    new BlueList<InventoryRow>(hangar.Items.Select(Item).ToArray()),
+                "ListByFlags" => BlueEmpty.List,
+                "GetSelfInvItem" when args.Length == 0 => Item(hangar.Ship),
+                "GetCapacity" when args is [] or [null or flag] => new CargoContainerCapacity(hangar.Capacity, hangar.Used),
+                _ => PilotCallResult.Unsupported,
+            };
+        }
         if (method == "MultiMerge" && (service == "@hangar" || container != 0))
         {
             return MergeFromWire(context, service == "@hangar" ? pilot.DockedLocationId : container, args, keywords);
@@ -388,6 +419,15 @@ internal sealed class InventoryHandler(
             ),
             ("invbroker", "GetInventoryFromId") when args is [long id, ..] && context.DestroyedShip?.ShipId == id => context.Reference(
                 $"{ShipInventoryPrefix}{id}",
+                PilotBindingLifetime.Location
+            ),
+            ("invbroker", "GetInventoryFromId")
+                when args is [long id, ..]
+                    && pilot.Position is not null
+                    && !context.Flight.InWarp
+                    && !context.Flight.PreparingWarp
+                    && sharing?.FleetHangar(pilot.PilotId, id) is not null => context.Reference(
+                $"{SharedShipInventoryPrefix}{id}",
                 PilotBindingLifetime.Location
             ),
             ("invbroker", "GetInventoryFromId") when args.Length > 0 && Equals(args[0], pilot.PilotId) => context.Reference(

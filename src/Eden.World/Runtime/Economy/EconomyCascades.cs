@@ -274,6 +274,10 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Set<Eden.Data.World.Fittings.ActiveFittedModule>().Where(child => child.ShipId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Fittings.ShipEnergy>().Where(child => child.ShipId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Propulsion.SpatialNavigationState>().Where(child => child.ShipId == removed.Id));
+                if (Set<Eden.Data.World.Inventory.SavedShipSharing>().Find(removed.Id) is { } sharing)
+                {
+                    Remove(sharing);
+                }
                 if (Set<Eden.Data.World.Flight.SavedCynosuralField>().Find(removed.OwnerId) is { } field && field.ShipId == removed.Id)
                 {
                     Remove(field);

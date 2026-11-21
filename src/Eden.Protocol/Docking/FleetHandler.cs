@@ -13,7 +13,8 @@ internal sealed class FleetHandler(
     ShipDogmaBuilder dogma,
     DeferredRefitPrimes refits,
     PilotBrain brain,
-    ICargoContainers containers
+    ICargoContainers containers,
+    IPilotShipSharing? sharing = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -30,13 +31,54 @@ internal sealed class FleetHandler(
         }
         if ((service, method) == ("ship", "GetShipConfiguration"))
         {
-            return args is [long id] && id == (context.ControlledStructureId ?? context.Pilot.ShipId)
-                ? new ShipSharingConfiguration()
-                : new PilotCallResult.Failure("Read the configuration of your active ship.");
+            if (args is not [long id] || keywords is { Count: > 0 })
+            {
+                return new PilotCallResult.Failure("Choose a ship to read its sharing configuration.");
+            }
+            var settings = sharing?.Configuration(context.Pilot.PilotId, id);
+            return id == (context.ControlledStructureId ?? context.Pilot.ShipId) || settings is not null
+                ? new ShipSharingConfigurationWire(settings)
+                : new PilotCallResult.Failure("The ship sharing configuration is unavailable at your current location.");
         }
         if ((service, method) == ("ship", "ConfigureShip"))
         {
-            return new PilotCallResult.Failure("Fleet and corporation access to personal ship holds is not available yet.");
+            try
+            {
+                if (
+                    sharing is null
+                    || context.ControlledStructureId is not null
+                    || args is not [Dictionary<string, object?> fields]
+                    || fields.Count == 0
+                    || keywords is { Count: > 0 }
+                    || fields.Any(field =>
+                        field.Value is not bool && field.Value is not (0L or 1L)
+                        || field.Key
+                            is not (ShipSharingConfigurationWire.FleetHangarFleet or ShipSharingConfigurationWire.FleetHangarCorporation)
+                    )
+                )
+                {
+                    throw new InvalidDataException("Choose fleet or corporation access for the active ship's fleet hangar.");
+                }
+                sharing.ConfigureFleetHangar(
+                    context.Pilot.PilotId,
+                    context.Pilot.ShipId,
+                    Setting(ShipSharingConfigurationWire.FleetHangarFleet),
+                    Setting(ShipSharingConfigurationWire.FleetHangarCorporation)
+                );
+                return PilotCallResult.None;
+
+                bool? Setting(string name) =>
+                    fields.GetValueOrDefault(name) switch
+                    {
+                        bool value => value,
+                        long value => value != 0,
+                        _ => null,
+                    };
+            }
+            catch (InvalidDataException error)
+            {
+                return new PilotCallResult.Failure(error.Message);
+            }
         }
         if (
             !(service == "ship" && method is "AssembleShip" or "Board" or "LeaveShip")

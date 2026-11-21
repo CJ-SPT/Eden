@@ -13,6 +13,7 @@ internal sealed partial class ResidentEconomy
 {
     private void RegisterBotTables()
     {
+        RegisterShipSharing();
         RegisterRegionalConflicts();
         Register(
             new EconomyTable<Eden.Data.World.Agents.SavedMission, EconomySavedMission>(

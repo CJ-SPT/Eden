@@ -359,6 +359,8 @@ internal sealed partial class FlightSession(
 
     public TargetContact? FindTarget(long id) => Scene.FindTarget(SceneContext, id);
 
+    internal bool HasPeerShip(long id) => id != Pilot.ShipId && space.FindArea(Pilot.SystemId, id) is not null;
+
     internal PilotWeaponTarget? FindPilotWeaponTarget(long id) => Scene.FindPilotWeaponTarget(SceneContext, id);
 
     internal bool NpcInWarp(long id) => Scene.NpcInWarp(id);

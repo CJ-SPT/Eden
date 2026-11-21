@@ -664,6 +664,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         model.Entity<TrainingLog>().HasIndex(e => new { e.PilotId, e.Time });
         model.Entity<Ship>().ToTable("WorldShip");
         model.Entity<Ship>().Property(s => s.StorageFlagId).HasDefaultValue((int)InventoryFlag.Hangar);
+        Eden.World.Inventory.ShipSharingSchema.Configure(model);
         model.Entity<Ship>().HasIndex(s => new { s.OwnerId, s.StoredInId });
         model.Entity<FlightPosition>().ToTable("WorldPosition").HasKey(p => p.ShipId);
         model.Entity<Pilot>().HasIndex(p => p.AccountId);

@@ -717,6 +717,26 @@ suites, formatting and `git diff --check` passed.
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
+## Shared fleet hangars
+
+Build 3662168 `shipConfigSvc.pyj` uses `ship.GetShipConfiguration(shipID)` and sends a one-key dictionary
+to `ship.ConfigureShip`. The `ShipFleetHangar` inventory controller uses flag `155` and the pinned 2,500 m
+surface transfer limit. EVE.js `shipServiceAccess.js` and `invBrokerService.js` corroborate the sharing keys,
+bound inventory reads and ownership change when a guest deposits into a fleet hangar.
+[CCP Retribution notes](https://www.eveonline.com/news/view/patch-notes-for-retribution-1)
+
+Access defaults to off and saves per hull. The owner can enable fleet and corporation access separately.
+Every shared list and movement checks current access, compatible holds, local flight state and range again.
+Depositing or withdrawing an ordinary item transfers ownership and updates both pilots' inventory caches.
+Quantity, capacity and item rights are checked before any stack changes. Schema 210 persists the settings
+alongside the transferred stock. Guest container contents and assembled hull exchange remain separate work.
+
+**Automated validation.** The exact Rorqual and Venture case passed in 7.83 seconds. The final 341-case filter
+passed in 23.66 seconds after a 5.27-second build, including the additional out-of-range checks, inventory,
+hold rules, cargo-container menus, fleet membership and migration.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Milestones
 
 | Milestone | Playable outcome and acceptance |
@@ -727,7 +747,7 @@ suites, formatting and `git diff --check` passed.
 | **4. Black Ops and covert travel** | Implemented. Black Ops direct jumps, covert module and mobile beacons, eligible fleet passenger travel through a paid portal, and fleet conduit jumps. |
 | **5. Dreadnoughts and force auxiliaries** | Implemented. Dreadnoughts and force auxiliaries use standard cynos, paid siege or triage, and normal docking, repair and loss settlement. The acceptance cases reopen a paid siege and settle an Apostle loss. |
 | **6. Carriers and fighters** | Carrier tubes support light attack, space superiority and support squadrons, with launch, targeting, recall and replacement. Squadron losses persist. Standup fighters and additional combat abilities remain open. |
-| **7. Capital industry and fleet services** | Rorquals use paid industrial cores, Excavators, fleet compression and P.A.N.I.C. Shared fleet storage, mobile refitting, clone bays and fresh-world resupply remain open. |
+| **7. Capital industry and fleet services** | Rorquals use paid industrial cores, Excavators, fleet compression and P.A.N.I.C. Nearby fleet or corporation members can move ordinary stacks through shared fleet hangars. Shared maintenance bays, mobile refitting, clone bays and fresh-world resupply remain open. |
 | **8. Supercapitals and production** | Keepstar docking, Sotiyo construction, direct jumps, Titan bridging, supercarrier heavy attack fighters and burst projectors are implemented. Targeted Titan doomsdays have paid windups, counters and durable loss settlement. Titan lances, Reapers and Bosonic fields support paid aiming and positional counters. The oscillator transports subcapitals and locks capital warp. Phenomena Generators apply the pinned racial boosts and penalties. |
 
 Milestone 5 needs the Upwell battle and destruction paths for its siege acceptance.

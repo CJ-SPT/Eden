@@ -1177,6 +1177,16 @@ public sealed partial class CapitalTravelTests
                 .ServiceProvider.GetRequiredService<PilotCallRouter>()
                 .Call(Context, service, method, BlueMarshal.Decode(BlueMarshal.Encode(args)), _ => { });
 
+        internal PilotCallResult CallWithKeywords(
+            string service,
+            string method,
+            Dictionary<string, object?> keywords,
+            params object?[] args
+        ) =>
+            _scope
+                .ServiceProvider.GetRequiredService<PilotCallRouter>()
+                .Call(Context, service, method, BlueMarshal.Decode(BlueMarshal.Encode(args)), _ => { }, keywords);
+
         internal Task TickAsync() => _tick.AdvanceAsync(Context, _output, _ => { }, _account, 42);
 
         public void Dispose()
