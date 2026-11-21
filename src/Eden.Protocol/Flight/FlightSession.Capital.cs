@@ -6,7 +6,9 @@ namespace Eden.Protocol.Flight;
 internal sealed partial class FlightSession
 {
     internal bool CapitalModuleActive =>
-        capitalTravel?.Field(Pilot.PilotId)?.ShipId == Pilot.ShipId || capitalTravel?.Portal(Pilot.PilotId)?.ShipId == Pilot.ShipId;
+        capitalTravel?.Field(Pilot.PilotId)?.ShipId == Pilot.ShipId
+        || capitalTravel?.Portal(Pilot.PilotId)?.ShipId == Pilot.ShipId
+        || CapitalTravelRules.CombatCapital(Pilot.ShipGroupId) && capitalTravel?.Mode(Pilot.ShipId) is not null;
 
     internal void RefreshCynos()
     {

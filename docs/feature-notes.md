@@ -332,7 +332,7 @@ Milestone 3 implements combat drones across its admitted hull cohort. Its first 
 | 15. T2 subcapitals | Complete ordinary subcapital cohorts, real-budget fits and role/equipment verification. |
 | 16. T3 | Tactical modes, strategic-cruiser subsystem assembly/refitting and nondestructive T3 rig removal. |
 | 17. Utility drones | Repair, salvage, energy, EWAR, web and functional hybrid drones. |
-| 18. Capital travel | [Jump freighters](protocol/capital-logistics.md#industrial-cynos-and-jump-freighters) use industrial, standard and mobile cynos or [Pharolux beacons](protocol/capital-logistics.md#pharolux-and-tenebrex). [Ansiblex gates](protocol/capital-logistics.md#ansiblex-jump-gates) use reciprocal links, alliance access and source-gate capacitor. |
+| 18. Capital travel | [Jump freighters](protocol/capital-logistics.md#industrial-cynos-and-jump-freighters) use industrial, standard and mobile cynos or [Pharolux beacons](protocol/capital-logistics.md#pharolux-and-tenebrex). [Ansiblex gates](protocol/capital-logistics.md#ansiblex-jump-gates) use reciprocal links, alliance access and source-gate capacitor. [Dreadnoughts and force auxiliaries](protocol/capital-logistics.md#dreadnoughts-and-force-auxiliaries) jump to standard cynos and use paid siege and triage cycles. |
 | 19. Capital modes | Siege, triage, bastion, flex hardeners, emergency energizers and sensor arrays. |
 | 20. Fighters | Tubes, squadrons, movement, abilities, losses, replenishment, recall and native fighter state. |
 | 21. Industrial command | Industrial cores, shipboard compression, industrial services, P.A.N.I.C. and ship clones. |

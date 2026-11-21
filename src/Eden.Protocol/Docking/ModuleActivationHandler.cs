@@ -62,6 +62,12 @@ internal sealed class ModuleActivationHandler(
             return PilotCallResult.Unsupported;
         }
         string effectName = BlueMarshal.Text(args[1]);
+        if (CapitalTravelHandler.ModeEffect(effectName) is { } mode)
+        {
+            return keywords is { Count: > 0 }
+                ? new PilotCallResult.Failure("Unexpected capital mode arguments.")
+                : capital?.ActivateMode(context, method, args, mode) ?? PilotCallResult.Unsupported;
+        }
         if (effectName is CapitalTravelHandler.CynoEffectName or CapitalTravelHandler.PortalEffectName)
         {
             return keywords is { Count: > 0 }
@@ -77,7 +83,7 @@ internal sealed class ModuleActivationHandler(
             && context.Flight.CapitalModuleActive
         )
         {
-            return new PilotCallResult.Failure("An active cynosural field or portal prevents navigation modules from activating.");
+            return new PilotCallResult.Failure("The active capital module prevents navigation modules from activating.");
         }
         if (method == "Activate" && args is [long module, _, _, long])
         {

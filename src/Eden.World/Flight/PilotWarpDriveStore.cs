@@ -16,6 +16,7 @@ internal sealed class PilotWarpDriveStore(WorldDatabase database) : IPilotWarpDr
         var live = LiveWorld.Find(database.Path) ?? throw new InvalidOperationException("Warp requires the resident world.");
         using var transaction = live.Economy.Begin(new(pilots: [pilotId], ships: [shipId]));
         Eden.World.Sovereignty.EntosisPersistence.RequireTravel(transaction, shipId, now);
+        PilotCapitalTravelStore.RequireMobile(transaction, pilotId, shipId, now);
         var pilot = transaction.Pilots.SingleOrDefault(p => p.Id == pilotId && p.ActiveShipId == shipId);
         if (pilot?.ActiveShip.Position is null)
         {

@@ -7,6 +7,7 @@ public enum DogmaAttributeId
     EcmBurstRange = 142,
     ConsumptionType = 713,
     ConsumptionQuantity = 714,
+    ConsumptionQuantityBonus = 885,
     CynosuralFieldSpawnRadius = 2455,
     CynoJammerActivationDelay = 2794,
     BaseJumpBridgeCapacitorCost = 6364,

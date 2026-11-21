@@ -297,6 +297,10 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
     private static RepairTarget Target(WorldAction world, CatalogDbContext catalog, Pilot source, long targetId, long now)
     {
         Eden.World.Sovereignty.EntosisPersistence.RequireAssistance(world, targetId, now);
+        if (Eden.World.Flight.PilotCapitalTravelStore.ActiveMode(world, targetId, now) is not null)
+        {
+            throw new InvalidDataException("A ship in siege or triage cannot receive remote repairs.");
+        }
         var pilot = world.Filter<Pilot>(p => p.ActiveShipId == targetId).SingleOrDefault();
         if (
             pilot?.ActiveShip.Position is null

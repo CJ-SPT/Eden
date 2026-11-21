@@ -49,6 +49,12 @@
         "types": []
       },
       {
+        "techLevel": 1,
+        "cohort": "CombatCapital",
+        "classes": [],
+        "types": [19720, 19722, 19724, 19726, 37604, 37605, 37606, 37607, 73787, 73790, 73792, 73793]
+      },
+      {
         "techLevel": 2,
         "cohort": "JumpFreighter",
         "classes": [902],

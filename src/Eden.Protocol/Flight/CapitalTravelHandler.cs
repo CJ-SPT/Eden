@@ -11,11 +11,12 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Flight;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class CapitalTravelHandler(
+internal sealed partial class CapitalTravelHandler(
     IPilotCapitalTravel travel,
     ISystemObjects systems,
     TimeProvider clock,
-    CapitalInventorySignal fuelSignal
+    CapitalInventorySignal fuelSignal,
+    IPilotFitting? fitting = null
 ) : ISelectedPilotCallHandler, IModuleEffectSource, IDisposable
 {
     internal const string CynoEffectName = "cynosuralGeneration";
@@ -264,6 +265,7 @@ internal sealed class CapitalTravelHandler(
             pilot == 0 ? null
             : travel.Field(pilot) is { } field ? Effect(field)
             : travel.Portal(pilot) is { } portal ? Effect(portal)
+            : CapitalTravelRules.CombatCapital(context.Pilot.ShipGroupId) && travel.Mode(context.Pilot.ShipId) is { } mode ? Effect(mode)
             : null;
         if (_lastEffect == current)
         {
@@ -272,29 +274,44 @@ internal sealed class CapitalTravelHandler(
         if (_lastEffect is { } ended && context.Selected && ended.PilotId == context.Pilot.PilotId)
         {
             context.NotificationsBeforeFlight.Add(new ShipEffectChanged(ended, Now, false, false, Now));
-            PortalVisual(context.Flight, ended, false);
+            CapitalVisual(context.Flight, ended, false);
+            if (
+                ended.ShipId == context.Pilot.ShipId
+                && ended.Effect is DogmaEffect.CapitalSiege or DogmaEffect.CapitalTriage
+                && fitting is not null
+            )
+            {
+                context.Flight.RefreshFitting(fitting.ShipAttributes(pilot));
+            }
         }
         _lastEffect = current;
         if (current is { } active)
         {
             context.NotificationsBeforeFlight.Add(new ShipEffectChanged(active, Now, true, true));
-            PortalVisual(context.Flight, active, true);
+            CapitalVisual(context.Flight, active, true);
         }
     }
 
-    private static void PortalVisual(FlightSession flight, DogmaActiveEffect effect, bool active)
+    private static void CapitalVisual(FlightSession flight, DogmaActiveEffect effect, bool active)
     {
-        if (effect.Effect == DogmaEffect.CovertJumpPortalGeneration && flight.Pilot.ShipId == effect.ShipId)
+        var graphic = effect.Effect switch
+        {
+            DogmaEffect.CovertJumpPortalGeneration => "effects.JumpPortalBO",
+            DogmaEffect.CapitalSiege => "effects.SiegeMode",
+            DogmaEffect.CapitalTriage => "effects.TriageMode",
+            _ => null,
+        };
+        if (graphic is not null && flight.Pilot.ShipId == effect.ShipId)
         {
             flight.SetWeaponEffect(
                 new(
                     effect.ModuleId,
-                    CapitalTravelRules.CovertPortalGenerator,
+                    effect.Effect == DogmaEffect.CovertJumpPortalGeneration ? CapitalTravelRules.CovertPortalGenerator : 0,
                     0,
                     null,
                     effect.StartTime,
                     effect.DurationMilliseconds ?? 0,
-                    "effects.JumpPortalBO",
+                    graphic,
                     Offensive: false
                 ),
                 active

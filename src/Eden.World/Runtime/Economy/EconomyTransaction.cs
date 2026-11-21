@@ -37,6 +37,8 @@ internal sealed partial class EconomyTransaction(
     private readonly Dictionary<string, long> _sequences = new(StringComparer.Ordinal);
     private readonly Dictionary<int, InstitutionalPreparation> _preparations = [];
 
+    internal IEnumerable<long> TimedModules(long ship) => store.TimedModules(ship);
+
     internal bool HasPrivateRows<T>()
         where T : class => _sets.TryGetValue(typeof(T), out var set) && set.Materializations != 0;
 

@@ -209,6 +209,10 @@ internal static class FittingCatalog
         {
             return null;
         }
+        if (type.GroupId == Eden.Gameplay.Flight.CapitalModeRules.Group && !Eden.World.Flight.CapitalModeCatalog.Supported(catalog, typeId))
+        {
+            return null;
+        }
         var attributes = catalog.FittingAttributes(typeId);
         return ModuleFittingRules.Define(
             typeId,

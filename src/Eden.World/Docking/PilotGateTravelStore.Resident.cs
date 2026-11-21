@@ -2,6 +2,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Maps;
+using Eden.Gameplay.Structures;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Combat;
@@ -58,6 +59,13 @@ internal sealed partial class PilotGateTravelStore
         )
         {
             throw new InvalidDataException("Use the active ship at a connected stargate within activation range.");
+        }
+        if (
+            CapitalTravelRules.CombatCapital(catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId)
+            && catalog.Definitions.SystemSecurity.GetValueOrDefault(gate.DestinationSystemId) >= StructureRules.HighSecurityBoundary
+        )
+        {
+            throw new InvalidDataException("Combat capitals cannot enter high security space through stargates.");
         }
         CrimewatchPersistence.CheckTravel(world, catalog, pilot, CrimewatchTravel.Jump, now, gate.DestinationSystemId);
         var arrival = GateTravelRules.Arrival(

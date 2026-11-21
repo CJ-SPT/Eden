@@ -187,6 +187,44 @@ The broader filter ran 157 tests in 118.07 seconds. It passed 155 cases and repr
 on Ansiblex baseline `242b7ec1`: the warm fitting command budget and the resident capsule settlement rollback
 fixture. Both Python validation suites and formatting passed.
 
+## Dreadnoughts and force auxiliaries
+
+The four empire dreadnoughts, their Navy or Fleet variants, and the four empire force auxiliaries can assemble and use
+their own jump drives with standard fields. Stargates block entry to high-security space using the 0.45 boundary.
+The capital branch includes the resident Upwell battle, asset safety and tethering changes through structure commit
+`33a97e5e`. Dreadnought weapons use the existing paid combat path and the same Upwell vulnerability and damage rules.
+
+The build-3662168 catalog defines Siege I/II (`20280`, `4292`) and Triage I/II (`27951`, `4294`) in group
+`515`. Activation uses native effects `6582` and `6581`, and the pinned client displays the SiegeMode and TriageMode
+graphics. Either mode pays Strontium Clathrates from cargo for a fixed 300-second cycle. The appropriate tactical skill
+reduces fuel by 25 units per level using the pinned skill and module attributes. A committed cycle blocks navigation,
+gate and jump-drive travel, docking, remote repairs and capacitor transfers to the ship. It ends at the saved
+deadline after a restart or when the ship is destroyed. Fitting uses the catalog's modifiers for weapon damage,
+repair amount, repair speed and range, movement, and assistance impedance. Each activation buys one cycle.
+[EVE University capital modules](https://wiki.eveuniversity.org/Capital_Ship_Modules) ·
+[CCP capital ship changes](https://www.eveonline.com/news/view/reworking-capital-ships-and-thus-it-begins)
+
+EVE.js `shipActionRestrictions.js` and `activeModuleSpecialFx.js` provided a behavior and graphics cross-check.
+The pinned catalog supplies the type restrictions, fuel formula, and modifiers. Eden uses its own resident
+transactions and existing active-module deadline index. Pirate capitals and Lancer Dreadnought specialist modes
+remain future work.
+
+**Automated validation.** The Revelation case covers the paid jump, a rejected short fuel stack, an eightfold
+siege multiplier, a paid turret volley against an Astrahus, and restart across the exact mode deadline.
+The Apostle case covers the paid jump, Triage II, a fourfold reduction in repair cycle time, an enhanced legal armor
+repair, and normal loss and capsule settlement. The Vaajaita gate case covers the high-security and siege checks. All
+three cases passed on the final fixture. The final integrated run passed 176 cases in 121.92 seconds with
+`CapitalTravelTests`, `StructureAttackTests`, `StructureTetherTests`, `TranslocationTests`, `WorldMigrationTests`
+and `StationUndockTests`. The wider 458-case run passed 456 cases in 352.70 seconds.
+The Apostle case initially lacked the loss catalog records and attacker in its fixture. It passed after both were added.
+The mutadaptive fitting assertion about Zarmazd assembly also failed on the pre-capital baseline `4a1c95cd`.
+The two Python suites passed all 17 cases. Formatting and the 140-column check passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Inspect siege and triage effects from a second pilot. Verify mode timer replay
+after reconnect.
+
 ## Milestones
 
 | Milestone | Playable outcome and acceptance |

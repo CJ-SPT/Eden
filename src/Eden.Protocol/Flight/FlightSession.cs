@@ -1172,7 +1172,7 @@ internal sealed partial class FlightSession(
     {
         if (CapitalModuleActive)
         {
-            return new PilotCallResult.Failure("Wait for the active cynosural field or portal to expire before jumping.");
+            return new PilotCallResult.Failure("Wait for the active capital module to finish before jumping.");
         }
         if (EntosisActive)
         {
@@ -1213,7 +1213,7 @@ internal sealed partial class FlightSession(
     {
         if (CapitalModuleActive)
         {
-            throw new InvalidDataException("Wait for the active cynosural field or portal to expire before jumping.");
+            throw new InvalidDataException("Wait for the active capital module to finish before jumping.");
         }
         if (EntosisActive)
         {
@@ -1500,7 +1500,7 @@ internal sealed partial class FlightSession(
     {
         if (command is not (FlightCommand.RefreshState or FlightCommand.Stop) && CapitalModuleActive)
         {
-            return new PilotCallResult.Failure("Wait for the active cynosural field or portal to expire before moving the ship.");
+            return new PilotCallResult.Failure("Wait for the active capital module to finish before moving the ship.");
         }
         if (
             EntosisActive

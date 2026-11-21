@@ -290,6 +290,10 @@ internal sealed partial class PilotCapitalTravelStore(
 
     internal static void RequireMobile(WorldAction world, long pilotId, long shipId, long now)
     {
+        if (ActiveMode(world, shipId, now) is not null)
+        {
+            throw new InvalidDataException("Wait for the active capital mode to finish before moving the ship.");
+        }
         var field = world.Set<SavedCynosuralField>().Find(pilotId);
         if (field?.ShipId == shipId && Active(world, field, now))
         {
@@ -337,7 +341,12 @@ internal sealed partial class PilotCapitalTravelStore(
         {
             throw new InvalidDataException("Insufficient capacitor to jump.");
         }
-        var timers = CapitalTravelRules.AfterJump(now, previous?.FatigueUntil ?? 0, distance, ship[DogmaAttributeId.JumpFatigueMultiplier]);
+        var timers = CapitalTravelRules.AfterJump(
+            now,
+            previous?.FatigueUntil ?? 0,
+            distance,
+            ship.GetValueOrDefault(DogmaAttributeId.JumpFatigueMultiplier, 1)
+        );
         return new(pilot, destination, ship, fuel, isotopes, cost, timers);
     }
 

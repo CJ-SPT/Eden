@@ -29,7 +29,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Protocol.Tests.Flight;
 
-public sealed class CapitalTravelTests
+public sealed partial class CapitalTravelTests
 {
     private const int Jita = 30000142;
     private const int Jan = 30001385;
@@ -694,6 +694,39 @@ public sealed class CapitalTravelTests
 
         internal Client Select(long account) => new(Db, Clock, account);
 
+        internal long FitCapitalModule(int type)
+        {
+            var pilot = Db.Store.FindPilot(1000001)!;
+            var fitting = Db.Services.GetRequiredService<IPilotFitting>();
+            var attributes = fitting.Attributes(type);
+            Train(
+                pilot.PilotId,
+                InventoryDefinitions
+                    .RequiredSkills.Select(req =>
+                        ((int)attributes.GetValueOrDefault(req.Skill), (int)attributes.GetValueOrDefault(req.Level))
+                    )
+                    .Where(req => req.Item1 > 0)
+                    .ToArray()
+            );
+            // Fit through the normal docked path, then restore the prepared flight position.
+            using (var action = Live.Economy.Begin(new(pilots: [pilot.PilotId])))
+            {
+                action.Remove(action.Positions.Find(pilot.ShipId)!);
+                action.Commit();
+            }
+            long module = Grant(pilot.PilotId, pilot.StationId, InventoryFlag.Hangar, type, 1);
+            fitting.Fit(pilot.PilotId, [module], pilot.StationId, (int)InventoryFlag.AutoFit);
+            fitting.SetOnline(pilot.PilotId, pilot.ShipId, module, true);
+            Db.Store.SetPosition(pilot.ShipId, pilot.Position!, pilot.SystemId);
+            return module;
+        }
+
+        internal long PutInCapitalCargo(int type, int quantity)
+        {
+            var pilot = Db.Store.FindPilot(1000001)!;
+            return Grant(pilot.PilotId, pilot.ShipId, InventoryFlag.Cargo, type, quantity);
+        }
+
         internal void CalibrateDrive() => Train(Db.Store.FindPilot(1000001)!.PilotId, (CapitalTravelRules.JumpDriveCalibration, 5));
 
         internal long PrepareCovertMobile()
@@ -973,10 +1006,15 @@ public sealed class CapitalTravelTests
         internal PilotCallResult Jump(Client client, CynosuralField field) =>
             client.Call("beyonce", "CmdJumpToFleetModuleBeacon", field.PilotId, field.Beacon.Id, field.SystemId);
 
-        internal void Reopen()
+        internal void Reopen(bool restart = false)
         {
             Live.Dispose();
-            Live = new(new(Db.Path), Clock, _ => { });
+            var database = new WorldDatabase(Db.Path);
+            if (restart)
+            {
+                WorldInitialization.Initialize(database, Clock);
+            }
+            Live = new(database, Clock, _ => { });
         }
 
         private void Train(long pilot, params (int Skill, int Level)[] skills)

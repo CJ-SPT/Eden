@@ -313,6 +313,17 @@ internal sealed partial record FittingCalculation
         }
         foreach (var module in modules)
         {
+            if (
+                module.Item.Online
+                && module.GroupId == Eden.Gameplay.Flight.CapitalModeRules.Group
+                && activeModules.ContainsKey(module.Item.Id)
+            )
+            {
+                foreach (var modifier in Eden.World.Flight.CapitalModeCatalog.Modifiers(catalog, module.Item.TypeId))
+                {
+                    Add(module.Item.Id, modifier, true);
+                }
+            }
             if (SpatialModuleCatalog.Supported(catalog, module.Item.TypeId, module.GroupId))
             {
                 foreach (var modifier in SpatialModuleCatalog.Modifiers(catalog, module.Item.TypeId))

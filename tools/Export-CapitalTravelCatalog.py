@@ -1,4 +1,4 @@
-"""Export fitting and geography inputs for the build-3662168 jump-freighter fixture."""
+"""Export fitting and geography inputs for build-3662168 capital travel and combat fixtures."""
 
 import argparse
 import json
@@ -26,7 +26,9 @@ def export(source, destination):
             raise ValueError('Expected client build 3662168')
         pending = {34, 648, 3638, 11963, 12729, 12731, 21094, 21096, 22430, 28646, 28650, 28652, 28844, 28846, 28848, 28850,
                    32880, 33476, 89648, 52694, 52696, 57319, 57425, 59630, 59631,
-                   16273, 16274, 17887, 17888, 17889,
+                   16273, 16274, 16275, 17887, 17888, 17889,
+                   670, 26475, 40639, 19720, 19722, 19724, 19726, 37604, 37605, 37606, 37607, 73787, 73790, 73792, 73793,
+                   20280, 4292, 27951, 4294, 20444, 17686, 20701, 24569,
                    34122, 34124, 34126, 1531, 2016, 3456, 21610, 21611, 21603}
         visited = set()
         while pending:
@@ -46,7 +48,7 @@ def export(source, destination):
             for effect in dogma.get('dogmaEffects', []):
                 keep('client/dogmaeffects', effect['effectID'])
             pending.update(int(v) for a, v in values if a in (182, 183, 184, 1285, 1289, 1290) and v > 0 and int(v) not in visited)
-        for type_list in (342, 343, 1000):
+        for type_list in (341, 342, 343, 1000):
             keep('client/typelist', type_list)
         for deployable in (33476, 35841, 57319, 59630):
             keep('client/spacecomponentsbytype', deployable)

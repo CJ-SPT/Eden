@@ -1002,6 +1002,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 ### Navigation and travel
 
 - [Capital logistics plan and industrial-cyno jump freighters, November 20, 2026](protocol/capital-logistics.md)
+- [Dreadnoughts and force auxiliaries](protocol/capital-logistics.md#dreadnoughts-and-force-auxiliaries)
 - [Stargate handoff timing, November 14, 2026](protocol/navigation.md#stargate-handoff-timing-november-14-2026)
 - [Empty-space context menu latency](protocol/navigation.md#empty-space-context-menu-latency)
 - [Aligning and native autopilot, November 11, 2026](protocol/navigation.md#aligning-and-native-autopilot-november-11-2026)

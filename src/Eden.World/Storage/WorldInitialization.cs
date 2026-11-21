@@ -2,6 +2,7 @@ using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Drones;
 using Eden.Data.World.Fittings;
+using Eden.Data.World.Inventory;
 using Eden.Data.World.Propulsion;
 using Eden.Data.World.Repair;
 using Eden.Gameplay.Combat;
@@ -123,9 +124,11 @@ public static class WorldInitialization
                     .SetProperty(d => d.DelegateMembership, 0)
                     .SetProperty(d => d.ReactionRevision, 0)
             );
-        // Live module bonuses belong to a connection. A restart retains paid
-        // capacitor/cooldowns but never leaves an orphaned active bonus.
-        world.Set<ActiveFittedModule>().ExecuteDelete();
+        // Siege and triage finish their paid cycle across restarts.
+        long moduleReopen = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc();
+        int[] capitalModes = Eden.Gameplay.Flight.CapitalModeRules.Types.ToArray();
+        var committedModes = world.Set<OwnedItem>().Where(i => i.Online && capitalModes.Contains(i.TypeId)).Select(i => i.Id);
+        world.Set<ActiveFittedModule>().Where(a => a.ExpiresAt <= moduleReopen || !committedModes.Contains(a.ModuleId)).ExecuteDelete();
         world.Set<Eden.Data.World.Fleets.WorldCommandBurst>().ExecuteDelete();
         PilotSpatialModuleStore.Reconcile(world, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc());
         world.Set<WorldTackle>().ExecuteDelete();
