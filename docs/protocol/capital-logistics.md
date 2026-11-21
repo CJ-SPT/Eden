@@ -123,23 +123,54 @@ After integrating the Faction Warfare merge on `main`, the combined capital trav
 enlistment and navy, fleet, Crimewatch, translocation and migration filter passed all 152 cases in 90.73 seconds.
 Schema 201 opens both features on existing saves.
 
+## Ansiblex jump gates
+
+An Ansiblex (`35841`) locks its destination system at deployment. Deployment needs active alliance sovereignty,
+the Advanced Logistics Network (`81621`), a target null-security system within 5 light years, and separation of
+at least 100,000 km from each stargate. A system can anchor one Ansiblex. Each direction requires reciprocal
+alignment and both services online. The source checks the pilot's membership in the alliance that holds sovereignty
+there and its existing Upwell access entries. Losing a service, upgrade or claim hides the link from route discovery
+and blocks departure.
+
+Build 3662168 sets the gate capacitor to 1,250 TJ and the recharge attribute to 22,500,000 ms. Each jump charges the
+source gate using the ship's base cost (`6364`) and the destination's distance from the source alliance's capital.
+The zone boundaries are 5, 10, 15 and 20 light years with multipliers of 0, 2, 6, 9 and 15. An alliance without a
+capital uses zone 5. The pinned restriction type list (`1000`) permits Freighters, Jump Freighters and Rorquals
+and excludes most other capitals. Gate operation consumes the existing structure service fuel, and the jump applies
+normal gate cloak without updating the pilot's jump-drive timers.
+[CCP 24.01 notes](https://www.eveonline.com/news/view/patch-notes-version-24-01) ·
+[CCP Ansiblex capacitor design](https://www.eveonline.com/news/view/force-projection-ansiblex-capacitor-update)
+
+Pinned `structureDeployment.pyj` sends `destinationSolarsystemID` in a KeyVal passed to `Anchor`.
+`mapView.pyj` consumes endpoint pairs plus allowed and denied IDs. `jumpBridge.pyj` uses the
+`structureJumpBridge` component for capacitor and ship eligibility. The menus and autopilot call
+`structureJumpBridgeMgr.CmdJumpThroughStructureStargate(structureID)` and expect a boolean result. The
+EVE.js directory and manager reference the same endpoint and access shapes. The charge model uses the
+newer pinned client and catalog.
+
+Schema 202 records the alignment and the source gate's capacitor and timestamp. A previously deployed
+Ansiblex needs to be redeployed with a destination to gain a link. The exact
+`AnsiblexChargesGateCapacitorAndRechecksBothEndpointsAtDeparture` test passed in 7.51 seconds. It anchors
+two endpoints through the native request, checks discovery and alliance access, cancels a jump without charge
+when the destination goes offline, jumps a Rhea from 49-0LI to V-OJEN for 15 TJ, reopens the save and confirms
+that the link clears when sovereignty power is lost. Decommissioning recovers one packaged hull and removes
+the saved alignment without duplicating the integral service. The focused capital travel, gate, structures, map,
+sovereignty and checkpoint suites passed all 201 cases in 110.24 seconds.
+
 ## Milestones
 
 | Milestone | Playable outcome and acceptance |
 | --- | --- |
 | **1. Jump freighters and industrial cynos** | Implemented. A fleetmate lights a cyno in lowsec. A loaded jump freighter jumps from another system, docks, and unloads. The ship, cargo, fuel, capacitor and pilot timers reconcile across disconnect and checkpoint reopen. |
 | **2. Standard cynos and sovereignty navigation** | Implemented. Standard module and mobile cynos, mobile inhibitors, Pharolux beacons and Tenebrex jammers use the paid jump-freighter path and resident sovereignty checks. |
-| **3. Ansiblex jump gates** | Link two authorized endpoints and exercise paid access and route discovery. Prove that loss of an endpoint, access or sovereignty affects the next transfer and route read. |
+| **3. Ansiblex jump gates** | Implemented. Link two aligned endpoints, enforce alliance access and the ship type list, and settle the source gate's capacitor at departure. |
 | **4. Black Ops and covert travel** | Jump a Black Ops battleship to a covert cyno and move eligible fleetmates through a paid portal. Verify recipient eligibility, costs, timers, interruption and the native fleet menus. |
 | **5. Dreadnoughts and force auxiliaries** | Jump a dreadnought and a force auxiliary to a standard cyno. Exercise paid siege, capital weapons and structure damage, then triage and lawful remote repairs. Prove dock and gate restrictions, loss settlement, and survival of paid mode deadlines on reopen. |
 | **6. Carriers and fighters** | Launch, control, recall and replace fighter squadrons from a carrier using native tubes and abilities. Verify targeting, observer updates and fighter losses. Reuse squadron rules for Standup fighters once the structure control and fitting branch is integrated. |
 | **7. Capital industry and fleet services** | Fly a Rorqual with an industrial core, Excavators, compression and P.A.N.I.C. Add supported fleet hangar, ship maintenance, refit and clone services. Exercise a real production and resupply route, then let bot haulers use the same paid jump and access operations. |
 | **8. Supercapitals and production** | Deliver the verified Keepstar/Sotiyo docking and construction rules, supercarrier and titan roles, and supported portals, superweapons and counters. Exercise construction, deployment, combat, and irreversible loss with real inputs and sovereignty requirements. |
 
-Milestone 2 needs the resident sovereignty upgrade state and hull-specific Upwell service rules. Milestone 5 needs the
-Upwell battle and destruction paths for its
-siege acceptance. Verify Ansiblex behavior against build 3662168 before choosing the policy for Milestone 3, especially
-capacitor, allowed hulls, alliance access, and the routing change after lost sovereignty.
+Milestone 5 needs the Upwell battle and destruction paths for its siege acceptance.
 [Sovereignty upgrades](sovereignty.md#sovereignty-resources-and-upgrades--november-16-2026) ·
 [Upwell implementation](structures.md) · [CCP Upwell structures](https://support.eveonline.com/hc/en-us/articles/213021829-Upwell-Structures) ·
 [CCP 24.01 notes](https://www.eveonline.com/news/view/patch-notes-version-24-01)

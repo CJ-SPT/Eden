@@ -705,9 +705,9 @@ service. Exported distribution dogma identifiers are not dungeon identifiers and
 slots select supported regional minor/major profiles; ore mappings are Veldspar, Mordunium, Kylixium, Griemeer, Nocxite,
 Hezorime and Ueganite. The pinned catalog determines resource requirements and ore identities.
 
-Ansiblex, cynosural beacon/jammer and supercapital consumers, and the four stability generators' ship bonuses, remain
-milestone 6 work. Their published upgrades can be installed and consume their catalog resources; this does not grant
-those downstream capabilities. Skyhook theft, access lists, alliance departure/dissolution and ownership transitions
+[Ansiblex, Pharolux and Tenebrex](capital-logistics.md) consume their corresponding active upgrades. Supercapital
+construction upgrades and the four stability generators' ship bonuses remain downstream work. Skyhook theft,
+access lists, alliance departure/dissolution and ownership transitions
 also remain explicit milestone 6 boundaries. Native UI input, rendering and live relay authentication remain unverified.
 
 ### Native contracts and evidence

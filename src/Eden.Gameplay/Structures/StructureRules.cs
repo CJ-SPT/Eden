@@ -54,6 +54,7 @@ public static class StructureRules
                 or StructureService.MoonMining
                 or StructureService.CynoBeacon
                 or StructureService.CynoJammer
+                or StructureService.JumpBridge
                 or StructureService.CompositeReactions
                 or StructureService.HybridReactions
                 or StructureService.BiochemicalReactions;

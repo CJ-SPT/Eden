@@ -286,10 +286,9 @@ internal sealed partial class PilotStructureStore(
             (world, catalog, now) =>
                 world.Set<SavedStructure>().Find(structureId) is { } structure
                 && (
-                    service == StructureService.CynoBeacon
-                        ? CapitalNavigationStore.CanUseBeacon(world, catalog, structure, pilotId, now)
-                        : ServiceAccess(world, catalog, structure, pilotId)
-                            && Snapshot(world, catalog, structure).Services.Contains(service)
+                    service == StructureService.CynoBeacon ? CapitalNavigationStore.CanUseBeacon(world, catalog, structure, pilotId, now)
+                    : service == StructureService.JumpBridge ? PilotJumpBridgeStore.CanUse(world, catalog, structure, pilotId, now)
+                    : ServiceAccess(world, catalog, structure, pilotId) && Snapshot(world, catalog, structure).Services.Contains(service)
                 ),
             pilotId: pilotId,
             structureId: structureId
@@ -475,6 +474,7 @@ internal sealed partial class PilotStructureStore(
             HasCore = profile.BuiltinCoreTypeId.HasValue,
         };
         world.Add(structure);
+        PilotJumpBridgeStore.Place(world, catalog, structure, deployment.DestinationSystemId, now);
         Consume(world, item, 1);
         world.SaveChanges();
         if (profile.BuiltinCoreTypeId is int builtinCore)
@@ -727,6 +727,7 @@ internal sealed partial class PilotStructureStore(
                     )
                     {
                         Name = s.Name,
+                        JumpBridge = PilotJumpBridgeStore.Contact(world, s, now),
                         Collision = StaticCollisionCatalog.Read(catalog, s.TypeId)?.Rotate(s.Yaw),
                         Structure = new(
                             s.State,

@@ -115,7 +115,10 @@ internal static class SovereigntyResourcePersistence
                 SovereigntySites.Invalidate(world, hub.SystemId);
                 navigationPowerLost |=
                     row.PowerState == SovereigntyUpgradePower.Online
-                    && row.TypeId is CapitalTravelRules.CynosuralNavigationUpgrade or CapitalTravelRules.CynosuralSuppressionUpgrade;
+                    && row.TypeId
+                        is CapitalTravelRules.CynosuralNavigationUpgrade
+                            or CapitalTravelRules.CynosuralSuppressionUpgrade
+                            or JumpBridgeRules.SovereigntyUpgrade;
             }
             row.PowerState = next.State;
             row.StartupPaid = next.StartupPaid;

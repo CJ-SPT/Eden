@@ -63,6 +63,7 @@ internal sealed partial class ResidentEconomy
 {
     private void RegisterStructureIndustryTables()
     {
+        RegisterJumpBridges();
         Register(
             new EconomyTable<SavedStructureService, EconomySavedStructureService>(
                 "WorldStructureService",

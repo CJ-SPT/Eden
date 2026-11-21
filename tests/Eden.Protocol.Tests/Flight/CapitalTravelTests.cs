@@ -34,6 +34,7 @@ public sealed class CapitalTravelTests
     private const int Jita = 30000142;
     private const int Jan = 30001385;
     private const int NullSystem = 30000251;
+    private const int SecondNullSystem = 30000248;
     private const int JanStation = 60001714;
     private const int Rhea = 28844;
     private const int Rapier = 11963;
@@ -41,6 +42,87 @@ public sealed class CapitalTravelTests
     private const int LiquidOzone = 16273;
     private const int Cargo = 34;
     private static readonly SpacePosition s_station = new(-102770810880, 7849451520, 353786634240);
+
+    [Fact]
+    public async Task AnsiblexChargesGateCapacitorAndRechecksBothEndpointsAtDeparture()
+    {
+        using Fixture fixture = new(structures: true);
+        var (source, exit) = fixture.PrepareJumpBridges();
+        var bridges = fixture.Db.Services.GetRequiredService<IPilotJumpBridges>();
+        var operatorPilot = fixture.Db.Store.FindPilot(1000002)!;
+        long owner = operatorPilot.PilotId;
+        using (Client outsider = fixture.Select(1000001))
+        {
+            Assert.IsType<PilotCallResult.Failure>(outsider.Call("structureJumpBridgeMgr", "CmdJumpThroughStructureStargate", source.Id));
+            Assert.Empty(bridges.Network(outsider.Pilot.PilotId).Allowed);
+            Assert.Equal(2, bridges.Network(outsider.Pilot.PilotId).Denied.Count);
+        }
+        fixture.AdmitBridgePilot(operatorPilot.CorpId);
+        using Client freighter = fixture.Select(1000001);
+        var directory = Assert.IsType<PilotCallResult.Success>(freighter.Call("structureDirectory", "GetJumpBridgesWithMyAccess"));
+        var shape = Assert.IsType<object?[]>(BlueMarshal.Decode(BlueMarshal.Encode(directory.Reply)));
+        Assert.Single(Assert.IsType<List<object?>>(shape[0]));
+        Assert.Equal(new object?[] { source.Id, exit.Id }, Assert.IsType<List<object?>>(shape[1]));
+        Assert.Empty(Assert.IsType<List<object?>>(shape[2]));
+        var nearby = Assert.IsType<PilotCallResult.Success>(freighter.Call("structureDirectory", "GetNearbyJumpBridges"));
+        Assert.Equal(2, Assert.IsType<List<object?>>(BlueMarshal.Decode(BlueMarshal.Encode(nearby.Reply))).Count);
+        var linked = Assert.IsType<PilotCallResult.Success>(freighter.Call("structureJumpBridgeMgr", "GetLinkedStructure", source.Id));
+        Assert.Equal(new object?[] { exit.Id, (long)SecondNullSystem }, BlueMarshal.Decode(BlueMarshal.Encode(linked.Reply)));
+        var details = Assert.IsType<PilotCallResult.Success>(
+            freighter.Call("beyonce", "CallComponentFromClient", source.Id, "structureJumpBridge", "GetJumpBridgeInfo")
+        );
+        var info = Assert.IsType<BlueInstance>(BlueMarshal.Decode(BlueMarshal.Encode(details.Reply)));
+        Assert.Contains("JumpBridgeAuthorizedInfo", info.Name, StringComparison.Ordinal);
+        Assert.Equal(1_250_000, bridges.Info(freighter.Pilot.PilotId, freighter.Pilot.ShipId, source.Id)?.Capacitor);
+        long exitModule = Assert.Single(exit.Modules).ItemId;
+        Assert.IsType<PilotCallResult.Success>(Jump());
+        await freighter.TickAsync();
+        fixture.Structures.SetServiceOnline(owner, exit.Id, exitModule, false);
+        fixture.Clock.Seconds += 3;
+        await freighter.TickAsync();
+        Assert.Equal(NullSystem, freighter.Pilot.SystemId);
+        Assert.Equal(1_250_000, bridges.Info(freighter.Pilot.PilotId, freighter.Pilot.ShipId, source.Id)?.Capacitor);
+        Assert.Empty(bridges.Network(freighter.Pilot.PilotId).Links);
+
+        fixture.Structures.SetServiceOnline(owner, exit.Id, exitModule, true);
+        Assert.IsType<PilotCallResult.Success>(Jump());
+        await freighter.TickAsync();
+        fixture.Clock.Seconds += 3;
+        await freighter.TickAsync();
+        Assert.Equal(SecondNullSystem, freighter.Pilot.SystemId);
+        Assert.Null(fixture.Travel.Timers(freighter.Pilot.PilotId));
+        Assert.Equal(60_000, Quantity(fixture, freighter, Nitrogen));
+        long chargedAt = fixture.Clock.Now;
+        var charge = Charge();
+        Assert.Equal((1_235_000d, chargedAt), charge);
+
+        freighter.Dispose();
+        await fixture.Live.FlushAsync();
+        fixture.Reopen();
+        Assert.Equal(charge, Charge());
+        fixture.SetUpgrade(JumpBridgeRules.SovereigntyUpgrade, SovereigntyUpgradePower.Offline, SecondNullSystem);
+        Assert.Empty(bridges.Network(owner).Links);
+        fixture.Structures.Unanchor(owner, exit.Id);
+        fixture.Clock.AdvanceWallTime(TimeSpan.FromDays(7));
+        var packaged = fixture.Structures.Read(owner, exit.Id)!;
+        Assert.Equal(StructureState.Unanchored, packaged.State);
+        Assert.Throws<InvalidDataException>(() => fixture.Structures.Withdraw(owner, exit.Id, exitModule, 1, toCargo: true));
+        fixture.Structures.Recover(owner, exit.Id);
+        Assert.Null(fixture.Structures.Read(owner, exit.Id));
+        Assert.Null(bridges.Destination(exit.Id));
+        Assert.Null(fixture.Live.Economy.Inspect(world => world.Set<SavedJumpBridge>().Find(exit.Id)));
+        var recovered = fixture.Inventory.List(owner, operatorPilot.ShipId);
+        Assert.Equal(1, Assert.Single(recovered, item => item.TypeId == JumpBridgeRules.Ansiblex).Quantity);
+        Assert.DoesNotContain(recovered, item => item.TypeId == JumpBridgeRules.Service);
+
+        PilotCallResult Jump() => freighter.Call("structureJumpBridgeMgr", "CmdJumpThroughStructureStargate", source.Id);
+        (double Charge, long At) Charge() =>
+            fixture.Live.Economy.Inspect(world =>
+            {
+                var state = world.Set<SavedJumpBridge>().Find(source.Id)!;
+                return (state.Capacitor, state.ChargedAt);
+            });
+    }
 
     [Fact]
     public async Task TurretDamagePersistsAndDestructionRetiresFleetDeployable()
@@ -423,6 +505,11 @@ public sealed class CapitalTravelTests
                 catalog.Database.ExecuteSql(
                     $"INSERT INTO Station VALUES ({JanStation},{Jan},1531,1000015,39,40088235,{s_station.X},{s_station.Y},{s_station.Z})"
                 );
+                if (structures)
+                {
+                    catalog.Database.ExecuteSql($"UPDATE ItemType SET Capacity=50000 WHERE Id={emitterHull}");
+                    catalog.Database.ExecuteSql($"UPDATE TypeAttribute SET Value=50000 WHERE ItemTypeId={emitterHull} AND AttributeId=38");
+                }
             }
             Live = new(database, Clock, _ => { });
             var first = Db.Store.FindPilot(1000001)!;
@@ -554,6 +641,7 @@ public sealed class CapitalTravelTests
                     new SavedSovereigntyClaim
                     {
                         SystemId = NullSystem,
+                        ClaimedAt = Clock.Now,
                         HubId = hubId,
                         CorporationId = corporationId,
                         AllianceId = allianceId,
@@ -607,10 +695,108 @@ public sealed class CapitalTravelTests
             }
         }
 
-        internal void SetUpgrade(int type, SovereigntyUpgradePower power)
+        internal (StructureSnapshot Source, StructureSnapshot Exit) PrepareJumpBridges()
         {
-            using var action = Live.Economy.Begin(new(systems: [NullSystem]));
-            action.Set<SavedSovereigntyUpgrade>().Single(row => row.SystemId == NullSystem && row.TypeId == type).PowerState = power;
+            PrepareNavigation();
+            var owner = Db.Store.FindPilot(1000002)!;
+            long pilot = owner.PilotId;
+            long ship = owner.ShipId;
+            using (var action = Live.Economy.Begin(new(systems: [NullSystem, SecondNullSystem])))
+            {
+                var first = action.Set<SavedSovereigntyClaim>().Find(NullSystem)!;
+                long secondHub = action.NextItemId();
+                action.Add(
+                    new SavedStructure
+                    {
+                        Id = secondHub,
+                        TypeId = EntosisRules.HubTypeId,
+                        CorporationId = owner.CorpId,
+                        SystemId = SecondNullSystem,
+                        State = StructureState.ShieldVulnerable,
+                        HasCore = true,
+                        X = 30_000_000,
+                    }
+                );
+                action.Add(
+                    new SavedSovereigntyClaim
+                    {
+                        SystemId = SecondNullSystem,
+                        HubId = secondHub,
+                        CorporationId = owner.CorpId,
+                        AllianceId = first.AllianceId,
+                        ClaimedAt = Clock.Now,
+                    }
+                );
+                foreach (var endpoint in new[] { (NullSystem, first.HubId), (SecondNullSystem, secondHub) })
+                {
+                    action.Add(
+                        new SavedSovereigntyUpgrade
+                        {
+                            Id = action.NextItemId(),
+                            HubId = endpoint.Item2,
+                            SystemId = endpoint.Item1,
+                            TypeId = JumpBridgeRules.SovereigntyUpgrade,
+                            ConfiguredOnline = true,
+                            PowerState = SovereigntyUpgradePower.Online,
+                        }
+                    );
+                }
+                action.Commit();
+            }
+            var source = Deploy(NullSystem, SecondNullSystem);
+            var destination = Deploy(SecondNullSystem, NullSystem);
+            Clock.AdvanceWallTime(TimeSpan.FromHours(1));
+            source = Enable(source);
+            destination = Enable(destination);
+            Db.Store.SetPosition(FreighterId, source.Position + new SpacePosition(source.Profile.Radius + 1000, 0, 0), NullSystem);
+            return (source, destination);
+
+            StructureSnapshot Deploy(int system, int peer)
+            {
+                SpacePosition point = new(1_000_000_000, 0, 0);
+                Db.Store.SetPosition(ship, point, system);
+                var item = Grant(pilot, ship, InventoryFlag.Cargo, JumpBridgeRules.Ansiblex, 1);
+                using var client = Select(1000002);
+                var extra = new BlueInstance("util.KeyVal", new Dictionary<string, object?> { ["destinationSolarsystemID"] = peer });
+                var result = client.Call(
+                    "structureDeployment",
+                    "Anchor",
+                    item,
+                    0d,
+                    0d,
+                    0d,
+                    (long)owner.CorpId,
+                    "Ansiblex",
+                    "",
+                    4L,
+                    12L,
+                    extra
+                );
+                Assert.True(result is PilotCallResult.Success, result.ToString());
+                return Assert.Single(Structures.List(pilot, system), structure => structure.Profile.TypeId == JumpBridgeRules.Ansiblex);
+            }
+
+            StructureSnapshot Enable(StructureSnapshot endpoint)
+            {
+                const int fuelBlock = 4051;
+                Db.Store.SetPosition(ship, endpoint.Position + new SpacePosition(25_000, 0, 0), endpoint.SystemId);
+                Structures.DepositFuel(pilot, endpoint.Id, Grant(pilot, ship, InventoryFlag.Cargo, fuelBlock, 4500));
+                return Structures.SetServiceOnline(pilot, endpoint.Id, Assert.Single(endpoint.Modules).ItemId, true).Structure;
+            }
+        }
+
+        internal void AdmitBridgePilot(int corporation)
+        {
+            long pilot = Db.Store.FindPilot(1000001)!.PilotId;
+            using var action = Live.Economy.Begin(new(pilots: [pilot]));
+            action.Pilots.Find(pilot)!.CorporationId = corporation;
+            action.Commit();
+        }
+
+        internal void SetUpgrade(int type, SovereigntyUpgradePower power, int system = NullSystem)
+        {
+            using var action = Live.Economy.Begin(new(systems: [system]));
+            action.Set<SavedSovereigntyUpgrade>().Single(row => row.SystemId == system && row.TypeId == type).PowerState = power;
             action.Commit();
         }
 

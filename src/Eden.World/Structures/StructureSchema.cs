@@ -22,6 +22,13 @@ internal static class StructureSchema
         model.Entity<SavedStructureService>().HasIndex(s => new { s.StructureId, s.Slot }).IsUnique();
         model.Entity<SavedStructureAccess>().ToTable("WorldStructureAccess").HasKey(s => new { s.StructureId, s.MemberId });
         model.Entity<SavedStructureAccess>().HasOne<SavedStructure>().WithMany().HasForeignKey(s => s.StructureId);
+        model.Entity<SavedJumpBridge>().ToTable("WorldJumpBridge").HasKey(row => row.StructureId);
+        model
+            .Entity<SavedJumpBridge>()
+            .HasOne<SavedStructure>()
+            .WithMany()
+            .HasForeignKey(row => row.StructureId)
+            .OnDelete(DeleteBehavior.Cascade);
         model.Entity<Ship>().Ignore(s => s.DockedLocationId);
     }
 
@@ -66,6 +73,9 @@ internal static class StructureSchema
             CREATE TABLE IF NOT EXISTS WorldStructureAccess (
                 StructureId INTEGER NOT NULL REFERENCES WorldStructure(Id) ON DELETE CASCADE,
                 MemberId INTEGER NOT NULL, Allowed INTEGER NOT NULL, PRIMARY KEY(StructureId,MemberId));
+            CREATE TABLE IF NOT EXISTS WorldJumpBridge (
+                StructureId INTEGER PRIMARY KEY REFERENCES WorldStructure(Id) ON DELETE CASCADE,
+                DestinationSystemId INTEGER NOT NULL, Capacitor REAL NOT NULL, ChargedAt INTEGER NOT NULL);
             """
         );
         if (

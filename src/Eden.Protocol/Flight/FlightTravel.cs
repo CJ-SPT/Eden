@@ -3,6 +3,7 @@ using Eden.Gameplay.Docking;
 using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Structures;
 using Eden.Protocol.PilotSessions;
 
 namespace Eden.Protocol.Flight;
@@ -12,7 +13,8 @@ internal sealed record GateDestination(
     StaticSpaceObject Exit,
     FlightSystem System,
     IReadOnlyList<StaticSpaceObject> Objects,
-    IWormholeTravel? Wormhole = null
+    IWormholeTravel? Wormhole = null,
+    IPilotJumpBridges? Bridge = null
 );
 
 internal sealed record GateTransit(GateDestination Destination, int TransferStamp, long? DepartureSentAt = null);

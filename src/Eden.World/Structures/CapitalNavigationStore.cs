@@ -67,12 +67,13 @@ internal sealed class CapitalNavigationStore(WorldDatabase database, TimeProvide
         {
             StructureFamily.CynoBeacon => CapitalTravelRules.PharoluxService,
             StructureFamily.CynoJammer => CapitalTravelRules.TenebrexService,
+            StructureFamily.JumpBridge => JumpBridgeRules.Service,
             _ => null,
         };
 
     internal static void CheckPlacement(WorldAction world, int typeId, int systemId, int corporationId)
     {
-        if (typeId is not (CapitalTravelRules.Pharolux or CapitalTravelRules.Tenebrex))
+        if (typeId is not (CapitalTravelRules.Pharolux or CapitalTravelRules.Tenebrex or JumpBridgeRules.Ansiblex))
         {
             return;
         }
@@ -113,10 +114,7 @@ internal sealed class CapitalNavigationStore(WorldDatabase database, TimeProvide
         {
             return;
         }
-        foreach (
-            var structure in Structures(world, systemId, CapitalTravelRules.Pharolux)
-                .Concat(Structures(world, systemId, CapitalTravelRules.Tenebrex))
-        )
+        foreach (var structure in NavigationStructures(world, systemId))
         {
             foreach (var service in world.Filter<SavedStructureService>(row => row.StructureId == structure.Id && row.Online))
             {
@@ -159,8 +157,7 @@ internal sealed class CapitalNavigationStore(WorldDatabase database, TimeProvide
     internal static void SettleFuel(WorldAction world, CatalogDbContext catalog, int systemId, long now)
     {
         if (
-            Structures(world, systemId, CapitalTravelRules.Pharolux)
-                .Concat(Structures(world, systemId, CapitalTravelRules.Tenebrex))
+            NavigationStructures(world, systemId)
                 .Any(structure =>
                     structure.UnanchorAt <= now
                     || world
@@ -173,12 +170,17 @@ internal sealed class CapitalNavigationStore(WorldDatabase database, TimeProvide
         }
     }
 
+    private static IEnumerable<SavedStructure> NavigationStructures(WorldAction world, int? systemId) =>
+        Structures(world, systemId, CapitalTravelRules.Pharolux)
+            .Concat(Structures(world, systemId, CapitalTravelRules.Tenebrex))
+            .Concat(Structures(world, systemId, JumpBridgeRules.Ansiblex));
+
     private static IQueryable<SavedStructure> Structures(WorldAction world, int? systemId, int typeId) =>
         systemId is int system
             ? world.Filter<SavedStructure>(row => row.SystemId == system && row.TypeId == typeId)
             : world.Filter<SavedStructure>(row => row.TypeId == typeId);
 
-    private static SavedStructureService? OnlineService(WorldAction world, SavedStructure structure, int typeId, long now) =>
+    internal static SavedStructureService? OnlineService(WorldAction world, SavedStructure structure, int typeId, long now) =>
         StructureRules.Operational(structure.State)
         && structure.HasCore
         && !(structure.UnanchorAt <= now)
@@ -191,10 +193,13 @@ internal sealed class CapitalNavigationStore(WorldDatabase database, TimeProvide
 
     private static bool HasUpgrade(WorldAction world, int typeId, int system, int corporation)
     {
-        int upgrade =
-            typeId == CapitalTravelRules.Pharolux
-                ? CapitalTravelRules.CynosuralNavigationUpgrade
-                : CapitalTravelRules.CynosuralSuppressionUpgrade;
+        int upgrade = typeId switch
+        {
+            CapitalTravelRules.Pharolux => CapitalTravelRules.CynosuralNavigationUpgrade,
+            CapitalTravelRules.Tenebrex => CapitalTravelRules.CynosuralSuppressionUpgrade,
+            JumpBridgeRules.Ansiblex => JumpBridgeRules.SovereigntyUpgrade,
+            _ => throw new InvalidDataException("This hull is not a navigation structure."),
+        };
         return world.Set<SavedSovereigntyClaim>().Find(system) is { } claim
             && (claim.CorporationId == corporation || world.Set<SavedAllianceMember>().Find(corporation)?.AllianceId == claim.AllianceId)
             && world

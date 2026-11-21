@@ -101,6 +101,12 @@ internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
     public override object ToBlue()
     {
         var fields = Fields(Body.Id, Body.TypeId, Body.OwnerId, Body.GroupId, Body.CategoryId);
+        if (Body.JumpBridge is { } bridge)
+        {
+            fields["targetSolarsystemID"] = bridge.DestinationSystemId;
+            fields["component_jumpBridge"] = bridge.Revision;
+            fields["activationState"] = bridge.Active;
+        }
         if (Body.CynoDeployable is { } deployable)
         {
             fields["component_activate"] = new object?[] { deployable.Active, deployable.Active ? null : deployable.OnlineAt };

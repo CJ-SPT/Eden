@@ -168,7 +168,8 @@ public sealed record StructureDeployment(
     string Description = "",
     int? MoonId = null,
     int ReinforceWeekday = 0,
-    int ReinforceHour = StructureRules.DefaultReinforceHour
+    int ReinforceHour = StructureRules.DefaultReinforceHour,
+    int? DestinationSystemId = null
 );
 
 public sealed record StructureResult(StructureSnapshot Structure, IReadOnlyList<Inventory.InventoryChange> Changes);

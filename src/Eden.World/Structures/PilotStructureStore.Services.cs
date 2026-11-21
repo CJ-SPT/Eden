@@ -147,6 +147,10 @@ internal sealed partial class PilotStructureStore
             }
             if (CapitalNavigationStore.ServiceType(profile.Family) == item.TypeId)
             {
+                if (profile.Family == StructureFamily.JumpBridge && world.Set<SavedJumpBridge>().Find(structure.Id) is null)
+                {
+                    throw new InvalidDataException("Deploy the Ansiblex with a destination system before activating its service.");
+                }
                 CapitalNavigationStore.CheckOnlining(world, structure, now);
                 module.OnlineSince = now;
             }

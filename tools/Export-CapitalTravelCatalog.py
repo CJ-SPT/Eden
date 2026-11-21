@@ -46,13 +46,14 @@ def export(source, destination):
                 keep('client/dogmaeffects', effect['effectID'])
             pending.update(int(v) for a, v in values if a in (182, 183, 184, 1285, 1289, 1290) and v > 0 and int(v) not in visited)
         keep('client/typelist', 343)
-        for deployable in (33476, 57319):
+        keep('client/typelist', 1000)
+        for deployable in (33476, 35841, 57319):
             keep('client/spacecomponentsbytype', deployable)
-        for system_id in (30000142, 30001385, 30000251):
+        for system_id in (30000142, 30001385, 30000248, 30000251):
             keep('client/systems', system_id, ('center', 'securityStatus', 'wormholeClassID', 'regionID', 'factionID'))
         systems = catalog.execute('SELECT s.Id,s.Name,c.Id,c.Name,r.Id,r.Name FROM SolarSystem s '
                                  'JOIN Constellation c ON s.ConstellationId=c.Id JOIN Region r ON c.RegionId=r.Id '
-                                 'WHERE s.Id IN (30001385,30000251) ORDER BY s.Id').fetchall()
+                                 'WHERE s.Id IN (30001385,30000248,30000251) ORDER BY s.Id').fetchall()
         orbit = catalog.execute('SELECT * FROM Celestial WHERE Id=40088235').fetchone()
     system_fields = ('id', 'name', 'constellationId', 'constellationName', 'regionId', 'regionName')
     orbit_fields = ('id', 'solarSystemId', 'typeId', 'groupId', 'radius', 'orbitId', 'x', 'y', 'z')

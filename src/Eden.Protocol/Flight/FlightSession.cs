@@ -1230,6 +1230,19 @@ internal sealed partial class FlightSession(
                 return false;
             }
         }
+        else if (jump.Bridge is { } bridge)
+        {
+            try
+            {
+                position = bridge.Transfer(Pilot.PilotId, Pilot.ShipId, jump.SourceId, jump.Exit.Id).Position!;
+            }
+            catch (InvalidDataException error)
+            {
+                _travel.Reset();
+                NotificationsBeforeFlight.Add(new CapitalJumpCancelled(error.Message));
+                return false;
+            }
+        }
         else if (gates is not null)
         {
             position = gates.Transfer(Pilot.PilotId, Pilot.ShipId, jump.SourceId, jump.Exit.Id).Position!;

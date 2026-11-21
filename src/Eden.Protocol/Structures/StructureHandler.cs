@@ -269,14 +269,13 @@ internal sealed class StructureHandler(
         {
             extra = configuration.State;
         }
-        if (
-            extra is not null
-            && extra is not Dictionary<string, object?> { Count: 0 }
-            && extra is not Dictionary<object, object?> { Count: 0 }
-        )
+        int? destination = extra switch
         {
-            throw new InvalidDataException("This deployment configuration is not supported.");
-        }
+            null or Dictionary<string, object?> { Count: 0 } or Dictionary<object, object?> { Count: 0 } => null,
+            Dictionary<string, object?> { Count: 1 } fields
+                when fields.GetValueOrDefault("destinationSolarsystemID") is long id && id is > 0 and <= int.MaxValue => (int)id,
+            _ => throw new InvalidDataException("This deployment configuration is not supported."),
+        };
         return new(
             item,
             StructureRules.DeploymentPosition(position, Number(x), Number(z)),
@@ -288,7 +287,8 @@ internal sealed class StructureHandler(
                 : throw new InvalidDataException("Invalid reinforcement day."),
             ReinforceHour: hour is null ? StructureRules.DefaultReinforceHour
                 : hour is long h ? checked((int)h)
-                : throw new InvalidDataException("Invalid reinforcement hour.")
+                : throw new InvalidDataException("Invalid reinforcement hour."),
+            DestinationSystemId: destination
         );
     }
 

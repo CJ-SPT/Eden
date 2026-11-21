@@ -22,6 +22,7 @@ public sealed record StaticSpaceObject(
     public int? HackingState { get; init; }
     public double? InterdictionRadius { get; init; }
     public CynoDeployableActivation? CynoDeployable { get; init; }
+    public Structures.JumpBridgeContact? JumpBridge { get; init; }
     public bool Solid { get; init; } = true;
     public StaticCollisionGeometry? Collision { get; init; }
     public bool IsGlobal { get; init; } = true;
