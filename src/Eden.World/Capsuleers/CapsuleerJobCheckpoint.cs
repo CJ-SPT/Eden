@@ -1,4 +1,4 @@
-using System.Text;
+using System.Text.Json;
 using Eden.Gameplay.Capsuleers;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -9,26 +9,24 @@ internal sealed partial record CapsuleerJobCheckpoint(IReadOnlyList<CapsuleerJob
 {
     internal void Apply(WorldDbContext world)
     {
-        const int rowsPerBatch = 128;
-        foreach (var batch in Jobs.Chunk(rowsPerBatch))
+        foreach (var batch in Jobs.Chunk(CapsuleerCheckpointJson.ProjectionBatchSize))
         {
-            StringBuilder sql = new("INSERT INTO WorldCapsuleerJob(PilotId,Revision,Sequence,DueTicks,Action) VALUES ");
-            List<object> parameters = [];
-            foreach (var job in batch)
-            {
-                if (parameters.Count > 0)
-                {
-                    sql.Append(',');
-                }
-                int offset = parameters.Count;
-                sql.Append($"(@p{offset},@p{offset + 1},@p{offset + 2},@p{offset + 3},@p{offset + 4})");
-                parameters.AddRange([job.PilotId, job.Revision, job.Sequence, job.DueTicks, (int)job.Action]);
-            }
-            sql.Append(" ON CONFLICT(PilotId) DO UPDATE SET Revision=excluded.Revision,Sequence=excluded.Sequence,");
-            sql.Append("DueTicks=excluded.DueTicks,Action=excluded.Action");
-            world.Database.ExecuteSqlRaw(sql.ToString(), parameters.ToArray());
+            ApplyBatch(world, JsonSerializer.Serialize(batch));
         }
     }
+
+    internal static void ApplyBatch(WorldDbContext world, string values) =>
+        world.Database.ExecuteSql(
+            $"""
+            INSERT INTO WorldCapsuleerJob(PilotId,Revision,Sequence,DueTicks,Action)
+            WITH payload(value) AS MATERIALIZED (SELECT jsonb(value) FROM json_each({values}))
+            SELECT json_extract(value,'$.PilotId'),json_extract(value,'$.Revision'),json_extract(value,'$.Sequence'),
+                json_extract(value,'$.DueTicks'),json_extract(value,'$.Action')
+            FROM payload WHERE 1
+            ON CONFLICT(PilotId) DO UPDATE SET Revision=excluded.Revision,Sequence=excluded.Sequence,
+                DueTicks=excluded.DueTicks,Action=excluded.Action
+            """
+        );
 
     internal static void Apply(WorldDbContext world, CapsuleerJob job) =>
         world.Database.ExecuteSql(

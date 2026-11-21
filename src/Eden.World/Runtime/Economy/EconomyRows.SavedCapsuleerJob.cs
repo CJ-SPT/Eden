@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Eden.World.Capsuleers;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 
@@ -34,21 +35,7 @@ internal sealed partial class ResidentEconomy
             var rows = batch.Where(c => c.Value is not null).Select(c => c.Value).ToArray();
             if (rows.Length != 0)
             {
-                string values = JsonSerializer.Serialize(rows);
-                world.Database.ExecuteSql(
-                    $"""
-                    INSERT INTO WorldCapsuleerJob(
-                        PilotId,Action,DueTicks,Revision,Sequence
-                    )
-                    SELECT
-                        json_extract(value,'$.PilotId'),json_extract(value,'$.Action'),json_extract(value,'$.DueTicks'),
-                        json_extract(value,'$.Revision'),json_extract(value,'$.Sequence')
-                    FROM json_each({values}) WHERE 1
-                    ON CONFLICT(PilotId) DO UPDATE SET
-                        Action=excluded.Action,DueTicks=excluded.DueTicks,Revision=excluded.Revision,
-                        Sequence=excluded.Sequence
-                    """
-                );
+                CapsuleerJobCheckpoint.ApplyBatch(world, JsonSerializer.Serialize(rows));
             }
         }
     }

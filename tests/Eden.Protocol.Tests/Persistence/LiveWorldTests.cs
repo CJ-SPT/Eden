@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Eden.Data.World.Characters;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Data.World.Skills;
@@ -345,6 +346,66 @@ public sealed class LiveWorldTests(ITestOutputHelper output)
         Assert.Equal(300, DiskValue(db.Path, $"SELECT Points FROM WorldPilotSkill WHERE PilotId={pilot} AND TypeId={trainedSkill}"));
         Assert.Equal(0, DiskValue(db.Path, $"SELECT COUNT(*) FROM WorldPilotSkill WHERE PilotId={pilot} AND TypeId={removedSkill}"));
         Assert.Equal(400, DiskValue(db.Path, $"SELECT Points FROM WorldPilotSkill WHERE PilotId={pilot} AND TypeId={newSkill}"));
+    }
+
+    [Fact]
+    public async Task CheckpointBatchesPilotsWithoutAppearanceAndPreservesBinaryPayloads()
+    {
+        const int count = 257;
+        const long firstPilot = (1L << 53) + 1;
+        const long firstShip = firstPilot + 1_000;
+        byte[] appearance = [0, 127, 128, 255];
+        using TestWorld fixture = new();
+        WorldDatabase database = new(fixture.Path);
+        TestClock clock = new();
+        using (LiveWorld live = new(database, clock, _ => { }))
+        {
+            live.MeasureCheckpoints = true;
+            using (var action = live.Economy.Begin())
+            {
+                for (int index = 0; index < count; index++)
+                {
+                    long pilot = firstPilot + index;
+                    long ship = firstShip + index;
+                    action.Add(new InventoryOwner { Id = pilot });
+                    action.Add(
+                        new Ship
+                        {
+                            Id = ship,
+                            OwnerId = pilot,
+                            TypeId = 601,
+                            StationId = 60000004,
+                        }
+                    );
+                    action.Add(
+                        new Pilot
+                        {
+                            Id = pilot,
+                            AccountId = 1000001,
+                            Name = $"Checkpoint pilot {index}",
+                            ActiveShipId = ship,
+                            CreatedAt = clock.Now,
+                            Appearance = index == count - 1 ? appearance : null,
+                        }
+                    );
+                }
+                action.Commit();
+            }
+            await live.FlushAsync();
+            var projection = Assert.Single(live.LastCheckpoint!.ProjectionTables!, table => table.Table == "WorldPilot");
+            Assert.Equal((count, 3), (projection.Rows, projection.Commands));
+        }
+        using LiveWorld reopened = new(database, clock, _ => { });
+        for (int index = 0; index < count; index++)
+        {
+            long pilot = firstPilot + index;
+            var saved = Assert.IsType<Pilot>(reopened.Economy.Peek<Pilot>(pilot));
+            Assert.Equal(pilot, saved.Id);
+            Assert.Equal(firstShip + index, saved.ActiveShipId);
+            Assert.Equal($"Checkpoint pilot {index}", saved.Name);
+            Assert.Equal(clock.Now, saved.CreatedAt);
+            Assert.Equal(index == count - 1 ? appearance : null, saved.Appearance);
+        }
     }
 
     [Fact]

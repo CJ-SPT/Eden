@@ -97,13 +97,46 @@ internal sealed partial class ResidentEconomy
 {
     private static void ProjectPilot(WorldDbContext world, IReadOnlyList<EconomyChange<EconomyPilot>> changes)
     {
-        foreach (var change in changes)
+        foreach (var batch in changes.Chunk(ProjectionBatchSize))
         {
-            if (change.Value is not { } row)
+            if (batch.All(change => change.Value is { Appearance: null, Portrait: null }))
             {
-                world.Database.ExecuteSql($"DELETE FROM WorldPilot WHERE Id={change.Key.Id}");
+                // Capsuleers have no appearance blobs. Keep native blob binding and
+                // original operation order in batches that include a blob or a deletion.
+                string values = JsonSerializer.Serialize(batch.Select(change => change.Value).ToArray());
+                world.Database.ExecuteSql(
+                    $"""
+                    INSERT INTO WorldPilot(Id,AccountId,Name,CorporationId,RaceId,BloodlineId,GenderId,AncestryId,SchoolId,
+                        CreatedAt,Appearance,Portrait,ActiveShipId,SafetyLevel)
+                    WITH payload(key,value) AS MATERIALIZED (SELECT key,jsonb(value) FROM json_each({values}))
+                    SELECT json_extract(value,'$.Id'),json_extract(value,'$.AccountId'),json_extract(value,'$.Name'),
+                        json_extract(value,'$.CorporationId'),json_extract(value,'$.RaceId'),json_extract(value,'$.BloodlineId'),
+                        json_extract(value,'$.GenderId'),json_extract(value,'$.AncestryId'),json_extract(value,'$.SchoolId'),
+                        json_extract(value,'$.CreatedAt'),NULL,NULL,json_extract(value,'$.ActiveShipId'),json_extract(value,'$.SafetyLevel')
+                    FROM payload WHERE 1 ORDER BY key
+                    ON CONFLICT(Id) DO UPDATE SET AccountId=excluded.AccountId,Name=excluded.Name,CorporationId=excluded.CorporationId,
+                        RaceId=excluded.RaceId,BloodlineId=excluded.BloodlineId,GenderId=excluded.GenderId,AncestryId=excluded.AncestryId,
+                        SchoolId=excluded.SchoolId,CreatedAt=excluded.CreatedAt,Appearance=excluded.Appearance,Portrait=excluded.Portrait,
+                        ActiveShipId=excluded.ActiveShipId,SafetyLevel=excluded.SafetyLevel
+                    """
+                );
                 continue;
             }
+            foreach (var change in batch)
+            {
+                ProjectPilot(world, change);
+            }
+        }
+    }
+
+    private static void ProjectPilot(WorldDbContext world, EconomyChange<EconomyPilot> change)
+    {
+        if (change.Value is not { } row)
+        {
+            world.Database.ExecuteSql($"DELETE FROM WorldPilot WHERE Id={change.Key.Id}");
+        }
+        else
+        {
             world.Database.ExecuteSql(
                 $"""
                 INSERT INTO WorldPilot(Id,AccountId,Name,CorporationId,RaceId,BloodlineId,GenderId,AncestryId,SchoolId,
