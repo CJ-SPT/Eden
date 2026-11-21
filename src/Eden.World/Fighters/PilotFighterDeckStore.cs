@@ -236,12 +236,12 @@ internal sealed class PilotFighterDeckStore(WorldDatabase database) : IPilotFigh
         if (
             pilot?.ActiveShipId != shipId
             || !FighterDeckRules.IsTube(flag)
-            || !FighterDeckRules.Supports(catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId)
+            || !FighterDeckRules.Supports(catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId, pilot.ActiveShip.TypeId)
             || flag - FighterDeckRules.FirstTube
                 >= catalog.FittingAttributes(pilot.ActiveShip.TypeId).GetValueOrDefault(DogmaAttributeId.FighterTubes)
         )
         {
-            throw new InvalidDataException("Choose a valid fighter tube on your active carrier.");
+            throw new InvalidDataException("Choose a valid fighter tube on your active ship.");
         }
         return pilot;
     }

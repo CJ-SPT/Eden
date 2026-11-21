@@ -17,7 +17,7 @@ internal sealed partial class FighterDeckHandler
         var flight = context.Flight;
         if (!flight.CanTarget || flight.PreparingWarp || flight.MicroJumpSpooling)
         {
-            return new PilotCallResult.Failure("Use fighter command from your active carrier outside warp.");
+            return new PilotCallResult.Failure("Use fighter commands from your active ship outside warp.");
         }
         var pilot = context.Pilot;
         flight.Checkpoint();
@@ -71,7 +71,7 @@ internal sealed partial class FighterDeckHandler
 
     internal void Advance(PilotCallContext context)
     {
-        if (!context.Selected || !FighterDeckRules.Supports(context.Pilot.ShipGroupId))
+        if (!context.Selected || !FighterDeckRules.Supports(context.Pilot.ShipGroupId, context.Pilot.ShipTypeId))
         {
             _seen = [];
             _seenShip = 0;

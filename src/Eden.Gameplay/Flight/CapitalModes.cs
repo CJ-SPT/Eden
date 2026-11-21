@@ -33,6 +33,7 @@ public static class CapitalModeRules
     public const int CapitalIndustrialReconfiguration = 28585;
     public const int CapitalIndustrialShips = 28374;
     public const int CycleMilliseconds = 300_000;
+    public const int Sarathiel = 87381;
     public const int SiegeSkill = 22043;
     public const int TriageSkill = 27906;
 

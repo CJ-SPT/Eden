@@ -32,10 +32,13 @@ internal sealed partial class FighterDeckHandler(
         if (method == "GetFightersForShip" && args.Length == 0)
         {
             return new FighterDeckReply(
-                FighterDeckRules.Supports(pilot.ShipGroupId) ? deck.Read(pilot.PilotId, pilot.ShipId) : new([], [])
+                FighterDeckRules.Supports(pilot.ShipGroupId, pilot.ShipTypeId) ? deck.Read(pilot.PilotId, pilot.ShipId) : new([], [])
             );
         }
-        if (!FighterDeckRules.Supports(pilot.ShipGroupId) || (pilot.Position is not null && !context.Flight.CanUseSelfModules))
+        if (
+            !FighterDeckRules.Supports(pilot.ShipGroupId, pilot.ShipTypeId)
+            || (pilot.Position is not null && !context.Flight.CanUseSelfModules)
+        )
         {
             return false;
         }

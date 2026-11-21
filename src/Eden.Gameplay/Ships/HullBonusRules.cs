@@ -160,6 +160,7 @@ public enum HullBonusEquipmentGroup
     ProjectileWeapon = 55,
     RocketLauncher = 507,
     LightMissileLauncher = 509,
+    SiegeModule = Eden.Gameplay.Flight.CapitalModeRules.Group,
     PropulsionModule = 46,
     Microwarpdrive = 475,
     MicroJumpDrive = 1189,
@@ -292,6 +293,7 @@ public static class HullBonusRules
                 HullBonusEquipmentGroup.StasisGrappler => HullCapability.Interdiction,
                 HullBonusEquipmentGroup.Booster => HullCapability.BoosterTraits,
                 HullBonusEquipmentGroup.ProjectileWeapon => HullCapability.Turrets,
+                HullBonusEquipmentGroup.SiegeModule => HullCapability.ShipModes,
                 HullBonusEquipmentGroup.WarpScrambler or HullBonusEquipmentGroup.StasisWeb => HullCapability.Tackle,
                 HullBonusEquipmentGroup.ArmorPlate => HullCapability.ArmorPlates,
                 HullBonusEquipmentGroup.ShieldExtender => HullCapability.ShieldExtenders,
@@ -443,6 +445,7 @@ public static class HullBonusRules
             is HullCapability.Bombs
                 or HullCapability.CargoScanning
                 or HullCapability.CapacitorBoosters
+                or HullCapability.ShipModes
                 or HullCapability.Overheating
                 or HullCapability.CommandBursts
                 or HullCapability.Cloaking

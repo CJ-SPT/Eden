@@ -324,7 +324,7 @@ internal sealed partial class PilotDroneStore(
         var world = transaction.World;
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = InSpace(world, pilotId, requireDroneHull: !fighter);
-        if (fighter && !FighterDeckRules.Supports(catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId))
+        if (fighter && !FighterDeckRules.Supports(catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId, pilot.ActiveShip.TypeId))
         {
             throw new InvalidDataException("This ship does not support fighter control.");
         }
@@ -697,7 +697,7 @@ internal sealed partial class PilotDroneStore(
         double controlledBandwidth = 0;
         bool released = false;
         bool supportsDrones = DroneRules.SupportsHull(ship.TypeId);
-        bool supportsFighters = FighterDeckRules.Supports(catalog.RequireItem(ship.TypeId).GroupId);
+        bool supportsFighters = FighterDeckRules.Supports(catalog.RequireItem(ship.TypeId).GroupId, ship.TypeId);
         foreach (
             var drone in world
                 .Set<WorldDrone>()

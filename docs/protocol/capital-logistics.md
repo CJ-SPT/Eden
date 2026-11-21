@@ -206,8 +206,8 @@ repair amount, repair speed and range, movement, and assistance impedance. Each 
 
 EVE.js `shipActionRestrictions.js` and `activeModuleSpecialFx.js` provided a behavior and graphics cross-check.
 The pinned catalog supplies the type restrictions, fuel formula, and modifiers. Eden uses its own resident
-transactions and the existing active-module deadline index. Lancer Dreadnoughts use the same siege owner.
-Pirate capitals and additional specialist modes remain open.
+transactions and the existing active-module deadline index. Lancer Dreadnoughts and the faction dreadnoughts
+below use the same siege owner.
 
 **Automated validation.** The Revelation case covers the paid jump, a rejected short fuel stack, an eightfold
 siege multiplier, a paid turret volley against an Astrahus, and restart across the exact mode deadline.
@@ -465,6 +465,32 @@ The same case checks catalog admission for all four hulls.
 capital travel, area weapons, spatial modules, tethering, flight, gates, remote repair and migration
 filter passed in 104.85 seconds after a 10.54-second build. Both Python suites, formatting and
 `git diff --check` passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+## Pirate capitals and the Zirnitra
+
+The pinned published roster adds Caiman, Chemosh, Sarathiel and Vehement dreadnoughts, Dagon and
+Loggerhead force auxiliaries, Revenant and Vendetta supercarriers, and Azariel, Komodo, Molok and
+Vanquisher Titans. The Zirnitra uses the same dreadnought rules with its own precursor weapon modifiers.
+Existing jump, docking, siege, triage and combat rules enforce the hull class and fitted catalog attributes.
+The fixture also records the stock wreck types for all thirteen hulls. EVE.js `wreckUtils.js` provided a
+second reference for the named pirate wrecks.
+[CCP Havoc expansion notes](https://www.eveonline.com/news/view/havoc-expansion-notes) ·
+[CCP Legion expansion notes](https://www.eveonline.com/news/view/legion-expansion-notes)
+
+Caiman and Komodo each have two launch tubes in build 3662168. Caiman loads light attack squadrons and
+Komodo can load one heavy attack squadron alongside a light squadron. Fighter fitting uses pinned effect
+`6984` for the Guristas hull bonuses and the default multiplier values from `12869`. Revenant attack
+missiles also use its explosion radius and velocity modifiers. The Sarathiel can steer and change speed
+in siege because its hull modifies the siege module's speed penalty. Warp and docking still wait for
+the cycle to expire. Capital micro jump drives and fleet jump fields, conduit jumps, additional
+fighter abilities and pirate blueprint acquisition remain open.
+
+**Automated validation.** The pirate roster and two-deck launch case passed in 8.12 seconds.
+The Sarathiel siege movement case passed in 7.76 seconds. All 200 cases in the final capital travel,
+fighter deck, hull audit, capacitor warfare, spatial modules and flight boundary filter passed in
+162.35 seconds after a 7.94-second build. Both Python suites, formatting and `git diff --check` passed.
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 

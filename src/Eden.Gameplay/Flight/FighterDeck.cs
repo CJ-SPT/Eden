@@ -40,20 +40,36 @@ public static class FighterDeckRules
     // Build 3662168 inventory flags, from the client inventory constants.
     public const int FirstTube = 159;
     public const int MaximumTubes = 5;
+    public const int Caiman = 45647;
+    public const int Komodo = 45649;
 
     public static bool IsTube(int flag) => flag is >= FirstTube and < FirstTube + MaximumTubes;
 
-    public static bool Supports(int group) => group is (int)HullClass.Carrier or (int)HullClass.Supercarrier;
+    public static bool Supports(int group, int typeId) =>
+        group is (int)HullClass.Carrier or (int)HullClass.Supercarrier
+        || (group, typeId) is ((int)HullClass.Dreadnought, Caiman) or ((int)HullClass.Titan, Komodo);
 
     public static bool FighterHullModifier(int skill, DogmaAttributeId attribute, DogmaOperation operation) =>
-        skill == (int)HullBonusSkill.Fighters
-        && operation == DogmaOperation.PostPercent
-        && attribute
+        (skill, operation) switch
+        {
+            ((int)HullBonusSkill.Fighters, DogmaOperation.PostPercent) => IsDamageBonus(attribute)
+                || attribute
+                    is DogmaAttributeId.MaxVelocity
+                        or DogmaAttributeId.ShieldCapacity
+                        or DogmaAttributeId.FighterAttackMissileExplosionRadius
+                        or DogmaAttributeId.FighterAttackMissileExplosionVelocity
+                        or DogmaAttributeId.FighterMissilesExplosionRadius
+                        or DogmaAttributeId.FighterMissilesExplosionVelocity,
+            ((int)HullBonusSkill.Fighters, DogmaOperation.PostMultiply) => attribute == DogmaAttributeId.MaxVelocity,
+            ((int)HullBonusSkill.LightFighters, DogmaOperation.PostMultiply) => IsDamageBonus(attribute),
+            _ => false,
+        };
+
+    private static bool IsDamageBonus(DogmaAttributeId attribute) =>
+        attribute
             is DogmaAttributeId.FighterAttackMissileDamageMultiplier
                 or DogmaAttributeId.FighterTurretDamageMultiplier
-                or DogmaAttributeId.FighterMissilesDamageMultiplier
-                or DogmaAttributeId.MaxVelocity
-                or DogmaAttributeId.ShieldCapacity;
+                or DogmaAttributeId.FighterMissilesDamageMultiplier;
 
     public static FighterClass? Class(IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
         attributes.GetValueOrDefault(DogmaAttributeId.LightFighterSquadron) == 1 ? FighterClass.Light

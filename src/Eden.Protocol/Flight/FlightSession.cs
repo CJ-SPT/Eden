@@ -1500,7 +1500,7 @@ internal sealed partial class FlightSession(
 
     private PilotCallResult ExecuteCommand(FlightCommand command)
     {
-        if (command is not (FlightCommand.RefreshState or FlightCommand.Stop) && CapitalModuleActive)
+        if (command is not (FlightCommand.RefreshState or FlightCommand.Stop) && CapitalModuleActive && !CanNavigateInSiege(command))
         {
             return new PilotCallResult.Failure("Wait for the active capital module to finish before moving the ship.");
         }
