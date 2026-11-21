@@ -847,7 +847,9 @@ its controller and the catalog fighter profile without capsuleer skill bonuses.
 The active gunner can recall a squadron to its original tube. Releasing control
 or reopening the world starts the same return, and the server lands returning
 squadrons even with no gunner connected. Corporation custody and surviving
-squadron size persist. Deployed squadrons are lost when the host departs.
+squadron size persist. A recall continues if the gunner undocks, and the personal
+ship's drone update leaves that squadron with the structure. Deployed squadrons
+are lost when the host departs.
 Standup attack and electronic warfare remain open.
 
 **Automated validation.** The exact
@@ -856,6 +858,9 @@ in 8.65 seconds, including manual recall, a second launch, and an unattended ret
 The 147-case Standup fighter, Upwell control and lifecycle, capital travel,
 pilot inventory, and world initialization filter passed in 85.65 seconds after
 a 3.12-second build. Both Python suites, formatting and `git diff --check` passed.
+The release and undock cases both passed in 9.47 seconds after an 11.84-second
+build. The 383-case Standup, structure control, personal and resident drones,
+drone recovery and capital travel filter passed in 229.51 seconds.
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 

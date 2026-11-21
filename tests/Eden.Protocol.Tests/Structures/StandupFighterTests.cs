@@ -19,8 +19,10 @@ namespace Eden.Protocol.Tests.Structures;
 
 public sealed class StandupFighterTests
 {
-    [Fact]
-    public async Task AstrahusLaunchesStandupSquadronAndRecallsItAfterGunnerReleasesControl()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task AstrahusLaunchesStandupSquadronAndRecallsItAfterGunnerReleasesControl(bool undock)
     {
         using Fixture fixture = new(liveWorld: true);
         PassiveCatalogFixture.LoadCapitalTravel(new WorldDatabase(fixture.Db.Path).CatalogPath);
@@ -84,25 +86,32 @@ public sealed class StandupFighterTests
             action.Commit();
         }
         double distantX = Contact().Position.X;
-        Assert.Same(PilotCallResult.None, Call("structureControl", "ReleaseControl", []));
+        if (undock)
+        {
+            Assert.IsType<PilotCallResult.Success>(Call("structureDocking", "Undock", [structure.Id, null]));
+            _ = drones.Advance(pilot.PilotId, fixture.Clock.Now, context.Flight.CurrentStamp);
+        }
+        else
+        {
+            Assert.Same(PilotCallResult.None, Call("structureControl", "ReleaseControl", []));
+        }
         Assert.Null(context.ControlledStructureId);
         Assert.Equal(DroneActivity.ReturningToBay, Contact().Activity);
+        Assert.Equal(structure.Id, Contact().ShipId);
         Tick();
         Assert.True(Contact().Position.X < distantX);
-        for (int step = 0; step < 60 && deck.Read(pilot.PilotId, structure.Id).Squadrons.Count > 0; step++)
+        for (int step = 0; step < 60 && drones.List(pilot.SystemId, fixture.Clock.Now).Any(row => row.Id == squadron.SquadronId); step++)
         {
             Tick();
         }
-        var landed = Assert.Single(deck.Read(pilot.PilotId, structure.Id).Tubes);
-        Assert.Equal(squadron.SquadronId, landed.SquadronId);
-        Assert.Equal(9, landed.Count);
         Assert.Empty(drones.List(pilot.SystemId, fixture.Clock.Now));
         await world.FlushAsync();
         using WorldDbContext saved = new(fixture.Db.Path);
-        var item = saved.Set<OwnedItem>().Find(landed.SquadronId)!;
+        var item = saved.Set<OwnedItem>().Find(squadron.SquadronId)!;
         Assert.Equal(fixture.CorporationId, item.OwnerId);
         Assert.Equal(structure.Id, item.LocationId);
         Assert.Equal(tube, item.FlagId);
+        Assert.Equal(9, item.Quantity);
 
         PilotCallResult Call(string service, string method, object?[] args) => router.Call(context, service, method, args, _ => { });
         DroneContact Contact() => Assert.Single(drones.List(pilot.SystemId, fixture.Clock.Now), row => row.Id == squadron.SquadronId);

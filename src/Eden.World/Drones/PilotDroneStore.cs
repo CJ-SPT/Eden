@@ -7,6 +7,7 @@ using Eden.Data.World.Combat.Npcs;
 using Eden.Data.World.Docking;
 using Eden.Data.World.Drones;
 using Eden.Data.World.Inventory;
+using Eden.Data.World.Structures;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
@@ -734,6 +735,11 @@ internal sealed partial class PilotDroneStore(
                 .ToArray()
         )
         {
+            if (drone.ControllerShipId != ship.Id && world.Set<SavedStructure>().Find(drone.ControllerShipId) is not null)
+            {
+                // The structure's recovery clock owns the squadron after the gunner undocks.
+                continue;
+            }
             bool fighterTube =
                 world.Set<OwnedItem>().Find(drone.ItemId) is { } controlledItem && FighterDeckRules.IsTube(controlledItem.FlagId);
             if (
