@@ -37,7 +37,7 @@ public sealed class StandardMarketTests
         TestClock clock = new();
         using TestWorld fixture = Create(clock);
         WorldDatabase database = new(fixture.Path);
-        long orderId;
+        MarketOrder[] ordersBeforeCheckpoint;
         long balance;
         using (var host = ServerServices.Build(database, clock, liveWorld: true))
         {
@@ -61,7 +61,6 @@ public sealed class StandardMarketTests
             Assert.Equal(StartingBalance - 900, bought.BalanceCents);
             var ask = Assert.Single(market.Orders(Pilot, Tritanium), order => !order.Bid);
             Assert.Equal((200L, 2, 5), (ask.PriceCents, ask.Remaining, ask.Entered));
-            orderId = ask.Id;
             long itemId = bought.Changes.Last().Item.Id;
             Assert.Throws<InvalidDataException>(() => market.Sell(Pilot, [new(itemId, Hub, Tritanium, 50, 1)]));
             Assert.Equal(bought.BalanceCents, market.Balance(Pilot));
@@ -69,6 +68,7 @@ public sealed class StandardMarketTests
             var sold = market.Sell(Pilot, [new(itemId, Hub, Tritanium, 50, 2)]);
             Assert.Equal(2, Assert.Single(sold.Trades).Quantity);
             Assert.Equal(2, Assert.Single(market.Orders(Pilot, Tritanium), order => order.Bid).Remaining);
+            ordersBeforeCheckpoint = market.Orders(Pilot, Tritanium).OrderBy(order => order.Id).ToArray();
             balance = sold.BalanceCents;
             var summary = market.BestAsks(Pilot, MarketScope.Region);
             using (var metrics = SessionPerformance.Begin("warm standard market", _ => { }, force: true)!)
@@ -83,9 +83,7 @@ public sealed class StandardMarketTests
         }
         using var reopened = ServerServices.Build(new(fixture.Path), clock, liveWorld: true);
         var shop = reopened.GetRequiredService<IPilotMarket>();
-        var reopenedAsk = Assert.Single(shop.Orders(Pilot, Tritanium), order => !order.Bid);
-        Assert.Equal((orderId, 2), (reopenedAsk.Id, reopenedAsk.Remaining));
-        Assert.Equal(2, Assert.Single(shop.Orders(Pilot, Tritanium), order => order.Bid).Remaining);
+        Assert.Equal(ordersBeforeCheckpoint, shop.Orders(Pilot, Tritanium).OrderBy(order => order.Id));
         Assert.Equal(balance, shop.Balance(Pilot));
         Assert.Equal(3, shop.Transactions(Pilot).Count);
         clock.AdvanceWallTime(TimeSpan.FromDays(90));

@@ -1,3 +1,5 @@
+using System.Buffers;
+using System.Text;
 using System.Text.Json;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Contracts;
@@ -360,6 +362,8 @@ internal sealed partial class ResidentEconomy
 {
     private static void ProjectNpcMarketOrder(WorldDbContext world, IReadOnlyList<EconomyChange<EconomyNpcMarketOrder>> changes)
     {
+        ArrayBufferWriter<byte> payload = new();
+        using Utf8JsonWriter json = new(payload);
         foreach (var batch in changes.Chunk(ProjectionBatchSize))
         {
             var removed = batch.Where(c => c.Value is null).Select(c => c.Key.Id).ToArray();
@@ -368,20 +372,32 @@ internal sealed partial class ResidentEconomy
                 string deleted = JsonSerializer.Serialize(removed);
                 world.Database.ExecuteSql($"DELETE FROM WorldMarketOrder WHERE Id IN (SELECT value FROM json_each({deleted}))");
             }
-            var rows = batch.Where(c => c.Value is not null).Select(c => c.Value).ToArray();
-            if (rows.Length != 0)
+            if (removed.Length != batch.Length)
             {
-                string values = JsonSerializer.Serialize(rows);
+                payload.ResetWrittenCount();
+                json.Reset();
+                json.WriteStartArray();
+                foreach (var change in batch)
+                {
+                    if (change.Value is { } order)
+                    {
+                        WriteNpcMarketOrder(json, order);
+                    }
+                }
+                json.WriteEndArray();
+                json.Flush();
+                string values = Encoding.UTF8.GetString(payload.WrittenSpan);
                 world.Database.ExecuteSql(
                     $"""
                     INSERT INTO WorldMarketOrder(Id,StationId,SystemId,RegionId,OwnerId,TypeId,Bid,PriceCents,Remaining,
                         Entered,Issued,Kind,SourceOrderId,DurationDays,Range,MinimumVolume)
-                    SELECT json_extract(value,'$.Id'),json_extract(value,'$.StationId'),json_extract(value,'$.SystemId'),
-                        json_extract(value,'$.RegionId'),json_extract(value,'$.OwnerId'),json_extract(value,'$.TypeId'),
-                        json_extract(value,'$.Bid'),json_extract(value,'$.PriceCents'),json_extract(value,'$.Remaining'),
-                        json_extract(value,'$.Entered'),json_extract(value,'$.Issued'),json_extract(value,
-                        '$.Kind'),json_extract(value,'$.SourceOrderId'),json_extract(value,'$.DurationDays'),
-                        json_extract(value,'$.Range'),json_extract(value,'$.MinimumVolume') FROM json_each({values}) WHERE 1
+                    WITH payload(value) AS MATERIALIZED (SELECT jsonb(value) FROM json_each({values}))
+                    SELECT json_extract(value,'$[0]'),json_extract(value,'$[1]'),json_extract(value,'$[2]'),
+                        json_extract(value,'$[3]'),json_extract(value,'$[4]'),json_extract(value,'$[5]'),
+                        json_extract(value,'$[6]'),json_extract(value,'$[7]'),json_extract(value,'$[8]'),
+                        json_extract(value,'$[9]'),json_extract(value,'$[10]'),json_extract(value,'$[11]'),
+                        json_extract(value,'$[12]'),json_extract(value,'$[13]'),json_extract(value,'$[14]'),
+                        json_extract(value,'$[15]') FROM payload WHERE 1
                     ON CONFLICT(Id) DO UPDATE SET StationId=excluded.StationId,SystemId=excluded.SystemId,
                         RegionId=excluded.RegionId,OwnerId=excluded.OwnerId,TypeId=excluded.TypeId,Bid=excluded.Bid,
                         PriceCents=excluded.PriceCents,Remaining=excluded.Remaining,Entered=excluded.Entered,
@@ -391,6 +407,29 @@ internal sealed partial class ResidentEconomy
                 );
             }
         }
+    }
+
+    // Keep this order aligned with the projection's INSERT. The payload is local to the command.
+    private static void WriteNpcMarketOrder(Utf8JsonWriter json, EconomyNpcMarketOrder order)
+    {
+        json.WriteStartArray();
+        json.WriteNumberValue(order.Id);
+        json.WriteNumberValue(order.StationId);
+        json.WriteNumberValue(order.SystemId);
+        json.WriteNumberValue(order.RegionId);
+        json.WriteNumberValue(order.OwnerId);
+        json.WriteNumberValue(order.TypeId);
+        json.WriteBooleanValue(order.Bid);
+        json.WriteNumberValue(order.PriceCents);
+        json.WriteNumberValue(order.Remaining);
+        json.WriteNumberValue(order.Entered);
+        json.WriteNumberValue(order.Issued);
+        json.WriteNumberValue((int)order.Kind);
+        json.WriteNumberValue(order.SourceOrderId);
+        json.WriteNumberValue(order.DurationDays);
+        json.WriteNumberValue(order.Range);
+        json.WriteNumberValue(order.MinimumVolume);
+        json.WriteEndArray();
     }
 }
 

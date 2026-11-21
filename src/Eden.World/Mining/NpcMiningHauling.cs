@@ -85,7 +85,7 @@ internal sealed partial class NpcMiningSeeder
             .ToArray();
         foreach (var miner in miners)
         {
-            var cargo = world.Filter<WorldNpcMiningCargo>(c => c.NpcId == miner.Id && c.Quantity > 0).OrderBy(c => c.TypeId).ToArray();
+            var cargo = NonemptyCargo(world, miner.Id);
             if (cargo.Length == 0)
             {
                 continue;
@@ -131,6 +131,24 @@ internal sealed partial class NpcMiningSeeder
                 ) * TimeSpan.TicksPerMillisecond
             );
         }
+    }
+
+    private static WorldNpcMiningCargo[] NonemptyCargo(WorldAction world, long npcId)
+    {
+        var cargo = world.Set<WorldNpcMiningCargo>();
+        if (cargo is EconomySet<WorldNpcMiningCargo, EconomyWorldNpcMiningCargo> resident)
+        {
+            return resident
+                .IndexedSnapshots(nameof(WorldNpcMiningCargo.NpcId), npcId)
+                .Where(stack => stack.NpcId == npcId && stack.Quantity > 0)
+                .OrderBy(stack => stack.TypeId)
+                .Select(stack => cargo.Find(npcId, stack.TypeId)!)
+                .ToArray();
+        }
+        return world
+            .Filter<WorldNpcMiningCargo>(stack => stack.NpcId == npcId && stack.Quantity > 0)
+            .OrderBy(stack => stack.TypeId)
+            .ToArray();
     }
 
     private static bool BeginWarp(
