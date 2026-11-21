@@ -6246,3 +6246,65 @@ Not performed; agent client testing is disabled.
 
 Compare allocation rate at 1,401 scheduled pilots after updating the dedicated server. Check the same interval
 for `market demand` owner holds and arrival `ownerReacquire` times.
+
+## Hauler traffic identity selection
+
+On `4dda77c7`, a 12-second allocation trace at 1,401 scheduled pilots attributed 45% of sampled bytes to
+traffic profile selection during docked hauler trades. Selection repeatedly checked reserved characters
+and pilot names, deduplicated overlapping pools and queried each local hauler for its ship type.
+
+Region, security-band and global pools now identify repeated characters during preparation. A repeat keeps
+its position in the seeded rotation, including when a newer kill lists a different hull. A fully redundant
+tier can be skipped. Character and name checks use the committed index count when the transaction has no
+private rows for that table. Private edits, additions and deletions take precedence during selection.
+Preparing a trade and executing it now use the same batched projection of the community's hauling roster.
+
+### Automated validation
+
+The fixed-work Release comparison exhausted 2,048 candidates at each of 64 seeded slots. Both versions
+returned the same ordered checksum across 131,072 kill IDs. The control allocated 9,879,824 bytes and
+the updated traversal allocated 8,192 bytes. The regression enforces a 64 KiB budget for all 64 scans.
+Elapsed time in the paired samples fell from 34.69 ms to 7.13 ms.
+
+Two untraced 90-second Release runs used the same copied world and traffic snapshot, 135 visited
+communities, one observer, real market maintenance, four reported processors and server GC.
+Both settled at the configured cap of 1,401 scheduled pilots before the final 30-second window.
+
+| Measurement | Control | Updated |
+| --- | ---: | ---: |
+| Process allocation at 1,401 pilots | 136.2 MiB/s | 109.9 MiB/s |
+| Process allocation per completed action in that window | 491.5 KiB | 397.4 KiB |
+| Completed actions per second in that window | 283.7 | 283.1 |
+| Oldest due job, p95 in that window | 54.2 ms | 36.0 ms |
+| Process allocation across admission and work, full run | 172.8 MiB/s | 142.4 MiB/s |
+| Completed actions over the full run | 23,549 | 23,790 |
+| Process CPU over the full run | 53.69 s | 51.05 s |
+| Warm frame processing p95 | 5.30 ms | 6.51 ms |
+| Warm end-to-end frame / market request p95 | 20.85 / 32.53 ms | 17.40 / 28.44 ms |
+| Peak checkpoint capture / projection / write | 13 / 826 / 1,117 ms | 19 / 868 / 1,063 ms |
+
+Each run completed seven checkpoints, finished with zero due jobs and recorded zero failed actions.
+All 60 warmed observer requests per run used zero SQL commands, connections and fitting rebuilds.
+These are single local timing samples. Reproduce with the capped save and the
+[`ReplaySustainedBotThroughput` settings above](#allocation-during-bot-admission-and-market-settlement).
+The stack sample, per-second reports and comparison are under `artifacts/bot-hotpaths-20261121/`.
+
+The exact `ExhaustingWarmedTrafficPoolsKeepsSeededOrderWithBoundedAllocation` filter passed in 2.73 s.
+Both commit and rollback cases of `TemplateRefreshCommitsPilotHullAndIdentityWithoutCloningUnrelatedPortraits`
+passed in 9.85 s. The combined filter covered `TrafficSnapshotTests`, `TrafficActivityTests`, `TrafficPreparationTests`,
+`CapsuleerBackgroundPreparationTests`, `CapsuleerProvisioningTests`, `ResidentBotEconomyTests`, the three
+non-optional startup performance cases and character-creation name collisions. It passed 98 of 100 cases in 44.92 s.
+Both failures reproduced against the control binaries. `LocalPreparationDoesNotReadUnrelatedSystemPayloads`
+hit malformed fixture JSON in the system security index. `MultipleCommunitiesRunTheRealQueueWithoutCreatingBackgroundNativeScenes`
+expected a remote miner's sequence to stay at zero and observed 16 on both builds.
+The final Debug and Release solution builds passed with zero warnings or errors in 5.08 s and 4.98 s.
+The three selection and transaction cases also passed in Release in 6 s. Both Python policy suites
+passed all 17 checks, repository formatting passed and the protocol index link resolved.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.

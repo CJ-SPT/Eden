@@ -113,26 +113,35 @@ internal sealed class TrafficSnapshot(TrafficSnapshotManifest? manifest, Traffic
         TrafficSecurityBand band,
         Func<TrafficProfile, bool>? compatible,
         Func<TrafficProfile, int>? hullGroup
-    ) =>
-        new(
-            new[] { _regions.GetValueOrDefault((region, band), []), _bands.GetValueOrDefault(band, []), _global }
-                .Select(values => new Lazy<TrafficCandidateTier>(() =>
-                {
-                    var pool = Latest(compatible is null ? values : values.Where(compatible));
-                    return hullGroup is null
-                        ? new TrafficCandidateTier(false, [new(0, pool)])
-                        : new TrafficCandidateTier(
-                            true,
-                            pool.GroupBy(hullGroup)
-                                .OrderBy(group => group.Key)
-                                .Select(group => new TrafficCandidateGroup(group.Key, group.ToArray()))
-                                .ToArray()
-                        );
-                }))
-                .ToArray()
-        );
+    )
+    {
+        var regional = Pool(_regions.GetValueOrDefault((region, band), []));
+        var security = Pool(_bands.GetValueOrDefault(band, []));
+        return new([Tier(regional, null), Tier(security, regional), Tier(Pool(_global), security)]);
 
-    internal sealed record TrafficCandidateGroup(int Key, TrafficProfile[] Members);
+        Lazy<TrafficProfile[]> Pool(TrafficProfile[] values) => new(() => Latest(compatible is null ? values : values.Where(compatible)));
+
+        Lazy<TrafficCandidateTier> Tier(Lazy<TrafficProfile[]> current, Lazy<TrafficProfile[]>? previous) =>
+            new(() =>
+            {
+                var pool = current.Value;
+                // Each broader tier contains every compatible character in the preceding tier.
+                // Leave holes for repeats so the seeded group and member rotations keep their original lengths.
+                if (previous is not null && previous.Value.Length == pool.Length)
+                {
+                    return new(hullGroup is not null, []);
+                }
+                var earlier = previous?.Value.Select(profile => profile.CharacterId).ToHashSet();
+                TrafficCandidateGroup Group(int key, IEnumerable<TrafficProfile> members) =>
+                    new(key, members.Select(profile => earlier?.Contains(profile.CharacterId) == true ? null : profile).ToArray());
+
+                return hullGroup is null
+                    ? new(false, [Group(0, pool)])
+                    : new(true, pool.GroupBy(hullGroup).OrderBy(group => group.Key).Select(group => Group(group.Key, group)).ToArray());
+            });
+    }
+
+    internal sealed record TrafficCandidateGroup(int Key, TrafficProfile?[] Members);
 
     internal sealed record TrafficCandidateTier(bool Grouped, TrafficCandidateGroup[] Groups);
 
@@ -140,7 +149,6 @@ internal sealed class TrafficSnapshot(TrafficSnapshotManifest? manifest, Traffic
     {
         internal IEnumerable<TrafficProfile> Candidates(long seed, int system, int slot)
         {
-            HashSet<long> seen = [];
             foreach (var prepared in Tiers)
             {
                 var tier = prepared.Value;
@@ -153,8 +161,7 @@ internal sealed class TrafficSnapshot(TrafficSnapshotManifest? manifest, Traffic
                     int start = TrafficRules.Start(tier.Grouped ? seed ^ group.Key : seed, system, slot, members.Length);
                     for (int member = 0; member < members.Length; member++)
                     {
-                        var profile = members[(start + member) % members.Length];
-                        if (seen.Add(profile.CharacterId))
+                        if (members[(start + member) % members.Length] is { } profile)
                         {
                             yield return profile;
                         }
