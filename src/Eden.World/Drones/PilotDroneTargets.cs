@@ -89,7 +89,14 @@ internal sealed partial class PilotDroneStore
 
     private sealed record FighterCompanionTarget(WorldDrone Row, DroneContact Contact, Pilot Owner);
 
-    private static FighterCompanionTarget? FighterTarget(WorldAction world, CatalogDbContext catalog, Pilot source, long id, int system)
+    private static FighterCompanionTarget? FighterTarget(
+        WorldAction world,
+        CatalogDbContext catalog,
+        Pilot source,
+        long id,
+        int system,
+        long now
+    )
     {
         if (
             world.Set<WorldDrone>().Find(id) is not { } row
@@ -101,7 +108,7 @@ internal sealed partial class PilotDroneStore
         {
             return null;
         }
-        var contact = Contact(world, catalog, row);
+        var contact = Contact(world, catalog, row, now);
         return contact.Health.Remaining.Destroyed ? null : new(row, contact, owner);
     }
 

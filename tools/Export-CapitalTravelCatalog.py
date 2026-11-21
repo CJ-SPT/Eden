@@ -64,6 +64,10 @@ def export(source, destination):
             dogma = keep('client/typedogma', type_id)
             for effect in dogma.get('dogmaEffects', []):
                 keep('client/dogmaeffects', effect['effectID'])
+            if category == 87:  # Fighters.
+                abilities = read('client/fighterabilitiesbytype', json.dumps(str(type_id)))
+                if abilities:
+                    records['client/fighterabilitiesbytype', str(type_id)] = abilities
             pending.update(int(v) for a, v in values if a in (182, 183, 184, 1285, 1289, 1290) and v > 0 and int(v) not in visited)
         for type_list in (330, 331, 332, 333, 334, 341, 342, 343, 348, 1000):
             keep('client/typelist', type_list)

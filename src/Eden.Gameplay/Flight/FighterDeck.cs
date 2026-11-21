@@ -14,7 +14,11 @@ public enum FighterClass
 
 public sealed record FighterTube(int Flag, long SquadronId, int TypeId, int Count);
 
-public sealed record FighterInSpace(int Flag, long SquadronId, int TypeId, int Count, DroneActivity Activity);
+public sealed record FighterInSpace(int Flag, long SquadronId, int TypeId, int Count, DroneActivity Activity)
+{
+    public FighterMobilityCycle? Mobility { get; init; }
+    public bool MobilityActive { get; init; }
+}
 
 public sealed record FighterDeckSnapshot(IReadOnlyList<FighterTube> Tubes, IReadOnlyList<FighterInSpace> Squadrons);
 
@@ -28,6 +32,7 @@ public interface IPilotFighterDeck
     IReadOnlyList<FighterLaunch> Launch(long pilotId, long shipId, IReadOnlyList<int> flags, long now);
     FighterTubeChange Load(long pilotId, long shipId, long stackId, int flag);
     FighterTubeChange Unload(long pilotId, long shipId, int flag);
+    void SetMobility(long pilotId, long shipId, IReadOnlyList<long> squadrons, bool activate, long now);
 }
 
 public interface IPilotFighterOrders
@@ -65,6 +70,7 @@ public static class FighterDeckRules
                     or DogmaAttributeId.MaxVelocity
                     or DogmaAttributeId.FighterNeutralizeAmount
                     or DogmaAttributeId.FighterWebStrength
+                    or DogmaAttributeId.FighterAfterburnerSpeed
                     or DogmaAttributeId.FighterEcmRadar
                     or DogmaAttributeId.FighterEcmLadar
                     or DogmaAttributeId.FighterEcmGravimetric

@@ -40,7 +40,10 @@ internal static partial class DroneCatalog
         var required = InventoryDefinitions.RequiredSkills.Select(pair => (int)attributes.GetValueOrDefault(pair.Skill)).ToHashSet();
         if (type.CategoryId == (int)InventoryCategory.Fighter)
         {
-            return Eden.World.Fighters.FighterCombatCatalog.Profile(type, source, attributes);
+            return Eden.World.Fighters.FighterCombatCatalog.Profile(type, source, attributes) with
+            {
+                Mobility = Eden.World.Fighters.FighterMobilityCatalog.Read(catalog, typeId, attributes),
+            };
         }
         if (UtilityDroneRules.Group(type.GroupId))
         {

@@ -130,7 +130,7 @@ internal sealed class SmartbombStore(
             {
                 continue;
             }
-            var contact = PilotDroneStore.Contact(world, catalog, row);
+            var contact = PilotDroneStore.Contact(world, catalog, row, now);
             if (contact.Health.Remaining.Destroyed)
             {
                 continue;

@@ -1,6 +1,7 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
 
@@ -53,7 +54,8 @@ public sealed record DroneWork(
     long StartedAt = 0,
     long DueAt = 0,
     bool Returning = false,
-    IReadOnlyList<DroneCargo>? Cargo = null
+    IReadOnlyList<DroneCargo>? Cargo = null,
+    FighterMobilityCycle? FighterMobility = null
 );
 
 public static class UtilityDroneRules

@@ -241,7 +241,7 @@ internal sealed partial class AreaWeaponStore
             }
             else if (target.Drone is { } drone)
             {
-                SmartbombStore.DamageDrone(world, drone, PilotDroneStore.Contact(world, catalog, drone), damage, now);
+                SmartbombStore.DamageDrone(world, drone, PilotDroneStore.Contact(world, catalog, drone, now), damage, now);
             }
             else if (target.Pilot is { } victim)
             {

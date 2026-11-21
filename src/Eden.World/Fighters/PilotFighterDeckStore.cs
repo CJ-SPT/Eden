@@ -6,6 +6,7 @@ using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Propulsion;
 using Eden.Infrastructure.Registration;
 using Eden.World.Catalog;
 using Eden.World.Combat;
@@ -20,7 +21,7 @@ using Eden.World.Storage;
 namespace Eden.World.Fighters;
 
 [Injectable]
-internal sealed class PilotFighterDeckStore(WorldDatabase database) : IPilotFighterDeck
+internal sealed class PilotFighterDeckStore(WorldDatabase database, TimeProvider clock) : IPilotFighterDeck
 {
     private LiveWorld Live =>
         LiveWorld.Find(database.Path) ?? throw new InvalidOperationException("Fighter decks require the resident world.");
@@ -33,7 +34,7 @@ internal sealed class PilotFighterDeckStore(WorldDatabase database) : IPilotFigh
                     world.Pilots.Find(pilotId)?.ActiveShipId == shipId
                         ? new FighterDeckSnapshot(
                             TubeItems(world, pilotId, shipId).OrderBy(item => item.FlagId).Select(Tube).ToArray(),
-                            Deployed(world, pilotId, shipId).ToArray()
+                            Deployed(world, pilotId, shipId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()).ToArray()
                         )
                         : new FighterDeckSnapshot([], []),
                 new(pilots: [pilotId], ships: [shipId])
@@ -102,14 +103,79 @@ internal sealed class PilotFighterDeckStore(WorldDatabase database) : IPilotFigh
         return launches;
     }
 
-    private static IEnumerable<FighterInSpace> Deployed(WorldAction world, long pilotId, long shipId) =>
+    private static IEnumerable<FighterInSpace> Deployed(WorldAction world, long pilotId, long shipId, long now = 0) =>
         world
             .Filter<WorldDrone>(drone => drone.PilotId == pilotId && drone.ControllerShipId == shipId && drone.SystemId != null)
             .AsEnumerable()
             .Select(drone => (Drone: drone, Item: world.Set<OwnedItem>().Find(drone.ItemId)))
             .Where(pair => pair.Item is not null && FighterDeckRules.IsTube(pair.Item.FlagId))
             .OrderBy(pair => pair.Item!.FlagId)
-            .Select(pair => new FighterInSpace(pair.Item!.FlagId, pair.Item.Id, pair.Item.TypeId, pair.Item.Quantity, pair.Drone.Activity));
+            .Select(pair =>
+            {
+                var item = pair.Item!;
+                var cycle = now > 0 ? PilotDroneStore.ReadWork(pair.Drone).FighterMobility : null;
+                return new FighterInSpace(item.FlagId, item.Id, item.TypeId, item.Quantity, pair.Drone.Activity)
+                {
+                    Mobility = cycle?.ReadyAt > now ? cycle : null,
+                    MobilityActive = cycle?.Active(now) == true,
+                };
+            });
+
+    public void SetMobility(long pilotId, long shipId, IReadOnlyList<long> squadrons, bool activate, long now)
+    {
+        if (squadrons.Count is < 1 or > FighterDeckRules.MaximumTubes || squadrons.Distinct().Count() != squadrons.Count)
+        {
+            throw new InvalidDataException("Choose distinct fighter squadrons.");
+        }
+        using var action = Live.Economy.Begin(new(pilots: [pilotId], ships: [shipId]));
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var pilot = RequireDeck(action, catalog, pilotId, shipId, FighterDeckRules.FirstTube);
+        var origin = pilot.ActiveShip.Position ?? throw new InvalidDataException("Use your active ship in space to command fighters.");
+        int system = CrimewatchPersistence.System(catalog, pilot.ActiveShip);
+        action.RequireUncloaked(shipId);
+        foreach (long id in squadrons)
+        {
+            var drone = action.Set<WorldDrone>().Find(id);
+            var item = action.Set<OwnedItem>().Find(id);
+            if (
+                drone is null
+                || item is null
+                || drone.PilotId != pilotId
+                || item.OwnerId != pilotId
+                || drone.ControllerShipId != shipId
+                || drone.SystemId != system
+                || item.LocationId != system
+                || !FighterDeckRules.IsTube(item.FlagId)
+                || new SpacePosition(origin.X, origin.Y, origin.Z).DistanceTo(new(drone.X, drone.Y, drone.Z)) > DroneRules.ShutdownDistance
+            )
+            {
+                throw new InvalidDataException("Choose deployed squadrons controlled by this ship.");
+            }
+            var profile = DroneCatalog.Skilled(action, catalog, pilotId, item.TypeId, shipId);
+            var mobility = profile.Mobility ?? throw new InvalidDataException("That squadron has no supported mobility ability.");
+            var work = PilotDroneStore.ReadWork(drone);
+            FighterMobilityCycle cycle;
+            if (activate)
+            {
+                if (work.FighterMobility?.ReadyAt > now)
+                {
+                    throw new InvalidDataException("The fighter mobility ability is active or cooling down.");
+                }
+                long ends = SpatialModuleRules.Deadline(now, mobility.DurationMilliseconds);
+                cycle = new(now, ends, SpatialModuleRules.Deadline(ends, mobility.CooldownMilliseconds));
+            }
+            else
+            {
+                if (work.FighterMobility?.Active(now) != true)
+                {
+                    throw new InvalidDataException("That fighter ability is no longer active.");
+                }
+                cycle = new(0, now, SpatialModuleRules.Deadline(now, mobility.CooldownMilliseconds));
+            }
+            PilotDroneStore.WriteWork(drone, work with { FighterMobility = cycle });
+        }
+        action.Commit();
+    }
 
     public FighterTubeChange Load(long pilotId, long shipId, long stackId, int flag)
     {

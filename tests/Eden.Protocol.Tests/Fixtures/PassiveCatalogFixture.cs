@@ -308,7 +308,7 @@ internal static class PassiveCatalogFixture
                 continue;
             }
             string key = record.Key.ToString(CultureInfo.InvariantCulture);
-            if (record.Dataset is "client/blueprints" or "client/dbuffcollections")
+            if (record.Dataset is "client/blueprints" or "client/dbuffcollections" or "client/fighterabilitiesbytype")
             {
                 key = JsonSerializer.Serialize(key);
             }

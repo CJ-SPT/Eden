@@ -103,7 +103,9 @@ internal sealed record FighterDeckReply(FighterDeckSnapshot State) : BlueModel
         {
             State.Tubes.Select(tube => (object?)FighterTubeContent.Fields(tube)).ToList(),
             State.Squadrons.Select(squad => (object?)new object?[] { squad.Flag, squad.SquadronId, squad.TypeId, squad.Count }).ToList(),
-            BlueEmpty.Dictionary.ToBlue(),
+            new BlueMap<long, object?>(
+                State.Squadrons.ToDictionary(squad => squad.SquadronId, squad => (object?)FighterAbilityState.For(squad))
+            ).ToBlue(),
         };
 }
 

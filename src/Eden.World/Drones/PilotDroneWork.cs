@@ -38,10 +38,10 @@ internal sealed partial class PilotDroneStore
         }
     }
 
-    private static DroneWork ReadWork(WorldDrone drone) =>
+    internal static DroneWork ReadWork(WorldDrone drone) =>
         drone.WorkJson is null ? new() : JsonSerializer.Deserialize<DroneWork>(drone.WorkJson)!;
 
-    private static void WriteWork(WorldDrone drone, DroneWork work) => drone.WorkJson = JsonSerializer.Serialize(work);
+    internal static void WriteWork(WorldDrone drone, DroneWork work) => drone.WorkJson = JsonSerializer.Serialize(work);
 
     internal static DroneWorkEffect? WorkEffect(WorldDrone drone, DroneProfile profile)
     {
@@ -76,7 +76,10 @@ internal sealed partial class PilotDroneStore
         if (drone.WorkJson is not null)
         {
             var work = ReadWork(drone);
-            WriteWork(drone, new(DueAt: work.DueAt, Returning: work.Cargo?.Count > 0, Cargo: work.Cargo));
+            WriteWork(
+                drone,
+                new(DueAt: work.DueAt, Returning: work.Cargo?.Count > 0, Cargo: work.Cargo, FighterMobility: work.FighterMobility)
+            );
         }
     }
 

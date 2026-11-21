@@ -370,7 +370,8 @@ internal sealed partial class PilotDroneStore(
             {
                 throw new InvalidDataException("Order drones to attack a locked ship within drone control range.");
             }
-            var companion = fighter && targetId is long companionId ? FighterTarget(world, catalog, pilot, companionId, systemId) : null;
+            var companion =
+                fighter && targetId is long companionId ? FighterTarget(world, catalog, pilot, companionId, systemId, now) : null;
             var structure = targetId is long structureId ? StructureCombatTargets.Find(world, structureId) : null;
             if (companion is not null)
             {
@@ -560,8 +561,9 @@ internal sealed partial class PilotDroneStore(
 
     public IReadOnlyList<DroneContact> List(int systemId, long now) =>
         LiveWorld.Find(database.Path)?.CombatForSystem(systemId)?.Drones(systemId, now)
-        ?? LiveReadModels.Find(database.Path)?.Drones(systemId, () => ReadContacts(systemId))
-        ?? ReadContacts(systemId);
+        ?? (LiveReadModels.Find(database.Path)?.Drones(systemId, () => ReadContacts(systemId)) ?? ReadContacts(systemId))
+            .Select(contact => FighterMobilityRules.Apply(contact, now))
+            .ToArray();
 
     private IReadOnlyList<DroneContact> ReadContacts(int systemId)
     {
@@ -743,7 +745,7 @@ internal sealed partial class PilotDroneStore(
                 released = true;
                 continue;
             }
-            var contact = Contact(world, catalog, drone);
+            var contact = Contact(world, catalog, drone, now);
             var profile = contact.Profile;
             bool qualified = true;
             try
@@ -877,7 +879,7 @@ internal sealed partial class PilotDroneStore(
             }
             var companion =
                 profile.SpaceSuperiority && drone.Activity == DroneActivity.Fighting
-                    ? FighterTarget(world, catalog, pilot, drone.TargetId, systemId)
+                    ? FighterTarget(world, catalog, pilot, drone.TargetId, systemId, now)
                     : null;
             var victim =
                 npc is null && structure is null && companion is null && drone.Activity == DroneActivity.Fighting
@@ -1010,7 +1012,7 @@ internal sealed partial class PilotDroneStore(
                     : structure is not null ? SpacePosition.Zero
                     : npc is null ? victimContact!.Velocity
                     : NpcMotion.Velocity(npc),
-                attributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius),
+                attributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius) * (companion?.Contact.MobilitySignatureMultiplier ?? 1),
                 rolls is not null && rolls.TryGetValue(drone.ItemId, out double roll)
                     ? roll
                     : RandomNumberGenerator.GetInt32(ProbabilityResolution) / (double)ProbabilityResolution,

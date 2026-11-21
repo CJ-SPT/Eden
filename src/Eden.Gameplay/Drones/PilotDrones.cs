@@ -87,7 +87,10 @@ public sealed record DroneProfile(
     MissileWarhead? FighterAttack = null,
     int FighterGroup = 0,
     bool SpaceSuperiority = false
-);
+)
+{
+    public FighterMobility? Mobility { get; init; }
+}
 
 public sealed record DroneContact(
     long Id,
@@ -111,6 +114,9 @@ public sealed record DroneContact(
     public int SquadronSize { get; init; }
 
     public DroneWorkEffect? WorkEffect { get; init; }
+    public FighterMobilityCycle? Mobility { get; init; }
+    public bool MobilityActive { get; init; }
+    public double MobilitySignatureMultiplier { get; init; } = 1;
 
     public Eden.Gameplay.Exploration.AbyssalDroneEnvironment? Abyssal { get; init; }
 }

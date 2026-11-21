@@ -33,7 +33,7 @@ namespace Eden.World.Drones;
 
 internal sealed partial class PilotDroneStore
 {
-    internal static DroneContact Contact(WorldAction world, CatalogDbContext catalog, WorldDrone drone)
+    internal static DroneContact Contact(WorldAction world, CatalogDbContext catalog, WorldDrone drone, long? now = null)
     {
         var item = world.Set<OwnedItem>().Find(drone.ItemId)!;
         var profile = DroneCatalog.Skilled(world, catalog, drone.PilotId, item.TypeId, drone.ControllerShipId);
@@ -64,7 +64,16 @@ internal sealed partial class PilotDroneStore
             drone.Orbiting,
             DroneDelegationPersistence.Read(drone)
         );
-        contact = contact with { SquadronSize = profile.FighterGroup == 0 ? 0 : item.Quantity, WorkEffect = WorkEffect(drone, profile) };
+        contact = contact with
+        {
+            SquadronSize = profile.FighterGroup == 0 ? 0 : item.Quantity,
+            WorkEffect = WorkEffect(drone, profile),
+            Mobility = profile.Mobility is null ? null : ReadWork(drone).FighterMobility,
+        };
+        if (now is long at)
+        {
+            contact = FighterMobilityRules.Apply(contact, at);
+        }
         if (
             drone.SystemId is int system
             && Eden.Gameplay.Exploration.AbyssalRules.IsSystem(system)

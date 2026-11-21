@@ -22,6 +22,10 @@ internal sealed class FlightDroneScene(SharedSpace space, TimeProvider clock, IP
         {
             update(new DestinyCommand.DroneActivityChanged(drone.Id, drone.Delegation));
         }
+        foreach (var drone in Contacts.Where(d => d.MobilityActive))
+        {
+            MobilityEffect(drone, true);
+        }
     }
 
     private DroneContact[] ReadDrones(FlightSceneContext context) =>
@@ -131,6 +135,14 @@ internal sealed class FlightDroneScene(SharedSpace space, TimeProvider clock, IP
                     update(DroneWorkWire.Effect(drone, currentWork, true));
                 }
             }
+            if (old is { MobilityActive: true } && (!drone.MobilityActive || old.Mobility != drone.Mobility))
+            {
+                MobilityEffect(old, false);
+            }
+            if (drone.MobilityActive && (old?.MobilityActive != true || old.Mobility != drone.Mobility))
+            {
+                MobilityEffect(drone, true);
+            }
             if (drone.ShotAt != 0 && old?.ShotAt != drone.ShotAt)
             {
                 update(
@@ -151,5 +163,33 @@ internal sealed class FlightDroneScene(SharedSpace space, TimeProvider clock, IP
             }
         }
         Contacts = current;
+    }
+
+    private void MobilityEffect(DroneContact drone, bool active)
+    {
+        string? graphic = drone.Profile.Mobility?.Kind switch
+        {
+            FighterMobilityKind.Microwarpdrive => "effects.MicroWarpDrive",
+            FighterMobilityKind.Afterburner => "effects.Afterburner",
+            _ => null,
+        };
+        if (graphic is not null && drone.Mobility is { } cycle)
+        {
+            update(
+                new DestinyCommand.TimedSpecialEffect(
+                    drone.Id,
+                    drone.Id,
+                    drone.Profile.TypeId,
+                    null,
+                    null,
+                    graphic,
+                    false,
+                    active,
+                    active,
+                    (cycle.EndsAt - cycle.StartedAt) / (double)TimeSpan.TicksPerMillisecond,
+                    cycle.StartedAt
+                )
+            );
+        }
     }
 }

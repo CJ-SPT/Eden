@@ -49,7 +49,7 @@ internal sealed partial class LiveCombatRuntime
             return null;
         }
         Trim();
-        return SystemDrones(system).Select(d => d.Contact).ToArray();
+        return SystemDrones(system).Select(d => Eden.Gameplay.Flight.FighterMobilityRules.Apply(d.Contact, now)).ToArray();
     }
 
     private LiveDrone[] SystemDrones(int system)
@@ -475,14 +475,16 @@ internal sealed partial class LiveCombatRuntime
             roll = DroneRules.OwnerAccuracyRoll(roll);
             return true;
         }
-        var contact = drone.Contact;
+        var contact = Eden.Gameplay.Flight.FighterMobilityRules.Apply(drone.Contact, now);
         var weapon = DroneNpcCombat.Weapon(attributes);
         if (!double.IsFinite(weapon.CycleMilliseconds) || weapon.CycleMilliseconds <= 0)
         {
             throw new InvalidDataException("Invalid NPC weapon cycle attributes.");
         }
         var signature =
-            DroneSignature(contact.Profile.TypeId) * Eden.Gameplay.Exploration.AbyssalDroneEnvironment.SignatureMultiplier(contact);
+            DroneSignature(contact.Profile.TypeId)
+            * contact.MobilitySignatureMultiplier
+            * Eden.Gameplay.Exploration.AbyssalDroneEnvironment.SignatureMultiplier(contact);
         var retaliation = DroneRules.Retaliation(contact, npc.Position, npc.Velocity, signature, weapon, roll, npc.Radius, now);
         if (retaliation.Result.Remaining.Destroyed)
         {
@@ -490,7 +492,7 @@ internal sealed partial class LiveCombatRuntime
         }
         _liveDrones[contact.Id] = drone with
         {
-            Contact = contact with { Health = contact.Health with { Remaining = retaliation.Result.Remaining } },
+            Contact = drone.Contact with { Health = drone.Contact.Health with { Remaining = retaliation.Result.Remaining } },
             ArmorDamage = contact.Profile.Defense.Armor - retaliation.Result.Remaining.Armor,
             StructureDamage = contact.Profile.Defense.Structure - retaliation.Result.Remaining.Structure,
         };

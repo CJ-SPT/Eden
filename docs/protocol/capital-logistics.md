@@ -695,6 +695,28 @@ passed in 21.05 seconds after a 1.23-second build. Both Python suites passed.
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
+## Fighter mobility abilities
+
+Build 3662168 `fightersSvc.pyj` sends `fighterMgr.CmdActivateAbilitySlots(fighterIDs, 1)` for untargeted
+slot-one abilities. The pinned `fighterabilitiesbytype` records map supported squadrons to microwarpdrive
+`4`, afterburner `9` or evasive maneuvers `13`. Pinned dogma supplies speed, signature and shield resonance
+modifiers. EVE.js `fighterRuntime.js` corroborates the native activation and deactivation events and the
+cooldown window, which begins when the ability ends.
+
+The mobility cycle shares the squadron checkpoint and runs independently of its movement and attack orders.
+The Templar gets six times speed and signature for 20 seconds. The Siren gets three times speed and keeps
+its signature. An Equite gets three times speed, one fifth signature and half shield resonances for ten
+seconds. The pinned data supplies each squadron's own values. The client receives the 60-second cooldown
+and the stock afterburner or microwarpdrive effects where available.
+
+**Automated validation.** The three exact cases passed in 10.13 seconds. The 92-case fighter, resident-drone
+and utility-drone filter passed in 40.43 seconds after a 10.92-second build. The exact cases cover duration,
+early deactivation, concurrent orbit orders, effective stats, restart and reactivation at the deadline.
+The 12-case mobility, support, space-superiority and smartbomb filter passed in 18.65 seconds. Both Python
+suites, formatting and `git diff --check` passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Milestones
 
 | Milestone | Playable outcome and acceptance |
