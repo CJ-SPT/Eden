@@ -14,7 +14,8 @@ RUN --mount=type=cache,id=eden-nuget,target=/root/.nuget/packages,sharing=locked
     --mount=type=cache,id=eden-compile-${TARGETARCH},target=/build-cache,sharing=locked \
     sdk_version="$(dotnet --version)" \
     && bash tools/Publish-Docker.sh /source "/build-cache/$sdk_version" /publish "$EDEN_REVISION" \
-    && test -s /publish/wwwroot/_framework/blazor.web.js +    && test -s /publish/data-tools/Import-LiveMarket.py
+    && test -s /publish/wwwroot/_framework/blazor.web.js \
+    && test -s /publish/data-tools/Import-LiveMarket.py
 
 FROM ubuntu:24.04 AS mod-compiler
 WORKDIR /build
