@@ -153,6 +153,10 @@ internal sealed class PilotSessionTick(
                     flight.RefreshNpcs();
                     flight.RefreshPeers();
                 }
+                else if (context.ControlledStructureId is not null)
+                {
+                    flight.RefreshDrones();
+                }
             }
 
             using (SessionLatency.Measure(SessionLatencyPhase.Updates))

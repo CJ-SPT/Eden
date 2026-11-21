@@ -60,6 +60,14 @@ public interface IStandupFighterInventory
     IReadOnlyList<InventoryChange> MoveStandupFighters(long pilotId, long structureId, long itemId, int? quantity, bool deposit);
 }
 
+public interface IStandupFighterFlight
+{
+    void Assign(long pilotId, long structureId);
+    void Release(long pilotId, long structureId, long now);
+    void Recall(long pilotId, long structureId, IReadOnlyList<long> squadrons, long now);
+    void AdvanceReturns(long now);
+}
+
 public static class FighterDeckRules
 {
     // Build 3662168 inventory flags, from the client inventory constants.

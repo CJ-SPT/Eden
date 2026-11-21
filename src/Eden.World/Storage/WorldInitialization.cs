@@ -5,6 +5,7 @@ using Eden.Data.World.Fittings;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Propulsion;
 using Eden.Data.World.Repair;
+using Eden.Data.World.Structures;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Inventory;
 using Eden.Infrastructure.Diagnostics;
@@ -133,6 +134,16 @@ public static class WorldInitialization
                     .SetProperty(d => d.OwnerMembership, 0)
                     .SetProperty(d => d.DelegateMembership, 0)
                     .SetProperty(d => d.ReactionRevision, 0)
+            );
+        // A restarted world has no structure control leases. Recover deployed Standup fighters to their tubes.
+        var structureHosts = world.Set<SavedStructure>().Select(row => row.Id);
+        world
+            .Set<WorldDrone>()
+            .Where(row => row.SystemId != null && structureHosts.Contains(row.ControllerShipId))
+            .ExecuteUpdate(set =>
+                set.SetProperty(row => row.Activity, Eden.Gameplay.Drones.DroneActivity.ReturningToBay)
+                    .SetProperty(row => row.TargetId, row => row.ControllerShipId)
+                    .SetProperty(row => row.Orbiting, false)
             );
         // Committed capital modes finish their paid cycle across restarts.
         long moduleReopen = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc();

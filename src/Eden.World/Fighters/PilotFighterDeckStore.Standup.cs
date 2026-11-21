@@ -27,12 +27,20 @@ internal sealed partial class PilotFighterDeckStore
             return new([], []);
         }
         using CatalogDbContext catalog = new(database.CatalogPath);
-        if (catalog.FittingAttributes(structure.TypeId).GetValueOrDefault(DogmaAttributeId.FighterTubes) <= 0)
+        var ship = world.Pilots.Find(pilotId)?.ActiveShip;
+        if (
+            ship?.StructureId != structureId
+            || ship.Position is not null
+            || catalog.FittingAttributes(structure.TypeId).GetValueOrDefault(DogmaAttributeId.FighterTubes) <= 0
+            || !PilotStructureStore.CanControl(world, catalog, structure, pilotId)
+        )
         {
             return new([], []);
         }
-        var host = RequireStockDeck(world, catalog, pilotId, structureId, FighterDeckRules.FirstTube);
-        return new(TubeItems(world, host.Owner, structureId).OrderBy(item => item.FlagId).Select(Tube).ToArray(), []);
+        return new(
+            TubeItems(world, structure.CorporationId, structureId).OrderBy(item => item.FlagId).Select(Tube).ToArray(),
+            Deployed(world, pilotId, structureId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()).ToArray()
+        );
     }
 
     private static FighterStockDeck RequireStockDeck(WorldAction world, CatalogDbContext catalog, long pilotId, long hostId, int flag)

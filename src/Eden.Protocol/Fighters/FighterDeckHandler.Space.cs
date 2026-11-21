@@ -20,7 +20,12 @@ internal sealed partial class FighterDeckHandler
     private PilotCallResult Command(PilotCallContext context, string method, object?[] args)
     {
         var flight = context.Flight;
-        if (!flight.CanTarget || flight.PreparingWarp || flight.MicroJumpSpooling)
+        long? structure = context.ControlledStructureId;
+        if (structure is not null && method is not ("LaunchFightersFromTubes" or "RecallFightersToTubes"))
+        {
+            return PilotCallResult.Unsupported;
+        }
+        if (structure is null && (!flight.CanTarget || flight.PreparingWarp || flight.MicroJumpSpooling))
         {
             return new PilotCallResult.Failure("Use fighter commands from your active ship outside warp.");
         }
@@ -30,7 +35,7 @@ internal sealed partial class FighterDeckHandler
         {
             case ("LaunchFightersFromTubes", [var tubes]):
                 var flags = ReadSelection(tubes).Select(flag => checked((int)flag)).ToArray();
-                foreach (var launched in deck.Launch(pilot.PilotId, pilot.ShipId, flags, Now))
+                foreach (var launched in deck.Launch(pilot.PilotId, structure ?? pilot.ShipId, flags, Now))
                 {
                     InventoryChangesWire.NotifyItemChange(context, launched.Inventory, beforeFlight: true);
                     context.NotificationsBeforeFlight.Add(new FighterTubeEmpty(launched.Squadron.Flag));
@@ -38,7 +43,14 @@ internal sealed partial class FighterDeckHandler
                 break;
             case ("RecallFightersToTubes", [var fighters]):
                 var recall = ReadSelection(fighters);
-                orders.OrderFighters(pilot.PilotId, recall, DroneOrder.ReturnToBay, null, new HashSet<long>(), Now);
+                if (structure is long structureId && standup is not null)
+                {
+                    standup.Recall(pilot.PilotId, structureId, recall, Now);
+                }
+                else
+                {
+                    orders.OrderFighters(pilot.PilotId, recall, DroneOrder.ReturnToBay, null, new HashSet<long>(), Now);
+                }
                 Advance(context);
                 flight.RefreshDrones();
                 return new BlueMap<long, object?>(recall.ToDictionary(id => id, _ => (object?)null));
@@ -106,19 +118,23 @@ internal sealed partial class FighterDeckHandler
 
     internal void Advance(PilotCallContext context)
     {
-        if (!context.Selected || !FighterDeckRules.Supports(context.Pilot.ShipGroupId, context.Pilot.ShipTypeId))
+        if (
+            !context.Selected
+            || context.ControlledStructureId is null && !FighterDeckRules.Supports(context.Pilot.ShipGroupId, context.Pilot.ShipTypeId)
+        )
         {
             _seen = [];
             _seenShip = 0;
             return;
         }
         var pilot = context.Pilot;
-        if (_seenShip != pilot.ShipId)
+        long host = context.ControlledStructureId ?? pilot.ShipId;
+        if (_seenShip != host)
         {
             _seen = [];
-            _seenShip = pilot.ShipId;
+            _seenShip = host;
         }
-        var snapshot = deck.Read(pilot.PilotId, pilot.ShipId);
+        var snapshot = deck.Read(pilot.PilotId, host);
         if (_seen.SequenceEqual(snapshot.Squadrons))
         {
             return;

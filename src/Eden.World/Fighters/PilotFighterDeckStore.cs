@@ -23,7 +23,8 @@ namespace Eden.World.Fighters;
 [Injectable]
 internal sealed partial class PilotFighterDeckStore(WorldDatabase database, TimeProvider clock)
     : IPilotFighterDeck,
-        IStandupFighterInventory
+        IStandupFighterInventory,
+        IStandupFighterFlight
 {
     private LiveWorld Live =>
         LiveWorld.Find(database.Path) ?? throw new InvalidOperationException("Fighter decks require the resident world.");
@@ -51,16 +52,31 @@ internal sealed partial class PilotFighterDeckStore(WorldDatabase database, Time
         {
             throw new InvalidDataException("Choose distinct launch tubes.");
         }
-        var pilot = RequireDeck(action, catalog, pilotId, shipId, flags[0]);
-        var position = pilot.ActiveShip.Position ?? throw new InvalidDataException("Launch fighters from your active ship in space.");
-        action.RequireUncloaked(shipId);
-        var hull = PilotFittingStore.ShipAttributes(action, catalog, pilot);
-        if (PilotHealthStore.Read(action, shipId, ShipHealth.DefenseFrom(hull), now).Remaining.Destroyed)
+        var host = RequireStockDeck(action, catalog, pilotId, shipId, flags[0]);
+        var pilot = action.Pilots.Find(pilotId)!;
+        var structure = host.Standup ? Eden.World.Structures.PilotStructureStore.Require(action, shipId) : null;
+        SpacePosition position;
+        int system;
+        int type;
+        if (structure is not null)
         {
-            throw new InvalidDataException("A destroyed ship cannot launch fighters.");
+            position = new(structure.X, structure.Y, structure.Z);
+            system = structure.SystemId;
+            type = structure.TypeId;
         }
-        var loaded = TubeItems(action, pilotId, shipId).ToDictionary(item => item.FlagId);
-        int system = position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
+        else
+        {
+            var saved = pilot.ActiveShip.Position ?? throw new InvalidDataException("Launch fighters from your active ship in space.");
+            action.RequireUncloaked(shipId);
+            if (PilotHealthStore.Read(action, shipId, ShipHealth.DefenseFrom(host.Attributes), now).Remaining.Destroyed)
+            {
+                throw new InvalidDataException("A destroyed ship cannot launch fighters.");
+            }
+            position = new(saved.X, saved.Y, saved.Z);
+            system = saved.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
+            type = pilot.ActiveShip.TypeId;
+        }
+        var loaded = TubeItems(action, host.Owner, shipId).ToDictionary(item => item.FlagId);
         var launches = new List<FighterLaunch>(flags.Count);
         foreach (int flag in flags)
         {
@@ -68,8 +84,17 @@ internal sealed partial class PilotFighterDeckStore(WorldDatabase database, Time
             {
                 throw new InvalidDataException("Choose only loaded fighter tubes.");
             }
-            PilotSkillReader.CheckRequirements(action, catalog, pilotId, item.TypeId);
-            var profile = DroneCatalog.Skilled(action, catalog, pilotId, item.TypeId, shipId);
+            if (!host.Standup)
+            {
+                PilotSkillReader.CheckRequirements(action, catalog, pilotId, item.TypeId);
+            }
+            var profile = host.Standup
+                ? DroneCatalog.Profile(catalog, item.TypeId)
+                : DroneCatalog.Skilled(action, catalog, pilotId, item.TypeId, shipId);
+            if (host.Class(catalog.FittingAttributes(item.TypeId)) is null)
+            {
+                throw new InvalidDataException("That fighter cannot launch from this deck.");
+            }
             var before = PilotInventoryStore.Read(catalog, item);
             item.LocationId = system;
             var drone =
@@ -84,7 +109,8 @@ internal sealed partial class PilotFighterDeckStore(WorldDatabase database, Time
                         }
                     )
                     .Entity;
-            double clearance = (catalog.RequireItem(pilot.ActiveShip.TypeId).Radius ?? 0) + profile.Radius + 300;
+            double clearance = (catalog.RequireItem(type).Radius ?? 0) + profile.Radius + 300;
+            drone.PilotId = pilotId;
             drone.ControllerShipId = shipId;
             drone.SystemId = system;
             drone.CorporationId = pilot.CorporationId;

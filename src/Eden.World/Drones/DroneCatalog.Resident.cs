@@ -26,6 +26,10 @@ internal static partial class DroneCatalog
     )
     {
         var attributes = catalog.FittingAttributes(typeId);
+        if (FighterDeckRules.StandupClass(attributes) is not null)
+        {
+            return Profile(catalog, typeId);
+        }
         var required = InventoryDefinitions.RequiredSkills.Select(pair => (int)attributes.GetValueOrDefault(pair.Skill)).ToHashSet();
         var pilot = world.Pilots.Single(p => p.Id == pilotId);
         long shipId = controllerShipId ?? pilot.ActiveShipId;

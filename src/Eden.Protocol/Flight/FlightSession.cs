@@ -135,7 +135,8 @@ internal sealed partial class FlightSession(
             commandBursts,
             fleets
         );
-    private FlightSceneContext SceneContext => new(Pilot, InBallpark || Pilot.InStructure, CanTarget, _simulatedStamp);
+    private FlightSceneContext SceneContext =>
+        new(Pilot, InBallpark || Pilot.InStructure, CanTarget, _simulatedStamp, _controlledStructureId);
     private long? _controlledStructureId;
 
     internal void SetStructureControl(long? structureId)
@@ -1100,6 +1101,8 @@ internal sealed partial class FlightSession(
                     )
                 )
             );
+            Scene.ResetDrones();
+            RefreshDrones();
             return;
         }
         // A new source SetState would run the client's asynchronous DoBallClear

@@ -12,7 +12,13 @@ using ZLinq;
 
 namespace Eden.Protocol.Flight;
 
-internal readonly record struct FlightSceneContext(DockedPilot Pilot, bool InBallpark, bool CanTarget, int SimulatedStamp);
+internal readonly record struct FlightSceneContext(
+    DockedPilot Pilot,
+    bool InBallpark,
+    bool CanTarget,
+    int SimulatedStamp,
+    long? ControlledStructure = null
+);
 
 internal sealed class FlightScene(
     SharedSpace space,
@@ -70,6 +76,8 @@ internal sealed class FlightScene(
     internal void RefreshNpcs(FlightSceneContext context) => Npcs.RefreshNpcs(context);
 
     internal void RefreshDrones(FlightSceneContext context) => Drones.RefreshDrones(context);
+
+    internal void ResetDrones() => Drones.Reset();
 
     internal void NotifyNpcWeapon(long npcId, NpcWeaponContact weapon) => Npcs.NotifyNpcWeapon(npcId, weapon);
 

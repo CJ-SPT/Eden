@@ -1,8 +1,11 @@
+using Eden.Data.World.Drones;
 using Eden.Data.World.Inventory;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Protocol.Docking;
+using Eden.Protocol.Drones;
 using Eden.Protocol.Fighters;
 using Eden.Protocol.Flight;
 using Eden.Protocol.PilotSessions;
@@ -16,6 +19,100 @@ namespace Eden.Protocol.Tests.Structures;
 
 public sealed class StandupFighterTests
 {
+    [Fact]
+    public async Task AstrahusLaunchesStandupSquadronAndRecallsItAfterGunnerReleasesControl()
+    {
+        using Fixture fixture = new(liveWorld: true);
+        PassiveCatalogFixture.LoadCapitalTravel(new WorldDatabase(fixture.Db.Path).CatalogPath);
+        var structure = fixture.Online();
+        var docking = fixture.Db.Services.GetRequiredService<IStationDocking>();
+        var pilot = docking.Dock(fixture.PilotId, fixture.ShipId, structure.Id);
+        var world = LiveWorld.Find(fixture.Db.Path)!;
+        const int tube = FighterDeckRules.FirstTube;
+        using (var action = world.Economy.Begin(new(pilots: [pilot.PilotId], ships: [structure.Id])))
+        {
+            action.Add(
+                new OwnedItem
+                {
+                    Id = action.NextItemId(),
+                    OwnerId = fixture.CorporationId,
+                    LocationId = structure.Id,
+                    FlagId = tube,
+                    TypeId = 47035,
+                    Quantity = 9,
+                }
+            );
+            action.Commit();
+        }
+        using var scope = fixture.Db.Services.CreateScope();
+        var factory = scope.ServiceProvider.GetRequiredService<FlightSessionFactory>();
+        using PilotCallContext context = new(1000001, pilot.Account, [pilot], factory.Create, 52, SignedSettings.Empty);
+        context.Select(pilot);
+        var router = scope.ServiceProvider.GetRequiredService<PilotCallRouter>();
+        var deck = scope.ServiceProvider.GetRequiredService<IPilotFighterDeck>();
+        var recovery = scope.ServiceProvider.GetRequiredService<IStandupFighterFlight>();
+        var drones = scope.ServiceProvider.GetRequiredService<IPilotDrones>();
+        Assert.False(
+            Assert.IsType<bool>(
+                Assert
+                    .IsType<PilotCallResult.Success>(Call("fighterMgr", "LaunchFightersFromTubes", [new object?[] { (long)tube }]))
+                    .Reply.ToBlue()
+            )
+        );
+        Assert.Same(PilotCallResult.None, Call("structureControl", "TakeControl", [structure.Id]));
+        Assert.IsType<PilotCallResult.Success>(Call("fighterMgr", "LaunchFightersFromTubes", [new object?[] { (long)tube }]));
+        var squadron = Assert.Single(deck.Read(pilot.PilotId, structure.Id).Squadrons);
+        Assert.Empty(deck.Read(pilot.PilotId, structure.Id).Tubes);
+        Assert.Equal(9, squadron.Count);
+        var launched = Contact();
+        Assert.Equal(structure.Id, launched.ShipId);
+        Assert.Equal(pilot.PilotId, launched.PilotId);
+        Assert.Contains(
+            context.Flight.Updates,
+            update =>
+                update.Command is DestinyCommand.AddBalls add
+                && add.Addition.Slims.OfType<DroneSlimItem>().Any(slim => slim.Drone.Id == squadron.SquadronId)
+        );
+        Assert.IsType<PilotCallResult.Success>(Call("fighterMgr", "RecallFightersToTubes", [new object?[] { squadron.SquadronId }]));
+        Assert.Equal(DroneActivity.ReturningToBay, Contact().Activity);
+        Tick();
+        Assert.Equal(squadron.SquadronId, Assert.Single(deck.Read(pilot.PilotId, structure.Id).Tubes).SquadronId);
+        Assert.IsType<PilotCallResult.Success>(Call("fighterMgr", "LaunchFightersFromTubes", [new object?[] { (long)tube }]));
+        using (var action = world.Economy.Begin(new(systems: [pilot.SystemId])))
+        {
+            action.Set<WorldDrone>().Find(squadron.SquadronId)!.X += 5_000;
+            action.Commit();
+        }
+        double distantX = Contact().Position.X;
+        Assert.Same(PilotCallResult.None, Call("structureControl", "ReleaseControl", []));
+        Assert.Null(context.ControlledStructureId);
+        Assert.Equal(DroneActivity.ReturningToBay, Contact().Activity);
+        Tick();
+        Assert.True(Contact().Position.X < distantX);
+        for (int step = 0; step < 60 && deck.Read(pilot.PilotId, structure.Id).Squadrons.Count > 0; step++)
+        {
+            Tick();
+        }
+        var landed = Assert.Single(deck.Read(pilot.PilotId, structure.Id).Tubes);
+        Assert.Equal(squadron.SquadronId, landed.SquadronId);
+        Assert.Equal(9, landed.Count);
+        Assert.Empty(drones.List(pilot.SystemId, fixture.Clock.Now));
+        await world.FlushAsync();
+        using WorldDbContext saved = new(fixture.Db.Path);
+        var item = saved.Set<OwnedItem>().Find(landed.SquadronId)!;
+        Assert.Equal(fixture.CorporationId, item.OwnerId);
+        Assert.Equal(structure.Id, item.LocationId);
+        Assert.Equal(tube, item.FlagId);
+
+        PilotCallResult Call(string service, string method, object?[] args) => router.Call(context, service, method, args, _ => { });
+        DroneContact Contact() => Assert.Single(drones.List(pilot.SystemId, fixture.Clock.Now), row => row.Id == squadron.SquadronId);
+        void Tick()
+        {
+            fixture.Clock.AdvanceWallTime(TimeSpan.FromSeconds(1));
+            recovery.AdvanceReturns(fixture.Clock.Now);
+        }
+    }
+
     [Fact]
     public async Task AstrahusMovesStandupStockAndLoadsNativeTubesWithClassLimits()
     {

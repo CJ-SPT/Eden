@@ -331,6 +331,9 @@ internal static class Program
             var concordMaintenance = services.GetRequiredService<ConcordMaintenance>();
             lifetime.OnStop(nameof(ConcordMaintenance), concordMaintenance.Dispose);
             concordMaintenance.Start();
+            var standupFighterMaintenance = services.GetRequiredService<StandupFighterMaintenance>();
+            lifetime.OnStop(nameof(StandupFighterMaintenance), standupFighterMaintenance.Dispose);
+            standupFighterMaintenance.Start();
             var abyssalMaintenance = services.GetRequiredService<AbyssalMaintenance>();
             lifetime.OnStop(nameof(AbyssalMaintenance), abyssalMaintenance.Dispose);
             abyssalMaintenance.Start();

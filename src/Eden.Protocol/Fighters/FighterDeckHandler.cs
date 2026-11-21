@@ -13,7 +13,8 @@ internal sealed partial class FighterDeckHandler(
     IPilotFighterDeck deck,
     IPilotFighterOrders orders,
     TargetingHandler targeting,
-    TimeProvider clock
+    TimeProvider clock,
+    IStandupFighterFlight? standup = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(

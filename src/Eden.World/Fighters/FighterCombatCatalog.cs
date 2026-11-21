@@ -24,11 +24,12 @@ internal static class FighterCombatCatalog
     )
     {
         double Value(DogmaAttributeId id) => values.GetValueOrDefault(id);
-        if (FighterDeckRules.Class(values) == FighterClass.Support)
+        var fighterClass = FighterDeckRules.Class(values) ?? FighterDeckRules.StandupClass(values);
+        if (fighterClass == FighterClass.Support)
         {
             return FighterSupportCatalog.Profile(type, source, values);
         }
-        var (fighterClass, role) = (FighterDeckRules.Class(values), Value(DogmaAttributeId.FighterSquadronRole));
+        double role = Value(DogmaAttributeId.FighterSquadronRole);
         bool superiority = fighterClass == FighterClass.Light && role == SpaceSuperiorityRole;
         if (
             source?.Published != 1

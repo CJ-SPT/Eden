@@ -17,6 +17,14 @@ internal static class FighterSupportCatalog
     private const int SirenTwo = 40570;
     private const int DromiOne = 40347;
     private const int DromiTwo = 40571;
+    private const int StandupSirenOne = 47037;
+    private const int StandupCenobiteOne = 47131;
+    private const int StandupScarabOne = 47132;
+    private const int StandupDromiOne = 47133;
+    private const int StandupCenobiteTwo = 47134;
+    private const int StandupScarabTwo = 47135;
+    private const int StandupSirenTwo = 47136;
+    private const int StandupDromiTwo = 47137;
 
     internal static DroneProfile Profile(
         CatalogItemDefinition type,
@@ -36,27 +44,27 @@ internal static class FighterSupportCatalog
         }
         var support = type.Id switch
         {
-            CenobiteOne or CenobiteTwo => Active(
+            CenobiteOne or CenobiteTwo or StandupCenobiteOne or StandupCenobiteTwo => Active(
                 UtilityDroneKind.Neutralizing,
                 DogmaAttributeId.FighterNeutralizeOptimal,
                 DogmaAttributeId.FighterNeutralizeDuration,
                 DogmaAttributeId.FighterNeutralizeAmount,
                 DogmaAttributeId.FighterNeutralizeFalloff
             ),
-            SirenOne or SirenTwo => Active(
+            SirenOne or SirenTwo or StandupSirenOne or StandupSirenTwo => Active(
                 UtilityDroneKind.WarpDisrupting,
                 DogmaAttributeId.FighterDisruptRange,
                 DogmaAttributeId.FighterDisruptDuration,
                 DogmaAttributeId.FighterDisruptStrength
             ),
-            DromiOne or DromiTwo => Active(
+            DromiOne or DromiTwo or StandupDromiOne or StandupDromiTwo => Active(
                 UtilityDroneKind.Webifying,
                 DogmaAttributeId.FighterWebRange,
                 DogmaAttributeId.FighterWebDuration,
                 DogmaAttributeId.FighterWebStrength,
                 DogmaAttributeId.FighterWebFalloff
             ),
-            ScarabOne or ScarabTwo => Jam(),
+            ScarabOne or ScarabTwo or StandupScarabOne or StandupScarabTwo => Jam(),
             _ => throw new InvalidDataException("Unsupported support fighter ability."),
         };
         float speed = (float)Positive(DogmaAttributeId.MaxVelocity);

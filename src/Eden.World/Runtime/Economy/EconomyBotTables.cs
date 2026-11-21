@@ -2007,6 +2007,7 @@ internal sealed partial class ResidentEconomy
                 [
                     new("ItemId", row => row.ItemId),
                     new("ControllerShipId", row => row.ControllerShipId),
+                    new("Activity", row => (int)row.Activity),
                     new("CorporationId", row => row.CorporationId),
                     new("DelegateFleetId", row => row.DelegateFleetId),
                     new("DelegatePilotId", row => row.DelegatePilotId),

@@ -827,12 +827,35 @@ A corporation manager docked at an eligible structure can move published Standup
 stacks between their local hangar and the corporation's fighter bay. The active
 structure controller can fill and unload launch tubes using the existing inventory
 transaction and squadron cap. The items remain in corporation custody through
-the world checkpoint. Standup launch, combat and automatic recall are separate work.
+the world checkpoint.
 
 **Automated validation.** The exact Astrahus case passed in 12.14 seconds. The
 320-case Standup inventory, Upwell control, fighter and ship inventory filter
 passed in 35.23 seconds after a 22.47-second build. Both Python suites, formatting
 and `git diff --check` passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+## Standup fighter launch and recall
+
+Build 3662168 uses `fighterMgr.LaunchFightersFromTubes` with tube flags and
+`RecallFightersToTubes` with squadron IDs. EVE.js `fighterMgrService.js` routes
+both through the controlled structure when present. Eden publishes the deployed
+squadron through the normal ballpark and fighter panel, using the structure as
+its controller and the catalog fighter profile without capsuleer skill bonuses.
+
+The active gunner can recall a squadron to its original tube. Releasing control
+or reopening the world starts the same return, and the server lands returning
+squadrons even with no gunner connected. Corporation custody and surviving
+squadron size persist. Deployed squadrons are lost when the host departs.
+Standup attack and electronic warfare remain open.
+
+**Automated validation.** The exact
+`AstrahusLaunchesStandupSquadronAndRecallsItAfterGunnerReleasesControl` case passed
+in 8.65 seconds, including manual recall, a second launch, and an unattended return.
+The 147-case Standup fighter, Upwell control and lifecycle, capital travel,
+pilot inventory, and world initialization filter passed in 85.65 seconds after
+a 3.12-second build. Both Python suites, formatting and `git diff --check` passed.
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
@@ -968,7 +991,7 @@ formatting and `git diff --check` passed.
 | **3. Ansiblex jump gates** | Implemented. Link two aligned endpoints, enforce alliance access and the ship type list, and settle the source gate's capacitor at departure. |
 | **4. Black Ops and covert travel** | Implemented. Black Ops direct jumps, covert module and mobile beacons, eligible fleet passenger travel through a paid portal, and fleet conduit jumps. |
 | **5. Dreadnoughts and force auxiliaries** | Implemented. Dreadnoughts and force auxiliaries use standard cynos, paid siege or triage, and normal docking, repair and loss settlement. The acceptance cases reopen a paid siege and settle an Apostle loss. |
-| **6. Carriers and fighters** | Carrier tubes support light attack, space superiority and support squadrons, with launch, targeting, recall and replacement. Squadron losses persist. Standup fighters and additional combat abilities remain open. |
+| **6. Carriers and fighters** | Carrier tubes support light attack, space superiority and support squadrons, with launch, targeting, recall and replacement. Squadron losses persist. Upwell gunners can launch and recall Standup fighters. Standup combat and additional combat abilities remain open. |
 | **7. Capital industry and fleet services** | Rorquals use paid industrial cores, Excavators, fleet compression and P.A.N.I.C. Nearby fleet or corporation members can exchange ordinary stacks through shared fleet hangars and refit from their own cargo at a maintenance-bay ship. Authorized pilots can store and board their own ships through shared maintenance bays. Rorqual and Titan clone vats install clones for invited pilots and receive capsule arrivals. Fresh-world resupply remains open. |
 | **8. Supercapitals and production** | Keepstar docking, Sotiyo construction, direct jumps, Titan bridging, supercarrier heavy attack fighters and burst projectors are implemented. Targeted Titan doomsdays have paid windups, counters and durable loss settlement. Titan lances, Reapers and Bosonic fields support paid aiming and positional counters. The oscillator transports subcapitals and locks capital warp. Phenomena Generators apply the pinned racial boosts and penalties. |
 
