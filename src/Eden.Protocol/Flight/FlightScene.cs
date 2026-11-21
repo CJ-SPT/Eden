@@ -45,7 +45,7 @@ internal sealed class FlightScene(
     private IReadOnlyList<StaticSpaceObject> _structures = [];
     private WreckContact[] _wrecks = [];
     private MissileContact[] _missiles = [];
-    private TitanLanceContact[] _lances = [];
+    private DoomsdayFieldContact[] _doomsdayFields = [];
 
     private FlightNpcScene Npcs => _npcScene ??= new(space, clock, encounters, effects, update, send);
     private FlightDroneScene Drones => _droneScene ??= new(space, clock, drones, update);
@@ -94,10 +94,10 @@ internal sealed class FlightScene(
     {
         Objects = Objects.ExceptBy(_anomalies.Select(o => o.Id), o => o.Id).ToArray();
         _anomalies = [];
-        if (_lances.Length != 0)
+        if (_doomsdayFields.Length != 0)
         {
-            Objects = Objects.Where(body => body.TypeId != TitanLanceRules.BeaconType).ToArray();
-            _lances = [];
+            Objects = Objects.Where(body => body.TypeId != DoomsdayFieldRules.BeaconType).ToArray();
+            _doomsdayFields = [];
         }
         _peers = [];
         _peerOrderSequences.Clear();
@@ -418,54 +418,83 @@ internal sealed class FlightScene(
         }
     }
 
-    internal void RefreshLances(FlightSceneContext context, IReadOnlyList<TitanLanceContact> current)
+    internal void RefreshDoomsdayFields(FlightSceneContext context, IReadOnlyList<DoomsdayFieldContact> current)
     {
         if (!context.InBallpark || context.Pilot.Position is not { } observer)
         {
             return;
         }
+        long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
         var visible = current
-            .Where(lance => lance.SourcePosition.DistanceTo(observer) <= NpcEncounterDefinitions.VisibilityRange)
+            .Where(field =>
+                field.VisualAt <= now
+                && field.VisualEndsAt > now
+                && field.SourcePosition.DistanceTo(observer) <= NpcEncounterDefinitions.VisibilityRange
+            )
             .ToArray();
-        if (_lances.SequenceEqual(visible))
+        if (_doomsdayFields.SequenceEqual(visible))
         {
             return;
         }
-        var removed = _lances.ExceptBy(visible.Select(lance => lance.Beacon.Id), lance => lance.Beacon.Id).ToArray();
-        var added = visible.ExceptBy(_lances.Select(lance => lance.Beacon.Id), lance => lance.Beacon.Id).ToArray();
-        _lances = visible;
-        Objects = Objects.Where(body => body.TypeId != TitanLanceRules.BeaconType).Concat(visible.Select(lance => lance.Beacon)).ToArray();
-        foreach (var lance in removed)
+        var removed = _doomsdayFields.ExceptBy(visible.Select(field => field.Id), field => field.Id).ToArray();
+        var added = visible.ExceptBy(_doomsdayFields.Select(field => field.Id), field => field.Id).ToArray();
+        _doomsdayFields = visible;
+        Objects = Objects
+            .Where(body => body.TypeId != DoomsdayFieldRules.BeaconType)
+            .Concat(visible.Select(field => field.Beacon).OfType<StaticSpaceObject>())
+            .ToArray();
+        foreach (var field in removed)
         {
-            LanceEffect(lance, false);
-            update(new DestinyCommand.RemoveBall(lance.Beacon.Id, false));
-        }
-        if (added.Length != 0)
-        {
-            update(new DestinyCommand.AddBalls(Ballpark.AddObjects(added.Select(lance => lance.Beacon), space.Stamp(clock))));
-            foreach (var lance in added)
+            DoomsdayFieldEffect(field, now, false);
+            if (field.Beacon is { } oldBeacon)
             {
-                LanceEffect(lance, true);
+                update(new DestinyCommand.RemoveBall(oldBeacon.Id, false));
             }
+        }
+        var beacons = added.Select(field => field.Beacon).OfType<StaticSpaceObject>().ToArray();
+        if (beacons.Length != 0)
+        {
+            update(new DestinyCommand.AddBalls(Ballpark.AddObjects(beacons, space.Stamp(clock))));
+        }
+        foreach (var field in added)
+        {
+            DoomsdayFieldEffect(field, now, true);
         }
     }
 
-    private void LanceEffect(TitanLanceContact lance, bool start) =>
+    private void DoomsdayFieldEffect(DoomsdayFieldContact field, long now, bool start)
+    {
+        Dictionary<string, object?>? graphic = null;
+        double duration = 10_000;
+        if (start && field.StartOffset is { } first && field.EndOffset is { } second)
+        {
+            double progress = Math.Clamp((now - field.VisualAt) / (double)(field.VisualEndsAt - field.VisualAt), 0, 1);
+            var current = first + (second - first) * progress;
+            duration = (field.VisualEndsAt - now) / (double)TimeSpan.TicksPerMillisecond;
+            graphic = new()
+            {
+                ["startTargetOffset"] = new object?[] { current.X, current.Y, current.Z },
+                ["endTargetOffset"] = new object?[] { second.X, second.Y, second.Z },
+                ["duration"] = duration,
+            };
+        }
         update(
             new DestinyCommand.TimedSpecialEffect(
-                lance.ShipId,
-                lance.ModuleId,
-                lance.TypeId,
-                lance.Beacon.Id,
+                field.ShipId,
+                field.ModuleId,
+                field.TypeId,
+                field.Beacon?.Id,
                 0,
-                TitanLanceRules.Graphic(lance.TypeId),
+                DoomsdayFieldRules.Graphic(field.TypeId),
                 true,
                 start,
                 false,
-                10_000,
-                lance.StartedAt
+                duration,
+                field.VisualAt,
+                graphic
             )
         );
+    }
 
     internal void RefreshCynos(FlightSceneContext context, IReadOnlyList<StaticSpaceObject> current)
     {

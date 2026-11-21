@@ -13,7 +13,7 @@ public enum AreaWeaponKind
     Defender,
     Projector,
     Doomsday,
-    Lance,
+    DoomsdayField,
 }
 
 public sealed record AreaWeaponProfile(
@@ -32,7 +32,7 @@ public sealed record AreaWeaponProfile(
     int FuelQuantity,
     NpcEwarPower Power,
     DoomsdayCharge? Doomsday = null,
-    TitanLanceProfile? Lance = null
+    DoomsdayFieldProfile? Field = null
 );
 
 public sealed record BombProfile(
@@ -58,7 +58,9 @@ public sealed record AreaWeaponFlight(
     long ResolvesAt,
     long TargetId = 0,
     HullDamage? Health = null,
-    bool Active = false
+    bool Active = false,
+    SpacePosition? EndPoint = null,
+    double SourceRadius = 0
 )
 {
     public SpacePosition Position(long now) =>
@@ -86,10 +88,11 @@ public interface IPilotAreaWeapons
         SpacePosition velocity,
         SpacePosition? point,
         long now,
-        long? target = null
+        long? target = null,
+        SpacePosition? secondPoint = null
     );
     void Advance(int systemId, long now);
-    IReadOnlyList<TitanLanceContact> Lances(int systemId, long now);
+    IReadOnlyList<DoomsdayFieldContact> DoomsdayFields(int systemId, long now);
     IReadOnlyList<MissileContact> Projectiles(int systemId, long now);
     void Cancel(long pilotId, long shipId, long now);
     void CancelModule(long pilotId, long shipId, long moduleId);
@@ -149,8 +152,8 @@ public static class AreaWeaponRules
         {
             BurstJammerGroup when effect == DogmaEffect.BurstJammer => AreaWeaponKind.BurstJammer,
             ProjectorGroup when IsProjector(effect) => AreaWeaponKind.Projector,
-            DoomsdayRules.Group when DoomsdayRules.EffectForType(type) == effect => effect == DogmaEffect.DoomsdayBeam
-                ? AreaWeaponKind.Lance
+            DoomsdayRules.Group when DoomsdayRules.EffectForType(type) == effect => DoomsdayFieldRules.IsEffect(effect)
+                ? AreaWeaponKind.DoomsdayField
                 : AreaWeaponKind.Doomsday,
             BombLauncherGroup when effect == DogmaEffect.UseMissiles => AreaWeaponKind.Bomb,
             DefenderLauncherGroup when effect == DogmaEffect.UseMissiles => AreaWeaponKind.Defender,
@@ -200,8 +203,8 @@ public static class AreaWeaponRules
             checked((int)Value(DogmaAttributeId.ConsumptionType)),
             checked((int)Value(DogmaAttributeId.ConsumptionQuantity)),
             power,
-            kind is AreaWeaponKind.Doomsday or AreaWeaponKind.Lance ? DoomsdayRules.Charge(attributes) : null,
-            kind == AreaWeaponKind.Lance ? TitanLanceRules.Profile(attributes) : null
+            kind is AreaWeaponKind.Doomsday or AreaWeaponKind.DoomsdayField ? DoomsdayRules.Charge(attributes) : null,
+            kind == AreaWeaponKind.DoomsdayField ? DoomsdayFieldRules.Profile(effect, attributes) : null
         );
         if (
             new[]
@@ -216,9 +219,9 @@ public static class AreaWeaponRules
             }.Any(value => !double.IsFinite(value) || value < 0)
             || result.Duration <= 0
             || kind == AreaWeaponKind.BurstJammer && result.Range <= 0
-            || kind is AreaWeaponKind.Doomsday or AreaWeaponKind.Lance
+            || kind is AreaWeaponKind.Doomsday or AreaWeaponKind.DoomsdayField
                 && (result.Delay <= 0 || result.FuelType <= 0 || result.FuelQuantity <= 0)
-            || kind == AreaWeaponKind.Lance && result.Range <= 0
+            || kind == AreaWeaponKind.DoomsdayField && result.Range <= 0
             || kind == AreaWeaponKind.Projector
                 && (result.Range <= 0 || result.Radius <= 0 || result.Delay <= 0 || result.FuelType <= 0 || result.FuelQuantity <= 0)
         )

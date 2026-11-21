@@ -15,7 +15,7 @@ namespace Eden.World.Combat;
 
 internal sealed partial class AreaWeaponStore
 {
-    public IReadOnlyList<TitanLanceContact> Lances(int systemId, long now)
+    public IReadOnlyList<DoomsdayFieldContact> DoomsdayFields(int systemId, long now)
     {
         if (LiveWorld.Find(database.Path)?.Economy is not { } economy || !economy.HasAreaWeapons(systemId))
         {
@@ -29,49 +29,62 @@ internal sealed partial class AreaWeaponStore
                 .Select(row => (Row: row, Flight: row.Flight()))
                 .Where(pair =>
                     !pair.Flight.Active
-                    && pair.Flight.Module.Lance is { } lance
-                    && now < AreaWeaponRules.Deadline(pair.Flight.StartedAt, pair.Flight.Module.Delay + lance.DamageDuration)
+                    && pair.Flight.Module.Field is { } field
+                    && now < AreaWeaponRules.Deadline(pair.Flight.StartedAt, pair.Flight.Module.Delay + field.DamageDuration)
                 )
                 .Select(pair =>
                 {
                     var (row, flight) = pair;
-                    var type = catalog.RequireItem(TitanLanceRules.BeaconType);
-                    StaticSpaceObject beacon = new(
-                        row.Id,
-                        type.Id,
-                        type.GroupId,
-                        type.CategoryId,
-                        checked((int)row.PilotId),
-                        flight.Point,
-                        (float)(type.Radius ?? 250)
-                    )
+                    var field = flight.Module.Field!;
+                    long active = AreaWeaponRules.Deadline(flight.StartedAt, flight.Module.Delay);
+                    long end = AreaWeaponRules.Deadline(active, field.DamageDuration);
+                    StaticSpaceObject? beacon = null;
+                    if (field.Shape == DoomsdayFieldShape.Cylinder)
                     {
-                        Solid = false,
-                        Name = type.Name,
-                    };
-                    long end = AreaWeaponRules.Deadline(flight.StartedAt, flight.Module.Delay + flight.Module.Lance!.DamageDuration);
-                    return new TitanLanceContact(
+                        var type = catalog.RequireItem(DoomsdayFieldRules.BeaconType);
+                        beacon = new StaticSpaceObject(
+                            row.Id,
+                            type.Id,
+                            type.GroupId,
+                            type.CategoryId,
+                            checked((int)row.PilotId),
+                            flight.Point,
+                            (float)(type.Radius ?? 250)
+                        )
+                        {
+                            Solid = false,
+                            Name = type.Name,
+                        };
+                    }
+                    var first = beacon is null ? flight.Point - flight.Origin : null;
+                    var second = flight.EndPoint is { } point ? point - flight.Origin : first;
+                    long visualAt = field.Shape == DoomsdayFieldShape.Sweep ? active : flight.StartedAt;
+                    long visualEnd = field.Shape == DoomsdayFieldShape.Cone ? active : end;
+                    return new DoomsdayFieldContact(
+                        row.Id,
                         beacon,
                         flight.Origin,
                         row.SourceShipId,
                         row.ModuleId,
                         flight.Module.TypeId,
-                        flight.StartedAt,
-                        end
+                        visualAt,
+                        visualEnd,
+                        first,
+                        second
                     );
                 })
                 .ToArray()
         );
     }
 
-    private void NeutralizeNearLance(
+    private void NeutralizeNearDoomsday(
         WorldAction world,
         CatalogDbContext catalog,
         Pilot source,
         SpacePosition center,
         int system,
         int module,
-        TitanLanceProfile lance,
+        DoomsdayFieldProfile field,
         long now
     )
     {
@@ -81,7 +94,7 @@ internal sealed partial class AreaWeaponStore
                 catalog,
                 system,
                 now,
-                (position, radius) => position.DistanceTo(center) <= lance.NeutralizationRadius + radius
+                (position, radius) => position.DistanceTo(center) <= field.NeutralizationRadius + radius
             )
         )
         {
@@ -90,13 +103,13 @@ internal sealed partial class AreaWeaponStore
                 continue;
             }
             double signature = victim.Attributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius);
-            double amount = lance.NeutralizationAmount * AreaWeaponRules.SignatureFactor(signature, lance.NeutralizationSignature);
+            double amount = field.NeutralizationAmount * AreaWeaponRules.SignatureFactor(signature, field.NeutralizationSignature);
             Aggression(world, catalog, source, source.ActiveShipId, module, victim, system, now, now);
             Drain(world, victim, amount, now);
         }
     }
 
-    private bool SettleLance(
+    private bool SettleDoomsdayField(
         WorldAction world,
         CatalogDbContext catalog,
         SavedAreaWeapon row,
@@ -106,9 +119,9 @@ internal sealed partial class AreaWeaponStore
     )
     {
         var charge = flight.Module.Doomsday!;
-        var lance = flight.Module.Lance!;
+        var field = flight.Module.Field!;
         long damageStart = AreaWeaponRules.Deadline(flight.StartedAt, flight.Module.Delay);
-        long damageEnd = AreaWeaponRules.Deadline(damageStart, lance.DamageDuration);
+        long damageEnd = AreaWeaponRules.Deadline(damageStart, field.DamageDuration);
         long lockEnd = AreaWeaponRules.Deadline(flight.StartedAt, charge.DriveLockMilliseconds);
         if (flight.Active || now >= lockEnd)
         {
@@ -130,7 +143,19 @@ internal sealed partial class AreaWeaponStore
             return false;
         }
 
-        var axis = (flight.Point - flight.Origin).Unit;
+        var offset = flight.Point - flight.Origin;
+        var center = flight.Origin;
+        double length = flight.Module.Range;
+        if (flight.EndPoint is { } second)
+        {
+            double progress = (now - damageStart) / (double)(damageEnd - damageStart);
+            offset += (second - flight.Point) * progress;
+            var position = source.ActiveShip.Position!;
+            center = presence.FindArea(row.SystemId, row.SourceShipId)?.Position ?? new(position.X, position.Y, position.Z);
+            length = offset.Length - flight.SourceRadius;
+        }
+        var axis = offset.Unit;
+        var origin = center + axis * flight.SourceRadius;
         bool destroyedNpc = false;
         foreach (
             var target in Targets(
@@ -138,7 +163,10 @@ internal sealed partial class AreaWeaponStore
                 catalog,
                 row.SystemId,
                 now,
-                (position, radius) => TitanLanceRules.Intersects(flight.Origin, axis, flight.Module.Range, lance.Radius, position, radius)
+                (position, radius) =>
+                    field.Shape == DoomsdayFieldShape.Cone
+                        ? DoomsdayFieldRules.IntersectsCone(origin, axis, length, position, radius)
+                        : DoomsdayFieldRules.Intersects(origin, axis, length, field.Radius, position, radius)
             )
         )
         {
@@ -150,7 +178,7 @@ internal sealed partial class AreaWeaponStore
                 continue;
             }
             double signature = target.Attributes.GetValueOrDefault(DogmaAttributeId.SignatureRadius);
-            var damage = charge.Damage.Scale(AreaWeaponRules.SignatureFactor(signature, lance.Signature));
+            var damage = charge.Damage.Scale(AreaWeaponRules.SignatureFactor(signature, field.Signature));
             Aggression(world, catalog, source, row.SourceShipId, flight.Module.TypeId, target, row.SystemId, now, now);
             if (target.Pilot is { } victim)
             {
@@ -177,7 +205,7 @@ internal sealed partial class AreaWeaponStore
             }
         }
         // A late frame samples current occupants once. It cannot infer their earlier positions.
-        long interval = AreaWeaponRules.Deadline(0, lance.DamageCycle);
+        long interval = AreaWeaponRules.Deadline(0, field.DamageCycle);
         long next = damageStart + ((now - damageStart) / interval + 1) * interval;
         row.Save(flight with { ResolvesAt = Math.Min(next, damageEnd) });
         return destroyedNpc;

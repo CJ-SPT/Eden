@@ -107,7 +107,7 @@ internal sealed record StaticSlimItem(StaticSpaceObject Body) : SlimItem
             fields["component_jumpBridge"] = bridge.Revision;
             fields["activationState"] = bridge.Active;
         }
-        if (Body.TypeId == TitanLanceRules.BeaconType)
+        if (Body.TypeId == DoomsdayFieldRules.BeaconType && Body.GroupId == DoomsdayFieldRules.BeaconGroup)
         {
             fields["component_activate"] = new object?[] { true, null };
         }

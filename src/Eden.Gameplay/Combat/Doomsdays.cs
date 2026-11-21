@@ -36,8 +36,13 @@ public static class DoomsdayRules
             24552 => DogmaEffect.SuperWeaponCaldari,
             24554 => DogmaEffect.SuperWeaponGallente,
             23674 => DogmaEffect.SuperWeaponMinmatar,
-            TitanLanceRules.HolyDestiny or TitanLanceRules.IronPike or TitanLanceRules.Phalarica or TitanLanceRules.Geiravor =>
+            DoomsdayFieldRules.HolyDestiny or DoomsdayFieldRules.IronPike or DoomsdayFieldRules.Phalarica or DoomsdayFieldRules.Geiravor =>
                 DogmaEffect.DoomsdayBeam,
+            DoomsdayFieldRules.DivineHarvest
+            or DoomsdayFieldRules.ColdWind
+            or DoomsdayFieldRules.Guillotine
+            or DoomsdayFieldRules.Jormungandr => DogmaEffect.DoomsdaySlash,
+            DoomsdayFieldRules.BosonicFieldGenerator => DogmaEffect.DoomsdayCone,
             _ => null,
         };
 

@@ -26,7 +26,7 @@ public sealed partial class CapitalTravelTests
         long keepstar = fixture.AddUpwell(Keepstar, NullSystem, basePosition, original.CorpId);
         fixture.Db.Store.SetPosition(original.ShipId, basePosition, NullSystem);
         long avatar = fixture.AssembleAndBoard(docking.Dock(original.PilotId, original.ShipId, keepstar), Avatar);
-        long module = fixture.FitCapitalModule(TitanLanceRules.HolyDestiny);
+        long module = fixture.FitCapitalModule(DoomsdayFieldRules.HolyDestiny);
         fixture.Grant(original.PilotId, avatar, InventoryFlag.Cargo, Helium, 55_000);
         fixture.Db.Store.SetPosition(avatar, origin, Jan);
         using (Client lowsec = fixture.Select(1000001))
@@ -49,7 +49,7 @@ public sealed partial class CapitalTravelTests
         SetCapacitor(34_999);
         Assert.IsType<PilotCallResult.Failure>(Aim(titan, aim));
         Assert.Equal(55_000, Quantity(fixture, titan, Helium));
-        Assert.Empty(weapons.Lances(NullSystem, fixture.Clock.Now));
+        Assert.Empty(weapons.DoomsdayFields(NullSystem, fixture.Clock.Now));
         Assert.Null(fixture.Live.Economy.Inspect(world => world.Set<ShipEnergy>().Find(targetPilot.ShipId)));
         SetCapacitor(fitting.ShipAttributes(original.PilotId)[DogmaAttributeId.CapacitorCapacity]);
         var activated = Aim(titan, aim);
@@ -57,9 +57,10 @@ public sealed partial class CapitalTravelTests
         Assert.Equal(5_000, Quantity(fixture, titan, Helium));
         Assert.True(fixture.Travel.DoomsdayMovementLocked(avatar));
         Assert.IsType<PilotCallResult.Failure>(titan.Context.Flight.Execute(new FlightCommand.Heading(0, 1, 0)));
-        var beam = Assert.Single(weapons.Lances(NullSystem, fixture.Clock.Now));
-        Assert.Equal(new SpacePosition(1_000_706_800, 0, 0), beam.Beacon.Position);
-        Assert.Equal(TitanLanceRules.BeaconType, beam.Beacon.TypeId);
+        var beam = Assert.Single(weapons.DoomsdayFields(NullSystem, fixture.Clock.Now));
+        var anchor = Assert.IsType<StaticSpaceObject>(beam.Beacon);
+        Assert.Equal(new SpacePosition(1_000_706_800, 0, 0), anchor.Position);
+        Assert.Equal(DoomsdayFieldRules.BeaconType, anchor.TypeId);
         double neutralized =
             35_000
             * defender[DogmaAttributeId.SignatureRadius]
@@ -69,12 +70,11 @@ public sealed partial class CapitalTravelTests
         Assert.Equal(defender[DogmaAttributeId.CapacitorCapacity] - neutralized, charge, 6);
         var updates = titan.Context.Flight.Updates.Select(update => update.Command).ToList();
         int beacon = updates.FindIndex(command =>
-            command is DestinyCommand.AddBalls add
-            && add.Addition.Slims.OfType<StaticSlimItem>().Any(slim => slim.Body.Id == beam.Beacon.Id)
+            command is DestinyCommand.AddBalls add && add.Addition.Slims.OfType<StaticSlimItem>().Any(slim => slim.Body.Id == anchor.Id)
         );
         int effect = updates.FindIndex(command =>
             command is DestinyCommand.TimedSpecialEffect { Graphic: "effects.SuperWeaponLanceAmarr", Start: true } fx
-            && fx.TargetId == beam.Beacon.Id
+            && fx.TargetId == anchor.Id
         );
         Assert.True(beacon >= 0 && effect > beacon);
 
@@ -116,7 +116,7 @@ public sealed partial class CapitalTravelTests
         await fixture.Live.FlushAsync();
         fixture.Reopen(restart: true);
         Assert.True(fixture.Travel.DoomsdayMovementLocked(avatar));
-        Assert.Empty(weapons.Lances(NullSystem, fixture.Clock.Now));
+        Assert.Empty(weapons.DoomsdayFields(NullSystem, fixture.Clock.Now));
         fixture.Clock.Seconds += 15;
         Assert.False(fixture.Travel.DoomsdayMovementLocked(avatar));
         Assert.Contains(

@@ -114,6 +114,8 @@ public enum DogmaEffect
     SuperWeaponGallente = 4491,
     SuperWeaponMinmatar = 4492,
     DoomsdayBeam = 6472,
+    DoomsdaySlash = 6201,
+    DoomsdayCone = 6473,
     CovertJumpPortalGeneration = 3674,
     JumpDriveEconomizer = 5911,
     BurstJammer = 6714,

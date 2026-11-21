@@ -72,7 +72,8 @@ internal sealed partial class AreaWeaponStore(
         SpacePosition velocity,
         SpacePosition? point,
         long now,
-        long? target = null
+        long? target = null,
+        SpacePosition? secondPoint = null
     )
     {
         int system = Live.Economy.Inspect(world =>
@@ -150,7 +151,11 @@ internal sealed partial class AreaWeaponStore(
             );
         }
         SpacePosition origin = new(saved.X, saved.Y, saved.Z);
-        SpacePosition? lanceStart = null;
+        double sourceRadius = 0;
+        if (secondPoint is not null && module.Field?.Shape != DoomsdayFieldShape.Sweep)
+        {
+            throw new InvalidDataException("Only a Reaper accepts a second aim point.");
+        }
         List<InventoryChange> inventoryChanges = [];
         if (module.Kind == AreaWeaponKind.Doomsday)
         {
@@ -167,7 +172,7 @@ internal sealed partial class AreaWeaponStore(
             Aggression(world, catalog, pilot, shipId, module.TypeId, victim, system, now, firesAt);
             SpendFuel(world, catalog, pilotId, shipId, module.FuelType, module.FuelQuantity, inventoryChanges);
         }
-        else if (module.Kind == AreaWeaponKind.Lance)
+        else if (module.Field is { } field)
         {
             if (
                 target is not null
@@ -176,15 +181,26 @@ internal sealed partial class AreaWeaponStore(
                 || catalog.RequireItem(pilot.ActiveShip.TypeId) is not { GroupId: (int)HullClass.Titan } titan
             )
             {
-                throw new InvalidDataException("Aim an online lance from its compatible Titan.");
+                throw new InvalidDataException("Aim an online area doomsday from its compatible Titan.");
             }
-            var aim = point - origin;
-            if (!double.IsFinite(aim.Length) || aim.Length < 1)
+            sourceRadius = titan.Radius ?? 0;
+            if (field.Shape == DoomsdayFieldShape.Sweep)
             {
-                throw new InvalidDataException("Choose a direction away from your ship for the lance.");
+                if (secondPoint is null || !Finite(secondPoint))
+                {
+                    throw new InvalidDataException("Choose both endpoints of the Reaper sweep.");
+                }
+                DoomsdayFieldRules.CheckSweep(origin, sourceRadius, module.Range, point, secondPoint);
             }
-            lanceStart = origin + aim.Unit * (titan.Radius ?? 0);
-            point = lanceStart + aim.Unit * module.Range;
+            else
+            {
+                var aim = point - origin;
+                if (!double.IsFinite(aim.Length) || aim.Length < 1)
+                {
+                    throw new InvalidDataException("Choose a direction away from your ship for the area doomsday.");
+                }
+                point = origin + aim.Unit * (sourceRadius + module.Range);
+            }
             SpendFuel(world, catalog, pilotId, shipId, module.FuelType, module.FuelQuantity, inventoryChanges);
         }
         else if (module.Kind == AreaWeaponKind.Projector)
@@ -255,9 +271,9 @@ internal sealed partial class AreaWeaponStore(
             }
         }
         double capacitor = ShipResources.SpendCapacitor(world, shipId, ship, module.CapacitorNeed, now);
-        if (module.Lance is { } lance)
+        if (module.Field is { } lance)
         {
-            NeutralizeNearLance(world, catalog, pilot, origin, system, module.TypeId, lance, now);
+            NeutralizeNearDoomsday(world, catalog, pilot, origin, system, module.TypeId, lance, now);
         }
         long end = AreaWeaponRules.Deadline(now, module.Duration);
         long ready = AreaWeaponRules.Deadline(end, module.Reactivation);
@@ -269,7 +285,7 @@ internal sealed partial class AreaWeaponStore(
         var timers = timer.Timers();
         long aggressionEnd = module.Kind switch
         {
-            AreaWeaponKind.Lance => AreaWeaponRules.Deadline(now, module.Delay + module.Lance!.DamageDuration),
+            AreaWeaponKind.DoomsdayField => AreaWeaponRules.Deadline(now, module.Delay + module.Field!.DamageDuration),
             AreaWeaponKind.Doomsday => AreaWeaponRules.Deadline(now, module.Delay),
             _ => end,
         };
@@ -281,7 +297,7 @@ internal sealed partial class AreaWeaponStore(
             Burst(world, catalog, pilot, module, origin, system, now, broken);
         }
         else if (
-            module.Kind is AreaWeaponKind.Projector or AreaWeaponKind.Doomsday or AreaWeaponKind.Lance
+            module.Kind is AreaWeaponKind.Projector or AreaWeaponKind.Doomsday or AreaWeaponKind.DoomsdayField
             || bomb is not null
             || intercepted is not null
         )
@@ -313,13 +329,15 @@ internal sealed partial class AreaWeaponStore(
                 new(
                     module,
                     bomb,
-                    lanceStart ?? origin,
+                    origin,
                     travel,
                     point ?? origin,
                     now,
                     resolves,
                     intercepted?.Id ?? target ?? 0,
-                    bomb?.Defense.Undamaged
+                    bomb?.Defense.Undamaged,
+                    EndPoint: secondPoint,
+                    SourceRadius: sourceRadius
                 )
             );
             world.Add(row);

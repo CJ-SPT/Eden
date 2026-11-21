@@ -414,6 +414,35 @@ included `CapitalTravelTests`, `AreaWeaponTests`, `SmartbombTests`, `TargetingTe
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
+## Reapers and Bosonic fields
+
+The four Reapers use effect `6201`. The pinned `positionalControl.pyj` calls
+`superWeaponMgr.ActivateSlashModule(moduleID, firstPoint, lastPoint)` with the two endpoints from
+`tacticalNavigation.ArcPath`. Eden validates their 30-degree sweep and the fixed 150 km midpoint before
+payment. After the ten-second warning window, the current beam position advances along that sweep. The
+pinned client reads `startTargetOffset`, `endTargetOffset` and `duration` to render the racial effect.
+Late observers receive the remaining segment. EVE.js `superWeaponMgrService.js` and
+`superweaponRuntime.js` cross-check the activation and sweep timing.
+[CCP capital rework](https://www.eveonline.com/news/view/reworking-capital-ships-and-thus-it-begins)
+
+The Bosonic Field Generator (`40633`, effect `6473`) uses the single-point call. The pinned catalog sets
+a 30 km reach, a ten-second warning, a 20-second damage window and a 10 km damage signature. It pays
+2,000 Strontium Clathrates and the fitted capacitor cost. The server evaluates the cone against current
+ship positions. The pinned `client/effects` registry yielded no verified Bosonic-specific grid graphic.
+Eden emits the existing `effects.IndicatorBeamMoving` along the aim axis during windup. The exact
+Bosonic grid graphic remains open.
+
+Both weapon families share the resident cooldown, neutralization and loss settlement used by Titan
+lances. The Reaper test proves that a Venture outside the first pulse is lost when the beam reaches it.
+The Bosonic cases verify an inside hit and an outside miss around the cone boundary.
+
+**Automated validation.** All five exact Reaper, Bosonic and Titan-lance cases passed in 11.79 seconds.
+The wider capital travel, area weapons, smartbombs, targeting, spatial modules, tethering, flight, typed
+protocol and migration filter passed 185 cases in 74.28 seconds after a 9.92-second build. Both Python
+suites, formatting and `git diff --check` passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Milestones
 
 | Milestone | Playable outcome and acceptance |
@@ -425,7 +454,7 @@ included `CapitalTravelTests`, `AreaWeaponTests`, `SmartbombTests`, `TargetingTe
 | **5. Dreadnoughts and force auxiliaries** | Implemented. Dreadnoughts and force auxiliaries use standard cynos, paid siege or triage, and normal docking, repair and loss settlement. The acceptance cases reopen a paid siege and settle an Apostle loss. |
 | **6. Carriers and fighters** | Implemented for light attack squadrons. Carrier tubes support launch, targeting, recall and replacement, with squadron losses persisted. Standup fighters and additional combat abilities remain open. |
 | **7. Capital industry and fleet services** | Rorquals use paid industrial cores, Excavators, fleet compression and P.A.N.I.C. Shared fleet storage, mobile refitting, clone bays and fresh-world resupply remain open. |
-| **8. Supercapitals and production** | Keepstar docking, Sotiyo construction, direct jumps, Titan bridging, supercarrier heavy attack fighters and burst projectors are implemented. Targeted Titan doomsdays have paid windups, counters and durable loss settlement. Titan lances add aimed beams and positional counters. Reapers, Bosonic and transport effects, and phenomena remain open. |
+| **8. Supercapitals and production** | Keepstar docking, Sotiyo construction, direct jumps, Titan bridging, supercarrier heavy attack fighters and burst projectors are implemented. Targeted Titan doomsdays have paid windups, counters and durable loss settlement. Titan lances, Reapers and Bosonic fields support paid aiming and positional counters. Transport effects and phenomena remain open. |
 
 Milestone 5 needs the Upwell battle and destruction paths for its siege acceptance.
 [Sovereignty upgrades](sovereignty.md#sovereignty-resources-and-upgrades--november-16-2026) ·

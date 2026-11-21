@@ -304,9 +304,9 @@ internal sealed partial class AreaWeaponStore
             {
                 SettleDoomsday(world, catalog, row, flight, now, damage);
             }
-            else if (flight.Module.Kind == AreaWeaponKind.Lance)
+            else if (flight.Module.Kind == AreaWeaponKind.DoomsdayField)
             {
-                destroyedNpc |= SettleLance(world, catalog, row, flight, now, damage);
+                destroyedNpc |= SettleDoomsdayField(world, catalog, row, flight, now, damage);
             }
             else if (flight.Module.Kind == AreaWeaponKind.Defender)
             {
