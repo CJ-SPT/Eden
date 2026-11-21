@@ -25,38 +25,57 @@ internal static class NpcPopulationSchedule
 
     internal static long Next(WorldAction world, int system, long now)
     {
-        var encounters = world.Set<WorldNpcEncounter>() is EconomySet<WorldNpcEncounter, EconomyWorldNpcEncounter> resident
+        var resident = world.Set<WorldNpcEncounter>() as EconomySet<WorldNpcEncounter, EconomyWorldNpcEncounter>;
+        var encounters = resident is not null
             ? resident
                 .IndexedSnapshots(nameof(WorldNpcEncounter.SystemId), system)
                 .Where(e => e.SystemId == system)
                 .Select(e => new EncounterDeadline(e.Id, e.Role, e.Occupied, e.NextSpawnAt))
-                .ToArray()
             : world
                 .Filter<WorldNpcEncounter>(e => e.SystemId == system)
                 .AsEnumerable()
                 .Select(e => new EncounterDeadline(e.Id, e.Role, e.Occupied, e.NextSpawnAt))
                 .ToArray();
-        // Guards respawn per slot. Legacy fixture pirates have no encounter row.
-        var tracked = encounters.Select(e => e.Id).ToHashSet();
-        // Authored anomaly and mission losses advance their own objectives. They never
-        // use regional slot respawns, even without a regional encounter row.
-        var slots = NpcPopulationMember
-            .InSystem(world, system)
-            .Where(n => !IsObjectiveAnchor(n.AnchorKind) && (n.Role is NpcRole.Navy or NpcRole.Customs || !tracked.Contains(n.EncounterId)))
-            .ToArray();
         long due = long.MaxValue;
-        foreach (var encounter in encounters.Where(e => e.Occupied && e.NextSpawnAt != null))
+        foreach (var encounter in encounters)
         {
-            long next = encounter.NextSpawnAt!.Value;
+            if (!encounter.Occupied || encounter.NextSpawnAt is not long next)
+            {
+                continue;
+            }
             if (encounter.Role == NpcRole.MiningMiner)
             {
                 next = CalmMiningDeadline(world, encounter, now) ?? next;
             }
             due = Math.Min(due, next);
         }
-        if (slots.Any(n => n.DestroyedAt != null && n.RetiredAt == null))
+        var members = NpcPopulationMember.InSystem(world, system);
+        if (resident is null)
         {
-            foreach (var latest in slots.GroupBy(n => (n.EncounterId, n.BeltId, n.Slot)).Select(g => g.MaxBy(n => n.Id)!))
+            members = members.ToArray();
+        }
+        HashSet<long>? tracked = null;
+        bool UsesSlotRespawn(NpcPopulationMember member)
+        {
+            // Authored encounters advance their own objectives. Guards retain per-slot
+            // respawns, and legacy NPCs have no encounter row in this system.
+            return !IsObjectiveAnchor(member.AnchorKind)
+                && (
+                    member.Role is NpcRole.Navy or NpcRole.Customs
+                    || (
+                        resident is not null
+                            ? resident.ReadSnapshot(new(member.EncounterId))?.SystemId != system
+                            : !(tracked ??= encounters.Select(e => e.Id).ToHashSet()).Contains(member.EncounterId)
+                    )
+                );
+        }
+        if (members.Any(n => n.DestroyedAt != null && n.RetiredAt == null && UsesSlotRespawn(n)))
+        {
+            var latestMembers = members
+                .Where(UsesSlotRespawn)
+                .GroupBy(n => (n.EncounterId, n.BeltId, n.Slot))
+                .Select(g => g.MaxBy(n => n.Id));
+            foreach (var latest in latestMembers)
             {
                 if (latest.DestroyedAt is { } destroyed && latest.RetiredAt is null)
                 {

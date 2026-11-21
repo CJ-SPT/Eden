@@ -8,6 +8,7 @@ using Eden.World.Catalog;
 using Eden.World.Combat;
 using Eden.World.Combat.Npcs;
 using Eden.World.Fittings;
+using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -195,6 +196,102 @@ public sealed class NpcPopulationTests
         var combat = db.Services.GetRequiredService<INpcCombat>();
         combat.Acquire([new(Pilot, Ship)], Now);
         Assert.Empty(combat.Aggressors(Ship));
+    }
+
+    [Fact]
+    public void ResidentDeadlinesRespectTrackedEncountersAndTheLatestLegacySlotOccupant()
+    {
+        using TestWorld db = new(liveWorld: true);
+        var live = db.Services.GetRequiredService<LiveWorld>();
+        using var action = live.Economy.Begin(new(systems: [OtherSystem]));
+        const long tracked = 100;
+        const long legacy = 101;
+        const long objective = 102;
+        long encounterDue = Now + TimeSpan.FromSeconds(20).Ticks;
+        long dueSoon = Now + TimeSpan.FromSeconds(4).Ticks;
+        long guardDue = Now + TimeSpan.FromSeconds(2).Ticks;
+        long respawnDelay = TimeSpan.FromSeconds(NpcEncounterDefinitions.RespawnSeconds).Ticks;
+        action.Add(
+            new WorldNpcEncounter
+            {
+                Id = tracked,
+                SystemId = OtherSystem,
+                Occupied = true,
+                NextSpawnAt = encounterDue,
+            }
+        );
+        AddMember(tracked, NpcAnchorKind.Belt, NpcRole.Pirate, Now - respawnDelay);
+        AddMember(objective, NpcAnchorKind.Mission, NpcRole.Pirate, Now - respawnDelay);
+        Assert.Equal(encounterDue, NpcPopulationSchedule.Next(action, OtherSystem, Now));
+
+        AddMember(legacy, NpcAnchorKind.Belt, NpcRole.Pirate, dueSoon - respawnDelay);
+        Assert.Equal(dueSoon, NpcPopulationSchedule.Next(action, OtherSystem, Now));
+        var replacement = AddMember(legacy, NpcAnchorKind.Belt, NpcRole.Pirate, null);
+        Assert.Equal(encounterDue, NpcPopulationSchedule.Next(action, OtherSystem, Now));
+
+        AddMember(tracked, NpcAnchorKind.Belt, NpcRole.Navy, guardDue - respawnDelay);
+        Assert.Equal(guardDue, NpcPopulationSchedule.Next(action, OtherSystem, Now));
+        action.Remove(replacement);
+        Assert.Equal(guardDue, NpcPopulationSchedule.Next(action, OtherSystem, Now));
+        Assert.Equal(guardDue + TimeSpan.TicksPerSecond, NpcPopulationSchedule.Next(action, OtherSystem, guardDue));
+
+        WorldNpc AddMember(long encounter, NpcAnchorKind anchor, NpcRole role, long? destroyed) =>
+            action
+                .Add(
+                    new WorldNpc
+                    {
+                        SystemId = OtherSystem,
+                        EncounterId = encounter,
+                        AnchorKind = anchor,
+                        Role = role,
+                        DestroyedAt = destroyed,
+                    }
+                )
+                .Entity;
+    }
+
+    [Fact]
+    public void ResidentDeadlineScanAllocationStaysBoundedInAnUncontestedSystem()
+    {
+        using TestWorld db = new(liveWorld: true);
+        var live = db.Services.GetRequiredService<LiveWorld>();
+        const int encounterCount = 256;
+        const int iterations = 32;
+        long due = Now + TimeSpan.TicksPerSecond;
+        using (var action = live.Economy.Begin(new(systems: [OtherSystem])))
+        {
+            for (int i = 0; i < encounterCount; i++)
+            {
+                action.Add(
+                    new WorldNpcEncounter
+                    {
+                        Id = 100 + i,
+                        SystemId = OtherSystem,
+                        Occupied = true,
+                        NextSpawnAt = due,
+                    }
+                );
+            }
+            action.Commit();
+        }
+
+        using var read = live.Economy.Begin();
+        const int emptySystem = OtherSystem + 1;
+        Assert.Equal(due, NpcPopulationSchedule.Next(read, OtherSystem, Now));
+        Assert.Equal(long.MaxValue, NpcPopulationSchedule.Next(read, emptySystem, Now));
+        long empty = Measure(emptySystem);
+        long populated = Measure(OtherSystem);
+        Assert.True(populated <= empty + 512 * iterations, $"Empty system allocated {empty} B. Populated system allocated {populated} B.");
+
+        long Measure(int system)
+        {
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            for (int sample = 0; sample < iterations; sample++)
+            {
+                NpcPopulationSchedule.Next(read, system, Now);
+            }
+            return GC.GetAllocatedBytesForCurrentThread() - before;
+        }
     }
 
     [Fact]
