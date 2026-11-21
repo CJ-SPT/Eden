@@ -1,6 +1,7 @@
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
+using Eden.Gameplay.Ships;
 using Eden.Gameplay.Structures;
 
 namespace Eden.Gameplay.Flight;
@@ -10,13 +11,15 @@ public enum CapitalJumpTarget
     FleetModule,
     Structure,
     FleetDeployable,
+    FleetPortal,
 }
 
 public sealed record CapitalJumpRequest(
     long EmitterId,
     long BeaconId,
     int SystemId,
-    CapitalJumpTarget Target = CapitalJumpTarget.FleetModule
+    CapitalJumpTarget Target = CapitalJumpTarget.FleetModule,
+    long PortalShipId = 0
 );
 
 public sealed record StructureCynoBeacon(long Id, int TypeId, int OwnerId, int SystemId, StructureState State, string Name);
@@ -43,6 +46,24 @@ public sealed record CynosuralField(
 
 public sealed record CynoActivation(CynosuralField Field, IReadOnlyList<InventoryChange> FuelChanges, double Capacitor);
 
+public sealed record JumpPortal(
+    long PilotId,
+    long ShipId,
+    long ModuleId,
+    long FleetId,
+    int Origin,
+    CapitalJumpRequest Target,
+    long StartedAt,
+    long EndsAt
+);
+
+public sealed record JumpPortalActivation(JumpPortal Portal, double Capacitor);
+
+public interface ICapitalInventoryEvents
+{
+    void Publish(long pilotId, IReadOnlyList<InventoryChange> changes);
+}
+
 public sealed record CapitalJump(DockedPilot Pilot, JumpTimers Timers, double Capacitor, IReadOnlyList<InventoryChange> Changes);
 
 public interface IPilotCapitalTravel
@@ -57,6 +78,9 @@ public interface IPilotCapitalTravel
     IReadOnlyDictionary<int, int> BeaconCounts();
     CynoDeployment Deploy(long pilotId, long shipId, IReadOnlyList<long> itemIds, SpacePosition heading);
     IReadOnlyList<StaticSpaceObject> Deployables(int systemId);
+    JumpPortalActivation OpenPortal(long pilotId, long shipId, CapitalJumpRequest request);
+    JumpPortal? Portal(long pilotId);
+    IReadOnlyList<JumpPortal> FleetPortals(long pilotId);
 }
 
 public sealed record CynoDeployment(IReadOnlyDictionary<long, long> Launched, IReadOnlyList<InventoryChange> Changes);
@@ -70,8 +94,15 @@ public static class CapitalTravelRules
     public const int IndustrialField = 52696;
     public const int StandardGenerator = 21096;
     public const int StandardField = 21094;
+    public const int CovertGenerator = 28646;
+    public const int CovertField = 28650;
+    public const int CovertFieldGroup = 897;
+    public const int CovertPortalGenerator = 28652;
+    public const int CovertPortalGroup = 4127;
     public const int MobileBeacon = 57319;
     public const int MobileField = 57425;
+    public const int CovertMobileBeacon = 59630;
+    public const int CovertMobileField = 59631;
     public const int MobileInhibitor = 33476;
     public const double MobileArrivalClearance = 5_000;
     public const int GeneratorGroup = 658;
@@ -96,8 +127,13 @@ public static class CapitalTravelRules
         {
             IndustrialGenerator => IndustrialField,
             StandardGenerator => StandardField,
+            CovertGenerator => CovertField,
             _ => null,
         };
+
+    public static bool Covert(int fieldType) => fieldType is CovertField or CovertMobileField;
+
+    public static bool JumpDrive(int groupId) => groupId is (int)HullClass.JumpFreighter or (int)HullClass.BlackOps;
 
     public static int Isotopes(double distance, double rate)
     {

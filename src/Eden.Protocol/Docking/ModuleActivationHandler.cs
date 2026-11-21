@@ -62,7 +62,7 @@ internal sealed class ModuleActivationHandler(
             return PilotCallResult.Unsupported;
         }
         string effectName = BlueMarshal.Text(args[1]);
-        if (effectName == CapitalTravelHandler.CynoEffectName)
+        if (effectName is CapitalTravelHandler.CynoEffectName or CapitalTravelHandler.PortalEffectName)
         {
             return keywords is { Count: > 0 }
                 ? new PilotCallResult.Failure("Unexpected cynosural activation arguments.")
@@ -74,10 +74,10 @@ internal sealed class ModuleActivationHandler(
                 SpatialModuleHandler.Handles(effectName)
                 || effectName is PropulsionWireDefinitions.EffectName or PropulsionWireDefinitions.MicrowarpdriveEffectName
             )
-            && context.Flight.CynoActive
+            && context.Flight.CapitalModuleActive
         )
         {
-            return new PilotCallResult.Failure("The active cynosural field prevents navigation modules from activating.");
+            return new PilotCallResult.Failure("An active cynosural field or portal prevents navigation modules from activating.");
         }
         if (method == "Activate" && args is [long module, _, _, long])
         {

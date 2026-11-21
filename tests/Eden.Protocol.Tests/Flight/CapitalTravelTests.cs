@@ -38,10 +38,126 @@ public sealed class CapitalTravelTests
     private const int JanStation = 60001714;
     private const int Rhea = 28844;
     private const int Rapier = 11963;
+    private const int Sin = 22430;
     private const int Nitrogen = 17888;
+    private const int Oxygen = 17887;
     private const int LiquidOzone = 16273;
     private const int Cargo = 34;
     private static readonly SpacePosition s_station = new(-102770810880, 7849451520, 353786634240);
+
+    [Fact]
+    public async Task CovertMobileBeaconSupportsFleetPortalWithHostFuel()
+    {
+        using Fixture fixture = new(Sin, Oxygen, Rapier, CapitalTravelRules.CovertGenerator, driveFuel: 10_000, fittedPortal: true);
+        fixture.CalibrateDrive();
+        long mobile = fixture.PrepareCovertMobile();
+        using Client host = fixture.Select(1000001);
+        long fleet;
+        using (Client deployer = fixture.Select(1000002))
+        {
+            fleet = fixture.Join(deployer);
+            Assert.IsType<PilotCallResult.Success>(deployer.Call("ship", "Drop", new List<object?> { mobile }, null, false));
+        }
+        fixture.MoveSecondToJita();
+        using Client passenger = fixture.Select(1000002);
+        Assert.Null(fixture.Fleets.Identity(passenger.Pilot.PilotId));
+        fixture.Fleets.Invite(
+            host.Pilot.PilotId,
+            fleet,
+            passenger.Pilot.PilotId,
+            new(FleetRules.NoGroup, FleetRules.NoGroup, FleetRole.Member)
+        );
+        fixture.Fleets.Accept(passenger.Pilot.PilotId, fleet);
+        fixture.Clock.Seconds += 60;
+        var field = Assert.Single(fixture.Travel.FleetFields(host.Pilot.PilotId));
+        Assert.Equal(CapitalTravelRules.CovertMobileField, field.Beacon.TypeId);
+        Assert.False(field.Beacon.IsGlobal);
+        Assert.Empty(fixture.Travel.BeaconCounts());
+        long deployable = field.DeployableId!.Value;
+        var opened = host.Call("beyonce", "CmdBridgeToFleetDeployableBeacon", deployable, Jan, field.Beacon.Id);
+        Assert.True(opened is PilotCallResult.Success, opened.ToString());
+        var portal = Assert.IsType<JumpPortal>(fixture.Travel.Portal(host.Pilot.PilotId));
+        Assert.Equal(20 * TimeSpan.TicksPerSecond, portal.EndsAt - portal.StartedAt);
+        Assert.Equal(10_000, Quantity(fixture, host, Oxygen));
+        Assert.IsType<PilotCallResult.Failure>(host.Call("dogmaIM", "Deactivate", portal.ModuleId, "jumpPortalGenerationBO"));
+        await host.TickAsync();
+        await passenger.TickAsync();
+        Assert.Contains(passenger.Packets, packet => ContainsText(packet, "OnBridgeModeChange"));
+        Assert.Contains(passenger.Packets, packet => ContainsText(packet, "effects.JumpPortalBO"));
+        await fixture.Live.FlushAsync();
+        fixture.Reopen();
+        Assert.Equal(portal, fixture.Travel.Portal(host.Pilot.PilotId));
+
+        fixture.Clock.Seconds += 18;
+        Assert.IsType<PilotCallResult.Success>(Jump());
+        await passenger.TickAsync();
+        fixture.Clock.Seconds += 3;
+        await passenger.TickAsync();
+        Assert.Equal(Jita, passenger.Pilot.SystemId);
+        Assert.Equal(10_000, Quantity(fixture, host, Oxygen));
+        Assert.Null(fixture.Travel.Timers(passenger.Pilot.PilotId));
+        Assert.IsType<PilotCallResult.Success>(host.Call("beyonce", "CmdBridgeToFleetDeployableBeacon", deployable, Jan, field.Beacon.Id));
+        host.Packets.Clear();
+
+        var jumped = Jump();
+        Assert.True(jumped is PilotCallResult.Success, jumped.ToString());
+        await passenger.TickAsync();
+        Assert.Equal(Jita, passenger.Pilot.SystemId);
+        Assert.Equal(10_000, Quantity(fixture, host, Oxygen));
+        fixture.Clock.Seconds += 3;
+        await passenger.TickAsync();
+        await host.TickAsync();
+        Assert.Equal(Jan, passenger.Pilot.SystemId);
+        Assert.Equal(Jita, host.Pilot.SystemId);
+        Assert.Equal(1_857, Quantity(fixture, host, Oxygen));
+        Assert.NotNull(fixture.Travel.Timers(passenger.Pilot.PilotId));
+        Assert.Null(fixture.Travel.Timers(host.Pilot.PilotId));
+        Assert.Contains(host.Packets, packet => ContainsText(packet, "OnItemChange"));
+
+        fixture.Clock.Seconds += 17;
+        await passenger.TickAsync();
+        Assert.Empty(fixture.Travel.FleetPortals(passenger.Pilot.PilotId));
+        Assert.Null(fixture.Travel.Portal(host.Pilot.PilotId));
+
+        PilotCallResult Jump() =>
+            passenger.Call("beyonce", "CmdJumpThroughFleet", host.Pilot.PilotId, host.Pilot.ShipId, field.Beacon.Id, Jan);
+    }
+
+    [Fact]
+    public async Task BlackOpsJumpsToCovertCynoInsideMobileInhibitor()
+    {
+        using Fixture fixture = new(Sin, Oxygen, Rapier, CapitalTravelRules.CovertGenerator, driveFuel: 10_000);
+        fixture.CalibrateDrive();
+        var (_, inhibitor) = fixture.PrepareDeployables();
+        using Client blackOps = fixture.Select(1000001);
+        using Client emitter = fixture.Select(1000002);
+        Assert.IsType<PilotCallResult.Success>(emitter.Call("ship", "Drop", new List<object?> { inhibitor }, null, false));
+        fixture.Clock.Seconds += 60;
+        var field = fixture.Light(emitter);
+        Assert.Equal(CapitalTravelRules.CovertField, field.Beacon.TypeId);
+        Assert.False(field.Beacon.IsGlobal);
+        Assert.Equal(30 * TimeSpan.TicksPerSecond, field.EndsAt - field.StartedAt);
+        Assert.Empty(fixture.Travel.BeaconCounts());
+        Assert.Equal(field, Assert.Single(fixture.Travel.FleetFields(blackOps.Pilot.PilotId)));
+        Assert.IsType<PilotCallResult.Success>(fixture.Jump(blackOps, field));
+        await blackOps.TickAsync();
+        fixture.Clock.Seconds += 3;
+        await blackOps.TickAsync();
+        Assert.Equal(Jan, blackOps.Pilot.SystemId);
+        Assert.Equal(6_313, Quantity(fixture, blackOps, Oxygen));
+    }
+
+    [Fact]
+    public void JumpFreighterRejectsCovertFleetField()
+    {
+        using Fixture fixture = new(emitterHull: Rapier, generator: CapitalTravelRules.CovertGenerator);
+        using Client freighter = fixture.Select(1000001);
+        using Client emitter = fixture.Select(1000002);
+        var field = fixture.Light(emitter);
+        Assert.IsType<PilotCallResult.Failure>(fixture.Jump(freighter, field));
+        Assert.Equal(60_000, Quantity(fixture, freighter, Nitrogen));
+        Assert.Null(fixture.Travel.Timers(freighter.Pilot.PilotId));
+    }
 
     [Fact]
     public async Task AnsiblexChargesGateCapacitorAndRechecksBothEndpointsAtDeparture()
@@ -489,7 +605,9 @@ public sealed class CapitalTravelTests
             int emitterHull = (int)StarterShipType.Venture,
             int generator = CapitalTravelRules.IndustrialGenerator,
             bool structures = false,
-            bool armed = false
+            bool armed = false,
+            int driveFuel = 60_000,
+            bool fittedPortal = false
         )
         {
             Db = new(clock: Clock);
@@ -517,8 +635,22 @@ public sealed class CapitalTravelTests
             var assembly = Db.Services.GetRequiredService<IPilotFleet>();
             var fitting = Db.Services.GetRequiredService<IPilotFitting>();
             Train(first.PilotId, [.. HullRequirements(hull), (3456, 5)]);
-            Train(second.PilotId, [.. HullRequirements(emitterHull), (CapitalTravelRules.CynosuralFieldTheory, 1)]);
+            Train(
+                second.PilotId,
+                [
+                    .. HullRequirements(emitterHull),
+                    (CapitalTravelRules.CynosuralFieldTheory, generator == CapitalTravelRules.CovertGenerator ? 5 : 1),
+                ]
+            );
             FreighterId = Board(first, hull);
+            if (fittedPortal)
+            {
+                int portalType = CapitalTravelRules.CovertPortalGenerator;
+                Train(first.PilotId, [.. HullRequirements(portalType)]);
+                long portal = Grant(first.PilotId, first.StationId, InventoryFlag.Hangar, portalType, 1);
+                fitting.Fit(first.PilotId, [portal], first.StationId, (int)InventoryFlag.AutoFit);
+                fitting.SetOnline(first.PilotId, FreighterId, portal, true);
+            }
             long venture = Board(second, emitterHull);
             Module = Grant(second.PilotId, second.StationId, InventoryFlag.Hangar, generator, 1);
             fitting.Fit(second.PilotId, [Module], second.StationId, (int)InventoryFlag.AutoFit);
@@ -532,8 +664,9 @@ public sealed class CapitalTravelTests
                 fitting.SetOnline(second.PilotId, venture, Gun.Value, true);
             }
             Grant(second.PilotId, venture, InventoryFlag.Cargo, LiquidOzone, 1000);
-            Grant(first.PilotId, FreighterId, InventoryFlag.FuelBay, isotope, 14_000);
-            Grant(first.PilotId, FreighterId, InventoryFlag.FuelBay, isotope, 46_000);
+            int firstStack = Math.Min(14_000, driveFuel / 2);
+            Grant(first.PilotId, FreighterId, InventoryFlag.FuelBay, isotope, firstStack);
+            Grant(first.PilotId, FreighterId, InventoryFlag.FuelBay, isotope, driveFuel - firstStack);
             CargoId = Grant(first.PilotId, FreighterId, InventoryFlag.Cargo, Cargo, 14);
             Db.Store.SetPosition(FreighterId, new(10_000_000, 0, 0), Jita);
             Db.Store.SetPosition(venture, s_station + new SpacePosition(-40_213, 0, 0), Jan);
@@ -560,6 +693,22 @@ public sealed class CapitalTravelTests
         }
 
         internal Client Select(long account) => new(Db, Clock, account);
+
+        internal void CalibrateDrive() => Train(Db.Store.FindPilot(1000001)!.PilotId, (CapitalTravelRules.JumpDriveCalibration, 5));
+
+        internal long PrepareCovertMobile()
+        {
+            const int anchoring = 11584;
+            var pilot = Db.Store.FindPilot(1000002)!;
+            Train(pilot.PilotId, (anchoring, 5));
+            return Grant(pilot.PilotId, pilot.ShipId, InventoryFlag.Cargo, CapitalTravelRules.CovertMobileBeacon, 1);
+        }
+
+        internal void MoveSecondToJita()
+        {
+            long ship = Db.Store.FindPilot(1000002)!.ShipId;
+            Db.Store.SetPosition(ship, new(10_001_000, 0, 0), Jita);
+        }
 
         internal (long Beacon, long Inhibitor) PrepareDeployables()
         {

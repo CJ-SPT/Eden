@@ -183,6 +183,11 @@ internal sealed record FleetDeployableBeaconChanged(long Id, Eden.Gameplay.Fligh
     public override object?[] Arguments => [Id, Field.SystemId, Field.Beacon.Id, Field.PilotId, Active];
 }
 
+internal sealed record FleetPortalChanged(Eden.Gameplay.Flight.JumpPortal Portal, bool Active) : FleetNotification("OnBridgeModeChange")
+{
+    public override object?[] Arguments => [Portal.ShipId, Portal.Target.SystemId, Portal.Target.BeaconId, Active];
+}
+
 internal sealed record FleetStateNotification(IReadOnlyList<FleetTargetTag> Tags) : FleetNotification("OnFleetStateChange")
 {
     public override object?[] Arguments =>

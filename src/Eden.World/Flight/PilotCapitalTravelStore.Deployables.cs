@@ -74,7 +74,7 @@ internal sealed partial class PilotCapitalTravelStore
                 || item.OwnerId != pilotId
                 || item.LocationId != shipId
                 || item.FlagId != (int)InventoryFlag.Cargo
-                || item.TypeId is not (CapitalTravelRules.MobileBeacon or CapitalTravelRules.MobileInhibitor)
+                || item.TypeId != CapitalTravelRules.MobileInhibitor && MobileFieldType(item.TypeId) is null
             )
             {
                 throw new InvalidDataException("Choose a supported mobile cynosural deployable from your active ship's cargo.");
@@ -86,22 +86,27 @@ internal sealed partial class PilotCapitalTravelStore
             }
             PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
             var point = origin + direction * profile.LaunchRange;
-            if (profile.FieldType.HasValue)
+            if (profile.FieldType is int fieldType)
             {
                 RequireCynoSystem(catalog, system);
                 if (fleet == 0)
                 {
                     throw new InvalidDataException("Join a fleet before deploying a mobile cynosural beacon.");
                 }
-                CapitalNavigationStore.SettleFuel(world, catalog, system, now);
-                if (CapitalNavigationStore.Jammed(world, catalog, system, now) || Inhibited(world, catalog, system, point, now))
+                if (!CapitalTravelRules.Covert(fieldType))
                 {
-                    throw new InvalidDataException("Cynosural fields are inhibited at this deployment position.");
+                    RequireUnjammed(world, catalog, system, now);
+                    if (Inhibited(world, catalog, system, point, now))
+                    {
+                        throw new InvalidDataException("Cynosural fields are inhibited at this deployment position.");
+                    }
                 }
             }
             if (
-                existing.Any(row => row.TypeId == item.TypeId && point.DistanceTo(MobilePosition(row)) < profile.GroupSeparation)
-                || geometry.Any(body => MobileObstructed(profile, point, body))
+                existing.Any(row =>
+                    (row.TypeId == item.TypeId || profile.FieldType.HasValue && MobileFieldType(row.TypeId).HasValue)
+                    && point.DistanceTo(MobilePosition(row)) < profile.GroupSeparation
+                ) || geometry.Any(body => MobileObstructed(profile, point, body))
             )
             {
                 throw new InvalidDataException("This position is too close to another object for deployment.");
@@ -244,10 +249,21 @@ internal sealed partial class PilotCapitalTravelStore
     }
 
     private static bool MobileBeaconActive(SavedCynoDeployable row, long now) =>
-        row.BeaconId != 0 && row.OnlineAt <= now && row.ExpiresAt > now;
+        row.BeaconId != 0 && row.OnlineAt <= now && row.ExpiresAt > now && MobileFieldType(row.TypeId).HasValue;
 
-    private static CynosuralField MobileBeaconContact(SavedCynoDeployable row) =>
-        new(
+    private static int? MobileFieldType(int typeId) =>
+        typeId switch
+        {
+            CapitalTravelRules.MobileBeacon => CapitalTravelRules.MobileField,
+            CapitalTravelRules.CovertMobileBeacon => CapitalTravelRules.CovertMobileField,
+            _ => null,
+        };
+
+    private static CynosuralField MobileBeaconContact(SavedCynoDeployable row)
+    {
+        int type = MobileFieldType(row.TypeId)!.Value;
+        bool covert = CapitalTravelRules.Covert(type);
+        return new(
             row.PilotId,
             0,
             0,
@@ -257,8 +273,8 @@ internal sealed partial class PilotCapitalTravelStore
             row.ExpiresAt,
             new(
                 row.BeaconId,
-                CapitalTravelRules.MobileField,
-                CapitalTravelRules.FieldGroup,
+                type,
+                covert ? CapitalTravelRules.CovertFieldGroup : CapitalTravelRules.FieldGroup,
                 (int)InventoryCategory.Celestial,
                 0,
                 MobilePosition(row),
@@ -266,10 +282,12 @@ internal sealed partial class PilotCapitalTravelStore
             )
             {
                 Solid = false,
-                Name = "Mobile Cynosural Beacon Field",
+                IsGlobal = !covert,
+                Name = covert ? "Covert Cynosural Field" : "Mobile Cynosural Beacon Field",
             },
             row.Id
         );
+    }
 
     private static MobileCynoProfile LoadMobileProfile(CatalogDbContext catalog, int typeId)
     {
@@ -291,7 +309,7 @@ internal sealed partial class PilotCapitalTravelStore
             type.GroupId,
             type.Name,
             (float)(type.Radius ?? 0),
-            typeId == CapitalTravelRules.MobileBeacon ? CapitalTravelRules.MobileField : null,
+            MobileFieldType(typeId),
             Seconds("activate"),
             Seconds("decay"),
             Read("deploy", "maxSecurityLevel"),

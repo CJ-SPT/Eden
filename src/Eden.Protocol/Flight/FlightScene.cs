@@ -402,7 +402,8 @@ internal sealed class FlightScene(
 
     internal void RefreshCynos(FlightSceneContext context, IReadOnlyList<StaticSpaceObject> current)
     {
-        static bool Cyno(StaticSpaceObject body) => body.GroupId == CapitalTravelRules.FieldGroup || body.CynoDeployable is not null;
+        static bool Cyno(StaticSpaceObject body) =>
+            body.GroupId is CapitalTravelRules.FieldGroup or CapitalTravelRules.CovertFieldGroup || body.CynoDeployable is not null;
         var previous = Objects.Where(Cyno).ToArray();
         if (previous.SequenceEqual(current))
         {

@@ -118,6 +118,8 @@ public static class ModuleFittingRules
                 Flight.CapitalTravelRules.GeneratorGroup => Flight.CapitalTravelRules.ModuleField(typeId) is not null
                     && effects.Contains(DogmaEffect.CynosuralGeneration),
                 Flight.CapitalTravelRules.EconomizerGroup => effects.Contains(DogmaEffect.JumpDriveEconomizer),
+                Flight.CapitalTravelRules.CovertPortalGroup => typeId == Flight.CapitalTravelRules.CovertPortalGenerator
+                    && effects.Contains(DogmaEffect.CovertJumpPortalGeneration),
                 CapacitorBoosterDefinitions.Group => CapacitorBoosterDefinitions.IsSupported(groupId, attributes)
                     && effects.Contains(DogmaEffect.CapacitorBoosting),
                 HullRepairDefinitions.Group => LocalRepairDefinitions.IsSupported(attributes)

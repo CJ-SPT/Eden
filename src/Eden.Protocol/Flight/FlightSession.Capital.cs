@@ -5,7 +5,8 @@ namespace Eden.Protocol.Flight;
 
 internal sealed partial class FlightSession
 {
-    internal bool CynoActive => capitalTravel?.Field(Pilot.PilotId)?.ShipId == Pilot.ShipId;
+    internal bool CapitalModuleActive =>
+        capitalTravel?.Field(Pilot.PilotId)?.ShipId == Pilot.ShipId || capitalTravel?.Portal(Pilot.PilotId)?.ShipId == Pilot.ShipId;
 
     internal void RefreshCynos()
     {
@@ -14,17 +15,23 @@ internal sealed partial class FlightSession
             var contacts = travel.Fields(Pilot.SystemId).Select(field => field.Beacon);
             if (Pilot.Position is { } position)
             {
-                contacts = contacts.Concat(
-                    travel
-                        .Deployables(Pilot.SystemId)
-                        .Where(body => position.DistanceTo(body.Position) <= NpcEncounterDefinitions.VisibilityRange)
-                );
+                contacts = contacts
+                    .Where(body => body.IsGlobal || position.DistanceTo(body.Position) <= NpcEncounterDefinitions.VisibilityRange)
+                    .Concat(
+                        travel
+                            .Deployables(Pilot.SystemId)
+                            .Where(body => position.DistanceTo(body.Position) <= NpcEncounterDefinitions.VisibilityRange)
+                    );
+            }
+            else
+            {
+                contacts = contacts.Where(body => body.IsGlobal);
             }
             Scene.RefreshCynos(SceneContext, contacts.ToArray());
         }
     }
 
-    internal void StopForCyno()
+    internal void StopForCapitalModule()
     {
         _navigation = new();
         Update(new DestinyCommand.Stop(Pilot.ShipId));

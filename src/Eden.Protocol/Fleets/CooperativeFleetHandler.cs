@@ -28,6 +28,7 @@ internal sealed partial class CooperativeFleetHandler(
     private readonly Dictionary<long, ShipHealth> _watchHealth = [];
     private int _watchSystem;
     private IReadOnlyList<CynosuralField> _sentCynos = [];
+    private IReadOnlyList<JumpPortal> _sentPortals = [];
     public bool IsMonitoring => _pilot.HasValue;
 
     public void Advance(PilotCallContext context)
@@ -148,6 +149,7 @@ internal sealed partial class CooperativeFleetHandler(
         }
         AdvanceTags(context);
         AdvanceCynos(context);
+        AdvancePortals(context);
     }
 
     private void AdvanceCynos(PilotCallContext context)
@@ -166,6 +168,20 @@ internal sealed partial class CooperativeFleetHandler(
 
     private static FleetNotification FleetBeacon(CynosuralField field, bool active) =>
         field.DeployableId is long id ? new FleetDeployableBeaconChanged(id, field, active) : new FleetModuleBeaconChanged(field, active);
+
+    private void AdvancePortals(PilotCallContext context)
+    {
+        var current = capital?.FleetPortals(context.Pilot.PilotId) ?? [];
+        foreach (var removed in _sentPortals.Except(current))
+        {
+            context.Notifications.Add(new FleetPortalChanged(removed, false));
+        }
+        foreach (var added in current.Except(_sentPortals))
+        {
+            context.Notifications.Add(new FleetPortalChanged(added, true));
+        }
+        _sentPortals = current;
+    }
 
     private static bool IsInTransit(PilotCallContext context) => context.Flight.InWarp || context.Flight.Translocating;
 

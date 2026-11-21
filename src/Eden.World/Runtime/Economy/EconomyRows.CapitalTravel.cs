@@ -123,6 +123,7 @@ internal sealed partial class ResidentEconomy
             )
         );
         RegisterCynoDeployables();
+        RegisterJumpPortals();
     }
 
     private void ObserveCynoDeadline(long? at)

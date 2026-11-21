@@ -41,7 +41,8 @@ internal sealed partial class PilotCapitalTravelStore(
     WorldDatabase database,
     SqliteWorld ships,
     ICooperativeFleets fleets,
-    TimeProvider clock
+    TimeProvider clock,
+    ICapitalInventoryEvents inventoryEvents
 ) : IPilotCapitalTravel
 {
     private sealed record JumpPlan(
@@ -51,7 +52,8 @@ internal sealed partial class PilotCapitalTravelStore(
         OwnedItem[] Fuel,
         int Quantity,
         double CapacitorCost,
-        JumpTimers Timers
+        JumpTimers Timers,
+        long? FuelPayer = null
     );
 
     private sealed record JumpDestination(int FieldType, SpacePosition Position, double SpawnRadius, double StructureRadius = 0);
@@ -68,15 +70,6 @@ internal sealed partial class PilotCapitalTravelStore(
         var position = pilot.ActiveShip.Position!;
         int system = position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
         long now = Now;
-        CapitalNavigationStore.SettleFuel(action, catalog, system, now);
-        if (CapitalNavigationStore.Jammed(action, catalog, system, now))
-        {
-            throw new InvalidDataException("This solar system is cynosural jammed.");
-        }
-        if (Inhibited(action, catalog, system, new(position.X, position.Y, position.Z), now))
-        {
-            throw new InvalidDataException("A mobile inhibitor blocks cynosural ignition at this position.");
-        }
         var field = action.Set<SavedCynosuralField>().Find(pilotId);
         if (Active(action, field, now))
         {
@@ -100,6 +93,14 @@ internal sealed partial class PilotCapitalTravelStore(
         )
         {
             throw new InvalidDataException("Fit and online a supported cynosural field generator on your active ship.");
+        }
+        if (!CapitalTravelRules.Covert(fieldType))
+        {
+            RequireUnjammed(action, catalog, system, now);
+            if (Inhibited(action, catalog, system, new(position.X, position.Y, position.Z), now))
+            {
+                throw new InvalidDataException("A mobile inhibitor blocks cynosural ignition at this position.");
+            }
         }
         PilotSkillReader.CheckRequirements(action, catalog, pilotId, item.TypeId);
         NaniteRepairPersistence.RequireAvailable(action, catalog, moduleId, now);
@@ -171,8 +172,12 @@ internal sealed partial class PilotCapitalTravelStore(
         var plan = Plan(action, catalog, pilotId, shipId, request, now);
         var before = PilotFleetStore.Read(catalog, plan.Pilot.ActiveShip);
         var arrival = Arrival(catalog, request.SystemId, plan.Destination, catalog.RequireItem(plan.Pilot.ActiveShip.TypeId).Radius ?? 0);
-        double capacitor = ShipResources.SpendCapacitor(action, shipId, plan.Attributes, plan.CapacitorCost, now);
+        double capacitor =
+            plan.CapacitorCost > 0
+                ? ShipResources.SpendCapacitor(action, shipId, plan.Attributes, plan.CapacitorCost, now)
+                : ShipResources.Capacitor(action, shipId, plan.Attributes, now);
         var changes = SpendFuel(action, catalog, plan.Fuel, plan.Quantity);
+        List<InventoryChange> passengerChanges = plan.FuelPayer.HasValue ? [] : changes;
         SqliteWorld.SetPosition(action, catalog, shipId, arrival, request.SystemId, now);
         MapStatisticsStore.Record(action, request.SystemId, now, MapActivityKind.Jump);
         var timers = action.Set<SavedJumpTimers>().Find(pilotId) ?? action.Add(new SavedJumpTimers { PilotId = pilotId }).Entity;
@@ -181,9 +186,13 @@ internal sealed partial class PilotCapitalTravelStore(
             plan.Timers.FatigueUntil,
             plan.Timers.UpdatedAt
         );
-        changes.Add(new(PilotFleetStore.Read(catalog, plan.Pilot.ActiveShip), before));
-        var result = new CapitalJump(ships.FindPilot(action, plan.Pilot.AccountId, pilotId)!, plan.Timers, capacitor, changes);
+        passengerChanges.Add(new(PilotFleetStore.Read(catalog, plan.Pilot.ActiveShip), before));
+        var result = new CapitalJump(ships.FindPilot(action, plan.Pilot.AccountId, pilotId)!, plan.Timers, capacitor, passengerChanges);
         action.Commit();
+        if (plan.FuelPayer is long payer)
+        {
+            inventoryEvents.Publish(payer, changes);
+        }
         live.Heat.ClearSelection(pilotId, shipId);
         return result;
     }
@@ -264,14 +273,14 @@ internal sealed partial class PilotCapitalTravelStore(
                 long now = Now;
                 return world
                     .Set<SavedCynosuralField>()
-                    .Where(row => Active(world, row, now))
+                    .Where(row => row.TypeId != CapitalTravelRules.CovertField && Active(world, row, now))
                     .Select(row => row.SystemId)
                     .AsEnumerable()
                     .Concat(
                         world
                             .Set<SavedCynoDeployable>()
                             .AsEnumerable()
-                            .Where(row => MobileBeaconActive(row, now))
+                            .Where(row => row.TypeId != CapitalTravelRules.CovertMobileBeacon && MobileBeaconActive(row, now))
                             .Select(row => row.SystemId)
                     )
                     .GroupBy(system => system)
@@ -286,26 +295,65 @@ internal sealed partial class PilotCapitalTravelStore(
         {
             throw new InvalidDataException("Wait for the active cynosural field to expire before moving the ship.");
         }
+        if (world.Set<SavedJumpPortal>().Find(pilotId) is { } portal && portal.ShipId == shipId && PortalActive(world, portal, now))
+        {
+            throw new InvalidDataException("Wait for the active jump portal to close before moving the ship.");
+        }
     }
 
     private JumpPlan Plan(WorldAction world, CatalogDbContext catalog, long pilotId, long shipId, CapitalJumpRequest request, long now)
     {
         var pilot = ActivePilot(world, pilotId, shipId);
-        RequireCynoSystem(catalog, request.SystemId);
-        CapitalNavigationStore.SettleFuel(world, catalog, request.SystemId, now);
-        if (CapitalNavigationStore.Jammed(world, catalog, request.SystemId, now))
+        if (request.Target == CapitalJumpTarget.FleetPortal)
         {
-            throw new InvalidDataException("The destination solar system is cynosural jammed.");
+            return PlanPortal(world, catalog, pilot, request, now);
+        }
+        RequireCynoSystem(catalog, request.SystemId);
+        if (request.Target == CapitalJumpTarget.Structure)
+        {
+            CapitalNavigationStore.SettleFuel(world, catalog, request.SystemId, now);
         }
         var destination = Destination(world, catalog, pilotId, request, now);
+        if (!CapitalTravelRules.Covert(destination.FieldType))
+        {
+            RequireUnjammed(world, catalog, request.SystemId, now);
+        }
         var position = pilot.ActiveShip.Position!;
         int origin = position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;
-        if (origin == request.SystemId || catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId != (int)HullClass.JumpFreighter)
+        if (origin == request.SystemId || !CapitalTravelRules.JumpDrive(catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId))
         {
-            throw new InvalidDataException("Use a jump freighter in a different system to jump to a cyno.");
+            throw new InvalidDataException("Use an eligible jump drive ship in a different system to jump to a cyno.");
         }
+        var previous = RequireJumpReady(world, catalog, pilot, origin, request.SystemId, now);
+        PilotSkillReader.CheckRequirements(world, catalog, pilotId, pilot.ActiveShip.TypeId);
+        var ship = PilotFittingStore.ShipAttributes(world, catalog, pilot);
+        RequireLiving(world, pilot, ship, now);
+        double distance = DriveDistance(catalog, origin, request.SystemId, destination, ship);
+        int isotopes = CapitalTravelRules.Isotopes(distance, ship[DogmaAttributeId.JumpDriveConsumptionAmount]);
+        int type = checked((int)ship[DogmaAttributeId.JumpDriveConsumptionType]);
+        var fuel = Fuel(world, pilotId, shipId, InventoryFlag.FuelBay, type, isotopes);
+        double cost = ship[DogmaAttributeId.JumpDriveCapacitorNeed] * ship[DogmaAttributeId.CapacitorCapacity];
+        if (!double.IsFinite(cost) || cost <= 0 || ShipResources.Capacitor(world, shipId, ship, now) < cost)
+        {
+            throw new InvalidDataException("Insufficient capacitor to jump.");
+        }
+        var timers = CapitalTravelRules.AfterJump(now, previous?.FatigueUntil ?? 0, distance, ship[DogmaAttributeId.JumpFatigueMultiplier]);
+        return new(pilot, destination, ship, fuel, isotopes, cost, timers);
+    }
+
+    private static SavedJumpTimers? RequireJumpReady(
+        WorldAction world,
+        CatalogDbContext catalog,
+        Pilot pilot,
+        int origin,
+        int system,
+        long now
+    )
+    {
         RequireReady(world, pilot, now);
-        CrimewatchPersistence.CheckTravel(world, catalog, pilot, CrimewatchTravel.Jump, now, request.SystemId);
+        CrimewatchPersistence.CheckTravel(world, catalog, pilot, CrimewatchTravel.Jump, now, system);
+        long shipId = pilot.ActiveShipId;
+        var position = pilot.ActiveShip.Position!;
         if (
             world
                 .Filter<WorldTackle>(row =>
@@ -322,34 +370,33 @@ internal sealed partial class PilotCapitalTravelStore(
         {
             throw new InvalidDataException("Warp disruption prevents this jump.");
         }
-        var previous = world.Set<SavedJumpTimers>().Find(pilotId);
+        var previous = world.Set<SavedJumpTimers>().Find(pilot.Id);
         if (previous?.ActivationUntil > now)
         {
             throw new InvalidDataException("Wait for the jump activation cooldown to finish.");
         }
-        PilotSkillReader.CheckRequirements(world, catalog, pilotId, pilot.ActiveShip.TypeId);
-        var ship = PilotFittingStore.ShipAttributes(world, catalog, pilot);
-        RequireLiving(world, pilot, ship, now);
+        return previous;
+    }
+
+    private static double DriveDistance(
+        CatalogDbContext catalog,
+        int origin,
+        int target,
+        JumpDestination destination,
+        IReadOnlyDictionary<DogmaAttributeId, double> ship
+    )
+    {
         long list = checked((long)ship[DogmaAttributeId.JumpDriveTargetBeaconTypeList]);
         if (catalog.Read(CatalogData.Client.Typelist, list)?.IncludedTypeIDs?.Contains(destination.FieldType) != true)
         {
             throw new InvalidDataException("This ship cannot jump to that type of cynosural field.");
         }
-        double distance = Center(catalog, origin).DistanceTo(Center(catalog, request.SystemId)) / CapitalTravelRules.LightYearMeters;
+        double distance = Center(catalog, origin).DistanceTo(Center(catalog, target)) / CapitalTravelRules.LightYearMeters;
         if (!double.IsFinite(distance) || distance <= 0 || distance > ship[DogmaAttributeId.JumpDriveRange])
         {
             throw new InvalidDataException("The cynosural field is outside jump range.");
         }
-        int isotopes = CapitalTravelRules.Isotopes(distance, ship[DogmaAttributeId.JumpDriveConsumptionAmount]);
-        int type = checked((int)ship[DogmaAttributeId.JumpDriveConsumptionType]);
-        var fuel = Fuel(world, pilotId, shipId, InventoryFlag.FuelBay, type, isotopes);
-        double cost = ship[DogmaAttributeId.JumpDriveCapacitorNeed] * ship[DogmaAttributeId.CapacitorCapacity];
-        if (!double.IsFinite(cost) || cost <= 0 || ShipResources.Capacitor(world, shipId, ship, now) < cost)
-        {
-            throw new InvalidDataException("Insufficient capacitor to jump.");
-        }
-        var timers = CapitalTravelRules.AfterJump(now, previous?.FatigueUntil ?? 0, distance, ship[DogmaAttributeId.JumpFatigueMultiplier]);
-        return new(pilot, destination, ship, fuel, isotopes, cost, timers);
+        return distance;
     }
 
     private JumpDestination Destination(WorldAction world, CatalogDbContext catalog, long pilotId, CapitalJumpRequest request, long now)
@@ -366,7 +413,7 @@ internal sealed partial class PilotCapitalTravelStore(
             {
                 throw new InvalidDataException("That fleet deployable beacon is unavailable.");
             }
-            return new(CapitalTravelRules.MobileField, MobilePosition(deployable), CapitalTravelRules.MobileArrivalClearance);
+            return new(MobileFieldType(deployable.TypeId)!.Value, MobilePosition(deployable), CapitalTravelRules.MobileArrivalClearance);
         }
         if (request.Target == CapitalJumpTarget.Structure)
         {
@@ -405,8 +452,10 @@ internal sealed partial class PilotCapitalTravelStore(
     private static TransactionParticipants Participants(long pilotId, long shipId, CapitalJumpRequest request) =>
         new(
             systems: [request.SystemId],
-            pilots: request.Target == CapitalJumpTarget.FleetModule ? [pilotId, request.EmitterId] : [pilotId],
-            ships: [shipId]
+            pilots: request.Target is CapitalJumpTarget.FleetModule or CapitalJumpTarget.FleetPortal
+                ? [pilotId, request.EmitterId]
+                : [pilotId],
+            ships: request.Target == CapitalJumpTarget.FleetPortal ? [shipId, request.PortalShipId] : [shipId]
         );
 
     private static Pilot ActivePilot(WorldAction world, long pilotId, long shipId) =>
@@ -453,6 +502,15 @@ internal sealed partial class PilotCapitalTravelStore(
         }
     }
 
+    private static void RequireUnjammed(WorldAction world, CatalogDbContext catalog, int system, long now)
+    {
+        CapitalNavigationStore.SettleFuel(world, catalog, system, now);
+        if (CapitalNavigationStore.Jammed(world, catalog, system, now))
+        {
+            throw new InvalidDataException("This solar system is cynosural jammed.");
+        }
+    }
+
     private static SpacePosition Center(CatalogDbContext catalog, int system) =>
         catalog.Read(CatalogData.Client.Systems, system)?.Center is { X: double x, Y: double y, Z: double z }
             ? new(x, y, z)
@@ -482,7 +540,7 @@ internal sealed partial class PilotCapitalTravelStore(
             new(
                 row.BeaconId,
                 row.TypeId,
-                CapitalTravelRules.FieldGroup,
+                CapitalTravelRules.Covert(row.TypeId) ? CapitalTravelRules.CovertFieldGroup : CapitalTravelRules.FieldGroup,
                 (int)InventoryCategory.Celestial,
                 0,
                 new(row.X, row.Y, row.Z),
@@ -490,7 +548,13 @@ internal sealed partial class PilotCapitalTravelStore(
             )
             {
                 Solid = false,
-                Name = row.TypeId == CapitalTravelRules.IndustrialField ? "Industrial Cynosural Field" : "Cynosural Field",
+                IsGlobal = !CapitalTravelRules.Covert(row.TypeId),
+                Name = row.TypeId switch
+                {
+                    CapitalTravelRules.CovertField => "Covert Cynosural Field",
+                    CapitalTravelRules.IndustrialField => "Industrial Cynosural Field",
+                    _ => "Cynosural Field",
+                },
             }
         );
 
@@ -522,8 +586,15 @@ internal sealed partial class PilotCapitalTravelStore(
 
     private static OwnedItem[] Fuel(WorldAction world, long pilotId, long shipId, InventoryFlag flag, int type, int required)
     {
+        var stacks = FuelStacks(world, pilotId, shipId, flag, type).ToArray();
+        RequireFuel(stacks, required);
+        return stacks;
+    }
+
+    private static IEnumerable<OwnedItem> FuelStacks(WorldAction world, long pilotId, long shipId, InventoryFlag flag, int type)
+    {
         int inventoryFlag = (int)flag;
-        var stacks = world
+        return world
             .Filter<OwnedItem>(item =>
                 item.LocationId == shipId
                 && item.OwnerId == pilotId
@@ -532,13 +603,15 @@ internal sealed partial class PilotCapitalTravelStore(
                 && !item.Singleton
                 && item.Quantity > 0
             )
-            .OrderBy(item => item.Id)
-            .ToArray();
+            .OrderBy(item => item.Id);
+    }
+
+    private static void RequireFuel(IReadOnlyList<OwnedItem> stacks, int required)
+    {
         if (required <= 0 || stacks.Sum(item => (long)item.Quantity) < required)
         {
             throw new InvalidDataException("The ship does not have enough of the required jump fuel.");
         }
-        return stacks;
     }
 
     private static List<InventoryChange> SpendFuel(WorldAction world, CatalogDbContext catalog, OwnedItem[] stacks, int required)

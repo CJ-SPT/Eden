@@ -65,6 +65,7 @@ internal sealed partial class EconomyTransaction
             case Eden.Data.World.Characters.Pilot removed:
                 RemoveRange(Filter<Eden.Data.World.Flight.SavedJumpTimers>(row => row.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Flight.SavedCynosuralField>(row => row.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Flight.SavedJumpPortal>(row => row.PilotId == removed.Id));
                 if (Set<Eden.Data.World.FactionWarfare.SavedMilitiaNavyPursuit>().Find(removed.Id) is { } pursuit)
                 {
                     foreach (long responderId in new[] { pursuit.FrigateId, pursuit.CruiserId }.OfType<long>())
@@ -253,6 +254,7 @@ internal sealed partial class EconomyTransaction
                 Eden.World.Repair.PilotRemoteAssistanceStore.ClearForTravel(this, removed.ShipId);
                 break;
             case Eden.Data.World.Inventory.Ship removed:
+                RemoveRange(Filter<Eden.Data.World.Flight.SavedJumpPortal>(row => row.ShipId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Characters.SavedShipDirt>(child => child.ShipId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Information.SavedInformationCycle>(cycle => cycle.ShipId == removed.Id));
                 Eden.World.Fleets.CommandBurstStore.Clear(this, removed.Id);

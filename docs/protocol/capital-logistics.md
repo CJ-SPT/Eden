@@ -157,6 +157,36 @@ that the link clears when sovereignty power is lost. Decommissioning recovers on
 the saved alignment without duplicating the integral service. The focused capital travel, gate, structures, map,
 sovereignty and checkpoint suites passed all 201 cases in 110.24 seconds.
 
+## Black Ops and covert travel
+
+Black Ops drives use the pinned beacon type list (`342`). Covert modules (`28646`) create field `28650`, and
+the covert mobile deployable (`59630`) creates field `59631` after one minute. Covert fields stay off the
+system-wide overview and map count. They remain usable during Tenebrex jamming and inside mobile inhibitor range.
+The Rapier's fitted covert cycle lasts 30 seconds. A Sin can take the native jump to that field. Jump freighter
+compatibility uses its own beacon type list.
+[CCP covert cyno exemption](https://www.eveonline.com/news/view/patch-notes-for-apocrypha-1.1-1) ·
+[CCP covert mobile beacon](https://www.eveonline.com/news/view/patch-notes-version-19-06)
+
+A fitted Covert Jump Portal Generator (`28652`) opens a 20-second portal for 100 GJ. The host stays at origin.
+Passengers must have the eligibility attribute named by the fitted module (`3320`), belong to the current
+fleet, and be within 2,500 m of the host hull surface. The resident jump pays the host's isotopes in fuel-bay
+order with cargo fallback, using the EVE.js rounding rule and the pinned mass factor. The passenger receives the
+jump timers. The host receives an inventory update when the fuel debit commits. If the portal, beacon,
+or fleet authorization disappears before departure, the passenger remains at origin and the host keeps its fuel.
+
+Pinned `cynoTravelSvc.pyj` gives the native bridge-open calls and
+`CmdJumpThroughFleet(ownerID, shipID, beaconID, solarSystemID)`. `fleetSvc.pyj` consumes
+`OnBridgeModeChange(shipID, solarSystemID, beaconID, active)`. The existing ship effect pipeline publishes
+`effects.JumpPortalBO`. EVE.js `beyonceService.js` and `fleetRuntime.js` provide corresponding bridge and
+fuel behavior. Schema 203 saves the paid portal cycle and its target. Fleet membership is still transient.
+
+The exact Sin direct-jump case passed in 9.20 seconds. The covert mobile portal test passed in 8.57 seconds,
+including the fleet menu notification, portal visuals, checkpoint reopen, expiry during departure, the Rapier's
+paid transfer, and the host's fuel inventory update.
+The broader filter ran 157 tests in 118.07 seconds. It passed 155 cases and reproduced two failures
+on Ansiblex baseline `242b7ec1`: the warm fitting command budget and the resident capsule settlement rollback
+fixture. Both Python validation suites and formatting passed.
+
 ## Milestones
 
 | Milestone | Playable outcome and acceptance |
@@ -164,7 +194,7 @@ sovereignty and checkpoint suites passed all 201 cases in 110.24 seconds.
 | **1. Jump freighters and industrial cynos** | Implemented. A fleetmate lights a cyno in lowsec. A loaded jump freighter jumps from another system, docks, and unloads. The ship, cargo, fuel, capacitor and pilot timers reconcile across disconnect and checkpoint reopen. |
 | **2. Standard cynos and sovereignty navigation** | Implemented. Standard module and mobile cynos, mobile inhibitors, Pharolux beacons and Tenebrex jammers use the paid jump-freighter path and resident sovereignty checks. |
 | **3. Ansiblex jump gates** | Implemented. Link two aligned endpoints, enforce alliance access and the ship type list, and settle the source gate's capacitor at departure. |
-| **4. Black Ops and covert travel** | Jump a Black Ops battleship to a covert cyno and move eligible fleetmates through a paid portal. Verify recipient eligibility, costs, timers, interruption and the native fleet menus. |
+| **4. Black Ops and covert travel** | Implemented. Black Ops direct jumps, covert module and mobile beacons, and eligible fleet passenger travel through a paid portal. |
 | **5. Dreadnoughts and force auxiliaries** | Jump a dreadnought and a force auxiliary to a standard cyno. Exercise paid siege, capital weapons and structure damage, then triage and lawful remote repairs. Prove dock and gate restrictions, loss settlement, and survival of paid mode deadlines on reopen. |
 | **6. Carriers and fighters** | Launch, control, recall and replace fighter squadrons from a carrier using native tubes and abilities. Verify targeting, observer updates and fighter losses. Reuse squadron rules for Standup fighters once the structure control and fitting branch is integrated. |
 | **7. Capital industry and fleet services** | Fly a Rorqual with an industrial core, Excavators, compression and P.A.N.I.C. Add supported fleet hangar, ship maintenance, refit and clone services. Exercise a real production and resupply route, then let bot haulers use the same paid jump and access operations. |

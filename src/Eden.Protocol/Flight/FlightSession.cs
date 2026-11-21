@@ -1130,9 +1130,9 @@ internal sealed partial class FlightSession(
 
     public PilotCallResult StartJump(FlightCommand.Jump request, ISystemObjects systems, bool automatic = false)
     {
-        if (CynoActive)
+        if (CapitalModuleActive)
         {
-            return new PilotCallResult.Failure("Wait for the active cynosural field to expire before jumping.");
+            return new PilotCallResult.Failure("Wait for the active cynosural field or portal to expire before jumping.");
         }
         if (EntosisActive)
         {
@@ -1170,9 +1170,9 @@ internal sealed partial class FlightSession(
 
     internal void StartWormholeJump(long entrance, IWormholeTravel travel, ISystemObjects systems)
     {
-        if (CynoActive)
+        if (CapitalModuleActive)
         {
-            throw new InvalidDataException("Wait for the active cynosural field to expire before jumping.");
+            throw new InvalidDataException("Wait for the active cynosural field or portal to expire before jumping.");
         }
         if (EntosisActive)
         {
@@ -1455,9 +1455,9 @@ internal sealed partial class FlightSession(
 
     private PilotCallResult ExecuteCommand(FlightCommand command)
     {
-        if (command is not (FlightCommand.RefreshState or FlightCommand.Stop) && CynoActive)
+        if (command is not (FlightCommand.RefreshState or FlightCommand.Stop) && CapitalModuleActive)
         {
-            return new PilotCallResult.Failure("Wait for the active cynosural field to expire before moving the ship.");
+            return new PilotCallResult.Failure("Wait for the active cynosural field or portal to expire before moving the ship.");
         }
         if (
             EntosisActive

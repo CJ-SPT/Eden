@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
@@ -10,12 +11,19 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Flight;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class CapitalTravelHandler(IPilotCapitalTravel travel, ISystemObjects systems, TimeProvider clock)
-    : ISelectedPilotCallHandler,
-        IModuleEffectSource
+internal sealed class CapitalTravelHandler(
+    IPilotCapitalTravel travel,
+    ISystemObjects systems,
+    TimeProvider clock,
+    CapitalInventorySignal fuelSignal
+) : ISelectedPilotCallHandler, IModuleEffectSource, IDisposable
 {
     internal const string CynoEffectName = "cynosuralGeneration";
+    internal const string PortalEffectName = "jumpPortalGenerationBO";
     private DogmaActiveEffect? _lastEffect;
+    private readonly ConcurrentQueue<(long Pilot, InventoryChange Change)> _fuelChanges = new();
+    private long _recipient;
+    private bool _subscribed;
 
     private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
@@ -41,7 +49,7 @@ internal sealed class CapitalTravelHandler(IPilotCapitalTravel travel, ISystemOb
                 return plain && args.Length == 0
                     ? new PilotCallResult.Success(new BlueMap<int, int>(travel.BeaconCounts()))
                     : new PilotCallResult.Failure("Cynosural beacon counts do not accept arguments.");
-            case ("beyonce", "CmdJumpToFleetModuleBeacon"):
+            case ("beyonce", "CmdJumpToFleetModuleBeacon" or "CmdBridgeToFleetModuleBeacon"):
                 if (
                     !plain
                     || args is not [long emitter, long beacon, long system]
@@ -52,8 +60,9 @@ internal sealed class CapitalTravelHandler(IPilotCapitalTravel travel, ISystemOb
                 {
                     return new PilotCallResult.Failure("Choose a valid fleet cynosural field.");
                 }
-                return StartJump(context, new(emitter, beacon, (int)system));
-            case ("beyonce", "CmdJumpToFleetDeployableBeacon"):
+                var moduleTarget = new CapitalJumpRequest(emitter, beacon, (int)system);
+                return method == "CmdBridgeToFleetModuleBeacon" ? OpenPortal(context, moduleTarget) : StartJump(context, moduleTarget);
+            case ("beyonce", "CmdJumpToFleetDeployableBeacon" or "CmdBridgeToFleetDeployableBeacon"):
                 if (
                     !plain
                     || args is not [long deployable, long deployableSystem, long deployedBeacon]
@@ -64,15 +73,62 @@ internal sealed class CapitalTravelHandler(IPilotCapitalTravel travel, ISystemOb
                 {
                     return new PilotCallResult.Failure("Choose a valid fleet deployable beacon.");
                 }
-                return StartJump(context, new(deployable, deployedBeacon, (int)deployableSystem, CapitalJumpTarget.FleetDeployable));
-            case ("structureCynoBeaconMgr", "CmdJumpToStructureBeacon"):
+                var mobileTarget = new CapitalJumpRequest(
+                    deployable,
+                    deployedBeacon,
+                    (int)deployableSystem,
+                    CapitalJumpTarget.FleetDeployable
+                );
+                return method == "CmdBridgeToFleetDeployableBeacon" ? OpenPortal(context, mobileTarget) : StartJump(context, mobileTarget);
+            case ("beyonce", "CmdJumpThroughFleet"):
+                if (
+                    !plain
+                    || args is not [long owner, long host, long portalBeacon, long portalSystem]
+                    || owner <= 0
+                    || host <= 0
+                    || portalBeacon <= 0
+                    || portalSystem is <= 0 or > int.MaxValue
+                )
+                {
+                    return new PilotCallResult.Failure("Choose a valid fleet jump portal.");
+                }
+                return StartJump(context, new(owner, portalBeacon, (int)portalSystem, CapitalJumpTarget.FleetPortal, host));
+            case ("structureCynoBeaconMgr", "CmdJumpToStructureBeacon" or "CmdBridgeToStructureBeacon"):
                 if (!plain || args is not [long structure, long destination] || structure <= 0 || destination is <= 0 or > int.MaxValue)
                 {
                     return new PilotCallResult.Failure("Choose a valid structure cynosural beacon.");
                 }
-                return StartJump(context, new(0, structure, (int)destination, CapitalJumpTarget.Structure));
+                var structureTarget = new CapitalJumpRequest(0, structure, (int)destination, CapitalJumpTarget.Structure);
+                return method == "CmdBridgeToStructureBeacon" ? OpenPortal(context, structureTarget) : StartJump(context, structureTarget);
             default:
                 return PilotCallResult.Unsupported;
+        }
+    }
+
+    private PilotCallResult OpenPortal(PilotCallContext context, CapitalJumpRequest request)
+    {
+        var flight = context.Flight;
+        if (!flight.CanUseSelfModules || flight.InWarp || flight.PreparingWarp || flight.Cloaked || flight.MicroJumpSpooling)
+        {
+            return new PilotCallResult.Failure("Wait until your ship is ready to open a jump portal.");
+        }
+        try
+        {
+            flight.Checkpoint();
+            var pilot = context.Pilot;
+            var opened = travel.OpenPortal(pilot.PilotId, pilot.ShipId, request);
+            flight.StopForCapitalModule();
+            context.NotificationsBeforeFlight.Add(
+                new ModuleAttributesChanged([
+                    new(pilot.PilotId, new DogmaItemKey.Item(pilot.ShipId), DogmaAttributeId.CapacitorCharge, Now, opened.Capacitor),
+                ])
+            );
+            Advance(context);
+            return true;
+        }
+        catch (InvalidDataException error)
+        {
+            return new PilotCallResult.Failure(error.Message);
         }
     }
 
@@ -138,6 +194,14 @@ internal sealed class CapitalTravelHandler(IPilotCapitalTravel travel, ISystemOb
     internal PilotCallResult Activate(PilotCallContext context, string method, object?[] args)
     {
         var pilot = context.Pilot;
+        if (BlueMarshal.Text(args[1]) == PortalEffectName)
+        {
+            return new PilotCallResult.Failure(
+                method == "Deactivate"
+                    ? "A jump portal closes at the end of its paid cycle."
+                    : "Choose a destination beacon from the fleet bridge menu."
+            );
+        }
         if (method == "Deactivate" && args is [long module, _] && travel.Field(pilot.PilotId)?.ModuleId == module)
         {
             return new PilotCallResult.Failure("An active cynosural field must complete its paid cycle.");
@@ -160,7 +224,7 @@ internal sealed class CapitalTravelHandler(IPilotCapitalTravel travel, ISystemOb
         try
         {
             var activation = travel.Light(pilot.PilotId, pilot.ShipId, moduleId, flight.Velocity.Length);
-            flight.StopForCyno();
+            flight.StopForCapitalModule();
             flight.RefreshCynos();
             foreach (var change in activation.FuelChanges)
             {
@@ -182,7 +246,25 @@ internal sealed class CapitalTravelHandler(IPilotCapitalTravel travel, ISystemOb
 
     internal void Advance(PilotCallContext context)
     {
-        var current = context.Selected && travel.Field(context.Pilot.PilotId) is { } field ? Effect(field) : null;
+        long pilot = context.Selected ? context.Pilot.PilotId : 0;
+        Volatile.Write(ref _recipient, pilot);
+        if (pilot != 0 && !_subscribed)
+        {
+            fuelSignal.FuelSpent += EnqueueFuel;
+            _subscribed = true;
+        }
+        while (_fuelChanges.TryDequeue(out var spent))
+        {
+            if (spent.Pilot == pilot)
+            {
+                InventoryChangesWire.NotifyItemChange(context, spent.Change, beforeFlight: true);
+            }
+        }
+        var current =
+            pilot == 0 ? null
+            : travel.Field(pilot) is { } field ? Effect(field)
+            : travel.Portal(pilot) is { } portal ? Effect(portal)
+            : null;
         if (_lastEffect == current)
         {
             return;
@@ -190,11 +272,52 @@ internal sealed class CapitalTravelHandler(IPilotCapitalTravel travel, ISystemOb
         if (_lastEffect is { } ended && context.Selected && ended.PilotId == context.Pilot.PilotId)
         {
             context.NotificationsBeforeFlight.Add(new ShipEffectChanged(ended, Now, false, false, Now));
+            PortalVisual(context.Flight, ended, false);
         }
         _lastEffect = current;
         if (current is { } active)
         {
             context.NotificationsBeforeFlight.Add(new ShipEffectChanged(active, Now, true, true));
+            PortalVisual(context.Flight, active, true);
+        }
+    }
+
+    private static void PortalVisual(FlightSession flight, DogmaActiveEffect effect, bool active)
+    {
+        if (effect.Effect == DogmaEffect.CovertJumpPortalGeneration && flight.Pilot.ShipId == effect.ShipId)
+        {
+            flight.SetWeaponEffect(
+                new(
+                    effect.ModuleId,
+                    CapitalTravelRules.CovertPortalGenerator,
+                    0,
+                    null,
+                    effect.StartTime,
+                    effect.DurationMilliseconds ?? 0,
+                    "effects.JumpPortalBO",
+                    Offensive: false
+                ),
+                active
+            );
+        }
+    }
+
+    private void EnqueueFuel(long pilot, IReadOnlyList<InventoryChange> changes)
+    {
+        if (pilot == Volatile.Read(ref _recipient))
+        {
+            foreach (var change in changes)
+            {
+                _fuelChanges.Enqueue((pilot, change));
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_subscribed)
+        {
+            fuelSignal.FuelSpent -= EnqueueFuel;
         }
     }
 
@@ -217,6 +340,18 @@ internal sealed class CapitalTravelHandler(IPilotCapitalTravel travel, ISystemOb
             DogmaEffect.CynosuralGeneration,
             field.StartedAt,
             (field.EndsAt - field.StartedAt) / (double)TimeSpan.TicksPerMillisecond,
+            0
+        );
+
+    private static DogmaActiveEffect Effect(JumpPortal portal) =>
+        new(
+            portal.ModuleId,
+            portal.PilotId,
+            portal.ShipId,
+            null,
+            DogmaEffect.CovertJumpPortalGeneration,
+            portal.StartedAt,
+            (portal.EndsAt - portal.StartedAt) / (double)TimeSpan.TicksPerMillisecond,
             0
         );
 }

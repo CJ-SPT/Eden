@@ -536,10 +536,11 @@ internal sealed partial record FittingCalculation
             .Concat(Enum.GetValues<ElectronicWarfareSkill>().Select(s => (int)s))
             .Concat(hullSkills)
             .Concat(
-                hull.GroupId == (int)HullClass.JumpFreighter
+                Eden.Gameplay.Flight.CapitalTravelRules.JumpDrive(hull.GroupId)
                     ?
                     [
                         Eden.Gameplay.Flight.CapitalTravelRules.JumpDriveOperation,
+                        Eden.Gameplay.Flight.CapitalTravelRules.JumpDriveCalibration,
                         Eden.Gameplay.Flight.CapitalTravelRules.JumpFuelConservation,
                     ]
                     : Array.Empty<int>()
