@@ -553,23 +553,20 @@ internal sealed partial class LiveCombatRuntime
     private readonly ResidentMap<int, BeltClearance> _beltClearances = [];
     private long _miningGeometry;
 
-    internal bool MiningPopulationDue(int system, long now)
-    {
-        using var ownership = owner.Enter();
-        return !_populationDue.TryGetValue(system, out long due) || due <= now || !_systemNpcs.ContainsKey(system);
-    }
-
     // The encounter owner invalidates these membership and population snapshots on changes.
     // Cold, mobile and contested scenes return to the ordinary NPC and defense owners.
-    internal bool QuietMiningBelt(int system, long ship, SpacePosition position, double radius, long now)
+    internal bool QuietMiningBelt(int system, long ship, SpacePosition position, double radius, long now, out bool populationDue)
     {
         using var ownership = owner.Enter();
+        if (!_populationDue.TryGetValue(system, out long due) || due <= now || !_systemNpcs.TryGetValue(system, out var members))
+        {
+            populationDue = true;
+            return false;
+        }
+        populationDue = false;
         if (
             !simulationObjects
             || !CanRun
-            || !_populationDue.TryGetValue(system, out long due)
-            || due <= now
-            || !_systemNpcs.TryGetValue(system, out var members)
             || !_droneAttackers.TryGetValue(ship, out var attacks)
             || attacks.Length != 0
             || _residentAttackers.TryGetValue(ship, out var pending) && pending.Count != 0

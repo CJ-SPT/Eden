@@ -162,6 +162,46 @@ public sealed partial class NpcMiningTests
     }
 
     [Fact]
+    public void QuietBeltChecksPopulationAndSafetyUnderOneSystemOwner()
+    {
+        var clock = Clock();
+        using TestWorld db = new(clock: clock, regionalNpcs: true, liveWorld: true);
+        Prepare(db);
+        var live = db.Services.GetRequiredService<LiveWorld>();
+        var runtime = live.CombatForSystem(SystemId)!;
+        var presence = db.Services.GetRequiredService<IPilotCombatPresence>();
+        SpacePosition position = new(1e14, 0, 0);
+
+        using (live.EnterShared())
+        using (live.UseSystem(SystemId))
+        {
+            Assert.False(runtime.QuietMiningBelt(SystemId, ShipId, position, 10, clock.Now, out bool populationDue));
+            Assert.True(populationDue);
+        }
+        var miners = Read(db, clock.Now);
+        Assert.NotEmpty(miners);
+        db.Store.SetPosition(ShipId, position, SystemId);
+        Assert.Empty(runtime.DefenseAttackers(PilotId, presence, clock.Now));
+        long due = MiningDue(db);
+
+        List<OwnershipTiming> holds = [];
+        using (live.EnterShared())
+        using (OwnershipMonitor.Observe(holds.Add))
+        using (live.UseSystem(SystemId))
+        {
+            Assert.True(runtime.QuietMiningBelt(SystemId, ShipId, position, 10, due - 1, out bool populationDue));
+            Assert.False(populationDue);
+        }
+        Assert.Equal(nameof(runtime.QuietMiningBelt), Assert.Single(holds, hold => hold.SystemId == SystemId).Operation);
+        using (live.EnterShared())
+        using (live.UseSystem(SystemId))
+        {
+            Assert.False(runtime.QuietMiningBelt(SystemId, ShipId, position, 10, due, out bool populationDue));
+            Assert.True(populationDue);
+        }
+    }
+
+    [Fact]
     public void CatalogAdmitsExactMinersHaulersAndFourCompleteResponseRosters()
     {
         using TestWorld db = new();

@@ -500,13 +500,18 @@ internal sealed partial class CapsuleerMiner(
             return false;
         }
         long now = Now;
+        int system = Pilot.SystemId;
+        long ship = Pilot.ShipId;
+        double radius = Pilot.Flight.ShipRadius;
+        bool quiet = combatSystem.QuietMiningBelt(system, ship, position, radius, now, out bool populationDue);
+        if (!populationDue)
+        {
+            return quiet;
+        }
         // One due population refresh serves every miner in this system. A contact entering
         // the belt then wakes the affected pilots in canonical queue order.
-        if (combatSystem.MiningPopulationDue(Pilot.SystemId, now))
-        {
-            encounters.Advance(Pilot.SystemId, now);
-        }
-        return combatSystem.QuietMiningBelt(Pilot.SystemId, Pilot.ShipId, position, Pilot.Flight.ShipRadius, now);
+        encounters.Advance(system, now);
+        return combatSystem.QuietMiningBelt(system, ship, position, radius, now, out _);
     }
 
     internal bool Sample(long throughTicks)
