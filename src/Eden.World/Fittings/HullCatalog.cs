@@ -130,7 +130,11 @@ internal static class HullCatalog
             .ToArray();
 
     private static bool Operational(ClientDogmaeffectsModifierInfoItem source) =>
-        HullBonusRules.Operational(
+        (
+            source.SkillTypeID == (int)HullBonusSkill.CynosuralFieldTheory
+            && source.ModifiedAttributeID == (int)DogmaAttributeId.ConsumptionQuantity
+        )
+        || HullBonusRules.Operational(
             Capability(source),
             source.Func == "LocationGroupModifier" ? (int?)source.GroupID : null,
             source.Func == "LocationRequiredSkillModifier" ? (int?)source.SkillTypeID : null

@@ -1,0 +1,49 @@
+using Eden.Gameplay.Flight;
+
+namespace Eden.Protocol.Flight;
+
+internal sealed partial class FlightSession
+{
+    internal bool CynoActive => capitalTravel?.Field(Pilot.PilotId)?.ShipId == Pilot.ShipId;
+
+    internal void RefreshCynos()
+    {
+        if (capitalTravel is { } travel)
+        {
+            Scene.RefreshCynos(SceneContext, travel.Fields(Pilot.SystemId).Select(field => field.Beacon).ToArray());
+        }
+    }
+
+    internal void StopForCyno()
+    {
+        _navigation = new();
+        Update(new DestinyCommand.Stop(Pilot.ShipId));
+        Update(new DestinyCommand.SetBallVelocity(Pilot.ShipId, 0, 0, 0));
+        PublishMotion();
+        space.Publish(CreateContact());
+    }
+
+    internal void StartCapitalJump(IPilotCapitalTravel travel, CapitalJumpRequest request, ISystemObjects systems)
+    {
+        if (!CanUseSelfModules || InWarp || PreparingWarp || MicroJumpSpooling || Cloaked)
+        {
+            throw new InvalidDataException("Wait until your active ship can jump.");
+        }
+        long pilotId = Pilot.PilotId;
+        long shipId = Pilot.ShipId;
+        travel.CheckJump(pilotId, shipId, request);
+        StartSpaceTransfer(
+            new(
+                () =>
+                {
+                    var moved = travel.Jump(pilotId, shipId, request);
+                    return new(moved.Pilot, moved.Changes, moved.Timers, moved.Capacitor);
+                },
+                request.SystemId,
+                systems.Load(request.SystemId),
+                0,
+                Capital: true
+            )
+        );
+    }
+}

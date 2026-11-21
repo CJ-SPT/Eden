@@ -1,0 +1,169 @@
+using Eden.Gameplay.Docking;
+using Eden.Gameplay.Dogma;
+using Eden.Gameplay.Flight;
+using Eden.Gameplay.Inventory;
+using Eden.Infrastructure.Registration;
+using Eden.Protocol.Docking;
+using Eden.Protocol.PilotSessions;
+using Eden.Protocol.Serialization;
+
+namespace Eden.Protocol.Flight;
+
+[Injectable(InjectionType.Scoped)]
+internal sealed class CapitalTravelHandler(IPilotCapitalTravel travel, ISystemObjects systems, TimeProvider clock)
+    : ISelectedPilotCallHandler,
+        IModuleEffectSource
+{
+    internal const string CynoEffectName = "cynosuralGeneration";
+    private DogmaActiveEffect? _lastEffect;
+
+    private long Now => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
+
+    public PilotCallResult Call(
+        PilotCallContext context,
+        string service,
+        string method,
+        object?[] args,
+        Dictionary<string, object?>? keywords = null
+    )
+    {
+        var pilot = context.Pilot;
+        bool plain = keywords is null or { Count: 0 };
+        switch (service, method)
+        {
+            case ("jumpTimers", "GetTimers"):
+                return plain && args is [long id] && id == pilot.PilotId
+                    ? new PilotCallResult.Success(new JumpTimerState(travel.Timers(id)))
+                    : new PilotCallResult.Failure("Read jump timers for your selected pilot.");
+            case ("map", "GetBeaconCount"):
+                return plain && args.Length == 0
+                    ? new PilotCallResult.Success(new BlueMap<int, int>(travel.BeaconCounts()))
+                    : new PilotCallResult.Failure("Cynosural beacon counts do not accept arguments.");
+            case ("beyonce", "CmdJumpToFleetModuleBeacon"):
+                if (
+                    !plain
+                    || args is not [long emitter, long beacon, long system]
+                    || emitter <= 0
+                    || beacon <= 0
+                    || system is <= 0 or > int.MaxValue
+                )
+                {
+                    return new PilotCallResult.Failure("Choose a valid fleet cynosural field.");
+                }
+                try
+                {
+                    context.Flight.Checkpoint();
+                    context.Flight.StartCapitalJump(travel, new(emitter, beacon, (int)system), systems);
+                    return PilotCallResult.None;
+                }
+                catch (InvalidDataException error)
+                {
+                    return new PilotCallResult.Failure(error.Message);
+                }
+            default:
+                return PilotCallResult.Unsupported;
+        }
+    }
+
+    internal PilotCallResult Activate(PilotCallContext context, string method, object?[] args)
+    {
+        var pilot = context.Pilot;
+        if (method == "Deactivate" && args is [long module, _] && travel.Field(pilot.PilotId)?.ModuleId == module)
+        {
+            return new PilotCallResult.Failure("An active cynosural field must complete its paid cycle.");
+        }
+        if (
+            method != "Activate"
+            || args is not [long moduleId, _, var target, long repeats]
+            || target is not (null or 0L) && !Equals(target, pilot.ShipId)
+            || repeats is < 0 or > int.MaxValue
+        )
+        {
+            return new PilotCallResult.Failure("Choose an industrial cynosural field generator on your own ship.");
+        }
+        var flight = context.Flight;
+        flight.Checkpoint();
+        if (!flight.CanUseSelfModules || flight.Cloaked || flight.InWarp || flight.PreparingWarp || flight.MicroJumpSpooling)
+        {
+            return new PilotCallResult.Failure("Wait until your ship can light a cynosural field.");
+        }
+        try
+        {
+            var activation = travel.Light(pilot.PilotId, pilot.ShipId, moduleId, flight.Velocity.Length);
+            flight.StopForCyno();
+            flight.RefreshCynos();
+            foreach (var change in activation.FuelChanges)
+            {
+                InventoryChangesWire.NotifyItemChange(context, change, beforeFlight: true);
+            }
+            context.NotificationsBeforeFlight.Add(
+                new ModuleAttributesChanged([
+                    new(pilot.PilotId, new DogmaItemKey.Item(pilot.ShipId), DogmaAttributeId.CapacitorCharge, Now, activation.Capacitor),
+                ])
+            );
+            Advance(context);
+            return PilotCallResult.None;
+        }
+        catch (InvalidDataException error)
+        {
+            return new PilotCallResult.Failure(error.Message);
+        }
+    }
+
+    internal void Advance(PilotCallContext context)
+    {
+        var current = context.Selected && travel.Field(context.Pilot.PilotId) is { } field ? Effect(field) : null;
+        if (_lastEffect == current)
+        {
+            return;
+        }
+        if (_lastEffect is { } ended && context.Selected && ended.PilotId == context.Pilot.PilotId)
+        {
+            context.NotificationsBeforeFlight.Add(new ShipEffectChanged(ended, Now, false, false, Now));
+        }
+        _lastEffect = current;
+        if (current is { } active)
+        {
+            context.NotificationsBeforeFlight.Add(new ShipEffectChanged(active, Now, true, true));
+        }
+    }
+
+    public DogmaActiveEffect? ActiveEffect(DockedPilot pilot, long module) =>
+        _lastEffect is { } effect && effect.PilotId == pilot.PilotId && effect.ShipId == pilot.ShipId && effect.ModuleId == module
+            ? effect
+            : null;
+
+    public void CancelModule(PilotCallContext context, long module)
+    {
+        // A paid cyno is tied to its resident deadline and survives connection cleanup.
+    }
+
+    private static DogmaActiveEffect Effect(CynosuralField field) =>
+        new(
+            field.ModuleId,
+            field.PilotId,
+            field.ShipId,
+            null,
+            DogmaEffect.CynosuralGeneration,
+            field.EndsAt - CapitalTravelRules.IndustrialCycleMilliseconds * TimeSpan.TicksPerMillisecond,
+            CapitalTravelRules.IndustrialCycleMilliseconds,
+            0
+        );
+}
+
+internal sealed record JumpTimerState(JumpTimers? Timers = null) : BlueModel
+{
+    public override object ToBlue() => Arguments(Timers);
+
+    internal static object?[] Arguments(JumpTimers? timers) => [timers?.ActivationUntil, timers?.FatigueUntil, timers?.UpdatedAt];
+}
+
+internal sealed record JumpTimersUpdated(JumpTimers Timers) : PilotNotification("OnJumpTimersUpdated")
+{
+    public override object?[] Arguments => JumpTimerState.Arguments(Timers);
+}
+
+internal sealed record CapitalJumpCancelled(string Message) : PilotNotification("OnRemoteMessage")
+{
+    public override object?[] Arguments => ["CustomNotify", new Dictionary<string, object?> { ["notify"] = Message }];
+}

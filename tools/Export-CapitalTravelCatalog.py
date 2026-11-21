@@ -1,0 +1,71 @@
+"""Export fitting and geography inputs for the build-3662168 jump-freighter fixture."""
+
+import argparse
+import json
+from pathlib import Path
+import sqlite3
+
+
+def export(source, destination):
+    if source.resolve() == destination.resolve():
+        raise ValueError('The fixture must not overwrite the source catalog')
+    types = []
+    records = {}
+    with sqlite3.connect(source.resolve().as_uri() + '?mode=ro', uri=True) as catalog:
+        def read(dataset, key):
+            row = catalog.execute('SELECT Data FROM SourceRecord WHERE Dataset=? AND Key=?', (dataset, str(key))).fetchone()
+            return json.loads(row[0]) if row else None
+
+        def keep(dataset, key, fields=None):
+            value = read(dataset, key)
+            if value is not None:
+                records[dataset, key] = value if fields is None else {name: value[name] for name in fields if name in value}
+            return value or {}
+
+        if read('sde/_sde', '"sde"')['buildNumber'] != 3662168:
+            raise ValueError('Expected client build 3662168')
+        pending = {34, 648, 12729, 12731, 28844, 28846, 28848, 28850, 32880, 89648, 52694, 52696, 16273, 16274, 17887, 17888, 17889,
+                   34122, 34124, 34126, 1531, 2016, 3456, 21610, 21611, 21603}
+        visited = set()
+        while pending:
+            type_id = min(pending)
+            pending.remove(type_id)
+            visited.add(type_id)
+            row = catalog.execute('SELECT t.Name,t.GroupId,g.Name,g.CategoryId,t.Mass,t.Radius,t.Capacity '
+                                  'FROM ItemType t JOIN ItemGroup g ON g.Id=t.GroupId WHERE t.Id=?', (type_id,)).fetchone()
+            name, group, group_name, category, mass, radius, capacity = row
+            values = catalog.execute('SELECT AttributeId,Value FROM TypeAttribute WHERE ItemTypeId=? ORDER BY AttributeId',
+                                     (type_id,)).fetchall()
+            types.append(dict(id=type_id, name=name, groupId=group, groupName=group_name, categoryId=category,
+                              mass=mass, radius=radius, capacity=capacity,
+                              attributes=[dict(id=a, value=v) for a, v in values]))
+            keep('client/types', type_id, ('published', 'techLevel', 'metaGroupID', 'volume', 'wreckTypeID'))
+            dogma = keep('client/typedogma', type_id)
+            for effect in dogma.get('dogmaEffects', []):
+                keep('client/dogmaeffects', effect['effectID'])
+            pending.update(int(v) for a, v in values if a in (182, 183, 184, 1285, 1289, 1290) and v > 0 and int(v) not in visited)
+        keep('client/typelist', 343)
+        for system_id in (30000142, 30001385):
+            keep('client/systems', system_id, ('center', 'securityStatus', 'wormholeClassID', 'regionID', 'factionID'))
+        system = catalog.execute('SELECT s.Id,s.Name,c.Id,c.Name,r.Id,r.Name FROM SolarSystem s '
+                                 'JOIN Constellation c ON s.ConstellationId=c.Id JOIN Region r ON c.RegionId=r.Id '
+                                 'WHERE s.Id=30001385').fetchone()
+        orbit = catalog.execute('SELECT * FROM Celestial WHERE Id=40088235').fetchone()
+    system_fields = ('id', 'name', 'constellationId', 'constellationName', 'regionId', 'regionName')
+    orbit_fields = ('id', 'solarSystemId', 'typeId', 'groupId', 'radius', 'orbitId', 'x', 'y', 'z')
+    lines = ['{', '  "build": 3662168,', '  "systems": ' + json.dumps([dict(zip(system_fields, system))]) + ',',
+             '  "celestials": ' + json.dumps([dict(zip(orbit_fields, orbit))]) + ',', '  "types": [']
+    lines.append(',\n'.join('    ' + json.dumps(row, ensure_ascii=False) for row in sorted(types, key=lambda row: row['id'])))
+    lines += ['  ],', '  "records": [']
+    lines.append(',\n'.join('    ' + json.dumps(dict(dataset=d, key=k, data=v), ensure_ascii=False)
+                            for (d, k), v in sorted(records.items())))
+    lines += ['  ]', '}', '']
+    destination.write_text('\n'.join(lines), encoding='utf-8', newline='\n')
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--catalog', type=Path, required=True)
+    parser.add_argument('--output', type=Path, default=Path('tests/Eden.Protocol.Tests/Fixtures/CapitalTravelCatalog.json'))
+    args = parser.parse_args()
+    export(args.catalog, args.output)

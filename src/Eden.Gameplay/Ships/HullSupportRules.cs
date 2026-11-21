@@ -8,6 +8,7 @@ public enum HullCohort
 {
     Special,
     TechTwoSubcapital,
+    JumpFreighter,
     Small,
     Combat,
     Utility,

@@ -503,6 +503,7 @@ internal sealed partial record FittingCalculation
                 && !Eden.World.Information.InformationCatalog.Supported(catalog, module.Item.TypeId, module.GroupId)
                 && !Eden.World.Exploration.ProbeCatalog.Launcher(catalog, module.Item.TypeId, module.GroupId)
                 && !CommandBurstCatalog.Module(catalog, module.Item.TypeId, module.GroupId)
+                && module.GroupId != Eden.Gameplay.Flight.CapitalTravelRules.EconomizerGroup
             )
             {
                 continue;
@@ -534,6 +535,20 @@ internal sealed partial record FittingCalculation
             .Concat([Eden.Gameplay.Exploration.HackingRules.HackingSkill, Eden.Gameplay.Exploration.HackingRules.ArchaeologySkill])
             .Concat(Enum.GetValues<ElectronicWarfareSkill>().Select(s => (int)s))
             .Concat(hullSkills)
+            .Concat(
+                hull.GroupId == (int)HullClass.JumpFreighter
+                    ?
+                    [
+                        Eden.Gameplay.Flight.CapitalTravelRules.JumpDriveOperation,
+                        Eden.Gameplay.Flight.CapitalTravelRules.JumpFuelConservation,
+                    ]
+                    : Array.Empty<int>()
+            )
+            .Concat(
+                modules.Any(module => module.Item.TypeId == Eden.Gameplay.Flight.CapitalTravelRules.IndustrialGenerator)
+                    ? [Eden.Gameplay.Flight.CapitalTravelRules.CynosuralFieldTheory]
+                    : Array.Empty<int>()
+            )
             .Concat(Enum.GetValues<RemoteRepairSkill>().Select(s => (int)s))
             .Concat(Enum.GetValues<Eden.Gameplay.Information.InformationSkill>().Select(s => (int)s))
             .Concat(Enum.GetValues<CapacitorEmissionSkill>().Select(s => (int)s))

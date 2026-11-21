@@ -231,4 +231,7 @@ internal sealed partial class PilotInterdictionStore(WorldDatabase database) : I
 
     private static SavedInterdictionField[] Fields(WorldAction world, int system, long now) =>
         world.Filter<SavedInterdictionField>(row => row.SystemId == system && row.ExpiresAt > now && row.HitPoints > 0).ToArray();
+
+    internal static bool BlocksJump(WorldAction world, int system, SpacePosition position, long now) =>
+        Fields(world, system, now).Any(row => Sphere(world, row) is { } field && position.DistanceTo(field.Center) <= field.Radius);
 }

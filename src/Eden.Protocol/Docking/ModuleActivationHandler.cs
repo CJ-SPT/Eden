@@ -4,6 +4,7 @@ using Eden.Protocol.Ammunition;
 using Eden.Protocol.Combat;
 using Eden.Protocol.Defenses;
 using Eden.Protocol.Fleets;
+using Eden.Protocol.Flight;
 using Eden.Protocol.Information;
 using Eden.Protocol.Mining;
 using Eden.Protocol.PilotSessions;
@@ -44,7 +45,8 @@ internal sealed class ModuleActivationHandler(
     CommandBurstHandler? commandBursts = null,
     InterdictionHandler? interdiction = null,
     AreaWeaponHandler? areaWeapons = null,
-    Eden.Protocol.Sovereignty.EntosisHandler? entosis = null
+    Eden.Protocol.Sovereignty.EntosisHandler? entosis = null,
+    CapitalTravelHandler? capital = null
 ) : ISelectedPilotCallHandler
 {
     public PilotCallResult Call(
@@ -60,6 +62,23 @@ internal sealed class ModuleActivationHandler(
             return PilotCallResult.Unsupported;
         }
         string effectName = BlueMarshal.Text(args[1]);
+        if (effectName == CapitalTravelHandler.CynoEffectName)
+        {
+            return keywords is { Count: > 0 }
+                ? new PilotCallResult.Failure("Unexpected cynosural activation arguments.")
+                : capital?.Activate(context, method, args) ?? PilotCallResult.Unsupported;
+        }
+        if (
+            method == "Activate"
+            && (
+                SpatialModuleHandler.Handles(effectName)
+                || effectName is PropulsionWireDefinitions.EffectName or PropulsionWireDefinitions.MicrowarpdriveEffectName
+            )
+            && context.Flight.CynoActive
+        )
+        {
+            return new PilotCallResult.Failure("The active cynosural field prevents navigation modules from activating.");
+        }
         if (method == "Activate" && args is [long module, _, _, long])
         {
             context.Flight.PrepareGateCloakModule(module);

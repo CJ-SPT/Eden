@@ -156,6 +156,10 @@ public sealed partial class SqliteWorld
 
     internal DockedPilot Dock(WorldAction world, CatalogDbContext catalog, long pilotId, long shipId, long locationId)
     {
+        if (world is EconomyTransaction)
+        {
+            Eden.World.Flight.PilotCapitalTravelStore.RequireMobile(world, pilotId, shipId, _clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+        }
         if (locationId >= Eden.Gameplay.Structures.StructureRules.FirstStructureId)
         {
             return DockStructure(world, catalog, pilotId, shipId, locationId);

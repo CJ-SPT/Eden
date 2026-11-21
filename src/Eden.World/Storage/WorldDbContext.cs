@@ -158,6 +158,7 @@ public sealed partial class WorldDbContext(string path) : DbContext
         Eden.World.Exploration.AbyssalSchema.Configure(model);
         ModuleConditionSchema.Configure(model);
         SpatialNavigationSchema.Configure(model);
+        Eden.World.Flight.CapitalTravelSchema.Configure(model);
         Eden.World.Capsuleers.CapsuleerCommunityStore.Configure(model);
         Eden.World.Capsuleers.CapsuleerPopulationStore.Configure(model);
         Eden.World.Capsuleers.RegionalConflictSchema.Configure(model);

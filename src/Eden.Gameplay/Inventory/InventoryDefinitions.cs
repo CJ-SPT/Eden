@@ -102,6 +102,8 @@ public enum FittingSkill
 
 public enum DogmaEffect
 {
+    CynosuralGeneration = 2857,
+    JumpDriveEconomizer = 5911,
     BurstJammer = 6714,
     BombLaunching = 2971,
     DefenderLaunching = 103,

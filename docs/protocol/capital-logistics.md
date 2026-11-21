@@ -6,11 +6,56 @@ Planning baseline, November 20, 2026, Eden `6898acc7`, client build **3662168**.
 delivery to an industrial cynosural field. The shared travel rules from that delivery support later combat capitals,
 fleet travel, and sovereignty infrastructure.
 
+## Industrial cynos and jump freighters
+
+Rhea, Nomad, Anshar, and Ark can use the native fleet-member jump to a paid industrial cyno. A Venture, Venture
+Consortium Issue, or a catalog-eligible hauler, blockade runner, or deep space transport can ignite the field. Ordinary
+fitting and fuel-bay inventory own hull admission, skills, economizers and the carried fuel. The freighter uses the
+correct isotope from its fuel bay. The emitter pays Liquid Ozone from cargo for one ten-minute cycle. Its field is a
+public warp target and appears in the map's beacon count. Fleet members receive the module beacon state and can use the
+native Jump Beacon broadcast to find it.
+
+The resident transfer revalidates the selected ship, exact beacon and both current fleet memberships at departure.
+Fuel, capacitor, location, map activity and pilot timers commit together. Eden uses whole-second cooldown and fatigue
+durations, with the previous fatigue read at commit. The source publishes the native departure effect before the
+transfer, then the destination sends a fresh ballpark and one arrival effect. A beacon that expires before commit
+cancels the jump at origin. A successful transfer's inventory and timer changes survive checkpoint reopen.
+
+Schema 193 records fields and timers. An offline emitter remains in space through the paid field deadline. The public
+field survives a reconnect or restart while its anchor is valid. Eden's online-only fleet membership invalidates jump
+access when the emitter leaves or disconnects. Cargo isotopes can be carried separately and must be moved into the fuel
+bay before jumping. Placement uses the pinned 5 km spawn radius and checks static destination geometry. Arrival visuals
+and the precise behavior of the live game's beacon-loss race remain unverified. Standard and covert cynos, jammers and
+structure beacons are follow-up milestones.
+
+The independent pinned input fixture can be regenerated with `tools/Export-CapitalTravelCatalog.py` against the
+build-3662168 catalog. Runtime and persistence tests provision and move the ships and items through the resident world.
+The fixture uses owned hulls and inputs. The existing production audit confirms the five recipe definitions, with the
+full fresh-world sourcing chain still to verify.
+
+**Automated validation.** Tool and solution restores passed. The final solution build finished in 2.80 seconds with
+zero warnings and errors. The exact method filter
+`FullyQualifiedName=Eden.Protocol.Tests.Flight.CapitalTravelTests.RheaDeliversCargoFromJitaToJanThroughVentureCyno`
+passed in 11.09 seconds. The capital travel class passed 10 cases in 17.44 seconds. The final combined filter below
+passed all **216** cases in **127.12 seconds** with no skips. It covers the delivery and unload, all four jump freighters,
+the eligible emitter cohorts, fuel and capacitor settlement, expiry during departure, the native timer and scene
+handoff, and checkpoint reopen. The catalog setup and formatting policy suites passed all 17 cases. The fixture
+export matched byte for byte. Formatting, 13 local links and anchors, and `git diff --check` passed.
+
+```text
+FullyQualifiedName~CapitalTravelTests|FullyQualifiedName~TranslocationTests|FullyQualifiedName~FlightSessionTests|FullyQualifiedName~FlightBoundaryTests|FullyQualifiedName~StationUndockTests|FullyQualifiedName~CooperativeFleetTests|FullyQualifiedName~PilotInventoryTests|FullyQualifiedName~ShipContentCoverageTests|FullyQualifiedName~TypedCallResultTests|FullyQualifiedName~WorldMigrationTests|FullyQualifiedName~DetachedCheckpointTests
+```
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Run the native Jita–Jan delivery. Verify the jump animation, capacitor gauge and
+timers after reconnect. Check beacon visibility and expiry from a third pilot.
+
 ## Milestones
 
 | Milestone | Playable outcome and acceptance |
 | --- | --- |
-| **1. Jump freighters and industrial cynos** | A fleetmate lights a cyno in lowsec. A loaded jump freighter jumps from another system, docks, and unloads. The ship, cargo, fuel, capacitor and pilot timers reconcile across disconnect and checkpoint reopen. |
+| **1. Jump freighters and industrial cynos** | Implemented. A fleetmate lights a cyno in lowsec. A loaded jump freighter jumps from another system, docks, and unloads. The ship, cargo, fuel, capacitor and pilot timers reconcile across disconnect and checkpoint reopen. |
 | **2. Standard cynos and sovereignty navigation** | Admit standard cyno emitters and jump-freighter use of standard fields. Enable mobile beacons and inhibitors plus Pharolux beacons and Tenebrex jammers. Verify placement, warm-up, fuel and access, including the effect of a hub upgrade or jammer state change on travel. |
 | **3. Ansiblex jump gates** | Link two authorized endpoints and exercise paid access and route discovery. Prove that loss of an endpoint, access or sovereignty affects the next transfer and route read. |
 | **4. Black Ops and covert travel** | Jump a Black Ops battleship to a covert cyno and move eligible fleetmates through a paid portal. Verify recipient eligibility, costs, timers, interruption and the native fleet menus. |
@@ -19,8 +64,8 @@ fleet travel, and sovereignty infrastructure.
 | **7. Capital industry and fleet services** | Fly a Rorqual with an industrial core, Excavators, compression and P.A.N.I.C. Add supported fleet hangar, ship maintenance, refit and clone services. Exercise a real production and resupply route, then let bot haulers use the same paid jump and access operations. |
 | **8. Supercapitals and production** | Deliver the verified Keepstar/Sotiyo docking and construction rules, supercarrier and titan roles, and supported portals, superweapons and counters. Exercise construction, deployment, combat, and irreversible loss with real inputs and sovereignty requirements. |
 
-Milestone 1 can start from main while faction warfare and Upwell combat integrate. Milestone 2 needs the resident sovereignty
-upgrade state and hull-specific Upwell service rules. Milestone 5 needs the Upwell battle and destruction paths for its
+Milestone 2 needs the resident sovereignty upgrade state and hull-specific Upwell service rules. Milestone 5 needs the
+Upwell battle and destruction paths for its
 siege acceptance. Verify Ansiblex behavior against build 3662168 before choosing the policy for Milestone 3, especially
 capacitor, allowed hulls, alliance access, and the routing change after lost sovereignty.
 [Sovereignty upgrades](sovereignty.md#sovereignty-resources-and-upgrades--november-16-2026) ·
@@ -109,8 +154,8 @@ skillbooks, Liquid Ozone and ice-derived isotopes through existing acquisition p
 
 The original 3662168 archive at `E:/EdenDev/downpatch-3662168/tq/code.ccp` has SHA-256
 `37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`. The contracts below come from its Python 2 code
-objects read as data with `xdis` and the read-only catalog. The generated route inventory lists
-the jump call as unhandled and the timer route as a compatibility handler. [Client RPC inventory](../client-routes/README.md)
+objects read as data with `xdis` and the read-only catalog. The generated route inventory at the planning baseline
+listed the jump call as unhandled and the timer route as a compatibility handler. [Client RPC inventory](../client-routes/README.md)
 
 | Client entry point | Verified contract |
 | --- | --- |
@@ -150,9 +195,9 @@ updates for a ball. The native jump effect and ordering come from the pinned cli
    state and one arrival event. Reuse focused ship fitting, inventory, fleet, Crimewatch, flight and detached checkpoint
    tests for immediate dependencies. On warmed reads, check command, connection and fit-rebuild counts.
 
-**Automated validation.** Static checks passed for 13 local links and anchors, UTF-8, final newlines, whitespace, the pinned
+**Planning validation.** Static checks passed for 13 local links and anchors, UTF-8, final newlines, whitespace, the pinned
 archive hash, catalog values for the four jump freighters and the cyno, the Jita–Jan vectors, and all five production recipes
-(under one second). `git diff --check` passed. Gameplay testing starts with the delivery fixture.
+(under one second). `git diff --check` passed.
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 

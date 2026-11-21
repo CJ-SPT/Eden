@@ -50,6 +50,12 @@
       },
       {
         "techLevel": 2,
+        "cohort": "JumpFreighter",
+        "classes": [902],
+        "types": []
+      },
+      {
+        "techLevel": 2,
         "cohort": "TechTwoSubcapital",
         "classes": [],
         "types": [

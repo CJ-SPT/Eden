@@ -171,6 +171,12 @@ internal sealed record FleetBroadcastNotification(FleetBroadcast Broadcast) : Fl
         ];
 }
 
+internal sealed record FleetModuleBeaconChanged(Eden.Gameplay.Flight.CynosuralField Field, bool Active)
+    : FleetNotification("OnFleetJumpBeaconModuleChange")
+{
+    public override object?[] Arguments => [Field.PilotId, Field.SystemId, Field.Beacon.Id, Field.Beacon.TypeId, Active];
+}
+
 internal sealed record FleetStateNotification(IReadOnlyList<FleetTargetTag> Tags) : FleetNotification("OnFleetStateChange")
 {
     public override object?[] Arguments =>

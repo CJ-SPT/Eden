@@ -39,7 +39,8 @@ internal sealed class FlightSessionFactory(
     IDedComplexTravel? dedComplexes = null,
     ICooperativeFleets? fleets = null,
     IPilotInterdiction? interdiction = null,
-    Eden.Gameplay.Sovereignty.IPilotEntosis? entosis = null
+    Eden.Gameplay.Sovereignty.IPilotEntosis? entosis = null,
+    IPilotCapitalTravel? capital = null
 )
 {
     public FlightSession Create(DockedPilot pilot)
@@ -79,7 +80,8 @@ internal sealed class FlightSessionFactory(
                 fleets: fleets,
                 warpDrive: warpDrive,
                 interdiction: interdiction,
-                entosis: entosis?.Available == true ? entosis : null
+                entosis: entosis?.Available == true ? entosis : null,
+                capital: capital
             );
         }
         catch

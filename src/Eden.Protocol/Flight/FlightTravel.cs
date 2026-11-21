@@ -2,6 +2,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Flight;
+using Eden.Gameplay.Inventory;
 using Eden.Protocol.PilotSessions;
 
 namespace Eden.Protocol.Flight;
@@ -17,12 +18,21 @@ internal sealed record GateDestination(
 internal sealed record GateTransit(GateDestination Destination, int TransferStamp, long? DepartureSentAt = null);
 
 internal sealed record TranslocationTransit(
-    IPilotTranslocation Travel,
-    TranslocationTarget Target,
+    Func<SpaceTransfer> Move,
+    int SystemId,
     IReadOnlyList<StaticSpaceObject> Objects,
     int TransferStamp,
     bool AwaitingSourceState = false,
-    int? PublishedSourceStamp = null
+    int? PublishedSourceStamp = null,
+    bool Capital = false,
+    long? DepartureSentAt = null
+);
+
+internal sealed record SpaceTransfer(
+    DockedPilot Pilot,
+    IReadOnlyList<InventoryChange> Changes,
+    JumpTimers? Timers = null,
+    double Capacitor = 0
 );
 
 internal readonly record struct FlightTravelContext(DockedPilot Pilot, bool InBallpark, bool InWarp, bool Aligning);
@@ -146,22 +156,17 @@ internal sealed class FlightTravel
         _awaitingArrival = true;
     }
 
-    internal void BeginTranslocation(
-        IPilotTranslocation travel,
-        TranslocationTarget target,
-        IReadOnlyList<StaticSpaceObject> objects,
-        int stamp
-    )
+    internal void BeginTranslocation(TranslocationTransit transit, int stamp)
     {
         Gate = null;
         _arrivalStamp = null;
         Arrival = null;
         _awaitingArrival = false;
-        Translocation = new(travel, target, objects, stamp + TranslocationDurationTicks);
+        Translocation = transit with { TransferStamp = stamp + TranslocationDurationTicks, AwaitingSourceState = false };
     }
 
-    internal void QueueTranslocation(IPilotTranslocation travel, TranslocationTarget target, IReadOnlyList<StaticSpaceObject> objects) =>
-        Translocation = new(travel, target, objects, int.MaxValue, AwaitingSourceState: true);
+    internal void QueueTranslocation(TranslocationTransit transit) =>
+        Translocation = transit with { TransferStamp = int.MaxValue, AwaitingSourceState = true };
 
     internal void SourceStatePublished(int stamp)
     {
@@ -174,8 +179,23 @@ internal sealed class FlightTravel
     internal TranslocationTransit? DepartureReady(int stamp) =>
         Translocation is { AwaitingSourceState: true, PublishedSourceStamp: int published } pending && stamp > published ? pending : null;
 
-    internal TranslocationTransit? TranslocationDue(int stamp) =>
-        Translocation is { AwaitingSourceState: false } transit && stamp >= transit.TransferStamp ? transit : null;
+    internal void CapitalDeparturePublished(long timestamp)
+    {
+        if (Translocation is { Capital: true, DepartureSentAt: null } transit)
+        {
+            Translocation = transit with { DepartureSentAt = timestamp };
+        }
+    }
+
+    internal TranslocationTransit? TranslocationDue(int stamp, TimeProvider clock) =>
+        Translocation is { AwaitingSourceState: false } transit
+        && (
+            transit.Capital
+                ? transit.DepartureSentAt is long sent && clock.GetElapsedTime(sent) >= TimeSpan.FromSeconds(TranslocationDurationTicks)
+                : stamp >= transit.TransferStamp
+        )
+            ? transit
+            : null;
 
     internal void CompleteTranslocation()
     {

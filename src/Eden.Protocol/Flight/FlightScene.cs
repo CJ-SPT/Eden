@@ -399,6 +399,29 @@ internal sealed class FlightScene(
         }
     }
 
+    internal void RefreshCynos(FlightSceneContext context, IReadOnlyList<StaticSpaceObject> current)
+    {
+        var previous = Objects.Where(body => body.GroupId == CapitalTravelRules.FieldGroup).ToArray();
+        if (previous.SequenceEqual(current))
+        {
+            return;
+        }
+        Objects = Objects.Where(body => body.GroupId != CapitalTravelRules.FieldGroup).Concat(current).ToArray();
+        if (!context.InBallpark)
+        {
+            return;
+        }
+        foreach (var removed in previous.ExceptBy(current.Select(body => body.Id), body => body.Id))
+        {
+            update(new DestinyCommand.RemoveBall(removed.Id, false));
+        }
+        var added = current.ExceptBy(previous.Select(body => body.Id), body => body.Id).ToArray();
+        if (added.Length > 0)
+        {
+            update(new DestinyCommand.AddBalls(Ballpark.AddObjects(added, space.Stamp(clock))));
+        }
+    }
+
     internal void RefreshInterdiction(FlightSceneContext context, IReadOnlyList<StaticSpaceObject> contacts)
     {
         var previous = Objects.Where(o => o.InterdictionRadius is not null).ToArray();

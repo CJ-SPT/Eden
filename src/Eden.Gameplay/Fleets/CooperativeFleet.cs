@@ -41,6 +41,7 @@ public enum FleetBroadcastKind
     EnemySpotted,
     InPosition,
     HealTarget,
+    JumpBeacon,
 }
 
 public sealed record FleetPilot(

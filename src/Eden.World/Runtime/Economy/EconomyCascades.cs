@@ -63,6 +63,8 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Set<Eden.Data.World.Characters.SavedPilotImplant>().Where(child => child.CloneId == removed.Id));
                 break;
             case Eden.Data.World.Characters.Pilot removed:
+                RemoveRange(Filter<Eden.Data.World.Flight.SavedJumpTimers>(row => row.PilotId == removed.Id));
+                RemoveRange(Filter<Eden.Data.World.Flight.SavedCynosuralField>(row => row.PilotId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Characters.SavedPilotActivity>().Where(child => child.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Market.SavedRedeemedCurrency>(child => child.PilotId == removed.Id));
                 RemoveRange(Filter<Eden.Data.World.Market.TestingWalletGrant>(child => child.PilotId == removed.Id));
@@ -249,6 +251,10 @@ internal sealed partial class EconomyTransaction
                 RemoveRange(Set<Eden.Data.World.Fittings.ActiveFittedModule>().Where(child => child.ShipId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Fittings.ShipEnergy>().Where(child => child.ShipId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Propulsion.SpatialNavigationState>().Where(child => child.ShipId == removed.Id));
+                if (Set<Eden.Data.World.Flight.SavedCynosuralField>().Find(removed.OwnerId) is { } field && field.ShipId == removed.Id)
+                {
+                    Remove(field);
+                }
                 RemoveRange(Set<Eden.Data.World.Propulsion.WorldTackle>().Where(child => child.SourceShipId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Repair.PendingLocalRepair>().Where(child => child.ShipId == removed.Id));
                 RemoveRange(Set<Eden.Data.World.Repair.WorldRemoteAssistance>().Where(child => child.SourceShipId == removed.Id));

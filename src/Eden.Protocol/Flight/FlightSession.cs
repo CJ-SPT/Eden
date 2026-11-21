@@ -47,9 +47,11 @@ internal sealed partial class FlightSession(
     ICooperativeFleets? fleets = null,
     IPilotWarpDrive? warpDrive = null,
     IPilotInterdiction? interdiction = null,
-    Eden.Gameplay.Sovereignty.IPilotEntosis? entosis = null
+    Eden.Gameplay.Sovereignty.IPilotEntosis? entosis = null,
+    IPilotCapitalTravel? capital = null
 ) : IDisposable
 {
+    private readonly IPilotCapitalTravel? capitalTravel = capital;
     internal const int ArrivalDurationTicks = FlightTravel.ArrivalDurationTicks;
     internal const int JumpDurationTicks = FlightTravel.JumpDurationTicks;
     internal const int TranslocationDurationTicks = FlightTravel.TranslocationDurationTicks;
@@ -906,7 +908,25 @@ internal sealed partial class FlightSession(
         IPilotTranslocation travel,
         TranslocationTarget target,
         IReadOnlyList<StaticSpaceObject> destinationObjects
-    )
+    ) => StartSpaceTransfer(DeveloperTransfer(travel, target, destinationObjects));
+
+    private TranslocationTransit DeveloperTransfer(
+        IPilotTranslocation travel,
+        TranslocationTarget target,
+        IReadOnlyList<StaticSpaceObject> destinationObjects
+    ) =>
+        new(
+            () =>
+            {
+                var moved = travel.Move(Pilot.PilotId, Pilot.ShipId, target);
+                return new(moved.Pilot, [moved.ShipChange]);
+            },
+            target.System.Id,
+            destinationObjects,
+            0
+        );
+
+    private void StartSpaceTransfer(TranslocationTransit transit)
     {
         if (EntosisActive)
         {
@@ -917,13 +937,13 @@ internal sealed partial class FlightSession(
             bool wasWarping = _navigation.Warp is not null || _navigation.WarpDestination is not null;
             _navigation = new();
             _simulatedStamp = Stamp;
-            _travel.BeginTranslocation(travel, target, destinationObjects, Stamp);
+            _travel.BeginTranslocation(transit, Stamp);
             if (wasWarping)
             {
                 WarpEffect(Pilot.ShipId, false);
             }
             Update(new DestinyCommand.Stop(Pilot.ShipId));
-            Update(new DestinyCommand.TranslocationOut(Pilot.ShipId, target.System.Id, TranslocationDurationTicks * 1000));
+            Update(new DestinyCommand.TranslocationOut(Pilot.ShipId, transit.SystemId, TranslocationDurationTicks * 1000));
             space.Publish(CreateContact());
         }
     }
@@ -934,12 +954,14 @@ internal sealed partial class FlightSession(
         IReadOnlyList<StaticSpaceObject> destinationObjects
     )
     {
-        _travel.QueueTranslocation(travel, target, destinationObjects);
+        _travel.QueueTranslocation(DeveloperTransfer(travel, target, destinationObjects));
     }
 
     public void SourceStatePublished() => _travel.SourceStatePublished(Stamp);
 
     internal void GateDeparturePublished() => _travel.GateDeparturePublished(clock.GetTimestamp());
+
+    internal void CapitalDeparturePublished() => _travel.CapitalDeparturePublished(clock.GetTimestamp());
 
     public void StartPendingTranslocation()
     {
@@ -947,20 +969,31 @@ internal sealed partial class FlightSession(
         {
             if (_travel.DepartureReady(Stamp) is { } pending)
             {
-                StartTranslocation(pending.Travel, pending.Target, pending.Objects);
+                StartSpaceTransfer(pending);
             }
         }
     }
 
-    public PilotTranslocation? CompleteTranslocation()
+    public SpaceTransfer? CompleteTranslocation()
     {
         using (space.UseSystem(Pilot.SystemId))
         {
-            if (_travel.TranslocationDue(Stamp) is not { } transit)
+            if (_travel.TranslocationDue(Stamp, clock) is not { } transit)
             {
                 return null;
             }
-            var moved = transit.Travel.Move(Pilot.PilotId, Pilot.ShipId, transit.Target);
+            SpaceTransfer moved;
+            try
+            {
+                moved = transit.Move();
+            }
+            catch (InvalidDataException error) when (transit.Capital)
+            {
+                _travel.CancelTranslocation();
+                SnapshotCore();
+                NotificationsBeforeFlight.Add(new CapitalJumpCancelled(error.Message));
+                return null;
+            }
             Relocate(moved.Pilot, transit.Objects);
             _travel.CompleteTranslocation();
             return moved;
@@ -1009,6 +1042,7 @@ internal sealed partial class FlightSession(
             return;
         }
         Checkpoint();
+        RefreshCynos();
         if (!InBallpark && Pilot.Position is { } position)
         {
             // A legacy save or a disconnect during warp can leave the ship inside a rigid body.
@@ -1089,6 +1123,10 @@ internal sealed partial class FlightSession(
 
     public PilotCallResult StartJump(FlightCommand.Jump request, ISystemObjects systems, bool automatic = false)
     {
+        if (CynoActive)
+        {
+            return new PilotCallResult.Failure("Wait for the active cynosural field to expire before jumping.");
+        }
         if (EntosisActive)
         {
             return new PilotCallResult.Failure("Wait for the paid Entosis cycle to finish before jumping.");
@@ -1125,6 +1163,10 @@ internal sealed partial class FlightSession(
 
     internal void StartWormholeJump(long entrance, IWormholeTravel travel, ISystemObjects systems)
     {
+        if (CynoActive)
+        {
+            throw new InvalidDataException("Wait for the active cynosural field to expire before jumping.");
+        }
         if (EntosisActive)
         {
             throw new InvalidDataException("Wait for the paid Entosis cycle to finish before jumping.");
@@ -1375,6 +1417,10 @@ internal sealed partial class FlightSession(
 
     private PilotCallResult ExecuteCommand(FlightCommand command)
     {
+        if (command is not (FlightCommand.RefreshState or FlightCommand.Stop) && CynoActive)
+        {
+            return new PilotCallResult.Failure("Wait for the active cynosural field to expire before moving the ship.");
+        }
         if (
             EntosisActive
             && command
