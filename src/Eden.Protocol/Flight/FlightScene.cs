@@ -683,6 +683,7 @@ internal sealed class FlightScene(
                 || ship.Pilot.CorpId != previous.Pilot.CorpId
                 || ship.Pilot.AllianceId != previous.Pilot.AllianceId
                 || ship.Pilot.WarFaction != previous.Pilot.WarFaction
+                || !(ship.Compression ?? []).SequenceEqual(previous.Compression ?? [])
             )
             {
                 update(new DestinyCommand.OnSlimItemChange(ship.Pilot.ShipId, new ShipSlimItem(ship)));

@@ -56,6 +56,7 @@ public enum HullCapability
     BoosterTraits,
     ShipModes,
     CapacitorBoosters,
+    CargoScanning,
     MicroJumpFields,
     Fighters,
 }
@@ -87,6 +88,7 @@ public enum HullBonusSkill
     InformationCommand = 20494,
     ExpeditionCommand = 89611,
     IndustrialReconfiguration = 58956,
+    CapitalIndustrialReconfiguration = 28585,
     IceHarvestingDroneOperation = 43702,
     Mining = 3386,
     RepairSystems = 3393,
@@ -145,6 +147,7 @@ public enum HullBonusSkill
 
 public enum HullBonusEquipmentGroup
 {
+    CargoScanner = 47,
     RemoteTrackingComputer = 209,
     RemoteSensorBooster = 290,
     ShieldExtender = 38,
@@ -274,6 +277,7 @@ public static class HullBonusRules
             },
             ModifierSelector.Group => (HullBonusEquipmentGroup?)target.Selection switch
             {
+                HullBonusEquipmentGroup.CargoScanner => HullCapability.CargoScanning,
                 HullBonusEquipmentGroup.TractorBeam => HullCapability.TractorBeams,
                 HullBonusEquipmentGroup.CloakingDevice => HullCapability.Cloaking,
                 HullBonusEquipmentGroup.CapitalFlexShieldHardener => HullCapability.CapitalFlexShieldHardening,
@@ -358,7 +362,8 @@ public static class HullBonusRules
                 or HullBonusSkill.MiningForeman
                 or HullBonusSkill.InformationCommand
                 or HullBonusSkill.ExpeditionCommand => HullCapability.CommandBursts,
-                HullBonusSkill.IndustrialReconfiguration => HullCapability.IndustrialCores,
+                HullBonusSkill.IndustrialReconfiguration or HullBonusSkill.CapitalIndustrialReconfiguration =>
+                    HullCapability.IndustrialCores,
                 HullBonusSkill.Cloaking => HullCapability.Cloaking,
                 HullBonusSkill.Archaeology or HullBonusSkill.Hacking => HullCapability.Hacking,
                 HullBonusSkill.IceHarvesting => HullCapability.IceMining,
@@ -423,6 +428,7 @@ public static class HullBonusRules
             )
         || capability
             is HullCapability.Bombs
+                or HullCapability.CargoScanning
                 or HullCapability.CapacitorBoosters
                 or HullCapability.Overheating
                 or HullCapability.CommandBursts

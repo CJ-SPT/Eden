@@ -61,6 +61,12 @@
         "types": [23757, 23911, 23915, 24483]
       },
       {
+        "techLevel": 1,
+        "cohort": "CapitalIndustrial",
+        "classes": [],
+        "types": [28352]
+      },
+      {
         "techLevel": 2,
         "cohort": "JumpFreighter",
         "classes": [902],
@@ -206,6 +212,7 @@
     ]
   },
   "droneHullTypes": [
+    28352,
     582,
     584,
     586,

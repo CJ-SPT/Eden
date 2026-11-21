@@ -61,7 +61,7 @@ internal sealed partial class PilotGateTravelStore
             throw new InvalidDataException("Use the active ship at a connected stargate within activation range.");
         }
         if (
-            CapitalTravelRules.CombatCapital(catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId)
+            CapitalTravelRules.RestrictedCapital(catalog.RequireItem(pilot.ActiveShip.TypeId).GroupId)
             && catalog.Definitions.SystemSecurity.GetValueOrDefault(gate.DestinationSystemId) >= StructureRules.HighSecurityBoundary
         )
         {

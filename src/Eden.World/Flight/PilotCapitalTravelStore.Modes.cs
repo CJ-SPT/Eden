@@ -5,7 +5,6 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
-using Eden.Gameplay.Ships;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
 using Eden.World.Runtime;
@@ -34,10 +33,10 @@ internal sealed partial class PilotCapitalTravelStore
             || CapitalModeRules.Effect(item.TypeId) != effect
             || !CapitalModeCatalog.Supported(catalog, item.TypeId)
             || !InventoryDefinitions.CanFitShip(catalog.FittingAttributes(item.TypeId), pilot.ActiveShip.TypeId, hull)
-            || hull != (int)(effect == DogmaEffect.CapitalSiege ? HullClass.Dreadnought : HullClass.ForceAuxiliary)
+            || hull != (int)CapitalModeRules.RequiredHull(effect)
         )
         {
-            throw new InvalidDataException("Use an online fitted siege or triage module on a compatible capital in space.");
+            throw new InvalidDataException("Use an online capital mode module on a compatible ship in space.");
         }
         if (action.Set<ModuleCooldown>().Find(moduleId)?.ReadyAt > now)
         {
@@ -47,13 +46,22 @@ internal sealed partial class PilotCapitalTravelStore
         NaniteRepairPersistence.RequireAvailable(action, catalog, moduleId, now);
         RequireLiving(action, pilot, PilotFittingStore.ShipAttributes(action, catalog, pilot), now);
         var attributes = catalog.FittingAttributes(item.TypeId);
-        int skill = effect == DogmaEffect.CapitalSiege ? CapitalModeRules.SiegeSkill : CapitalModeRules.TriageSkill;
+        int skill = CapitalModeRules.RequiredSkill(effect);
         double bonus = catalog.FittingAttributes(skill).GetValueOrDefault(DogmaAttributeId.ConsumptionQuantityBonus);
-        int quantity = checked(
-            (int)(attributes[DogmaAttributeId.ConsumptionQuantity] - PilotSkillReader.Level(action, catalog, pilotId, skill) * bonus)
-        );
+        double required =
+            attributes[DogmaAttributeId.ConsumptionQuantity] - PilotSkillReader.Level(action, catalog, pilotId, skill) * bonus;
         int fuelType = checked((int)attributes[DogmaAttributeId.ConsumptionType]);
-        var stacks = Fuel(action, pilotId, shipId, InventoryFlag.Cargo, fuelType, quantity);
+        bool industrial = effect == DogmaEffect.CapitalIndustrialCore;
+        if (industrial)
+        {
+            double role = catalog.FittingAttributes(pilot.ActiveShip.TypeId).GetValueOrDefault(DogmaAttributeId.IndustrialCoreFuelPercent);
+            int level = PilotSkillReader.Level(action, catalog, pilotId, CapitalModeRules.CapitalIndustrialShips);
+            required *= 1 + role * level / 100;
+        }
+        int quantity = checked((int)Math.Round(required, MidpointRounding.AwayFromZero));
+        var cargo = FuelStacks(action, pilotId, shipId, InventoryFlag.Cargo, fuelType);
+        var stacks = (industrial ? FuelStacks(action, pilotId, shipId, InventoryFlag.FuelBay, fuelType).Concat(cargo) : cargo).ToArray();
+        RequireFuel(stacks, quantity);
         var changes = SpendFuel(action, catalog, stacks, quantity);
 
         long end = checked(now + CapitalModeRules.CycleMilliseconds * TimeSpan.TicksPerMillisecond);

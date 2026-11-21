@@ -70,6 +70,7 @@ public interface IPilotCapitalTravel
 {
     CapitalModeActivation ActivateMode(long pilotId, long shipId, long moduleId, DogmaEffect effect);
     CapitalModeCycle? Mode(long shipId);
+    IReadOnlyList<ShipCompressorCycle> Compressors(long shipId);
     CynoActivation Light(long pilotId, long shipId, long moduleId, double speed);
     void CheckJump(long pilotId, long shipId, CapitalJumpRequest request);
     CapitalJump Jump(long pilotId, long shipId, CapitalJumpRequest request);
@@ -136,10 +137,14 @@ public static class CapitalTravelRules
     public static bool Covert(int fieldType) => fieldType is CovertField or CovertMobileField;
 
     public static bool JumpDrive(int groupId) =>
-        groupId is (int)HullClass.JumpFreighter or (int)HullClass.BlackOps || CombatCapital(groupId);
+        groupId is (int)HullClass.JumpFreighter or (int)HullClass.BlackOps || RestrictedCapital(groupId);
 
-    public static bool CombatCapital(int groupId) =>
-        groupId is (int)HullClass.Dreadnought or (int)HullClass.ForceAuxiliary or (int)HullClass.Carrier;
+    public static bool RestrictedCapital(int groupId) =>
+        groupId
+            is (int)HullClass.Dreadnought
+                or (int)HullClass.ForceAuxiliary
+                or (int)HullClass.Carrier
+                or (int)HullClass.CapitalIndustrial;
 
     public static int Isotopes(double distance, double rate)
     {

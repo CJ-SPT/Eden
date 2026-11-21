@@ -250,12 +250,47 @@ Support, space superiority and heavy combat, the other fighter abilities, genera
 squadrons remain open. The initial focused cases cover a short squadron, capacity and class rejection, checkpointed
 tube contents, a second pilot observing launch, and an Archon using a light attack squadron against an Astrahus. The
 second test also verifies atomic rollback for a batch with an empty tube, the loss of one fighter, restart, recall and
-replacement.
+replacement. The wider run passed all 403 focused cases in 211.49 seconds across capital travel, drone combat,
+structure attacks, typed calls and migration. Both Python suites passed all 17 cases, and formatting passed.
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** Inspect tube and fighter HUD updates from the carrier. Confirm the visible squadron
 shrinks from a second client's grid.
+
+## Rorqual industrial core and shipboard compression
+
+The Rorqual can assemble, use its jump drive and launch Excavators through the resident drone lifecycle. Capital
+Industrial Core I (`28583`) and II (`42890`) use effect `4575` and the pinned 300-second cycle. Fuel comes from the
+fuel bay first and then cargo. The activation applies Capital Industrial Reconfiguration's 50-unit reduction per level
+and the Rorqual's 5% per level fuel bonus. Eden rounds fractional fuel requirements to a whole unit. The core locks
+travel and applies the pinned ship, local repair, command burst and mining-drone modifiers. Its paid deadline
+survives a server restart.
+
+An online capital compressor requires a paid core cycle. The five capital compressor types use effect `8364`, their
+respective resource type lists, a 60-second cycle and a 1,500 GJ activation cost. The 144 km surface range increases
+with Fleet Compression Logistics. The core and compressor must both be active at settlement. In-space compression
+checks ownership, fleet membership, range and the particular compressor's allowed input before converting the stack
+in the same hold without changing its units. It uses the catalog mapping shared with structure compression.
+[CCP shipboard compression release notes](https://www.eveonline.com/news/view/patch-notes-version-20-03) ·
+[EVE University Rorqual](https://wiki.eveuniversity.org/Rorqual)
+
+Pinned `itemcompression/client/inSpaceCompression.pyj` looks up `compression_facility_typelists` in the facility
+ship's slim item. `itemCompression.pyj` uses `inSpaceCompressionMgr.CompressItemInSpace(itemID, facilityBallID)`.
+EVE.js `industrialCore.js`, `miningIndustry.js` and `inSpaceCompressionMgrService.js` served as behavior and wire
+cross-checks. Both modules support paid single cycles. P.A.N.I.C., shared fleet storage and refitting, clone services,
+and the full capital production and resupply chain remain open.
+
+**Automated validation.** `RorqualPaysForIndustrialCoreAndImprovesExcavatorYield` checks insufficient fuel before
+activation, a 903-unit charge and a 2.7× core yield multiplier, flight blocking and exact expiry on restart.
+`RorqualAdvertisesPaidFleetCompressionAndRejectsAtTheExactDeadline` checks the slim item, a successful
+100-unit conversion of Veldspar for a fleet Venture, and a rejection without conversion at expiry. All 90 cases
+passed in 66.69 seconds with `CapitalTravelTests`, `StructureCompressionTests`, `MiningDroneLifecycleTests`,
+`UtilityDroneIntegrationTests`, `WorldMigrationTests` and `TypedCallResultTests`.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Check the core and compressor HUD timers and compress ore from the fleet member's hold.
 
 ## Milestones
 

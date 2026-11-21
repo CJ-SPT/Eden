@@ -29,6 +29,7 @@ def export(source, destination):
                    16273, 16274, 16275, 17887, 17888, 17889,
                    670, 26475, 40639, 19720, 19722, 19724, 19726, 37604, 37605, 37606, 37607, 73787, 73790, 73792, 73793,
                    23757, 23911, 23915, 24483, 23055, 23057, 23059, 23061, 32325,
+                   16272, 28352, 28583, 42890, 41030, 43681, 1230, 62516, 62453, 62632, 62633, 62634, 62635, 62636,
                    20280, 4292, 27951, 4294, 20444, 17686, 20701, 24569,
                    34122, 34124, 34126, 1531, 2016, 3456, 21610, 21611, 21603}
         visited = set()
@@ -49,8 +50,9 @@ def export(source, destination):
             for effect in dogma.get('dogmaEffects', []):
                 keep('client/dogmaeffects', effect['effectID'])
             pending.update(int(v) for a, v in values if a in (182, 183, 184, 1285, 1289, 1290) and v > 0 and int(v) not in visited)
-        for type_list in (341, 342, 343, 1000):
+        for type_list in (330, 331, 332, 333, 334, 341, 342, 343, 348, 1000):
             keep('client/typelist', type_list)
+        keep('client/compressibletypes', 1230)
         for deployable in (33476, 35841, 57319, 59630):
             keep('client/spacecomponentsbytype', deployable)
         for system_id in (30000142, 30001385, 30000248, 30000251):

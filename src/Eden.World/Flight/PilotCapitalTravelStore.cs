@@ -43,7 +43,7 @@ internal sealed partial class PilotCapitalTravelStore(
     ICooperativeFleets fleets,
     TimeProvider clock,
     ICapitalInventoryEvents inventoryEvents
-) : IPilotCapitalTravel
+) : IPilotCapitalTravel, IPilotShipCompression
 {
     private sealed record JumpPlan(
         Pilot Pilot,

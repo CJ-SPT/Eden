@@ -8,6 +8,8 @@ public enum DogmaAttributeId
     ConsumptionType = 713,
     ConsumptionQuantity = 714,
     ConsumptionQuantityBonus = 885,
+    IndustrialCoreFuelPercent = 1239,
+    CompressibleItemsTypeList = 3255,
     CynosuralFieldSpawnRadius = 2455,
     CynoJammerActivationDelay = 2794,
     BaseJumpBridgeCapacitorCost = 6364,

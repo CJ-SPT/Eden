@@ -133,10 +133,20 @@ public static class WorldInitialization
                     .SetProperty(d => d.DelegateMembership, 0)
                     .SetProperty(d => d.ReactionRevision, 0)
             );
-        // Siege and triage finish their paid cycle across restarts.
+        // Committed capital modes finish their paid cycle across restarts.
         long moduleReopen = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc();
         int[] capitalModes = Eden.Gameplay.Flight.CapitalModeRules.Types.ToArray();
-        var committedModes = world.Set<OwnedItem>().Where(i => i.Online && capitalModes.Contains(i.TypeId)).Select(i => i.Id);
+        var committedModes = world
+            .Set<OwnedItem>()
+            .Where(i =>
+                i.Online
+                && (
+                    capitalModes.Contains(i.TypeId)
+                    || i.TypeId >= Eden.Gameplay.Flight.ShipCompressionRules.CapitalAsteroidOre
+                        && i.TypeId <= Eden.Gameplay.Flight.ShipCompressionRules.CapitalMoonOre
+                )
+            )
+            .Select(i => i.Id);
         world.Set<ActiveFittedModule>().Where(a => a.ExpiresAt <= moduleReopen || !committedModes.Contains(a.ModuleId)).ExecuteDelete();
         world.Set<Eden.Data.World.Fleets.WorldCommandBurst>().ExecuteDelete();
         PilotSpatialModuleStore.Reconcile(world, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc());

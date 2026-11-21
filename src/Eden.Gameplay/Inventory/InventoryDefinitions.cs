@@ -103,6 +103,8 @@ public enum FittingSkill
 public enum DogmaEffect
 {
     CynosuralGeneration = 2857,
+    CapitalIndustrialCore = 4575,
+    IndustrialItemCompression = 8364,
     CapitalTriage = 6581,
     CapitalSiege = 6582,
     CovertJumpPortalGeneration = 3674,

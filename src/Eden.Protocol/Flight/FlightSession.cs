@@ -654,7 +654,8 @@ internal sealed partial class FlightSession(
             MicroJump: _microJump,
             GateCloakUntil: GateCloaked ? SpatialStatus.GateCloakUntil : 0,
             ConnectionId: _connectionId,
-            Tether: _tether
+            Tether: _tether,
+            Compression: _compressionFacilities
         );
 
     public void RefreshFitting(IReadOnlyDictionary<DogmaAttributeId, double> attributes)

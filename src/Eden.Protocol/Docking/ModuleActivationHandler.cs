@@ -62,6 +62,12 @@ internal sealed class ModuleActivationHandler(
             return PilotCallResult.Unsupported;
         }
         string effectName = BlueMarshal.Text(args[1]);
+        if (effectName == CapitalTravelHandler.CompressionEffectName)
+        {
+            return keywords is { Count: > 0 }
+                ? new PilotCallResult.Failure("Unexpected compression activation arguments.")
+                : capital?.ActivateCompression(context, method, args) ?? PilotCallResult.Unsupported;
+        }
         if (CapitalTravelHandler.ModeEffect(effectName) is { } mode)
         {
             return keywords is { Count: > 0 }

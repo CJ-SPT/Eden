@@ -14,6 +14,7 @@ internal sealed partial class CapitalTravelHandler
         {
             "moduleBonusSiegeModule" => DogmaEffect.CapitalSiege,
             "moduleBonusTriageModule" => DogmaEffect.CapitalTriage,
+            "industrialCoreEffect2" => DogmaEffect.CapitalIndustrialCore,
             _ => null,
         };
 

@@ -16,7 +16,8 @@ internal sealed partial class CapitalTravelHandler(
     ISystemObjects systems,
     TimeProvider clock,
     CapitalInventorySignal fuelSignal,
-    IPilotFitting? fitting = null
+    IPilotFitting? fitting = null,
+    IPilotShipCompression? compression = null
 ) : ISelectedPilotCallHandler, IModuleEffectSource, IDisposable
 {
     internal const string CynoEffectName = "cynosuralGeneration";
@@ -40,6 +41,8 @@ internal sealed partial class CapitalTravelHandler(
         bool plain = keywords is null or { Count: 0 };
         switch (service, method)
         {
+            case ("inSpaceCompressionMgr", "CompressItemInSpace"):
+                return Compress(context, args, plain);
             case ("ship", "Drop"):
                 return Drop(context, args, plain);
             case ("jumpTimers", "GetTimers"):
@@ -261,11 +264,13 @@ internal sealed partial class CapitalTravelHandler(
                 InventoryChangesWire.NotifyItemChange(context, spent.Change, beforeFlight: true);
             }
         }
+        AdvanceCompressors(context);
         var current =
             pilot == 0 ? null
             : travel.Field(pilot) is { } field ? Effect(field)
             : travel.Portal(pilot) is { } portal ? Effect(portal)
-            : CapitalTravelRules.CombatCapital(context.Pilot.ShipGroupId) && travel.Mode(context.Pilot.ShipId) is { } mode ? Effect(mode)
+            : CapitalTravelRules.RestrictedCapital(context.Pilot.ShipGroupId) && travel.Mode(context.Pilot.ShipId) is { } mode
+                ? Effect(mode)
             : null;
         if (_lastEffect == current)
         {
@@ -277,7 +282,7 @@ internal sealed partial class CapitalTravelHandler(
             CapitalVisual(context.Flight, ended, false);
             if (
                 ended.ShipId == context.Pilot.ShipId
-                && ended.Effect is DogmaEffect.CapitalSiege or DogmaEffect.CapitalTriage
+                && ended.Effect is DogmaEffect.CapitalSiege or DogmaEffect.CapitalTriage or DogmaEffect.CapitalIndustrialCore
                 && fitting is not null
             )
             {
@@ -297,7 +302,7 @@ internal sealed partial class CapitalTravelHandler(
         var graphic = effect.Effect switch
         {
             DogmaEffect.CovertJumpPortalGeneration => "effects.JumpPortalBO",
-            DogmaEffect.CapitalSiege => "effects.SiegeMode",
+            DogmaEffect.CapitalSiege or DogmaEffect.CapitalIndustrialCore => "effects.SiegeMode",
             DogmaEffect.CapitalTriage => "effects.TriageMode",
             _ => null,
         };
@@ -339,9 +344,11 @@ internal sealed partial class CapitalTravelHandler(
     }
 
     public DogmaActiveEffect? ActiveEffect(DockedPilot pilot, long module) =>
-        _lastEffect is { } effect && effect.PilotId == pilot.PilotId && effect.ShipId == pilot.ShipId && effect.ModuleId == module
-            ? effect
-            : null;
+        _lastEffect is { } effect && effect.PilotId == pilot.PilotId && effect.ShipId == pilot.ShipId && effect.ModuleId == module ? effect
+        : _compressors.FirstOrDefault(cycle => cycle.PilotId == pilot.PilotId && cycle.ShipId == pilot.ShipId && cycle.ModuleId == module)
+            is { } compressor
+            ? Effect(compressor)
+        : null;
 
     public void CancelModule(PilotCallContext context, long module)
     {

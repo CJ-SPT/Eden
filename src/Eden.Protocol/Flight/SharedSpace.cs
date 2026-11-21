@@ -149,7 +149,8 @@ internal sealed record ShipContact(
     GateCamp? Camp = null,
     long GateCloakUntil = 0,
     long ConnectionId = 0,
-    Eden.Gameplay.Structures.PilotTether? Tether = null
+    Eden.Gameplay.Structures.PilotTether? Tether = null,
+    IReadOnlyList<ShipCompressionFacility>? Compression = null
 );
 
 internal sealed record MotionOrder(long Sequence, StampedDestinyUpdate Update);

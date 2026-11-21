@@ -721,7 +721,9 @@ public sealed partial class CapitalTravelTests
             return module;
         }
 
-        internal long PutInFighterBay(int type, int quantity)
+        internal long PutInFighterBay(int type, int quantity) => PutInTrainedHold(type, quantity, InventoryFlag.FighterBay);
+
+        internal long PutInTrainedHold(int type, int quantity, InventoryFlag flag)
         {
             var pilot = Db.Store.FindPilot(1000001)!;
             var attributes = Db.Services.GetRequiredService<IPilotFitting>().Attributes(type);
@@ -734,7 +736,13 @@ public sealed partial class CapitalTravelTests
                     .Where(req => req.Item1 > 0)
                     .ToArray()
             );
-            return Grant(pilot.PilotId, pilot.ShipId, InventoryFlag.FighterBay, type, quantity);
+            return Grant(pilot.PilotId, pilot.ShipId, flag, type, quantity);
+        }
+
+        internal long PutInEscortHold(int type, int quantity, InventoryFlag flag)
+        {
+            var pilot = Db.Store.FindPilot(1000002)!;
+            return Grant(pilot.PilotId, pilot.ShipId, flag, type, quantity);
         }
 
         internal long PutInCapitalCargo(int type, int quantity)
