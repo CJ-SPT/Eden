@@ -30,6 +30,7 @@ internal sealed partial class CapsuleerHauler
         }
         if (Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup)
         {
+            _work = Work with { SovereigntyExpedition = null, HomeDefenseAllianceId = null };
             _pilot = fleet.RecoverCorvette(world, catalog, pilotId, Pilot.ShipId, Pilot.DockedLocationId).Pilot;
             ResetTradeHull();
             Wait("Boarded the recovery corvette.");
@@ -49,7 +50,7 @@ internal sealed partial class CapsuleerHauler
                 return;
             }
             JoinCorporationAtDock();
-            if (TryCorporationRelocation() || TryCorporationSupply())
+            if (TryCorporationRelocation() || TrySovereigntyExpedition() || TryCorporationSupply())
             {
                 return;
             }

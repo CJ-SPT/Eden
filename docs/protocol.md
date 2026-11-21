@@ -29,6 +29,9 @@ probe resolution, native hacking and sale of recovered loot.
 [Bot wreck salvage and trade](protocol/capsuleers.md#bot-wreck-salvage-and-trade) covers paid salvager fitting,
 wreck recovery, restart and sale into funded station demand.
 
+[Fresh-world alliance and first-claim progression](protocol/sovereignty.md#fresh-world-alliance-and-first-claim-progression)
+covers founder contributions, native training, funded expedition stock, capture and the first dues payment.
+
 [Fresh-world frontier patrols](protocol/capsuleers.md#fresh-world-frontier-patrols) covers earned combat equipment,
 replacement reserves and station moves into lower-security space.
 

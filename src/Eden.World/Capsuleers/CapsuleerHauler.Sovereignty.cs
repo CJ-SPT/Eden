@@ -127,6 +127,7 @@ internal sealed partial class CapsuleerHauler
                     system,
                     qualified ? (HullClass)Pilot.ShipGroupId : HullClass.Hauler,
                     avoided,
+                    CapsuleerAlliances.FirstClaimJumpLimit(world),
                     policy: world.Settings.Capsuleers
                 )
             )

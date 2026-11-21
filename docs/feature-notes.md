@@ -28,6 +28,8 @@
   [Replacement markets](protocol/capsuleers.md#fresh-world-replacement-markets)
   Equipped bounty hunters with replacement reserves can move to reachable lower-security stations for belt patrols.
   [Frontier patrols](protocol/capsuleers.md#fresh-world-frontier-patrols)
+  Fresh bot corporations can fund operations from founder contributions and pursue trained, paid first claims.
+  [Fresh-world sovereignty](protocol/sovereignty.md#fresh-world-alliance-and-first-claim-progression)
   Fresh worlds prepare eligible unvisited high-security station systems while someone is playing. The administrator
   can cap admitted bots, set region or solar-system access, and control fresh-universe careers and autonomous organizations.
   [Population settings](world-configuration.md#autonomous-population)

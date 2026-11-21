@@ -49,10 +49,11 @@ public sealed class CapsuleerAllianceTests
     private const long PersonalContribution = 10000;
 
     [Theory]
-    [InlineData(false, true)]
-    [InlineData(true, true)]
-    [InlineData(false, false)]
-    public async Task FundedAllianceStagesOneHubAcrossRestartForAnUnobservedClaimableSystem(bool expedition, bool claimsEnabled)
+    [InlineData(false, true, false)]
+    [InlineData(true, true, false)]
+    [InlineData(false, false, false)]
+    [InlineData(true, true, true)]
+    public async Task FundedAllianceStagesOneHubAcrossRestartForAnUnobservedClaimableSystem(bool expedition, bool claimsEnabled, bool fresh)
     {
         const int station = 60015157;
         const int hubType = EntosisRules.HubTypeId;
@@ -229,7 +230,11 @@ public sealed class CapsuleerAllianceTests
             await restored.FlushAsync();
         }
 
-        using var delivered = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        if (fresh)
+        {
+            InstallFreshProgression(fixture.Database);
+        }
+        using var delivered = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true, loadConfiguration: !fresh);
         using var present = delivered.GetRequiredService<IHumanPresence>().Select(Observer, ObserverSystem);
         delivered.GetRequiredService<CorporationMaintenance>().Tick();
         delivered
@@ -250,7 +255,7 @@ public sealed class CapsuleerAllianceTests
             });
         if (expedition)
         {
-            await ExerciseExpedition(fixture, corporation, station, delivered, present);
+            await ExerciseExpedition(fixture, corporation, station, delivered, present, fresh);
         }
     }
 
@@ -259,7 +264,8 @@ public sealed class CapsuleerAllianceTests
         int corporation,
         int station,
         ServiceProvider delivered,
-        IHumanPresenceLease present
+        IHumanPresenceLease present,
+        bool fresh
     )
     {
         const int squall = CapsuleerAllianceRules.ExpeditionSquall;
@@ -277,12 +283,43 @@ public sealed class CapsuleerAllianceTests
         {
             setup.Set<PilotWallet>().Find(Observer)!.Cents = 1_000_000;
             budget = setup.Set<SavedCorporation>().Find(corporation)!.BalanceCents;
+            if (fresh)
+            {
+                var qualified = setup
+                    .Filter<SavedCapsuleerAgent>(agent => agent.Career == CapsuleerCareer.Hauling)
+                    .AsEnumerable()
+                    .First(agent => setup.Pilots.Find(agent.PilotId) is { } pilot && pilot.CorporationId == corporation);
+                long id = qualified.PilotId;
+                CapsuleerCommunityStore.GrantRequirements(setup, catalog, id, squall, []);
+                CapsuleerCommunityStore.GrantRequirements(setup, catalog, id, link, []);
+                int skill = CapsuleerIndustry.ExpeditionHaulingSkill(catalog);
+                var trained = setup.Set<PilotSkill>().Find(id, skill) ?? setup.Add(new PilotSkill { PilotId = id, TypeId = skill }).Entity;
+                trained.Points = TrainedSkill.PointsForLevel(
+                    catalog.FittingAttributes(skill)[Eden.Gameplay.Dogma.DogmaAttributeId.SkillTimeConstant],
+                    CapsuleerAllianceRules.ExpeditionHaulingSkillLevel
+                );
+            }
             foreach (var (type, quantity) in new[] { (squall, 1), (link, 1), (strontium, fuel) })
             {
                 var stock = InventoryPersistence.MergeOutput(setup, catalog, Observer, station, (int)InventoryFlag.Hangar, type, quantity);
                 sales.Add(new(stock.Item.Id, station, type, unitPrice, quantity));
             }
             setup.Commit();
+        }
+        long broker = 0;
+        if (fresh)
+        {
+            SavedPersonalOrder? SquallBid() =>
+                deliveryWorld.Economy.Inspect(world =>
+                    world
+                        .Filter<SavedPersonalOrder>(order => order.CorporationId == corporation)
+                        .SingleOrDefault(order => order.Bid && order.TypeId == squall && order.Status == PersonalOrderStatus.Open)
+                );
+            Advance(delivered, () => SquallBid() is not null, 300);
+            broker =
+                deliveryWorld.Economy.Inspect(world => budget - world.Set<SavedCorporation>().Find(corporation)!.BalanceCents)
+                - SquallBid()!.EscrowCents;
+            Assert.True(broker >= 0);
         }
         delivered.GetRequiredService<IPersonalMarket>().PlaceSell(Observer, sales, 7);
         Advance(
@@ -304,7 +341,7 @@ public sealed class CapsuleerAllianceTests
             );
             Assert.Null(world.Set<SavedSovereigntyHub>().Find(target));
             Assert.Equal(squall, world.Pilots.Find(courier)!.ActiveShip.TypeId);
-            Assert.Equal(budget - unitPrice * (fuel + 2), world.Set<SavedCorporation>().Find(corporation)!.BalanceCents);
+            Assert.Equal(budget - broker - unitPrice * (fuel + 2), world.Set<SavedCorporation>().Find(corporation)!.BalanceCents);
             Assert.Equal(
                 3,
                 world
@@ -317,7 +354,7 @@ public sealed class CapsuleerAllianceTests
         await deliveryWorld.FlushAsync();
         present.Dispose();
         delivered.Dispose();
-        using var claiming = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        using var claiming = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true, loadConfiguration: !fresh);
         using var observer = claiming.GetRequiredService<IHumanPresence>().Select(Observer, ObserverSystem);
         var claimWorld = claiming.GetRequiredService<LiveWorld>();
         var claims = claiming.GetRequiredService<ISovereignty>();
@@ -350,6 +387,21 @@ public sealed class CapsuleerAllianceTests
             return true;
         });
         Advance(claiming, () => claimWorld.HaulerCheckpoints.GetValueOrDefault(courier)?.Work.SovereigntyExpedition is null, 500);
+        if (fresh)
+        {
+            int alliance = claims.Read(target)!.AllianceId;
+            var bill = claimWorld.Economy.Inspect(world => world.Filter<SavedAllianceBill>(row => row.AllianceId == alliance).Single());
+            fixture.Clock.UtcNow = DateTimeOffset.FromFileTime(bill.DueAt);
+            var maintenance = claiming.GetRequiredService<CorporationMaintenance>();
+            maintenance.Tick();
+            maintenance.Tick();
+            Assert.Equal(
+                corporation,
+                claimWorld.Economy.Inspect(world => world.Set<SavedAllianceBill>().Find(bill.Id)!.PaidByCorporationId)
+            );
+            await claimWorld.FlushAsync();
+            return;
+        }
         long lossTime = fixture.Clock.Now;
         long beforeReplacement;
         using (var loss = claimWorld.Economy.Begin())
@@ -618,9 +670,10 @@ public sealed class CapsuleerAllianceTests
     }
 
     [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task FundedNeighborsFormAndGrowAnAllianceThroughDueApplicationsAcrossRestart(bool automatic)
+    [InlineData(true, false)]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    public async Task FundedNeighborsFormAndGrowAnAllianceThroughDueApplicationsAcrossRestart(bool automatic, bool fresh)
     {
         using CapsuleerHaulerTests.Fixture fixture = new(legacyFounders: false, isolateRoute: true);
         CapsuleerCorporationTests.PrepareExistingSave(fixture);
@@ -629,7 +682,8 @@ public sealed class CapsuleerAllianceTests
             catalog.Database.ExecuteSqlRaw(
                 """
                 INSERT OR IGNORE INTO ItemType(Id,Name,GroupId) VALUES (3732,'Empire Control',257);
-                INSERT OR REPLACE INTO TypeAttribute(ItemTypeId,AttributeId,Value) VALUES (3732,275,5);
+                INSERT OR REPLACE INTO TypeAttribute(ItemTypeId,AttributeId,Value) VALUES (3732,275,5),(3732,180,166),(3732,181,164);
+                INSERT OR REPLACE INTO SourceRecord VALUES ('client/types','3732',json_object('published',1));
                 INSERT INTO Celestial(Id,SolarSystemId,TypeId,GroupId,Radius,X,Y,Z) VALUES
                     (55000001,31000002,16,10,3500,0,0,0),(55000002,31000005,16,10,3500,0,0,0),
                     (55000003,31000003,16,10,3500,0,0,0),(55000004,31000005,16,10,3500,0,0,0);
@@ -662,6 +716,12 @@ public sealed class CapsuleerAllianceTests
             }
         }
 
+        if (fresh)
+        {
+            // Use the same funded corporations to exercise the fresh skill gate independently of years of sandbox income.
+            InstallFreshProgression(fixture.Database);
+        }
+
         (int Id, long Ceo) founder;
         (int Id, long Ceo) wing;
         (int Id, long Ceo) third;
@@ -671,7 +731,7 @@ public sealed class CapsuleerAllianceTests
         long billDue;
         long reserve = AllianceBillingRules.Amount(CapsuleerAllianceRules.FoundingCorporations);
         long shortfall = AllianceRules.CreationFeeCents - PersonalContribution;
-        using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true))
+        using (var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true, loadConfiguration: !fresh))
         {
             var live = host.GetRequiredService<LiveWorld>();
             var maintenance = host.GetRequiredService<CorporationMaintenance>();
@@ -722,6 +782,41 @@ public sealed class CapsuleerAllianceTests
                 );
                 return;
             }
+            if (fresh)
+            {
+                Assert.True(fixture.Database.Settings.FreshUniverse);
+                Assert.Empty(alliances.List());
+                using (var qualification = live.Economy.Begin(TransactionParticipants.None))
+                {
+                    Assert.Null(qualification.Set<PilotSkill>().Find(founder.Ceo, AllianceRules.EmpireControlSkill));
+                    Assert.Equal(shortfall + reserve, qualification.Set<SavedCorporation>().Find(founder.Id)!.BalanceCents);
+                    qualification.Add(
+                        new PilotSkill
+                        {
+                            PilotId = founder.Ceo,
+                            TypeId = AllianceRules.EmpireControlSkill,
+                            Points = TrainedSkill.PointsForLevel(5, AllianceRules.RequiredEmpireControlLevel) - 100,
+                        }
+                    );
+                    qualification.Commit();
+                }
+                fixture.Clock.Seconds += 60;
+                maintenance.Tick();
+                Assert.Empty(alliances.List());
+                long deadline = live.Economy.Inspect(world =>
+                {
+                    var queued = Assert.Single(world.Filter<QueuedLevel>(row => row.PilotId == founder.Ceo));
+                    Assert.Equal(AllianceRules.EmpireControlSkill, queued.TypeId);
+                    Assert.Equal(AllianceRules.RequiredEmpireControlLevel, queued.Level);
+                    return Assert.IsType<long>(queued.EndTime);
+                });
+                fixture.Clock.UtcNow = DateTimeOffset.FromFileTime(deadline);
+                fixture.Clock.Seconds += 60;
+                maintenance.Tick();
+                fixture.Clock.Seconds += 60;
+                maintenance.Tick();
+            }
+
             var alliance = Assert.Single(alliances.List());
             allianceId = alliance.Id;
             Assert.Equal(founder.Id, alliance.ExecutorCorporationId);
@@ -749,7 +844,7 @@ public sealed class CapsuleerAllianceTests
             await live.FlushAsync();
         }
 
-        using var reopened = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        using var reopened = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true, loadConfiguration: !fresh);
         var restored = reopened.GetRequiredService<LiveWorld>();
         var worker = reopened.GetRequiredService<CorporationMaintenance>();
         var roster = reopened.GetRequiredService<IAlliances>();
@@ -809,6 +904,17 @@ public sealed class CapsuleerAllianceTests
             return true;
         });
         await restored.FlushAsync();
+    }
+
+    private static void InstallFreshProgression(WorldDatabase database)
+    {
+        var active = database.Configuration.Active!;
+        database.Configuration.Install(
+            active with
+            {
+                Draft = active.Draft with { Settings = active.Draft.Settings with { FreshUniverse = true } },
+            }
+        );
     }
 
     private static (int Id, long Ceo) Charter(
