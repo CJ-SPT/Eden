@@ -31,7 +31,7 @@ using Xunit.Abstractions;
 
 namespace Eden.Protocol.Tests.Industry;
 
-public sealed class FreshUniverseTests(ITestOutputHelper output)
+public sealed partial class FreshUniverseTests(ITestOutputHelper output)
 {
     // The pinned catalog's starter system and a station with reprocessing, manufacturing and a market.
     private const int StarterSystem = 30015042;
@@ -307,7 +307,7 @@ public sealed class FreshUniverseTests(ITestOutputHelper output)
         long id = live.Economy.Inspect(world =>
             world
                 .Filter<SavedCapsuleerAgent>(agent => agent.CommunitySystemId == secondSystem)
-                .Single(agent => agent.Slot == StarterIndustryRules.BuyerSlot)
+                .Single(agent => agent.Career == CapsuleerCareer.Mining && agent.Slot == StarterIndustryRules.BuyerSlot)
                 .PilotId
         );
         var points = host.GetRequiredService<IPilotFreeSkillPoints>();

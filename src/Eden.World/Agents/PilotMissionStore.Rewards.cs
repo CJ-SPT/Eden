@@ -30,7 +30,8 @@ internal sealed partial class PilotMissionStore
         int level,
         bool storyline,
         long now,
-        MissionProfile? continuation = null
+        MissionProfile? continuation = null,
+        int? courierDestination = null
     )
     {
         bool fixedAgent = agent.Type == AgentType.Event && MissionCatalog.ForFixedAgent(catalog, agent.Id).Any();
@@ -87,7 +88,11 @@ internal sealed partial class PilotMissionStore
             agent.Type == AgentType.FactionalWarfare
                 ? MilitiaDestination(world, catalog, station!.SolarSystemId, (MilitiaFaction)agent.FactionId!.Value, sequence)
                 : null;
-        if (profile.Kind == MissionKind.Courier)
+        if (profile.Kind == MissionKind.Courier && courierDestination is int selected)
+        {
+            destination = catalog.RequireStation(selected);
+        }
+        else if (profile.Kind == MissionKind.Courier)
         {
             var neighbors = catalog.GatesInSystem(station!.SolarSystemId).Select(g => g.DestinationSystemId).ToHashSet();
             var destinations = catalog

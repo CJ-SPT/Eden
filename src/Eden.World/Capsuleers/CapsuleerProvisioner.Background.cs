@@ -35,6 +35,7 @@ internal sealed partial class CapsuleerProvisioner
                 return null;
             }
             _ = CapsuleerProvisioningCatalog.StarterIndustry(catalog, system);
+            _ = FreshCareerRoutes.Read(catalog, system);
             using var freshCoordinator = synchronization.TryEnterShared("starter capsuleer preparation");
             using var freshSystem = freshCoordinator is null ? null : synchronization.TryEnterSystems("starter capsuleer system", [system]);
             return freshSystem is not null && occupied() ? ProvisionPrepared(system, catalog) : null;

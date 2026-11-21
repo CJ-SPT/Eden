@@ -20,6 +20,8 @@
   from opposing-militia combat, and compare kills and victory points in the dashboard. [Faction Warfare](protocol/faction-warfare.md)
 - **Simulated capsuleers.** Encounter NPC pilots that mine, haul goods, form corporations, and take part in regional conflicts.
   Corporations can build and buy reserves based on their pilots' current and lost equipment.
+  Fresh-world pilots can earn their first industrial or combat frigate through deliveries or bounties.
+  [Fresh-world careers](protocol/capsuleers.md#fresh-universe-hauling-and-bounty-careers) ·
   [Capsuleer population](capsuleer-population.md) · [Fleet supply](protocol/capsuleers.md#catalog-driven-fleet-supply-and-production) ·
   [Regional conflicts](protocol/capsuleers.md#regional-bot-conflicts--november-17-2026)
 

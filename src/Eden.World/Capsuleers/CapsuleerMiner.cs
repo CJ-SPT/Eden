@@ -878,7 +878,12 @@ internal sealed partial class CapsuleerMiner(
                 fresh && CapsuleerProvisioningCatalog.StarterIndustry(_operation.Catalog, Pilot.SystemId).HomeStationId == Pilot.StationId;
             if (!fresh || starterTradeSettled)
             {
-                var acquisition = industry.AdvanceCareerShip(resident, _operation.Catalog, Pilot, training.Plan, Now, starterWorkshop);
+                var fleetDemand =
+                    starterWorkshop && starterTradeSettled
+                        ? industry.WorkStarterFleetOrders(resident, _operation.Catalog, Pilot, Now)
+                        : null;
+                var acquisition =
+                    fleetDemand ?? industry.AdvanceCareerShip(resident, _operation.Catalog, Pilot, training.Plan, Now, starterWorkshop);
                 _operation.MarketChanged |= acquisition.MarketChanged;
                 if (starterWorkshop)
                 {
