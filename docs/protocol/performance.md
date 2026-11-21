@@ -6779,6 +6779,11 @@ save. The admission window waits for the required number of scheduled pilots bef
 The replay records admission time, actual paid mining collections, process working set, queue age, latency, and
 checkpoint costs. Market and population maintenance can run during the measured window.
 
+The optional `EDEN_BOT_REPLAY_PREFILL_ROSTER=1` stage completes the requested fresh roster through the
+resident provisioner before the timed workload. With `EDEN_BOT_REPLAY_IMMUTABLE_CATALOG_LINKS=1` the
+runner links catalogs from a read-only fixture after checking manifest hashes and rollback journal headers.
+Keep the world, skills editor and active marker in the private replay directory.
+
 The merged market fix at `63a030c0` ran on the dedicated host against a private copy of its 2,418-pilot fresh
 save. The 180-second run recovered from its saved backlog in 58.1 seconds and completed 153,218 actions
 and 4,004 paid mining collections. In the final 90 seconds, due age p95 was 606 ms and peaked at 1.16 s. Warm
@@ -6799,6 +6804,53 @@ The scheduler reached 9,993 of the 10,000 saved pilots. It held the remaining se
 had thousands of due jobs. That diagnostic ended at the admission plateau before the timed window. The
 read-only catalog link integration test passed on Linux. The linked fixture kept its working copy of the
 world database and its own mutable skill state.
+
+With disk-backed checkpoint capture and the larger static geometry cache at `08aef8b9`, a ten-minute
+Fresh Universe replay retained 7,500 scheduled pilots and completed 1,567,231 actions, including 46,965
+paid mining collections. It wrote 41 checkpoints with zero action failures and no OOM kill. All final
+301 queue samples stayed below one second. Queue age p95 was 343 ms and the maximum was 726 ms.
+Warm frame and market p99 were 16.5 and 30.5 ms. Peak process working set was 3.87 GiB and the lowest
+host available memory was 3.29 GiB. One arrival at second 37 held world ownership for 334 ms and failed
+the 250 ms ownership assertion. The action reported zero SQL commands and zero GC pause during the hold.
+The workload used one in-process observer and normal market and population maintenance.
+
+The matched ten-minute 10,000-pilot replay at `19b88179` used the original frozen starter workload again.
+It admitted all pilots in 27.4 seconds and retained them throughout. It completed 2,084,637 actions,
+58,823 paid mining collections, and 41 checkpoints, with zero action failures and no OOM kills. Peak
+process working set was 4.02 GiB and the host had at least 3.08 GiB available. Warm frame and market p99
+were 68.1 and 58.3 ms. The final five-minute queue p95 fell from 166.9 to 25.5 seconds. It ended
+25.2 seconds behind and still exceeded the one-second deadline as later mining and combat work matured.
+Ownership holds also exceeded 250 ms. The revised trial used 7 GiB of container memory and optional
+swap, disk-backed captures, a larger retained fit cache, and fit reuse within docked resupply.
+
+The late replay profile also showed expensive ship deletions in detached checkpoint projection. A
+matched SQLite probe with 30,000 ships and 128 deletions used a full ship scan with the correlated
+predicate. The revised primary-key lookup applied the same deletions and brought the isolated median
+from about 1.35 seconds to less than 0.1 ms. Existing atomic-install checks now cover both capture modes.
+The on-disk capture closes and syncs the projected image before installing it through the same durable
+rotation, saving the second database copy.
+
+The 9,000-pilot replay at `99cdadd3` used 7,500 pilots from a later checkpoint and added 1,500 ordinary
+founders. All 9,000 remained scheduled over ten minutes. The replay completed 1,747,194 actions and 55,129
+paid mining collections, with 41 checkpoints, zero action failures and no OOM kills. The final window
+had queue age p95 of 652 ms and an ending age of 168 ms. Two of 301 samples exceeded one second,
+with a maximum of 1.10 seconds. Frame and market request p99 were 67.0 and 38.9 ms. Peak process
+working set was 3.99 GiB and host available memory stayed above 3.14 GiB.
+
+The 15-minute Fresh Universe replay at `338d74d2` used the same frozen 10,000-pilot workload and the
+indexed ship deletion, direct checkpoint installation, quiet defense reads and scoped population
+invalidation. Admission took 22.0 seconds after preparing the starter roster. All 10,000 pilots stayed
+scheduled while completing 3,220,428 actions and 94,878 paid mining collections. The replay wrote 61
+checkpoints with zero action failures and no OOM kills. Final five-minute queue age p95 was 534 ms,
+with three of 301 samples above one second, a 1.24-second maximum and a 450 ms ending age. The queue
+recovered after the spikes. Frame and market request p99 were 13.4 and 51.6 ms. Peak process working
+set was 4.04 GiB and the lowest host available memory was 3.08 GiB.
+
+The strict replay failed its one-second queue-age assertion. The diagnostics also recorded short
+world-ownership overruns during managed GC pauses. The replay sustained its population without a
+growing queue, which supports the 10,000-pilot operating cap for this workload. Both atomic checkpoint
+replacement cases passed on Linux. The service can gradually found additional pilots on the existing
+save when players activate the simulation.
 
 ### Live acceptance
 
