@@ -1004,6 +1004,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 - [Capital logistics and capital ships, November 20, 2026](protocol/capital-logistics.md)
 - [Dreadnoughts and force auxiliaries](protocol/capital-logistics.md#dreadnoughts-and-force-auxiliaries)
 - [Carrier launch decks and light attack fighters](protocol/capital-logistics.md#carrier-launch-decks-and-light-attack-fighters)
+- [Fighter rocket and torpedo salvos](protocol/capital-logistics.md#fighter-rocket-and-torpedo-salvos)
 - [Rorqual industrial core and shipboard compression](protocol/capital-logistics.md#rorqual-industrial-core-and-shipboard-compression)
 - [Mobile jump clones](protocol/capital-logistics.md#mobile-jump-clones)
 - [Stargate handoff timing, November 14, 2026](protocol/navigation.md#stargate-handoff-timing-november-14-2026)

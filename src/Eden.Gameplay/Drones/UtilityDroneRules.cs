@@ -55,7 +55,8 @@ public sealed record DroneWork(
     long DueAt = 0,
     bool Returning = false,
     IReadOnlyList<DroneCargo>? Cargo = null,
-    FighterMobilityCycle? FighterMobility = null
+    FighterMobilityCycle? FighterMobility = null,
+    FighterSalvoCycle? FighterSalvo = null
 );
 
 public static class UtilityDroneRules

@@ -273,6 +273,7 @@ public enum DogmaAttributeId
     EcmJamDuration = 2822,
     FighterMissilesExplosionRadius = 2125,
     FighterMissilesExplosionVelocity = 2126,
+    FighterMissilesResistanceAttribute = 2170,
     FighterMissilesDamageMultiplier = 2130,
     FighterMissilesReductionFactor = 2127,
     FighterMissilesReductionSensitivity = 2128,

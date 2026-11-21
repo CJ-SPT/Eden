@@ -43,6 +43,7 @@ internal static partial class DroneCatalog
             return Eden.World.Fighters.FighterCombatCatalog.Profile(type, source, attributes) with
             {
                 Mobility = Eden.World.Fighters.FighterMobilityCatalog.Read(catalog, typeId, attributes),
+                Salvo = Eden.World.Fighters.FighterSalvoCatalog.Read(catalog, typeId, attributes),
             };
         }
         if (UtilityDroneRules.Group(type.GroupId))

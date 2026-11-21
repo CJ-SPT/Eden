@@ -75,6 +75,12 @@ internal static partial class DroneCatalog
             {
                 Damage = damage,
                 FighterAttack = weapon with { Damage = damage },
+                Salvo = profile.Salvo is { } salvo
+                    ? salvo with
+                    {
+                        Warhead = salvo.Warhead with { Damage = salvo.Warhead.Damage.Scale(damageBonus) },
+                    }
+                    : null,
                 MaximumSpeed = profile.MaximumSpeed * speedBonus,
                 OrbitSpeed = profile.OrbitSpeed * speedBonus,
             };

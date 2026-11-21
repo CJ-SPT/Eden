@@ -78,7 +78,13 @@ internal sealed partial class PilotDroneStore
             var work = ReadWork(drone);
             WriteWork(
                 drone,
-                new(DueAt: work.DueAt, Returning: work.Cargo?.Count > 0, Cargo: work.Cargo, FighterMobility: work.FighterMobility)
+                new(
+                    DueAt: work.DueAt,
+                    Returning: work.Cargo?.Count > 0,
+                    Cargo: work.Cargo,
+                    FighterMobility: work.FighterMobility,
+                    FighterSalvo: work.FighterSalvo
+                )
             );
         }
     }

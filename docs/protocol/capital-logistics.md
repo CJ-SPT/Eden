@@ -717,6 +717,33 @@ suites, formatting and `git diff --check` passed.
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
+## Fighter rocket and torpedo salvos
+
+Build 3662168 `fighterabilitiesbytype` assigns slot two to Heavy Rocket Salvo (ability 33)
+and Torpedo Salvo (ability 19). Both use dogma effect 6431. Templar I has 18 charges,
+a 14-second attack cycle and four seconds per rearmed charge. Cyclops I has nine
+charges, a 40-second attack cycle and six seconds per rearmed charge. The pinned
+`fightersSvc.pyj` submits `CmdActivateAbilitySlots(ids, 2, targetID)`.
+`shipFighterState.pyj` receives the remaining charge count, cycle start, duration
+and rearm interval. EVE.js `fighterRuntime.js` and `fighterDogma.js` corroborate the
+single impact, timed charge recovery and target resistance attribute.
+[CCP Fighter Controls](https://support.eveonline.com/hc/en-us/articles/207659599-Fighter-Controls)
+
+An eligible squadron can fire at a locked, valid target within its pinned surface
+range while continuing its primary attack. One activation spends one charge and
+settles one squadron-scaled missile hit through normal combat and Crimewatch.
+Torpedoes use the target's anti-capital missile damage multiplier. Deactivation
+keeps the original cycle deadline. The existing drone checkpoint retains charges,
+deadlines and mobility state together. Closing the client keeps the same deadlines.
+
+**Automated validation.** The two exact Templar and Cyclops cases passed in 9.17 seconds.
+They cover lock refusal, damage, concurrent primary attacks, cancellation and the rearm
+boundary after a restart. The 74-case fighter, resident drone, pilot drone and smartbomb
+filter passed in 77.66 seconds after a 19.98-second build. Both Python suites, formatting
+and `git diff --check` passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Shared fleet hangars
 
 Build 3662168 `shipConfigSvc.pyj` uses `ship.GetShipConfiguration(shipID)` and sends a one-key dictionary

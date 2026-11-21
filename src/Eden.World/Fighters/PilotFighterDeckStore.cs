@@ -96,6 +96,11 @@ internal sealed class PilotFighterDeckStore(WorldDatabase database, TimeProvider
             drone.ShotTargetId = 0;
             drone.SpeedLimit = profile.OrbitSpeed;
             drone.Orbiting = true;
+            var work = PilotDroneStore.ReadWork(drone);
+            if (work.FighterSalvo is null && profile.Salvo is { } salvo)
+            {
+                PilotDroneStore.WriteWork(drone, work with { FighterSalvo = FighterSalvoCycle.Full(salvo) });
+            }
             var change = new InventoryChange(PilotInventoryStore.Read(catalog, item), before);
             launches.Add(new(new(flag, item.Id, item.TypeId, item.Quantity, drone.Activity), change));
         }
@@ -113,11 +118,14 @@ internal sealed class PilotFighterDeckStore(WorldDatabase database, TimeProvider
             .Select(pair =>
             {
                 var item = pair.Item!;
-                var cycle = now > 0 ? PilotDroneStore.ReadWork(pair.Drone).FighterMobility : null;
+                var work = now > 0 ? PilotDroneStore.ReadWork(pair.Drone) : null;
+                var cycle = work?.FighterMobility;
                 return new FighterInSpace(item.FlagId, item.Id, item.TypeId, item.Quantity, pair.Drone.Activity)
                 {
                     Mobility = cycle?.ReadyAt > now ? cycle : null,
                     MobilityActive = cycle?.Active(now) == true,
+                    Salvo = work?.FighterSalvo?.Refresh(now),
+                    SalvoActive = work?.FighterSalvo?.Active(now) == true,
                 };
             });
 

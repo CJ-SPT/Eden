@@ -18,6 +18,8 @@ public sealed record FighterInSpace(int Flag, long SquadronId, int TypeId, int C
 {
     public FighterMobilityCycle? Mobility { get; init; }
     public bool MobilityActive { get; init; }
+    public FighterSalvoCycle? Salvo { get; init; }
+    public bool SalvoActive { get; init; }
 }
 
 public sealed record FighterDeckSnapshot(IReadOnlyList<FighterTube> Tubes, IReadOnlyList<FighterInSpace> Squadrons);
@@ -38,6 +40,7 @@ public interface IPilotFighterDeck
 public interface IPilotFighterOrders
 {
     void OrderFighters(long pilotId, IReadOnlyList<long> squadrons, DroneOrder order, long? target, IReadOnlySet<long> locks, long now);
+    void SetSalvo(long pilotId, long shipId, IReadOnlyList<long> squadrons, long? target, bool locked, long now);
 }
 
 public static class FighterDeckRules

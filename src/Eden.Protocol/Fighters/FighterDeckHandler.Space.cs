@@ -61,6 +61,18 @@ internal sealed partial class FighterDeckHandler
                 Advance(context);
                 flight.RefreshDrones();
                 return new BlueMap<long, object?>(squads.ToDictionary(id => id, _ => (object?)null));
+            case ("CmdActivateAbilitySlots", [var fighters, (long)FighterSalvoCycle.Slot, long salvoTarget]):
+                var firing = ReadSelection(fighters);
+                targeting.Advance(context);
+                orders.SetSalvo(pilot.PilotId, pilot.ShipId, firing, salvoTarget, targeting.IsLocked(salvoTarget), Now);
+                Advance(context);
+                flight.RefreshDrones();
+                return new BlueMap<long, object?>(firing.ToDictionary(id => id, _ => (object?)null));
+            case ("CmdDeactivateAbilitySlots", [var fighters, (long)FighterSalvoCycle.Slot]):
+                var ceasing = ReadSelection(fighters);
+                orders.SetSalvo(pilot.PilotId, pilot.ShipId, ceasing, null, false, Now);
+                Advance(context);
+                return new BlueMap<long, object?>(ceasing.ToDictionary(id => id, _ => (object?)null));
             case ("ExecuteMovementCommandOnFighters", [var fighters, var instruction, long home, _])
                 when BlueMarshal.Text(instruction) == "ORBIT" && home == pilot.ShipId:
                 orders.OrderFighters(pilot.PilotId, ReadSelection(fighters), DroneOrder.Orbit, null, new HashSet<long>(), Now);
@@ -106,6 +118,10 @@ internal sealed partial class FighterDeckHandler
             {
                 context.NotificationsBeforeFlight.Add(new FighterMobilityEnded(squad.SquadronId));
             }
+            if (squad.SalvoActive && present.GetValueOrDefault(squad.SquadronId)?.SalvoActive != true)
+            {
+                context.NotificationsBeforeFlight.Add(new FighterSalvoEnded(squad.SquadronId));
+            }
             if (!present.ContainsKey(squad.SquadronId))
             {
                 context.NotificationsBeforeFlight.Add(new FighterRemoved(squad));
@@ -131,6 +147,10 @@ internal sealed partial class FighterDeckHandler
             if (squad is { MobilityActive: true, Mobility: { } cycle } && old?.Mobility != cycle)
             {
                 context.NotificationsBeforeFlight.Add(new FighterMobilityStarted(squad.SquadronId, cycle));
+            }
+            if (squad is { SalvoActive: true, Salvo: { } salvo } && old?.Salvo?.StartedAt != salvo.StartedAt)
+            {
+                context.NotificationsBeforeFlight.Add(new FighterSalvoStarted(squad.SquadronId, salvo));
             }
             if (old is null || (old.Activity == DroneActivity.ReturningToBay) != (squad.Activity == DroneActivity.ReturningToBay))
             {
@@ -190,17 +210,29 @@ internal sealed record FighterAttackEnded(long Squadron) : PilotNotification("On
 
 internal static class FighterAbilityState
 {
-    internal static List<object?> For(FighterInSpace squadron) =>
-        [
-            BlueEmpty.Dictionary.ToBlue(),
-            new BlueMap<int, object?>(
-                squadron.Mobility is { } cycle
-                    ? new Dictionary<int, object?> { [FighterMobilityRules.Slot] = Cooldown(cycle) }
-                    : new Dictionary<int, object?>()
-            ).ToBlue(),
-        ];
+    internal static List<object?> For(FighterInSpace squadron)
+    {
+        Dictionary<int, object?> charges = [];
+        Dictionary<int, object?> cooldowns = [];
+        if (squadron.Mobility is { } cycle)
+        {
+            cooldowns[FighterMobilityRules.Slot] = Cooldown(cycle);
+        }
+        if (squadron.Salvo is { } salvo)
+        {
+            charges[FighterSalvoCycle.Slot] = salvo.Charges;
+            if (SalvoCooldown(salvo) is { } cooldown)
+            {
+                cooldowns[FighterSalvoCycle.Slot] = cooldown;
+            }
+        }
+        return [new BlueMap<int, object?>(charges).ToBlue(), new BlueMap<int, object?>(cooldowns).ToBlue()];
+    }
 
     internal static List<object?> Cooldown(FighterMobilityCycle cycle) => [cycle.EndsAt, cycle.ReadyAt];
+
+    internal static List<object?>? SalvoCooldown(FighterSalvoCycle cycle) =>
+        cycle.RearmAt > 0 ? [cycle.RearmAt - cycle.RearmTicks, cycle.RearmAt] : null;
 }
 
 internal sealed record FighterMobilityStarted(long Squadron, FighterMobilityCycle Cycle)
@@ -220,4 +252,22 @@ internal sealed record FighterMobilityStarted(long Squadron, FighterMobilityCycl
 internal sealed record FighterMobilityEnded(long Squadron) : PilotNotification("OnFighterAbilitySlotDeactivated")
 {
     public override object?[] Arguments => [Squadron, FighterMobilityRules.Slot, null];
+}
+
+internal sealed record FighterSalvoStarted(long Squadron, FighterSalvoCycle Cycle) : PilotNotification("OnFighterAbilitySlotActivated")
+{
+    public override object?[] Arguments =>
+        [
+            Squadron,
+            FighterSalvoCycle.Slot,
+            Cycle.Charges,
+            Cycle.StartedAt,
+            (Cycle.EndsAt - Cycle.StartedAt) / TimeSpan.TicksPerMillisecond,
+            FighterAbilityState.SalvoCooldown(Cycle),
+        ];
+}
+
+internal sealed record FighterSalvoEnded(long Squadron) : PilotNotification("OnFighterAbilitySlotDeactivated")
+{
+    public override object?[] Arguments => [Squadron, FighterSalvoCycle.Slot, null];
 }
