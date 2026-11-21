@@ -17,7 +17,8 @@
   [Sovereignty](protocol/sovereignty.md)
 - **Faction Warfare.** Enlist as a pilot, corporation, or alliance. Capture complexes and battlefields, fight for
   Advantage, and contest infrastructure hubs in both empire warzones. Run militia missions, earn ranks and LP
-  from opposing-militia combat, and compare kills and victory points in the dashboard. [Faction Warfare](protocol/faction-warfare.md)
+  from opposing-militia combat, and compare kills and victory points in the dashboard. Theaters of War shows shipcasters
+  in their unbuilt state. [Faction Warfare](protocol/faction-warfare.md)
 - **Simulated capsuleers.** Encounter NPC pilots that mine, haul goods, form corporations, and take part in regional conflicts.
   Corporations can build and buy reserves based on their pilots' current and lost equipment.
   Fresh-world pilots can earn their first industrial or combat frigate through deliveries or bounties.
