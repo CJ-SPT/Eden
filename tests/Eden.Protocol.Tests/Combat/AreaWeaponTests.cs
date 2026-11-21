@@ -245,6 +245,19 @@ public sealed partial class AreaWeaponTests
         store.Advance(SystemId, fixture.Clock.Now);
         fixture.Clock.AdvanceWallTime(TimeSpan.FromSeconds(40) - TimeSpan.FromTicks(1));
         Assert.Equal(speed * .45, fitting.ShipAttributes(victim.PilotId)[DogmaAttributeId.MaxVelocity], 6);
+        using (live.Enter(systemId: SystemId))
+        {
+            LiveTimedModules timers = new(live, SystemId);
+            long now = fixture.Clock.Now;
+            timers.Expire(now);
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            for (int check = 0; check < 1024; check++)
+            {
+                timers.Expire(now);
+            }
+            long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            Assert.InRange(allocated, 0, 1024);
+        }
         fixture.Clock.AdvanceWallTime(TimeSpan.FromTicks(1));
         Assert.Equal(speed, fitting.ShipAttributes(victim.PilotId)[DogmaAttributeId.MaxVelocity]);
         using var snapshot = Assert.IsType<WorldSnapshot>(live.CaptureSnapshot());

@@ -268,8 +268,10 @@ public sealed partial class ServerPerformanceReplayTests
                 populationMaintenance.Start();
             }
             TimeSpan startedCpu = Process.GetCurrentProcess().TotalProcessorTime;
-            long startedAllocations = GC.GetTotalAllocatedBytes();
+            // The approximate counter can stay flat for several samples while bots continue to work.
+            long startedAllocations = GC.GetTotalAllocatedBytes(precise: true);
             long timedAllocations = 0;
+            bool allocationSamplesMonotonic = true;
             long arrivalsStarted = Stopwatch.GetTimestamp();
             Stopwatch elapsed = Stopwatch.StartNew();
             ConcurrentQueue<ThroughputRequest> requests = new();
@@ -346,7 +348,9 @@ public sealed partial class ServerPerformanceReplayTests
                 var blockingCollection = GC.GetGCMemoryInfo(GCKind.FullBlocking);
                 var backgroundCollection = GC.GetGCMemoryInfo(GCKind.Background);
                 var fullCollection = blockingCollection.Index > backgroundCollection.Index ? blockingCollection : backgroundCollection;
-                timedAllocations = GC.GetTotalAllocatedBytes() - startedAllocations;
+                long sampleAllocations = GC.GetTotalAllocatedBytes(precise: true) - startedAllocations;
+                allocationSamplesMonotonic &= sampleAllocations >= timedAllocations;
+                timedAllocations = sampleAllocations;
                 double delay = TimeSpan.FromTicks(state.OldestDelayTicks).TotalMilliseconds;
                 if (delay < 1000)
                 {
@@ -461,8 +465,11 @@ public sealed partial class ServerPerformanceReplayTests
                         ReportedPilots = LatencyReportedPilots,
                         Communities = communities,
                         CpuMilliseconds = (Process.GetCurrentProcess().TotalProcessorTime - startedCpu).TotalMilliseconds,
-                        AllocatedBytes = GC.GetTotalAllocatedBytes() - startedAllocations,
-                        BytesPerCompletedAction = timedAllocations / (double)Math.Max(1, previousCompleted - completedAtStart),
+                        AllocatedBytes = GC.GetTotalAllocatedBytes(precise: true) - startedAllocations,
+                        AllocationSamplesMonotonic = allocationSamplesMonotonic,
+                        BytesPerCompletedAction = allocationSamplesMonotonic
+                            ? timedAllocations / (double)Math.Max(1, previousCompleted - completedAtStart)
+                            : (double?)null,
                     }
                 )
             );

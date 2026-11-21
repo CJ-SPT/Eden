@@ -54,6 +54,17 @@ internal abstract class WorldAction
 
     internal abstract int PilotCount { get; }
 
+    internal virtual (int OldCount, int NewCount, IReadOnlyList<long> Recipients) MembershipChangeAudience(int previous, int next) =>
+        (
+            Pilots.Count(p => p.CorporationId == previous),
+            Pilots.Count(p => p.CorporationId == next),
+            Pilots
+                .Where(p => p.CorporationId == previous || p.CorporationId == next)
+                .Where(p => p.AccountId > 0)
+                .Select(p => p.Id)
+                .ToArray()
+        );
+
     internal virtual bool PilotExists(long id) => Filter<Pilot>(p => p.Id == id).Any();
 
     internal virtual long? SkillPoints(long pilot, int type) => Set<PilotSkill>().Find(pilot, type)?.Points;

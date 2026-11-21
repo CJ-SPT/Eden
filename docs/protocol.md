@@ -825,6 +825,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 - [Multi-buy price-history queries (November 15, 2026)](protocol/performance.md#multi-buy-price-history-queries-november-15-2026)
 - [Mining-fit skill-point stalls (November 13, 2026)](protocol/performance.md#mining-fit-skill-point-stalls-november-13-2026)
 - [Hauler traffic identity selection](protocol/performance.md#hauler-traffic-identity-selection)
+- [Bot corporation recruitment and timed effects](protocol/performance.md#bot-corporation-recruitment-and-timed-effects)
 - [Allocation during bot admission and market settlement](protocol/performance.md#allocation-during-bot-admission-and-market-settlement)
 - [Player bot allocation and queue delay](protocol/performance.md#player-bot-allocation-and-queue-delay)
 - [Offscreen bot scheduling at ten thousand pilots](protocol/performance.md#offscreen-bot-scheduling-at-ten-thousand-pilots)

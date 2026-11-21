@@ -12,10 +12,15 @@ internal sealed class LiveTimedModules(LiveWorld owner, int? system = null)
         var modules = economy.DueModules(system, now);
         var structureTackles = economy.DueStructureTackles(system, now);
         var areaContacts = economy.DueAreaContacts(system, now);
-        if (bursts.Length == 0 && modules.Length == 0 && areaContacts.Length == 0 && structureTackles.Length == 0)
+        if (bursts.Length != 0 || modules.Length != 0 || areaContacts.Length != 0 || structureTackles.Length != 0)
         {
-            return;
+            ExpireDue(now, bursts, modules, structureTackles, areaContacts);
         }
+    }
+
+    private void ExpireDue(long now, long[] bursts, long[] modules, long[] structureTackles, (long Module, long Target)[] areaContacts)
+    {
+        var economy = owner.Economy;
         var ships = economy.Inspect(world =>
             bursts
                 .Select(id => world.Set<WorldCommandBurst>().Find(id)?.ShipId)

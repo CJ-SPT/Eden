@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Eden.Data.World.Characters;
 using Eden.Data.World.Corporations;
 using Eden.Gameplay.Corporations;
 using Eden.World.Storage;
@@ -37,6 +38,47 @@ internal sealed record EconomyCorporationContact(int CorporationId, long Contact
 internal sealed record EconomyCorporationContactLabel(int CorporationId, long Id, string Name, int? Color);
 
 internal sealed record EconomyCorporationEmployment(long Id, long PilotId, int CorporationId, long StartedAt);
+
+internal sealed partial class EconomyTransaction
+{
+    internal override (int OldCount, int NewCount, IReadOnlyList<long> Recipients) MembershipChangeAudience(int previous, int next)
+    {
+        List<long> recipients = [];
+        int CountMembers(int corporation)
+        {
+            int count = 0;
+            foreach (var member in CorporationMembers(corporation))
+            {
+                count++;
+                if (member.AccountId > 0)
+                {
+                    recipients.Add(member.PilotId);
+                }
+            }
+            return count;
+        }
+        int oldCount = CountMembers(previous);
+        int newCount = previous == next ? oldCount : CountMembers(next);
+        return (oldCount, newCount, recipients);
+    }
+
+    internal IEnumerable<(long PilotId, long AccountId)> CorporationMembers(int corporationId)
+    {
+        var pilots = (EconomySet<Pilot, EconomyPilot>)Pilots;
+        // Private pilots shadow their committed index entries, including moves into or out of this corporation.
+        foreach (var saved in pilots.VisibleCommittedSnapshots(nameof(Pilot.CorporationId), corporationId))
+        {
+            yield return new(saved.Id, saved.AccountId);
+        }
+        foreach (var pilot in pilots.Local)
+        {
+            if (pilot.CorporationId == corporationId && pilots.State(pilot) != EntityState.Deleted && Visible(pilot))
+            {
+                yield return new(pilot.Id, pilot.AccountId);
+            }
+        }
+    }
+}
 
 internal sealed partial class ResidentEconomy
 {

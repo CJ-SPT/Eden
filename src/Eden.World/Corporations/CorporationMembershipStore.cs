@@ -330,14 +330,7 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
             world.Remove(access);
         }
         int previous = pilot.CorporationId;
-        int oldCount = world.Pilots.Count(p => p.CorporationId == previous);
-        int newCount = world.Pilots.Count(p => p.CorporationId == corporationId);
-        // Simulated pilots never consume client notification feeds.
-        var recipients = world
-            .Pilots.Where(p => p.CorporationId == previous || p.CorporationId == corporationId)
-            .Where(p => p.AccountId > 0)
-            .Select(p => p.Id)
-            .ToArray();
+        var (oldCount, newCount, recipients) = world.MembershipChangeAudience(previous, corporationId);
         if (!world.Set<SavedCorporationEmployment>().Any(e => e.PilotId == pilot.Id))
         {
             world.Add(
@@ -358,10 +351,14 @@ internal sealed partial class CorporationMembershipStore(WorldDatabase database,
                 StartedAt = now,
             }
         );
-        var change = new CorporationMemberChange(pilot.Id, previous, corporationId, oldCount - 1, newCount + 1, now);
-        foreach (long recipient in recipients)
+        if (recipients.Count != 0)
         {
-            world.Add(new SavedCorporationChange { PilotId = recipient, MembershipJson = JsonSerializer.Serialize(change) });
+            var change = new CorporationMemberChange(pilot.Id, previous, corporationId, oldCount - 1, newCount + 1, now);
+            string json = JsonSerializer.Serialize(change);
+            foreach (long recipient in recipients)
+            {
+                world.Add(new SavedCorporationChange { PilotId = recipient, MembershipJson = json });
+            }
         }
     }
 
