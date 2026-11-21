@@ -2,6 +2,64 @@
 
 [Protocol index](../protocol.md)
 
+## Bot traffic distribution
+
+In the local November 12 world checkpoint, Amamake held 23 simulated haulers, including 16 docked and 9 from its own
+roster. Jakanerva and Penirgman held 72 and 68 respectively. The pictured Local count of 127 is a separate observation.
+Local includes docked pilots. EVE University documents the same membership behavior and identifies Amamake as a lowsec
+chokepoint. EVE.js 24.01 build 3396210 projects visible sessions into Local in
+`server/src/_secondary/chat/chatRuntime.js` (`getLocalGatewayMembershipPayload`, SHA-256 prefix `CA84ADB4`). Eden's
+route planning uses the reciprocal gates and station positions of its build-3662168 catalog.
+[EVE University on Local](https://wiki.eveuniversity.org/Scouting#Local) ·
+[EVE University on topology](https://wiki.eveuniversity.org/Topology#Low_sec_topology)
+
+The ordinary planner at `31abd819` retained eight stations per exact jump count. It ranked trade hubs and station count
+before sampling, so one station-rich system could take every slot at that distance. Trips also used one breadth-first
+path through equal-length forks. The planner now draws the destination system first, with less weight for recently visited
+systems. It draws a station within that system using the pilot's preferences. Outbound and homeward trips vary between
+equally short paths using the saved pilot seed and trip sequence. Initial watched-gate visitors spread their stops within
+each distance band while still crossing the watched gate.
+
+One catalog map per origin system and hull-access class supplies the reachable systems and distances. The planner builds
+only the chosen route for an ordinary trip. The saved current route and deadlines continue through docking. The new
+selection applies when the pilot plans a new ordinary trip. Threat detours, capital restrictions and fixed work destinations
+retain their existing rules.
+
+**Automated validation**
+
+A matched build-3662168 routing replay generated 48 trips per station system within seven jumps of each named
+system, with identical pilots, sequences and distance roles on both revisions. It ran 22,128 routes in each version.
+
+| System | Routes sampled | Stops, before → after | Through trips, before → after | Distinct destinations, before → after |
+|---|---:|---:|---:|---:|
+| Amamake | 8,976 | 1,089 → 62 | 856 → 1,293 | 206 → 1,333 |
+| Jakanerva | 3,360 | 238 → 32 | 481 → 468 | 107 → 837 |
+| Penirgman | 9,792 | 1,224 → 72 | 736 → 831 | 193 → 1,220 |
+
+Mean trip length increased by 0.67–0.87 jumps across the three samples. The replay measures routing choices and
+through traffic. Local counts also depend on the deployed population, the time pilots spend in each system and work
+that requires a specific destination. Raw replay results are in `artifacts/traffic-distribution/catalog-*.trx`.
+
+The exact `CapsuleerTrafficRoutesTests.RegionalTrafficSpreadsAcrossSystemsAndEqualLengthGatePaths` filter sent all
+256 baseline trips to the dense system in a two-destination fixture (5.65 seconds). The corrected planner split the trips
+across both systems and both equal-length gate paths (4.48 seconds). The fixture also checks two initial gate visitors.
+
+The focused .NET filter covered `CapsuleerTrafficRoutesTests`, `CapsuleerTrafficNavigationTests`,
+`CapsuleerInboundProvisioningTests`, `CapsuleerInboundRuntimeTests`, `CapsuleerTrafficPerformanceTests`,
+`RegionalConflictWorldTests`, and the fresh-traffic and receiving-only inbound acceptance methods. All 126 cases passed
+in 133.24 seconds, including the installed-catalog Vattuolen route and zero-SQL warm reads.
+The final build took 9.18 seconds. The route class and exact visitor-return and eight-jump restart filters passed
+28 cases in 24.73 seconds. Catalog setup, formatting policy, formatter and the new documentation links passed their checks.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+Compare Local and docked guest counts across several traffic cycles in Amamake, Jakanerva and Penirgman on the deployed
+world, with the same configured population.
+
 ## Bot data and relic exploration
 
 An available first-slot hauler in an established world can take up exploration while docked at a high-security NPC

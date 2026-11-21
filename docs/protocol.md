@@ -109,6 +109,9 @@ The November 17 combat and traffic fixes cover [abandoned drones](protocol/drone
 [observer grid updates](protocol/navigation.md#observing-a-loss-and-a-warp-in-the-same-update--november-17-2026)
 and [returning traffic](protocol/capsuleers.md#traffic-returning-to-occupied-systems--november-17-2026).
 
+[Bot traffic distribution](protocol/capsuleers.md#bot-traffic-distribution) records the destination bias, varied shortest
+paths and a matched routing replay around Amamake, Jakanerva and Penirgman.
+
 [Traffic through unobserved systems](protocol/capsuleers.md#traffic-through-unobserved-systems) records resident
 traveler admission, checkpoint recovery and the shared playtime pause. [Paced offscreen starts](protocol/capsuleers.md#paced-offscreen-starts)
 records how the scheduler limits the login backlog.

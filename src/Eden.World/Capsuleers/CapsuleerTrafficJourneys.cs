@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Ships;
 using Eden.World.Catalog;
@@ -7,6 +8,11 @@ namespace Eden.World.Capsuleers;
 internal static partial class CapsuleerTrafficRoutes
 {
     private const int MaximumRegionalRoutes = 32;
+    private const int OrdinarySystemWeight = 4;
+    private const int RecentSystemWeight = 1;
+    private const int HubStationWeight = 4;
+    private const int JourneyNodeEstimatedBytes = 32;
+    private const ulong StationDrawSalt = 0x9E3779B97F4A7C15UL;
 
     internal static CapsuleerTrafficRoute[] RegionalRoutes(CatalogDbContext catalog, int station) =>
         catalog
@@ -36,10 +42,24 @@ internal static partial class CapsuleerTrafficRoutes
         Estimate: routes => EntryEstimatedBytes + routes.Sum(r => EntryEstimatedBytes + r.Systems.Length * sizeof(int))
     );
 
-    private static readonly CatalogDefinition<CapsuleerTrafficRoute[]> s_capitalJourneys = new(
-        "capsuleer-capital-destination-journeys",
-        (catalog, station) => LoadJourneys(catalog, station, false),
-        Estimate: routes => EntryEstimatedBytes + routes.Sum(r => EntryEstimatedBytes + r.Systems.Length * sizeof(int))
+    private readonly record struct JourneyNode(int Parent, int Jumps);
+
+    private sealed record JourneyMap(FrozenDictionary<int, JourneyNode> Nodes, int[] StationSystems)
+    {
+        internal long EstimatedBytes =>
+            EntryEstimatedBytes + (long)Nodes.Count * JourneyNodeEstimatedBytes + StationSystems.Length * sizeof(int);
+    }
+
+    private static readonly CatalogDefinition<JourneyMap> s_journeyMap = new(
+        "capsuleer-journey-systems",
+        (catalog, source) => LoadJourneyMap(catalog, source, true),
+        Estimate: map => map.EstimatedBytes
+    );
+
+    private static readonly CatalogDefinition<JourneyMap> s_capitalJourneyMap = new(
+        "capsuleer-capital-journey-systems",
+        (catalog, source) => LoadJourneyMap(catalog, source, false),
+        Estimate: map => map.EstimatedBytes
     );
 
     internal static CapsuleerTrafficRoute? Journey(
@@ -57,62 +77,125 @@ internal static partial class CapsuleerTrafficRoutes
         {
             return null;
         }
+        int source = catalog.RequireStation(stationId).SolarSystemId;
         bool unrestricted = TrafficRules.RouteAllows(hull, true);
-        var routes = catalog.Definition(unrestricted ? s_journeys : s_capitalJourneys, stationId);
+        var graph = catalog.Definitions.GlobalDefinition(s_graph);
         var avoided = routine?.Threats.Where(threat => threat.ExpiresAt > elapsed).Select(threat => threat.SystemId).ToHashSet();
-        int maximum = TrafficJourneyRules.MaximumDistance(kind);
-        var candidates = routes.Where(route => route.Systems.Length - 1 <= maximum).ToArray();
+        var recentSystems = routine?.RecentStations.Select(id => catalog.Definitions.FindStation(id)?.SolarSystemId ?? 0).ToArray() ?? [];
+        ulong draw = routine is null ? TravelerRoutineRules.Mix(unchecked((ulong)sequence)) : TravelerRoutineRules.Draw(routine, sequence);
+        var map = catalog.Definition(unrestricted ? s_journeyMap : s_capitalJourneyMap, source);
+        Predicate<int> onwardStation = candidate => candidate != stationId && candidate != previousStationId;
+        int destination = 0;
+        bool onward = false;
         if (avoided is { Count: > 0 })
         {
-            var alternatives = LoadJourneys(catalog, stationId, unrestricted, avoided)
-                .Where(route => route.Systems.Length - 1 <= maximum && !avoided.Contains(route.Systems[^1]))
-                .ToArray();
-            if (alternatives.Length > 0)
+            var safe = LoadJourneyMap(catalog, source, unrestricted, avoided);
+            (destination, onward) = ChooseDestination(safe, avoided);
+            if (destination != 0)
             {
-                candidates = alternatives;
+                map = safe;
             }
         }
-        if (candidates.Length == 0)
+        if (destination == 0)
+        {
+            (destination, onward) = ChooseDestination(map, null);
+        }
+        if (destination == 0)
         {
             return null;
         }
-        if (kind == TrafficJourneyKind.Local)
+
+        int station = 0;
+        int stationWeight = 0;
+        foreach (int candidate in graph.Stations[destination])
         {
-            var inSystem = candidates.Where(route => route.Systems.Length == 1).ToArray();
-            if (inSystem.Length > 0)
+            if (candidate == stationId || onward && candidate == previousStationId)
             {
-                candidates = inSystem;
+                continue;
+            }
+            int geographic = CapsuleerEncounterRules.IsTradeHubStation(candidate) ? HubStationWeight : 1;
+            int weight = routine is null ? geographic : TravelerRoutineRules.DestinationWeight(routine, candidate, geographic);
+            stationWeight += weight;
+            if (TravelerRoutineRules.Mix(draw ^ StationDrawSalt ^ (uint)candidate) % (ulong)stationWeight < (ulong)weight)
+            {
+                station = candidate;
             }
         }
-        var preferred = candidates.Where(route => route.Systems.Length - 1 >= TrafficJourneyRules.MinimumDistance(kind)).ToArray();
-        if (preferred.Length > 0)
+        return new(stationId, station, JourneyPath(graph, map, destination, draw));
+
+        (int System, bool Onward) ChooseDestination(JourneyMap reachable, IReadOnlySet<int>? excluded)
         {
-            candidates = preferred;
-        }
-        var onward = candidates.Where(route => route.DestinationStationId != previousStationId).ToArray();
-        if (onward.Length > 0)
-        {
-            candidates = onward;
-        }
-        int Weight(CapsuleerTrafficRoute route)
-        {
-            int geographic =
-                CapsuleerEncounterRules.IsTradeHubStation(route.DestinationStationId) ? 4
-                : catalog.Definitions.StationsInSystem(route.Systems[^1]).Length >= 4 ? 2
-                : 1;
-            return routine is null ? geographic : TravelerRoutineRules.DestinationWeight(routine, route.DestinationStationId, geographic);
-        }
-        ulong draw = routine is null ? TravelerRoutineRules.Mix(unchecked((ulong)sequence)) : TravelerRoutineRules.Draw(routine, sequence);
-        int selection = (int)(draw % (ulong)candidates.Sum(Weight));
-        foreach (var candidate in candidates)
-        {
-            selection -= Weight(candidate);
-            if (selection < 0)
+            int selected = 0;
+            (bool PreferredBand, bool Onward) bestPriority = default;
+            int totalWeight = 0;
+            int maximum = TrafficJourneyRules.MaximumDistance(kind);
+            int minimum = TrafficJourneyRules.MinimumDistance(kind);
+            foreach (int system in reachable.StationSystems)
             {
-                return candidate;
+                int jumps = reachable.Nodes[system].Jumps;
+                if (jumps > maximum)
+                {
+                    break;
+                }
+                if (excluded?.Contains(system) == true)
+                {
+                    continue;
+                }
+                var stations = graph.Stations[system];
+                if (stations.Length == 1 && stations[0] == stationId)
+                {
+                    continue;
+                }
+
+                // Preserve local stops and preferred distance bands. Every eligible system in the winning band gets one draw.
+                bool preferred = kind == TrafficJourneyKind.Local ? jumps == 0 : jumps >= minimum;
+                var priority = (preferred, Array.Exists(stations, onwardStation));
+                int comparison = priority.CompareTo(bestPriority);
+                if (comparison < 0)
+                {
+                    continue;
+                }
+                if (comparison > 0)
+                {
+                    bestPriority = priority;
+                    totalWeight = 0;
+                }
+                int weight = recentSystems.Contains(system) ? RecentSystemWeight : OrdinarySystemWeight;
+                totalWeight += weight;
+                if (TravelerRoutineRules.Mix(draw ^ (uint)system) % (ulong)totalWeight < (ulong)weight)
+                {
+                    selected = system;
+                }
             }
+            return (selected, bestPriority.Onward);
         }
-        throw new InvalidOperationException("The destination weighting has no selected route.");
+    }
+
+    internal static CapsuleerTrafficRoute? JourneyHome(
+        CatalogDbContext catalog,
+        int stationId,
+        int homeStationId,
+        HullClass hull,
+        ulong draw,
+        IReadOnlySet<int>? avoided = null
+    )
+    {
+        if (!TrafficRules.RouteAllows(hull, false))
+        {
+            return null;
+        }
+        int source = catalog.RequireStation(stationId).SolarSystemId;
+        int destination = catalog.RequireStation(homeStationId).SolarSystemId;
+        bool unrestricted = TrafficRules.RouteAllows(hull, true);
+        var map = avoided is { Count: > 0 }
+            ? LoadJourneyMap(catalog, source, unrestricted, avoided)
+            : catalog.Definition(unrestricted ? s_journeyMap : s_capitalJourneyMap, source);
+        if (!map.Nodes.ContainsKey(destination) || avoided?.Contains(destination) == true)
+        {
+            return null;
+        }
+        var graph = catalog.Definitions.GlobalDefinition(s_graph);
+        return new(stationId, homeStationId, JourneyPath(graph, map, destination, draw));
     }
 
     internal static CapsuleerTrafficRoute? ToStation(
@@ -185,59 +268,88 @@ internal static partial class CapsuleerTrafficRoutes
         return null;
     }
 
-    private static CapsuleerTrafficRoute[] LoadJourneys(CatalogDbContext catalog, int stationId) => LoadJourneys(catalog, stationId, true);
-
-    private static CapsuleerTrafficRoute[] LoadJourneys(
-        CatalogDbContext catalog,
-        int stationId,
-        bool unrestricted,
-        IReadOnlySet<int>? avoided = null
-    )
+    private static CapsuleerTrafficRoute[] LoadJourneys(CatalogDbContext catalog, int stationId)
     {
         var graph = catalog.Definitions.GlobalDefinition(s_graph);
         int source = catalog.RequireStation(stationId).SolarSystemId;
+        var map = catalog.Definition(s_journeyMap, source);
+        // Patrol planning keeps its bounded, geographically prioritized list.
+        return map
+            .StationSystems.SelectMany(system => graph.Stations[system].Select(station => (System: system, Station: station)))
+            .Where(stop => stop.Station != stationId)
+            .OrderByDescending(stop => CapsuleerEncounterRules.IsTradeHubStation(stop.Station))
+            .ThenByDescending(stop => graph.Stations[stop.System].Length)
+            .ThenBy(stop => stop.Station)
+            .GroupBy(stop => map.Nodes[stop.System].Jumps)
+            .SelectMany(group => group.Take(MaximumRoutes))
+            .Select(stop => new CapsuleerTrafficRoute(stationId, stop.Station, JourneyPath(graph, map, stop.System)))
+            .ToArray();
+    }
+
+    private static JourneyMap LoadJourneyMap(CatalogDbContext catalog, int source, bool unrestricted, IReadOnlySet<int>? avoided = null)
+    {
+        var graph = catalog.Definitions.GlobalDefinition(s_graph);
         var security = catalog.Definitions.SystemSecurity;
         bool Allows(int system) =>
             unrestricted || TrafficRules.SecurityBand(security.GetValueOrDefault(system)) != TrafficSecurityBand.High;
         if (!Allows(source))
         {
-            return [];
+            return new(FrozenDictionary<int, JourneyNode>.Empty, []);
         }
         Queue<int> pending = new();
-        Dictionary<int, int> parents = new() { [source] = source };
-        Dictionary<int, int> distances = new() { [source] = 0 };
-        List<CapsuleerTrafficRoute> routes = [];
+        Dictionary<int, JourneyNode> nodes = new() { [source] = new(source, 0) };
+        List<int> stations = [];
         pending.Enqueue(source);
         while (pending.TryDequeue(out int current))
         {
-            foreach (int destination in graph.Stations.GetValueOrDefault(current) ?? [])
+            if (graph.Stations.ContainsKey(current))
             {
-                if (destination != stationId)
-                {
-                    routes.Add(new(stationId, destination, PathTo(current, parents)));
-                }
+                stations.Add(current);
             }
-            if (distances[current] >= TrafficJourneyRules.MaximumJumps)
+            int jumps = nodes[current].Jumps;
+            if (jumps >= TrafficJourneyRules.MaximumJumps)
             {
                 continue;
             }
             foreach (int next in graph.Links.GetValueOrDefault(current) ?? [])
             {
-                if (Allows(next) && avoided?.Contains(next) != true && parents.TryAdd(next, current))
+                if (Allows(next) && avoided?.Contains(next) != true && nodes.TryAdd(next, new(current, jumps + 1)))
                 {
-                    distances[next] = distances[current] + 1;
                     pending.Enqueue(next);
                 }
             }
         }
-        // Every distance band retains endpoints. Hubs and station clusters receive first choice
-        // within a band without excluding quieter destinations.
-        return routes
-            .OrderByDescending(route => CapsuleerEncounterRules.IsTradeHubStation(route.DestinationStationId))
-            .ThenByDescending(route => graph.Stations[route.Systems[^1]].Length)
-            .ThenBy(route => route.DestinationStationId)
-            .GroupBy(route => route.Systems.Length)
-            .SelectMany(group => group.Take(MaximumRoutes))
-            .ToArray();
+        return new(nodes.ToFrozenDictionary(), stations.ToArray());
+    }
+
+    private static int[] JourneyPath(TrafficGraph graph, JourneyMap map, int destination, ulong? draw = null)
+    {
+        int[] path = new int[map.Nodes[destination].Jumps + 1];
+        int current = destination;
+        for (int index = path.Length - 1; index > 0; index--)
+        {
+            path[index] = current;
+            int parent = map.Nodes[current].Parent;
+            if (draw is ulong seed)
+            {
+                // Any neighbor one layer closer gives a shortest route. Mix the trip and both systems to vary each fork.
+                ulong best = ulong.MaxValue;
+                foreach (int neighbor in graph.Links[current])
+                {
+                    if (map.Nodes.TryGetValue(neighbor, out var node) && node.Jumps == index - 1)
+                    {
+                        ulong rank = TravelerRoutineRules.Mix(seed ^ ((ulong)(uint)current << 32) ^ (uint)neighbor);
+                        if (rank < best)
+                        {
+                            best = rank;
+                            parent = neighbor;
+                        }
+                    }
+                }
+            }
+            current = parent;
+        }
+        path[0] = current;
+        return path;
     }
 }

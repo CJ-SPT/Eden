@@ -420,9 +420,9 @@ Busy routes can first appear with a traveler inbound at a gate, another closing 
 ### Persistent traveler routines
 
 Travelers acquire a saved pace and station affinities at their next dock. Trip selection uses an independent deterministic draw,
-reduces the weight of the last three stations, and retains the local/regional/long-distance and home roster policies.
-Brisk, regular and leisurely pilots use half, normal and double layovers with 20% per-visit variation. Station endpoints are
-considered before candidate limits; hull-restricted searches retain compatible detours. Security status adds no travel preference.
+reduces the weight of recently visited systems and stations, and retains the local, regional, long-distance and home roster
+policies. Brisk, regular and leisurely pilots use half, normal and double layovers with 20% per-visit variation. Hull-restricted
+searches retain compatible detours. Security status adds no travel preference.
 
 An attacked traveler remembers up to four systems for thirty human-active minutes. After retreat, its next dock shelters it
 for five to fifteen human-active minutes. Compatible alternatives avoid remembered systems; topology without an alternative
@@ -433,9 +433,10 @@ See [the validation record](protocol/capsuleers.md#persistent-traveler-routines-
 
 Locals travel zero to two jumps from their saved home station and can return after docking. Regional visitors favor three to seven jumps. Long-distance visitors favor eight to twenty. A topology that cannot support the preferred distance uses a shorter compatible station route. Each new route has distinct station endpoints and visits each system once.
 
-Home roster slots reserve recurring locals alongside regional and long-distance travelers. Busy station systems use a local/regional/long-distance cycle across their slots. Ordinary station systems reserve two local slots per three. Locals prefer trips between stations in their home system when available. Destination selection weights trade hubs and station clusters. The entire path must admit the selected hull, including restrictions on capitals entering high security.
+Home roster slots reserve recurring locals alongside regional and long-distance travelers. Busy station systems use a local/regional/long-distance cycle across their slots. Ordinary station systems reserve two local slots per three. Locals prefer trips between stations in their home system when available. Each reachable system in the preferred distance band gets one weighted entry in the trip draw. The pilot then chooses a station in the selected system using station affinities and trade-hub preference. Trips vary their gates where several shortest paths exist. The entire path must admit the selected hull, including restrictions on capitals entering high security.
+[Traffic distribution validation](protocol/capsuleers.md#bot-traffic-distribution).
 
-A watched reciprocal gate pair introduces at most four durable visitors with staggered departures and distinct owned ships. The first visitor can already be finishing a moving approach on the unobserved source side. Remaining visitors wait docked at their real source stations and fly the full departure route. Gate arrivals use a stable spread around the arrival shell. Both ends share those identities. Watching the opposite side preserves each traveler's direction and deadline. Subsequent trips begin at the pilot's actual docked station and favor a destination other than the previous origin when alternatives exist. Visitors make an onward stop before routing home, keeping a continuing circuit. Homeward legs follow real compatible paths.
+A watched reciprocal gate pair introduces at most four durable visitors with staggered departures and distinct owned ships. The first visitor can already be finishing a moving approach on the unobserved source side. Remaining visitors wait docked at their real source stations and fly the full departure route. New visitors spread their first stops across eligible station systems in each distance band. Gate arrivals use a stable spread around the arrival shell. Both ends share those identities. Watching the opposite side preserves each traveler's direction and deadline. Subsequent trips begin at the pilot's actual docked station and favor a destination other than the previous origin when alternatives exist. Visitors make an onward stop before routing home, keeping a continuing circuit. Homeward legs follow real compatible paths.
 
 Established travelers continue on the shared human play clock through unobserved systems. Background alignment, analytic warp, approach, docking and gate-transfer deadlines retain the same navigation and ownership checks. Observed systems use ordinary flight samples. Empty worlds pause the shared clock. A witnessed departure completes once. Tackle, retreat, loss, cargo and equipment retain their normal effects.
 
