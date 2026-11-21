@@ -1,5 +1,8 @@
+using System.Runtime.CompilerServices;
+using Eden.Data.Catalog.Capsuleers;
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Characters;
+using Eden.World.Capsuleers;
 
 namespace Eden.World.Runtime.Economy;
 
@@ -14,6 +17,17 @@ internal sealed class EconomyNameComparer : IEqualityComparer<object>
 internal sealed partial class ResidentEconomy
 {
     internal int SavedPilotCount => ((EconomyTable<Pilot, EconomyPilot>)_tables[typeof(Pilot)]).RowCount;
+
+    // Pools belong to a bounded catalog cache. Evicting a pool also releases its exhaustion marker.
+    internal ConditionalWeakTable<TrafficSnapshot.TrafficCandidatePools, object> FullyReservedTrafficPools { get; } = new();
+
+    private void TrafficIdentityChanged(EconomySavedTrafficIdentity? before, EconomySavedTrafficIdentity? after)
+    {
+        if (before is not null && before.CharacterId != after?.CharacterId)
+        {
+            FullyReservedTrafficPools.Clear();
+        }
+    }
 }
 
 internal sealed partial class EconomyTransaction
@@ -39,6 +53,35 @@ internal sealed partial class EconomyTransaction
             character,
             static (identity, candidate) => identity.CharacterId == candidate
         );
+
+    internal TrafficProfile? SelectTrafficProfile(TrafficSnapshot.TrafficCandidatePools pool, long seed, int system, int slot)
+    {
+        // A private assignment or release must never consume or publish a shared negative result.
+        bool committed = !HasPrivateRows<SavedTrafficIdentity>();
+        if (committed && store.FullyReservedTrafficPools.TryGetValue(pool, out _))
+        {
+            return null;
+        }
+        bool allCharactersTaken = true;
+        foreach (var profile in pool.Candidates(seed, system, slot))
+        {
+            if (TrafficCharacterTaken(profile.CharacterId))
+            {
+                continue;
+            }
+            allCharactersTaken = false;
+            if (!HasPilotName(profile.Name))
+            {
+                return profile;
+            }
+        }
+        // Names can be changed independently. Only occupied character IDs prove the entire pool unavailable.
+        if (committed && allCharactersTaken)
+        {
+            store.FullyReservedTrafficPools.GetOrCreateValue(pool);
+        }
+        return null;
+    }
 }
 
 internal sealed partial class EconomySet<TRow, TState>

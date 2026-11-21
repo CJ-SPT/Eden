@@ -654,6 +654,7 @@ internal sealed partial class ResidentEconomy
                     new("KillId", row => row.KillId),
                     new("SnapshotId", row => row.SnapshotId),
                 ],
+                changed: TrafficIdentityChanged,
                 primaryColumn: "PilotId"
             )
         );

@@ -6387,3 +6387,79 @@ Not performed; agent client testing is disabled.
 ### Optional maintainer checks
 
 None.
+
+## Hauler identity reservations and journey ranges
+
+A 12-second allocation trace of `5f1558dd` attributed 123 MiB to the hauler's traffic identity
+selection predicate and 74 MiB to building journey maps. The resident economy now remembers a candidate
+pool when every character in it has a committed reservation. Releasing or replacing a character clears
+the result. A transaction with private identity rows uses its own view. A name collision alone leaves
+the character eligible for a later scan. The markers follow the lifetime of the catalog's candidate pools.
+
+Local and regional journeys now build origin maps out to their respective two- and seven-jump limits.
+Long-distance journeys, return routes and regional patrol planning retain the full twenty-jump search.
+The maps use the same gate order, security restrictions and seeded destination draws. A bot with an
+active threat builds the ordinary fallback map only when its detour search finds no destination.
+Each map keeps its search dictionary and records the jump count alongside each station system.
+The cache size estimate accounts for the dictionary's allocated capacity.
+
+### Automated validation
+
+On two private copies of the capped save, 64 warmed searches for a free identity in a 13,673-character
+pool returned no match on both builds. Thread allocation fell from 21,107,712 to 81,408 bytes.
+The median elapsed time across three batches fell from 92.07 to 0.55 ms.
+
+On the same catalog, both builds returned identical destination stations and system paths for 288
+seeded route requests, including the same five requests with no reachable destination. Each batch
+started with the global gate graph warm and 48 previously unseen origin systems. The mixed batch
+requested all three ranges from each origin. The warm timing repeats the same batch eight times.
+
+| Journey range | Cold allocation, before / after | Cold time, before / after | Warm time, before / after |
+| --- | ---: | ---: | ---: |
+| Local | 7,226,224 / 209,712 bytes | 25.86 / 1.09 ms | 4.85 / 4.65 ms |
+| Regional | 9,329,840 / 730,024 bytes | 13.37 / 2.57 ms | 9.59 / 8.52 ms |
+| Long-distance | 7,053,624 / 4,918,048 bytes | 12.04 / 19.11 ms | 27.29 / 23.63 ms |
+| All three ranges | 10,938,200 / 8,468,216 bytes | 18.14 / 17.50 ms | 42.77 / 38.91 ms |
+
+Each warm route batch allocated the same bytes on both builds. All reservation and route batches
+recorded zero SQL commands, connections and fitting rebuilds.
+
+The 90-second replay used the same saved world, workload manifest, four fixed server GC heaps,
+135 communities, one observer and market maintenance on both builds. Both held 1,401 scheduled
+bots throughout the final 30 seconds. Allocation counters advanced at every sample.
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| Warm allocation | 98.00 MiB/s | 94.49 MiB/s |
+| Warm allocation per completed action | 351.99 KiB | 342.77 KiB |
+| Warm completed actions/s | 285.10 | 282.29 |
+| Warm oldest due job p95 | 48.99 ms | 34.80 ms |
+| All-run allocation | 125.79 MiB/s | 123.98 MiB/s |
+| All-run completed actions | 23,850 | 23,921 |
+| Process CPU time | 49.66 s | 45.94 s |
+| Warm frame processing p95 | 9.61 ms | 5.50 ms |
+| Warm end-to-end frame / market request p95 | 15.36 / 30.37 ms | 16.07 / 29.35 ms |
+| Peak checkpoint capture / projection / write | 12 / 832 / 1,114 ms | 16 / 839 / 981 ms |
+
+Both runs completed seven checkpoints, recorded zero failed actions and finished with zero due jobs.
+All 60 warm observer requests on each build recorded zero SQL commands, connections and fitting rebuilds.
+Warm throughput fell 1.0% in this single replay pair. The isolated cold long-distance batch took
+7.07 ms longer while allocating 30% less. The trace, probes and reports are under
+`artifacts/bot-hotpaths-next/` in the main checkout.
+
+The exact `ExhaustedPoolObservesPrivateAndCommittedCharacterReleases` filter passed both cases in 31.64 s.
+`DestinationJourneysHaveRealEndpointsDistanceBandsAndNoRepeatedSystems` passed all three cases in 4.82 s.
+The combined filter for `TrafficSnapshotTests`, `TrafficActivityTests`, `TrafficPreparationTests`,
+`CapsuleerTrafficRoutesTests`, `CapsuleerTrafficNavigationTests`, `ResidentBotEconomyTests` and
+`CapsuleerBackgroundPreparationTests` passed all 134 cases in 50.08 s. In Release, the two exact filters
+and `ThreatMemoryUsesADetourExpiresAndFallsBackWhenThereIsNoAlternative` passed all six cases in 6 s.
+Debug and Release solution builds completed in 21.96 s and 15.72 s with zero warnings or errors.
+The Python catalog and formatting suites passed all 17 checks. Repository formatting and the protocol index link passed.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
