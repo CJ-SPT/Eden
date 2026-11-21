@@ -83,6 +83,7 @@ internal sealed partial class CapsuleerScheduler
     private CapsuleerHauler.PreparedJourney? PlanUpcomingTrade(PreparationInput input, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
+        using var catalogScope = new CatalogReadScope().Begin();
         using CatalogDbContext catalog = new(database.CatalogPath);
         PrepareStationInputs(catalog, input);
         if (input.PrepareInstitutionalOffers)
@@ -116,6 +117,7 @@ internal sealed partial class CapsuleerScheduler
                 || old.StationId != current.StationId
                 || old.TrainingHull != current.TrainingHull
                 || old.DefaultProfession != current.DefaultProfession
+                || old.TrainingPlan != current.TrainingPlan
                 || old.PrepareInstitutionalOffers != current.PrepareInstitutionalOffers
                 || old.Journey != current.Journey
                 || !SameTemplate(old.Template, current.Template)

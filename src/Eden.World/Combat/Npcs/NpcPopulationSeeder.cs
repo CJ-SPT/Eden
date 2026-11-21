@@ -65,10 +65,10 @@ internal sealed partial class NpcPopulationSeeder(
         }
         if (policy.Mining && politics.FactionId.HasValue && NpcConvoyRules.Eligible(security))
         {
-            foreach (var belt in catalog.BeltAnchors(systemId))
-            {
-                _ = catalog.Read(CatalogData.Client.Asteroidcountbytypeidbeltid, (long)belt.Id);
-            }
+            _ = catalog.ReadMany(
+                CatalogData.Client.Asteroidcountbytypeidbeltid,
+                catalog.BeltAnchors(systemId).Select(belt => (long)belt.Id)
+            );
         }
     }
 

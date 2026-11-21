@@ -496,25 +496,22 @@ internal sealed partial class PilotMarketStore
             signal.ScheduleDemand(long.MaxValue, 0);
             return 0;
         }
-        using var world = live.Economy.Begin();
-        using CatalogDbContext catalog = new(database.CatalogPath);
         long now = Now;
         long cursor = signal.DemandCursor;
-        var open = world
-            .Set<SavedPersonalOrder>()
-            .Where(o => !o.Bid && o.Status == PersonalOrderStatus.Open && o.Expires > now && o.Remaining > 0);
-        var page = open.Where(o => o.Id > cursor)
-            .Select(o => new
-            {
-                o.Id,
-                o.StationId,
-                o.TypeId,
-            })
-            .OrderBy(o => o.Id)
-            .Take(limit)
-            .ToArray();
-        int settled = 0;
+        var page = live.Economy.OpenSellOrdersAfter(cursor, now).Take(limit).ToArray();
+        if (cursor == 0 && page.Length == 0)
+        {
+            signal.ScheduleDemand(long.MaxValue, 0);
+            return 0;
+        }
         int settlementLimit = Math.Min(limit, DemandSettlementsPerTurn);
+        // Cheaper asks at the same location take priority, including sellers beyond this page of IDs.
+        // Only those sellers can receive a payment. Importing unrelated combat here made a poll grow with every bot system.
+        var locations = page.Select(o => new DemandLocation(o.StationId, o.TypeId)).Distinct().Take(DemandLocationsPerTurn);
+        var sellers = locations.SelectMany(location => live.Economy.DemandSellers(location.StationId, location.TypeId, now));
+        using var world = live.Economy.Begin(new(pilots: sellers));
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        int settled = 0;
         HashSet<DemandLocation> attempted = [];
         RegionalMarketStore regional = new(activity);
         foreach (var entry in page)
@@ -544,7 +541,11 @@ internal sealed partial class PilotMarketStore
         if (!more)
         {
             // Read the listings after settlement. A closed listing no longer needs a recovery wake.
-            var demand = open.Select(o => new NpcMarketAssortment(o.StationId, o.TypeId, true, NpcMarketKind.Regional, 0)).ToHashSet();
+            var demand = live
+                .Economy.OpenSellOrdersAfter(0, now)
+                .Where(o => world.PersonalOrderStillOpen(o.Id))
+                .Select(o => new NpcMarketAssortment(o.StationId, o.TypeId, true, NpcMarketKind.Regional, 0))
+                .ToHashSet();
             if (demand.Count > 0)
             {
                 var stock = world.Set<SavedRegionalMarketStock>();

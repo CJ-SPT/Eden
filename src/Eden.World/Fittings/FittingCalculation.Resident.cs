@@ -1,4 +1,5 @@
 using System.Collections.Frozen;
+using System.Collections.Immutable;
 using System.Data;
 using System.Globalization;
 using Eden.Data.Catalog;
@@ -590,28 +591,35 @@ internal sealed partial record FittingCalculation
             )
             .Distinct()
             .ToArray();
-        var trained = world
-            .Set<PilotSkill>()
-            .Where(s => s.PilotId == pilot.Id && Enumerable.Contains(relevantSkills, s.TypeId))
-            .Select(s => s.TypeId)
-            .ToHashSet();
-        var skillIds = relevantSkills
-            .Where(skill => Enumerable.Contains(trained, skill) || Enumerable.Contains(hullSkills, skill))
+        var trained =
+            world is EconomyTransaction
+                ? null
+                : world
+                    .Set<PilotSkill>()
+                    .Where(s => s.PilotId == pilot.Id && Enumerable.Contains(relevantSkills, s.TypeId))
+                    .Select(s => s.TypeId)
+                    .ToHashSet();
+        var activeSkills = relevantSkills
+            .Where(skill => hullSkills.Contains(skill) || (trained?.Contains(skill) ?? world.SkillPoints(pilot.Id, skill).HasValue))
+            .ToArray();
+        var skillIds = activeSkills
             .Concat(Enum.GetValues<FittingSkill>().Select(s => (int)s))
             .Concat(Enum.GetValues<DefenseSkill>().Select(s => (int)s))
             .Concat(Enum.GetValues<TargetingSkill>().Select(s => (int)s))
             .Distinct()
             .ToArray();
         var levels = PilotSkillReader.Levels(world, catalog, pilot.Id, skillIds);
-        foreach (int skill in relevantSkills.Where(skill => Enumerable.Contains(trained, skill) || Enumerable.Contains(hullSkills, skill)))
+        foreach (int skill in activeSkills)
         {
             int level = levels.GetValueOrDefault(skill);
             if (level == 0 && !Enumerable.Contains(hullSkills, skill))
             {
                 continue;
             }
-            var attributes = PilotFittingStore.ReadAttributes(catalog, skill).ToDictionary();
-            attributes[DogmaAttributeId.SkillLevel] = level;
+            var attributes = PilotFittingStore
+                .ReadAttributes(catalog, skill)
+                .ToImmutableDictionary()
+                .SetItem(DogmaAttributeId.SkillLevel, level);
             nodes.Add(new(skill, attributes));
             var modifiersForSkill = skill switch
             {

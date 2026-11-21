@@ -1317,6 +1317,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 
 ### Session performance and resident state
 
+- [Allocation during bot admission and market settlement](protocol/performance.md#allocation-during-bot-admission-and-market-settlement)
 - [Player bot allocation and queue delay](protocol/performance.md#player-bot-allocation-and-queue-delay)
 - [Offscreen bot scheduling at ten thousand pilots](protocol/performance.md#offscreen-bot-scheduling-at-ten-thousand-pilots)
 - [In-space frame stalls during bot traffic](protocol/performance.md#in-space-frame-stalls-during-bot-traffic)

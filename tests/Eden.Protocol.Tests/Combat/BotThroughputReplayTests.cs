@@ -257,6 +257,11 @@ public sealed partial class ServerPerformanceReplayTests
             long completedAtStart = diagnostics.Read().CompletedActions;
             int generation2AtStart = GC.CollectionCount(2);
             maintenance.Start();
+            var marketMaintenance =
+                Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_MARKET_MAINTENANCE") == "1"
+                    ? host.GetRequiredService<MarketMaintenance>()
+                    : null;
+            marketMaintenance?.Start();
             var populationMaintenance = host.GetRequiredService<CapsuleerPopulationMaintenance>();
             if (Environment.GetEnvironmentVariable("EDEN_BOT_REPLAY_PREPARATION") == "1")
             {
@@ -407,6 +412,11 @@ public sealed partial class ServerPerformanceReplayTests
             }
             await checkpoints;
             maintenance.Dispose();
+            if (marketMaintenance is not null)
+            {
+                await marketMaintenance.DisposeAsync();
+                Assert.Null(marketMaintenance.LastFailure);
+            }
             await live.FlushAsync();
             if (live.LastCheckpoint is { } finalCheckpoint)
             {
@@ -434,6 +444,7 @@ public sealed partial class ServerPerformanceReplayTests
                         TimestampFrequency = Stopwatch.Frequency,
                         ServerGC = System.Runtime.GCSettings.IsServerGC,
                         TraceWorkerPhases = traceWorker,
+                        MarketMaintenance = marketMaintenance is not null,
                         MinimumScheduled = minimumScheduled,
                         scheduler.TradesStartedAhead,
                         scheduler.TradesUsedAhead,

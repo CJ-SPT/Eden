@@ -692,10 +692,10 @@ public sealed partial class CatalogProvider
                 key,
                 () =>
                 {
-                    using CatalogDbContext catalog = new(_owner.Identity.Path);
-                    string encoded = CatalogKey.Encode(key);
-                    var record = catalog.Set<SourceRecord>().Find(_source.Name, encoded);
-                    return Decode(record);
+                    string path = _owner.Identity.Path;
+                    var inputs = CatalogConnectionScope.Inputs(path);
+                    using var owned = inputs.IsScoped ? null : inputs;
+                    return Decode(inputs.ReadRecord(path, _source.Name, CatalogKey.Encode(key)));
                 }
             );
 

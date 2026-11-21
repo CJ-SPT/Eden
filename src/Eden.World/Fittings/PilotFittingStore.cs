@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Globalization;
 using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
@@ -43,19 +44,23 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
         return ReadAttributes(catalog, typeId);
     }
 
-    internal static IReadOnlyDictionary<DogmaAttributeId, double> ReadAttributes(CatalogDbContext catalog, int typeId)
-    {
-        var attributes = Attributes(catalog, typeId);
-        if (
-            !attributes.ContainsKey(DogmaAttributeId.SignatureRadius)
-            && catalog.Read(CatalogData.Client.Dogmaattributes, (long)(((int)DogmaAttributeId.SignatureRadius)))?.DefaultValue
-                is double signature
-        )
+    private static readonly CatalogDefinition<ImmutableDictionary<DogmaAttributeId, double>> s_baseAttributes = new(
+        "fitting-base-attributes",
+        (catalog, type) =>
         {
-            attributes[DogmaAttributeId.SignatureRadius] = signature;
-        }
-        return attributes;
-    }
+            var values = catalog.FittingAttributes(type).ToImmutableDictionary();
+            return
+                !values.ContainsKey(DogmaAttributeId.SignatureRadius)
+                && catalog.Read(CatalogData.Client.Dogmaattributes, (long)DogmaAttributeId.SignatureRadius)?.DefaultValue
+                    is double signature
+                ? values.Add(DogmaAttributeId.SignatureRadius, signature)
+                : values;
+        },
+        Estimate: values => 256 + values.Count * 64L
+    );
+
+    internal static IReadOnlyDictionary<DogmaAttributeId, double> ReadAttributes(CatalogDbContext catalog, int typeId) =>
+        catalog.Definition(s_baseAttributes, typeId);
 
     private static Dictionary<DogmaAttributeId, double> Attributes(CatalogDbContext catalog, int typeId) =>
         catalog.FittingAttributes(typeId).ToDictionary();

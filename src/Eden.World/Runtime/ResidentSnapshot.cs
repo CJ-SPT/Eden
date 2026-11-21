@@ -37,6 +37,10 @@ internal sealed class ResidentSnapshot<TKey, TValue>(string name, params string[
 
     internal void Observe(IReadOnlyCollection<CombatRowChange> changes, Func<TKey, CombatRowChange, bool>? affects = null)
     {
+        if (!HasEntries)
+        {
+            return;
+        }
         var relevant = changes.Where(c => tables.Contains(c.Table, StringComparer.Ordinal)).ToArray();
         if (relevant.Length == 0)
         {
@@ -57,6 +61,10 @@ internal sealed class ResidentSnapshot<TKey, TValue>(string name, params string[
 
     internal void ObserveValues(IReadOnlyCollection<CombatRowChange> changes, Func<TKey, TValue, CombatRowChange, bool> affects)
     {
+        if (!HasEntries)
+        {
+            return;
+        }
         var relevant = changes.Where(c => tables.Contains(c.Table, StringComparer.Ordinal)).ToArray();
         if (relevant.Length == 0)
         {

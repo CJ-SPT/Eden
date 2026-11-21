@@ -86,8 +86,12 @@ internal sealed partial class ResidentEconomy
 
     private readonly Dictionary<int, InstitutionalPreparation> _prepared = [];
     private readonly SortedSet<(long Expires, long Id)> _openOrders = [];
+    private readonly SortedSet<long> _openSellOrders = [];
     private readonly ConcurrentDictionary<long, long> _marketHeads = [];
     internal long NextExpiry => _openOrders.Count == 0 ? long.MaxValue : _openOrders.Min.Expires;
+
+    private EconomyTable<SavedPersonalOrder, EconomySavedPersonalOrder> PersonalBook =>
+        (EconomyTable<SavedPersonalOrder, EconomySavedPersonalOrder>)_tables[typeof(SavedPersonalOrder)];
 
     internal IReadOnlyCollection<EconomyKey> NpcMarketOrders(NpcMarketAssortment assortment) =>
         ((EconomyTable<NpcMarketOrder, EconomyNpcMarketOrder>)_tables[typeof(NpcMarketOrder)]).Indexed(
@@ -97,6 +101,16 @@ internal sealed partial class ResidentEconomy
 
     private void OrderChanged(EconomySavedPersonalOrder? before, EconomySavedPersonalOrder? after)
     {
+        bool wasAsk = before is { Status: Eden.Gameplay.Market.PersonalOrderStatus.Open, Bid: false, Remaining: > 0 };
+        bool isAsk = after is { Status: Eden.Gameplay.Market.PersonalOrderStatus.Open, Bid: false, Remaining: > 0 };
+        if (wasAsk && !isAsk)
+        {
+            _openSellOrders.Remove(before!.Id);
+        }
+        else if (!wasAsk && isAsk)
+        {
+            _openSellOrders.Add(after!.Id);
+        }
         if (before is not null && after is not null && before.Status == after.Status && before.Expires == after.Expires)
         {
             return;
@@ -108,6 +122,40 @@ internal sealed partial class ResidentEconomy
         if (after is { Status: Eden.Gameplay.Market.PersonalOrderStatus.Open })
         {
             _openOrders.Add((after.Expires, after.Id));
+        }
+    }
+
+    // The demand worker reads this committed page while holding the shared owner, before opening its settlement transaction.
+    internal IEnumerable<EconomySavedPersonalOrder> OpenSellOrdersAfter(long cursor, long now)
+    {
+        if (_openSellOrders.Count == 0 || cursor >= _openSellOrders.Max)
+        {
+            yield break;
+        }
+        foreach (long id in _openSellOrders.GetViewBetween(cursor + 1, long.MaxValue))
+        {
+            if (PersonalBook.Snapshot(new(id)) is { } order && order.Expires > now)
+            {
+                yield return order;
+            }
+        }
+    }
+
+    internal IEnumerable<long> DemandSellers(int station, int type, long now)
+    {
+        var atStation = PersonalBook.Indexed(nameof(SavedPersonalOrder.StationId), station);
+        var ofType = PersonalBook.Indexed(nameof(SavedPersonalOrder.TypeId), type);
+        foreach (var key in atStation.Count <= ofType.Count ? atStation : ofType)
+        {
+            if (
+                PersonalBook.Snapshot(key) is { Bid: false, Remaining: > 0, Status: Eden.Gameplay.Market.PersonalOrderStatus.Open } order
+                && order.StationId == station
+                && order.TypeId == type
+                && order.Expires > now
+            )
+            {
+                yield return order.PilotId;
+            }
         }
     }
 
@@ -279,6 +327,7 @@ internal sealed partial class ResidentEconomy
         _sequences.Clear();
         _prepared.Clear();
         _openOrders.Clear();
+        _openSellOrders.Clear();
         ClearTimedModules();
         ClearCommandBursts();
         ClearCombatIndexes();

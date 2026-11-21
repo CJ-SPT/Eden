@@ -6,6 +6,7 @@ using Eden.Data.World.Economy;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Mail;
 using Eden.Data.World.Mining;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Dogma;
@@ -54,6 +55,8 @@ internal abstract class WorldAction
     internal abstract int PilotCount { get; }
 
     internal virtual bool PilotExists(long id) => Filter<Pilot>(p => p.Id == id).Any();
+
+    internal virtual long? SkillPoints(long pilot, int type) => Set<PilotSkill>().Find(pilot, type)?.Points;
 
     internal abstract bool HasPilotName(string name);
     internal abstract bool TrafficCharacterTaken(long character);

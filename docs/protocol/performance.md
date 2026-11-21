@@ -6153,3 +6153,96 @@ Not performed; agent client testing is disabled.
 Compare frame processing and oldest due job age at similar pilot counts. On any further spike, capture
 the session's `Exploration`, `WorldWait`, `Ownership` and `gcPause` timings alongside any prepared
 traffic action's `ownerReacquire` time.
+
+## Allocation during bot admission and market settlement
+
+The November 21, 2026 server capture on `f285dfd7` recorded a trade allocating 145.4 MiB and repeated
+400–900 ms holds of the shared world owner during market demand. One arrival took 441.68 ms, including
+440.85 ms to reacquire that owner. The dashboard showed a process-wide rate of 722.1 MiB/s at 1,401 scheduled pilots.
+
+The resident demand worker used to import combat state from every loaded system when polling the order book.
+It now pages committed open sell orders by ID and opens the settlement transaction for sellers at the locations
+the turn can visit. This includes cheaper listings beyond the page. The transaction's private fills determine the
+next recovery deadline. Price and time priority, rollback and checkpoint recovery use the existing settlement path.
+
+The bot worker accounted for 95% of sampled allocations during a separate 12-second admission trace.
+The stack for restoring hauler fittings accounted for 39%. Fittings now share immutable base attributes and look
+up a pilot's relevant skill points by composite key, including pending changes in that transaction. A trade
+prepares the selected career hull directly when the saved or entry hull qualifies. Selecting a new goal
+checks only hull groups that can supply the required career stage. Fresh careers prepare their slot's
+entry hull. Cold single-record catalog reads reuse a parameterized command within each operation.
+Partial mining keeps the system's asteroid contacts warm. Depletion, replenishment and physical changes refresh
+the affected system.
+
+### Automated validation
+
+With the build 3662168 item index warm and hauling career data cold, preparing an Ibis pilot's next hull took
+30.4 MiB and 335 catalog commands on the baseline and 1.8 MiB and 22 commands after the change. The fresh
+hauling path took 30.4 MiB and 335 commands before and 1.9 MiB and 21 commands after. Each repeated preparation
+issued zero SQL commands. These measurements cover the preparation phase alone.
+
+On the combat path the same corvette went from 209.0 MiB and 2,475 commands to 2.1 MiB and 29 commands.
+A Badger seeking its next hauling hull went from 30.3 MiB and 334 commands to 7.2 MiB and 159 commands.
+The ordered list of eligible hull IDs matched the baseline at all five tested stages for mining, hauling and combat.
+
+Eight warm demand polls on a resting listing allocated 1.18 MiB on the baseline. Loading 256 unrelated systems
+raised that to 7.08 MiB. The new worker allocated 0.83 MiB in both cases and settled a partial sale while the
+test held an unrelated system's owner. The polls did zero SQL, opened zero connections and rebuilt zero fits.
+
+For a fixed population comparison, a copy of the frozen save used `capsuleers.activePilotCap=1401` on both
+builds. It reached that cap before the final 30-second window. The control and patched runs used the same
+starting revision, catalog, 135 visited communities and one observer.
+
+| Measurement | Control | Patched |
+| --- | ---: | ---: |
+| Managed allocations at 1,401 scheduled pilots, final 30 s | 139.9 MiB/s | 102.0 MiB/s |
+| Process bytes per completed action in that window | 504.2 KiB | 369.5 KiB |
+| Actions completed in that window | 8,569 | 8,541 |
+| Mean allocation across admission and work, full 90 s | 197.2 MiB/s | 172.6 MiB/s |
+| Completed actions / failures, full 90 s | 23,639 / 0 | 24,050 / 0 |
+| Warm frame processing p95 | 7.16 ms | 2.19 ms |
+| Peak checkpoint capture / projection / write | 12 ms / 784 ms / 1,257 ms | 11 ms / 791 ms / 1,841 ms |
+
+Each run completed seven checkpoints and ended with zero jobs due. All 60 warm observer requests on each build
+used zero SQL commands, connections and fitting rebuilds. The dedicated server's 722.1 MiB/s sample was higher
+than either local replay.
+
+The 90-second Release replay used four reported processors, server GC, the same frozen world, 135 visited
+communities, one observer and real market maintenance. With uncapped admission it completed 29,629 actions
+before and 33,513 after, with zero failures. Process allocation per completed action fell from 697.8 to
+611.1 KiB. Process allocation per second was 223.8 and 220.3 MiB/s respectively, with 3,523 and 3,999 pilots
+scheduled at the end. Warm frame processing p95 was 10.18 ms and 3.73 ms. All 60 warm observer requests
+on each build used zero SQL commands, connections and fitting rebuilds. The frozen world's initial book had
+no open sell orders. The market regression exercises partial settlement while another system is busy.
+
+Reproduce with `ReplaySustainedBotThroughput`, `EDEN_BOT_REPLAY_CASE=450-False`, `EDEN_BOT_REPLAY_SYSTEMS=135`,
+`EDEN_BOT_REPLAY_SECONDS=90`, `EDEN_BOT_REPLAY_MARKET_MAINTENANCE=1` and `EDEN_BOT_REPLAY_WORKER_TRACE=0`.
+Set `EDEN_BOT_REPLAY_SOURCE` to the frozen directory and `EDEN_PERFORMANCE_OUTPUT` to a separate directory
+for each run. Per-second samples and checkpoint measurements are under `artifacts/bot-allocation-20261121/`.
+
+The solution build passed in 9.99 s. The exact `ResidentDemandDoesNotVisitUnrelatedSimulatedSystems` and
+`PartialMiningKeepsAsteroidContactsWarmAndDepletionRefreshesOnlyTheMinedSystem` filters passed. The broader
+catalog, fitting, market, admission, scheduling, preparation, NPC and fresh-career selection passed 179 of
+184 cases in 2 min 13 s. All five failures reproduced on `f285dfd7`. They were two fitting SQL-count assertions,
+the warm founder's SQL-count assertion and both disconnect variants of
+`RoutineProjectionPersistsNewResidentFounderBeforeItsDependents`. Fresh couriers and combat pilots earned and
+replaced both career ships in the installed-catalog test. Both Python policy suites passed all 17 checks.
+
+After integration with the capital-logistics changes on `74904850`, the solution and Release test project
+built with zero warnings or errors in 10.84 s and 12.81 s. The integration filter covered resident demand,
+resident economy, traffic preparation, passive fittings, fitting rollback, career ship replacement, capital
+fuel consumption and phenomena effects. All 55 cases passed in 42 s. Repository formatting passed.
+On the integrated build, the same 90-second capped replay averaged 173.3 MiB/s overall and 105.1 MiB/s
+in the final window at 1,401 pilots. It completed 23,973 actions with zero failures and zero jobs due at the
+last sample. The 60 warm requests issued zero SQL commands, opened zero connections and rebuilt zero fits.
+Warm frame processing p95 was 9.71 ms. Seven checkpoints peaked at 14 ms for capture, 794 ms for projection
+and 1,015 ms for file writing.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+Compare allocation rate at 1,401 scheduled pilots after updating the dedicated server. Check the same interval
+for `market demand` owner holds and arrival `ownerReacquire` times.

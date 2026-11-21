@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using Eden.Data.World.Capsuleers;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
@@ -39,6 +40,7 @@ internal sealed partial class CapsuleerScheduler
         TrafficTemplateInput? Template,
         int TrainingHull,
         CapsuleerProfession DefaultProfession,
+        CapsuleerCareerPlan? TrainingPlan,
         bool PrepareMercoxit,
         bool PrepareInstitutionalOffers
     );
@@ -168,8 +170,20 @@ internal sealed partial class CapsuleerScheduler
             && job.Action == CapsuleerAction.Prepare
             && !world.Settings.FreshUniverse
             && world.Settings.Capsuleers.Miners
-            && world.Set<Eden.Data.World.Capsuleers.SavedCapsuleerAgent>().Find(job.PilotId) is { Slot: 0 } miner
+            && world.Set<SavedCapsuleerAgent>().Find(job.PilotId) is { Slot: 0 } miner
             && miner.CommunitySystemId == system;
+        var trainingPlan = job.Action == CapsuleerAction.Prepare ? expedition?.CareerPlan : work?.CareerPlan;
+        var profession =
+            job.Action == CapsuleerAction.Prepare ? CapsuleerProfession.Mining : trainingPlan?.Profession ?? CapsuleerProfession.Hauling;
+        if (
+            dockedWork
+            && world.Settings.FreshUniverse
+            && job.Action == CapsuleerAction.Trade
+            && world.Set<SavedCapsuleerAgent>().Find(job.PilotId) is { } freshAgent
+        )
+        {
+            profession = FreshCareerRules.Profession(freshAgent.Slot);
+        }
         return new(
             job,
             system,
@@ -195,9 +209,8 @@ internal sealed partial class CapsuleerScheduler
                 )
                 : null,
             dockedWork ? resident?.ShipTypeId ?? world.Ships.Find(shipId)?.TypeId ?? 0 : 0,
-            job.Action == CapsuleerAction.Prepare
-                ? CapsuleerProfession.Mining
-                : work?.CareerPlan?.Profession ?? CapsuleerProfession.Hauling,
+            profession,
+            trainingPlan,
             mercoxit,
             dockedWork && PilotMarketStore.UsesInstitutionalOffers(world)
         );
@@ -232,11 +245,20 @@ internal sealed partial class CapsuleerScheduler
         if (input.TrainingHull != 0)
         {
             var hull = (HullClass)catalog.RequireItem(input.TrainingHull).GroupId;
+            if (database.Settings.FreshUniverse && input.Job.Action == CapsuleerAction.Trade)
+            {
+                // WorkFreshCareer trains for its slot's entry hull. Recovery capsules do not train this turn.
+                if (hull != HullClass.Capsule)
+                {
+                    CapsuleerCareerTraining.PrepareFreshChoices(catalog, input.DefaultProfession);
+                }
+                return;
+            }
             var profession =
                 input.Job.Action == CapsuleerAction.Prepare
                     ? CapsuleerProfession.Mining
                     : CapsuleerCareerTraining.Profession(catalog, input.TrainingHull, hull) ?? input.DefaultProfession;
-            CapsuleerCareerTraining.PrepareChoices(catalog, input.TrainingHull, profession);
+            CapsuleerCareerTraining.PrepareChoices(catalog, input.TrainingHull, profession, input.TrainingPlan);
         }
     }
 

@@ -15,13 +15,17 @@ internal sealed partial class PilotSkillReader
 {
     internal static int Level(WorldAction world, CatalogDbContext catalog, long pilotId, int skill)
     {
-        long points = world.Set<PilotSkill>().Find(pilotId, skill)?.Points ?? 0;
+        long points = world.SkillPoints(pilotId, skill) ?? 0;
         double rank = catalog.FittingAttributes(skill).GetValueOrDefault(DogmaAttributeId.SkillTimeConstant, 1);
         return new TrainedSkill(skill, points, rank).Level;
     }
 
     internal static IReadOnlyDictionary<int, int> Levels(WorldAction world, CatalogDbContext catalog, long pilotId, int[] skills)
     {
+        if (world is EconomyTransaction)
+        {
+            return skills.ToDictionary(skill => skill, skill => Level(world, catalog, pilotId, skill));
+        }
         var points = world
             .Set<PilotSkill>()
             .Where(s => s.PilotId == pilotId && Enumerable.Contains(skills, s.TypeId))

@@ -210,6 +210,32 @@ public sealed class TrafficPreparationTests
     }
 
     [Fact]
+    public void PartialMiningKeepsAsteroidContactsWarmAndDepletionRefreshesOnlyTheMinedSystem()
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new();
+        using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true);
+        var live = host.GetRequiredService<LiveWorld>();
+        using var owner = live.EnterShared();
+        var field = host.GetRequiredService<Eden.Gameplay.Mining.IAsteroidField>();
+        var local = field.List(SourceSystem);
+        long rock = local.First().Id;
+        var remote = field.List(SourceSystem + 1);
+        void SetQuantity(long quantity)
+        {
+            using var work = live.Economy.Begin(new(systems: [SourceSystem]));
+            work.Set<WorldAsteroid>().Find(rock)!.Quantity = quantity;
+            work.Commit();
+        }
+        SetQuantity(1);
+        Assert.Same(local, field.List(SourceSystem));
+        SetQuantity(0);
+        Assert.DoesNotContain(field.List(SourceSystem), item => item.Id == rock);
+        Assert.Same(remote, field.List(SourceSystem + 1));
+        SetQuantity(2);
+        Assert.Contains(field.List(SourceSystem), item => item.Id == rock);
+    }
+
+    [Fact]
     public void ResidentGeometryReadsIndexedSnapshotsAndSeesPrivateDepletionAndRenewal()
     {
         using CapsuleerHaulerTests.Fixture fixture = new();

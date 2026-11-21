@@ -106,7 +106,7 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
     internal AutoMiningHold AutoMiningHold(long pilot, long ship, MiningFamily family, Func<AutoMiningHold> load) =>
         Read(_autoMiningHolds, (pilot, ship, family), load);
 
-    private readonly ResidentSnapshot<int, IReadOnlyList<StaticSpaceObject>> _asteroids = new("resident.asteroids", "WorldAsteroid");
+    private readonly ResidentSnapshot<int, IReadOnlyList<StaticSpaceObject>> _asteroids = new("resident.asteroids");
     private readonly ResidentSnapshot<(int System, MiningFamily Family, long Catalog), MiningSiteView> _miningSites = new(
         "resident.miningSites",
         "WorldMiningSite",
@@ -276,6 +276,14 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
         );
         foreach (var change in changes)
         {
+            if (change.Table == "WorldAsteroidGeometry" && change.System is int system && !MissionMiningRules.IsDeposit(change.Id))
+            {
+                _asteroids.Remove(system);
+            }
+            else if (change.Table == "WorldAsteroid" && !change.Resident && !MissionMiningRules.IsDeposit(change.Id))
+            {
+                _asteroids.Clear();
+            }
             if (change.Table == "WorldPilot")
             {
                 _gateWatcherShips.Remove(change.Id);
@@ -352,10 +360,6 @@ internal sealed partial class LiveReadModels(LiveWorld owner, WorldDatabase data
                 }
         );
         ObserveDefenseProfiles(changes);
-        if (changes.Any(change => change.Table == "WorldAsteroid" && !MissionMiningRules.IsDeposit(change.Id)))
-        {
-            _asteroids.Observe(changes);
-        }
         _unfinishedMissiles.Observe(changes);
         _miningSites.Observe(changes);
         ObserveStructures(changes);

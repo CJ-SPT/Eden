@@ -7,6 +7,7 @@ using Eden.Data.World.Industry;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Data.World.Mining;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Docking;
@@ -60,6 +61,10 @@ internal sealed partial class EconomyTransaction(
             .IndexedSnapshots(nameof(NpcMarketAssortment), assortments)
             .Where(o => assortments.Contains(new(o.StationId, o.TypeId, o.Bid, o.Kind, o.SourceOrderId)));
 
+    internal bool PersonalOrderStillOpen(long id) =>
+        ((EconomySet<SavedPersonalOrder, EconomySavedPersonalOrder>)Set<SavedPersonalOrder>()).ReadSnapshot(new(id))
+            is { Status: PersonalOrderStatus.Open, Bid: false, Remaining: > 0 };
+
     internal override IEnumerable<EconomyWorldAsteroid> AsteroidsInSystem(int system) =>
         ((EconomySet<WorldAsteroid, EconomyWorldAsteroid>)Set<WorldAsteroid>())
             .IndexedSnapshots(nameof(WorldAsteroid.SystemId), system)
@@ -85,6 +90,9 @@ internal sealed partial class EconomyTransaction(
     }
 
     internal override bool PilotExists(long id) => store.IsPilot(id);
+
+    internal override long? SkillPoints(long pilot, int type) =>
+        ((EconomySet<PilotSkill, EconomyPilotSkill>)Set<PilotSkill>()).ReadSnapshot(new(pilot, type))?.Points;
 
     internal override IReadOnlyList<long> ContainedInventoryIds(long location)
     {

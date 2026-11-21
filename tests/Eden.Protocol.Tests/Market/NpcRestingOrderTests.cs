@@ -241,6 +241,70 @@ public sealed class NpcRestingOrderTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public async Task ResidentDemandDoesNotVisitUnrelatedSimulatedSystems()
+    {
+        using Fixture f = new();
+        f.Stock(0);
+        f.List(f.Stack(5), 5);
+        var live = f.Host.GetRequiredService<LiveWorld>();
+        var signal = f.Host.GetRequiredService<MarketChangeSignal>();
+        using var presence = f.Host.GetRequiredService<IHumanPresence>().Select(f.Pilot.PilotId, f.Pilot.SystemId);
+        var demand = f.Demand;
+        Assert.Equal(0, demand.AdvanceDemand());
+        var small = Measure();
+        const int remote = 31000001;
+        for (int system = remote; system < remote + 256; system++)
+        {
+            _ = live.CombatForSystem(system);
+        }
+        var large = Measure();
+        output.WriteLine(
+            $"Eight demand polls before and after loading 256 unrelated systems: "
+                + $"{small.AllocatedBytes:N0} / {large.AllocatedBytes:N0} bytes, "
+                + $"{small.Elapsed.TotalMilliseconds:F2} / {large.Elapsed.TotalMilliseconds:F2} ms."
+        );
+        Assert.InRange(large.AllocatedBytes, 0, small.AllocatedBytes + 256 * 1024);
+
+        f.Stock(3);
+        signal.ScheduleDemand(0, 0);
+        using ManualResetEventSlim entered = new();
+        using ManualResetEventSlim release = new();
+        var holding = Task.Run(() =>
+        {
+            using var lease = live.Enter("paused unrelated bot system", remote);
+            entered.Set();
+            Assert.True(release.Wait(TimeSpan.FromSeconds(15)));
+        });
+        try
+        {
+            Assert.True(entered.Wait(TimeSpan.FromSeconds(10)));
+            Assert.Equal(1, await Task.Run(() => demand.AdvanceDemand()).WaitAsync(TimeSpan.FromSeconds(5)));
+        }
+        finally
+        {
+            release.Set();
+            await holding;
+        }
+        Assert.Equal(2, Assert.Single(f.Personal.PersonalOrders(f.Pilot.PilotId)).Remaining);
+        Assert.Equal(3, Assert.Single(f.Market.Transactions(f.Pilot.PilotId)).Quantity);
+
+        PerformanceSample Measure()
+        {
+            PerformanceSample sample = default;
+            using (SessionPerformance.Capture("warm demand polls", value => sample = value))
+            {
+                for (int repeat = 0; repeat < 8; repeat++)
+                {
+                    signal.ScheduleDemand(0, 0);
+                    Assert.Equal(0, demand.AdvanceDemand());
+                }
+            }
+            Assert.Equal((0, 0, 0), (sample.Commands, sample.Connections, sample.Fittings));
+            return sample;
+        }
+    }
+
+    [Fact]
     public void ResidentDemandYieldsBetweenLocationsAndResumesBeforeADueSale()
     {
         const int earlierListings = 24;
@@ -306,27 +370,28 @@ public sealed class NpcRestingOrderTests(ITestOutputHelper output)
         f.Stock(4);
         using var presence = f.Host.GetRequiredService<IHumanPresence>().Select(f.Pilot.PilotId, f.Pilot.SystemId);
         long before = f.Market.Balance(f.Pilot.PilotId);
-        using (WorldDbContext world = new(f.Data.Database.Path))
-        {
-            world.Database.ExecuteSqlRaw(
-                "CREATE TRIGGER RejectDemand BEFORE INSERT ON WorldMarketTrade BEGIN SELECT RAISE(ABORT,'settlement failure'); END"
-            );
-        }
-        Assert.Throws<DbUpdateException>(() => f.Demand.AdvanceDemand());
-        Assert.Equal(before, f.Market.Balance(f.Pilot.PilotId));
+        var live = f.Host.GetRequiredService<LiveWorld>();
+        long seller = f.Pilot.PilotId;
+        SetBalance(long.MaxValue);
+        Assert.Throws<OverflowException>(() => f.Demand.AdvanceDemand());
+        Assert.Equal(long.MaxValue, f.Market.Balance(seller));
         Assert.Equal(4, f.Bid.Remaining);
         Assert.Equal(2, f.Personal.PersonalOrders(f.Pilot.PilotId).Count);
         Assert.Empty(f.Market.Transactions(f.Pilot.PilotId));
-        using (WorldDbContext world = new(f.Data.Database.Path))
-        {
-            world.Database.ExecuteSqlRaw("DROP TRIGGER RejectDemand");
-        }
+        SetBalance(before);
         Assert.Equal(1, f.Demand.AdvanceDemand(1));
         Assert.Equal(cheaper, Assert.Single(f.Personal.PersonalOrders(f.Pilot.PilotId, history: true)).Id);
         Assert.Equal(10, Assert.Single(f.Personal.PersonalOrders(f.Pilot.PilotId)).PriceCents);
         Assert.Equal(0, f.Bid.Remaining);
         Assert.Equal(0, f.Demand.AdvanceDemand());
         Assert.Single(f.Market.Transactions(f.Pilot.PilotId));
+
+        void SetBalance(long cents)
+        {
+            using var world = live.Economy.Begin(new(pilots: [seller]));
+            world.Set<PilotWallet>().Find(seller)!.Cents = cents;
+            world.Commit();
+        }
     }
 
     [Fact]

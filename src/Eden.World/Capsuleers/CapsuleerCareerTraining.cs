@@ -53,12 +53,18 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
     internal static IReadOnlyList<int> Ships(CatalogDbContext catalog, CapsuleerProfession profession) =>
         catalog.Definition(s_ships, (int)profession);
 
-    internal static void PrepareChoices(CatalogDbContext catalog, int hull, CapsuleerProfession profession)
+    internal static void PrepareChoices(CatalogDbContext catalog, int hull, CapsuleerProfession profession, CapsuleerCareerPlan? saved)
     {
         using var phase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("traffic.prepareCareerChoices");
-        _ = catalog.Definition(s_careerHullStages, hull);
-        _ = catalog.Definitions.GlobalDefinition(s_careerChoices[profession]);
+        var (stage, preferred) = PreferredShip(catalog, hull, profession, saved);
+        if (preferred == 0)
+        {
+            _ = catalog.Definition(s_careerChoices[profession], stage + 1);
+        }
     }
+
+    internal static void PrepareFreshChoices(CatalogDbContext catalog, CapsuleerProfession profession) =>
+        _ = catalog.Definition(s_careerFitPlans, EntryHull(profession));
 
     internal CapsuleerTrainingTurn Advance(
         EconomyTransaction world,
@@ -303,24 +309,45 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
         CapsuleerCareerPlan? saved
     )
     {
-        var flown = catalog.Definition(s_careerHullStages, pilot.ShipTypeId);
-        int stage = Math.Max(saved?.HighestHullStage ?? 0, flown.Profession == profession ? flown.Stage : 0);
+        var (stage, preferred) = PreferredShip(catalog, pilot.ShipTypeId, profession, saved);
         var focus = saved?.NextFocus ?? CapsuleerTrainingFocus.Work;
-        var choices = catalog.Definitions.GlobalDefinition(s_careerChoices[profession]);
-        var next = choices[stage + 1];
-        if (saved is { ShipTypeId: > 0 } && next.Contains(saved.ShipTypeId))
+        if (preferred != 0)
         {
-            return saved with { HighestHullStage = stage };
+            return new(profession, preferred, focus) { HighestHullStage = stage };
         }
-        var available = next.ToArray();
+        var available = catalog.Definition(s_careerChoices[profession], stage + 1);
         if (available.Length == 0)
         {
             return new(profession, 0, focus) { HighestHullStage = stage };
         }
-        var rookie = stage == 0 ? available.FirstOrDefault(type => type == EntryHull(profession)) : 0;
         long seed = world.Set<SavedCapsuleerProvisioning>().Find(1)?.WorldSeed ?? 0;
         ulong draw = CapsuleerProvisioningRules.Seed(seed ^ pilot.PilotId, pilot.SystemId, CapsuleerCareer.Mining);
-        return new(profession, rookie == 0 ? available[(int)(draw % (ulong)available.Length)] : rookie, focus) { HighestHullStage = stage };
+        return new(profession, available[(int)(draw % (ulong)available.Length)], focus) { HighestHullStage = stage };
+    }
+
+    private static (int Stage, int Preferred) PreferredShip(
+        CatalogDbContext catalog,
+        int hull,
+        CapsuleerProfession profession,
+        CapsuleerCareerPlan? saved
+    )
+    {
+        var flown = catalog.Definition(s_careerHullStages, hull);
+        int stage = Math.Max(
+            saved?.Profession == profession ? saved.HighestHullStage : 0,
+            flown.Profession == profession ? flown.Stage : 0
+        );
+        if (saved?.Profession == profession && saved.ShipTypeId > 0 && IsChoice(saved.ShipTypeId))
+        {
+            return (stage, saved.ShipTypeId);
+        }
+        int entry = EntryHull(profession);
+        return (stage, stage == 0 && IsChoice(entry) ? entry : 0);
+
+        bool IsChoice(int type) =>
+            catalog.Definition(s_careerHullStages, type) == (profession, stage + 1)
+            && EligibleShip(catalog, type)
+            && catalog.Definition(s_careerFitPlans, type) is not null;
     }
 
     private static int EntryHull(CapsuleerProfession profession) =>
@@ -358,31 +385,51 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
         }
     );
 
-    private static readonly FrozenDictionary<CapsuleerProfession, CatalogDefinition<ILookup<int, int>>> s_careerChoices =
+    private static readonly FrozenDictionary<CapsuleerProfession, CatalogDefinition<int[]>> s_careerChoices =
         Enum.GetValues<CapsuleerProfession>()
             .ToFrozenDictionary(
                 profession => profession,
-                profession => new CatalogDefinition<ILookup<int, int>>(
-                    "career-goal-stages/" + profession,
-                    (catalog, _) =>
-                        Ships(catalog, profession)
-                            .Select(type => (Type: type, Stage: catalog.Definition(s_careerHullStages, type).Stage))
-                            .Where(ship => ship.Stage > 0 && catalog.Definition(s_careerFitPlans, ship.Type) is not null)
-                            .ToLookup(ship => ship.Stage, ship => ship.Type)
+                profession => new CatalogDefinition<int[]>(
+                    "career-goals/" + profession,
+                    (catalog, stage) => LoadChoices(catalog, profession, stage)
                 )
             );
+
+    private static int[] LoadChoices(CatalogDbContext catalog, CapsuleerProfession profession, int stage)
+    {
+        // HullStage distinguishes standard tech-one hulls from other variants. Exclude entire groups
+        // before reading individual type records, then check each candidate's actual catalog stage.
+        var groups = Enum.GetValues<HullClass>()
+            .Where(group =>
+                CapsuleerCareerTrainingRules.HullStage(profession, group, 1, true) == stage
+                || CapsuleerCareerTrainingRules.HullStage(profession, group, 2, false) == stage
+            );
+        return groups
+            .SelectMany(group => catalog.Definitions.TypesInGroup((int)group))
+            .Where(type =>
+                catalog.Definition(s_careerHullStages, type) == (profession, stage)
+                && EligibleShip(catalog, type)
+                && catalog.Definition(s_careerFitPlans, type) is not null
+            )
+            .Order()
+            .ToArray();
+    }
 
     private static int[] LoadShips(CatalogDbContext catalog, int profession) =>
         catalog
             .Definitions.Items.Values.Where(item =>
                 item.CategoryId == (int)InventoryCategory.Ship
                 && Profession(catalog, item.Id, (HullClass)item.GroupId) == (CapsuleerProfession)profession
-                && HullCatalog.CanAssemble(catalog, item, item.CategoryId)
-                && catalog.Definition(s_shipPlans, item.Id) is { Length: > 0 }
+                && EligibleShip(catalog, item.Id)
             )
             .Select(item => item.Id)
             .Order()
             .ToArray();
+
+    private static bool EligibleShip(CatalogDbContext catalog, int type) =>
+        catalog.FittingType(type) is { CategoryId: (int)InventoryCategory.Ship } item
+        && HullCatalog.CanAssemble(catalog, item, item.CategoryId)
+        && catalog.Definition(s_shipPlans, type) is { Length: > 0 };
 
     internal static CapsuleerProfession? Profession(CatalogDbContext catalog, int ship, HullClass hull) =>
         hull == HullClass.Frigate
