@@ -450,6 +450,10 @@ internal sealed partial class FlightSession(
     {
         using (space.UseSystem(Pilot.SystemId))
         {
+            if (space.HasConduitArrival(Pilot.ShipId))
+            {
+                return;
+            }
             if (space.ConsumeDisplacement(Pilot.ShipId) is { } destination)
             {
                 Pilot = Pilot with { Position = destination };

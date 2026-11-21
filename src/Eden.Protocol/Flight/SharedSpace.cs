@@ -164,7 +164,7 @@ internal sealed class SharedSpace(
     IAutonomousPilotPresence? autonomous = null,
     IPilotGateCloak? gateCloaks = null,
     Eden.Gameplay.Structures.IPilotTethering? tethering = null
-) : IPilotCombatPresence
+) : IPilotCombatPresence, IConduitArrivalEvents
 {
     // The coordinator owns copied navigation states. Connections retain their socket and notification queue.
     private readonly ConcurrentDictionary<long, ShipContact> _ships = new();
@@ -294,6 +294,29 @@ internal sealed class SharedSpace(
 
     private readonly ConcurrentDictionary<long, ShipMotion> _motion = new();
     private readonly ConcurrentDictionary<long, SpacePosition> _displacements = new();
+    private readonly ConcurrentDictionary<long, CapitalJump> _conduitArrivals = new();
+
+    internal bool HasConduitArrival(long ship) => _conduitArrivals.ContainsKey(ship);
+
+    internal CapitalJump? TakeConduitArrival(long ship) => _conduitArrivals.TryRemove(ship, out var arrival) ? arrival : null;
+
+    public void Publish(int origin, CapitalJump arrival)
+    {
+        long ship = arrival.Pilot.ShipId;
+        RunMotion(
+            origin,
+            () =>
+            {
+                using var owned = EnterMotion(systemId: origin);
+                if (SystemFor(ship) == origin)
+                {
+                    LeaveOwned(ship);
+                    _conduitArrivals[ship] = arrival;
+                }
+            },
+            nameof(Publish)
+        );
+    }
 
     internal SpacePosition? ConsumeDisplacement(long ship) => _displacements.TryRemove(ship, out var destination) ? destination : null;
 
@@ -495,6 +518,7 @@ internal sealed class SharedSpace(
             }
             _motion.TryRemove(shipId, out _);
             _displacements.TryRemove(shipId, out _);
+            _conduitArrivals.TryRemove(shipId, out _);
             _history.TryRemove(shipId, out _);
             _orders.TryRemove(shipId, out _);
         }

@@ -586,6 +586,9 @@ internal sealed partial class CooperativeFleetHandler(
                 case ("SetTakesFleetWarp", [bool takesWarp]):
                     fleets.SetTakesWarp(actor, id, takesWarp);
                     return PilotCallResult.None;
+                case ("SetAcceptsConduitJumpsValue", [bool acceptsConduit]):
+                    fleets.SetAcceptsConduitJumps(actor, id, acceptsConduit);
+                    return PilotCallResult.None;
                 case ("SendBroadcast", _):
                     SendBroadcast(actor, id, args, FleetBroadcastRange.Universe);
                     return PilotCallResult.None;

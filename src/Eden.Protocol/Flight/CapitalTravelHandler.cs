@@ -55,7 +55,7 @@ internal sealed partial class CapitalTravelHandler(
                 return plain && args.Length == 0
                     ? new PilotCallResult.Success(new BlueMap<int, int>(travel.BeaconCounts()))
                     : new PilotCallResult.Failure("Cynosural beacon counts do not accept arguments.");
-            case ("beyonce", "CmdJumpToFleetModuleBeacon" or "CmdBridgeToFleetModuleBeacon"):
+            case ("beyonce", "CmdJumpToFleetModuleBeacon" or "CmdBridgeToFleetModuleBeacon" or "CmdGroupJumpToFleetModuleBeacon"):
                 if (
                     !plain
                     || args is not [long emitter, long beacon, long system]
@@ -66,9 +66,19 @@ internal sealed partial class CapitalTravelHandler(
                 {
                     return new PilotCallResult.Failure("Choose a valid fleet cynosural field.");
                 }
-                var moduleTarget = new CapitalJumpRequest(emitter, beacon, (int)system);
+                var moduleTarget = new CapitalJumpRequest(
+                    emitter,
+                    beacon,
+                    (int)system,
+                    Conduit: method == "CmdGroupJumpToFleetModuleBeacon"
+                );
                 return method == "CmdBridgeToFleetModuleBeacon" ? OpenPortal(context, moduleTarget) : StartJump(context, moduleTarget);
-            case ("beyonce", "CmdJumpToFleetDeployableBeacon" or "CmdBridgeToFleetDeployableBeacon"):
+            case (
+                "beyonce",
+                "CmdJumpToFleetDeployableBeacon"
+                    or "CmdBridgeToFleetDeployableBeacon"
+                    or "CmdGroupJumpToFleetDeployableBeacon"
+            ):
                 if (
                     !plain
                     || args is not [long deployable, long deployableSystem, long deployedBeacon]
@@ -83,7 +93,8 @@ internal sealed partial class CapitalTravelHandler(
                     deployable,
                     deployedBeacon,
                     (int)deployableSystem,
-                    CapitalJumpTarget.FleetDeployable
+                    CapitalJumpTarget.FleetDeployable,
+                    Conduit: method == "CmdGroupJumpToFleetDeployableBeacon"
                 );
                 return method == "CmdBridgeToFleetDeployableBeacon" ? OpenPortal(context, mobileTarget) : StartJump(context, mobileTarget);
             case ("beyonce", "CmdJumpThroughFleet"):
@@ -99,16 +110,39 @@ internal sealed partial class CapitalTravelHandler(
                     return new PilotCallResult.Failure("Choose a valid fleet jump portal.");
                 }
                 return StartJump(context, new(owner, portalBeacon, (int)portalSystem, CapitalJumpTarget.FleetPortal, host));
-            case ("structureCynoBeaconMgr", "CmdJumpToStructureBeacon" or "CmdBridgeToStructureBeacon"):
+            case ("structureCynoBeaconMgr", "CmdJumpToStructureBeacon" or "CmdBridgeToStructureBeacon" or "CmdGroupJumpToStructureBeacon"):
                 if (!plain || args is not [long structure, long destination] || structure <= 0 || destination is <= 0 or > int.MaxValue)
                 {
                     return new PilotCallResult.Failure("Choose a valid structure cynosural beacon.");
                 }
-                var structureTarget = new CapitalJumpRequest(0, structure, (int)destination, CapitalJumpTarget.Structure);
+                var structureTarget = new CapitalJumpRequest(
+                    0,
+                    structure,
+                    (int)destination,
+                    CapitalJumpTarget.Structure,
+                    Conduit: method == "CmdGroupJumpToStructureBeacon"
+                );
                 return method == "CmdBridgeToStructureBeacon" ? OpenPortal(context, structureTarget) : StartJump(context, structureTarget);
             default:
                 return PilotCallResult.Unsupported;
         }
+    }
+
+    internal bool AdoptConduit(PilotCallContext context)
+    {
+        if (!context.Selected || context.Flight.TakeConduitArrival() is not { } moved)
+        {
+            return false;
+        }
+        context.Flight.Relocate(moved.Pilot, systems.Load(moved.Pilot.SystemId));
+        context.ReleaseLocationReferences();
+        context.Roster = context.Roster.Select(pilot => pilot.PilotId == moved.Pilot.PilotId ? moved.Pilot : pilot).ToArray();
+        foreach (var change in moved.Changes)
+        {
+            InventoryChangesWire.NotifyItemChange(context, change);
+        }
+        context.Notifications.Add(new JumpTimersUpdated(moved.Timers));
+        return true;
     }
 
     private PilotCallResult OpenPortal(PilotCallContext context, CapitalJumpRequest request)

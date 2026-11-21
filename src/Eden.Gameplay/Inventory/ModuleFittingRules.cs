@@ -3,6 +3,7 @@ using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Fleets;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Information;
 using Eden.Gameplay.Mining;
 using Eden.Gameplay.Propulsion;
@@ -130,6 +131,8 @@ public static class ModuleFittingRules
                     && effects.Contains(DogmaEffect.TitanJumpPortalGeneration),
                 Flight.CapitalTravelRules.CovertPortalGroup => typeId == Flight.CapitalTravelRules.CovertPortalGenerator
                     && effects.Contains(DogmaEffect.CovertJumpPortalGeneration),
+                CapitalTravelRules.IndustrialPortalGroup => typeId == CapitalTravelRules.IndustrialPortalGenerator
+                    && effects.Contains(DogmaEffect.TitanJumpPortalGeneration),
                 CapacitorBoosterDefinitions.Group => CapacitorBoosterDefinitions.IsSupported(groupId, attributes)
                     && effects.Contains(DogmaEffect.CapacitorBoosting),
                 HullRepairDefinitions.Group => LocalRepairDefinitions.IsSupported(attributes)

@@ -20,13 +20,13 @@ internal sealed record FleetOptionsReply(bool FreeMove, bool Registered = false)
 
 internal sealed record FleetMemberReply(FleetMember Member) : BlueModel
 {
-    internal static BlueInstance OptOuts(bool enabled) =>
+    internal static BlueInstance OptOuts(FleetMember member) =>
         new(
             "util.KeyVal",
             new Dictionary<string, object?>
             {
-                ["acceptsFleetWarp"] = enabled,
-                ["acceptsConduitJumps"] = false,
+                ["acceptsFleetWarp"] = member.TakesFleetWarp,
+                ["acceptsConduitJumps"] = member.AcceptsConduitJumps,
                 ["acceptsFleetRegroups"] = false,
             }
         );
@@ -46,7 +46,7 @@ internal sealed record FleetMemberReply(FleetMember Member) : BlueModel
                 ["job"] = Member.Job,
                 ["shipTypeID"] = Member.Pilot.ShipTypeId,
                 ["solarSystemID"] = Member.Pilot.SystemId,
-                ["memberOptOuts"] = OptOuts(Member.TakesFleetWarp),
+                ["memberOptOuts"] = OptOuts(Member),
             }
         );
 }
@@ -116,12 +116,12 @@ internal sealed record FleetMemberNotification(long FleetId, FleetMember Before,
             Before.Placement.SquadId,
             (int)Before.Placement.Role,
             Before.Job,
-            FleetMemberReply.OptOuts(Before.TakesFleetWarp),
+            FleetMemberReply.OptOuts(Before),
             After.Placement.WingId,
             After.Placement.SquadId,
             (int)After.Placement.Role,
             After.Job,
-            FleetMemberReply.OptOuts(After.TakesFleetWarp),
+            FleetMemberReply.OptOuts(After),
             OnlyMember,
         ];
 }

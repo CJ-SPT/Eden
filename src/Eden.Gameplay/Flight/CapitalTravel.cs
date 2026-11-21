@@ -19,7 +19,8 @@ public sealed record CapitalJumpRequest(
     long BeaconId,
     int SystemId,
     CapitalJumpTarget Target = CapitalJumpTarget.FleetModule,
-    long PortalShipId = 0
+    long PortalShipId = 0,
+    bool Conduit = false
 );
 
 public sealed record StructureCynoBeacon(long Id, int TypeId, int OwnerId, int SystemId, StructureState State, string Name);
@@ -63,6 +64,11 @@ public sealed record JumpPortalActivation(JumpPortal Portal, double Capacitor, I
 public interface ICapitalInventoryEvents
 {
     void Publish(long pilotId, IReadOnlyList<InventoryChange> changes);
+}
+
+public interface IConduitArrivalEvents
+{
+    void Publish(int origin, CapitalJump arrival);
 }
 
 public sealed record CapitalJump(DockedPilot Pilot, JumpTimers Timers, double Capacitor, IReadOnlyList<InventoryChange> Changes);
@@ -109,6 +115,10 @@ public static class CapitalTravelRules
     public const int JumpPortalGenerationSkill = 24562;
     public const int CovertPortalGenerator = 28652;
     public const int CovertPortalGroup = 4127;
+    public const int IndustrialPortalGenerator = 63140;
+    public const int IndustrialPortalGroup = 4184;
+    public const int CapitalJumpPortalGenerationSkill = 83094;
+    public const double ConduitRange = 10_000;
     public const int MobileBeacon = 57319;
     public const int MobileField = 57425;
     public const int CovertMobileBeacon = 59630;
@@ -154,6 +164,42 @@ public static class CapitalTravelRules
                 or (int)HullClass.Carrier
                 or (int)HullClass.CapitalIndustrial
         || Supercapital(groupId);
+
+    public static bool CarrierConduitHull(int groupId) =>
+        (HullClass)groupId is HullClass.Carrier or HullClass.Supercarrier or HullClass.CommandCarrier;
+
+    public static bool CarrierConduitPassengerHull(int groupId) =>
+        (HullClass)groupId
+            is HullClass.Capsule
+                or HullClass.Shuttle
+                or HullClass.Corvette
+                or HullClass.Frigate
+                or HullClass.Cruiser
+                or HullClass.Battleship
+                or HullClass.AssaultFrigate
+                or HullClass.HeavyAssaultCruiser
+                or HullClass.CombatBattlecruiser
+                or HullClass.Destroyer
+                or HullClass.CommandShip
+                or HullClass.Interdictor
+                or HullClass.CovertOps
+                or HullClass.Interceptor
+                or HullClass.Logistics
+                or HullClass.ForceRecon
+                or HullClass.StealthBomber
+                or HullClass.ElectronicAttack
+                or HullClass.HeavyInterdictionCruiser
+                or HullClass.BlackOps
+                or HullClass.Marauder
+                or HullClass.CombatReconShip
+                or HullClass.StrategicCruiser
+                or HullClass.PrototypeExploration
+                or HullClass.AttackBattlecruiser
+                or HullClass.ExpeditionFrigate
+                or HullClass.TacticalDestroyer
+                or HullClass.LogisticsFrigate
+                or HullClass.CommandDestroyer
+                or HullClass.FlagCruiser;
 
     public static bool Supercapital(int groupId) => groupId is (int)HullClass.Supercarrier or (int)HullClass.Titan;
 

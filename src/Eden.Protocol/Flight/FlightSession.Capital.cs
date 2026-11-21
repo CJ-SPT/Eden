@@ -5,6 +5,8 @@ namespace Eden.Protocol.Flight;
 
 internal sealed partial class FlightSession
 {
+    internal CapitalJump? TakeConduitArrival() => space.TakeConduitArrival(Pilot.ShipId);
+
     internal bool IndustrialProtectionActive => capitalTravel?.IndustrialProtectionActive(Pilot.ShipId) == true;
 
     internal bool CapitalModuleActive =>

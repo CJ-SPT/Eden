@@ -134,6 +134,16 @@ internal sealed class PilotUpdateCoordinator(
         || naniteRepairs.IsMonitoring
         || assetSafety?.IsMonitoring == true;
 
+    internal bool AdoptConduit(PilotCallContext context)
+    {
+        if (capital?.AdoptConduit(context) != true)
+        {
+            return false;
+        }
+        Enter(context);
+        return true;
+    }
+
     public void Enter(PilotCallContext context)
     {
         // Warm the same resident views that subsequent RPCs and ticks will use.

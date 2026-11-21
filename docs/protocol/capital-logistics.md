@@ -509,8 +509,9 @@ Komodo can load one heavy attack squadron alongside a light squadron. Fighter fi
 `6984` for the Guristas hull bonuses and the default multiplier values from `12869`. Revenant attack
 missiles also use its explosion radius and velocity modifiers. The Sarathiel can steer and change speed
 in siege because its hull modifies the siege module's speed penalty. Warp and docking still wait for
-the cycle to expire. Capital micro jump drives and fleet jump fields, conduit jumps, additional
-fighter abilities and pirate blueprint acquisition remain open.
+the cycle to expire. Capital micro jump drives and fleet jump fields, additional
+fighter abilities and pirate blueprint acquisition remain open. The Revenant and Vendetta share the
+carrier conduit rules below.
 
 **Automated validation.** The pirate roster and two-deck launch case passed in 8.12 seconds.
 The Sarathiel siege movement case passed in 7.76 seconds. All 200 cases in the final capital travel,
@@ -543,6 +544,35 @@ a 10.68-second build. Both Python suites, formatting and `git diff --check` pass
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
+## Fleet conduit jumps
+
+Build 3662168's `cynoTravelSvc.pyj` uses the group jump variants of the fleet module, fleet deployable
+and structure beacon calls. The pinned `fleetSvc.pyj` sends `SetAcceptsConduitJumpsValue`. Fleet member
+replies and change notifications carry each pilot's choice. EVE.js `conduitJumpRuntime.js` provided a
+cross-check for the 10 km surface range, consent, online passengers and flat group fuel cost.
+[CCP Black Ops update](https://www.eveonline.com/news/view/enter-the-portal-black-ops-update-tq)
+
+An eligible Black Ops with a fitted online covert portal carries up to 30 covert hulls, and a Rorqual
+with an online industrial portal carries up to 30 mining ships. Carriers and supercarriers use the pinned
+combat passenger flag and Capital Jump Portal Generation's five extra seats per level. They start with
+five seats. Only hulls admitted by the pinned catalog and Eden's fitting rules enter this path.
+[CCP 24.01 notes](https://www.eveonline.com/news/view/patch-notes-version-24-01)
+
+The anchor uses its fitted jump range and normal capacitor payment. Group fuel uses the hull's pinned rate
+independently of the selected passengers' mass or number. Eligible passengers move without paying fuel
+or capacitor. Each passenger receives individual jump timers. The anchor, passengers, paid fuel and timers
+commit in one resident transaction. The flight coordinator retires passenger contacts in the origin system
+and delivers the committed arrivals to their connections. Offline pilots, opt-outs and blocked or ineligible
+hulls stay at the origin. The industrial portal's standalone bridge and Tech II command carrier admission
+remain open.
+
+**Automated validation.** The five exact Sin, Archon and Rorqual cases passed in 12.41 seconds. All
+146 cases in the final capital travel, fleet, translocation, gates and call result filter passed in
+98.81 seconds after an 11.21-second build. The final cases check the exact paid isotope costs and
+separation at arrival. Both Python suites, formatting and `git diff --check` passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Milestones
 
 | Milestone | Playable outcome and acceptance |
@@ -550,7 +580,7 @@ a 10.68-second build. Both Python suites, formatting and `git diff --check` pass
 | **1. Jump freighters and industrial cynos** | Implemented. A fleetmate lights a cyno in lowsec. A loaded jump freighter jumps from another system, docks, and unloads. The ship, cargo, fuel, capacitor and pilot timers reconcile across disconnect and checkpoint reopen. |
 | **2. Standard cynos and sovereignty navigation** | Implemented. Standard module and mobile cynos, mobile inhibitors, Pharolux beacons and Tenebrex jammers use the paid jump-freighter path and resident sovereignty checks. |
 | **3. Ansiblex jump gates** | Implemented. Link two aligned endpoints, enforce alliance access and the ship type list, and settle the source gate's capacitor at departure. |
-| **4. Black Ops and covert travel** | Implemented. Black Ops direct jumps, covert module and mobile beacons, and eligible fleet passenger travel through a paid portal. |
+| **4. Black Ops and covert travel** | Implemented. Black Ops direct jumps, covert module and mobile beacons, eligible fleet passenger travel through a paid portal, and fleet conduit jumps. |
 | **5. Dreadnoughts and force auxiliaries** | Implemented. Dreadnoughts and force auxiliaries use standard cynos, paid siege or triage, and normal docking, repair and loss settlement. The acceptance cases reopen a paid siege and settle an Apostle loss. |
 | **6. Carriers and fighters** | Implemented for light attack squadrons. Carrier tubes support launch, targeting, recall and replacement, with squadron losses persisted. Standup fighters and additional combat abilities remain open. |
 | **7. Capital industry and fleet services** | Rorquals use paid industrial cores, Excavators, fleet compression and P.A.N.I.C. Shared fleet storage, mobile refitting, clone bays and fresh-world resupply remain open. |

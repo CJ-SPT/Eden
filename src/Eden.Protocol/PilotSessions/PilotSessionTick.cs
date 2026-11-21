@@ -58,6 +58,13 @@ internal sealed class PilotSessionTick(
         }
         var flight = context.Flight;
         var previousControl = context.ControlledStructureId;
+        var beforeConduit = flight.Pilot;
+        bool arrived = updates.AdoptConduit(context);
+        using var arrivalContext = arrived ? context.Flight.UseSystem() : null;
+        if (arrived)
+        {
+            await output.AnnounceTransitionAsync(beforeConduit, previousControl);
+        }
         var beforeControl = context.Pilot;
         var beforePlayerDamage = flight.Pilot;
         using (SessionLatency.Measure(SessionLatencyPhase.PendingDamage))

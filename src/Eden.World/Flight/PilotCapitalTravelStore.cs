@@ -8,6 +8,7 @@ using Eden.Data.World.Inventory;
 using Eden.Data.World.Propulsion;
 using Eden.Data.World.Structures;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
@@ -42,7 +43,9 @@ internal sealed partial class PilotCapitalTravelStore(
     SqliteWorld ships,
     ICooperativeFleets fleets,
     TimeProvider clock,
-    ICapitalInventoryEvents inventoryEvents
+    ICapitalInventoryEvents inventoryEvents,
+    IConduitArrivalEvents conduitArrivals,
+    IPilotCombatPresence presence
 ) : IPilotCapitalTravel, IPilotShipCompression
 {
     private sealed record JumpPlan(
@@ -53,7 +56,8 @@ internal sealed partial class PilotCapitalTravelStore(
         int Quantity,
         double CapacitorCost,
         JumpTimers Timers,
-        long? FuelPayer = null
+        long? FuelPayer = null,
+        ConduitProfile? Conduit = null
     );
 
     private sealed record JumpDestination(int FieldType, SpacePosition Position, double SpawnRadius, double StructureRadius = 0);
@@ -166,11 +170,20 @@ internal sealed partial class PilotCapitalTravelStore(
     public CapitalJump Jump(long pilotId, long shipId, CapitalJumpRequest request)
     {
         var live = Live;
-        using var action = live.Economy.Begin(Participants(pilotId, shipId, request));
+        var members = request.Conduit ? ConduitMembers(pilotId) : [];
+        var baseParticipants = Participants(pilotId, shipId, request);
+        using var action = live.Economy.Begin(
+            new(
+                systems: baseParticipants.Systems,
+                pilots: baseParticipants.Pilots.Concat(members.Select(member => member.Id)),
+                ships: baseParticipants.Ships.Concat(members.Select(member => member.ShipId))
+            )
+        );
         using CatalogDbContext catalog = new(database.CatalogPath);
         long now = Now;
         var plan = Plan(action, catalog, pilotId, shipId, request, now);
-        var before = PilotFleetStore.Read(catalog, plan.Pilot.ActiveShip);
+        int origin = CrimewatchPersistence.System(catalog, plan.Pilot.ActiveShip);
+        var passengers = PlanConduitPassengers(action, catalog, plan, request.SystemId, origin, members, now);
         var arrival = Arrival(catalog, request.SystemId, plan.Destination, catalog.RequireItem(plan.Pilot.ActiveShip.TypeId).Radius ?? 0);
         double capacitor =
             plan.CapacitorCost > 0
@@ -178,23 +191,52 @@ internal sealed partial class PilotCapitalTravelStore(
                 : ShipResources.Capacitor(action, shipId, plan.Attributes, now);
         var changes = SpendFuel(action, catalog, plan.Fuel, plan.Quantity);
         List<InventoryChange> passengerChanges = plan.FuelPayer.HasValue ? [] : changes;
-        SqliteWorld.SetPosition(action, catalog, shipId, arrival, request.SystemId, now);
-        MapStatisticsStore.Record(action, request.SystemId, now, MapActivityKind.Jump);
-        var timers = action.Set<SavedJumpTimers>().Find(pilotId) ?? action.Add(new SavedJumpTimers { PilotId = pilotId }).Entity;
-        (timers.ActivationUntil, timers.FatigueUntil, timers.UpdatedAt) = (
-            plan.Timers.ActivationUntil,
-            plan.Timers.FatigueUntil,
-            plan.Timers.UpdatedAt
-        );
-        passengerChanges.Add(new(PilotFleetStore.Read(catalog, plan.Pilot.ActiveShip), before));
-        var result = new CapitalJump(ships.FindPilot(action, plan.Pilot.AccountId, pilotId)!, plan.Timers, capacitor, passengerChanges);
+        var result = MoveToBeacon(action, catalog, plan.Pilot, request.SystemId, arrival, plan.Timers, capacitor, passengerChanges);
+        List<CapitalJump> received = [];
+        double clearance = 0;
+        double previousRadius = catalog.RequireItem(plan.Pilot.ActiveShip.TypeId).Radius ?? 0;
+        foreach (var passenger in passengers)
+        {
+            clearance += 2 * previousRadius + passenger.Radius + DockingDefinitions.MaximumRange;
+            var point = Arrival(catalog, request.SystemId, plan.Destination, passenger.Radius, clearance);
+            received.Add(
+                MoveToBeacon(action, catalog, passenger.Pilot, request.SystemId, point, passenger.Timers, passenger.Capacitor, [])
+            );
+            previousRadius = passenger.Radius;
+        }
         action.Commit();
+        foreach (var arrived in received)
+        {
+            conduitArrivals.Publish(origin, arrived);
+            live.Heat.ClearSelection(arrived.Pilot.PilotId, arrived.Pilot.ShipId);
+        }
         if (plan.FuelPayer is long payer)
         {
             inventoryEvents.Publish(payer, changes);
         }
         live.Heat.ClearSelection(pilotId, shipId);
         return result;
+    }
+
+    private CapitalJump MoveToBeacon(
+        WorldAction world,
+        CatalogDbContext catalog,
+        Pilot pilot,
+        int system,
+        SpacePosition arrival,
+        JumpTimers timers,
+        double capacitor,
+        List<InventoryChange> changes
+    )
+    {
+        long ship = pilot.ActiveShipId;
+        var before = PilotFleetStore.Read(catalog, pilot.ActiveShip);
+        SqliteWorld.SetPosition(world, catalog, ship, arrival, system, timers.UpdatedAt);
+        MapStatisticsStore.Record(world, system, timers.UpdatedAt, MapActivityKind.Jump);
+        var row = world.Set<SavedJumpTimers>().Find(pilot.Id) ?? world.Add(new SavedJumpTimers { PilotId = pilot.Id }).Entity;
+        (row.ActivationUntil, row.FatigueUntil, row.UpdatedAt) = (timers.ActivationUntil, timers.FatigueUntil, timers.UpdatedAt);
+        changes.Add(new(PilotFleetStore.Read(catalog, pilot.ActiveShip), before));
+        return new(ships.FindPilot(world, pilot.AccountId, pilot.Id)!, timers, capacitor, changes);
     }
 
     public JumpTimers? Timers(long pilotId) =>
@@ -345,7 +387,9 @@ internal sealed partial class PilotCapitalTravelStore(
         var ship = PilotFittingStore.ShipAttributes(world, catalog, pilot);
         RequireLiving(world, pilot, ship, now);
         double distance = DriveDistance(catalog, origin, request.SystemId, destination, ship);
-        int isotopes = CapitalTravelRules.Isotopes(distance, ship[DogmaAttributeId.JumpDriveConsumptionAmount]);
+        var conduit = request.Conduit ? ReadConduit(world, catalog, pilot, ship, distance) : null;
+        double rate = conduit is null ? ship[DogmaAttributeId.JumpDriveConsumptionAmount] : ship[DogmaAttributeId.ConduitFuelRate];
+        int isotopes = CapitalTravelRules.Isotopes(distance, rate);
         int type = checked((int)ship[DogmaAttributeId.JumpDriveConsumptionType]);
         var fuel = Fuel(world, pilotId, shipId, InventoryFlag.FuelBay, type, isotopes);
         double cost = ship[DogmaAttributeId.JumpDriveCapacitorNeed] * ship[DogmaAttributeId.CapacitorCapacity];
@@ -359,7 +403,7 @@ internal sealed partial class PilotCapitalTravelStore(
             distance,
             ship.GetValueOrDefault(DogmaAttributeId.JumpFatigueMultiplier, 1)
         );
-        return new(pilot, destination, ship, fuel, isotopes, cost, timers);
+        return new(pilot, destination, ship, fuel, isotopes, cost, timers, Conduit: conduit);
     }
 
     private static SavedJumpTimers? RequireJumpReady(
@@ -514,7 +558,7 @@ internal sealed partial class PilotCapitalTravelStore(
     private static void RequireCynoSystem(CatalogDbContext catalog, int system)
     {
         var data = catalog.Read(CatalogData.Client.Systems, system);
-        // Wormhole classes 7Ã¢â‚¬â€œ9 locate normal high, low and null security systems in the pinned client.
+        // Wormhole classes 7 through 9 locate normal high, low and null security systems in the pinned client.
         if (
             data is not { SecurityStatus: < StructureRules.HighSecurityBoundary, WormholeClassID: 8 or 9 }
             || data.RegionID is 10000004 or 10000017 or 10000019 or 10000070
@@ -580,10 +624,17 @@ internal sealed partial class PilotCapitalTravelStore(
             }
         );
 
-    private static SpacePosition Arrival(CatalogDbContext catalog, int system, JumpDestination destination, double shipRadius)
+    private static SpacePosition Arrival(
+        CatalogDbContext catalog,
+        int system,
+        JumpDestination destination,
+        double shipRadius,
+        double extraClearance = 0
+    )
     {
         var center = destination.Position;
-        double offset = destination.SpawnRadius + (destination.StructureRadius > 0 ? destination.StructureRadius + shipRadius : 0);
+        double offset =
+            extraClearance + destination.SpawnRadius + (destination.StructureRadius > 0 ? destination.StructureRadius + shipRadius : 0);
         var geometry = SystemObjects.Geometry(catalog, system);
         SpacePosition[] directions = [new(1, 0, 0), new(0, 1, 0), new(0, 0, 1), new(-1, 0, 0), new(0, -1, 0), new(0, 0, -1)];
         foreach (var direction in directions)
