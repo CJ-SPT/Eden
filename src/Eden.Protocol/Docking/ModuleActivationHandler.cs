@@ -99,6 +99,7 @@ internal sealed class ModuleActivationHandler(
                 || effectName is PropulsionWireDefinitions.EffectName or PropulsionWireDefinitions.MicrowarpdriveEffectName
             )
             && context.Flight.CapitalModuleActive
+            && !(effectName == SpatialModuleHandler.MicroJumpEffect && context.Flight.MobileSiege)
         )
         {
             return new PilotCallResult.Failure("The active capital module prevents navigation modules from activating.");

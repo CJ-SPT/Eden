@@ -631,6 +631,26 @@ lifecycle test across all 150 admitted drone-bay hulls in 50.42 seconds. Both Py
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
+## Capital micro jump drive
+
+Build 3662168 type `83465` uses `dogmaIM.Activate` with `microJumpDrive` (effect `4921`). The pinned
+`MicroJumpDrive.pyj` defines the native spool and landing effects. EVE.js `microJumpDriveRuntime.js`
+reads attribute `2066` for distance and confirms the 250 km capital displacement. The same Eden
+spatial module cycle handles capacitor, signature bloom, scrambler cancellation, and reactivation.
+
+The pinned module admits carriers, command carriers, and the Sarathiel. Skill `83464` reduces capacitor
+cost by 5% per level. The required Micro Jump Drive Operation V reduces the 12-second spool to 9 seconds
+and the Command Carriers skill further reduces it. The Sarathiel can complete the jump during siege
+while its siege warp restriction stays active.
+[CCP Equinox notes](https://www.eveonline.com/news/view/equinox-expansion-notes) ·
+[CCP Legion notes](https://www.eveonline.com/news/view/legion-expansion-notes)
+
+**Automated validation.** All three exact capital drive cases passed in 9.36 seconds. The
+47-case spatial module, flight boundary, Sarathiel and command carrier filter passed in 76.64
+seconds after a 3.32-second build. Both Python suites and formatting passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Milestones
 
 | Milestone | Playable outcome and acceptance |

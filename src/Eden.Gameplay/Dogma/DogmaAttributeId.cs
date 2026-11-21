@@ -638,6 +638,7 @@ public enum DogmaAttributeId
     RepairMultiplierBonusMax = 2797,
     RemoteResistanceId = 2138,
     ModuleReactivationDelay = 669,
+    MicroJumpRange = 2066,
     DroneBandwidth = 1271,
     DroneBandwidthUsed = 1272,
     DroneBandwidthLoad = 1273,

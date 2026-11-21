@@ -21,7 +21,7 @@ internal static class SpatialModuleCatalog
 
     private static bool Validate(CatalogDbContext catalog, int type, int group)
     {
-        if (group is not (SpatialModuleRules.CloakGroup or SpatialModuleRules.MicroJumpGroup))
+        if (group != SpatialModuleRules.CloakGroup && !SpatialModuleRules.IsDrive(group, type))
         {
             return false;
         }

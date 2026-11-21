@@ -57,6 +57,9 @@ public static class SpatialModuleRules
 {
     public const int CloakGroup = 330;
     public const int MicroJumpGroup = 1189;
+    public const int CapitalMicroJumpGroup = 4769;
+    public const int CapitalDrive = 83465;
+    public const int CapitalMicroJumpSkill = 83464;
     public const int CloakingSkill = 11579;
     public const int MicroJumpSkill = 4385;
     public const double DecloakDistance = 2000;
@@ -64,6 +67,13 @@ public static class SpatialModuleRules
     // Build 3662168 appConst.microJumpDriveDistance. Standard drives omit a range attribute.
     public const double JumpDistance = 100000;
     public const double ActivationGraceMilliseconds = 5000;
+
+    public static bool IsDriveGroup(int group) => group is MicroJumpGroup or CapitalMicroJumpGroup;
+
+    public static bool IsDrive(int group, int type) => group == MicroJumpGroup || group == CapitalMicroJumpGroup && type == CapitalDrive;
+
+    public static double Distance(int type, IReadOnlyDictionary<DogmaAttributeId, double> attributes) =>
+        type == CapitalDrive ? attributes.GetValueOrDefault(DogmaAttributeId.MicroJumpRange) : JumpDistance;
 
     public static bool IsCloak(DogmaEffect effect) =>
         effect is DogmaEffect.Cloaking or DogmaEffect.PrototypeCloaking or DogmaEffect.CovertCloaking;
@@ -95,7 +105,12 @@ public static class SpatialModuleRules
             module.VelocityMultiplier,
             module.SignatureBonus,
         ];
-        if (values.Any(v => !double.IsFinite(v) || v < 0) || module.VelocityMultiplier <= 0 || !cloak && module.DurationMilliseconds <= 0)
+        double distance = Distance(type, attributes);
+        if (
+            values.Any(v => !double.IsFinite(v) || v < 0)
+            || module.VelocityMultiplier <= 0
+            || !cloak && (module.DurationMilliseconds <= 0 || !double.IsFinite(distance) || distance <= 0)
+        )
         {
             throw new InvalidDataException("Invalid spatial module attributes.");
         }
@@ -105,13 +120,13 @@ public static class SpatialModuleRules
     public static long Deadline(long now, double milliseconds) =>
         checked(now + (long)Math.Ceiling(milliseconds * TimeSpan.TicksPerMillisecond));
 
-    public static SpacePosition Jump(SpacePosition origin, SpacePosition heading)
+    public static SpacePosition Jump(SpacePosition origin, SpacePosition heading, double distance = JumpDistance)
     {
         if (!Finite(origin) || !Finite(heading) || heading.Length <= 0 || !double.IsFinite(heading.Length))
         {
             throw new InvalidDataException("A micro jump requires finite coordinates and a heading.");
         }
-        var destination = origin + heading.Unit * JumpDistance;
+        var destination = origin + heading.Unit * distance;
         if (!Finite(destination))
         {
             throw new InvalidDataException("Invalid micro-jump destination.");

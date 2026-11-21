@@ -116,8 +116,19 @@ internal sealed partial class PilotSpatialModuleStore(WorldDatabase database, IP
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
         Eden.World.Sovereignty.EntosisPersistence.RequireTravel(world, pilot.ActiveShipId, now);
-        Eden.World.Flight.PilotCapitalTravelStore.RequireMobile(world, pilot.Id, pilot.ActiveShipId, now);
         var item = world.Set<OwnedItem>().Find(moduleId);
+        bool capital = item?.TypeId == SpatialModuleRules.CapitalDrive;
+        if (capital && world is not EconomyTransaction)
+        {
+            throw new InvalidDataException("A capital micro jump requires the resident world.");
+        }
+        Eden.World.Flight.PilotCapitalTravelStore.RequireMobile(
+            world,
+            pilot.Id,
+            pilot.ActiveShipId,
+            now,
+            allowSiegeMicroJump: capital && effect == DogmaEffect.MicroJumpDrive && pilot.ActiveShip.TypeId == CapitalModeRules.Sarathiel
+        );
         bool cloak = SpatialModuleRules.IsCloak(effect);
         if (cloak && pilot.ActiveShip.Position?.SystemId is int system && Eden.Gameplay.Exploration.AbyssalRules.IsSystem(system))
         {
@@ -388,7 +399,10 @@ internal sealed partial class PilotSpatialModuleStore(WorldDatabase database, IP
         {
             var destination = SpatialModuleRules.Jump(
                 new(position.X, position.Y, position.Z),
-                new(state.HeadingX, state.HeadingY, state.HeadingZ)
+                new(state.HeadingX, state.HeadingY, state.HeadingZ),
+                item.TypeId == SpatialModuleRules.CapitalDrive
+                    ? SpatialModuleRules.Distance(item.TypeId, catalog.FittingAttributes(item.TypeId))
+                    : SpatialModuleRules.JumpDistance
             );
             position.X = destination.X;
             position.Y = destination.Y;

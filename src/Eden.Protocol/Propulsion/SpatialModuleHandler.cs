@@ -22,6 +22,8 @@ internal sealed class SpatialModuleHandler(TimeProvider clock, IPilotSpatialModu
 
     private long Now() => clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
 
+    internal const string MicroJumpEffect = "microJumpDrive";
+
     internal static bool Handles(string name) => Effect(name) is not null;
 
     private static DogmaEffect? Effect(string name) =>
@@ -30,7 +32,7 @@ internal sealed class SpatialModuleHandler(TimeProvider clock, IPilotSpatialModu
             "cloaking" => DogmaEffect.Cloaking,
             "cloakingPrototype" => DogmaEffect.PrototypeCloaking,
             "cloakingWarpSafe" => DogmaEffect.CovertCloaking,
-            "microJumpDrive" => DogmaEffect.MicroJumpDrive,
+            MicroJumpEffect => DogmaEffect.MicroJumpDrive,
             _ => null,
         };
 

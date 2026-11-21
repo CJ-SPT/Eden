@@ -333,7 +333,7 @@ internal sealed partial class PilotCapitalTravelStore(
     public bool DoomsdayMovementLocked(long shipId) =>
         LiveWorld.Find(database.Path)?.Economy.Inspect(world => AreaWeaponStore.DoomsdayLocked(world, shipId, Now, movement: true)) == true;
 
-    internal static void RequireMobile(WorldAction world, long pilotId, long shipId, long now)
+    internal static void RequireMobile(WorldAction world, long pilotId, long shipId, long now, bool allowSiegeMicroJump = false)
     {
         if (AreaWeaponStore.DoomsdayLocked(world, shipId, now, movement: true))
         {
@@ -343,7 +343,7 @@ internal sealed partial class PilotCapitalTravelStore(
         {
             throw new InvalidDataException("P.A.N.I.C. prevents warping, docking and jumping.");
         }
-        if (ActiveMode(world, shipId, now) is not null)
+        if (ActiveMode(world, shipId, now) is { } mode && !(allowSiegeMicroJump && mode.Effect == DogmaEffect.CapitalSiege))
         {
             throw new InvalidDataException("Wait for the active capital mode to finish before moving the ship.");
         }

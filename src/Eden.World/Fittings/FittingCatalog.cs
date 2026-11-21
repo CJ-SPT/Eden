@@ -199,7 +199,7 @@ internal static class FittingCatalog
             return null;
         }
         if (
-            type.GroupId is SpatialModuleRules.CloakGroup or SpatialModuleRules.MicroJumpGroup
+            (type.GroupId == SpatialModuleRules.CloakGroup || SpatialModuleRules.IsDriveGroup(type.GroupId))
             && !SpatialModuleCatalog.Supported(catalog, typeId, type.GroupId)
         )
         {

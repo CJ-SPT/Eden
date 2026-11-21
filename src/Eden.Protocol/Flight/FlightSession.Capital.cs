@@ -16,17 +16,20 @@ internal sealed partial class FlightSession
             && capitalTravel?.DoomsdayMovementLocked(Pilot.ShipId) == true
         || CapitalTravelRules.RestrictedCapital(Pilot.ShipGroupId) && capitalTravel?.Mode(Pilot.ShipId) is not null;
 
-    private bool CanNavigateInSiege(FlightCommand command) =>
+    internal bool MobileSiege =>
         Pilot.ShipTypeId == CapitalModeRules.Sarathiel
-        && command
+        && capitalTravel?.Field(Pilot.PilotId)?.ShipId != Pilot.ShipId
+        && capitalTravel?.Mode(Pilot.ShipId)?.Effect == Eden.Gameplay.Inventory.DogmaEffect.CapitalSiege;
+
+    private bool CanNavigateInSiege(FlightCommand command) =>
+        command
             is FlightCommand.Heading
                 or FlightCommand.AlignTo
                 or FlightCommand.AlignToBookmark
                 or FlightCommand.AlignToPoint
                 or FlightCommand.Follow
                 or FlightCommand.Speed
-        && capitalTravel?.Field(Pilot.PilotId)?.ShipId != Pilot.ShipId
-        && capitalTravel?.Mode(Pilot.ShipId)?.Effect == Eden.Gameplay.Inventory.DogmaEffect.CapitalSiege;
+        && MobileSiege;
 
     internal void RefreshDoomsdayFields(IReadOnlyList<DoomsdayFieldContact> contacts) =>
         Scene.RefreshDoomsdayFields(SceneContext, contacts);

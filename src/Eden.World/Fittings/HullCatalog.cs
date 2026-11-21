@@ -134,6 +134,8 @@ internal static class HullCatalog
             source.SkillTypeID == (int)HullBonusSkill.CynosuralFieldTheory
             && source.ModifiedAttributeID is (int)DogmaAttributeId.ConsumptionQuantity or (int)DogmaAttributeId.Duration
         )
+        || source.SkillTypeID == (int)HullBonusSkill.CapitalMicroJumpDriveOperation
+            && source.ModifiedAttributeID == (int)DogmaAttributeId.Duration
         || FighterHullModifier(source)
         || HullBonusRules.Operational(
             Capability(source),

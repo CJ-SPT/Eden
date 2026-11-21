@@ -654,6 +654,7 @@ internal sealed partial class PilotFittingStore(WorldDatabase database, TimeProv
                     or SignatureSuppressionRules.Group
                     or SpatialModuleRules.CloakGroup
                     or SpatialModuleRules.MicroJumpGroup
+                    or SpatialModuleRules.CapitalMicroJumpGroup
             || FittingCatalog.Effects(catalog, module.TypeId).Contains(DogmaEffect.AssaultDamageControl)
             || module.TypeId == BreacherRules.CounterType
         )
