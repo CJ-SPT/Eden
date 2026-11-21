@@ -1,1 +1,3 @@
 tools/Publish-Docker.sh text eol=lf
+tools/client-downpatcher/*.service text eol=lf
+tools/client-downpatcher/*.timer text eol=lf
