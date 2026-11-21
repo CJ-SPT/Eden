@@ -1,3 +1,4 @@
+using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Economy;
 using Eden.Data.World.Market;
 using Eden.Data.World.Mining;
@@ -103,6 +104,52 @@ public sealed class TrafficPreparationTests
         {
             Assert.False(scheduler.PreparationCurrent(input));
             Assert.Equal(input.Job.Revision + 1, live.CapsuleerJobs[input.Job.PilotId].Revision);
+        }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ResidentFreshTradesSkipLegacyJourneyPreparation(bool freshUniverse)
+    {
+        using CapsuleerHaulerTests.Fixture fixture = new();
+        var configuration = fixture.Database.Configuration;
+        var active = configuration.Active!;
+        configuration.Install(
+            active with
+            {
+                Draft = active.Draft with { Settings = active.Draft.Settings with { FreshUniverse = freshUniverse } },
+            }
+        );
+        long hauler = fixture.Founder().PilotId;
+        using var host = ServerServices.Build(fixture.Database, fixture.Clock, liveWorld: true, loadConfiguration: false);
+        var live = host.GetRequiredService<LiveWorld>();
+        long miner = live.Economy.Inspect(world =>
+            world.Set<SavedCapsuleerAgent>().Single(agent => agent.Career == CapsuleerCareer.Mining).PilotId
+        );
+        using (var world = live.Economy.Begin(new(pilots: [miner])))
+        {
+            world.Add(new SavedCapsuleerSuspension { PilotId = miner });
+            world.Commit();
+        }
+        using var human = host.GetRequiredService<IHumanPresence>().Select(90000001, SourceSystem);
+        var scheduler = host.GetRequiredService<CapsuleerScheduler>();
+        _ = scheduler.CapturePreparation();
+        Assert.NotNull(scheduler.Hauler(hauler));
+        fixture.Clock.Seconds++;
+        var input = Assert.IsType<CapsuleerScheduler.PreparationInput>(scheduler.CapturePreparation());
+        Assert.Equal(hauler, input.Job.PilotId);
+        Assert.Equal(CapsuleerAction.Trade, input.Job.Action);
+        Assert.NotEqual(0, input.TrainingHull);
+        Assert.Equal(freshUniverse, input.FreshCareerTrade);
+        if (freshUniverse)
+        {
+            Assert.Null(input.Journey);
+            Assert.Null(input.Template);
+        }
+        else
+        {
+            Assert.NotNull(input.Journey);
         }
     }
 

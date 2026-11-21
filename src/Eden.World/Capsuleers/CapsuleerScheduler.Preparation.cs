@@ -42,7 +42,8 @@ internal sealed partial class CapsuleerScheduler
         CapsuleerProfession DefaultProfession,
         CapsuleerCareerPlan? TrainingPlan,
         bool PrepareMercoxit,
-        bool PrepareInstitutionalOffers
+        bool PrepareInstitutionalOffers,
+        bool FreshCareerTrade
     );
 
     internal PreparationInput? CapturePreparation(CancellationToken cancellationToken = default)
@@ -165,6 +166,8 @@ internal sealed partial class CapsuleerScheduler
                 .ToArray();
         var missing = geometry.SelectMany(capture => capture.Missing).Distinct().ToArray();
         bool dockedWork = stationId != 0 && job.Action is CapsuleerAction.Trade or CapsuleerAction.Prepare;
+        // Resident fresh careers plan their paid deliveries and supply travel in the action itself.
+        bool freshCareerTrade = job.Action == CapsuleerAction.Trade && world is EconomyTransaction && world.Settings.FreshUniverse;
         bool mercoxit =
             dockedWork
             && job.Action == CapsuleerAction.Prepare
@@ -196,8 +199,8 @@ internal sealed partial class CapsuleerScheduler
             Array.AsReadOnly(systems.Order().ToArray()),
             Array.AsReadOnly(missing),
             Array.AsReadOnly(geometry),
-            hauler?.CaptureJourney(world, job),
-            job.Action == CapsuleerAction.Trade && stationId != 0
+            freshCareerTrade ? null : hauler?.CaptureJourney(world, job),
+            !freshCareerTrade && job.Action == CapsuleerAction.Trade && stationId != 0
                 ? TrafficTemplatePreparation.Capture(
                     database,
                     world,
@@ -212,7 +215,8 @@ internal sealed partial class CapsuleerScheduler
             profession,
             trainingPlan,
             mercoxit,
-            dockedWork && PilotMarketStore.UsesInstitutionalOffers(world)
+            dockedWork && PilotMarketStore.UsesInstitutionalOffers(world),
+            freshCareerTrade
         );
     }
 
@@ -350,7 +354,7 @@ internal sealed partial class CapsuleerScheduler
                     geometry[system] = Array.AsReadOnly<StaticSpaceObject>([.. objects, .. resources]);
                 }
             }
-            if (input.Job.Action is CapsuleerAction.Trade or CapsuleerAction.Prepare)
+            if (!input.FreshCareerTrade && input.Job.Action is CapsuleerAction.Trade or CapsuleerAction.Prepare)
             {
                 _ = CapsuleerTrafficRoutes.Read(catalog, input.CommunityId);
             }
