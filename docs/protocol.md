@@ -738,6 +738,16 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### Player Upwell structures
 
+- [Structures gap audit](protocol/structures.md#structures-gap-audit)
+- [Standup Focused Warp Disruptors](protocol/structures.md#standup-focused-warp-disruptors)
+- [Standup stasis webifiers](protocol/structures.md#standup-stasis-webifiers)
+- [Standup energy neutralizers and structure capacitor](protocol/structures.md#standup-energy-neutralizers-and-structure-capacitor)
+- [Defensive missiles against drones](protocol/structures.md#defensive-missiles-against-drones)
+- [Resident defensive missile firing](protocol/structures.md#resident-defensive-missile-firing)
+- [Resident structure ammunition](protocol/structures.md#resident-structure-ammunition-and-reloads)
+- [Resident structure targeting](protocol/structures.md#resident-structure-targeting-and-controlled-scenes)
+- [Resident defensive fitting](protocol/structures.md#resident-defensive-fitting-and-full-power-dogma)
+- [Resident structure control](protocol/structures.md#resident-structure-control-authority)
 - [Native Upwell repair shop](protocol/structures.md#native-upwell-repair-shop)
 - [Upwell combat, asset safety and tethering](protocol/structures.md#upwell-completion-program--november-16-2026)
 - [Station and structure hull geometry](protocol/structures.md#station-and-structure-hull-geometry--november-16-2026)

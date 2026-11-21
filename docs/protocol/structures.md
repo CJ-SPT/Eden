@@ -13,9 +13,511 @@ Historical foundation limitations below describe their original milestones; this
 | Asset safety | Personal/corporate collection, timed delivery, paid recovery, native inventory and public loot | Implemented; validation below |
 | Incoming combat and loss | Paid weapons against structures, legal targeting, destruction settlement and automatic custody transitions | Implemented; validation below |
 | Tethering | Resident protection, native effects, access and timer checks, saved repair settlement | Implemented; validation below |
-| Defense | Combat fitting/control, supported defensive weapons and target updates | Planned |
+| Defense | Combat fitting/control, supported defensive weapons and target updates | In progress; resident control, fitting, targeting, ammunition, defensive missiles, energy neutralizers, targeted stasis webifiers and focused warp tackle implemented. Other EWAR and area defenses remain |
 | Service completion | Remaining native structure profiles/access, economic/clone services, ownership and specialized structure consumers | Planned |
 
+### Structures gap audit
+
+The defense branch covers resident gunner leases, fitting, target locks, ammunition, defensive missiles against ships and
+drones, capacitor warfare and targeted webs. The integration uses that lease for Standup fighter assignment and automatic
+recall. Ship locks on the structure survive a change of gunner. Controlled flight snapshots use the structure as the
+ballpark ego while the pilot's personal ship stays docked. Schema 214 adds structure tackle source support to main's
+schema 213 and also accepts the earlier structure-branch format.
+
+| Area | Existing coverage and remaining gaps |
+| --- | --- |
+| Defense | Launch and recall of Standup fighters, guided missiles, webs, neutralizers and scripted warp tackle work. Other targeted EWAR, point defense, area and superweapon modules, and fighter attack commands need dedicated gameplay and protocol coverage. |
+| Dockable services | Tether, repair, manual moon extraction, compression and supported industry are implemented. Player market orders, jump clones, corporation offices and native structure deliveries remain open. |
+| Access and ownership | A corporation-default profile and per-structure access overrides exist. Native editing, per-service ACLs and fees, and ownership transfer remain open. |
+| Specialized structures | Pharolux, Tenebrex, reciprocal Ansiblex links, sovereignty hubs and Skyhook resource production already have gameplay authority. Metenox harvesting and Skyhook combat, theft and transfer remain open. |
+| Deployment | Corporation age, collision separation, some restricted systems, cores and hull restrictions are enforced. The full restricted-system list and conquest-index anchoring rules still need pinned coverage. |
+
+The service audit compared Eden's onlining allowlist and directory routes with EVE.js **261108.1** and CCP's published
+profiles and hull rules. The EVE.js reference manifest records the checked profile and service module hashes. Service
+coverage for the navigation hulls and Skyhooks is recorded on the [capital travel](capital-logistics.md#pharolux-and-tenebrex)
+and [sovereignty](sovereignty.md#sovereignty-resources-and-upgrades--november-16-2026) pages.
+[CCP Upwell quick facts](https://support.eveonline.com/hc/en-us/articles/209985225-Upwell-Structures-Quick-Facts) ·
+[CCP structure profiles](https://support.eveonline.com/hc/en-us/articles/208289635-Profiles) ·
+[CCP Equinox notes](https://www.eveonline.com/news/view/equinox-expansion-notes) ·
+[UniWiki structure fitting](https://wiki.eveuniversity.org/Fitting_upwell_structures)
+
+**Automated validation**
+
+The focused integration filter joined the test namespaces or classes for `Structures`, `Docking`, `Ammunition`,
+`Propulsion`, `Flight.CapitalTravelTests`, `GateCloakTests`, `GateActivityProtocolTests`, `AutoNavigationTests`,
+`WarpCapacitorTests`, `Combat.CapacitorWarfare`, `ResidentFitTests`, `LiveSimulationTests`, `SessionPerformanceTests`,
+`AreaWeaponInteractionTests`, `CrimewatchTests`, `Persistence.WorldMigrationTests`, `DetachedCheckpointTests`,
+`PilotSessions.TypedSessionTests`, `Capsuleers.CapsuleerInboundGateAcceptanceTests` and `Hosting`.
+It completed in 570.88 seconds with 889 passed and the existing opt-in Standard market Rhea replay skipped.
+The solution built without warnings. Both Python policy suites (8 and 9 cases), CSharpier, line width and local links passed.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+Take control of an Astrahus, lock a nearby ship, launch fighters and release control. Verify the fighters return and
+the other ship retains its lock on the Astrahus.
+
+### Standup Focused Warp Disruptors
+
+A gunner can apply 100 points of warp disruption to a locked ship or NPC with a fitted, online Standup Focused Warp
+Disruptor. Both variants use structure capacitor and green safety. Structure Electronic Systems reduces the activation
+cost by 3% per level.
+
+| Variant (type) | Base cost | Unscripted surface range | Scripted surface range |
+| --- | ---: | ---: | ---: |
+| Standup Focused Warp Disruptor I (35949) | 4,000 GJ | 210 km | 63 km |
+| Standup Focused Warp Disruptor II (47334) | 4,800 GJ | 300 km | 90 km |
+
+The Standup Focused Warp Scrambling Script (type 47336) shortens range and also suppresses microwarpdrives and
+micro jump drives. Firing preserves the loaded script. Both modes contribute to the same warp strength used by ship navigation and prevent Upwell docking
+when the target's warp core strength is overcome. The effect expires after 30 seconds and can be fired again after
+a further 60 seconds. Release or loss of the control lease ends active tackle and preserves the paid reactivation
+deadline. The webifiers now also require a fresh activation after every cooldown.
+
+The build-3662168 module default is effect 6222 (`structureWarpScrambleBlockMWDWithNPCEffect`), which uses
+`effects.Laser`. Group 1442 receives the skill capacitor modifier from effect 6400. Script effect 7026 modifies
+range attribute 54 and propulsion block strength 1350. Both tackle groups set `disallowRepeatingActivation`
+(attribute 1014). Inert inspection of the signed archive recorded below found the structure group in
+`moduleButtonTooltip.pyj` and the `warpScramblerMWD` slot for this native effect in `dogma/effects/__init__.pyj`.
+EVE.js 261108.1 classifies the same effect as a scrambler in `space/modules/hostileModuleRuntime.js` (hash below).
+[CCP structure defense and cooldowns](https://www.eveonline.com/news/view/upwell-2.0-structures-changes-coming-on-february-13th) ·
+[CCP unscripted micro jump behavior](https://www.eveonline.com/news/view/patch-notes-for-july-2018-release) ·
+[CCP warp disruption rules](https://support.eveonline.com/hc/en-us/articles/115004925705-Warp-Scrambling-and-Warp-Disruption)
+
+**Automated validation**
+
+Exact filters for `DisruptorUsesCatalogRangeStrengthAndOnePaidCycle`,
+`NativeDisruptorBlocksWarpAndUpwellDockingAndScriptAddsPropulsionBlock` and
+`WebSlowsNpcForPaidCycleAndCooldownSurvivesRelease` passed 8 cases in 13.74 seconds. These exercise both disruption
+variants and script modes, inclusive range, source capacitor, script custody, green safety, native effect and victim
+notifications, warp and dock denial, exact expiry, and one paid cycle even when given a repeat count.
+
+The combined check caught a pre-selection beam monitor call. The monitor now waits for a selected pilot. A follow-up
+run on main reproduced both subscription packet failures caused by the test fixture's missing resident world. The
+fixture now starts that world and commits its account grade through the resident owner. Both exact Alpha and Omega
+cases passed in 7.49 seconds with the corrected setup.
+
+The final focused filter joined `Structures`, `Docking.StructureServiceTests`, `Propulsion.TackleTests`,
+`Propulsion.HicInterdictionTests`, `Propulsion.SpatialModuleTests`, `Propulsion.SpatialModuleOperationTests`,
+`Combat.LiveSimulationTests`, `Combat.ResidentFitTests`, `Persistence.WorldMigrationTests`,
+`Persistence.DetachedCheckpointTests`, `PilotSessions.JumpCloneServiceTests`, `PilotSessions.SubscriptionServiceTests`
+and `Hosting`. All 444 cases passed in 191.16 seconds. The solution built without warnings, both Python policy suites
+passed (8 and 9 cases), and CSharpier, line width and local documentation links passed.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+Activate a Standup disruptor with and without the script. At the target, verify warp and Upwell docking are blocked
+in both modes and that only the scripted mode blocks propulsion modules.
+
+### Standup stasis webifiers
+
+A gunner can slow a locked pilot ship or NPC with a fitted, online Standup Stasis Webifier. The module uses the structure's
+capacitor and green safety. The operator's Structure Electronic Systems skill reduces activation cost by 3% per level.
+Existing tackle rules apply the target's web resistance and combine incoming speed modifiers.
+
+| Standup variant | Base cost | Range from hull surfaces | Base speed reduction |
+| --- | ---: | ---: | ---: |
+| Stasis Webifier I (35943) | 3,000 GJ | 200 km | 70% |
+| Stasis Webifier II (47351) | 3,600 GJ | 300 km | 75% |
+
+Both variants have a 30-second active cycle followed by a 60-second reactivation delay. The focused warp disruption
+milestone above enforces a fresh activation at the end of that delay. The target regains speed when the web expires,
+even if the gunner's connection has not advanced.
+Releasing control ends the web. The next gunner inherits the cooldown. Restart clears active tackle and preserves
+the capacitor payment and reactivation deadline. Schema 190 allows a tackle row to reference its source ship or structure.
+
+Build 3662168 gives group 1441 default effect 6682 (`structureModuleEffectStasisWebifier`), graphic `effects.Laser`,
+and reactivation attribute 669. Skill effect 6400 applies the capacitor modifier to the fitted group. Inert reads of
+the signed client archive identified below found the structure webifier group in `moduleButtonTooltip.pyj`, the
+`webify` slot in `buffBarConst.pyj`, and EWAR start/end callbacks in `tactical.pyj`. The older EVE.js reference maps the
+same effect name to its web family in `space/modules/hostileModuleRuntime.js`
+(SHA-256 `db747aa99975012526f576e6042ba2c1c6d7d664c58cc50e0dc31fc5e550d93f`).
+[CCP Upwell 2.0 defense changes](https://www.eveonline.com/news/view/upwell-2.0-structures-changes-coming-on-february-13th),
+[UniWiki structure fitting](https://wiki.eveuniversity.org/Fitting_upwell_structures).
+
+**Automated validation**
+
+The focused tests exercise both range boundaries, rejected payments, NPC movement, delayed repeats, lease release,
+checkpoint reopen, and migration of an existing ship tackle row. Two simulated sessions exercise safety, the gunner's
+paid cooldown and skill-adjusted capacitor cost, the victim's speed and EWAR notifications, and observer beam start/stop.
+
+Initial development filtered `StructureWebifierTests.WebSlowsNpcForPaidCycleAndCooldownSurvivesRelease` and
+`StructureWebifierTests.NativeWebShowsGunnerAndVictimThePaidEffectAndRestoresSpeedAtExpiry` individually.
+The first migration-fixture run accessed the pilot's fit while the fixture still had the old schema. Capturing the pilot and
+ship IDs before installing the old schema corrected the fixture. The exact migration case then passed.
+
+The final filter joined `FullyQualifiedName~Eden.Protocol.Tests.` predicates with `|` for `Structures`,
+`Docking.StructureServiceTests`, `Propulsion.TackleTests`, `Propulsion.HicInterdictionTests`, `Thermal.MobilityHeatTests`,
+`Combat.CapacitorWarfare`, `Combat.ResidentFitTests`, `Combat.LiveSimulationTests`, `Combat.SessionPerformanceTests`,
+`Combat.AreaWeaponInteractionTests`, `Combat.CrimewatchTests`, `Persistence.WorldMigrationTests`,
+`Persistence.DetachedCheckpointTests` and `PilotSessions.TypedSessionTests`.
+All 563 affected .NET cases passed in 4m 55s. Root validation took 5m 37s including tool and solution restore, the
+zero-warning build, both Python policy suites (8 + 9), formatting (2,630 files), line width and diff checks.
+All 782 local link destinations in the three edited Markdown files exist.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer check**
+
+Fire a Standup web against a legal ship target and inspect its speed and EWAR icon as the gunner's cooldown begins.
+
+### Standup energy neutralizers and structure capacitor
+
+A gunner can activate a fitted, online Standup neutralizer against a locked ship or NPC. Each cycle checks the control
+lease, structure state, target, green safety, module cooldown and available capacitor. A paid cycle immediately drains
+the target and charges the structure. A duplicate activation keeps the current cycle. A late repeat pays once at the
+current time, and a replacement gunner inherits the paid cooldown.
+
+| Standup variant (type) | Base cost (GJ) | Base drain (GJ) | Cycle | Optimal / falloff |
+| --- | ---: | ---: | ---: | ---: |
+| Heavy I (35925) | 1,000 | 1,500 | 15 s | 100 / 100 km |
+| Heavy II (47332) | 1,000 | 1,800 | 15 s | 120 / 120 km |
+| Dark Blood Heavy (46575) | 1,000 | 1,900 | 15 s | 150 / 150 km |
+| XL I (35924) | 6,000 | 10,000 | 30 s | 150 / 100 km |
+| XL II (47330) | 6,000 | 12,000 | 30 s | 180 / 120 km |
+
+The pinned group 1329 uses effect 6216 (`structureEnergyNeutralizerFalloff`). Structure Engineering Systems (37799)
+reduces the fitted activation cost by 2% per trained level through effect 6401. Neutralization uses surface distance,
+falloff and the target's energy warfare resistance. The XL variants also use 15,000 m signature resolution.
+The target can only lose its remaining charge. A gunner's docked ship has its own capacitor.
+
+Saved-world schema **189** adds a structure capacitor balance and timestamp. Existing structures start fully charged.
+Reads calculate recharge at the supplied wall time. Changing capacitor capacity or recharge through a defensive refit
+settles the old curve first and preserves the charged fraction. Dogma priming includes the current charge, the gunner's
+activation cost, the active effect and the paid deadline. The target receives capacitor and EWAR updates, and nearby
+observers receive timed effects for visible endpoints. Other electronic warfare, tackle and area defenses remain open.
+
+The values above come from the build-3662168 type and effect records in the checked-in structure catalog. Inert inspection
+of the original archive recorded below found the structure neutralizer group in `shipModuleButton/moduleButtonTooltip.pyj`.
+The older EVE.js reference maps this effect to its hostile neutralizer family in `space/modules/hostileModuleRuntime.js`
+(SHA-256 `db747aa99975012526f576e6042ba2c1c6d7d664c58cc50e0dc31fc5e550d93f`).
+[CCP structure fitting and skills](https://www.eveonline.com/news/view/structure-fitting-in-the-citadel-expansion),
+[UniWiki structure fitting](https://wiki.eveuniversity.org/Fitting_upwell_structures).
+
+**Automated validation**
+
+The focused flows cover all five variants, XL signature application, operator skill, insufficient capacitor rollback,
+green safety, late repeats, native charge and effect updates, battery refits, and checkpoint reopen after lease release.
+All 495 affected .NET cases passed in 4m 26s. Tool and solution restore, the zero-warning build (9.90s), both Python
+policy suites (8 + 9), formatting (2,625 files), line width and diff verification passed. Root validation took 5m 9s.
+The three edited Markdown files had 780 valid local link destinations.
+
+The final filter joined `FullyQualifiedName~Eden.Protocol.Tests.` predicates with `|` for `Structures`,
+`Docking.StructureServiceTests`, `Combat.CapacitorWarfare`, `Combat.NpcCapacitorRuleTests`, `Combat.PilotMissileTests`,
+`Combat.CrimewatchTests`, `Combat.SessionPerformanceTests`, `Flight.WarpCapacitorTests`, `Persistence.WorldMigrationTests`,
+`Persistence.DetachedCheckpointTests` and `PilotSessions.TypedSessionTests`.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer check**
+
+Activate a Standup neutralizer against a legal ship target and inspect the gunner's capacitor gauge, target EWAR icon,
+and beam on a nearby observer.
+
+### Defensive missiles against drones
+
+Standup anticapital and multirole launchers can fire on a locked, deployed drone. A controlled drone inherits its
+controller's eligibility under the structure's green safety. A ship that attacks the structure can have its drones
+engaged in retaliation, and a ship whose drone is attacked can return fire against that structure. Uncontrolled drones
+use Eden's neutral-target safety check and grant no retaliation through their former controller.
+
+The paid missile follows the drone's physical movement. On contact, the resident world applies missile damage using
+the drone's signature radius and speed, then updates its shield, armor, hull and inventory through the same path used
+by smartbombs. If two missiles reach a drone together, destruction by the first causes the second to lose its target.
+Returning a drone to bay or scooping it clears pending and completed locks and sends incoming missiles along their
+last direction. Even an immediate relaunch with the same item ID requires a new lock. The saved target kind and flight
+snapshot carry these outcomes across checkpoints using the existing missile schema.
+
+The original build-3662168 archive identified below contains the existing ship and target identifiers in
+`eve/client/script/parklife/targetMgr.pyj`. The missile activation and impact wire shapes carry the drone item ID.
+The older EVE.js reference resolves physical targets by item ID in `server/src/space/runtime/missileEntity.js`
+(SHA-256 `7b27b19c4725272cd51b6d08f930755afc6934037d9c11d1c74deee8da7eda12`).
+Carbon's `Ballpark::StopAllFollowers` supplies the lost-target motion. Gameplay references cover structure launchers
+and drone recovery. [Carbon Destiny source at the referenced revision](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Ballpark.cpp),
+[structure fitting](https://wiki.eveuniversity.org/Fitting_upwell_structures), [drone mechanics](https://wiki.eveuniversity.org/Drones).
+
+**Automated validation**
+
+All 437 affected .NET cases passed in 4m 7s. The four drone cases cover neutral rejection before payment, controller
+retaliation, saved launches, surviving and fatal hits after reopen, same-frame destruction, and recall or scoop
+followed by immediate relaunch. Tool and solution restore, the zero-warning build (7.69s), both Python suites
+(8 + 9), formatting (2,621 files), line width and diff verification passed. The root validation took 4m 49s.
+The three edited Markdown files had 778 valid local link destinations.
+
+The final filter joined `FullyQualifiedName~Eden.Protocol.Tests.` predicates with `|` for `Structures.StructureWeaponTests`,
+`Structures.StructureTarget`, `Structures.StructureAttackTests`, `Combat.MissileFlightTests`, `Combat.MissileRulesTests`,
+`Combat.MissileCombatTests`, `Combat.PilotMissileTests`, `Combat.NpcMissileTests`, `Combat.NpcMissileTimingTests`,
+`Combat.ResidentNpcMissileTests`, `Combat.DroneRecoveryTests`, `Combat.CombatDroneTests`, `Combat.DroneSynchronizationTests`,
+`Combat.ResidentDroneTests`, `Combat.SmartbombTests` and `Flight.MissileBallparkTests`.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer check**
+
+Fire at a hostile drone from a controlled structure and verify the impact or recall in the gunner's overview.
+
+### Resident defensive missile firing
+
+Standup anticapital and multirole launchers now fire through a resident structure authority. Each launch requires the
+exact current control lease, a cored operational structure, an online fitted corporate launcher, a completed resident
+lock, compatible loaded ammunition and an elapsed reload/cycle deadline. The four pinned published launcher variants
+(35921, 47323, 35922 and 47298) use cycles of 15, 12, 3 and 2.4 seconds respectively, before fitted modifiers.
+These families consume one round and no capacitor. Failed checks preserve ammunition, deadlines and projectile state.
+Other defensive effects fail closed rather than using the gunner's docked ship.
+
+Cycles and repeat counts belong to the resident control lease. Repeated activation on the same active target does not
+pay twice; changing target requires stopping. A delayed callback starts at most one new paid cycle at its current time,
+with no catch-up launches. Each repeated launch revalidates targeting and legality. Deactivation finishes the paid cycle;
+loss of control clears connection cycles. The existing saved module cooldown still blocks firing through a replacement
+controller, and already-paid missiles survive release, disconnect and checkpoint/reopen. Destruction or removal of the
+source structure expires its remaining flights. Structure IDs use actual resident membership, not a numeric cutoff.
+
+The common physical missile simulation handles NPC, player-ship and vulnerable structure targets, including missile
+application, target motion, health, ordinary destruction/reward settlement and exactly-once impact reports. Structure
+contacts settle before battle/repair deadlines. Launch payloads snapshot the actual source structure, operator,
+corporation, alliance and weapon for later damage history. Existing item/cooldown/missile projection is reused; schema
+**188** is unchanged. The catalog fixture now includes the four structure operating skills: **408 types**, SHA-256
+`98b0a8fda3954ce3210cd2498eb572aedf93b19996f77631503bf7639eb33597`.
+Structure Missile Systems (37796) reads its pinned 2% damage bonus per level; normal ship skills do not enter this graph.
+
+Structure safety is always green, independently of the operator's saved preference and private limited engagements.
+In empire space, player targets require a suspect/criminal flag, outlaw status or saved incoming hostility against this
+exact structure. Ship attacks now record that structure-specific hostility at the paid weapon boundary. A ship attacked
+by a structure can return fire against that exact structure, including in high security; this does not invent war rights
+against other structures. Rights expire with their saved deadlines. Neutral structure attacks outside null security are
+likewise rejected unless this structure is retaliating. CONCORD cannot be attacked. No suspect/criminal flag is assigned
+to the operator by defensive firing.
+
+Native Activate/Deactivate, Godma effect notifications, active-effect priming, saved next-activation times and magazine
+updates use the structure identity. Controlled session ticks advance cycles and physical missiles. Fitted equipment
+triples are present on structure slim items for native hardpoint/missile presentation. A resident fitted-membership event
+invalidates only contact views containing the changed structure; ordinary cargo quantity changes do not invalidate them.
+The structure safety view does not overwrite the operator's saved ship safety preference.
+
+Remaining defense work includes capacitor-backed EWAR/tackle, guided bombs, point defenses, doomsdays, drone targets,
+and NPC retaliation against structures. Ordinary NPC aggression currently requires a real ship target; defensive launches
+and impacts intentionally do not create an invalid ship reference or a fake ship. Structure-targeting NPC AI needs its own
+authority. Fighter/capital systems and war declarations remain separate dependencies. This missile milestone does not
+complete the overall structure program or establish native visual acceptance.
+
+References: [UniWiki structure fitting](https://wiki.eveuniversity.org/Fitting_upwell_structures),
+[CCP structure quick facts](https://support.eveonline.com/hc/en-us/articles/209985225-Upwell-Structures-Quick-Facts)
+and [CCP structure skill bonuses](https://www.eveonline.com/news/view/structure-fitting-in-the-citadel-expansion).
+Inert inspection of the signed build-3662168 archive (hash recorded below) checks `structure.pyj` hardpoint fitting,
+`eveSpaceObject/missile.pyj` launch-module lookup and the existing native module activation shapes. Existing Blue/Destiny
+codecs are reused; Carbon Destiny reference remains revision
+[`114e89fa584f0e1a81eb0a679aabf41af8870072`](https://github.com/carbonengine/destiny/tree/114e89fa584f0e1a81eb0a679aabf41af8870072).
+No AGPL implementation was incorporated.
+
+**Automated validation:** Final root checks passed **784** affected .NET cases (6m48s), tool/solution restore, a zero-warning/
+error build (4.48s), both Python policy suites (8 + 9), formatting (2,621 files), line width and diff verification in
+**447.12s**. Documentation UTF-8/whitespace and **1,460** local links passed. The seventeen-case weapon class covers both
+launcher families/tiers, paid flight checkpoint/reopen, controller replacement, late and duplicate callbacks, physical
+NPC/player/structure impacts, fatal NPC attribution and exactly-once bounty payment, green safety, personal-engagement
+isolation, high-security retaliation and expiry, native session ticks/effect priming, contact invalidation, operating skill
+damage and rejection rollback. Warm unchanged cycle reads assert zero SQL commands, connections and fitting calculations.
+Development corrected a fixture's missing NPC wreck/home data, the native module-list wire type and an attempt to put a
+structure into the ordinary NPC aggression table; final focused flows and root checks passed after those corrections.
+
+The final filter joined `FullyQualifiedName~Eden.Protocol.Tests.` predicates with `|` for: `Structures`, `Ammunition`,
+`Docking.StructureServiceTests`, `Persistence.ModuleFittingTests`, `Persistence.InventoryOwnershipTests`,
+`Fittings.ApplyFittingTests`, `PilotSessions.TypedSessionTests`, `Combat.MissileFittingTests`, `Combat.MissileFlightTests`,
+`Combat.PilotMissileTests`, `Combat.MissileCombatTests`, `Combat.MissileRulesTests`, `Combat.NpcMissileTests`,
+`Combat.NpcMissileTimingTests`, `Combat.ResidentNpcMissileTests`, `Combat.PilotCombatTests`, `Combat.NpcCombatTests`,
+`Combat.CrimewatchTests`, `Combat.CombatDroneTests`, `Combat.ExpandedCombatDroneTests`, `Combat.DroneCombatTriggerTests`
+and `Combat.SessionPerformanceTests`. No full .NET suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Fire and stop a Standup launcher in the native controlled scene; release control with a
+missile in flight; inspect hardpoints, ammunition counts and the green safety display.
+
+### Resident structure ammunition and reloads
+
+The native structure ammunition bay now stores corporation-owned charge-category items under cargo flag 5. Managers
+deposit or withdraw whole/partial stacks while docked, including atomic batch deposits. The pinned controller declares
+no capacity bar for this bay. Loading accepts accessible personal cargo/hangar stock or corporation bay stock, transfers
+loaded ammunition into real stacks inside the fitted modules, and validates charge groups/sizes and magazine capacity
+against catalog volume. Reloads save each module's deadline in the existing resident `WorldModuleCooldown` table.
+Paid cycles/reloads prevent ammunition changes. Damaged structures can replenish ammunition independently of defensive
+fitting's full-shield requirement. Batch failures preserve quantities, ownership, magazines and cooldowns. Exhausting
+supplied stock leaves subsequent magazines unchanged.
+
+Loaded charges participate in the structure dogma graph. Hull/ballistic/guidance modifiers reach missile charges, while
+the pinned scripts' `otherID` modifiers reach their loaded module. Cached inputs include charge identity, parent module
+and immutable profile; quantity changes do not require a fitting recalculation. Unloading a script restores the module's
+unscripted attributes. Existing item and cooldown projection supplies checkpoint/reopen persistence; schema **188** is unchanged.
+
+Native `LoadAmmo`/`UnloadAmmo`, tuple `ItemGetInfo`, GetAllInfo charge priming, slot quantities, reload notifications and
+personal withdrawal now route through that authority. Routing uses resident structure membership because ordinary ship
+and structure IDs overlap. Native replies retain the operator's actual docked ship. Warm magazine/charge reads assert
+zero SQL commands, connections and fitting calculations. Defensive firing and automatic weapon cycles remain subsequent work.
+
+References: [UniWiki structure fitting](https://wiki.eveuniversity.org/Fitting_upwell_structures) and
+[missile mechanics](https://wiki.eveuniversity.org/Missile_mechanics). Inert build-3662168 inspection of
+`inventorycommon/const.pyj` and `invControllers.pyj` verifies the controller's cargo flag, charge-category filter and
+inherited `hasCapacity = False`. Pinned effects 6322-6325 and 7026 supply ECM/scrambler script modifiers; hull effect 7039
+and module effects 6448/6449 supply missile damage/application modifiers. The corrected six-field charge-group export
+reproduces the unchanged 404-type fixture and SHA-256 recorded below. Read-only EVE.js 261108.1 comparison:
+`invBrokerService.js`, SHA-256 `8CEC4112DE1B312B547E39B789391B0D8E18DFCA95AA61170F82AEFADC1E9651`.
+No AGPL source was incorporated; existing Blue charge and item codecs are reused.
+
+**Automated validation:** Final root checks passed **349** affected cases (2m16s), tool/solution restore, a zero-warning/error
+build (10.45s), both Python policy suites (8 + 9), formatting (2,616 files), line width and diff verification in **206.93s**.
+The ten-case ammunition class covers native custody/priming, checkpoint/reopen, damage-time replenishment, modifier-profile
+resolution, scripts, exhausted batch supply, rejection/rollback and capacity validation. The earlier combined ammunition
+run passed 64 structure/ordinary cases before the final additions. The final filter joined `FullyQualifiedName~` predicates
+with `|` for `Eden.Protocol.Tests.Structures`, `Eden.Protocol.Tests.Ammunition`,
+`Eden.Protocol.Tests.Docking.StructureServiceTests`, `Eden.Protocol.Tests.Persistence.ModuleFittingTests`,
+`Eden.Protocol.Tests.Persistence.InventoryOwnershipTests`, `Eden.Protocol.Tests.Fittings.ApplyFittingTests`,
+`Eden.Protocol.Tests.Combat.MissileFittingTests`, `Eden.Protocol.Tests.Combat.MissileFlightTests` and
+`Eden.Protocol.Tests.PilotSessions.TypedSessionTests`. No full .NET suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Deposit ammunition through the native bay; inspect a reload and a loaded script;
+partially unload into the bay and withdraw a stack to the personal hangar.
+
+### Resident structure targeting and controlled scenes
+
+Target scans and completed locks now belong to the resident control lease. World validates the exact lease, current
+docking/management authority, installed core and vulnerable operational state. The source is the structure rather than
+the pilot's docked ship. Target limits, scan resolution and range come from the fitted hull; ordinary ship-targeting
+skills do not apply. The pinned maximum-range attribute (797) caps acquisition at 490 km, with surface distance using
+both collision radii. Pending scans count against the target limit. Range loss, unavailable/warping or tethered targets,
+reinforcement and shared lock cancellation remove scans and completed locks. A cancelled pending edge cannot later
+complete after its target becomes available again.
+
+The native `AddTarget` RPC stays pending until the resident wall-clock deadline, while other calls remain available.
+The protocol adapter owns only deferred replies and notification comparisons. Releasing or losing control cancels
+pending replies and clears outgoing locks while preserving ships targeting the structure. Acquisition state is connection
+state and is intentionally not checkpointed; old lease generations cannot restore it.
+
+Controlled SetState now includes nearby ships, NPCs, drones, missiles and wrecks around an explicit structure observer.
+The real docked ship is neither moved nor published as the structure. Ordinary entity codecs and stamped updates are
+reused, including subsequent peer membership/movement and NPC refresh. Logged-off ships remain visible until their
+existing logoff deadline; removal then streams without resetting the scene. Normal ship snapshots retain their existing
+serialization order. This provides the targeting and observation boundary for defensive firing, which remains subsequent work.
+
+References: [UniWiki targeting](https://wiki.eveuniversity.org/Targeting),
+[structure fitting](https://wiki.eveuniversity.org/Fitting_upwell_structures) and
+[CCP structure defense](https://support.eveonline.com/hc/en-us/articles/209985225-Upwell-Structures-Quick-Facts).
+The original build-3662168 archive recorded below was inspected inertly: `targetMgr.pyj` uses the session ship's
+`maxTargetRange` and native surface distance, and its lock completion/cancellation paths consume the existing replies.
+The fixture retains targeting attributes 76, 192, 564 and maximum attribute 797. Consulted
+[Carbon Destiny Thunkers.cpp, revision 114e89fa](https://github.com/carbonengine/destiny/blob/114e89fa584f0e1a81eb0a679aabf41af8870072/src/Thunkers.cpp)
+for existing surface-distance and ball-stream behavior. Blue formats and Destiny entity encodings are unchanged.
+
+**Automated validation:** Final root checks passed **288** affected cases (1m25s), tool/solution restore, a zero-warning/error
+build (9.08s), both Python policy suites (8 + 9), formatting (2,612 files), line width and diff verification in **131.46s**.
+Warm targeting reads assert zero SQL commands, connections and fitting calculations. Native coverage includes the deferred
+reply, populated controlled SetState, a complete session tick, logged-off peer retention/expiry, streamed removal and
+pending-reply cancellation on release. Development corrected a test NPC without a home anchor and a test expectation that
+disconnect immediately removes a ship; the existing logoff deadline is preserved. No full .NET suite was requested or run.
+The final filter joined `FullyQualifiedName~` predicates with `|` for `Eden.Protocol.Tests.Structures`,
+`Eden.Protocol.Tests.Targeting`, `Eden.Protocol.Tests.PilotSessions.TargetLockSessionTests`,
+`Eden.Protocol.Tests.Flight.TypedFlightTests`, `Eden.Protocol.Tests.Flight.FlightSessionTests`,
+`Eden.Protocol.Tests.Flight.StaticSceneFrameTests`, `Eden.Protocol.Tests.Flight.MissileBallparkTests`,
+`Eden.Protocol.Tests.Combat.NpcSceneReadTests`, `Eden.Protocol.Tests.Combat.NpcSceneUpdateTests`,
+`Eden.Protocol.Tests.Combat.NpcSceneIndexTests`, `Eden.Protocol.Tests.Combat.ResidentQuerySessionTests` and
+`Eden.Protocol.Tests.Docking.StructureServiceTests`.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Take control with another ship nearby; complete and cancel native target scans;
+release control and verify the target UI and docked ship presentation.
+
+### Resident defensive fitting and full-power dogma
+
+Defensive equipment now fits through the native structure inventory alongside service modules. Resident authority
+validates hull restrictions, rack occupancy, launcher/turret hardpoints, CPU, powergrid, calibration, module/group limits,
+rig size and shared T1/T2 rig families. Batch fitting is atomic, splits packaged stacks and transfers fitted equipment to
+the owning corporation. Removing a rig destroys it. Fitting changes require docking, management authority, an installed
+core, full shields and no repair/reinforcement or decommission timer. Paid cycles and loaded equipment prevent removal.
+Services retain their distinct online/fuel rules, including switching to full power while under shield attack.
+
+The structure dogma graph evaluates fitted and online effects from the pinned catalog, with hull role modifiers and
+security-specific rig coefficients. Ordinary ship fitting skills do not enter this graph. The immutable fitting cache
+includes exact equipment, online state, hull definitions and system security; rolled-back candidates cannot replace a
+committed view. Warmed unchanged reads perform no SQL, connections or fitting calculations.
+
+Pinned effects 7008, 7040 and the service full-power assignment connect attributes 2743/2744, 2751 and 2804/2805.
+An online service multiplies shield and armor capacity by four and enables layered armor plating; hull capacity stays
+unchanged. Saved-world schema **188** retains the capacity image beside saved HP. Reads preserve the damage fraction
+when fitting or power changes capacity. Legacy rows without an image use their original catalog capacities. Projection
+and checkpoint/reopen retain the image, so power toggling cannot restore damage or apply the multiplier twice.
+
+References: [UniWiki fitting Upwell structures](https://wiki.eveuniversity.org/Fitting_upwell_structures),
+[CCP structure quick facts](https://support.eveonline.com/hc/en-us/articles/209985225-Upwell-Structures-Quick-Facts) and
+[CCP vulnerability states](https://support.eveonline.com/hc/en-us/articles/208289385-Upwell-Structures-Vulnerability-States).
+The expanded build-3662168 fixture contains 404 types, including published rack equipment and compatible charges;
+SHA-256 `9bffc6be9a41cf4e42973439dc18586641065b25688bd1906ac9db4c0388c805`.
+Read-only EVE.js 261108.1 comparison: `structureFullPowerDogma.js`, SHA-256
+`5DADA7810FF3FF529CE35D6FAC3CEB54C95A0292C0F5C960D56124BDE549DF69`. No AGPL source was incorporated.
+This milestone supplies fitting and authoritative defensive attributes; defensive firing is subsequent work.
+
+**Automated validation:** Final root checks passed **218** affected cases, tool/solution restore, a zero-warning/error
+build (0.71s), both Python policy suites (8 + 9), formatting (2,608 files), line width and diff verification in **98.59s**.
+Documentation encoding, whitespace and 769 local links passed. The final filter joined `FullyQualifiedName~` predicates
+with `|` for `Eden.Protocol.Tests.Structures`, `Eden.Protocol.Tests.Docking.StructureServiceTests`,
+`Eden.Protocol.Tests.Persistence.WorldMigrationTests`, `Eden.Protocol.Tests.Persistence.WorldInitializationTests`,
+`Eden.Protocol.Tests.Persistence.ModuleFittingTests`, `Eden.Protocol.Tests.Docking.TypedInventoryTests` and
+`Eden.Protocol.Tests.Persistence.InventoryOwnershipTests`. The earlier 204-case batch preceded the final native
+attribute notifications and migration regression. A subsequent root attempt was interrupted after two new assertions
+resolved a scoped protocol service from the root test provider; the fixture scope was corrected, both exact variants
+passed, and the final batch above passed. No full .NET suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** Fit mixed rack equipment through the native fitting view; inspect module/hull attributes
+while switching a service online/offline; destroy a fitted rig and confirm the native inventory presentation.
+
+### Resident structure-control authority
+
+Exclusive structure control is now owned by the resident world. The protocol adapter retains the native control/session
+behavior while Gameplay exposes a typed lease token and World validates docked location and corporation authority.
+Separate service instances share the same resident registry. Every acquisition receives a unique lease ID; a released
+token cannot authorize a later acquisition, including after checkpoint/reopen. Disposing an old lease cannot release
+its replacement. Control is connection state and is intentionally not restored from a checkpoint.
+
+The current-controller observer is a cheap registry lookup. Mutation consumers must call the authoritative `Require`
+operation, which verifies the exact token and current docking/role permissions under the persistence owner before
+returning the structure. This avoids acquiring the persistence owner while holding a simulation-only lease. Disconnect,
+logoff, ship changes and native release retain their existing cleanup paths. Defensive fitting and firing are subsequent
+parts of the completion program; this authority boundary does not by itself implement those actions.
+
+[UniWiki structure permissions](https://wiki.eveuniversity.org/Structure_permissions) and
+[CCP structure management](https://support.eveonline.com/hc/en-us/articles/208289605-Structure-Management) were reviewed
+alongside the pinned native control evidence recorded below. The read-only EVE.js 261108.1 comparison used
+`structureControlService.js`, SHA-256 `795AD6F1DC9B697FAE9A22D95B0A6CF8F71576E7B00C9C6D466AE256A1B33E70`;
+no AGPL source was incorporated. Native request and reply shapes are unchanged.
+
+**Automated validation:** The exact stale-lease/service-instance flow passed before expansion. The expanded three-case
+control class, including checkpoint/reopen and native disconnect, passed (build 14.55s, tests 11.17s including runner).
+Final root validation passed **30** affected cases using the structure control, attack, tether and pilot-selection filters;
+the matched cases belonged to the three structure classes. The build had zero warnings/errors (3.23s). Tool/solution
+restore, both Python policy suites (8 + 9), formatting (2,602 files), line width, diff and documentation checks passed.
+Root checks took **78.25s**. An initial native disconnect check exposed an attempt to enter persistence while holding a
+simulation-only lease; acquisition/validation now take the persistence owner first, and the exact check and final batch
+passed. No full .NET suite was requested or run.
+
+**Live acceptance:** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks:** None required for this authority-only milestone; native defensive interaction remains
+unverified until the corresponding feature is implemented and exercised.
 ### Native Upwell repair shop
 
 The November 21, 2026 EVE.js follow-up found two missing pieces in Eden's docked Upwell repair path. Pinned build

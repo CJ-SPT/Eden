@@ -59,7 +59,7 @@ internal sealed partial class PilotMissileStore
 
     private static IQueryable<WorldMissile> Flying(WorldAction world, int system) =>
         world.Filter<WorldMissile>(row =>
-            row.SourceKind == MissileSourceKind.Pilot
+            (row.SourceKind == MissileSourceKind.Pilot || world is EconomyTransaction && row.SourceKind == MissileSourceKind.Structure)
             && row.SystemId == system
             && (row.Status == MissileFlightStatus.Flying || row.Status == MissileFlightStatus.Attached)
         );

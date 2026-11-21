@@ -3,6 +3,7 @@ using Eden.Data.Catalog;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
+using Eden.Data.World.Drones;
 using Eden.Data.World.Inventory;
 using Eden.Data.World.Structures;
 using Eden.Gameplay.Ammunition;
@@ -273,7 +274,7 @@ internal sealed partial class PilotMissileStore(
         }
         else if (structure is not null)
         {
-            StructureCombatTargets.Check(world, catalog, structure, now);
+            StructureCombatTargets.Check(world, catalog, structure, now, pilotId);
             if (structure.SystemId != systemId || automatic)
             {
                 throw new InvalidDataException("Lock a structure in this system before launching missiles.");
@@ -367,7 +368,7 @@ internal sealed partial class PilotMissileStore(
         }
         else if (structure is not null)
         {
-            StructureCombatTargets.Aggress(world, pilotId, systemId, now, cooldown.ReadyAt);
+            StructureCombatTargets.Aggress(world, pilotId, structure.Id, systemId, now, cooldown.ReadyAt);
         }
         else
         {
@@ -402,16 +403,11 @@ internal sealed partial class PilotMissileStore(
             transaction.Commit();
             return;
         }
-        foreach (var source in rows.Where(m => m.Status == MissileFlightStatus.Flying).GroupBy(m => (m.PilotId, m.SourceShipId)))
+        foreach (
+            var source in rows.Where(m => m.Status == MissileFlightStatus.Flying).GroupBy(m => (m.SourceKind, m.PilotId, m.SourceShipId))
+        )
         {
-            var pilot = world.Pilots.Find(source.Key.PilotId)!;
-            var position = pilot.ActiveShip.Position;
-            if (
-                pilot.ActiveShipId != source.Key.SourceShipId
-                || position is null
-                || (position.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId) != systemId
-                || world.Set<ShipLoss>().Any(l => l.ShipId == source.Key.SourceShipId)
-            )
+            if (!MissileSourcePersistence.Available(world, catalog, source.First()))
             {
                 foreach (var row in source)
                 {
@@ -446,15 +442,30 @@ internal sealed partial class PilotMissileStore(
             {
                 target = new(contact.Position, contact.Velocity, row.TargetRadius);
             }
+            if (
+                row.TargetKind == MissileTargetKind.Drone
+                && world.Set<WorldDrone>().Find(row.TargetId) is { } drone
+                && drone.SystemId == systemId
+            )
+            {
+                observedAt = drone.UpdatedAt;
+                target = new(new(drone.X, drone.Y, drone.Z), new(drone.VelocityX, drone.VelocityY, drone.VelocityZ), row.TargetRadius);
+            }
             return MissileMotionHistory.Step(world, row, payload, target, observedAt);
         }
 
         foreach (var (row, payload, time) in MissileMotionHistory.DueSteps(rows, now, AdvanceFlight))
         {
-            if (world.Pilots.Find(row.PilotId)!.ActiveShipId != row.SourceShipId)
+            if (!MissileSourcePersistence.Available(world, catalog, row))
             {
                 row.Status = MissileFlightStatus.Expired;
                 row.EndedAt = time;
+                continue;
+            }
+            var droneTarget = row.TargetKind == MissileTargetKind.Drone ? world.Set<WorldDrone>().Find(row.TargetId) : null;
+            if (row.TargetKind == MissileTargetKind.Drone && !payload.Flight.Orphaned && droneTarget?.SystemId != systemId)
+            {
+                // An earlier impact in this queue destroyed the drone. Reschedule from the last paid flight boundary.
                 continue;
             }
             row.Save(payload);
@@ -470,6 +481,10 @@ internal sealed partial class PilotMissileStore(
                 destroyed |= AdvanceBreacher(world, catalog, rows, systemId, time, pilotImpacts);
                 AttachBreacher(row, payload, time, rows);
                 continue;
+            }
+            if (row.Status == MissileFlightStatus.Impact && droneTarget is not null)
+            {
+                ApplyDroneImpact(world, catalog, row, payload, droneTarget, time);
             }
             if (row.Status == MissileFlightStatus.Impact && row.TargetKind == MissileTargetKind.Pilot)
             {
@@ -506,7 +521,8 @@ internal sealed partial class PilotMissileStore(
                     time,
                     row.LauncherTypeId,
                     row.SourceTypeId,
-                    paidProjectile: true
+                    paidProjectile: true,
+                    sourceParty: row.SourceKind == MissileSourceKind.Structure ? payload.Source : null
                 );
                 destroyed |= result.Destroyed;
                 world.SaveChanges();
@@ -598,7 +614,12 @@ internal sealed partial class PilotMissileStore(
         var world = transaction.World;
         var rows = world
             .Set<WorldMissile>()
-            .Where(m => m.SourceKind == MissileSourceKind.Pilot && m.PilotId == pilotId && m.Outcome != null && !m.Reported)
+            .Where(m =>
+                (m.SourceKind == MissileSourceKind.Pilot || world is EconomyTransaction && m.SourceKind == MissileSourceKind.Structure)
+                && m.PilotId == pilotId
+                && m.Outcome != null
+                && !m.Reported
+            )
             .OrderBy(m => m.EndedAt)
             .ThenBy(m => m.Id)
             .ToArray();

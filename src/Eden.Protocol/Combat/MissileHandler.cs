@@ -160,7 +160,7 @@ internal sealed class MissileHandler(
         {
             Cancel(context);
         }
-        if (!context.Flight.CanTarget)
+        if (!context.Flight.CanTarget && !context.Pilot.InStructure)
         {
             return;
         }

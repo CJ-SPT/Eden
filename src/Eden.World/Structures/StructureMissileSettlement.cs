@@ -21,21 +21,14 @@ internal static class StructureMissileSettlement
         var rows = world
             .Filter<WorldMissile>(m =>
                 m.SystemId == system
-                && m.SourceKind == MissileSourceKind.Pilot
+                && (m.SourceKind == MissileSourceKind.Pilot || world is EconomyTransaction && m.SourceKind == MissileSourceKind.Structure)
                 && m.TargetKind == MissileTargetKind.Structure
                 && m.Status == MissileFlightStatus.Flying
             )
             .ToArray();
         foreach (var row in rows)
         {
-            var source = world.Pilots.Find(row.PilotId);
-            if (
-                source?.ActiveShipId != row.SourceShipId
-                || source.ActiveShip.Position is not { } position
-                || (position.SystemId ?? catalog.RequireStation(source.ActiveShip.StationId).SolarSystemId) != system
-                || world.Set<ShipLoss>().Any(l => l.ShipId == row.SourceShipId)
-                || now > row.ExpiresAt + TimeSpan.TicksPerSecond
-            )
+            if (!MissileSourcePersistence.Available(world, catalog, row) || now > row.ExpiresAt + TimeSpan.TicksPerSecond)
             {
                 row.Status = MissileFlightStatus.Expired;
                 row.EndedAt = now;

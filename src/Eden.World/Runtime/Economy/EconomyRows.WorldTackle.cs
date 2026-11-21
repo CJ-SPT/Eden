@@ -13,7 +13,8 @@ internal sealed record EconomyWorldTackle(
     double MwdBlock,
     long PilotId,
     double Range,
-    long SourceShipId,
+    long? SourceShipId,
+    long? SourceStructureId,
     long StartedAt,
     double Strength,
     int SystemId,
@@ -50,7 +51,7 @@ internal sealed partial class ResidentEconomy
                     $"""
                     INSERT INTO WorldTackle(
                         ModuleId,CapacitorNeed,DurationMilliseconds,Effect,ExpiresAt,MwdBlock,PilotId,Range,SourceShipId,
-                        StartedAt,Strength,SystemId,TargetId,TargetKind,TypeId,WebPercent
+                        StartedAt,Strength,SystemId,TargetId,TargetKind,TypeId,WebPercent,SourceStructureId
                     )
                     SELECT
                         json_extract(value,'$.ModuleId'),json_extract(value,'$.CapacitorNeed'),
@@ -59,7 +60,7 @@ internal sealed partial class ResidentEconomy
                         json_extract(value,'$.Range'),json_extract(value,'$.SourceShipId'),
                         json_extract(value,'$.StartedAt'),json_extract(value,'$.Strength'),json_extract(value,'$.SystemId'),
                         json_extract(value,'$.TargetId'),json_extract(value,'$.TargetKind'),json_extract(value,'$.TypeId'),
-                        json_extract(value,'$.WebPercent')
+                        json_extract(value,'$.WebPercent'),json_extract(value,'$.SourceStructureId')
                     FROM json_each({values}) WHERE 1
                     ON CONFLICT(ModuleId) DO UPDATE SET
                         CapacitorNeed=excluded.CapacitorNeed,DurationMilliseconds=excluded.DurationMilliseconds,
@@ -67,7 +68,7 @@ internal sealed partial class ResidentEconomy
                         PilotId=excluded.PilotId,Range=excluded.Range,SourceShipId=excluded.SourceShipId,
                         StartedAt=excluded.StartedAt,Strength=excluded.Strength,SystemId=excluded.SystemId,
                         TargetId=excluded.TargetId,TargetKind=excluded.TargetKind,TypeId=excluded.TypeId,
-                        WebPercent=excluded.WebPercent
+                        WebPercent=excluded.WebPercent,SourceStructureId=excluded.SourceStructureId
                     """
                 );
             }

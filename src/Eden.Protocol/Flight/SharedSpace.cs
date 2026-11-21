@@ -623,16 +623,19 @@ internal sealed class SharedSpace(
     internal ShipContact[] Peers(int system, long viewerId, SpacePosition? viewer) =>
         viewer is null ? [] : RunMotion(system, () => PeersOwned(system, viewerId, viewer), nameof(Peers));
 
-    internal IEnumerable<ShipContact> GateArrivals(DockedPilot pilot) =>
-        _ships.Values.Where(ship =>
-            ship.GateArrival is not null
-            && ship.Pilot.SystemId == pilot.SystemId
-            && IsGateCloaked(ship.Pilot.ShipId)
-            && ship.Pilot.ShipId != pilot.ShipId
-            && pilot.Position is { } viewer
-            && ship.Pilot.Position is { } position
-            && viewer.DistanceTo(position) <= NavigationDefinitions.MaximumTargetDistance
-        );
+    internal IEnumerable<ShipContact> GateArrivals(DockedPilot pilot) => GateArrivals(pilot.SystemId, pilot.ShipId, pilot.Position);
+
+    internal IEnumerable<ShipContact> GateArrivals(int systemId, long observerId, SpacePosition? viewer) =>
+        viewer is null
+            ? []
+            : _ships.Values.Where(ship =>
+                ship.GateArrival is not null
+                && ship.Pilot.SystemId == systemId
+                && IsGateCloaked(ship.Pilot.ShipId)
+                && ship.Pilot.ShipId != observerId
+                && ship.Pilot.Position is { } position
+                && viewer.DistanceTo(position) <= NavigationDefinitions.MaximumTargetDistance
+            );
 
     internal CommandBurstCandidate[] CommandBurstCandidates(DockedPilot pilot) =>
         RunMotion(

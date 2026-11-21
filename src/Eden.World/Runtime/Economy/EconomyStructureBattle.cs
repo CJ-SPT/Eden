@@ -15,7 +15,10 @@ internal sealed record EconomyStructureBattle(
     double ShieldWindow,
     double ArmorWindow,
     double HullWindow,
-    long PausedUntil
+    long PausedUntil,
+    double ShieldCapacity,
+    double ArmorCapacity,
+    double HullCapacity
 );
 
 internal sealed partial class ResidentEconomy
@@ -36,7 +39,10 @@ internal sealed partial class ResidentEconomy
                         row.ShieldWindow,
                         row.ArmorWindow,
                         row.HullWindow,
-                        row.PausedUntil
+                        row.PausedUntil,
+                        row.ShieldCapacity,
+                        row.ArmorCapacity,
+                        row.HullCapacity
                     ),
                 state => new SavedStructureBattle
                 {
@@ -50,9 +56,13 @@ internal sealed partial class ResidentEconomy
                     ArmorWindow = state.ArmorWindow,
                     HullWindow = state.HullWindow,
                     PausedUntil = state.PausedUntil,
+                    ShieldCapacity = state.ShieldCapacity,
+                    ArmorCapacity = state.ArmorCapacity,
+                    HullCapacity = state.HullCapacity,
                 },
                 ProjectStructureBattle,
-                "StructureId,Shield,Armor,Hull,RepairAt,DamageWindowAt,ShieldWindow,ArmorWindow,HullWindow,PausedUntil",
+                "StructureId,Shield,Armor,Hull,RepairAt,DamageWindowAt,ShieldWindow,ArmorWindow,HullWindow,PausedUntil,"
+                    + "ShieldCapacity,ArmorCapacity,HullCapacity",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -64,7 +74,10 @@ internal sealed partial class ResidentEconomy
                         reader.GetDouble(7),
                         reader.GetDouble(8),
                         reader.GetDouble(9),
-                        reader.GetInt64(10)
+                        reader.GetInt64(10),
+                        reader.GetDouble(11),
+                        reader.GetDouble(12),
+                        reader.GetDouble(13)
                     ),
                 state => new(state.StructureId),
                 indexes: [new("StructureId", row => row.StructureId)],
@@ -82,7 +95,8 @@ internal sealed partial class ResidentEconomy
             world.Database.ExecuteSql(
                 $"""
                 INSERT INTO WorldStructureBattle(
-                    StructureId,Shield,Armor,Hull,RepairAt,DamageWindowAt,ShieldWindow,ArmorWindow,HullWindow,PausedUntil
+                    StructureId,Shield,Armor,Hull,RepairAt,DamageWindowAt,ShieldWindow,ArmorWindow,HullWindow,PausedUntil,
+                    ShieldCapacity,ArmorCapacity,HullCapacity
                 )
                 SELECT
                     json_extract(value,'$.StructureId'),
@@ -94,7 +108,10 @@ internal sealed partial class ResidentEconomy
                     json_extract(value,'$.ShieldWindow'),
                     json_extract(value,'$.ArmorWindow'),
                     json_extract(value,'$.HullWindow'),
-                    json_extract(value,'$.PausedUntil')
+                    json_extract(value,'$.PausedUntil'),
+                    json_extract(value,'$.ShieldCapacity'),
+                    json_extract(value,'$.ArmorCapacity'),
+                    json_extract(value,'$.HullCapacity')
                 FROM json_each({rows}) WHERE 1
                 ON CONFLICT(StructureId) DO UPDATE SET
                     Shield=excluded.Shield,
@@ -105,7 +122,10 @@ internal sealed partial class ResidentEconomy
                     ShieldWindow=excluded.ShieldWindow,
                     ArmorWindow=excluded.ArmorWindow,
                     HullWindow=excluded.HullWindow,
-                    PausedUntil=excluded.PausedUntil
+                    PausedUntil=excluded.PausedUntil,
+                    ShieldCapacity=excluded.ShieldCapacity,
+                    ArmorCapacity=excluded.ArmorCapacity,
+                    HullCapacity=excluded.HullCapacity
                 """
             );
         }

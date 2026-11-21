@@ -1,5 +1,8 @@
+using Eden.Data.World.Propulsion;
+using Eden.Data.World.Structures;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
+using Eden.Protocol.Tests.Structures;
 using Eden.World.Fittings;
 using Eden.World.Storage;
 using Microsoft.Data.Sqlite;
@@ -9,6 +12,97 @@ namespace Eden.Protocol.Tests.Persistence;
 
 public sealed class WorldMigrationTests
 {
+    [Theory]
+    [InlineData(189)]
+    [InlineData(213)]
+    public void StructureTackleUpgradePreservesShipSourceAndRevisionTriggers(int version)
+    {
+        using StructureTests.Fixture fixture = new();
+        long ship = fixture.ShipId;
+        long pilot = fixture.PilotId;
+        long module = fixture.Item(35943);
+        using WorldDbContext world = new(fixture.Db.Path);
+        world.Database.ExecuteSqlRaw(
+            """
+            DROP TABLE WorldTackle;
+            CREATE TABLE WorldTackle(
+                ModuleId INTEGER PRIMARY KEY REFERENCES WorldItem(Id), PilotId INTEGER NOT NULL REFERENCES WorldPilot(Id),
+                SourceShipId INTEGER NOT NULL REFERENCES WorldShip(Id), TypeId INTEGER NOT NULL, SystemId INTEGER NOT NULL,
+                TargetId INTEGER NOT NULL, TargetKind INTEGER NOT NULL, Effect INTEGER NOT NULL, DurationMilliseconds REAL NOT NULL,
+                CapacitorNeed REAL NOT NULL, Range REAL NOT NULL, Strength REAL NOT NULL, WebPercent REAL NOT NULL,
+                MwdBlock REAL NOT NULL, StartedAt INTEGER NOT NULL, ExpiresAt INTEGER NOT NULL);
+            """
+        );
+        world.Database.ExecuteSqlRaw(version == 189 ? "PRAGMA user_version=189" : "PRAGMA user_version=213");
+        ResidentFitSchema.Create(world);
+        world.Database.ExecuteSql(
+            $"""
+            INSERT INTO WorldTackle VALUES({module},{pilot},{ship},526,30001392,{ship},0,6426,
+                10000,5,10000,0,-50,0,100,200)
+            """
+        );
+        using Eden.World.Catalog.CatalogDbContext catalog = new(new WorldDatabase(fixture.Db.Path).CatalogPath);
+        WorldMigration.Open(world, catalog, fixture.Clock);
+        var upgraded = world.Set<WorldTackle>().Single();
+        Assert.Equal(fixture.ShipId, upgraded.SourceShipId);
+        Assert.Null(upgraded.SourceStructureId);
+        Assert.Equal(-50, upgraded.WebPercent);
+        Assert.Equal(200, upgraded.ExpiresAt);
+        Assert.True(
+            world
+                .Database.SqlQueryRaw<int>(
+                    "SELECT COUNT(*) AS Value FROM sqlite_schema WHERE tbl_name='WorldTackle' AND name LIKE 'Fit_WorldTackle_%'"
+                )
+                .Single() > 0
+        );
+    }
+
+    [Fact]
+    public void Version187StructureBattleUpgradePreservesDamageAndSavedDeadlines()
+    {
+        using StructureTests.Fixture fixture = new();
+        var structure = fixture.Online();
+        long repairAt = fixture.Clock.Now + TimeSpan.TicksPerMinute;
+        using (WorldDbContext world = new(fixture.Db.Path))
+        {
+            world.Add(
+                new SavedStructureBattle
+                {
+                    StructureId = structure.Id,
+                    Shield = 123,
+                    Armor = 456,
+                    Hull = 789,
+                    RepairAt = repairAt,
+                }
+            );
+            world.SaveChanges();
+            world.Database.ExecuteSqlRaw(
+                """
+                DROP TABLE WorldStructureEnergy;
+                ALTER TABLE WorldStructureBattle DROP COLUMN ShieldCapacity;
+                ALTER TABLE WorldStructureBattle DROP COLUMN ArmorCapacity;
+                ALTER TABLE WorldStructureBattle DROP COLUMN HullCapacity;
+                PRAGMA user_version=187;
+                """
+            );
+        }
+        for (int reopen = 0; reopen < 2; reopen++)
+        {
+            WorldInitialization.Initialize(new(fixture.Db.Path));
+            using WorldDbContext world = new(fixture.Db.Path);
+            var battle = world.Set<SavedStructureBattle>().Find(structure.Id)!;
+            Assert.Null(world.Set<SavedStructureEnergy>().Find(structure.Id));
+            Assert.Equal(123, battle.Shield);
+            Assert.Equal(456, battle.Armor);
+            Assert.Equal(789, battle.Hull);
+            Assert.Equal(repairAt, battle.RepairAt);
+            Assert.Equal(0, battle.ShieldCapacity);
+            Assert.Equal(0, battle.ArmorCapacity);
+            Assert.Equal(0, battle.HullCapacity);
+            Assert.Equal(WorldMigration.CurrentVersion, world.Database.SqlQueryRaw<int>("PRAGMA user_version").AsEnumerable().Single());
+        }
+    }
+
     [Fact]
     public void Version185AddsAnInactiveGateCloakWithoutChangingExistingNavigationDeadlines()
     {

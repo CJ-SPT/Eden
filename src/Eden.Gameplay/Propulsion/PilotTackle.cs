@@ -74,12 +74,17 @@ public static class TackleDefinitions
     public const int PropulsionJammingSkill = 3435;
     public const double MaximumDistance = 250000;
 
+    public static bool Web(DogmaEffect effect) => effect is DogmaEffect.StasisWebifier or DogmaEffect.StructureStasisWebifier;
+
+    public static bool StructureTackle(DogmaEffect effect) =>
+        effect is DogmaEffect.StructureStasisWebifier or DogmaEffect.StructureWarpDisruptor;
+
     public static bool Targeted(DogmaEffect effect) =>
-        effect is DogmaEffect.StasisWebifier or DogmaEffect.WarpDisruptor or DogmaEffect.WarpScrambler;
+        Web(effect) || effect is DogmaEffect.WarpDisruptor or DogmaEffect.WarpScrambler or DogmaEffect.StructureWarpDisruptor;
 
     public static TackleModule Define(long itemId, int typeId, DogmaEffect effect, IReadOnlyDictionary<DogmaAttributeId, double> attributes)
     {
-        bool web = effect == DogmaEffect.StasisWebifier;
+        bool web = Web(effect);
         bool core = effect == DogmaEffect.WarpCoreStabilizer;
         if (!core && !Targeted(effect))
         {
@@ -94,8 +99,10 @@ public static class TackleDefinitions
             core ? 0 : attributes.GetValueOrDefault(DogmaAttributeId.MaxRange),
             web ? 0 : attributes.GetValueOrDefault(DogmaAttributeId.WarpScrambleStrength),
             web ? attributes.GetValueOrDefault(DogmaAttributeId.SpeedFactor) : 0,
-            effect == DogmaEffect.WarpScrambler ? attributes.GetValueOrDefault(DogmaAttributeId.ActivationBlockStrength) : 0,
-            core ? attributes.GetValueOrDefault(DogmaAttributeId.ModuleReactivationDelay) : 0,
+            effect is DogmaEffect.WarpScrambler or DogmaEffect.StructureWarpDisruptor
+                ? attributes.GetValueOrDefault(DogmaAttributeId.ActivationBlockStrength)
+                : 0,
+            core || StructureTackle(effect) ? attributes.GetValueOrDefault(DogmaAttributeId.ModuleReactivationDelay) : 0,
             web ? attributes.GetValueOrDefault(DogmaAttributeId.FalloffEffectiveness) : 0
         );
         if (
@@ -126,7 +133,7 @@ public static class TackleDefinitions
     {
         foreach (var module in modules)
         {
-            if (module.Effect == DogmaEffect.StasisWebifier)
+            if (Web(module.Effect))
             {
                 yield return new(
                     target,
@@ -156,7 +163,7 @@ public static class TackleDefinitions
         IReadOnlyList<TackleModule> modules
     )
     {
-        if (!modules.Any(m => m.Effect == DogmaEffect.StasisWebifier))
+        if (!modules.Any(m => Web(m.Effect)))
         {
             return attributes;
         }

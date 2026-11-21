@@ -41,10 +41,10 @@ internal sealed class PilotCallContext(
     public AccountProfile Account { get; } = account;
     public IReadOnlyList<DockedPilot> Roster { get; set; } = roster;
     public FlightSession? ActiveFlight { get; private set; }
-    internal Eden.Protocol.Structures.StructureControlLease? StructureControl { get; private set; }
+    internal Eden.Gameplay.Structures.IStructureControlLease? StructureControl { get; private set; }
     internal long? ControlledStructureId => StructureControl?.StructureId;
 
-    internal void TakeStructureControl(Eden.Protocol.Structures.StructureControlLease lease)
+    internal void TakeStructureControl(Eden.Gameplay.Structures.IStructureControlLease lease)
     {
         if (StructureControl != lease)
         {

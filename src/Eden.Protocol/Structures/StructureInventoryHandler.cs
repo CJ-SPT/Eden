@@ -13,10 +13,12 @@ namespace Eden.Protocol.Structures;
 [Injectable]
 internal sealed class StructureInventoryHandler(
     IPilotStructures structures,
-    IStructureContacts contacts,
     IPilotInventory personalInventory,
     IPilotFleet fleet,
     InventoryTransfers transfers,
+    IPilotStructureFitting fitting,
+    FittingOperations fittingOperations,
+    IPilotStructureAmmunition ammunition,
     IStandupFighterInventory? fighterBay = null
 ) : ISelectedPilotCallHandler
 {
@@ -85,6 +87,31 @@ internal sealed class StructureInventoryHandler(
             }
             if (
                 method == "MultiAdd"
+                && args is [List<object?> ammunitionItems, long _]
+                && Equals(keywords?.GetValueOrDefault("flag"), (long)InventoryFlag.Cargo)
+            )
+            {
+                if (
+                    ammunitionItems.Any(item => item is not long)
+                    || keywords?.Keys.Any(key => key is not ("flag" or "qty")) == true
+                    || keywords?.GetValueOrDefault("qty") is not (null or long and > 0 and <= int.MaxValue)
+                )
+                {
+                    throw new InvalidDataException("Choose valid ammunition stacks and quantity.");
+                }
+                int? amount = keywords?.GetValueOrDefault("qty") is long ammunitionAmount ? checked((int)ammunitionAmount) : null;
+                fittingOperations.NotifyStructureChanges(
+                    context,
+                    ammunition.Deposit(
+                        context.Pilot.PilotId,
+                        id,
+                        ammunitionItems.Select(item => new StructureAmmoDeposit((long)item!, amount)).ToArray()
+                    )
+                );
+                return PilotCallResult.None;
+            }
+            if (
+                method == "MultiAdd"
                 && args is [List<object?> batch, long _]
                 && Equals(keywords?.GetValueOrDefault("flag"), (long)InventoryFlag.AutoFit)
             )
@@ -95,13 +122,12 @@ internal sealed class StructureInventoryHandler(
                     || batch.Any(item => item is not long)
                 )
                 {
-                    throw new InvalidDataException("Choose whole service modules to fit.");
+                    throw new InvalidDataException("Choose whole structure equipment items to fit.");
                 }
-                StructureHandler.Notify(
+                fittingOperations.NotifyStructureChanges(
                     context,
-                    structures.FitServices(context.Pilot.PilotId, id, batch.Select(item => new StructureServiceFit((long)item!)).ToArray())
+                    fitting.Fit(context.Pilot.PilotId, id, batch.Select(item => new StructureServiceFit((long)item!)).ToArray())
                 );
-                context.Flight.RefreshStructures(contacts.Contacts(context.Pilot.SystemId));
                 return PilotCallResult.None;
             }
             // Native drag/drop uses MultiAdd even for a single selected item. Each installation is one atomic command.
@@ -119,6 +145,15 @@ internal sealed class StructureInventoryHandler(
                 return new BlueList<InventoryRow>(
                     items.Where(i => args.Length == 0 || i.FlagId == (long)args[0]!).Select(InventoryRow.From).ToArray()
                 );
+            }
+            if (method == "DestroyFitting" && args is [long rig] && keywords is not { Count: > 0 })
+            {
+                if (!items.Any(item => item.Id == rig && InventoryDefinitions.IsRigSlot(item.FlagId)))
+                {
+                    throw new InvalidDataException("Choose a fitted structure rig to destroy.");
+                }
+                fittingOperations.NotifyStructureChanges(context, fitting.Remove(context.Pilot.PilotId, id, rig));
+                return PilotCallResult.None;
             }
             if (method == "GetSelfInvItem" && args.Length == 0)
             {
@@ -163,19 +198,21 @@ internal sealed class StructureInventoryHandler(
                 }
                 var result = flag switch
                 {
-                    (int)InventoryFlag.AutoFit when quantity is null or 1 => structures.FitServices(context.Pilot.PilotId, id, [new(item)]),
+                    (int)InventoryFlag.Cargo => ammunition.Deposit(context.Pilot.PilotId, id, item, quantity),
+                    (int)InventoryFlag.AutoFit when quantity is null or 1 => fitting.Fit(context.Pilot.PilotId, id, [new(item)]),
                     StructureRules.CoreRoomFlag when quantity is null or 1 => structures.InstallCore(context.Pilot.PilotId, id, item),
                     StructureRules.FuelBayFlag => structures.DepositFuel(context.Pilot.PilotId, id, item, quantity),
                     >= StructureRules.FirstServiceSlot
                     and < StructureRules.FirstServiceSlot + StructureRules.MaximumServiceSlots when quantity is null or 1 =>
                         structures.FitService(context.Pilot.PilotId, id, item, flag),
+                    _ when InventoryDefinitions.IsFittedSlot(flag) && quantity is null or 1 => fitting.Fit(
+                        context.Pilot.PilotId,
+                        id,
+                        [new(item, flag)]
+                    ),
                     _ => throw new InvalidDataException("Choose a core, service slot or structure fuel bay."),
                 };
-                StructureHandler.Notify(context, result);
-                if (context.ControlledStructureId == id)
-                {
-                    context.Flight.RefreshStructures(contacts.Contacts(context.Pilot.SystemId));
-                }
+                fittingOperations.NotifyStructureChanges(context, result);
                 return PilotCallResult.None;
             }
             return PilotCallResult.Unsupported;

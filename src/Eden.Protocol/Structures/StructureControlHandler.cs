@@ -67,9 +67,8 @@ internal sealed class StructureControlHandler(
                 }
                 if (method == "TakeControl" && args is [long structureId] && structureId >= StructureRules.FirstStructureId)
                 {
-                    _ = structures.AuthorizeControl(pilot, structureId);
-                    context.Flight.RefreshStructures(contacts.Contacts(context.Pilot.SystemId));
                     context.TakeStructureControl(controllers.Acquire(structureId, pilot, context.SessionId));
+                    context.Flight.RefreshStructures(contacts.Contacts(context.Pilot.SystemId));
                     context.Flight.Snapshot();
                     return PilotCallResult.None;
                 }
@@ -108,11 +107,22 @@ internal sealed class StructureControlHandler(
             {
                 return structures.Read(pilot, id) is { } structure ? dogma.Prime(structure) : PilotCallResult.None;
             }
+            if (
+                method == "ItemGetInfo"
+                && context.ControlledStructureId == id
+                && args is [object?[] { Length: 3 } key]
+                && key is [long source, long slot, long type]
+                && source == id
+            )
+            {
+                var magazine = structures.Read(pilot, id)?.Magazines.FirstOrDefault(item => item.FlagId == slot && item.TypeId == type);
+                return magazine is null ? PilotCallResult.None : dogma.PrimeCharge(context.Pilot, magazine);
+            }
             if (method == "ItemGetInfo" && args is [long moduleId] && context.ControlledStructureId == id)
             {
                 var structure = structures.Read(pilot, id)!;
                 var fittedItem = structures.Inventory(pilot, id).SingleOrDefault(i => i.Id == moduleId);
-                if (fittedItem is not null && structure.Modules.Any(m => m.ItemId == moduleId))
+                if (fittedItem is not null && structure.Modules.Concat(structure.Equipment).Any(m => m.ItemId == moduleId))
                 {
                     return dogma.PrimeModule(context.Pilot, structure, fittedItem);
                 }

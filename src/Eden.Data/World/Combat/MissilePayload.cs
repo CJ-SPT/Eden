@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 
 namespace Eden.Data.World.Combat;
@@ -9,7 +10,8 @@ internal sealed record MissilePayload(
     MissileWarhead Warhead,
     BreacherPayload? Breacher = null,
     double EnvironmentDamage = 0,
-    MissileTarget? Target = null
+    MissileTarget? Target = null,
+    CombatParty? Source = null
 );
 
 [JsonSerializable(typeof(MissilePayload))]

@@ -29,6 +29,10 @@ internal static class StructureDeparture
         {
             throw new InvalidOperationException("Structure departures require the resident world.");
         }
+        if (world.Set<SavedStructureEnergy>().Find(structure.Id) is { } energy)
+        {
+            world.Remove(energy);
+        }
         bool eject =
             !AssetSafetyStore.SafetyEnabled(catalog, structure.SystemId)
             || destroyed && structure.LowPowerAt is long low && now - low >= StructureRules.AbandonmentDuration;

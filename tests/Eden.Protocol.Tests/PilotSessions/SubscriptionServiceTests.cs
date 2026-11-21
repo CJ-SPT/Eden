@@ -4,6 +4,7 @@ using Eden.Gameplay.Flight;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Transport;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -218,8 +219,12 @@ public sealed class SubscriptionServiceTests
     [InlineData(AccountCloneGrade.Omega)]
     public async Task NativePilotServicesPacketsReturnSubscriptionTimeWithoutDestinationErrors(AccountCloneGrade grade)
     {
-        using TestWorld world = new();
-        SaveGrade(world, grade);
+        using TestWorld world = new(liveWorld: true);
+        using (var setup = new WorldActionScope(new(world.Path)))
+        {
+            setup.World.Set<Account>().Find(1000001L)!.CloneGrade = grade;
+            setup.Commit();
+        }
         Queue<object?> input = new(
             new[]
             {

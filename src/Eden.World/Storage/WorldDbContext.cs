@@ -399,10 +399,22 @@ public sealed partial class WorldDbContext(string path) : DbContext
         model.Entity<SavedCharacterSetting>().HasOne<Pilot>().WithMany().HasForeignKey(s => s.PilotId);
         model.Entity<SavedCharacterSheet>().ToTable("WorldCharacterSheet").HasKey(s => s.PilotId);
         model.Entity<SavedCharacterSheet>().HasOne<Pilot>().WithMany().HasForeignKey(s => s.PilotId);
-        model.Entity<WorldTackle>().ToTable("WorldTackle").HasKey(t => t.ModuleId);
+        model
+            .Entity<WorldTackle>()
+            .ToTable(
+                "WorldTackle",
+                table => table.HasCheckConstraint("CK_WorldTackle_OneSource", "(SourceShipId IS NULL) <> (SourceStructureId IS NULL)")
+            )
+            .HasKey(t => t.ModuleId);
         model.Entity<WorldTackle>().HasOne<OwnedItem>().WithMany().HasForeignKey(t => t.ModuleId);
         model.Entity<WorldTackle>().HasOne<Pilot>().WithMany().HasForeignKey(t => t.PilotId);
-        model.Entity<WorldTackle>().HasOne<Ship>().WithMany().HasForeignKey(t => t.SourceShipId);
+        model.Entity<WorldTackle>().HasOne<Ship>().WithMany().HasForeignKey(t => t.SourceShipId).OnDelete(DeleteBehavior.Cascade);
+        model
+            .Entity<WorldTackle>()
+            .HasOne<Eden.Data.World.Structures.SavedStructure>()
+            .WithMany()
+            .HasForeignKey(t => t.SourceStructureId)
+            .OnDelete(DeleteBehavior.Cascade);
         // Targets may be ships or NPCs. Their availability is checked by the owning operation.
         model.Entity<WorldTackle>().HasIndex(t => new { t.TargetId, t.TargetKind });
         model.Entity<WorldMissile>().ToTable("WorldMissile").HasKey(m => m.Id);

@@ -23,12 +23,14 @@ internal static class CapacitorWire
             cycle.Module.TypeId,
             cycle.TargetId,
             null,
-            cycle.Module.Kind switch
-            {
-                CapacitorModuleKind.Transfer => "effects.EnergyTransfer",
-                CapacitorModuleKind.Neutralizer => "effects.EnergyDestabilization",
-                _ => "effects.EnergyVampire",
-            },
+            cycle.Module.Effect == DogmaEffect.StructureEnergyNeutralizer
+                ? "effects.Laser"
+                : cycle.Module.Kind switch
+                {
+                    CapacitorModuleKind.Transfer => "effects.EnergyTransfer",
+                    CapacitorModuleKind.Neutralizer => "effects.EnergyDestabilization",
+                    _ => "effects.EnergyVampire",
+                },
             cycle.Module.Kind != CapacitorModuleKind.Transfer,
             active,
             active,

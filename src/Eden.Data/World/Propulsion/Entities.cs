@@ -7,7 +7,8 @@ public sealed class WorldTackle
 {
     public long ModuleId { get; set; }
     public long PilotId { get; set; }
-    public long SourceShipId { get; set; }
+    public long? SourceStructureId { get; set; }
+    public long? SourceShipId { get; set; }
     public int TypeId { get; set; }
     public int SystemId { get; set; }
     public long TargetId { get; set; }
@@ -25,5 +26,6 @@ public sealed class WorldTackle
     internal TackleModule Module() =>
         new(ModuleId, TypeId, Effect, DurationMilliseconds, CapacitorNeed, Range, Strength, WebPercent, MwdBlock, 0);
 
-    internal TackleEffect Contact() => new(PilotId, SourceShipId, Module(), new(TargetId, TargetKind), StartedAt, ExpiresAt);
+    internal TackleEffect Contact() =>
+        new(PilotId, SourceStructureId ?? SourceShipId!.Value, Module(), new(TargetId, TargetKind), StartedAt, ExpiresAt);
 }

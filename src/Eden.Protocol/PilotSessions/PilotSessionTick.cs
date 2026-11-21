@@ -147,7 +147,7 @@ internal sealed class PilotSessionTick(
                 {
                     flight.RefreshStructures(structures.Contacts(flight.Pilot.SystemId));
                 }
-                if (flight.InBallpark)
+                if (flight.InBallpark || context.ControlledStructureId is not null)
                 {
                     flight.RefreshCynos();
                     flight.RefreshAsteroids(asteroids.List(flight.Pilot.SystemId));

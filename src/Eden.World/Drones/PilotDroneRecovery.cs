@@ -71,10 +71,9 @@ internal sealed partial class PilotDroneStore
             item.LocationId = ship.Id;
             item.OwnerId = pilotId;
             item.FlagId = (int)hold;
-            drone.SystemId = null;
             drone.PilotId = pilotId;
             drone.CorporationId = pilot.CorporationId;
-            Release(drone);
+            Stow(world, drone);
             changes.Add(new(PilotInventoryStore.Read(catalog, item), previous));
         }
         transaction.Commit();

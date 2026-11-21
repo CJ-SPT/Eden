@@ -28,6 +28,7 @@ The linked protocol records contain scope, source revisions and validation for i
 - [Cooperative fleets](#cooperative-fleets)
 - [Player corporations](#player-corporations)
 - [Travel and navigation](#travel-and-navigation)
+- [Player Upwell structures](#player-upwell-structures)
 - [Inventory, ships and holds](#inventory-ships-and-holds)
 - [Personal contracts](#personal-contracts)
 - [Mining, industry and economy](#mining-industry-and-economy)
@@ -140,6 +141,15 @@ On the local server at `127.0.0.1:26000`, **Eden Pilot** can undock the Ibis fro
 Player and NPC ships share one authoritative movement step per system tick. Ship bumping follows the pinned client's legacy Destiny response, including stationary ships being pushed and unequal hull masses. Owners and observers share tick-stamped courses and native collision prediction. Stopped ships remain collision participants. Movement and collision results are saved together. See the [ship collision investigation and acceptance](protocol/navigation.md#shared-ship-motion-and-collision-correction).
 
 Use **Orbit** or **Keep at Range** on a nearby ship, NPC, asteroid or wreck to control positioning. Orbits account for the two objects' radii and the ship's speed, mass and agility; tight or boosted orbits can settle wider than the requested range. Both controls track moving targets. Stop, a new heading, warp and docking cancel the course. When the target leaves, an orbiting ship continues on its current heading while a Keep at Range follower coasts to a stop. Restart retains position and returns the ship to rest.
+
+## Player Upwell structures
+
+Gunners can fit Standup defenses, load ammunition and scripts, lock from the structure's own sensors, fire defensive
+missiles, neutralize capacitor, slow ships and disrupt warp. Loading the Standup scrambling script also blocks
+microwarpdrives and micro jump drives. Standup fighters can launch and recall, including after the gunner
+releases control. The structure audit tracks the remaining defensive effects, service-specific access and fees,
+player markets, clone bays, corporation offices, and specialized hull behavior.
+[Structure gameplay and gap audit](protocol/structures.md#structures-gap-audit)
 
 ## Inventory, ships and holds
 

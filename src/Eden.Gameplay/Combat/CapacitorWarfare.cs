@@ -80,7 +80,7 @@ public static class CapacitorWarfareRules
         var kind = effect switch
         {
             DogmaEffect.RemoteCapacitorTransfer => CapacitorModuleKind.Transfer,
-            DogmaEffect.EnergyNeutralizer => CapacitorModuleKind.Neutralizer,
+            DogmaEffect.EnergyNeutralizer or DogmaEffect.StructureEnergyNeutralizer => CapacitorModuleKind.Neutralizer,
             DogmaEffect.EnergyNosferatu => CapacitorModuleKind.Nosferatu,
             _ => throw new InvalidDataException("Unsupported capacitor module effect."),
         };

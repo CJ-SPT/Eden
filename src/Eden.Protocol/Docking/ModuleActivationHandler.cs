@@ -47,6 +47,7 @@ internal sealed class ModuleActivationHandler(
     InterdictionHandler? interdiction = null,
     AreaWeaponHandler? areaWeapons = null,
     Eden.Protocol.Sovereignty.EntosisHandler? entosis = null,
+    Eden.Protocol.Structures.StructureWeaponHandler? structureWeapons = null,
     CapitalTravelHandler? capital = null
 ) : ISelectedPilotCallHandler
 {
@@ -111,6 +112,13 @@ internal sealed class ModuleActivationHandler(
         if (effectName == Eden.Protocol.Sovereignty.EntosisHandler.EffectName && keywords is { Count: > 0 })
         {
             return new PilotCallResult.Failure("Unexpected Entosis activation arguments.");
+        }
+        if (context.ControlledStructureId is not null && effectName != InventoryWireDefinitions.OnlineEffectName)
+        {
+            return Eden.Protocol.Structures.StructureWeaponHandler.Effect(effectName) is { } structureEffect
+                ? structureWeapons?.Call(context, method, structureEffect, args, keywords)
+                    ?? new PilotCallResult.Failure("Structure defensive weapons are unavailable.")
+                : new PilotCallResult.Failure("This structure defensive effect is not supported yet.");
         }
         bool offensive =
             CombatWireDefinitions.Handles(effectName)

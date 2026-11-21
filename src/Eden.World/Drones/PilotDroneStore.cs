@@ -391,7 +391,7 @@ internal sealed partial class PilotDroneStore(
             }
             else if (structure is not null)
             {
-                StructureCombatTargets.Check(world, catalog, structure, now);
+                StructureCombatTargets.Check(world, catalog, structure, now, pilotId);
                 if (
                     structure.SystemId != systemId
                     || Position(position).DistanceTo(StructureCombatTargets.Position(structure))
@@ -401,7 +401,7 @@ internal sealed partial class PilotDroneStore(
                 {
                     throw new InvalidDataException("The structure is outside drone control range.");
                 }
-                StructureCombatTargets.Aggress(world, pilotId, systemId, now, now);
+                StructureCombatTargets.Aggress(world, pilotId, structure.Id, systemId, now, now);
             }
             else if (npc is null)
             {
@@ -882,7 +882,7 @@ internal sealed partial class PilotDroneStore(
             {
                 try
                 {
-                    StructureCombatTargets.Check(world, catalog, structure, now);
+                    StructureCombatTargets.Check(world, catalog, structure, now, pilotId);
                     if (
                         structure.SystemId != systemId
                         || drone.DelegationMode != DroneDelegationMode.None
@@ -975,8 +975,7 @@ internal sealed partial class PilotDroneStore(
                     {
                         item.FlagId = (int)InventoryFlag.DroneBay;
                     }
-                    drone.SystemId = null;
-                    Release(drone);
+                    Stow(world, drone);
                     changes.Add(new(PilotInventoryStore.Read(catalog, item), previous));
                     continue;
                 }
@@ -1067,7 +1066,7 @@ internal sealed partial class PilotDroneStore(
             }
             else if (structure is not null)
             {
-                StructureCombatTargets.Aggress(world, pilotId, systemId, now, drone.ReadyAt);
+                StructureCombatTargets.Aggress(world, pilotId, structure.Id, systemId, now, drone.ReadyAt);
                 var result = StructureCombatTargets.Apply(world, catalog, structure, damage, now);
                 hit = new(
                     drone.ItemId,
@@ -1116,6 +1115,31 @@ internal sealed partial class PilotDroneStore(
             security.Publish();
         }
         return new(changes, hits, released);
+    }
+
+    private static void Stow(WorldAction world, WorldDrone drone)
+    {
+        drone.SystemId = null;
+        Release(drone);
+        if (world is not EconomyTransaction resident)
+        {
+            return;
+        }
+        world.AfterCommit(() => world.TargetLocks?.RemoveShip(drone.ItemId));
+        if (resident.MissileHistory(drone.ItemId) is null)
+        {
+            return;
+        }
+        // A singleton can leave the bay with the same item ID before the next flight tick.
+        foreach (
+            var row in world.Filter<WorldMissile>(m =>
+                m.TargetId == drone.ItemId && m.TargetKind == MissileTargetKind.Drone && m.Status == MissileFlightStatus.Flying
+            )
+        )
+        {
+            var payload = row.Payload();
+            row.Save(payload with { Flight = MissileFlightRules.LoseTarget(payload.Flight), Target = null });
+        }
     }
 
     private static void Release(WorldDrone drone)

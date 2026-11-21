@@ -20,19 +20,26 @@ internal sealed class CapacitorSignal : ICapacitorEvents
         }
         lock (_incoming)
         {
-            var next = _incoming
-                .GetValueOrDefault(cycle.TargetId, [])
-                .Where(c => c.Module.ItemId != cycle.Module.ItemId)
-                .Concat(active ? [cycle] : Array.Empty<CapacitorCycle>())
-                .ToArray();
-            if (next.Length == 0)
-            {
-                _incoming.Remove(cycle.TargetId);
-            }
-            else
-            {
-                _incoming[cycle.TargetId] = next;
-            }
+            Set(_incoming, cycle.TargetId, cycle, active);
+        }
+    }
+
+    private static void Set<TKey>(Dictionary<TKey, CapacitorCycle[]> index, TKey key, CapacitorCycle cycle, bool active)
+        where TKey : notnull
+    {
+        // An old gunner can disconnect after another session starts a new cycle on the same module.
+        var next = index
+            .GetValueOrDefault(key, [])
+            .Where(c => c.Module.ItemId != cycle.Module.ItemId || !active && c != cycle)
+            .Concat(active ? [cycle] : Array.Empty<CapacitorCycle>())
+            .ToArray();
+        if (next.Length == 0)
+        {
+            index.Remove(key);
+        }
+        else
+        {
+            index[key] = next;
         }
     }
 

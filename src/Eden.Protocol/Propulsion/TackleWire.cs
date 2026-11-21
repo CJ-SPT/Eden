@@ -9,9 +9,9 @@ internal static class TackleWire
     internal static string Ewar(DogmaEffect effect) =>
         effect switch
         {
-            DogmaEffect.StasisWebifier => "webify",
+            DogmaEffect.StasisWebifier or DogmaEffect.StructureStasisWebifier => "webify",
             DogmaEffect.WarpDisruptor or DogmaEffect.FocusedWarpDisruption => "warpScrambler",
-            DogmaEffect.WarpScrambler or DogmaEffect.FocusedWarpScrambling => "warpScramblerMWD",
+            DogmaEffect.WarpScrambler or DogmaEffect.FocusedWarpScrambling or DogmaEffect.StructureWarpDisruptor => "warpScramblerMWD",
             _ => throw new InvalidDataException("Unsupported incoming tackle effect."),
         };
 

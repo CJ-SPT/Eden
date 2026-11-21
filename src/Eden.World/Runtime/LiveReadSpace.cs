@@ -41,7 +41,7 @@ internal sealed partial class LiveReadModels
                 world
                     .Set<WorldMissile>()
                     .Any(row =>
-                        row.SourceKind == MissileSourceKind.Pilot
+                        (row.SourceKind == MissileSourceKind.Pilot || row.SourceKind == MissileSourceKind.Structure)
                         && row.SystemId == system
                         && (row.Status == MissileFlightStatus.Flying || row.Status == MissileFlightStatus.Attached)
                     )
@@ -53,7 +53,12 @@ internal sealed partial class LiveReadModels
             world =>
                 world
                     .Set<WorldMissile>()
-                    .Any(row => row.SourceKind == MissileSourceKind.Pilot && row.PilotId == pilot && row.Outcome != null && !row.Reported)
+                    .Any(row =>
+                        (row.SourceKind == MissileSourceKind.Pilot || row.SourceKind == MissileSourceKind.Structure)
+                        && row.PilotId == pilot
+                        && row.Outcome != null
+                        && !row.Reported
+                    )
         );
 
     internal bool Impacted(long id) =>

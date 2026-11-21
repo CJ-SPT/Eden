@@ -17,11 +17,11 @@ internal readonly record struct FlightSceneContext(
     bool InBallpark,
     bool CanTarget,
     int SimulatedStamp,
-    long? ControlledStructure = null
+    StaticSpaceObject? Observer = null
 )
 {
-    internal long ObserverId => ControlledStructure ?? Pilot.ShipId;
-    internal SpacePosition? ObserverPosition => Pilot.Position ?? (ControlledStructure is null ? null : Pilot.Home.Position);
+    internal SpacePosition? Position => Observer?.Position ?? Pilot.Position;
+    internal long EntityId => Observer?.Id ?? Pilot.ShipId;
 }
 
 internal sealed class FlightScene(
@@ -192,12 +192,12 @@ internal sealed class FlightScene(
             .AsValueEnumerable()
             .Where(o =>
                 !MiningDefinitions.IsResource(o.CategoryId, o.GroupId)
-                || (context.Pilot.Position is { } position && position.DistanceTo(o.Position) <= AsteroidDefinitions.VisibilityRange)
+                || (context.Position is { } position && position.DistanceTo(o.Position) <= AsteroidDefinitions.VisibilityRange)
             )
             .ToArray();
 
     private MissileContact[] ReadMissiles(FlightSceneContext context) =>
-        context.Pilot.Position is not { } position
+        context.Position is not { } position
             ? []
             : (missiles?.List(context.Pilot.SystemId) ?? [])
                 .Where(m => position.DistanceTo(m.Flight.Position) <= NpcEncounterDefinitions.VisibilityRange)
@@ -246,7 +246,7 @@ internal sealed class FlightScene(
 
     internal StaticSpaceObject? NavigationTarget(FlightSceneContext context, long id)
     {
-        if (id == context.Pilot.ShipId || context.Pilot.Position is not { } position)
+        if (id == context.Pilot.ShipId || context.Position is not { } position)
         {
             return null;
         }
@@ -297,7 +297,7 @@ internal sealed class FlightScene(
     }
 
     private WreckContact[] ReadWrecks(FlightSceneContext context) =>
-        context.Pilot.Position is not { } position
+        context.Position is not { } position
             ? []
             : (wrecks?.List(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) ?? [])
                 .Where(w =>
@@ -627,7 +627,7 @@ internal sealed class FlightScene(
             .AsValueEnumerable()
             .Where(o =>
                 IsPublicAsteroid(o)
-                && context.Pilot.Position is { } position
+                && context.Position is { } position
                 && position.DistanceTo(o.Position) <= AsteroidDefinitions.VisibilityRange
             )
             .ToArray();
@@ -679,7 +679,9 @@ internal sealed class FlightScene(
         }
     }
 
-    internal void Snapshot(FlightSceneContext context, ShipContact[] peers, ShipContact own)
+    internal void SnapshotStructure(FlightSceneContext context) => Snapshot(context, Peers(context), null);
+
+    internal void Snapshot(FlightSceneContext context, ShipContact[] peers, ShipContact? own)
     {
         bool entering = _observingSince is null;
         _observingSince ??= clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
@@ -696,24 +698,33 @@ internal sealed class FlightScene(
         _missiles = ReadMissiles(context);
         Drones.Capture(context);
         _visibleAsteroids = visible.Where(IsPublicAsteroid).ToArray();
-        send(
-            new(
+        var snapshot = own is null
+            ? Ballpark.StructureSnapshot(
+                context.EntityId,
+                context.Pilot.SystemId,
                 stamp,
-                new DestinyCommand.SetState(
-                    Ballpark.Snapshot(own, stamp, visible, peers, Npcs.Contacts, _wrecks, _missiles, Drones.Contacts) with
-                    {
-                        Boosts = commandBursts?.Incoming(own.Pilot.ShipId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()),
-                    }
-                )
+                visible,
+                peers,
+                Npcs.Contacts,
+                _wrecks,
+                _missiles,
+                Drones.Contacts
             )
-        );
+            : Ballpark.Snapshot(own, stamp, visible, peers, Npcs.Contacts, _wrecks, _missiles, Drones.Contacts) with
+            {
+                Boosts = commandBursts?.Incoming(own.Pilot.ShipId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()),
+            };
+        send(new(stamp, new DestinyCommand.SetState(snapshot)));
         Drones.ReplayActivities();
         Npcs.Replay();
         foreach (var missile in _missiles.Where(m => !m.Flight.Orphaned))
         {
             update(new DestinyCommand.AttackIndicator(missile.SourceShipId, missile.Id, missile.TargetId, true));
         }
-        effects.Replay(own, null);
+        if (own is not null)
+        {
+            effects.Replay(own, null);
+        }
         foreach (var peer in peers)
         {
             effects.Replay(peer, null);
@@ -723,7 +734,7 @@ internal sealed class FlightScene(
                 ObserveGateDeparture(peer);
             }
         }
-        if (own.Warp is not null || own.AlignTo is not null)
+        if (own is not null && (own.Warp is not null || own.AlignTo is not null))
         {
             effects.WarpEffect(context.Pilot.ShipId, true);
         }
@@ -732,12 +743,11 @@ internal sealed class FlightScene(
     internal void CorrectPosition(long id, SpacePosition position, SpacePosition velocity, int stamp) =>
         FlightEffects.CorrectPosition(send, id, position, velocity, stamp);
 
-    private ShipContact[] Peers(FlightSceneContext context) =>
-        space.Peers(context.Pilot.SystemId, context.ObserverId, context.ObserverPosition);
+    private ShipContact[] Peers(FlightSceneContext context) => space.Peers(context.Pilot.SystemId, context.EntityId, context.Position);
 
     internal void RefreshPeers(FlightSceneContext context)
     {
-        foreach (var arrival in space.GateArrivals(context.Pilot))
+        foreach (var arrival in space.GateArrivals(context.Pilot.SystemId, context.EntityId, context.Position))
         {
             ObserveGateArrival(arrival);
         }

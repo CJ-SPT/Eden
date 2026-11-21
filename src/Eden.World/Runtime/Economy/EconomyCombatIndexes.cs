@@ -46,6 +46,7 @@ internal sealed partial class ResidentEconomy
         _tackleTargets.Clear();
         _playerEwarTargets.Clear();
         _areaContactEnds.Clear();
+        _structureTackleEnds.Clear();
         _effectRevision = 0;
         _tackleRows = 0;
         _playerEwarRows = 0;
@@ -174,7 +175,7 @@ internal sealed partial class ResidentEconomy
         {
             if (row.Status is MissileFlightStatus.Flying or MissileFlightStatus.Attached)
             {
-                if (row.SourceKind == MissileSourceKind.Pilot)
+                if (row.SourceKind is MissileSourceKind.Pilot or MissileSourceKind.Structure)
                 {
                     AdjustCount(_pilotMissileSystems, row.SystemId, add);
                     if (row.TargetKind == MissileTargetKind.Structure)
@@ -187,7 +188,11 @@ internal sealed partial class ResidentEconomy
                     AdjustCount(_npcMissilePilots, row.PilotId, add);
                 }
             }
-            if (row.SourceKind == MissileSourceKind.Pilot && row.Outcome is not null && !row.Reported)
+            if (
+                (row.SourceKind == MissileSourceKind.Pilot || row.SourceKind == MissileSourceKind.Structure)
+                && row.Outcome is not null
+                && !row.Reported
+            )
             {
                 AdjustCount(_missileReportPilots, row.PilotId, add);
             }
@@ -282,6 +287,14 @@ internal sealed partial class ResidentEconomy
         {
             return;
         }
+        if (before?.SourceStructureId is not null)
+        {
+            _structureTackleEnds.Remove((before.ExpiresAt, before.ModuleId, before.SystemId));
+        }
+        if (after?.SourceStructureId is not null)
+        {
+            _structureTackleEnds.Add((after.ExpiresAt, after.ModuleId, after.SystemId));
+        }
         if (before is null)
         {
             Interlocked.Increment(ref _tackleRows);
@@ -311,6 +324,17 @@ internal sealed partial class ResidentEconomy
             Target(after.TargetId);
         }
     }
+
+    private readonly SortedSet<(long End, long Module, int System)> _structureTackleEnds = [];
+
+    internal long[] DueStructureTackles(int? system, long now) =>
+        _structureTackleEnds.Count == 0 || _structureTackleEnds.Min.End > now
+            ? []
+            : _structureTackleEnds
+                .TakeWhile(row => row.End <= now)
+                .Where(row => system is null || row.System == system)
+                .Select(row => row.Module)
+                .ToArray();
 
     private readonly SortedSet<(long End, long Module, long Target, int System)> _areaContactEnds = [];
 

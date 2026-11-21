@@ -27,6 +27,13 @@ public sealed class SavedStructure
     public long DeployedAt { get; set; }
 }
 
+internal sealed class SavedStructureEnergy
+{
+    public long StructureId { get; set; }
+    public double Charge { get; set; }
+    public long UpdatedAt { get; set; }
+}
+
 public sealed class SavedStructureService
 {
     public long ItemId { get; set; }

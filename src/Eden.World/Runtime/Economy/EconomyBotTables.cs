@@ -2003,6 +2003,14 @@ internal sealed partial class ResidentEconomy
                         reader.IsDBNull(31) ? null : reader.GetString(31)
                     ),
                 state => new(state.ItemId),
+                changed: (_, row) =>
+                {
+                    if (row?.SystemId is not null)
+                    {
+                        MissileHistory(row.ItemId)
+                            ?.Observe(row.UpdatedAt, new(row.X, row.Y, row.Z), new(row.VelocityX, row.VelocityY, row.VelocityZ));
+                    }
+                },
                 indexes:
                 [
                     new("ItemId", row => row.ItemId),
@@ -2872,6 +2880,7 @@ internal sealed partial class ResidentEconomy
                         row.PilotId,
                         row.Range,
                         row.SourceShipId,
+                        row.SourceStructureId,
                         row.StartedAt,
                         row.Strength,
                         row.SystemId,
@@ -2891,6 +2900,7 @@ internal sealed partial class ResidentEconomy
                     PilotId = state.PilotId,
                     Range = state.Range,
                     SourceShipId = state.SourceShipId,
+                    SourceStructureId = state.SourceStructureId,
                     StartedAt = state.StartedAt,
                     Strength = state.Strength,
                     SystemId = state.SystemId,
@@ -2901,7 +2911,7 @@ internal sealed partial class ResidentEconomy
                 },
                 ProjectWorldTackle,
                 "ModuleId,CapacitorNeed,DurationMilliseconds,Effect,ExpiresAt,MwdBlock,PilotId,Range,SourceShipId,"
-                    + "StartedAt,Strength,SystemId,TargetId,TargetKind,TypeId,WebPercent",
+                    + "StartedAt,Strength,SystemId,TargetId,TargetKind,TypeId,WebPercent,SourceStructureId",
                 reader =>
                     new(
                         reader.GetInt64(1),
@@ -2912,7 +2922,8 @@ internal sealed partial class ResidentEconomy
                         reader.GetDouble(6),
                         reader.GetInt64(7),
                         reader.GetDouble(8),
-                        reader.GetInt64(9),
+                        reader.IsDBNull(9) ? null : reader.GetInt64(9),
+                        reader.IsDBNull(17) ? null : reader.GetInt64(17),
                         reader.GetInt64(10),
                         reader.GetDouble(11),
                         reader.GetInt32(12),
@@ -2928,6 +2939,7 @@ internal sealed partial class ResidentEconomy
                     new("ModuleId", row => row.ModuleId),
                     new("PilotId", row => row.PilotId),
                     new("SourceShipId", row => row.SourceShipId),
+                    new("SourceStructureId", row => row.SourceStructureId),
                     new("SystemId", row => row.SystemId),
                     new("TargetId", row => row.TargetId),
                     new("TargetKind", row => row.TargetKind),
@@ -4330,9 +4342,13 @@ internal sealed partial class EconomyTransaction
             {
                 throw new InvalidDataException("Missing resident Pilot reference.");
             }
-            if (Set<Eden.Data.World.Inventory.Ship>().FindUnfiltered(new(row.SourceShipId)) is null)
+            if (
+                row.SourceShipId.HasValue == row.SourceStructureId.HasValue
+                || row.SourceShipId is long ship && Set<Eden.Data.World.Inventory.Ship>().FindUnfiltered(new(ship)) is null
+                || row.SourceStructureId is long structure && Set<Eden.Data.World.Structures.SavedStructure>().Find(structure) is null
+            )
             {
-                throw new InvalidDataException("Missing resident Ship reference.");
+                throw new InvalidDataException("Invalid resident tackle source.");
             }
         }
         foreach (var row in Retained<Eden.Data.World.Repair.PendingLocalRepair>())

@@ -10,8 +10,9 @@ internal sealed class LiveTimedModules(LiveWorld owner, int? system = null)
         var economy = owner.Economy;
         var bursts = economy.DueCommandBursts(system, now);
         var modules = economy.DueModules(system, now);
+        var structureTackles = economy.DueStructureTackles(system, now);
         var areaContacts = economy.DueAreaContacts(system, now);
-        if (bursts.Length == 0 && modules.Length == 0 && areaContacts.Length == 0)
+        if (bursts.Length == 0 && modules.Length == 0 && areaContacts.Length == 0 && structureTackles.Length == 0)
         {
             return;
         }
@@ -21,6 +22,7 @@ internal sealed class LiveTimedModules(LiveWorld owner, int? system = null)
                 .Concat(modules.Select(id => world.Set<ActiveFittedModule>().Find(id)?.ShipId))
                 .Concat(
                     modules
+                        .Concat(structureTackles)
                         .Select(id => world.Set<Eden.Data.World.Propulsion.WorldTackle>().Find(id))
                         .Where(row => row?.TargetKind == Eden.Gameplay.Propulsion.TackleTargetKind.Ship)
                         .Select(row => (long?)row!.TargetId)
@@ -36,6 +38,13 @@ internal sealed class LiveTimedModules(LiveWorld owner, int? system = null)
                 .ToArray()
         );
         using var action = economy.Begin(new(ships: ships));
+        foreach (long id in structureTackles)
+        {
+            if (action.Set<Eden.Data.World.Propulsion.WorldTackle>().Find(id) is { } tackle && tackle.ExpiresAt <= now)
+            {
+                action.Remove(tackle);
+            }
+        }
         foreach (var contact in areaContacts)
         {
             if (action.Set<Eden.Data.World.Combat.WorldPlayerEwar>().Find(contact.Module, contact.Target) is { } row)

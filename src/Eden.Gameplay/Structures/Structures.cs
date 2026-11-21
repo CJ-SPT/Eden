@@ -120,6 +120,7 @@ public sealed record StructureServiceProfile(
 public sealed record StructureModule(long ItemId, int TypeId, int Slot, bool Online, long? NextFuelAt)
 {
     public int? HourlyFuel { get; init; }
+    public long ReadyAt { get; init; }
 }
 
 public sealed record StructureAccess(long MemberId, bool Allowed);
@@ -135,6 +136,7 @@ public sealed record StructureContact(
     StructureUpkeepState UpkeepState = StructureUpkeepState.LowPower
 )
 {
+    public IReadOnlyList<StructureModule> Equipment { get; init; } = [];
     public double Yaw { get; init; }
     public StructureBattle? Battle { get; init; }
     public Combat.HullDamage? DamageFractions { get; init; }
@@ -165,6 +167,13 @@ public sealed record StructureSnapshot(
     int ReinforceHour = StructureRules.DefaultReinforceHour
 )
 {
+    public IReadOnlyList<StructureModule> Equipment { get; init; } = [];
+    public double? Capacitor { get; init; }
+    public double ElectronicCostMultiplier { get; init; } = 1;
+    public double EngineeringCostMultiplier { get; init; } = 1;
+    public StructureFittingState? Fitting { get; init; }
+    public IReadOnlyList<StructureWeaponCycle> Weapons { get; init; } = [];
+    public IReadOnlyList<Ammunition.Magazine> Magazines { get; init; } = [];
     public StructureBattle? Battle { get; init; }
     public Combat.HullDamage? DamageFractions { get; init; }
     public StructureUpkeepState Upkeep { get; init; } = StructureUpkeepState.LowPower;

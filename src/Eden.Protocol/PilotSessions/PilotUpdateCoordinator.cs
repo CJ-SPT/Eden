@@ -102,7 +102,8 @@ internal sealed class PilotUpdateCoordinator(
     Eden.Protocol.Flight.CapitalTravelHandler? capital = null,
     Eden.Protocol.Structures.AssetSafetyHandler? assetSafety = null,
     Eden.Protocol.Fighters.FighterDeckHandler? fighterDeck = null,
-    ShipCloneMonitor? shipClones = null
+    ShipCloneMonitor? shipClones = null,
+    Eden.Protocol.Structures.StructureWeaponHandler? structureWeapons = null
 )
 {
     public bool IsAccountMonitoring => redemption.IsMonitoring;
@@ -305,6 +306,7 @@ internal sealed class PilotUpdateCoordinator(
         }
         using (SessionPerformance.Phase("update.missiles"))
         {
+            structureWeapons?.Advance(context);
             missiles.Advance(context);
         }
         ApplyPlayerDamage(context);

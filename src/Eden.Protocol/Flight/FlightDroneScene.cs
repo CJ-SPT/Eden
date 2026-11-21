@@ -31,11 +31,11 @@ internal sealed class FlightDroneScene(SharedSpace space, TimeProvider clock, IP
     }
 
     private DroneContact[] ReadDrones(FlightSceneContext context) =>
-        context.ObserverPosition is not { } position
+        context.Position is not { } position
             ? []
             : (drones?.List(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc()) ?? [])
                 // A controller must keep simulating its flight even beyond the observer grid.
-                .Where(d => d.ShipId == context.ObserverId || position.DistanceTo(d.Position) <= NpcEncounterDefinitions.VisibilityRange)
+                .Where(d => d.ShipId == context.EntityId || position.DistanceTo(d.Position) <= NpcEncounterDefinitions.VisibilityRange)
                 .ToArray();
 
     internal void RefreshDrones(FlightSceneContext context)

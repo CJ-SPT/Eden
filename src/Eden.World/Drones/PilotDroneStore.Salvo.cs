@@ -291,7 +291,7 @@ internal sealed partial class PilotDroneStore
             );
             return hit.Health.Remaining.Destroyed;
         }
-        StructureCombatTargets.Aggress(world, pilot.Id, system, now, end);
+        StructureCombatTargets.Aggress(world, pilot.Id, target.Structure!.Id, system, now, end);
         return StructureCombatTargets.Apply(world, catalog, target.Structure!, damage, now).Health.Remaining.Destroyed;
     }
 }

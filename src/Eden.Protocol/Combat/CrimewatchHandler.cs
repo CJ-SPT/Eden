@@ -122,7 +122,7 @@ internal sealed class CrimewatchHandler(IPilotCrimewatch crimewatch, IPilotSafet
                     CrimewatchTimerState.SuspectCounting
                 );
         return new(
-            state.Safety,
+            context.ControlledStructureId is not null ? ShipSafetyLevel.Full : state.Safety,
             Timer(
                 timers.Weapons,
                 now,
@@ -239,6 +239,12 @@ internal sealed class CrimewatchHandler(IPilotCrimewatch crimewatch, IPilotSafet
         }
         try
         {
+            if (context.ControlledStructureId is not null)
+            {
+                return level == (long)ShipSafetyLevel.Full
+                    ? PilotCallResult.None
+                    : new PilotCallResult.Failure("Structure weapon safety must remain green.");
+            }
             safety.Set(context.Pilot.PilotId, (ShipSafetyLevel)level);
             return PilotCallResult.None;
         }

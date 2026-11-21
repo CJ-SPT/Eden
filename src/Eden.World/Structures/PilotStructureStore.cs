@@ -180,6 +180,18 @@ internal sealed partial class PilotStructureStore(
     internal static StructureSnapshot Snapshot(WorldAction world, CatalogDbContext catalog, SavedStructure structure, long now = 0)
     {
         var profile = StructureCatalog.Require(catalog, structure.TypeId);
+        var fitting = world is EconomyTransaction ? StructureEquipmentPersistence.Read(world, catalog, structure) : null;
+        if (fitting is not null)
+        {
+            profile = profile with
+            {
+                Cpu = fitting.Attributes.GetValueOrDefault(Eden.Gameplay.Dogma.DogmaAttributeId.CpuOutput),
+                Power = fitting.Attributes.GetValueOrDefault(Eden.Gameplay.Dogma.DogmaAttributeId.PowerOutput),
+                Shield = fitting.Attributes.GetValueOrDefault(Eden.Gameplay.Dogma.DogmaAttributeId.ShieldCapacity),
+                Armor = fitting.Attributes.GetValueOrDefault(Eden.Gameplay.Dogma.DogmaAttributeId.ArmorHitPoints),
+                Hull = fitting.Attributes.GetValueOrDefault(Eden.Gameplay.Dogma.DogmaAttributeId.StructureHitPoints),
+            };
+        }
         var modules = world
             .Filter<SavedStructureService>(m => m.StructureId == structure.Id)
             .OrderBy(m => m.Slot)
@@ -242,6 +254,7 @@ internal sealed partial class PilotStructureStore(
             services.UnionWith([StructureService.Reactions, StructureService.Industry]);
         }
         var battle = world is EconomyTransaction ? StructureBattlePersistence.Read(world, catalog, structure) : null;
+        var controller = Eden.World.Runtime.LiveWorld.Find(world.WorldPath)?.StructureControllers.GetValueOrDefault(structure.Id);
         return new(
             structure.Id,
             profile,
@@ -265,8 +278,29 @@ internal sealed partial class PilotStructureStore(
             structure.ReinforceHour
         )
         {
+            Capacitor = fitting is null ? null : StructureEnergy.Read(world, structure.Id, fitting.Attributes, now).Charge,
+            Fitting = fitting,
+            Magazines = world is EconomyTransaction ? Magazines(world, structure) : [],
+            EngineeringCostMultiplier = controller is null
+                ? 1
+                : StructureEnergy.CostMultiplier(world, catalog, controller.Token.PilotId, StructureWeaponRules.EngineeringSystemsSkill),
+            ElectronicCostMultiplier = controller is null
+                ? 1
+                : StructureEnergy.CostMultiplier(world, catalog, controller.Token.PilotId, StructureWeaponRules.ElectronicSystemsSkill),
+            Weapons = controller?.Weapons.Values.Where(cycle => cycle.Active(now)).OrderBy(cycle => cycle.ModuleId).ToArray() ?? [],
+            Equipment =
+                world is EconomyTransaction
+                    ? StructureEquipmentPersistence
+                        .Equipment(world, catalog, structure)
+                        .Where(item => !item.Profile.Service)
+                        .Select(item => new StructureModule(item.ItemId, item.Profile.TypeId, item.FlagId, item.Online, null)
+                        {
+                            ReadyAt = world.Set<Eden.Data.World.Combat.ModuleCooldown>().Find(item.ItemId)?.ReadyAt ?? 0,
+                        })
+                        .ToArray()
+                    : [],
             Battle = battle,
-            DamageFractions = battle?.Health.Fractions(StructureBattlePersistence.Profile(catalog, structure.TypeId).Defense),
+            DamageFractions = battle?.Health.Fractions(StructureBattlePersistence.Profile(world, catalog, structure).Defense),
             Upkeep = StructureRules.Upkeep(structure.LowPowerAt, modules.Any(m => m.Online), now),
         };
     }
@@ -752,9 +786,16 @@ internal sealed partial class PilotStructureStore(
                                 StructureRules.Upkeep(s.LowPowerAt, modules[s.Id].Any(module => module.Online), now)
                             )
                             {
+                                Equipment = world
+                                    .Filter<OwnedItem>(item => item.LocationId == s.Id && item.OwnerId == s.CorporationId)
+                                    .AsEnumerable()
+                                    .Where(item => InventoryDefinitions.IsFittedSlot(item.FlagId))
+                                    .OrderBy(item => item.FlagId)
+                                    .Select(item => new StructureModule(item.Id, item.TypeId, item.FlagId, item.Online, null))
+                                    .ToArray(),
                                 Yaw = s.Yaw,
                                 Battle = battle,
-                                DamageFractions = battle?.Health.Fractions(StructureBattlePersistence.Profile(catalog, s.TypeId).Defense),
+                                DamageFractions = battle?.Health.Fractions(StructureBattlePersistence.Profile(world, catalog, s).Defense),
                             },
                             Skyhook =
                                 world is EconomyTransaction

@@ -7,6 +7,7 @@ public enum MissileSourceKind
 {
     Pilot,
     Npc,
+    Structure,
 }
 
 public interface INpcMissiles
