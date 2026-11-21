@@ -147,6 +147,18 @@ internal sealed partial class PilotSpatialModuleStore(WorldDatabase database, IP
         if (cloak)
         {
             Eden.World.Combat.AreaWeaponStore.RequireDoomsdayCooldownComplete(world, pilot.ActiveShipId, now);
+            if (
+                world
+                    .Filter<OwnedItem>(fitted => fitted.LocationId == pilot.ActiveShipId)
+                    .AsEnumerable()
+                    .Any(fitted =>
+                        InventoryDefinitions.IsHighSlot(fitted.FlagId)
+                        && Eden.Gameplay.Combat.DoomsdayFieldRules.IsDisruptiveLance(fitted.TypeId)
+                    )
+            )
+            {
+                throw new InvalidDataException("A fitted disruptive lance prevents cloaking.");
+            }
             CheckCloakGeometry(world, catalog, pilot.ActiveShip, now);
         }
         var cloakTypes = catalog.Definitions.TypesInGroup(SpatialModuleRules.CloakGroup).ToHashSet();

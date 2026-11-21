@@ -915,6 +915,7 @@ internal sealed partial class ResidentEconomy
         RegisterCommandBursts();
         RegisterInterdiction();
         RegisterAreaWeapons();
+        RegisterLanceDisruptions();
         RegisterCloneTrainingTables();
         RegisterCharacterServices();
         RegisterSkillTrading();

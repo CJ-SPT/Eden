@@ -183,6 +183,14 @@ internal sealed partial class AreaWeaponStore
             if (target.Pilot is { } victim)
             {
                 HitPilot(world, catalog, row, source, target, victim, flight.Module.TypeId, damage, now, notifications);
+                if (field.DisruptionDuration > 0 && world.Set<ShipLoss>().Find(target.Id) is null)
+                {
+                    long endsAt = AreaWeaponRules.Deadline(now, field.DisruptionDuration);
+                    var disruption =
+                        world.Set<SavedLanceDisruption>().Find(target.Id)
+                        ?? world.Add(new SavedLanceDisruption { ShipId = target.Id }).Entity;
+                    disruption.EndsAt = Math.Max(disruption.EndsAt, endsAt);
+                }
             }
             else if (target.Npc is { } npc)
             {

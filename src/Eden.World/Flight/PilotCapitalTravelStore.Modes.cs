@@ -33,7 +33,7 @@ internal sealed partial class PilotCapitalTravelStore
             || CapitalModeRules.Effect(item.TypeId) != effect
             || !CapitalModeCatalog.Supported(catalog, item.TypeId)
             || !InventoryDefinitions.CanFitShip(catalog.FittingAttributes(item.TypeId), pilot.ActiveShip.TypeId, hull)
-            || hull != (int)CapitalModeRules.RequiredHull(effect)
+            || !CapitalModeRules.CanActivate(effect, hull)
         )
         {
             throw new InvalidDataException("Use an online capital mode module on a compatible ship in space.");

@@ -20,6 +20,7 @@ public sealed partial class SqliteWorld
         Eden.World.Sovereignty.EntosisPersistence.RequireTravel(world, shipId, now);
         Eden.World.Flight.PilotCapitalTravelStore.RequireMobile(world, pilotId, shipId, now);
         AreaWeaponStore.RequireDoomsdayCooldownComplete(world, shipId, now);
+        LanceDisruption.RequireTravel(world, shipId, now);
         var structure = PilotStructureStore.Require(world, structureId);
         PilotStructureStore.Advance(world, catalog, now, structure.SystemId);
         var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();

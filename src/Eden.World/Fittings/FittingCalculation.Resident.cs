@@ -542,7 +542,7 @@ internal sealed partial record FittingCalculation
             .Concat([AreaWeaponRules.BombDeploymentSkill, AreaWeaponRules.DefenderSkill, AreaWeaponRules.ProjectorSkill])
             .Concat(
                 modules.Any(module => DoomsdayRules.EffectForType(module.Item.TypeId) is not null)
-                    ? [DoomsdayRules.OperationSkill, DoomsdayRules.RapidFiringSkill]
+                    ? [DoomsdayRules.OperationSkill, DoomsdayRules.RapidFiringSkill, DoomsdayFieldRules.DisruptiveLanceOperation]
                     : Array.Empty<int>()
             )
             .Concat(modules.Any(m => m.GroupId == CommandBurstRules.Group) ? CommandBurstCatalog.Skills : [])

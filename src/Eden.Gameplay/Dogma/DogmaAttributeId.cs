@@ -16,6 +16,7 @@ public enum DogmaAttributeId
     DoomsdayDamageCycle = 2265,
     DoomsdayAreaShape = 2429,
     DoomsdayFixedRange = 2430,
+    DisruptiveLanceDuration = 5412,
     DoomsdayDriveLock = 2427,
     DoomsdayImmobility = 2428,
     ConsumptionQuantity = 714,

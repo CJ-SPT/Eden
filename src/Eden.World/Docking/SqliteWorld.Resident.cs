@@ -173,6 +173,7 @@ public sealed partial class SqliteWorld
             long now = _clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();
             Eden.World.Flight.PilotCapitalTravelStore.RequireMobile(world, pilotId, shipId, now);
             Eden.World.Combat.AreaWeaponStore.RequireDoomsdayCooldownComplete(world, shipId, now);
+            Eden.World.Combat.LanceDisruption.RequireTravel(world, shipId, now);
         }
         if (locationId >= Eden.Gameplay.Structures.StructureRules.FirstStructureId)
         {

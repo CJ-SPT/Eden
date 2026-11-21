@@ -19,7 +19,8 @@ public sealed record DoomsdayFieldProfile(
     double DamageCycle,
     double NeutralizationRadius,
     double NeutralizationAmount,
-    double NeutralizationSignature
+    double NeutralizationSignature,
+    double DisruptionDuration = 0
 );
 
 public sealed record DoomsdayFieldContact(
@@ -49,18 +50,29 @@ public static class DoomsdayFieldRules
     public const int Guillotine = 41443;
     public const int Jormungandr = 41444;
     public const int BosonicFieldGenerator = 40633;
+    public const int Atgeir = 77398;
+    public const int Azmaru = 77399;
+    public const int SteelYari = 77400;
+    public const int Sarissa = 77401;
+    public const int DisruptiveLanceOperation = 77739;
+
+    // CCP's Viridian notes specify the repair reduction. The pinned catalog supplies the duration.
+    public const double DisruptedRemoteRepairMultiplier = 0.5;
+
+    public static bool IsDisruptiveLance(int type) => type is Atgeir or Azmaru or SteelYari or Sarissa;
+
     private const double SweepAngle = 15 * Math.PI / 180;
 
     public static bool IsEffect(DogmaEffect effect) =>
-        effect is DogmaEffect.DoomsdayBeam or DogmaEffect.DoomsdaySlash or DogmaEffect.DoomsdayCone;
+        effect is DogmaEffect.DoomsdayBeam or DogmaEffect.DoomsdaySlash or DogmaEffect.DoomsdayCone or DogmaEffect.DisruptiveLance;
 
     public static string Graphic(int type) =>
         type switch
         {
-            HolyDestiny => "effects.SuperWeaponLanceAmarr",
-            IronPike => "effects.SuperWeaponLanceCaldari",
-            Phalarica => "effects.SuperWeaponLanceGallente",
-            Geiravor => "effects.SuperWeaponLanceMinmatar",
+            HolyDestiny or Azmaru => "effects.SuperWeaponLanceAmarr",
+            IronPike or SteelYari => "effects.SuperWeaponLanceCaldari",
+            Phalarica or Sarissa => "effects.SuperWeaponLanceGallente",
+            Geiravor or Atgeir => "effects.SuperWeaponLanceMinmatar",
             DivineHarvest => "effects.SWSlashBeamAmarr",
             ColdWind => "effects.SWSlashBeamCaldari",
             Guillotine => "effects.SWSlashBeamGallente",
@@ -75,7 +87,7 @@ public static class DoomsdayFieldRules
         double Read(DogmaAttributeId id) => attributes.GetValueOrDefault(id);
         var shape = effect switch
         {
-            DogmaEffect.DoomsdayBeam => DoomsdayFieldShape.Cylinder,
+            DogmaEffect.DoomsdayBeam or DogmaEffect.DisruptiveLance => DoomsdayFieldShape.Cylinder,
             DogmaEffect.DoomsdaySlash => DoomsdayFieldShape.Sweep,
             DogmaEffect.DoomsdayCone => DoomsdayFieldShape.Cone,
             _ => throw new InvalidDataException("Unsupported area doomsday shape."),
@@ -88,7 +100,8 @@ public static class DoomsdayFieldRules
             Read(DogmaAttributeId.DoomsdayDamageCycle),
             Read(DogmaAttributeId.DoomsdayNeutralizationRadius),
             Read(DogmaAttributeId.DoomsdayNeutralizationAmount),
-            Read(DogmaAttributeId.DoomsdayNeutralizationSignature)
+            Read(DogmaAttributeId.DoomsdayNeutralizationSignature),
+            Read(DogmaAttributeId.DisruptiveLanceDuration)
         );
         if (
             Read(DogmaAttributeId.DoomsdayAreaShape) != (int)shape
@@ -103,6 +116,7 @@ public static class DoomsdayFieldRules
                 profile.NeutralizationAmount,
                 profile.NeutralizationSignature,
             }.Any(value => !double.IsFinite(value) || value <= 0)
+            || effect == DogmaEffect.DisruptiveLance && (!double.IsFinite(profile.DisruptionDuration) || profile.DisruptionDuration <= 0)
             || profile.DamageCycle > profile.DamageDuration
         )
         {

@@ -38,6 +38,7 @@ internal sealed partial class PilotGateTravelStore
     {
         Eden.World.Sovereignty.EntosisPersistence.RequireTravel(world, shipId, now);
         Eden.World.Flight.PilotCapitalTravelStore.RequireMobile(world, pilotId, shipId, now);
+        Eden.World.Combat.LanceDisruption.RequireTravel(world, shipId, now);
         var pilot = world.Pilots.Single(p => p.Id == pilotId);
         var position = pilot.ActiveShip.Position;
         int origin = position?.SystemId ?? catalog.RequireStation(pilot.ActiveShip.StationId).SolarSystemId;

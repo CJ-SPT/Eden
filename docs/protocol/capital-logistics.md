@@ -206,8 +206,8 @@ repair amount, repair speed and range, movement, and assistance impedance. Each 
 
 EVE.js `shipActionRestrictions.js` and `activeModuleSpecialFx.js` provided a behavior and graphics cross-check.
 The pinned catalog supplies the type restrictions, fuel formula, and modifiers. Eden uses its own resident
-transactions and existing active-module deadline index. Pirate capitals and Lancer Dreadnought specialist modes
-remain future work.
+transactions and the existing active-module deadline index. Lancer Dreadnoughts use the same siege owner.
+Pirate capitals and additional specialist modes remain open.
 
 **Automated validation.** The Revelation case covers the paid jump, a rejected short fuel stack, an eightfold
 siege multiplier, a paid turret volley against an Astrahus, and restart across the exact mode deadline.
@@ -440,6 +440,31 @@ The Bosonic cases verify an inside hit and an outside miss around the cone bound
 The wider capital travel, area weapons, smartbombs, targeting, spatial modules, tethering, flight, typed
 protocol and migration filter passed 185 cases in 74.28 seconds after a 9.92-second build. Both Python
 suites, formatting and `git diff --check` passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+## Lancer Dreadnoughts and disruptive lances
+
+Bane, Hubris, Karura and Valravn are admitted from the pinned Tech II hull catalog. They can use standard
+capital jumps and siege. Their racial disruptive lances use effect `11691` (`debuffLance`) and the same
+`superWeaponMgr.ActivateSinglePointTargetedModule` path as Titan lances. The pinned hull and skill effects
+modify range, damage and capacitor consumption. A Lancer needs siege to fire and cannot cloak while the
+lance is fitted. [CCP Viridian expansion notes](https://www.eveonline.com/news/view/viridian-expansion-notes)
+
+Eden requires red safety for an untargeted lance in lowsec. A ship caught in the beam loses access to warp,
+docking, tethering, gates and jump travel for 60 seconds. Incoming remote repairs apply at half strength for
+the same interval. EVE.js `disruptiveLanceDebuff.js` cross-checks the refresh behavior. Schema 206 checkpoints
+the recipient's current deadline. Restart preserves that deadline and cancels pending beam pulses.
+[CCP Lancer Dreadnought mechanics](https://www.eveonline.com/news/view/new-lancer-dreadnoughts)
+
+The Bane acceptance case verifies siege, cloaking, payment and racial range, then reopens the save while
+the Rapier is disrupted. It verifies half-strength armor repair and that warp resumes at exact expiry.
+The same case checks catalog admission for all four hulls.
+
+**Automated validation.** The exact Bane case passed in 8.23 seconds. All 232 cases in the final
+capital travel, area weapons, spatial modules, tethering, flight, gates, remote repair and migration
+filter passed in 104.85 seconds after a 10.54-second build. Both Python suites, formatting and
+`git diff --check` passed.
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 

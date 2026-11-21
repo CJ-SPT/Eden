@@ -43,6 +43,7 @@ public static class DoomsdayRules
             or DoomsdayFieldRules.Guillotine
             or DoomsdayFieldRules.Jormungandr => DogmaEffect.DoomsdaySlash,
             DoomsdayFieldRules.BosonicFieldGenerator => DogmaEffect.DoomsdayCone,
+            int disruptive when DoomsdayFieldRules.IsDisruptiveLance(disruptive) => DogmaEffect.DisruptiveLance,
             _ => null,
         };
 

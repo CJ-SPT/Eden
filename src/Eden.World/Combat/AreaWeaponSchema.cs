@@ -16,6 +16,10 @@ internal static class AreaWeaponSchema
             );
             CREATE INDEX IF NOT EXISTS IX_AreaWeapon_System ON SavedAreaWeapon(SystemId);
             CREATE INDEX IF NOT EXISTS IX_AreaWeapon_Module ON SavedAreaWeapon(ModuleId);
+            CREATE TABLE IF NOT EXISTS SavedLanceDisruption(
+                ShipId INTEGER PRIMARY KEY REFERENCES WorldShip(Id) ON DELETE CASCADE,
+                EndsAt INTEGER NOT NULL
+            );
             """
         );
     }

@@ -373,6 +373,7 @@ internal sealed partial class PilotCapitalTravelStore(
     {
         RequireReady(world, pilot, now);
         CrimewatchPersistence.CheckTravel(world, catalog, pilot, CrimewatchTravel.Jump, now, system);
+        LanceDisruption.RequireTravel(world, pilot.ActiveShipId, now);
         long shipId = pilot.ActiveShipId;
         var position = pilot.ActiveShip.Position!;
         if (

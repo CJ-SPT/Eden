@@ -333,11 +333,12 @@ internal sealed class PilotRemoteRepairStore(WorldDatabase database, IRemoteRepa
 
     private static RemoteRepairApplied Apply(WorldAction world, RepairTarget target, RemoteRepairModule module, double distance, long now)
     {
-        double amount = RemoteRepairRules.Amount(
-            module,
-            distance,
-            target.Attributes.GetValueOrDefault(DogmaAttributeId.RemoteRepairImpedance, 1)
-        );
+        double impedance = target.Attributes.GetValueOrDefault(DogmaAttributeId.RemoteRepairImpedance, 1);
+        if (LanceDisruption.Active(world, target.Health.ShipId, now))
+        {
+            impedance *= DoomsdayFieldRules.DisruptedRemoteRepairMultiplier;
+        }
+        double amount = RemoteRepairRules.Amount(module, distance, impedance);
         var health = RemoteRepairRules.Apply(target.Health, module.Kind, amount);
         var saved = world.Set<ShipHealthState>().Find(health.ShipId) ?? world.Add(new ShipHealthState { ShipId = health.ShipId }).Entity;
         saved.ShieldCharge = health.Remaining.Shield;

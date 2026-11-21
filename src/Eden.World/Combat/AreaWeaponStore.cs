@@ -137,18 +137,23 @@ internal sealed partial class AreaWeaponStore(
             throw new InvalidDataException("A destroyed ship cannot activate area weapons.");
         }
         double security = CrimewatchPersistence.Security(catalog, system);
+        bool disruptive = effect == DogmaEffect.DisruptiveLance;
         if (module.Kind == AreaWeaponKind.BurstJammer)
         {
             bool alpha = world.Set<Account>().Find(pilot.AccountId)!.CloneGrade == AccountCloneGrade.Alpha;
             SmartbombRules.CheckSafety(security, pilot.SafetyLevel, alpha);
         }
-        else if (security >= CrimewatchRules.HighSecurity || security > 0 && module.Kind != AreaWeaponKind.Doomsday)
+        else if (security >= CrimewatchRules.HighSecurity || security > 0 && module.Kind != AreaWeaponKind.Doomsday && !disruptive)
         {
             throw new InvalidDataException(
                 module.Kind == AreaWeaponKind.Doomsday
                     ? "Targeted doomsdays require low-security, null-security or wormhole space."
                     : "This area weapon requires null-security or wormhole space."
             );
+        }
+        if (disruptive && security > 0 && pilot.SafetyLevel != ShipSafetyLevel.Disabled)
+        {
+            throw new InvalidDataException("Use red safety before firing a disruptive lance in low-security space.");
         }
         SpacePosition origin = new(saved.X, saved.Y, saved.Z);
         double sourceRadius = 0;
@@ -178,12 +183,17 @@ internal sealed partial class AreaWeaponStore(
                 target is not null
                 || point is null
                 || !Finite(point)
-                || catalog.RequireItem(pilot.ActiveShip.TypeId) is not { GroupId: (int)HullClass.Titan } titan
+                || catalog.RequireItem(pilot.ActiveShip.TypeId) is not { } hull
+                || hull.GroupId != (int)(disruptive ? HullClass.LancerDreadnought : HullClass.Titan)
             )
             {
-                throw new InvalidDataException("Aim an online area doomsday from its compatible Titan.");
+                throw new InvalidDataException("Aim an online area doomsday from its compatible hull.");
             }
-            sourceRadius = titan.Radius ?? 0;
+            if (disruptive && Eden.World.Flight.PilotCapitalTravelStore.ActiveMode(world, shipId, now)?.Effect != DogmaEffect.CapitalSiege)
+            {
+                throw new InvalidDataException("Activate siege before firing a disruptive lance.");
+            }
+            sourceRadius = hull.Radius ?? 0;
             if (field.Shape == DoomsdayFieldShape.Sweep)
             {
                 if (secondPoint is null || !Finite(secondPoint))

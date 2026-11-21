@@ -271,6 +271,7 @@ internal sealed class PilotJumpBridgeStore(WorldDatabase database, SqliteWorld s
         }
         world.RequireUncloaked(shipId);
         PilotCapitalTravelStore.RequireMobile(world, pilotId, shipId, now);
+        Eden.World.Combat.LanceDisruption.RequireTravel(world, shipId, now);
         EntosisPersistence.RequireTravel(world, shipId, now);
         CrimewatchPersistence.CheckTravel(world, catalog, pilot, CrimewatchTravel.Jump, now, exit.Structure.SystemId);
         if (

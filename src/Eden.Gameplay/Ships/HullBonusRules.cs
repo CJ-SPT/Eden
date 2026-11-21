@@ -129,6 +129,7 @@ public enum HullBonusSkill
     CapitalCapacitorEmissionSystems = 24572,
     XLPrecursorWeapon = 52998,
     BurstProjectorOperation = AreaWeaponRules.ProjectorSkill,
+    DisruptiveLanceOperation = DoomsdayFieldRules.DisruptiveLanceOperation,
     RepairDroneOperation = 3439,
     Fighters = 23069,
     LightFighters = 40572,
@@ -366,7 +367,7 @@ public static class HullBonusRules
                 HullBonusSkill.HullUpgrades or HullBonusSkill.ShieldUpgrades or HullBonusSkill.TacticalShieldManipulation =>
                     HullCapability.Overheating,
                 HullBonusSkill.MicroJumpDriveOperation => HullCapability.MicroJumpDrives,
-                HullBonusSkill.BurstProjectorOperation => HullCapability.ElectronicWarfare,
+                HullBonusSkill.BurstProjectorOperation or HullBonusSkill.DisruptiveLanceOperation => HullCapability.ElectronicWarfare,
                 HullBonusSkill.Leadership
                 or HullBonusSkill.SkirmishCommand
                 or HullBonusSkill.InformationCommandSpecialist

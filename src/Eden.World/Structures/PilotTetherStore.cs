@@ -212,8 +212,10 @@ internal sealed class PilotTetherStore(WorldDatabase database, TimeProvider cloc
         var profile = StructureCatalog.Require(catalog, structure.TypeId);
         int group = catalog.RequireItem(ship.TypeId).GroupId;
         if (
-            !StructureRules.CanDock(profile, structure.State, group)
-            || group == (int)Eden.Gameplay.Ships.HullClass.Titan && AreaWeaponStore.DoomsdayLocked(world, shipId, now, movement: false)
+            LanceDisruption.Active(world, shipId, now)
+            || !StructureRules.CanDock(profile, structure.State, group)
+            || group is (int)Eden.Gameplay.Ships.HullClass.Titan or (int)Eden.Gameplay.Ships.HullClass.LancerDreadnought
+                && AreaWeaponStore.DoomsdayLocked(world, shipId, now, movement: false)
         )
         {
             return false;

@@ -116,6 +116,7 @@ public enum DogmaEffect
     DoomsdayBeam = 6472,
     DoomsdaySlash = 6201,
     DoomsdayCone = 6473,
+    DisruptiveLance = 11691,
     CovertJumpPortalGeneration = 3674,
     JumpDriveEconomizer = 5911,
     BurstJammer = 6714,

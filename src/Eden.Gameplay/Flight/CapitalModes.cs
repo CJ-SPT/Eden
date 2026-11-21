@@ -47,7 +47,10 @@ public static class CapitalModeRules
             _ => null,
         };
 
-    public static HullClass RequiredHull(DogmaEffect effect) =>
+    public static bool CanActivate(DogmaEffect effect, int group) =>
+        group == (int)RequiredHull(effect) || (effect == DogmaEffect.CapitalSiege && group == (int)HullClass.LancerDreadnought);
+
+    private static HullClass RequiredHull(DogmaEffect effect) =>
         effect switch
         {
             DogmaEffect.CapitalSiege => HullClass.Dreadnought,

@@ -10,7 +10,8 @@ internal sealed partial class FlightSession
     internal bool CapitalModuleActive =>
         capitalTravel?.Field(Pilot.PilotId)?.ShipId == Pilot.ShipId
         || capitalTravel?.Portal(Pilot.PilotId)?.ShipId == Pilot.ShipId
-        || Pilot.ShipGroupId == (int)Eden.Gameplay.Ships.HullClass.Titan && capitalTravel?.DoomsdayMovementLocked(Pilot.ShipId) == true
+        || Pilot.ShipGroupId is (int)Eden.Gameplay.Ships.HullClass.Titan or (int)Eden.Gameplay.Ships.HullClass.LancerDreadnought
+            && capitalTravel?.DoomsdayMovementLocked(Pilot.ShipId) == true
         || CapitalTravelRules.RestrictedCapital(Pilot.ShipGroupId) && capitalTravel?.Mode(Pilot.ShipId) is not null;
 
     internal void RefreshDoomsdayFields(IReadOnlyList<DoomsdayFieldContact> contacts) =>

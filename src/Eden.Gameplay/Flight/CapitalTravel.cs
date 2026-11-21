@@ -147,7 +147,12 @@ public static class CapitalTravelRules
         groupId is (int)HullClass.JumpFreighter or (int)HullClass.BlackOps || RestrictedCapital(groupId);
 
     public static bool RestrictedCapital(int groupId) =>
-        groupId is (int)HullClass.Dreadnought or (int)HullClass.ForceAuxiliary or (int)HullClass.Carrier or (int)HullClass.CapitalIndustrial
+        groupId
+            is (int)HullClass.Dreadnought
+                or (int)HullClass.LancerDreadnought
+                or (int)HullClass.ForceAuxiliary
+                or (int)HullClass.Carrier
+                or (int)HullClass.CapitalIndustrial
         || Supercapital(groupId);
 
     public static bool Supercapital(int groupId) => groupId is (int)HullClass.Supercarrier or (int)HullClass.Titan;

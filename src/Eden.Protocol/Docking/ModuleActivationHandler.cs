@@ -185,7 +185,7 @@ internal sealed class ModuleActivationHandler(
             var name when DoomsdayRules.Effect(name) is { } doomsday => keywords is { Count: > 0 }
                 ? new PilotCallResult.Failure("Unexpected doomsday arguments.")
                 : areaWeapons?.CallModule(context, method, args, doomsday) ?? PilotCallResult.Unsupported,
-            "doomsdayBeamDOT" or "doomsdaySlash" or "doomsdayConeDOT" => method == "Deactivate"
+            "doomsdayBeamDOT" or "doomsdaySlash" or "doomsdayConeDOT" or "debuffLance" => method == "Deactivate"
                 ? new PilotCallResult.Failure("A paid area doomsday cannot be stopped early.")
                 : new PilotCallResult.Failure("Aim the area doomsday from the tactical overlay."),
             AreaWeaponHandler.BurstEffect => areaWeapons?.CallModule(context, method, args, DogmaEffect.BurstJammer)
