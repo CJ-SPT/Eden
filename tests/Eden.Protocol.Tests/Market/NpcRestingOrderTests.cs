@@ -136,9 +136,10 @@ public sealed class NpcRestingOrderTests(ITestOutputHelper output)
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void ResidentSalesKeepUnrelatedRegionalOrdersOutOfMatchingAllocations(bool atSellerStation)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public void ResidentSalesKeepUnrelatedRegionalOrdersOutOfMatchingAllocations(bool atSellerStation, bool matchingType)
     {
         using Fixture f = new();
         var pilot = f.Pilot;
@@ -177,11 +178,11 @@ public sealed class NpcRestingOrderTests(ITestOutputHelper output)
                 setup.Add(
                     new NpcMarketOrder
                     {
-                        StationId = crowdedStation,
+                        StationId = matchingType ? crowdedStation + index : crowdedStation,
                         SystemId = pilot.SystemId,
                         RegionId = pilot.RegionId,
                         OwnerId = pilot.StationOwnerId,
-                        TypeId = 100_000 + index,
+                        TypeId = matchingType ? type : 100_000 + index,
                         Kind = NpcMarketKind.Regional,
                         Bid = true,
                         Entered = 1,
@@ -204,7 +205,7 @@ public sealed class NpcRestingOrderTests(ITestOutputHelper output)
         );
         Assert.Equal((0, 0, 0), (small.Commands, small.Connections, small.Fittings));
         Assert.Equal((0, 0, 0), (large.Commands, large.Connections, large.Fittings));
-        Assert.InRange(large.AllocatedBytes, 0, small.AllocatedBytes + 1024 * 1024);
+        Assert.InRange(large.AllocatedBytes, 0, Math.Min(small.AllocatedBytes + 64 * 1024, 512 * 1024));
 
         PerformanceSample Measure()
         {

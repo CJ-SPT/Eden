@@ -191,28 +191,34 @@ internal sealed partial class PilotMarketStore
         long cutoff = clock.GetUtcNow().AddDays(-MarketDefinitions.NpcOrderDays).UtcDateTime.ToFileTimeUtc();
         var kind = MarketKind(world);
         bool progressive = RegionalMarketStore.Enabled(world);
-        var npcs = world
-            .Set<NpcMarketOrder>()
-            .Where(o =>
-                (o.StationId == incoming.StationId || o.Kind == NpcMarketKind.Standard && !incoming.Bid && o.RegionId == incoming.RegionId)
-                && o.TypeId == incoming.TypeId
-                && o.Bid != incoming.Bid
-                && o.Issued > cutoff
-                && o.Issued + (long)o.DurationDays * TimeSpan.TicksPerDay > now
-                && (
-                    progressive
-                        ? o.Kind == NpcMarketKind.Institutional
-                            || o.Kind == NpcMarketKind.Regional && (incoming.DurationDays == 0 || !incoming.Bid)
-                        : o.Kind == kind
+        var npcs =
+            specificOrder is not null ? []
+            : world is EconomyTransaction resident ? ResidentNpcMatches(resident, incoming, kind, progressive, npcDemandOnly, cutoff, now)
+            : world
+                .Set<NpcMarketOrder>()
+                .Where(o =>
+                    (
+                        o.StationId == incoming.StationId
+                        || o.Kind == NpcMarketKind.Standard && !incoming.Bid && o.RegionId == incoming.RegionId
+                    )
+                    && o.TypeId == incoming.TypeId
+                    && o.Bid != incoming.Bid
+                    && o.Issued > cutoff
+                    && o.Issued + (long)o.DurationDays * TimeSpan.TicksPerDay > now
+                    && (
+                        progressive
+                            ? o.Kind == NpcMarketKind.Institutional
+                                || o.Kind == NpcMarketKind.Regional && (incoming.DurationDays == 0 || !incoming.Bid)
+                            : o.Kind == kind
+                    )
+                    && (!npcDemandOnly || o.Kind == NpcMarketKind.Regional && o.Bid)
                 )
-                && specificOrder == null
-                && (!npcDemandOnly || o.Kind == NpcMarketKind.Regional && o.Bid)
-            )
-            .ToArray()
-            .Where(order => order.Kind != NpcMarketKind.Standard || StandardBidReaches(catalog, order, incoming))
-            .ToArray();
+                .ToArray();
         var candidates = personal
-            .Concat(npcs.Where(o => o.Remaining > 0).Select(o => new Candidate(null, o)))
+            .Concat(
+                npcs.Where(o => o.Remaining > 0 && (o.Kind != NpcMarketKind.Standard || StandardBidReaches(catalog, o, incoming)))
+                    .Select(o => new Candidate(null, o))
+            )
             .Where(o => PersonalMarketRules.Crosses(incoming.Bid, incoming.PriceCents, o.Price))
             .OrderBy(o => incoming.Bid ? o.Price : -o.Price)
             .ThenBy(o => o.Issued)
@@ -374,6 +380,45 @@ internal sealed partial class PilotMarketStore
             incoming.Status = PersonalOrderStatus.Filled;
         }
         return trades;
+    }
+
+    private static NpcMarketOrder[] ResidentNpcMatches(
+        EconomyTransaction world,
+        SavedPersonalOrder incoming,
+        NpcMarketKind kind,
+        bool progressive,
+        bool npcDemandOnly,
+        long cutoff,
+        long now
+    )
+    {
+        var available = world.StationMarketOrders(incoming.StationId, incoming.TypeId);
+        if (!progressive && kind == NpcMarketKind.Standard && !incoming.Bid && !npcDemandOnly)
+        {
+            available = available.Concat(
+                world.RegionalOrders(incoming.RegionId, incoming.TypeId).Where(order => order.StationId != incoming.StationId)
+            );
+        }
+        // Finish snapshot reads before opening selected rows in the transaction's writable overlay.
+        var matches = available
+            .Where(order =>
+                order.Bid != incoming.Bid
+                && order.Remaining > 0
+                && order.Issued > cutoff
+                && order.Issued + (long)order.DurationDays * TimeSpan.TicksPerDay > now
+                && (
+                    progressive
+                        ? order.Kind == NpcMarketKind.Institutional
+                            || order.Kind == NpcMarketKind.Regional && (incoming.DurationDays == 0 || !incoming.Bid)
+                        : order.Kind == kind
+                )
+                && (!npcDemandOnly || order.Kind == NpcMarketKind.Regional && order.Bid)
+                && PersonalMarketRules.Crosses(incoming.Bid, incoming.PriceCents, order.PriceCents)
+            )
+            .Select(order => order.Id)
+            .ToArray();
+        var writable = world.Set<NpcMarketOrder>();
+        return Array.ConvertAll(matches, id => writable.Find(id)!);
     }
 
     internal MarketResult ExecuteBuy(
