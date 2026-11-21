@@ -1,11 +1,13 @@
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Inventory;
+using Eden.Data.World.Market;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Ships;
+using Eden.World.Combat;
 using Eden.World.Fittings;
 using Eden.World.Runtime.Economy;
 
@@ -108,10 +110,61 @@ internal sealed partial class CapsuleerHauler
         var supplies = resupply.Dock(database, world, catalog, pilotId, Work.Resupply, Now);
         _operation.MarketChanged |= supplies.SpentCents != (Work.Resupply?.SpentCents ?? 0);
         _work = Work with { Resupply = supplies };
-        if (rookie ? !TryLaunchSortie(supplies, null) : !TryLaunchActivity(scoutedAnomaly))
+        if (rookie ? TryLaunchSortie(supplies, null) : TryFrontierPatrol(world, supplies) || TryLaunchActivity(scoutedAnomaly))
         {
-            Wait("Waiting for a viable bounty patrol.");
+            return;
         }
+        if (supplies.Requirements.Length > 0)
+        {
+            _work = Work with { Resupply = supplies with { Checked = false } };
+        }
+        Wait("Waiting for a viable bounty patrol.");
+    }
+
+    private bool TryFrontierPatrol(EconomyTransaction world, ResupplyProgress supplies)
+    {
+        if (
+            !world.Settings.Capsuleers.BeltRatting
+            || !world.Settings.NpcPopulation.Pirates
+            || supplies.Requirements.Any(requirement => !requirement.Drone)
+            || world.Set<PilotWallet>().Find(pilotId) is not { Cents: > 0 } wallet
+        )
+        {
+            return false;
+        }
+        var catalog = _operation.Catalog;
+        if (CapsuleerIndustry.CareerKit(catalog, Pilot.ShipTypeId) is not { } kit)
+        {
+            return false;
+        }
+        decimal reserve = kit.Parts().Sum(part => (decimal)CapsuleerIndustry.ReferencePrice(catalog, part.TypeId) * part.Quantity);
+        if (reserve <= 0 || wallet.Cents < reserve)
+        {
+            return false;
+        }
+        var defense = CapsuleerDefenseProfile.Read(world, catalog, pilotId);
+        var health = PilotHealthStore.Read(world, Pilot.ShipId, ShipHealth.DefenseFrom(defense.ShipAttributes), Now);
+        if (CapsuleerDefenseRules.Retreat(health, defense.Combat) || !defense.RattingWeapons.Any(weapon => weapon.AvailableShots > 0))
+        {
+            return false;
+        }
+
+        bool canEnterNullSecurity =
+            wallet.Cents >= reserve * FreshCareerRules.NullSecurityReserveHulls
+            && CapsuleerIndustry.Employer(world, pilotId, Pilot.CorpId) is not null;
+        var route = FreshCareerRoutes.FrontierPatrol(
+            catalog,
+            Pilot,
+            world.Settings.Capsuleers,
+            canEnterNullSecurity,
+            AvoidedSupplierSystems()
+        );
+        if (route is null)
+        {
+            return false;
+        }
+        BeginSupplyJourney(route);
+        return true;
     }
 
     private bool TryFreshDelivery(EconomyTransaction world, FreshCareerRoutes routes, bool startNew)

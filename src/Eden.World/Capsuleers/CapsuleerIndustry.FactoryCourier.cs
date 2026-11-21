@@ -387,7 +387,7 @@ internal sealed partial class CapsuleerIndustry
             .Distinct()
             .Order();
 
-    private static HashSet<int> NearbySystems(CatalogDbContext catalog, int source, int jumps)
+    internal static HashSet<int> NearbySystems(CatalogDbContext catalog, int source, int jumps)
     {
         HashSet<int> nearby = [source];
         int[] frontier = [source];

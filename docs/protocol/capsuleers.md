@@ -2,6 +2,34 @@
 
 [Protocol index](../protocol.md)
 
+## Fresh-world frontier patrols
+
+Fresh bounty hunters with a paid combat fit can rebase from high security to a nearby low-security station with
+a market and belts. They need an armed, combat-ready ship and enough personal ISK to cover a replacement fit at
+reference prices. Members of an active bot-led corporation can also choose a null-security destination when their
+reserve covers two fits. The planner checks reachable work systems, avoids remembered threats, and prefers routes
+with fewer lower-security jumps. The pilot follows the ordinary gates and docks before launching a local patrol.
+
+Lower-security belt composition and rewards are existing game rules. Eden uses the build 3662168 station, belt,
+and gate records. EVE.js `server/src/space/npc/beltRatRuntime.js` selects a rat profile from system security.
+The inspected snapshot has SHA-256 `82F911DE0BC228F8D9F00F1D43FA94F28260FA8F43EFA27833EB6D1F2A773C78`.
+[EVE University belt ratting](https://wiki.eveuniversity.org/Ratting)
+
+### Automated validation
+
+The pinned-catalog fresh careers replay passed in 76.17 seconds. After the paid replacement and recruitment
+checks, the fixture staged ammunition and savings for the frontier decision. The equipped hunter docked in
+low security while the human remained in the starter system. The population, traffic navigation and ratting
+filters passed 40 cases in 31 seconds. The replay covered low-security arrival.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
 ## Fresh-world replacement markets
 
 If a fresh courier or bounty hunter cannot assemble an affordable career fit locally, the pilot can travel to a

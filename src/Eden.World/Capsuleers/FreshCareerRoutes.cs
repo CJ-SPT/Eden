@@ -16,6 +16,7 @@ namespace Eden.World.Capsuleers;
 
 internal sealed record FreshCareerRoutes(CapsuleerTrafficRoute? Courier, CatalogAgent? Agent, CapsuleerTrafficRoute? Combat)
 {
+    private static readonly CatalogDefinition<int[]> s_frontierStations = new("fresh-frontier-stations", LoadFrontierStations);
     private static readonly CatalogDefinition<FreshCareerRoutes> s_routes = new(
         "capsuleer-rookie-career-routes",
         (catalog, system) => Load(catalog, system)
@@ -35,6 +36,50 @@ internal sealed record FreshCareerRoutes(CapsuleerTrafficRoute? Courier, Catalog
             .GetOrCreateValue(policy)
             .GetOrAdd((catalog.Definitions.Identity.Generation, system), _ => Load(catalog, system, policy));
     }
+
+    internal static CapsuleerTrafficRoute? FrontierPatrol(
+        CatalogDbContext catalog,
+        DockedPilot pilot,
+        CapsuleerPopulationPolicy policy,
+        bool canEnterNullSecurity,
+        IReadOnlySet<int> avoided
+    )
+    {
+        double security = catalog.Definitions.SystemSecurity.GetValueOrDefault(pilot.SystemId, 1);
+        if (security <= 0 || (security < CrimewatchRules.HighSecurity && !canEnterNullSecurity))
+        {
+            return null;
+        }
+        int jumps = FreshCareerRules.MaximumFrontierJumps;
+        return catalog
+            .Definition(s_frontierStations, pilot.SystemId)
+            .Where(station =>
+            {
+                double destination = catalog.Definitions.SystemSecurity.GetValueOrDefault(catalog.RequireStation(station).SolarSystemId, 1);
+                return destination < security && (destination > 0 || canEnterNullSecurity);
+            })
+            .Select(station =>
+                CapsuleerTrafficRoutes.ToStation(catalog, pilot.StationId, station, (HullClass)pilot.ShipGroupId, avoided, jumps, policy)
+            )
+            .OfType<CapsuleerTrafficRoute>()
+            .Where(route =>
+                canEnterNullSecurity
+                || route.Systems.Skip(1).All(system => catalog.Definitions.SystemSecurity.GetValueOrDefault(system) > 0)
+            )
+            .OrderBy(route => route.Systems.Skip(1).Count(system => !HighSecurity(catalog, system)))
+            .ThenBy(route => route.Systems.Length)
+            .ThenBy(route => route.DestinationStationId)
+            .FirstOrDefault();
+    }
+
+    private static int[] LoadFrontierStations(CatalogDbContext catalog, int origin) =>
+        CapsuleerIndustry
+            .NearbySystems(catalog, origin, FreshCareerRules.MaximumFrontierJumps)
+            .Where(system => system != origin && !HighSecurity(catalog, system) && catalog.BeltAnchors(system).Count > 0)
+            .SelectMany(system => catalog.Definitions.StationsInSystem(system))
+            .Where(station => StationCapabilities.Has(catalog, station.OperationId, StationService.Market))
+            .Select(station => station.Id)
+            .ToArray();
 
     private static FreshCareerRoutes Load(CatalogDbContext catalog, int system, CapsuleerPopulationPolicy? policy = null)
     {

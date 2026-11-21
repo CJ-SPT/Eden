@@ -90,6 +90,17 @@ public sealed partial class FreshUniverseTests
                 .Distinct()
                 .Select(id => (System: id, Routes: FreshCareerRoutes.Read(catalog, id)))
                 .Where(site => site.Routes is { Courier: not null, Combat: not null })
+                .Where(site =>
+                    CapsuleerIndustry
+                        .NearbySystems(catalog, site.System, FreshCareerRules.MaximumFrontierJumps)
+                        .Any(id =>
+                            LowSecurity(catalog, id)
+                            && catalog.BeltAnchors(id).Count > 0
+                            && catalog
+                                .Definitions.StationsInSystem(id)
+                                .Any(station => StationCapabilities.Has(catalog, station.OperationId, StationService.Market))
+                        )
+                )
                 .Select(site => (site.System, site.Routes, Market: RegionalReplacementMarket(catalog, site.Routes.Courier!)))
                 .First(site => site.Market > 0);
             system = opening.System;
@@ -271,9 +282,48 @@ public sealed partial class FreshUniverseTests
         AdvanceCareers(reopened, system, clock, () => pilots.All(id => corporations.Identity(id).Id == employer.Id));
         Assert.All(pilots, id => Assert.Contains(membership.Applications(id, false), a => a.Status == CorporationApplicationStatus.Joined));
         VerifyPurchases(reopened, pilots, goals, supplier, 2);
+        using (CatalogDbContext catalog = new(database.CatalogPath))
+        {
+            long patrol = pilots[1];
+            using (var reserve = restored.Economy.Begin(TransactionParticipants.None))
+            {
+                Assert.True(BountyIncome(reserve, patrol) > 0);
+                // Stage enough savings for the next career decision. Startup and replacement above require earned income.
+                var fit = CapsuleerIndustry.CareerKit(catalog, goals[1])!;
+                long value = fit.Parts().Sum(part => checked(CapsuleerIndustry.ReferencePrice(catalog, part.TypeId) * part.Quantity));
+                Assert.True(value > 0);
+                reserve.Set<PilotWallet>().Find(patrol)!.Cents = checked(value * 2);
+                long ship = reserve.Pilots.Find(patrol)!.ActiveShipId;
+                foreach (var magazine in fit.Magazines)
+                {
+                    int quantity = checked(magazine.Quantity * (CapsuleerSupplyStore.SpareMagazines + 1));
+                    InventoryPersistence.MergeOutput(reserve, catalog, patrol, ship, (int)InventoryFlag.Cargo, magazine.TypeId, quantity);
+                }
+                reserve.Commit();
+            }
+            AdvanceCareers(
+                reopened,
+                system,
+                clock,
+                () =>
+                    restored.Economy.Inspect(world =>
+                    {
+                        var ship = world.Pilots.Find(patrol)!.ActiveShip;
+                        return world.Positions.Find(ship.Id) is null
+                            && LowSecurity(catalog, catalog.RequireStation(ship.StationId).SolarSystemId);
+                    })
+            );
+            Assert.Equal([system], reopened.GetRequiredService<IHumanPresence>().Read().ActiveSystems);
+            VerifyPurchases(reopened, pilots, goals, supplier, 2);
+        }
 
         ServiceProvider Open() => ServerServices.Build(database, clock, population: new TestNpcPopulationSeeder(system), liveWorld: true);
     }
+
+    private static bool LowSecurity(CatalogDbContext catalog, int system) =>
+        catalog.Definitions.SystemSecurity.TryGetValue(system, out double security)
+        && security > 0
+        && security < CrimewatchRules.HighSecurity;
 
     private static int RegionalReplacementMarket(CatalogDbContext catalog, CapsuleerTrafficRoute opening)
     {
