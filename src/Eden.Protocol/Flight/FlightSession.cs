@@ -360,6 +360,22 @@ internal sealed partial class FlightSession(
 
     public TargetContact? FindTarget(long id) => Scene.FindTarget(SceneContext, id);
 
+    internal StaticSpaceObject? StructureTargetingSource =>
+        _controlledStructureId is long id ? Scene.Objects.FirstOrDefault(body => body.Id == id && body.Structure is not null) : null;
+
+    internal TargetContact? FindStructureTarget(long id) =>
+        Scene.FindTarget(SceneContext with { CanTarget = StructureTargetingSource is not null }, id);
+
+    internal void RefreshStructureObservers()
+    {
+        if (_controlledStructureId is not null)
+        {
+            Scene.RefreshPeers(SceneContext);
+            RefreshNpcs();
+            RefreshDrones();
+        }
+    }
+
     internal bool HasPeerShip(long id) => id != Pilot.ShipId && space.FindArea(Pilot.SystemId, id) is not null;
 
     internal PilotWeaponTarget? FindPilotWeaponTarget(long id) => Scene.FindPilotWeaponTarget(SceneContext, id);
@@ -1101,8 +1117,8 @@ internal sealed partial class FlightSession(
                     )
                 )
             );
-            Scene.ResetDrones();
-            RefreshDrones();
+            Scene.ResetStructureObservers();
+            RefreshStructureObservers();
             return;
         }
         // A new source SetState would run the client's asynchronous DoBallClear

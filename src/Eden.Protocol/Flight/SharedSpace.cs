@@ -618,10 +618,10 @@ internal sealed class SharedSpace(
             && ship.Health?.Remaining.Destroyed != true
         );
 
-    public ShipContact[] Peers(DockedPilot pilot)
-    {
-        return RunMotion(pilot.SystemId, () => PeersOwned(pilot), nameof(Peers));
-    }
+    public ShipContact[] Peers(DockedPilot pilot) => Peers(pilot.SystemId, pilot.ShipId, pilot.Position);
+
+    internal ShipContact[] Peers(int system, long viewerId, SpacePosition? viewer) =>
+        viewer is null ? [] : RunMotion(system, () => PeersOwned(system, viewerId, viewer), nameof(Peers));
 
     internal IEnumerable<ShipContact> GateArrivals(DockedPilot pilot) =>
         _ships.Values.Where(ship =>
@@ -703,24 +703,21 @@ internal sealed class SharedSpace(
             SmartbombRules.InRange(origin, pilot.Flight.ShipRadius, position, radius, NavigationDefinitions.MaximumTargetDistance);
     }
 
-    private ShipContact[] PeersOwned(DockedPilot pilot)
+    private ShipContact[] PeersOwned(int system, long viewerId, SpacePosition viewer)
     {
-        using (EnterMotion(systemId: pilot.SystemId))
+        using (EnterMotion(systemId: system))
         {
             var offline =
-                crimewatch
-                    ?.LoggedOff(pilot.SystemId)
-                    .Select(p => new ShipContact(PilotContact.From(p.Pilot), SpacePosition.Zero, null, 0, null))
+                crimewatch?.LoggedOff(system).Select(p => new ShipContact(PilotContact.From(p.Pilot), SpacePosition.Zero, null, 0, null))
                 ?? [];
             return _ships
                 .Values.Concat(offline)
                 .GroupBy(s => s.Pilot.ShipId)
                 .Select(g => g.First())
                 .Where(ship =>
-                    ship.Pilot.SystemId == pilot.SystemId
-                    && ship.Pilot.ShipId != pilot.ShipId
+                    ship.Pilot.SystemId == system
+                    && ship.Pilot.ShipId != viewerId
                     && !IsCloaked(ship.Pilot.ShipId)
-                    && pilot.Position is { } viewer
                     && PeerInRange(ship, viewer)
                 )
                 .OrderBy(ship => ship.Pilot.ShipId)

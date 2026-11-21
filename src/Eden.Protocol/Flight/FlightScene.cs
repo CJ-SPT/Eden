@@ -18,7 +18,11 @@ internal readonly record struct FlightSceneContext(
     bool CanTarget,
     int SimulatedStamp,
     long? ControlledStructure = null
-);
+)
+{
+    internal long ObserverId => ControlledStructure ?? Pilot.ShipId;
+    internal SpacePosition? ObserverPosition => Pilot.Position ?? (ControlledStructure is null ? null : Pilot.Home.Position);
+}
 
 internal sealed class FlightScene(
     SharedSpace space,
@@ -77,7 +81,16 @@ internal sealed class FlightScene(
 
     internal void RefreshDrones(FlightSceneContext context) => Drones.RefreshDrones(context);
 
-    internal void ResetDrones() => Drones.Reset();
+    internal void ResetStructureObservers()
+    {
+        _peers = [];
+        _peerOrderSequences.Clear();
+        _cloakedPeers.Clear();
+        _gateArrivals.Clear();
+        _gateDepartures.Clear();
+        Npcs.Clear();
+        Drones.Reset();
+    }
 
     internal void NotifyNpcWeapon(long npcId, NpcWeaponContact weapon) => Npcs.NotifyNpcWeapon(npcId, weapon);
 
@@ -129,7 +142,7 @@ internal sealed class FlightScene(
         {
             return null;
         }
-        if (space.Peers(context.Pilot).FirstOrDefault(s => s.Pilot.ShipId == id && s.Warp is null && s.DepartureGate is null) is { } ship)
+        if (Peers(context).FirstOrDefault(s => s.Pilot.ShipId == id && s.Warp is null && s.DepartureGate is null) is { } ship)
         {
             return new(id, ship.Pilot.ShipTypeId, ship.Pilot.Position!, ship.Pilot.Flight.ShipRadius);
         }
@@ -719,13 +732,16 @@ internal sealed class FlightScene(
     internal void CorrectPosition(long id, SpacePosition position, SpacePosition velocity, int stamp) =>
         FlightEffects.CorrectPosition(send, id, position, velocity, stamp);
 
+    private ShipContact[] Peers(FlightSceneContext context) =>
+        space.Peers(context.Pilot.SystemId, context.ObserverId, context.ObserverPosition);
+
     internal void RefreshPeers(FlightSceneContext context)
     {
         foreach (var arrival in space.GateArrivals(context.Pilot))
         {
             ObserveGateArrival(arrival);
         }
-        var current = space.Peers(context.Pilot);
+        var current = Peers(context);
         var previousById = _peers.ToDictionary(ship => ship.Pilot.ShipId);
         foreach (var departed in _peers.ExceptBy(current.Select(ship => ship.Pilot.ShipId), ship => ship.Pilot.ShipId))
         {

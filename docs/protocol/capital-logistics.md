@@ -859,6 +859,28 @@ a 3.12-second build. Both Python suites, formatting and `git diff --check` passe
 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
+## Upwell target locks
+
+Build 3662168 `targetMgr.pyj` calls `dogmaIM.AddTarget(targetID)`. The
+separate on-behalf-of call in `playerOwnedTargetMgr.pyj` takes a starbase module
+ID as well. EVE.js `dogmaService/targeting.js` resolves the ordinary lock from
+the controlled scene. Eden lets a gunner observe nearby ships, NPCs and drones
+from the Upwell structure's position. For an Astrahus the pinned targeting
+attributes are 350 km, seven locks and 40 mm scan resolution.
+
+Locks belong to the controlled structure for the duration of the control lease.
+Releasing it cancels outgoing locks and scans while retaining other pilots'
+locks on the structure. The pilot's own ship stays docked. These locks support
+the Standup combat work that follows.
+
+**Automated validation.** The exact
+`UpwellControllerLocksWithStructureSensorsAndClearsOutgoingLocksOnRelease` case
+passed in 7.58 seconds. The 137-case structure control, Standup, targeting,
+flight, capital travel and drone combat filter passed in 78.91 seconds after
+a 1.22-second build. Both Python suites, formatting and `git diff --check` passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
 ## Shared fleet hangars
 
 Build 3662168 `shipConfigSvc.pyj` uses `ship.GetShipConfiguration(shipID)` and sends a one-key dictionary

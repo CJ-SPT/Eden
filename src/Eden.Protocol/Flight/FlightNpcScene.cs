@@ -50,7 +50,7 @@ internal sealed class FlightNpcScene(
 
     private IReadOnlyList<NpcContact> ReadNpcs(FlightSceneContext context)
     {
-        var scene = context.Pilot.Position is { } position
+        var scene = context.ObserverPosition is { } position
             ? encounters?.ReadScene(context.Pilot.SystemId, position, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc())
                 ?? NpcSceneContacts.Empty
             : NpcSceneContacts.Empty;

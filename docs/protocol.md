@@ -1007,6 +1007,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 - [Fighter rocket and torpedo salvos](protocol/capital-logistics.md#fighter-rocket-and-torpedo-salvos)
 - [Long-range heavy fighter bombs](protocol/capital-logistics.md#long-range-heavy-fighter-bombs)
 - [Standup fighter launch and recall](protocol/capital-logistics.md#standup-fighter-launch-and-recall)
+- [Upwell target locks](protocol/capital-logistics.md#upwell-target-locks)
 - [Rorqual industrial core and shipboard compression](protocol/capital-logistics.md#rorqual-industrial-core-and-shipboard-compression)
 - [Mobile jump clones](protocol/capital-logistics.md#mobile-jump-clones)
 - [Stargate handoff timing, November 14, 2026](protocol/navigation.md#stargate-handoff-timing-november-14-2026)

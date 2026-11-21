@@ -155,7 +155,7 @@ internal sealed class PilotSessionTick(
                 }
                 else if (context.ControlledStructureId is not null)
                 {
-                    flight.RefreshDrones();
+                    flight.RefreshStructureObservers();
                 }
             }
 
