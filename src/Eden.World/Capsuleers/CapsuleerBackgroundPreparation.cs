@@ -16,6 +16,7 @@ internal sealed class CapsuleerBackgroundPreparation(
     CapsuleerScheduler scheduler
 ) : ICapsuleerBackgroundPreparation, IDisposable
 {
+    private static readonly TimeSpan ExpansionBacklogLimit = TimeSpan.FromMilliseconds(250);
     private readonly Lock _gate = new();
     private readonly CapsuleerProvisioner _provisioner = new(database, clock);
     private readonly Dictionary<int, int> _completed = [];
@@ -102,6 +103,14 @@ internal sealed class CapsuleerBackgroundPreparation(
             bool atCapacity = false;
             if (!foreground && _freshSystems is { Count: > 0 })
             {
+                if (
+                    policy.FreshFounderCohortsPerSystem > FreshCareerRules.DefaultFounderCohorts
+                    && scheduler.Read().OldestDelayTicks >= ExpansionBacklogLimit.Ticks
+                )
+                {
+                    // Let existing jobs catch up before founding more background pilots.
+                    return new(progress, null, false) { RetryLater = true, RetryAfter = ExpansionBacklogLimit };
+                }
                 int cap = policy.ActivePilotCap;
                 if (cap > 0)
                 {
