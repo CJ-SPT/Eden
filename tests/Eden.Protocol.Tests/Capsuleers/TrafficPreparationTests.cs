@@ -3,6 +3,7 @@ using Eden.Data.World.Economy;
 using Eden.Data.World.Market;
 using Eden.Data.World.Mining;
 using Eden.Gameplay.Capsuleers;
+using Eden.Gameplay.Flight;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Diagnostics;
 using Eden.Server;
@@ -13,12 +14,14 @@ using Eden.World.Runtime;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Xunit.Abstractions;
 
 namespace Eden.Protocol.Tests.Capsuleers;
 
-public sealed class TrafficPreparationTests
+public sealed class TrafficPreparationTests(ITestOutputHelper output)
 {
     private const int SourceSystem = 30000141;
+    private const int FirstGeometrySystem = 30000142;
 
     [Theory]
     [InlineData(0)]
@@ -54,6 +57,69 @@ public sealed class TrafficPreparationTests
         geometry.Observe([new("WorldAsteroid", asteroid)]);
         Assert.True(geometry.TryRead(SourceSystem, Catalog, out var after));
         Assert.Same(before, after);
+    }
+
+    [Fact]
+    public void StaticGeometryKeepsACommunityWorkingSetWarm()
+    {
+        const int systems = 1200;
+        using TestWorld world = new();
+        using CatalogDbContext catalog = new(new WorldDatabase(world.Path).CatalogPath);
+        using var scope = new CatalogReadScope().Begin();
+        LiveTrafficGeometry geometry = new();
+        IReadOnlyList<StaticSpaceObject>[] snapshots = new IReadOnlyList<StaticSpaceObject>[systems];
+        for (int index = 0; index < systems; index++)
+        {
+            snapshots[index] = geometry.StaticObjects(catalog, FirstGeometrySystem + index);
+        }
+        Assert.NotEmpty(snapshots[0]);
+
+        using var metrics = SessionPerformance.Begin("warm 1,200-system static geometry", output.WriteLine, force: true)!;
+        long allocated = GC.GetAllocatedBytesForCurrentThread();
+        int hits = 0;
+        for (int index = 0; index < systems; index++)
+        {
+            if (ReferenceEquals(snapshots[index], geometry.StaticObjects(catalog, FirstGeometrySystem + index)))
+            {
+                hits++;
+            }
+        }
+        long bytes = GC.GetAllocatedBytesForCurrentThread() - allocated;
+        output.WriteLine($"{systems} warm static geometry checks: {hits} hits, {bytes} bytes.");
+        Assert.Equal(systems, hits);
+        Assert.Equal(0, metrics.Commands);
+        Assert.Equal(0, metrics.Connections);
+    }
+
+    [Fact]
+    public void StaticGeometryEvictsTheLeastRecentlyUsedSystemAndKeepsCatalogGenerationsSeparate()
+    {
+        const int systems = 2048;
+        const int nextSystem = FirstGeometrySystem + 1;
+        using TestWorld world = new();
+        using CatalogDbContext oldCatalog = new(new WorldDatabase(world.Path).CatalogPath);
+        using var retainOld = CatalogProvider.Retain(oldCatalog.Definitions.Identity.Path);
+        LiveTrafficGeometry geometry = new();
+        var hot = geometry.StaticObjects(oldCatalog, FirstGeometrySystem);
+        var cold = geometry.StaticObjects(oldCatalog, nextSystem);
+        for (int index = 2; index < systems; index++)
+        {
+            geometry.StaticObjects(oldCatalog, FirstGeometrySystem + index);
+        }
+        Assert.Same(hot, geometry.StaticObjects(oldCatalog, FirstGeometrySystem));
+        geometry.StaticObjects(oldCatalog, FirstGeometrySystem + systems);
+        Assert.Same(hot, geometry.StaticObjects(oldCatalog, FirstGeometrySystem));
+        Assert.NotSame(cold, geometry.StaticObjects(oldCatalog, nextSystem));
+
+        using TestWorld updated = new();
+        using CatalogDbContext newCatalog = new(new WorldDatabase(updated.Path).CatalogPath);
+        using var retainNew = CatalogProvider.Retain(newCatalog.Definitions.Identity.Path);
+        Assert.True(oldCatalog.Definitions.Identity.Generation < newCatalog.Definitions.Identity.Generation);
+        var latest = geometry.StaticObjects(newCatalog, FirstGeometrySystem);
+        Assert.NotSame(hot, latest);
+        Assert.Equal(hot, latest);
+        Assert.NotSame(latest, geometry.StaticObjects(oldCatalog, FirstGeometrySystem));
+        Assert.Same(latest, geometry.StaticObjects(newCatalog, FirstGeometrySystem));
     }
 
     [Fact]

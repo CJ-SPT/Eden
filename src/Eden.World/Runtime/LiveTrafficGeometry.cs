@@ -10,15 +10,18 @@ internal sealed class LiveTrafficGeometry
 {
     private readonly Lock _gate = new();
     private const int MaximumSystems = 1024;
+    private const int MaximumStaticSystems = 2048;
+    private const int MaximumStaticObjects = 96 * 1024;
 
     private sealed record Entry(long Catalog, IReadOnlyList<StaticSpaceObject> Objects, LinkedListNode<int> Recency);
 
+    private readonly record struct StaticEntry(IReadOnlyList<StaticSpaceObject> Objects, LinkedListNode<int> Recency);
+
     private readonly Dictionary<int, Entry> _systems = [];
     private readonly LinkedList<int> _systemOrder = new();
-    private readonly Dictionary<int, IReadOnlyList<StaticSpaceObject>> _static = [];
-    private readonly Queue<int> _staticOrder = new();
+    private readonly Dictionary<int, StaticEntry> _static = [];
+    private readonly LinkedList<int> _staticOrder = new();
     private long _staticCatalog;
-    private const int MaximumStaticObjects = 48 * 1024;
     private int _staticObjects;
     private readonly Dictionary<long, int> _belts = [];
     internal long Revision { get; private set; }
@@ -30,11 +33,12 @@ internal sealed class LiveTrafficGeometry
         {
             if (_staticCatalog == generation && _static.TryGetValue(system, out var cached))
             {
-                return cached;
+                Touch(_staticOrder, cached.Recency);
+                return cached.Objects;
             }
         }
         var loaded = SystemObjects.Geometry(catalog, system);
-        if (loaded.Count > MaximumStaticObjects)
+        if (loaded.Count > MaximumStaticObjects || catalog.Definitions.Identity.Generation != generation)
         {
             return loaded;
         }
@@ -53,16 +57,17 @@ internal sealed class LiveTrafficGeometry
             }
             if (_static.TryGetValue(system, out var cached))
             {
-                return cached;
+                Touch(_staticOrder, cached.Recency);
+                return cached.Objects;
             }
-            while (_static.Count >= MaximumSystems || _staticObjects + loaded.Count > MaximumStaticObjects)
+            while (_static.Count >= MaximumStaticSystems || _staticObjects + loaded.Count > MaximumStaticObjects)
             {
-                int expired = _staticOrder.Dequeue();
-                _staticObjects -= _static[expired].Count;
+                int expired = _staticOrder.First!.Value;
+                _staticOrder.RemoveFirst();
+                _staticObjects -= _static[expired].Objects.Count;
                 _static.Remove(expired);
             }
-            _static.Add(system, loaded);
-            _staticOrder.Enqueue(system);
+            _static.Add(system, new(loaded, _staticOrder.AddLast(system)));
             _staticObjects += loaded.Count;
             return loaded;
         }
@@ -74,7 +79,7 @@ internal sealed class LiveTrafficGeometry
         {
             if (_systems.TryGetValue(system, out var entry) && entry.Catalog == catalog)
             {
-                Touch(entry.Recency);
+                Touch(_systemOrder, entry.Recency);
                 objects = entry.Objects;
                 return true;
             }
@@ -103,7 +108,7 @@ internal sealed class LiveTrafficGeometry
             if (_systems.TryGetValue(system, out var current))
             {
                 recency = current.Recency;
-                Touch(recency);
+                Touch(_systemOrder, recency);
             }
             else
             {
@@ -121,12 +126,12 @@ internal sealed class LiveTrafficGeometry
         }
     }
 
-    private void Touch(LinkedListNode<int> recency)
+    private static void Touch(LinkedList<int> order, LinkedListNode<int> recency)
     {
         if (recency.Next is not null)
         {
-            _systemOrder.Remove(recency);
-            _systemOrder.AddLast(recency);
+            order.Remove(recency);
+            order.AddLast(recency);
         }
     }
 
