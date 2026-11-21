@@ -17,6 +17,7 @@ using Eden.Server.Maintenance;
 using Eden.World.Catalog;
 using Eden.World.Fittings;
 using Eden.World.Storage;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Eden.Server;
@@ -135,42 +136,10 @@ internal static class Program
         {
             return;
         }
-        bool freshUniverse = args.Contains("--fresh-universe");
-        bool economyWorld = freshUniverse || args.Contains("--economy-world");
-        bool testingMarket = args.Contains("--testing-market");
-        if (testingMarket && (economyWorld || File.Exists(worldPath)))
+        string[] creationFlags = ["--fresh-universe", "--economy-world", "--testing-market", "--economy-config", "--npc-stock"];
+        if (args.Any(creationFlags.Contains))
         {
-            throw new InvalidDataException("--testing-market requires a new world without --economy-world.");
-        }
-        if (economyWorld && File.Exists(worldPath))
-        {
-            throw new InvalidDataException("--economy-world requires a new world path.");
-        }
-        int npcStock = Eden.Gameplay.Market.NpcSupplyRules.Stock;
-        Eden.Gameplay.Economy.EconomicConfiguration? economicConfiguration = null;
-        if (Value("--economy-config") is { } economicPath)
-        {
-            if (!economyWorld)
-            {
-                throw new InvalidDataException("--economy-config requires a new --economy-world.");
-            }
-            economicConfiguration =
-                System.Text.Json.JsonSerializer.Deserialize<Eden.Gameplay.Economy.EconomicConfiguration>(
-                    File.ReadAllText(economicPath),
-                    new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web)
-                    {
-                        UnmappedMemberHandling = System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow,
-                    }
-                ) ?? throw new InvalidDataException("Missing economy configuration.");
-            Eden.Gameplay.Economy.EconomicRules.Validate(economicConfiguration);
-        }
-        if (Value("--npc-stock") is { } stockText)
-        {
-            if (!economyWorld || !int.TryParse(stockText, out npcStock))
-            {
-                throw new InvalidDataException("--npc-stock requires a new --economy-world and a whole-number stock quantity.");
-            }
-            Eden.Gameplay.Market.NpcSupplyRules.ValidateStock(npcStock);
+            throw new InvalidDataException("World creation settings have moved to administration. Start Eden without the creation flags.");
         }
         if (await Eden.Server.Modding.ModCommands.TryRun(args, new WorldDatabase(worldPath)))
         {
@@ -195,98 +164,190 @@ internal static class Program
                 }
             );
         WorldDatabase database = new(worldPath);
-        if (preparationRoot is null)
-        {
-            if (Value("--grant-redeem") is null && Value("--set-account-password") is null)
-            {
-                ServerBanner.Write(Console.Out);
-            }
-            Directory.CreateDirectory(Path.GetDirectoryName(worldPath)!);
-            using FileStream startupOwnership = new(worldPath + ".owner", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
-            using var reconciliationPerformance = SessionPerformance.Begin("startup.reconciliation", ServerLog.Console.Trace);
-            long reconciliationStarted = Stopwatch.GetTimestamp();
-            Eden.Gameplay.Market.WorldEconomySettings? startingEconomy = File.Exists(worldPath)
-                ? null
-                : new(testingMarket, !economyWorld, npcStock, freshUniverse);
-            bool preparePopulation = Value("--grant-redeem") is null && Value("--set-account-password") is null;
-            if (preparePopulation)
-            {
-                ServerLog.Console.Information($"Loading saved world from {worldPath}...");
-            }
-            WorldInitialization.Initialize(database, economy: startingEconomy, economics: economicConfiguration);
-            if (preparePopulation)
-            {
-                using var populationPhase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("startup.capsuleerPopulation");
-                WorldInitialization.PrepareCapsuleers(database, maximumCommunities: 0);
-            }
-            ServerLog.Console.Information(
-                $"World reconciliation completed in {Stopwatch.GetElapsedTime(reconciliationStarted).TotalSeconds:F2}s."
-            );
-        }
-        // Ticket preparation signs a local claim without opening the saved world.
-        using var services = ServerStartup.Measure(
-            "host creation",
-            () =>
-                ServerServices.Build(
-                    database,
-                    options: options,
-                    liveWorld: preparationRoot is null,
-                    loadConfiguration: preparationRoot is null
-                )
-        );
-        if (preparationRoot is { } root)
-        {
-            if (!OperatingSystem.IsWindows())
-            {
-                throw new PlatformNotSupportedException("Local development ticket preparation requires Windows.");
-            }
-            if (!options.DevelopmentLogin)
-            {
-                throw new InvalidDataException("Pass --development-login explicitly for local development tickets.");
-            }
-            long accountId = args.Contains("Wing") ? 1000002 : 1000001;
-            string claim = services
-                .GetRequiredService<DevelopmentIdentity>()
-                .Prepare(root, accountId, services.GetRequiredService<ChatCertificate>());
-            Console.WriteLine(claim);
-            return;
-        }
-        Directory.CreateDirectory(Path.GetDirectoryName(worldPath)!);
-        var accounts = services.GetRequiredService<LauncherStore>();
-        if (Value("--grant-redeem") is { } redeemPath)
-        {
-            var grant =
-                JsonSerializer.Deserialize<RedeemGrant>(File.ReadAllText(redeemPath))
-                ?? throw new InvalidDataException("The redeem grant file is empty.");
-            var token = services.GetRequiredService<IAccountRedemption>().Grant(grant);
-            Console.WriteLine($"Redeem token {token.Id} issued to account {grant.AccountId}.");
-            return;
-        }
-        if (Value("--set-account-password") is { } userName)
-        {
-            Console.Write("New password: ");
-            string password = ReadPassword();
-            Console.Write("Confirm password: ");
-            if (password != ReadPassword())
-            {
-                throw new InvalidDataException("Passwords do not match.");
-            }
-            accounts.SetPassword(userName, password);
-            Console.WriteLine("Account password updated. Previous launcher sessions have been revoked.");
-            return;
-        }
+        string? redeemPath = Value("--grant-redeem");
+        string? accountName = Value("--set-account-password");
+        bool online = preparationRoot is null && redeemPath is null && accountName is null;
         WorldWipeRequest worldWipe = new(worldPath);
-        await ServerLifetime.RunAsync(async lifetime =>
+        await ServerLifetime.RunAsync(async startup =>
         {
-            ConsoleCancelEventHandler interrupt = (_, args) =>
+            ConsoleCancelEventHandler interrupt = (_, eventArgs) =>
             {
-                args.Cancel = true;
+                eventArgs.Cancel = true;
                 shutdown.Cancel();
             };
             Console.CancelKeyPress += interrupt;
-            lifetime.OnStop("console interrupt", () => Console.CancelKeyPress -= interrupt);
-            var world = services.GetRequiredService<Eden.World.Runtime.LiveWorld>();
-            lifetime.OnStop("resident world", world.Dispose);
+            startup.OnStop("console interrupt", () => Console.CancelKeyPress -= interrupt);
+
+            int port = Value("--admin-port") is { } adminPort
+                ? int.TryParse(adminPort, out int parsedPort) && parsedPort is > 0 and <= 65535
+                    ? parsedPort
+                    : throw new InvalidDataException("--admin-port requires a port between 1 and 65535.")
+                : AdministrationHost.DefaultPort;
+            AdministrationBinding admin = new(
+                port,
+                Environment.GetEnvironmentVariable("EDEN_ADMIN_ORIGIN"),
+                IPAddress.Parse(options.ListenAddress),
+                options.CertificatePath,
+                args.Contains("--disable-admin")
+            );
+            AdministratorAccounts administrators = new(worldPath);
+            LauncherReadiness readiness = new();
+            var api = online ? LauncherApi.Create(options, readiness, TimeProvider.System) : null;
+            bool runtimeStopsApi = false;
+            if (api is not null)
+            {
+                startup.OnStop("launcher API", api.DisposeAsync);
+                startup.OnStop("setup launcher API listener", () => runtimeStopsApi ? ValueTask.CompletedTask : new(api.StopAsync()));
+            }
+
+            if (preparationRoot is null)
+            {
+                if (online)
+                {
+                    ServerBanner.Write(Console.Out);
+                }
+                Directory.CreateDirectory(Path.GetDirectoryName(worldPath)!);
+                using FileStream startupOwnership = new(worldPath + ".owner", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+                var setup = WorldSetupStore.Read(worldPath);
+                if (!online && setup is not null)
+                {
+                    throw new InvalidOperationException("Start Eden and complete world setup before managing game accounts.");
+                }
+                bool needsSetup = setup is { Approval: null };
+                if (needsSetup && admin.Disabled)
+                {
+                    throw new InvalidDataException("World setup requires administration. Start Eden without --disable-admin.");
+                }
+                if (
+                    online
+                    && !admin.Disabled
+                    && (needsSetup || administrators.Provisioned)
+                    && new[] { options.GamePort, options.GatewayPort, options.ApiPort, ChatServer.ClientPort }.Contains(admin.Port)
+                )
+                {
+                    throw new InvalidDataException("Administration requires a separate port.");
+                }
+                if (needsSetup)
+                {
+                    readiness.RequireSetup(null);
+                }
+                if (api is not null)
+                {
+                    await api.StartAsync(shutdown.Token);
+                    ServerLog.Console.Information($"Launcher API listening on {options.ListenAddress}:{options.ApiPort}.");
+                }
+                var approval = setup?.Approval;
+                if (setup is { Approval: null })
+                {
+                    approval = await ConfigureWorldAsync(database, setup, readiness, administrators, admin, shutdown.Token);
+                    if (approval is null)
+                    {
+                        return;
+                    }
+                }
+                readiness.StartWorld();
+                using var reconciliationPerformance = SessionPerformance.Begin("startup.reconciliation", ServerLog.Console.Trace);
+                long reconciliationStarted = Stopwatch.GetTimestamp();
+                if (online)
+                {
+                    ServerLog.Console.Information($"Loading saved world from {worldPath}...");
+                }
+                WorldInitialization.Initialize(database, setup: approval);
+                if (online)
+                {
+                    using var populationPhase = Eden.Infrastructure.Diagnostics.SessionPerformance.Phase("startup.capsuleerPopulation");
+                    WorldInitialization.PrepareCapsuleers(database, maximumCommunities: 0);
+                }
+
+                ServerLog.Console.Information(
+                    $"World reconciliation completed in {Stopwatch.GetElapsedTime(reconciliationStarted).TotalSeconds:F2}s."
+                );
+            }
+            // Ticket preparation signs a local claim without opening the saved world.
+            using var services = ServerStartup.Measure(
+                "host creation",
+                () =>
+                    ServerServices.Build(
+                        database,
+                        options: options,
+                        liveWorld: preparationRoot is null,
+                        loadConfiguration: preparationRoot is null
+                    )
+            );
+            if (preparationRoot is { } root)
+            {
+                if (!OperatingSystem.IsWindows())
+                {
+                    throw new PlatformNotSupportedException("Local development ticket preparation requires Windows.");
+                }
+                if (!options.DevelopmentLogin)
+                {
+                    throw new InvalidDataException("Pass --development-login explicitly for local development tickets.");
+                }
+                long accountId = args.Contains("Wing") ? 1000002 : 1000001;
+                string claim = services
+                    .GetRequiredService<DevelopmentIdentity>()
+                    .Prepare(root, accountId, services.GetRequiredService<ChatCertificate>());
+                Console.WriteLine(claim);
+                return;
+            }
+            Directory.CreateDirectory(Path.GetDirectoryName(worldPath)!);
+            if (redeemPath is not null)
+            {
+                var grant =
+                    JsonSerializer.Deserialize<RedeemGrant>(File.ReadAllText(redeemPath))
+                    ?? throw new InvalidDataException("The redeem grant file is empty.");
+                var token = services.GetRequiredService<IAccountRedemption>().Grant(grant);
+                Console.WriteLine($"Redeem token {token.Id} issued to account {grant.AccountId}.");
+                return;
+            }
+            if (accountName is not null)
+            {
+                Console.Write("New password: ");
+                string password = ReadPassword();
+                Console.Write("Confirm password: ");
+                if (password != ReadPassword())
+                {
+                    throw new InvalidDataException("Passwords do not match.");
+                }
+                services.GetRequiredService<LauncherStore>().SetPassword(accountName, password);
+                Console.WriteLine("Account password updated. Previous launcher sessions have been revoked.");
+                return;
+            }
+            runtimeStopsApi = true;
+            await RunLiveWorldAsync(services, database, options, admin, api!, readiness, worldWipe, startupStarted, shutdown);
+        });
+        // Reaching here requires every producer and the final resident checkpoint to
+        // have stopped successfully. Never replace a save while a resident owner exists.
+        if (worldWipe.ShutdownRequested.IsCompletedSuccessfully && worldWipe.Pending is { } wipe)
+        {
+            ServerLog.Console.Information($"Backing up and wiping world. Backup directory: {wipe.BackupDirectory}");
+            bool reconfigure = wipe.Recreation == WorldRecreation.Configure;
+            WorldWipe.Execute(worldPath, wipe.BackupDirectory, reconfigure, wipe.ConfigurationGeneration);
+            string next = reconfigure ? "configure the replacement in administration" : "recreate it with the saved settings";
+            ServerLog.Console.Information($"World wipe complete. Accounts retained. Restart Eden to {next}.");
+        }
+    }
+
+    private static async Task RunLiveWorldAsync(
+        IServiceProvider services,
+        WorldDatabase database,
+        LauncherOptions options,
+        AdministrationBinding admin,
+        WebApplication api,
+        LauncherReadiness readiness,
+        WorldWipeRequest worldWipe,
+        long startupStarted,
+        CancellationTokenSource shutdown
+    )
+    {
+        var accounts = services.GetRequiredService<LauncherStore>();
+        await ServerLifetime.RunAsync(async lifetime =>
+        {
+            Eden.World.Runtime.LiveWorld? world = null;
+            lifetime.OnStop("resident world", () => world?.Dispose());
+            lifetime.OnStop("launcher API listener", () => new ValueTask(api.StopAsync()));
+            world = services.GetRequiredService<Eden.World.Runtime.LiveWorld>();
             // Load the canonical world image before accepting players or starting bot turns.
             // The first economic action must not pay the full saved-world hydration cost.
             ServerStartup.Measure("resident readiness", world.Economy.Warm);
@@ -307,20 +368,6 @@ internal static class Program
             if (shutdown.IsCancellationRequested)
             {
                 return;
-            }
-            int administrationPort = Value("--admin-port") is { } adminPort
-                ? int.TryParse(adminPort, out int parsedPort) && parsedPort is > 0 and <= 65535
-                    ? parsedPort
-                    : throw new InvalidDataException("--admin-port requires a port between 1 and 65535.")
-                : AdministrationHost.DefaultPort;
-            bool administrationEnabled = !args.Contains("--disable-admin") && new AdministratorAccounts(worldPath).Provisioned;
-            string? administrationOrigin = Environment.GetEnvironmentVariable("EDEN_ADMIN_ORIGIN");
-            if (
-                administrationEnabled
-                && new[] { options.GamePort, options.GatewayPort, options.ApiPort, ChatServer.ClientPort }.Contains(administrationPort)
-            )
-            {
-                throw new InvalidDataException("Administration requires a separate port.");
             }
             var launcherMaintenance = services.GetRequiredService<LauncherMaintenance>();
             lifetime.OnStop(nameof(LauncherMaintenance), launcherMaintenance.DisposeAsync);
@@ -354,47 +401,31 @@ internal static class Program
                 services.GetRequiredService<IGatewayAuthentication>()
             );
             lifetime.OnStop("gateway", gateway.DisposeAsync);
-            var api = LauncherApi.Create(
-                options,
-                accounts,
-                services.GetRequiredService<DevelopmentIdentity>(),
-                TimeProvider.System,
-                services.GetRequiredService<ChatCertificate>().PublicPem,
-                services.GetRequiredService<Eden.Server.Administration.SkillClientPublisher>(),
-                services.GetRequiredService<Eden.World.Modding.ModStore>()
-            );
-            lifetime.OnStop("launcher API", api.DisposeAsync);
             var chat = services.GetRequiredService<ChatServer>();
             lifetime.OnStop("chat", chat.DisposeAsync);
             await chat.StartAsync(new(IPAddress.Parse(options.ListenAddress), ChatServer.ClientPort));
             lifetime.OnStop("gateway listener", () => new ValueTask(gateway.StopAsync()));
             await gateway.StartAsync();
-            lifetime.OnStop("launcher API listener", () => new ValueTask(api.StopAsync()));
-            await api.StartAsync();
-            if (administrationEnabled)
+            if (!admin.Disabled && new AdministratorAccounts(database.Path).Provisioned)
             {
                 var administration = AdministrationHost.Create(
                     services,
-                    worldPath,
-                    administrationPort,
-                    administrationOrigin,
-                    IPAddress.Parse(options.ListenAddress),
-                    options.CertificatePath,
+                    database.Path,
+                    admin.Port,
+                    admin.Origin,
+                    admin.ListenAddress,
+                    admin.CertificatePath,
                     worldWipe
                 );
                 lifetime.OnStop("administration", administration.DisposeAsync);
                 lifetime.OnStop("administration listener", () => new ValueTask(administration.StopAsync()));
                 await administration.StartAsync();
-                string address = string.IsNullOrEmpty(administrationOrigin)
-                    ? $"http://127.0.0.1:{administrationPort}"
-                    : administrationOrigin;
-                ServerLog.Console.Information($"Administration available at {address}.");
+                ServerLog.Console.Information($"Administration available at {admin.Address}.");
             }
-            else if (!args.Contains("--disable-admin") && !string.IsNullOrEmpty(administrationOrigin))
+            else if (!admin.Disabled && admin.Origin is not null)
             {
                 ServerLog.Console.Information("Provision an administrator with --set-admin-password to start the administration listener.");
             }
-            ServerLog.Console.Information($"Launcher API listening on {options.ListenAddress}:{options.ApiPort}.");
             ServerLog.Console.Information($"Gateway listening on {options.ListenAddress}:{options.GatewayPort}.");
             ServerLog.Console.Information($"Chat listening on {options.ListenAddress}:{ChatServer.ClientPort} (TLS).");
             Task server = services.GetRequiredService<LoopbackServer>().RunAsync(startupStarted, shutdown.Token);
@@ -411,11 +442,22 @@ internal static class Program
                     }
                 }
             );
-            if (!server.IsCompleted)
+            if (!server.IsCompleted && !shutdown.IsCancellationRequested)
             {
                 population.Start(shutdown.Token);
+                readiness.Open(
+                    new(
+                        accounts,
+                        services.GetRequiredService<DevelopmentIdentity>(),
+                        services.GetRequiredService<ChatCertificate>().PublicPem,
+                        services.GetRequiredService<SkillClientPublisher>(),
+                        services.GetRequiredService<Eden.World.Modding.ModStore>()
+                    )
+                );
+                lifetime.OnStop("launcher account access", readiness.StartWorld);
             }
             var completed = await Task.WhenAny(server, chat.Completion, worldWipe.ShutdownRequested);
+            readiness.StartWorld();
             if (completed == worldWipe.ShutdownRequested)
             {
                 await shutdown.CancelAsync();
@@ -428,13 +470,57 @@ internal static class Program
             joined = true;
             await server;
         });
-        // Reaching here requires every producer and the final resident checkpoint to
-        // have stopped successfully. Never replace a save while a resident owner exists.
-        if (worldWipe.ShutdownRequested.IsCompletedSuccessfully && worldWipe.Pending is { } wipe)
+    }
+
+    private sealed record AdministrationBinding(int Port, string? Origin, IPAddress ListenAddress, string? CertificatePath, bool Disabled)
+    {
+        public string Address => string.IsNullOrEmpty(Origin) ? $"http://127.0.0.1:{Port}" : Origin;
+    }
+
+    private static async Task<WorldSetupApproval?> ConfigureWorldAsync(
+        WorldDatabase database,
+        WorldSetupState setup,
+        LauncherReadiness readiness,
+        AdministratorAccounts administrators,
+        AdministrationBinding admin,
+        CancellationToken shutdown
+    )
+    {
+        ServerLog.Console.Information("World setup required. Game accounts are closed until an administrator creates the world.");
+        if (!administrators.Provisioned)
         {
-            ServerLog.Console.Information($"Backing up and wiping world. Backup directory: {wipe.BackupDirectory}");
-            WorldWipe.Execute(worldPath, wipe.BackupDirectory);
-            ServerLog.Console.Information("World wipe complete. Accounts retained. Restart Eden to initialize the fresh world.");
+            ServerLog.Console.Information(
+                $"In another terminal run Eden with --world \"{database.Path}\" --set-admin-password <name> to provision an administrator."
+            );
+        }
+        try
+        {
+            while (!administrators.Provisioned)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(1), shutdown);
+            }
+            WorldSetupRequest request = new(database, setup);
+            await using var administration = AdministrationHost.Create(
+                null,
+                database.Path,
+                admin.Port,
+                admin.Origin,
+                admin.ListenAddress,
+                admin.CertificatePath,
+                worldSetup: request
+            );
+            await administration.StartAsync(shutdown);
+            string address = admin.Address.TrimEnd('/') + "/world/setup";
+            readiness.RequireSetup(address);
+            ServerLog.Console.Information($"Open {address} and sign in to configure the world.");
+            var approval = await request.Approved.WaitAsync(shutdown);
+            readiness.StartWorld();
+            await administration.StopAsync();
+            return approval;
+        }
+        catch (OperationCanceledException) when (shutdown.IsCancellationRequested)
+        {
+            return null;
         }
     }
 

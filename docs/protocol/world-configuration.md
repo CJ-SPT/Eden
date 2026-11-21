@@ -2,6 +2,34 @@
 
 [Documentation](../README.md) / [Protocol index](../protocol.md) / [Administrator guide](../world-configuration.md)
 
+## First-start world setup
+
+The launcher API binds before world reconciliation. Anonymous `GET /api/v1/server` adds
+`worldStatus` with `setup_required`, `starting` or `ready` and an optional `worldSetupUrl`.
+Setup or startup returns HTTP 503 with `world_setup_required` or `world_starting` for account and launch
+operations. Ready servers keep the existing v1/v2 response shape with these additive fields. The launcher
+treats older metadata with the field omitted as ready and validates remote setup links as HTTPS.
+
+The setup-only administration host uses the existing administrator and antiforgery protection. It persists
+the selected Fresh or Established configuration in the stopped world before initialization. Startup activates
+the approved revision and removes the setup record in one transaction. A wiped checkpoint records when the
+next boot requires setup. Reuse keeps the staged revision, and the confirmation checks its configuration
+generation against the final checkpoint. The backup captures the old state before the change.
+
+See the [operator flow](../world-configuration.md#first-start) and [wipe choices](../world-wipe.md).
+
+**Automated validation.** The server filter covered administration, wipe, launcher API/accounts, startup,
+configuration persistence, character creation and the Fresh Universe restart case. It passed 90 cases
+with two opt-in skips in 57.30 seconds. An earlier run found an outdated population-page label assertion,
+which reproduced on baseline `721abebc` and was excluded from that filter. The installed build 3662168
+fresh-population case passed separately in 21.81 seconds. The final setup, wipe and readiness filter passed
+all 11 cases in 14.66 seconds. The launcher filter covered view models, API and launch, groups, CA downloads
+and TLS trust. It passed 56 cases in 19.93 seconds.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
+
+**Optional maintainer checks.** Approve a new world from the launcher's admin link and exercise both wipe choices.
+
 ## Administration settings with decimal-comma locales, November 20, 2026
 
 On a French-configured server, changing **Warp speed** on `localhost` caused the administration reload banner before

@@ -1,4 +1,5 @@
 @inherits LayoutComponentBase
+@inject AdministrationSite Site
 <header class="admin-header">
     <div class="admin-brand">
         <img src="eden-server.svg" width="40" height="40" alt="" />
@@ -7,14 +8,21 @@
     <AuthorizeView>
         <Authorized>
             <nav class="admin-nav" aria-label="Administration">
-                <NavLink href="/" Match="NavLinkMatch.All">Settings</NavLink>
-                <NavLink href="/catalog">Catalog</NavLink>
-                <NavLink href="/mods">Mods</NavLink>
-                <NavLink href="/revisions">Revisions</NavLink>
-                <NavLink href="/population">Population</NavLink>
-                <NavLink href="/optional-data">Optional data</NavLink>
-                <NavLink href="/performance">Performance</NavLink>
-                <NavLink href="/world">World</NavLink>
+                @if (Site.Setup is null)
+                {
+                    <NavLink href="/" Match="NavLinkMatch.All">Settings</NavLink>
+                    <NavLink href="/catalog">Catalog</NavLink>
+                    <NavLink href="/mods">Mods</NavLink>
+                    <NavLink href="/revisions">Revisions</NavLink>
+                    <NavLink href="/population">Population</NavLink>
+                    <NavLink href="/optional-data">Optional data</NavLink>
+                    <NavLink href="/performance">Performance</NavLink>
+                    <NavLink href="/world">World</NavLink>
+                }
+                else
+                {
+                    <NavLink href="/world/setup">World setup</NavLink>
+                }
                 <form method="post" action="/logout"><AntiforgeryToken /><button class="secondary">Sign out</button></form>
             </nav>
         </Authorized>

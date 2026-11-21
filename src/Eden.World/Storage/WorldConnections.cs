@@ -45,11 +45,12 @@ internal static partial class WorldConnections
             )
         || context.Database.GetDbConnection() is LiveConnection connection && connection.HasChanges(tables);
 
-    internal static SqliteConnection FileConnection(string path) =>
+    internal static SqliteConnection FileConnection(string path, SqliteOpenMode mode = SqliteOpenMode.ReadWriteCreate) =>
         new(
             new SqliteConnectionStringBuilder
             {
                 DataSource = path,
+                Mode = mode,
                 ForeignKeys = true,
                 Pooling = false,
             }.ToString()

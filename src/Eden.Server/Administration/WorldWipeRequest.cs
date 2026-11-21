@@ -1,6 +1,12 @@
 namespace Eden.Server.Administration;
 
-internal sealed record WorldWipePlan(string BackupDirectory);
+internal enum WorldRecreation
+{
+    Reuse,
+    Configure,
+}
+
+internal sealed record WorldWipePlan(string BackupDirectory, WorldRecreation Recreation, long? ConfigurationGeneration);
 
 internal sealed class WorldWipeRequest(string worldPath)
 {
@@ -12,7 +18,11 @@ internal sealed class WorldWipeRequest(string worldPath)
     internal Task ShutdownRequested => _shutdown.Task;
     internal WorldWipePlan? Pending => Volatile.Read(ref _plan);
 
-    internal WorldWipePlan Prepare(string confirmation)
+    internal WorldWipePlan Prepare(
+        string confirmation,
+        WorldRecreation recreation = WorldRecreation.Reuse,
+        long? configurationGeneration = null
+    )
     {
         if (!string.Equals(confirmation, Confirmation, StringComparison.Ordinal))
         {
@@ -30,7 +40,7 @@ internal sealed class WorldWipeRequest(string worldPath)
                     + "-"
                     + Guid.NewGuid().ToString("N")
             );
-            _plan = new(backup);
+            _plan = new(backup, recreation, configurationGeneration);
             return _plan;
         }
     }

@@ -18,6 +18,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
@@ -30,13 +31,14 @@ internal static class AdministrationHost
     internal const string CsrfHeader = "X-Eden-Admin-Csrf";
 
     internal static WebApplication Create(
-        IServiceProvider worldServices,
+        IServiceProvider? worldServices,
         string worldPath,
         int port = DefaultPort,
         string? publicOrigin = null,
         IPAddress? listenAddress = null,
         string? certificatePath = null,
-        WorldWipeRequest? worldWipe = null
+        WorldWipeRequest? worldWipe = null,
+        WorldSetupRequest? worldSetup = null
     )
     {
         if (port is < 0 or > 65535)
@@ -98,33 +100,37 @@ internal static class AdministrationHost
         builder.Services.ConfigureHttpJsonOptions(options =>
             options.SerializerOptions.UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow
         );
-        builder.Services.AddSingleton(worldServices.GetRequiredService<IWorldConfiguration>());
-        builder.Services.AddSingleton(worldServices.GetRequiredService<WorldDatabase>());
-        builder.Services.AddSingleton<OptionalDataImporter>();
-        builder.Services.AddSingleton<OptionalDataImports>();
-        builder.Services.AddHostedService(provider => provider.GetRequiredService<OptionalDataImports>());
-        builder.Services.AddSingleton(worldServices.GetRequiredService<CatalogProvider>());
-        builder.Services.AddSingleton(provider => new CatalogBrowser(provider.GetRequiredService<CatalogProvider>()));
-        builder.Services.AddScoped<AdministrationOperations>();
-        builder.Services.AddSingleton(worldServices.GetRequiredService<Eden.World.Modding.ModStore>());
-        builder.Services.AddSingleton(worldServices.GetRequiredService<Eden.Server.Modding.ModPublisher>());
-        builder.Services.AddSingleton(worldServices.GetRequiredService<ICapsuleerPopulation>());
-        builder.Services.AddSingleton(worldServices.GetRequiredService<ICapsuleerDiagnostics>());
-        builder.Services.AddSingleton(worldServices.GetRequiredService<ICapsuleerScene>());
-        builder.Services.AddSingleton(worldServices.GetRequiredService<Eden.World.Capsuleers.CapsuleerCorporationIdentityStore>());
-        builder.Services.AddSingleton(
-            new ServerPerformanceMonitor(
-                TimeProvider.System,
-                worldServices.GetRequiredService<PilotGate>(),
-                worldServices.GetService<LiveWorld>(),
-                readCapsuleers: () =>
-                    new(
-                        worldServices.GetRequiredService<ICapsuleerDiagnostics>().Read(),
-                        worldServices.GetRequiredService<ICapsuleerScene>().MaterializedPilots
-                    ),
-                frames: worldServices.GetService<Eden.Infrastructure.Diagnostics.SessionFrameMonitor>()
-            )
-        );
+        builder.Services.AddSingleton(new AdministrationSite(worldSetup));
+        if (worldServices is not null)
+        {
+            builder.Services.AddSingleton(worldServices.GetRequiredService<IWorldConfiguration>());
+            builder.Services.AddSingleton(worldServices.GetRequiredService<WorldDatabase>());
+            builder.Services.AddSingleton<OptionalDataImporter>();
+            builder.Services.AddSingleton<OptionalDataImports>();
+            builder.Services.AddHostedService(provider => provider.GetRequiredService<OptionalDataImports>());
+            builder.Services.AddSingleton(worldServices.GetRequiredService<CatalogProvider>());
+            builder.Services.AddSingleton(provider => new CatalogBrowser(provider.GetRequiredService<CatalogProvider>()));
+            builder.Services.AddScoped<AdministrationOperations>();
+            builder.Services.AddSingleton(worldServices.GetRequiredService<Eden.World.Modding.ModStore>());
+            builder.Services.AddSingleton(worldServices.GetRequiredService<Eden.Server.Modding.ModPublisher>());
+            builder.Services.AddSingleton(worldServices.GetRequiredService<ICapsuleerPopulation>());
+            builder.Services.AddSingleton(worldServices.GetRequiredService<ICapsuleerDiagnostics>());
+            builder.Services.AddSingleton(worldServices.GetRequiredService<ICapsuleerScene>());
+            builder.Services.AddSingleton(worldServices.GetRequiredService<Eden.World.Capsuleers.CapsuleerCorporationIdentityStore>());
+            builder.Services.AddSingleton(
+                new ServerPerformanceMonitor(
+                    TimeProvider.System,
+                    worldServices.GetRequiredService<PilotGate>(),
+                    worldServices.GetService<LiveWorld>(),
+                    readCapsuleers: () =>
+                        new(
+                            worldServices.GetRequiredService<ICapsuleerDiagnostics>().Read(),
+                            worldServices.GetRequiredService<ICapsuleerScene>().MaterializedPilots
+                        ),
+                    frames: worldServices.GetService<Eden.Infrastructure.Diagnostics.SessionFrameMonitor>()
+                )
+            );
+        }
         var protection = builder
             .Services.AddDataProtection()
             .SetApplicationName("Eden.Administration." + administrators.Realm)
@@ -243,6 +249,25 @@ internal static class AdministrationHost
                 }
             }
         );
+        app.Use(
+            async (context, next) =>
+            {
+                var path = context.Request.Path;
+                if (
+                    worldSetup is not null
+                    && (HttpMethods.IsGet(context.Request.Method) || HttpMethods.IsHead(context.Request.Method))
+                    && !path.StartsWithSegments("/api")
+                    && !System.IO.Path.HasExtension(path)
+                    && path != "/login"
+                    && path != "/world/setup"
+                )
+                {
+                    context.Response.Redirect("/world/setup");
+                    return;
+                }
+                await next(context);
+            }
+        );
         app.UseRouting();
         app.UseAuthentication();
         app.UseAuthorization();
@@ -264,7 +289,7 @@ internal static class AdministrationHost
                         return Results.Redirect("/login?failed=true");
                     }
                     await context.SignInAsync(AdministratorAccounts.Scheme, user, new AuthenticationProperties { IsPersistent = false });
-                    return Results.Redirect("/");
+                    return Results.Redirect(worldSetup is null ? "/" : "/world/setup");
                 }
             )
             .AllowAnonymous()
@@ -294,6 +319,44 @@ internal static class AdministrationHost
             "/antiforgery",
             (HttpContext context, IAntiforgery antiforgery) => new { token = antiforgery.GetAndStoreTokens(context).RequestToken }
         );
+        if (worldSetup is not null)
+        {
+            api.MapGet(
+                "/world/setup-draft",
+                (string profile) =>
+                    Results.Text(WorldSetupStore.Export(worldSetup.Draft(WorldSetupRequest.ParseProfile(profile))), "application/json")
+            );
+            api.MapPost(
+                "/world/setup",
+                async (HttpContext context) =>
+                {
+                    var form = await context.Request.ReadFormAsync();
+                    worldSetup.Prepare(
+                        WorldSetupRequest.ParseProfile(form["profile"].ToString()),
+                        form["document"].ToString(),
+                        context.User.Identity!.Name!
+                    );
+                    context.Response.OnCompleted(worldSetup.BeginStartup);
+                    return Results.Content(
+                        "<!doctype html><html lang=\"en\"><meta charset=\"utf-8\"><title>Starting world</title>"
+                            + "<h1>Starting world</h1><p>Eden saved your settings and is preparing the world.</p>"
+                            + "<p>In the launcher, choose Check again to see when accounts are open.</p></html>",
+                        "text/html"
+                    );
+                }
+            );
+        }
+        else
+        {
+            MapWorldEndpoints(api);
+        }
+        app.MapStaticAssets();
+        app.MapRazorComponents<AdministrationApp>().AddInteractiveServerRenderMode().RequireAuthorization(AdministratorAccounts.Policy);
+        return app;
+    }
+
+    private static void MapWorldEndpoints(RouteGroupBuilder api)
+    {
         api.MapGet("/performance", (ClaimsPrincipal user, AdministrationOperations operations) => operations.Performance(user));
         api.MapPost(
             "/optional-data/{dataset}",
@@ -318,7 +381,17 @@ internal static class AdministrationHost
             async (HttpContext context, AdministrationOperations operations, WorldWipeRequest wipe) =>
             {
                 var form = await context.Request.ReadFormAsync();
-                var plan = await operations.WipeWorld(context.User, form["confirmation"].ToString(), wipe);
+                var choice = form["recreation"].ToString() switch
+                {
+                    "reuse" => WorldRecreation.Reuse,
+                    "configure" => WorldRecreation.Configure,
+                    _ => throw new InvalidDataException("Choose how to recreate the world."),
+                };
+                if (!long.TryParse(form["generation"], out long generation))
+                {
+                    throw new InvalidDataException("Reload the World page before requesting a wipe.");
+                }
+                var plan = await operations.WipeWorld(context.User, form["confirmation"].ToString(), choice, generation, wipe);
                 context.Response.OnCompleted(wipe.BeginShutdown);
                 string backup = WebUtility.HtmlEncode(plan.BackupDirectory);
                 return Results.Content(
@@ -415,9 +488,6 @@ internal static class AdministrationHost
                 string? key = null
             ) => operations.Page(user, dataset, after, limit, search, key)
         );
-        app.MapStaticAssets();
-        app.MapRazorComponents<AdministrationApp>().AddInteractiveServerRenderMode().RequireAuthorization(AdministratorAccounts.Policy);
-        return app;
     }
 
     private static bool AllowedRequest(HttpContext context, Uri? httpsOrigin)

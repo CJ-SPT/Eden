@@ -6,7 +6,7 @@ Eden runs as a Linux container under Docker Engine or Docker Desktop in Linux-co
 
 ## Prepare the data and TLS configuration
 
-1. Generate the pinned `catalog.sqlite` on Windows using the [catalog setup guide](development-client.md#creating-and-recreating-the-databases). By default, Compose uses `src/Eden.Server/data` from this checkout. On another machine, copy the catalog there, or set `EDEN_HOST_DATA_DIR` to the directory that contains it. Eden creates `world.sqlite` at first startup if the directory contains only a catalog.
+1. Generate the pinned `catalog.sqlite` on Windows using the [catalog setup guide](development-client.md#creating-and-recreating-the-databases). By default, Compose uses `src/Eden.Server/data` from this checkout. On another machine, copy the catalog there, or set `EDEN_HOST_DATA_DIR` to the directory that contains it. With only a catalog, Eden waits for [first-start world setup](world-configuration.md#first-start).
 2. To continue an existing world, stop its current host before copying the data directory. Include `world.sqlite`, `catalog.sqlite`, and the associated files listed in the [Windows migration guide](development-client.md#moving-an-existing-server). Run one Eden instance per data directory. On Linux, give the container user (UID/GID 1654) write access to the data directory and world files and read access to the catalog, configuration and TLS certificate.
 3. Create `deploy` in the checkout. Copy `server.docker.example.json` to `deploy/server.json` and place your PKCS#12 certificate at `deploy/server.pfx`. Change `GameAddress` and `GatewayAddress` to the host name players will use. The certificate must cover that name. Set `EDEN_CERTIFICATE_PASSWORD` in the shell or a local Compose `.env` file for a password-protected PFX. Set `EDEN_HOST_CONFIG_DIR` if your configuration lives elsewhere.
 
@@ -14,7 +14,8 @@ Compose publishes TCP 26000 (game), 26001 (HTTPS gateway), 26002 (HTTPS launcher
 
 ## Start and stop
 
-From the repository root, run:
+For a new world, first follow [Remote administration](#remote-administration) to provision administrator access and publish
+the setup page. For an already configured world, start the base service from the repository root.
 
 ```sh
 docker compose config --quiet
@@ -194,7 +195,8 @@ docker compose stop eden
 docker compose run --build --rm eden --config /config/server.json --set-admin-password Corey
 ```
 
-Build and recreate the service with both Compose files, then open `EDEN_ADMIN_ORIGIN` on the remote machine.
+Build and recreate the service with both Compose files, then open `EDEN_ADMIN_ORIGIN` in your browser.
+On first boot, follow the setup page and approve the world profile before using game accounts.
 
 If header links work but settings tabs and form buttons are inert, check whether
 `/_framework/blazor.web.js` loads successfully. Current builds explicitly restore the Blazor framework assets

@@ -2,7 +2,8 @@
 
 [Documentation index](README.md)
 
-The administration **World** page can [back up and wipe gameplay state](world-wipe.md) while retaining accounts and configuration.
+The administration **World** page can [back up and wipe gameplay state](world-wipe.md) while retaining accounts.
+Choose whether the replacement world uses the existing settings or returns to setup.
 Use **Optional data** to import or refresh [live market orders](#market-presets) and
 [zKillboard traffic](capsuleer-population.md#zkill-backed-travelers).
 
@@ -30,6 +31,35 @@ A draft saves as **pending restart**. Saving, restoring and importing use the sa
 | Fitting | Ship CPU, power grid, rig calibration and drone bandwidth multipliers. |
 
 Changes affect future operations. Balances, installed jobs and paid costs, quoted obligations, historical transactions and saved deadlines are not rewritten. Existing grants are not replayed. Testing NPC market orders refresh under the selected policy on subsequent market operations; personal orders and escrow keep their saved terms. Disabling an NPC population prevents new spawns without deleting residents or changing their mechanics. Simulated-pilot limits also pause and despawn excess saved pilots at restart, as described below.
+
+## First start
+
+Start Eden normally with the pinned catalog available. For a new save, the console prints **World setup required**. The
+launcher connects to show setup status while game account creation, sign-in and launch wait.
+
+If the console asks for an administrator, open a second terminal and run the command below. Use the same `--world` path if you
+selected one on startup. Enter the administrator password when prompted. The running server then prints the setup URL.
+
+```powershell
+dotnet run --no-build --project src/Eden.Server -- --set-admin-password Corey
+```
+
+Sign in at the printed URL (by default `http://127.0.0.1:26003/world/setup`) and select a profile.
+
+| Profile | Starting rules |
+| --- | --- |
+| **Established Universe** | Established bot careers and traffic, progressive markets, regional NPC and starter supply, and the existing testing wallet grant. |
+| **Fresh Universe** | Humans and bots start at zero ISK with racial corvettes and starter skills and equipment. NPC starter ore buyers, blueprints and skillbooks support the early economy. Bots earn their upgrades. |
+
+For custom starting settings, open **Advanced settings**, copy the selected profile's draft, edit it, and paste the complete JSON
+into the form. For example, set `settings.developmentSupply.testingGrants` to false to create an Established world without testing
+wallet grants. The draft also supports bot limits, market supply, institutional stock and economic overrides.
+
+Select **Create world and start**. Eden validates and saves the choice, then prepares the world. If startup is interrupted after
+approval, restart Eden with the same data directory to resume with the saved choice. When the server is ready, choose **Check again**
+in the launcher to enable **Add account**. Existing saves start with their saved settings.
+
+For Docker, publish the [HTTPS administration site](docker.md#remote-administration) before setting up a new world.
 
 ## World tuning
 
@@ -335,7 +365,8 @@ See the [multiplier implementation record](protocol/planetary.md#world-configura
 
 ## Progressive regional markets
 
-The Economy card exposes **Progressive regional markets**. Save the setting and restart the host to activate it. The saved `economy.progressiveMarkets` value accepts true or false. An omitted or null value follows the world's supply mode, enabling progression for economy saves and retaining configured development prices for development saves. This switch can be staged on an existing save and preserves personal orders, escrow, balances, inventories and history. Progression now means [claimed-production unlocks](protocol/industry.md#production-driven-market-progression--november-8-2026), rather than timed product unlocks. New server worlds start with testing market supply disabled; `--testing-market` explicitly creates a development market. Existing saves retain their saved supply mode.
+The Economy card exposes **Progressive regional markets**. Save the setting and restart the host to activate it. The saved `economy.progressiveMarkets` value accepts true or false. An omitted or null value follows the world's supply mode, enabling progression for economy saves and retaining configured development prices for development saves. This switch can be staged on an existing save and preserves personal orders, escrow, balances, inventories and history. Progression now means [claimed-production unlocks](protocol/industry.md#production-driven-market-progression--november-8-2026), rather than timed product unlocks. The first-start profiles default to testing market supply disabled. Use **Testing** in the market editor, or customize the
+[first-start draft](#first-start) to enable it at creation. Existing saves retain their saved supply mode.
 
 Markets use one shared selected-human clock. Economic age and replenishment advance while at least one human pilot is selected, including while docked. Additional humans share the same elapsed interval. Training and installed industry retain their established deadline policies.
 

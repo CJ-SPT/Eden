@@ -105,6 +105,50 @@ public sealed class LauncherApiTests
     }
 
     [Fact]
+    public async Task AccountEndpointsWaitForWorldReadiness()
+    {
+        var options = new LauncherOptions { ApiPort = AvailablePort() };
+        LauncherReadiness readiness = new();
+        const string setupUrl = "http://127.0.0.1:26003/world/setup";
+        readiness.RequireSetup(setupUrl);
+        await using var api = LauncherApi.Create(options, readiness, TimeProvider.System);
+        await api.StartAsync();
+        using var client = new HttpClient { BaseAddress = new Uri($"http://127.0.0.1:{options.ApiPort}/api/v1/") };
+
+        var server = await client.GetFromJsonAsync<ServerReply>("server");
+        Assert.Equal(LauncherReadiness.SetupRequired, server!.WorldStatus);
+        Assert.Equal(setupUrl, server.WorldSetupUrl);
+        using var remote = new HttpRequestMessage(HttpMethod.Get, "server");
+        remote.Headers.Host = "eden.test";
+        using var remoteReply = await client.SendAsync(remote);
+        Assert.Null((await remoteReply.Content.ReadFromJsonAsync<ServerReply>())!.WorldSetupUrl);
+
+        foreach (string endpoint in new[] { "accounts", "sessions", "sessions/refresh", "launch-tickets" })
+        {
+            using var response = await client.PostAsJsonAsync(endpoint, new { });
+            Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+            Assert.Equal("world_setup_required", (await response.Content.ReadFromJsonAsync<ApiError>())!.Code);
+        }
+        readiness.StartWorld();
+        Assert.Equal(LauncherReadiness.Starting, (await client.GetFromJsonAsync<ServerReply>("server"))!.WorldStatus);
+        using var starting = await client.PostAsJsonAsync("sessions", new SignInRequest("Test", "secret", false));
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, starting.StatusCode);
+        Assert.Equal("world_starting", (await starting.Content.ReadFromJsonAsync<ApiError>())!.Code);
+
+        using TestWorld world = new(liveWorld: true);
+        var store = new LauncherStore(new WorldDatabase(world.Path), TimeProvider.System);
+        store.Initialize();
+        using var identity = new DevelopmentIdentity(TimeProvider.System, store, options);
+        readiness.Open(new(store, identity, null, null, null));
+        Assert.Equal(LauncherReadiness.Ready, (await client.GetFromJsonAsync<ServerReply>("server"))!.WorldStatus);
+        using var registration = await client.PostAsJsonAsync("accounts", new AccountRequest("Test", "secret"));
+        Assert.Equal(HttpStatusCode.OK, registration.StatusCode);
+        using var signIn = await client.PostAsJsonAsync("sessions", new SignInRequest("Test", "secret", false));
+        Assert.Equal(HttpStatusCode.OK, signIn.StatusCode);
+        await api.StopAsync();
+    }
+
+    [Fact]
     public async Task RepeatedSignInAttemptsAreThrottled()
     {
         using TestWorld world = new();

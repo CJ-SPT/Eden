@@ -1,0 +1,42 @@
+@page "/world/setup"
+@attribute [Authorize(Policy = AdministratorAccounts.Policy)]
+@inject AdministrationSite Site
+<PageTitle>World setup · Eden</PageTitle>
+@if (Site.Setup is { } setup)
+{
+    <h1>Set up your world</h1>
+    <p>Choose the starting rules for players, bots and the market. Account access opens when the world is ready.</p>
+    @if (setup.Previous is { } previous)
+    {
+        <p>Your previous world used <strong>@(previous.Settings.FreshUniverse ? "Fresh Universe" : "Established Universe")</strong>.
+            Selecting that profile starts with its last active settings. A different profile applies its starting rules.</p>
+    }
+    <form method="post" action="/api/admin/world/setup" class="card">
+        <AntiforgeryToken />
+        <label>World profile
+            <select name="profile" required>
+                <option value="">Select a world profile</option>
+                <option value="established">Established Universe</option>
+                <option value="fresh">Fresh Universe</option>
+            </select>
+        </label>
+        <p><strong>Established Universe</strong> defaults to established bot careers and traffic, progressive markets, NPC starter
+            supply, and the established pilot wallet grant.</p>
+        <p><strong>Fresh Universe</strong> starts players and bots at zero ISK with starter skills and equipment.
+            NPC starter offers support the first production chains, and bots earn their upgrades.</p>
+        <details>
+            <summary>Advanced settings</summary>
+            <p>Open a configuration draft in a new tab, edit it, and paste the complete JSON below.
+                The draft includes market and bot settings, balance and service costs, and economic overrides.</p>
+            <p><a href="/api/admin/world/setup-draft?profile=established" target="_blank" rel="noopener">Established draft</a>
+                · <a href="/api/admin/world/setup-draft?profile=fresh" target="_blank" rel="noopener">Fresh draft</a></p>
+            <label>World configuration JSON <textarea name="document" rows="10" spellcheck="false"></textarea></label>
+        </details>
+        <button type="submit">Create world and start</button>
+    </form>
+}
+else
+{
+    <h1>World setup complete</h1>
+    <p><a href="/world">Open the World page</a></p>
+}

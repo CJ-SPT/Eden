@@ -201,7 +201,7 @@ public sealed class WorldConfigurationStore(WorldDatabase database, TimeProvider
         database.Configuration.Install(Revision(world.Set<SavedConfigurationRevision>().Find(state.ActiveRevisionId)!));
     }
 
-    internal static void Activate(WorldDatabase database)
+    internal static void Activate(WorldDatabase database, TimeProvider? clock = null, WorldSetupApproval? setup = null)
     {
         if (Eden.World.Runtime.LiveWorld.Find(database.Path) is not null)
         {
@@ -211,8 +211,31 @@ public sealed class WorldConfigurationStore(WorldDatabase database, TimeProvider
         using var transaction = world.Database.BeginTransaction();
         var state = world.Set<SavedConfigurationState>().Single();
         var active = Revision(world.Set<SavedConfigurationRevision>().Find(state.ActiveRevisionId)!);
-        ConfigurationValidation.Validate(active.Draft, database.Catalog);
-        if (state.PendingRevisionId is long pendingId)
+        ConfigurationValidation.Validate(setup?.Draft ?? active.Draft, database.Catalog);
+        if (setup is not null)
+        {
+            ValidateMarketSnapshot(database, setup.Draft);
+            long next = checked(world.Set<SavedConfigurationRevision>().Max(revision => revision.Id) + 1);
+            var revision = new SavedConfigurationRevision
+            {
+                Id = next,
+                ParentId = active.Id,
+                Author = setup.Author,
+                CreatedAt = (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc(),
+                Document = ConfigurationValidation.Encode(setup.Draft),
+            };
+            world.Add(revision);
+            Apply(world, setup.Draft);
+            state.ActiveRevisionId = next;
+            state.PendingRevisionId = null;
+            state.ActivationFailure = null;
+            state.Generation = checked(state.Generation + 1);
+            world.Update(state);
+            world.SaveChanges();
+            WorldSetupStore.Complete(world);
+            active = Revision(revision);
+        }
+        else if (state.PendingRevisionId is long pendingId)
         {
             try
             {
@@ -236,7 +259,10 @@ public sealed class WorldConfigurationStore(WorldDatabase database, TimeProvider
             world.SaveChanges();
         }
         transaction.Commit();
-        ValidateMarketSnapshot(database, active.Draft);
+        if (setup is null)
+        {
+            ValidateMarketSnapshot(database, active.Draft);
+        }
         database.Configuration.Install(active);
     }
 

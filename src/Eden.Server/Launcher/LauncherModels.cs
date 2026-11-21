@@ -38,7 +38,9 @@ public sealed record ServerReply(
     string GatewayAddress,
     string? ChatCertificatePem = null,
     Eden.World.Skills.SkillClientPackage? SkillPackage = null,
-    Eden.Modding.ModSetPackage? ModSet = null
+    Eden.Modding.ModSetPackage? ModSet = null,
+    string WorldStatus = LauncherReadiness.Ready,
+    string? WorldSetupUrl = null
 );
 
 internal sealed class LauncherException(string code, string message, int status = 400) : Exception(message)

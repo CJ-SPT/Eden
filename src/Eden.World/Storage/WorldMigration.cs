@@ -24,7 +24,8 @@ internal static class WorldMigration
         CatalogDbContext catalog,
         TimeProvider clock,
         Eden.Gameplay.Market.WorldEconomySettings? economy = null,
-        Eden.Gameplay.Economy.EconomicConfiguration? economics = null
+        Eden.Gameplay.Economy.EconomicConfiguration? economics = null,
+        WorldSetupApproval? setup = null
     )
     {
         CatalogSources.CheckBuild(catalog);
@@ -34,9 +35,16 @@ internal static class WorldMigration
         {
             throw new InvalidDataException($"Unsupported Eden world version {version}.");
         }
+        if (setup is { NewWorld: true })
+        {
+            var settings = setup.Draft.Settings;
+            var supply = settings.DevelopmentSupply;
+            economy = new(supply.TestingMarket, supply.TestingGrants, supply.InstitutionalStock, settings.FreshUniverse);
+        }
         // Every step receives the original version, even after historical PRAGMA writes.
         LegacyWorldMigration.Initialize(world, version, economy?.FreshUniverse == true);
-        InitialEconomyMigration.Initialize(world, version, economy, economics);
+        // An approved setup can resume after the first migration transaction has already committed.
+        InitialEconomyMigration.Initialize(world, version, setup is { NewWorld: true } && version != 0 ? null : economy, economics);
         Eden.World.Market.StandardMarketSchema.Upgrade(world);
         WorldVersions06To20.Apply(world, catalog, version);
         if (version is >= 6 and < ScienceSchema.Version)

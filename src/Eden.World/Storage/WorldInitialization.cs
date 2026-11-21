@@ -33,7 +33,8 @@ public static class WorldInitialization
         WorldDatabase database,
         TimeProvider? clock = null,
         Eden.Gameplay.Market.WorldEconomySettings? economy = null,
-        Eden.Gameplay.Economy.EconomicConfiguration? economics = null
+        Eden.Gameplay.Economy.EconomicConfiguration? economics = null,
+        WorldSetupApproval? setup = null
     )
     {
         if (Eden.World.Runtime.LiveWorld.Find(database.Path) is not null)
@@ -64,7 +65,7 @@ public static class WorldInitialization
         }
         using (SessionPerformance.Phase("startup.schema"))
         {
-            WorldMigration.Open(world, catalog, clock ?? TimeProvider.System, economy, economics);
+            WorldMigration.Open(world, catalog, clock ?? TimeProvider.System, economy, economics, setup);
         }
         if (skillsChanged)
         {
@@ -83,7 +84,7 @@ public static class WorldInitialization
             }
         }
         database.LoadTraffic();
-        WorldConfigurationStore.Activate(database);
+        WorldConfigurationStore.Activate(database, clock ?? TimeProvider.System, setup);
         Eden.World.Capsuleers.CapsuleerCommunityStore.ReconcileCloneGrade(world);
         Eden.World.Capsuleers.CapsuleerPopulationActivation.Apply(database, clock ?? TimeProvider.System);
         world.ChangeTracker.Clear();

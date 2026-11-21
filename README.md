@@ -29,6 +29,8 @@ dotnet run --no-build --project src/Eden.Server
 
 The first command copies and verifies the client. Catalog setup builds the server and downloads the matching game data on
 its first run. For staging, offline setup, and troubleshooting, see the [Windows client guide](docs/development-client.md).
+On a new save, follow the server console to [World setup](docs/world-configuration.md#first-start). Choose **Established Universe**
+or **Fresh Universe** in administration. Account creation and sign-in open once the world is ready.
 
 ### Connect and play
 
@@ -49,7 +51,7 @@ and Python client extensions. [World settings](docs/world-configuration.md) · [
 ## Local game data
 
 - `catalog.sqlite` contains game definitions for build 3662168. Catalog setup generates it locally.
-- `world.sqlite` saves accounts, pilots, assets, and simulation state. Eden creates it on first startup.
+- `world.sqlite` saves accounts, pilots, assets, and simulation state. Eden creates it when an administrator approves first-start settings.
 
 The default data directory is `src/Eden.Server/data` when running from source and `data` beside a published executable.
 Stop the server before copying or moving an existing world. [Save migration guide](docs/development-client.md#moving-an-existing-server)

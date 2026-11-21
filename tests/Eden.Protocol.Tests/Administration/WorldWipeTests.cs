@@ -52,6 +52,7 @@ public sealed class WorldWipeTests
         string backup = fixture.Path + ".backups/test";
         WorldWipe.Execute(fixture.Path, backup);
 
+        Assert.Null(WorldSetupStore.Read(fixture.Path));
         string backupWorld = Path.Combine(backup, "world.sqlite");
         using (WorldDbContext original = new(backupWorld))
         {
@@ -89,6 +90,82 @@ public sealed class WorldWipeTests
         Assert.Equal(newPilot, Assert.Single(fixture.Store.ListPilots(account.AccountId)).PilotId);
         reopened.Dispose();
         Assert.Equal(newPilot, Assert.Single(WorldInitialization.Open(database).ListPilots(account.AccountId)).PilotId);
+    }
+
+    [Fact]
+    public void ReuseAppliesSavedPendingRevisionWithoutReturningToSetup()
+    {
+        using TestWorld fixture = new(liveWorld: true);
+        WorldDatabase database = new(fixture.Path);
+        WorldConfigurationStore configuration = new(database, TimeProvider.System);
+        var active = configuration.Read();
+        var draft = active.Active.Draft;
+        var rates = draft.Settings.Progression with { TrainingSpeedMultiplier = 2 };
+        var pending = configuration.Save(
+            active.Generation,
+            draft with
+            {
+                Settings = draft.Settings with { Progression = rates },
+            },
+            "Operator"
+        );
+        fixture.Services.GetRequiredService<LiveWorld>().Dispose();
+
+        WorldWipe.Execute(fixture.Path, fixture.Path + ".backups/reuse", configurationGeneration: pending.Generation);
+        Assert.Null(WorldSetupStore.Read(fixture.Path));
+        WorldInitialization.Initialize(database);
+        var replacement = configuration.Read();
+        Assert.Equal(pending.Pending!.Id, replacement.Active.Id);
+        Assert.Null(replacement.Pending);
+        Assert.Equal(rates, database.Settings.Progression);
+    }
+
+    [Fact]
+    public void ReconfigurationSurvivesWipeAndUsesNewProfileWithExistingAccounts()
+    {
+        using TestWorld fixture = new(liveWorld: true);
+        WorldDatabase database = new(fixture.Path);
+        var launcher = fixture.Services.GetRequiredService<LauncherStore>();
+        long accountId = launcher.Register(new("Retained Pilot", AccountPassword)).AccountId;
+        var oldSession = launcher.SignIn(new("Retained Pilot", AccountPassword, true));
+        WorldConfigurationStore configuration = new(database, TimeProvider.System);
+        var active = configuration.Read();
+        var draft = active.Active.Draft;
+        var pending = configuration.Save(
+            active.Generation,
+            draft with
+            {
+                Settings = draft.Settings with { Progression = draft.Settings.Progression with { TrainingSpeedMultiplier = 2 } },
+            },
+            "Operator"
+        );
+        fixture.Services.GetRequiredService<LiveWorld>().Dispose();
+
+        string backup = fixture.Path + ".backups/reconfigure";
+        Assert.Throws<InvalidOperationException>(() =>
+            WorldWipe.Execute(fixture.Path, backup, reconfigure: true, configurationGeneration: active.Generation)
+        );
+        Assert.Null(WorldSetupStore.Read(fixture.Path));
+        WorldWipe.Execute(fixture.Path, backup, reconfigure: true, configurationGeneration: pending.Generation);
+        Assert.Null(WorldSetupStore.Read(Path.Combine(backup, "world.sqlite")));
+        var state = WorldSetupStore.Read(fixture.Path)!;
+        Assert.False(state.NewWorld);
+        Assert.Null(state.Approval);
+
+        WorldSetupRequest request = new(database, state);
+        request.Prepare(WorldProfile.Fresh, "", "Operator");
+        var approval = WorldSetupStore.Read(fixture.Path)!.Approval!;
+        WorldInitialization.Initialize(database, setup: approval);
+        Assert.Null(WorldSetupStore.Read(fixture.Path));
+        Assert.True(database.Settings.UsesFreshUniverseMarket());
+        Assert.Equal(draft.Settings.Progression.TrainingSpeedMultiplier, database.Settings.Progression.TrainingSpeedMultiplier);
+        Assert.Null(configuration.Read().Pending);
+        Assert.Equal(pending.Pending!.Id, configuration.Get(pending.Pending.Id).Id);
+        using LiveWorld reopened = new(database, TimeProvider.System, _ => { });
+        var reopenedLauncher = new LauncherStore(database, TimeProvider.System);
+        Assert.Equal(accountId, reopenedLauncher.SignIn(new("Retained Pilot", AccountPassword, false)).AccountId);
+        Assert.Throws<LauncherException>(() => reopenedLauncher.Refresh(oldSession.RefreshToken!));
+        Assert.Empty(fixture.Store.ListPilots(1000001));
     }
 
     [Fact]
@@ -158,10 +235,12 @@ public sealed class WorldWipeTests
                         throw new IOException("Injected disk write failure.");
                     }
                     LiveWorld.PersistSnapshot(image, path);
-                }
+                },
+                reconfigure: true
             )
         );
         Assert.Equal(original, SHA256.HashData(File.ReadAllBytes(fixture.Path)));
+        Assert.Null(WorldSetupStore.Read(fixture.Path));
         Assert.Equal("90000001", mods.ReadState("test.world", "pilot"));
         Assert.NotEmpty(fixture.Store.ListPilots(1000001));
         using WorldDbContext saved = new(Path.Combine(backup, "world.sqlite"));

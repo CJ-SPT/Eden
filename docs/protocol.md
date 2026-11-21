@@ -922,6 +922,7 @@ scope tested at the time. Add new findings to the owning topic page and link the
 
 ### World configuration
 
+- [First-start world setup](protocol/world-configuration.md#first-start-world-setup)
 - [Administration settings with decimal-comma locales](protocol/world-configuration.md#administration-settings-with-decimal-comma-locales-november-20-2026)
 - [Optional data imports in server administration](protocol/world-configuration.md#optional-data-imports-in-server-administration)
 - [Custom gameplay switches](protocol/world-configuration.md#custom-gameplay-switches-november-15-2026)

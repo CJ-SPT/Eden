@@ -25,6 +25,13 @@ internal static class LauncherApi
         Eden.World.Modding.ModStore? mods = null
     )
     {
+        LauncherReadiness readiness = new();
+        readiness.Open(new(accounts, identity, chatCertificatePem, skillPublisher, mods));
+        return Create(settings, readiness, clock);
+    }
+
+    public static WebApplication Create(LauncherOptions settings, LauncherReadiness readiness, TimeProvider clock)
+    {
         settings.Validate();
         byte[]? certificateAuthority = LoadCertificateAuthority(settings.CertificateAuthorityPath);
         var builder = WebApplication.CreateSlimBuilder();
@@ -76,6 +83,11 @@ internal static class LauncherApi
                 context.Response.Headers.CacheControl = "no-store";
                 try
                 {
+                    var path = context.Request.Path;
+                    if (path != "/api/v1/server" && path != "/api/v1/ca-certificate")
+                    {
+                        _ = readiness.RequireWorld();
+                    }
                     await next(context);
                 }
                 catch (LauncherException error)
@@ -93,28 +105,48 @@ internal static class LauncherApi
         }
         app.MapGet(
             "/api/v1/server",
-            () =>
-                new ServerReply(
+            (HttpContext context) =>
+            {
+                var availability = readiness.Read();
+                var world = availability.World;
+                var mods = world?.Mods;
+                var activeSet = mods?.ActiveSet;
+                string? setupUrl = availability.SetupUrl;
+                if (
+                    Uri.TryCreate(setupUrl, UriKind.Absolute, out var uri)
+                    && uri.IsLoopback
+                    && !context.Request.Host.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+                    && !(IPAddress.TryParse(context.Request.Host.Host, out var ip) && IPAddress.IsLoopback(ip))
+                )
+                {
+                    setupUrl = null;
+                }
+                return new ServerReply(
                     settings.ServerId,
                     settings.Name,
                     mods is null ? 1 : 2,
                     CompatibilityHandshake.Build,
                     settings.GameAddress,
                     settings.GatewayAddress,
-                    chatCertificatePem,
-                    mods?.ActiveSet is null ? skillPublisher?.Status().Active : null,
-                    mods?.ActiveSet
-                )
+                    world?.ChatCertificatePem,
+                    activeSet is null ? world?.SkillPublisher?.Status().Active : null,
+                    activeSet,
+                    availability.State,
+                    setupUrl
+                );
+            }
         );
-        app.MapPost("/api/v1/accounts", (AccountRequest request) => accounts.Register(request)).RequireRateLimiting("register");
-        app.MapPost("/api/v1/sessions", (SignInRequest request) => accounts.SignIn(request)).RequireRateLimiting("sign-in");
-        app.MapPost("/api/v1/sessions/refresh", (RefreshRequest request) => accounts.Refresh(request.RefreshToken))
+        app.MapPost("/api/v1/accounts", (AccountRequest request) => readiness.RequireWorld().Accounts.Register(request))
+            .RequireRateLimiting("register");
+        app.MapPost("/api/v1/sessions", (SignInRequest request) => readiness.RequireWorld().Accounts.SignIn(request))
+            .RequireRateLimiting("sign-in");
+        app.MapPost("/api/v1/sessions/refresh", (RefreshRequest request) => readiness.RequireWorld().Accounts.Refresh(request.RefreshToken))
             .RequireRateLimiting("sign-in");
         app.MapDelete(
             "/api/v1/sessions/current",
             (HttpContext context) =>
             {
-                accounts.Revoke(Access(context));
+                readiness.RequireWorld().Accounts.Revoke(Access(context));
                 return Results.NoContent();
             }
         );
@@ -126,6 +158,7 @@ internal static class LauncherApi
                     {
                         throw new LauncherException("unsupported_build", "This server requires client build 3662168.");
                     }
+                    var (accounts, identity, _, skillPublisher, mods) = readiness.RequireWorld();
                     var set = mods?.ActiveSet;
                     var package = set is null
                         ? skillPublisher?.Status().Active
@@ -157,6 +190,7 @@ internal static class LauncherApi
             "/api/v1/skill-packages/{id}/code",
             (string id, HttpContext context) =>
             {
+                var (accounts, _, _, skillPublisher, _) = readiness.RequireWorld();
                 accounts.AuthorizeAccess(Access(context));
                 if (skillPublisher?.Status().Active?.Id != id)
                 {
@@ -173,6 +207,7 @@ internal static class LauncherApi
             "/api/v2/mod-sets/{id}/code",
             (string id, HttpContext context) =>
             {
+                var (accounts, _, _, _, mods) = readiness.RequireWorld();
                 accounts.AuthorizeAccess(Access(context));
                 if (mods?.ActiveSet?.Id != id)
                 {

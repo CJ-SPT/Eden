@@ -22,9 +22,16 @@ public static class WorldWipe
         "WorldManufacturingIndex",
     };
 
-    public static void Execute(string worldPath, string backupDirectory) => Execute(worldPath, backupDirectory, LiveWorld.PersistSnapshot);
+    public static void Execute(string worldPath, string backupDirectory, bool reconfigure = false, long? configurationGeneration = null) =>
+        Execute(worldPath, backupDirectory, LiveWorld.PersistSnapshot, reconfigure, configurationGeneration);
 
-    internal static void Execute(string worldPath, string backupDirectory, Action<SqliteConnection, string> persist)
+    internal static void Execute(
+        string worldPath,
+        string backupDirectory,
+        Action<SqliteConnection, string> persist,
+        bool reconfigure = false,
+        long? configurationGeneration = null
+    )
     {
         worldPath = Path.GetFullPath(worldPath);
         backupDirectory = Path.GetFullPath(backupDirectory);
@@ -37,8 +44,19 @@ public static class WorldWipe
         {
             throw new IOException("World wipe requires a new backup directory.");
         }
-        Directory.CreateDirectory(backupDirectory);
         using var world = ReadCheckpoint(worldPath);
+        if (configurationGeneration is long expected)
+        {
+            using var command = world.CreateCommand();
+            command.CommandText = "SELECT Generation FROM WorldConfigurationState WHERE Id=1";
+            if (!Equals(command.ExecuteScalar(), expected))
+            {
+                throw new InvalidOperationException(
+                    "The world settings changed after wipe confirmation. Review the revision and try again."
+                );
+            }
+        }
+        Directory.CreateDirectory(backupDirectory);
         string modsPath = ModDbContext.FilePath(worldPath);
         using var mods = File.Exists(modsPath) ? ReadCheckpoint(modsPath) : null;
         string worldBackup = Path.Combine(backupDirectory, "world.sqlite");
@@ -58,6 +76,11 @@ public static class WorldWipe
         );
 
         ClearWorld(world);
+        if (reconfigure)
+        {
+            using WorldDbContext replacement = new(world);
+            WorldSetupStore.RequireReconfiguration(replacement);
+        }
         if (mods is not null)
         {
             // Empty mod IDs hold deployment identity; named mods own disposable world state.

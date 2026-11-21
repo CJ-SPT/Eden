@@ -61,10 +61,25 @@ internal sealed partial class AdministrationOperations(
         }
     }
 
-    internal async Task<WorldWipePlan> WipeWorld(ClaimsPrincipal user, string confirmation, WorldWipeRequest wipe)
+    internal async Task<WorldWipePlan> WipeWorld(
+        ClaimsPrincipal user,
+        string confirmation,
+        WorldRecreation recreation,
+        long generation,
+        WorldWipeRequest wipe
+    )
     {
         await Authorize(user);
-        return wipe.Prepare(confirmation);
+        var state = configuration.Read();
+        if (state.Generation != generation)
+        {
+            throw new InvalidOperationException("The world settings changed. Reload the World page and review the latest revision.");
+        }
+        if (recreation == WorldRecreation.Reuse && state.Pending is { } pending)
+        {
+            configuration.Validate(pending.Draft);
+        }
+        return wipe.Prepare(confirmation, recreation, generation);
     }
 
     internal async Task<ConfigurationState> Read(ClaimsPrincipal user)

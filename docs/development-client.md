@@ -239,44 +239,25 @@ Native chat requires a rebuilt server listening with TLS on TCP **5222** and the
 
 ## Creating an economy world without testing supply
 
-For a fresh-universe progression world, put the verified build-3662168 `catalog.sqlite` beside a new world path
-and select the profile on its first launch.
+Put the verified build-3662168 `catalog.sqlite` beside the new world path and start Eden normally with that path.
 
 ```powershell
-dotnet run --no-build --project src/Eden.Server -- --world 'E:\EdenWorlds\Fresh\world.sqlite' --fresh-universe
+dotnet run --no-build --project src/Eden.Server -- --world 'E:\EdenWorlds\Economy\world.sqlite'
 ```
 
-Subsequent launches use the same `--world` path and the saved profile. Register and create your character through
-the launcher and client. Fresh humans and bots start at zero ISK with a racial corvette and civilian equipment.
-NPC ore buyers provide first earnings, and NPC blueprint and skillbook offers provide access to training and jobs.
-The first autonomous cohort develops a local Miner I supply chain at eligible high-security stations.
-[Fresh-universe implementation](protocol/capsuleers.md#fresh-universe-starter-industry)
+Follow the console to [World setup](world-configuration.md#first-start). Select **Fresh Universe** for the zero-ISK
+opening, or select **Established Universe** and turn off `settings.developmentSupply.testingGrants` in its advanced
+draft to use established bot rules without the testing grant. You can adjust `settings.developmentSupply.institutionalStock`
+(default 1,000 replenishing units per order), service costs, prices, manufacturing indices and belt renewal in the same draft.
 
-Personal station-local market orders work in existing development worlds. Their saved economic settings retain replenishing 1 ISK stock and one-time pilot grants.
+Fresh humans and bots start at zero ISK with a racial corvette and civilian equipment. NPC ore buyers provide first
+earnings. NPC blueprint and skillbook offers provide access to training and jobs. The first autonomous cohort develops
+a local Miner I supply chain at eligible high-security stations. [Fresh-universe implementation](protocol/capsuleers.md#fresh-universe-starter-industry)
 
-For an isolated economy world, put a copy of the verified build-3662168 `catalog.sqlite` beside a new world path and add `--economy-world` on its first server launch:
+Institutional NPC offers stock catalog blueprints and skillbooks at pinned base prices. Ships, modules and minerals
+also depend on the market policy selected in the draft. See [market presets](world-configuration.md#market-presets)
+and the [starter production audit](starter-production.json).
 
-```powershell
-dotnet run --no-build --project src/Eden.Server -- --world 'E:\EdenWorlds\Economy\world.sqlite' --economy-world
-```
-
-The command rejects an existing world file. Subsequent launches use the same `--world` path without `--economy-world`; the saved settings continue to disable testing NPC supply and testing ISK grants. Existing saves are never converted or stripped of assets. Economy worlds now publish the station owner's catalog-offered original blueprints and skillbooks at pinned base prices. The saved institutional stock defaults to 1,000 replenishing units per order; add `--npc-stock 500` alongside `--economy-world` to choose a different initial stock (1 through 1,000,000). Subsequent launches retain that value. Finished goods and minerals come from player activity. Merlin, Venture and Badger production chains are supported. New economy worlds save material valuations and manufacturing indices and charge industry/reprocessing costs. Catalog belts renew daily at 11:00 UTC by default, with offline/restart catch-up. See the [source audit](starter-production.json).
-
-See [world market presets](world-configuration.md#market-presets) for supply choices and the
-[personal market protocol record](protocol/industry.md#persistent-personal-market-orders-november-6-2026) for order terms.
-
-To override economic inputs at creation, edit a copy of [economy-settings.example.json](economy-settings.example.json), then add `--economy-config 'E:\EdenWorlds\economy-settings.json'` to the first-launch command above. This option requires a new `--economy-world`. Unknown fields, duplicate/nonpositive material prices, unknown types/systems, invalid rates and invalid UTC hours reject. Subsequent launches omit the creation options and use the saved values.
-
-| Setting | Meaning and default |
-| --- | --- |
-| `chargeServiceCosts` | Enable paid industry/reprocessing and the starter hulls' material-based insurance valuation; true in a new economy world. |
-| `renewBelts` | Enable scheduled catalog-belt replenishment; true. |
-| `renewalHourUtc` | Daily renewal boundary, integer 0-23; 11. |
-| `defaultManufacturingIndex` | Offline fallback system rate, 0-1; 0.01 means 1%. |
-| `adjustedPrices` | Optional `{typeId, priceIsk}` overrides. Otherwise positive catalog material base prices initialize a saved snapshot. These are local valuations, not fetched live prices. |
-| `manufacturingIndices` | Optional `{systemId, index}` overrides; unspecified systems use the saved fallback. |
-
-Saved worlds retain their own economic settings and existing job charges. [Renewal and service costs](protocol/industry.md#renewable-belts-and-economic-service-charges-november-6-2026)
 
 ## Optional gameplay checks
 

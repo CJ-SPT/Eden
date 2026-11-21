@@ -6,12 +6,20 @@ The separate [Eden Launcher](https://github.com/CJ-SPT/Eden-Launcher) uses API v
 
 ## Contents
 
+- [World setup](#world-setup)
 - [Existing accounts](#existing-accounts)
 - [Developer accounts](#developer-accounts)
 - [Remote hosting](#remote-hosting)
 - [CA certificate downloads](#ca-certificate-downloads)
 - [Authentication](#authentication)
 - [Native chat trust](#native-chat-trust)
+
+## World setup
+
+When a new world needs settings, the launcher shows **World setup required** before account creation or sign-in. If you
+administer the server, use **Open world setup** or follow the server console to the [setup page](world-configuration.md#first-start).
+Players on a server with no published administration URL can ask its operator to finish setup. Choose **Check again** once
+the server is ready. The same flow applies after a wipe with **Configure new settings**.
 
 ## Existing accounts
 

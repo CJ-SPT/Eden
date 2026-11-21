@@ -2,10 +2,15 @@
 
 [Documentation index](README.md) / [Administration and settings](world-configuration.md)
 
-Sign in to the administration website, open **World**, type `WIPE WORLD`, then select
-**Back up, wipe world and stop server**. This disconnects players and stops Eden. Wait for the
-server console to report **World wipe complete** before restarting the server. The request
-page reports the backup directory; it confirms the request, not completion.
+Sign in to administration and open **World**. Choose how to recreate the world.
+
+- **Recreate with existing settings** uses the revision shown in the form, including saved settings pending restart.
+- **Configure new settings** opens [World setup](world-configuration.md#first-start) on the next start. The previous active
+  settings are available as a starting point. You can change the world profile or paste a new configuration draft.
+
+Type `WIPE WORLD` and select **Back up, wipe world and stop server**. The request page reports the backup directory.
+Wait for **World wipe complete** in the server console before restarting. Account creation and sign-in reopen when the
+replacement world is ready.
 
 The wipe removes every character (including bots), inventory, wallet, corporation, alliance,
 structure, sovereignty claim, market order, industry job, mission, redemption entitlement,
@@ -14,8 +19,8 @@ tickets are discarded; players sign in again and create new characters. Named mo
 world state is cleared too.
 
 Accounts retain their IDs, usernames, password hashes, roles, creation dates and clone grades.
-Server configuration revisions (including pending settings), configured prices and industry
-indices remain. Administrator credentials, catalog data, imported market/traffic reference
+Configuration history, configured prices and industry indices are retained in the wiped save. A new setup approval
+becomes the active revision and supersedes any old pending changes. Administrator credentials, catalog data, imported market/traffic reference
 snapshots, skill authoring, mod packages, mod selection and deployment identities remain.
 Internal ID sequence high-water marks remain. Fresh NPC populations, resources and market
 supply are generated according to the retained settings on startup or when their systems load.
@@ -26,7 +31,8 @@ checkpoint. Only a successful shutdown reaches the wipe. The operation acquires 
 exclusive `.owner` file used by the running server and refuses a world that is still owned.
 It copies the final checkpoint into a detached image and writes, flushes and checks the full
 backup before clearing any rows. It also backs up the mod state database when present.
-Deletion runs only in detached images; account/configuration tables and the schema are retained.
+Deletion runs only in detached images. Account and configuration tables are retained. For **Configure new settings**, the
+replacement checkpoint records that setup is required. The backup retains its original startup state.
 The replacement world is checked for integrity and foreign key violations before the existing
 atomic checkpoint writer installs it. A backup failure leaves the original saves intact.
 If installing the world fails after installing cleared mod state, the original mod state is restored.

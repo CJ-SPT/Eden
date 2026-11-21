@@ -40,6 +40,10 @@ internal static class ConfigurationCommands
         }
         // A running server owns this file. Its authenticated editor is the live write boundary.
         using FileStream ownership = new(worldPath + ".owner", FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+        if (WorldSetupStore.Read(worldPath) is not null)
+        {
+            throw new InvalidOperationException("Complete world setup in administration before using saved configuration commands.");
+        }
         WorldDatabase database = new(worldPath);
         using (WorldDbContext world = new(worldPath))
         using (CatalogDbContext catalog = new(database.CatalogPath))

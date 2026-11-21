@@ -204,7 +204,9 @@ The catalog supplies station efficiency, ore recipes, batch sizes and skill bonu
 3. Right-click a Civilian Miner and choose **Buy This Type**. Buy one at the station. It arrives in Item Hangar; the price is deducted from the same saved wallet. Fit it through the station's circled ship button.
 4. Open Wallet to compare the balance and transaction records. Restart the host and client, then compare wallet balance, owned items and remaining NPC order quantities.
 
-New server worlds start with [production-driven market progression](protocol/industry.md#production-driven-market-progression--november-8-2026). Create a new development save with `--testing-market` to use the testing supply described below; existing saves retain their configured mode. `--economy-world` additionally disables testing wallet grants and enables the existing economy service-cost policy.
+The default [first-start profiles](world-configuration.md#first-start) use production-driven market progression. For the testing
+supply below, set `settings.developmentSupply.testingMarket` to true and `settings.economy.progressiveMarkets` to false
+in the Established draft. Keep `settings.developmentSupply.testingGrants` enabled for the wallet grant.
 
 Eden's optional testing market stocks every pinned client type with `published=1` and a positive `marketGroupID`: **19,727 types**, each sold for **1 ISK per unit**. Docked market access populates the current station. Each sell order displays **1,000,000 units**; supply is restored on access and after purchases, and expired sell orders renew. Larger requests retain partial fills up to that displayed quantity. Old sell-order identities and trade history are retained when a station upgrades to this policy.
 
