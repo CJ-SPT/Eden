@@ -1,7 +1,12 @@
 using System.Collections.Concurrent;
+using Eden.Data.World.Characters;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Combat.Npcs;
+using Eden.Data.World.Contracts;
+using Eden.Data.World.Docking;
+using Eden.Data.World.Inventory;
 using Eden.Data.World.Propulsion;
+using Eden.Data.World.Repair;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Propulsion;
 
@@ -77,6 +82,42 @@ internal sealed partial class ResidentEconomy
     }
 
     internal bool IsShip(long ship) => _shipIdentities.ContainsKey(ship);
+
+    internal bool CanProbeDefenseShip(long pilot, long ship, int system, bool cold)
+    {
+        if (!_loaded || _transaction || _owner.SqlConnections != 0 && (_owner.HasOpenSqlTransaction || _owner.HasUnpublishedSqlChanges))
+        {
+            return false;
+        }
+        var pilots = (EconomyTable<Pilot, EconomyPilot>)_tables[typeof(Pilot)];
+        var ships = (EconomyTable<Ship, EconomyShip>)_tables[typeof(Ship)];
+        var positions = (EconomyTable<FlightPosition, EconomyFlightPosition>)_tables[typeof(FlightPosition)];
+        if (
+            pilots.Snapshot(new(pilot))?.ActiveShipId != ship
+            || ships.Snapshot(new(ship))?.OwnerId != pilot
+            || positions.Snapshot(new(ship))?.SystemId != system
+            || _tables[typeof(SavedContractEscrow)].Contains(new(ship))
+        )
+        {
+            return false;
+        }
+        // A cold hydrate applies completed paid repairs. Keep it whenever this hull has pending repairs.
+        var repairs = (EconomyTable<PendingLocalRepair, EconomyPendingLocalRepair>)_tables[typeof(PendingLocalRepair)];
+        return !cold || repairs.Indexed(nameof(PendingLocalRepair.ShipId), ship).Count == 0;
+    }
+
+    internal bool HasUnexpiredPlayerHostility(long ship, long now)
+    {
+        var attacks = (EconomyTable<SavedPilotHostility, EconomySavedPilotHostility>)_tables[typeof(SavedPilotHostility)];
+        foreach (var key in attacks.Indexed(nameof(SavedPilotHostility.TargetShipId), ship))
+        {
+            if (attacks.Snapshot(key) is { ExpiresAt: var expires } && expires > now)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 
     internal bool HasPilotMissiles(int system) => _pilotMissileSystems.ContainsKey(system);
 

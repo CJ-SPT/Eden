@@ -1,5 +1,6 @@
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
+using Eden.Gameplay.Docking;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Mining;
@@ -9,15 +10,21 @@ namespace Eden.World.Runtime.Combat;
 
 internal sealed partial class LiveCombatRuntime
 {
-    internal CapsuleerAttacker[] DefenseNpcAttackers(long pilot, long now, IReadOnlyList<NpcEwarContact> incoming)
+    internal CapsuleerAttacker[] DefenseNpcAttackers(DockedPilot pilot, long now, IReadOnlyList<NpcEwarContact> incoming)
     {
         return Execute(() => DefenseNpcAttackersOwned(pilot, now, incoming), nameof(DefenseNpcAttackers));
     }
 
-    private CapsuleerAttacker[] DefenseNpcAttackersOwned(long pilot, long now, IReadOnlyList<NpcEwarContact> incoming)
+    private CapsuleerAttacker[] DefenseNpcAttackersOwned(DockedPilot pilot, long now, IReadOnlyList<NpcEwarContact> incoming)
     {
         using var ownership = owner.Enter();
-        var ship = Ship(pilot, now);
+        if (CanProbeDefense(pilot) && !HasNpcDefenseAttack(pilot.ShipId, now, incoming))
+        {
+            Trim();
+            owner.TrackShip(pilot.ShipId, pilot.SystemId, pilot.PilotId);
+            return [];
+        }
+        var ship = Ship(pilot.PilotId, now);
         if (ship.Position is null)
         {
             return [];
@@ -81,6 +88,18 @@ internal sealed partial class LiveCombatRuntime
         return result.ToArray();
     }
 
+    private bool HasNpcDefenseAttack(long ship, long now, IReadOnlyList<NpcEwarContact> incoming)
+    {
+        if (incoming.Count > 0 || owner.Reads?.NpcEwarAttempts(ship).Count > 0)
+        {
+            return true;
+        }
+        var recent = DroneTriggers(ship).Incoming;
+        var aggression = Aggression();
+        return (recent.At > 0 && recent.At + CrimewatchRules.PvpDuration.Ticks > now && aggression.ContainsKey(recent.OtherId))
+            || aggression.Values.Any(attack => attack.ShipId == ship);
+    }
+
     internal LiveCombatNpc? RattingNpc(long id, long now) => Npc(id, now);
 
     internal LiveCombatShip? DefenseShip(long pilot, long now)
@@ -95,7 +114,7 @@ internal sealed partial class LiveCombatRuntime
     }
 
     internal CapsuleerAttacker? PatrolTarget(
-        Eden.Gameplay.Docking.DockedPilot pilot,
+        DockedPilot pilot,
         long target,
         SpacePosition anchor,
         IPilotCombatPresence presence,
@@ -145,15 +164,20 @@ internal sealed partial class LiveCombatRuntime
         return PatrolRules.CorporateAllies(left.Corporation, left.Alliance, right.Corporation, right.Alliance);
     }
 
-    internal CapsuleerAttacker[] DefenseAttackers(long pilot, IPilotCombatPresence presence, long now)
+    internal CapsuleerAttacker[] DefenseAttackers(DockedPilot pilot, IPilotCombatPresence presence, long now)
     {
         return Execute(() => DefenseAttackersOwned(pilot, presence, now), nameof(DefenseAttackers));
     }
 
-    private CapsuleerAttacker[] DefenseAttackersOwned(long pilot, IPilotCombatPresence presence, long now)
+    private CapsuleerAttacker[] DefenseAttackersOwned(DockedPilot pilot, IPilotCombatPresence presence, long now)
     {
         using var ownership = owner.Enter();
-        var ship = Ship(pilot, now);
+        if (CanProbeDefense(pilot) && !HasPlayerDefenseAttack(pilot.ShipId, now))
+        {
+            owner.TrackShip(pilot.ShipId, pilot.SystemId, pilot.PilotId);
+            return [];
+        }
+        var ship = Ship(pilot.PilotId, now);
         if (ship.Position is null)
         {
             return [];
@@ -191,6 +215,40 @@ internal sealed partial class LiveCombatRuntime
             );
         }
         return result.ToArray();
+    }
+
+    private bool CanProbeDefense(DockedPilot pilot)
+    {
+        int system = pilot.SystemId;
+        bool loaded = _ships.TryGetValue(pilot.PilotId, out var ship);
+        return CanRun
+            && pilot.Position is not null
+            && (systemId is null || systemId == system)
+            && (!loaded || ship!.ShipId == pilot.ShipId && ship.SystemId == system)
+            && (!_positions.TryGetValue(pilot.ShipId, out var position) || position.System is null || position.System == system)
+            && owner.Economy.CanProbeDefenseShip(pilot.PilotId, pilot.ShipId, system, cold: !loaded);
+    }
+
+    private bool HasPlayerDefenseAttack(long ship, long now)
+    {
+        static bool Active(DronePilotHostility attack, long time) => attack.ExpiresAt > time && attack.LastAttackAt > 0;
+
+        // The exact path still merges by source and applies presence, visibility and damage gates.
+        if (_residentAttackers.TryGetValue(ship, out var pending) && pending.Values.Any(attack => Active(attack, now)))
+        {
+            return true;
+        }
+        if (_droneAttackers.TryGetValue(ship, out var saved))
+        {
+            return saved.Any(attack => Active(attack, now));
+        }
+        if (owner.Economy.HasUnexpiredPlayerHostility(ship, now))
+        {
+            return true;
+        }
+        // The belt safety probe also uses the cached absence of a saved hostility.
+        _droneAttackers[ship] = [];
+        return false;
     }
 
     internal CombatVolley? FirePilot(

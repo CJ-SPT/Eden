@@ -248,9 +248,9 @@ internal sealed partial class CapsuleerDefense(
             state = state with { Cycles = cycles };
         }
         var incoming = tackle.Incoming(pilot.ShipId);
-        var attackers = runtime is null ? PlayerAttackers(pilot, now) : runtime.DefenseAttackers(pilot.PilotId, presence, now);
+        var attackers = runtime is null ? PlayerAttackers(pilot, now) : runtime.DefenseAttackers(pilot, presence, now);
         var jams = npcWarfare.Incoming(pilot.ShipId);
-        var npcAttackers = runtime?.DefenseNpcAttackers(pilot.PilotId, now, jams) ?? [];
+        var npcAttackers = runtime?.DefenseNpcAttackers(pilot, now, jams) ?? [];
         var candidates =
             attackers.Length == 0 && npcAttackers.Length == 0
                 ? []

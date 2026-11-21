@@ -181,7 +181,7 @@ public sealed partial class NpcMiningTests
         var miners = Read(db, clock.Now);
         Assert.NotEmpty(miners);
         db.Store.SetPosition(ShipId, position, SystemId);
-        Assert.Empty(runtime.DefenseAttackers(PilotId, presence, clock.Now));
+        Assert.Empty(runtime.DefenseAttackers(db.Store.FindPilot(1000001)!, presence, clock.Now));
         long due = MiningDue(db);
 
         List<OwnershipTiming> holds = [];

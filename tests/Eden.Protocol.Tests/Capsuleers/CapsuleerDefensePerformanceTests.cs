@@ -21,6 +21,45 @@ namespace Eden.Protocol.Tests.Capsuleers;
 
 public sealed class CapsuleerDefensePerformanceTests(ITestOutputHelper output)
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FirstQuietDefenseCheckSkipsCombatFitForCurrentShip(bool staleShip)
+    {
+        using NpcCombatTests.Fixture f = new(liveWorld: true, useTestClock: true);
+        var pilot = f.Pilot;
+        var live = LiveWorld.Find(f.Db.Path)!;
+        live.Economy.Warm();
+        var runtime = live.Combat!;
+        Assert.Throws<KeyNotFoundException>(() => runtime.CurrentShip(pilot.PilotId));
+        var defense = f.Db.Services.GetRequiredService<CapsuleerDefense>();
+        NavigationState navigation = new();
+        var position = Assert.IsType<SpacePosition>(pilot.Position);
+        var destination = position + new SpacePosition(1_000_000, 0, 0);
+        long activeShip = pilot.ShipId;
+        if (staleShip)
+        {
+            pilot = pilot with { ShipId = long.MaxValue };
+        }
+        Assert.True(navigation.StartWarpPoint(pilot.ShipId, pilot.Flight, position, destination, 0, 0, 0));
+        var queuedWarp = Assert.IsType<SpacePosition>(navigation.WarpDestination);
+
+        using var metrics = SessionPerformance.Begin("first quiet defense", output.WriteLine, force: true)!;
+        var quiet = defense.Advance(pilot, navigation, null, f.Clock.Now, 0, []);
+        Assert.Equal(new(pilot, null, false, false, false), quiet);
+        Assert.Equal(queuedWarp, navigation.WarpDestination);
+        if (staleShip)
+        {
+            Assert.Equal(activeShip, runtime.CurrentShip(pilot.PilotId).ShipId);
+            Assert.Equal(1, metrics.FittingCalculations);
+        }
+        else
+        {
+            Assert.Throws<KeyNotFoundException>(() => runtime.CurrentShip(pilot.PilotId));
+            Assert.Equal((0, 0, 0), (metrics.Commands, metrics.Connections, metrics.FittingCalculations));
+        }
+    }
+
     [Fact]
     public void WarmQuietDefenseChecksKeepNavigationAndAvoidSql()
     {
