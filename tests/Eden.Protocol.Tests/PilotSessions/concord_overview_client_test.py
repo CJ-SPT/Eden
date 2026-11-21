@@ -59,6 +59,8 @@ names += ['eve.client.script.ui.shared.planet', 'eve.client.script.ui.shared.pla
 names += ['user_licenses', 'user_licenses.client', 'user_licenses.client.messenger',
           'user_licenses.client.messenger.request_messenger', 'user_licenses.client.user_license',
           'user_licenses.client.user_license_type']
+names += ['gametime', 'carbon.common.lib', 'carbon.common.lib.const', 'characterskills',
+          'characterskills.skill_training', 'skills', 'skills.client', 'skills.client.skillGroupController']
 for name in names:
     module = type(sys)(name)
     module.__path__ = []
@@ -66,6 +68,9 @@ for name in names:
     parent, _, child = name.rpartition('.')
     if parent:
         setattr(sys.modules[parent], child, module)
+sys.modules['carbon.common.lib.const'].MIN = 600000000
+sys.modules['carbon.common.lib.const'].SEC = 10000000
+sys.modules['characterskills.skill_training'].GetSkillPointsPerMinute = lambda primary, secondary: primary + secondary / 2.0
 photo = sys.modules['eve.client.script.ui.services.evePhotosvc']
 sys.modules['eve.client.script.ui.shared.planet.importExportUI'].PlanetaryImportExportUI = type(
     'PlanetaryImportExportUI', (object,), {
@@ -85,7 +90,10 @@ sys.modules['os.path'].exists = lambda *args: False
 sys.modules['blue'].paths = None
 sys.modules['carbon.common.script.sys.serviceConst'].ROLE_CHTINVISIBLE = 1048576
 sys.modules['eve.client.script.ui.services.skillQueueSvc'].SkillQueueService = type(
-    'SkillQueueService', (object,), {'GetSkillLevelAndProgressWithFreePoints': lambda *args: None})
+    'SkillQueueService', (object,), {'GetSkillLevelAndProgressWithFreePoints': lambda *args: None,
+                                     'GetEstimatedSkillPointsTrained': lambda *args: None,
+                                     'GetAddedSpAndAddedTimeForSkill': lambda *args: None,
+                                     'GetTrainingEndTimeOfQueue': lambda *args: None})
 sys.modules['eve.client.script.ui.services.skillsvc'].SkillsSvc = type(
     'SkillsSvc', (object,), {'SetFreeSkillPoints': lambda *args: None, 'OnFreeSkillPointsChanged': lambda *args: None})
 sys.modules['eve.client.script.ui.skilltrading.applySkillPointsWindow'].ApplySkillPointsListEntry = type(

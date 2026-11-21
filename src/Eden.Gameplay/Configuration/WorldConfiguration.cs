@@ -91,7 +91,8 @@ public sealed record ProgressionPolicy(
     decimal MiningSkillPointMultiplier = 1,
     decimal KillSkillPointPercent = NpcSkillPointRewards.DefaultPercent,
     decimal MiningIskPerSkillPoint = ActivitySkillPointRewards.IskPerSkillPoint,
-    bool GrantStartingEquipment = true
+    bool GrantStartingEquipment = true,
+    decimal TrainingSpeedMultiplier = 1
 );
 
 public sealed record CapsuleerPopulationPolicy(

@@ -17,7 +17,7 @@ A draft saves as **pending restart**. Saving, restoring and importing use the sa
 | Rewards | NPC bounty ISK, mission ISK, mission loyalty points and positive mission standing-gain multipliers. |
 | NPC population | Enable new pirates/anomalies, guards, convoys and mining populations independently. Existing living residents remain. An optional Major Threat anomaly override enables the six advanced nullsec families without sovereignty upgrades. |
 | Exploration | Always resolve cosmic signatures for every pilot, without scanner probes. Off by default. |
-| Progression | NPC kill-SP and mining-SP multipliers; starting skills and initial wallet grants for future pilots. Native training formulas remain unchanged. |
+| Progression | Skill training speed, NPC kill-SP and mining-SP multipliers, and starting grants for new pilots. |
 | Industry | Manufacturing, research, copying and invention speed; reprocessing efficiency. |
 | Planetary industry | Maximum planets per pilot, extraction yield, factory output, command-center CPU and powergrid multipliers. |
 | Structures | Minimum corporation age for anchoring; anchoring, core onlining and decommissioning speeds for new timers. |
@@ -148,9 +148,15 @@ saved world; they do not modify shared catalog definitions or autonomous NPC gat
   The Progression panel exposes both base conversions: `progression.killSkillPointPercent` accepts 0–100%, and
   `progression.miningIskPerSkillPoint` accepts 0.01–1,000,000,000 ISK per SP. Lower mining costs grant more SP.
   Omitted base fields retain 0.25% and 400 in existing revision documents. These rates are saved, exported and compared
-  with original, active and pending values, and activate after restart. They do not alter past rewards or training speed.
+  with original, active and pending values, and activate after restart.
   Live draft previews compare against active settings using editable example amounts, with ore/ice/gas selection,
   combined multipliers, effective conversion and SP per kill or collection. Example amounts are not saved.
+- **Progression → Skill training speed** (`settings.progression.trainingSpeedMultiplier`) accepts **0.1–100×** and defaults
+  to **1×**, including for older revisions. Select **Save for restart** and restart the server to activate the rate. At 2×, a
+  newly scheduled level with a normal one-hour duration takes 30 minutes. Character attributes, implants, cerebral accelerators
+  and clone grade still determine the underlying rate. Saved queue deadlines and accrued SP carry across restart. Pause and
+  resume an existing queue to reschedule all remaining levels at the active rate. The client receives the rate at login and
+  uses saved deadlines for scheduled training. See [skill training speed](protocol/characters.md#world-skill-training-speed-november-21-2026).
 - Mission ISK, LP and positive standing gains are calculated when an offer is created and saved with it. Existing offers and
   accepted missions keep their terms. Standing gain fractions cap at 100%; penalties remain unchanged.
 - Industry speed divides normal duration: 2× means half the time, retaining ordinary skill/blueprint bonuses and rounding.
@@ -160,7 +166,7 @@ saved world; they do not modify shared catalog definitions or autonomous NPC gat
 - Reprocessing scales effective efficiency after skills and caps recovery at 100% of available materials, before output rounding.
   The quote and committed outputs use the same calculation.
 
-Training speed, combat difficulty, travel, ship-loss rules, loot and salvage tuning are outside this version. No client package
+Combat difficulty, travel, ship-loss rules, loot and salvage tuning are outside this version. No client package
 update is required. Native visual presentation remains unverified; see the [implementation record](protocol/world-configuration.md).
 
 ## Custom gameplay options

@@ -1,3 +1,4 @@
+using System.Globalization;
 using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Skills;
 using Eden.Protocol.PilotSessions;
@@ -28,8 +29,23 @@ internal sealed record SkillQueueRow(int Position, TrainingEntry Entry) : BlueMo
                 ["trainingToLevel"] = Entry.Target.Level,
                 ["trainingStartSP"] = Entry.StartPoints,
                 ["trainingDestinationSP"] = Entry.EndPoints,
+                ["edenTrainingPeriods"] = new BlueList<SkillQueueRatePeriod>(
+                    Entry.Periods.Select(period => new SkillQueueRatePeriod(period)).ToArray()
+                ),
             }
         );
+}
+
+internal sealed record SkillQueueRatePeriod(TrainingProgressPeriod Period) : BlueModel
+{
+    // Decimal strings preserve the server's fractional SP across booster expiry boundaries.
+    public override object ToBlue() =>
+        new object?[]
+        {
+            Period.StartTime,
+            Period.StartPoints.ToString(CultureInfo.InvariantCulture),
+            Period.PointsPerMinute.ToString(CultureInfo.InvariantCulture),
+        };
 }
 
 internal sealed record SkillQueueReply(IReadOnlyList<SkillQueueRow> Queue, long FreePoints = 0) : BlueModel

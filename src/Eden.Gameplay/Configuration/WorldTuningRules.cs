@@ -54,6 +54,7 @@ public static class WorldTuningRules
         ValidateRate(settings.Rewards.MissionStandingMultiplier, true);
         ValidateRate(settings.Progression.KillSkillPointMultiplier, true);
         ValidateRate(settings.Progression.MiningSkillPointMultiplier, true);
+        ValidateRate(settings.Progression.TrainingSpeedMultiplier);
         NpcSkillPointRewards.ValidatePercent(settings.Progression.KillSkillPointPercent);
         ActivitySkillPointRewards.ValidateIskPerSkillPoint(settings.Progression.MiningIskPerSkillPoint);
         ValidateRate(settings.Industry.ManufacturingSpeed);

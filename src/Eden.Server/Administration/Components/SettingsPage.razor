@@ -136,8 +136,16 @@ else
                              hidden="@(Workspace.Activity != SettingsActivity.Progression)">
                         <div class="settings-panel-heading">
                             <h2 id="heading-Progression">Progression</h2>
-                            <p class="muted">Set activity-based skill point rates and what newly created pilots receive.</p>
+                            <p class="muted">Set skill training speed, activity-based skill point rates, and new pilot grants.</p>
                         </div>
+                        <section class="card settings-group">
+                            <h3>Skill training</h3>
+                            <div class="settings-multipliers">
+                                <MultiplierControl Label="Skill training speed" @bind-Value="Form.TrainingSpeedMultiplier"
+                                    Description="Scales the rate of newly scheduled training after restart. Pause and resume to apply it to ongoing training."
+                                    ExampleAmount="60" ExampleUnit="minutes of training" Speed="true" />
+                            </div>
+                        </section>
                         <section class="settings-group">
                             <h3>Activity skill points</h3>
                             <ProgressionControls Form="Form" ActiveSettings="State.Active.Draft.Settings" Changed="StateHasChanged"
@@ -146,7 +154,6 @@ else
                         </section>
                         <section class="card settings-group">
                             <h3>New pilot grants</h3>
-                            <p class="muted">Training speed and skill requirements are unchanged.</p>
                             <div class="settings-fields">
                                 <SettingField Label="Grant catalog starting skills to new pilots"
                                               Help="Gives newly created pilots the starting skills defined in the catalog.">

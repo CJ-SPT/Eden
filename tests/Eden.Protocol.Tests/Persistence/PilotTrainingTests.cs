@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Industry;
@@ -5,6 +6,8 @@ using Eden.Gameplay.Skills;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
 using Eden.Protocol.Skills;
+using Eden.World.Configuration;
+using Eden.World.Runtime;
 using Eden.World.Skills;
 using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +17,74 @@ namespace Eden.Protocol.Tests.Persistence;
 
 public sealed class PilotTrainingTests
 {
+    [Fact]
+    public async Task ConfiguredSpeedActivatesOnRestartAndRescheduledTrainingSurvivesCheckpoint()
+    {
+        const long pilot = 90000001;
+        const int skill = 3327;
+        Clock clock = new();
+        using TestWorld fixture = new(clock: clock);
+        WorldDatabase database = new(fixture.Path);
+        WorldConfigurationStore configuration = new(database, clock);
+        PilotTrainingStore training = new(database, clock);
+        TrainingTarget[] targets = [new(skill, 4)];
+        var initial = configuration.Read();
+        var legacy = JsonNode.Parse(configuration.Export(initial.Active.Id))!;
+        legacy["settings"]!["progression"]!.AsObject().Remove("trainingSpeedMultiplier");
+        Assert.Equal(1, ConfigurationValidation.Decode(legacy.ToJsonString()).Settings.Progression.TrainingSpeedMultiplier);
+
+        TrainingEntry baseline;
+        long pendingId;
+        using (var live = new LiveWorld(database, clock, combatObjects: false, simulationObjects: false))
+        {
+            baseline = Assert.Single(training.Save(pilot, targets, true).Queue);
+            var settings = initial.Active.Draft.Settings;
+            var pending = configuration.Save(
+                initial.Generation,
+                initial.Active.Draft with
+                {
+                    Settings = settings with { Progression = settings.Progression with { TrainingSpeedMultiplier = 2.5m } },
+                },
+                "training configuration test"
+            );
+            pendingId = pending.Pending!.Id;
+            Assert.Equal(1, database.Settings.Progression.TrainingSpeedMultiplier);
+            await live.FlushAsync();
+        }
+
+        clock.AdvanceWallTime(TimeSpan.FromMinutes(2));
+        WorldInitialization.Initialize(database, clock);
+        Assert.Equal(pendingId, configuration.Read().Active.Id);
+        Assert.Equal(2.5m, database.Settings.Progression.TrainingSpeedMultiplier);
+        TrainingEntry resumed;
+        using (var live = new LiveWorld(database, clock, combatObjects: false, simulationObjects: false))
+        {
+            Assert.Equal(baseline, Assert.Single(training.Advance(pilot).Queue));
+            var paused = Assert.Single(training.Pause(pilot).Queue);
+            Assert.Null(paused.EndTime);
+            Assert.Equal(baseline.StartPoints + 30, paused.StartPoints);
+            resumed = Assert.Single(training.Save(pilot, targets, true).Queue);
+            Assert.Equal(paused.StartPoints, resumed.StartPoints);
+            Assert.Equal(baseline.EndPoints, resumed.EndPoints);
+            long duration = (long)decimal.Ceiling((resumed.EndPoints - resumed.StartPoints) * TimeSpan.TicksPerMinute / 37.5m);
+            Assert.Equal(clock.Now + duration, resumed.EndTime);
+            await live.FlushAsync();
+        }
+
+        clock.UtcNow = DateTimeOffset.FromFileTime(resumed.EndTime!.Value);
+        WorldDatabase reopened = new(fixture.Path);
+        WorldInitialization.Initialize(reopened, clock);
+        using var restarted = new LiveWorld(reopened, clock, combatObjects: false, simulationObjects: false);
+        training = new(reopened, clock);
+        var completed = training.Advance(pilot);
+        Assert.Empty(completed.Queue);
+        Assert.Equal(skill, Assert.Single(completed.ChangedSkills));
+        Assert.Empty(training.Advance(pilot).ChangedSkills);
+        var completion = Assert.Single(training.History(pilot, 100), entry => entry.EventId == 53);
+        Assert.Equal(resumed.EndTime, completion.Time);
+        Assert.Equal(resumed.EndPoints, completion.Points);
+    }
+
     [Fact]
     public void TrainingResumesOfflineAndCreditsEachLevelOnce()
     {

@@ -88,6 +88,9 @@ public sealed partial class AdministrationTests
             await renderer.Change(nameof(SettingsForm.GeneralMiningHoldMultiplier), "2.5");
             await renderer.Change(nameof(SettingsForm.IceHoldMultiplier), "0.5");
             await renderer.Change(nameof(SettingsForm.GasHoldMultiplier), "3");
+            await renderer.Click("Progression");
+            await renderer.Change(nameof(SettingsForm.TrainingSpeedMultiplier), "2.5");
+            Assert.Contains("60 minutes of training becomes 24 minutes of training", renderer.Text);
             await renderer.Click("Player bots");
             await renderer.Change(nameof(SettingsForm.BotExploration), false);
             await renderer.Change(nameof(SettingsForm.ActivePilotCap), "250");
@@ -114,6 +117,8 @@ public sealed partial class AdministrationTests
             Assert.Equal(2, saved.Pending!.Draft.Settings.Resources.OreYieldMultiplier);
             Assert.Equal(new MiningHoldPolicy(2.5m, .5m, 3), saved.Pending.Draft.Settings.MiningHolds);
             Assert.Equal(new MiningHoldPolicy(), saved.Active.Draft.Settings.MiningHolds);
+            Assert.Equal(2.5m, saved.Pending.Draft.Settings.Progression.TrainingSpeedMultiplier);
+            Assert.Equal(1, saved.Active.Draft.Settings.Progression.TrainingSpeedMultiplier);
             Assert.False(saved.Pending.Draft.Settings.Capsuleers.Exploration);
             Assert.True(saved.Pending.Draft.Settings.Capsuleers.WreckSalvage);
             Assert.True(saved.Active.Draft.Settings.Capsuleers.Exploration);

@@ -4,7 +4,14 @@ internal static class TrainingTiming
 {
     // Cerebral-accelerator expirations change rate inside a queued level. Keep
     // fractional SP between periods, then round only when materializing progress.
-    internal static IReadOnlyList<TrainingProgressPeriod> Plan(TrainingSkill skill, long before, long after, long start, bool alpha)
+    internal static IReadOnlyList<TrainingProgressPeriod> Plan(
+        TrainingSkill skill,
+        long before,
+        long after,
+        long start,
+        bool alpha,
+        decimal speedMultiplier
+    )
     {
         if (skill.RateChanges.Count == 0)
         {
@@ -12,7 +19,8 @@ internal static class TrainingTiming
         }
         var changes = skill.RateChanges.OrderBy(c => c.Time).ToArray();
         var current = changes.LastOrDefault(c => c.Time <= start);
-        decimal Rate(double primary, double secondary) => ((decimal)primary + (decimal)secondary / 2) * (alpha ? .5m : 1m);
+        decimal Rate(double primary, double secondary) =>
+            ((decimal)primary + (decimal)secondary / 2) * (alpha ? .5m : 1m) * speedMultiplier;
         decimal rate = Rate(current?.PrimaryAttribute ?? skill.PrimaryAttribute, current?.SecondaryAttribute ?? skill.SecondaryAttribute);
         decimal points = before;
         long time = start;

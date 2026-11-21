@@ -118,7 +118,8 @@ public sealed partial class AdministrationTests
         Assert.Contains("Base SP rate (% of gross bounty)", html);
         Assert.Contains("Reset to 400 ISK", html);
         Assert.Contains("Active now: 2,500 SP", html);
-        Assert.Contains("Training speed and skill requirements are unchanged", html);
+        Assert.Contains("Reset Skill training speed to 1×", html);
+        Assert.Contains("Pause and resume to apply it to ongoing training", html);
     }
 
     [Fact]
@@ -182,7 +183,7 @@ public sealed partial class AdministrationTests
     }
 
     [Fact]
-    public async Task MiningSkillPointControlSavesExportsAndComparesPendingRates()
+    public async Task ProgressionControlsSaveExportAndComparePendingRates()
     {
         await using var fixture = await Fixture.Start();
         await fixture.SignIn();
@@ -192,12 +193,14 @@ public sealed partial class AdministrationTests
             MiningSkillPointMultiplier = 2.5m,
             KillSkillPointPercent = 1.25m,
             MiningIskPerSkillPoint = 125.5m,
+            TrainingSpeedMultiplier = 10,
         };
         var draft = state.Active.Draft with { Settings = state.Active.Draft.Settings with { Progression = policy } };
         using var saved = await fixture.Client.PostAsJsonAsync("/api/admin/revisions", new AdminSaveRequest(state.Generation, draft));
         Assert.Equal(HttpStatusCode.OK, saved.StatusCode);
         var pending = (await saved.Content.ReadFromJsonAsync<ConfigurationState>())!;
         Assert.Equal(1, pending.Active.Draft.Settings.Progression.MiningSkillPointMultiplier);
+        Assert.Equal(1, pending.Active.Draft.Settings.Progression.TrainingSpeedMultiplier);
         Assert.Equal(policy, pending.Pending!.Draft.Settings.Progression);
         using var export = await fixture.Client.GetAsync($"/api/admin/export/{pending.Pending.Id}");
         Assert.Equal(policy, (await export.Content.ReadFromJsonAsync<WorldConfigurationDraft>())!.Settings.Progression);
@@ -205,6 +208,15 @@ public sealed partial class AdministrationTests
         Assert.Contains(differences!, c => c.Field == "Mining skill points" && c.After == "2.5\u00d7");
         Assert.Contains(differences!, c => c.Field == "NPC kill base SP rate (%)" && c.After == "1.25");
         Assert.Contains(differences!, c => c.Field == "Mining reference ISK per SP" && c.After == "125.5");
+        Assert.Contains(differences!, c => c.Field == "Skill training speed" && c.After == "10×");
+        using var invalid = await fixture.Client.PostAsJsonAsync(
+            "/api/admin/validate",
+            draft with
+            {
+                Settings = draft.Settings with { Progression = policy with { TrainingSpeedMultiplier = 0 } },
+            }
+        );
+        Assert.False((await invalid.Content.ReadFromJsonAsync<AdminValidationResult>())!.Valid);
     }
 
     private const string Password = "local administrator password";

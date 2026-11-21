@@ -299,7 +299,8 @@ public sealed class WorldSettingsPageTests
                 KillSkillPointMultiplier: 9,
                 MiningSkillPointMultiplier: 2.5m,
                 KillSkillPointPercent: 1.25m,
-                MiningIskPerSkillPoint: 125.5m
+                MiningIskPerSkillPoint: 125.5m,
+                TrainingSpeedMultiplier: 2.5m
             ),
             Industry = new(10, 11, 12, 13, 14),
             Structures = new(2, 3, 4, MinimumCorporationAgeDays: 0),
@@ -318,6 +319,7 @@ public sealed class WorldSettingsPageTests
         form.MiningSkillPointMultiplier = 101;
         form.KillSkillPointPercent = 100.01m;
         form.MiningIskPerSkillPoint = 0;
+        form.TrainingSpeedMultiplier = 0;
         form.InventionSpeed = 101;
         form.StructureAnchoringSpeed = 0;
         form.StructureOnliningSpeed = 101;
@@ -331,6 +333,7 @@ public sealed class WorldSettingsPageTests
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.MiningSkillPointMultiplier)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.KillSkillPointPercent)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.MiningIskPerSkillPoint)));
+        Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.TrainingSpeedMultiplier)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.InventionSpeed)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.StructureAnchoringSpeed)));
         Assert.Contains(errors, e => e.MemberNames.Contains(nameof(form.StructureOnliningSpeed)));
@@ -342,6 +345,7 @@ public sealed class WorldSettingsPageTests
         form.MiningSkillPointMultiplier = 0;
         form.KillSkillPointPercent = 0;
         form.MiningIskPerSkillPoint = 0.01m;
+        form.TrainingSpeedMultiplier = 0.1m;
         form.InventionSpeed = 100;
         form.StructureAnchoringSpeed = .1m;
         form.StructureOnliningSpeed = 100;
@@ -349,6 +353,14 @@ public sealed class WorldSettingsPageTests
         form.StructureMinimumCorporationAgeDays = 0;
         Assert.True(Validator.TryValidateObject(form, new(form), [], true));
         Assert.Equal("2.5×", ConfigurationDisplay.Settings(new(), settings, null).Single(r => r.Label == "Mining skill points").Active);
+        Assert.Contains(
+            ConfigurationDisplay.Settings(new(), new(), settings),
+            row => row.Label == "Skill training speed" && row.Original == "1×" && row.Active == "1×" && row.Pending == "2.5×"
+        );
+        Assert.Contains(
+            ConfigurationDisplay.Compare(new(), new() { Settings = settings }),
+            change => change.Field == "Skill training speed" && change.Before == "1×" && change.After == "2.5×"
+        );
         Assert.Contains(
             ConfigurationDisplay.Compare(new(), new() { Settings = settings }),
             c => c.Field == "Mining skill points" && c.After == "2.5×"

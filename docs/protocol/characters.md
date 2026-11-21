@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [World skill training speed, November 21, 2026](#world-skill-training-speed-november-21-2026)
 - [Ship Tree recent-skill lookup, November 15, 2026](#ship-tree-recent-skill-lookup-november-15-2026)
 
 - [Player corporation banners in Character Show Info, November 13, 2026](#player-corporation-banners-in-character-show-info-november-13-2026)
@@ -51,6 +52,51 @@ These records preserve milestone evidence and historical observations. Dates, sc
 - [Local skill-plan gateway, November 2, 2026](#local-skill-plan-gateway-november-2-2026)
 - [Character creation and first spawn, November 2, 2026](#character-creation-and-first-spawn-november-2-2026)
 - [Initial corvette fitting](#initial-corvette-fitting)
+
+## World skill training speed, November 21, 2026
+
+The active `progression.trainingSpeedMultiplier` scales SP per minute after the primary and secondary learning attributes and
+the clone-grade modifier. It also scales each period of a level that crosses a cerebral accelerator expiry. Skill ranks,
+level thresholds, clone restrictions and SP awards follow their existing rules.
+
+Queue rows and any rate periods retain their saved times across restart. Subsequent scheduling uses the active configuration.
+Saving an active queue with the same head retains that head's deadline while scheduling its tail. Pausing banks whole SP at
+the saved rate, and resuming schedules the remaining levels at the active rate. Queue changes persist through resident-world
+checkpoints.
+
+Inert inspection of the build **3662168** archive (SHA-256
+`37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`) confirms that `GetSkillTrainingTimeCalculator`
+uses character attributes and deducts expired booster bonuses locally. The skill service and skill group controller also
+calculate SP per minute for display. The signed login adapter scales the rate used by those three paths. The neural remap
+editor still consumes actual character attributes. Queue rows carry saved timestamps and fractional booster-period data
+for progress and duration estimates. A draft keeps the saved active head's timeline when the head remains in place, and
+estimates new or reordered entries at the current rate. The pinned catalog lists Perception, Willpower and rank 1 for
+skill type 3327 under dogma attributes 180, 181 and 275.
+
+The EVE.js build 3396210 reference uses a server rate in `skillTrainingMath.js` and scales reported learning attributes in
+`skillTrainingSpeed.js` for client estimates. The inspected `skillTrainingSpeed.js` SHA-256 is
+`1221EA51CE15770CFEACFACD238CD5CFB3A5367512D1B3403EDB86D84D726F08`. [EVE University training formula](https://wiki.eveuniversity.org/Skill_training#Effects_on_skill_training)
+
+**Automated validation**
+
+The solution built in 26.60 seconds with zero warnings or errors. The focused run passed 179 tests in 90 seconds with
+`EDEN_TEST_CLIENT_ROOT` set to the pinned build. Class filters covered `WorldSettingsPageTests`, `WorldConfigurationTests`,
+`TrainingRulesTests`, `PilotTrainingTests`, `PilotSkillBookTests`, `BoosterTimingTests`, `BoosterMutationTests`,
+`CharacterSheetTests`, `CloneGradeTests`, `FreeSkillPointTests`, `SkillInjectorLifecycleTests`, `CharacterSheetServiceTests`,
+`BoosterServiceTests`, `ImplantServiceTests`, `FreeSkillPointServiceTests`, `TrainingSpeedClientTests`, `FreePointClientTests`,
+`ConcordOverviewTests`, `PilotLoginTests` and `PlanetaryClientTests`. Exact method filters also covered the rendered settings
+page, revision save and export, repeated Blazor saves, training with booster expiry and clone changes, implant-driven queue
+rebasing, and `FreshProfileStartsEmptyAndPersistsAcrossRestart`. The catalog and formatting policy suites passed 8 and 9
+checks respectively. Formatting and diff checks passed. The milestone sequence took 157 seconds. Client adapter checks ran
+headlessly.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+None.
 
 ## Player corporation banners in Character Show Info, November 13, 2026
 

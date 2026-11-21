@@ -138,6 +138,8 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
         bool implantChange = true
     )
     {
+        // A slower rate can make a previously accepted queue exceed the limit for new edits.
+        bool checkHorizon = targets is not null;
         bool remapped = false;
         if (attributes is not null)
         {
@@ -287,7 +289,8 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
                 now,
                 points is not null || changeAttributes is not null,
                 queue,
-                queueInputs
+                queueInputs,
+                checkHorizon
             );
             activate = queue.FirstOrDefault()?.StartTime is not null;
             world.RemoveRange(world.Filter<QueuedLevel>(q => q.PilotId == pilotId).ToArray());
@@ -341,7 +344,8 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
         long now,
         bool clampAlphaBudget,
         IReadOnlyList<TrainingEntry> priorQueue,
-        TrainingInputs? preparedInputs
+        TrainingInputs? preparedInputs,
+        bool checkHorizon
     )
     {
         if (targets.Count == 0)
@@ -350,7 +354,7 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
         }
         var inputs = preparedInputs ?? ReadInputs(world, pilotId, targets, now);
         bool partial = priorQueue.Any(e => e.EndPoints < TrainedSkill.PointsForLevel(inputs.Skills[e.Target.TypeId].Rank, e.Target.Level));
-        return TrainingRules.Plan(targets, inputs, activate, running, now, clampAlphaBudget || partial);
+        return TrainingRules.Plan(targets, inputs, activate, running, now, clampAlphaBudget || partial, checkHorizon);
     }
 
     private TrainingInputs ReadInputs(WorldDbContext world, long pilotId, IReadOnlyList<TrainingTarget> targets, long now) =>
@@ -416,7 +420,7 @@ internal sealed partial class PilotTrainingStore(WorldDatabase database, TimePro
             }
         );
         var grade = pilot.Account.CloneGrade;
-        return new(inputs, grade, ReadFreePoints(world, pilotId));
+        return new(inputs, grade, ReadFreePoints(world, pilotId), database.Settings.Progression.TrainingSpeedMultiplier);
     }
 
     private void Record(WorldDbContext world, long pilotId, long time, int typeId, long points, int eventId) =>

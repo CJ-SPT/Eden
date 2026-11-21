@@ -1108,6 +1108,7 @@ The section anchors below preserve links to the former single-file notes. Follow
 - <a id="character-sheet-service-roadmap"></a>[Character-sheet service roadmap](protocol/characters.md#character-sheet-service-roadmap)
 - <a id="character-sheet-attributes-and-biography-november-4-2026"></a>[Character-sheet attributes and biography, November 4, 2026](protocol/characters.md#character-sheet-attributes-and-biography-november-4-2026)
 - <a id="skill-training-queue-november-2-2026"></a>[Skill training queue, November 2, 2026](protocol/characters.md#skill-training-queue-november-2-2026)
+- [World skill training speed, November 21, 2026](protocol/characters.md#world-skill-training-speed-november-21-2026)
 - <a id="local-skill-plan-gateway-november-2-2026"></a>[Local skill-plan gateway, November 2, 2026](protocol/characters.md#local-skill-plan-gateway-november-2-2026)
 - <a id="character-creation-and-first-spawn-november-2-2026"></a>[Character creation and first spawn, November 2, 2026](protocol/characters.md#character-creation-and-first-spawn-november-2-2026)
 - <a id="initial-corvette-fitting"></a>[Initial corvette fitting](protocol/characters.md#initial-corvette-fitting)

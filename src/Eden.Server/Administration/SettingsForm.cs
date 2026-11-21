@@ -206,6 +206,10 @@ public sealed class SettingsForm
     [Display(Name = "Positive mission standings")]
     public decimal MissionStandingMultiplier { get; set; } = 1;
 
+    [Range(typeof(decimal), "0.1", "100", ParseLimitsInInvariantCulture = true)]
+    [Display(Name = "Skill training speed")]
+    public decimal TrainingSpeedMultiplier { get; set; } = 1;
+
     [Range(typeof(decimal), "0", "100", ParseLimitsInInvariantCulture = true)]
     [Display(Name = "NPC kill skill points")]
     public decimal KillSkillPointMultiplier { get; set; } = 1;
@@ -304,6 +308,7 @@ public sealed class SettingsForm
             MissionIskMultiplier = settings.Rewards.MissionIskMultiplier,
             MissionLpMultiplier = settings.Rewards.MissionLpMultiplier,
             MissionStandingMultiplier = settings.Rewards.MissionStandingMultiplier,
+            TrainingSpeedMultiplier = settings.Progression.TrainingSpeedMultiplier,
             KillSkillPointMultiplier = settings.Progression.KillSkillPointMultiplier,
             MiningSkillPointMultiplier = settings.Progression.MiningSkillPointMultiplier,
             KillSkillPointPercent = settings.Progression.KillSkillPointPercent,
@@ -451,7 +456,8 @@ public sealed class SettingsForm
                 MiningSkillPointMultiplier,
                 KillSkillPointPercent,
                 MiningIskPerSkillPoint,
-                StartingEquipment
+                StartingEquipment,
+                TrainingSpeedMultiplier
             ),
             Capsuleers = new(GlobalProvisioning, SimulatedPilots, SimulatedMiners, TrafficMultiplier, GateVisitors)
             {
