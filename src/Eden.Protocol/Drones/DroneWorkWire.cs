@@ -23,6 +23,7 @@ internal static class DroneWorkWire
                 UtilityDroneKind.TrackingDisruption => "effects.TrackingDisruption",
                 UtilityDroneKind.Painting => "effects.TargetPaint",
                 UtilityDroneKind.Webifying => "effects.ModifyTargetSpeed",
+                UtilityDroneKind.WarpDisrupting => "effects.WarpScramble",
                 UtilityDroneKind.Salvaging => "effects.Salvaging",
                 _ => "effects.Laser",
             },

@@ -79,6 +79,12 @@ internal static partial class DroneCatalog
                 OrbitSpeed = profile.OrbitSpeed * speedBonus,
             };
         }
+        if (profile.FighterGroup != 0)
+        {
+            double shield =
+                profile.Defense.Shield * SkillMultiplier(HullBonusSkill.SupportFighters, DogmaAttributeId.SupportFighterShieldBonus);
+            return profile with { Defense = profile.Defense with { Shield = shield } };
+        }
         return UtilityDroneRules.ApplyGathering(
             DroneRules.ApplySkills(profile, Skills(world, catalog, pilotId), required),
             world.Settings.Resources

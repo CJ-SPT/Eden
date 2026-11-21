@@ -246,8 +246,7 @@ hit that destroys an individual fighter reduces the squadron count and carries e
 Squadrons retain their tube assignment on a clean restart and stop attacking on disconnect. Recall and replenishment
 reuse the same squadron item.
 
-Support, space superiority and heavy combat, the other fighter abilities, general maneuver commands, and Standup
-squadrons remain open. The initial focused cases cover a short squadron, capacity and class rejection, checkpointed
+The initial focused cases cover a short squadron, capacity and class rejection, checkpointed
 tube contents, a second pilot observing launch, and an Archon using a light attack squadron against an Astrahus. The
 second test also verifies atomic rollback for a batch with an empty tube, the loss of one fighter, restart, recall and
 replacement. The wider run passed all 403 focused cases in 211.49 seconds across capital travel, drone combat,
@@ -257,6 +256,26 @@ structure attacks, typed calls and migration. Both Python suites passed all 17 c
 
 **Optional maintainer checks.** Inspect tube and fighter HUD updates from the carrier. Confirm the visible squadron
 shrinks from a second client's grid.
+
+### Support fighter electronic warfare
+
+The pinned `fighterabilitiesbytype` table puts the Cenobite neutralizer, Scarab ECM, Siren warp
+disruptor and Dromi web in slot zero on both Tech I and Tech II variants. EVE.js `fighterRuntime.js`
+cross-checks the effect families and range checks. Eden uses the same launch and recall calls as
+attack fighters and applies the pinned ranges, strengths and durations through its resident
+capacitor, electronic warfare and tackle owners. Strength uses the number of surviving fighters.
+The Support Fighters skill applies the pinned shield capacity bonus.
+
+The Archon test loads two support squadrons and rejects a third. It activates each racial ability
+against a locked Venture, verifies the capacitor drain or active disruption and checks effect
+cleanup on recall. Additional ability slots, space superiority and Standup fighters remain open.
+
+**Automated validation.** The four exact support fighter cases passed in 11.04 seconds. All 309 cases
+in the final capital travel, utility drone, resident drone, pilot drone, electronic warfare and
+tackle filter passed in 118.70 seconds after an 8.60-second build. Both Python suites, formatting
+and `git diff --check` passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
 
 ## Rorqual industrial core and shipboard compression
 
@@ -335,8 +354,8 @@ Supercarriers use the native fighter tubes introduced for carriers, with class l
 published light and heavy attack squadrons. Slot zero uses the attack missile profile. The Aeon's racial Carrier
 and Heavy Fighters skills apply to Cyclops attack damage. Supercarriers also use the existing
 `superWeaponMgr.ActivateSinglePointTargetedModule` path for burst projectors. The racial effects `6615`–`6618`
-modify their associated projector cycles, alongside Burst Projector Operation. Other fighter roles and abilities,
-Standup fighter control remains open.
+modify their associated projector cycles, alongside Burst Projector Operation. Additional fighter abilities and
+Standup fighter control remain open.
 
 The pinned catalog cases exercise all eight hulls. The Avatar pays to bridge a Rapier from Jan to a Pharolux,
 then jumps itself and docks at the Keepstar. The Aeon fires Cyclops attack missiles at an Astrahus and applies a
@@ -582,7 +601,7 @@ separation at arrival. Both Python suites, formatting and `git diff --check` pas
 | **3. Ansiblex jump gates** | Implemented. Link two aligned endpoints, enforce alliance access and the ship type list, and settle the source gate's capacitor at departure. |
 | **4. Black Ops and covert travel** | Implemented. Black Ops direct jumps, covert module and mobile beacons, eligible fleet passenger travel through a paid portal, and fleet conduit jumps. |
 | **5. Dreadnoughts and force auxiliaries** | Implemented. Dreadnoughts and force auxiliaries use standard cynos, paid siege or triage, and normal docking, repair and loss settlement. The acceptance cases reopen a paid siege and settle an Apostle loss. |
-| **6. Carriers and fighters** | Implemented for light attack squadrons. Carrier tubes support launch, targeting, recall and replacement, with squadron losses persisted. Standup fighters and additional combat abilities remain open. |
+| **6. Carriers and fighters** | Carrier tubes support light attack and support squadrons, with launch, targeting, recall and replacement. Squadron losses persist. Standup fighters and additional combat abilities remain open. |
 | **7. Capital industry and fleet services** | Rorquals use paid industrial cores, Excavators, fleet compression and P.A.N.I.C. Shared fleet storage, mobile refitting, clone bays and fresh-world resupply remain open. |
 | **8. Supercapitals and production** | Keepstar docking, Sotiyo construction, direct jumps, Titan bridging, supercarrier heavy attack fighters and burst projectors are implemented. Targeted Titan doomsdays have paid windups, counters and durable loss settlement. Titan lances, Reapers and Bosonic fields support paid aiming and positional counters. The oscillator transports subcapitals and locks capital warp. Phenomena Generators apply the pinned racial boosts and penalties. |
 

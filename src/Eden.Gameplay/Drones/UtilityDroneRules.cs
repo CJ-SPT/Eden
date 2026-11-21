@@ -20,6 +20,7 @@ public enum UtilityDroneKind
     Salvaging,
     OreMining,
     IceMining,
+    WarpDisrupting,
 }
 
 public sealed record UtilityDroneProfile(
@@ -30,7 +31,8 @@ public sealed record UtilityDroneProfile(
     ElectronicWarfareModule? ElectronicWarfare = null,
     double EffectMilliseconds = 0,
     double ResidueChance = 0,
-    double ResidueMultiplier = 0
+    double ResidueMultiplier = 0,
+    double Falloff = 0
 )
 {
     public bool Repair => Kind is UtilityDroneKind.ShieldRepair or UtilityDroneKind.ArmorRepair or UtilityDroneKind.HullRepair;

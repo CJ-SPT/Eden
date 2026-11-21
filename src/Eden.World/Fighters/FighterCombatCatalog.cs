@@ -19,6 +19,10 @@ internal static class FighterCombatCatalog
     )
     {
         double Value(DogmaAttributeId id) => values.GetValueOrDefault(id);
+        if (FighterDeckRules.Class(values) == FighterClass.Support)
+        {
+            return FighterSupportCatalog.Profile(type, source, values);
+        }
         if (
             source?.Published != 1
             || (FighterDeckRules.Class(values), Value(DogmaAttributeId.FighterSquadronRole))

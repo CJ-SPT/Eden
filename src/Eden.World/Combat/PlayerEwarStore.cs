@@ -276,7 +276,9 @@ internal sealed partial class PlayerEwarStore(WorldDatabase database, INpcEwarRo
             var item = world.Set<OwnedItem>().Find(row.ModuleId);
             // Paid rows belong to the source controller, including at repeat
             // boundaries. A victim advancing first cannot expire a continuous effect.
-            bool droneEffect = item is not null && catalog.FittingType(item.TypeId)?.CategoryId == (int)InventoryCategory.Drone;
+            bool droneEffect =
+                item is not null
+                && catalog.FittingType(item.TypeId)?.CategoryId is (int)InventoryCategory.Drone or (int)InventoryCategory.Fighter;
             bool valid =
                 source?.ActiveShip.Position is not null
                 && source.ActiveShipId == row.SourceShipId
