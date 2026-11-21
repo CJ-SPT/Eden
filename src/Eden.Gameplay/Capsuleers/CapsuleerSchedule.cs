@@ -26,6 +26,9 @@ public interface ICapsuleerScheduler
         return Run(destinyStamp, maximumActions);
     }
 
+    CapsuleerBatch RunMaintenance(int destinyStamp, int maximumActions, CancellationToken cancellationToken) =>
+        Run(destinyStamp, maximumActions: 1, cancellationToken);
+
     IReadOnlyList<CapsuleerJob> Jobs();
     MinerObservation? Miner(long pilotId);
     HaulerObservation? Hauler(long pilotId);

@@ -454,13 +454,22 @@ internal sealed partial class CapsuleerScheduler(
     public CapsuleerBatch Run(int destinyStamp, int maximumActions, CancellationToken cancellationToken) =>
         RunPrepared(destinyStamp, maximumActions, cancellationToken);
 
+    public CapsuleerBatch RunMaintenance(int destinyStamp, int maximumActions, CancellationToken cancellationToken) =>
+        RunPrepared(
+            destinyStamp,
+            maximumActions: 1,
+            cancellationToken,
+            backgroundActions: Math.Min(BackgroundActionsPerSlice, maximumActions)
+        );
+
     private CapsuleerBatch RunCore(
         int destinyStamp,
         int maximumActions,
         HumanActivitySnapshot activity,
         CapsuleerHauler.PreparedJourney? preparedJourney = null,
         bool measured = false,
-        long? turnStarted = null
+        long? turnStarted = null,
+        Predicate<CapsuleerJob>? mayExecute = null
     )
     {
         long started = turnStarted ?? clock.GetTimestamp();
@@ -601,7 +610,8 @@ internal sealed partial class CapsuleerScheduler(
                     executing = job;
                     CheckMiningBelt(job, at, activity);
                 },
-                firstCheck: job => FirstMiningCheck(job, activity)
+                firstCheck: job => FirstMiningCheck(job, activity),
+                mayExecute: mayExecute
             );
             executing = null;
             // The owner is held throughout this turn. An offscreen action cannot move a

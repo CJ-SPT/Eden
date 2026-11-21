@@ -178,9 +178,7 @@ internal sealed class CapsuleerMaintenance(
             int completed = 0;
             do
             {
-                // A job, its transaction and the queue revision are one atomic step.
-                // Let waiting sessions enter before the next job or scene capture.
-                var batch = scheduler.Run(scene.Stamp, maximumActions: 1, cancellationToken);
+                var batch = scheduler.RunMaintenance(scene.Stamp, CapsuleerJobQueue.ActionsPerTurn - completed, cancellationToken);
                 backlogged = batch.Turn.OldestDueTicks is not null;
                 int work = batch.Turn.Completed + batch.Turn.SafetyChecks;
                 advanced = work > 0;

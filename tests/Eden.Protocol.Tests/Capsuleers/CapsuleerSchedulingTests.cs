@@ -52,6 +52,34 @@ public sealed class CapsuleerSchedulingTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public void BoundedBackgroundSliceLeavesTheFirstUnpreparedDeadlineAtTheHead()
+    {
+        CapsuleerJobQueue queue = new();
+        var clock = new TestClock();
+        CapsuleerJob first = new(1, 1, 1, 9, CapsuleerAction.Arrival);
+        CapsuleerJob second = new(2, 1, 1, 9, CapsuleerAction.Arrival);
+        CapsuleerJob trade = new(3, 1, 1, 9, CapsuleerAction.Trade);
+        CapsuleerJob later = new(4, 1, 1, 9, CapsuleerAction.Arrival);
+        queue.Restore([later, trade, second, first]);
+        List<CapsuleerJob> paid = [];
+
+        var turn = queue.Run(9, Execute, clock, maximumActions: 4, mayExecute: job => job.Action == CapsuleerAction.Arrival);
+        Assert.Equal(2, turn.Completed);
+        Assert.Equal(new[] { first, second }, paid);
+        Assert.Equal(trade, queue.NextJob);
+        Assert.Equal(9, turn.OldestDueTicks);
+
+        Assert.Equal(2, queue.Run(9, Execute, clock).Completed);
+        Assert.Equal(new[] { first, second, trade, later }, paid);
+
+        CapsuleerJob Execute(CapsuleerJob job)
+        {
+            paid.Add(job);
+            return job.Next(10, job.Action);
+        }
+    }
+
+    [Fact]
     public void SleepingPaidCycleChecksCanWakeAtTheSameDeadlineAsAnotherPilot()
     {
         CapsuleerJobQueue queue = new();

@@ -139,7 +139,8 @@ public sealed class CapsuleerJobQueue
         bool useCanonicalQueue = false,
         int maximumActions = ActionsPerTurn,
         Action<CapsuleerJob, long>? check = null,
-        Func<CapsuleerJob, long?>? firstCheck = null
+        Func<CapsuleerJob, long?>? firstCheck = null,
+        Predicate<CapsuleerJob>? mayExecute = null
     )
     {
         ArgumentOutOfRangeException.ThrowIfNegative(throughTicks);
@@ -179,6 +180,10 @@ public sealed class CapsuleerJobQueue
             // A probe can expose another pilot's cold trade or travel job. Release the owner
             // so its own inputs can be prepared before the authoritative action.
             if (checks > 0 && useCanonicalQueue && maximumActions == 1 && job.PilotId != first.Job.PilotId)
+            {
+                break;
+            }
+            if (mayExecute is not null && !mayExecute(job))
             {
                 break;
             }

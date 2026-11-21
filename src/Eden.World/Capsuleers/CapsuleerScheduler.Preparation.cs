@@ -10,6 +10,7 @@ using Eden.World.Catalog;
 using Eden.World.Combat.Npcs;
 using Eden.World.Market;
 using Eden.World.Mining;
+using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -87,18 +88,7 @@ internal sealed partial class CapsuleerScheduler
         }
         if (job.Action == CapsuleerAction.Arrival && Live is { } live)
         {
-            int system = _locations[job.PilotId];
-            // Arrival advances the current leg. Transfers and new journeys have their own jobs.
-            // Cold or detailed roles can still need geometry prepared outside the owner.
-            if (
-                !activity.ActiveSystems.Contains(system)
-                    && _haulers.TryGetValue(job.PilotId, out var traveler)
-                    && traveler.HasFlightInputs(system, database.Catalog.Identity.Generation)
-                    && !ActiveOperation(job.PilotId)
-                || live.TrafficGeometry.TryRead(system, database.Catalog.Identity.Generation, out _)
-                    && _miners.TryGetValue(job.PilotId, out var miner)
-                    && miner.PreparationPilot?.SystemId == system
-            )
+            if (WarmArrival(live, job, activity))
             {
                 RoutineArrivals++;
                 return null;
@@ -119,6 +109,36 @@ internal sealed partial class CapsuleerScheduler
             RecordFailure(job, activity.ElapsedTicks, error);
             throw;
         }
+    }
+
+    private bool WarmArrival(LiveWorld live, CapsuleerJob job, HumanActivitySnapshot activity)
+    {
+        int system = _locations[job.PilotId];
+        long generation = database.Catalog.Identity.Generation;
+        return !activity.ActiveSystems.Contains(system)
+                && _haulers.TryGetValue(job.PilotId, out var traveler)
+                && traveler.HasFlightInputs(system, generation)
+                && !ActiveOperation(job.PilotId)
+            || live.TrafficGeometry.TryRead(system, generation, out _)
+                && _miners.TryGetValue(job.PilotId, out var miner)
+                && miner.PreparationPilot?.SystemId == system;
+    }
+
+    private bool CanRunInBackgroundSlice(LiveWorld live, CapsuleerJob job, HumanActivitySnapshot activity)
+    {
+        if (_membershipDirty || _resuming.ContainsKey(job.PilotId) || activity.ActiveSystems.Contains(_locations[job.PilotId]))
+        {
+            return false;
+        }
+        return job.Action switch
+        {
+            CapsuleerAction.Arrival => WarmArrival(live, job, activity),
+            CapsuleerAction.Retry => _miners.GetValueOrDefault(job.PilotId)?.PreparationPilot is not null
+                || _haulers.GetValueOrDefault(job.PilotId)?.PreparationPilot is not null,
+            CapsuleerAction.Collect or CapsuleerAction.Lock => _miners.GetValueOrDefault(job.PilotId)?.PreparationPilot is not null
+                && _preparedPopulationCatalog.GetValueOrDefault(_locations[job.PilotId]) == database.Catalog.Identity.Generation,
+            _ => false,
+        };
     }
 
     private PreparationInput CapturePreparation(WorldAction world, CapsuleerJob job, IReadOnlyList<int> occupied)
@@ -270,7 +290,9 @@ internal sealed partial class CapsuleerScheduler
         }
     }
 
-    private CapsuleerBatch RunPrepared(int destinyStamp, int maximumActions, CancellationToken cancellationToken)
+    private const int BackgroundActionsPerSlice = 4;
+
+    private CapsuleerBatch RunPrepared(int destinyStamp, int maximumActions, CancellationToken cancellationToken, int backgroundActions = 1)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maximumActions);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(maximumActions, CapsuleerJobQueue.ActionsPerTurn);
@@ -291,6 +313,30 @@ internal sealed partial class CapsuleerScheduler
             if (input is null)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                if (
+                    backgroundActions > 1
+                    && Live is { } backgroundLive
+                    && _queue.NextJob is { } head
+                    && CanRunInBackgroundSlice(backgroundLive, head, activity)
+                )
+                {
+                    // Keep each deadline and resource commit. Release ownership before
+                    // a cold, observed or cross-system job needs its normal preparation.
+                    return RunCore(destinyStamp, backgroundActions, activity, turnStarted: started, mayExecute: CanContinue);
+
+                    bool CanContinue(CapsuleerJob job)
+                    {
+                        if (cancellationToken.IsCancellationRequested || !CanRunInBackgroundSlice(backgroundLive, job, activity))
+                        {
+                            return false;
+                        }
+                        if (job != head && job.Action == CapsuleerAction.Arrival)
+                        {
+                            RoutineArrivals++;
+                        }
+                        return true;
+                    }
+                }
                 return RunCore(destinyStamp, maximumActions, activity, turnStarted: started);
             }
         }
