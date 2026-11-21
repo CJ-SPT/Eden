@@ -56,6 +56,10 @@ The separate [Avalonia desktop launcher](https://github.com/CJ-SPT/Eden-Launcher
 
 The native localization QA settings update now accepts its boolean flag before and after character selection and keeps it for the connection. See the [localization compatibility notes](protocol/compatibility.md#localization-qa-wrap-compatibility-november-5-2026).
 
+Insider's QA menu can read and toggle the connection's Asset Holding QA settings. Its jump-clone command clears the selected
+pilot's saved cooldown. Entitlement failure simulation, HyperNet seeding and test-token generation require separate service
+work. See the [Insider QA guide](development-client.md#insider-qa-tab).
+
 Character-sheet Combat Log now shows saved NPC kills and player ship losses, with native report details and historical records recovered from existing loss/bounty data. Catalog-driven NPC faction losses now persist their standing values and dated history together with each kill. See the [interaction history notes](protocol/characters.md#character-interaction-history-november-5-2026).
 
 Skill extraction now supports the native client request with atomic skill removal, extractor consumption and Large Skill Injector delivery. It enforces the allocated-SP minimum, docked capsule requirement, Alpha level floors, queued/trained prerequisites and clone/implant restrictions. Receipts, history, restart persistence, concurrent requests and connected-session notifications have automated coverage; native presentation remains unverified. See the [skill extraction notes](protocol/characters.md#persistent-skill-extraction).

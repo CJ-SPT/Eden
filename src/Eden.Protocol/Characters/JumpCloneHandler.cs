@@ -32,8 +32,13 @@ internal sealed class JumpCloneHandler(IPilotJumpClones clones, DeferredRefitPri
                     or "SetJumpCloneName"
                     or "DestroyInstalledClone"
                     or "CloneJump"
+                    or "ResetLastCloneJumpTime"
                 )
         )
+        {
+            return PilotCallResult.Unsupported;
+        }
+        if (method == "ResetLastCloneJumpTime" && (context.Roles & (long)PilotRole.QualityAssurance) == 0)
         {
             return PilotCallResult.Unsupported;
         }
@@ -63,6 +68,10 @@ internal sealed class JumpCloneHandler(IPilotJumpClones clones, DeferredRefitPri
                     return PilotCallResult.None;
                 case ("DestroyInstalledClone", [long id]):
                     Changed(context, clones.Destroy(pilot, id));
+                    return PilotCallResult.None;
+                case ("ResetLastCloneJumpTime", []):
+                    clones.ResetCooldown(pilot);
+                    context.Notifications.Add(new JumpCloneCacheInvalidated());
                     return PilotCallResult.None;
                 case ("CloneJump", [long station, long id, var price, var confirmed]) when station is > 0 and <= int.MaxValue:
                     _ = confirmed switch

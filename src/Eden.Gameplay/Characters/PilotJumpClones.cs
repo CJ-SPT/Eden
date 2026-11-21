@@ -60,6 +60,7 @@ public interface IPilotJumpClones : IPilotJumpCloneSkills
     void Rename(long pilotId, long cloneId, string name);
     int Destroy(long pilotId, long cloneId);
     JumpCloneTransfer Jump(long pilotId, long expectedShipId, int stationId, long cloneId, long quotedCents);
+    void ResetCooldown(long pilotId);
 }
 
 public static class JumpCloneRules

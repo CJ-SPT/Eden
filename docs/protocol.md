@@ -807,6 +807,7 @@ fit-based procurement, factory prerequisites, and corporate reserves.
 
 - [Trashing personal items and ships, November 8, 2026](protocol/inventory.md#trashing-personal-items-and-ships-november-8-2026)
 
+- [Insider QA tab, November 21, 2026](protocol/navigation.md#insider-qa-tab-november-21-2026)
 - [Insider tools and reward destinations, November 9, 2026](protocol/navigation.md#insider-tools-and-reward-destinations-november-9-2026)
 - [Native redemption pairs and batched training queues, November 9, 2026](protocol/characters.md#native-redemption-pairs-and-batched-training-queues-november-9-2026)
 - [Native Type Browser item creation, November 8, 2026](protocol/navigation.md#native-type-browser-item-creation-november-8-2026)

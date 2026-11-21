@@ -119,6 +119,8 @@ internal sealed class PilotCallContext(
     public DockedPilot Pilot => Flight.Pilot;
     public SignedSettings SignedSettings { get; } = signedSettings;
     public bool LocalizationQaWrap { get; set; }
+    public bool AssetHoldingItemValidationEnabled { get; set; } = true;
+    public bool AssetHoldingItemFailureEnabled { get; set; }
     public bool Selected => ActiveFlight is not null;
     public long? NextSkillCompletion { get; set; }
     public List<PilotNotification> Notifications { get; } = [];

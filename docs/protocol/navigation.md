@@ -8,6 +8,7 @@ These records preserve milestone evidence and historical observations. Dates, sc
 
 ## Contents
 
+- [Insider QA tab, November 21, 2026](#insider-qa-tab-november-21-2026)
 - [Gate-arrival cloak, November 17, 2026](#gate-arrival-cloak-november-17-2026)
 - [Distant warping ships in the overview, November 17, 2026](#distant-warping-ships-in-the-overview-november-17-2026)
 - [Travel configuration, November 15, 2026](#travel-configuration-november-15-2026)
@@ -472,6 +473,37 @@ position/gate/dock operations and typed catch-up motion; existing affected fligh
 
 **Optional maintainer checks:** Align to a gate/bookmark and stop; enable autopilot on a multi-system station route;
 save a different gate distance, restart and compare the next gate landing.
+
+## Insider QA tab, November 21, 2026
+
+The reported **Invalid Packet Destination** named `inventoryAssetHoldingMgr.is_item_validation_enabled`. In build **3662168**,
+`InsiderService.QAMenu` calls `assetholding.client.qa.get_insider_qa_menu` synchronously. The menu immediately reads both
+`is_item_validation_enabled()` and `is_item_failure_enabled()` through `AssetHoldingService.remote_inventory`. The initial
+Python booleans are True and False respectively. The menu inverts the validation result to label its bypass switch. The setters
+`set_item_validation_enabled(bool)` and `set_item_failure_enabled(bool)` return Python None. The server checks the authenticated
+QA role and pilot selection. Connection-local flags model the entitlement QA switches. Eden's ordinary inventory validation,
+consumption and creation use their normal rules.
+
+The **Jump Clones** callback invokes `jumpCloneSvc.ResetLastCloneJumpTime()` through the current location moniker. Eden clears the
+selected pilot's saved timer in a resident transaction and delivers `OnJumpCloneCacheInvalidated` after commit. The existing
+checkpoint projects that change. Only the QA role can reset the timer. Other server-backed entries, including the home-station
+remote-office timer, HyperNet seeding and the redeemer's test-token batch, require mechanics outside this implementation.
+
+Source evidence comes from inert inspection of `eve/devtools/script/insider.pyj`, `assetholding/client/qa.pyj`,
+`assetholding/client/assetholding_svc.pyj` and `eve/client/script/ui/services/clonejumpsvc.pyj` in the staged archive. The SHA-256 is
+`37FB2AF4FA0EC5C8FA320F34CD28C8B7DBF4917418336B38CBA20A7860DB0368`. The older EVE.js **261108.1** release was checked for its
+connection-local toggle behavior and its jump-clone reset in `server/src/services/inventory/inventoryAssetHoldingMgrService.js`
+and `server/src/services/station/jumpCloneRuntime.js`. Ordinary cooldown behavior is covered in the
+[EVE University jump-clone guide](https://wiki.eveuniversity.org/Jump_clones).
+
+**Automated validation** — The exact Asset Holding test passed in 10.84 s and the exact jump-clone reset test passed in 8.82 s.
+The combined `InsiderQaTests`, `JumpCloneServiceTests`, `Persistence.JumpCloneTests` and
+`Hosting.ServerServicesTests` filter passed all 29 cases in 15.11 s. It covers selection and authorization, native boolean
+and None replies, argument validation, per-connection isolation, location binding, cache invalidation and checkpoint reopen.
+
+**Live acceptance** — Not performed; agent client testing is disabled.
+
+**Optional maintainer checks** — Open Insider → QA while docked, toggle both Asset Holding switches and reopen the menu, then reset an active jump-clone cooldown.
 
 ## Insider tools and reward destinations, November 9, 2026
 
