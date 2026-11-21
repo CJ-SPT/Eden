@@ -117,6 +117,8 @@ public static class ModuleFittingRules
                 Sovereignty.EntosisRules.ModuleGroup => effects.Contains(Sovereignty.EntosisRules.Effect),
                 Flight.CapitalTravelRules.GeneratorGroup => Flight.CapitalTravelRules.ModuleField(typeId) is not null
                     && effects.Contains(DogmaEffect.CynosuralGeneration),
+                Flight.IndustrialProtectionRules.Group => typeId == Flight.IndustrialProtectionRules.Module
+                    && effects.Contains(DogmaEffect.IndustrialInvulnerability),
                 Flight.ShipCompressionRules.Group => Flight.ShipCompressionRules.IsCompressor(typeId)
                     && effects.Contains(DogmaEffect.IndustrialItemCompression),
                 Flight.CapitalModeRules.Group => Flight.CapitalModeRules.Effect(typeId) is { } mode && effects.Contains(mode),

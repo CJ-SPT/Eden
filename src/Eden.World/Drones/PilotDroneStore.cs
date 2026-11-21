@@ -346,6 +346,10 @@ internal sealed partial class PilotDroneStore(
         {
             throw new InvalidDataException("These drones are unavailable to your current ship.");
         }
+        if (order == DroneOrder.Engage)
+        {
+            Eden.World.Flight.PilotCapitalTravelStore.RequireOffense(world, pilot.ActiveShipId, now);
+        }
         bool workOrder = ValidateWorkOrder(world, catalog, pilot, selected!, order, targetId, locks, range, systemId, now);
         if (order == DroneOrder.Engage && !workOrder)
         {
@@ -676,6 +680,7 @@ internal sealed partial class PilotDroneStore(
         List<InventoryChange> changes = [];
         List<DroneHit> hits = [];
         List<PilotDamage> pilotHits = [];
+        bool protection = Eden.World.Flight.PilotCapitalTravelStore.ProtectedIndustry(world, ship.Id, now);
         var settings = Settings(world, pilotId);
         var shipAttributes = PilotFittingStore.ShipAttributes(world, catalog, pilot);
         var snapshot = world.CachedFittingSnapshot(pilotId, ship.Id, world.FitRevision(pilotId));
@@ -742,9 +747,16 @@ internal sealed partial class PilotDroneStore(
             {
                 continue;
             }
-            if (profile.Utility is not null)
+            if (profile.Utility is { } utility)
             {
                 RequireResident();
+                if (protection && utility.Offensive)
+                {
+                    CancelWork(world, drone);
+                    drone.Activity = DroneActivity.Idle;
+                    drone.TargetId = ship.Id;
+                    continue;
+                }
                 if (AdvanceWork(world, catalog, pilot, drone, contact, controlRange, now, stamp, changes))
                 {
                     continue;
@@ -754,6 +766,7 @@ internal sealed partial class PilotDroneStore(
             double seconds = Math.Min(1, (now - drone.UpdatedAt) / (double)TimeSpan.TicksPerSecond);
             if (
                 !fighter
+                && !protection
                 && profile.Damage.Total > 0
                 && drone.DelegationMode == DroneDelegationMode.None
                 && drone.Activity == DroneActivity.Idle
@@ -938,7 +951,8 @@ internal sealed partial class PilotDroneStore(
             );
             drone.UpdatedAt = now;
             if (
-                profile.Damage.Total <= 0
+                protection
+                || profile.Damage.Total <= 0
                 || npc is null && structure is null && victimContact is null
                 || drone.ReadyAt > now
                 || contact.Position.DistanceTo(target) - radius - profile.Radius > profile.Optimal + profile.Falloff * 2

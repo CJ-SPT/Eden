@@ -1,4 +1,6 @@
+using Eden.Data.World.Mining;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Dogma;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
@@ -99,5 +101,71 @@ public sealed partial class CapitalTravelTests
         PilotCallResult Compress(long item) => venture.Call("inSpaceCompressionMgr", "CompressItemInSpace", item, owner.ShipId);
 
         InventoryItem Item(long id) => fixture.Inventory.List(miner.PilotId, miner.ShipId).Single(item => item.Id == id);
+    }
+
+    [Fact]
+    public async Task RorqualPanicRequiresLockedAsteroidBurnsOutAndProtectsItsFleet()
+    {
+        using Fixture fixture = new(UtilityDroneRules.Rorqual, Oxygen);
+        long panic = fixture.FitCapitalModule(IndustrialProtectionRules.Module);
+        var owner = fixture.Db.Store.FindPilot(1000001)!;
+        var miner = fixture.Db.Store.FindPilot(1000002)!;
+        var origin = new SpacePosition(1_000_000_000, 0, 0);
+        fixture.Db.Store.SetPosition(owner.ShipId, origin, Jan);
+        fixture.Db.Store.SetPosition(miner.ShipId, origin + new SpacePosition(10_000, 0, 0), Jan);
+        const long rock = 8_000_000_000_201;
+        using (var action = fixture.Live.Economy.Begin(new(systems: [Jan])))
+        {
+            action.Add(
+                new WorldAsteroid
+                {
+                    Id = rock,
+                    TypeId = 1230,
+                    SystemId = Jan,
+                    Quantity = 2000,
+                    BeltId = 40088235,
+                    X = origin.X + 5000,
+                    Radius = 300,
+                }
+            );
+            action.Commit();
+        }
+        using Client rorqual = fixture.Select(1000001);
+        using Client venture = fixture.Select(1000002);
+        fixture.Join(venture);
+        var fitting = fixture.Db.Services.GetRequiredService<IPilotFitting>();
+        double before = Resistance();
+        Assert.IsType<PilotCallResult.Failure>(Activate());
+        await rorqual.TickAsync();
+        var locking = rorqual.Call("dogmaIM", "AddTarget", rock);
+        Assert.True(locking is PilotCallResult.Success, locking.ToString());
+        fixture.Clock.Seconds += 60;
+        await rorqual.TickAsync();
+        var activated = Activate();
+        Assert.True(activated is PilotCallResult.Success, activated.ToString());
+        Assert.False(fixture.Inventory.List(owner.PilotId, owner.ShipId).Single(item => item.Id == panic).Online);
+        Assert.True(fixture.Travel.IndustrialProtectionActive(owner.ShipId));
+        Assert.True(fixture.Travel.IndustrialProtectionActive(miner.ShipId));
+        Assert.Equal(before * 0.0001, Resistance(), 8);
+        var warp = fixture.Db.Services.GetRequiredService<IPilotWarpDrive>();
+        Assert.Throws<InvalidDataException>(() => warp.Activate(miner.PilotId, miner.ShipId, 1_000_000, fixture.Clock.Now));
+        long ends = fixture.Clock.Now + 264 * TimeSpan.TicksPerSecond;
+
+        rorqual.Dispose();
+        venture.Dispose();
+        await fixture.Live.FlushAsync();
+        fixture.Reopen(restart: true);
+        Assert.True(fixture.Travel.IndustrialProtectionActive(miner.ShipId));
+        Assert.Equal(before * 0.0001, Resistance(), 8);
+        using Client reopened = fixture.Select(1000002);
+        fixture.Clock.AdvanceWallTime(TimeSpan.FromTicks(ends - fixture.Clock.Now - 1));
+        Assert.True(fixture.Travel.IndustrialProtectionActive(miner.ShipId));
+        fixture.Clock.AdvanceWallTime(TimeSpan.FromTicks(1));
+        Assert.False(fixture.Travel.IndustrialProtectionActive(miner.ShipId));
+        await reopened.TickAsync();
+        Assert.Equal(before, Resistance(), 8);
+
+        PilotCallResult Activate() => rorqual.Call("dogmaIM", "Activate", panic, "moduleBonusIndustrialInvulnerability", null, 0);
+        double Resistance() => fitting.ShipAttributes(miner.PilotId)[DogmaAttributeId.ShieldEmResonance];
     }
 }

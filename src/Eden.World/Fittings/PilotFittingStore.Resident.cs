@@ -79,6 +79,15 @@ internal sealed partial class PilotFittingStore
                 // Build 3662168 command nodes omit the dogma signature attribute.
                 return Math.Max(1, catalog.FittingType(typeId)?.Radius ?? 0);
             }
+            if (
+                npcSignature <= 0
+                && world.Set<Eden.Data.World.Mining.WorldAsteroid>().Find(itemId) is { } asteroid
+                && asteroid.TypeId == typeId
+            )
+            {
+                // Mineable ore and ice can omit signature data. The spawned deposit has a physical radius.
+                return asteroid.Radius;
+            }
             if (npcSignature <= 0 && catalog.FittingType(typeId) is { GroupId: MiningDefinitions.GasCloudGroup } cloud)
             {
                 // Gas types have no dogma signature. Use their physical catalog radius for locking.

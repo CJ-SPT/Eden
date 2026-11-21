@@ -17,7 +17,8 @@ internal sealed partial class CapitalTravelHandler(
     TimeProvider clock,
     CapitalInventorySignal fuelSignal,
     IPilotFitting? fitting = null,
-    IPilotShipCompression? compression = null
+    IPilotShipCompression? compression = null,
+    Eden.Protocol.Targeting.TargetingHandler? targeting = null
 ) : ISelectedPilotCallHandler, IModuleEffectSource, IDisposable
 {
     internal const string CynoEffectName = "cynosuralGeneration";
@@ -265,6 +266,7 @@ internal sealed partial class CapitalTravelHandler(
             }
         }
         AdvanceCompressors(context);
+        AdvanceProtection(context);
         var current =
             pilot == 0 ? null
             : travel.Field(pilot) is { } field ? Effect(field)

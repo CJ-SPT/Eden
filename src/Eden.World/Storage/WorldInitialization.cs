@@ -148,7 +148,10 @@ public static class WorldInitialization
             )
             .Select(i => i.Id);
         world.Set<ActiveFittedModule>().Where(a => a.ExpiresAt <= moduleReopen || !committedModes.Contains(a.ModuleId)).ExecuteDelete();
-        world.Set<Eden.Data.World.Fleets.WorldCommandBurst>().ExecuteDelete();
+        world
+            .Set<Eden.Data.World.Fleets.WorldCommandBurst>()
+            .Where(row => !row.IndustrialProtection || row.ExpiresAt <= moduleReopen)
+            .ExecuteDelete();
         PilotSpatialModuleStore.Reconcile(world, (clock ?? TimeProvider.System).GetUtcNow().UtcDateTime.ToFileTimeUtc());
         world.Set<WorldTackle>().ExecuteDelete();
         world

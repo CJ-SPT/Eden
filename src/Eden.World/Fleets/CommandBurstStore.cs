@@ -270,6 +270,18 @@ internal sealed class CommandBurstStore(WorldDatabase database, ICooperativeFlee
     {
         foreach (var boost in Effective(catalog, rows))
         {
+            if (boost.CollectionId == IndustrialProtectionRules.VelocityPenalty)
+            {
+                // Build 3662168 publishes this DBuff against a separate client attribute.
+                // Destiny consumes the effective maximum velocity.
+                yield return new(
+                    ship,
+                    DogmaAttributeId.MaxVelocity,
+                    DogmaOperation.PostPercent,
+                    new DogmaValue.Constant(boost.Value),
+                    true
+                );
+            }
             var collection = CommandBurstCatalog.Collection(catalog, boost.CollectionId);
             foreach (var modifier in collection.Modifiers)
             {

@@ -89,6 +89,7 @@ internal sealed partial class PilotMissileStore(
         overloaded |= PilotOverloadStore.Selected(world, database.Path, pilotId, moduleId);
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Pilots.Single(p => p.Id == pilotId);
+        Eden.World.Flight.PilotCapitalTravelStore.RequireOffense(world, pilot.ActiveShipId, now);
         var members = banked ? PilotWeaponBankStore.Members(world, pilot.ActiveShipId, moduleId) : [moduleId];
         overloaded |= members.Any(id => PilotOverloadStore.Selected(world, database.Path, pilotId, id));
         var launchers = members.Select(id => ReadLauncher(world, catalog, pilot, id, now)).ToArray();

@@ -254,6 +254,7 @@ internal sealed partial class PilotCombatStore(
         overloaded |= PilotOverloadStore.Selected(world, database.Path, pilotId, moduleId);
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Pilots.Find(pilotId)!;
+        PilotCapitalTravelStore.RequireOffense(world, pilot.ActiveShipId, now);
         if (advanced is not null)
         {
             world.RequireUncloaked(pilot.ActiveShipId);

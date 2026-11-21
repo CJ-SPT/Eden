@@ -116,6 +116,7 @@ internal sealed partial class PilotSpatialModuleStore(WorldDatabase database, IP
         using CatalogDbContext catalog = new(database.CatalogPath);
         var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
         Eden.World.Sovereignty.EntosisPersistence.RequireTravel(world, pilot.ActiveShipId, now);
+        Eden.World.Flight.PilotCapitalTravelStore.RequireMobile(world, pilot.Id, pilot.ActiveShipId, now);
         var item = world.Set<OwnedItem>().Find(moduleId);
         bool cloak = SpatialModuleRules.IsCloak(effect);
         if (cloak && pilot.ActiveShip.Position?.SystemId is int system && Eden.Gameplay.Exploration.AbyssalRules.IsSystem(system))

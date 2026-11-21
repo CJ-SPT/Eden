@@ -71,6 +71,8 @@ public interface IPilotCapitalTravel
     CapitalModeActivation ActivateMode(long pilotId, long shipId, long moduleId, DogmaEffect effect);
     CapitalModeCycle? Mode(long shipId);
     IReadOnlyList<ShipCompressorCycle> Compressors(long shipId);
+    IndustrialProtectionActivation ProtectIndustry(long pilotId, long shipId, long moduleId, long asteroid);
+    bool IndustrialProtectionActive(long shipId);
     CynoActivation Light(long pilotId, long shipId, long moduleId, double speed);
     void CheckJump(long pilotId, long shipId, CapitalJumpRequest request);
     CapitalJump Jump(long pilotId, long shipId, CapitalJumpRequest request);

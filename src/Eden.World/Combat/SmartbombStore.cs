@@ -61,6 +61,7 @@ internal sealed class SmartbombStore(
             throw new InvalidDataException("Use an online fitted smartbomb on your active ship in space.");
         }
         world.RequireUncloaked(shipId);
+        Eden.World.Flight.PilotCapitalTravelStore.RequireOffense(world, shipId, now);
         PilotSkillReader.CheckRequirements(world, catalog, pilotId, item.TypeId);
         NaniteRepairPersistence.RequireAvailable(world, catalog, moduleId, now);
         var cooldown = world.Set<ModuleCooldown>().Find(moduleId);

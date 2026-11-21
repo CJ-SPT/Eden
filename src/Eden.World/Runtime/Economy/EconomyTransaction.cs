@@ -39,6 +39,9 @@ internal sealed partial class EconomyTransaction(
 
     internal IEnumerable<long> TimedModules(long ship) => store.TimedModules(ship);
 
+    internal bool MayHaveIndustrialProtection(long now) =>
+        store.MayHaveIndustrialProtection(now) || HasPrivateRows<Eden.Data.World.Fleets.WorldCommandBurst>();
+
     internal bool HasPrivateRows<T>()
         where T : class => _sets.TryGetValue(typeof(T), out var set) && set.Materializations != 0;
 

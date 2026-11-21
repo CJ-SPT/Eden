@@ -278,8 +278,8 @@ in the same hold without changing its units. It uses the catalog mapping shared 
 Pinned `itemcompression/client/inSpaceCompression.pyj` looks up `compression_facility_typelists` in the facility
 ship's slim item. `itemCompression.pyj` uses `inSpaceCompressionMgr.CompressItemInSpace(itemID, facilityBallID)`.
 EVE.js `industrialCore.js`, `miningIndustry.js` and `inSpaceCompressionMgrService.js` served as behavior and wire
-cross-checks. Both modules support paid single cycles. P.A.N.I.C., shared fleet storage and refitting, clone services,
-and the full capital production and resupply chain remain open.
+cross-checks. Both modules support paid single cycles. Shared fleet storage and refitting, clone services, and the
+full capital production and resupply chain remain open.
 
 **Automated validation.** `RorqualPaysForIndustrialCoreAndImprovesExcavatorYield` checks insufficient fuel before
 activation, a 903-unit charge and a 2.7× core yield multiplier, flight blocking and exact expiry on restart.
@@ -291,6 +291,24 @@ passed in 66.69 seconds with `CapitalTravelTests`, `StructureCompressionTests`, 
 **Live acceptance.** Not performed; agent client testing is disabled.
 
 **Optional maintainer checks.** Check the core and compressor HUD timers and compress ore from the fleet member's hold.
+
+## P.A.N.I.C. fleet protection
+
+The Rorqual's Pulse Activated Nexus Invulnerability Core requires a completed lock on a live ore or ice asteroid.
+Effect `6719` burns out module `42522`, starts a weapons timer and applies the pinned protection buffs to the Rorqual
+and eligible untethered fleet ships within 200 km. The base interval is 240 seconds, extended 10% per level of
+Invulnerability Core Operation. The shield-resistance buff uses the pinned -99.99% value. Protected pilots cannot
+warp, dock, jump, cloak, or use offensive modules. Combat drones cease dealing damage for the interval. Paid protection
+survives a clean restart and expires at its saved deadline. Schema 205 stores it using the existing timed buff scheduler.
+[CCP P.A.N.I.C. mechanics](https://support.eveonline.com/hc/en-us/articles/213529785-Pulse-Activated-Nexus-Invulnerability-Core-P-A-N-I-C)
+
+`RorqualPanicRequiresLockedAsteroidBurnsOutAndProtectsItsFleet` covers native activation and burnout, a Venture's
+shield resonance and warp restriction, and the saved protection before and after exact expiry. The broader
+`CapitalTravelTests`, `CommandBurstTests`, `WorldMigrationTests`, `StructureTetherTests` and `TargetingTests`
+filter passed all 73 cases in 70.13 seconds. The final P.A.N.I.C., burst and spatial-module rerun passed 15 cases
+in 18 seconds of test execution. Both Python suites and formatting passed.
+
+**Live acceptance.** Not performed; agent client testing is disabled.
 
 ## Milestones
 

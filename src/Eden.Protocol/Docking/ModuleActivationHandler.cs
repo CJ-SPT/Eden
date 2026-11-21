@@ -62,6 +62,12 @@ internal sealed class ModuleActivationHandler(
             return PilotCallResult.Unsupported;
         }
         string effectName = BlueMarshal.Text(args[1]);
+        if (effectName == CapitalTravelHandler.ProtectionEffectName)
+        {
+            return keywords is { Count: > 0 }
+                ? new PilotCallResult.Failure("Unexpected P.A.N.I.C. activation arguments.")
+                : capital?.ActivateProtection(context, method, args) ?? PilotCallResult.Unsupported;
+        }
         if (effectName == CapitalTravelHandler.CompressionEffectName)
         {
             return keywords is { Count: > 0 }
@@ -111,6 +117,14 @@ internal sealed class ModuleActivationHandler(
             || TackleWire.Effect(effectName) is DogmaEffect.StasisWebifier or DogmaEffect.WarpDisruptor or DogmaEffect.WarpScrambler
             || PlayerEwarWire.Effect(effectName) is not null
             || CapacitorWire.Effect(effectName) is DogmaEffect.EnergyNeutralizer or DogmaEffect.EnergyNosferatu;
+        if (
+            method == "Activate"
+            && (offensive || SpatialModuleHandler.Handles(effectName) || effectName == Eden.Protocol.Sovereignty.EntosisHandler.EffectName)
+            && context.Flight.IndustrialProtectionActive
+        )
+        {
+            return new PilotCallResult.Failure("P.A.N.I.C. prevents using offensive, cloak and travel modules.");
+        }
         // Nullification is explicitly permitted through an active cloak by the pinned effect.
         if (
             method == "Activate"

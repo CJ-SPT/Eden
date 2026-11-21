@@ -290,6 +290,10 @@ internal sealed partial class PilotCapitalTravelStore(
 
     internal static void RequireMobile(WorldAction world, long pilotId, long shipId, long now)
     {
+        if (ProtectedIndustry(world, shipId, now))
+        {
+            throw new InvalidDataException("P.A.N.I.C. prevents warping, docking and jumping.");
+        }
         if (ActiveMode(world, shipId, now) is not null)
         {
             throw new InvalidDataException("Wait for the active capital mode to finish before moving the ship.");

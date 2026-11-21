@@ -9,6 +9,7 @@ public enum DogmaAttributeId
     ConsumptionQuantity = 714,
     ConsumptionQuantityBonus = 885,
     IndustrialCoreFuelPercent = 1239,
+    IndustrialProtectionDuration = 2788,
     CompressibleItemsTypeList = 3255,
     CynosuralFieldSpawnRadius = 2455,
     CynoJammerActivationDelay = 2794,

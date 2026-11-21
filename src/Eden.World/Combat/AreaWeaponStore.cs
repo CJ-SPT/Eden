@@ -106,6 +106,7 @@ internal sealed partial class AreaWeaponStore(
             throw new InvalidDataException("Use an online fitted area weapon on your active ship in space.");
         }
         world.RequireUncloaked(shipId);
+        Eden.World.Flight.PilotCapitalTravelStore.RequireOffense(world, shipId, now);
         if (CrimewatchPersistence.System(catalog, pilot.ActiveShip) != system || presence.IsTravelProtected(system, shipId))
         {
             throw new InvalidDataException("The source ship is travelling or has changed systems.");

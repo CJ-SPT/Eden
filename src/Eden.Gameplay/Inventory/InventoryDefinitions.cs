@@ -104,6 +104,7 @@ public enum DogmaEffect
 {
     CynosuralGeneration = 2857,
     CapitalIndustrialCore = 4575,
+    IndustrialInvulnerability = 6719,
     IndustrialItemCompression = 8364,
     CapitalTriage = 6581,
     CapitalSiege = 6582,
