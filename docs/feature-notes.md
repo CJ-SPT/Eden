@@ -22,6 +22,8 @@
 - **Simulated capsuleers.** Encounter NPC pilots that mine, haul goods, form corporations, and take part in regional conflicts.
   Corporations can build and buy reserves based on their pilots' current and lost equipment.
   Fresh-world pilots can earn their first industrial or combat frigate through deliveries or bounties.
+  Pilots in paid career ships can join corporations and take on corporate freight or station production.
+  [Fresh-world corporate careers](protocol/capsuleers.md#fresh-world-corporate-careers)
   Fresh worlds prepare eligible unvisited high-security station systems while someone is playing. The administrator
   can cap admitted bots, set region or solar-system access, and control fresh-universe careers and autonomous organizations.
   [Population settings](world-configuration.md#autonomous-population)

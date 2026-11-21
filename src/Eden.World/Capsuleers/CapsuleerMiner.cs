@@ -822,6 +822,16 @@ internal sealed partial class CapsuleerMiner(
             _work = Work with { StarterOreTypes = oreTypes };
         }
         if (
+            fresh
+            && starterTradeSettled
+            && Pilot.ShipGroupId != (int)HullClass.Corvette
+            && _operation.World is EconomyTransaction freshFactory
+            && CapsuleerIndustry.Employer(freshFactory, pilotId, Pilot.CorpId) is not null
+        )
+        {
+            _operation.MarketChanged |= industry.ProduceScheduled(freshFactory, _operation.Catalog, Pilot, Now, out supply);
+        }
+        if (
             !fresh
             && Pilot.CorpId >= Eden.Gameplay.Corporations.CorporationRules.FirstCorporationId
             && _operation.World is EconomyTransaction supplyWorld

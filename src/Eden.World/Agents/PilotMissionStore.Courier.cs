@@ -28,7 +28,8 @@ internal sealed partial class PilotMissionStore
         DockedPilot ship,
         CatalogAgent agent,
         int destination,
-        long now
+        long now,
+        bool startNew = true
     )
     {
         if (ship.Position is not null || ship.InStructure || agent.StationId is not int source)
@@ -53,13 +54,17 @@ internal sealed partial class PilotMissionStore
                 if (dock == delivery.DestinationStation)
                 {
                     Act(world, catalog, pilot, agent, MissionAction.Complete, delivery.Id, now, []);
-                    return source;
+                    return startNew ? source : null;
                 }
                 return delivery.DestinationStation;
             }
             // A destroyed ship's cargo cannot complete an existing delivery.
             Act(world, catalog, pilot, agent, MissionAction.Quit, delivery.Id, now, []);
-            return dock == source ? null : source;
+            return !startNew || dock == source ? null : source;
+        }
+        if (!startNew)
+        {
+            return null;
         }
         if (dock != source)
         {

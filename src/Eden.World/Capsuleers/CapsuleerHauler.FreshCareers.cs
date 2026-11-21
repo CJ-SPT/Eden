@@ -3,6 +3,7 @@ using Eden.Data.World.Inventory;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.Exploration;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Ships;
 using Eden.World.Fittings;
@@ -12,9 +13,12 @@ namespace Eden.World.Capsuleers;
 
 internal sealed partial class CapsuleerHauler
 {
-    private bool FreshCombat => database.Settings.FreshUniverse && Work.CareerPlan?.Profession == CapsuleerProfession.Combat;
+    private bool FreshCombat =>
+        database.Settings.FreshUniverse
+        && Pilot.ShipGroupId == (int)HullClass.Corvette
+        && Work.CareerPlan?.Profession == CapsuleerProfession.Combat;
 
-    private void WorkFreshCareer(EconomyTransaction world)
+    private void WorkFreshCareer(EconomyTransaction world, CombatAnomaly? scoutedAnomaly)
     {
         var catalog = _operation.Catalog;
         if (Pilot.InStructure || world.Set<SavedCapsuleerAgent>().Find(pilotId) is not { } agent)
@@ -31,7 +35,27 @@ internal sealed partial class CapsuleerHauler
         }
 
         var profession = FreshCareerRules.Profession(agent.Slot);
-        var training = careerTraining.AdvanceFreshCareer(world, catalog, Pilot, profession, Now);
+        bool rookie = Pilot.ShipGroupId == (int)HullClass.Corvette;
+        var courier =
+            profession == CapsuleerProfession.Hauling
+                ? FreshCareerRoutes.Read(catalog, agent.CommunitySystemId, world.Settings.Capsuleers)
+                : null;
+        if (!rookie)
+        {
+            if (courier is not null && TryFreshDelivery(world, courier, startNew: false))
+            {
+                return;
+            }
+            JoinCorporationAtDock();
+            if (TryCorporationRelocation() || TryCorporationSupply())
+            {
+                return;
+            }
+        }
+
+        var training = rookie
+            ? careerTraining.AdvanceFreshCareer(world, catalog, Pilot, profession, Now)
+            : careerTraining.Advance(world, catalog, Pilot, profession, Work.CareerPlan, Now);
         _work = Work with { CareerPlan = training.Plan };
         _operation.MarketChanged |= training.MarketChanged;
         if (training.LevelChanged)
@@ -39,14 +63,15 @@ internal sealed partial class CapsuleerHauler
             _pilot = ReadPilot(world, CapsuleerCommunityStore.MinerAccountId);
         }
         if (
-            Pilot.ShipGroupId == (int)HullClass.Corvette
-            && (
-                profession != CapsuleerProfession.Hauling
-                || !world.Filter<OwnedItem>(item => item.LocationId == Pilot.ShipId).Any(item => item.FlagId == (int)InventoryFlag.Cargo)
-            )
+            (rookie && profession == CapsuleerProfession.Combat)
+            || !world
+                .Filter<OwnedItem>(item => item.LocationId == Pilot.ShipId)
+                .Any(item =>
+                    item.FlagId == (int)InventoryFlag.Cargo && catalog.RequireItem(item.TypeId).CategoryId != (int)InventoryCategory.Charge
+                )
         )
         {
-            var purchase = ammunitionSupply.AdvanceCareerShip(world, catalog, Pilot, training.Plan!, Now);
+            var purchase = ammunitionSupply.AdvanceCareerShip(world, catalog, Pilot, training.Plan, Now);
             _operation.MarketChanged |= purchase.MarketChanged;
             if (purchase.Boarded)
             {
@@ -57,29 +82,12 @@ internal sealed partial class CapsuleerHauler
             }
         }
 
-        if (profession == CapsuleerProfession.Hauling)
+        if (courier is not null)
         {
-            var routes = FreshCareerRoutes.Read(catalog, agent.CommunitySystemId, world.Settings.Capsuleers);
-            if (
-                routes.Agent is { } issuer
-                && routes.Courier is { } delivery
-                && missions.RunStarterCourier(world, catalog, Pilot, issuer, delivery.DestinationStationId, Now) is int station
-                && CapsuleerTrafficRoutes.ToStation(
-                    catalog,
-                    Pilot.StationId,
-                    station,
-                    (HullClass)Pilot.ShipGroupId,
-                    AvoidedSupplierSystems(),
-                    FreshCareerRules.DeliveryJumps,
-                    policy: world.Settings.Capsuleers
-                )
-                    is { } route
-            )
+            if (!TryFreshDelivery(world, courier, startNew: true))
             {
-                BeginSupplyJourney(route);
-                return;
+                Wait("Waiting for a reachable distribution delivery.");
             }
-            Wait("Waiting for a reachable distribution delivery.");
             return;
         }
 
@@ -88,10 +96,41 @@ internal sealed partial class CapsuleerHauler
         var supplies = resupply.Dock(database, world, catalog, pilotId, Work.Resupply, Now);
         _operation.MarketChanged |= supplies.SpentCents != (Work.Resupply?.SpentCents ?? 0);
         _work = Work with { Resupply = supplies };
-        if (!TryLaunchSortie(supplies, null))
+        if (rookie ? !TryLaunchSortie(supplies, null) : !TryLaunchActivity(scoutedAnomaly))
         {
             Wait("Waiting for a viable bounty patrol.");
         }
+    }
+
+    private bool TryFreshDelivery(EconomyTransaction world, FreshCareerRoutes routes, bool startNew)
+    {
+        var catalog = _operation.Catalog;
+        if (
+            routes.Agent is not { } issuer
+            || routes.Courier is not { } delivery
+            || missions.RunStarterCourier(world, catalog, Pilot, issuer, delivery.DestinationStationId, Now, startNew) is not int station
+        )
+        {
+            return false;
+        }
+        var route = CapsuleerTrafficRoutes.ToStation(
+            catalog,
+            Pilot.StationId,
+            station,
+            (HullClass)Pilot.ShipGroupId,
+            AvoidedSupplierSystems(),
+            station == issuer.StationId ? CapsuleerRecruitmentRules.MaximumJumps : FreshCareerRules.DeliveryJumps,
+            policy: world.Settings.Capsuleers
+        );
+        if (route is null)
+        {
+            Wait("Waiting for a reachable distribution delivery.");
+        }
+        else
+        {
+            BeginSupplyJourney(route);
+        }
+        return true;
     }
 
     private void FitRookieWeapon(EconomyTransaction world)

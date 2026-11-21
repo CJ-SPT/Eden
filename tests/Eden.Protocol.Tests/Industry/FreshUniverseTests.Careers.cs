@@ -2,17 +2,20 @@ using Eden.Data.World.Agents;
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Combat;
 using Eden.Data.World.Market;
+using Eden.Data.World.Skills;
 using Eden.Gameplay.Agents;
 using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
+using Eden.Gameplay.Corporations;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Inventory;
 using Eden.Gameplay.Market;
 using Eden.Gameplay.Ships;
 using Eden.Gameplay.Skills;
 using Eden.Infrastructure.Operations;
+using Eden.Protocol.Tests.PilotSessions;
 using Eden.Server;
 using Eden.Server.Launcher;
 using Eden.World.Capsuleers;
@@ -233,6 +236,31 @@ public sealed partial class FreshUniverseTests
         });
         Assert.Contains(Allocations(restored, pilots[1]), allocation => allocation.Points > 0);
         output.WriteLine($"Completed both replacements at {TimeSpan.FromSeconds(clock.Seconds)} simulated time.");
+
+        // An established employer sends ordinary invitations. Each rookie finishes any paid work before accepting.
+        using (var hire = restored.Economy.Begin(TransactionParticipants.None))
+        {
+            hire.Set<PilotWallet>().Find(supplier)!.Cents += CorporationRules.CreationFeeCents;
+            hire.Add(
+                new PilotSkill
+                {
+                    PilotId = supplier,
+                    TypeId = CorporationRules.ManagementSkill,
+                    Points = 250,
+                }
+            );
+            hire.Commit();
+        }
+        var corporations = reopened.GetRequiredService<IPlayerCorporations>();
+        var membership = reopened.GetRequiredService<ICorporationMembership>();
+        var employer = corporations.Create(supplier, PlayerCorporationTests.Details("Courier and Patrol Service", "CPS")).Corporation;
+        foreach (long id in pilots)
+        {
+            Assert.Equal(CorporationApplicationStatus.Invited, membership.Invite(supplier, id).Status);
+        }
+        AdvanceCareers(reopened, system, clock, () => pilots.All(id => corporations.Identity(id).Id == employer.Id));
+        Assert.All(pilots, id => Assert.Contains(membership.Applications(id, false), a => a.Status == CorporationApplicationStatus.Joined));
+        VerifyPurchases(reopened, pilots, goals, supplier, 2);
 
         ServiceProvider Open() => ServerServices.Build(database, clock, population: new TestNpcPopulationSeeder(system), liveWorld: true);
     }

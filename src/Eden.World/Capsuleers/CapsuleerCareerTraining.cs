@@ -98,9 +98,8 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
         bool factory =
             profession == CapsuleerProfession.Mining
             && (
-                world.Settings.FreshUniverse
-                    ? agent.Slot == StarterIndustryRules.ProducerSlot
-                    : profile.CorporationId >= CorporationRules.FirstCorporationId
+                profile.CorporationId >= CorporationRules.FirstCorporationId
+                || world.Settings.FreshUniverse && agent.Slot == StarterIndustryRules.ProducerSlot
             );
         var focus = plan.NextFocus;
         for (int turn = 0; turn < 3; turn++, focus = CapsuleerCareerTrainingRules.Next(focus))

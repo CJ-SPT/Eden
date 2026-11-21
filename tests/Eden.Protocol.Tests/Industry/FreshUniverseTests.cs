@@ -1,7 +1,9 @@
 using Eden.Data.World.Capsuleers;
 using Eden.Data.World.Combat.Npcs;
+using Eden.Data.World.Corporations;
 using Eden.Data.World.Economy;
 using Eden.Data.World.Industry;
+using Eden.Data.World.Inventory;
 using Eden.Data.World.Market;
 using Eden.Data.World.Skills;
 using Eden.Gameplay.Capsuleers;
@@ -18,13 +20,17 @@ using Eden.Gameplay.Reprocessing;
 using Eden.Gameplay.Ships;
 using Eden.Gameplay.Skills;
 using Eden.Infrastructure.Operations;
+using Eden.Protocol.Tests.PilotSessions;
 using Eden.Server;
 using Eden.Server.Launcher;
 using Eden.World.Capsuleers;
 using Eden.World.Catalog;
 using Eden.World.Combat.Npcs;
 using Eden.World.Docking;
+using Eden.World.Industry;
+using Eden.World.Inventory;
 using Eden.World.Runtime;
+using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
@@ -298,6 +304,155 @@ public sealed partial class FreshUniverseTests(ITestOutputHelper output)
         }
     }
 
+    [InstalledCatalogFact]
+    public void FreshPaidMinerRunsCorporateProduction()
+    {
+        var directory = TestDirectory.Create("eden-fresh-corporate-production-");
+        try
+        {
+            VerifyFreshCorporateProduction(directory.FullName);
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
+    }
+
+    private void VerifyFreshCorporateProduction(string directory)
+    {
+        WorldDatabase database = new(Path.Combine(directory, "world.sqlite"));
+        File.Copy(Environment.GetEnvironmentVariable(CatalogEnvironmentVariable)!, database.OriginalCatalogPath);
+        TestClock clock = new();
+        WorldInitialization.Initialize(database, clock, new(FreshUniverse: true));
+        using var host = ServerServices.Build(database, clock, population: new TestNpcPopulationSeeder(), liveWorld: true);
+        host.GetRequiredService<IHumanPresence>().Update(Guid.NewGuid(), StarterSystem);
+        var prepared = host.GetRequiredService<CapsuleerProvisioner>()
+            .PrepareBackgroundSystem(StarterSystem, host.GetRequiredService<IWorldSynchronization>(), () => true, CancellationToken.None);
+        long factory = Assert.IsType<long>(prepared?.CreatedPilotId);
+        var live = host.GetRequiredService<LiveWorld>();
+        long customer = CreateSupplier(host, factory);
+        using CatalogDbContext catalog = new(database.CatalogPath);
+        var recipe = ManufacturingCatalog.Recipes(catalog)[CapsuleerAmmunitionSupplyRules.BlueprintType];
+        using (var setup = live.Economy.Begin(TransactionParticipants.None))
+        {
+            // Resume from a fitted career ship and completed starter trade before installing any corporate jobs.
+            var fitted = setup.Pilots.Find(factory)!.ActiveShip;
+            fitted.TypeId = Venture;
+            setup.Add(
+                new OwnedItem
+                {
+                    Id = setup.NextItemId(),
+                    OwnerId = factory,
+                    LocationId = fitted.Id,
+                    FlagId = (int)InventoryFlag.HighSlot0,
+                    TypeId = Miner,
+                    Quantity = 1,
+                    Singleton = true,
+                    Online = true,
+                }
+            );
+            setup.Add(
+                new MarketExecution
+                {
+                    PilotId = factory,
+                    TypeId = Miner,
+                    StationId = Factory,
+                    CounterpartyId = customer,
+                    PriceCents = 100_000,
+                    Quantity = 1,
+                    Time = clock.Now,
+                }
+            );
+            setup.Set<PilotWallet>().Find(factory)!.Cents = CorporationRules.CreationFeeCents;
+            foreach (var skill in recipe.Skills)
+            {
+                var trained =
+                    setup.Set<PilotSkill>().Find(factory, skill.TypeId)
+                    ?? setup.Add(new PilotSkill { PilotId = factory, TypeId = skill.TypeId }).Entity;
+                double rank = catalog
+                    .FittingAttributes(skill.TypeId)
+                    .GetValueOrDefault(Eden.Gameplay.Dogma.DogmaAttributeId.SkillTimeConstant);
+                trained.Points = Math.Max(trained.Points, TrainedSkill.PointsForLevel(rank, skill.Level));
+            }
+            if (setup.Set<PilotSkill>().Find(factory, CorporationRules.ManagementSkill) is not { } management)
+            {
+                management = setup.Add(new PilotSkill { PilotId = factory, TypeId = CorporationRules.ManagementSkill }).Entity;
+            }
+            management.Points = Math.Max(management.Points, 250);
+            setup.Pilots.Find(customer)!.ActiveShip.StationId = Factory;
+            var customerWallet = setup.Set<PilotWallet>().Find(customer) ?? setup.Add(new PilotWallet { PilotId = customer }).Entity;
+            customerWallet.Cents = 10_000_000;
+            setup.Add(
+                new OwnedItem
+                {
+                    Id = setup.NextItemId(),
+                    OwnerId = factory,
+                    LocationId = Factory,
+                    FlagId = (int)InventoryFlag.Hangar,
+                    TypeId = recipe.BlueprintTypeId,
+                    Quantity = 1,
+                    Singleton = true,
+                    BlueprintRuns = -1,
+                }
+            );
+            foreach (var (type, quantity) in IndustryMaterials.Calculate(recipe.Materials, 1))
+            {
+                InventoryPersistence.MergeOutput(setup, catalog, factory, Factory, (int)InventoryFlag.Hangar, type, quantity);
+            }
+            setup.Commit();
+        }
+
+        int corporation = host.GetRequiredService<IPlayerCorporations>()
+            .Create(factory, PlayerCorporationTests.Details("Fresh Foundry", "FRFR"))
+            .Corporation.Id;
+        const long capital = 10_000_000;
+        using (var treasury = live.Economy.Begin(TransactionParticipants.None))
+        {
+            var charter = treasury.Set<SavedCorporation>().Find(corporation)!;
+            charter.BalanceCents = capital;
+            charter.CapsuleerFoundingSystemId = StarterSystem;
+            treasury.Commit();
+        }
+        var market = host.GetRequiredService<IPersonalMarket>();
+        market.PlaceBuy(customer, new(Factory, recipe.ProductTypeId, 10_000, recipe.OutputQuantity, 7));
+        long order = Assert.Single(market.PersonalOrders(customer)).Id;
+        try
+        {
+            Advance(
+                host,
+                clock,
+                () => live.Economy.Inspect(world => world.Set<SavedPersonalOrder>().Find(order)?.Status == PersonalOrderStatus.Filled),
+                maximumTurns: 12_000
+            );
+        }
+        finally
+        {
+            var diagnostics = live.Economy.Inspect(world =>
+            {
+                var actor = world.Pilots.Find(factory)!;
+                var orderRow = world.Set<SavedPersonalOrder>().Find(order);
+                var jobs = world
+                    .Filter<IndustryJob>(job => job.PilotId == factory)
+                    .AsEnumerable()
+                    .Select(job => $"{job.ProductTypeId}/{job.Status}/{job.OutputCorporationId}");
+                return $"Hull {actor.ActiveShip.TypeId}, corp {actor.CorporationId}, starter order {orderRow?.Status}. "
+                    + $"Jobs {string.Join(", ", jobs)}.";
+            });
+            output.WriteLine(diagnostics);
+        }
+        live.Economy.Inspect(world =>
+        {
+            var job = Assert.Single(
+                world.Filter<IndustryJob>(row => row.PilotId == factory),
+                row => row.OutputCorporationId == corporation && row.ProductTypeId == recipe.ProductTypeId
+            );
+            Assert.Equal(IndustryJobStatus.Delivered, job.Status);
+            Assert.True(job.CostCents > 0);
+            Assert.True(world.Set<SavedCorporation>().Find(corporation)!.BalanceCents > capital);
+            return true;
+        });
+    }
+
     private static void SpendFreshPirateBountyPoints(ServiceProvider host, WorldDatabase database, TestClock clock)
     {
         // Open a second native factory cohort in the same universe. This rookie has never mined or received SP.
@@ -438,7 +593,11 @@ public sealed partial class FreshUniverseTests(ITestOutputHelper output)
             var kit = inventory.List(bot.Id, Factory);
             Assert.Equal(2, kit.Count);
             Assert.Equal(
-                inventory.List(human, player.ActiveShip.StationId).Select(i => i.TypeId).Order(),
+                inventory
+                    .List(human, player.ActiveShipId)
+                    .Where(i => InventoryDefinitions.IsHighSlot(i.FlagId))
+                    .Select(i => i.TypeId)
+                    .Order(),
                 kit.Select(i => i.TypeId).Order()
             );
             Assert.Equal(Skills(human), Skills(bot.Id));

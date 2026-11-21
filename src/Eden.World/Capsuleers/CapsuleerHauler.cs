@@ -1053,7 +1053,7 @@ internal sealed partial class CapsuleerHauler(
         using var phase = SessionPerformance.Phase("traffic.tradeAndLaunch");
         if (database.Settings.FreshUniverse && _operation.World is EconomyTransaction freshWorld)
         {
-            WorkFreshCareer(freshWorld);
+            WorkFreshCareer(freshWorld, scoutedAnomaly);
             return;
         }
         if (Pilot.ShipGroupId == FleetDefinitions.CapsuleGroup)

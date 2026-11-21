@@ -2,6 +2,42 @@
 
 [Protocol index](../protocol.md)
 
+## Fresh-world corporate careers
+
+A courier or bounty hunter in a paid career ship reviews ordinary corporation applications at dock. The courier
+delivers any outstanding mission cargo before reviewing membership, relocating or taking corporate freight. It can
+return to its distribution agent for paid work between corporate runs. A combat pilot in a paid hull uses the
+ordinary departure and resupply plans. A lost hull returns the pilot to corvette recovery and its entry fit.
+The current hull, organization and existing work checkpoints govern these decisions after restart.
+
+A fresh-world miner that has completed its starter trade and boarded a career ship can run paid NPC-station
+production for a bot-led corporation. The factory uses the existing funded orders, freight requests, active-time job
+deadlines and corporate sale settlement. Fresh operators must satisfy the catalog skill requirements before the
+factory spends money on a run. [Distribution mission rules](https://wiki.eveuniversity.org/Distribution_missions) ·
+[Corporation invitations](https://wiki.eveuniversity.org/Recruiting_corporation_members)
+
+The pinned build 3662168 supplies the career fits and manufacturing inputs. The inspected EVE.js
+`server/src/services/career/careerMissionSources.js` snapshot records rewards in the mission-completion checkpoint.
+Its SHA-256 is `D762CF77D7A6644F2D67630941EC1AADF3F36BFF18C443D77F61E51B9C9C3501`.
+
+### Automated validation
+
+- The pinned-catalog courier and bounty replay passed in 33.50 seconds. It followed both paid hull purchases,
+  recovery after loss, and acceptance of ordinary invitations.
+- The pinned-catalog Venture and corporate production methods passed independently in 2 minutes 51 seconds and
+  34.86 seconds. The corporate fixture starts with a funded charter, a qualified miner and owned inputs. The
+  scheduler installed and delivered Iron Charge S and filled a funded customer order.
+- The focused selection passed 309 cases in 313.48 seconds. It covered the remaining fresh-universe cases,
+  corporation recruitment, hauling, mining, recurring regional trade, and admitted courier deliveries.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
+
 ## Autonomous pilot creation under load
 
 The server log from revision `abdddb2d` reported 186 slow market-demand owner holds with a median of

@@ -75,9 +75,9 @@ internal static partial class CapsuleerCorporations
         }
         var hull = (HullClass)(catalog.Definitions.Items.GetValueOrDefault(pilot.ActiveShip.TypeId)?.GroupId ?? 0);
         var profession =
-            agent.Career == CapsuleerCareer.Mining
-                ? CapsuleerProfession.Mining
-                : CapsuleerCareerTraining.Profession(catalog, pilot.ActiveShip.TypeId, hull) ?? CapsuleerProfession.Hauling;
+            agent.Career == CapsuleerCareer.Mining ? CapsuleerProfession.Mining
+            : world.Settings.FreshUniverse ? FreshCareerRules.Profession(agent.Slot)
+            : CapsuleerCareerTraining.Profession(catalog, pilot.ActiveShip.TypeId, hull) ?? CapsuleerProfession.Hauling;
         long nextReview = checked(activeTicks + CapsuleerRecruitmentRules.ReviewDelay(pilotId).Ticks);
         organization = organization with { Profession = profession, DueTicks = nextReview };
         var former = world.Set<SavedCorporation>().Find(pilot.CorporationId);

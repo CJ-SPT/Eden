@@ -247,10 +247,14 @@ internal sealed partial class CapsuleerScheduler
             var hull = (HullClass)catalog.RequireItem(input.TrainingHull).GroupId;
             if (database.Settings.FreshUniverse && input.Job.Action == CapsuleerAction.Trade)
             {
-                // WorkFreshCareer trains for its slot's entry hull. Recovery capsules do not train this turn.
-                if (hull != HullClass.Capsule)
+                // Recovery uses the same entry fit as a first career purchase.
+                if (hull == HullClass.Corvette)
                 {
                     CapsuleerCareerTraining.PrepareFreshChoices(catalog, input.DefaultProfession);
+                }
+                else if (hull != HullClass.Capsule)
+                {
+                    CapsuleerCareerTraining.PrepareChoices(catalog, input.TrainingHull, input.DefaultProfession, input.TrainingPlan);
                 }
                 return;
             }
