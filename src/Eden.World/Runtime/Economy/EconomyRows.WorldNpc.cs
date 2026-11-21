@@ -66,6 +66,7 @@ internal sealed partial class ResidentEconomy
                     ShieldCharge,ShieldRepairAt,SpawnSlot,StructureDamage,SystemId,TypeId,UpdatedAt,VelocityX,VelocityY,
                     VelocityZ,X,Y,Z
                 )
+                WITH payload(value) AS MATERIALIZED (SELECT jsonb(value) FROM json_each({values}))
                 SELECT
                     json_extract(value,'$.Id'),json_extract(value,'$.AcquisitionRange'),
                     json_extract(value,'$.AnchorKind'),json_extract(value,'$.ArmorDamage'),
@@ -81,7 +82,7 @@ internal sealed partial class ResidentEconomy
                     json_extract(value,'$.TypeId'),json_extract(value,'$.UpdatedAt'),json_extract(value,'$.VelocityX'),
                     json_extract(value,'$.VelocityY'),json_extract(value,'$.VelocityZ'),json_extract(value,'$.X'),
                     json_extract(value,'$.Y'),json_extract(value,'$.Z')
-                FROM json_each({values}) WHERE 1
+                FROM payload WHERE 1
                 ON CONFLICT(Id) DO UPDATE SET
                     AcquisitionRange=excluded.AcquisitionRange,AnchorKind=excluded.AnchorKind,
                     ArmorDamage=excluded.ArmorDamage,ArmorRepairAt=excluded.ArmorRepairAt,BeltId=excluded.BeltId,

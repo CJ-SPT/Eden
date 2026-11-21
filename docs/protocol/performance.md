@@ -6463,3 +6463,85 @@ Not performed; agent client testing is disabled.
 ### Optional maintainer checks
 
 None.
+
+## CPU profiling at 2,500 autonomous capsuleers
+
+The reported dashboard showed 42.6% CPU across four processors, 506.8 MiB/s of managed
+allocations and 1,989 ms of checkpoint projection at 2,418 scheduled pilots. A local
+Release replay of `48463eeb` used a frozen saved world with the active-pilot cap raised
+to 2,500. It visited 300 communities and ran with one in-process observer, four processors
+reported to .NET, server GC, market maintenance and checkpoints every 15 seconds. The
+host, save and measured traffic mix differ from the reported server.
+
+A 44-second managed thread trace at 2,500 pilots repeatedly sampled the NPC population
+refresh under autonomous miner belt checks and the market-order and NPC checkpoint
+projections. Thread samples include waits, so process CPU totals come from the untraced
+replays. In a separate 15-second allocation sample, bot maintenance accounted for 80%
+of sampled bytes and checkpoint work for 18%. NPC population refresh alone appeared on
+stacks accounting for 43% of sampled allocation. The market-order projector was
+the largest checkpoint table by elapsed time, followed by the NPC projector.
+
+NPC mining haulers now read positive cargo stacks through the resident NPC ID index,
+including pending additions, updates and removals in the current transaction. They
+still collect in type-ID order after the same range and hold checks. Checkpoint
+projection materializes each batch row as JSONB once for field extraction. NPC market
+orders also use a reusable UTF-8 buffer and compact positional payloads. These payloads
+exist only inside the projection command. The bundled SQLite version is 3.50.4.
+Projection uses the existing transaction and row mappings. NPC rows release old
+spawn slots before writing new occupants.
+
+EVE University describes mining NPC haulers collecting ore from the fleet. The local
+EVE.js reference defines mining NPC profiles in `server/src/space/npc/miningNpcCatalog.js`.
+[EVE University NPC mining operations](https://wiki.eveuniversity.org/NPC_Mining_Operations)
+
+### Automated validation
+
+The untraced Release pair ran for 180 seconds per build from identical copies of the
+frozen world and catalog. Every sample from second 110 through the final measured second
+had 2,500 scheduled pilots. Process CPU came from the test host's cumulative processor
+time. The checkpoint table figures cover the last five completed checkpoints.
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| Warm process CPU per completed action | 1.172 ms | 0.777 ms |
+| Warm completed actions per second | 415.8 | 413.9 |
+| Warm oldest due job p95 | 76.2 ms | 48.3 ms |
+| Warm frame processing p95 | 6.58 ms | 3.13 ms |
+| Warm end-to-end frame / market request p95 | 17.16 / 33.51 ms | 15.65 / 32.26 ms |
+| Average checkpoint capture / projection / write | 21 / 1,285 / 1,030 ms | 17 / 664 / 981 ms |
+| Market projection time / allocated bytes per row | 12.05 µs / 939 B | 3.94 µs / 417 B |
+| NPC projection time / allocated bytes per row | 42.32 µs / 2,038 B | 15.39 µs / 2,038 B |
+| Process CPU time across the whole replay | 103.50 s | 80.25 s |
+
+Both builds completed 13 checkpoints and reported zero failed bot actions. All 70 warm
+observer requests on each build recorded zero SQL commands, connections and fitting
+calculations. The final five checkpoints projected 237,010 market rows on each build
+and 34,533 / 34,532 NPC rows. The process-wide allocation counter moved backwards in
+both runs, so allocation evidence comes from EventPipe and the checkpoint projection
+counters. These measurements come from one local A/B pair.
+
+The exact replay filter was
+`FullyQualifiedName=Eden.Protocol.Tests.Combat.ServerPerformanceReplayTests.ReplaySustainedBotThroughput`.
+The configured `450-False` case used `EDEN_BOT_REPLAY_SYSTEMS=300`,
+`EDEN_BOT_REPLAY_SECONDS=180`, `EDEN_BOT_REPLAY_WORKER_TRACE=0`,
+`EDEN_BOT_REPLAY_MARKET_MAINTENANCE=1`, `DOTNET_PROCESSOR_COUNT=4` and `DOTNET_gcServer=1`.
+The runs took 3 minutes 41 seconds and 3 minutes 49 seconds including setup.
+Raw traces, workload manifests, per-second CPU samples and replay reports are in
+`artifacts/bot-cpu/` in the worktree.
+
+The exact `HaulerWarpsInCollectsOnlyRealCargoAndDeliversWithoutDuplication` filter passed
+all four cases in 12.94 seconds with the Debug test build in 17.35 seconds. The market
+checkpoint test compares every client-visible order field before and after reopening.
+The combined `NpcMiningTests`, `LiveSimulationTests`, `NpcPopulationTests`,
+`StandardMarketTests`, `NpcAssortmentTests`, `EconomicProjectionTests`, `LiveWorldTests`
+and `CapsuleerTrafficPerformanceTests` filter passed all 144 cases in 52 seconds.
+The Debug solution build, Release test build, all 17 Python policy checks, repository
+formatting and protocol index check passed. The combined validation took 92 seconds.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+None.
