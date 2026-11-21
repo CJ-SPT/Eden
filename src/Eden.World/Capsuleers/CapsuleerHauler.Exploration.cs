@@ -17,11 +17,13 @@ internal sealed partial class CapsuleerHauler
 {
     private const int ExplorerSlot = 0;
 
+    private bool ExplorationEnabled => database.Settings.Capsuleers.Exploration && database.Settings.NpcPopulation.Pirates;
+
     private bool TryLaunchExploration(EconomyTransaction world)
     {
         if (
             Pilot.InStructure
-            || !database.Settings.NpcPopulation.Pirates
+            || !ExplorationEnabled
             || Work.Freight is not null
             || Work.CorporationSupply is not null
             || Work.SovereigntyExpedition is not null
@@ -118,7 +120,8 @@ internal sealed partial class CapsuleerHauler
             .ToArray();
 
     private IReadOnlyList<CombatAnomaly> ExplorationSignatures() =>
-        Work.Exploration is { Phase: ExplorationPhase.Scanning, ScanInFlight: false } exploration
+        ExplorationEnabled
+        && Work.Exploration is { Phase: ExplorationPhase.Scanning, ScanInFlight: false } exploration
         && !Work.Retreating
         && Work.ActiveTicks < exploration.EndsAt
             ? anomalies.Signatures(Pilot.SystemId, Now)
@@ -138,7 +141,7 @@ internal sealed partial class CapsuleerHauler
         }
         if (
             exploration.Phase != ExplorationPhase.Returning
-            && (Work.Retreating || Work.ActiveTicks >= exploration.EndsAt || !database.Settings.NpcPopulation.Pirates)
+            && (Work.Retreating || Work.ActiveTicks >= exploration.EndsAt || !ExplorationEnabled)
         )
         {
             if (_navigation.Warp is not null)

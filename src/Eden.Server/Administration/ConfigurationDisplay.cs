@@ -84,6 +84,8 @@ internal static class ConfigurationDisplay
         ["capsuleers.situationalAwareness"] = "React to ships and remember dangerous belts",
         ["capsuleers.beltRatting"] = "Run belt-ratting sorties",
         ["capsuleers.anomalyRatting"] = "Run ordinary combat anomalies",
+        ["capsuleers.exploration"] = "Explore data and relic sites",
+        ["capsuleers.wreckSalvage"] = "Salvage NPC wrecks",
         ["capsuleers.roamingPvp"] = "Nullsec PvP roams",
         ["capsuleers.roamPercent"] = "Roam chance per departure (%)",
         ["capsuleers.generatedCombatPercent"] = "Combat fits among generated nullsec pilots (%)",

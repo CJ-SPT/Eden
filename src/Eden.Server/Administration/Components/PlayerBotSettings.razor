@@ -1,6 +1,6 @@
 <section class="card settings-group">
     <h3>Population &amp; traffic</h3>
-    <p class="muted">Bot settings are applied at restart. Eden pauses excess pilots without deleting them and reuses saved pilots when limits rise. Station traffic and miners are prepared globally on restart.</p>
+    <p class="muted">Bot settings apply at restart. Eden pauses pilots above the configured limits and reuses them when the limits rise.</p>
     <div class="settings-fields">
         <SettingField Label="Enable player bots"
                       Help="Controls all simulated capsuleers, including station travelers, gate visitors, miners, haulers and combat pilots. Turning this off pauses and hides them.">
@@ -34,6 +34,19 @@
         <SettingField Label="Run ordinary combat anomalies"
                       Help="Allows eligible combat pilots to visit ordinary combat anomalies.">
             <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.AnomalyRatting" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+    </div>
+</section>
+<section class="card settings-group">
+    <h3>Exploration &amp; salvage</h3>
+    <div class="settings-fields">
+        <SettingField Label="Explore data and relic sites"
+                      Help="Allows eligible bots to fit exploration ships, scan and hack high-security pirate sites. An explorer already in flight returns to its departure station after this is turned off.">
+            <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.BotExploration" aria-describedby="@field.Help" /></Control>
+        </SettingField>
+        <SettingField Label="Salvage NPC wrecks"
+                      Help="Allows bot ratters to fit salvagers and recover salvage from their own wrecks. Ordinary wreck looting is separate.">
+            <Control Context="field"><InputCheckbox id="@field.Input" @bind-Value="Form.BotWreckSalvage" aria-describedby="@field.Help" /></Control>
         </SettingField>
     </div>
 </section>

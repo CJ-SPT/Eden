@@ -19,6 +19,8 @@
         <h2>Active population settings</h2>
         <p>Simulated pilots: @(snapshot.Policy.Enabled ? "On" : "Off") · Miners: @(snapshot.Policy.Miners ? "On" : "Off") ·
             Station traffic: @snapshot.Policy.TrafficMultiplier× · Visitors per watched gate: @snapshot.Policy.GateVisitors</p>
+        <p>Explore data and relic sites: @(snapshot.Policy.Exploration ? "On" : "Off") ·
+            Salvage NPC wrecks: @(snapshot.Policy.WreckSalvage ? "On" : "Off")</p>
         <p class="muted">Traffic and visitor limits are separate. They do not guarantee every saved pilot is in your current system.</p>
     </section>
     <section class="card">

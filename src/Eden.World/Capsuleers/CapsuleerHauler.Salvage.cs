@@ -76,7 +76,7 @@ internal sealed partial class CapsuleerHauler
 
     private InformationModule? Salvager(WorldAction world, CatalogDbContext catalog)
     {
-        if (world is not EconomyTransaction)
+        if (!database.Settings.Capsuleers.WreckSalvage || world is not EconomyTransaction)
         {
             return null;
         }

@@ -237,7 +237,7 @@ public sealed class WorldSettingsPageTests
     [Fact]
     public void PopulationControlsRoundTripPreserveLegacyPreferencesAndValidateRanges()
     {
-        CapsuleerPopulationPolicy policy = new(false, false, false, 2.5m, 9);
+        CapsuleerPopulationPolicy policy = new(false, false, false, 2.5m, 9) { Exploration = false, WreckSalvage = false };
         var form = SettingsForm.From(new() { Capsuleers = policy });
         Assert.Equal(policy, form.Build().Capsuleers);
         Assert.Equal(new CapsuleerPopulationPolicy(), SettingsForm.From(new()).Build().Capsuleers);
@@ -254,6 +254,8 @@ public sealed class WorldSettingsPageTests
         Assert.Contains(changes, c => c.Field == "Player bots" && c.After == "Off");
         Assert.Contains(changes, c => c.Field == "Station traffic density" && c.After == "10×");
         Assert.Contains(changes, c => c.Field == "Visitors per watched gate" && c.After == "16");
+        Assert.Contains(changes, c => c.Field == "Explore data and relic sites" && c.Before == "On" && c.After == "Off");
+        Assert.Contains(changes, c => c.Field == "Salvage NPC wrecks" && c.Before == "On" && c.After == "Off");
     }
 
     [Fact]

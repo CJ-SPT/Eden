@@ -1,5 +1,7 @@
 # Protocol findings and milestone records
 
+[Bot activity settings](protocol/capsuleers.md#bot-activity-settings) covers restart behavior for exploration and wreck salvage.
+
 [Bot data and relic exploration](protocol/capsuleers.md#bot-data-and-relic-exploration) traces the paid Heron fit,
 probe resolution, native hacking and sale of recovered loot.
 

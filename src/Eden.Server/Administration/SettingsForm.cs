@@ -80,6 +80,8 @@ public sealed class SettingsForm
     public bool SituationalAwareness { get; set; }
     public bool BeltRatting { get; set; }
     public bool AnomalyRatting { get; set; }
+    public bool BotExploration { get; set; }
+    public bool BotWreckSalvage { get; set; }
 
     public bool RoamingPvp { get; set; }
     public bool RoamingGangs { get; set; }
@@ -326,6 +328,8 @@ public sealed class SettingsForm
             SituationalAwareness = settings.Capsuleers.SituationalAwareness,
             BeltRatting = settings.Capsuleers.BeltRatting,
             AnomalyRatting = settings.Capsuleers.AnomalyRatting,
+            BotExploration = settings.Capsuleers.Exploration,
+            BotWreckSalvage = settings.Capsuleers.WreckSalvage,
             RoamingPvp = settings.Capsuleers.RoamingPvp,
             RoamingGangs = settings.Capsuleers.RoamingGangs,
             RoamingGangSize = settings.Capsuleers.RoamingGangSize,
@@ -404,6 +408,8 @@ public sealed class SettingsForm
                 SituationalAwareness = SituationalAwareness,
                 BeltRatting = BeltRatting,
                 AnomalyRatting = AnomalyRatting,
+                Exploration = BotExploration,
+                WreckSalvage = BotWreckSalvage,
                 RoamingPvp = RoamingPvp,
                 RoamingGangs = RoamingGangs,
                 RoamingGangSize = RoamingGangSize,

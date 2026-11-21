@@ -2,6 +2,45 @@
 
 [Protocol index](../protocol.md)
 
+## Bot activity settings
+
+The web editor stages `capsuleers.exploration` and `capsuleers.wreckSalvage` in the world configuration revision.
+Both default to on, including when older documents omit them. The switches apply at startup and appear in the
+active settings on Population. Changing either activity keeps the existing population eligibility and provisioning
+fingerprint. [Settings and roadmap](../world-configuration.md#autonomous-population)
+
+When exploration is disabled, a bot skips exploration acquisitions and new sorties. Its existing sortie uses the
+normal return path, including probe recall and cleanup of pending scan and hacking state. When wreck salvage is
+disabled, a ratter skips salvager procurement and cancels an outstanding cycle via the information module owner.
+The pilot retains the fitted module, can pick up ordinary wreck loot, and can unload goods it recovered earlier.
+These gates use Eden's resident activity routines and the build 3662168 behavior recorded under
+[exploration](#bot-data-and-relic-exploration) and [wreck salvage](#bot-wreck-salvage-and-trade).
+
+**Automated validation**
+
+The exploration replay covers both site types and a restart during a scan with exploration disabled. It verifies
+probe recovery, departure-station docking and no new sortie. The salvage replay covers both resuming and canceling
+a paid cycle after restart, including ordinary loot recovery with salvage disabled. Administration tests cover
+the authenticated form, active and pending revisions, comparisons, and export. A legacy import test removes both
+properties and verifies that they default to on.
+
+The solution build finished without warnings or errors. The final focused filter passed 175 cases in 64.85 seconds.
+It selected `WorldSettingsPageTests`, `AdministrationComponentTests`, the `SettingsSaveUpdatesStatus` and
+`Population` methods on `AdministrationTests`, `WorldConfigurationTests`, `PilotSpaceActivitiesTests`,
+`CapsuleerPopulationSettingsTests`, `CapsuleerHaulerTests`, `CapsuleerMinerTests`, and
+`Eden.Protocol.Tests.Information`. The filter omitted the previously recorded
+`ShoppingChoosesRealAffordableStockAndHonorsThreatMemory` theory. Both Python policy suites passed all 17 checks.
+Formatting and all five new documentation links passed.
+
+**Live acceptance**
+
+Not performed; agent client testing is disabled.
+
+**Optional maintainer checks**
+
+In administration, turn off one activity under Player bots, save for restart, and verify its active value on Population
+after restart.
+
 ## Bot traffic distribution
 
 In the local November 12 world checkpoint, Amamake held 23 simulated haulers, including 16 docked and 9 from its own

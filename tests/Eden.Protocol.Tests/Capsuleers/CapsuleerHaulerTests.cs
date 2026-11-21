@@ -303,10 +303,15 @@ public sealed class CapsuleerHaulerTests
         internal WorldDatabase Database { get; }
         internal TestClock Clock { get; } = new();
 
-        internal Fixture(bool legacyFounders = true, bool isolateRoute = false, bool migrateRoutineTables = false)
+        internal Fixture(
+            bool legacyFounders = true,
+            bool isolateRoute = false,
+            bool migrateRoutineTables = false,
+            Action<string>? additionalCatalogData = null
+        )
         {
             Database = new(Path.Combine(_directory.FullName, "world.sqlite"));
-            CapsuleerMinerTests.CreateWorld(Database, Clock, legacyFounders);
+            CapsuleerMinerTests.CreateWorld(Database, Clock, legacyFounders, additionalCatalogData);
             using (WorldDbContext world = new(Database.Path))
             {
                 world.Database.ExecuteSqlRaw(
