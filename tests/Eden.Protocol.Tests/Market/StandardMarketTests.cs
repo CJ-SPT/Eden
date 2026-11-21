@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using Eden.Data.Catalog.Market;
 using Eden.Data.World.Market;
+using Eden.Gameplay.Characters;
 using Eden.Gameplay.Configuration;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Diagnostics;
@@ -10,6 +11,7 @@ using Eden.Protocol.Market;
 using Eden.Protocol.Serialization;
 using Eden.Server;
 using Eden.Server.Administration;
+using Eden.Server.Launcher;
 using Eden.World.Catalog;
 using Eden.World.Configuration;
 using Eden.World.Runtime;
@@ -145,6 +147,102 @@ public sealed class StandardMarketTests
         Assert.Throws<InvalidDataException>(() => config.Validate(conflict));
         conflict = draft with { Settings = draft.Settings with { Economy = new(ProgressiveMarkets: true, StandardMarket: true) } };
         Assert.Throws<InvalidDataException>(() => config.Validate(conflict));
+    }
+
+    [Theory]
+    [InlineData(MarketPreset.NpcOnly, NpcMarketKind.Institutional)]
+    [InlineData(MarketPreset.Standard, NpcMarketKind.Standard)]
+    [InlineData(MarketPreset.Testing, NpcMarketKind.Development)]
+    public async Task FreshWorldCanSwitchToRegularMarketAndRetainPlayerOrders(MarketPreset preset, NpcMarketKind expectedKind)
+    {
+        const int school = 18;
+        const int system = 30001392;
+        const int station = 60015159;
+        const int shuttle = 672;
+        var directory = TestDirectory.Create("eden-fresh-market-");
+        try
+        {
+            WorldDatabase database = new(Path.Combine(directory.FullName, "world.sqlite"));
+            TestCatalog.Create(database.OriginalCatalogPath);
+            TestCatalog.AddSchool(database.OriginalCatalogPath, school, 1, 1, system, station, 601);
+            using (CatalogDbContext catalog = new(database.OriginalCatalogPath, writable: true))
+            {
+                catalog.Database.ExecuteSqlRaw(
+                    """
+                    INSERT OR IGNORE INTO ItemGroup VALUES(31,'Shuttle',6);
+                    INSERT OR IGNORE INTO ItemType(Id,Name,GroupId) VALUES(672,'Caldari Shuttle',31);
+                    INSERT OR REPLACE INTO SourceRecord VALUES
+                        ('client/stationoperations','14','{{"services":[7]}}'),
+                        ('client/types','672','{{"published":1,"marketGroupID":1,"volume":5000}}'),
+                        ('client/npccorporations','1000035','{{"corporationTrades":{{"672":1}}}}');
+                    """
+                );
+            }
+            TestClock clock = new();
+            WorldInitialization.Initialize(database, clock, new(FreshUniverse: true));
+            var configuration = new WorldConfigurationStore(database, clock);
+            long pilot;
+            long balance;
+            MarketOrder order;
+            using (var host = ServerServices.Build(database, clock, liveWorld: true))
+            {
+                long account = host.GetRequiredService<LauncherStore>()
+                    .Register(new("Market Account", "Isolated Test Password 1"))
+                    .AccountId;
+                pilot = host.GetRequiredService<ICharacterCreation>()
+                    .Create(account, new("Market Pilot", 1, 1, 0, CharacterRules.UnspecifiedAncestry, [], [], school));
+                var market = host.GetRequiredService<IPilotMarket>();
+                Assert.Equal(0, market.Balance(pilot));
+                Assert.Empty(market.Orders(pilot, shuttle));
+                var live = host.GetRequiredService<LiveWorld>();
+                using (var economy = live.Economy.Begin())
+                {
+                    economy.Add(new PilotWallet { PilotId = pilot, Cents = StartingBalance });
+                    economy.Commit();
+                }
+                var personal = host.GetRequiredService<IPersonalMarket>();
+                personal.PlaceBuy(pilot, new(station, shuttle, 100, 1, 90));
+                order = Assert.Single(personal.PersonalOrders(pilot));
+                balance = market.Balance(pilot);
+
+                var state = configuration.Read();
+                var form = SettingsForm.From(state.Active.Draft.Settings);
+                form.MarketPreset = preset;
+                var draft = state.Active.Draft with { Settings = form.Build() };
+                if (preset == MarketPreset.Standard)
+                {
+                    var missing = Assert.Throws<InvalidDataException>(() => configuration.Save(state.Generation, draft, "test"));
+                    Assert.Contains("Import a compatible live market order snapshot", missing.Message);
+                    WriteSnapshot(
+                        database,
+                        clock,
+                        [Order(clock, 1, 70_000, 3) with { StationId = station, SystemId = system, TypeId = shuttle }]
+                    );
+                }
+                var pending = configuration.Save(state.Generation, draft, "test");
+                Assert.NotNull(pending.Pending);
+                Assert.DoesNotContain(market.Orders(pilot, shuttle), row => !row.Bid);
+                await live.FlushAsync();
+            }
+
+            WorldInitialization.Initialize(database, clock);
+            using var reopened = ServerServices.Build(database, clock, liveWorld: true);
+            Assert.True(database.Settings.FreshUniverse);
+            Assert.False(database.Settings.DevelopmentSupply.TestingGrants);
+            Assert.Equal(preset, SettingsForm.From(database.Settings).MarketPreset);
+            var shop = reopened.GetRequiredService<IPilotMarket>();
+            var ask = Assert.Single(shop.Orders(pilot, shuttle), row => !row.Bid);
+            Assert.Equal(station, ask.StationId);
+            var restored = reopened.GetRequiredService<LiveWorld>();
+            Assert.Equal(expectedKind, restored.Economy.Inspect(world => world.Set<NpcMarketOrder>().Find(ask.Id)!.Kind));
+            Assert.Equal(balance, shop.Balance(pilot));
+            Assert.Equal(order, Assert.Single(reopened.GetRequiredService<IPersonalMarket>().PersonalOrders(pilot)));
+            Assert.Single(shop.Buy(pilot, station, [new(shuttle, ask.PriceCents, 1)]).Trades);
+        }
+        finally
+        {
+            directory.Delete(recursive: true);
+        }
     }
 
     [Fact]

@@ -1919,6 +1919,55 @@ No full .NET regression suite was requested or run.
 **Optional maintainer checks:** After updating/restarting the host with Regional hub supply enabled, inspect native
 market categories and buy an NPC trade good at a regional hub. Native rendering and input remain unverified.
 
+## Market presets on fresh worlds and demand batching
+
+Fresh-universe worlds can stage market presets in **Economy & market** and activate them at restart. Standard
+still requires a compatible live order snapshot. NPC only uses the station corporation assortment. The default
+fresh market remains progressive with both supply supplements disabled. It supplies starter ore buyers,
+blueprints and skillbooks. The fresh profile requires starting skills and equipment and disables testing grants.
+Starter miners use the selected market's bids when an administrator switches away from the bootstrap market.
+[Market settings](../world-configuration.md#market-presets)
+
+The local EVE.js build 3396210 market-seeder guide describes how its Tranquility snapshot keeps station prices
+and volumes in `doc/MARKET_SEEDER.md` (SHA-256 prefix `7B354E099F4287301`). Fresh-world preset
+compatibility is Eden policy. [EVE University on regional markets](https://wiki.eveuniversity.org/Trading)
+
+A follow-up server capture showed recurring market-demand owner holds of roughly 400–550 ms. The previous
+change indexed recovery-deadline lookups. The maintenance turn could still prepare and settle a full page of
+listings while holding the world owner. Each resident poll now visits up to eight station/item pairs and
+settles up to 16 listings. It checks a 25 ms elapsed budget between pairs. A single pair and the commit can
+overrun that budget. The poll advances regional stock directly for those pairs, and resumes at the first
+unfinished listing or pair after commit. Existing price priority and recovery deadlines govern settlement.
+
+### Automated validation
+
+The solution built in 4.73 s with zero warnings or errors. The four exact cases passed in 9.29 s.
+They staged NPC only, Standard and Testing from fresh settings, restarted with an existing player bid
+and balance, and bought stock from the selected market. Standard rejected a missing snapshot before
+the test installed its compatible fixture. The demand test resumed past 24 unfillable listings and
+settled the later sale once. Revision `9ad486ef` rejected the preset changes and processed all 25
+demand locations in the first poll.
+
+A broader 96-case run passed 94 cases in 114.67 s. Both corvette industry replays failed while comparing
+human and bot starter equipment. Both reproduced the same mismatch on `9ad486ef`, before any market
+trading in those replays. The run omitted the previously documented SQL-trigger rollback fixture.
+
+The market, configuration and administration filter passed 59 cases in 20.92 s. Both Python policy suites
+passed all 17 checks. Formatting and the two new local documentation links passed verification.
+
+```text
+(FullyQualifiedName~StandardMarketTests|FullyQualifiedName~NpcRestingOrderTests|FullyQualifiedName~WorldConfigurationTests|FullyQualifiedName~AdministrationComponentTests|FullyQualifiedName~FreshProfileStartsEmptyAndPersistsAcrossRestart)&FullyQualifiedName!~MaintenanceUsesPricePriorityAndRejectsDuplicateConsumptionAfterRollback
+```
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+- Select **NPC only** on an existing fresh world, save, and restart.
+- Compare the server's market-demand owner holds during population growth.
+
 ## Progressive regional markets — November 8, 2026
 
 Historical implementation: the production-driven policy recorded below supersedes the time-based unlocks and material-derived quotes in this section. Existing section anchors and validation evidence are retained.

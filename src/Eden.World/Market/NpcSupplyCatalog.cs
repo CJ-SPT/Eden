@@ -25,7 +25,7 @@ internal sealed partial class PilotMarketStore
         int CorporationId,
         bool Hub,
         bool RegionalHubSupply,
-        bool FreshUniverse,
+        bool FreshUniverseMarket,
         bool StarterIndustry
     );
 
@@ -68,7 +68,7 @@ internal sealed partial class PilotMarketStore
     private IReadOnlyList<InstitutionalOffer> InstitutionalOffers(CatalogDbContext catalog, CatalogStationDefinition station)
     {
         bool hub = RegionalMarketCatalog.Read(catalog).Hubs.GetValueOrDefault(station.RegionId)?.Station.Id == station.Id;
-        bool fresh = database.Settings.FreshUniverse;
+        bool fresh = database.Settings.UsesFreshUniverseMarket();
         bool starterIndustry =
             fresh && CapsuleerProvisioningCatalog.StarterIndustry(catalog, station.SolarSystemId).HomeStationId == station.Id;
         InstitutionalSupplier supplier = new(station.OwnerId, hub, database.Settings.Economy.RegionalHubSupply, fresh, starterIndustry);
@@ -134,7 +134,8 @@ internal sealed partial class PilotMarketStore
             var manufacturing = recipes.GetValueOrDefault(typeId.ToString(CultureInfo.InvariantCulture))?.Activities?.Manufacturing;
             bool bid = offer.Bid;
             if (
-                supplier.FreshUniverse && (bid || type.CategoryId is not ((int)InventoryCategory.Blueprint or (int)InventoryCategory.Skill))
+                supplier.FreshUniverseMarket
+                && (bid || type.CategoryId is not ((int)InventoryCategory.Blueprint or (int)InventoryCategory.Skill))
             )
             {
                 continue;

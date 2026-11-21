@@ -45,7 +45,7 @@ internal sealed partial class RegionalMarketStore
         {
             return;
         }
-        bool freshUniverse = world.Settings.FreshUniverse;
+        bool freshUniverse = world.Settings.UsesFreshUniverseMarket();
         var unlocks = world.Set<SavedMarketUnlock>();
         HashSet<int> unlocked =
             freshUniverse ? []

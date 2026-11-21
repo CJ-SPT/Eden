@@ -52,17 +52,14 @@ internal static class ConfigurationValidation
         if (
             settings.FreshUniverse
             && (
-                settings.Economy
-                    is { StandardMarket: true }
-                        or { ProgressiveMarkets: not true }
-                        or { RegionalHubSupply: true }
-                        or { BeginnerMarketSupply: true }
-                || settings.DevelopmentSupply is { TestingMarket: true } or { TestingGrants: true }
+                settings.DevelopmentSupply.TestingGrants
                 || settings.Progression is { GrantStartingEquipment: false } or { GrantStartingSkills: false }
             )
         )
         {
-            throw new InvalidDataException("Fresh-universe progression requires the starter package and the player-supplied market.");
+            throw new InvalidDataException(
+                "Fresh-universe progression requires starting skills and equipment with testing grants disabled."
+            );
         }
         if (settings.Economy.StandardMarket && (settings.DevelopmentSupply.TestingMarket || settings.Economy.ProgressiveMarkets != false))
         {

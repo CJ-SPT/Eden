@@ -155,6 +155,11 @@ public sealed record WorldSettings
     public SimulationPolicy Simulation { get; init; } = new();
     public NavigationPolicy Navigation { get; init; } = new();
     public ExplorationPolicy Exploration { get; init; } = new();
+
+    public bool UsesFreshUniverseMarket() =>
+        FreshUniverse
+        && Economy is { StandardMarket: false, RegionalHubSupply: false, BeginnerMarketSupply: false }
+        && (Economy.ProgressiveMarkets ?? !DevelopmentSupply.TestingMarket);
 }
 
 // Read-only access to the active in-memory policy, never a pending administrator draft.

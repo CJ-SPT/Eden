@@ -272,18 +272,25 @@ internal sealed partial class CapsuleerIndustry
     private bool SellStarterOre(EconomyTransaction world, CatalogDbContext catalog, DockedPilot pilot, OwnedItem[] hangar)
     {
         int station = pilot.StationId;
+        bool starterMarket = world.Settings.UsesFreshUniverseMarket();
         foreach (var item in hangar.Where(item => CapsuleerProvisioningCatalog.SupportedOre(catalog, item.TypeId)))
         {
-            var bid = market.StarterOreBid(world, catalog, station, item.TypeId);
-            if (bid is not null)
+            var bid = starterMarket ? market.StarterOreBid(world, catalog, station, item.TypeId) : null;
+            if (starterMarket && bid is null)
             {
-                market.ExecuteSell(
-                    world,
-                    catalog,
-                    pilot.PilotId,
-                    [new(item.Id, station, item.TypeId, bid.PriceCents, Math.Min(bid.Remaining, item.Quantity))],
-                    0
-                );
+                continue;
+            }
+            int quantity = bid is null ? item.Quantity : Math.Min(bid.Remaining, item.Quantity);
+            var result = market.ExecuteSell(
+                world,
+                catalog,
+                pilot.PilotId,
+                [new(item.Id, station, item.TypeId, bid?.PriceCents ?? 1, quantity)],
+                0,
+                skipUnmatched: !starterMarket
+            );
+            if (result.Trades.Count > 0)
+            {
                 return true;
             }
         }

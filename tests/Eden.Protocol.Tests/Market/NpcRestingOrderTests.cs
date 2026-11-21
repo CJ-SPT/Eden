@@ -241,6 +241,60 @@ public sealed class NpcRestingOrderTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public void ResidentDemandYieldsBetweenLocationsAndResumesBeforeADueSale()
+    {
+        const int earlierListings = 24;
+        using Fixture f = new();
+        f.Stock(0);
+        long earlierSeller = f.Host.GetRequiredService<SqliteWorld>().FindPilot(1000002)!.PilotId;
+        var live = f.Host.GetRequiredService<LiveWorld>();
+        var signal = f.Host.GetRequiredService<MarketChangeSignal>();
+        using (var world = live.Economy.Begin())
+        {
+            for (int index = 1; index <= earlierListings; index++)
+            {
+                world.Add(
+                    new SavedPersonalOrder
+                    {
+                        Id = PersonalMarketRules.FirstOrderId + index,
+                        PilotId = earlierSeller,
+                        StationId = f.Pilot.StationId,
+                        SystemId = f.Pilot.SystemId,
+                        RegionId = f.Pilot.RegionId,
+                        TypeId = 100_000 + index,
+                        PriceCents = 1,
+                        Remaining = 1,
+                        Entered = 1,
+                        Issued = f.Data.Clock.Now,
+                        Modified = f.Data.Clock.Now,
+                        Expires = f.Data.Clock.Now + TimeSpan.FromDays(30).Ticks,
+                        DurationDays = 30,
+                    }
+                );
+            }
+            world.Commit();
+        }
+        f.List(f.Stack(1), 1);
+        f.Stock(1);
+        using var presence = f.Host.GetRequiredService<IHumanPresence>().Select(f.Pilot.PilotId, f.Pilot.SystemId);
+        Assert.Equal(0, f.Demand.AdvanceDemand());
+        Assert.InRange(signal.DemandCursor, PersonalMarketRules.FirstOrderId + 1, PersonalMarketRules.FirstOrderId + 8);
+        Assert.Empty(f.Market.Transactions(f.Pilot.PilotId));
+        int settled = 0;
+        for (int turn = 0; turn <= earlierListings && signal.DemandCursor != 0; turn++)
+        {
+            long previous = signal.DemandCursor;
+            settled += f.Demand.AdvanceDemand();
+            Assert.True(signal.DemandCursor == 0 || signal.DemandCursor > previous);
+        }
+        Assert.Equal(1, settled);
+        Assert.Equal(0, signal.DemandCursor);
+        Assert.Single(f.Market.Transactions(f.Pilot.PilotId));
+        Assert.Empty(f.Personal.PersonalOrders(f.Pilot.PilotId));
+        Assert.Equal(earlierListings, f.Personal.PersonalOrders(earlierSeller).Count);
+    }
+
+    [Fact]
     public void MaintenanceUsesPricePriorityAndRejectsDuplicateConsumptionAfterRollback()
     {
         using Fixture f = new();

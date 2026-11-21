@@ -40,6 +40,11 @@ Existing settings are preserved; combinations that do not match a preset appear 
 changes market supply switches only. Wallet grants, balances, owned goods, player orders, service costs and
 reference-history choices retain their settings.
 
+The presets also apply to existing **Fresh-universe** worlds. The profile starts pilots at zero ISK with the
+starter package. Its default market uses starter ore buyers and blueprint and skillbook offers. To select that
+market again under **Custom**, enable progressive regional markets and turn off live orders, testing, regional
+hub supply and beginner supply. Other presets use their own available buyers and sellers.
+
 | Preset | Supply |
 | --- | --- |
 | Standard | Individual captured public live orders, with original supported stations, sides, prices, quantities, ranges, minimum volumes and expiration deadlines. |

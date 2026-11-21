@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Market presets on fresh worlds and demand batching](protocol/industry.md#market-presets-on-fresh-worlds-and-demand-batching)
+covers preset activation, saved player orders, and shorter market-demand turns during population growth.
+
 [Autonomous pilot creation under load](protocol/capsuleers.md#autonomous-pilot-creation-under-load) records the
 resident asteroid and market-demand changes and the startup replay.
 

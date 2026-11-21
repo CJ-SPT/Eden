@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json;
 using Eden.Data.Catalog;
@@ -21,6 +22,10 @@ namespace Eden.World.Market;
 
 internal sealed partial class PilotMarketStore
 {
+    private const int DemandLocationsPerTurn = 8;
+    private const int DemandSettlementsPerTurn = 16;
+    private static readonly TimeSpan s_demandOwnerBudget = TimeSpan.FromMilliseconds(25);
+
     private MarketResult ResidentBuy(
         Eden.World.Runtime.LiveWorld live,
         long pilotId,
@@ -485,6 +490,7 @@ internal sealed partial class PilotMarketStore
             return 0;
         }
         using var owner = live.EnterShared("market demand");
+        long started = Stopwatch.GetTimestamp();
         if (!live.Economy.Inspect(RegionalMarketStore.Enabled))
         {
             signal.ScheduleDemand(long.MaxValue, 0);
@@ -508,16 +514,32 @@ internal sealed partial class PilotMarketStore
             .Take(limit)
             .ToArray();
         int settled = 0;
-        foreach (var location in page.Select(o => new DemandLocation(o.StationId, o.TypeId)).Distinct())
+        int settlementLimit = Math.Min(limit, DemandSettlementsPerTurn);
+        HashSet<DemandLocation> attempted = [];
+        RegionalMarketStore regional = new(activity);
+        foreach (var entry in page)
         {
-            Seed(world, catalog, Station(catalog, location.StationId), location.TypeId);
-            settled += SettleRestingSales(world, catalog, location.StationId, location.TypeId, limit - settled);
-            if (settled == limit)
+            if (attempted.Add(new(entry.StationId, entry.TypeId)))
             {
-                break;
+                if (
+                    attempted.Count > DemandLocationsPerTurn
+                    || attempted.Count > 1 && Stopwatch.GetElapsedTime(started) >= s_demandOwnerBudget
+                )
+                {
+                    break;
+                }
+                var station = Station(catalog, entry.StationId);
+                regional.Advance(world, catalog, station.RegionId, station.Id, now, entry.TypeId);
+                settled += SettleRestingSales(world, catalog, station.Id, entry.TypeId, settlementLimit - settled);
+                if (settled == settlementLimit)
+                {
+                    // This location may still have listings ready to fill.
+                    break;
+                }
             }
+            cursor = entry.Id;
         }
-        bool more = page.Length == limit || settled == limit;
+        bool more = page.Length == limit || page.Length > 0 && cursor < page[^1].Id;
         long next = long.MaxValue;
         if (!more)
         {
@@ -540,9 +562,9 @@ internal sealed partial class PilotMarketStore
         {
             signal.Changed(demand: false);
         }
-        // Failed transactions never advance the cursor or deadline. A full page
-        // continues next poll so expensive/unfillable listings cannot starve later IDs.
-        signal.ScheduleDemand(more ? 0 : next, more ? page[^1].Id : 0);
+        // Resume after the last fully processed listing. A failed transaction
+        // leaves its work pending for the next poll.
+        signal.ScheduleDemand(more ? 0 : next, more ? cursor : 0);
         return settled;
     }
 }

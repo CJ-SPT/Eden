@@ -438,7 +438,14 @@ internal sealed partial class PilotMarketStore
         return new(Wallet(world, pilotId).Cents, trades.Select(Read).ToArray(), changes, station.SolarSystemId, station.RegionId);
     }
 
-    internal MarketResult ExecuteSell(WorldAction world, CatalogDbContext catalog, long pilotId, IReadOnlyList<MarketSale> items, int days)
+    internal MarketResult ExecuteSell(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        IReadOnlyList<MarketSale> items,
+        int days,
+        bool skipUnmatched = false
+    )
     {
         var pilot = Pilot(world, pilotId);
         var station = TradeStation(catalog, pilot, pilot.ActiveShip.StationId);
@@ -486,6 +493,10 @@ internal sealed partial class PilotMarketStore
             var fills = MatchOrders(world, catalog, order, changes);
             if (days == 0 && fills.Count == 0)
             {
+                if (skipUnmatched)
+                {
+                    continue;
+                }
                 throw new InvalidDataException("No matching station order remains at that price. Refresh the market quote.");
             }
             item.Quantity -= days > 0 ? request.Quantity : request.Quantity - order.Remaining;
