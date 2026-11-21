@@ -20,7 +20,10 @@ public sealed record CombatAnomaly(
     bool Ded = false,
     long? GhostCountdownEnd = null,
     int GhostRoomId = 0
-);
+)
+{
+    public int? ArchetypeId { get; init; }
+}
 
 public sealed record AnomalySystemSites(int SystemId, IReadOnlyList<CombatAnomaly> Sites);
 

@@ -17,6 +17,7 @@ using Eden.World.Characters;
 using Eden.World.Combat.Npcs;
 using Eden.World.Combat.Weapons;
 using Eden.World.Docking;
+using Eden.World.FactionWarfare;
 using Eden.World.Fittings;
 using Eden.World.Inventory;
 using Eden.World.Runtime;
@@ -261,6 +262,7 @@ internal sealed partial class PilotMissileStore(
             {
                 throw new InvalidDataException("The NPC is unavailable.");
             }
+            MilitiaHubStore.RequireAttack(world, npc, pilot);
             targetType = catalog.FittingType(npc.TypeId)!;
             target = new(NpcMotion.Position(npc), NpcMotion.Velocity(npc), (float)(targetType.Radius ?? 0));
         }
@@ -458,6 +460,8 @@ internal sealed partial class PilotMissileStore(
                 && row.TargetKind == MissileTargetKind.Npc
                 && world.Set<WorldNpc>().Find(row.TargetId) is { DestroyedAt: null, RetiredAt: null } npc
                 && npc.Navigation != NpcNavigationState.Warping
+                && world.Pilots.Find(row.PilotId) is { } pilot
+                && MilitiaObjectiveStore.CanAttack(world, npc, pilot)
             )
             {
                 var attributes = PlayerEwarStore.NpcAttributes(world, npc.Id, PilotFittingStore.ReadAttributes(catalog, npc.TypeId));
@@ -467,7 +471,6 @@ internal sealed partial class PilotMissileStore(
                     payload.Target!.Velocity.Length
                 );
                 var damage = payload.Warhead.Damage.Scale(application);
-                var pilot = world.Pilots.Find(row.PilotId)!;
                 var result = NpcDamagePersistence.Apply(
                     world,
                     catalog,

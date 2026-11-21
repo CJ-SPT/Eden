@@ -39,6 +39,10 @@ internal static partial class NpcDamagePersistence
         bool paidProjectile = false
     )
     {
+        if (npc.Role == NpcRole.MilitiaHub || npc.AnchorKind == NpcAnchorKind.MilitiaObjective)
+        {
+            throw new InvalidDataException("Faction warfare objective damage requires the resident world.");
+        }
         if (npc.DestroyedAt.HasValue || npc.RetiredAt.HasValue)
         {
             throw new InvalidDataException("The NPC is no longer available.");

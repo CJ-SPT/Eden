@@ -35,7 +35,8 @@ internal sealed class PilotServices(
     Eden.Protocol.Mining.AutoMiningHandler? autoMining = null,
     Eden.Protocol.Exploration.AbyssalHandler? abyss = null,
     Eden.Protocol.Exploration.WormholeEnvironmentHandler? environments = null,
-    SessionFrameMonitor? frames = null
+    SessionFrameMonitor? frames = null,
+    Eden.Gameplay.FactionWarfare.IFactionWarzones? warzones = null
 ) : IPilotSession
 {
     public async Task RunAsync(
@@ -93,7 +94,8 @@ internal sealed class PilotServices(
             presentation,
             autoMining: autoMining,
             abyss: abyss,
-            environments: environments
+            environments: environments,
+            warzoneUpdates: warzones is null ? null : new Eden.Protocol.FactionWarfare.FactionWarzoneUpdates(warzones)
         );
         async Task<(object? Packet, long Received)> ReadArrivalAsync()
         {

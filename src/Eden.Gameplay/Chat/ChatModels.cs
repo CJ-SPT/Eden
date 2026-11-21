@@ -1,3 +1,5 @@
+using Eden.Gameplay.FactionWarfare;
+
 namespace Eden.Gameplay.Chat;
 
 public enum ChatRoomKind
@@ -10,6 +12,7 @@ public enum ChatRoomKind
     Player,
     Fleet,
     Alliance,
+    Militia,
 }
 
 public sealed record ChatRoom(ChatRoomKind Kind, long Id);
@@ -23,7 +26,8 @@ public sealed record ChatPilot(
     int GenderId = 0,
     ChatRoomKind LocalKind = ChatRoomKind.Local,
     long? FleetId = null,
-    int? AllianceId = null
+    int? AllianceId = null,
+    MilitiaFaction? WarFaction = null
 );
 
 public sealed record ChatRoomInfo(ChatRoom Room, string Name, long? OwnerId = null);

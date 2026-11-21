@@ -45,7 +45,7 @@ internal sealed partial class PilotFittingStore
     )
     {
         long pilotId = pilot.Id;
-        CheckFittingService(world, ship, pilotId);
+        CheckFittingService(world, catalog, ship, pilotId);
 
         long source = request.SourceId;
         long now = clock.GetUtcNow().UtcDateTime.ToFileTimeUtc();

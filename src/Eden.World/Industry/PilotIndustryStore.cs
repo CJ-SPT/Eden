@@ -155,7 +155,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
         }
         if (
             stationId >= StructureRules.FirstStructureId
-            && !PilotStructureStore.Access(world, PilotStructureStore.Require(world, stationId), pilotId)
+            && !PilotStructureStore.ServiceAccess(world, catalog, PilotStructureStore.Require(world, stationId), pilotId)
         )
         {
             throw new InvalidDataException("Industry access to this structure is denied.");
@@ -214,7 +214,7 @@ internal sealed partial class PilotIndustryStore(WorldDatabase database, TimePro
                             .AsEnumerable()
                             .Where(s =>
                                 catalog.Definitions.Systems[s.SystemId].RegionId == regionId
-                                && PilotStructureStore.Access(world, s, pilotId)
+                                && PilotStructureStore.ServiceAccess(world, catalog, s, pilotId)
                             )
                             .Select(s => IndustryStation.From(PilotStructureStore.Snapshot(world, catalog, s)))
                     )

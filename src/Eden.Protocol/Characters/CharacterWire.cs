@@ -142,7 +142,7 @@ internal sealed record PublicCharacterInfoRow(PublicCharacterProfile Profile) : 
             Profile.AncestryId,
             Profile.CorporationJoinedAt ?? Profile.CreatedAt,
             // CharacterInfoWindow reads this on the public row before constructing any tabs.
-            null,
+            (int?)Profile.MilitiaFaction,
             new BlueUnicode(Profile.Biography),
         };
 }
@@ -183,11 +183,26 @@ internal sealed record CharacterEmploymentRow(int CorporationId, long StartedAt)
         );
 }
 
+internal sealed record CharacterEmploymentHistory(IReadOnlyList<CorporationEmployment> Employment) : BlueModel
+{
+    public override object ToBlue() =>
+        new CompatibilityRowset(
+            ["corporationID", "startDate", "deleted"],
+            Employment.Select(entry => new CharacterEmploymentLine(entry)).ToArray()
+        ).ToBlue();
+}
+
+internal sealed record CharacterEmploymentLine(CorporationEmployment Employment) : BlueModel
+{
+    public override object ToBlue() => new List<object?> { Employment.CorporationId, Employment.StartedAt, 0 };
+}
+
 internal sealed record CharacterCorporationInfo(
     int CorporationId,
     string Title = "",
     IReadOnlyList<CorporationTitle>? Titles = null,
-    int? AllianceId = null
+    int? AllianceId = null,
+    int? MilitiaFactionId = null
 ) : BlueModel
 {
     private const int CorporationTitleCount = 16;
@@ -198,7 +213,7 @@ internal sealed record CharacterCorporationInfo(
         {
             ["corpID"] = CorporationId,
             ["allianceID"] = AllianceId,
-            ["militiaFactionID"] = null,
+            ["militiaFactionID"] = MilitiaFactionId,
             ["title"] = new BlueUnicode(Title),
         };
         for (int index = 1; index <= CorporationTitleCount; index++)

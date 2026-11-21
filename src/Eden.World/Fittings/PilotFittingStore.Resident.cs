@@ -119,7 +119,7 @@ internal sealed partial class PilotFittingStore
         var pilot = world.Filter<Pilot>(p => p.Id == pilotId).Single();
         var ship = fittingShip ?? pilot.ActiveShip;
         RequireFittingShip(pilot, ship);
-        CheckFittingService(world, ship, pilotId);
+        CheckFittingService(world, catalog, ship, pilotId);
         bool fromContainer = sourceId != ship.Id && sourceId != ship.DockedLocationId;
         if (fromContainer)
         {
@@ -357,12 +357,12 @@ internal sealed partial class PilotFittingStore
         }
     }
 
-    private static void CheckFittingService(WorldAction world, Ship ship, long pilotId)
+    private static void CheckFittingService(WorldAction world, CatalogDbContext catalog, Ship ship, long pilotId)
     {
         if (ship.Position is null && ship.StructureId is long structureId)
         {
             var structure = Eden.World.Structures.PilotStructureStore.Require(world, structureId);
-            if (!structure.HasCore || !Eden.World.Structures.PilotStructureStore.Access(world, structure, pilotId))
+            if (!structure.HasCore || !Eden.World.Structures.PilotStructureStore.ServiceAccess(world, catalog, structure, pilotId))
             {
                 throw new InvalidDataException("Ship fitting requires a quantum core and access to this structure.");
             }

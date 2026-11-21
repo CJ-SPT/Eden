@@ -248,11 +248,16 @@ internal static partial class Ballpark
 
     private static SlimItem WriteNpc(BinaryWriter writer, NpcContact npc, int stamp)
     {
-        if (npc.Role == NpcRole.MissionStructure)
+        if (npc.Role is NpcRole.MissionStructure or NpcRole.MilitiaHub or NpcRole.MilitiaObjective)
         {
             // Carbon Thunkers.cpp omits the free-ball fields for rigid mode. Structures
             // retain their entity slim and damage state while remaining fixed local balls.
-            WriteBallHeader(writer, npc.Id, (byte)NavigationMode.Rigid, npc.Radius, npc.Position, (byte)DestinyBallFlags.Massive);
+            var flags = DestinyBallFlags.Massive;
+            if (npc.Role is NpcRole.MilitiaHub or NpcRole.MilitiaObjective)
+            {
+                flags |= DestinyBallFlags.Global;
+            }
+            WriteBallHeader(writer, npc.Id, (byte)NavigationMode.Rigid, npc.Radius, npc.Position, (byte)flags);
             writer.Write((sbyte)-1);
             return new NpcSlimItem(npc);
         }

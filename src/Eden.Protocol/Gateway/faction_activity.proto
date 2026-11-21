@@ -1,0 +1,36 @@
+syntax = "proto3";
+package eve_public.faction.activity;
+option csharp_namespace = "Eden.Protocol.Gateway.FactionActivity";
+
+import "militia_faction.proto";
+import "solar_system.proto";
+
+import "public_character.proto";
+
+// Pinned build 3662168 activity_pb2.pyj.
+message Score {
+  eve_public.faction.Identifier faction = 1;
+  uint32 contribution = 2;
+  uint32 floor = 3;
+}
+
+message GetSolarSystemScoresRequest {
+  eve_public.solarsystem.Identifier solar_system = 1;
+}
+
+message GetSolarSystemScoresResponse {
+  eve_public.solarsystem.Identifier solar_system = 1;
+  repeated Score scores = 2;
+}
+
+message ScoreContributionNotice {
+  eve_public.solarsystem.Identifier solar_system = 1;
+  eve_public.character.Identifier contributor = 2;
+  eve_public.faction.Identifier faction = 3;
+  int32 contribution = 4;
+}
+
+message SolarSystemScoresNotice {
+  eve_public.solarsystem.Identifier solar_system = 1;
+  repeated Score scores = 2;
+}

@@ -8,8 +8,10 @@ using Eden.Gameplay.Agents;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Configuration;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Market;
 using Eden.World.Catalog;
+using Eden.World.FactionWarfare;
 using Eden.World.Runtime;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -45,7 +47,7 @@ internal sealed partial class PilotMissionStore
                 return false;
             }
             var offer = Snapshot(world, catalog, pilot, row);
-            if (offer.Agent.Space is not null)
+            if (offer.Agent.Space is not null || offer.Agent.Type == AgentType.FactionalWarfare)
             {
                 return false;
             }
@@ -71,7 +73,7 @@ internal sealed partial class PilotMissionStore
         long now = Now;
         training.Advance(transaction, pilotId, now);
         var pilot = ResidentPilot(transaction, pilotId);
-        if (share && Agent(agentId).Space is not null)
+        if (share && (Agent(agentId).Space is not null || Agent(agentId).Type == AgentType.FactionalWarfare))
         {
             throw new InvalidDataException("This one-time agent's rewards are personal.");
         }
@@ -93,6 +95,23 @@ internal sealed partial class PilotMissionStore
     {
         if (mission.ClosedAt is null && now >= mission.ExpiresAt)
         {
+            if (
+                mission.State == MissionState.Accepted
+                && world is EconomyTransaction
+                && MilitiaMissionCatalog.Issuer(mission.MissionId) is { } faction
+                && world.Pilots.Find(mission.PilotId) is { } pilot
+            )
+            {
+                MilitiaProgressionStore.AdjustStanding(
+                    world,
+                    pilot,
+                    faction,
+                    -MilitiaProgressionRules.MissionFailureFraction,
+                    StandingEvent.AgentMissionFailed,
+                    mission.SystemId,
+                    now
+                );
+            }
             Close(world, mission, MissionState.Failed, now);
             return true;
         }

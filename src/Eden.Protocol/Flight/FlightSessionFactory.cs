@@ -4,6 +4,7 @@ using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Drones;
 using Eden.Gameplay.Exploration;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
@@ -39,7 +40,8 @@ internal sealed class FlightSessionFactory(
     IDedComplexTravel? dedComplexes = null,
     ICooperativeFleets? fleets = null,
     IPilotInterdiction? interdiction = null,
-    Eden.Gameplay.Sovereignty.IPilotEntosis? entosis = null
+    Eden.Gameplay.Sovereignty.IPilotEntosis? entosis = null,
+    IMilitiaComplexes? complexes = null
 )
 {
     public FlightSession Create(DockedPilot pilot)
@@ -79,7 +81,8 @@ internal sealed class FlightSessionFactory(
                 fleets: fleets,
                 warpDrive: warpDrive,
                 interdiction: interdiction,
-                entosis: entosis?.Available == true ? entosis : null
+                entosis: entosis?.Available == true ? entosis : null,
+                complexes: complexes
             );
         }
         catch

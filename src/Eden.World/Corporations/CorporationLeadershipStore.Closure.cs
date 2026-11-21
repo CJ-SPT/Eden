@@ -3,6 +3,7 @@ using Eden.Data.World.Corporations;
 using Eden.Gameplay.Corporations;
 using Eden.World.Bookmarks;
 using Eden.World.Catalog;
+using Eden.World.FactionWarfare;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
 
@@ -61,6 +62,7 @@ internal sealed partial class CorporationLeadershipStore
             int destination = CorporationMembershipStore.OriginalCorporation(world, catalog, member.Id);
             CorporationMembershipStore.Move(world, member, destination, now);
         }
+        MilitiaOrganizationStore.OrganizationClosed(world, corporation.Id);
         corporation.ClosedAt = now;
         corporation.DetailsJson = JsonSerializer.Serialize(after);
         world.SaveChanges();

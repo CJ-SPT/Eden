@@ -167,6 +167,11 @@ internal sealed partial class PilotStructureStore(
         return pilot.CorporationId == structure.CorporationId || structure.PublicAccess;
     }
 
+    internal static bool ServiceAccess(WorldAction world, CatalogDbContext catalog, SavedStructure structure, long pilotId) =>
+        Access(world, structure, pilotId)
+        && world.Pilots.Find(pilotId) is { } pilot
+        && Eden.World.FactionWarfare.MilitiaEnlistmentStore.CanUseStructureServices(world, catalog, pilot, structure.SystemId);
+
     internal static StructureSnapshot Snapshot(WorldAction world, CatalogDbContext catalog, SavedStructure structure)
     {
         var profile = StructureCatalog.Require(catalog, structure.TypeId);
@@ -280,7 +285,7 @@ internal sealed partial class PilotStructureStore(
         Execute(
             (world, catalog, _) =>
                 world.Set<SavedStructure>().Find(structureId) is { } structure
-                && Access(world, structure, pilotId)
+                && ServiceAccess(world, catalog, structure, pilotId)
                 && Snapshot(world, catalog, structure).Services.Contains(service),
             pilotId: pilotId,
             structureId: structureId

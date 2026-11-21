@@ -27,11 +27,23 @@ public sealed partial class FleetWorld
             || settings.JoinLimit is < 1 or > FleetRules.MaximumMembers
             || (
                 settings.Scope
-                & ~(FleetInviteScope.Corporation | FleetInviteScope.Alliance | FleetInviteScope.Public | FleetInviteScope.PublicOpen)
+                & ~(
+                    FleetInviteScope.Corporation
+                    | FleetInviteScope.Alliance
+                    | FleetInviteScope.Militia
+                    | FleetInviteScope.Public
+                    | FleetInviteScope.PublicOpen
+                )
             ) != 0
         )
         {
-            throw new InvalidDataException("Choose a fleet name, description and corporation, alliance, or public access settings.");
+            throw new InvalidDataException(
+                "Choose a fleet name, description and corporation, alliance, militia, or public access settings."
+            );
+        }
+        if (settings.Scope.HasFlag(FleetInviteScope.Militia) && fleet.Members[actor].Pilot.WarFaction is null)
+        {
+            throw new InvalidDataException("Enlist with a militia before advertising a militia fleet.");
         }
         static FleetAdvertAccess Copy(FleetAdvertAccess access)
         {
@@ -117,6 +129,7 @@ public sealed partial class FleetWorld
                 (
                     ad.Scope.HasFlag(FleetInviteScope.Corporation) && pilot.CorporationId == leader.CorporationId
                     || ad.Scope.HasFlag(FleetInviteScope.Alliance) && pilot.AllianceId.HasValue && pilot.AllianceId == leader.AllianceId
+                    || ad.Scope.HasFlag(FleetInviteScope.Militia) && pilot.WarFaction.HasValue && pilot.WarFaction == leader.WarFaction
                 ) && Access(ad.MemberGroups, pilot, security)
             )
             || ((ad.Scope & (FleetInviteScope.Public | FleetInviteScope.PublicOpen)) != 0 && Access(ad.Public, pilot, security));

@@ -122,7 +122,7 @@ internal sealed class NoticeStream(GatewayRequests requests, IGatewayAuthenticat
                 {
                     continue;
                 }
-                foreach (var notice in requests.SovereigntyNotices(account))
+                foreach (var notice in requests.SovereigntyNotices(account).Concat(requests.FactionActivityNotices(account)))
                 {
                     await output.WriteAsync(notice, stopping.Token);
                 }

@@ -43,7 +43,7 @@ internal sealed class PilotRepairStore(WorldDatabase database) : IPilotRepair
         if (pilot.ActiveShip.StructureId is long structureId)
         {
             var structure = Eden.World.Structures.PilotStructureStore.Require(world, structureId);
-            if (!structure.HasCore || !Eden.World.Structures.PilotStructureStore.Access(world, structure, pilot.Id))
+            if (!structure.HasCore || !Eden.World.Structures.PilotStructureStore.ServiceAccess(world, catalog, structure, pilot.Id))
             {
                 throw new InvalidDataException("The structure requires a quantum core and repair access.");
             }

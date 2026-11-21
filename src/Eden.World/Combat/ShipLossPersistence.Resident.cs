@@ -17,6 +17,7 @@ using Eden.World.Characters;
 using Eden.World.Combat.Npcs;
 using Eden.World.Docking;
 using Eden.World.Drones;
+using Eden.World.FactionWarfare;
 using Eden.World.Insurance;
 using Eden.World.Inventory;
 using Eden.World.Loot;
@@ -135,6 +136,10 @@ internal static partial class ShipLossPersistence
         // Snapshot original locations and fitted flags before wreck creation
         // moves surviving inventory into loose cargo.
         var reportItems = PilotInteractionHistoryStore.LostShipItems(shipId, items, storedManifests, survivors);
+        if (playerAttacker is { } final)
+        {
+            MilitiaPlayerKills.Settle(world, catalog, pilot, old, final, system, new(position.X, position.Y, position.Z), reportItems, now);
+        }
         PilotInteractionHistoryStore.Destroyed(
             world,
             pilotId,

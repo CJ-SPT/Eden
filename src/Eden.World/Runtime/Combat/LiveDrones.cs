@@ -263,7 +263,10 @@ internal sealed partial class LiveCombatRuntime
                 npc = null;
             }
             // Mining alerts and inventory return retain the existing transaction boundary.
-            if (npc is not null && (NpcPopulationRules.IsMining(npc.Role) || npc.Role == NpcRole.Concord))
+            if (
+                npc is not null
+                && (NpcPopulationRules.IsMining(npc.Role) || npc.Role is NpcRole.Concord or NpcRole.MilitiaHub or NpcRole.MilitiaObjective)
+            )
             {
                 return Settle();
             }

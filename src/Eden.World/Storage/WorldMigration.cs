@@ -17,7 +17,7 @@ namespace Eden.World.Storage;
 
 internal static class WorldMigration
 {
-    internal const int CurrentVersion = 192;
+    internal const int CurrentVersion = 200;
 
     public static void Open(
         WorldDbContext world,
@@ -183,6 +183,7 @@ internal static class WorldMigration
         Eden.World.Sovereignty.SovereigntyWarfareSchema.Upgrade(world);
         Eden.World.Sovereignty.SovereigntyActivitySchema.Upgrade(world, version);
         Eden.World.Sovereignty.SovereigntyResourceSchema.Upgrade(world);
+        Eden.World.FactionWarfare.FactionWarzoneSchema.Upgrade(world);
         Eden.World.Characters.ContactOwnerSchema.Upgrade(world);
         Eden.World.Characters.PilotActivitySchema.Upgrade(world);
         Eden.World.Bookmarks.SharedBookmarkSchema.Upgrade(world, catalog);

@@ -1,3 +1,5 @@
+using Eden.Gameplay.FactionWarfare;
+
 namespace Eden.Gameplay.Chat;
 
 // The host serializes operations and delivers the resulting immutable events.
@@ -95,6 +97,13 @@ public sealed class ChatWorld(long roomSeed = 0)
             ? Update(session, pilot with { AllianceId = alliance })
             : [];
 
+    public Guid[] RoomConnections(ChatRoom room) => _members.TryGetValue(room, out var connections) ? connections.ToArray() : [];
+
+    public IReadOnlyList<ChatDelivery> UpdateMilitia(Guid connection, MilitiaFaction? faction) =>
+        _connections.TryGetValue(connection, out var session) && Pilot(session) is { } pilot
+            ? Update(session, pilot with { WarFaction = faction })
+            : [];
+
     public IReadOnlyList<ChatDelivery> Update(Guid session, ChatPilot? pilot)
     {
         List<ChatDelivery> events = [];
@@ -165,6 +174,10 @@ public sealed class ChatWorld(long roomSeed = 0)
         if (pilot.AllianceId is int alliance)
         {
             rooms.Add(new(ChatRoomKind.Alliance, alliance));
+        }
+        if (pilot.WarFaction is { } faction)
+        {
+            rooms.Add(new(ChatRoomKind.Militia, (int)faction));
         }
         if (pilot.FleetId is { } fleet)
         {
@@ -239,6 +252,7 @@ public sealed class ChatWorld(long roomSeed = 0)
                 && room.Kind == pilot.LocalKind,
             ChatRoomKind.Corporation => room.Id == pilot.CorporationId,
             ChatRoomKind.Alliance => room.Id == pilot.AllianceId,
+            ChatRoomKind.Militia => room.Id == (int?)pilot.WarFaction,
             ChatRoomKind.Fleet => room.Id == pilot.FleetId,
             ChatRoomKind.Private => _privateAccess.TryGetValue(room, out var allowed) && allowed.Contains(pilot.Id),
             ChatRoomKind.Player => _rooms.ContainsKey(room),
@@ -371,7 +385,8 @@ public sealed class ChatWorld(long roomSeed = 0)
                     or ChatRoomKind.Wormhole
                     or ChatRoomKind.Triglavian
                     or ChatRoomKind.Corporation
-                    or ChatRoomKind.Alliance;
+                    or ChatRoomKind.Alliance
+                    or ChatRoomKind.Militia;
             if (selected is null || !systemRoom || !Eligible(selected, room))
             {
                 throw new InvalidDataException("Join an authorized channel before using it.");
@@ -476,6 +491,7 @@ public sealed class ChatWorld(long roomSeed = 0)
                 room,
                 room.Kind == ChatRoomKind.Corporation ? "Corporation"
                     : room.Kind == ChatRoomKind.Alliance ? "Alliance"
+                    : room.Kind == ChatRoomKind.Militia ? "Militia"
                     : room.Kind == ChatRoomKind.Fleet ? "Fleet"
                     : "Local"
             );

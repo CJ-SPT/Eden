@@ -20,7 +20,26 @@ public sealed class SavedInboxNotification
     public int? AllianceId { get; set; }
 
     public InboxNotification Snapshot() =>
-        new(Id, Type, SenderId, ReceiverId, Processed, Deleted, Created, new(ContactLevel, Message), AllianceId);
+        new(
+            Id,
+            Type,
+            SenderId,
+            ReceiverId,
+            Processed,
+            Deleted,
+            Created,
+            new(ContactLevel, Message),
+            AllianceId,
+            Type
+                is >= InboxNotificationType.MilitiaMemberStandingWarning
+                    and <= InboxNotificationType.MilitiaAllianceCeoStandingRemoval
+                    or InboxNotificationType.MilitiaCorporationStandingRemoval
+                    or InboxNotificationType.MilitiaCorporationStandingWarning
+                    or InboxNotificationType.MilitiaAllianceStandingWarning
+                    or InboxNotificationType.MilitiaAllianceStandingRemoval
+                ? JsonSerializer.Deserialize<MilitiaStandingNotificationContent>(Message)
+                : null
+        );
 }
 
 public sealed class SavedMail

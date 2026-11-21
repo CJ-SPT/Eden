@@ -1,3 +1,4 @@
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Flight;
 
 namespace Eden.Gameplay.Fleets;
@@ -51,10 +52,11 @@ public sealed record FleetPilot(
     int SystemId,
     SpacePosition? Position,
     bool InTransit = false,
-    int? AllianceId = null
+    int? AllianceId = null,
+    MilitiaFaction? WarFaction = null
 );
 
-public sealed record FleetAffiliation(int CorporationId, int? AllianceId);
+public sealed record FleetAffiliation(int CorporationId, int? AllianceId, MilitiaFaction? WarFaction = null);
 
 public sealed record FleetPlacement(long WingId, long SquadId, FleetRole Role);
 
@@ -120,7 +122,7 @@ public abstract record FleetEvent
 
     public sealed record Warp(FleetWarpOrder Order) : FleetEvent;
 
-    public sealed record MissionStanding(long SourceId, double Value) : FleetEvent;
+    public sealed record StandingChanged(long SourceId, double Value) : FleetEvent;
 
     public sealed record Resync(FleetMember? Member) : FleetEvent;
 }
@@ -144,7 +146,7 @@ public interface ICooperativeFleets
     IReadOnlyList<FleetPilot> Fleetmates(long actor);
     bool CanShareLoot(long actor, long owner, int system);
     IReadOnlyList<FleetDelivery> Drain(long actor);
-    void NotifyMissionStanding(long pilotId, long sourceId, double value);
+    void NotifyStandingChanged(long pilotId, long sourceId, double value);
     CooperativeFleet Create(long actor);
     bool CanBind(long actor, long fleet);
     CooperativeFleet Read(long actor, long fleet);

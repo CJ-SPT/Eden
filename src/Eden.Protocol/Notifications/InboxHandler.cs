@@ -174,7 +174,9 @@ internal sealed record InboxContactData(ContactNotificationContent Content) : Bl
 internal sealed record InboxNotificationReply(InboxNotification Notification) : BlueModel
 {
     internal static BlueModel Data(InboxNotification notification) =>
-        notification.AllianceId is int alliance ? new InboxAllianceData(alliance) : new InboxContactData(notification.Content);
+        notification.MilitiaStanding is { } militia ? new InboxMilitiaStandingData(notification.Type, militia)
+        : notification.AllianceId is int alliance ? new InboxAllianceData(alliance)
+        : new InboxContactData(notification.Content);
 
     public override object ToBlue() =>
         new BlueInstance(
@@ -201,4 +203,32 @@ internal sealed record InboxNotificationReceived(InboxNotification Notification)
 internal sealed record InboxAllianceData(int AllianceId) : BlueModel
 {
     public override object ToBlue() => new Dictionary<string, object?> { ["allianceID"] = AllianceId };
+}
+
+internal sealed record InboxMilitiaStandingData(InboxNotificationType Type, MilitiaStandingNotificationContent Content) : BlueModel
+{
+    public override object ToBlue()
+    {
+        var data = new Dictionary<string, object?> { ["factionID"] = (int)Content.Faction };
+        if (Type is >= InboxNotificationType.MilitiaMemberStandingWarning and <= InboxNotificationType.MilitiaAllianceCeoStandingRemoval)
+        {
+            data["characterID"] = Content.CharacterId;
+            data["corporationID"] = Content.CorporationId;
+            data["requiredStanding"] = Content.RequiredStanding;
+            if (Content.WarningDuration is long duration)
+            {
+                data["characterStanding"] = Content.Standing;
+                data["warningDuration"] = duration;
+            }
+        }
+        else if (Content.AllianceId is null)
+        {
+            data["corpID"] = Content.CorporationId;
+        }
+        if (Content.AllianceId is int alliance)
+        {
+            data["allianceID"] = alliance;
+        }
+        return data;
+    }
 }

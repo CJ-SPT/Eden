@@ -3,8 +3,11 @@ using System.Text.Json;
 using Eden.Data.World.Alliances;
 using Eden.Data.World.Characters;
 using Eden.Data.World.Corporations;
+using Eden.Data.World.FactionWarfare;
 using Eden.Gameplay.Characters;
 using Eden.Gameplay.Corporations;
+using Eden.Gameplay.FactionWarfare;
+using Eden.World.FactionWarfare;
 using Eden.World.Runtime.Combat;
 using Eden.World.Runtime.Economy;
 using Eden.World.Storage;
@@ -31,8 +34,24 @@ internal sealed record OwnerDirectorySnapshot(
     ImmutableDictionary<int, LocalCorporationIdentity> Corporations,
     Lazy<SearchNameIndex> CharacterSearch,
     Lazy<SearchNameIndex> CorporationSearch,
-    ImmutableDictionary<int, int> AllianceMemberships
-);
+    ImmutableDictionary<int, int> AllianceMemberships,
+    ImmutableDictionary<long, MilitiaFaction> DirectMilitias,
+    ImmutableDictionary<int, MilitiaFaction> OrganizationMilitias
+)
+{
+    internal MilitiaFaction? PilotMilitia(long id)
+    {
+        if (!Pilots.TryGetValue(id, out var pilot))
+        {
+            return null;
+        }
+        int corporation = pilot.CorporationId;
+        int owner = AllianceMemberships.GetValueOrDefault(corporation, corporation);
+        return MilitiaRules.CorporationFaction(corporation)
+            ?? (OrganizationMilitias.TryGetValue(owner, out var organization) ? (MilitiaFaction?)organization : null)
+            ?? (DirectMilitias.TryGetValue(id, out var direct) ? direct : null);
+    }
+}
 
 // Published identities contain committed public fields only. Readers never acquire persistence or system ownership.
 internal sealed class LiveOwnerDirectory(WorldDbContext world)
@@ -55,7 +74,17 @@ internal sealed class LiveOwnerDirectory(WorldDbContext world)
             .Set<SavedAllianceMember>()
             .AsNoTracking()
             .ToImmutableDictionary(row => row.CorporationId, row => row.AllianceId);
-        return new(pilots, corporations, Characters(pilots), CorporationNames(corporations), alliances);
+        var direct = world
+            .Set<SavedMilitiaEnlistment>()
+            .AsNoTracking()
+            .Where(row => row.DirectFaction.HasValue)
+            .ToImmutableDictionary(row => row.PilotId, row => row.DirectFaction!.Value);
+        var organizations = world
+            .Set<SavedMilitiaOrganization>()
+            .AsNoTracking()
+            .Where(row => row.Phase == MilitiaOrganizationPhase.Active || row.Phase == MilitiaOrganizationPhase.Leaving)
+            .ToImmutableDictionary(row => row.OwnerId, row => row.Faction);
+        return new(pilots, corporations, Characters(pilots), CorporationNames(corporations), alliances, direct, organizations);
     }
 
     private static Lazy<SearchNameIndex> Characters(ImmutableDictionary<long, LocalPilotIdentity> pilots) =>
@@ -90,7 +119,17 @@ internal sealed class LiveOwnerDirectory(WorldDbContext world)
             .Select(change => change.Id)
             .Distinct()
             .ToArray();
-        if (pilotIds.Length + corporationIds.Length + allianceCorporations.Length == 0)
+        long[] directIds = changes
+            .Where(change => change.Table == "WorldMilitiaEnlistment")
+            .Select(change => change.Id)
+            .Distinct()
+            .ToArray();
+        long[] organizationIds = changes
+            .Where(change => change.Table == "WorldMilitiaOrganization")
+            .Select(change => change.Id)
+            .Distinct()
+            .ToArray();
+        if (pilotIds.Length + corporationIds.Length + allianceCorporations.Length + directIds.Length + organizationIds.Length == 0)
         {
             return;
         }
@@ -144,7 +183,28 @@ internal sealed class LiveOwnerDirectory(WorldDbContext world)
                 : world.Set<SavedAllianceMember>().AsNoTracking().SingleOrDefault(member => member.CorporationId == key);
             alliances = row is null ? alliances.Remove(key) : alliances.SetItem(key, row.AllianceId);
         }
-        if (pilots != previous.Pilots || corporations != previous.Corporations || alliances != previous.AllianceMemberships)
+        var direct = previous.DirectMilitias;
+        foreach (long id in directIds)
+        {
+            direct = economy.Peek<SavedMilitiaEnlistment>(id)?.DirectFaction is { } faction
+                ? direct.SetItem(id, faction)
+                : direct.Remove(id);
+        }
+        var organizations = previous.OrganizationMilitias;
+        foreach (long id in organizationIds)
+        {
+            int key = checked((int)id);
+            organizations = MilitiaOrganizationStore.ActiveFaction(economy.Peek<SavedMilitiaOrganization>(id)) is { } faction
+                ? organizations.SetItem(key, faction)
+                : organizations.Remove(key);
+        }
+        if (
+            pilots != previous.Pilots
+            || corporations != previous.Corporations
+            || alliances != previous.AllianceMemberships
+            || direct != previous.DirectMilitias
+            || organizations != previous.OrganizationMilitias
+        )
         {
             Volatile.Write(
                 ref _snapshot,
@@ -153,7 +213,9 @@ internal sealed class LiveOwnerDirectory(WorldDbContext world)
                     corporations,
                     characterNamesChanged ? Characters(pilots) : previous.CharacterSearch,
                     corporationNamesChanged ? CorporationNames(corporations) : previous.CorporationSearch,
-                    alliances
+                    alliances,
+                    direct,
+                    organizations
                 )
             );
         }

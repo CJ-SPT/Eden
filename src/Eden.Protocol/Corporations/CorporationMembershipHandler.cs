@@ -15,6 +15,7 @@ internal sealed partial class CorporationHandler
     {
         if (_observedPilot != context.Pilot.PilotId)
         {
+            _lastMilitia = null;
             _observedPilot = context.Pilot.PilotId;
             _cursor = membership.Head(context.Pilot.PilotId);
             _allianceCursor = allianceMembership.Head;
@@ -25,6 +26,7 @@ internal sealed partial class CorporationHandler
     public void Reset()
     {
         _observedPilot = null;
+        _lastMilitia = null;
         _cursor = 0;
         _allianceCursor = 0;
         allianceSocial.Reset();
@@ -164,21 +166,6 @@ internal sealed partial class CorporationHandler
                 ? new CorporationAggressionReply(corporations.Read((int)id)?.Details.FriendlyFireEnabled ?? false)
                 : new PilotCallResult.Failure("Choose a corporation.");
         }
-        // Opportunities providers read this through fwEnlistmentSvc.GetMyFaction.
-        if (service == "fwCharacterEnlistmentMgr" && method == "GetMyEnlistment")
-        {
-            return args is [] && keywords is null or { Count: 0 }
-                ? new CharacterEnlistmentReply()
-                : new PilotCallResult.Failure("Unexpected enlistment arguments.");
-        }
-        // Build 3662168 fwEnlistmentSvc forwards this Details-panel query to
-        // fwCharacterEnlistmentMgr, independently of the older facWarMgr service.
-        if (service == "fwCharacterEnlistmentMgr" && method == "GetCorpAllowedEnlistmentFactions")
-        {
-            return args is [long id] && id is > 0 and <= int.MaxValue && keywords is null or { Count: 0 }
-                ? BlueEmpty.List
-                : new PilotCallResult.Failure("Choose a corporation.");
-        }
         if (
             service != "corpRegistry"
             || method
@@ -314,13 +301,6 @@ internal sealed record CorporationMemberRemovalReply(CorporationMemberRemovalRes
             ["kicked"] = Result.Kicked.Select(id => (object?)id).ToList(),
             ["notKicked"] = Result.NotKicked.Select(id => (object?)id).ToList(),
         };
-}
-
-internal sealed record CharacterEnlistmentReply : BlueModel
-{
-    // Build 3662168 unpacks effective faction, direct faction and corporation faction in this order.
-    // Eden has no faction warfare enlistments.
-    public override object ToBlue() => new object?[] { null, null, null };
 }
 
 internal sealed record CorporationApplicationReply(CorporationApplication Application) : BlueModel

@@ -15,6 +15,7 @@ using Eden.Gameplay.Ships;
 using Eden.World.Catalog;
 using Eden.World.Characters;
 using Eden.World.Corporations;
+using Eden.World.FactionWarfare;
 using Eden.World.Inventory;
 using Eden.World.Loot;
 using Eden.World.Market;
@@ -45,6 +46,14 @@ internal static partial class NpcDamagePersistence
         if (npc.DestroyedAt.HasValue || npc.RetiredAt.HasValue)
         {
             throw new InvalidDataException("The NPC is no longer available.");
+        }
+        if (npc.Role == NpcRole.MilitiaHub)
+        {
+            return MilitiaHubStore.Apply(world, npc, pilot, attributes, damage, now, bypassResistances);
+        }
+        if (!MilitiaObjectiveStore.CanAttack(world, npc, pilot))
+        {
+            throw new InvalidDataException("Only the opposing militia may attack this objective.");
         }
         // A paid missile already checked safety and recorded CONCORD hostility
         // at launch. Its impact cannot recheck a later safety setting or hull.
@@ -100,13 +109,14 @@ internal static partial class NpcDamagePersistence
                 PilotTaskTrackingStore.Record(world, catalog, pilot.Id, now, TaskEvents.NpcDestroyed);
             }
             npc.DestroyedAt = now;
+            MilitiaObjectiveStore.Destroyed(world, catalog, npc, pilot, now);
             if (npc.AnchorKind == NpcAnchorKind.Abyssal)
             {
                 Eden.World.Exploration.AbyssalStore.Killed(world, catalog, npc, pilot, now);
                 return new(new(npc.Id, defense, result.Remaining), result.Applied, true, null);
             }
             if (
-                npc.Role is NpcRole.Pirate or NpcRole.Navy or NpcRole.Customs or NpcRole.Concord
+                npc.Role is NpcRole.Pirate or NpcRole.Navy or NpcRole.Customs or NpcRole.Concord or NpcRole.MilitiaNavy
                 && !NpcMotionRules.IsStationary(catalog.RequireItem(npc.TypeId).GroupId, npc.Role)
             )
             {
@@ -126,7 +136,10 @@ internal static partial class NpcDamagePersistence
             Eden.World.Exploration.CombatAnomalyStore.Killed(world, catalog, npc, now, pilot.Id);
             Eden.World.Agents.PilotMissionStore.Killed(world, catalog, npc, now);
             PilotSecurityStatusStore.RecordKill(world, catalog, pilot, npc, attributes, now);
-            WreckStore.Create(world, catalog, npc, pilot, now);
+            if (npc.Role != NpcRole.MilitiaObjective)
+            {
+                WreckStore.Create(world, catalog, npc, pilot, now);
+            }
             var wreck = world.Set<WorldWreck>().Local.SingleOrDefault(w => w.NpcId == npc.Id);
             var loot = world
                 .Set<OwnedItem>()
@@ -143,8 +156,12 @@ internal static partial class NpcDamagePersistence
                 attacker,
                 loot
             );
-            PilotInteractionHistoryStore.FactionLoss(world, catalog, pilot, npc, attributes, now);
-            long originalCents = NpcBountyRules.BaseCents(npc.Role, attributes);
+            bool militiaMission = Eden.World.Agents.MilitiaMissionCatalog.IsMilitia(world, npc);
+            if (!militiaMission && npc.AnchorKind is not (NpcAnchorKind.MilitiaComplex or NpcAnchorKind.MilitiaObjective))
+            {
+                PilotInteractionHistoryStore.FactionLoss(world, catalog, pilot, npc, attributes, now);
+            }
+            long originalCents = militiaMission ? 0 : NpcBountyRules.BaseCents(npc.Role, attributes);
             long cents = WorldTuningRules.Reward(originalCents, world.Settings.Rewards.BountyMultiplier);
             long skillPoints = NpcSkillPointRewards.FromBounty(
                 cents,

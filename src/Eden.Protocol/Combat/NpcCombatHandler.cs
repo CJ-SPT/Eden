@@ -2,10 +2,12 @@ using System.Security.Cryptography;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Docking;
 using Eden.Gameplay.Dogma;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Market;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.Characters;
 using Eden.Protocol.Docking;
+using Eden.Protocol.FactionWarfare;
 using Eden.Protocol.Flight;
 using Eden.Protocol.Market;
 using Eden.Protocol.PilotSessions;
@@ -23,11 +25,13 @@ internal sealed class NpcCombatHandler(
     INpcMissiles? missiles = null,
     CharacterInteractionHistoryHandler? history = null,
     NpcEwarHandler? ewar = null,
-    IConcord? concord = null
+    IConcord? concord = null,
+    IMilitiaNavy? militiaNavy = null
 ) : IDisposable
 {
     private const int ProbabilityResolution = 1_000_000;
     private long _shipId;
+    private long _navyPilot;
     private bool _disengaged = true;
     private long[] _aggressors = [];
     private long _nextAcquire;
@@ -36,6 +40,10 @@ internal sealed class NpcCombatHandler(
 
     public void Enter(PilotCallContext context)
     {
+        if (_navyPilot != 0 && _navyPilot != context.Pilot.PilotId)
+        {
+            EndNavyPursuit();
+        }
         // Reconnecting starts without an offline fight or overdue burst. Local
         // detection can establish a fresh fight with a new reaction interval.
         _nextAcquire = 0;
@@ -73,6 +81,7 @@ internal sealed class NpcCombatHandler(
             _shipId = context.Pilot.ShipId;
             _disengaged = false;
         }
+        AdvanceNavyPursuit(context);
         if (context.Pilot.Position is not null && context.Pilot.ShipGroupId != FleetDefinitions.CapsuleGroup && concord is not null)
         {
             var enforcement = concord.Advance(context.Pilot.PilotId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
@@ -171,6 +180,34 @@ internal sealed class NpcCombatHandler(
         }
     }
 
+    private void AdvanceNavyPursuit(PilotCallContext context)
+    {
+        var pilot = context.Pilot;
+        if (militiaNavy is null || pilot.Identity.WarFaction is null && _navyPilot != pilot.PilotId)
+        {
+            return;
+        }
+        var update = militiaNavy.Advance(pilot.PilotId, context.Flight.CanTarget, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+        _navyPilot = pilot.Identity.WarFaction is null ? 0 : pilot.PilotId;
+        if (update.WarningFaction is { } faction)
+        {
+            context.Notifications.Add(new MilitiaNavyWarning(faction));
+        }
+        if (update.SceneChanged)
+        {
+            context.Flight.RefreshNpcs();
+        }
+    }
+
+    private void EndNavyPursuit()
+    {
+        if (_navyPilot != 0)
+        {
+            militiaNavy?.Leave(_navyPilot, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
+            _navyPilot = 0;
+        }
+    }
+
     private void Notify(PilotCallContext context, NpcShot shot)
     {
         context.NotificationsBeforeFlight.Add(new DamageMessageNotification(CombatMessages.Incoming(shot)));
@@ -217,6 +254,7 @@ internal sealed class NpcCombatHandler(
 
     public void Leave()
     {
+        EndNavyPursuit();
         Clear();
         _shipId = 0;
     }

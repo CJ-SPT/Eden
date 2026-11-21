@@ -31,6 +31,9 @@ public sealed record StaticSpaceObject(
     public SpaceContainerState? Container { get; init; }
     public Structures.StructureContact? Structure { get; init; }
     public Structures.MoonMiningPoint? MoonMiningPoint { get; init; }
+    public FactionWarfare.MilitiaCaptureBracket? MilitiaCapture { get; init; }
+    public FactionWarfare.MilitiaBattlefieldCapture? BattlefieldCapture { get; init; }
+    public int? BattlefieldScore { get; init; }
     public Sovereignty.SovereigntyHub? Sovereignty { get; init; }
     public Sovereignty.SovereigntyCommandNode? CommandNode { get; init; }
     public Sovereignty.SovereigntySkyhook? Skyhook { get; init; }

@@ -1,5 +1,6 @@
 using Eden.Gameplay.Alliances;
 using Eden.Gameplay.Chat;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Infrastructure.Registration;
 using Eden.Protocol.PilotSessions;
 using Eden.Protocol.Serialization;
@@ -7,7 +8,9 @@ using Eden.Protocol.Serialization;
 namespace Eden.Protocol.Chat;
 
 [Injectable(InjectionType.Scoped)]
-internal sealed class ChatHandler(IPilotChat chat, IAlliances? alliances = null) : ISelectedPilotCallHandler, IDisposable
+internal sealed class ChatHandler(IPilotChat chat, IAlliances? alliances = null, IMilitiaEnlistment? militia = null)
+    : ISelectedPilotCallHandler,
+        IDisposable
 {
     private readonly Guid _session = Guid.NewGuid();
     private ChatPilot? _pilot;
@@ -26,7 +29,8 @@ internal sealed class ChatHandler(IPilotChat chat, IAlliances? alliances = null)
                 selected.Profile.GenderId,
                 ChatRules.LocalKind(selected.SystemId, selected.RegionId),
                 selected.Identity.Fleet?.FleetId,
-                alliances is null ? selected.Identity.AllianceId : alliances.PilotAffiliation(selected.PilotId)
+                alliances is null ? selected.Identity.AllianceId : alliances.PilotAffiliation(selected.PilotId),
+                militia is null ? selected.Identity.WarFaction : militia.EffectiveFaction(selected.PilotId)
             );
         if (_pilot != pilot)
         {

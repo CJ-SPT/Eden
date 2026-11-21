@@ -17,6 +17,7 @@ public sealed class NpcSceneIndex
     private readonly NpcSimulationContact[] _members;
     private readonly IReadOnlyList<long> _allIds;
     private readonly int[]? _ordered;
+    private readonly int[] _global;
     private readonly Axis _axis;
     private readonly SpacePosition? _minimum;
     private readonly SpacePosition? _maximum;
@@ -27,6 +28,7 @@ public sealed class NpcSceneIndex
     public NpcSceneIndex(IReadOnlyList<NpcSimulationContact> members)
     {
         _members = members.ToArray();
+        _global = Enumerable.Range(0, _members.Length).Where(index => _members[index].IsGlobal).ToArray();
         _allIds = Array.AsReadOnly(_members.Select(n => n.Id).ToArray());
         Members = Array.AsReadOnly(_members);
         Warping = _members.Where(n => n.Warping).Select(n => n.Id).ToFrozenSet();
@@ -64,7 +66,7 @@ public sealed class NpcSceneIndex
         }
         if (_ordered is null || !Finite(position))
         {
-            return _members.Where(n => Visible(position, n.Position)).Select(n => n.Id).ToArray();
+            return _members.Where(n => n.IsGlobal || Visible(position, n.Position)).Select(n => n.Id).ToArray();
         }
         // Round outward so the candidate interval never rejects an inclusive boundary.
         double minimum = Math.BitDecrement(Coordinate(position) - NpcEncounterDefinitions.VisibilityRange);
@@ -83,7 +85,7 @@ public sealed class NpcSceneIndex
                 high = middle;
             }
         }
-        List<int> selected = [];
+        List<int> selected = new(_global);
         for (int index = low; index < _ordered.Length; index++)
         {
             int source = _ordered[index];
@@ -92,7 +94,7 @@ public sealed class NpcSceneIndex
             {
                 break;
             }
-            if (Visible(position, member.Position))
+            if (!member.IsGlobal && Visible(position, member.Position))
             {
                 selected.Add(source);
             }

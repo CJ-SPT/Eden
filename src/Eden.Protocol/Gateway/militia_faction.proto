@@ -1,0 +1,8 @@
+syntax = "proto3";
+package eve_public.faction;
+option csharp_namespace = "Eden.Protocol.Gateway.MilitiaFactions";
+
+// Pinned build 3662168 faction_pb2.pyj.
+message Identifier {
+  uint64 sequential = 1;
+}

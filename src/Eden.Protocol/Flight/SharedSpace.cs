@@ -4,6 +4,7 @@ using Eden.Gameplay.Capsuleers;
 using Eden.Gameplay.Combat;
 using Eden.Gameplay.Defenses;
 using Eden.Gameplay.Docking;
+using Eden.Gameplay.FactionWarfare;
 using Eden.Gameplay.Fleets;
 using Eden.Gameplay.Flight;
 using Eden.Gameplay.Inventory;
@@ -80,7 +81,8 @@ internal sealed record PilotContact(
     double X,
     double Y,
     double Z,
-    int? AllianceId = null
+    int? AllianceId = null,
+    Eden.Gameplay.FactionWarfare.MilitiaFaction? WarFaction = null
 )
 {
     internal static PilotContact From(DockedPilot pilot) =>
@@ -101,7 +103,8 @@ internal sealed record PilotContact(
             pilot.X,
             pilot.Y,
             pilot.Z,
-            pilot.Identity.AllianceId
+            pilot.Identity.AllianceId,
+            pilot.Identity.WarFaction
         );
 }
 
@@ -144,7 +147,8 @@ internal sealed record ShipContact(
     bool Cloaked = false,
     SpatialActivation? MicroJump = null,
     GateCamp? Camp = null,
-    long GateCloakUntil = 0
+    long GateCloakUntil = 0,
+    long ConnectionId = 0
 );
 
 internal sealed record MotionOrder(long Sequence, StampedDestinyUpdate Update);
@@ -468,20 +472,26 @@ internal sealed class SharedSpace(
     }
 
     public NpcTargetCandidate[] NpcTargets(int systemId) =>
-        _ships
-            .Values.Where(ship =>
-                ship.Pilot.SystemId == systemId
-                && ship.Pilot.Position is not null
-                && ship.Pilot.ShipGroupId != FleetDefinitions.CapsuleGroup
-                && ship.Warp is null
-                && ship.AlignTo is null
-                && ship.DepartureGate is null
-                && !ArrivalProtected(ship)
-                && !IsCloaked(ship.Pilot.ShipId)
-                && ship.Health?.Remaining.Destroyed != true
-            )
-            .Select(ship => new NpcTargetCandidate(ship.Pilot.PilotId, ship.Pilot.ShipId))
+        TargetableShips(systemId).Select(ship => new NpcTargetCandidate(ship.Pilot.PilotId, ship.Pilot.ShipId)).ToArray();
+
+    internal MilitiaComplexPilot[] MilitiaComplexPilots(int systemId) =>
+        TargetableShips(systemId)
+            .Where(ship => ship.Pilot.WarFaction.HasValue && ship.ConnectionId != 0)
+            .Select(ship => new MilitiaComplexPilot(ship.Pilot.PilotId, ship.Pilot.ShipId, ship.Pilot.Position!, ship.ConnectionId))
             .ToArray();
+
+    private IEnumerable<ShipContact> TargetableShips(int systemId) =>
+        _ships.Values.Where(ship =>
+            ship.Pilot.SystemId == systemId
+            && ship.Pilot.Position is not null
+            && ship.Pilot.ShipGroupId != FleetDefinitions.CapsuleGroup
+            && ship.Warp is null
+            && ship.AlignTo is null
+            && ship.DepartureGate is null
+            && !ArrivalProtected(ship)
+            && !IsCloaked(ship.Pilot.ShipId)
+            && ship.Health?.Remaining.Destroyed != true
+        );
 
     public ShipContact[] Peers(DockedPilot pilot)
     {

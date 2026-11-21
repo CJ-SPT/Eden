@@ -46,6 +46,7 @@ public sealed partial class SqliteWorld
             throw new InvalidDataException("Focused warp disruption prevents docking at a player structure.");
         }
         CrimewatchPersistence.CheckTravel(world, catalog, pilot, CrimewatchTravel.Dock, now);
+        Eden.World.FactionWarfare.MilitiaEnlistmentStore.RequireDocking(world, pilot, structure.SystemId, type.GroupId);
         if (
             new SpacePosition(position.X, position.Y, position.Z).DistanceTo(new(structure.X, structure.Y, structure.Z))
             > profile.Radius + (type.Radius ?? 0) + DockingDefinitions.MaximumRange

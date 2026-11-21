@@ -22,7 +22,8 @@ internal sealed class PilotSessionTick(
     Eden.Protocol.Mining.AutoMiningHandler? autoMining = null,
     Eden.Protocol.Exploration.AbyssalHandler? abyss = null,
     Eden.Protocol.Exploration.WormholeEnvironmentHandler? environments = null,
-    Eden.Gameplay.Sovereignty.IPilotEntosis? entosis = null
+    Eden.Gameplay.Sovereignty.IPilotEntosis? entosis = null,
+    Eden.Protocol.FactionWarfare.FactionWarzoneUpdates? warzoneUpdates = null
 )
 {
     public async Task AdvanceAsync(
@@ -106,6 +107,7 @@ internal sealed class PilotSessionTick(
                 entosis.Advance(context.Pilot.SystemId, clock.GetUtcNow().UtcDateTime.ToFileTimeUtc());
             }
             anomalies?.Advance(context);
+            warzoneUpdates?.Advance(context);
             abyss?.Advance(context);
             environments?.Advance(context);
             using (SessionLatency.Measure(SessionLatencyPhase.Contacts))
@@ -153,6 +155,7 @@ internal sealed class PilotSessionTick(
                 || beforeAttack.ShipId != context.Pilot.ShipId
                 || beforeAttack.CorpId != context.Pilot.CorpId
                 || beforeAttack.Identity.AllianceId != context.Pilot.Identity.AllianceId
+                || beforeAttack.Identity.WarFaction != context.Pilot.Identity.WarFaction
                 || beforeAttack.Identity.Fleet != context.Pilot.Identity.Fleet
                 || beforeAttack.Identity.CorporationRoles != context.Pilot.Identity.CorporationRoles
                 || beforeAttack.Identity.CorporationAccess != context.Pilot.Identity.CorporationAccess

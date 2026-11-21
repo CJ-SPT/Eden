@@ -54,6 +54,8 @@ internal sealed partial class LiveReadModels
         "WorldCorporationMemberAccess",
         "WorldCorporationTitle",
         "WorldCorporationWalletSelection",
+        "WorldMilitiaEnlistment",
+        "WorldMilitiaOrganization",
         "WorldAllianceMember"
     );
 

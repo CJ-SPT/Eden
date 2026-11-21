@@ -11,5 +11,6 @@
     <EmbeddedResource Include="Catalog/Exploration/sleeper-loot.json" LogicalName="Eden.Data.SleeperLoot.json" />
     <EmbeddedResource Include="Catalog/CatalogSchema.g.json" LogicalName="Eden.Data.Catalog.Schema.json" />
     <EmbeddedResource Include="Catalog/Flight/static-collision-3662168.json.gz" LogicalName="Eden.Data.StaticCollision.json.gz" />
+    <EmbeddedResource Include="Catalog/FactionWarfare/warzone-roster-3662168.json" LogicalName="Eden.Data.WarzoneRoster.json" />
   </ItemGroup>
 </Project>
