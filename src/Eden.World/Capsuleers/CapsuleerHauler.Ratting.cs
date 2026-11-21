@@ -255,7 +255,7 @@ internal sealed partial class CapsuleerHauler
         CrimewatchPersistence.CheckTravel(_operation.World, _operation.Catalog, saved, CrimewatchTravel.Warp, Now);
         if (_warpBlocked)
         {
-            throw new InvalidDataException("Warp disruption prevents the ratting pilot from leaving.");
+            throw new InvalidDataException("Warp disruption prevents the pilot from leaving.");
         }
         _work = Work with { WaitingReason = null };
         _work = Work with { WarpReadyAt = CapsuleerWarpRules.Begin(_navigation, WarpOrder(_target!), Work.ActiveTicks) };

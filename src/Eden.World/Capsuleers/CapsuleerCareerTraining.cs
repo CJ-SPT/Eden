@@ -158,9 +158,12 @@ internal sealed class CapsuleerCareerTraining(PilotTrainingStore training, Pilot
         return new(plan, marketChanged, trained);
     }
 
-    internal bool TrainForModule(EconomyTransaction world, CatalogDbContext catalog, DockedPilot pilot, int module, long now)
+    internal bool TrainForModule(EconomyTransaction world, CatalogDbContext catalog, DockedPilot pilot, int module, long now) =>
+        TrainForEquipment(world, catalog, pilot, [module], now);
+
+    internal bool TrainForEquipment(EconomyTransaction world, CatalogDbContext catalog, DockedPilot pilot, int[] types, long now)
     {
-        if (Expand(catalog, RequiredSkills(catalog, module)) is not { Length: > 0 } targets)
+        if (Expand(catalog, types.SelectMany(type => RequiredSkills(catalog, type))) is not { Length: > 0 } targets)
         {
             return false;
         }

@@ -2,6 +2,64 @@
 
 [Protocol index](../protocol.md)
 
+## Bot data and relic exploration
+
+An available first-slot hauler in an established world can take up exploration while docked at a high-security NPC
+station with pirate sites enabled. The pilot qualifies through owned or purchased skillbooks, earned skill points and
+the training queue. It assembles and boards a Heron fitted with a Core Probe Launcher I, Data Analyzer I and
+Relic Analyzer I. It uses owned stock first and buys the remaining kit and eight Core Scanner Probe Is from station
+offers when the total fits within a quarter of its wallet. A Heron with the three modules already online can enter the
+same loop. The pilot reuses recovered probes for its next trip.
+
+The pilot launches real probes, starts with a wide formation at the first catalog celestial, and centers each narrower
+formation on the previous measured position. The candidate type is used only once the signature crosses the scan
+group threshold. The pilot recalls its probes and warps after a fully resolved ordinary data or relic signature.
+Sorties stay in the departure system. High-security pirate sites use the existing exploration definition and layout.
+
+At the site, the pilot approaches and locks an available container and pays capacitor for its matching analyzer.
+The decision policy chooses moves using revealed tiles, reachable frontier coordinates and available utilities.
+The native hacking owner resolves each move, applies the normal failure limit and generates inventory on success.
+The pilot takes the loot its hold can fit, returns to station and sells marketable stock into funded buy orders. Unsold
+and non-marketable goods go into its hangar. A pending probe scan and the flight routine checkpoint together.
+After restart the native hacking owner counts a previously active board as an abandoned attempt.
+
+Build 3662168 catalog item IDs are Heron 605, Core Probe Launcher I 17938, Core Scanner Probe I 30013,
+Data Analyzer I 22175 and Relic Analyzer I 22177. The local build 3396210 EVE.js reference computes coverage and
+perfect warp targets in `server/src/services/exploration/probes/probeScanRuntime.js` and separates public board state
+from transition logic in `server/src/services/exploration/hackingBoardEngine.js`. The inspected SHA-256 hashes are
+`4973D4AFE1C46906C82EDBEA2AE24A144C946C89C3E5551E4FCAF898E8CC738C` and
+`09646B00AC9BA92BE81A60DD82542BC6F8B2482664052B49487C6A269852AE3E`.
+[Probe scanning](https://wiki.eveuniversity.org/Probe_scanning) ·
+[Hacking](https://wiki.eveuniversity.org/Hacking) ·
+[Resident probes and pirate exploration](information.md#resident-probes-and-pirate-exploration)
+
+### Automated validation
+
+`FullyQualifiedName=Eden.Protocol.Tests.Capsuleers.PilotSpaceActivitiesTests.ExplorerBuysFitsScansHacksAndSellsSiteLoot`
+passed both cases in 9.58 seconds including runner overhead. Each replay buys and fits the kit through the market,
+pauses with a scan in flight, resumes with the human in another system, resolves the target and retrieves all eight
+probes. It plays the appropriate native data or relic board, retrieves its generated loot, and fills a funded order
+after docking. The reduced build 3662168 fixture qualifies the test pilot in advance and selects a repeatable
+container seed. The replays cover one ordinary site of each kind.
+
+The broader test filter passed 157 cases in 116.07 seconds before the final change to roll back a failed native hack
+action. Both exploration replays were rerun after that change. The solution built without warnings in 0.91 seconds
+with warm outputs. Both Python policy suites passed 17 checks, and formatting passed.
+
+```text
+(FullyQualifiedName~ProbeScanning|FullyQualifiedName~Hacking|FullyQualifiedName~DedAndGhostSiteTests|FullyQualifiedName~PilotSpaceActivitiesTests|FullyQualifiedName~CapsuleerInboundRuntimeTests|FullyQualifiedName~CapsuleerPopulationSettingsTests)&FullyQualifiedName!~ShoppingChoosesRealAffordableStockAndHonorsThreatMemory
+```
+
+The filter omits the pre-existing shopping theory.
+
+### Live acceptance
+
+Not performed; agent client testing is disabled.
+
+### Optional maintainer checks
+
+- Follow a fitted explorer from a high-security station to a data or relic site, then check the station market for its sale.
+
 ## Bot wreck salvage and trade
 
 Combat pilots can recover salvage from their own NPC wrecks on belt and public anomaly sorties. A pilot with a free

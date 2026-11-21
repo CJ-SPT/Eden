@@ -76,24 +76,22 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
     }
 
     public IReadOnlyList<ScanProbe> List(long pilotId, int systemId, long now) =>
-        WorldActionScope.Inspect(
-            database,
-            world =>
-                world
-                    .Filter<SavedScanProbe>(p => p.PilotId == pilotId && p.SystemId == systemId && p.ExpiresAt > now)
-                    .OrderBy(p => p.Id)
-                    .AsEnumerable()
-                    .Select(Read)
-                    .ToArray()
-        );
+        WorldActionScope.Inspect(database, world => List(world, pilotId, systemId, now));
+
+    internal static ScanProbe[] List(WorldAction world, long pilotId, int systemId, long now) =>
+        world
+            .Filter<SavedScanProbe>(p => p.PilotId == pilotId && p.SystemId == systemId && p.ExpiresAt > now)
+            .OrderBy(p => p.Id)
+            .AsEnumerable()
+            .Select(Read)
+            .ToArray();
 
     public bool IsLauncher(long pilotId, long moduleId) => IsLauncher(pilotId, moduleId, ProbeScanRules.LauncherGroup);
 
-    public ProbeScan? Pending(long pilotId) =>
-        WorldActionScope.Inspect(
-            database,
-            world => world.Set<SavedProbeScan>().Find(pilotId) is { } saved ? JsonSerializer.Deserialize<ProbeScan>(saved.ScanJson) : null
-        );
+    public ProbeScan? Pending(long pilotId) => WorldActionScope.Inspect(database, world => Pending(world, pilotId));
+
+    internal static ProbeScan? Pending(WorldAction world, long pilotId) =>
+        world.Set<SavedProbeScan>().Find(pilotId) is { } saved ? JsonSerializer.Deserialize<ProbeScan>(saved.ScanJson) : null;
 
     public bool IsSurveyLauncher(long pilotId, long moduleId) => IsLauncher(pilotId, moduleId, ProbeScanRules.SurveyLauncherGroup);
 
@@ -175,97 +173,96 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
         );
 
     public ProbeLaunch Launch(long pilotId, long moduleId, int count, long now) =>
-        Write(
-            pilotId,
-            (world, catalog) =>
-            {
-                if (count is < 1 or > ProbeScanRules.MaximumProbes)
-                {
-                    throw new InvalidDataException("Launch between one and eight probes.");
-                }
-                var pilot = Pilot(world, catalog, pilotId, now);
-                int system = SystemId(pilot, catalog);
-                var module = world.Set<OwnedItem>().Find(moduleId);
-                if (
-                    module is not { Online: true, Singleton: true }
-                    || module.OwnerId != pilotId
-                    || module.LocationId != pilot.ActiveShipId
-                    || !InventoryDefinitions.IsHighSlot(module.FlagId)
-                    || !ProbeCatalog.Launcher(catalog, module.TypeId, catalog.RequireItem(module.TypeId).GroupId)
+        Write(pilotId, (world, catalog) => Launch(world, catalog, pilotId, moduleId, count, now));
+
+    internal static ProbeLaunch Launch(WorldAction world, CatalogDbContext catalog, long pilotId, long moduleId, int count, long now)
+    {
+        if (count is < 1 or > ProbeScanRules.MaximumProbes)
+        {
+            throw new InvalidDataException("Launch between one and eight probes.");
+        }
+        var pilot = Pilot(world, catalog, pilotId, now);
+        int system = SystemId(pilot, catalog);
+        var module = world.Set<OwnedItem>().Find(moduleId);
+        if (
+            module is not { Online: true, Singleton: true }
+            || module.OwnerId != pilotId
+            || module.LocationId != pilot.ActiveShipId
+            || !InventoryDefinitions.IsHighSlot(module.FlagId)
+            || !ProbeCatalog.Launcher(catalog, module.TypeId, catalog.RequireItem(module.TypeId).GroupId)
+        )
+        {
+            throw new InvalidDataException("Use an online probe launcher fitted to your active ship.");
+        }
+        PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
+        PilotFittingStore.CheckHull(catalog, module.TypeId, pilot.ActiveShip.TypeId);
+        NaniteRepairPersistence.RequireAvailable(world, catalog, moduleId, now);
+        var cooldown = world.Set<ModuleCooldown>().Find(moduleId);
+        if (cooldown?.ReadyAt > now)
+        {
+            throw new InvalidDataException("Wait for the probe launcher cycle or reload to finish.");
+        }
+        var charge = PilotAmmunitionStore.Contents(world, moduleId);
+        if (
+            charge is null
+            || charge.OwnerId != pilotId
+            || !ProbeCatalog.Probe(catalog, charge.TypeId, catalog.RequireItem(charge.TypeId).GroupId)
+            || !ProbeCatalog.Compatible(catalog.FittingAttributes(module.TypeId), catalog.FittingAttributes(charge.TypeId))
+        )
+        {
+            throw new InvalidDataException("Load compatible scanner probes into the launcher.");
+        }
+        PilotSkillReader.CheckRequirements(world, catalog, pilotId, charge.TypeId);
+        world.RemoveRange(world.Filter<SavedScanProbe>(p => p.PilotId == pilotId && p.ExpiresAt <= now).ToArray());
+        int deployed = world.Filter<SavedScanProbe>(p => p.PilotId == pilotId && p.SystemId == system && p.ExpiresAt > now).Count();
+        int quantity = Math.Min(count, Math.Min(charge.Quantity, ProbeScanRules.MaximumProbes - deployed));
+        if (quantity <= 0)
+        {
+            throw new InvalidDataException("No probe capacity remains in this system.");
+        }
+        var fit = FittingCalculation.Read(world, catalog, pilot);
+        var profile = ProbeCatalog.FittedProfile(catalog, fit, charge.Id, charge.TypeId, pilot.ActiveShip.TypeId);
+        ProbeScanRules.Validate(new(0, SpacePosition.Zero, 1), profile);
+        if (!double.IsFinite(profile.LifetimeMs) || profile.LifetimeMs <= 0)
+        {
+            throw new InvalidDataException("The probe has no valid flight lifetime.");
+        }
+        var position = pilot.ActiveShip.Position!;
+        long next = world.Next("WorldScanProbe", ProbeScanRules.FirstProbeId - 1);
+        List<ScanProbe> launched = [];
+        for (int i = 0; i < quantity; i++)
+        {
+            var probe = world
+                .Add(
+                    new SavedScanProbe
+                    {
+                        Id = next++,
+                        PilotId = pilotId,
+                        SystemId = system,
+                        TypeId = charge.TypeId,
+                        X = position.X,
+                        Y = position.Y,
+                        Z = position.Z,
+                        ExpiresAt = checked(now + (long)Math.Ceiling(profile.LifetimeMs * TimeSpan.TicksPerMillisecond)),
+                        ProfileJson = JsonSerializer.Serialize(profile),
+                    }
                 )
-                {
-                    throw new InvalidDataException("Use an online probe launcher fitted to your active ship.");
-                }
-                PilotSkillReader.CheckRequirements(world, catalog, pilotId, module.TypeId);
-                PilotFittingStore.CheckHull(catalog, module.TypeId, pilot.ActiveShip.TypeId);
-                NaniteRepairPersistence.RequireAvailable(world, catalog, moduleId, now);
-                var cooldown = world.Set<ModuleCooldown>().Find(moduleId);
-                if (cooldown?.ReadyAt > now)
-                {
-                    throw new InvalidDataException("Wait for the probe launcher cycle or reload to finish.");
-                }
-                var charge = PilotAmmunitionStore.Contents(world, moduleId);
-                if (
-                    charge is null
-                    || charge.OwnerId != pilotId
-                    || !ProbeCatalog.Probe(catalog, charge.TypeId, catalog.RequireItem(charge.TypeId).GroupId)
-                    || !ProbeCatalog.Compatible(catalog.FittingAttributes(module.TypeId), catalog.FittingAttributes(charge.TypeId))
-                )
-                {
-                    throw new InvalidDataException("Load compatible scanner probes into the launcher.");
-                }
-                PilotSkillReader.CheckRequirements(world, catalog, pilotId, charge.TypeId);
-                world.RemoveRange(world.Filter<SavedScanProbe>(p => p.PilotId == pilotId && p.ExpiresAt <= now).ToArray());
-                int deployed = world.Filter<SavedScanProbe>(p => p.PilotId == pilotId && p.SystemId == system && p.ExpiresAt > now).Count();
-                int quantity = Math.Min(count, Math.Min(charge.Quantity, ProbeScanRules.MaximumProbes - deployed));
-                if (quantity <= 0)
-                {
-                    throw new InvalidDataException("No probe capacity remains in this system.");
-                }
-                var fit = FittingCalculation.Read(world, catalog, pilot);
-                var profile = ProbeCatalog.FittedProfile(catalog, fit, charge.Id, charge.TypeId, pilot.ActiveShip.TypeId);
-                ProbeScanRules.Validate(new(0, SpacePosition.Zero, 1), profile);
-                if (!double.IsFinite(profile.LifetimeMs) || profile.LifetimeMs <= 0)
-                {
-                    throw new InvalidDataException("The probe has no valid flight lifetime.");
-                }
-                var position = pilot.ActiveShip.Position!;
-                long next = world.Next("WorldScanProbe", ProbeScanRules.FirstProbeId - 1);
-                List<ScanProbe> launched = [];
-                for (int i = 0; i < quantity; i++)
-                {
-                    var probe = world
-                        .Add(
-                            new SavedScanProbe
-                            {
-                                Id = next++,
-                                PilotId = pilotId,
-                                SystemId = system,
-                                TypeId = charge.TypeId,
-                                X = position.X,
-                                Y = position.Y,
-                                Z = position.Z,
-                                ExpiresAt = checked(now + (long)Math.Ceiling(profile.LifetimeMs * TimeSpan.TicksPerMillisecond)),
-                                ProfileJson = JsonSerializer.Serialize(profile),
-                            }
-                        )
-                        .Entity;
-                    launched.Add(Read(probe));
-                }
-                charge.Quantity -= quantity;
-                var magazine = PilotAmmunitionStore.Read(world, module, charge);
-                if (charge.Quantity == 0)
-                {
-                    world.Remove(charge);
-                }
-                cooldown ??= world.Add(new ModuleCooldown { ModuleId = moduleId }).Entity;
-                cooldown.Kind = ModuleCooldownKind.Cycle;
-                cooldown.ReadyAt = checked(
-                    now + (long)Math.Ceiling(fit.Graph.Read(moduleId, DogmaAttributeId.WeaponCycleTime) * TimeSpan.TicksPerMillisecond)
-                );
-                return new ProbeLaunch(launched, magazine with { ReadyAt = cooldown.ReadyAt });
-            }
+                .Entity;
+            launched.Add(Read(probe));
+        }
+        charge.Quantity -= quantity;
+        var magazine = PilotAmmunitionStore.Read(world, module, charge);
+        if (charge.Quantity == 0)
+        {
+            world.Remove(charge);
+        }
+        cooldown ??= world.Add(new ModuleCooldown { ModuleId = moduleId }).Entity;
+        cooldown.Kind = ModuleCooldownKind.Cycle;
+        cooldown.ReadyAt = checked(
+            now + (long)Math.Ceiling(fit.Graph.Read(moduleId, DogmaAttributeId.WeaponCycleTime) * TimeSpan.TicksPerMillisecond)
         );
+        return new ProbeLaunch(launched, magazine with { ReadyAt = cooldown.ReadyAt });
+    }
 
     private static SavedScanProbe[] Owned(WorldAction world, long pilotId, int systemId, IReadOnlyList<long> ids, long now)
     {
@@ -295,38 +292,29 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
     }
 
     public ProbeRecovery Recover(long pilotId, IReadOnlyList<long> ids, long now) =>
-        Write(
-            pilotId,
-            (world, catalog) =>
-            {
-                var pilot = Pilot(world, catalog, pilotId, now);
-                Idle(world, pilotId, now);
-                var probes = Owned(world, pilotId, SystemId(pilot, catalog), ids, now);
-                double required = probes.Sum(p => PilotInventoryStore.Volume(catalog, p.TypeId));
-                double used = InventoryPersistence.UsedVolume(world, catalog, pilotId, pilot.ActiveShipId, (int)InventoryFlag.Cargo);
-                double capacity = PilotInventoryStore.HoldCapacity(world, catalog, pilotId, pilot.ActiveShipId, (int)InventoryFlag.Cargo);
-                if (used + required > capacity + InventoryDefinitions.ResourceTolerance)
-                {
-                    throw new CargoCapacityException(capacity - used, required);
-                }
-                var items = probes
-                    .GroupBy(p => p.TypeId)
-                    .Select(g =>
-                        InventoryPersistence.MergeOutput(
-                            world,
-                            catalog,
-                            pilotId,
-                            pilot.ActiveShipId,
-                            (int)InventoryFlag.Cargo,
-                            g.Key,
-                            g.Count()
-                        )
-                    )
-                    .ToArray();
-                world.RemoveRange(probes);
-                return new ProbeRecovery(ids.ToArray(), items);
-            }
-        );
+        Write(pilotId, (world, catalog) => Recover(world, catalog, pilotId, ids, now));
+
+    internal static ProbeRecovery Recover(WorldAction world, CatalogDbContext catalog, long pilotId, IReadOnlyList<long> ids, long now)
+    {
+        var pilot = Pilot(world, catalog, pilotId, now);
+        Idle(world, pilotId, now);
+        var probes = Owned(world, pilotId, SystemId(pilot, catalog), ids, now);
+        double required = probes.Sum(p => PilotInventoryStore.Volume(catalog, p.TypeId));
+        double used = InventoryPersistence.UsedVolume(world, catalog, pilotId, pilot.ActiveShipId, (int)InventoryFlag.Cargo);
+        double capacity = PilotInventoryStore.HoldCapacity(world, catalog, pilotId, pilot.ActiveShipId, (int)InventoryFlag.Cargo);
+        if (used + required > capacity + InventoryDefinitions.ResourceTolerance)
+        {
+            throw new CargoCapacityException(capacity - used, required);
+        }
+        var items = probes
+            .GroupBy(p => p.TypeId)
+            .Select(g =>
+                InventoryPersistence.MergeOutput(world, catalog, pilotId, pilot.ActiveShipId, (int)InventoryFlag.Cargo, g.Key, g.Count())
+            )
+            .ToArray();
+        world.RemoveRange(probes);
+        return new ProbeRecovery(ids.ToArray(), items);
+    }
 
     public void Destroy(long pilotId, long id, long now) =>
         Write(
@@ -357,125 +345,141 @@ internal sealed class PilotProbeScanningStore(WorldDatabase database, ICombatAno
                 world => SystemId(world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown scanning pilot."), geographic)
             );
             var signatures = sites.Signatures(system, now);
-            return Write(
-                pilotId,
-                (world, catalog) =>
-                {
-                    var pilot = Pilot(world, catalog, pilotId, now);
-                    Idle(world, pilotId, now);
-                    var probes = Owned(world, pilotId, system, placements.Select(p => p.Id).ToArray(), now);
-                    var launcher =
-                        world
-                            .Filter<OwnedItem>(i => i.OwnerId == pilotId && i.LocationId == pilot.ActiveShipId && i.Singleton && i.Online)
-                            .AsEnumerable()
-                            .FirstOrDefault(i =>
-                                InventoryDefinitions.IsHighSlot(i.FlagId)
-                                && ProbeCatalog.Launcher(catalog, i.TypeId, catalog.RequireItem(i.TypeId).GroupId)
-                            )
-                        ?? throw new InvalidDataException("Fit and online a probe launcher before scanning.");
-                    PilotSkillReader.CheckRequirements(world, catalog, pilotId, launcher.TypeId);
-                    NaniteRepairPersistence.RequireAvailable(world, catalog, launcher.Id, now);
-                    var fitting = FittingCalculation.Read(world, catalog, pilot);
-                    double duration = fitting.Graph.Read(launcher.Id, DogmaAttributeId.Duration);
-                    if (!double.IsFinite(duration) || duration <= 0)
-                    {
-                        throw new InvalidDataException("The launcher has no scan duration.");
-                    }
-                    long ready = checked(now + (long)Math.Ceiling(duration * TimeSpan.TicksPerMillisecond));
-                    var profiles = probes
-                        .Select(p => p.TypeId)
-                        .Distinct()
-                        .ToDictionary(
-                            type => type,
-                            type =>
-                                ProbeCatalog.FittedProfile(
-                                    catalog,
-                                    FittingCalculation.Read(world, catalog, pilot, ownerTypeId: type),
-                                    FittingCalculation.OwnerTargetId,
-                                    type,
-                                    pilot.ActiveShip.TypeId
-                                )
-                        );
-                    foreach (var probe in probes)
-                    {
-                        PilotSkillReader.CheckRequirements(world, catalog, pilotId, probe.TypeId);
-                        probe.ProfileJson = JsonSerializer.Serialize(profiles[probe.TypeId]);
-                    }
-                    var pairs = probes.Select(p => (Probe: Read(p), Placement: placements.Single(x => x.Id == p.Id))).ToArray();
-                    foreach (var pair in pairs)
-                    {
-                        ProbeScanRules.Validate(pair.Placement, pair.Probe.Profile);
-                        if (pair.Probe.ExpiresAt <= ready)
-                        {
-                            throw new InvalidDataException("A selected probe expires before this scan can complete.");
-                        }
-                    }
-                    var results = signatures.Select(site => ProbeScanRules.Scan(site, pairs)).OfType<ProbeScanResult>().ToArray();
-                    foreach (var probe in probes)
-                    {
-                        var destination = placements.Single(p => p.Id == probe.Id).Destination;
-                        probe.X = destination.X;
-                        probe.Y = destination.Y;
-                        probe.Z = destination.Z;
-                    }
-                    ProbeScan scan = new(pilot.ActiveShipId, system, now, ready, probes.Select(Read).ToArray(), results);
-                    var saved = world.Set<SavedProbeScan>().Find(pilotId) ?? world.Add(new SavedProbeScan { PilotId = pilotId }).Entity;
-                    saved.StartedAt = now;
-                    saved.ReadyAt = ready;
-                    saved.ScanJson = JsonSerializer.Serialize(scan, s_json);
-                    return scan;
-                }
-            );
+            return Write(pilotId, (world, catalog) => Begin(world, catalog, pilotId, placements, signatures, now));
         }
     }
 
-    public IReadOnlyList<ProbeScanResult> Complete(long pilotId, ProbeScan scan, long now) =>
-        Write(
-            pilotId,
-            (world, catalog) =>
+    internal static ProbeScan Begin(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        IReadOnlyList<ProbePlacement> placements,
+        IReadOnlyList<CombatAnomaly> signatures,
+        long now
+    )
+    {
+        var pilot = Pilot(world, catalog, pilotId, now);
+        int system = SystemId(pilot, catalog);
+        Idle(world, pilotId, now);
+        var probes = Owned(world, pilotId, system, placements.Select(p => p.Id).ToArray(), now);
+        var launcher =
+            world
+                .Filter<OwnedItem>(i => i.OwnerId == pilotId && i.LocationId == pilot.ActiveShipId && i.Singleton && i.Online)
+                .AsEnumerable()
+                .FirstOrDefault(i =>
+                    InventoryDefinitions.IsHighSlot(i.FlagId)
+                    && ProbeCatalog.Launcher(catalog, i.TypeId, catalog.RequireItem(i.TypeId).GroupId)
+                )
+            ?? throw new InvalidDataException("Fit and online a probe launcher before scanning.");
+        PilotSkillReader.CheckRequirements(world, catalog, pilotId, launcher.TypeId);
+        NaniteRepairPersistence.RequireAvailable(world, catalog, launcher.Id, now);
+        var fitting = FittingCalculation.Read(world, catalog, pilot);
+        double duration = fitting.Graph.Read(launcher.Id, DogmaAttributeId.Duration);
+        if (!double.IsFinite(duration) || duration <= 0)
+        {
+            throw new InvalidDataException("The launcher has no scan duration.");
+        }
+        long ready = checked(now + (long)Math.Ceiling(duration * TimeSpan.TicksPerMillisecond));
+        var profiles = probes
+            .Select(p => p.TypeId)
+            .Distinct()
+            .ToDictionary(
+                type => type,
+                type =>
+                    ProbeCatalog.FittedProfile(
+                        catalog,
+                        FittingCalculation.Read(world, catalog, pilot, ownerTypeId: type),
+                        FittingCalculation.OwnerTargetId,
+                        type,
+                        pilot.ActiveShip.TypeId
+                    )
+            );
+        foreach (var probe in probes)
+        {
+            PilotSkillReader.CheckRequirements(world, catalog, pilotId, probe.TypeId);
+            probe.ProfileJson = JsonSerializer.Serialize(profiles[probe.TypeId]);
+        }
+        var pairs = probes.Select(p => (Probe: Read(p), Placement: placements.Single(x => x.Id == p.Id))).ToArray();
+        foreach (var pair in pairs)
+        {
+            ProbeScanRules.Validate(pair.Placement, pair.Probe.Profile);
+            if (pair.Probe.ExpiresAt <= ready)
             {
-                var saved = world.Set<SavedProbeScan>().Find(pilotId);
-                if (saved is null || saved.StartedAt != scan.StartedAt || saved.ReadyAt > now)
-                {
-                    return (IReadOnlyList<ProbeScanResult>)Array.Empty<ProbeScanResult>();
-                }
-                var authoritative = JsonSerializer.Deserialize<ProbeScan>(saved.ScanJson)!;
-                world.Remove(saved);
-                var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown scanning pilot.");
-                if (
-                    pilot.ActiveShipId != authoritative.ShipId
-                    || pilot.ActiveShip.Position is null
-                    || SystemId(pilot, catalog) != authoritative.SystemId
-                )
-                {
-                    return Array.Empty<ProbeScanResult>();
-                }
-                var ids = authoritative.Probes.Select(p => p.Id).ToArray();
-                if (
-                    world.Filter<SavedScanProbe>(p => Enumerable.Contains(ids, p.Id) && p.PilotId == pilotId && p.ExpiresAt > now).Count()
-                    != ids.Length
-                )
-                {
-                    return Array.Empty<ProbeScanResult>();
-                }
-                var results = authoritative.Results.Where(r => Available(world, catalog, r.Site.Id, authoritative.SystemId, now)).ToArray();
-                foreach (var result in results.Where(r => r.Certainty >= 1))
-                {
-                    if (world.Set<SavedResolvedSignature>().Find(pilotId, result.Site.Id) is null)
-                    {
-                        world.Add(
-                            new SavedResolvedSignature
-                            {
-                                PilotId = pilotId,
-                                SiteId = result.Site.Id,
-                                SystemId = authoritative.SystemId,
-                            }
-                        );
-                    }
-                }
-                return results;
+                throw new InvalidDataException("A selected probe expires before this scan can complete.");
             }
-        );
+        }
+        var results = signatures
+            .Where(site => site.SystemId == system)
+            .Select(site => ProbeScanRules.Scan(site, pairs))
+            .OfType<ProbeScanResult>()
+            .ToArray();
+        foreach (var probe in probes)
+        {
+            var destination = placements.Single(p => p.Id == probe.Id).Destination;
+            probe.X = destination.X;
+            probe.Y = destination.Y;
+            probe.Z = destination.Z;
+        }
+        ProbeScan scan = new(pilot.ActiveShipId, system, now, ready, probes.Select(Read).ToArray(), results);
+        var saved = world.Set<SavedProbeScan>().Find(pilotId) ?? world.Add(new SavedProbeScan { PilotId = pilotId }).Entity;
+        saved.StartedAt = now;
+        saved.ReadyAt = ready;
+        saved.ScanJson = JsonSerializer.Serialize(scan, s_json);
+        return scan;
+    }
+
+    public IReadOnlyList<ProbeScanResult> Complete(long pilotId, ProbeScan scan, long now) =>
+        Write(pilotId, (world, catalog) => Complete(world, catalog, pilotId, scan, now));
+
+    internal static IReadOnlyList<ProbeScanResult> Complete(
+        WorldAction world,
+        CatalogDbContext catalog,
+        long pilotId,
+        ProbeScan scan,
+        long now
+    )
+    {
+        var saved = world.Set<SavedProbeScan>().Find(pilotId);
+        if (saved is null || saved.StartedAt != scan.StartedAt || saved.ReadyAt > now)
+        {
+            return (IReadOnlyList<ProbeScanResult>)Array.Empty<ProbeScanResult>();
+        }
+        var authoritative = JsonSerializer.Deserialize<ProbeScan>(saved.ScanJson)!;
+        world.Remove(saved);
+        var pilot = world.Pilots.Find(pilotId) ?? throw new InvalidDataException("Unknown scanning pilot.");
+        if (
+            pilot.ActiveShipId != authoritative.ShipId
+            || pilot.ActiveShip.Position is null
+            || SystemId(pilot, catalog) != authoritative.SystemId
+        )
+        {
+            return Array.Empty<ProbeScanResult>();
+        }
+        var ids = authoritative.Probes.Select(p => p.Id).ToArray();
+        if (
+            world.Filter<SavedScanProbe>(p => Enumerable.Contains(ids, p.Id) && p.PilotId == pilotId && p.ExpiresAt > now).Count()
+            != ids.Length
+        )
+        {
+            return Array.Empty<ProbeScanResult>();
+        }
+        var results = authoritative.Results.Where(r => Available(world, catalog, r.Site.Id, authoritative.SystemId, now)).ToArray();
+        foreach (var result in results.Where(r => r.Certainty >= 1))
+        {
+            if (world.Set<SavedResolvedSignature>().Find(pilotId, result.Site.Id) is null)
+            {
+                world.Add(
+                    new SavedResolvedSignature
+                    {
+                        PilotId = pilotId,
+                        SiteId = result.Site.Id,
+                        SystemId = authoritative.SystemId,
+                    }
+                );
+            }
+        }
+        return results;
+    }
 
     private static bool Available(WorldAction world, CatalogDbContext catalog, long siteId, int systemId, long now) =>
         WormholeRules.IsEndpoint(siteId) && WormholeTravelStore.Exists(world, systemId, siteId, now)

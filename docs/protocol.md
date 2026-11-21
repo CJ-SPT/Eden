@@ -1,5 +1,8 @@
 # Protocol findings and milestone records
 
+[Bot data and relic exploration](protocol/capsuleers.md#bot-data-and-relic-exploration) traces the paid Heron fit,
+probe resolution, native hacking and sale of recovered loot.
+
 [Bot wreck salvage and trade](protocol/capsuleers.md#bot-wreck-salvage-and-trade) covers paid salvager fitting,
 wreck recovery, restart and sale into funded station demand.
 

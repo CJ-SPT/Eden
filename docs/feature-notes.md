@@ -297,6 +297,9 @@ The [scanners and salvage checkpoint](protocol/information.md#scanners-and-salva
 Combat bots with an online salvager can recover their own NPC wrecks and sell recovered materials when they dock at a
 market with funded demand. [Bot wreck salvage and trade](protocol/capsuleers.md#bot-wreck-salvage-and-trade)
 
+Eligible bots can purchase and fit a Heron for ordinary high-security exploration, scan down data and relic signatures,
+play the hacking board and sell marketable loot. [Bot data and relic exploration](protocol/capsuleers.md#bot-data-and-relic-exploration)
+
 [Directional scanning completion](protocol/information.md#directional-scanning-completion-november-8-2026) supplies off-grid name lookup without coordinates, the pinned 1.5-second cooldown, scanning during warp, unpiloted hull detection and shared resident scan contacts. [Probe scanning](protocol/information.md#probe-scanning-and-combat-signatures-november-9-2026) now adds owned probes, progressive signature resolution, recovery and persistent hidden combat encounters; active module cloaks are excluded from discovery.
 
 The build-3662168 completion program covers ordinary functional static hulls, ship modules/rigs, charges, drones, subsystems and carrier fighters. Each family includes its actual static tiers. Restricted equipment follows its ship role. Complete roles include the required exploration, fleet and ship-to-ship capital mechanics. Acquisition/production expansion, CONCORD, sovereignty and full player structures are separate programs. Per-item mutations and bespoke special-edition mechanics are deferred; existing supported special editions remain available. Unknown server rules are evidence blockers, not permission to invent replacements.
